@@ -1039,6 +1039,19 @@ export function initDatabase() {
       console.warn('⚠️ Не удалось обновить схему документов:', migrationError.message);
     }
     
+    // Создаем таблицы для чата
+    try {
+      const chatsTable = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='chats'").get();
+      if (!chatsTable) {
+        console.log('🔄 Создание таблиц для чата...');
+        const chatTablesSql = readFileSync(join(__dirname, 'add_chat_tables.sql'), 'utf8');
+        db.exec(chatTablesSql);
+        console.log('✅ Таблицы для чата созданы');
+      }
+    } catch (chatError) {
+      console.warn('⚠️ Не удалось создать таблицы чата:', chatError.message);
+    }
+    
     // Выполняем начальное обслуживание БД
     performMaintenance(db);
     
@@ -4313,6 +4326,203 @@ export const propertyQueries = {
    */
   getPendingProperties: function() {
     return this.getPending();
+  }
+};
+
+// Экспортируем функции для работы с чатом
+export const chatQueries = {
+  /**
+   * Создать новый чат
+   */
+  create: (userId, chatType = 'ai') => {
+    const db = getDatabase();
+    const stmt = db.prepare(`
+      INSERT INTO chats (user_id, chat_type, is_active)
+      VALUES (?, ?, 1)
+    `);
+    const result = stmt.run(userId, chatType);
+    return result.lastInsertRowid;
+  },
+
+  /**
+   * Получить активный чат пользователя по типу
+   */
+  getActiveChat: (userId, chatType = 'ai') => {
+    const db = getDatabase();
+    const stmt = db.prepare(`
+      SELECT * FROM chats
+      WHERE user_id = ? AND chat_type = ? AND is_active = 1
+      ORDER BY created_at DESC
+      LIMIT 1
+    `);
+    return stmt.get(userId, chatType);
+  },
+
+  /**
+   * Получить или создать чат для пользователя
+   */
+  getOrCreate: (userId, chatType = 'ai') => {
+    let chat = chatQueries.getActiveChat(userId, chatType);
+    if (!chat) {
+      const chatId = chatQueries.create(userId, chatType);
+      chat = chatQueries.getById(chatId);
+    }
+    return chat;
+  },
+
+  /**
+   * Получить чат по ID
+   */
+  getById: (chatId) => {
+    const db = getDatabase();
+    const stmt = db.prepare('SELECT * FROM chats WHERE id = ?');
+    return stmt.get(chatId);
+  },
+
+  /**
+   * Переключить тип чата (AI -> Manager или наоборот)
+   */
+  switchChatType: (userId, newChatType) => {
+    const db = getDatabase();
+    // Деактивируем старый чат
+    const deactivateStmt = db.prepare(`
+      UPDATE chats SET is_active = 0, updated_at = datetime('now')
+      WHERE user_id = ? AND is_active = 1
+    `);
+    deactivateStmt.run(userId);
+    
+    // Создаем или активируем новый чат
+    return chatQueries.getOrCreate(userId, newChatType);
+  },
+
+  /**
+   * Получить все чаты пользователя
+   */
+  getAllByUserId: (userId) => {
+    const db = getDatabase();
+    const stmt = db.prepare(`
+      SELECT * FROM chats
+      WHERE user_id = ?
+      ORDER BY updated_at DESC
+    `);
+    return stmt.all(userId);
+  },
+
+  /**
+   * Получить все активные чаты (для админа)
+   */
+  getAllActive: () => {
+    const db = getDatabase();
+    const stmt = db.prepare(`
+      SELECT c.*, u.first_name, u.last_name, u.email, u.phone_number
+      FROM chats c
+      LEFT JOIN users u ON c.user_id = u.id
+      WHERE c.is_active = 1
+      ORDER BY c.updated_at DESC
+    `);
+    return stmt.all();
+  },
+
+  /**
+   * Добавить сообщение в чат
+   */
+  addMessage: (chatId, senderType, senderId, messageText) => {
+    const db = getDatabase();
+    const stmt = db.prepare(`
+      INSERT INTO chat_messages (chat_id, sender_type, sender_id, message_text, is_read)
+      VALUES (?, ?, ?, ?, 0)
+    `);
+    const result = stmt.run(chatId, senderType, senderId || null, messageText);
+    
+    // Обновляем updated_at в чате
+    const updateChatStmt = db.prepare(`
+      UPDATE chats SET updated_at = datetime('now') WHERE id = ?
+    `);
+    updateChatStmt.run(chatId);
+    
+    return result.lastInsertRowid;
+  },
+
+  /**
+   * Получить все сообщения чата
+   */
+  getMessages: (chatId) => {
+    const db = getDatabase();
+    const stmt = db.prepare(`
+      SELECT * FROM chat_messages
+      WHERE chat_id = ?
+      ORDER BY created_at ASC
+    `);
+    return stmt.all(chatId);
+  },
+
+  /**
+   * Отметить сообщения как прочитанные
+   */
+  markAsRead: (chatId, userId) => {
+    const db = getDatabase();
+    const stmt = db.prepare(`
+      UPDATE chat_messages
+      SET is_read = 1, read_at = datetime('now')
+      WHERE chat_id = ? AND sender_type != 'user' AND is_read = 0
+    `);
+    return stmt.run(chatId);
+  },
+
+  /**
+   * Отметить сообщения как прочитанные для админа
+   */
+  markAsReadByAdmin: (chatId) => {
+    const db = getDatabase();
+    const stmt = db.prepare(`
+      UPDATE chat_messages
+      SET is_read = 1, read_at = datetime('now')
+      WHERE chat_id = ? AND sender_type = 'user' AND is_read = 0
+    `);
+    return stmt.run(chatId);
+  },
+
+  /**
+   * Получить количество непрочитанных сообщений для пользователя
+   */
+  getUnreadCount: (userId) => {
+    const db = getDatabase();
+    const stmt = db.prepare(`
+      SELECT COUNT(*) as count
+      FROM chat_messages cm
+      JOIN chats c ON cm.chat_id = c.id
+      WHERE c.user_id = ? AND cm.sender_type != 'user' AND cm.is_read = 0
+    `);
+    const result = stmt.get(userId);
+    return result ? result.count : 0;
+  },
+
+  /**
+   * Получить количество непрочитанных сообщений для админа
+   */
+  getUnreadCountForAdmin: () => {
+    const db = getDatabase();
+    const stmt = db.prepare(`
+      SELECT COUNT(*) as count
+      FROM chat_messages
+      WHERE sender_type = 'user' AND is_read = 0
+    `);
+    const result = stmt.get();
+    return result ? result.count : 0;
+  },
+
+  /**
+   * Получить количество непрочитанных сообщений в конкретном чате для админа
+   */
+  getUnreadCountForAdminByChat: (chatId) => {
+    const db = getDatabase();
+    const stmt = db.prepare(`
+      SELECT COUNT(*) as count
+      FROM chat_messages
+      WHERE chat_id = ? AND sender_type = 'user' AND is_read = 0
+    `);
+    const result = stmt.get(chatId);
+    return result ? result.count : 0;
   }
 };
 

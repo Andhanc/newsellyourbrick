@@ -2,7 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import axios from 'axios';
 import { initDatabase, closeDatabase, getDatabase } from './database/database.js';
-import { userQueries, documentQueries, notificationQueries, administratorQueries, whatsappUserQueries, purchaseRequestQueries, apartmentQueries, houseQueries, propertyQueries } from './database/database.js';
+import { userQueries, documentQueries, notificationQueries, administratorQueries, whatsappUserQueries, purchaseRequestQueries, apartmentQueries, houseQueries, propertyQueries, chatQueries } from './database/database.js';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import multer from 'multer';
@@ -7005,6 +7005,360 @@ app.get('/api/bids/user/:userId/property/:propertyId', (req, res) => {
     res.json({ success: true, data: formattedBids });
   } catch (error) {
     console.error('❌ Ошибка при получении истории ставок пользователя по объекту:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// ========== РОУТЫ ДЛЯ ЧАТА ==========
+
+/**
+ * POST /api/chat/create - Создать новый чат
+ */
+app.post('/api/chat/create', (req, res) => {
+  try {
+    const { userId, chatType = 'ai' } = req.body;
+    
+    if (!userId) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Необходимо указать userId' 
+      });
+    }
+
+    const chatId = chatQueries.create(userId, chatType);
+    const chat = chatQueries.getById(chatId);
+    
+    res.json({
+      success: true,
+      data: chat
+    });
+  } catch (error) {
+    console.error('Ошибка при создании чата:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * GET /api/chat/:userId - Получить активный чат пользователя
+ */
+app.get('/api/chat/:userId', (req, res) => {
+  try {
+    const userId = parseInt(req.params.userId);
+    const chatType = req.query.type || 'ai';
+    
+    if (!userId) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Неверный userId' 
+      });
+    }
+
+    const chat = chatQueries.getOrCreate(userId, chatType);
+    const messages = chatQueries.getMessages(chat.id);
+    
+    console.log(`📥 Загрузка чата: userId=${userId}, chatType=${chatType}, chatId=${chat.id}, сообщений=${messages.length}`);
+    
+    res.json({
+      success: true,
+      data: {
+        chat,
+        messages
+      }
+    });
+  } catch (error) {
+    console.error('Ошибка при получении чата:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * POST /api/chat/:chatId/message - Отправить сообщение
+ */
+app.post('/api/chat/:chatId/message', async (req, res) => {
+  try {
+    const chatId = parseInt(req.params.chatId);
+    const { senderType, senderId, messageText } = req.body;
+    
+    if (!chatId || !senderType || !messageText) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Необходимо указать chatId, senderType и messageText' 
+      });
+    }
+
+    const chat = chatQueries.getById(chatId);
+    if (!chat) {
+      return res.status(404).json({ 
+        success: false, 
+        error: 'Чат не найден' 
+      });
+    }
+
+    // Добавляем сообщение
+    console.log(`💬 Сохранение сообщения: chatId=${chatId}, senderType=${senderType}, senderId=${senderId}, text="${messageText.substring(0, 50)}..."`);
+    const messageId = chatQueries.addMessage(chatId, senderType, senderId || null, messageText);
+    console.log(`✅ Сообщение сохранено с ID: ${messageId}`);
+    
+    // Примечание: AI ответы обрабатываются на фронтенде для лучшей производительности
+
+    // Получаем обновленные сообщения
+    const messages = chatQueries.getMessages(chatId);
+    console.log(`📦 Возвращаем ${messages.length} сообщений для чата ${chatId}`);
+    
+    res.json({
+      success: true,
+      data: {
+        messageId,
+        messages
+      }
+    });
+  } catch (error) {
+    console.error('Ошибка при отправке сообщения:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * POST /api/chat/:userId/switch - Переключить тип чата (AI <-> Manager)
+ */
+app.post('/api/chat/:userId/switch', (req, res) => {
+  try {
+    const userId = parseInt(req.params.userId);
+    const { chatType } = req.body;
+    
+    if (!userId || !chatType) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Необходимо указать userId и chatType' 
+      });
+    }
+
+    if (chatType !== 'ai' && chatType !== 'manager') {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'chatType должен быть "ai" или "manager"' 
+      });
+    }
+
+    const chat = chatQueries.switchChatType(userId, chatType);
+    const messages = chatQueries.getMessages(chat.id);
+    
+    res.json({
+      success: true,
+      data: {
+        chat,
+        messages
+      }
+    });
+  } catch (error) {
+    console.error('Ошибка при переключении чата:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * POST /api/chat/:chatId/read - Отметить сообщения как прочитанные
+ */
+app.post('/api/chat/:chatId/read', (req, res) => {
+  try {
+    const chatId = parseInt(req.params.chatId);
+    const { userId, isAdmin } = req.body;
+    
+    if (!chatId) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Необходимо указать chatId' 
+      });
+    }
+
+    if (isAdmin) {
+      chatQueries.markAsReadByAdmin(chatId);
+    } else if (userId) {
+      chatQueries.markAsRead(chatId, userId);
+    } else {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Необходимо указать userId или isAdmin' 
+      });
+    }
+    
+    res.json({
+      success: true,
+      message: 'Сообщения отмечены как прочитанные'
+    });
+  } catch (error) {
+    console.error('Ошибка при отметке сообщений:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * GET /api/chat/:userId/unread - Получить количество непрочитанных сообщений
+ */
+app.get('/api/chat/:userId/unread', (req, res) => {
+  try {
+    const userId = parseInt(req.params.userId);
+    
+    if (!userId) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Неверный userId' 
+      });
+    }
+
+    const count = chatQueries.getUnreadCount(userId);
+    
+    res.json({
+      success: true,
+      data: { count }
+    });
+  } catch (error) {
+    console.error('Ошибка при получении непрочитанных сообщений:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * GET /api/admin/chat/list - Получить список всех чатов (для админа)
+ */
+app.get('/api/admin/chat/list', (req, res) => {
+  try {
+    const chats = chatQueries.getAllActive();
+    
+    // Для каждого чата получаем последнее сообщение и количество непрочитанных
+    const chatsWithInfo = chats.map(chat => {
+      const messages = chatQueries.getMessages(chat.id);
+      const lastMessage = messages[messages.length - 1];
+      const unreadCount = chatQueries.getUnreadCountForAdminByChat(chat.id);
+      
+      return {
+        ...chat,
+        lastMessage: lastMessage ? {
+          text: lastMessage.message_text,
+          timestamp: lastMessage.created_at
+        } : null,
+        unreadCount
+      };
+    });
+    
+    res.json({
+      success: true,
+      data: chatsWithInfo
+    });
+  } catch (error) {
+    console.error('Ошибка при получении списка чатов:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * GET /api/admin/chat/unread - Получить количество непрочитанных сообщений для админа
+ */
+app.get('/api/admin/chat/unread', (req, res) => {
+  try {
+    const count = chatQueries.getUnreadCountForAdmin();
+    
+    res.json({
+      success: true,
+      data: { count }
+    });
+  } catch (error) {
+    console.error('Ошибка при получении непрочитанных сообщений для админа:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * GET /api/admin/chat/:chatId - Получить чат с сообщениями (для админа)
+ */
+app.get('/api/admin/chat/:chatId', (req, res) => {
+  try {
+    const chatId = parseInt(req.params.chatId);
+    
+    if (!chatId) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Неверный chatId' 
+      });
+    }
+
+    const chat = chatQueries.getById(chatId);
+    if (!chat) {
+      return res.status(404).json({ 
+        success: false, 
+        error: 'Чат не найден' 
+      });
+    }
+
+    const messages = chatQueries.getMessages(chatId);
+    
+    // Получаем информацию о пользователе
+    const user = userQueries.getById(chat.user_id);
+    
+    res.json({
+      success: true,
+      data: {
+        chat,
+        messages,
+        user: user ? {
+          id: user.id,
+          firstName: user.first_name,
+          lastName: user.last_name,
+          email: user.email,
+          phoneNumber: user.phone_number
+        } : null
+      }
+    });
+  } catch (error) {
+    console.error('Ошибка при получении чата для админа:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * POST /api/admin/chat/:chatId/message - Отправить сообщение от админа/менеджера
+ */
+app.post('/api/admin/chat/:chatId/message', (req, res) => {
+  try {
+    const chatId = parseInt(req.params.chatId);
+    const { messageText, adminId } = req.body;
+    
+    if (!chatId || !messageText) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Необходимо указать chatId и messageText' 
+      });
+    }
+
+    const chat = chatQueries.getById(chatId);
+    if (!chat) {
+      return res.status(404).json({ 
+        success: false, 
+        error: 'Чат не найден' 
+      });
+    }
+
+    // Определяем тип отправителя в зависимости от типа чата
+    const senderType = chat.chat_type === 'manager' ? 'manager' : 'admin';
+    
+    // Добавляем сообщение
+    const messageId = chatQueries.addMessage(chatId, senderType, adminId || null, messageText);
+    
+    // Отмечаем сообщения пользователя как прочитанные
+    chatQueries.markAsReadByAdmin(chatId);
+    
+    // Получаем обновленные сообщения
+    const messages = chatQueries.getMessages(chatId);
+    
+    res.json({
+      success: true,
+      data: {
+        messageId,
+        messages
+      }
+    });
+  } catch (error) {
+    console.error('Ошибка при отправке сообщения от админа:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });

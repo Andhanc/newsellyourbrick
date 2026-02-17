@@ -46,6 +46,7 @@ const Header = () => {
   const [userPhoto, setUserPhoto] = useState(null) // Фотография пользователя
   const [isLoggedIn, setIsLoggedIn] = useState(false) // Статус авторизации
   const [isAIChatOpen, setIsAIChatOpen] = useState(false) // Состояние AI чата для страницы аукцион
+  const [chatUnreadCount, setChatUnreadCount] = useState(0) // Количество непрочитанных сообщений в чате
   const locationRef = useRef(null)
   const notificationRef = useRef(null)
   const menuRef = useRef(null)
@@ -95,6 +96,36 @@ const Header = () => {
       window.removeEventListener('aiChatStateChange', handleAIChatStateChange)
     }
   }, [])
+
+  // Загружаем количество непрочитанных сообщений в чате
+  useEffect(() => {
+    const loadChatUnreadCount = async () => {
+      const dbUserId = localStorage.getItem('userId')
+      if (!dbUserId || !/^\d+$/.test(dbUserId)) return
+
+      try {
+        const API_BASE_URL = await getApiBaseUrl()
+        const response = await fetch(`${API_BASE_URL}/chat/${dbUserId}/unread`)
+        
+        if (response.ok) {
+          const data = await response.json()
+          if (data.success) {
+            setChatUnreadCount(data.data.count)
+          }
+        }
+      } catch (error) {
+        console.error('Ошибка при загрузке непрочитанных сообщений:', error)
+      }
+    }
+
+    if (isLoggedIn) {
+      loadChatUnreadCount()
+      
+      // Обновляем каждые 30 секунд
+      const interval = setInterval(loadChatUnreadCount, 30000)
+      return () => clearInterval(interval)
+    }
+  }, [isLoggedIn])
 
   // Загружаем фотографию пользователя при изменении авторизации
   useEffect(() => {
@@ -345,8 +376,28 @@ const Header = () => {
               type="button"
               className={`new-header__filter-btn ${location.pathname === '/chat' ? 'new-header__filter-btn--active' : ''}`}
               onClick={() => navigate('/chat')}
+              style={{ position: 'relative' }}
             >
               <span>{t('chat')}</span>
+              {chatUnreadCount > 0 && (
+                <span style={{
+                  position: 'absolute',
+                  top: '-8px',
+                  right: '-8px',
+                  backgroundColor: '#ff4444',
+                  color: 'white',
+                  borderRadius: '50%',
+                  width: '20px',
+                  height: '20px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '12px',
+                  fontWeight: 'bold'
+                }}>
+                  {chatUnreadCount > 99 ? '99+' : chatUnreadCount}
+                </span>
+              )}
             </button>
             <button
               type="button"

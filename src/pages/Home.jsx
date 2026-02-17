@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from 'react'
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { useUser } from '@clerk/clerk-react'
 import { useNavigate } from 'react-router-dom'
 import { FiX, FiSend } from 'react-icons/fi'
@@ -22,11 +22,14 @@ function Home() {
   const [dbUserId, setDbUserId] = useState(null)
   const navigate = useNavigate()
   
-  // Состояния для чата AI
+  // Состояния для чата
   const [isChatOpen, setIsChatOpen] = useState(false)
   const [chatMessages, setChatMessages] = useState([])
   const [chatInput, setChatInput] = useState('')
   const [isLoadingAI, setIsLoadingAI] = useState(false)
+  const [chatType, setChatType] = useState('ai') // 'ai' или 'manager'
+  const [currentChatId, setCurrentChatId] = useState(null)
+  const [unreadCount, setUnreadCount] = useState(0)
   const chatMessagesRef = useRef(null)
   const [userPreferences, setUserPreferences] = useState({
     purpose: null, // 'для себя', 'под сдачу', 'инвестиции'
@@ -256,31 +259,69 @@ function Home() {
     return () => clearInterval(interval)
   }, [dbUserId])
 
-  // Функции для чата AI
+  // Функции для чата
   const toggleChat = () => {
-    setIsChatOpen((prev) => !prev)
+    setIsChatOpen((prev) => {
+      const newState = !prev
+      if (newState && currentChatId) {
+        // Отмечаем сообщения как прочитанные при открытии
+        markMessagesAsRead()
+      }
+      return newState
+    })
   }
 
   const handleChatInputChange = (e) => {
     setChatInput(e.target.value)
   }
 
-  const handleButtonClick = async (buttonText) => {
-    // Отправляем текст кнопки как сообщение пользователя
-    await handleChatSubmit(null, buttonText)
-  }
+  // Загрузка чата из БД
+  const loadChat = useCallback(async () => {
+    if (!dbUserId) return
 
-  const handleChatSubmit = async (e, buttonText = null) => {
+    try {
+      const API_BASE_URL = await getApiBaseUrl()
+      const response = await fetch(`${API_BASE_URL}/chat/${dbUserId}?type=${chatType}`)
+      
+      if (response.ok) {
+        const data = await response.json()
+        if (data.success) {
+          setCurrentChatId(data.data.chat.id)
+          const formattedMessages = data.data.messages.map(msg => ({
+            id: msg.id,
+            text: msg.message_text,
+            sender: msg.sender_type === 'user' ? 'user' : (msg.sender_type === 'ai' ? 'bot' : 'manager'),
+            timestamp: new Date(msg.created_at),
+            recommendations: null // Можно добавить парсинг из message_text если нужно
+          }))
+          setChatMessages(formattedMessages)
+          
+          // Если нет сообщений, показываем приветственное
+          if (formattedMessages.length === 0 && chatType === 'ai') {
+            setChatMessages([{
+              id: 1,
+              text: 'Здравствуйте! Я ваш AI-консультант по недвижимости. Помогу подобрать идеальный вариант в Испании или Дубае. Чем могу помочь?',
+              sender: 'bot',
+              timestamp: new Date(),
+            }])
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Ошибка при загрузке чата:', error)
+    }
+  }, [dbUserId, chatType])
+
+  // Отправка сообщения
+  const handleChatSubmit = async (e) => {
     if (e) e.preventDefault()
     
-    const userMessage = buttonText || chatInput.trim()
-    if (!userMessage) return
+    const userMessage = chatInput.trim()
+    if (!userMessage || !currentChatId) return
 
-    if (!buttonText) {
-      setChatInput('')
-    }
+    setChatInput('')
 
-    // Добавляем сообщение пользователя
+    // Добавляем сообщение пользователя локально
     const userMessageObj = {
       id: Date.now(),
       text: userMessage,
@@ -290,199 +331,165 @@ function Home() {
 
     setChatMessages((prev) => [...prev, userMessageObj])
 
-    // Обновляем предпочтения на основе сообщения
-    const lowerMessage = userMessage.toLowerCase()
-    
-    // Определяем цель
-    if (lowerMessage.includes('для себя') || lowerMessage === 'для себя' || lowerMessage.includes('сам') || lowerMessage.includes('личн')) {
-      setUserPreferences(prev => ({ ...prev, purpose: 'для себя' }))
-    } else if (lowerMessage.includes('под сдачу') || lowerMessage === 'под сдачу' || lowerMessage.includes('сдачу') || lowerMessage.includes('аренд')) {
-      setUserPreferences(prev => ({ ...prev, purpose: 'под сдачу' }))
-    } else if (lowerMessage.includes('инвестиц') || lowerMessage === 'инвестиции' || lowerMessage.includes('инвест')) {
-      setUserPreferences(prev => ({ ...prev, purpose: 'инвестиции' }))
-    }
-    
-    // Определяем локацию
-    if (lowerMessage.includes('испания') || lowerMessage.includes('spain') || lowerMessage.includes('españa') || 
-        lowerMessage.includes('tenerife') || lowerMessage.includes('тенерифе') || lowerMessage.includes('коста') ||
-        lowerMessage.includes('barcelona') || lowerMessage.includes('madrid')) {
-      setUserPreferences(prev => ({ ...prev, location: 'Испания' }))
-    } else if (lowerMessage.includes('дубай') || lowerMessage.includes('dubai') || lowerMessage.includes('uae') || 
-               lowerMessage.includes('оаэ') || lowerMessage.includes('emirates')) {
-      setUserPreferences(prev => ({ ...prev, location: 'Дубай' }))
-    }
-
-    // Извлекаем бюджет из сообщения (конвертируем рубли в евро, если указаны)
-    const budgetMatch = userMessage.match(/(\d+[\s,.]?\d*)\s*(тыс|млн|k|m|€|\$|eur|usd|евро|доллар|рубл|₽|rub)/i)
-    if (budgetMatch) {
-      let budget = parseFloat(budgetMatch[1].replace(/\s/g, '').replace(',', '.'))
-      const unit = budgetMatch[2].toLowerCase()
-      
-      // Конвертируем в евро (примерный курс: 1 EUR = 100 RUB)
-      const eurToRubRate = 100
-      
-      if (unit.includes('млн') || unit === 'm') {
-        budget = budget * 1000000
-      } else if (unit.includes('тыс') || unit === 'k') {
-        budget = budget * 1000
-      }
-      
-      // Если указаны рубли, конвертируем в евро
-      if (unit.includes('рубл') || unit.includes('₽') || unit.includes('rub')) {
-        budget = budget / eurToRubRate
-      }
-      
-      setUserPreferences(prev => ({ ...prev, budget }))
-    }
-    
-    // Определяем тип недвижимости
-    if (lowerMessage.includes('квартир') || lowerMessage.includes('апартамент') || lowerMessage.includes('apartment')) {
-      setUserPreferences(prev => ({ ...prev, propertyType: 'квартира' }))
-    } else if (lowerMessage.includes('вилл') || lowerMessage.includes('villa')) {
-      setUserPreferences(prev => ({ ...prev, propertyType: 'вилла' }))
-    } else if (lowerMessage.includes('дом') || lowerMessage.includes('таунхаус') || lowerMessage.includes('townhouse') || lowerMessage.includes('house')) {
-      setUserPreferences(prev => ({ ...prev, propertyType: 'дом' }))
-    }
-    
-    // Извлекаем количество комнат
-    const roomsMatch = userMessage.match(/(\d+)\s*(комнат|room|bed)/i)
-    if (roomsMatch) {
-      setUserPreferences(prev => ({ ...prev, rooms: parseInt(roomsMatch[1]) }))
-    }
-
-    setIsLoadingAI(true)
-
+    // Сохраняем в БД
     try {
-      // Получаем ответ от AI
-      const response = await askPropertyAssistant(
-        [...chatMessages, userMessageObj],
-        userPreferences,
-        auctionProperties
-      )
+      const API_BASE_URL = await getApiBaseUrl()
+      const response = await fetch(`${API_BASE_URL}/chat/${currentChatId}/message`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          senderType: 'user',
+          senderId: dbUserId,
+          messageText: userMessage
+        })
+      })
 
-      // Добавляем ответ бота
-      const botMessage = {
-        id: Date.now() + 1,
-        text: response.text,
-        sender: 'bot',
-        timestamp: new Date(),
-        buttons: response.buttons,
-        recommendations: response.recommendations
+      if (response.ok) {
+        const data = await response.json()
+        if (data.success) {
+          // Обновляем сообщения из ответа
+          const formattedMessages = data.data.messages.map(msg => ({
+            id: msg.id,
+            text: msg.message_text,
+            sender: msg.sender_type === 'user' ? 'user' : (msg.sender_type === 'ai' ? 'bot' : 'manager'),
+            timestamp: new Date(msg.created_at),
+          }))
+          setChatMessages(formattedMessages)
+
+          // Если чат с AI, получаем ответ от AI на фронтенде
+          if (chatType === 'ai') {
+            setIsLoadingAI(true)
+            try {
+              const aiResponse = await askPropertyAssistant(
+                formattedMessages,
+                userPreferences,
+                auctionProperties
+              )
+
+              // Сохраняем ответ AI в БД
+              const aiResponseRes = await fetch(`${API_BASE_URL}/chat/${currentChatId}/message`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  senderType: 'ai',
+                  senderId: null,
+                  messageText: aiResponse.text
+                })
+              })
+
+              if (aiResponseRes.ok) {
+                const aiData = await aiResponseRes.json()
+                if (aiData.success) {
+                  const updatedMessages = aiData.data.messages.map(msg => ({
+                    id: msg.id,
+                    text: msg.message_text,
+                    sender: msg.sender_type === 'user' ? 'user' : (msg.sender_type === 'ai' ? 'bot' : 'manager'),
+                    timestamp: new Date(msg.created_at),
+                    recommendations: msg.sender_type === 'ai' && aiResponse.recommendations ? aiResponse.recommendations : null
+                  }))
+                  setChatMessages(updatedMessages)
+                }
+              }
+            } catch (aiError) {
+              console.error('Ошибка при получении ответа от AI:', aiError)
+            } finally {
+              setIsLoadingAI(false)
+            }
+          }
+        }
       }
-
-      setChatMessages((prev) => [...prev, botMessage])
     } catch (error) {
-      console.error('Ошибка при обращении к AI:', error)
-      const errorMessage = {
-        id: Date.now() + 1,
-        text: 'Извините, произошла ошибка. Попробуйте еще раз.',
-        sender: 'bot',
-        timestamp: new Date(),
-        buttons: null,
-        recommendations: null
-      }
-      setChatMessages((prev) => [...prev, errorMessage])
-    } finally {
-      setIsLoadingAI(false)
+      console.error('Ошибка при отправке сообщения:', error)
     }
   }
 
-  // Функция для получения уникального идентификатора пользователя/сессии
-  const isLoggedIn = isAuthenticated() || (user && userLoaded)
-  const getChatUserId = useMemo(() => {
-    // Если пользователь авторизован, используем его ID
-    if (isLoggedIn) {
-      const currentUserData = getUserData()
-      const userId = currentUserData.id || localStorage.getItem('userId') || dbUserId
-      if (userId) {
-        return `user_${userId}`
-      }
-    }
-    
-    // Если пользователь не авторизован, создаем/используем уникальный ID сессии
-    let sessionId = localStorage.getItem('chatSessionId')
-    if (!sessionId) {
-      // Генерируем уникальный ID сессии
-      sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-      localStorage.setItem('chatSessionId', sessionId)
-    }
-    return sessionId
-  }, [isLoggedIn, dbUserId])
+  // Переключение типа чата
+  const switchChatType = async (newType) => {
+    if (!dbUserId || newType === chatType) return
 
-  // Загружаем историю чата из localStorage при монтировании компонента
-  const chatHistoryLoadedRef = useRef(false)
-  
-  useEffect(() => {
-    if (!chatHistoryLoadedRef.current) {
-      try {
-        const chatUserId = getChatUserId
-        const historyKey = `aiChatHistory_${chatUserId}`
-        const preferencesKey = `aiChatPreferences_${chatUserId}`
-        
-        // Загружаем историю сообщений
-        const savedChatHistory = localStorage.getItem(historyKey)
-        if (savedChatHistory) {
-          const parsed = JSON.parse(savedChatHistory)
-          // Преобразуем timestamp из строк в Date объекты
-          const messagesWithDates = parsed.map(msg => ({
-            ...msg,
-            timestamp: msg.timestamp ? new Date(msg.timestamp) : new Date()
+    try {
+      const API_BASE_URL = await getApiBaseUrl()
+      const response = await fetch(`${API_BASE_URL}/chat/${dbUserId}/switch`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chatType: newType })
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        if (data.success) {
+          setChatType(newType)
+          setCurrentChatId(data.data.chat.id)
+          const formattedMessages = data.data.messages.map(msg => ({
+            id: msg.id,
+            text: msg.message_text,
+            sender: msg.sender_type === 'user' ? 'user' : (msg.sender_type === 'ai' ? 'bot' : 'manager'),
+            timestamp: new Date(msg.created_at),
           }))
-          setChatMessages(messagesWithDates)
+          setChatMessages(formattedMessages)
         }
-        
-        // Загружаем предпочтения пользователя
-        const savedPreferences = localStorage.getItem(preferencesKey)
-        if (savedPreferences) {
-          const parsed = JSON.parse(savedPreferences)
-          setUserPreferences(parsed)
-        }
-        
-        // Если нет сохраненной истории, показываем приветственное сообщение
-        if (!savedChatHistory && chatMessages.length === 0) {
-          setChatMessages([{
-            id: 1,
-            text: 'Здравствуйте! Я ваш AI-консультант по недвижимости. Помогу подобрать идеальный вариант в Испании или Дубае. Для начала, скажите, для какой цели вы ищете недвижимость?',
-            sender: 'bot',
-            timestamp: new Date(),
-            buttons: ['Для себя', 'Под сдачу', 'Инвестиции'],
-          }])
-        }
-        
-        chatHistoryLoadedRef.current = true
-      } catch (error) {
-        console.error('Ошибка при загрузке истории чата:', error)
-        chatHistoryLoadedRef.current = true
       }
+    } catch (error) {
+      console.error('Ошибка при переключении чата:', error)
     }
-  }, [getChatUserId]) // Загружаем при изменении идентификатора пользователя
+  }
 
-  // Сохраняем историю чата в localStorage при каждом изменении
-  useEffect(() => {
-    if (chatHistoryLoadedRef.current && chatMessages.length > 0) {
-      try {
-        const chatUserId = getChatUserId
-        const historyKey = `aiChatHistory_${chatUserId}`
-        // Сохраняем историю в localStorage с привязкой к пользователю
-        localStorage.setItem(historyKey, JSON.stringify(chatMessages))
-      } catch (error) {
-        console.error('Ошибка при сохранении истории чата:', error)
-      }
-    }
-  }, [chatMessages, getChatUserId])
+  // Отметка сообщений как прочитанных
+  const markMessagesAsRead = async () => {
+    if (!currentChatId || !dbUserId) return
 
-  // Сохраняем предпочтения пользователя в localStorage
-  useEffect(() => {
-    if (chatHistoryLoadedRef.current) {
-      try {
-        const chatUserId = getChatUserId
-        const preferencesKey = `aiChatPreferences_${chatUserId}`
-        localStorage.setItem(preferencesKey, JSON.stringify(userPreferences))
-      } catch (error) {
-        console.error('Ошибка при сохранении предпочтений:', error)
-      }
+    try {
+      const API_BASE_URL = await getApiBaseUrl()
+      await fetch(`${API_BASE_URL}/chat/${currentChatId}/read`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: dbUserId, isAdmin: false })
+      })
+      
+      // Обновляем счетчик непрочитанных
+      loadUnreadCount()
+    } catch (error) {
+      console.error('Ошибка при отметке сообщений:', error)
     }
-  }, [userPreferences, getChatUserId])
+  }
+
+  // Загрузка количества непрочитанных сообщений
+  const loadUnreadCount = useCallback(async () => {
+    if (!dbUserId) return
+
+    try {
+      const API_BASE_URL = await getApiBaseUrl()
+      const response = await fetch(`${API_BASE_URL}/chat/${dbUserId}/unread`)
+      
+      if (response.ok) {
+        const data = await response.json()
+        if (data.success) {
+          setUnreadCount(data.data.count)
+        }
+      }
+    } catch (error) {
+      console.error('Ошибка при загрузке непрочитанных сообщений:', error)
+    }
+  }, [dbUserId])
+
+  // Загружаем чат при изменении dbUserId или chatType
+  useEffect(() => {
+    if (dbUserId) {
+      loadChat()
+      loadUnreadCount()
+      
+      // Обновляем счетчик каждые 30 секунд
+      const interval = setInterval(loadUnreadCount, 30000)
+      return () => clearInterval(interval)
+    }
+  }, [dbUserId, chatType, loadChat, loadUnreadCount])
+
+  // Отмечаем сообщения как прочитанные при открытии чата
+  useEffect(() => {
+    if (isChatOpen && currentChatId) {
+      markMessagesAsRead()
+    }
+  }, [isChatOpen, currentChatId])
 
   // Автоскролл к последнему сообщению
   useEffect(() => {
@@ -515,49 +522,6 @@ function Home() {
     }
   }, [isChatOpen])
 
-  // Очищаем историю при закрытии сайта
-  useEffect(() => {
-    const handleBeforeUnload = () => {
-      // Очищаем историю чата при закрытии вкладки/браузера для текущего пользователя/сессии
-      const chatUserId = getChatUserId
-      const historyKey = `aiChatHistory_${chatUserId}`
-      const preferencesKey = `aiChatPreferences_${chatUserId}`
-      localStorage.removeItem(historyKey)
-      localStorage.removeItem(preferencesKey)
-      
-      // Если это сессия (неавторизованный пользователь), также удаляем ID сессии
-      if (chatUserId.startsWith('session_')) {
-        localStorage.removeItem('chatSessionId')
-      }
-    }
-
-    // Используем beforeunload для очистки при закрытии
-    window.addEventListener('beforeunload', handleBeforeUnload)
-    
-    // Также используем pagehide для более надежной очистки
-    const handlePageHide = (event) => {
-      // Если страница выгружается (не просто скрывается), очищаем данные
-      if (event.persisted === false) {
-        const chatUserId = getChatUserId
-        const historyKey = `aiChatHistory_${chatUserId}`
-        const preferencesKey = `aiChatPreferences_${chatUserId}`
-        localStorage.removeItem(historyKey)
-        localStorage.removeItem(preferencesKey)
-        
-        // Если это сессия (неавторизованный пользователь), также удаляем ID сессии
-        if (chatUserId.startsWith('session_')) {
-          localStorage.removeItem('chatSessionId')
-        }
-      }
-    }
-    
-    window.addEventListener('pagehide', handlePageHide)
-
-    return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload)
-      window.removeEventListener('pagehide', handlePageHide)
-    }
-  }, [getChatUserId])
 
   return (
     <div className="home-page">
@@ -573,15 +537,18 @@ function Home() {
       )}
       <FAQ />
 
-      {/* Кнопка AI помощника */}
+      {/* Кнопка чата */}
       <button
         type="button"
         className="ai-button"
         onClick={toggleChat}
-        aria-label="AI Assistant"
+        aria-label="Chat"
         aria-expanded={isChatOpen}
       >
-        AI
+        {unreadCount > 0 && (
+          <span className="ai-button__badge">{unreadCount > 99 ? '99+' : unreadCount}</span>
+        )}
+        Чат
       </button>
 
       {/* Модальное окно чата */}
@@ -589,20 +556,40 @@ function Home() {
         <div className="chat-widget">
           <div className="chat-widget__header">
             <div className="chat-widget__header-info">
-              <div className="chat-widget__avatar">AI</div>
+              <div className="chat-widget__avatar">{chatType === 'ai' ? 'AI' : 'М'}</div>
               <div className="chat-widget__header-text">
-                <h3 className="chat-widget__title">AI Консультант</h3>
+                <h3 className="chat-widget__title">
+                  {chatType === 'ai' ? 'AI Консультант' : 'Менеджер'}
+                </h3>
                 <span className="chat-widget__status">Онлайн</span>
               </div>
             </div>
-            <button
-              type="button"
-              className="chat-widget__close"
-              onClick={toggleChat}
-              aria-label="Закрыть чат"
-            >
-              <FiX size={20} />
-            </button>
+            <div className="chat-widget__header-actions">
+              <button
+                type="button"
+                className={`chat-widget__switch-btn ${chatType === 'ai' ? 'active' : ''}`}
+                onClick={() => switchChatType('ai')}
+                disabled={chatType === 'ai'}
+              >
+                AI
+              </button>
+              <button
+                type="button"
+                className={`chat-widget__switch-btn ${chatType === 'manager' ? 'active' : ''}`}
+                onClick={() => switchChatType('manager')}
+                disabled={chatType === 'manager'}
+              >
+                Менеджер
+              </button>
+              <button
+                type="button"
+                className="chat-widget__close"
+                onClick={toggleChat}
+                aria-label="Закрыть чат"
+              >
+                <FiX size={20} />
+              </button>
+            </div>
           </div>
 
           <div className="chat-widget__messages" ref={chatMessagesRef}>
@@ -656,20 +643,6 @@ function Home() {
                     </div>
                   )}
                 </div>
-                {message.buttons && message.buttons.length > 0 && (
-                  <div className="chat-widget__buttons">
-                    {message.buttons.map((button, index) => (
-                      <button
-                        key={index}
-                        className="chat-widget__button"
-                        onClick={() => !isLoadingAI && handleButtonClick(button)}
-                        disabled={isLoadingAI}
-                      >
-                        {button}
-                      </button>
-                    ))}
-                  </div>
-                )}
                 <div className="chat-widget__message-time">
                   {message.timestamp.toLocaleTimeString('ru-RU', {
                     hour: '2-digit',
@@ -695,7 +668,7 @@ function Home() {
             <input
               type="text"
               className="chat-widget__input"
-              placeholder={isLoadingAI ? "AI думает..." : "Введите ваше сообщение..."}
+              placeholder={isLoadingAI ? (chatType === 'ai' ? "AI думает..." : "Отправка...") : "Введите ваше сообщение..."}
               value={chatInput}
               onChange={handleChatInputChange}
               disabled={isLoadingAI}

@@ -185,6 +185,40 @@
   display: inline-block;
 }
 
+.chat-widget__header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.chat-widget__switch-btn {
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(17, 24, 39, 0.2);
+  background: rgba(17, 24, 39, 0.05);
+  color: #111827;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: 'Montserrat', sans-serif;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.chat-widget__switch-btn:hover:not(:disabled) {
+  background: rgba(17, 24, 39, 0.1);
+}
+
+.chat-widget__switch-btn.active {
+  background: #111827;
+  color: #ffffff;
+  border-color: #111827;
+}
+
+.chat-widget__switch-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .chat-widget__close {
   width: 32px;
   height: 32px;
@@ -203,6 +237,24 @@
 .chat-widget__close:hover {
   background: rgba(17, 24, 39, 0.15);
   transform: scale(1.1);
+}
+
+.ai-button__badge {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background: #ff4444;
+  color: white;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: bold;
+  font-family: 'Montserrat', sans-serif;
+  box-shadow: 0 2px 8px rgba(255, 68, 68, 0.4);
 }
 
 .chat-widget__messages {

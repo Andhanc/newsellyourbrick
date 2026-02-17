@@ -1,51 +1,445 @@
-import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useState, useEffect, useRef, useCallback } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { useUser } from '@clerk/clerk-react'
+import { FiX, FiSend } from 'react-icons/fi'
+import { getUserData, isAuthenticated } from '../services/authService'
+import { askPropertyAssistant } from '../services/aiService'
+import { getApiBaseUrl } from '../utils/apiConfig'
 import './Chat.css'
 
 const Chat = () => {
   const navigate = useNavigate()
-  const [activeChat, setActiveChat] = useState('tech-support')
+  const { user, isLoaded: userLoaded } = useUser()
+  const userData = getUserData()
+  const [dbUserId, setDbUserId] = useState(null)
+  
+  const [chatType, setChatType] = useState('ai') // 'ai' или 'manager'
+  const [chatMessages, setChatMessages] = useState([])
+  const [chatInput, setChatInput] = useState('')
+  const [isLoadingAI, setIsLoadingAI] = useState(false)
+  const [currentChatId, setCurrentChatId] = useState(null)
+  const [unreadCount, setUnreadCount] = useState(0)
   const [notificationsEnabled, setNotificationsEnabled] = useState(false)
   const [showNotificationModal, setShowNotificationModal] = useState(false)
-  const [messages, setMessages] = useState({
-    'tech-support': [
-      {
-        id: 1,
-        text: 'Здравствуйте! С вами бот 😊 Уточните ваш вопрос. Попробую помочь.',
-        sender: 'bot',
-        time: '23:05',
-        date: 'Сегодня'
-      }
-    ],
-    'expert': [
-      {
-        id: 1,
-        text: 'Напишите в чат или выберите нужный вопрос:',
-        sender: 'bot',
-        time: '23:05',
-        date: 'Сегодня'
-      }
-    ]
+  const chatMessagesRef = useRef(null)
+  
+  const [userPreferences, setUserPreferences] = useState({
+    purpose: null,
+    budget: null,
+    location: null,
+    propertyType: null,
+    rooms: null,
+    area: null,
+    other: null
   })
-  const [inputMessage, setInputMessage] = useState('')
 
-  const chats = [
-    {
-      id: 'tech-support',
-      name: 'AI',
-      description: 'Для вопросов по сервису',
-      avatar: 'ai',
-      unread: false
-    },
-    {
-      id: 'expert',
-      name: 'Эксперт по подбору',
-      description: 'Найдёт, подскажет, позвонит',
-      avatar: 'expert',
-      unread: true,
-      photo: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&h=150&fit=crop&crop=face'
+  // Получаем числовой ID из БД для Clerk пользователей
+  useEffect(() => {
+    const savedUserId = localStorage.getItem('userId')
+    if (savedUserId && /^\d+$/.test(savedUserId)) {
+      setDbUserId(parseInt(savedUserId))
+      return
     }
-  ]
+    
+    if (!userLoaded) return
+    
+    const isClerkAuth = user && userLoaded
+    const isOldAuth = isAuthenticated()
+    
+    if (isClerkAuth && user) {
+      const fetchDbUserId = async () => {
+        try {
+          const API_BASE_URL = await getApiBaseUrl()
+          const userEmail = user.primaryEmailAddress?.emailAddress || user.emailAddresses?.[0]?.emailAddress
+          if (userEmail) {
+            const userResponse = await fetch(`${API_BASE_URL}/users/email/${encodeURIComponent(userEmail)}`)
+            if (userResponse.ok) {
+              const userData = await userResponse.json()
+              if (userData.success && userData.data && userData.data.id) {
+                const numericId = userData.data.id
+                setDbUserId(numericId)
+                localStorage.setItem('userId', String(numericId))
+              }
+            }
+          }
+        } catch (e) {
+          console.warn('Не удалось получить userId из БД:', e)
+        }
+      }
+      fetchDbUserId()
+    } else if (isOldAuth) {
+      const currentUserData = getUserData()
+      const userId = currentUserData?.id
+      if (userId && /^\d+$/.test(userId.toString())) {
+        setDbUserId(parseInt(userId))
+      }
+    }
+  }, [userLoaded, user?.id, user?.primaryEmailAddress?.emailAddress])
+
+  // Форматирование даты сообщения
+  const formatMessageDate = (date) => {
+    const today = new Date()
+    const messageDate = new Date(date)
+    const diff = today - messageDate
+    
+    if (diff < 86400000) {
+      return 'Сегодня'
+    } else if (diff < 172800000) {
+      return 'Вчера'
+    } else {
+      return messageDate.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' })
+    }
+  }
+
+  // Загрузка чата из БД
+  const loadChat = useCallback(async () => {
+    if (!dbUserId) {
+      console.log('⚠️ loadChat: dbUserId не установлен')
+      return
+    }
+
+    try {
+      const API_BASE_URL = await getApiBaseUrl()
+      console.log(`📥 Загрузка чата для userId: ${dbUserId}, type: ${chatType}`)
+      const response = await fetch(`${API_BASE_URL}/chat/${dbUserId}?type=${chatType}`)
+      
+      if (response.ok) {
+        const data = await response.json()
+        console.log('📦 Получены данные чата:', data)
+        if (data.success && data.data) {
+          setCurrentChatId(data.data.chat.id)
+          const messages = data.data.messages || []
+          console.log(`✅ Чат загружен, chatId: ${data.data.chat.id}, сообщений: ${messages.length}`)
+          
+          const formattedMessages = messages.map(msg => ({
+            id: msg.id,
+            text: msg.message_text,
+            sender: msg.sender_type === 'user' ? 'user' : (msg.sender_type === 'ai' ? 'bot' : 'manager'),
+            timestamp: new Date(msg.created_at),
+            time: new Date(msg.created_at).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }),
+            date: formatMessageDate(new Date(msg.created_at))
+          }))
+          
+          // ВСЕГДА устанавливаем сообщения из БД - это источник истины
+          // НЕ показываем приветственное, если есть сообщения в БД
+          console.log(`✅ Устанавливаем ${formattedMessages.length} сообщений из БД`)
+          if (formattedMessages.length > 0) {
+            // Есть сообщения в БД - используем их
+            setChatMessages(formattedMessages)
+          } else {
+            // Нет сообщений - показываем приветственное (только для отображения, не сохраняем в БД)
+            console.log('ℹ️ Нет сообщений в БД, показываем приветственное')
+            const welcomeMessage = chatType === 'ai' 
+              ? {
+                  id: 1,
+                  text: 'Здравствуйте! Я ваш AI-консультант по недвижимости. Помогу подобрать идеальный вариант в Испании или Дубае. Чем могу помочь?',
+                  sender: 'bot',
+                  timestamp: new Date(),
+                  time: new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }),
+                  date: 'Сегодня'
+                }
+              : {
+                  id: 1,
+                  text: 'Здравствуйте! Я ваш менеджер. Готов помочь с любыми вопросами по недвижимости. Напишите мне, и я отвечу в ближайшее время.',
+                  sender: 'manager',
+                  timestamp: new Date(),
+                  time: new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }),
+                  date: 'Сегодня'
+                }
+            setChatMessages([welcomeMessage])
+          }
+        } else {
+          console.error('❌ Ошибка в ответе API:', data)
+        }
+      } else {
+        console.error(`❌ Ошибка HTTP при загрузке чата: ${response.status} ${response.statusText}`)
+        try {
+          const errorText = await response.text()
+          console.error('Текст ошибки:', errorText)
+        } catch (e) {
+          console.error('Не удалось прочитать текст ошибки')
+        }
+      }
+    } catch (error) {
+      console.error('❌ Ошибка при загрузке чата:', error)
+    }
+  }, [dbUserId, chatType])
+
+  // Загрузка количества непрочитанных сообщений
+  const loadUnreadCount = useCallback(async () => {
+    if (!dbUserId) return
+
+    try {
+      const API_BASE_URL = await getApiBaseUrl()
+      const response = await fetch(`${API_BASE_URL}/chat/${dbUserId}/unread`)
+      
+      if (response.ok) {
+        const data = await response.json()
+        if (data.success) {
+          setUnreadCount(data.data.count)
+        }
+      }
+    } catch (error) {
+      console.error('Ошибка при загрузке непрочитанных сообщений:', error)
+    }
+  }, [dbUserId])
+
+  // Загружаем чат при изменении dbUserId или chatType
+  useEffect(() => {
+    if (dbUserId) {
+      console.log(`🔄 Загрузка чата: userId=${dbUserId}, type=${chatType}`)
+      // Загружаем чат сразу при монтировании или изменении типа
+      loadChat()
+      loadUnreadCount()
+      
+      // Обновляем счетчик каждые 30 секунд
+      const interval = setInterval(() => {
+        loadUnreadCount()
+        // Также обновляем чат, чтобы получить новые сообщения
+        if (currentChatId) {
+          loadChat()
+        }
+      }, 30000)
+      return () => clearInterval(interval)
+    } else {
+      console.log('⚠️ dbUserId не установлен, чат не загружается')
+    }
+  }, [dbUserId, chatType, loadChat, loadUnreadCount, currentChatId])
+
+  // Отметка сообщений как прочитанных
+  const markMessagesAsRead = useCallback(async () => {
+    if (!currentChatId || !dbUserId) {
+      console.log('⚠️ markMessagesAsRead: нет currentChatId или dbUserId')
+      return
+    }
+
+    try {
+      console.log(`📖 Отмечаем сообщения как прочитанные: chatId=${currentChatId}, userId=${dbUserId}`)
+      const API_BASE_URL = await getApiBaseUrl()
+      const response = await fetch(`${API_BASE_URL}/chat/${currentChatId}/read`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: dbUserId, isAdmin: false })
+      })
+      
+      if (response.ok) {
+        console.log('✅ Сообщения отмечены как прочитанные')
+        loadUnreadCount()
+      } else {
+        console.error(`❌ Ошибка при отметке сообщений: ${response.status}`)
+      }
+    } catch (error) {
+      console.error('❌ Ошибка при отметке сообщений:', error)
+    }
+  }, [currentChatId, dbUserId, loadUnreadCount])
+
+  // Отмечаем сообщения как прочитанные при открытии или изменении чата
+  useEffect(() => {
+    if (currentChatId && dbUserId && chatMessages.length > 0) {
+      // Небольшая задержка, чтобы убедиться что сообщения загружены
+      const timer = setTimeout(() => {
+        markMessagesAsRead()
+      }, 1000)
+      return () => clearTimeout(timer)
+    }
+  }, [currentChatId, chatMessages.length, dbUserId, markMessagesAsRead])
+
+  // Автоскролл к последнему сообщению
+  useEffect(() => {
+    if (chatMessagesRef.current) {
+      chatMessagesRef.current.scrollTop = chatMessagesRef.current.scrollHeight
+    }
+  }, [chatMessages])
+
+  // Переключение типа чата
+  const switchChatType = async (newType) => {
+    if (!dbUserId || newType === chatType) return
+
+    try {
+      const API_BASE_URL = await getApiBaseUrl()
+      const response = await fetch(`${API_BASE_URL}/chat/${dbUserId}/switch`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chatType: newType })
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        if (data.success) {
+          setChatType(newType)
+          setCurrentChatId(data.data.chat.id)
+          const formattedMessages = data.data.messages.map(msg => ({
+            id: msg.id,
+            text: msg.message_text,
+            sender: msg.sender_type === 'user' ? 'user' : (msg.sender_type === 'ai' ? 'bot' : 'manager'),
+            timestamp: new Date(msg.created_at),
+            time: new Date(msg.created_at).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }),
+            date: formatMessageDate(new Date(msg.created_at))
+          }))
+          
+          // ВСЕГДА устанавливаем сообщения из БД
+          if (formattedMessages.length > 0) {
+            setChatMessages(formattedMessages)
+          } else {
+            // Если нет сообщений, показываем приветственное
+            const welcomeMessage = newType === 'ai' 
+              ? {
+                  id: 1,
+                  text: 'Здравствуйте! Я ваш AI-консультант по недвижимости. Помогу подобрать идеальный вариант в Испании или Дубае. Чем могу помочь?',
+                  sender: 'bot',
+                  timestamp: new Date(),
+                  time: new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }),
+                  date: 'Сегодня'
+                }
+              : {
+                  id: 1,
+                  text: 'Здравствуйте! Я ваш менеджер. Готов помочь с любыми вопросами по недвижимости. Напишите мне, и я отвечу в ближайшее время.',
+                  sender: 'manager',
+                  timestamp: new Date(),
+                  time: new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }),
+                  date: 'Сегодня'
+                }
+            setChatMessages([welcomeMessage])
+          }
+          
+          // Отмечаем сообщения как прочитанные после загрузки
+          setTimeout(() => {
+            markMessagesAsRead()
+          }, 500)
+        }
+      }
+    } catch (error) {
+      console.error('Ошибка при переключении чата:', error)
+    }
+  }
+
+  // Отправка сообщения
+  const handleSendMessage = async (e) => {
+    e.preventDefault()
+    const userMessage = chatInput.trim()
+    if (!userMessage || !currentChatId || !dbUserId) return
+
+    setChatInput('')
+
+    // НЕ добавляем сообщение локально - ждем ответа от сервера с сохраненным сообщением из БД
+    // Это гарантирует, что мы всегда работаем с данными из БД
+
+    // Обновляем предпочтения на основе сообщения
+    const lowerMessage = userMessage.toLowerCase()
+    if (lowerMessage.includes('для себя') || lowerMessage.includes('сам') || lowerMessage.includes('личн')) {
+      setUserPreferences(prev => ({ ...prev, purpose: 'для себя' }))
+    } else if (lowerMessage.includes('под сдачу') || lowerMessage.includes('сдачу') || lowerMessage.includes('аренд')) {
+      setUserPreferences(prev => ({ ...prev, purpose: 'под сдачу' }))
+    } else if (lowerMessage.includes('инвестиц') || lowerMessage.includes('инвест')) {
+      setUserPreferences(prev => ({ ...prev, purpose: 'инвестиции' }))
+    }
+
+    // Сохраняем в БД
+    try {
+      const API_BASE_URL = await getApiBaseUrl()
+      console.log(`📤 Отправка сообщения: chatId=${currentChatId}, userId=${dbUserId}, text="${userMessage}"`)
+      const response = await fetch(`${API_BASE_URL}/chat/${currentChatId}/message`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          senderType: 'user',
+          senderId: dbUserId,
+          messageText: userMessage
+        })
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        console.log('📤 Ответ на отправку сообщения:', data)
+        if (data.success && data.data && data.data.messages) {
+          // ВСЕГДА обновляем сообщения из БД - это источник истины
+          const formattedMessages = data.data.messages.map(msg => ({
+            id: msg.id,
+            text: msg.message_text,
+            sender: msg.sender_type === 'user' ? 'user' : (msg.sender_type === 'ai' ? 'bot' : 'manager'),
+            timestamp: new Date(msg.created_at),
+            time: new Date(msg.created_at).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }),
+            date: formatMessageDate(new Date(msg.created_at))
+          }))
+          console.log(`✅ Обновляем сообщения из БД: ${formattedMessages.length} сообщений`)
+          setChatMessages(formattedMessages)
+
+          // Если чат с AI, получаем ответ от AI
+          if (chatType === 'ai') {
+            setIsLoadingAI(true)
+            try {
+              // Загружаем объявления для AI (можно кэшировать)
+              const propertiesResponse = await fetch(`${API_BASE_URL}/properties/test-timers`)
+              let auctionProperties = []
+              if (propertiesResponse.ok) {
+                const propsData = await propertiesResponse.json()
+                if (propsData.success && propsData.data) {
+                  auctionProperties = propsData.data
+                }
+              }
+
+              const aiResponse = await askPropertyAssistant(
+                formattedMessages,
+                userPreferences,
+                auctionProperties
+              )
+
+              // Сохраняем ответ AI в БД
+              const aiResponseRes = await fetch(`${API_BASE_URL}/chat/${currentChatId}/message`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  senderType: 'ai',
+                  senderId: null,
+                  messageText: aiResponse.text
+                })
+              })
+
+              if (aiResponseRes.ok) {
+                const aiData = await aiResponseRes.json()
+                if (aiData.success && aiData.data && aiData.data.messages) {
+                  // ВСЕГДА обновляем сообщения из БД после ответа AI
+                  const updatedMessages = aiData.data.messages.map(msg => ({
+                    id: msg.id,
+                    text: msg.message_text,
+                    sender: msg.sender_type === 'user' ? 'user' : (msg.sender_type === 'ai' ? 'bot' : 'manager'),
+                    timestamp: new Date(msg.created_at),
+                    time: new Date(msg.created_at).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }),
+                    date: formatMessageDate(new Date(msg.created_at))
+                  }))
+                  console.log(`✅ Обновляем сообщения после ответа AI: ${updatedMessages.length} сообщений`)
+                  setChatMessages(updatedMessages)
+                } else {
+                  console.error('❌ Ошибка в ответе API при сохранении ответа AI:', aiData)
+                  loadChat() // Перезагружаем чат
+                }
+              } else {
+                console.error(`❌ Ошибка HTTP при сохранении ответа AI: ${aiResponseRes.status}`)
+                loadChat() // Перезагружаем чат
+              }
+            } catch (aiError) {
+              console.error('❌ Ошибка при получении ответа от AI:', aiError)
+              loadChat() // Перезагружаем чат при ошибке
+            } finally {
+              setIsLoadingAI(false)
+            }
+          }
+        } else {
+          console.error('❌ Ошибка в ответе API при отправке сообщения:', data)
+          // При ошибке перезагружаем чат, чтобы получить актуальное состояние
+          loadChat()
+        }
+      } else {
+        console.error(`❌ Ошибка HTTP при отправке сообщения: ${response.status} ${response.statusText}`)
+        // При ошибке перезагружаем чат
+        loadChat()
+      }
+    } catch (error) {
+      console.error('❌ Ошибка при отправке сообщения:', error)
+      // При ошибке перезагружаем чат
+      loadChat()
+    }
+  }
 
   const handleToggleNotifications = () => {
     const newState = !notificationsEnabled
@@ -56,44 +450,6 @@ const Chat = () => {
       setShowNotificationModal(false)
     }, 3000)
   }
-
-  const handleSendMessage = (e) => {
-    e.preventDefault()
-    if (!inputMessage.trim()) return
-
-    const newMessage = {
-      id: messages[activeChat].length + 1,
-      text: inputMessage,
-      sender: 'user',
-      time: new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }),
-      date: 'Сегодня'
-    }
-
-    setMessages(prev => ({
-      ...prev,
-      [activeChat]: [...prev[activeChat], newMessage]
-    }))
-
-    setInputMessage('')
-
-    // Автоответ бота
-    setTimeout(() => {
-      const botResponse = {
-        id: messages[activeChat].length + 2,
-        text: 'Спасибо за ваше сообщение! Мы обработаем ваш запрос и ответим в ближайшее время.',
-        sender: 'bot',
-        time: new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }),
-        date: 'Сегодня'
-      }
-      setMessages(prev => ({
-        ...prev,
-        [activeChat]: [...prev[activeChat], botResponse]
-      }))
-    }, 1000)
-  }
-
-  const currentChat = chats.find(chat => chat.id === activeChat)
-  const currentMessages = messages[activeChat] || []
 
   return (
     <div className="chat-overlay" onClick={() => navigate(-1)}>
@@ -121,9 +477,7 @@ const Chat = () => {
           <div className="chat-header">
             <h2>Сообщения</h2>
             <button className="close-button" onClick={() => navigate(-1)}>
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                <path d="M15 5L5 15M5 5L15 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-              </svg>
+              <FiX size={20} />
             </button>
           </div>
 
@@ -138,148 +492,107 @@ const Chat = () => {
             <span>{notificationsEnabled ? 'Отключить уведомления' : 'Включить уведомления'}</span>
           </button>
 
-          <div className="chats-list">
-            {chats.map((chat) => (
-              <div
-                key={chat.id}
-                className={`chat-item ${activeChat === chat.id ? 'active' : ''}`}
-                onClick={() => setActiveChat(chat.id)}
-              >
-                <div className="chat-avatar">
-                  {chat.avatar === 'ai' ? (
-                    <div className="bot-avatar">
-                      <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
-                        <circle cx="20" cy="20" r="20" fill="#4A90E2"/>
-                        <circle cx="20" cy="20" r="15" fill="white"/>
-                        <circle cx="14" cy="18" r="2" fill="#4A90E2"/>
-                        <circle cx="26" cy="18" r="2" fill="#4A90E2"/>
-                        <path d="M14 24C14 24 16 26 20 26C24 26 26 24 26 24" stroke="#4A90E2" strokeWidth="2" strokeLinecap="round"/>
-                      </svg>
-                    </div>
-                  ) : (
-                    <div className="expert-avatar">
-                      {chat.photo ? (
-                        <img src={chat.photo} alt={chat.name} className="expert-photo" />
-                      ) : (
-                        <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
-                          <circle cx="20" cy="20" r="20" fill="#4A90E2"/>
-                          <circle cx="20" cy="16" r="6" fill="white"/>
-                          <path d="M10 32C10 28 15 26 20 26C25 26 30 28 30 32" fill="white"/>
-                        </svg>
-                      )}
-                    </div>
-                  )}
-                </div>
-                <div className="chat-info">
-                  <div className="chat-name-row">
-                    <h3>{chat.name}</h3>
-                    {chat.unread && <div className="unread-dot"></div>}
-                  </div>
-                  <p className="chat-description">{chat.description}</p>
-                  {currentMessages.length > 0 && (
-                    <p className="chat-preview">
-                      {currentMessages[currentMessages.length - 1].text.substring(0, 40)}...
-                    </p>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
+          {unreadCount > 0 && (
+            <div className="unread-badge">
+              Непрочитанных: {unreadCount}
+            </div>
+          )}
         </div>
 
         <div className="chat-main">
-          {currentChat && (
-            <>
-              <div className="chat-main-header">
-                <div className="chat-main-info">
-                  <div className="chat-main-avatar">
-                    {currentChat.avatar === 'ai' ? (
-                      <div className="bot-avatar">
-                        <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-                          <circle cx="16" cy="16" r="16" fill="#4A90E2"/>
-                          <circle cx="16" cy="16" r="12" fill="white"/>
-                          <circle cx="11" cy="14" r="1.5" fill="#4A90E2"/>
-                          <circle cx="21" cy="14" r="1.5" fill="#4A90E2"/>
-                          <path d="M11 19C11 19 13 21 16 21C19 21 21 19 21 19" stroke="#4A90E2" strokeWidth="1.5" strokeLinecap="round"/>
-                        </svg>
-                      </div>
-                    ) : (
-                      <div className="expert-avatar">
-                        {currentChat.photo ? (
-                          <img src={currentChat.photo} alt={currentChat.name} className="expert-photo" />
-                        ) : (
-                          <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-                            <circle cx="16" cy="16" r="16" fill="#4A90E2"/>
-                            <circle cx="16" cy="13" r="5" fill="white"/>
-                            <path d="M8 26C8 23 12 21 16 21C20 21 24 23 24 26" fill="white"/>
-                          </svg>
-                        )}
-                      </div>
-                    )}
+          <div className="chat-main-header">
+            <div className="chat-main-info">
+              <div className="chat-main-avatar">
+                {chatType === 'ai' ? (
+                  <div className="bot-avatar">
+                    <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                      <circle cx="16" cy="16" r="16" fill="#4A90E2"/>
+                      <circle cx="16" cy="16" r="12" fill="white"/>
+                      <circle cx="11" cy="14" r="1.5" fill="#4A90E2"/>
+                      <circle cx="21" cy="14" r="1.5" fill="#4A90E2"/>
+                      <path d="M11 19C11 19 13 21 16 21C19 21 21 19 21 19" stroke="#4A90E2" strokeWidth="1.5" strokeLinecap="round"/>
+                    </svg>
                   </div>
-                  <div>
-                    <h3>{currentChat.name}</h3>
-                    <p>{currentChat.description}</p>
+                ) : (
+                  <div className="expert-avatar">
+                    <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                      <circle cx="16" cy="16" r="16" fill="#4A90E2"/>
+                      <circle cx="16" cy="13" r="5" fill="white"/>
+                      <path d="M8 26C8 23 12 21 16 21C20 21 24 23 24 26" fill="white"/>
+                    </svg>
+                  </div>
+                )}
+              </div>
+              <div>
+                <h3>{chatType === 'ai' ? 'AI Консультант' : 'Менеджер'}</h3>
+                <p>{chatType === 'ai' ? 'Для вопросов по сервису' : 'Найдёт, подскажет, позвонит'}</p>
+              </div>
+            </div>
+            <div className="chat-switch-buttons">
+              <button
+                type="button"
+                className={`chat-switch-btn ${chatType === 'ai' ? 'active' : ''}`}
+                onClick={() => switchChatType('ai')}
+                disabled={chatType === 'ai'}
+              >
+                AI
+              </button>
+              <button
+                type="button"
+                className={`chat-switch-btn ${chatType === 'manager' ? 'active' : ''}`}
+                onClick={() => switchChatType('manager')}
+                disabled={chatType === 'manager'}
+              >
+                Менеджер
+              </button>
+            </div>
+          </div>
+
+          <div className="chat-messages" ref={chatMessagesRef}>
+            {chatMessages.map((message, index) => {
+              const showDate = index === 0 || 
+                (index > 0 && chatMessages[index - 1].date !== message.date)
+              
+              return (
+                <div key={message.id}>
+                  {showDate && (
+                    <div className="message-date">{message.date}</div>
+                  )}
+                  <div className={`message ${message.sender === 'user' ? 'message-user' : 'message-bot'}`}>
+                    <div className="message-content">
+                      <p>{message.text}</p>
+                      <span className="message-time">{message.time}</span>
+                    </div>
                   </div>
                 </div>
-                <button className="menu-button">
-                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                    <circle cx="10" cy="4" r="1.5" fill="currentColor"/>
-                    <circle cx="10" cy="10" r="1.5" fill="currentColor"/>
-                    <circle cx="10" cy="16" r="1.5" fill="currentColor"/>
-                  </svg>
-                </button>
+              )
+            })}
+            {isLoadingAI && (
+              <div className="message message-bot">
+                <div className="message-content">
+                  <div className="typing-indicator">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                  </div>
+                </div>
               </div>
+            )}
+          </div>
 
-              <div className="chat-messages">
-                {currentMessages.map((message, index) => {
-                  const showDate = index === 0 || 
-                    (index > 0 && currentMessages[index - 1].date !== message.date)
-                  
-                  return (
-                    <div key={message.id}>
-                      {showDate && (
-                        <div className="message-date">{message.date}</div>
-                      )}
-                      <div className={`message ${message.sender === 'user' ? 'message-user' : 'message-bot'}`}>
-                        <div className="message-content">
-                          <p>{message.text}</p>
-                          <span className="message-time">{message.time}</span>
-                        </div>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-
-              <form className="chat-input-form" onSubmit={handleSendMessage}>
-                <button type="button" className="input-button">
-                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                    <path d="M4 6L10 10L16 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                    <rect x="2" y="4" width="16" height="12" rx="2" stroke="currentColor" strokeWidth="1.5"/>
-                  </svg>
-                </button>
-                <button type="button" className="input-button">
-                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                    <path d="M10 2C6.68629 2 4 4.68629 4 8C4 11.3137 6.68629 14 10 14C13.3137 14 16 11.3137 16 8C16 4.68629 13.3137 2 10 2Z" stroke="currentColor" strokeWidth="1.5"/>
-                    <path d="M10 6V10M10 10L13 13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-                  </svg>
-                </button>
-                <input
-                  type="text"
-                  className="chat-input"
-                  placeholder="Напишите сообщение..."
-                  value={inputMessage}
-                  onChange={(e) => setInputMessage(e.target.value)}
-                />
-                <button type="submit" className="send-button">
-                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                    <path d="M2 10L18 2L12 18L10 10L2 10Z" fill="currentColor"/>
-                  </svg>
-                </button>
-              </form>
-            </>
-          )}
+          <form className="chat-input-form" onSubmit={handleSendMessage}>
+            <input
+              type="text"
+              className="chat-input"
+              placeholder={isLoadingAI ? (chatType === 'ai' ? "AI думает..." : "Отправка...") : "Напишите сообщение..."}
+              value={chatInput}
+              onChange={(e) => setChatInput(e.target.value)}
+              disabled={isLoadingAI || !currentChatId}
+            />
+            <button type="submit" className="send-button" disabled={!chatInput.trim() || isLoadingAI || !currentChatId}>
+              <FiSend size={20} />
+            </button>
+          </form>
         </div>
       </div>
     </div>
@@ -287,4 +600,3 @@ const Chat = () => {
 }
 
 export default Chat
-

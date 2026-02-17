@@ -1,205 +1,151 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { FiSend, FiSearch, FiZap, FiUser, FiMessageCircle, FiCpu } from 'react-icons/fi';
+import { getApiBaseUrl } from '../../utils/apiConfig';
 import './AdminChat.css';
 
 const AdminChat = () => {
   const [selectedChat, setSelectedChat] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [inputMessage, setInputMessage] = useState('');
+  const [chats, setChats] = useState([]);
+  const [messages, setMessages] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
   const messagesEndRef = useRef(null);
 
-  const [chats] = useState([
-    {
-      id: 'manager',
-      name: 'Менеджер',
-      avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=150&q=80',
-      type: 'manager',
-      status: 'online',
-      lastMessage: 'Добрый день! Как дела?',
-      timestamp: '10:30',
-      unread: 2
-    },
-    {
-      id: 'ai-assistant',
-      name: 'Умный помощник',
-      avatar: 'https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&w=150&q=80',
-      type: 'ai',
-      status: 'online',
-      lastMessage: 'Готов помочь с любыми вопросами!',
-      timestamp: '09:15',
-      unread: 0
-    },
-    {
-      id: 'user1',
-      name: 'Иван Петров',
-      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80',
-      type: 'user',
-      status: 'online',
-      lastMessage: 'Спасибо за помощь!',
-      timestamp: 'Вчера',
-      unread: 1
-    },
-    {
-      id: 'user2',
-      name: 'Мария Иванова',
-      avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=150&q=80',
-      type: 'user',
-      status: 'offline',
-      lastMessage: 'Интересует квартира на Costa Adeje',
-      timestamp: '15:45',
-      unread: 0
-    },
-    {
-      id: 'user3',
-      name: 'Сергей Волков',
-      avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=150&q=80',
-      type: 'user',
-      status: 'online',
-      lastMessage: 'Когда можем встретиться?',
-      timestamp: '12:20',
-      unread: 3
+  // Загрузка списка чатов
+  const loadChats = async () => {
+    try {
+      const API_BASE_URL = await getApiBaseUrl();
+      const response = await fetch(`${API_BASE_URL}/admin/chat/list`);
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          const formattedChats = data.data.map(chat => ({
+            id: chat.id,
+            name: chat.first_name && chat.last_name 
+              ? `${chat.first_name} ${chat.last_name}` 
+              : chat.email || chat.phone_number || `Пользователь #${chat.user_id}`,
+            userId: chat.user_id,
+            email: chat.email,
+            phoneNumber: chat.phone_number,
+            chatType: chat.chat_type,
+            status: 'online', // Можно добавить проверку онлайн статуса
+            lastMessage: chat.lastMessage ? chat.lastMessage.text : 'Нет сообщений',
+            timestamp: chat.lastMessage 
+              ? formatTimestamp(chat.lastMessage.timestamp) 
+              : formatTimestamp(chat.updated_at),
+            unread: chat.unreadCount || 0
+          }));
+          setChats(formattedChats);
+        }
+      }
+    } catch (error) {
+      console.error('Ошибка при загрузке чатов:', error);
     }
-  ]);
-
-  const [messages, setMessages] = useState({
-    'manager': [
-      {
-        id: 1,
-        text: 'Добрый день! Как дела?',
-        sender: 'manager',
-        timestamp: new Date(Date.now() - 3600000)
-      },
-      {
-        id: 2,
-        text: 'Здравствуйте! Всё отлично, спасибо!',
-        sender: 'admin',
-        timestamp: new Date(Date.now() - 3300000)
-      }
-    ],
-    'ai-assistant': [
-      {
-        id: 1,
-        text: 'Привет! Я Умный помощник. Готов помочь с любыми вопросами по работе админ-панели!',
-        sender: 'ai',
-        timestamp: new Date(Date.now() - 7200000)
-      },
-      {
-        id: 2,
-        text: 'Отлично! Расскажи о статистике',
-        sender: 'admin',
-        timestamp: new Date(Date.now() - 7000000)
-      },
-      {
-        id: 3,
-        text: 'В разделе статистики вы можете увидеть общую информацию о пользователях, объектах, аукционах и прибыли. Также доступны фильтры по времени и календарь для выбора периода.',
-        sender: 'ai',
-        timestamp: new Date(Date.now() - 6800000)
-      }
-    ],
-    'user1': [
-      {
-        id: 1,
-        text: 'Здравствуйте! Хочу задать вопрос о недвижимости',
-        sender: 'user',
-        timestamp: new Date(Date.now() - 86400000)
-      },
-      {
-        id: 2,
-        text: 'Конечно! Чем могу помочь?',
-        sender: 'admin',
-        timestamp: new Date(Date.now() - 86000000)
-      },
-      {
-        id: 3,
-        text: 'Спасибо за помощь!',
-        sender: 'user',
-        timestamp: new Date(Date.now() - 84000000)
-      }
-    ],
-    'user2': [
-      {
-        id: 1,
-        text: 'Интересует квартира на Costa Adeje',
-        sender: 'user',
-        timestamp: new Date(Date.now() - 1800000)
-      }
-    ],
-    'user3': [
-      {
-        id: 1,
-        text: 'Когда можем встретиться для просмотра объекта?',
-        sender: 'user',
-        timestamp: new Date(Date.now() - 3600000)
-      },
-      {
-        id: 2,
-        text: 'Давайте согласуем время. Когда вам удобно?',
-        sender: 'admin',
-        timestamp: new Date(Date.now() - 3300000)
-      }
-    ]
-  });
-
-  useEffect(() => {
-    if (!selectedChat && chats.length > 0) {
-      setSelectedChat(chats[0]);
-    }
-  }, []);
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [selectedChat, messages]);
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const filteredChats = chats.filter(chat =>
-    chat.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Загрузка сообщений чата
+  const loadMessages = async (chatId) => {
+    try {
+      const API_BASE_URL = await getApiBaseUrl();
+      const response = await fetch(`${API_BASE_URL}/admin/chat/${chatId}`);
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          const formattedMessages = data.data.messages.map(msg => ({
+            id: msg.id,
+            text: msg.message_text,
+            sender: msg.sender_type === 'user' ? 'user' : (msg.sender_type === 'ai' ? 'ai' : 'admin'),
+            timestamp: new Date(msg.created_at)
+          }));
+          setMessages(formattedMessages);
+          
+          // Отмечаем сообщения как прочитанные
+          await fetch(`${API_BASE_URL}/admin/chat/${chatId}/read`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ isAdmin: true })
+          });
+          
+          // Обновляем список чатов
+          loadChats();
+          loadUnreadCount();
+        }
+      }
+    } catch (error) {
+      console.error('Ошибка при загрузке сообщений:', error);
+    }
+  };
 
-  const handleSendMessage = (e) => {
+  // Загрузка количества непрочитанных сообщений
+  const loadUnreadCount = async () => {
+    try {
+      const API_BASE_URL = await getApiBaseUrl();
+      const response = await fetch(`${API_BASE_URL}/admin/chat/unread`);
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          setUnreadCount(data.data.count);
+        }
+      }
+    } catch (error) {
+      console.error('Ошибка при загрузке непрочитанных сообщений:', error);
+    }
+  };
+
+  // Отправка сообщения
+  const handleSendMessage = async (e) => {
     e.preventDefault();
     if (!inputMessage.trim() || !selectedChat) return;
 
+    const messageText = inputMessage.trim();
+    setInputMessage('');
+
+    // Добавляем сообщение локально
     const newMessage = {
-      id: messages[selectedChat.id]?.length + 1 || 1,
-      text: inputMessage.trim(),
+      id: Date.now(),
+      text: messageText,
       sender: 'admin',
       timestamp: new Date()
     };
+    setMessages(prev => [...prev, newMessage]);
 
-    setMessages(prev => ({
-      ...prev,
-      [selectedChat.id]: [...(prev[selectedChat.id] || []), newMessage]
-    }));
+    try {
+      const API_BASE_URL = await getApiBaseUrl();
+      const response = await fetch(`${API_BASE_URL}/admin/chat/${selectedChat.id}/message`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messageText,
+          adminId: null // Можно добавить ID админа если нужно
+        })
+      });
 
-    setInputMessage('');
-
-    setTimeout(() => {
-      let responseText = '';
-      if (selectedChat.type === 'ai') {
-        responseText = 'Понял! Могу помочь с дополнительной информацией. Что именно вас интересует?';
-      } else if (selectedChat.type === 'manager') {
-        responseText = 'Хорошо, разберусь и вернусь с ответом.';
-      } else {
-        responseText = 'Спасибо за сообщение! Я свяжусь с вами в ближайшее время.';
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success) {
+          // Обновляем сообщения из ответа
+          const formattedMessages = data.data.messages.map(msg => ({
+            id: msg.id,
+            text: msg.message_text,
+            sender: msg.sender_type === 'user' ? 'user' : (msg.sender_type === 'ai' ? 'ai' : 'admin'),
+            timestamp: new Date(msg.created_at)
+          }));
+          setMessages(formattedMessages);
+          
+          // Обновляем список чатов
+          loadChats();
+        }
       }
-
-      const response = {
-        id: (messages[selectedChat.id]?.length || 0) + 2,
-        text: responseText,
-        sender: selectedChat.id,
-        timestamp: new Date()
-      };
-
-      setMessages(prev => ({
-        ...prev,
-        [selectedChat.id]: [...(prev[selectedChat.id] || []), response]
-      }));
-    }, 1000);
+    } catch (error) {
+      console.error('Ошибка при отправке сообщения:', error);
+    }
   };
 
+  // Форматирование времени
   const formatTime = (date) => {
     const now = new Date();
     const messageDate = new Date(date);
@@ -219,8 +165,31 @@ const AdminChat = () => {
     });
   };
 
-  const getChatIcon = (type) => {
-    switch (type) {
+  // Форматирование timestamp для списка чатов
+  const formatTimestamp = (timestamp) => {
+    if (!timestamp) return '';
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diff = now - date;
+
+    if (diff < 86400000) {
+      return date.toLocaleTimeString('ru-RU', {
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    }
+    if (diff < 172800000) {
+      return 'Вчера';
+    }
+    return date.toLocaleDateString('ru-RU', {
+      day: '2-digit',
+      month: '2-digit'
+    });
+  };
+
+  // Получение иконки чата
+  const getChatIcon = (chatType) => {
+    switch (chatType) {
       case 'manager':
         return <FiUser size={20} />;
       case 'ai':
@@ -230,13 +199,51 @@ const AdminChat = () => {
     }
   };
 
-  const currentMessages = selectedChat ? (messages[selectedChat.id] || []) : [];
+  // Обработка выбора чата
+  const handleChatSelect = (chat) => {
+    setSelectedChat(chat);
+    loadMessages(chat.id);
+  };
+
+  // Фильтрация чатов
+  const filteredChats = chats.filter(chat =>
+    chat.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (chat.email && chat.email.toLowerCase().includes(searchQuery.toLowerCase()))
+  );
+
+  // Загрузка данных при монтировании
+  useEffect(() => {
+    loadChats();
+    loadUnreadCount();
+    
+    // Обновляем каждые 30 секунд
+    const interval = setInterval(() => {
+      loadChats();
+      loadUnreadCount();
+    }, 30000);
+    
+    return () => clearInterval(interval);
+  }, []);
+
+  // Автоскролл к последнему сообщению
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages, selectedChat]);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const currentMessages = selectedChat ? messages : [];
 
   return (
     <div className="admin-chat">
       <div className="admin-chat__sidebar">
         <div className="admin-chat__header">
           <h2 className="admin-chat__title">Чаты</h2>
+          {unreadCount > 0 && (
+            <span className="admin-chat__unread-badge">{unreadCount > 99 ? '99+' : unreadCount}</span>
+          )}
         </div>
         
         <div className="admin-chat__search">
@@ -251,38 +258,46 @@ const AdminChat = () => {
         </div>
 
         <div className="admin-chat__list">
-          {filteredChats.map(chat => (
-            <div
-              key={chat.id}
-              className={`admin-chat__item ${selectedChat?.id === chat.id ? 'active' : ''}`}
-              onClick={() => setSelectedChat(chat)}
-            >
-              <div className="admin-chat__item-avatar">
-                <img src={chat.avatar} alt={chat.name} />
-                {chat.status === 'online' && (
-                  <span className="admin-chat__status-dot"></span>
-                )}
-                {chat.type === 'ai' && (
-                  <div className="admin-chat__ai-badge">
-                    <FiZap size={12} />
-                  </div>
-                )}
-              </div>
-              <div className="admin-chat__item-content">
-                <div className="admin-chat__item-header">
-                  <h3 className="admin-chat__item-name">
-                    {getChatIcon(chat.type)}
-                    {chat.name}
-                  </h3>
-                  <span className="admin-chat__item-time">{chat.timestamp}</span>
-                </div>
-                <p className="admin-chat__item-message">{chat.lastMessage}</p>
-              </div>
-              {chat.unread > 0 && (
-                <div className="admin-chat__item-badge">{chat.unread}</div>
-              )}
+          {filteredChats.length === 0 ? (
+            <div className="admin-chat__empty-list">
+              <p>Нет активных чатов</p>
             </div>
-          ))}
+          ) : (
+            filteredChats.map(chat => (
+              <div
+                key={chat.id}
+                className={`admin-chat__item ${selectedChat?.id === chat.id ? 'active' : ''}`}
+                onClick={() => handleChatSelect(chat)}
+              >
+                <div className="admin-chat__item-avatar">
+                  <div className="admin-chat__item-avatar-placeholder">
+                    {getChatIcon(chat.chatType)}
+                  </div>
+                  {chat.status === 'online' && (
+                    <span className="admin-chat__status-dot"></span>
+                  )}
+                  {chat.chatType === 'ai' && (
+                    <div className="admin-chat__ai-badge">
+                      <FiZap size={12} />
+                    </div>
+                  )}
+                </div>
+                <div className="admin-chat__item-content">
+                  <div className="admin-chat__item-header">
+                    <h3 className="admin-chat__item-name">
+                      {getChatIcon(chat.chatType)}
+                      {chat.name}
+                    </h3>
+                    <span className="admin-chat__item-time">{chat.timestamp}</span>
+                  </div>
+                  <p className="admin-chat__item-message">{chat.lastMessage}</p>
+                </div>
+                {chat.unread > 0 && (
+                  <div className="admin-chat__item-badge">{chat.unread}</div>
+                )}
+              </div>
+            ))
+          )}
         </div>
       </div>
 
@@ -292,19 +307,24 @@ const AdminChat = () => {
             <div className="admin-chat__main-header">
               <div className="admin-chat__main-header-info">
                 <div className="admin-chat__main-avatar">
-                  <img src={selectedChat.avatar} alt={selectedChat.name} />
+                  <div className="admin-chat__main-avatar-placeholder">
+                    {getChatIcon(selectedChat.chatType)}
+                  </div>
                   {selectedChat.status === 'online' && (
                     <span className="admin-chat__status-dot"></span>
                   )}
                 </div>
                 <div>
                   <h3 className="admin-chat__main-name">
-                    {getChatIcon(selectedChat.type)}
+                    {getChatIcon(selectedChat.chatType)}
                     {selectedChat.name}
                   </h3>
                   <span className="admin-chat__main-status">
-                    {selectedChat.status === 'online' ? 'Онлайн' : 'Офлайн'}
+                    {selectedChat.chatType === 'ai' ? 'AI Консультант' : 'Менеджер'} • {selectedChat.status === 'online' ? 'Онлайн' : 'Офлайн'}
                   </span>
+                  {selectedChat.email && (
+                    <span className="admin-chat__main-email">{selectedChat.email}</span>
+                  )}
                 </div>
               </div>
             </div>
@@ -358,5 +378,3 @@ const AdminChat = () => {
 };
 
 export default AdminChat;
-
-
