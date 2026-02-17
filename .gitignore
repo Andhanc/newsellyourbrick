@@ -48,13 +48,7 @@ Thumbs.db
 # Optional eslint cache
 .eslintcache
 
-# Database
-database.sqlite
-database.sqlite-journal
-server/database.sqlite
-server/database.sqlite-journal
-*.sqlite
-*.sqlite-journal
+
 
 # Uploads
 server/uploads/
