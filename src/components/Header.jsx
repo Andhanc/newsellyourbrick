@@ -45,6 +45,7 @@ const Header = () => {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
   const [userPhoto, setUserPhoto] = useState(null) // Фотография пользователя
   const [isLoggedIn, setIsLoggedIn] = useState(false) // Статус авторизации
+  const [isAIChatOpen, setIsAIChatOpen] = useState(false) // Состояние AI чата для страницы аукцион
   const locationRef = useRef(null)
   const notificationRef = useRef(null)
   const menuRef = useRef(null)
@@ -81,6 +82,19 @@ const Header = () => {
       searchInputRef.current.focus()
     }
   }, [isSearchOpen])
+
+  // Слушаем события изменения состояния AI чата
+  useEffect(() => {
+    const handleAIChatStateChange = (event) => {
+      setIsAIChatOpen(event.detail.isOpen)
+    }
+
+    window.addEventListener('aiChatStateChange', handleAIChatStateChange)
+    
+    return () => {
+      window.removeEventListener('aiChatStateChange', handleAIChatStateChange)
+    }
+  }, [])
 
   // Загружаем фотографию пользователя при изменении авторизации
   useEffect(() => {
@@ -343,8 +357,17 @@ const Header = () => {
             </button>
             <button
               type="button"
-              className={`new-header__filter-btn ${location.pathname === '/chat' ? 'new-header__filter-btn--active' : ''}`}
-              onClick={() => navigate('/chat')}
+              className={`new-header__filter-btn ${location.pathname === '/auction' ? (isAIChatOpen ? 'new-header__filter-btn--active' : '') : (location.pathname === '/chat' ? 'new-header__filter-btn--active' : '')}`}
+              onClick={() => {
+                // Если мы на странице аукцион, открываем AI консультант
+                if (location.pathname === '/auction') {
+                  // Диспатчим событие для открытия AI чата
+                  window.dispatchEvent(new CustomEvent('openAIChat'))
+                } else {
+                  // На других страницах переходим на /chat
+                  navigate('/chat')
+                }
+              }}
             >
               <span>{t('aiAssistant') || 'Умный помощник'}</span>
             </button>
