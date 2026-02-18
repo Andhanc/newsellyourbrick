@@ -30,7 +30,15 @@ export default defineConfig(({ mode }) => {
   
   // Порт для Vite (фронтенд)
   // Локально: 5173, на Railway: PORT (устанавливает Railway автоматически)
+  // ВАЖНО: На Railway PORT устанавливается автоматически, используем его
   const vitePort = process.env.PORT ? parseInt(process.env.PORT) : 5173
+  
+  // Логируем для диагностики
+  if (process.env.PORT) {
+    console.log('[FRONTEND] ⚠️ Railway PORT установлен:', process.env.PORT)
+  } else {
+    console.log('[FRONTEND] ⚠️ Railway PORT не установлен, используем 5173')
+  }
   
   // Логирование для диагностики (важно для Railway - видим, что Vite запускается)
   console.log('═══════════════════════════════════════════════════════');
@@ -92,24 +100,14 @@ export default defineConfig(({ mode }) => {
     server: {
       port: vitePort,
       host: '0.0.0.0', // Слушаем на всех интерфейсах для Railway
-      strictPort: true, // Строгий порт - если порт занят, покажем ошибку (важно для Railway)
+      strictPort: false, // НЕ строгий порт - если порт занят, попробуем другой
       // ВАЖНО: Railway устанавливает PORT, приложение должно слушать на этом порту
       // Разрешаем все Railway хосты
-      allowedHosts: [
-        '.railway.app',
-        '.up.railway.app',
-        'localhost',
-        '127.0.0.1'
-      ],
+      allowedHosts: 'all', // Разрешаем все хосты для Railway
       // Отключаем HMR в production (на Railway) - он не нужен и вызывает проблемы с WebSocket
       hmr: actualMode === 'production' ? false : {
         clientPort: vitePort, // Для HMR в development
         overlay: false // Отключаем overlay для избежания ошибок esbuild на Railway
-      },
-      // Улучшенная обработка ошибок
-      watch: {
-        usePolling: false,
-        interval: 100
       },
       proxy: {
         '/api': {
