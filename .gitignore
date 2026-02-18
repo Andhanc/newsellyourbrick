@@ -66,3 +66,9 @@ server/uploads/
 .wwebjs_auth/
 server/.wwebjs_auth/
 server/.wwebjs_cache/
+
+# Database files
+*.sqlite
+*.sqlite3
+*.db
+server/database.sqlite

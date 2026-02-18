@@ -424,13 +424,38 @@ function MainPage() {
     return filterPropertiesByLocation(combined)
   }, [])
   
-  // Загружаем историю чата из localStorage для авторизованных пользователей
+  // Функция для получения уникального идентификатора пользователя/сессии
+  const getChatUserId = useMemo(() => {
+    // Если пользователь авторизован, используем его ID
+    if (isLoggedIn) {
+      const userData = getUserData()
+      const userId = userData.id || localStorage.getItem('userId')
+      if (userId) {
+        return `user_${userId}`
+      }
+    }
+    
+    // Если пользователь не авторизован, создаем/используем уникальный ID сессии
+    let sessionId = localStorage.getItem('chatSessionId')
+    if (!sessionId) {
+      // Генерируем уникальный ID сессии
+      sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+      localStorage.setItem('chatSessionId', sessionId)
+    }
+    return sessionId
+  }, [isLoggedIn])
+
+  // Загружаем историю чата из localStorage при монтировании компонента
   useEffect(() => {
-    // Если пользователь авторизован и история еще не загружена
-    if (isLoggedIn && !chatHistoryLoadedRef.current) {
-      const savedChatHistory = localStorage.getItem('aiChatHistory')
-      if (savedChatHistory) {
-        try {
+    if (!chatHistoryLoadedRef.current) {
+      try {
+        const chatUserId = getChatUserId
+        const historyKey = `aiChatHistory_${chatUserId}`
+        const preferencesKey = `aiChatPreferences_${chatUserId}`
+        
+        // Загружаем историю сообщений
+        const savedChatHistory = localStorage.getItem(historyKey)
+        if (savedChatHistory) {
           const parsed = JSON.parse(savedChatHistory)
           // Преобразуем timestamp из строк в Date объекты
           const messagesWithDates = parsed.map(msg => ({
@@ -438,53 +463,104 @@ function MainPage() {
             timestamp: msg.timestamp ? new Date(msg.timestamp) : new Date()
           }))
           setChatMessages(messagesWithDates)
-          chatHistoryLoadedRef.current = true
-          return // Не показываем приветственное сообщение, если есть сохраненная история
-        } catch (error) {
-          console.error('Ошибка при загрузке истории чата:', error)
         }
-      }
-      // Если нет сохраненной истории, но пользователь авторизован - показываем приветствие
-      if (chatMessages.length === 0) {
-        setChatMessages([{
-          id: 1,
-          text: 'Здравствуйте! Я ваш AI-консультант по недвижимости. Помогу подобрать идеальный вариант в Испании или Дубае. Для начала, скажите, для какой цели вы ищете недвижимость?',
-          sender: 'bot',
-          timestamp: new Date(),
-          buttons: ['Для себя', 'Под сдачу', 'Инвестиции'],
-        }])
-      }
-      chatHistoryLoadedRef.current = true
-    }
-    
-    // Если пользователь не авторизован - сбрасываем флаг
-    if (!isLoggedIn) {
-      chatHistoryLoadedRef.current = false
-      // Показываем приветствие только если история пустая (для неавторизованных)
-      if (chatMessages.length === 0) {
-        setChatMessages([{
-          id: 1,
-          text: 'Здравствуйте! Я ваш AI-консультант по недвижимости. Помогу подобрать идеальный вариант в Испании или Дубае. Для начала, скажите, для какой цели вы ищете недвижимость?',
-          sender: 'bot',
-          timestamp: new Date(),
-          buttons: ['Для себя', 'Под сдачу', 'Инвестиции'],
-        }])
+        
+        // Загружаем предпочтения пользователя
+        const savedPreferences = localStorage.getItem(preferencesKey)
+        if (savedPreferences) {
+          const parsed = JSON.parse(savedPreferences)
+          setUserPreferences(parsed)
+        }
+        
+        // Если нет сохраненной истории, показываем приветственное сообщение
+        if (!savedChatHistory && chatMessages.length === 0) {
+          setChatMessages([{
+            id: 1,
+            text: 'Здравствуйте! Я ваш AI-консультант по недвижимости. Помогу подобрать идеальный вариант в Испании или Дубае. Для начала, скажите, для какой цели вы ищете недвижимость?',
+            sender: 'bot',
+            timestamp: new Date(),
+            buttons: ['Для себя', 'Под сдачу', 'Инвестиции'],
+          }])
+        }
+        
+        chatHistoryLoadedRef.current = true
+      } catch (error) {
+        console.error('Ошибка при загрузке истории чата:', error)
+        chatHistoryLoadedRef.current = true
       }
     }
-  }, [isLoggedIn]) // Загружаем только при изменении статуса авторизации
+  }, [getChatUserId]) // Загружаем при изменении идентификатора пользователя
 
-  // Сохраняем историю чата в localStorage для авторизованных пользователей
+  // Сохраняем историю чата в localStorage при каждом изменении
   useEffect(() => {
-    if (isLoggedIn && chatMessages.length > 0) {
+    if (chatHistoryLoadedRef.current && chatMessages.length > 0) {
       try {
-        // Сохраняем историю в localStorage
-        localStorage.setItem('aiChatHistory', JSON.stringify(chatMessages))
+        const chatUserId = getChatUserId
+        const historyKey = `aiChatHistory_${chatUserId}`
+        // Сохраняем историю в localStorage с привязкой к пользователю
+        localStorage.setItem(historyKey, JSON.stringify(chatMessages))
       } catch (error) {
         console.error('Ошибка при сохранении истории чата:', error)
       }
     }
-    // История не очищается при выходе из аккаунта - остается в localStorage
-  }, [chatMessages, isLoggedIn])
+  }, [chatMessages, getChatUserId])
+
+  // Сохраняем предпочтения пользователя в localStorage
+  useEffect(() => {
+    if (chatHistoryLoadedRef.current) {
+      try {
+        const chatUserId = getChatUserId
+        const preferencesKey = `aiChatPreferences_${chatUserId}`
+        localStorage.setItem(preferencesKey, JSON.stringify(userPreferences))
+      } catch (error) {
+        console.error('Ошибка при сохранении предпочтений:', error)
+      }
+    }
+  }, [userPreferences, getChatUserId])
+
+  // Очищаем историю при закрытии сайта
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      // Очищаем историю чата при закрытии вкладки/браузера для текущего пользователя/сессии
+      const chatUserId = getChatUserId
+      const historyKey = `aiChatHistory_${chatUserId}`
+      const preferencesKey = `aiChatPreferences_${chatUserId}`
+      localStorage.removeItem(historyKey)
+      localStorage.removeItem(preferencesKey)
+      
+      // Если это сессия (неавторизованный пользователь), также удаляем ID сессии
+      if (chatUserId.startsWith('session_')) {
+        localStorage.removeItem('chatSessionId')
+      }
+    }
+
+    // Используем beforeunload для очистки при закрытии
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    
+    // Также используем pagehide для более надежной очистки
+    const handlePageHide = (event) => {
+      // Если страница выгружается (не просто скрывается), очищаем данные
+      if (event.persisted === false) {
+        const chatUserId = getChatUserId
+        const historyKey = `aiChatHistory_${chatUserId}`
+        const preferencesKey = `aiChatPreferences_${chatUserId}`
+        localStorage.removeItem(historyKey)
+        localStorage.removeItem(preferencesKey)
+        
+        // Если это сессия (неавторизованный пользователь), также удаляем ID сессии
+        if (chatUserId.startsWith('session_')) {
+          localStorage.removeItem('chatSessionId')
+        }
+      }
+    }
+    
+    window.addEventListener('pagehide', handlePageHide)
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload)
+      window.removeEventListener('pagehide', handlePageHide)
+    }
+  }, [getChatUserId])
   
   // Отладочная информация о состоянии i18n
   useEffect(() => {

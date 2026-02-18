@@ -1,11 +1,14 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { useUser } from '@clerk/clerk-react'
+import { useNavigate } from 'react-router-dom'
+import { FiX, FiSend } from 'react-icons/fi'
 import Header from '../components/Header'
 import Hero from '../components/Hero'
 import PropertyList from '../components/PropertyList'
 import FAQ from '../components/FAQ'
 import DepositButton from '../components/DepositButton'
 import { getUserData, isAuthenticated } from '../services/authService'
+import { askPropertyAssistant } from '../services/aiService'
 import './Home.css'
 
 import { getApiBaseUrl } from '../utils/apiConfig'
@@ -17,13 +20,23 @@ function Home() {
   const { user, isLoaded: userLoaded } = useUser()
   const userData = getUserData()
   const [dbUserId, setDbUserId] = useState(null)
+  const navigate = useNavigate()
   
-  // Функция для проверки, можно ли показывать депозит
-  const canShowDeposit = () => {
-    if (!isAuthenticated()) return false
-    const userRole = userData?.role
-    return userRole !== 'seller'
-  }
+  // Состояния для чата AI
+  const [isChatOpen, setIsChatOpen] = useState(false)
+  const [chatMessages, setChatMessages] = useState([])
+  const [chatInput, setChatInput] = useState('')
+  const [isLoadingAI, setIsLoadingAI] = useState(false)
+  const chatMessagesRef = useRef(null)
+  const [userPreferences, setUserPreferences] = useState({
+    purpose: null, // 'для себя', 'под сдачу', 'инвестиции'
+    budget: null,
+    location: null, // 'Испания', 'Дубай'
+    propertyType: null, // 'квартира', 'вилла', 'апартаменты', 'дом'
+    rooms: null,
+    area: null,
+    other: null
+  })
 
   // Загрузка аукционных и не аукционных объявлений из API
   useEffect(() => {
@@ -243,9 +256,312 @@ function Home() {
     return () => clearInterval(interval)
   }, [dbUserId])
 
+  // Функции для чата AI
+  const toggleChat = () => {
+    setIsChatOpen((prev) => !prev)
+  }
+
+  const handleChatInputChange = (e) => {
+    setChatInput(e.target.value)
+  }
+
+  const handleButtonClick = async (buttonText) => {
+    // Отправляем текст кнопки как сообщение пользователя
+    await handleChatSubmit(null, buttonText)
+  }
+
+  const handleChatSubmit = async (e, buttonText = null) => {
+    if (e) e.preventDefault()
+    
+    const userMessage = buttonText || chatInput.trim()
+    if (!userMessage) return
+
+    if (!buttonText) {
+      setChatInput('')
+    }
+
+    // Добавляем сообщение пользователя
+    const userMessageObj = {
+      id: Date.now(),
+      text: userMessage,
+      sender: 'user',
+      timestamp: new Date(),
+    }
+
+    setChatMessages((prev) => [...prev, userMessageObj])
+
+    // Обновляем предпочтения на основе сообщения
+    const lowerMessage = userMessage.toLowerCase()
+    
+    // Определяем цель
+    if (lowerMessage.includes('для себя') || lowerMessage === 'для себя' || lowerMessage.includes('сам') || lowerMessage.includes('личн')) {
+      setUserPreferences(prev => ({ ...prev, purpose: 'для себя' }))
+    } else if (lowerMessage.includes('под сдачу') || lowerMessage === 'под сдачу' || lowerMessage.includes('сдачу') || lowerMessage.includes('аренд')) {
+      setUserPreferences(prev => ({ ...prev, purpose: 'под сдачу' }))
+    } else if (lowerMessage.includes('инвестиц') || lowerMessage === 'инвестиции' || lowerMessage.includes('инвест')) {
+      setUserPreferences(prev => ({ ...prev, purpose: 'инвестиции' }))
+    }
+    
+    // Определяем локацию
+    if (lowerMessage.includes('испания') || lowerMessage.includes('spain') || lowerMessage.includes('españa') || 
+        lowerMessage.includes('tenerife') || lowerMessage.includes('тенерифе') || lowerMessage.includes('коста') ||
+        lowerMessage.includes('barcelona') || lowerMessage.includes('madrid')) {
+      setUserPreferences(prev => ({ ...prev, location: 'Испания' }))
+    } else if (lowerMessage.includes('дубай') || lowerMessage.includes('dubai') || lowerMessage.includes('uae') || 
+               lowerMessage.includes('оаэ') || lowerMessage.includes('emirates')) {
+      setUserPreferences(prev => ({ ...prev, location: 'Дубай' }))
+    }
+
+    // Извлекаем бюджет из сообщения (конвертируем рубли в евро, если указаны)
+    const budgetMatch = userMessage.match(/(\d+[\s,.]?\d*)\s*(тыс|млн|k|m|€|\$|eur|usd|евро|доллар|рубл|₽|rub)/i)
+    if (budgetMatch) {
+      let budget = parseFloat(budgetMatch[1].replace(/\s/g, '').replace(',', '.'))
+      const unit = budgetMatch[2].toLowerCase()
+      
+      // Конвертируем в евро (примерный курс: 1 EUR = 100 RUB)
+      const eurToRubRate = 100
+      
+      if (unit.includes('млн') || unit === 'm') {
+        budget = budget * 1000000
+      } else if (unit.includes('тыс') || unit === 'k') {
+        budget = budget * 1000
+      }
+      
+      // Если указаны рубли, конвертируем в евро
+      if (unit.includes('рубл') || unit.includes('₽') || unit.includes('rub')) {
+        budget = budget / eurToRubRate
+      }
+      
+      setUserPreferences(prev => ({ ...prev, budget }))
+    }
+    
+    // Определяем тип недвижимости
+    if (lowerMessage.includes('квартир') || lowerMessage.includes('апартамент') || lowerMessage.includes('apartment')) {
+      setUserPreferences(prev => ({ ...prev, propertyType: 'квартира' }))
+    } else if (lowerMessage.includes('вилл') || lowerMessage.includes('villa')) {
+      setUserPreferences(prev => ({ ...prev, propertyType: 'вилла' }))
+    } else if (lowerMessage.includes('дом') || lowerMessage.includes('таунхаус') || lowerMessage.includes('townhouse') || lowerMessage.includes('house')) {
+      setUserPreferences(prev => ({ ...prev, propertyType: 'дом' }))
+    }
+    
+    // Извлекаем количество комнат
+    const roomsMatch = userMessage.match(/(\d+)\s*(комнат|room|bed)/i)
+    if (roomsMatch) {
+      setUserPreferences(prev => ({ ...prev, rooms: parseInt(roomsMatch[1]) }))
+    }
+
+    setIsLoadingAI(true)
+
+    try {
+      // Получаем ответ от AI
+      const response = await askPropertyAssistant(
+        [...chatMessages, userMessageObj],
+        userPreferences,
+        auctionProperties
+      )
+
+      // Добавляем ответ бота
+      const botMessage = {
+        id: Date.now() + 1,
+        text: response.text,
+        sender: 'bot',
+        timestamp: new Date(),
+        buttons: response.buttons,
+        recommendations: response.recommendations
+      }
+
+      setChatMessages((prev) => [...prev, botMessage])
+    } catch (error) {
+      console.error('Ошибка при обращении к AI:', error)
+      const errorMessage = {
+        id: Date.now() + 1,
+        text: 'Извините, произошла ошибка. Попробуйте еще раз.',
+        sender: 'bot',
+        timestamp: new Date(),
+        buttons: null,
+        recommendations: null
+      }
+      setChatMessages((prev) => [...prev, errorMessage])
+    } finally {
+      setIsLoadingAI(false)
+    }
+  }
+
+  // Функция для получения уникального идентификатора пользователя/сессии
+  const isLoggedIn = isAuthenticated() || (user && userLoaded)
+  const getChatUserId = useMemo(() => {
+    // Если пользователь авторизован, используем его ID
+    if (isLoggedIn) {
+      const currentUserData = getUserData()
+      const userId = currentUserData.id || localStorage.getItem('userId') || dbUserId
+      if (userId) {
+        return `user_${userId}`
+      }
+    }
+    
+    // Если пользователь не авторизован, создаем/используем уникальный ID сессии
+    let sessionId = localStorage.getItem('chatSessionId')
+    if (!sessionId) {
+      // Генерируем уникальный ID сессии
+      sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+      localStorage.setItem('chatSessionId', sessionId)
+    }
+    return sessionId
+  }, [isLoggedIn, dbUserId])
+
+  // Загружаем историю чата из localStorage при монтировании компонента
+  const chatHistoryLoadedRef = useRef(false)
+  
+  useEffect(() => {
+    if (!chatHistoryLoadedRef.current) {
+      try {
+        const chatUserId = getChatUserId
+        const historyKey = `aiChatHistory_${chatUserId}`
+        const preferencesKey = `aiChatPreferences_${chatUserId}`
+        
+        // Загружаем историю сообщений
+        const savedChatHistory = localStorage.getItem(historyKey)
+        if (savedChatHistory) {
+          const parsed = JSON.parse(savedChatHistory)
+          // Преобразуем timestamp из строк в Date объекты
+          const messagesWithDates = parsed.map(msg => ({
+            ...msg,
+            timestamp: msg.timestamp ? new Date(msg.timestamp) : new Date()
+          }))
+          setChatMessages(messagesWithDates)
+        }
+        
+        // Загружаем предпочтения пользователя
+        const savedPreferences = localStorage.getItem(preferencesKey)
+        if (savedPreferences) {
+          const parsed = JSON.parse(savedPreferences)
+          setUserPreferences(parsed)
+        }
+        
+        // Если нет сохраненной истории, показываем приветственное сообщение
+        if (!savedChatHistory && chatMessages.length === 0) {
+          setChatMessages([{
+            id: 1,
+            text: 'Здравствуйте! Я ваш AI-консультант по недвижимости. Помогу подобрать идеальный вариант в Испании или Дубае. Для начала, скажите, для какой цели вы ищете недвижимость?',
+            sender: 'bot',
+            timestamp: new Date(),
+            buttons: ['Для себя', 'Под сдачу', 'Инвестиции'],
+          }])
+        }
+        
+        chatHistoryLoadedRef.current = true
+      } catch (error) {
+        console.error('Ошибка при загрузке истории чата:', error)
+        chatHistoryLoadedRef.current = true
+      }
+    }
+  }, [getChatUserId]) // Загружаем при изменении идентификатора пользователя
+
+  // Сохраняем историю чата в localStorage при каждом изменении
+  useEffect(() => {
+    if (chatHistoryLoadedRef.current && chatMessages.length > 0) {
+      try {
+        const chatUserId = getChatUserId
+        const historyKey = `aiChatHistory_${chatUserId}`
+        // Сохраняем историю в localStorage с привязкой к пользователю
+        localStorage.setItem(historyKey, JSON.stringify(chatMessages))
+      } catch (error) {
+        console.error('Ошибка при сохранении истории чата:', error)
+      }
+    }
+  }, [chatMessages, getChatUserId])
+
+  // Сохраняем предпочтения пользователя в localStorage
+  useEffect(() => {
+    if (chatHistoryLoadedRef.current) {
+      try {
+        const chatUserId = getChatUserId
+        const preferencesKey = `aiChatPreferences_${chatUserId}`
+        localStorage.setItem(preferencesKey, JSON.stringify(userPreferences))
+      } catch (error) {
+        console.error('Ошибка при сохранении предпочтений:', error)
+      }
+    }
+  }, [userPreferences, getChatUserId])
+
+  // Автоскролл к последнему сообщению
+  useEffect(() => {
+    if (chatMessagesRef.current && isChatOpen) {
+      chatMessagesRef.current.scrollTop = chatMessagesRef.current.scrollHeight
+    }
+  }, [chatMessages, isChatOpen])
+
+  // Обновляем window.isChatOpen и отправляем событие для синхронизации с хедером
+  useEffect(() => {
+    window.isChatOpen = isChatOpen
+    // Отправляем событие для обновления состояния в Header
+    window.dispatchEvent(new CustomEvent('aiChatStateChange', { 
+      detail: { isOpen: isChatOpen } 
+    }))
+  }, [isChatOpen])
+
+  // Обработчик события для открытия AI чата из хедера
+  useEffect(() => {
+    const handleOpenAIChat = () => {
+      if (!isChatOpen) {
+        setIsChatOpen(true)
+      }
+    }
+
+    window.addEventListener('openAIChat', handleOpenAIChat)
+    
+    return () => {
+      window.removeEventListener('openAIChat', handleOpenAIChat)
+    }
+  }, [isChatOpen])
+
+  // Очищаем историю при закрытии сайта
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      // Очищаем историю чата при закрытии вкладки/браузера для текущего пользователя/сессии
+      const chatUserId = getChatUserId
+      const historyKey = `aiChatHistory_${chatUserId}`
+      const preferencesKey = `aiChatPreferences_${chatUserId}`
+      localStorage.removeItem(historyKey)
+      localStorage.removeItem(preferencesKey)
+      
+      // Если это сессия (неавторизованный пользователь), также удаляем ID сессии
+      if (chatUserId.startsWith('session_')) {
+        localStorage.removeItem('chatSessionId')
+      }
+    }
+
+    // Используем beforeunload для очистки при закрытии
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    
+    // Также используем pagehide для более надежной очистки
+    const handlePageHide = (event) => {
+      // Если страница выгружается (не просто скрывается), очищаем данные
+      if (event.persisted === false) {
+        const chatUserId = getChatUserId
+        const historyKey = `aiChatHistory_${chatUserId}`
+        const preferencesKey = `aiChatPreferences_${chatUserId}`
+        localStorage.removeItem(historyKey)
+        localStorage.removeItem(preferencesKey)
+        
+        // Если это сессия (неавторизованный пользователь), также удаляем ID сессии
+        if (chatUserId.startsWith('session_')) {
+          localStorage.removeItem('chatSessionId')
+        }
+      }
+    }
+    
+    window.addEventListener('pagehide', handlePageHide)
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload)
+      window.removeEventListener('pagehide', handlePageHide)
+    }
+  }, [getChatUserId])
+
   return (
     <div className="home-page">
-      {canShowDeposit() && <DepositButton amount={userDeposit} />}
+      <DepositButton amount={userDeposit} />
       <Header />
       <Hero />
       {loading ? (
@@ -256,6 +572,146 @@ function Home() {
         <PropertyList auctionProperties={auctionProperties} />
       )}
       <FAQ />
+
+      {/* Кнопка AI помощника */}
+      <button
+        type="button"
+        className="ai-button"
+        onClick={toggleChat}
+        aria-label="AI Assistant"
+        aria-expanded={isChatOpen}
+      >
+        AI
+      </button>
+
+      {/* Модальное окно чата */}
+      {isChatOpen && (
+        <div className="chat-widget">
+          <div className="chat-widget__header">
+            <div className="chat-widget__header-info">
+              <div className="chat-widget__avatar">AI</div>
+              <div className="chat-widget__header-text">
+                <h3 className="chat-widget__title">AI Консультант</h3>
+                <span className="chat-widget__status">Онлайн</span>
+              </div>
+            </div>
+            <button
+              type="button"
+              className="chat-widget__close"
+              onClick={toggleChat}
+              aria-label="Закрыть чат"
+            >
+              <FiX size={20} />
+            </button>
+          </div>
+
+          <div className="chat-widget__messages" ref={chatMessagesRef}>
+            {chatMessages.map((message) => (
+              <div
+                key={message.id}
+                className={`chat-widget__message ${
+                  message.sender === 'user'
+                    ? 'chat-widget__message--user'
+                    : 'chat-widget__message--bot'
+                }`}
+              >
+                <div className="chat-widget__message-content">
+                  {message.text}
+                  {message.recommendations && message.recommendations.length > 0 && (
+                    <div className="chat-widget__recommendations">
+                      <div className="chat-widget__recommendations-title">Рекомендуемые объявления:</div>
+                      {message.recommendations.map((recId) => {
+                        const property = auctionProperties.find(p => p.id === recId)
+                        if (!property) return null
+                        const propertyName = property.name || property.title || 'Объявление'
+                        const propertyPrice = property.price ? `${property.price.toLocaleString('ru-RU')} €` : 'Цена не указана'
+                        const propertyArea = property.area || property.sqft
+                        const propertyRooms = property.rooms || property.beds
+                        
+                        return (
+                          <a
+                            key={recId}
+                            href={`/property/${recId}`}
+                            className="chat-widget__recommendation-link"
+                            onClick={(e) => {
+                              e.preventDefault()
+                              navigate(`/property/${recId}`, { 
+                                state: { property: property }
+                              })
+                              setIsChatOpen(false)
+                            }}
+                          >
+                            <div className="chat-widget__recommendation-item">
+                              <div className="chat-widget__recommendation-title">{propertyName}</div>
+                              <div className="chat-widget__recommendation-location">{property.location}</div>
+                              <div className="chat-widget__recommendation-details">
+                                {propertyRooms && <span>{propertyRooms} {propertyRooms === 1 ? 'комната' : propertyRooms < 5 ? 'комнаты' : 'комнат'}</span>}
+                                {propertyArea && <span>{propertyArea} м²</span>}
+                              </div>
+                              <div className="chat-widget__recommendation-price">{propertyPrice}</div>
+                            </div>
+                          </a>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+                {message.buttons && message.buttons.length > 0 && (
+                  <div className="chat-widget__buttons">
+                    {message.buttons.map((button, index) => (
+                      <button
+                        key={index}
+                        className="chat-widget__button"
+                        onClick={() => !isLoadingAI && handleButtonClick(button)}
+                        disabled={isLoadingAI}
+                      >
+                        {button}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                <div className="chat-widget__message-time">
+                  {message.timestamp.toLocaleTimeString('ru-RU', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })}
+                </div>
+              </div>
+            ))}
+            {isLoadingAI && (
+              <div className="chat-widget__message chat-widget__message--bot">
+                <div className="chat-widget__message-content">
+                  <div className="chat-widget__typing">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <form className="chat-widget__input-form" onSubmit={handleChatSubmit}>
+            <input
+              type="text"
+              className="chat-widget__input"
+              placeholder={isLoadingAI ? "AI думает..." : "Введите ваше сообщение..."}
+              value={chatInput}
+              onChange={handleChatInputChange}
+              disabled={isLoadingAI}
+              autoFocus
+            />
+            <button
+              type="submit"
+              className="chat-widget__send"
+              aria-label="Отправить сообщение"
+              disabled={isLoadingAI}
+            >
+              <FiSend size={18} />
+            </button>
+          </form>
+        </div>
+      )}
     </div>
   )
 }
