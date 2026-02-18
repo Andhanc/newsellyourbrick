@@ -1045,12 +1045,10 @@
 /* Эффект жидкого стекла для кнопки "Купить сейчас" */
 .property-actions .btn-liquid-glass-buy {
   padding: 16px 20px;
-  background: linear-gradient(135deg, rgba(255, 107, 53, 0.85) 0%, rgba(255, 69, 0, 0.85) 100%);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: linear-gradient(135deg, #d0d8f0 0%, #e8e8f5 40%, #f0e0eb 70%, #f8e8f0 100%);
+  border: none;
   border-radius: 8px;
-  color: #fff;
+  color: #111827;
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
@@ -1061,64 +1059,58 @@
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   overflow: hidden;
-  box-shadow: 
-    0 4px 16px rgba(255, 107, 53, 0.3),
-    inset 0 1px 0 rgba(255, 255, 255, 0.3),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   font-family: inherit;
   width: auto;
   max-width: 85%;
   margin: 0 auto;
+  letter-spacing: 0.3px;
 }
 
 .property-actions .btn-liquid-glass-buy::before {
   content: '';
   position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 0;
-  height: 0;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.3);
-  transform: translate(-50%, -50%);
-  transition: width 0.5s ease, height 0.5s ease;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.25), transparent);
+  transition: left 0.6s ease;
 }
 
 .property-actions .btn-liquid-glass-buy::after {
   content: '';
   position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-  background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent);
-  transform: rotate(45deg);
-  transition: left 0.6s ease;
+  inset: 0;
+  border-radius: 8px;
+  padding: 1px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.1));
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.3s ease;
 }
 
 .property-actions .btn-liquid-glass-buy:hover::before {
-  width: 300px;
-  height: 300px;
-}
-
-.property-actions .btn-liquid-glass-buy:hover::after {
   left: 100%;
 }
 
+.property-actions .btn-liquid-glass-buy:hover::after {
+  opacity: 1;
+}
+
 .property-actions .btn-liquid-glass-buy:hover {
-  background: linear-gradient(135deg, rgba(255, 107, 53, 0.95) 0%, rgba(255, 69, 0, 0.95) 100%);
-  backdrop-filter: blur(25px) saturate(200%);
-  -webkit-backdrop-filter: blur(25px) saturate(200%);
+  background: linear-gradient(135deg, #e0e8f8 0%, #f0f0fa 40%, #f8e8f5 70%, #fef0f8 100%);
+  box-shadow: 0 4px 14px rgba(208, 216, 240, 0.4), 0 2px 6px rgba(0, 0, 0, 0.1);
   transform: translateY(-2px);
-  box-shadow: 
-    0 6px 20px rgba(255, 107, 53, 0.4),
-    inset 0 1px 0 rgba(255, 255, 255, 0.4),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.15);
-  border-color: rgba(255, 255, 255, 0.4);
 }
 
 .property-actions .btn-liquid-glass-buy:active {
   transform: translateY(0);
+  box-shadow: 0 1px 4px rgba(208, 216, 240, 0.3);
+  transition: all 0.1s ease;
 }
 
 .property-actions .btn-secondary {

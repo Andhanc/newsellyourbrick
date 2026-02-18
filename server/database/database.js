@@ -3601,13 +3601,17 @@ export const propertyQueries = {
       // Обновляем в правильной таблице
       let result = null;
       
-      // Если объект в houses (house или villa)
-      if (propertyInHouses && (propertyInHouses.property_type === 'house' || propertyInHouses.property_type === 'villa')) {
+      // Если объект найден в houses, обновляем в houses (независимо от property_type)
+      if (propertyInHouses) {
         try {
           result = houseQueries.updateModerationStatus(id, status, reviewedBy, rejectionReason);
           console.log(`📊 updateModerationStatus houses: changes=${result?.changes || 0}`);
           if (result && result.changes > 0) {
             console.log(`✅ updateModerationStatus: обновлено в houses, ID=${id}, type=${propertyInHouses.property_type}`);
+            return result;
+          } else if (result && result.changes === 0) {
+            console.warn(`⚠️ updateModerationStatus: объект ID=${id} найден в houses, но changes=0. Возможно, статус уже был ${status}`);
+            // Возвращаем результат даже если changes=0, так как статус может быть уже обновлен
             return result;
           }
         } catch (e) {
@@ -3616,13 +3620,17 @@ export const propertyQueries = {
         }
       }
       
-      // Если объект в apartments (apartment или commercial)
-      if (propertyInApartments && (propertyInApartments.property_type === 'apartment' || propertyInApartments.property_type === 'commercial')) {
+      // Если объект найден в apartments, обновляем в apartments (независимо от property_type)
+      if (propertyInApartments) {
         try {
           result = apartmentQueries.updateModerationStatus(id, status, reviewedBy, rejectionReason);
           console.log(`📊 updateModerationStatus apartments: changes=${result?.changes || 0}`);
           if (result && result.changes > 0) {
             console.log(`✅ updateModerationStatus: обновлено в apartments, ID=${id}, type=${propertyInApartments.property_type}`);
+            return result;
+          } else if (result && result.changes === 0) {
+            console.warn(`⚠️ updateModerationStatus: объект ID=${id} найден в apartments, но changes=0. Возможно, статус уже был ${status}`);
+            // Возвращаем результат даже если changes=0, так как статус может быть уже обновлен
             return result;
           }
         } catch (e) {

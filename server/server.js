@@ -3851,7 +3851,9 @@ app.post('/api/properties', upload.fields([
       property_type,
       title,
       description: description || null,
-      price: price ? parseFloat(price) : null,
+      // Для аукционов: price - это опциональная цена "Купить сейчас"
+      // Если не указана или равна 0, устанавливаем null
+      price: (price && price !== '0' && parseFloat(price) > 0) ? parseFloat(price) : null,
       currency: currency || 'USD',
       is_auction: normalizedIsAuction,
       auction_start_date: auction_start_date || null,
@@ -5945,14 +5947,43 @@ app.put('/api/properties/:id/approve', (req, res) => {
       }
       
       // Используем функцию из propertyQueries, которая работает с новыми таблицами
+      console.log(`🔄 Вызов updateModerationStatus для ID=${id}, status=approved`);
       const result = propertyQueries.updateModerationStatus(id, 'approved', reviewed_by, null);
       
-      if (result.changes === 0) {
-        console.error(`❌ Одобрение: объект ID=${id} не был обновлен (changes=0)`);
-        return res.status(404).json({ success: false, error: 'Объявление не найдено или не было изменено' });
+      console.log(`📊 Результат updateModerationStatus:`, {
+        changes: result?.changes || 0,
+        lastInsertRowid: result?.lastInsertRowid,
+        hasResult: !!result
+      });
+      
+      if (!result) {
+        console.error(`❌ Одобрение: updateModerationStatus вернул null/undefined для ID=${id}`);
+        return res.status(500).json({ success: false, error: 'Ошибка при обновлении статуса модерации' });
       }
       
-      console.log(`✅ Одобрение: статус обновлен, changes=${result.changes}`);
+      if (result.changes === 0) {
+        console.warn(`⚠️ Одобрение: объект ID=${id} не был обновлен (changes=0). Проверяем текущий статус...`);
+        // Проверяем текущий статус объекта
+        const currentProperty = propertyQueries.getById(id);
+        if (currentProperty) {
+          console.log(`📊 Текущий статус объекта ID=${id}:`, currentProperty.moderation_status);
+          if (currentProperty.moderation_status === 'approved') {
+            console.log(`✅ Объект ID=${id} уже одобрен, пропускаем обновление`);
+            // Объект уже одобрен, продолжаем как обычно
+          } else {
+            console.error(`❌ Объект ID=${id} не был обновлен, текущий статус: ${currentProperty.moderation_status}`);
+            return res.status(500).json({ 
+              success: false, 
+              error: `Объявление не было обновлено. Текущий статус: ${currentProperty.moderation_status}` 
+            });
+          }
+        } else {
+          console.error(`❌ Объект ID=${id} не найден после попытки обновления`);
+          return res.status(404).json({ success: false, error: 'Объявление не найдено после обновления' });
+        }
+      } else {
+        console.log(`✅ Одобрение: статус обновлен, changes=${result.changes}`);
+      }
       
       // Получаем обновленное объявление для проверки
       const updatedProperty = propertyQueries.getById(id);
@@ -6046,7 +6077,14 @@ app.put('/api/properties/:id/approve', (req, res) => {
 
       res.json({ 
         success: true, 
-        message: 'Объявление одобрено' 
+        message: 'Объявление одобрено',
+        data: {
+          id: updatedProperty.id,
+          title: updatedProperty.title,
+          property_type: updatedProperty.property_type,
+          moderation_status: updatedProperty.moderation_status,
+          is_auction: updatedProperty.is_auction
+        }
       });
     }
   } catch (error) {

@@ -4,7 +4,7 @@ import { properties } from '../data/properties'
 import CountdownTimer from '../components/CountdownTimer'
 import BiddingHistoryModal from '../components/BiddingHistoryModal'
 import DepositButton from '../components/DepositButton'
-import { getUserData } from '../services/authService'
+import { getUserData, isAuthenticated } from '../services/authService'
 import BidOutbidNotification from '../components/BidOutbidNotification'
 import { FiX, FiLayers, FiHome, FiCheck, FiX as FiXIcon } from 'react-icons/fi'
 import { IoLocationOutline } from 'react-icons/io5'
@@ -452,7 +452,7 @@ const PropertyDetail = () => {
   if (isLoading) {
     return (
       <div className="property-detail-page">
-        <DepositButton amount={userDeposit} />
+        {canShowDeposit() && <DepositButton amount={userDeposit} />}
         <div className="property-detail">
           <div className="loading" style={{ 
             display: 'flex', 
@@ -493,7 +493,7 @@ const PropertyDetail = () => {
             onGoToProperty={handleGoToPropertyFromNotification}
           />
         )}
-        <DepositButton amount={userDeposit} />
+        {canShowDeposit() && <DepositButton amount={userDeposit} />}
         <div className="property-detail">
           <div className="not-found">
             <h2>Объект не найден</h2>

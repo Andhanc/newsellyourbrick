@@ -24,6 +24,9 @@ const VerificationModal = ({ isOpen, onClose, userId, onComplete }) => {
   const [hintStep, setHintStep] = useState(1)
 
   const cameraRef = useRef(null)
+  const passportFileInputRef = useRef(null)
+  const selfieFileInputRef = useRef(null)
+  const selfieWithPassportFileInputRef = useRef(null)
 
   useEffect(() => {
     if (isOpen) {
@@ -338,6 +341,20 @@ const VerificationModal = ({ isOpen, onClose, userId, onComplete }) => {
                         </svg>
                         Сфотографировать
                       </button>
+                      <button 
+                        className="verification-step__btn verification-step__btn--secondary"
+                        onClick={() => passportFileInputRef.current?.click()}
+                        type="button"
+                      >
+                        Загрузить файл
+                      </button>
+                      <input
+                        ref={passportFileInputRef}
+                        type="file"
+                        accept="image/*"
+                        style={{ display: 'none' }}
+                        onChange={(e) => handleFileUpload('passport', e)}
+                      />
                     </div>
                   </>
                 )}
@@ -390,6 +407,20 @@ const VerificationModal = ({ isOpen, onClose, userId, onComplete }) => {
                         </svg>
                         Сделать селфи
                       </button>
+                      <button 
+                        className="verification-step__btn verification-step__btn--secondary"
+                        onClick={() => selfieFileInputRef.current?.click()}
+                        type="button"
+                      >
+                        Загрузить файл
+                      </button>
+                      <input
+                        ref={selfieFileInputRef}
+                        type="file"
+                        accept="image/*"
+                        style={{ display: 'none' }}
+                        onChange={(e) => handleFileUpload('selfie', e)}
+                      />
                     </div>
                   </>
                 )}
@@ -442,6 +473,20 @@ const VerificationModal = ({ isOpen, onClose, userId, onComplete }) => {
                         </svg>
                         Сделать селфи с паспортом
                       </button>
+                      <button 
+                        className="verification-step__btn verification-step__btn--secondary"
+                        onClick={() => selfieWithPassportFileInputRef.current?.click()}
+                        type="button"
+                      >
+                        Загрузить файл
+                      </button>
+                      <input
+                        ref={selfieWithPassportFileInputRef}
+                        type="file"
+                        accept="image/*"
+                        style={{ display: 'none' }}
+                        onChange={(e) => handleFileUpload('selfieWithPassport', e)}
+                      />
                     </div>
                   </>
                 )}

@@ -1387,21 +1387,27 @@
 }
 
 .property-detail-sidebar__history-btn {
-  padding: 12px 20px;
-  border-radius: 8px;
+  padding: 10px 20px;
+  border-radius: 10px;
   border: none;
-  background: #2563eb;
+  background: #000000;
   color: #ffffff;
   font-weight: 600;
   font-family: 'Montserrat', sans-serif;
   font-size: 14px;
   cursor: pointer;
-  transition: background 0.2s ease;
+  transition: all 0.3s ease;
   width: 100%;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  display: block;
+  margin: 0 auto 20px;
+  letter-spacing: 0.3px;
 }
 
 .property-detail-sidebar__history-btn:hover {
-  background: #1d4ed8;
+  background: #1a1a1a;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+  transform: translateY(-1px);
 }
 
 /* Функционал ставки */
@@ -1426,41 +1432,24 @@
   flex: 1;
   padding: 10px 16px;
   border-radius: 8px;
-  border: 2px solid #e5e7eb;
-  background: #ffffff;
-  color: #2563eb;
+  border: none;
+  background: #000000;
+  color: #ffffff;
   font-weight: 600;
   font-family: 'Montserrat', sans-serif;
   font-size: 14px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
   position: relative;
   overflow: hidden;
-}
-
-.bidding-section__quick-btn::before {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 0;
-  height: 0;
-  border-radius: 50%;
-  background: rgba(37, 99, 235, 0.1);
-  transform: translate(-50%, -50%);
-  transition: width 0.3s ease, height 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
 }
 
 .bidding-section__quick-btn:hover {
-  border-color: #2563eb;
-  background: #eff6ff;
+  background: #000000;
   transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.15);
-}
-
-.bidding-section__quick-btn:hover::before {
-  width: 200px;
-  height: 200px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+  color: #0ABAB5;
 }
 
 .bidding-section__quick-btn:active {
@@ -1525,14 +1514,14 @@
   padding: 12px 20px;
   border-radius: 8px;
   border: none;
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  background: #000000;
   color: #ffffff;
   font-weight: 600;
   font-family: 'Montserrat', sans-serif;
   font-size: 15px;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.25);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
   position: relative;
   overflow: hidden;
 }
@@ -1549,8 +1538,8 @@
 }
 
 .bidding-section__submit-btn:hover:not(:disabled) {
-  background: linear-gradient(135deg, #059669 0%, #047857 100%);
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35);
+  background: #1a1a1a;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
   transform: translateY(-1px);
 }
 
@@ -1560,7 +1549,7 @@
 
 .bidding-section__submit-btn:active:not(:disabled) {
   transform: translateY(0);
-  box-shadow: 0 2px 6px rgba(16, 185, 129, 0.25);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
 }
 
 .bidding-section__submit-btn:disabled {
@@ -1590,18 +1579,18 @@
   padding: 10px 20px;
   border-radius: 10px;
   border: none;
-  background: linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%);
-  color: #ffffff;
+  background: linear-gradient(135deg, #d0d8f0 0%, #e8e8f5 40%, #f0e0eb 70%, #f8e8f0 100%);
+  color: #111827;
   font-weight: 600;
   font-family: 'Montserrat', sans-serif;
   font-size: 14px;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   width: 100%;
-  max-width: 70%;
-  margin: 12px auto 20px;
+  max-width: 100%;
+  margin: 0 auto 20px;
   display: block;
-  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.25), 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   position: relative;
   overflow: hidden;
   letter-spacing: 0.3px;
@@ -1634,8 +1623,8 @@
 }
 
 .property-detail-sidebar__buy-now-btn:hover {
-  background: linear-gradient(135deg, #059669 0%, #047857 50%, #065f46 100%);
-  box-shadow: 0 4px 14px rgba(16, 185, 129, 0.35), 0 2px 6px rgba(0, 0, 0, 0.15);
+  background: linear-gradient(135deg, #e0e8f8 0%, #f0f0fa 40%, #f8e8f5 70%, #fef0f8 100%);
+  box-shadow: 0 4px 14px rgba(208, 216, 240, 0.4), 0 2px 6px rgba(0, 0, 0, 0.1);
   transform: translateY(-2px);
 }
 
@@ -1649,7 +1638,7 @@
 
 .property-detail-sidebar__buy-now-btn:active {
   transform: translateY(0);
-  box-shadow: 0 1px 4px rgba(16, 185, 129, 0.25);
+  box-shadow: 0 1px 4px rgba(208, 216, 240, 0.3);
   transition: all 0.1s ease;
 }
 
@@ -2055,6 +2044,70 @@
   .footer__container {
     padding: 0 16px;
   }
+}
+
+/* Модальное окно для просмотра документа */
+.property-detail-document-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10002;
+  padding: 2rem;
+  cursor: pointer;
+}
+
+.property-detail-document-modal-content {
+  position: relative;
+  max-width: 90vw;
+  max-height: 90vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+}
+
+.property-detail-document-modal-content img {
+  max-width: 100%;
+  max-height: 90vh;
+  object-fit: contain;
+  border-radius: 8px;
+}
+
+.property-detail-document-pdf {
+  width: 90vw;
+  max-width: 1200px;
+  height: 90vh;
+  border: none;
+  border-radius: 8px;
+  background: white;
+}
+
+.property-detail-document-modal-close {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  border-radius: 50%;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #fff;
+  z-index: 1;
+  transition: background 0.2s;
+}
+
+.property-detail-document-modal-close:hover {
+  background: rgba(255, 255, 255, 0.2);
 }
 
 

@@ -11,6 +11,7 @@ import {
   FiUser,
   FiClock,
   FiArrowUp,
+  FiXCircle,
 } from 'react-icons/fi'
 import { FaHeart as FaHeartSolid } from 'react-icons/fa'
 import { IoLocationOutline } from 'react-icons/io5'
@@ -69,6 +70,8 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
     width: window.innerWidth,
     height: window.innerHeight
   })
+  const [selectedDocument, setSelectedDocument] = useState(null) // Выбранный документ для просмотра
+  const [processedDocuments, setProcessedDocuments] = useState([]) // Обработанные документы
   
   // Отслеживаем изменения currentBid и запускаем анимацию при росте
   useEffect(() => {
@@ -109,7 +112,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
 
 
   // Функция для обработки URL документа
-  const processDocumentUrl = (docUrl) => {
+  const processDocumentUrl = async (docUrl) => {
     if (!docUrl) return null
     
     // Data URL (base64) - используем как есть
@@ -122,21 +125,31 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
       return docUrl
     }
     
-    // Получаем базовый URL без /api
-    const baseUrl = API_BASE_URL.replace('/api', '').replace(/\/$/, '')
+    // Получаем актуальный базовый URL
+    const currentApiUrl = await getApiBaseUrl()
+    const baseUrl = currentApiUrl.replace('/api', '').replace(/\/$/, '')
+    
+    // Убираем возможные пробелы и лишние символы
+    const cleanUrl = docUrl.trim()
     
     // Путь начинается с /uploads/ - добавляем базовый URL
-    if (docUrl.startsWith('/uploads/')) {
-      return `${baseUrl}${docUrl}`
+    if (cleanUrl.startsWith('/uploads/')) {
+      return `${baseUrl}${cleanUrl}`
     }
     
     // Путь начинается с uploads/ без слеша - добавляем / и базовый URL
-    if (docUrl.startsWith('uploads/')) {
-      return `${baseUrl}/${docUrl}`
+    if (cleanUrl.startsWith('uploads/')) {
+      return `${baseUrl}/${cleanUrl}`
+    }
+    
+    // Если путь уже содержит полный путь к файлу, используем его
+    if (cleanUrl.includes('/') && !cleanUrl.startsWith('/')) {
+      // Это может быть путь вида "folder/file.pdf" - добавляем базовый URL и /uploads/
+      return `${baseUrl}/uploads/${cleanUrl}`
     }
     
     // Относительный путь - добавляем /uploads/
-    return `${baseUrl}/uploads/${docUrl}`
+    return `${baseUrl}/uploads/${cleanUrl}`
   }
 
   // Функция для определения типа документа
@@ -257,6 +270,79 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
     }
     initApiUrl()
   }, [])
+
+  // Загружаем и обрабатываем документы
+  useEffect(() => {
+    const loadDocuments = async () => {
+      if (!onBack && !showDocuments) {
+        setProcessedDocuments([])
+        return
+      }
+
+      const docs = []
+      
+      // Документ о праве собственности
+      if (displayProperty.ownership_document || property.ownership_document || property.ownershipDocument) {
+        const docUrl = displayProperty.ownership_document || property.ownership_document || property.ownershipDocument
+        if (docUrl) {
+          const processedUrl = await processDocumentUrl(docUrl)
+          console.log('📄 Документ о праве собственности:', { original: docUrl, processed: processedUrl })
+          docs.push({
+            name: 'Документ о праве собственности',
+            url: processedUrl,
+            type: getDocumentType(docUrl, 'Документ о праве собственности')
+          })
+        }
+      }
+      
+      // Справка об отсутствии долгов
+      if (displayProperty.no_debts_document || property.no_debts_document || property.noDebtsDocument) {
+        const docUrl = displayProperty.no_debts_document || property.no_debts_document || property.noDebtsDocument
+        if (docUrl) {
+          const processedUrl = await processDocumentUrl(docUrl)
+          console.log('📄 Справка об отсутствии долгов:', { original: docUrl, processed: processedUrl })
+          docs.push({
+            name: 'Справка об отсутствии долгов',
+            url: processedUrl,
+            type: getDocumentType(docUrl, 'Справка об отсутствии долгов')
+          })
+        }
+      }
+      
+      // Дополнительные документы
+      let additionalDocs = []
+      const rawAdditionalDocs = displayProperty.additional_documents || property.additional_documents || property.additionalDocuments
+      if (rawAdditionalDocs) {
+        if (typeof rawAdditionalDocs === 'string') {
+          try {
+            additionalDocs = JSON.parse(rawAdditionalDocs)
+          } catch (e) {
+            console.warn('Ошибка парсинга additional_documents:', e)
+          }
+        } else if (Array.isArray(rawAdditionalDocs)) {
+          additionalDocs = rawAdditionalDocs
+        }
+        
+        for (const doc of additionalDocs) {
+          const docName = typeof doc === 'string' ? doc : (doc.name || `Документ ${additionalDocs.indexOf(doc) + 1}`)
+          const docUrl = typeof doc === 'object' && doc.url ? doc.url : (typeof doc === 'string' ? doc : null)
+          if (docUrl) {
+            const processedUrl = await processDocumentUrl(docUrl)
+            docs.push({
+              name: docName,
+              url: processedUrl,
+              type: typeof doc === 'object' && doc.type ? doc.type : getDocumentType(docUrl, docName)
+            })
+          }
+        }
+      }
+      
+      setProcessedDocuments(docs)
+    }
+    
+    loadDocuments()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [onBack, showDocuments, property.ownership_document, property.no_debts_document, property.additional_documents])
 
   // Используем геокодированные координаты или исходные
   const finalCoordinates = mapCoordinates || coordinates
@@ -1488,7 +1574,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                         </div>
                       )}
                       <div className="property-detail-info-item property-detail-info-item--horizontal">
-                        <span className="property-detail-info-label">Площадь общая:</span>
+                        <span className="property-detail-info-label">Общая площадь объекта:</span>
                         <span className="property-detail-info-value">
                           {(displayProperty.area || displayProperty.sqft) ? `${displayProperty.area || displayProperty.sqft} м²` : '—'}
                         </span>
@@ -1561,7 +1647,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                         </span>
                       </div>
                       <div className="property-detail-info-item property-detail-info-item--horizontal">
-                        <span className="property-detail-info-label">Площадь общая:</span>
+                        <span className="property-detail-info-label">Общая площадь объекта:</span>
                         <span className="property-detail-info-value">
                           {(displayProperty.area || displayProperty.sqft) ? `${displayProperty.area || displayProperty.sqft} м²` : '—'}
                         </span>
@@ -1746,10 +1832,9 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                       furniture: 'Мебель'
                     }
                     
-                    // Проверяем ТОЛЬКО массив amenities (единственный источник правды)
-                    // Если массив существует (даже если пустой), используем только его
-                    // Fallback используем только если массива вообще нет (null/undefined)
-                    if (isAmenitiesArray) {
+                    // Используем ТОЛЬКО массив amenities (единственный источник правды)
+                    // Показываем удобства только если они есть в массиве amenities
+                    if (isAmenitiesArray && amenitiesArray.length > 0) {
                       // Основные удобства
                       Object.entries(mainAmenitiesLabels).forEach(([key, label]) => {
                         if (amenitiesArray.includes(key)) {
@@ -1764,23 +1849,8 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                           amenities.push(featureLabels[featureKey])
                         }
                       }
-                    } else {
-                      // Fallback: если массива нет вообще (null/undefined), проверяем отдельные поля (для старых записей)
-                      // Но это должно быть редко, так как новые записи всегда имеют массив
-                      Object.entries(mainAmenitiesLabels).forEach(([key, label]) => {
-                        if (hasAmenity(property[key]) || hasAmenity(displayProperty[key])) {
-                          amenities.push(label)
-                        }
-                      })
-                      
-                      for (let i = 1; i <= 26; i++) {
-                        const featureKey = `feature${i}`
-                        const featureValue = displayProperty[featureKey] || property[featureKey]
-                        if (hasAmenity(featureValue) && featureLabels[featureKey]) {
-                          amenities.push(featureLabels[featureKey])
-                        }
-                      }
                     }
+                    // Убрали fallback логику - используем только массив amenities
                     
                     // Логируем только один раз при монтировании (для отладки)
                     // Убрали логирование, чтобы избежать бесконечного цикла
@@ -1830,24 +1900,39 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
               <h1 className="property-detail-sidebar__title">{propertyInfo}</h1>
 
               {/* Минимальная цена продажи для аукционных объектов */}
-              {isAuctionProperty && displayProperty.price && !timerExpired && (
-                <>
-                  <div className="property-detail-sidebar__current-bid">
-                    <span className="current-bid-label">Минимальная цена продажи:</span>
-                    <span className="current-bid-value">
-                      {displayProperty.currency === 'USD' ? '$' : displayProperty.currency === 'EUR' ? '€' : displayProperty.currency === 'BYN' ? 'Br' : ''}
-                      {displayProperty.price.toLocaleString('ru-RU')}
-                    </span>
-                  </div>
-                  <button
-                    type="button"
-                    className="property-detail-sidebar__buy-now-btn"
-                    onClick={handleBookNow}
-                  >
-                    Купить сейчас
-                  </button>
-                </>
-              )}
+              {/* Показываем только если указана цена "Купить сейчас" (price должна быть больше стартовой цены аукциона) */}
+              {(() => {
+                const buyNowPrice = displayProperty.price ? Number(displayProperty.price) : 0;
+                const startingPrice = displayProperty.auction_starting_price ? Number(displayProperty.auction_starting_price) : 0;
+                // Показываем блок только если:
+                // 1. Это аукцион
+                // 2. Указана цена "Купить сейчас" (price > 0)
+                // 3. Цена "Купить сейчас" больше стартовой цены аукциона (логическая проверка)
+                // 4. Таймер не истек
+                const shouldShowBuyNow = isAuctionProperty && 
+                                         buyNowPrice > 0 && 
+                                         buyNowPrice > startingPrice && 
+                                         !timerExpired;
+                
+                return shouldShowBuyNow ? (
+                  <>
+                    <div className="property-detail-sidebar__current-bid">
+                      <span className="current-bid-label">Минимальная цена продажи:</span>
+                      <span className="current-bid-value">
+                        {displayProperty.currency === 'USD' ? '$' : displayProperty.currency === 'EUR' ? '€' : displayProperty.currency === 'BYN' ? 'Br' : ''}
+                        {displayProperty.price.toLocaleString('ru-RU')}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      className="property-detail-sidebar__buy-now-btn"
+                      onClick={handleBookNow}
+                    >
+                      Купить сейчас
+                    </button>
+                  </>
+                ) : null;
+              })()}
               {/* Кнопка для победителя аукциона */}
               {isAuctionProperty && timerExpired && isUserLeader && (
                 <button
@@ -1859,7 +1944,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
               )}
 
               {/* Цена для неаукционных объектов */}
-              {!isAuctionProperty && displayProperty.price && (
+              {!isAuctionProperty && displayProperty.price && Number(displayProperty.price) > 0 && (
                 <>
                   <div className="property-detail-sidebar__price-block">
                     <span className="price-label">Стоимость:</span>
@@ -1889,7 +1974,6 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
 
               {/* Местоположение */}
               <div className="property-detail-sidebar__location">
-                <IoLocationOutline size={18} />
                 <span>{displayProperty.location}</span>
               </div>
 
@@ -2174,84 +2258,35 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
             </div>
 
             {/* Документы - отдельный блок под property-detail-sidebar__content (только в кабинете продавца) */}
-            {(onBack || showDocuments) ? (() => {
-              const documents = []
-              
-              // Документ о праве собственности
-              if (displayProperty.ownership_document || property.ownership_document || property.ownershipDocument) {
-                const docUrl = displayProperty.ownership_document || property.ownership_document || property.ownershipDocument
-                const processedUrl = processDocumentUrl(docUrl)
-                documents.push({
-                  name: 'Документ о праве собственности',
-                  url: processedUrl,
-                  type: getDocumentType(docUrl, 'Документ о праве собственности')
-                })
-              }
-              
-              // Справка об отсутствии долгов
-              if (displayProperty.no_debts_document || property.no_debts_document || property.noDebtsDocument) {
-                const docUrl = displayProperty.no_debts_document || property.no_debts_document || property.noDebtsDocument
-                const processedUrl = processDocumentUrl(docUrl)
-                documents.push({
-                  name: 'Справка об отсутствии долгов',
-                  url: processedUrl,
-                  type: getDocumentType(docUrl, 'Справка об отсутствии долгов')
-                })
-              }
-              
-              // Дополнительные документы
-              let additionalDocs = []
-              const rawAdditionalDocs = displayProperty.additional_documents || property.additional_documents || property.additionalDocuments
-              if (rawAdditionalDocs) {
-                if (typeof rawAdditionalDocs === 'string') {
-                  try {
-                    additionalDocs = JSON.parse(rawAdditionalDocs)
-                  } catch (e) {
-                    console.warn('Ошибка парсинга additional_documents:', e)
-                  }
-                } else if (Array.isArray(rawAdditionalDocs)) {
-                  additionalDocs = rawAdditionalDocs
-                }
-                
-                additionalDocs.forEach((doc, index) => {
-                  const docName = typeof doc === 'string' ? doc : (doc.name || `Документ ${index + 1}`)
-                  const docUrl = typeof doc === 'object' && doc.url ? doc.url : (typeof doc === 'string' ? doc : null)
-                  const processedUrl = processDocumentUrl(docUrl)
-                  documents.push({
-                    name: docName,
-                    url: processedUrl,
-                    type: typeof doc === 'object' && doc.type ? doc.type : getDocumentType(docUrl, docName)
-                  })
-                })
-              }
-              
-              if (documents.length === 0) {
-                return null
-              }
-              
-              return (
-                <div className="property-detail-sidebar__documents">
-                  <h3 className="property-detail-sidebar__documents-title">Документы</h3>
-                  <div className="property-detail-sidebar__documents-content">
-                    {documents.map((doc, index) => (
-                      <a
-                        key={index}
-                        href={doc.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="property-detail-sidebar__document-item"
-                      >
-                        <FiFileText size={20} className="property-detail-sidebar__document-icon" />
-                        <span className="property-detail-sidebar__document-name">{doc.name}</span>
-                        <span className="property-detail-sidebar__document-type">
-                          {doc.type === 'pdf' ? 'PDF' : 'Изображение'}
-                        </span>
-                      </a>
-                    ))}
-                  </div>
+            {(onBack || showDocuments) && processedDocuments.length > 0 && (
+              <div className="property-detail-sidebar__documents">
+                <h3 className="property-detail-sidebar__documents-title">Документы</h3>
+                <div className="property-detail-sidebar__documents-content">
+                  {processedDocuments.map((doc, index) => (
+                    <button
+                      key={index}
+                      type="button"
+                      onClick={() => setSelectedDocument(doc)}
+                      className="property-detail-sidebar__document-item"
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        width: '100%',
+                        textAlign: 'left',
+                        padding: 0
+                      }}
+                    >
+                      <FiFileText size={20} className="property-detail-sidebar__document-icon" />
+                      <span className="property-detail-sidebar__document-name">{doc.name}</span>
+                      <span className="property-detail-sidebar__document-type">
+                        {doc.type === 'pdf' ? 'PDF' : 'Изображение'}
+                      </span>
+                    </button>
+                  ))}
                 </div>
-              )
-            })() : null}
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -2287,6 +2322,35 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
           currentBid: currentBid || displayProperty.currentBid || displayProperty.auction_starting_price || displayProperty.price
         }}
       />
+
+      {/* Модальное окно для просмотра документа */}
+      {selectedDocument && (
+        <div
+          className="property-detail-document-modal"
+          onClick={() => setSelectedDocument(null)}
+        >
+          <div className="property-detail-document-modal-content" onClick={(e) => e.stopPropagation()}>
+            <button
+              className="property-detail-document-modal-close"
+              onClick={(e) => {
+                e.stopPropagation()
+                setSelectedDocument(null)
+              }}
+            >
+              <FiXCircle size={32} strokeWidth={2} />
+            </button>
+            {selectedDocument.type === 'pdf' ? (
+              <iframe
+                src={`${selectedDocument.url}#toolbar=0`}
+                className="property-detail-document-pdf"
+                title={selectedDocument.name}
+              />
+            ) : (
+              <img src={selectedDocument.url} alt={selectedDocument.name} />
+            )}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

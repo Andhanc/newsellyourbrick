@@ -133,7 +133,7 @@ const AddProperty = () => {
     title: '',
     description: '',
     price: '',
-    isAuction: false,
+    isAuction: true, // Все объекты всегда аукционные
     auctionStartDate: '',
     auctionEndDate: '',
     auctionStartingPrice: '',
@@ -377,8 +377,23 @@ const AddProperty = () => {
   // Обработчик загрузки дополнительных документов
   const handleDocumentUpload = (e) => {
     const files = Array.from(e.target.files)
+    const MAX_DOCUMENTS = 5
     
-    files.forEach((file) => {
+    // Проверяем лимит документов
+    if (additionalDocuments.length >= MAX_DOCUMENTS) {
+      alert(`Максимальное количество дополнительных документов: ${MAX_DOCUMENTS}`)
+      e.target.value = ''
+      return
+    }
+    
+    const remainingSlots = MAX_DOCUMENTS - additionalDocuments.length
+    const filesToAdd = files.slice(0, remainingSlots)
+    
+    if (files.length > remainingSlots) {
+      alert(`Можно загрузить еще ${remainingSlots} документ(ов). Остальные файлы не будут добавлены.`)
+    }
+    
+    filesToAdd.forEach((file) => {
       // Проверяем, что файл - это PDF или изображение
       const isPDF = file.type === 'application/pdf'
       const isImage = file.type.startsWith('image/')
@@ -390,13 +405,18 @@ const AddProperty = () => {
 
       const reader = new FileReader()
       reader.onloadend = () => {
-        setAdditionalDocuments(prev => [...prev, {
-          id: Date.now() + Math.random(),
-          name: file.name,
-          url: reader.result,
-          file: file,
-          type: isPDF ? 'pdf' : 'image'
-        }])
+        setAdditionalDocuments(prev => {
+          if (prev.length >= MAX_DOCUMENTS) {
+            return prev
+          }
+          return [...prev, {
+            id: Date.now() + Math.random(),
+            name: file.name,
+            url: reader.result,
+            file: file,
+            type: isPDF ? 'pdf' : 'image'
+          }]
+        })
       }
       reader.onerror = () => {
         alert(`Ошибка при чтении файла "${file.name}"`)
@@ -687,7 +707,7 @@ const AddProperty = () => {
       formDataToSend.append('description', formData.description || '')
       if (formData.price) formDataToSend.append('price', String(formData.price))
       formDataToSend.append('currency', currency)
-      formDataToSend.append('is_auction', formData.isAuction ? '1' : '0')
+      formDataToSend.append('is_auction', '1') // Все объекты всегда аукционные
       // Всегда отправляем test_drive: если null или undefined, то '0', иначе в зависимости от значения
       const testDriveValue = (formData.testDrive === true || formData.testDrive === 1) ? '1' : '0'
       console.log('🔍 Отправка test_drive на сервер:', {
@@ -1177,7 +1197,7 @@ const AddProperty = () => {
           title: property.title || '',
           description: property.description || '',
           price: property.price ? String(property.price) : '',
-          isAuction: property.is_auction === 1 || property.is_auction === true,
+          isAuction: true, // Все объекты всегда аукционные
           auctionStartDate: property.auction_start_date || '',
           auctionEndDate: property.auction_end_date || '',
           auctionStartingPrice: property.auction_starting_price ? String(property.auction_starting_price) : '',
@@ -2716,25 +2736,25 @@ const AddProperty = () => {
 
   // Обработчик перехода к форме после указания цены
   const handlePriceContinue = async () => {
-    if (!formData.price || formData.price <= 0) {
-      alert('Пожалуйста, укажите минимальную цену продажи')
+    // Цена "Купить сейчас" опциональна - не проверяем её
+    // Все объекты всегда аукционные, поэтому проверяем только аукционные поля
+    if (!formData.auctionStartDate || !formData.auctionEndDate) {
+      alert('Пожалуйста, укажите период проведения аукциона')
       return
     }
-    if (formData.isAuction) {
-      if (!formData.auctionStartDate || !formData.auctionEndDate) {
-        alert('Пожалуйста, укажите период проведения аукциона')
-        return
-      }
-      if (!formData.auctionStartingPrice || formData.auctionStartingPrice <= 0) {
-        alert('Пожалуйста, укажите стартовую цену аукциона')
-        return
-      }
-      // Проверка: Стартовая сумма ставки должна быть меньше Минимальной цены продажи
+    if (!formData.auctionStartingPrice || formData.auctionStartingPrice <= 0) {
+      alert('Пожалуйста, укажите стартовую цену аукциона')
+      return
+    }
+    
+    // Если указана цена "Купить сейчас", проверяем, что стартовая цена меньше
+    if (formData.price && formData.price > 0) {
+      // Проверка: Стартовая сумма ставки должна быть меньше цены "Купить сейчас"
       // Преобразуем строки в числа, убирая запятые если они есть
       const startingPriceNum = Number(removeCommas(String(formData.auctionStartingPrice)))
       const priceNum = Number(removeCommas(String(formData.price)))
       if (startingPriceNum >= priceNum) {
-        alert('Стартовая сумма ставки должна быть меньше минимальной цены продажи')
+        alert('Стартовая сумма ставки должна быть меньше цены "Купить сейчас"')
         return
       }
     }
@@ -3805,7 +3825,7 @@ const AddProperty = () => {
                     <div className="detail-form-field detail-form-field--split">
                       <div className="detail-form-field-half">
                         <label className="detail-form-label">
-                          <span className="detail-form-label-text">Площадь общая</span>
+                          <span className="detail-form-label-text">Общая площадь объекта</span>
                         </label>
                         <input
                           type="number"
@@ -3995,7 +4015,7 @@ const AddProperty = () => {
                       </div>
                       <div className="detail-form-field-half">
                         <label className="detail-form-label">
-                          <span className="detail-form-label-text">Площадь общая</span>
+                          <span className="detail-form-label-text">Общая площадь объекта</span>
                         </label>
                         <input
                           type="number"
@@ -5029,7 +5049,7 @@ const AddProperty = () => {
               {/* Блок для дополнительных документов */}
               <div className="documents-additional-section">
                 <h3 className="documents-section-title">Дополнительные документы</h3>
-                <p className="documents-section-hint">Вы можете загрузить дополнительные документы, которые помогут покупателю принять решение</p>
+                <p className="documents-section-hint">Вы можете загрузить до 5 дополнительных документов, которые помогут покупателю принять решение</p>
                 
                 {/* Drag and drop область для дополнительных документов */}
                 <div 
@@ -5088,7 +5108,7 @@ const AddProperty = () => {
                           </div>
                         </div>
                       ))}
-                      {additionalDocuments.length < 10 && (
+                      {additionalDocuments.length < 5 && (
                         <div
                           className="document-preview-add"
                           onClick={() => documentInputRef.current?.click()}
@@ -5191,14 +5211,17 @@ const AddProperty = () => {
               </h2>
               
               <p className="property-price-description">
-                Укажите минимальную цену продажи вашей недвижимости. Вы также можете выставить объект на аукцион.
+                Все объекты размещаются на аукционе. Вы можете указать опциональную цену "Купить сейчас" - это цена, за которую вы готовы мгновенно продать объект. Если не укажете, объект будет только на аукционе.
               </p>
 
-              {/* Блок цены */}
+              {/* Блок цены "Купить сейчас" */}
               <div className="price-input-section">
                 <label className="price-input-label">
-                  Минимальная цена продажи
+                  Купить сейчас (опционально)
                 </label>
+                <p style={{ fontSize: '14px', color: '#666', marginTop: '4px', marginBottom: '12px' }}>
+                  Укажите цену, за которую вы готовы мгновенно продать объект. Если не укажете, объект будет только на аукционе.
+                </p>
                 <div className="price-input-wrapper-large">
                   <div className="currency-selector">
                     <button
@@ -5239,100 +5262,85 @@ const AddProperty = () => {
                     className="price-input-large"
                     placeholder="0"
                     inputMode="numeric"
-                    required
                   />
                 </div>
               </div>
 
-              {/* Блок аукциона */}
-              <div className="auction-toggle-section">
-                <div className="auction-toggle-wrapper">
-                  <input
-                    type="checkbox"
-                    id="isAuction"
-                    name="isAuction"
-                    checked={formData.isAuction}
-                    onChange={handleInputChange}
-                    className="auction-toggle-checkbox"
+              {/* Информация об аукционе */}
+              <div className="auction-info-section" style={{ marginTop: '24px', padding: '16px', background: '#f0f9ff', borderRadius: '12px', border: '1px solid #bae6fd' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <FiDollarSign size={20} color="#0ea5e9" />
+                  <div>
+                    <div style={{ fontWeight: '600', color: '#0c4a6e', marginBottom: '4px' }}>Аукционный объект</div>
+                    <div style={{ fontSize: '14px', color: '#075985' }}>Все объекты размещаются на аукционе. Покупатели смогут делать ставки.</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Поля аукциона (всегда видны, так как все объекты аукционные) */}
+              <div className="auction-fields-section">
+                <div className="auction-date-range">
+                  <AuctionPeriodPicker
+                    label="Период проведения аукциона"
+                    startDate={formData.auctionStartDate}
+                    endDate={formData.auctionEndDate}
+                    onStartDateChange={(date) => setFormData(prev => ({ ...prev, auctionStartDate: date }))}
+                    onEndDateChange={(date) => setFormData(prev => ({ ...prev, auctionEndDate: date }))}
                   />
-                  <label htmlFor="isAuction" className="auction-toggle-label">
-                    <div className="auction-toggle-icon">
-                      <FiDollarSign size={20} />
-                    </div>
-                    <div className="auction-toggle-text">
-                      <span className="auction-toggle-title">Выставить объект на аукцион</span>
-                      <span className="auction-toggle-hint">Позволяет покупателям делать ставки</span>
-                    </div>
+                </div>
+                
+                <div className="auction-starting-price">
+                  <label className="auction-starting-price-label">
+                    Стартовая сумма ставки
                   </label>
-                </div>
-              </div>
-
-              {/* Поля аукциона (показываются при включении) */}
-              {formData.isAuction && (
-                <div className="auction-fields-section">
-                  <div className="auction-date-range">
-                    <AuctionPeriodPicker
-                      label="Период проведения аукциона"
-                      startDate={formData.auctionStartDate}
-                      endDate={formData.auctionEndDate}
-                      onStartDateChange={(date) => setFormData(prev => ({ ...prev, auctionStartDate: date }))}
-                      onEndDateChange={(date) => setFormData(prev => ({ ...prev, auctionEndDate: date }))}
+                  <div className="bid-step-input-wrapper-large">
+                    <div className="currency-selector">
+                      <button
+                        type="button"
+                        className="currency-button"
+                        onClick={() => setShowCurrencyDropdown(showCurrencyDropdown === 'auction' ? null : 'auction')}
+                      >
+                        <span className="currency-symbol">{currencies.find(c => c.code === currency)?.symbol || '$'}</span>
+                        <FiChevronDown className="currency-chevron" size={14} />
+                      </button>
+                      {showCurrencyDropdown === 'auction' && (
+                        <div className="currency-dropdown">
+                          {currencies.map((curr) => (
+                            <button
+                              key={curr.code}
+                              type="button"
+                              className={`currency-option ${currency === curr.code ? 'active' : ''}`}
+                              onClick={() => {
+                                setCurrency(curr.code)
+                                setShowCurrencyDropdown(null)
+                              }}
+                            >
+                              <span className="currency-option-symbol">{curr.symbol}</span>
+                              <span className="currency-option-name">{curr.name}</span>
+                              <span className="currency-option-code">({curr.code})</span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    <input
+                      type="text"
+                      name="auctionStartingPrice"
+                      value={formData.auctionStartingPrice ? formatNumberWithCommas(formData.auctionStartingPrice) : ''}
+                      onChange={handleAuctionPriceChange}
+                      className={`price-input-large ${validationErrors.auctionStartingPrice ? 'error' : ''}`}
+                      placeholder="0"
+                      inputMode="numeric"
+                      required
                     />
                   </div>
-                  
-                  <div className="auction-starting-price">
-                    <label className="auction-starting-price-label">
-                      Стартовая сумма ставки
-                    </label>
-                    <div className="bid-step-input-wrapper-large">
-                      <div className="currency-selector">
-                        <button
-                          type="button"
-                          className="currency-button"
-                          onClick={() => setShowCurrencyDropdown(showCurrencyDropdown === 'auction' ? null : 'auction')}
-                        >
-                          <span className="currency-symbol">{currencies.find(c => c.code === currency)?.symbol || '$'}</span>
-                          <FiChevronDown className="currency-chevron" size={14} />
-                        </button>
-                        {showCurrencyDropdown === 'auction' && (
-                          <div className="currency-dropdown">
-                            {currencies.map((curr) => (
-                              <button
-                                key={curr.code}
-                                type="button"
-                                className={`currency-option ${currency === curr.code ? 'active' : ''}`}
-                                onClick={() => {
-                                  setCurrency(curr.code)
-                                  setShowCurrencyDropdown(null)
-                                }}
-                              >
-                                <span className="currency-option-symbol">{curr.symbol}</span>
-                                <span className="currency-option-name">{curr.name}</span>
-                                <span className="currency-option-code">({curr.code})</span>
-                              </button>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                      <input
-                        type="text"
-                        name="auctionStartingPrice"
-                        value={formData.auctionStartingPrice ? formatNumberWithCommas(formData.auctionStartingPrice) : ''}
-                        onChange={handleAuctionPriceChange}
-                        className={`price-input-large ${validationErrors.auctionStartingPrice ? 'error' : ''}`}
-                        placeholder="0"
-                        inputMode="numeric"
-                        required={formData.isAuction}
-                      />
+                  {validationErrors.auctionStartingPrice && (
+                    <div className="validation-error" style={{ marginTop: '8px', color: '#ff4444', fontSize: '14px' }}>
+                      {validationErrors.auctionStartingPrice}
                     </div>
-                    {validationErrors.auctionStartingPrice && (
-                      <div className="validation-error" style={{ marginTop: '8px', color: '#ff4444', fontSize: '14px' }}>
-                        {validationErrors.auctionStartingPrice}
-                      </div>
-                    )}
-                  </div>
+                  )}
                 </div>
-              )}
+              </div>
 
               <div className="property-price-actions">
                 <button

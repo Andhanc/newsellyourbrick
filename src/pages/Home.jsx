@@ -17,6 +17,13 @@ function Home() {
   const { user, isLoaded: userLoaded } = useUser()
   const userData = getUserData()
   const [dbUserId, setDbUserId] = useState(null)
+  
+  // Функция для проверки, можно ли показывать депозит
+  const canShowDeposit = () => {
+    if (!isAuthenticated()) return false
+    const userRole = userData?.role
+    return userRole !== 'seller'
+  }
 
   // Загрузка аукционных и не аукционных объявлений из API
   useEffect(() => {
@@ -238,7 +245,7 @@ function Home() {
 
   return (
     <div className="home-page">
-      <DepositButton amount={userDeposit} />
+      {canShowDeposit() && <DepositButton amount={userDeposit} />}
       <Header />
       <Hero />
       {loading ? (

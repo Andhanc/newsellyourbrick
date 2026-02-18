@@ -513,21 +513,22 @@ const ModerationPropertyDetail = ({ property, onBack, onApprove, onReject }) => 
           </div>
 
           <div className="moderation-property-detail__price">
-            {property.price ? `${property.price.toLocaleString('ru-RU')} ${property.currency || 'USD'}` : 'Цена не указана'}
-            <div style={{ marginTop: '10px', fontSize: '14px', color: '#666' }}>
-              <strong>Аукцион:</strong> {property.is_auction === 1 || property.isAuction ? 'Да' : 'Нет'}
-              {(property.is_auction === 1 || property.isAuction) && (
-                <>
-                  {property.auction_start_date && (
-                    <div>Начало: {new Date(property.auction_start_date).toLocaleDateString('ru-RU')}</div>
-                  )}
-                  {property.auction_end_date && (
-                    <div>Окончание: {new Date(property.auction_end_date).toLocaleDateString('ru-RU')}</div>
-                  )}
-                  {property.auction_starting_price && (
-                    <div>Стартовая цена: {property.auction_starting_price.toLocaleString('ru-RU')} {property.currency || 'USD'}</div>
-                  )}
-                </>
+            {/* Купить сейчас - показываем только если указана */}
+            {property.price && Number(property.price) > 0 && (
+              <div style={{ marginBottom: '10px' }}>
+                <strong>Купить сейчас:</strong> <span style={{ color: '#0ABAB5' }}>{property.price.toLocaleString('ru-RU')} {property.currency || 'USD'}</span>
+              </div>
+            )}
+            <div style={{ fontSize: '14px', color: '#666' }}>
+              <div style={{ marginBottom: '8px' }}>Аукционный объект</div>
+              {property.auction_start_date && (
+                <div>Начало: {new Date(property.auction_start_date).toLocaleDateString('ru-RU')}</div>
+              )}
+              {property.auction_end_date && (
+                <div>Окончание: {new Date(property.auction_end_date).toLocaleDateString('ru-RU')}</div>
+              )}
+              {property.auction_starting_price && (
+                <div>Начальная сумма ставки: {property.auction_starting_price.toLocaleString('ru-RU')} {property.currency || 'USD'}</div>
               )}
             </div>
           </div>

@@ -173,6 +173,7 @@ const Moderation = () => {
   const [pendingDocuments, setPendingDocuments] = useState([]);
   const [pendingProperties, setPendingProperties] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [recentlyApprovedIds, setRecentlyApprovedIds] = useState(new Set()); // ID недавно одобренных объектов
   const [requestTypeFilter, setRequestTypeFilter] = useState('all'); // 'all', 'publication', 'edit', 'delete'
 
   // Загрузка документов на верификацию
@@ -405,8 +406,26 @@ const Moderation = () => {
         const data = await response.json();
         console.log('✅ Ответ API:', data);
         if (data.success && data.data) {
-          propertiesList = data.data;
-          console.log(`✅ Загружено объявлений из API: ${propertiesList.length}`);
+          // Фильтруем только объекты со статусом pending (на случай, если бэкенд вернет одобренные)
+          // Также исключаем недавно одобренные объекты (даже если бэкенд их еще вернул)
+          propertiesList = data.data.filter(property => {
+            const propertyId = String(property.id);
+            // Исключаем недавно одобренные объекты
+            if (recentlyApprovedIds.has(propertyId)) {
+              console.log(`🚫 Исключаем недавно одобренный объект ID: ${propertyId}`);
+              return false;
+            }
+            const status = property.moderation_status || property.moderationStatus;
+            return status === 'pending' || status === null || status === undefined;
+          });
+          console.log(`✅ Загружено объявлений из API: ${data.data.length}, после фильтрации pending: ${propertiesList.length}`);
+          // Логируем типы объектов для отладки
+          const typesCount = {};
+          propertiesList.forEach(p => {
+            const type = p.property_type || p.propertyType || 'unknown';
+            typesCount[type] = (typesCount[type] || 0) + 1;
+          });
+          console.log('📊 Типы объектов на модерации:', typesCount);
         } else {
           console.warn('⚠️ API вернул success: false или нет data');
         }
@@ -589,7 +608,7 @@ const Moderation = () => {
                   property_type: property.propertyType || property.property_type || 'house',
                   title: property.title || '',
                   description: property.description || '',
-                  price: property.price || 0,
+                  price: property.price && Number(property.price) > 0 ? property.price : null,
                   currency: property.currency || 'USD',
                   is_auction: property.isAuction ? 1 : 0,
                   auction_start_date: property.auctionStartDate || null,
@@ -742,18 +761,34 @@ const Moderation = () => {
       
       if (type === 'properties') {
         // Одобрение недвижимости
+        // Находим объект для логирования его типа
+        const propertyToApprove = pendingProperties.find(p => p.id === id || String(p.id) === String(id));
+        if (propertyToApprove) {
+          console.log('🏠 Одобряем объект:', {
+            id: id,
+            title: propertyToApprove.title,
+            property_type: propertyToApprove.property_type || propertyToApprove.propertyType,
+            price: propertyToApprove.price,
+            auction_starting_price: propertyToApprove.auction_starting_price
+          });
+        }
+        
         const response = await fetch(`${API_BASE_URL}/properties/${id}/approve`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            reviewed_by: adminId
+            reviewed_by: adminId,
+            moderation_status: 'approved' // Явно указываем статус одобрения
           })
         });
 
         if (response.ok) {
           const data = await response.json();
+          console.log('📥 Ответ от API при одобрении:', data);
+          console.log('📋 Полный ответ:', JSON.stringify(data, null, 2));
+          
           if (data.success) {
             // Удаляем данные недвижимости из localStorage, если они там есть
             try {
@@ -770,13 +805,79 @@ const Moderation = () => {
               console.warn('⚠️ Не удалось проверить localStorage:', e);
             }
             
+            // Проверяем, действительно ли объект был обновлен
+            // Если в ответе есть данные об объекте, проверяем его статус
+            if (data.data && data.data.moderation_status) {
+              console.log('📊 Статус объекта после одобрения:', data.data.moderation_status);
+              if (data.data.moderation_status !== 'approved') {
+                console.warn('⚠️ ВНИМАНИЕ: Объект одобрен, но статус не обновлен на approved!', data.data);
+                alert('Объявление одобрено, но статус не обновлен. Возможно, проблема на сервере. Проверьте логи бэкенда.');
+              } else {
+                console.log('✅ Статус объекта успешно обновлен на approved');
+              }
+            } else {
+              console.warn('⚠️ API не вернул данные об объекте в ответе. Проверяем статус через отдельный запрос...');
+              // Если API не вернул данные, делаем дополнительную проверку через отдельный запрос
+              setTimeout(async () => {
+                try {
+                  const checkResponse = await fetch(`${API_BASE_URL}/properties/${id}`);
+                  if (checkResponse.ok) {
+                    const checkData = await checkResponse.json();
+                    if (checkData.success && checkData.data) {
+                      console.log('📊 Проверка статуса объекта:', checkData.data.moderation_status);
+                      if (checkData.data.moderation_status !== 'approved') {
+                        console.error('❌ Статус объекта не обновлен после одобрения!', checkData.data);
+                      }
+                    }
+                  }
+                } catch (checkError) {
+                  console.error('❌ Ошибка при проверке статуса объекта:', checkError);
+                }
+              }, 2000);
+            }
+            
+            // Добавляем ID в список недавно одобренных
+            const approvedId = String(id);
+            setRecentlyApprovedIds(prev => new Set([...prev, approvedId]));
+            console.log(`✅ Добавлен ID ${approvedId} в список недавно одобренных`);
+            
+            // Удаляем из списка недавно одобренных через 5 минут (на случай, если объект снова появится)
+            setTimeout(() => {
+              setRecentlyApprovedIds(prev => {
+                const newSet = new Set(prev);
+                newSet.delete(approvedId);
+                return newSet;
+              });
+            }, 5 * 60 * 1000); // 5 минут
+            
             alert('Объявление одобрено. Владельцу отправлено уведомление.');
-            loadPendingProperties();
+            // Закрываем детальный вид
             setSelectedProperty(null);
+            
+            // Удаляем объект из локального списка сразу, чтобы он не показывался
+            setPendingProperties(prev => prev.filter(p => String(p.id) !== String(id)));
+            
+            // Обновляем список после задержки, чтобы дать серверу время обновить статус
+            // Увеличиваем задержку, так как бэкенд может обрабатывать запрос асинхронно
+            setTimeout(() => {
+              console.log('🔄 Принудительное обновление списка после одобрения...');
+              loadPendingProperties();
+            }, 1500);
+          } else {
+            console.error('❌ API вернул success: false:', data);
+            alert(data.error || data.message || 'Ошибка при одобрении объявления. Сервер вернул ошибку.');
           }
         } else {
-          const errorData = await response.json().catch(() => ({}));
-          alert(errorData.error || 'Ошибка при одобрении объявления');
+          const errorText = await response.text().catch(() => 'Неизвестная ошибка');
+          console.error('❌ Ошибка HTTP при одобрении:', response.status, errorText);
+          let errorMessage = 'Ошибка при одобрении объявления';
+          try {
+            const errorData = JSON.parse(errorText);
+            errorMessage = errorData.error || errorData.message || errorMessage;
+          } catch (e) {
+            errorMessage = errorText || errorMessage;
+          }
+          alert(errorMessage);
         }
       } else {
         // Одобрение пользователя
