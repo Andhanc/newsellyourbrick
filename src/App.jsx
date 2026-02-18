@@ -13,6 +13,7 @@ import Favorites from './pages/Favorites'
 import OwnerDashboard from './pages/OwnerDashboard'
 import AddProperty from './pages/AddProperty'
 import Wallet from './pages/Wallet'
+import SearchResults from './pages/SearchResults'
 import AdminPanelPage from './admin/AdminPanelPage'
 import Footer from './components/Footer'
 import ClerkAuthSync from './components/ClerkAuthSync'
@@ -201,6 +202,7 @@ function App() {
           <Route path="/auction" element={<Home />} />
           <Route path="/main" element={<Home />} />
           <Route path="/property/:id" element={<PropertyDetailPage />} />
+          <Route path="/search-results" element={<SearchResults />} />
           <Route path="/map" element={<MapPage />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/data" element={<Data />} />

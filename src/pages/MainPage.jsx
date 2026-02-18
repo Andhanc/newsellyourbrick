@@ -48,6 +48,7 @@ import {
   PiWarehouse,
 } from 'react-icons/pi'
 import PropertyTimer from '../components/PropertyTimer'
+import PropertySearchBlock from '../components/PropertySearchBlock'
 import { showToast } from '../components/ToastContainer'
 import LoginModal from '../components/LoginModal'
 import VerificationSuccessNotification from '../components/VerificationSuccessNotification'
@@ -2208,6 +2209,8 @@ function MainPage() {
       </section>
       </section>
 
+      {/* Блок подборки недвижимости */}
+      <PropertySearchBlock />
 
       {/* Блок "Аппартаменты" */}
       <section className="apartments-section">
@@ -2348,53 +2351,6 @@ function MainPage() {
                   </div>
                 )
               })}
-            </div>
-            
-            <div className="apartments-section__personal">
-              <div className="personal-selection">
-                <div className="personal-selection__banner">
-                  <FiStar className="personal-selection__banner-icon" size={14} />
-                  ПЕРСОНАЛЬНАЯ
-                </div>
-                <div className="personal-selection__content">
-                  <div className="personal-selection__decorative">
-                    <div className="personal-selection__icon personal-selection__icon--1">
-                      <PiBuildingApartment size={32} />
-                    </div>
-                    <div className="personal-selection__icon personal-selection__icon--2">
-                      <FiHeart size={24} />
-                    </div>
-                    <div className="personal-selection__icon personal-selection__icon--3">
-                      <FiCheck size={20} />
-                    </div>
-                  </div>
-                  <h3 className="personal-selection__title">ПОДБОРКА</h3>
-                  <h3 className="personal-selection__title">АППАРТАМЕНТОВ</h3>
-                  <div className="personal-selection__features">
-                    <div className="personal-selection__feature">
-                      <FiCheck className="personal-selection__feature-icon" size={18} />
-                      <span>Индивидуальный подход</span>
-                    </div>
-                    <div className="personal-selection__feature">
-                      <FiCheck className="personal-selection__feature-icon" size={18} />
-                      <span>{t('quickSelection')}</span>
-                    </div>
-                    <div className="personal-selection__feature">
-                      <FiCheck className="personal-selection__feature-icon" size={18} />
-                      <span>{t('bestOptions')}</span>
-                    </div>
-                  </div>
-                  <p className="personal-selection__text">{t('fromYou')}</p>
-                  <p className="personal-selection__text">{t('fromUs')}</p>
-                  <button 
-                    className="personal-selection__button"
-                    onClick={() => setIsChatOpen(true)}
-                  >
-                    <span>{t('learnMore')}</span>
-                    <FiArrowRight className="personal-selection__button-icon" size={18} />
-                  </button>
-                </div>
-              </div>
             </div>
           </div>
         </div>
@@ -2543,53 +2499,6 @@ function MainPage() {
                 )
               })}
             </div>
-            
-            <div className="apartments-section__personal">
-              <div className="personal-selection">
-                <div className="personal-selection__banner">
-                  <FiStar className="personal-selection__banner-icon" size={14} />
-                  ПЕРСОНАЛЬНАЯ
-                </div>
-                <div className="personal-selection__content">
-                  <div className="personal-selection__decorative">
-                    <div className="personal-selection__icon personal-selection__icon--1">
-                      <PiBuildings size={32} />
-                    </div>
-                    <div className="personal-selection__icon personal-selection__icon--2">
-                      <FiHeart size={24} />
-                    </div>
-                    <div className="personal-selection__icon personal-selection__icon--3">
-                      <FiCheck size={20} />
-                    </div>
-                  </div>
-                  <h3 className="personal-selection__title">ПОДБОРКА</h3>
-                  <h3 className="personal-selection__title">ВИЛЛ</h3>
-                  <div className="personal-selection__features">
-                    <div className="personal-selection__feature">
-                      <FiCheck className="personal-selection__feature-icon" size={18} />
-                      <span>Индивидуальный подход</span>
-                    </div>
-                    <div className="personal-selection__feature">
-                      <FiCheck className="personal-selection__feature-icon" size={18} />
-                      <span>{t('quickSelection')}</span>
-                    </div>
-                    <div className="personal-selection__feature">
-                      <FiCheck className="personal-selection__feature-icon" size={18} />
-                      <span>{t('bestOptions')}</span>
-                    </div>
-                  </div>
-                  <p className="personal-selection__text">{t('fromYou')}</p>
-                  <p className="personal-selection__text">{t('fromUs')}</p>
-                  <button 
-                    className="personal-selection__button"
-                    onClick={() => setIsChatOpen(true)}
-                  >
-                    <span>{t('learnMore')}</span>
-                    <FiArrowRight className="personal-selection__button-icon" size={18} />
-                  </button>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       </section>
@@ -2737,53 +2646,6 @@ function MainPage() {
                 )
               })}
             </div>
-            
-            <div className="apartments-section__personal">
-              <div className="personal-selection">
-                <div className="personal-selection__banner">
-                  <FiStar className="personal-selection__banner-icon" size={14} />
-                  ПЕРСОНАЛЬНАЯ
-                </div>
-                <div className="personal-selection__content">
-                  <div className="personal-selection__decorative">
-                    <div className="personal-selection__icon personal-selection__icon--1">
-                      <PiBuildingApartment size={32} />
-                    </div>
-                    <div className="personal-selection__icon personal-selection__icon--2">
-                      <FiHeart size={24} />
-                    </div>
-                    <div className="personal-selection__icon personal-selection__icon--3">
-                      <FiCheck size={20} />
-                    </div>
-                  </div>
-                  <h3 className="personal-selection__title">ПОДБОРКА</h3>
-                  <h3 className="personal-selection__title">КВАРТИР</h3>
-                  <div className="personal-selection__features">
-                    <div className="personal-selection__feature">
-                      <FiCheck className="personal-selection__feature-icon" size={18} />
-                      <span>Индивидуальный подход</span>
-                    </div>
-                    <div className="personal-selection__feature">
-                      <FiCheck className="personal-selection__feature-icon" size={18} />
-                      <span>{t('quickSelection')}</span>
-                    </div>
-                    <div className="personal-selection__feature">
-                      <FiCheck className="personal-selection__feature-icon" size={18} />
-                      <span>{t('bestOptions')}</span>
-                    </div>
-                  </div>
-                  <p className="personal-selection__text">{t('fromYou')}</p>
-                  <p className="personal-selection__text">{t('fromUs')}</p>
-                  <button 
-                    className="personal-selection__button"
-                    onClick={() => setIsChatOpen(true)}
-                  >
-                    <span>{t('learnMore')}</span>
-                    <FiArrowRight className="personal-selection__button-icon" size={18} />
-                  </button>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       </section>
@@ -2930,53 +2792,6 @@ function MainPage() {
                   </div>
                 )
               })}
-            </div>
-            
-            <div className="apartments-section__personal">
-              <div className="personal-selection">
-                <div className="personal-selection__banner">
-                  <FiStar className="personal-selection__banner-icon" size={14} />
-                  ПЕРСОНАЛЬНАЯ
-                </div>
-                <div className="personal-selection__content">
-                  <div className="personal-selection__decorative">
-                    <div className="personal-selection__icon personal-selection__icon--1">
-                      <PiHouseLine size={32} />
-                    </div>
-                    <div className="personal-selection__icon personal-selection__icon--2">
-                      <FiHeart size={24} />
-                    </div>
-                    <div className="personal-selection__icon personal-selection__icon--3">
-                      <FiCheck size={20} />
-                    </div>
-                  </div>
-                  <h3 className="personal-selection__title">ПОДБОРКА</h3>
-                  <h3 className="personal-selection__title">ДОМОВ</h3>
-                  <div className="personal-selection__features">
-                    <div className="personal-selection__feature">
-                      <FiCheck className="personal-selection__feature-icon" size={18} />
-                      <span>Индивидуальный подход</span>
-                    </div>
-                    <div className="personal-selection__feature">
-                      <FiCheck className="personal-selection__feature-icon" size={18} />
-                      <span>{t('quickSelection')}</span>
-                    </div>
-                    <div className="personal-selection__feature">
-                      <FiCheck className="personal-selection__feature-icon" size={18} />
-                      <span>{t('bestOptions')}</span>
-                    </div>
-                  </div>
-                  <p className="personal-selection__text">{t('fromYou')}</p>
-                  <p className="personal-selection__text">{t('fromUs')}</p>
-                  <button 
-                    className="personal-selection__button"
-                    onClick={() => setIsChatOpen(true)}
-                  >
-                    <span>{t('learnMore')}</span>
-                    <FiArrowRight className="personal-selection__button-icon" size={18} />
-                  </button>
-                </div>
-              </div>
             </div>
           </div>
         </div>

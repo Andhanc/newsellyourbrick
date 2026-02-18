@@ -8,6 +8,7 @@ import { properties } from '../data/properties'
 import { isAuthenticated } from '../services/authService'
 import PropertyTimer from './PropertyTimer'
 import CircularTimer from './CircularTimer'
+import PropertySearchModal from './PropertySearchModal'
 import './PropertyList.css'
 
 const PropertyList = ({ auctionProperties = null }) => {
@@ -16,6 +17,7 @@ const PropertyList = ({ auctionProperties = null }) => {
   const { user, isLoaded: userLoaded } = useUser()
   const [searchQuery, setSearchQuery] = useState('')
   const [showFilters, setShowFilters] = useState(false)
+  const [isSearchModalOpen, setIsSearchModalOpen] = useState(false)
   const [propertyType, setPropertyType] = useState('все')
   
   // Маппинг категорий из URL (английские) в русские названия для фильтра
@@ -176,13 +178,12 @@ const PropertyList = ({ auctionProperties = null }) => {
           </div>
           <button 
             className="filters-button"
-            onClick={() => setShowFilters(!showFilters)}
+            onClick={() => setIsSearchModalOpen(true)}
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
             </svg>
             Фильтры
-            {showFilters && <span className="filters-badge">1</span>}
           </button>
         </div>
 
@@ -506,6 +507,13 @@ const PropertyList = ({ auctionProperties = null }) => {
           </>
         )}
       </div>
+
+      {isSearchModalOpen && (
+        <PropertySearchModal 
+          isOpen={isSearchModalOpen}
+          onClose={() => setIsSearchModalOpen(false)}
+        />
+      )}
     </section>
   )
 }
