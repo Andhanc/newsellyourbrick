@@ -4051,31 +4051,103 @@ app.post('/api/properties', upload.fields([
       propertyData.garage = garage ? 1 : 0;
     }
 
+    // Проверяем обязательные поля
+    if (!user_id) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Необходимо указать user_id' 
+      });
+    }
+    
+    if (!title || !title.trim()) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Необходимо указать название объявления' 
+      });
+    }
+    
     // Используем соответствующий query в зависимости от типа
     let result;
     let property;
     
     // Логируем propertyData перед сохранением
+    console.log('🔍 POST /api/properties - propertyData перед сохранением:', {
+      property_type: propertyData.property_type,
+      user_id: propertyData.user_id,
+      title: propertyData.title ? propertyData.title.substring(0, 50) + '...' : 'нет',
+      has_photos: !!propertyData.photos,
+      photos_count: propertyData.photos ? (Array.isArray(propertyData.photos) ? propertyData.photos.length : 0) : 0
+    });
+    
     if (property_type === 'house' || property_type === 'villa') {
-      console.log('🔍 POST /api/properties - propertyData перед сохранением:', {
+      console.log('🔍 POST /api/properties - propertyData для дома/виллы:', {
         bedrooms: propertyData.bedrooms,
         bedroomsType: typeof propertyData.bedrooms,
         property_type: propertyData.property_type
       });
     }
     
-    if (property_type === 'apartment' || property_type === 'commercial') {
-      result = apartmentQueries.create(propertyData);
-      property = apartmentQueries.getById(result.lastInsertRowid);
-    } else if (property_type === 'house' || property_type === 'villa') {
-      result = houseQueries.create(propertyData);
-      property = houseQueries.getById(result.lastInsertRowid);
-      console.log('🔍 POST /api/properties - Создан дом/вилла, bedrooms в БД:', property.bedrooms, 'тип:', typeof property.bedrooms);
-    } else {
-      return res.status(400).json({ 
-        success: false, 
-        error: 'Неизвестный тип недвижимости' 
-      });
+    try {
+      if (property_type === 'apartment' || property_type === 'commercial') {
+        console.log('🔍 Создание квартиры/коммерческой недвижимости...');
+        result = apartmentQueries.create(propertyData);
+        property = apartmentQueries.getById(result.lastInsertRowid);
+        console.log('✅ Квартира/коммерческая недвижимость создана с ID:', result.lastInsertRowid);
+      } else if (property_type === 'house' || property_type === 'villa') {
+        console.log('🔍 Создание дома/виллы...');
+        result = houseQueries.create(propertyData);
+        property = houseQueries.getById(result.lastInsertRowid);
+        console.log('✅ Дом/вилла создана с ID:', result.lastInsertRowid);
+        console.log('🔍 POST /api/properties - Создан дом/вилла, bedrooms в БД:', property.bedrooms, 'тип:', typeof property.bedrooms);
+      } else {
+        return res.status(400).json({ 
+          success: false, 
+          error: 'Неизвестный тип недвижимости' 
+        });
+      }
+    } catch (createError) {
+      console.error('❌ Ошибка при вызове create:', createError);
+      console.error('❌ Тип ошибки:', createError.constructor.name);
+      console.error('❌ Сообщение:', createError.message);
+      console.error('❌ Stack:', createError.stack);
+      
+      // Проверяем, есть ли таблица
+      try {
+        const db = getDatabase();
+        const tableName = (property_type === 'apartment' || property_type === 'commercial') 
+          ? 'properties_apartments' 
+          : 'properties_houses';
+        const tableExists = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name=?").get(tableName);
+        if (!tableExists) {
+          console.error(`❌ Таблица ${tableName} не существует!`);
+          return res.status(500).json({ 
+            success: false, 
+            error: `Таблица ${tableName} не существует. Обратитесь к администратору.` 
+          });
+        }
+        
+        // Проверяем структуру таблицы
+        const columns = db.prepare(`PRAGMA table_info(${tableName})`).all();
+        console.log(`📋 Колонки в таблице ${tableName}:`, columns.map(c => c.name).join(', '));
+        
+        // Проверяем, какие поля отсутствуют в propertyData
+        const requiredColumns = columns.map(c => c.name);
+        const missingFields = requiredColumns.filter(col => {
+          // Пропускаем поля с DEFAULT значениями
+          if (col === 'id' || col === 'created_at' || col === 'updated_at' || col === 'moderation_status') {
+            return false;
+          }
+          // Проверяем, есть ли поле в propertyData
+          return propertyData[col] === undefined && col !== 'id';
+        });
+        if (missingFields.length > 0) {
+          console.warn('⚠️ Поля, которые могут отсутствовать в propertyData:', missingFields);
+        }
+      } catch (checkError) {
+        console.error('❌ Ошибка при проверке таблицы:', checkError);
+      }
+      
+      throw createError; // Пробрасываем ошибку дальше
     }
     
     console.log('🔍 POST /api/properties - Сохранено test_drive в БД:', normalizedTestDrive, 'тип:', typeof normalizedTestDrive)
@@ -4136,11 +4208,35 @@ app.post('/api/properties', upload.fields([
     });
   } catch (error) {
     console.error('❌ Ошибка при создании объявления:', error);
-    console.error('Stack:', error.stack);
+    console.error('❌ Тип ошибки:', error.constructor.name);
+    console.error('❌ Сообщение:', error.message);
+    console.error('❌ Stack:', error.stack);
+    
+    // Логируем дополнительные детали для SQLite ошибок
+    if (error.message && error.message.includes('no such column')) {
+      console.error('❌ SQLite ошибка: отсутствует колонка в таблице');
+      console.error('❌ Проверьте структуру таблицы properties_apartments или properties_houses');
+    }
+    
+    if (error.message && error.message.includes('no such table')) {
+      console.error('❌ SQLite ошибка: отсутствует таблица');
+      console.error('❌ Проверьте, что таблицы properties_apartments и properties_houses созданы');
+    }
+    
+    // Отправляем более детальную ошибку
+    const errorMessage = error.message || 'Внутренняя ошибка сервера';
+    const errorDetails = process.env.NODE_ENV === 'development' || process.env.NODE_ENV !== 'production' 
+      ? {
+          message: errorMessage,
+          stack: error.stack,
+          type: error.constructor.name
+        }
+      : undefined;
+    
     res.status(500).json({ 
       success: false, 
-      error: error.message || 'Ошибка при создании объявления',
-      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      error: errorMessage,
+      details: errorDetails
     });
   }
 });
