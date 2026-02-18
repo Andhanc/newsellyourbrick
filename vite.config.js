@@ -92,20 +92,24 @@ export default defineConfig(({ mode }) => {
     server: {
       port: vitePort,
       host: '0.0.0.0', // Слушаем на всех интерфейсах для Railway
-      strictPort: false, // НЕ строгий порт - если порт занят, попробуем другой (для диагностики)
+      strictPort: true, // Строгий порт - если порт занят, покажем ошибку (важно для Railway)
       // ВАЖНО: Railway устанавливает PORT, приложение должно слушать на этом порту
-      // Если порт занят, Vite попробует другой порт, но это вызовет проблемы с Railway
-      // ВАЖНО: Railway устанавливает PORT, но если порт занят, лучше увидеть ошибку, чем молча падать
       // Разрешаем все Railway хосты
       allowedHosts: [
         '.railway.app',
         '.up.railway.app',
-        'web-production-5f1e0.up.railway.app' // Конкретный хост из ошибки
+        'localhost',
+        '127.0.0.1'
       ],
       // Отключаем HMR в production (на Railway) - он не нужен и вызывает проблемы с WebSocket
       hmr: actualMode === 'production' ? false : {
         clientPort: vitePort, // Для HMR в development
         overlay: false // Отключаем overlay для избежания ошибок esbuild на Railway
+      },
+      // Улучшенная обработка ошибок
+      watch: {
+        usePolling: false,
+        interval: 100
       },
       proxy: {
         '/api': {
@@ -113,23 +117,22 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
           secure: false,
           // Используем IPv4 для избежания проблем с IPv6 на Railway
-          // Это решает ошибки NO_SOCKET и IPV6_NDISC_BAD_CODE
           family: 4, // Принудительно используем IPv4
           // Таймауты для избежания зависаний
           timeout: 30000, // 30 секунд
-          // Retry при ошибках подключения
           proxyTimeout: 30000,
-          // Для локальной разработки
+          // Улучшенная обработка ошибок
           configure: (proxy, _options) => {
             proxy.on('proxyReq', (proxyReq, req, res) => {
-              console.log(`[Proxy] ${req.method} ${req.url} -> ${apiUrl}${req.url}`)
+              if (actualMode !== 'production') {
+                console.log(`[Proxy] ${req.method} ${req.url} -> ${apiUrl}${req.url}`)
+              }
             })
             proxy.on('error', (err, req, res) => {
               console.error(`[Proxy Error] ${err.message} для ${req.url}`)
-              console.error(`[Proxy Error] Код ошибки: ${err.code}`)
-              console.error(`[Proxy Error] Целевой URL: ${apiUrl}`)
+              console.error(`[Proxy Error] Код: ${err.code}, Целевой URL: ${apiUrl}`)
               // Отправляем понятную ошибку клиенту
-              if (!res.headersSent) {
+              if (res && !res.headersSent) {
                 res.writeHead(502, {
                   'Content-Type': 'application/json'
                 })
@@ -141,9 +144,8 @@ export default defineConfig(({ mode }) => {
               }
             })
             proxy.on('proxyRes', (proxyRes, req, res) => {
-              // Логируем успешные ответы в dev режиме
-              if (actualMode !== 'production') {
-                console.log(`[Proxy] ${req.method} ${req.url} -> ${proxyRes.statusCode}`)
+              if (actualMode !== 'production' && proxyRes.statusCode >= 400) {
+                console.warn(`[Proxy] ${req.method} ${req.url} -> ${proxyRes.statusCode}`)
               }
             })
           }
@@ -152,9 +154,8 @@ export default defineConfig(({ mode }) => {
           target: apiUrl,
           changeOrigin: true,
           secure: false,
-          // Используем IPv4 для избежания проблем с IPv6 на Railway
-          family: 4, // Принудительно используем IPv4
-          timeout: 5000, // 5 секунд для health check
+          family: 4,
+          timeout: 5000,
           proxyTimeout: 5000
         }
       }
