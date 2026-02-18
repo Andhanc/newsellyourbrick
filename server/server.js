@@ -221,6 +221,12 @@ console.log('💾 Инициализация базы данных...');
 try {
   initDatabase();
   console.log('✅ База данных инициализирована успешно');
+} catch (dbError) {
+  console.error('❌ КРИТИЧЕСКАЯ ОШИБКА: Не удалось инициализировать базу данных:', dbError);
+  console.error('💡 Проверьте права доступа к файлу базы данных и наличие необходимых директорий.');
+  // Не останавливаем сервер, но логируем ошибку
+  // Сервер может работать даже если БД не инициализирована (для диагностики)
+}
   
   // Создаем таблицу auction_winners после инициализации БД
   try {
@@ -259,10 +265,6 @@ try {
   } catch (tableError) {
     console.error('❌ Ошибка при создании таблицы auction_winners:', tableError);
   }
-} catch (error) {
-  console.error('❌ Ошибка при инициализации базы данных:', error);
-  process.exit(1);
-}
 
 // ========== НАСТРОЙКА WHATSAPP WEB КЛИЕНТА ==========
 let waClientReady = false;
@@ -7875,7 +7877,8 @@ app._router?.stack?.forEach((middleware) => {
   }
 });
 
-app.listen(PORT, '0.0.0.0', () => {
+// Запуск сервера с обработкой ошибок
+const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Сервер запущен на порту ${PORT}`);
   console.log(`📡 API доступен по адресу: http://0.0.0.0:${PORT}/api`);
   console.log(`🌐 Railway PORT: ${process.env.PORT || 'не установлен'}`);
@@ -7891,6 +7894,17 @@ app.listen(PORT, '0.0.0.0', () => {
   } else {
     console.warn(`⚠️ ВНИМАНИЕ: Маршруты test-timer не найдены в списке зарегистрированных!`);
   }
+});
+
+// Обработка ошибок при запуске сервера
+server.on('error', (error) => {
+  if (error.code === 'EADDRINUSE') {
+    console.error(`❌ Порт ${PORT} уже занят. Проверьте, не запущен ли другой процесс на этом порту.`);
+    console.error(`💡 Попробуйте изменить SERVER_PORT в переменных окружения.`);
+  } else {
+    console.error(`❌ Ошибка при запуске сервера:`, error);
+  }
+  process.exit(1);
 });
 
 // Graceful shutdown

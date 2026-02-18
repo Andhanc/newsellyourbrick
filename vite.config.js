@@ -115,6 +115,10 @@ export default defineConfig(({ mode }) => {
           // Используем IPv4 для избежания проблем с IPv6 на Railway
           // Это решает ошибки NO_SOCKET и IPV6_NDISC_BAD_CODE
           family: 4, // Принудительно используем IPv4
+          // Таймауты для избежания зависаний
+          timeout: 30000, // 30 секунд
+          // Retry при ошибках подключения
+          proxyTimeout: 30000,
           // Для локальной разработки
           configure: (proxy, _options) => {
             proxy.on('proxyReq', (proxyReq, req, res) => {
@@ -122,6 +126,25 @@ export default defineConfig(({ mode }) => {
             })
             proxy.on('error', (err, req, res) => {
               console.error(`[Proxy Error] ${err.message} для ${req.url}`)
+              console.error(`[Proxy Error] Код ошибки: ${err.code}`)
+              console.error(`[Proxy Error] Целевой URL: ${apiUrl}`)
+              // Отправляем понятную ошибку клиенту
+              if (!res.headersSent) {
+                res.writeHead(502, {
+                  'Content-Type': 'application/json'
+                })
+                res.end(JSON.stringify({
+                  success: false,
+                  error: 'Сервер временно недоступен. Пожалуйста, попробуйте позже.',
+                  details: process.env.NODE_ENV === 'development' ? err.message : undefined
+                }))
+              }
+            })
+            proxy.on('proxyRes', (proxyRes, req, res) => {
+              // Логируем успешные ответы в dev режиме
+              if (actualMode !== 'production') {
+                console.log(`[Proxy] ${req.method} ${req.url} -> ${proxyRes.statusCode}`)
+              }
             })
           }
         },
@@ -130,7 +153,9 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
           secure: false,
           // Используем IPv4 для избежания проблем с IPv6 на Railway
-          family: 4 // Принудительно используем IPv4
+          family: 4, // Принудительно используем IPv4
+          timeout: 5000, // 5 секунд для health check
+          proxyTimeout: 5000
         }
       }
     },
