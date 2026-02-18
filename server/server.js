@@ -6671,10 +6671,23 @@ app.get('/api/users/:id/deposit', (req, res) => {
       return res.status(404).json({ success: false, error: 'Пользователь не найден' });
     }
     
+    // Проверяем и добавляем колонку deposit_amount, если её нет
+    try {
+      const pragmaInfo = db.prepare("PRAGMA table_info(users)").all();
+      const depositAmountColumn = pragmaInfo.find(col => col.name === 'deposit_amount');
+      if (!depositAmountColumn) {
+        console.log('🔄 Добавляем колонку deposit_amount в таблицу users...');
+        db.exec("ALTER TABLE users ADD COLUMN deposit_amount REAL DEFAULT 0");
+        console.log('✅ Колонка deposit_amount добавлена');
+      }
+    } catch (colError) {
+      console.warn('⚠️ Ошибка при проверке/добавлении колонки deposit_amount:', colError.message);
+    }
+    
     res.json({
       success: true,
       data: {
-        depositAmount: user.deposit_amount || 0,
+        depositAmount: (user.deposit_amount !== undefined && user.deposit_amount !== null) ? parseFloat(user.deposit_amount) : 0,
         hasCard: user.has_card === 1,
         cardType: user.card_type || null
       }
@@ -6693,6 +6706,19 @@ app.post('/api/users/:id/deposit/top-up', (req, res) => {
     const userId = req.params.id;
     const db = getDatabase();
     
+    // Проверяем и добавляем колонку deposit_amount, если её нет
+    try {
+      const pragmaInfo = db.prepare("PRAGMA table_info(users)").all();
+      const depositAmountColumn = pragmaInfo.find(col => col.name === 'deposit_amount');
+      if (!depositAmountColumn) {
+        console.log('🔄 Добавляем колонку deposit_amount в таблицу users...');
+        db.exec("ALTER TABLE users ADD COLUMN deposit_amount REAL DEFAULT 0");
+        console.log('✅ Колонка deposit_amount добавлена');
+      }
+    } catch (colError) {
+      console.warn('⚠️ Ошибка при проверке/добавлении колонки deposit_amount:', colError.message);
+    }
+    
     const user = userQueries.getById(userId);
     if (!user) {
       return res.status(404).json({ success: false, error: 'Пользователь не найден' });
@@ -6705,7 +6731,7 @@ app.post('/api/users/:id/deposit/top-up', (req, res) => {
       });
     }
     
-    const currentDeposit = user.deposit_amount || 0;
+    const currentDeposit = (user.deposit_amount !== undefined && user.deposit_amount !== null) ? parseFloat(user.deposit_amount) : 0;
     const newDeposit = currentDeposit + 3000;
     
     const stmt = db.prepare('UPDATE users SET deposit_amount = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?');
@@ -6757,7 +6783,20 @@ app.post('/api/users/:id/deposit/withdraw', (req, res) => {
       return res.status(404).json({ success: false, error: 'Пользователь не найден' });
     }
     
-    const currentDeposit = user.deposit_amount || 0;
+    // Проверяем и добавляем колонку deposit_amount, если её нет
+    try {
+      const pragmaInfo = db.prepare("PRAGMA table_info(users)").all();
+      const depositAmountColumn = pragmaInfo.find(col => col.name === 'deposit_amount');
+      if (!depositAmountColumn) {
+        console.log('🔄 Добавляем колонку deposit_amount в таблицу users...');
+        db.exec("ALTER TABLE users ADD COLUMN deposit_amount REAL DEFAULT 0");
+        console.log('✅ Колонка deposit_amount добавлена');
+      }
+    } catch (colError) {
+      console.warn('⚠️ Ошибка при проверке/добавлении колонки deposit_amount:', colError.message);
+    }
+    
+    const currentDeposit = (user.deposit_amount !== undefined && user.deposit_amount !== null) ? parseFloat(user.deposit_amount) : 0;
     if (currentDeposit < amount) {
       return res.status(400).json({ 
         success: false, 
@@ -6861,7 +6900,7 @@ app.get('/api/users/:id/analytics', (req, res) => {
     res.json({
       success: true,
       data: {
-        currentDeposit: user.deposit_amount || 0,
+        currentDeposit: (user.deposit_amount !== undefined && user.deposit_amount !== null) ? parseFloat(user.deposit_amount) : 0,
         totalDeposit,
         totalWithdrawal,
         hasCard: user.has_card === 1
@@ -7056,7 +7095,20 @@ app.post('/api/bids', (req, res) => {
     // Для обычных объектов депозит не требуется
     const isAuction = property.is_auction === 1;
     if (isAuction) {
-      const depositAmount = user.deposit_amount || 0;
+      // Проверяем и добавляем колонку deposit_amount, если её нет
+      try {
+        const pragmaInfo = db.prepare("PRAGMA table_info(users)").all();
+        const depositAmountColumn = pragmaInfo.find(col => col.name === 'deposit_amount');
+        if (!depositAmountColumn) {
+          console.log('🔄 Добавляем колонку deposit_amount в таблицу users...');
+          db.exec("ALTER TABLE users ADD COLUMN deposit_amount REAL DEFAULT 0");
+          console.log('✅ Колонка deposit_amount добавлена');
+        }
+      } catch (colError) {
+        console.warn('⚠️ Ошибка при проверке/добавлении колонки deposit_amount:', colError.message);
+      }
+      
+      const depositAmount = (user.deposit_amount !== undefined && user.deposit_amount !== null) ? parseFloat(user.deposit_amount) : 0;
       if (depositAmount <= 0) {
         return res.status(400).json({ 
           success: false, 
