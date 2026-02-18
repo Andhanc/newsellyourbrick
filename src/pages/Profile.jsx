@@ -7,7 +7,7 @@ import VerificationModal from '../components/VerificationModal'
 import SellerVerificationModal from '../components/SellerVerificationModal'
 import './Profile.css'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? '/api' : 'http://localhost:3000/api')
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
 
 const Profile = () => {
   const navigate = useNavigate()
@@ -43,7 +43,7 @@ const Profile = () => {
   const [documentsCompleted, setDocumentsCompleted] = useState(false)
   
   // Используем proxy из vite.config.js или полный URL
-  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? '/api' : 'http://localhost:3000/api')
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
   
   // Загрузка данных пользователя из БД
   const loadUserDataFromDB = async (userId) => {

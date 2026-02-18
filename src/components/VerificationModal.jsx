@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import * as faceapi from 'face-api.js'
 import './VerificationModal.css'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? '/api' : 'http://localhost:3000/api')
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
 
 const VerificationModal = ({ isOpen, onClose, userId, onComplete }) => {
   const [currentStep, setCurrentStep] = useState(1)

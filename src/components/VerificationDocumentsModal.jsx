@@ -2,7 +2,7 @@ import { useState, useRef } from 'react';
 import { FiX, FiUpload, FiFile, FiCheck, FiCamera } from 'react-icons/fi';
 import './VerificationDocumentsModal.css';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 
 const VerificationDocumentsModal = ({ isOpen, onClose, userId, onComplete }) => {
   const [documents, setDocuments] = useState({

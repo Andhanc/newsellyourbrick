@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { FiAlertCircle, FiCheck, FiX, FiChevronDown, FiChevronUp, FiFile, FiUser, FiMail, FiPhone, FiMapPin, FiCreditCard } from 'react-icons/fi';
 import './VerificationToast.css';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 
 const VerificationToast = ({ userId }) => {
   const [status, setStatus] = useState(null);

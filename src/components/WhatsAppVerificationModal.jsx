@@ -69,7 +69,7 @@ const WhatsAppVerificationModal = ({ isOpen, onClose, onSuccess, phoneNumber, ro
       
       // Проверяем, существует ли пользователь в БД (для быстрого входа)
       try {
-        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api'
+        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
         const checkResponse = await fetch(`${API_BASE_URL}/users/phone/${digitsToSend}`)
         if (checkResponse.ok) {
           const checkData = await checkResponse.json()

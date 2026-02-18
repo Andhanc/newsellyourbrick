@@ -7,7 +7,7 @@ import standardImage from '../img/standart.png'
 import basicImage from '../img/basicc.png'
 import './Subscriptions.css'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api'
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
 
 const Subscriptions = () => {
   const [userId, setUserId] = useState(null)

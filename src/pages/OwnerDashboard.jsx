@@ -34,7 +34,7 @@ import CountrySelect, { countries as countryList } from '../components/CountrySe
 import { getUserData, saveUserData, logout, clearUserData } from '../services/authService'
 import './OwnerDashboard.css'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api'
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
 
 // Демонстрационные данные объявлений владельца
 const mockOwnerProperties = [

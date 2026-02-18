@@ -665,7 +665,7 @@ const AddProperty = () => {
 
     setIsSubmitting(true)
     try {
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? '/api' : 'http://localhost:3000/api')
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
       
       // Загружаем данные пользователя из профиля
       let userProfileData = null
@@ -1079,7 +1079,7 @@ const AddProperty = () => {
   const loadPropertyData = async (propertyId) => {
     setIsLoadingProperty(true)
     try {
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? '/api' : 'http://localhost:3000/api')
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
       const response = await fetch(`${API_BASE_URL}/properties/${propertyId}`)
       
       if (!response.ok) {

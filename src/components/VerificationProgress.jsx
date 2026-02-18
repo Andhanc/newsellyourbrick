@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { FiAlertCircle, FiCheck, FiX, FiFile, FiUser } from 'react-icons/fi';
 import './VerificationProgress.css';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 
 const VerificationProgress = ({ userId, onStartVerification }) => {
   const [status, setStatus] = useState(null);
