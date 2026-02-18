@@ -59,6 +59,33 @@ const VerificationModal = ({ isOpen, onClose, userId, onComplete }) => {
     reader.readAsDataURL(imageBlob)
   }
 
+  const handleFileUpload = (type, event) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    // Проверяем, что это изображение
+    if (!file.type.startsWith('image/')) {
+      alert('Пожалуйста, выберите изображение')
+      return
+    }
+
+    // Проверяем размер файла (максимум 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      alert('Размер файла не должен превышать 10MB')
+      return
+    }
+
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      setPhotos(prev => ({ ...prev, [type]: file }))
+      setPreviews(prev => ({ ...prev, [type]: reader.result }))
+    }
+    reader.readAsDataURL(file)
+    
+    // Сбрасываем значение input, чтобы можно было загрузить тот же файл снова
+    event.target.value = ''
+  }
+
   const handleNext = () => {
     if (currentStep === 1 && !photos.passport) {
       alert('Пожалуйста, загрузите или сфотографируйте паспорт')

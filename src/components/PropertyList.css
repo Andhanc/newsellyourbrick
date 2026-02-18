@@ -1,11 +1,13 @@
 .property-list {
-  padding: 60px 20px;
+  padding: 60px 0;
   background: #f5f5f5;
 }
 
 .property-list-container {
   max-width: 1200px;
   margin: 0 auto;
+  padding: 0 20px;
+  width: 100%;
 }
 
 .property-list-title {
@@ -262,13 +264,21 @@
 .properties-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 30px;
+  gap: 20px;
   align-items: stretch;
 }
 
 @media (max-width: 1200px) {
   .properties-grid {
     grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+  }
+}
+
+@media (max-width: 768px) {
+  .properties-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
   }
 }
 

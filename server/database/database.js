@@ -1,7 +1,7 @@
 import Database from 'better-sqlite3';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
-import { readFileSync, existsSync } from 'fs';
+import { readFileSync, existsSync, renameSync, unlinkSync } from 'fs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -241,6 +241,34 @@ function performMaintenance(dbInstance) {
  */
 export function initDatabase() {
   try {
+    // Проверяем, не повреждена ли существующая БД
+    if (existsSync(DB_PATH)) {
+      try {
+        const testDb = new Database(DB_PATH, { readonly: true });
+        testDb.prepare('SELECT 1').get();
+        testDb.close();
+      } catch (testError) {
+        if (testError.message && testError.message.includes('malformed')) {
+          console.error('❌ Обнаружена поврежденная БД! Переименовываю и пересоздаю...');
+          const corruptedPath = join(__dirname, '..', 'database.sqlite.corrupted');
+          try {
+            if (existsSync(corruptedPath)) {
+              unlinkSync(corruptedPath);
+            }
+            renameSync(DB_PATH, corruptedPath);
+            console.log('📦 Поврежденная БД сохранена как database.sqlite.corrupted');
+          } catch (renameError) {
+            console.warn('⚠️ Не удалось переименовать поврежденную БД, удаляю:', renameError.message);
+            try {
+              unlinkSync(DB_PATH);
+            } catch (unlinkError) {
+              console.error('❌ Не удалось удалить поврежденную БД:', unlinkError.message);
+            }
+          }
+        }
+      }
+    }
+    
     // Создаем соединение с БД с улучшенными настройками
     db = new Database(DB_PATH, {
       timeout: DB_CONFIG.busyTimeout,
@@ -1080,14 +1108,47 @@ export function getDatabase() {
     // Простая проверка - выполняем простой запрос
     db.prepare('SELECT 1').get();
   } catch (error) {
-    // Если соединение потеряно, пересоздаем его
-    console.warn('⚠️ Соединение с БД потеряно, пересоздаю...');
-    try {
-      db.close();
-    } catch (closeError) {
-      // Игнорируем ошибки закрытия
+    // Если БД повреждена, пытаемся восстановить
+    if (error.message && error.message.includes('malformed')) {
+      console.error('❌ База данных повреждена! Попытка восстановления...');
+      try {
+        if (db) {
+          db.close();
+        }
+      } catch (closeError) {
+        // Игнорируем ошибки закрытия
+      }
+      
+      // Переименовываем поврежденную БД
+      const corruptedPath = join(__dirname, '..', 'database.sqlite.corrupted');
+      const dbPath = join(__dirname, '..', 'database.sqlite');
+      
+      try {
+        if (existsSync(dbPath)) {
+          if (existsSync(corruptedPath)) {
+            unlinkSync(corruptedPath);
+          }
+          renameSync(dbPath, corruptedPath);
+          console.log('📦 Поврежденная БД переименована в database.sqlite.corrupted');
+        }
+      } catch (renameError) {
+        console.warn('⚠️ Не удалось переименовать поврежденную БД:', renameError.message);
+      }
+      
+      // Пересоздаем БД
+      db = null;
+      db = initDatabase();
+      console.log('✅ База данных пересоздана');
+    } else {
+      // Если соединение потеряно по другой причине, пересоздаем его
+      console.warn('⚠️ Соединение с БД потеряно, пересоздаю...');
+      try {
+        db.close();
+      } catch (closeError) {
+        // Игнорируем ошибки закрытия
+      }
+      db = initDatabase();
     }
-    db = initDatabase();
   }
   
   return db;
