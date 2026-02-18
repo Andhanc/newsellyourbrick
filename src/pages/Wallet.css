@@ -788,9 +788,23 @@
   margin-top: 8px;
 }
 
-.card-form-submit:hover {
+.card-form-submit:hover:not(.disabled):not(:disabled) {
   transform: translateY(-2px);
   box-shadow: 0 8px 20px rgba(10, 186, 181, 0.4);
+}
+
+.card-form-submit.disabled,
+.card-form-submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.card-hint {
+  margin-top: 8px;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.6);
+  text-align: center;
 }
 
 .wallet-actions {

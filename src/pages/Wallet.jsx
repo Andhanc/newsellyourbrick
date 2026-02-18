@@ -401,13 +401,22 @@ const Wallet = () => {
 
     // Валидация
     const cleanedCardNumber = cardNumber.replace(/\D/g, '')
+    console.log('🔍 Проверка карты:', {
+      cardNumber: cleanedCardNumber,
+      cardNumberLength: cleanedCardNumber.length,
+      cardExpiry: cardExpiry,
+      cardCvv: cardCvv,
+      cardCvvLength: cardCvv.length
+    })
+    
     if (cleanedCardNumber.length < 13 || cleanedCardNumber.length > 19) {
       setCardError('Номер карты должен содержать от 13 до 19 цифр')
       return
     }
 
     if (!validateLuhn(cleanedCardNumber)) {
-      setCardError('Номер карты недействителен (не прошел проверку алгоритма Луна)')
+      // Для тестовых карт добавляем более понятное сообщение
+      setCardError('Номер карты недействителен. Проверьте правильность ввода или используйте тестовый номер карты (например, 4111 1111 1111 1111 для VISA)')
       return
     }
 
@@ -418,6 +427,24 @@ const Wallet = () => {
 
     if (!cardExpiry || !/^\d{2}\/\d{2}$/.test(cardExpiry)) {
       setCardError('Укажите срок действия в формате MM/YY')
+      return
+    }
+    
+    // Проверка срока действия
+    const [month, year] = cardExpiry.split('/')
+    const expiryMonth = parseInt(month, 10)
+    const expiryYear = parseInt(year, 10)
+    const currentDate = new Date()
+    const currentYear = currentDate.getFullYear() % 100
+    const currentMonth = currentDate.getMonth() + 1
+    
+    if (expiryMonth < 1 || expiryMonth > 12) {
+      setCardError('Месяц должен быть от 01 до 12')
+      return
+    }
+    
+    if (expiryYear < currentYear || (expiryYear === currentYear && expiryMonth < currentMonth)) {
+      setCardError('Срок действия карты истек')
       return
     }
 
@@ -639,10 +666,22 @@ const Wallet = () => {
   // Проверка, можно ли сохранить карту
   const canSaveCard = () => {
     const cleanedNumber = cardNumber.replace(/\D/g, '')
-    return cleanedNumber.length >= 13 && 
-           cardExpiry.length === 5 && 
-           cardCvv.length >= 3 &&
-           validateLuhn(cleanedNumber)
+    const hasValidNumber = cleanedNumber.length >= 13 && cleanedNumber.length <= 19
+    const hasValidExpiry = cardExpiry.length === 5 && /^\d{2}\/\d{2}$/.test(cardExpiry)
+    const hasValidCvv = cardCvv.length >= 3 && cardCvv.length <= 4
+    const isValidLuhn = validateLuhn(cleanedNumber)
+    
+    // Для отладки (можно убрать в продакшене)
+    if (hasValidNumber && hasValidExpiry && hasValidCvv && !isValidLuhn) {
+      console.log('⚠️ Номер карты не прошел проверку Луна:', {
+        number: cleanedNumber,
+        length: cleanedNumber.length,
+        expiry: cardExpiry,
+        cvv: cardCvv
+      })
+    }
+    
+    return hasValidNumber && hasValidExpiry && hasValidCvv && isValidLuhn
   }
   
   // Определяем тип карты при вводе номера
@@ -924,17 +963,55 @@ const Wallet = () => {
             </div>
           </div>
 
-          {/* Кнопка сохранения (показывается только когда все поля заполнены) */}
-          {isEditingCard && !hasCard && canSaveCard() && (
+          {/* Кнопка сохранения (показывается всегда при редактировании) */}
+          {isEditingCard && !hasCard && (
             <div className="card-save-container">
               {cardError && <div className="card-error">{cardError}</div>}
               <button 
                 type="button"
                 onClick={handleCardSubmit}
-                className="card-form-submit"
+                className={`card-form-submit ${!canSaveCard() ? 'disabled' : ''}`}
+                disabled={!canSaveCard()}
               >
                 Сохранить карту
               </button>
+              {!canSaveCard() && !cardError && (() => {
+                const cleanedNumber = cardNumber.replace(/\D/g, '')
+                const hasValidNumber = cleanedNumber.length >= 13 && cleanedNumber.length <= 19
+                const hasValidExpiry = cardExpiry.length === 5 && /^\d{2}\/\d{2}$/.test(cardExpiry)
+                const hasValidCvv = cardCvv.length >= 3 && cardCvv.length <= 4
+                const isValidLuhn = cleanedNumber.length > 0 ? validateLuhn(cleanedNumber) : false
+                
+                const issues = []
+                if (!hasValidNumber) {
+                  issues.push('Номер карты должен содержать от 13 до 19 цифр')
+                } else if (!isValidLuhn) {
+                  issues.push('Номер карты не прошел проверку (используйте валидный номер, например: 4111 1111 1111 1111)')
+                }
+                if (!hasValidExpiry) {
+                  issues.push('Срок действия должен быть в формате MM/YY (например: 12/25)')
+                }
+                if (!hasValidCvv) {
+                  issues.push('CVV должен содержать 3 или 4 цифры')
+                }
+                
+                return (
+                  <div className="card-hint">
+                    {issues.length > 0 ? (
+                      <div>
+                        <div style={{ marginBottom: '8px', fontWeight: '600' }}>Заполните все поля:</div>
+                        {issues.map((issue, idx) => (
+                          <div key={idx} style={{ fontSize: '13px', marginTop: '4px', color: 'rgba(255, 255, 255, 0.7)' }}>
+                            • {issue}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      'Заполните все поля карты для сохранения'
+                    )}
+                  </div>
+                )
+              })()}
             </div>
           )}
 

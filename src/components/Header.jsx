@@ -291,46 +291,57 @@ const Header = () => {
                       <div className="menu-dropdown__column">
                         <h3 className="menu-dropdown__column-title">Навигация по сайту</h3>
                         <div className="menu-dropdown__column-items">
-                          <button className="menu-dropdown__item">
-                            <span>Недвижимость</span>
+                          <button 
+                            className="menu-dropdown__item"
+                            onClick={() => {
+                              navigate('/')
+                              setIsMenuOpen(false)
+                            }}
+                          >
+                            <span>Главная</span>
                           </button>
-                          <button className="menu-dropdown__item">
-                            <span>Покупка</span>
+                          <button 
+                            className="menu-dropdown__item"
+                            onClick={() => {
+                              navigate('/auction')
+                              setIsMenuOpen(false)
+                            }}
+                          >
+                            <span>Аукцион</span>
                           </button>
-                          <button className="menu-dropdown__item">
-                            <span>Аренда</span>
+                          <button 
+                            className="menu-dropdown__item"
+                            onClick={() => {
+                              navigate('/map')
+                              setIsMenuOpen(false)
+                            }}
+                          >
+                            <span>Карта</span>
                           </button>
-                          <button className="menu-dropdown__item">
-                            <span>Недвижимость</span>
+                          <button 
+                            className="menu-dropdown__item"
+                            onClick={() => {
+                              navigate('/favorites')
+                              setIsMenuOpen(false)
+                            }}
+                          >
+                            <span>Избранное</span>
                           </button>
-                          <button className="menu-dropdown__item">
-                            <span>Покупка</span>
+                          <button 
+                            className="menu-dropdown__item"
+                            onClick={() => {
+                              navigate('/chat')
+                              setIsMenuOpen(false)
+                            }}
+                          >
+                            <span>Чат</span>
                           </button>
-              
-                          
                         </div>
                       </div>
                       <div className="menu-dropdown__column">
-                        <h3 className="menu-dropdown__column-title">Дополнительно</h3>
+                        <h3 className="menu-dropdown__column-title">Профиль</h3>
                         <div className="menu-dropdown__column-items">
-                          <button className="menu-dropdown__item">
-                            <span>Премиум</span>
-                          </button>
-                          <button className="menu-dropdown__item">
-                            <span>Бонусы</span>
-                          </button>
-                          <button className="menu-dropdown__item">
-                            <span>Поддержка</span>
-                          </button>
-                          <button className="menu-dropdown__item">
-                            <span>Приложения</span>
-                          </button>
-                          <button className="menu-dropdown__item">
-                            <span>Автолюбителям</span>
-                          </button>
-                          <button className="menu-dropdown__item">
-                            <span>Переводы</span>
-                          </button>
+                          {/* Ссылки будут добавлены позже */}
                         </div>
                       </div>
                     </div>
@@ -433,11 +444,19 @@ const Header = () => {
                     const userData = getUserData()
                     const localRole = localStorage.getItem('userRole')
                     const storedRole = userData.role || localRole
+                    const isAdminLoggedIn = localStorage.getItem('isAdminLoggedIn') === 'true'
+                    const isAdmin = isAdminLoggedIn && storedRole === 'admin'
                     const isOwnerFlag = localStorage.getItem('isOwnerLoggedIn') === 'true'
                     const isOwner =
                       storedRole === 'seller' ||
                       storedRole === 'owner' ||
                       isOwnerFlag
+
+                    // Если по локальным данным видно, что это админ — ведем в админ-панель
+                    if (isAdmin) {
+                      navigate('/admin')
+                      return
+                    }
 
                     // Если по локальным данным видно, что это продавец — ведем в кабинет продавца
                     if (isOwner) {

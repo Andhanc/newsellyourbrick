@@ -5119,18 +5119,102 @@ app.get('/api/properties/test-timers', (req, res) => {
     console.log('📥 GET /api/properties/test-timers - Запрос получен');
     const db = getDatabase();
     
-    // Запрос для получения объявлений с тестовыми таймерами
-    const query = `
-      SELECT p.*, 
-             u.first_name, u.last_name, u.email, u.phone_number
-      FROM properties p
-      LEFT JOIN users u ON p.user_id = u.id
-      WHERE p.test_timer_end_date IS NOT NULL
-        AND p.test_timer_end_date != ''
-      ORDER BY p.test_timer_end_date ASC
-    `;
+    // Проверяем наличие поля test_timer_end_date во всех возможных таблицах
+    let hasTestTimerFieldApartments = false;
+    let hasTestTimerFieldHouses = false;
+    let hasTestTimerFieldOld = false;
     
-    const properties = db.prepare(query).all();
+    try {
+      // Проверяем новую таблицу для квартир/апартаментов
+      try {
+        const apartmentsPragma = db.prepare("PRAGMA table_info(properties_apartments)").all();
+        hasTestTimerFieldApartments = apartmentsPragma.some(col => col.name === 'test_timer_end_date');
+      } catch (e) {
+        console.warn('⚠️ Таблица properties_apartments не существует:', e.message);
+      }
+      
+      // Проверяем таблицу для домов/вилл
+      try {
+        const housesPragma = db.prepare("PRAGMA table_info(properties_houses)").all();
+        hasTestTimerFieldHouses = housesPragma.some(col => col.name === 'test_timer_end_date');
+      } catch (e) {
+        console.warn('⚠️ Таблица properties_houses не существует:', e.message);
+      }
+      
+      // Проверяем старую таблицу properties (fallback)
+      try {
+        const oldPragma = db.prepare("PRAGMA table_info(properties)").all();
+        hasTestTimerFieldOld = oldPragma.some(col => col.name === 'test_timer_end_date');
+      } catch (e) {
+        console.warn('⚠️ Таблица properties не существует:', e.message);
+      }
+    } catch (e) {
+      console.warn('Ошибка при проверке структуры таблиц:', e.message);
+    }
+    
+    let allProperties = [];
+    
+    // Запрос для получения объявлений с тестовыми таймерами из таблицы properties_apartments (квартиры/апартаменты)
+    if (hasTestTimerFieldApartments) {
+      try {
+        const apartmentsQuery = `
+          SELECT p.*, 
+                 u.first_name, u.last_name, u.email, u.phone_number
+          FROM properties_apartments p
+          LEFT JOIN users u ON p.user_id = u.id
+          WHERE p.test_timer_end_date IS NOT NULL
+            AND p.test_timer_end_date != ''
+          ORDER BY p.test_timer_end_date ASC
+        `;
+        const apartments = db.prepare(apartmentsQuery).all();
+        allProperties = allProperties.concat(apartments);
+        console.log(`✅ Найдено ${apartments.length} объявлений с тестовыми таймерами в таблице properties_apartments`);
+      } catch (e) {
+        console.error('Ошибка при загрузке объявлений из properties_apartments:', e);
+      }
+    }
+    
+    // Запрос для получения объявлений с тестовыми таймерами из таблицы properties_houses (дома/виллы)
+    if (hasTestTimerFieldHouses) {
+      try {
+        const housesQuery = `
+          SELECT p.*, 
+                 u.first_name, u.last_name, u.email, u.phone_number
+          FROM properties_houses p
+          LEFT JOIN users u ON p.user_id = u.id
+          WHERE p.test_timer_end_date IS NOT NULL
+            AND p.test_timer_end_date != ''
+          ORDER BY p.test_timer_end_date ASC
+        `;
+        const houses = db.prepare(housesQuery).all();
+        allProperties = allProperties.concat(houses);
+        console.log(`✅ Найдено ${houses.length} объявлений с тестовыми таймерами в таблице properties_houses`);
+      } catch (e) {
+        console.error('Ошибка при загрузке объявлений из properties_houses:', e);
+      }
+    }
+    
+    // Fallback на старую таблицу properties
+    if (hasTestTimerFieldOld) {
+      try {
+        const oldQuery = `
+          SELECT p.*, 
+                 u.first_name, u.last_name, u.email, u.phone_number
+          FROM properties p
+          LEFT JOIN users u ON p.user_id = u.id
+          WHERE p.test_timer_end_date IS NOT NULL
+            AND p.test_timer_end_date != ''
+          ORDER BY p.test_timer_end_date ASC
+        `;
+        const oldProperties = db.prepare(oldQuery).all();
+        allProperties = allProperties.concat(oldProperties);
+        console.log(`✅ Найдено ${oldProperties.length} объявлений с тестовыми таймерами в старой таблице properties`);
+      } catch (e) {
+        console.error('Ошибка при загрузке объявлений из старой таблицы properties:', e);
+      }
+    }
+    
+    const properties = allProperties;
     
     // Преобразуем данные в формат для фронтенда
     const formattedProperties = properties.map(prop => {
@@ -5154,10 +5238,22 @@ app.get('/api/properties/test-timers', (req, res) => {
         }
       }
       
+      // Определяем property_type в зависимости от таблицы
+      let propertyType = prop.property_type;
+      if (!propertyType) {
+        // Если property_type не указан, определяем по таблице
+        // Если есть поле floors (характерно для домов/вилл), это дом или вилла
+        if (prop.floors !== undefined || prop.land_area !== undefined) {
+          propertyType = prop.property_type || 'house';
+        } else {
+          propertyType = prop.property_type || 'apartment';
+        }
+      }
+      
       return {
         id: prop.id,
-        name: prop.title,
-        title: prop.title,
+        name: prop.title || prop.name || '',
+        title: prop.title || prop.name || '',
         location: prop.location || '',
         price: prop.price || 0,
         coordinates: prop.coordinates ? (
@@ -5180,16 +5276,21 @@ app.get('/api/properties/test-timers', (req, res) => {
         currentBid: prop.auction_starting_price || prop.price || 0,
         endTime: prop.test_timer_end_date || null,
         test_timer_end_date: prop.test_timer_end_date || null,
-        beds: prop.bedrooms || prop.rooms || 0,
+        beds: prop.bedrooms || prop.rooms || prop.beds || 0,
         baths: prop.bathrooms || 0,
-        sqft: prop.area || 0,
-        area: prop.area || 0,
-        rooms: prop.bedrooms || prop.rooms || 0,
+        sqft: prop.area || prop.sqft || 0,
+        area: prop.area || prop.sqft || 0,
+        rooms: prop.bedrooms || prop.rooms || prop.beds || 0,
+        bedrooms: prop.bedrooms || prop.rooms || prop.beds || 0,
         description: prop.description || '',
-        property_type: prop.property_type,
+        property_type: propertyType,
         currency: prop.currency || 'USD',
         originalPrice: prop.price || null,
-        auctionStartingPrice: prop.auction_starting_price || null
+        auctionStartingPrice: prop.auction_starting_price || null,
+        // Дополнительные поля для домов/вилл
+        floors: prop.floors || prop.total_floors || null,
+        total_floors: prop.total_floors || prop.floors || null,
+        land_area: prop.land_area || null
       };
     });
     
@@ -5233,33 +5334,81 @@ app.post('/api/properties/:id/test-timer', (req, res) => {
       return res.status(400).json({ success: false, error: 'Не указана дата окончания таймера' });
     }
     
-    // Проверяем, существует ли объявление
-    const property = db.prepare('SELECT id FROM properties WHERE id = ?').get(id);
+    // Проверяем, существует ли объявление во всех возможных таблицах
+    // Система использует: properties_apartments (квартиры/коммерческая), properties_houses (дома/виллы), и старую properties
+    let property = null;
+    let tableName = null;
+    
+    // Сначала проверяем новые таблицы
+    try {
+      property = db.prepare('SELECT id, property_type FROM properties_apartments WHERE id = ?').get(id);
+      if (property) {
+        tableName = 'properties_apartments';
+        console.log(`✅ Объявление найдено в properties_apartments:`, { id: property.id, property_type: property.property_type });
+      }
+    } catch (e) {
+      console.warn('⚠️ Таблица properties_apartments не существует или ошибка:', e.message);
+    }
+    
     if (!property) {
-      console.error('❌ Объявление не найдено:', id);
+      try {
+        property = db.prepare('SELECT id, property_type FROM properties_houses WHERE id = ?').get(id);
+        if (property) {
+          tableName = 'properties_houses';
+          console.log(`✅ Объявление найдено в properties_houses:`, { id: property.id, property_type: property.property_type });
+        }
+      } catch (e) {
+        console.warn('⚠️ Таблица properties_houses не существует или ошибка:', e.message);
+      }
+    }
+    
+    // Fallback на старую таблицу properties
+    if (!property) {
+      try {
+        property = db.prepare('SELECT id FROM properties WHERE id = ?').get(id);
+        if (property) {
+          tableName = 'properties';
+          console.log(`✅ Объявление найдено в старой таблице properties:`, { id: property.id });
+        }
+      } catch (e) {
+        console.warn('⚠️ Таблица properties не существует или ошибка:', e.message);
+      }
+    }
+    
+    if (!property || !tableName) {
+      console.error('❌ Объявление не найдено ни в одной таблице:', id);
       return res.status(404).json({ success: false, error: 'Объявление не найдено' });
     }
     
-    // Проверяем, существует ли поле test_timer_end_date в таблице
+    console.log(`✅ Объявление найдено в таблице: ${tableName}`);
+    
+    // Проверяем и добавляем необходимые поля в нужной таблице
+    let hasTestTimerField = false;
+    let hasTestTimerDurationField = false;
+    
     try {
-      const pragmaInfo = db.prepare("PRAGMA table_info(properties)").all();
-      const hasTestTimerField = pragmaInfo.some(col => col.name === 'test_timer_end_date');
-      const hasTestTimerDurationField = pragmaInfo.some(col => col.name === 'test_timer_duration');
+      let pragmaInfo = db.prepare(`PRAGMA table_info(${tableName})`).all();
+      hasTestTimerField = pragmaInfo.some(col => col.name === 'test_timer_end_date');
+      hasTestTimerDurationField = pragmaInfo.some(col => col.name === 'test_timer_duration');
       
       if (!hasTestTimerField) {
-        console.log('🔄 Поле test_timer_end_date отсутствует, добавляем...');
+        console.log(`🔄 Поле test_timer_end_date отсутствует в ${tableName}, добавляем...`);
         try {
           const migrationPath = join(__dirname, 'database', 'add_test_timer_field.sql');
           console.log('📁 Путь к миграции:', migrationPath);
           const migrationSql = readFileSync(migrationPath, 'utf8');
-          db.exec(migrationSql);
-          console.log('✅ Поле test_timer_end_date добавлено');
+          // Заменяем имя таблицы в миграции, если нужно
+          const adaptedSql = migrationSql.replace(/properties/g, tableName);
+          db.exec(adaptedSql);
+          console.log(`✅ Поле test_timer_end_date добавлено в ${tableName}`);
+          hasTestTimerField = true;
         } catch (migrationError) {
-          console.error('❌ Ошибка при добавлении поля:', migrationError);
+          console.error('❌ Ошибка при добавлении поля через миграцию:', migrationError);
           // Пытаемся добавить напрямую
           try {
-            db.exec("ALTER TABLE properties ADD COLUMN test_timer_end_date TEXT");
-            console.log('✅ Поле test_timer_end_date добавлено напрямую');
+            db.exec(`ALTER TABLE ${tableName} ADD COLUMN test_timer_end_date TEXT`);
+            console.log(`✅ Поле test_timer_end_date добавлено напрямую в таблицу ${tableName}`);
+            hasTestTimerField = true;
           } catch (directError) {
             console.error('❌ Ошибка при прямом добавлении поля:', directError);
             return res.status(500).json({ 
@@ -5270,49 +5419,71 @@ app.post('/api/properties/:id/test-timer', (req, res) => {
         }
       }
       
-      if (!hasTestTimerDurationField) {
-        console.log('🔄 Поле test_timer_duration отсутствует, добавляем...');
+      if (!hasTestTimerDurationField && test_timer_duration !== undefined && test_timer_duration !== null) {
+        console.log(`🔄 Поле test_timer_duration отсутствует в ${tableName}, добавляем...`);
         try {
           const migrationPath = join(__dirname, 'database', 'add_test_timer_duration_field.sql');
-          console.log('📁 Путь к миграции:', migrationPath);
-          const migrationSql = readFileSync(migrationPath, 'utf8');
-          db.exec(migrationSql);
-          console.log('✅ Поле test_timer_duration добавлено');
+          try {
+            console.log('📁 Путь к миграции:', migrationPath);
+            const migrationSql = readFileSync(migrationPath, 'utf8');
+            // Заменяем имя таблицы в миграции, если нужно
+            const adaptedSql = migrationSql.replace(/properties/g, tableName);
+            db.exec(adaptedSql);
+            console.log(`✅ Поле test_timer_duration добавлено в ${tableName}`);
+            hasTestTimerDurationField = true;
+          } catch (fileError) {
+            // Если файл миграции не существует, добавляем напрямую
+            console.log('📁 Файл миграции не найден, добавляем поле напрямую');
+            throw new Error('Migration file not found');
+          }
         } catch (migrationError) {
-          console.error('❌ Ошибка при добавлении поля:', migrationError);
+          console.error('❌ Ошибка при добавлении поля через миграцию:', migrationError);
           // Пытаемся добавить напрямую
           try {
-            db.exec("ALTER TABLE properties ADD COLUMN test_timer_duration INTEGER");
-            console.log('✅ Поле test_timer_duration добавлено напрямую');
+            db.exec(`ALTER TABLE ${tableName} ADD COLUMN test_timer_duration INTEGER`);
+            console.log(`✅ Поле test_timer_duration добавлено напрямую в таблицу ${tableName}`);
+            hasTestTimerDurationField = true;
           } catch (directError) {
-            console.error('❌ Ошибка при прямом добавлении поля:', directError);
-            // Не критично, продолжаем
+            console.error('❌ Ошибка при прямом добавлении поля test_timer_duration:', directError);
+            // Не критично, продолжаем без этого поля
+            hasTestTimerDurationField = false;
           }
         }
       }
+      
+      // Повторно проверяем структуру после попыток добавления
+      pragmaInfo = db.prepare(`PRAGMA table_info(${tableName})`).all();
+      hasTestTimerField = pragmaInfo.some(col => col.name === 'test_timer_end_date');
+      hasTestTimerDurationField = pragmaInfo.some(col => col.name === 'test_timer_duration');
+      
     } catch (checkError) {
       console.error('❌ Ошибка при проверке структуры таблицы:', checkError);
+      return res.status(500).json({ 
+        success: false, 
+        error: 'Ошибка при проверке структуры таблицы: ' + checkError.message 
+      });
     }
     
-    // Обновляем тестовый таймер
+    // Обновляем тестовый таймер в нужной таблице
     try {
+      
       let result;
-      if (test_timer_duration !== undefined && test_timer_duration !== null) {
-        // Обновляем и дату окончания, и длительность
+      if (test_timer_duration !== undefined && test_timer_duration !== null && hasTestTimerDurationField) {
+        // Обновляем и дату окончания, и длительность (если поле существует)
         result = db.prepare(`
-          UPDATE properties 
+          UPDATE ${tableName} 
           SET test_timer_end_date = ?, test_timer_duration = ?, updated_at = CURRENT_TIMESTAMP
           WHERE id = ?
         `).run(test_timer_end_date, test_timer_duration, id);
-        console.log('✅ Тестовый таймер обновлен с длительностью:', { id, duration: test_timer_duration, changes: result.changes });
+        console.log(`✅ Тестовый таймер обновлен с длительностью в таблице ${tableName}:`, { id, duration: test_timer_duration, changes: result.changes });
       } else {
-        // Обновляем только дату окончания (для обратной совместимости)
+        // Обновляем только дату окончания (если поле длительности не существует или не указано)
         result = db.prepare(`
-          UPDATE properties 
+          UPDATE ${tableName} 
           SET test_timer_end_date = ?, updated_at = CURRENT_TIMESTAMP
           WHERE id = ?
         `).run(test_timer_end_date, id);
-        console.log('✅ Тестовый таймер обновлен (без длительности):', { id, changes: result.changes });
+        console.log(`✅ Тестовый таймер обновлен (без длительности) в таблице ${tableName}:`, { id, changes: result.changes });
       }
       
       res.json({
@@ -5341,29 +5512,43 @@ app.delete('/api/properties/:id/test-timer', (req, res) => {
     const db = getDatabase();
     const { id } = req.params;
     
-    // Проверяем, существует ли объявление
-    const property = db.prepare('SELECT id FROM properties WHERE id = ?').get(id);
+    // Проверяем, существует ли объявление в обеих таблицах
+    let property = db.prepare('SELECT id FROM properties WHERE id = ?').get(id);
+    let tableName = 'properties';
+    
+    if (!property) {
+      // Проверяем в таблице домов/вилл
+      property = db.prepare('SELECT id FROM properties_houses WHERE id = ?').get(id);
+      if (property) {
+        tableName = 'properties_houses';
+      }
+    }
+    
     if (!property) {
       return res.status(404).json({ success: false, error: 'Объявление не найдено' });
     }
     
-    // Удаляем тестовый таймер и его длительность
-    const pragmaInfo = db.prepare("PRAGMA table_info(properties)").all();
+    console.log(`✅ Объявление найдено в таблице: ${tableName} для удаления таймера`);
+    
+    // Удаляем тестовый таймер и его длительность из нужной таблицы
+    const pragmaInfo = db.prepare(`PRAGMA table_info(${tableName})`).all();
     const hasTestTimerDurationField = pragmaInfo.some(col => col.name === 'test_timer_duration');
     
     if (hasTestTimerDurationField) {
       db.prepare(`
-        UPDATE properties 
+        UPDATE ${tableName} 
         SET test_timer_end_date = NULL, test_timer_duration = NULL, updated_at = CURRENT_TIMESTAMP
         WHERE id = ?
       `).run(id);
     } else {
       db.prepare(`
-        UPDATE properties 
+        UPDATE ${tableName} 
         SET test_timer_end_date = NULL, updated_at = CURRENT_TIMESTAMP
         WHERE id = ?
       `).run(id);
     }
+    
+    console.log(`✅ Тестовый таймер удален из таблицы ${tableName} для объявления ${id}`);
     
     res.json({
       success: true,
@@ -6728,6 +6913,7 @@ app.post('/api/bids', (req, res) => {
     console.log('✅ Валидация пройдена:', { userIdNum, propertyIdNum, bidAmountNum });
     
     // Проверяем и создаем таблицу bids, если её нет
+    // ВАЖНО: Не используем FOREIGN KEY для property_id, так как объекты могут быть в разных таблицах (properties или properties_houses)
     try {
       const tableCheck = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='bids'").get();
       if (!tableCheck) {
@@ -6739,8 +6925,8 @@ app.post('/api/bids', (req, res) => {
             property_id INTEGER NOT NULL,
             bid_amount REAL NOT NULL,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-            FOREIGN KEY (property_id) REFERENCES properties(id) ON DELETE CASCADE
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+            -- ВАЖНО: property_id НЕ имеет FOREIGN KEY, так как объекты могут быть в properties или properties_houses
           );
           CREATE INDEX IF NOT EXISTS idx_bids_user_id ON bids(user_id);
           CREATE INDEX IF NOT EXISTS idx_bids_property_id ON bids(property_id);
@@ -6748,6 +6934,23 @@ app.post('/api/bids', (req, res) => {
           CREATE INDEX IF NOT EXISTS idx_bids_user_property ON bids(user_id, property_id);
         `);
         console.log('✅ Таблица bids создана');
+      } else {
+        // Проверяем, есть ли внешний ключ на property_id, и если есть - пытаемся его удалить
+        // Это нужно для существующих таблиц
+        try {
+          const foreignKeys = db.prepare(`
+            SELECT sql FROM sqlite_master 
+            WHERE type='table' AND name='bids'
+          `).get();
+          
+          if (foreignKeys && foreignKeys.sql && foreignKeys.sql.includes('FOREIGN KEY (property_id) REFERENCES properties')) {
+            console.log('⚠️ Обнаружен внешний ключ на property_id, который может вызывать проблемы. Рекомендуется пересоздать таблицу без этого ключа.');
+            // В SQLite нельзя просто удалить внешний ключ, нужно пересоздать таблицу
+            // Но мы не будем делать это автоматически, чтобы не потерять данные
+          }
+        } catch (fkCheckError) {
+          console.warn('⚠️ Не удалось проверить внешние ключи:', fkCheckError.message);
+        }
       }
     } catch (tableError) {
       console.error('❌ Ошибка при проверке/создании таблицы bids:', tableError);
@@ -6770,13 +6973,53 @@ app.post('/api/bids', (req, res) => {
       });
     }
     
-    // Проверяем, существует ли объект недвижимости
-    const property = db.prepare('SELECT * FROM properties WHERE id = ?').get(propertyIdNum);
+    // Проверяем, существует ли объект недвижимости во всех возможных таблицах
+    // Система использует: properties_apartments (квартиры/коммерческая), properties_houses (дома/виллы), и старую properties
+    let property = null;
+    let tableName = null;
+    
+    // Сначала проверяем новые таблицы
+    try {
+      property = db.prepare('SELECT * FROM properties_apartments WHERE id = ?').get(propertyIdNum);
+      if (property) {
+        tableName = 'properties_apartments';
+        console.log(`✅ Объект найден в properties_apartments:`, { id: property.id, title: property.title, property_type: property.property_type });
+      }
+    } catch (e) {
+      console.warn('⚠️ Таблица properties_apartments не существует или ошибка:', e.message);
+    }
+    
     if (!property) {
-      console.error(`❌ Объект недвижимости с ID ${propertyIdNum} не найден в БД`);
+      try {
+        property = db.prepare('SELECT * FROM properties_houses WHERE id = ?').get(propertyIdNum);
+        if (property) {
+          tableName = 'properties_houses';
+          console.log(`✅ Объект найден в properties_houses:`, { id: property.id, title: property.title, property_type: property.property_type });
+        }
+      } catch (e) {
+        console.warn('⚠️ Таблица properties_houses не существует или ошибка:', e.message);
+      }
+    }
+    
+    // Fallback на старую таблицу properties
+    if (!property) {
+      try {
+        property = db.prepare('SELECT * FROM properties WHERE id = ?').get(propertyIdNum);
+        if (property) {
+          tableName = 'properties';
+          console.log(`✅ Объект найден в старой таблице properties:`, { id: property.id, title: property.title });
+        }
+      } catch (e) {
+        console.warn('⚠️ Таблица properties не существует или ошибка:', e.message);
+      }
+    }
+    
+    if (!property || !tableName) {
+      console.error(`❌ Объект недвижимости с ID ${propertyIdNum} не найден ни в одной таблице (properties_apartments, properties_houses, properties)`);
       return res.status(404).json({ success: false, error: `Объект недвижимости с ID ${propertyIdNum} не найден` });
     }
-    console.log('✅ Объект найден:', { id: property.id, title: property.title, is_auction: property.is_auction });
+    
+    console.log('✅ Объект найден:', { id: property.id, title: property.title, is_auction: property.is_auction, table: tableName });
     
     // Проверяем, что это аукцион
     if (property.is_auction !== 1) {
@@ -6870,12 +7113,39 @@ app.post('/api/bids', (req, res) => {
     }
     
     // Создаем ставку
-    const stmt = db.prepare(`
-      INSERT INTO bids (user_id, property_id, bid_amount, created_at)
-      VALUES (?, ?, ?, CURRENT_TIMESTAMP)
-    `);
-    const result = stmt.run(userIdNum, propertyIdNum, bidAmountNum);
-    const bidId = result.lastInsertRowid;
+    // ВАЖНО: Отключаем проверку внешних ключей, так как объекты могут быть в разных таблицах
+    // (properties или properties_houses), а внешний ключ ссылается только на properties
+    try {
+      db.prepare('PRAGMA foreign_keys = OFF').run();
+    } catch (fkError) {
+      console.warn('⚠️ Не удалось отключить проверку внешних ключей:', fkError.message);
+    }
+    
+    let result;
+    let bidId;
+    try {
+      const stmt = db.prepare(`
+        INSERT INTO bids (user_id, property_id, bid_amount, created_at)
+        VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+      `);
+      result = stmt.run(userIdNum, propertyIdNum, bidAmountNum);
+      bidId = result.lastInsertRowid;
+    } catch (insertError) {
+      // Включаем обратно проверку внешних ключей
+      try {
+        db.prepare('PRAGMA foreign_keys = ON').run();
+      } catch (fkError2) {
+        console.warn('⚠️ Не удалось включить проверку внешних ключей:', fkError2.message);
+      }
+      throw insertError;
+    }
+    
+    // Включаем обратно проверку внешних ключей
+    try {
+      db.prepare('PRAGMA foreign_keys = ON').run();
+    } catch (fkError) {
+      console.warn('⚠️ Не удалось включить проверку внешних ключей:', fkError.message);
+    }
     
     console.log(`✅ Ставка создана с ID: ${bidId}, user_id: ${user_id}, property_id: ${property_id}, amount: ${bidAmountNum}`);
     console.log(`📊 Результат INSERT: changes=${result.changes}, lastInsertRowid=${bidId}`);
