@@ -3,6 +3,8 @@ import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { FiSearch, FiShoppingCart, FiCheck, FiX, FiClock, FiFileText, FiExternalLink } from 'react-icons/fi';
 import { getApiBaseUrl } from '../../utils/apiConfig';
+import { getEmailJsConfig } from '../../utils/env';
+import emailjs from '@emailjs/browser';
 import './PurchaseRequests.css';
 
 const PurchaseRequests = () => {
@@ -75,6 +77,79 @@ const PurchaseRequests = () => {
     });
   }, [searchQuery, statusFilter, requests]);
 
+  // Функция отправки email покупателю о необходимости первоначального платежа
+  const sendPaymentRequestEmail = async (request) => {
+    if (!request.buyer_email) return;
+
+    const emailJsConfig = getEmailJsConfig();
+    const EMAILJS_SERVICE_ID = emailJsConfig.serviceId || '';
+    const EMAILJS_TEMPLATE_ID = emailJsConfig.templateId || '';
+    const EMAILJS_PUBLIC_KEY = emailJsConfig.publicKey || '';
+
+    if (!EMAILJS_SERVICE_ID || !EMAILJS_TEMPLATE_ID || !EMAILJS_PUBLIC_KEY) {
+      console.warn('EmailJS не настроен для отправки уведомления');
+      return;
+    }
+
+    try {
+      if (EMAILJS_PUBLIC_KEY) {
+        emailjs.init(EMAILJS_PUBLIC_KEY);
+      }
+
+      const currencySymbol = request.property_currency === 'USD' ? '$' : 
+                            request.property_currency === 'EUR' ? '€' : 
+                            request.property_currency || '';
+      const propertyPrice = request.property_price ? 
+        `${currencySymbol}${parseFloat(request.property_price).toLocaleString('ru-RU')}` : 
+        'не указана';
+      
+      // Получаем реквизиты для платежа (можно вынести в переменные окружения)
+      const paymentAccount = process.env.REACT_APP_PAYMENT_ACCOUNT_NUMBER || 
+                             process.env.VITE_PAYMENT_ACCOUNT_NUMBER || 
+                             'BY36ALFA30122345678901234567';
+
+      const emailMessage = `Здравствуйте, ${request.buyer_name || 'Покупатель'}!
+
+Мы рассмотрели ваш запрос на покупку объекта недвижимости.
+
+📋 Детали запроса:
+🏠 Объект: ${request.property_title || 'Не указан'}
+💰 Цена: ${propertyPrice}
+📍 Местоположение: ${request.property_location || 'Не указано'}
+
+Для продолжения необходимо совершить первоначальный платеж по следующим реквизитам:
+
+💳 Номер счета: ${paymentAccount}
+
+После получения платежа наш менеджер свяжется с вами для дальнейших действий.
+
+С уважением,
+Команда Sellyourbrick`;
+
+      const templateParams = {
+        to_email: request.buyer_email,
+        email: request.buyer_email,
+        buyer_name: request.buyer_name || 'Покупатель',
+        property_title: request.property_title || 'Не указан',
+        property_price: propertyPrice,
+        property_location: request.property_location || 'Не указано',
+        payment_account: paymentAccount,
+        message: emailMessage,
+        from_name: 'Sellyourbrick'
+      };
+
+      await emailjs.send(
+        EMAILJS_SERVICE_ID,
+        EMAILJS_TEMPLATE_ID,
+        templateParams,
+        EMAILJS_PUBLIC_KEY
+      );
+      console.log('✅ Email уведомление отправлено покупателю');
+    } catch (error) {
+      console.error('Ошибка отправки email:', error);
+    }
+  };
+
   const handleStatusUpdate = async (requestId, newStatus) => {
     if (updatingStatus) return;
     
@@ -95,6 +170,13 @@ const PurchaseRequests = () => {
       if (response.ok) {
         const result = await response.json();
         if (result.success) {
+          const updatedRequest = requests.find(req => req.id === requestId);
+          
+          // Если статус "processing", отправляем email покупателю
+          if (newStatus === 'processing' && updatedRequest) {
+            await sendPaymentRequestEmail(updatedRequest);
+          }
+          
           // Обновляем локальное состояние
           setRequests(requests.map(req => 
             req.id === requestId ? { ...req, status: newStatus, admin_notes: adminNotes || req.admin_notes } : req
@@ -478,6 +560,25 @@ const PurchaseRequests = () => {
                       </span>
                     </div>
                     
+                    {(propertyDetails?.property_type || selectedRequest.property_type) && (
+                      <div className="modal-info-item">
+                        <span className="modal-info-label">Тип недвижимости:</span>
+                        <span className="modal-info-value">
+                          {(() => {
+                            const type = propertyDetails?.property_type || selectedRequest.property_type;
+                            const typeMap = {
+                              'apartment': 'Квартира',
+                              'house': 'Дом',
+                              'villa': 'Вилла',
+                              'townhouse': 'Таунхаус',
+                              'commercial': 'Коммерческая'
+                            };
+                            return typeMap[type] || type || 'Не указано';
+                          })()}
+                        </span>
+                      </div>
+                    )}
+                    
                     {(propertyDetails?.price || selectedRequest.property_price) && (
                       <div className="modal-info-item">
                         <span className="modal-info-label">Цена:</span>
@@ -490,11 +591,186 @@ const PurchaseRequests = () => {
                       </div>
                     )}
                     
+                    {(propertyDetails?.area || propertyDetails?.sqft || selectedRequest.property_area) && (
+                      <div className="modal-info-item">
+                        <span className="modal-info-label">Площадь:</span>
+                        <span className="modal-info-value">
+                          {propertyDetails?.area || propertyDetails?.sqft || selectedRequest.property_area || 'Не указано'} м²
+                        </span>
+                      </div>
+                    )}
+                    
+                    {(propertyDetails?.rooms || selectedRequest.property_rooms) && (
+                      <div className="modal-info-item">
+                        <span className="modal-info-label">Комнат:</span>
+                        <span className="modal-info-value">
+                          {propertyDetails?.rooms || selectedRequest.property_rooms || 'Не указано'}
+                        </span>
+                      </div>
+                    )}
+                    
+                    {(propertyDetails?.bedrooms || selectedRequest.property_bedrooms) && (
+                      <div className="modal-info-item">
+                        <span className="modal-info-label">Спален:</span>
+                        <span className="modal-info-value">
+                          {propertyDetails?.bedrooms || selectedRequest.property_bedrooms || 'Не указано'}
+                        </span>
+                      </div>
+                    )}
+                    
+                    {(propertyDetails?.bathrooms || selectedRequest.property_bathrooms) && (
+                      <div className="modal-info-item">
+                        <span className="modal-info-label">Ванных:</span>
+                        <span className="modal-info-value">
+                          {propertyDetails?.bathrooms || selectedRequest.property_bathrooms || 'Не указано'}
+                        </span>
+                      </div>
+                    )}
+                    
+                    {(propertyDetails?.floor !== null && propertyDetails?.floor !== undefined) && (
+                      <div className="modal-info-item">
+                        <span className="modal-info-label">Этаж:</span>
+                        <span className="modal-info-value">
+                          {propertyDetails.floor}
+                          {propertyDetails.total_floors ? ` / ${propertyDetails.total_floors}` : ''}
+                        </span>
+                      </div>
+                    )}
+                    
+                    {(propertyDetails?.year_built || selectedRequest.property_year_built) && (
+                      <div className="modal-info-item">
+                        <span className="modal-info-label">Год постройки:</span>
+                        <span className="modal-info-value">
+                          {propertyDetails?.year_built || selectedRequest.property_year_built || 'Не указано'}
+                        </span>
+                      </div>
+                    )}
+                    
+                    {(propertyDetails?.land_area || selectedRequest.property_land_area) && (
+                      <div className="modal-info-item">
+                        <span className="modal-info-label">Площадь участка:</span>
+                        <span className="modal-info-value">
+                          {propertyDetails?.land_area || selectedRequest.property_land_area || 'Не указано'} м²
+                        </span>
+                      </div>
+                    )}
+                    
                     {(propertyDetails?.location || selectedRequest.property_location) && (
                       <div className="modal-info-item modal-info-item--full">
                         <span className="modal-info-label">Местоположение:</span>
                         <span className="modal-info-value">
                           {propertyDetails?.location || selectedRequest.property_location}
+                        </span>
+                      </div>
+                    )}
+                    
+                    {(propertyDetails?.description || selectedRequest.property_description) && (
+                      <div className="modal-info-item modal-info-item--full">
+                        <span className="modal-info-label">Описание:</span>
+                        <span className="modal-info-value" style={{ whiteSpace: 'pre-wrap', lineHeight: '1.6' }}>
+                          {propertyDetails?.description || selectedRequest.property_description || 'Не указано'}
+                        </span>
+                      </div>
+                    )}
+                    
+                    {/* Удобства */}
+                    {(propertyDetails?.balcony || propertyDetails?.parking || propertyDetails?.elevator || 
+                      propertyDetails?.garage || propertyDetails?.pool || propertyDetails?.garden ||
+                      propertyDetails?.electricity || propertyDetails?.internet || propertyDetails?.security ||
+                      propertyDetails?.furniture || selectedRequest.property_balcony || selectedRequest.property_parking) && (
+                      <div className="modal-info-item modal-info-item--full">
+                        <span className="modal-info-label">Удобства:</span>
+                        <div className="modal-info-value" style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginTop: '0.5rem' }}>
+                          {((propertyDetails?.balcony === 1 || propertyDetails?.balcony === true) || selectedRequest.property_balcony === 1) && (
+                            <span style={{ padding: '0.25rem 0.75rem', background: '#e0f2fe', color: '#0369a1', borderRadius: '6px', fontSize: '0.875rem' }}>Балкон</span>
+                          )}
+                          {((propertyDetails?.parking === 1 || propertyDetails?.parking === true) || selectedRequest.property_parking === 1) && (
+                            <span style={{ padding: '0.25rem 0.75rem', background: '#e0f2fe', color: '#0369a1', borderRadius: '6px', fontSize: '0.875rem' }}>Парковка</span>
+                          )}
+                          {((propertyDetails?.elevator === 1 || propertyDetails?.elevator === true) || selectedRequest.property_elevator === 1) && (
+                            <span style={{ padding: '0.25rem 0.75rem', background: '#e0f2fe', color: '#0369a1', borderRadius: '6px', fontSize: '0.875rem' }}>Лифт</span>
+                          )}
+                          {((propertyDetails?.garage === 1 || propertyDetails?.garage === true) || selectedRequest.property_garage === 1) && (
+                            <span style={{ padding: '0.25rem 0.75rem', background: '#e0f2fe', color: '#0369a1', borderRadius: '6px', fontSize: '0.875rem' }}>Гараж</span>
+                          )}
+                          {((propertyDetails?.pool === 1 || propertyDetails?.pool === true) || selectedRequest.property_pool === 1) && (
+                            <span style={{ padding: '0.25rem 0.75rem', background: '#e0f2fe', color: '#0369a1', borderRadius: '6px', fontSize: '0.875rem' }}>Бассейн</span>
+                          )}
+                          {((propertyDetails?.garden === 1 || propertyDetails?.garden === true) || selectedRequest.property_garden === 1) && (
+                            <span style={{ padding: '0.25rem 0.75rem', background: '#e0f2fe', color: '#0369a1', borderRadius: '6px', fontSize: '0.875rem' }}>Сад</span>
+                          )}
+                          {((propertyDetails?.electricity === 1 || propertyDetails?.electricity === true) || selectedRequest.property_electricity === 1) && (
+                            <span style={{ padding: '0.25rem 0.75rem', background: '#e0f2fe', color: '#0369a1', borderRadius: '6px', fontSize: '0.875rem' }}>Электричество</span>
+                          )}
+                          {((propertyDetails?.internet === 1 || propertyDetails?.internet === true) || selectedRequest.property_internet === 1) && (
+                            <span style={{ padding: '0.25rem 0.75rem', background: '#e0f2fe', color: '#0369a1', borderRadius: '6px', fontSize: '0.875rem' }}>Интернет</span>
+                          )}
+                          {((propertyDetails?.security === 1 || propertyDetails?.security === true) || selectedRequest.property_security === 1) && (
+                            <span style={{ padding: '0.25rem 0.75rem', background: '#e0f2fe', color: '#0369a1', borderRadius: '6px', fontSize: '0.875rem' }}>Охрана</span>
+                          )}
+                          {((propertyDetails?.furniture === 1 || propertyDetails?.furniture === true) || selectedRequest.property_furniture === 1) && (
+                            <span style={{ padding: '0.25rem 0.75rem', background: '#e0f2fe', color: '#0369a1', borderRadius: '6px', fontSize: '0.875rem' }}>Мебель</span>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Дополнительная информация */}
+                    {(propertyDetails?.renovation || propertyDetails?.condition || propertyDetails?.heating ||
+                      propertyDetails?.water_supply || propertyDetails?.sewerage ||
+                      selectedRequest.property_renovation || selectedRequest.property_condition) && (
+                      <div className="modal-info-item modal-info-item--full">
+                        <span className="modal-info-label" style={{ marginBottom: '0.75rem', display: 'block' }}>Дополнительная информация:</span>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                          {(propertyDetails?.renovation || selectedRequest.property_renovation) && (
+                            <div style={{ display: 'flex', gap: '0.5rem' }}>
+                              <span style={{ fontWeight: 600, color: '#6b7280', minWidth: '120px' }}>Ремонт:</span>
+                              <span>{propertyDetails?.renovation || selectedRequest.property_renovation}</span>
+                            </div>
+                          )}
+                          {(propertyDetails?.condition || selectedRequest.property_condition) && (
+                            <div style={{ display: 'flex', gap: '0.5rem' }}>
+                              <span style={{ fontWeight: 600, color: '#6b7280', minWidth: '120px' }}>Состояние:</span>
+                              <span>{propertyDetails?.condition || selectedRequest.property_condition}</span>
+                            </div>
+                          )}
+                          {(propertyDetails?.heating || selectedRequest.property_heating) && (
+                            <div style={{ display: 'flex', gap: '0.5rem' }}>
+                              <span style={{ fontWeight: 600, color: '#6b7280', minWidth: '120px' }}>Отопление:</span>
+                              <span>{propertyDetails?.heating || selectedRequest.property_heating}</span>
+                            </div>
+                          )}
+                          {(propertyDetails?.water_supply || selectedRequest.property_water_supply) && (
+                            <div style={{ display: 'flex', gap: '0.5rem' }}>
+                              <span style={{ fontWeight: 600, color: '#6b7280', minWidth: '120px' }}>Водоснабжение:</span>
+                              <span>{propertyDetails?.water_supply || selectedRequest.property_water_supply}</span>
+                            </div>
+                          )}
+                          {(propertyDetails?.sewerage || selectedRequest.property_sewerage) && (
+                            <div style={{ display: 'flex', gap: '0.5rem' }}>
+                              <span style={{ fontWeight: 600, color: '#6b7280', minWidth: '120px' }}>Канализация:</span>
+                              <span>{propertyDetails?.sewerage || selectedRequest.property_sewerage}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Коммерческая недвижимость */}
+                    {(propertyDetails?.commercial_type || selectedRequest.property_commercial_type) && (
+                      <div className="modal-info-item">
+                        <span className="modal-info-label">Тип коммерческой недвижимости:</span>
+                        <span className="modal-info-value">
+                          {propertyDetails?.commercial_type || selectedRequest.property_commercial_type}
+                        </span>
+                      </div>
+                    )}
+                    
+                    {(propertyDetails?.business_hours || selectedRequest.property_business_hours) && (
+                      <div className="modal-info-item">
+                        <span className="modal-info-label">Часы работы:</span>
+                        <span className="modal-info-value">
+                          {propertyDetails?.business_hours || selectedRequest.property_business_hours}
                         </span>
                       </div>
                     )}

@@ -82,18 +82,9 @@ function AdminSessionCleaner() {
   const location = useLocation()
 
   useEffect(() => {
-    // Если мы не на странице админ-панели и есть активная сессия администратора, очищаем её
-    if (location.pathname !== '/admin') {
-      const userRole = localStorage.getItem('userRole')
-      const isAdminLoggedIn = localStorage.getItem('isAdminLoggedIn') === 'true'
-      
-      if (isAdminLoggedIn && userRole === 'admin') {
-        console.log('🔄 Автоматическая очистка сессии администратора при переходе на:', location.pathname)
-        localStorage.removeItem('userRole')
-        localStorage.removeItem('isAdminLoggedIn')
-        localStorage.removeItem('isLoggedIn')
-      }
-    }
+    // Сессия администратора теперь сохраняется при выходе из админки
+    // Это позволяет админу просматривать объекты через кнопку "Перейти к объекту"
+    // Автоматическая очистка сессии админа отключена
   }, [location.pathname])
 
   return null

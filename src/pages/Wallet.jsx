@@ -562,6 +562,13 @@ const Wallet = () => {
       return
     }
     
+    // Проверяем, что пользователь не является продавцом
+    const userRole = userData?.role || 'buyer'
+    if (userRole === 'seller' || userRole === 'owner') {
+      alert('Продавцы не могут покупать объекты')
+      return
+    }
+    
     setIsBuyNowModalOpen(true)
   }
 

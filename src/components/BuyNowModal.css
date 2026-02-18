@@ -84,7 +84,7 @@
   display: flex;
   justify-content: center;
   margin-bottom: 16px;
-  color: #10b981;
+  color: #0ABAB5;
 }
 
 .buy-now-modal__title {
@@ -108,16 +108,17 @@
   align-items: center;
   gap: 8px;
   padding: 20px;
-  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+  background: linear-gradient(135deg, rgba(10, 186, 181, 0.1) 0%, rgba(8, 154, 149, 0.15) 100%);
   border-radius: 12px;
   margin-bottom: 24px;
-  border: 1px solid #bbf7d0;
+  border: 2px solid rgba(10, 186, 181, 0.3);
+  box-shadow: 0 4px 12px rgba(10, 186, 181, 0.1);
 }
 
 .buy-now-modal__price-label {
   font-size: 14px;
-  color: #166534;
-  font-weight: 500;
+  color: #089a95;
+  font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -125,7 +126,7 @@
 .buy-now-modal__price-value {
   font-size: 32px;
   font-weight: 700;
-  color: #10b981;
+  color: #0ABAB5;
   font-family: 'Montserrat', sans-serif;
 }
 
@@ -146,22 +147,24 @@
   gap: 16px;
   margin-bottom: 24px;
   padding: 20px;
-  background: #f9fafb;
+  background: rgba(10, 186, 181, 0.05);
   border-radius: 12px;
-  border-left: 4px solid #10b981;
-  transition: all 0.2s ease;
+  border-left: 4px solid #0ABAB5;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(10, 186, 181, 0.08);
 }
 
 .buy-now-modal__step:hover {
-  background: #f3f4f6;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  background: rgba(10, 186, 181, 0.1);
+  box-shadow: 0 4px 12px rgba(10, 186, 181, 0.15);
+  transform: translateX(4px);
 }
 
 .buy-now-modal__step-number {
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  background: linear-gradient(135deg, #0ABAB5 0%, #089a95 100%);
   color: #ffffff;
   display: flex;
   align-items: center;
@@ -170,6 +173,7 @@
   font-size: 18px;
   flex-shrink: 0;
   font-family: 'Montserrat', sans-serif;
+  box-shadow: 0 4px 12px rgba(10, 186, 181, 0.3);
 }
 
 .buy-now-modal__step-content {
@@ -188,7 +192,7 @@
 }
 
 .buy-now-modal__step-title svg {
-  color: #10b981;
+  color: #0ABAB5;
 }
 
 .buy-now-modal__step-text {
@@ -201,19 +205,21 @@
 
 .buy-now-modal__contact {
   padding: 16px;
-  background: #eff6ff;
+  background: linear-gradient(135deg, rgba(10, 186, 181, 0.08) 0%, rgba(8, 154, 149, 0.12) 100%);
   border-radius: 12px;
-  border: 1px solid #bfdbfe;
+  border: 2px solid rgba(10, 186, 181, 0.2);
   margin-bottom: 24px;
+  box-shadow: 0 2px 8px rgba(10, 186, 181, 0.1);
 }
 
 .buy-now-modal__contact-text {
   font-size: 14px;
   line-height: 1.6;
-  color: #1e40af;
+  color: #089a95;
   margin: 0;
   text-align: center;
   font-family: 'Montserrat', sans-serif;
+  font-weight: 500;
 }
 
 .buy-now-modal__actions {
@@ -235,20 +241,37 @@
 }
 
 .buy-now-modal__button--primary {
-  background: linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%);
+  background: linear-gradient(135deg, #0ABAB5 0%, #089a95 50%, #067a75 100%);
   color: #ffffff;
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+  box-shadow: 0 4px 12px rgba(10, 186, 181, 0.4);
+  position: relative;
+  overflow: hidden;
+}
+
+.buy-now-modal__button--primary::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  transition: left 0.5s;
+}
+
+.buy-now-modal__button--primary:hover::before {
+  left: 100%;
 }
 
 .buy-now-modal__button--primary:hover {
-  background: linear-gradient(135deg, #059669 0%, #047857 50%, #065f46 100%);
-  box-shadow: 0 6px 16px rgba(16, 185, 129, 0.4);
+  background: linear-gradient(135deg, #089a95 0%, #067a75 50%, #055a56 100%);
+  box-shadow: 0 6px 20px rgba(10, 186, 181, 0.5);
   transform: translateY(-2px);
 }
 
 .buy-now-modal__button--primary:active {
   transform: translateY(0);
-  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+  box-shadow: 0 2px 8px rgba(10, 186, 181, 0.3);
 }
 
 .buy-now-modal__button--primary:disabled {
@@ -360,7 +383,7 @@
   margin-top: 2px;
   cursor: pointer;
   flex-shrink: 0;
-  accent-color: #10b981;
+  accent-color: #0ABAB5;
 }
 
 .buy-now-modal__agreement-label--disabled .buy-now-modal__agreement-checkbox {
@@ -520,13 +543,25 @@
 .buy-now-modal__copied-message {
   margin-top: 12px;
   padding: 8px 16px;
-  background: #10b981;
+  background: #0ABAB5;
   color: #ffffff;
   border-radius: 6px;
   font-size: 14px;
   text-align: center;
   font-weight: 600;
   animation: slideIn 0.3s ease-out;
+  font-family: 'Montserrat', sans-serif;
+}
+
+.buy-now-modal__error {
+  margin-top: 16px;
+  padding: 12px 16px;
+  background: #fee2e2;
+  border: 1px solid #fca5a5;
+  border-radius: 8px;
+  color: #dc2626;
+  font-size: 14px;
+  text-align: center;
   font-family: 'Montserrat', sans-serif;
 }
 

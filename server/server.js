@@ -2346,7 +2346,7 @@ app.get('/api/purchase-requests/buyer/:buyerId', (req, res) => {
 /**
  * PUT /api/purchase-requests/:id/status - Обновить статус запроса
  */
-app.put('/api/purchase-requests/:id/status', (req, res) => {
+app.put('/api/purchase-requests/:id/status', async (req, res) => {
   try {
     const { status, adminNotes } = req.body;
     
@@ -2359,10 +2359,91 @@ app.put('/api/purchase-requests/:id/status', (req, res) => {
       return res.status(404).json({ success: false, error: 'Запрос не найден' });
     }
 
+    // Если статус "processing", резервируем объект на 72 часа
+    if (status === 'processing' && request.property_id) {
+      try {
+        const buyerId = request.buyer_id || null;
+        console.log(`🔍 PUT /api/purchase-requests/:id/status - Резервация объекта ID=${request.property_id}, buyerId=${buyerId}, requestId=${req.params.id}`);
+        
+        const reserveResult = propertyQueries.reserve(request.property_id, buyerId, req.params.id);
+        console.log(`✅ Объект #${request.property_id} забронирован на 72 часа для запроса #${req.params.id}`, reserveResult);
+        
+        // Проверяем, что резервация действительно произошла
+        const checkReservation = propertyQueries.isReserved(request.property_id);
+        console.log(`🔍 Проверка резервации после установки:`, checkReservation);
+        
+        if (!checkReservation.isReserved) {
+          console.error(`❌ ВНИМАНИЕ: Резервация не установлена! Объект ID=${request.property_id} не забронирован`);
+        }
+      } catch (reserveError) {
+        console.error('❌ Ошибка при резервации объекта:', reserveError);
+        console.error('❌ Stack trace:', reserveError.stack);
+        // Продолжаем выполнение, даже если резервация не удалась
+      }
+    }
+
     purchaseRequestQueries.updateStatus(req.params.id, status, adminNotes);
     const updatedRequest = purchaseRequestQueries.getById(req.params.id);
     
     console.log(`✅ Статус запроса #${req.params.id} обновлен: ${status}`);
+    
+    // Если статус "processing", отправляем уведомления покупателю
+    if (status === 'processing') {
+      try {
+        // Получаем реквизиты для платежа (можно вынести в переменные окружения)
+        const paymentAccount = process.env.PAYMENT_ACCOUNT_NUMBER || 'BY36ALFA30122345678901234567';
+        
+        // Формируем сообщение для покупателя
+        const currencySymbol = request.property_currency === 'USD' ? '$' : 
+                              request.property_currency === 'EUR' ? '€' : 
+                              request.property_currency || '';
+        const propertyPrice = request.property_price ? 
+          `${currencySymbol}${parseFloat(request.property_price).toLocaleString('ru-RU')}` : 
+          'не указана';
+        
+        const message = `Здравствуйте, ${request.buyer_name || 'Покупатель'}!
+
+Мы рассмотрели ваш запрос на покупку объекта недвижимости.
+
+📋 Детали запроса:
+🏠 Объект: ${request.property_title || 'Не указан'}
+💰 Цена: ${propertyPrice}
+📍 Местоположение: ${request.property_location || 'Не указано'}
+
+Для продолжения необходимо совершить первоначальный платеж по следующим реквизитам:
+
+💳 Номер счета: ${paymentAccount}
+
+После получения платежа наш менеджер свяжется с вами для дальнейших действий.
+
+С уважением,
+Команда Sellyourbrick`;
+
+        // Отправляем WhatsApp сообщение
+        if (request.buyer_phone) {
+          try {
+            const formattedPhone = String(request.buyer_phone).replace(/\D/g, '');
+            if (formattedPhone && waClientReady && waClient) {
+              const chatId = `${formattedPhone}@c.us`;
+              await waClient.sendMessage(chatId, message);
+              console.log(`✅ WhatsApp сообщение отправлено покупателю: ${formattedPhone}`);
+            }
+          } catch (whatsappError) {
+            console.error('❌ Ошибка отправки WhatsApp:', whatsappError);
+          }
+        }
+
+        // Отправляем email через EmailJS (нужно будет вызвать на фронтенде или создать отдельный endpoint)
+        // Пока просто логируем
+        if (request.buyer_email) {
+          console.log(`📧 Email должен быть отправлен покупателю: ${request.buyer_email}`);
+          console.log(`📧 Текст сообщения:\n${message}`);
+        }
+      } catch (notificationError) {
+        console.error('❌ Ошибка при отправке уведомлений:', notificationError);
+        // Продолжаем выполнение, даже если уведомления не отправились
+      }
+    }
     
     res.json({ success: true, data: updatedRequest, message: 'Статус обновлен' });
   } catch (error) {
@@ -5520,12 +5601,26 @@ app.get('/api/properties/:id', (req, res) => {
       formatted.test_timer_duration = formatted.test_timer_duration || null;
     }
     
-    console.log('🔍 GET /api/properties/:id - Отправляем formatted с test_drive:', {
+    // Проверяем резервацию объекта
+    console.log(`🔍 GET /api/properties/:id - Проверка резервации для объекта ID=${id}`);
+    const reservationInfo = propertyQueries.isReserved(id);
+    console.log(`🔍 GET /api/properties/:id - Результат проверки резервации:`, reservationInfo);
+    
+    formatted.is_reserved = reservationInfo.isReserved || false;
+    formatted.reserved_until = reservationInfo.reservedUntil || null;
+    formatted.reserved_by = reservationInfo.reservedBy || null;
+    formatted.reservation_time_remaining = reservationInfo.timeRemaining || null;
+    
+    console.log('🔍 GET /api/properties/:id - Отправляем formatted с резервацией:', {
       test_drive: formatted.test_drive,
       test_drive_type: typeof formatted.test_drive,
       test_timer_end_date: formatted.test_timer_end_date,
       test_timer_duration: formatted.test_timer_duration,
-      endTime: formatted.endTime
+      endTime: formatted.endTime,
+      is_reserved: formatted.is_reserved,
+      reserved_until: formatted.reserved_until,
+      reserved_by: formatted.reserved_by,
+      reservation_time_remaining: formatted.reservation_time_remaining
     });
     res.json({ success: true, data: formatted });
   } catch (error) {

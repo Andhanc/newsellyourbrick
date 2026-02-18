@@ -29,14 +29,20 @@ const PropertyDetailPage = () => {
         return
       }
 
-      // Иначе загружаем из API
+      // Иначе загружаем из API (всегда загружаем актуальные данные, включая резервацию)
       if (id) {
         try {
           setIsLoading(true)
+          console.log(`🔍 PropertyDetailPage: Загрузка данных объекта ID=${id}`);
           const response = await fetch(`${API_BASE_URL}/properties/${id}`)
           if (response.ok) {
             const result = await response.json()
             console.log('📥 PropertyDetailPage - Ответ от API:', result)
+            console.log('📥 PropertyDetailPage - Данные о резервации из API:', {
+              is_reserved: result.data?.is_reserved,
+              reserved_until: result.data?.reserved_until,
+              reserved_by: result.data?.reserved_by
+            });
             if (result.success && result.data) {
               const prop = result.data
               console.log('📥 PropertyDetailPage - Данные объекта (prop) - ВСЕ ПОЛЯ:', prop)
@@ -271,7 +277,18 @@ const PropertyDetailPage = () => {
                 ownership_document: prop.ownership_document || null,
                 no_debts_document: prop.no_debts_document || null,
                 additional_documents: prop.additional_documents || null,
+                // Резервация
+                is_reserved: prop.is_reserved === true || prop.is_reserved === 1 || prop.is_reserved === 'true' || false,
+                reserved_until: prop.reserved_until || null,
+                reserved_by: prop.reserved_by || null,
+                reservation_time_remaining: prop.reservation_time_remaining || null,
               }
+              
+              console.log('📥 PropertyDetailPage - Данные о резервации:', {
+                is_reserved: formattedProperty.is_reserved,
+                reserved_until: formattedProperty.reserved_until,
+                reserved_by: formattedProperty.reserved_by
+              });
               
               console.log('✅ Загружено объявление:', {
                 id: formattedProperty.id,

@@ -6,7 +6,7 @@ import BiddingHistoryModal from '../components/BiddingHistoryModal'
 import DepositButton from '../components/DepositButton'
 import { getUserData, isAuthenticated } from '../services/authService'
 import BidOutbidNotification from '../components/BidOutbidNotification'
-import { FiX, FiLayers, FiHome, FiCheck, FiX as FiXIcon } from 'react-icons/fi'
+import { FiX, FiLayers, FiHome, FiCheck, FiX as FiXIcon, FiLock } from 'react-icons/fi'
 import { IoLocationOutline } from 'react-icons/io5'
 import { MdBed, MdOutlineBathtub } from 'react-icons/md'
 import { BiArea } from 'react-icons/bi'
@@ -44,6 +44,32 @@ const PropertyDetail = () => {
   const shownNotificationIdsRef = useRef(new Set())
   const userData = getUserData()
   const userId = userData?.id
+
+  // Функция для проверки, можно ли показывать депозит (только для авторизованных покупателей)
+  const canShowDeposit = () => {
+    // Проверяем, авторизован ли пользователь
+    if (!isAuthenticated() || !userData || !userData.isLoggedIn) {
+      return false
+    }
+    // Показываем депозит только для покупателей (не для продавцов)
+    const userRole = userData.role || 'buyer'
+    return userRole === 'buyer' || userRole === 'client'
+  }
+
+  // Проверка авторизации при загрузке компонента
+  useEffect(() => {
+    // Проверяем, является ли пользователь админом
+    const isAdminLoggedIn = localStorage.getItem('isAdminLoggedIn') === 'true'
+    const userRole = localStorage.getItem('userRole')
+    const isAdmin = isAdminLoggedIn && userRole === 'admin'
+    
+    // Если пользователь не авторизован и не админ, перенаправляем
+    if (!isAdmin && (!isAuthenticated() || !userData || !userData.isLoggedIn)) {
+      // Показываем сообщение и перенаправляем на главную страницу
+      alert('Для просмотра страницы объекта необходимо авторизоваться')
+      navigate('/')
+    }
+  }, [navigate])
 
   // Функция для загрузки данных объекта
   const loadPropertyData = async (propertyId) => {
@@ -169,6 +195,14 @@ const PropertyDetail = () => {
         console.warn('Не удалось загрузить ставки:', bidsError)
       }
     
+    // Логируем данные о резервации для отладки
+    console.log('🔍 Данные о резервации из API:', {
+      is_reserved: prop.is_reserved,
+      reserved_until: prop.reserved_until,
+      reserved_by: prop.reserved_by,
+      reservation_time_remaining: prop.reservation_time_remaining
+    });
+    
     const formattedProperty = {
       id: prop.id,
       title: prop.title,
@@ -218,7 +252,18 @@ const PropertyDetail = () => {
       seller: prop.first_name && prop.last_name 
         ? `${prop.first_name} ${prop.last_name}` 
         : 'Продавец',
+      is_reserved: prop.is_reserved === true || prop.is_reserved === 1 || prop.is_reserved === 'true' || false,
+      reserved_until: prop.reserved_until || null,
+      reserved_by: prop.reserved_by || null,
+      reservation_time_remaining: prop.reservation_time_remaining || null,
     }
+    
+    console.log('✅ Обработанные данные о резервации:', {
+      is_reserved: formattedProperty.is_reserved,
+      reserved_until: formattedProperty.reserved_until,
+      reserved_until_date: formattedProperty.reserved_until ? new Date(formattedProperty.reserved_until) : null,
+      is_reserved_valid: formattedProperty.is_reserved && formattedProperty.reserved_until && new Date(formattedProperty.reserved_until) > new Date()
+    });
     
     setProperty(formattedProperty)
     setCurrentBid(currentMaxBid)
@@ -230,26 +275,22 @@ const PropertyDetail = () => {
   // Загружаем данные объявления
   useEffect(() => {
     const loadProperty = async () => {
-      // Сначала проверяем, есть ли данные в location.state
-      const propertyFromState = location.state?.property
-      if (propertyFromState) {
-        setProperty(propertyFromState)
-        setIsLoading(false)
-        // Загружаем актуальные данные с сервера в фоне
-        const prop = await loadPropertyData(propertyFromState.id)
-        if (prop) {
-          processPropertyData(prop)
-        }
-        return
-      }
-
-      // Если данных нет, загружаем с сервера
+      // Всегда загружаем актуальные данные с сервера, чтобы получить информацию о резервации
       if (id) {
         try {
           setIsLoading(true)
+          console.log(`🔍 PropertyDetail: Загрузка данных объекта ID=${id}`);
           const prop = await loadPropertyData(id)
           if (prop) {
+            console.log(`🔍 PropertyDetail: Данные объекта получены:`, {
+              id: prop.id,
+              title: prop.title,
+              is_reserved: prop.is_reserved,
+              reserved_until: prop.reserved_until
+            });
             await processPropertyData(prop)
+          } else {
+            console.warn(`⚠️ PropertyDetail: Объект с ID ${id} не найден`);
           }
         } catch (err) {
           console.error('Ошибка загрузки объявления:', err)
@@ -262,7 +303,7 @@ const PropertyDetail = () => {
     }
 
     loadProperty()
-  }, [id, location.state])
+  }, [id])
 
   // Функция для загрузки депозита пользователя
   const loadUserDeposit = async () => {
@@ -294,8 +335,22 @@ const PropertyDetail = () => {
     images: property.images || (property.image ? [property.image] : []),
     currentBid: property.currentBid || property.price,
     price: property.price || property.currentBid,
-    coordinates: property.coordinates || [28.1000, -16.7200]
+    coordinates: property.coordinates || [28.1000, -16.7200],
+    // Сохраняем данные о резервации
+    is_reserved: property.is_reserved === true || property.is_reserved === 1 || property.is_reserved === 'true' || false,
+    reserved_until: property.reserved_until || null,
+    reserved_by: property.reserved_by || null,
+    reservation_time_remaining: property.reservation_time_remaining || null
   } : null
+  
+  // Логируем normalizedProperty для отладки
+  if (normalizedProperty) {
+    console.log('🔍 normalizedProperty резервация:', {
+      is_reserved: normalizedProperty.is_reserved,
+      reserved_until: normalizedProperty.reserved_until,
+      shouldShowBanner: normalizedProperty.is_reserved && normalizedProperty.reserved_until && new Date(normalizedProperty.reserved_until) > new Date()
+    });
+  }
   
   // Логируем для отладки
   useEffect(() => {
@@ -521,6 +576,23 @@ const PropertyDetail = () => {
       return
     }
     
+    // Проверяем, что пользователь не является продавцом
+    const userRole = userData?.role || 'buyer'
+    if (userRole === 'seller' || userRole === 'owner') {
+      alert('Продавцы не могут делать ставки на объекты')
+      return
+    }
+    
+    // Проверяем резервацию объекта
+    if (property?.is_reserved) {
+      const reservedUntil = property.reserved_until ? new Date(property.reserved_until) : null
+      if (reservedUntil && reservedUntil > new Date()) {
+        const hoursRemaining = Math.ceil((reservedUntil - new Date()) / (1000 * 60 * 60))
+        alert(`Объект забронирован на ${hoursRemaining} часов. Ставки временно недоступны.`)
+        return
+      }
+    }
+    
     if (!bidAmount || parseFloat(bidAmount) <= 0) {
       setBidError('Введите сумму ставки')
       return
@@ -644,7 +716,7 @@ const PropertyDetail = () => {
           onGoToProperty={handleGoToPropertyFromNotification}
         />
       )}
-      <DepositButton amount={userDeposit} />
+      {canShowDeposit() && <DepositButton amount={userDeposit} />}
       <div className="property-detail">
         <div className="detail-header">
           <button onClick={() => navigate(-1)} className="back-button">
@@ -656,6 +728,76 @@ const PropertyDetail = () => {
             <span>{normalizedProperty.title}</span>
           </div>
         </div>
+
+        {/* Баннер резервации */}
+        {(() => {
+          if (!normalizedProperty) return false;
+          const isReserved = normalizedProperty.is_reserved === true || normalizedProperty.is_reserved === 1 || normalizedProperty.is_reserved === 'true';
+          const reservedUntil = normalizedProperty.reserved_until ? new Date(normalizedProperty.reserved_until) : null;
+          const isValid = isReserved && reservedUntil && reservedUntil > new Date();
+          
+          console.log('🔍 Проверка отображения баннера резервации:', {
+            normalizedProperty_exists: !!normalizedProperty,
+            is_reserved: normalizedProperty.is_reserved,
+            isReserved: isReserved,
+            reserved_until: normalizedProperty.reserved_until,
+            reservedUntil: reservedUntil ? reservedUntil.toISOString() : null,
+            now: new Date().toISOString(),
+            isValid: isValid,
+            hoursRemaining: isValid && reservedUntil ? Math.ceil((reservedUntil - new Date()) / (1000 * 60 * 60)) : 0
+          });
+          
+          return isValid;
+        })() && (
+          <div className="reservation-banner" style={{
+            background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)',
+            border: '2px solid #f59e0b',
+            borderRadius: '12px',
+            padding: '16px 20px',
+            margin: '20px 0',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            boxShadow: '0 4px 6px rgba(245, 158, 11, 0.1)',
+            zIndex: 1000,
+            position: 'relative'
+          }}>
+            <div style={{
+              background: '#f59e0b',
+              borderRadius: '50%',
+              width: '40px',
+              height: '40px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0
+            }}>
+              <FiLock size={20} color="#fff" />
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ 
+                fontWeight: 600, 
+                fontSize: '16px', 
+                color: '#92400e',
+                marginBottom: '4px'
+              }}>
+                🔒 Объект забронирован
+              </div>
+              <div style={{ 
+                fontSize: '14px', 
+                color: '#78350f'
+              }}>
+                Объект временно недоступен для ставок. Резервация действует до {new Date(normalizedProperty.reserved_until).toLocaleString('ru-RU', {
+                  year: 'numeric',
+                  month: '2-digit',
+                  day: '2-digit',
+                  hour: '2-digit',
+                  minute: '2-digit'
+                })} ({Math.ceil((new Date(normalizedProperty.reserved_until) - new Date()) / (1000 * 60 * 60))} часов)
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="detail-content">
           <div className="detail-left">
@@ -968,6 +1110,23 @@ const PropertyDetail = () => {
               </div>
 
               <form onSubmit={handleBid} className="bid-form">
+                {normalizedProperty.is_reserved && normalizedProperty.reserved_until && new Date(normalizedProperty.reserved_until) > new Date() && (
+                  <div style={{
+                    background: 'rgba(245, 158, 11, 0.1)',
+                    border: '1px solid #f59e0b',
+                    borderRadius: '8px',
+                    padding: '12px',
+                    marginBottom: '16px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    color: '#92400e',
+                    fontSize: '14px'
+                  }}>
+                    <FiLock size={16} />
+                    <span>Ставки временно недоступны. Объект забронирован.</span>
+                  </div>
+                )}
                 <div className="bid-input-group">
                   <label>Ваша ставка</label>
                   <input
@@ -980,7 +1139,11 @@ const PropertyDetail = () => {
                     placeholder={`Минимум ${formatPrice(minimumBid || (normalizedProperty.currentBid + (normalizedProperty.currentBid * 0.05)))}`}
                     min={minimumBid || (normalizedProperty.currentBid + (normalizedProperty.currentBid * 0.05))}
                     step="1000"
-                    disabled={isSubmittingBid}
+                    disabled={isSubmittingBid || (normalizedProperty.is_reserved && normalizedProperty.reserved_until && new Date(normalizedProperty.reserved_until) > new Date())}
+                    style={{
+                      opacity: (normalizedProperty.is_reserved && normalizedProperty.reserved_until && new Date(normalizedProperty.reserved_until) > new Date()) ? 0.5 : 1,
+                      cursor: (normalizedProperty.is_reserved && normalizedProperty.reserved_until && new Date(normalizedProperty.reserved_until) > new Date()) ? 'not-allowed' : 'text'
+                    }}
                   />
                   {bidError && (
                     <div className="bid-error" style={{ color: 'red', fontSize: '12px', marginTop: '5px' }}>
@@ -991,9 +1154,13 @@ const PropertyDetail = () => {
                 <button 
                   type="submit" 
                   className="btn btn-bid glass-button"
-                  disabled={isSubmittingBid}
+                  disabled={isSubmittingBid || (normalizedProperty.is_reserved && normalizedProperty.reserved_until && new Date(normalizedProperty.reserved_until) > new Date())}
+                  style={{
+                    opacity: (normalizedProperty.is_reserved && normalizedProperty.reserved_until && new Date(normalizedProperty.reserved_until) > new Date()) ? 0.5 : 1,
+                    cursor: (normalizedProperty.is_reserved && normalizedProperty.reserved_until && new Date(normalizedProperty.reserved_until) > new Date()) ? 'not-allowed' : 'pointer'
+                  }}
                 >
-                  {isSubmittingBid ? 'Отправка...' : 'Сделать ставку сейчас'}
+                  {isSubmittingBid ? 'Отправка...' : (normalizedProperty.is_reserved && normalizedProperty.reserved_until && new Date(normalizedProperty.reserved_until) > new Date()) ? 'Объект забронирован' : 'Сделать ставку сейчас'}
                 </button>
               </form>
 

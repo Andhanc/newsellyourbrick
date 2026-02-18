@@ -213,6 +213,80 @@ export const getUserData = () => {
 }
 
 /**
+ * Очищает данные пользователя из localStorage, но сохраняет админские данные
+ */
+export const clearUserDataWithoutAdmin = () => {
+  // Сохраняем админские данные перед очисткой
+  const isAdminLoggedIn = localStorage.getItem('isAdminLoggedIn')
+  const adminPermissions = localStorage.getItem('adminPermissions')
+  const userRole = localStorage.getItem('userRole')
+  const isAdmin = isAdminLoggedIn === 'true' && userRole === 'admin'
+  
+  // Удаляем основной объект userData (если был сохранен)
+  localStorage.removeItem('userData')
+  
+  // Удаляем все отдельные поля (список всех возможных ключей), кроме админских
+  const keysToRemove = [
+    'isLoggedIn',
+    'loginMethod',
+    'userEmail',
+    'userName',
+    'userId',
+    'userPicture',
+    'userRole',
+    'isOwnerLoggedIn',
+    'isBlocked', // Флаг блокировки пользователя
+    'blockedUserId', // ID заблокированного пользователя
+    'hasSeenWelcome', // Флаг просмотра приветственного модального окна
+    'userPhone',
+    'userPhoneFormatted',
+    'userCountry',
+    'userCountryCode',
+    'userCountryFlag',
+    'userPassword', // Для email регистрации
+    // Коды верификации (для безопасности)
+    'whatsappCodes',
+    'emailCodes'
+  ]
+  
+  keysToRemove.forEach(key => {
+    localStorage.removeItem(key)
+  })
+  
+  // Дополнительная проверка: удаляем все ключи, начинающиеся с 'user' и другие связанные флаги, кроме админских
+  Object.keys(localStorage).forEach(key => {
+    if (
+      key.startsWith('user') || 
+      key === 'isLoggedIn' || 
+      key === 'loginMethod' || 
+      key === 'isOwnerLoggedIn' ||
+      key === 'isBlocked' ||
+      key === 'blockedUserId' ||
+      key === 'hasSeenWelcome' ||
+      key.includes('Code')
+    ) {
+      localStorage.removeItem(key)
+    }
+  })
+  
+  // Восстанавливаем админские данные
+  if (isAdmin) {
+    if (isAdminLoggedIn) {
+      localStorage.setItem('isAdminLoggedIn', isAdminLoggedIn)
+    }
+    if (adminPermissions) {
+      localStorage.setItem('adminPermissions', adminPermissions)
+    }
+    if (userRole === 'admin') {
+      localStorage.setItem('userRole', 'admin')
+    }
+    console.log('✅ Данные пользователя очищены из localStorage (админские данные сохранены)')
+  } else {
+    console.log('✅ Данные пользователя очищены из localStorage')
+  }
+}
+
+/**
  * Очищает данные пользователя из localStorage
  */
 export const clearUserData = () => {
@@ -1292,7 +1366,7 @@ export const sendEmailVerificationCode = async (email) => {
           // Дополнительные переменные (на случай кастомного шаблона)
           to_email: emailLower,
           verification_code: code,
-          from_name: 'Real Estate Auction',
+          from_name: 'Sellyourbrick',
           message: `Ваш код подтверждения: ${code}. Код действителен в течение 10 минут.`
         }
         

@@ -3899,6 +3899,115 @@ export const propertyQueries = {
   },
 
   /**
+   * Забронировать объект на 72 часа
+   */
+  reserve: (id, userId, purchaseRequestId) => {
+    console.log(`🔍 propertyQueries.reserve: резервация объекта ID=${id}, userId=${userId}, purchaseRequestId=${purchaseRequestId}`);
+    
+    const property = propertyQueries.getById(id);
+    if (!property) {
+      console.error(`❌ propertyQueries.reserve: объект с ID ${id} не найден`);
+      throw new Error(`Объект с ID ${id} не найден`);
+    }
+    
+    console.log(`🔍 propertyQueries.reserve: найден объект:`, {
+      id: property.id,
+      property_type: property.property_type,
+      source_table: property.source_table,
+      title: property.title
+    });
+    
+    const sourceTable = property.source_table;
+    if (!sourceTable) {
+      // Если source_table не установлен, определяем по property_type
+      console.log(`⚠️ propertyQueries.reserve: source_table не установлен, определяем по property_type`);
+      if (property.property_type === 'apartment' || property.property_type === 'commercial') {
+        console.log(`✅ propertyQueries.reserve: используем apartments (property_type=${property.property_type})`);
+        return apartmentQueries.reserve(id, userId, purchaseRequestId);
+      } else if (property.property_type === 'house' || property.property_type === 'villa') {
+        console.log(`✅ propertyQueries.reserve: используем houses (property_type=${property.property_type})`);
+        return houseQueries.reserve(id, userId, purchaseRequestId);
+      } else {
+        console.error(`❌ propertyQueries.reserve: неизвестный property_type=${property.property_type}`);
+        throw new Error(`Неизвестный тип объекта: ${property.property_type}`);
+      }
+    }
+    
+    if (sourceTable === 'apartments') {
+      console.log(`✅ propertyQueries.reserve: резервируем в apartments`);
+      return apartmentQueries.reserve(id, userId, purchaseRequestId);
+    } else if (sourceTable === 'houses') {
+      console.log(`✅ propertyQueries.reserve: резервируем в houses`);
+      return houseQueries.reserve(id, userId, purchaseRequestId);
+    } else {
+      console.error(`❌ propertyQueries.reserve: неизвестный source_table=${sourceTable}`);
+      throw new Error(`Неизвестный тип объекта: source_table=${sourceTable}`);
+    }
+  },
+
+  /**
+   * Снять бронь с объекта
+   */
+  unreserve: (id) => {
+    const property = propertyQueries.getById(id);
+    if (!property) {
+      throw new Error('Объект не найден');
+    }
+    
+    const sourceTable = property.source_table;
+    if (sourceTable === 'apartments') {
+      return apartmentQueries.unreserve(id);
+    } else if (sourceTable === 'houses') {
+      return houseQueries.unreserve(id);
+    } else {
+      throw new Error('Неизвестный тип объекта');
+    }
+  },
+
+  /**
+   * Проверить, забронирован ли объект
+   */
+  isReserved: (id) => {
+    const property = propertyQueries.getById(id);
+    if (!property) {
+      console.log(`🔍 propertyQueries.isReserved: объект с ID ${id} не найден`);
+      return { isReserved: false };
+    }
+    
+    const sourceTable = property.source_table;
+    console.log(`🔍 propertyQueries.isReserved: проверка объекта ID=${id}, source_table=${sourceTable}, property_type=${property.property_type}`);
+    
+    if (!sourceTable) {
+      // Если source_table не установлен, определяем по property_type
+      if (property.property_type === 'apartment' || property.property_type === 'commercial') {
+        const result = apartmentQueries.isReserved(id);
+        console.log(`🔍 propertyQueries.isReserved: результат из apartments:`, result);
+        return result;
+      } else if (property.property_type === 'house' || property.property_type === 'villa') {
+        const result = houseQueries.isReserved(id);
+        console.log(`🔍 propertyQueries.isReserved: результат из houses:`, result);
+        return result;
+      } else {
+        console.log(`⚠️ propertyQueries.isReserved: неизвестный property_type=${property.property_type}`);
+        return { isReserved: false };
+      }
+    }
+    
+    if (sourceTable === 'apartments') {
+      const result = apartmentQueries.isReserved(id);
+      console.log(`🔍 propertyQueries.isReserved: результат из apartments:`, result);
+      return result;
+    } else if (sourceTable === 'houses') {
+      const result = houseQueries.isReserved(id);
+      console.log(`🔍 propertyQueries.isReserved: результат из houses:`, result);
+      return result;
+    } else {
+      console.log(`⚠️ propertyQueries.isReserved: неизвестный source_table=${sourceTable}`);
+      return { isReserved: false };
+    }
+  },
+
+  /**
    * Получить одобренные объекты без аукциона
    */
   getApproved: (propertyType = null) => {

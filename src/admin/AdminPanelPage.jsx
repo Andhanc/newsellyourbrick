@@ -16,7 +16,7 @@ import PurchaseRequests from '../components/admin/PurchaseRequests';
 import AccessManagement from '../components/admin/AccessManagement';
 import Testing from '../components/admin/Testing';
 import { mockBusinessInfo } from '../data/mockData';
-import { clearUserData } from '../services/authService';
+import { clearUserData, clearUserDataWithoutAdmin } from '../services/authService';
 import '../styles/admin/global.css';
 import './AdminPanelPage.css';
 
@@ -93,8 +93,8 @@ const AdminPanelPage = () => {
 
   const handleLogout = () => {
     if (window.confirm('Вы уверены, что хотите выйти?')) {
-      // Очищаем все данные пользователя из localStorage
-      clearUserData();
+      // Очищаем все данные пользователя из localStorage, но сохраняем админские данные
+      clearUserDataWithoutAdmin();
       navigate('/');
       // Перезагружаем страницу для полной очистки состояния
       setTimeout(() => {
@@ -104,8 +104,8 @@ const AdminPanelPage = () => {
   };
 
   const handleBack = () => {
-    // При переходе на главную автоматически завершаем сессию администратора
-    clearUserData();
+    // При переходе на главную сохраняем сессию администратора
+    clearUserDataWithoutAdmin();
     navigate('/');
   };
 

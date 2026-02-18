@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useUser } from '@clerk/clerk-react'
+import { useNavigate } from 'react-router-dom'
 import {
   FiArrowLeft,
   FiShare2,
@@ -12,10 +13,11 @@ import {
   FiClock,
   FiArrowUp,
   FiXCircle,
+  FiLock,
 } from 'react-icons/fi'
 import { FaHeart as FaHeartSolid } from 'react-icons/fa'
 import { IoLocationOutline } from 'react-icons/io5'
-import { isAuthenticated } from '../services/authService'
+import { isAuthenticated, getUserData } from '../services/authService'
 import PropertyTimer from '../components/PropertyTimer'
 import CircularTimer from '../components/CircularTimer'
 import BiddingHistoryModal from '../components/BiddingHistoryModal'
@@ -36,6 +38,8 @@ let API_BASE_URL = getApiBaseUrlSync()
 function PropertyDetailClassic({ property: initialProperty, onBack, showDocuments = false }) {
   const { t } = useTranslation()
   const { user, isLoaded: userLoaded } = useUser()
+  const navigate = useNavigate()
+  const userData = getUserData()
   const [property, setProperty] = useState(initialProperty)
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
   const thumbnailScrollRef = useRef(null)
@@ -84,6 +88,25 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
       return () => clearTimeout(timer)
     }
   }, [currentBid, prevBid])
+
+  // Проверка авторизации при загрузке компонента
+  useEffect(() => {
+    // Проверяем, является ли пользователь админом
+    const isAdminLoggedIn = localStorage.getItem('isAdminLoggedIn') === 'true'
+    const userRole = localStorage.getItem('userRole')
+    const isAdmin = isAdminLoggedIn && userRole === 'admin'
+    
+    // Если пользователь не авторизован и не админ, перенаправляем
+    if (!isAdmin && (!isAuthenticated() || !userData || !userData.isLoggedIn)) {
+      // Показываем сообщение и перенаправляем на главную страницу
+      alert('Для просмотра страницы объекта необходимо авторизоваться')
+      if (onBack) {
+        onBack()
+      } else {
+        navigate('/')
+      }
+    }
+  }, [navigate, onBack])
 
   // Отслеживаем размер окна для конфетти
   useEffect(() => {
@@ -435,7 +458,21 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
     test_timer_end_date: property.test_timer_end_date || null,
     test_timer_duration: property.test_timer_duration || null, // Исходная длительность таймера в миллисекундах
     endTime: property.test_timer_end_date || property.endTime || null,
+    // Резервация
+    is_reserved: property.is_reserved === true || property.is_reserved === 1 || property.is_reserved === 'true' || false,
+    reserved_until: property.reserved_until || null,
+    reserved_by: property.reserved_by || null,
+    reservation_time_remaining: property.reservation_time_remaining || null,
   }
+  
+  // Логируем данные о резервации для отладки
+  console.log('🔍 PropertyDetailClassic - Данные о резервации:', {
+    property_is_reserved: property.is_reserved,
+    property_reserved_until: property.reserved_until,
+    displayProperty_is_reserved: displayProperty.is_reserved,
+    displayProperty_reserved_until: displayProperty.reserved_until,
+    shouldShowBanner: displayProperty.is_reserved && displayProperty.reserved_until && new Date(displayProperty.reserved_until) > new Date()
+  });
 
   // Убрали лишние логи, которые вызывают бесконечный цикл
 
@@ -960,11 +997,44 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
       return
     }
     
+    // Проверяем, что пользователь не является продавцом
+    const userRole = userData?.role || 'buyer'
+    if (userRole === 'seller' || userRole === 'owner') {
+      alert('Продавцы не могут покупать объекты')
+      return
+    }
+    
     // Открываем модальное окно с инструкциями
     setIsBuyNowModalOpen(true)
   }
 
   const handleQuickBid = (amount) => {
+    // Проверяем авторизацию
+    const isClerkAuth = user && userLoaded
+    const isOldAuth = isAuthenticated()
+    
+    if (!isClerkAuth && !isOldAuth) {
+      showToast('Пожалуйста, войдите в систему, чтобы сделать ставку', 'warning')
+      return
+    }
+
+    // Проверяем, что пользователь не является продавцом
+    const userRole = userData?.role || 'buyer'
+    if (userRole === 'seller' || userRole === 'owner') {
+      alert('Продавцы не могут делать ставки на объекты')
+      return
+    }
+
+    // Проверяем резервацию объекта
+    if (displayProperty?.is_reserved) {
+      const reservedUntil = displayProperty.reserved_until ? new Date(displayProperty.reserved_until) : null
+      if (reservedUntil && reservedUntil > new Date()) {
+        const hoursRemaining = Math.ceil((reservedUntil - new Date()) / (1000 * 60 * 60))
+        showToast(`Объект забронирован на ${hoursRemaining} часов. Ставки временно недоступны.`, 'error')
+        return
+      }
+    }
+
     // Используем текущую максимальную ставку (currentBid), которая обновляется динамически
     // Если currentBid еще не загружен, используем значение из displayProperty или стартовую цену
     const startingPrice = displayProperty.auction_starting_price || 0
@@ -1010,6 +1080,23 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
     if (!isClerkAuth && !isOldAuth) {
       showToast('Пожалуйста, войдите в систему, чтобы сделать ставку', 'warning')
       return
+    }
+
+    // Проверяем, что пользователь не является продавцом
+    const userRole = userData?.role || 'buyer'
+    if (userRole === 'seller' || userRole === 'owner') {
+      alert('Продавцы не могут делать ставки на объекты')
+      return
+    }
+
+    // Проверяем резервацию объекта
+    if (displayProperty?.is_reserved) {
+      const reservedUntil = displayProperty.reserved_until ? new Date(displayProperty.reserved_until) : null
+      if (reservedUntil && reservedUntil > new Date()) {
+        const hoursRemaining = Math.ceil((reservedUntil - new Date()) / (1000 * 60 * 60))
+        showToast(`Объект забронирован на ${hoursRemaining} часов. Ставки временно недоступны.`, 'error')
+        return
+      }
     }
 
     const amount = parseFloat(bidAmount)
@@ -1412,6 +1499,75 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
           </div>
         </div>
       </div>
+
+      {/* Баннер резервации */}
+      {(() => {
+        if (!displayProperty) return false;
+        const isReserved = displayProperty.is_reserved === true || displayProperty.is_reserved === 1 || displayProperty.is_reserved === 'true';
+        const reservedUntil = displayProperty.reserved_until ? new Date(displayProperty.reserved_until) : null;
+        const isValid = isReserved && reservedUntil && reservedUntil > new Date();
+        
+        console.log('🔍 PropertyDetailClassic - Проверка баннера:', {
+          displayProperty_exists: !!displayProperty,
+          is_reserved: displayProperty.is_reserved,
+          isReserved: isReserved,
+          reserved_until: displayProperty.reserved_until,
+          reservedUntil: reservedUntil ? reservedUntil.toISOString() : null,
+          now: new Date().toISOString(),
+          isValid: isValid,
+          hoursRemaining: isValid && reservedUntil ? Math.ceil((reservedUntil - new Date()) / (1000 * 60 * 60)) : 0
+        });
+        
+        return isValid;
+      })() && (
+        <div className="reservation-banner" style={{
+          background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)',
+          border: '2px solid #f59e0b',
+          borderRadius: '12px',
+          padding: '16px 20px',
+          margin: '20px auto',
+          maxWidth: '1200px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
+          boxShadow: '0 4px 6px rgba(245, 158, 11, 0.1)'
+        }}>
+          <div style={{
+            background: '#f59e0b',
+            borderRadius: '50%',
+            width: '40px',
+            height: '40px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0
+          }}>
+            <FiLock size={20} color="#fff" />
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ 
+              fontWeight: 600, 
+              fontSize: '16px', 
+              color: '#92400e',
+              marginBottom: '4px'
+            }}>
+              🔒 Объект забронирован
+            </div>
+            <div style={{ 
+              fontSize: '14px', 
+              color: '#78350f'
+            }}>
+              Объект временно недоступен для ставок. Резервация действует до {new Date(displayProperty.reserved_until).toLocaleString('ru-RU', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+              })} ({Math.ceil((new Date(displayProperty.reserved_until) - new Date()) / (1000 * 60 * 60))} часов)
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Основной контент */}
       <div className="property-detail-main">
@@ -2111,12 +2267,33 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                   {/* Функционал ставки - скрываем когда таймер истек */}
                   {!timerExpired && (
                   <div className="property-detail-sidebar__bidding-section">
+                    {displayProperty.is_reserved && displayProperty.reserved_until && new Date(displayProperty.reserved_until) > new Date() && (
+                      <div style={{
+                        background: 'rgba(245, 158, 11, 0.1)',
+                        border: '1px solid #f59e0b',
+                        borderRadius: '8px',
+                        padding: '12px',
+                        marginBottom: '16px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        color: '#92400e',
+                        fontSize: '14px'
+                      }}>
+                        <FiLock size={16} />
+                        <span>Ставки временно недоступны. Объект забронирован.</span>
+                      </div>
+                    )}
                     <div className="bidding-section__quick-buttons">
                       <button
                         type="button"
                         className="bidding-section__quick-btn"
                         onClick={() => handleQuickBid(1000)}
-                        disabled={isSubmittingBid || isUserLeader}
+                        disabled={isSubmittingBid || isUserLeader || (displayProperty.is_reserved && displayProperty.reserved_until && new Date(displayProperty.reserved_until) > new Date())}
+                        style={{
+                          opacity: (displayProperty.is_reserved && displayProperty.reserved_until && new Date(displayProperty.reserved_until) > new Date()) ? 0.5 : 1,
+                          cursor: (displayProperty.is_reserved && displayProperty.reserved_until && new Date(displayProperty.reserved_until) > new Date()) ? 'not-allowed' : 'pointer'
+                        }}
                       >
                         +1 000
                       </button>
@@ -2124,7 +2301,11 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                         type="button"
                         className="bidding-section__quick-btn"
                         onClick={() => handleQuickBid(2000)}
-                        disabled={isSubmittingBid || isUserLeader}
+                        disabled={isSubmittingBid || isUserLeader || (displayProperty.is_reserved && displayProperty.reserved_until && new Date(displayProperty.reserved_until) > new Date())}
+                        style={{
+                          opacity: (displayProperty.is_reserved && displayProperty.reserved_until && new Date(displayProperty.reserved_until) > new Date()) ? 0.5 : 1,
+                          cursor: (displayProperty.is_reserved && displayProperty.reserved_until && new Date(displayProperty.reserved_until) > new Date()) ? 'not-allowed' : 'pointer'
+                        }}
                       >
                         +2 000
                       </button>
@@ -2132,7 +2313,11 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                         type="button"
                         className="bidding-section__quick-btn"
                         onClick={() => handleQuickBid(3000)}
-                        disabled={isSubmittingBid || isUserLeader}
+                        disabled={isSubmittingBid || isUserLeader || (displayProperty.is_reserved && displayProperty.reserved_until && new Date(displayProperty.reserved_until) > new Date())}
+                        style={{
+                          opacity: (displayProperty.is_reserved && displayProperty.reserved_until && new Date(displayProperty.reserved_until) > new Date()) ? 0.5 : 1,
+                          cursor: (displayProperty.is_reserved && displayProperty.reserved_until && new Date(displayProperty.reserved_until) > new Date()) ? 'not-allowed' : 'pointer'
+                        }}
                       >
                         +3 000
                       </button>
@@ -2145,10 +2330,14 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                       <input
                         type="text"
                         className="bidding-section__input"
-                        placeholder={isUserLeader ? 'Вы лидируете в аукционе' : 'Введите сумму ставки'}
+                        placeholder={isUserLeader ? 'Вы лидируете в аукционе' : (displayProperty.is_reserved && displayProperty.reserved_until && new Date(displayProperty.reserved_until) > new Date()) ? 'Объект забронирован' : 'Введите сумму ставки'}
                         value={bidAmount}
                         onChange={handleBidAmountChange}
-                        disabled={isSubmittingBid || isUserLeader}
+                        disabled={isSubmittingBid || isUserLeader || (displayProperty.is_reserved && displayProperty.reserved_until && new Date(displayProperty.reserved_until) > new Date())}
+                        style={{
+                          opacity: (displayProperty.is_reserved && displayProperty.reserved_until && new Date(displayProperty.reserved_until) > new Date()) ? 0.5 : 1,
+                          cursor: (displayProperty.is_reserved && displayProperty.reserved_until && new Date(displayProperty.reserved_until) > new Date()) ? 'not-allowed' : 'text'
+                        }}
                       />
                     </div>
 
@@ -2156,9 +2345,13 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                       type="button"
                       className={`bidding-section__submit-btn ${isUserLeader ? 'bidding-section__submit-btn--winner' : ''}`}
                       onClick={handleBidSubmit}
-                      disabled={isSubmittingBid || !bidAmount || isUserLeader}
+                      disabled={isSubmittingBid || !bidAmount || isUserLeader || (displayProperty.is_reserved && displayProperty.reserved_until && new Date(displayProperty.reserved_until) > new Date())}
+                      style={{
+                        opacity: (displayProperty.is_reserved && displayProperty.reserved_until && new Date(displayProperty.reserved_until) > new Date()) ? 0.5 : 1,
+                        cursor: (displayProperty.is_reserved && displayProperty.reserved_until && new Date(displayProperty.reserved_until) > new Date()) ? 'not-allowed' : 'pointer'
+                      }}
                     >
-                      {isSubmittingBid ? 'Отправка...' : isUserLeader ? 'Вы выигрываете' : 'Сделать ставку'}
+                      {isSubmittingBid ? 'Отправка...' : isUserLeader ? 'Вы выигрываете' : (displayProperty.is_reserved && displayProperty.reserved_until && new Date(displayProperty.reserved_until) > new Date()) ? 'Объект забронирован' : 'Сделать ставку'}
                     </button>
                   </div>
                   )}

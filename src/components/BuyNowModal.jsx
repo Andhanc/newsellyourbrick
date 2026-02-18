@@ -3,6 +3,8 @@ import { FiX, FiCheckCircle, FiFileText, FiCreditCard, FiShield } from 'react-ic
 import { useUser } from '@clerk/clerk-react'
 import { getUserData } from '../services/authService'
 import { getApiBaseUrl } from '../utils/apiConfig'
+import { getEmailJsConfig } from '../utils/env'
+import emailjs from '@emailjs/browser'
 import './BuyNowModal.css'
 
 const BuyNowModal = ({ isOpen, onClose, property }) => {
@@ -17,11 +19,122 @@ const BuyNowModal = ({ isOpen, onClose, property }) => {
   const currency = property?.currency || 'USD'
   const currencySymbol = currency === 'USD' ? '$' : currency === 'EUR' ? '€' : currency === 'BYN' ? 'Br' : ''
 
+  // Функция отправки email подтверждения
+  const sendPurchaseConfirmationEmail = async (email, buyerName, propertyTitle, price, currencySymbol) => {
+    if (!email) return
+
+    const emailJsConfig = getEmailJsConfig()
+    const EMAILJS_SERVICE_ID = emailJsConfig.serviceId || ''
+    const EMAILJS_TEMPLATE_ID = emailJsConfig.templateId || ''
+    const EMAILJS_PUBLIC_KEY = emailJsConfig.publicKey || ''
+
+    if (!EMAILJS_SERVICE_ID || !EMAILJS_TEMPLATE_ID || !EMAILJS_PUBLIC_KEY) {
+      console.warn('EmailJS не настроен для отправки подтверждения')
+      return
+    }
+
+    try {
+      // Инициализируем EmailJS, если еще не инициализирован
+      if (EMAILJS_PUBLIC_KEY) {
+        emailjs.init(EMAILJS_PUBLIC_KEY)
+      }
+
+      // Формируем такое же сообщение, как в WhatsApp
+      const emailMessage = `🎉 Здравствуйте, ${buyerName || 'Покупатель'}!
+
+Ваш запрос на покупку объекта недвижимости успешно принят!
+
+📋 Детали запроса:
+🏠 Объект: ${propertyTitle}
+💰 Цена: ${currencySymbol}${price.toLocaleString('ru-RU')}
+
+Наш менеджер свяжется с вами в течение 24 часов для уточнения деталей и ответов на ваши вопросы.
+
+С уважением,
+Команда Sellyourbrick`
+
+      const templateParams = {
+        to_email: email,
+        email: email,
+        buyer_name: buyerName || 'Покупатель',
+        property_title: propertyTitle,
+        property_price: `${currencySymbol}${price.toLocaleString('ru-RU')}`,
+        message: emailMessage,
+        from_name: 'Sellyourbrick'
+      }
+
+      await emailjs.send(
+        EMAILJS_SERVICE_ID,
+        EMAILJS_TEMPLATE_ID,
+        templateParams,
+        EMAILJS_PUBLIC_KEY
+      )
+      console.log('✅ Email подтверждения отправлен')
+    } catch (error) {
+      console.error('Ошибка отправки email:', error)
+      throw error
+    }
+  }
+
+  // Функция отправки WhatsApp подтверждения
+  const sendPurchaseConfirmationWhatsApp = async (phone, buyerName, propertyTitle, price, currencySymbol) => {
+    if (!phone) return
+
+    try {
+      const API_BASE_URL = await getApiBaseUrl()
+      // Форматируем номер телефона (убираем все нецифровые символы)
+      const formattedPhone = phone.replace(/\D/g, '')
+
+      const message = `🎉 Здравствуйте, ${buyerName || 'Покупатель'}!
+
+Ваш запрос на покупку объекта недвижимости успешно принят!
+
+📋 Детали запроса:
+🏠 Объект: ${propertyTitle}
+💰 Цена: ${currencySymbol}${price.toLocaleString('ru-RU')}
+
+Наш менеджер свяжется с вами в течение 24 часов для уточнения деталей и ответов на ваши вопросы.
+
+С уважением,
+Команда Sellyourbrick`
+
+      const response = await fetch(`${API_BASE_URL}/whatsapp/send-message`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          phone: formattedPhone,
+          message: message
+        })
+      })
+
+      if (response.ok) {
+        console.log('✅ WhatsApp сообщение отправлено')
+      } else {
+        const errorData = await response.json().catch(() => ({}))
+        console.warn('Не удалось отправить WhatsApp:', errorData.error || 'Unknown error')
+      }
+    } catch (error) {
+      console.error('Ошибка отправки WhatsApp:', error)
+      throw error
+    }
+  }
+
   const handleSubmitRequest = async () => {
     setIsSubmitting(true)
     setSubmitError(null)
 
     try {
+      // Проверяем, что пользователь не является продавцом
+      const userData = getUserData()
+      const userRole = userData?.role || 'buyer'
+      if (userRole === 'seller' || userRole === 'owner') {
+        alert('Продавцы не могут покупать объекты')
+        setIsSubmitting(false)
+        return
+      }
+
       // Получаем данные текущего пользователя
       let buyerData = {}
       
@@ -149,7 +262,23 @@ const BuyNowModal = ({ isOpen, onClose, property }) => {
       const data = await response.json()
 
       if (response.ok && data.success) {
-        alert('✅ Запрос на покупку успешно отправлен! Наш менеджер свяжется с вами в течение 24 часов.')
+        // Отправляем email пользователю
+        try {
+          await sendPurchaseConfirmationEmail(buyerData.email, buyerData.name, propertyTitle, propertyPrice, currencySymbol)
+        } catch (emailError) {
+          console.warn('Не удалось отправить email:', emailError)
+        }
+
+        // Отправляем WhatsApp сообщение пользователю
+        if (buyerData.phone) {
+          try {
+            await sendPurchaseConfirmationWhatsApp(buyerData.phone, buyerData.name, propertyTitle, propertyPrice, currencySymbol)
+          } catch (whatsappError) {
+            console.warn('Не удалось отправить WhatsApp:', whatsappError)
+          }
+        }
+
+        alert('✅ Запрос на покупку успешно отправлен! Наш менеджер свяжется с вами в течение 24 часов. Проверьте вашу почту и WhatsApp.')
         onClose()
       } else {
         throw new Error(data.error || 'Не удалось отправить запрос')

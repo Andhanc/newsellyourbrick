@@ -387,6 +387,17 @@ function Home() {
     }
   }
 
+  // Функция для проверки, можно ли показывать депозит (только для авторизованных покупателей)
+  const canShowDeposit = () => {
+    // Проверяем, авторизован ли пользователь
+    if (!isAuthenticated() || !userData || !userData.isLoggedIn) {
+      return false
+    }
+    // Показываем депозит только для покупателей (не для продавцов)
+    const userRole = userData.role || 'buyer'
+    return userRole === 'buyer' || userRole === 'client'
+  }
+
   // Функция для получения уникального идентификатора пользователя/сессии
   const isLoggedIn = isAuthenticated() || (user && userLoaded)
   const getChatUserId = useMemo(() => {
@@ -561,7 +572,7 @@ function Home() {
 
   return (
     <div className="home-page">
-      <DepositButton amount={userDeposit} />
+      {canShowDeposit() && <DepositButton amount={userDeposit} />}
       <Header />
       <Hero />
       {loading ? (
