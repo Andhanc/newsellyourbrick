@@ -103,7 +103,13 @@ export default defineConfig(({ mode }) => {
       strictPort: false, // НЕ строгий порт - если порт занят, попробуем другой
       // ВАЖНО: Railway устанавливает PORT, приложение должно слушать на этом порту
       // Разрешаем все Railway хосты
-      allowedHosts: 'all', // Разрешаем все хосты для Railway
+      allowedHosts: [
+        '.railway.app',
+        '.up.railway.app',
+        'newsellyourbrick-production.up.railway.app', // Конкретный хост из ошибки
+        'localhost',
+        '127.0.0.1'
+      ],
       // Отключаем HMR в production (на Railway) - он не нужен и вызывает проблемы с WebSocket
       hmr: actualMode === 'production' ? false : {
         clientPort: vitePort, // Для HMR в development
