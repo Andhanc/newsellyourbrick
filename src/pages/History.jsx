@@ -19,7 +19,9 @@ const History = () => {
       // Сначала проверяем localStorage
       const storedUserId = localStorage.getItem('userId')
       if (storedUserId && /^\d+$/.test(storedUserId)) {
-        setUserId(parseInt(storedUserId))
+        const parsedId = parseInt(storedUserId)
+        console.log('📋 Используем userId из localStorage:', parsedId)
+        setUserId(parsedId)
         return
       }
 
@@ -27,24 +29,40 @@ const History = () => {
       const isClerkAuth = user && userLoaded
       const isOldAuth = isAuthenticated()
 
+      console.log('📋 Проверка авторизации:', { isClerkAuth, isOldAuth, userLoaded, hasUser: !!user })
+
       if (isClerkAuth && user) {
         // Для Clerk пользователей получаем ID из БД
         try {
           const userEmail = user.primaryEmailAddress?.emailAddress || user.emailAddresses?.[0]?.emailAddress
+          console.log('📋 Email пользователя Clerk:', userEmail)
+          
           if (userEmail) {
             const userResponse = await fetch(`${API_BASE_URL}/users/email/${encodeURIComponent(userEmail)}`)
+            console.log('📋 Ответ сервера для получения userId:', userResponse.status)
+            
             if (userResponse.ok) {
               const userData = await userResponse.json()
+              console.log('📋 Данные пользователя из БД:', userData)
+              
               if (userData.success && userData.data && userData.data.id) {
                 const numericId = userData.data.id
+                console.log('✅ Найден userId для Clerk пользователя:', numericId)
                 setUserId(numericId)
                 localStorage.setItem('userId', String(numericId))
                 return
+              } else {
+                console.warn('⚠️ userId не найден в ответе сервера:', userData)
               }
+            } else {
+              const errorText = await userResponse.text().catch(() => 'Не удалось прочитать ошибку')
+              console.error('❌ Ошибка при получении userId:', userResponse.status, errorText)
             }
+          } else {
+            console.warn('⚠️ Email не найден у Clerk пользователя')
           }
         } catch (e) {
-          console.warn('Не удалось получить userId из БД для Clerk пользователя:', e)
+          console.error('❌ Ошибка при получении userId из БД для Clerk пользователя:', e)
         }
       } else if (isOldAuth) {
         // Для старой системы авторизации
@@ -53,10 +71,13 @@ const History = () => {
           const id = userData.id
           // Проверяем, что ID числовой
           if (/^\d+$/.test(id.toString())) {
+            console.log('📋 Используем userId из старой системы:', id)
             setUserId(parseInt(id))
             localStorage.setItem('userId', String(id))
           }
         }
+      } else {
+        console.log('⚠️ Пользователь не авторизован')
       }
     }
 
@@ -70,6 +91,7 @@ const History = () => {
     if (userId) {
       loadVerificationStatus()
       loadWonProperties()
+      loadBidHistory()
     }
   }, [userId])
 
@@ -190,50 +212,189 @@ const History = () => {
 
   const [purchaseHistory, setPurchaseHistory] = useState([])
   const [isLoadingPurchases, setIsLoadingPurchases] = useState(true)
+  const [bidHistory, setBidHistory] = useState([])
+  const [isLoadingBids, setIsLoadingBids] = useState(true)
 
-  const bidHistory = [
-    {
-      id: 1,
-      propertyTitle: "1-комн. квартира, 35 м², 3/5 этаж",
-      location: "Санкт-Петербург, Невский проспект, д. 12",
-      bidAmount: 2800000,
-      bidDate: "2024-01-20",
-      bidTime: "14:30",
-      status: "active",
-      currentBid: 3200000,
-      endTime: "2024-01-25T18:00:00"
-    },
-    {
-      id: 2,
-      propertyTitle: "Студия, 28 м², 2/10 этаж",
-      location: "Москва, ул. Тверская, д. 8",
-      bidAmount: 1500000,
-      bidDate: "2024-01-18",
-      bidTime: "10:15",
-      status: "outbid",
-      currentBid: 1800000
-    },
-    {
-      id: 3,
-      propertyTitle: "2-комн. квартира, 65 м², 7/12 этаж",
-      location: "Казань, ул. Баумана, д. 25",
-      bidAmount: 4500000,
-      bidDate: "2024-01-10",
-      bidTime: "16:45",
-      status: "won",
-      finalPrice: 4500000
-    },
-    {
-      id: 4,
-      propertyTitle: "4-комн. квартира, 120 м², 1/3 этаж",
-      location: "Сочи, ул. Навагинская, д. 15",
-      bidAmount: 8500000,
-      bidDate: "2023-12-28",
-      bidTime: "11:20",
-      status: "lost",
-      finalPrice: 9200000
+  // Загружаем ставки пользователя
+  const loadBidHistory = async () => {
+    if (!userId) {
+      console.log('⚠️ userId не установлен, пропускаем загрузку ставок')
+      setIsLoadingBids(false)
+      return
     }
-  ]
+    
+    // Убеждаемся, что userId - число
+    const numericUserId = typeof userId === 'string' ? parseInt(userId) : userId
+    if (isNaN(numericUserId)) {
+      console.error('❌ userId не является числом:', userId)
+      setIsLoadingBids(false)
+      return
+    }
+    
+    setIsLoadingBids(true)
+    try {
+      console.log(`📊 Запрос ставок для пользователя ${numericUserId}`)
+      console.log(`📊 API URL: ${API_BASE_URL}/bids/user/${numericUserId}`)
+      const response = await fetch(`${API_BASE_URL}/bids/user/${numericUserId}`)
+      console.log(`📊 Ответ сервера:`, response.status, response.statusText)
+      
+      if (response.ok) {
+        const result = await response.json()
+        console.log(`📊 Результат запроса ставок:`, result)
+        console.log(`📊 Количество ставок:`, result.data?.length || 0)
+        
+        if (result.success && result.data) {
+          // Логируем все ставки для отладки
+          console.log(`📊 Все ставки пользователя:`, result.data)
+          
+          // Группируем ставки по объектам и определяем статус
+          const bidsByProperty = {}
+          
+          result.data.forEach(bid => {
+            const propertyId = bid.property_id
+            console.log(`📊 Обработка ставки:`, { propertyId, bid_amount: bid.bid_amount, title: bid.title, is_auction: bid.is_auction })
+            
+            if (!bidsByProperty[propertyId]) {
+              bidsByProperty[propertyId] = {
+                property: bid,
+                bids: []
+              }
+            }
+            bidsByProperty[propertyId].bids.push(bid)
+          })
+          
+          console.log(`📊 Сгруппировано объектов:`, Object.keys(bidsByProperty).length)
+          
+          // Для каждого объекта определяем статус и формируем данные
+          const formattedBids = await Promise.all(
+            Object.values(bidsByProperty).map(async ({ property, bids }) => {
+              // Сортируем ставки пользователя по дате (последняя первая)
+              const sortedBids = bids.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+              const userMaxBid = Math.max(...bids.map(b => b.bid_amount))
+              const userLastBid = sortedBids[0]
+              
+              // Получаем текущую максимальную ставку для объекта
+              let currentMaxBid = userMaxBid
+              let isUserLeader = false
+              let status = 'active'
+              
+              try {
+                const bidsResponse = await fetch(`${API_BASE_URL}/bids/property/${propertyId}`)
+                if (bidsResponse.ok) {
+                  const bidsData = await bidsResponse.json()
+                  if (bidsData.success && bidsData.data && bidsData.data.length > 0) {
+                    const allBids = bidsData.data.sort((a, b) => {
+                      if (b.bid_amount !== a.bid_amount) {
+                        return b.bid_amount - a.bid_amount
+                      }
+                      return new Date(b.created_at) - new Date(a.created_at)
+                    })
+                    const maxBid = allBids[0]
+                    currentMaxBid = maxBid.bid_amount
+                    isUserLeader = maxBid.user_id === numericUserId
+                    
+                    // Определяем статус
+                    const endDate = property.auction_end_date || property.end_date
+                    const isAuctionEnded = endDate ? new Date(endDate) <= new Date() : false
+                    
+                    if (isUserLeader) {
+                      // Если пользователь лидер и аукцион закончился - выиграл
+                      if (isAuctionEnded) {
+                        status = 'won'
+                      } else {
+                        status = 'active'
+                      }
+                    } else {
+                      // Если пользователь не лидер
+                      if (isAuctionEnded) {
+                        // Аукцион закончился, но пользователь не лидер - проиграл
+                        status = 'lost'
+                      } else {
+                        // Аукцион еще идет, но ставку перебили
+                        status = 'outbid'
+                      }
+                    }
+                  }
+                }
+              } catch (error) {
+                console.warn('Ошибка получения текущей ставки:', error)
+              }
+              
+              // Парсим photos если это строка
+              let photos = []
+              if (property.photos) {
+                try {
+                  photos = typeof property.photos === 'string' 
+                    ? JSON.parse(property.photos) 
+                    : property.photos
+                } catch (e) {
+                  photos = []
+                }
+              }
+              
+              const bidDate = new Date(userLastBid.created_at)
+              
+              // Для обычных объектов (не аукционов) статус всегда 'active' или 'outbid'
+              // так как у них нет даты окончания
+              const isAuction = property.is_auction === 1 || property.is_auction === true
+              if (!isAuction) {
+                // Для обычных объектов статус зависит только от того, лидер ли пользователь
+                status = isUserLeader ? 'active' : 'outbid'
+              }
+              
+              console.log(`📊 Форматирование ставки для объекта ${propertyId}:`, {
+                title: property.title,
+                is_auction: property.is_auction,
+                isAuction,
+                status,
+                userMaxBid,
+                currentMaxBid,
+                isUserLeader,
+                endDate: property.auction_end_date || property.end_date
+              })
+              
+              return {
+                id: propertyId,
+                propertyId: propertyId,
+                propertyTitle: property.title || 'Объект недвижимости',
+                location: property.location || property.address || 'Адрес не указан',
+                bidAmount: userMaxBid,
+                bidDate: bidDate.toISOString().split('T')[0],
+                bidTime: bidDate.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }),
+                status: status,
+                currentBid: currentMaxBid,
+                finalPrice: status === 'won' || status === 'lost' ? currentMaxBid : null,
+                endTime: property.auction_end_date || property.end_date || null,
+                currency: property.currency || 'USD',
+                isAuction: isAuction
+              }
+            })
+          )
+          
+          // Сортируем по дате ставки (новые первые)
+          formattedBids.sort((a, b) => new Date(b.bidDate + 'T' + b.bidTime) - new Date(a.bidDate + 'T' + a.bidTime))
+          
+          console.log(`📊 Отформатировано ставок для отображения:`, formattedBids.length)
+          console.log(`📊 Данные ставок:`, formattedBids)
+          
+          setBidHistory(formattedBids)
+        } else {
+          console.log('⚠️ Нет данных в ответе сервера')
+          setBidHistory([])
+        }
+      } else {
+        const errorText = await response.text().catch(() => 'Не удалось прочитать ошибку')
+        console.error('❌ Ошибка HTTP при загрузке ставок:', response.status, errorText)
+        setBidHistory([])
+      }
+    } catch (error) {
+      console.error('❌ Ошибка загрузки ставок:', error)
+      console.error('❌ Stack trace:', error.stack)
+      setBidHistory([])
+    } finally {
+      setIsLoadingBids(false)
+    }
+  }
 
   const formatPrice = (price, currency = 'USD') => {
     const symbol = currency === 'USD' ? '$' : currency === 'EUR' ? '€' : currency === 'BYN' ? 'Br' : '$'
@@ -389,7 +550,11 @@ const History = () => {
             <section className="history-section">
               <h2 className="section-title">Ставки на аукционе</h2>
               <div className="history-list">
-                {bidHistory.length > 0 ? (
+                {isLoadingBids ? (
+                  <div className="empty-state">
+                    <p>Загрузка...</p>
+                  </div>
+                ) : bidHistory.length > 0 ? (
                   bidHistory.map((bid) => (
                     <div key={bid.id} className="history-card bid-card">
                       <div className="card-content">

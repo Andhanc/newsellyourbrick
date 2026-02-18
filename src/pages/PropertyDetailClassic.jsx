@@ -597,9 +597,9 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
     }
   }, [displayProperty.test_timer_end_date, displayProperty.test_timer_duration]);
 
-  // Загружаем ставки для аукционных объектов и обновляем текущую ставку
+  // Загружаем ставки для всех объектов (аукционных и обычных) и обновляем текущую ставку
   useEffect(() => {
-    if (!isAuctionProperty || !displayProperty.id) return
+    if (!displayProperty.id) return
 
     const loadBids = async () => {
       try {
@@ -756,8 +756,10 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
               return prev
             })
           } else {
-            // Если ставок нет - показываем стартовую цену
-            const startingPrice = displayProperty.auction_starting_price || 0
+            // Если ставок нет - показываем стартовую цену (для аукциона) или цену объекта (для обычных)
+            const startingPrice = isAuctionProperty 
+              ? (displayProperty.auction_starting_price || 0)
+              : (displayProperty.price || 0)
             setCurrentBid(prev => {
               if (prev !== startingPrice) {
                 return startingPrice
@@ -777,8 +779,10 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
         }
       } catch (error) {
         console.warn('Ошибка загрузки ставок:', error)
-        // В случае ошибки показываем стартовую цену
-        const startingPrice = displayProperty.auction_starting_price || 0
+        // В случае ошибки показываем стартовую цену (для аукциона) или цену объекта (для обычных)
+        const startingPrice = isAuctionProperty 
+          ? (displayProperty.auction_starting_price || 0)
+          : (displayProperty.price || 0)
         setCurrentBid(prev => {
           if (prev !== startingPrice) {
             return startingPrice
@@ -799,7 +803,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
     const interval = setInterval(loadBids, 3000)
     return () => clearInterval(interval)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [displayProperty.id, isAuctionProperty])
+  }, [displayProperty.id])
 
   // Периодически обновляем данные объекта с сервера для синхронизации таймера
   useEffect(() => {
@@ -969,9 +973,9 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
     saveWinner();
   }, [timerExpired, currentLeader, displayProperty.id, isAuctionProperty, auctionEndTime, user, userLoaded]);
 
-  // Проверяем уведомления о перебитой ставке для текущего объекта
+  // Проверяем уведомления о перебитой ставке для текущего объекта (для всех объектов)
   useEffect(() => {
-    if (!isAuctionProperty || !displayProperty.id) return
+    if (!displayProperty.id) return
 
     const checkNotifications = async () => {
       try {
@@ -1075,7 +1079,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
     const interval = setInterval(checkNotifications, 5000)
     return () => clearInterval(interval)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [displayProperty.id, isAuctionProperty, user, userLoaded])
+  }, [displayProperty.id, user, userLoaded])
 
   const handleToggleFavorite = () => {
     // Проверяем авторизацию через Clerk или старую систему
@@ -1124,6 +1128,30 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
     setIsBuyNowModalOpen(true)
   }
 
+  // Функция для определения значений кнопок быстрых ставок в зависимости от текущей ставки
+  const getQuickBidAmounts = () => {
+    // Используем текущую максимальную ставку
+    const startingPrice = isAuctionProperty 
+      ? (displayProperty.auction_starting_price || 0)
+      : (displayProperty.price || 0)
+    const effectiveCurrentBid = currentBid !== null ? currentBid : (displayProperty.currentBid || startingPrice)
+    
+    // Определяем значения кнопок в зависимости от текущей ставки
+    if (effectiveCurrentBid < 300000) {
+      // До 300,000: 1000, 3000, 5000
+      return [1000, 3000, 5000]
+    } else if (effectiveCurrentBid < 500000) {
+      // До 500,000: 5000, 10000, 15000
+      return [5000, 10000, 15000]
+    } else if (effectiveCurrentBid < 1000000) {
+      // До 1,000,000: 15000, 20000, 25000
+      return [15000, 20000, 25000]
+    } else {
+      // От 1,000,000: 25000, 50000, 100000
+      return [25000, 50000, 100000]
+    }
+  }
+
   const handleQuickBid = (amount) => {
     // Проверяем авторизацию
     const isClerkAuth = user && userLoaded
@@ -1153,7 +1181,9 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
 
     // Используем текущую максимальную ставку (currentBid), которая обновляется динамически
     // Если currentBid еще не загружен, используем значение из displayProperty или стартовую цену
-    const startingPrice = displayProperty.auction_starting_price || 0
+    const startingPrice = isAuctionProperty 
+      ? (displayProperty.auction_starting_price || 0)
+      : (displayProperty.price || 0)
     const effectiveCurrentBid = currentBid !== null ? currentBid : (displayProperty.currentBid || startingPrice)
     
     // Если пользователь уже ввел сумму в поле, используем её как базу только если она >= текущей ставки
@@ -1170,8 +1200,9 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
     // Добавляем значение кнопки к базовой сумме
     const quickBidAmount = baseAmount + amount
     
-    // Убеждаемся, что итоговая сумма не меньше минимальной ставки (текущая + 1000)
-    const minBidStep = 1000
+    // Получаем минимальный шаг из текущих значений кнопок
+    const quickBidAmounts = getQuickBidAmounts()
+    const minBidStep = quickBidAmounts[0] // Минимальный шаг - это первая кнопка
     const minimumBid = effectiveCurrentBid + minBidStep
     const finalBidAmount = Math.max(quickBidAmount, minimumBid)
     
@@ -1184,7 +1215,8 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
       baseAmount,
       quickBidAmount,
       minimumBid,
-      finalBidAmount
+      finalBidAmount,
+      minBidStep
     })
   }
 
@@ -1222,11 +1254,14 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
     }
 
     // Используем текущую максимальную ставку для проверки
-    const startingPrice = displayProperty.auction_starting_price || 0
+    const startingPrice = isAuctionProperty 
+      ? (displayProperty.auction_starting_price || 0)
+      : (displayProperty.price || 0)
     const effectiveCurrentBid = currentBid !== null ? currentBid : (displayProperty.currentBid || startingPrice)
     
-    // Минимальный шаг ставки - самая низкая сумма из кнопок (1000)
-    const minBidStep = 1000
+    // Получаем минимальный шаг из текущих значений кнопок
+    const quickBidAmounts = getQuickBidAmounts()
+    const minBidStep = quickBidAmounts[0] // Минимальный шаг - это первая кнопка
     const minimumBid = effectiveCurrentBid + minBidStep
     
     console.log('📤 handleBidSubmit:', {
@@ -1729,7 +1764,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                   )
                 )}
                 {/* Анимация изменения цены поверх изображения */}
-                {priceAnimation && currentBid !== null && isAuctionProperty && (
+                {priceAnimation && currentBid !== null && (
                   <div className="property-detail-gallery__price-overlay">
                     <div className="price-overlay__content">
                       <div className="price-overlay__label">Новая ставка</div>
@@ -2253,7 +2288,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
               </div>
 
               {/* Блок таймера аукциона, текущей ставки и истории ставок */}
-              {isAuctionProperty && auctionEndTime && (
+              {(isAuctionProperty && auctionEndTime) || (!isAuctionProperty && displayProperty.price) ? (
                 <div className="property-detail-sidebar__auction-block">
                   {(displayProperty.test_timer_end_date && 
                     (typeof displayProperty.test_timer_end_date === 'string' 
@@ -2367,16 +2402,34 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                       )}
                     </>
                   )}
+                  {/* Показываем лидера для обычных объектов (без таймера) */}
+                  {!isAuctionProperty && currentLeader && (
+                    <div className="auction-leader-card">
+                      <div className="auction-leader-label">Текущий лидер</div>
+                      <div className="auction-leader-name">
+                        {currentLeader.firstName && currentLeader.lastName 
+                          ? `${currentLeader.firstName} ${currentLeader.lastName}`
+                          : currentLeader.email || 'Игрок'}
+                      </div>
+                      <div className="auction-leader-bid">
+                        Ставка: {displayProperty.currency === 'USD' ? '$' : displayProperty.currency === 'EUR' ? '€' : displayProperty.currency === 'BYN' ? 'Br' : ''}
+                        {currentLeader.bidAmount.toLocaleString('ru-RU')}
+                      </div>
+                    </div>
+                  )}
+
                   <div className="property-detail-sidebar__current-bid">
                     <span className="current-bid-label">
-                      {currentBid !== null && currentBid !== displayProperty.auction_starting_price
+                      {currentBid !== null && currentBid !== (isAuctionProperty ? displayProperty.auction_starting_price : displayProperty.price)
                         ? 'Текущая максимальная ставка:'
-                        : 'Стартовая сумма ставки:'}
+                        : isAuctionProperty 
+                          ? 'Стартовая сумма ставки:'
+                          : 'Цена объекта:'}
                     </span>
                     <div className={`current-bid-value-wrapper ${priceAnimation ? 'current-bid-value-wrapper--animated' : ''}`}>
                       <span className="current-bid-value">
                         {displayProperty.currency === 'USD' ? '$' : displayProperty.currency === 'EUR' ? '€' : displayProperty.currency === 'BYN' ? 'Br' : ''}
-                        {(currentBid !== null ? currentBid : (displayProperty.auction_starting_price || 0)).toLocaleString('ru-RU')}
+                        {(currentBid !== null ? currentBid : (isAuctionProperty ? (displayProperty.auction_starting_price || 0) : (displayProperty.price || 0))).toLocaleString('ru-RU')}
                       </span>
                       {priceAnimation && (
                         <span className="current-bid-arrow">
@@ -2386,8 +2439,8 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                     </div>
                   </div>
 
-                  {/* Функционал ставки - скрываем когда таймер истек */}
-                  {!timerExpired && (
+                  {/* Функционал ставки - скрываем когда таймер истек (только для аукционов) */}
+                  {(!isAuctionProperty || !timerExpired) && (
                   <div className="property-detail-sidebar__bidding-section">
                     {displayProperty.is_reserved && displayProperty.reserved_until && new Date(displayProperty.reserved_until) > new Date() && (
                       <div style={{
@@ -2407,42 +2460,31 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                       </div>
                     )}
                     <div className="bidding-section__quick-buttons">
-                      <button
-                        type="button"
-                        className="bidding-section__quick-btn"
-                        onClick={() => handleQuickBid(1000)}
-                        disabled={isSubmittingBid || isUserLeader || (displayProperty.is_reserved && displayProperty.reserved_until && new Date(displayProperty.reserved_until) > new Date())}
-                        style={{
-                          opacity: (displayProperty.is_reserved && displayProperty.reserved_until && new Date(displayProperty.reserved_until) > new Date()) ? 0.5 : 1,
-                          cursor: (displayProperty.is_reserved && displayProperty.reserved_until && new Date(displayProperty.reserved_until) > new Date()) ? 'not-allowed' : 'pointer'
-                        }}
-                      >
-                        +1 000
-                      </button>
-                      <button
-                        type="button"
-                        className="bidding-section__quick-btn"
-                        onClick={() => handleQuickBid(2000)}
-                        disabled={isSubmittingBid || isUserLeader || (displayProperty.is_reserved && displayProperty.reserved_until && new Date(displayProperty.reserved_until) > new Date())}
-                        style={{
-                          opacity: (displayProperty.is_reserved && displayProperty.reserved_until && new Date(displayProperty.reserved_until) > new Date()) ? 0.5 : 1,
-                          cursor: (displayProperty.is_reserved && displayProperty.reserved_until && new Date(displayProperty.reserved_until) > new Date()) ? 'not-allowed' : 'pointer'
-                        }}
-                      >
-                        +2 000
-                      </button>
-                      <button
-                        type="button"
-                        className="bidding-section__quick-btn"
-                        onClick={() => handleQuickBid(3000)}
-                        disabled={isSubmittingBid || isUserLeader || (displayProperty.is_reserved && displayProperty.reserved_until && new Date(displayProperty.reserved_until) > new Date())}
-                        style={{
-                          opacity: (displayProperty.is_reserved && displayProperty.reserved_until && new Date(displayProperty.reserved_until) > new Date()) ? 0.5 : 1,
-                          cursor: (displayProperty.is_reserved && displayProperty.reserved_until && new Date(displayProperty.reserved_until) > new Date()) ? 'not-allowed' : 'pointer'
-                        }}
-                      >
-                        +3 000
-                      </button>
+                      {(() => {
+                        const quickBidAmounts = getQuickBidAmounts()
+                        const formatAmount = (amount) => {
+                          if (amount >= 1000) {
+                            return `+${(amount / 1000).toFixed(0)}K`
+                          }
+                          return `+${amount}`
+                        }
+                        
+                        return quickBidAmounts.map((amount, index) => (
+                          <button
+                            key={index}
+                            type="button"
+                            className="bidding-section__quick-btn"
+                            onClick={() => handleQuickBid(amount)}
+                            disabled={isSubmittingBid || isUserLeader || (displayProperty.is_reserved && displayProperty.reserved_until && new Date(displayProperty.reserved_until) > new Date())}
+                            style={{
+                              opacity: (displayProperty.is_reserved && displayProperty.reserved_until && new Date(displayProperty.reserved_until) > new Date()) ? 0.5 : 1,
+                              cursor: (displayProperty.is_reserved && displayProperty.reserved_until && new Date(displayProperty.reserved_until) > new Date()) ? 'not-allowed' : 'pointer'
+                            }}
+                          >
+                            {formatAmount(amount)}
+                          </button>
+                        ))
+                      })()}
                     </div>
                     
                     <div className="bidding-section__input-wrapper">
@@ -2532,7 +2574,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                     История ставок
                   </button>
                 </div>
-              )}
+              ) : null}
 
               {/* Карта */}
               <div className="property-detail-sidebar__map">
@@ -2606,22 +2648,20 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
         </div>
       </div>
 
-      {/* Модальное окно истории ставок для аукционных объектов */}
-      {isAuctionProperty && (
-        <BiddingHistoryModal
-          isOpen={isBidHistoryOpen}
-          onClose={() => setIsBidHistoryOpen(false)}
-          property={{
-            id: displayProperty.id,
-            title: propertyInfo,
-            start_date: displayProperty.auction_start_date,
-            end_date: displayProperty.auction_end_date,
-            auction_starting_price: displayProperty.auction_starting_price,
-            price: displayProperty.price,
-            currentBid: displayProperty.currentBid || displayProperty.price
-          }}
-        />
-      )}
+      {/* Модальное окно истории ставок для всех объектов */}
+      <BiddingHistoryModal
+        isOpen={isBidHistoryOpen}
+        onClose={() => setIsBidHistoryOpen(false)}
+        property={{
+          id: displayProperty.id,
+          title: propertyInfo,
+          start_date: displayProperty.auction_start_date,
+          end_date: displayProperty.auction_end_date,
+          auction_starting_price: displayProperty.auction_starting_price,
+          price: displayProperty.price,
+          currentBid: currentBid || displayProperty.currentBid || (isAuctionProperty ? displayProperty.auction_starting_price : displayProperty.price) || 0
+        }}
+      />
 
       {/* Модальное окно с инструкциями по покупке */}
       <BuyNowModal

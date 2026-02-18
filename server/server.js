@@ -7002,15 +7002,6 @@ app.post('/api/bids', (req, res) => {
     }
     console.log('✅ Пользователь найден:', { id: user.id, name: `${user.first_name} ${user.last_name}` });
     
-    // Проверяем, что у пользователя есть депозит
-    const depositAmount = user.deposit_amount || 0;
-    if (depositAmount <= 0) {
-      return res.status(400).json({ 
-        success: false, 
-        error: 'Для участия в аукционе необходим депозит. Пожалуйста, пополните депозит.' 
-      });
-    }
-    
     // Проверяем, существует ли объект недвижимости во всех возможных таблицах
     // Система использует: properties_apartments (квартиры/коммерческая), properties_houses (дома/виллы), и старую properties
     let property = null;
@@ -7059,15 +7050,20 @@ app.post('/api/bids', (req, res) => {
     
     console.log('✅ Объект найден:', { id: property.id, title: property.title, is_auction: property.is_auction, table: tableName });
     
-    // Проверяем, что это аукцион
-    if (property.is_auction !== 1) {
-      console.error('❌ Объект не является аукционом:', { id: property.id, is_auction: property.is_auction });
-      return res.status(400).json({ 
-        success: false, 
-        error: 'Этот объект не является аукционом' 
-      });
+    // Проверяем, что у пользователя есть депозит (только для аукционов)
+    // Для обычных объектов депозит не требуется
+    const isAuction = property.is_auction === 1;
+    if (isAuction) {
+      const depositAmount = user.deposit_amount || 0;
+      if (depositAmount <= 0) {
+        return res.status(400).json({ 
+          success: false, 
+          error: 'Для участия в аукционе необходим депозит. Пожалуйста, пополните депозит.' 
+        });
+      }
     }
     
+    // Разрешаем ставки для всех объектов (как аукционных, так и обычных)
     // Проверка отключена: пользователь может делать ставки в нескольких объектах
     // const existingBids = db.prepare(`
     //   SELECT property_id FROM bids 
@@ -7085,7 +7081,11 @@ app.post('/api/bids', (req, res) => {
     console.log('✅ Пользователь может сделать ставку в этом объекте (проверка на несколько объектов отключена)');
     
     // Получаем текущую максимальную ставку для этого объекта
-    let currentMaxBid = property.auction_starting_price || property.price || 0;
+    // Для аукционов используем auction_starting_price, для обычных объектов - price
+    const basePrice = property.is_auction === 1 
+      ? (property.auction_starting_price || property.price || 0)
+      : (property.price || 0);
+    let currentMaxBid = basePrice;
     try {
       const maxBid = db.prepare(`
         SELECT MAX(bid_amount) as max_bid 
@@ -7346,44 +7346,99 @@ app.get('/api/bids/user/:id', (req, res) => {
     const userId = req.params.id;
     const db = getDatabase();
     
+    console.log(`📊 GET /api/bids/user/:id - Запрос ставок для пользователя ${userId}`);
+    
     // Проверяем, существует ли таблица ставок
     const tableExists = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='bids'").get();
     if (!tableExists) {
+      console.log('⚠️ Таблица bids не существует');
       return res.json({ success: true, data: [] });
     }
     
+    // Получаем все ставки пользователя
     const bids = db.prepare(`
-      SELECT 
-        b.*,
-        p.title,
-        p.location,
-        p.price,
-        p.auction_starting_price,
-        p.auction_minimum_bid,
-        p.photos,
-        p.is_auction,
-        p.auction_end_date
-      FROM bids b
-      LEFT JOIN properties p ON b.property_id = p.id
-      WHERE b.user_id = ?
-      ORDER BY b.created_at DESC
+      SELECT * FROM bids
+      WHERE user_id = ?
+      ORDER BY created_at DESC
     `).all(userId);
     
-    // Парсим JSON поля
+    console.log(`📊 Найдено ${bids.length} ставок для пользователя ${userId}`);
+    
+    // Для каждой ставки получаем информацию об объекте из соответствующей таблицы
     const formattedBids = bids.map(bid => {
-      const formatted = { ...bid };
-      if (formatted.photos) {
-        try {
-          formatted.photos = JSON.parse(formatted.photos);
-        } catch (e) {
-          formatted.photos = [];
+      let property = null;
+      
+      // Пытаемся найти объект во всех возможных таблицах
+      try {
+        // Сначала проверяем properties_apartments
+        property = db.prepare('SELECT * FROM properties_apartments WHERE id = ?').get(bid.property_id);
+        if (property) {
+          property.source_table = 'properties_apartments';
         }
-      } else {
-        formatted.photos = [];
+      } catch (e) {
+        // Таблица может не существовать
       }
+      
+      if (!property) {
+        try {
+          // Проверяем properties_houses
+          property = db.prepare('SELECT * FROM properties_houses WHERE id = ?').get(bid.property_id);
+          if (property) {
+            property.source_table = 'properties_houses';
+          }
+        } catch (e) {
+          // Таблица может не существовать
+        }
+      }
+      
+      if (!property) {
+        try {
+          // Проверяем старую таблицу properties
+          property = db.prepare('SELECT * FROM properties WHERE id = ?').get(bid.property_id);
+          if (property) {
+            property.source_table = 'properties';
+          }
+        } catch (e) {
+          // Таблица может не существовать
+        }
+      }
+      
+      // Парсим JSON поля
+      if (property && property.photos) {
+        try {
+          property.photos = typeof property.photos === 'string' 
+            ? JSON.parse(property.photos) 
+            : property.photos;
+        } catch (e) {
+          property.photos = [];
+        }
+      } else if (property) {
+        property.photos = [];
+      }
+      
+      const formatted = {
+        ...bid,
+        title: property?.title || null,
+        location: property?.location || property?.address || null,
+        price: property?.price || null,
+        auction_starting_price: property?.auction_starting_price || null,
+        auction_minimum_bid: property?.auction_minimum_bid || null,
+        photos: property?.photos || [],
+        is_auction: property?.is_auction || 0,
+        auction_end_date: property?.auction_end_date || null,
+        currency: property?.currency || 'USD'
+      };
+      
+      console.log(`📊 Ставка ${bid.id} для объекта ${bid.property_id}:`, {
+        title: formatted.title,
+        is_auction: formatted.is_auction,
+        hasProperty: !!property
+      });
+      
       return formatted;
     });
     
+    console.log(`✅ Возвращаем ${formattedBids.length} ставок для пользователя ${userId}`);
     res.json({ success: true, data: formattedBids });
   } catch (error) {
     console.error('Ошибка при получении ставок пользователя:', error);
