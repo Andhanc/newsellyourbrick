@@ -5,6 +5,7 @@
 
 import { spawn } from 'child_process';
 import http from 'http';
+import { setTimeout } from 'timers/promises';
 
 const SERVER_PORT = process.env.SERVER_PORT || 3000;
 const MAX_RETRIES = 30; // 30 попыток = 15 секунд максимум
