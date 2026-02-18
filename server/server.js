@@ -221,6 +221,44 @@ console.log('💾 Инициализация базы данных...');
 try {
   initDatabase();
   console.log('✅ База данных инициализирована успешно');
+  
+  // Создаем таблицу auction_winners после инициализации БД
+  try {
+    const db = getDatabase();
+    const tableExists = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='auction_winners'").get();
+    if (!tableExists) {
+      console.log('🔄 Создание таблицы auction_winners...');
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS auction_winners (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          user_id INTEGER NOT NULL,
+          property_id INTEGER NOT NULL,
+          property_table TEXT NOT NULL,
+          winning_bid_amount REAL NOT NULL,
+          currency TEXT DEFAULT 'USD',
+          auction_end_date TEXT NOT NULL,
+          won_at TEXT DEFAULT (datetime('now')),
+          deposit_amount REAL NOT NULL,
+          deposit_due_date TEXT NOT NULL,
+          deposit_paid INTEGER DEFAULT 0,
+          deposit_paid_at TEXT,
+          status TEXT DEFAULT 'pending_deposit',
+          created_at TEXT DEFAULT (datetime('now')),
+          updated_at TEXT DEFAULT (datetime('now')),
+          FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        );
+        CREATE INDEX IF NOT EXISTS idx_auction_winners_user_id ON auction_winners(user_id);
+        CREATE INDEX IF NOT EXISTS idx_auction_winners_property_id ON auction_winners(property_id);
+        CREATE INDEX IF NOT EXISTS idx_auction_winners_status ON auction_winners(status);
+        CREATE INDEX IF NOT EXISTS idx_auction_winners_deposit_paid ON auction_winners(deposit_paid);
+      `);
+      console.log('✅ Таблица auction_winners создана');
+    } else {
+      console.log('✅ Таблица auction_winners уже существует');
+    }
+  } catch (tableError) {
+    console.error('❌ Ошибка при создании таблицы auction_winners:', tableError);
+  }
 } catch (error) {
   console.error('❌ Ошибка при инициализации базы данных:', error);
   process.exit(1);
@@ -7408,6 +7446,296 @@ app.get('/api/bids/user/:userId/property/:propertyId', (req, res) => {
     res.json({ success: true, data: formattedBids });
   } catch (error) {
     console.error('❌ Ошибка при получении истории ставок пользователя по объекту:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * ========== РОУТЫ ДЛЯ ВЫИГРАННЫХ ОБЪЕКТОВ НА АУКЦИОНЕ ==========
+ */
+
+// Создаем таблицу auction_winners при запуске сервера
+try {
+  const db = getDatabase();
+  const tableExists = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='auction_winners'").get();
+  if (!tableExists) {
+    console.log('🔄 Создание таблицы auction_winners...');
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS auction_winners (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        property_id INTEGER NOT NULL,
+        property_table TEXT NOT NULL,
+        winning_bid_amount REAL NOT NULL,
+        currency TEXT DEFAULT 'USD',
+        auction_end_date TEXT NOT NULL,
+        won_at TEXT DEFAULT (datetime('now')),
+        deposit_amount REAL NOT NULL,
+        deposit_due_date TEXT NOT NULL,
+        deposit_paid INTEGER DEFAULT 0,
+        deposit_paid_at TEXT,
+        status TEXT DEFAULT 'pending_deposit',
+        created_at TEXT DEFAULT (datetime('now')),
+        updated_at TEXT DEFAULT (datetime('now')),
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+      );
+      CREATE INDEX IF NOT EXISTS idx_auction_winners_user_id ON auction_winners(user_id);
+      CREATE INDEX IF NOT EXISTS idx_auction_winners_property_id ON auction_winners(property_id);
+      CREATE INDEX IF NOT EXISTS idx_auction_winners_status ON auction_winners(status);
+      CREATE INDEX IF NOT EXISTS idx_auction_winners_deposit_paid ON auction_winners(deposit_paid);
+    `);
+    console.log('✅ Таблица auction_winners создана');
+  }
+} catch (error) {
+  console.error('❌ Ошибка при создании таблицы auction_winners:', error);
+}
+
+/**
+ * POST /api/auction-winners - Сохранить победителя аукциона
+ * Вызывается когда таймер аукциона закончился
+ */
+app.post('/api/auction-winners', (req, res) => {
+  try {
+    const { user_id, property_id, property_table, winning_bid_amount, currency, auction_end_date } = req.body;
+    const db = getDatabase();
+    
+    console.log('🏆 Сохранение победителя аукциона:', { user_id, property_id, property_table, winning_bid_amount });
+    
+    // Валидация
+    if (!user_id || !property_id || !property_table || !winning_bid_amount || !auction_end_date) {
+      return res.status(400).json({
+        success: false,
+        error: 'Необходимо указать: user_id, property_id, property_table, winning_bid_amount, auction_end_date'
+      });
+    }
+    
+    // Проверяем, не был ли уже сохранен победитель для этого объекта
+    const existing = db.prepare(`
+      SELECT id FROM auction_winners 
+      WHERE property_id = ? AND property_table = ?
+    `).get(property_id, property_table);
+    
+    if (existing) {
+      console.log('⚠️ Победитель для этого объекта уже сохранен');
+      return res.status(409).json({
+        success: false,
+        error: 'Победитель для этого объекта уже зарегистрирован'
+      });
+    }
+    
+    // Вычисляем сумму депозита (10% от выигрышной ставки)
+    const depositAmount = Math.round(winning_bid_amount * 0.1 * 100) / 100;
+    
+    // Вычисляем дату до которой нужно внести депозит (3 дня с момента выигрыша)
+    const wonDate = new Date(auction_end_date);
+    const depositDueDate = new Date(wonDate.getTime() + 3 * 24 * 60 * 60 * 1000);
+    
+    // Сохраняем победителя
+    const stmt = db.prepare(`
+      INSERT INTO auction_winners (
+        user_id, property_id, property_table, winning_bid_amount, currency,
+        auction_end_date, deposit_amount, deposit_due_date, status
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending_deposit')
+    `);
+    
+    const result = stmt.run(
+      user_id,
+      property_id,
+      property_table,
+      winning_bid_amount,
+      currency || 'USD',
+      auction_end_date,
+      depositAmount,
+      depositDueDate.toISOString()
+    );
+    
+    console.log('✅ Победитель сохранен:', {
+      id: result.lastInsertRowid,
+      deposit_amount: depositAmount,
+      deposit_due_date: depositDueDate.toISOString()
+    });
+    
+    res.json({
+      success: true,
+      data: {
+        id: result.lastInsertRowid,
+        deposit_amount: depositAmount,
+        deposit_due_date: depositDueDate.toISOString()
+      }
+    });
+  } catch (error) {
+    console.error('❌ Ошибка при сохранении победителя:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * GET /api/auction-winners/user/:id - Получить выигранные объекты пользователя
+ */
+app.get('/api/auction-winners/user/:id', (req, res) => {
+  try {
+    const userId = parseInt(req.params.id);
+    
+    if (isNaN(userId)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Некорректный user_id'
+      });
+    }
+    
+    const db = getDatabase();
+    
+    // Проверяем и создаем таблицу, если её нет
+    try {
+      const tableExists = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='auction_winners'").get();
+      if (!tableExists) {
+        console.log('🔄 Таблица auction_winners не найдена, создаем...');
+        db.exec(`
+          CREATE TABLE IF NOT EXISTS auction_winners (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            property_id INTEGER NOT NULL,
+            property_table TEXT NOT NULL,
+            winning_bid_amount REAL NOT NULL,
+            currency TEXT DEFAULT 'USD',
+            auction_end_date TEXT NOT NULL,
+            won_at TEXT DEFAULT (datetime('now')),
+            deposit_amount REAL NOT NULL,
+            deposit_due_date TEXT NOT NULL,
+            deposit_paid INTEGER DEFAULT 0,
+            deposit_paid_at TEXT,
+            status TEXT DEFAULT 'pending_deposit',
+            created_at TEXT DEFAULT (datetime('now')),
+            updated_at TEXT DEFAULT (datetime('now')),
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+          );
+          CREATE INDEX IF NOT EXISTS idx_auction_winners_user_id ON auction_winners(user_id);
+          CREATE INDEX IF NOT EXISTS idx_auction_winners_property_id ON auction_winners(property_id);
+          CREATE INDEX IF NOT EXISTS idx_auction_winners_status ON auction_winners(status);
+          CREATE INDEX IF NOT EXISTS idx_auction_winners_deposit_paid ON auction_winners(deposit_paid);
+        `);
+        console.log('✅ Таблица auction_winners создана');
+      }
+    } catch (tableError) {
+      console.error('❌ Ошибка при проверке/создании таблицы auction_winners:', tableError);
+    }
+    
+    console.log(`📊 Запрос выигранных объектов для пользователя ${userId}`);
+    
+    // Получаем выигранные объекты
+    const winners = db.prepare(`
+      SELECT * FROM auction_winners
+      WHERE user_id = ?
+      ORDER BY won_at DESC
+    `).all(userId);
+    
+    // Для каждого объекта получаем детальную информацию
+    const winnersWithDetails = winners.map(winner => {
+      let property = null;
+      
+      // Пытаемся получить объект из соответствующей таблицы
+      try {
+        if (winner.property_table === 'properties_apartments') {
+          property = db.prepare('SELECT * FROM properties_apartments WHERE id = ?').get(winner.property_id);
+        } else if (winner.property_table === 'properties_houses') {
+          property = db.prepare('SELECT * FROM properties_houses WHERE id = ?').get(winner.property_id);
+        } else {
+          property = db.prepare('SELECT * FROM properties WHERE id = ?').get(winner.property_id);
+        }
+      } catch (e) {
+        console.warn(`⚠️ Не удалось получить объект ${winner.property_id} из таблицы ${winner.property_table}:`, e.message);
+      }
+      
+      // Парсим JSON поля
+      if (property) {
+        if (property.photos) {
+          try {
+            property.photos = JSON.parse(property.photos);
+          } catch (e) {
+            property.photos = [];
+          }
+        } else {
+          property.photos = [];
+        }
+      }
+      
+      return {
+        ...winner,
+        property: property || null
+      };
+    });
+    
+    console.log(`✅ Найдено ${winnersWithDetails.length} выигранных объектов для пользователя ${userId}`);
+    
+    res.json({ success: true, data: winnersWithDetails });
+  } catch (error) {
+    console.error('❌ Ошибка при получении выигранных объектов:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * POST /api/auction-winners/:id/pay-deposit - Оплатить депозит
+ */
+app.post('/api/auction-winners/:id/pay-deposit', (req, res) => {
+  try {
+    const winnerId = parseInt(req.params.id);
+    const db = getDatabase();
+    
+    console.log(`💳 Оплата депозита для выигранного объекта ${winnerId}`);
+    
+    // Получаем информацию о выигранном объекте
+    const winner = db.prepare('SELECT * FROM auction_winners WHERE id = ?').get(winnerId);
+    
+    if (!winner) {
+      return res.status(404).json({
+        success: false,
+        error: 'Выигранный объект не найден'
+      });
+    }
+    
+    if (winner.deposit_paid === 1) {
+      return res.status(400).json({
+        success: false,
+        error: 'Депозит уже оплачен'
+      });
+    }
+    
+    // Проверяем, не истек ли срок оплаты
+    const now = new Date();
+    const dueDate = new Date(winner.deposit_due_date);
+    
+    if (now > dueDate) {
+      return res.status(400).json({
+        success: false,
+        error: 'Срок оплаты депозита истек'
+      });
+    }
+    
+    // Обновляем статус оплаты
+    const updateStmt = db.prepare(`
+      UPDATE auction_winners
+      SET deposit_paid = 1,
+          deposit_paid_at = datetime('now'),
+          status = 'deposit_paid',
+          updated_at = datetime('now')
+      WHERE id = ?
+    `);
+    
+    updateStmt.run(winnerId);
+    
+    console.log(`✅ Депозит оплачен для выигранного объекта ${winnerId}`);
+    
+    res.json({
+      success: true,
+      data: {
+        id: winnerId,
+        deposit_paid: true,
+        deposit_paid_at: new Date().toISOString()
+      }
+    });
+  } catch (error) {
+    console.error('❌ Ошибка при оплате депозита:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });

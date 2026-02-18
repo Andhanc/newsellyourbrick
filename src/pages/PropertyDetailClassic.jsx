@@ -812,15 +812,18 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
           const propData = await propResponse.json();
           if (propData.success && propData.data) {
             const updatedProp = propData.data;
-            // Обновляем только таймер, если он изменился
-            if (updatedProp.test_timer_end_date !== property.test_timer_end_date) {
+            // Обновляем только таймер, если он изменился И если он не null/undefined/пустая строка
+            // Это предотвращает потерю test_timer_end_date при обновлении данных
+            if (updatedProp.test_timer_end_date && 
+                updatedProp.test_timer_end_date !== property.test_timer_end_date) {
               setProperty(prev => ({
                 ...prev,
                 test_timer_end_date: updatedProp.test_timer_end_date,
-                test_timer_duration: updatedProp.test_timer_duration
+                test_timer_duration: updatedProp.test_timer_duration || prev.test_timer_duration
               }));
               console.log('🔄 Таймер обновлен с сервера:', updatedProp.test_timer_end_date);
             }
+            // Если таймер на сервере null, но у нас он был - не обновляем (сохраняем текущее значение)
           }
         }
       } catch (error) {
@@ -852,6 +855,119 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
     const interval = setInterval(checkTimer, 1000);
     return () => clearInterval(interval);
   }, [auctionEndTime]);
+
+  // Сохраняем победителя когда таймер закончился
+  useEffect(() => {
+    if (!timerExpired || !isAuctionProperty || !currentLeader || !displayProperty.id) return;
+    
+    const saveWinner = async () => {
+      try {
+        // Получаем userId
+        const isClerkAuth = user && userLoaded;
+        const isOldAuth = isAuthenticated();
+        
+        let userId = null;
+        if (isClerkAuth && user) {
+          const savedUserId = localStorage.getItem('userId');
+          if (savedUserId && /^\d+$/.test(savedUserId)) {
+            userId = parseInt(savedUserId);
+          } else {
+            try {
+              const userEmail = user.primaryEmailAddress?.emailAddress || user.emailAddresses?.[0]?.emailAddress;
+              if (userEmail) {
+                const userResponse = await fetch(`${API_BASE_URL}/users/email/${encodeURIComponent(userEmail)}`);
+                if (userResponse.ok) {
+                  const userData = await userResponse.json();
+                  if (userData.success && userData.data && userData.data.id) {
+                    userId = userData.data.id;
+                    localStorage.setItem('userId', String(userId));
+                  }
+                }
+              }
+            } catch (e) {
+              console.warn('Не удалось получить userId:', e);
+            }
+          }
+        } else if (isOldAuth) {
+          const { getUserData } = await import('../services/authService');
+          const userData = getUserData();
+          userId = userData?.id;
+        }
+        
+        if (!userId) {
+          console.warn('⚠️ Не удалось определить userId для сохранения победителя');
+          return;
+        }
+        
+        // Определяем таблицу объекта
+        // Используем property_type из displayProperty, если доступен
+        let propertyTable = 'properties';
+        const propertyType = displayProperty.property_type || displayProperty.propertyType;
+        if (propertyType === 'apartment' || propertyType === 'commercial') {
+          propertyTable = 'properties_apartments';
+        } else if (propertyType === 'house' || propertyType === 'villa') {
+          propertyTable = 'properties_houses';
+        } else {
+          // Если property_type не определен, пытаемся получить из API
+          try {
+            const propResponse = await fetch(`${API_BASE_URL}/properties/${displayProperty.id}`);
+            if (propResponse.ok) {
+              const propData = await propResponse.json();
+              const apiPropertyType = propData.data?.property_type;
+              if (apiPropertyType === 'apartment' || apiPropertyType === 'commercial') {
+                propertyTable = 'properties_apartments';
+              } else if (apiPropertyType === 'house' || apiPropertyType === 'villa') {
+                propertyTable = 'properties_houses';
+              }
+            }
+          } catch (e) {
+            console.warn('⚠️ Не удалось определить таблицу объекта, используем по умолчанию:', e);
+          }
+        }
+        
+        // Сохраняем победителя
+        const winnerData = {
+          user_id: userId,
+          property_id: displayProperty.id,
+          property_table: propertyTable,
+          winning_bid_amount: currentLeader.bidAmount,
+          currency: displayProperty.currency || 'USD',
+          auction_end_date: auctionEndTime
+        };
+        
+        console.log('🏆 Сохранение победителя:', winnerData);
+        
+        const response = await fetch(`${API_BASE_URL}/auction-winners`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(winnerData)
+        });
+        
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success) {
+            console.log('✅ Победитель успешно сохранен:', result.data);
+          } else {
+            console.warn('⚠️ Ошибка при сохранении победителя:', result.error);
+          }
+        } else {
+          const errorData = await response.json().catch(() => ({}));
+          // Если победитель уже сохранен (409), это нормально
+          if (response.status === 409) {
+            console.log('ℹ️ Победитель уже был сохранен ранее');
+          } else {
+            console.error('❌ Ошибка при сохранении победителя:', errorData);
+          }
+        }
+      } catch (error) {
+        console.error('❌ Ошибка при сохранении победителя:', error);
+      }
+    };
+    
+    saveWinner();
+  }, [timerExpired, currentLeader, displayProperty.id, isAuctionProperty, auctionEndTime, user, userLoaded]);
 
   // Проверяем уведомления о перебитой ставке для текущего объекта
   useEffect(() => {
@@ -1279,12 +1395,15 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                     if (propData.success && propData.data) {
                       const updatedProp = propData.data;
                       // Обновляем свойство для синхронизации таймера
+                      // Сохраняем test_timer_end_date, если он не null/undefined/пустая строка
                       setProperty(prev => ({
                         ...prev,
-                        test_timer_end_date: updatedProp.test_timer_end_date,
-                        test_timer_duration: updatedProp.test_timer_duration
+                        test_timer_end_date: (updatedProp.test_timer_end_date && updatedProp.test_timer_end_date.trim() !== '') 
+                          ? updatedProp.test_timer_end_date 
+                          : prev.test_timer_end_date, // Сохраняем текущее значение, если сервер вернул пустое
+                        test_timer_duration: updatedProp.test_timer_duration || prev.test_timer_duration
                       }));
-                      console.log('✅ Данные объекта обновлены с сервера:', updatedProp.test_timer_end_date);
+                      console.log('✅ Данные объекта обновлены с сервера:', updatedProp.test_timer_end_date || 'сохранено предыдущее значение');
                     }
                   }
                 } catch (propError) {
@@ -2136,7 +2255,10 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
               {/* Блок таймера аукциона, текущей ставки и истории ставок */}
               {isAuctionProperty && auctionEndTime && (
                 <div className="property-detail-sidebar__auction-block">
-                  {displayProperty.test_timer_end_date ? (
+                  {(displayProperty.test_timer_end_date && 
+                    (typeof displayProperty.test_timer_end_date === 'string' 
+                      ? displayProperty.test_timer_end_date.trim() !== '' 
+                      : displayProperty.test_timer_end_date !== null && displayProperty.test_timer_end_date !== undefined)) ? (
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '1rem' }}>
                       {!timerExpired && (
                         <CircularTimer 

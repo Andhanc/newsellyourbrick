@@ -102,58 +102,100 @@ const CircularTimer = ({ endTime, size = 120, strokeWidth = 6, originalDuration 
     }
   };
 
+  const centerRadius = radius - strokeWidth + 2;
+
   return (
     <div className={`circular-timer ${isLeader ? 'circular-timer--leader' : ''}`} style={{ width: size, height: size }}>
       <svg className="circular-timer-svg" width={size} height={size} style={{ overflow: 'visible' }}>
         <defs>
-          {/* Красивый градиент для оранжевого прогресса (когда не лидер) */}
+          {/* Градиенты для обводки с 3D эффектом (более контрастные для объёма) */}
           <linearGradient id="orangeGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#ff8c42" stopOpacity="1" />
-            <stop offset="50%" stopColor="#ff6b35" stopOpacity="1" />
-            <stop offset="100%" stopColor="#ff5722" stopOpacity="1" />
+            <stop offset="0%" stopColor="#ffb366" stopOpacity="1" />
+            <stop offset="30%" stopColor="#ff8c42" stopOpacity="1" />
+            <stop offset="60%" stopColor="#ff6b35" stopOpacity="1" />
+            <stop offset="100%" stopColor="#ff4500" stopOpacity="1" />
           </linearGradient>
-          {/* Красивый градиент для красного прогресса (когда не лидер) */}
           <linearGradient id="redGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#ff4444" stopOpacity="1" />
-            <stop offset="50%" stopColor="#dc2626" stopOpacity="1" />
-            <stop offset="100%" stopColor="#b91c1c" stopOpacity="1" />
+            <stop offset="0%" stopColor="#ff6666" stopOpacity="1" />
+            <stop offset="30%" stopColor="#ff4444" stopOpacity="1" />
+            <stop offset="60%" stopColor="#dc2626" stopOpacity="1" />
+            <stop offset="100%" stopColor="#991b1b" stopOpacity="1" />
           </linearGradient>
-          {/* Зелено-сероватый градиент для основного прогресса (когда лидер) */}
           <linearGradient id="greenGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#6ee7b7" stopOpacity="1" />
-            <stop offset="50%" stopColor="#34d399" stopOpacity="1" />
-            <stop offset="100%" stopColor="#10b981" stopOpacity="1" />
+            <stop offset="0%" stopColor="#86efac" stopOpacity="1" />
+            <stop offset="30%" stopColor="#6ee7b7" stopOpacity="1" />
+            <stop offset="60%" stopColor="#34d399" stopOpacity="1" />
+            <stop offset="100%" stopColor="#059669" stopOpacity="1" />
           </linearGradient>
-          {/* Сероватый градиент для обводки окончания (когда лидер) */}
           <linearGradient id="grayGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#9ca3af" stopOpacity="1" />
-            <stop offset="50%" stopColor="#6b7280" stopOpacity="1" />
-            <stop offset="100%" stopColor="#4b5563" stopOpacity="1" />
+            <stop offset="0%" stopColor="#d1d5db" stopOpacity="1" />
+            <stop offset="30%" stopColor="#9ca3af" stopOpacity="1" />
+            <stop offset="60%" stopColor="#6b7280" stopOpacity="1" />
+            <stop offset="100%" stopColor="#374151" stopOpacity="1" />
           </linearGradient>
-          {/* Радиальный градиент для более объемного вида */}
-          <radialGradient id="orangeRadial" cx="50%" cy="50%">
-            <stop offset="0%" stopColor="#ffa366" stopOpacity="1" />
-            <stop offset="100%" stopColor="#ff6b35" stopOpacity="1" />
+          
+          {/* Радиальные градиенты для объемного центра (красный) */}
+          <radialGradient id="centerOrangeRadial" cx="35%" cy="35%">
+            <stop offset="0%" stopColor="#ff6666" stopOpacity="1" />
+            <stop offset="30%" stopColor="#ff4444" stopOpacity="1" />
+            <stop offset="60%" stopColor="#dc2626" stopOpacity="1" />
+            <stop offset="100%" stopColor="#b91c1c" stopOpacity="1" />
           </radialGradient>
+          
+          {/* Радиальные градиенты для объемного центра (зеленый для лидера) */}
+          <radialGradient id="centerGreenRadial" cx="35%" cy="35%">
+            <stop offset="0%" stopColor="#a7f3d0" stopOpacity="1" />
+            <stop offset="40%" stopColor="#6ee7b7" stopOpacity="1" />
+            <stop offset="70%" stopColor="#34d399" stopOpacity="1" />
+            <stop offset="100%" stopColor="#10b981" stopOpacity="1" />
+          </radialGradient>
+          
+          {/* Фильтры для теней */}
+          <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur in="SourceAlpha" stdDeviation="4"/>
+            <feOffset dx="0" dy="4" result="offsetblur"/>
+            <feComponentTransfer>
+              <feFuncA type="linear" slope="0.5"/>
+            </feComponentTransfer>
+            <feMerge>
+              <feMergeNode/>
+              <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+          </filter>
+          
+          <filter id="innerShadow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur in="SourceAlpha" stdDeviation="3"/>
+            <feOffset dx="0" dy="-2" result="offsetblur"/>
+            <feComponentTransfer>
+              <feFuncA type="linear" slope="0.3"/>
+            </feComponentTransfer>
+            <feMerge>
+              <feMergeNode/>
+              <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+          </filter>
         </defs>
-        {/* Фоновый круг */}
+        
+        {/* Фоновый круг - того же цвета что и прогресс для единообразия */}
         <circle
           className="circular-timer-bg"
           cx={size / 2}
           cy={size / 2}
           r={radius}
-          stroke={isLeader ? "#d1d5db" : "#e5e7eb"}
-          strokeWidth={strokeWidth}
+          stroke={isLeader ? "url(#grayGradient)" : "url(#orangeGradient)"}
+          strokeWidth={strokeWidth + 2}
           fill="none"
+          opacity="0.4"
         />
-        {/* Прогресс круг с градиентом - меняется в зависимости от лидерства */}
+        
+        {/* Прогресс круг с 3D эффектом */}
         <circle
           className="circular-timer-progress"
           cx={size / 2}
           cy={size / 2}
           r={radius}
           stroke={isLeader ? "url(#grayGradient)" : "url(#orangeGradient)"}
-          strokeWidth={strokeWidth + 1}
+          strokeWidth={strokeWidth + 2}
           fill="none"
           strokeDasharray={circumference}
           strokeDashoffset={offset}
@@ -163,14 +205,15 @@ const CircularTimer = ({ endTime, size = 120, strokeWidth = 6, originalDuration 
             transition: 'stroke-dashoffset 0.5s cubic-bezier(0.4, 0, 0.2, 1), stroke 0.3s ease'
           }}
         />
-        {/* Обводка окончания (красная когда не лидер, зеленая когда лидер) - поверх основной */}
+        
+        {/* Обводка окончания с 3D эффектом */}
         <circle
           className="circular-timer-red-progress"
           cx={size / 2}
           cy={size / 2}
           r={radius}
           stroke={isLeader ? "url(#greenGradient)" : "url(#redGradient)"}
-          strokeWidth={strokeWidth + 3}
+          strokeWidth={strokeWidth + 4}
           fill="none"
           strokeDasharray={circumference}
           strokeDashoffset={redOffset}
@@ -181,6 +224,16 @@ const CircularTimer = ({ endTime, size = 120, strokeWidth = 6, originalDuration 
             opacity: redProgressValue > 0 ? 1 : 0
           }}
         />
+        
+        {/* Основной центр */}
+        <circle
+          className="circular-timer-center"
+          cx={size / 2}
+          cy={size / 2}
+          r={centerRadius}
+          fill={isLeader ? "url(#centerGreenRadial)" : "url(#centerOrangeRadial)"}
+        />
+        
       </svg>
       <div className="circular-timer-content">
         <div className="circular-timer-time">{formatTime()}</div>

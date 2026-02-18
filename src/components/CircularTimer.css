@@ -4,35 +4,40 @@
   align-items: center;
   justify-content: center;
   overflow: visible;
+  cursor: pointer;
+  transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  flex-shrink: 0;
+}
+
+.circular-timer:hover {
+  transform: scale(1.08) translateY(-2px);
+}
+
+.circular-timer:active {
+  transform: scale(1.02) translateY(0px);
 }
 
 .circular-timer-svg {
   transform: rotate(-90deg);
   overflow: visible;
+  display: block;
 }
 
 .circular-timer-bg {
-  opacity: 0.2;
+  /* Фоновый круг создаёт глубину, но того же цвета что и основной прогресс */
 }
 
 .circular-timer-progress {
-  transition: stroke-dashoffset 0.5s cubic-bezier(0.4, 0, 0.2, 1), stroke 0.3s ease, filter 0.3s ease;
-  filter: drop-shadow(0 0 6px rgba(255, 107, 53, 0.5));
-}
-
-/* Сероватое свечение для основного круга когда пользователь лидер */
-.circular-timer--leader .circular-timer-progress {
-  filter: drop-shadow(0 0 6px rgba(107, 114, 128, 0.5));
+  transition: stroke-dashoffset 0.5s cubic-bezier(0.4, 0, 0.2, 1), stroke 0.3s ease;
 }
 
 .circular-timer-red-progress {
-  transition: stroke-dashoffset 1s cubic-bezier(0.4, 0, 0.2, 1), stroke 0.3s ease, filter 0.3s ease;
-  filter: drop-shadow(0 0 8px rgba(220, 38, 38, 0.6));
+  transition: stroke-dashoffset 1s cubic-bezier(0.4, 0, 0.2, 1), stroke 0.3s ease;
 }
 
-/* Зеленое свечение для обводки окончания когда пользователь лидер */
-.circular-timer--leader .circular-timer-red-progress {
-  filter: drop-shadow(0 0 8px rgba(52, 211, 153, 0.6));
+/* Основной центр */
+.circular-timer-center {
+  transition: transform 0.15s ease;
 }
 
 .circular-timer-content {
@@ -45,15 +50,16 @@
   align-items: center;
   justify-content: center;
   text-align: center;
-  z-index: 10;
+  z-index: 20;
+  pointer-events: none;
 }
 
 .circular-timer-time {
   font-size: 28px;
-  font-weight: 700;
-  color: #000;
+  font-weight: 800;
+  color: #ffffff;
   line-height: 1.2;
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
-  letter-spacing: 1px;
+  letter-spacing: 1.5px;
 }

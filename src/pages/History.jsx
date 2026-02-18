@@ -1,39 +1,149 @@
 import { Link } from 'react-router-dom'
 import { useState, useEffect } from 'react'
-import { getUserData } from '../services/authService'
+import { useUser } from '@clerk/clerk-react'
+import { getUserData, isAuthenticated } from '../services/authService'
 import VerificationToast from '../components/VerificationToast'
+import WonPropertyCard from '../components/WonPropertyCard'
 import './History.css'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api'
 
 const History = () => {
+  const { user, isLoaded: userLoaded } = useUser()
   const [userId, setUserId] = useState(null)
   const [verificationStatus, setVerificationStatus] = useState(null)
 
+  // Получаем userId с поддержкой Clerk
   useEffect(() => {
-    const userData = getUserData()
-    if (userData?.id) {
-      setUserId(userData.id)
-    } else {
-      // Пытаемся получить из localStorage
+    const fetchUserId = async () => {
+      // Сначала проверяем localStorage
       const storedUserId = localStorage.getItem('userId')
-      if (storedUserId) {
-        setUserId(storedUserId)
+      if (storedUserId && /^\d+$/.test(storedUserId)) {
+        setUserId(parseInt(storedUserId))
+        return
+      }
+
+      // Проверяем авторизацию через Clerk
+      const isClerkAuth = user && userLoaded
+      const isOldAuth = isAuthenticated()
+
+      if (isClerkAuth && user) {
+        // Для Clerk пользователей получаем ID из БД
+        try {
+          const userEmail = user.primaryEmailAddress?.emailAddress || user.emailAddresses?.[0]?.emailAddress
+          if (userEmail) {
+            const userResponse = await fetch(`${API_BASE_URL}/users/email/${encodeURIComponent(userEmail)}`)
+            if (userResponse.ok) {
+              const userData = await userResponse.json()
+              if (userData.success && userData.data && userData.data.id) {
+                const numericId = userData.data.id
+                setUserId(numericId)
+                localStorage.setItem('userId', String(numericId))
+                return
+              }
+            }
+          }
+        } catch (e) {
+          console.warn('Не удалось получить userId из БД для Clerk пользователя:', e)
+        }
+      } else if (isOldAuth) {
+        // Для старой системы авторизации
+        const userData = getUserData()
+        if (userData?.id) {
+          const id = userData.id
+          // Проверяем, что ID числовой
+          if (/^\d+$/.test(id.toString())) {
+            setUserId(parseInt(id))
+            localStorage.setItem('userId', String(id))
+          }
+        }
       }
     }
-  }, [])
+
+    if (userLoaded || isAuthenticated()) {
+      fetchUserId()
+    }
+  }, [user, userLoaded])
 
   // Загружаем статус верификации
   useEffect(() => {
     if (userId) {
       loadVerificationStatus()
+      loadWonProperties()
     }
   }, [userId])
 
+  // Загружаем выигранные объекты
+  const loadWonProperties = async () => {
+    if (!userId) {
+      console.log('⚠️ userId не установлен, пропускаем загрузку выигранных объектов')
+      return
+    }
+    
+    // Убеждаемся, что userId - число
+    const numericUserId = typeof userId === 'string' ? parseInt(userId) : userId
+    if (isNaN(numericUserId)) {
+      console.error('❌ userId не является числом:', userId)
+      setIsLoadingPurchases(false)
+      return
+    }
+    
+    setIsLoadingPurchases(true)
+    try {
+      console.log(`📊 Запрос выигранных объектов для пользователя ${numericUserId}`)
+      const response = await fetch(`${API_BASE_URL}/auction-winners/user/${numericUserId}`)
+      if (response.ok) {
+        const result = await response.json()
+        if (result.success && result.data) {
+          // Преобразуем данные в формат для отображения
+          const formattedPurchases = result.data.map(winner => {
+            const property = winner.property || {}
+            const photos = property.photos || []
+            const firstPhoto = photos.length > 0 ? photos[0] : null
+            
+            return {
+              id: winner.id,
+              propertyId: winner.property_id,
+              propertyTitle: property.title || 'Объект недвижимости',
+              location: property.location || property.address || 'Адрес не указан',
+              purchasePrice: winner.winning_bid_amount,
+              purchaseDate: winner.won_at || winner.auction_end_date,
+              status: winner.deposit_paid === 1 ? 'deposit_paid' : 'pending_deposit',
+              image: firstPhoto || 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800',
+              currency: winner.currency || 'USD',
+              depositAmount: winner.deposit_amount,
+              depositDueDate: winner.deposit_due_date,
+              depositPaid: winner.deposit_paid === 1,
+              winnerData: winner // Сохраняем полные данные для компонента
+            }
+          })
+          setPurchaseHistory(formattedPurchases)
+        } else {
+          setPurchaseHistory([])
+        }
+      } else {
+        setPurchaseHistory([])
+      }
+    } catch (error) {
+      console.error('Ошибка загрузки выигранных объектов:', error)
+      setPurchaseHistory([])
+    } finally {
+      setIsLoadingPurchases(false)
+    }
+  }
+
   const loadVerificationStatus = async () => {
     if (!userId) return
+    
+    // Убеждаемся, что userId - число
+    const numericUserId = typeof userId === 'string' ? parseInt(userId) : userId
+    if (isNaN(numericUserId)) {
+      console.error('❌ userId не является числом в loadVerificationStatus:', userId)
+      return
+    }
+    
     try {
-      const response = await fetch(`${API_BASE_URL}/users/${userId}/verification-status`)
+      const response = await fetch(`${API_BASE_URL}/users/${numericUserId}/verification-status`)
       if (response.ok) {
         const result = await response.json()
         if (result.success && result.data) {
@@ -78,27 +188,8 @@ const History = () => {
     return !isBasicInfoComplete() || !isPassportDataComplete()
   }
 
-  // Примерные данные истории
-  const purchaseHistory = [
-    {
-      id: 1,
-      propertyTitle: "2-комн. квартира, 58 м², 9/10 этаж",
-      location: "Новгородская область, Великий Новгород, Большая Московская улица, 128/10",
-      purchasePrice: 3500000,
-      purchaseDate: "2024-01-15",
-      status: "completed",
-      image: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800"
-    },
-    {
-      id: 2,
-      propertyTitle: "3-комн. квартира, 85 м², 5/9 этаж",
-      location: "Москва, ул. Ленина, д. 45",
-      purchasePrice: 12500000,
-      purchaseDate: "2023-11-20",
-      status: "completed",
-      image: "https://images.unsplash.com/photo-1484154218962-a197022b5858?w=800"
-    }
-  ]
+  const [purchaseHistory, setPurchaseHistory] = useState([])
+  const [isLoadingPurchases, setIsLoadingPurchases] = useState(true)
 
   const bidHistory = [
     {
@@ -144,11 +235,12 @@ const History = () => {
     }
   ]
 
-  const formatPrice = (price) => {
+  const formatPrice = (price, currency = 'USD') => {
+    const symbol = currency === 'USD' ? '$' : currency === 'EUR' ? '€' : currency === 'BYN' ? 'Br' : '$'
     if (price >= 1000000) {
-      return `$${(price / 1000000).toFixed(1)}M`
+      return `${symbol}${(price / 1000000).toFixed(1)}M`
     }
-    return `$${price.toLocaleString('en-US')}`
+    return `${symbol}${price.toLocaleString('ru-RU')}`
   }
 
   const formatDate = (dateString) => {
@@ -270,35 +362,21 @@ const History = () => {
 
           <div className="history-content">
             <section className="history-section">
-              <h2 className="section-title">Покупки</h2>
+              <h2 className="section-title">Мои покупки</h2>
               <div className="history-list">
-                {purchaseHistory.length > 0 ? (
+                {isLoadingPurchases ? (
+                  <div className="empty-state">
+                    <p>Загрузка...</p>
+                  </div>
+                ) : purchaseHistory.length > 0 ? (
                   purchaseHistory.map((purchase) => (
-                    <div key={purchase.id} className="history-card purchase-card">
-                      <div className="card-image">
-                        <img src={purchase.image} alt={purchase.propertyTitle} />
-                        <div className="card-badge status-badge status-success">
-                          {getStatusLabel(purchase.status)}
-                        </div>
-                      </div>
-                      <div className="card-content">
-                        <h3 className="card-title">{purchase.propertyTitle}</h3>
-                        <p className="card-location">{purchase.location}</p>
-                        <div className="card-details">
-                          <div className="detail-item">
-                            <span className="detail-label">Цена покупки:</span>
-                            <span className="detail-value price">{formatPrice(purchase.purchasePrice)}</span>
-                          </div>
-                          <div className="detail-item">
-                            <span className="detail-label">Дата покупки:</span>
-                            <span className="detail-value">{formatDate(purchase.purchaseDate)}</span>
-                          </div>
-                        </div>
-                        <Link to={`/property/${purchase.id}`} className="card-link">
-                          Посмотреть объект →
-                        </Link>
-                      </div>
-                    </div>
+                    <WonPropertyCard
+                      key={purchase.id}
+                      purchase={purchase}
+                      formatPrice={formatPrice}
+                      formatDate={formatDate}
+                      getStatusLabel={getStatusLabel}
+                    />
                   ))
                 ) : (
                   <div className="empty-state">
