@@ -71,4 +71,4 @@ server/.wwebjs_cache/
 *.sqlite
 *.sqlite3
 *.db
-server/database.sqlite
+!server/database.sqlite
