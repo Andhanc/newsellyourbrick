@@ -681,6 +681,82 @@ const AddProperty = () => {
       } catch (userError) {
         console.warn('⚠️ Не удалось загрузить данные пользователя из профиля:', userError)
       }
+
+      // Проверяем заполненность обязательных полей профиля
+      if (userProfileData) {
+        const missingFields = []
+        
+        if (!userProfileData.first_name || userProfileData.first_name.trim() === '') {
+          missingFields.push('Имя')
+        }
+        if (!userProfileData.last_name || userProfileData.last_name.trim() === '') {
+          missingFields.push('Фамилия')
+        }
+        if (!userProfileData.country || userProfileData.country.trim() === '') {
+          missingFields.push('Страна')
+        }
+        if (!userProfileData.email || userProfileData.email.trim() === '') {
+          missingFields.push('Почта')
+        }
+        if (!userProfileData.phone_number || userProfileData.phone_number.trim() === '') {
+          missingFields.push('WhatsApp')
+        }
+        
+        // Проверяем пароль - если пользователь зарегистрирован через email, пароль должен быть установлен
+        // Для WhatsApp пользователей пароль может отсутствовать
+        const userData = getUserData()
+        const isEmailUser = userData && userData.loginMethod === 'email'
+        if (isEmailUser && (!userProfileData.password || userProfileData.password.trim() === '')) {
+          // Для email пользователей проверяем, что пароль установлен
+          // Но в БД пароль хранится в хешированном виде, поэтому проверяем через другой способ
+          // Если пользователь может войти, значит пароль установлен
+        }
+        
+        if (missingFields.length > 0) {
+          setIsSubmitting(false)
+          alert(
+            `Для публикации объекта необходимо заполнить все обязательные поля профиля.\n\n` +
+            `Не заполнены следующие поля:\n${missingFields.map(f => `• ${f}`).join('\n')}\n\n` +
+            `Пожалуйста, перейдите в профиль и заполните недостающие данные.`
+          )
+          // Перенаправляем в кабинет продавца, чтобы пользователь мог заполнить профиль
+          navigate('/owner/dashboard')
+          return false
+        }
+      } else {
+        // Если не удалось загрузить данные пользователя, все равно проверяем через localStorage
+        const userData = getUserData()
+        if (userData) {
+          const missingFields = []
+          
+          if (!userData.firstName || !userData.firstName.trim()) {
+            missingFields.push('Имя')
+          }
+          if (!userData.lastName || !userData.lastName.trim()) {
+            missingFields.push('Фамилия')
+          }
+          if (!userData.country || !userData.country.trim()) {
+            missingFields.push('Страна')
+          }
+          if (!userData.email || !userData.email.trim()) {
+            missingFields.push('Почта')
+          }
+          if (!userData.phone && !userData.phoneFormatted) {
+            missingFields.push('WhatsApp')
+          }
+          
+          if (missingFields.length > 0) {
+            setIsSubmitting(false)
+            alert(
+              `Для публикации объекта необходимо заполнить все обязательные поля профиля.\n\n` +
+              `Не заполнены следующие поля:\n${missingFields.map(f => `• ${f}`).join('\n')}\n\n` +
+              `Пожалуйста, перейдите в профиль и заполните недостающие данные.`
+            )
+            navigate('/owner/dashboard')
+            return false
+          }
+        }
+      }
       
       // Подготавливаем данные для отправки
       const formDataToSend = new FormData()

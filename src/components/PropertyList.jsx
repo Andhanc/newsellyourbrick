@@ -237,6 +237,7 @@ const PropertyList = ({ auctionProperties = null }) => {
                 const hasTimer = (property.isAuction === true && property.endTime != null && property.endTime !== '') || hasTestTimer
                 const hasTestDrive = property.test_drive === 1 || property.testDrive === true || property.test_drive === true
                 const isReserved = property.is_reserved === true || property.is_reserved === 1
+                const hasBuyNowPrice = property.price && Number(property.price) > 0
                 
                 // Проверяем, закончился ли таймер
                 const checkTimerExpired = () => {
@@ -283,18 +284,6 @@ const PropertyList = ({ auctionProperties = null }) => {
                       <div className="reserved-overlay-text">Забронировано</div>
                     </div>
                   )}
-                  <div 
-                    className="property-buy-badge"
-                    onClick={(e) => {
-                      e.preventDefault()
-                      e.stopPropagation()
-                      navigate(`/property/${property.id}`, {
-                        state: { property }
-                      })
-                    }}
-                  >
-                    <span>Купить сейчас</span>
-                  </div>
                   {hasTestTimer && (
                     <div 
                       className="property-auction-badge"
@@ -313,18 +302,36 @@ const PropertyList = ({ auctionProperties = null }) => {
                       <span>Аукцион</span>
                     </div>
                   )}
-                  {hasTestDrive && (
-                    <div 
-                      className="property-testdrive-badge"
-                      onClick={(e) => {
-                        e.preventDefault()
-                        e.stopPropagation()
-                        navigate(`/property/${property.id}`, {
-                          state: { property }
-                        })
-                      }}
-                    >
-                      <span>Тест-драйв</span>
+                  {(hasBuyNowPrice || hasTestDrive) && (
+                    <div className="property-badges-center">
+                      {hasBuyNowPrice && (
+                        <div 
+                          className="property-buy-badge"
+                          onClick={(e) => {
+                            e.preventDefault()
+                            e.stopPropagation()
+                            navigate(`/property/${property.id}`, {
+                              state: { property }
+                            })
+                          }}
+                        >
+                          <span>Купить сейчас</span>
+                        </div>
+                      )}
+                      {hasTestDrive && (
+                        <div 
+                          className="property-testdrive-badge"
+                          onClick={(e) => {
+                            e.preventDefault()
+                            e.stopPropagation()
+                            navigate(`/property/${property.id}`, {
+                              state: { property }
+                            })
+                          }}
+                        >
+                          <span>Тест-драйв</span>
+                        </div>
+                      )}
                     </div>
                   )}
                   <button 

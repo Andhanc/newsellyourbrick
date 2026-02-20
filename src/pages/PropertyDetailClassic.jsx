@@ -2352,15 +2352,20 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
               {(() => {
                 const buyNowPrice = displayProperty.price ? Number(displayProperty.price) : 0;
                 const startingPrice = displayProperty.auction_starting_price ? Number(displayProperty.auction_starting_price) : 0;
+                // Получаем текущую максимальную ставку
+                const effectiveCurrentBid = currentBid !== null ? currentBid : (displayProperty.currentBid || startingPrice);
+                
                 // Показываем блок только если:
                 // 1. Это аукцион
                 // 2. Указана цена "Купить сейчас" (price > 0)
                 // 3. Цена "Купить сейчас" больше стартовой цены аукциона (логическая проверка)
                 // 4. Таймер не истек
+                // 5. Текущая ставка меньше минимальной цены продажи (если ставка >= цены, блок скрывается)
                 const shouldShowBuyNow = isAuctionProperty && 
                                          buyNowPrice > 0 && 
                                          buyNowPrice > startingPrice && 
-                                         !timerExpired;
+                                         !timerExpired &&
+                                         effectiveCurrentBid < buyNowPrice;
                 
                 return shouldShowBuyNow ? (
                   <>

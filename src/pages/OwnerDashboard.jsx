@@ -11,6 +11,7 @@ import {
   FiPlus,
   FiLogOut,
   FiUser,
+  FiUsers,
   FiSettings,
   FiBarChart2,
   FiX,
@@ -141,6 +142,9 @@ const OwnerDashboard = () => {
   const [propertyToDelete, setPropertyToDelete] = useState(null)
   const [deleteReason, setDeleteReason] = useState('')
   const [isSubmittingDelete, setIsSubmittingDelete] = useState(false)
+  const [interestCount, setInterestCount] = useState(0) // Количество уникальных заинтересованных пользователей
+  const [showProfileFieldsModal, setShowProfileFieldsModal] = useState(false)
+  const [missingFields, setMissingFields] = useState([])
 
   useEffect(() => {
     // Проверяем, авторизован ли владелец
@@ -202,15 +206,21 @@ const OwnerDashboard = () => {
         loadFromDb()
         
         // Загружаем статус верификации и документы
-        if (userData.id) {
-          setUserId(userData.id)
+        // Используем числовой ID из БД (из localStorage), если доступен, иначе userData.id
+        const dbUserId = localStorage.getItem('userId')
+        const effectiveUserId = (dbUserId && /^\d+$/.test(dbUserId)) ? dbUserId : userData.id
+        
+        if (effectiveUserId) {
+          setUserId(effectiveUserId)
           // При первой загрузке проверяем непросмотренное уведомление о верификации
-          checkVerificationNotification(userData.id)
+          checkVerificationNotification(effectiveUserId)
           // При первой загрузке не показываем уведомление (isStatusUpdate = false)
-          loadVerificationStatus(userData.id, false)
-          loadUserDocuments(userData.id)
+          loadVerificationStatus(effectiveUserId, false)
+          loadUserDocuments(effectiveUserId)
           // Загружаем объявления пользователя
-          loadUserProperties(userData.id)
+          loadUserProperties(effectiveUserId)
+          // Загружаем количество заинтересованных пользователей
+          loadInterestCount(effectiveUserId)
         }
       }
 
@@ -322,6 +332,9 @@ const OwnerDashboard = () => {
               ? (prop.bedrooms || 0)
               : (prop.bedrooms || prop.rooms || 0)
             
+            // Подсчитываем количество фотографий
+            const photosCount = Array.isArray(photosArray) ? photosArray.length : 0
+            
             return {
             id: prop.id,
             title: prop.title || 'Без названия',
@@ -343,7 +356,8 @@ const OwnerDashboard = () => {
             inquiries: 0, // TODO: добавить подсчет запросов
             publishedDate: prop.created_at || new Date().toISOString(),
             rejectionReason: prop.rejection_reason || null,
-            isAuction: prop.is_auction === 1 || prop.is_auction === true || prop.is_auction === '1' || prop.is_auction === 'true'
+            isAuction: prop.is_auction === 1 || prop.is_auction === true || prop.is_auction === '1' || prop.is_auction === 'true',
+            photosCount: photosCount
           }
           })
           setProperties(formattedProperties)
@@ -353,6 +367,24 @@ const OwnerDashboard = () => {
       console.error('Ошибка загрузки объявлений:', error)
     } finally {
       setPropertiesLoading(false)
+    }
+  }
+
+  // Загружаем количество уникальных заинтересованных пользователей
+  const loadInterestCount = async (userId) => {
+    if (!userId) return
+    try {
+      const response = await fetch(`${API_BASE_URL}/owner/${userId}/interest-count`)
+      if (response.ok) {
+        const result = await response.json()
+        if (result.success && result.data) {
+          setInterestCount(result.data.uniqueUsersCount || 0)
+        }
+      }
+    } catch (error) {
+      console.error('Ошибка загрузки заинтересованности:', error)
+      // Устанавливаем 0 в случае ошибки
+      setInterestCount(0)
     }
   }
 
@@ -783,6 +815,8 @@ const OwnerDashboard = () => {
         // Обновляем список объявлений
         if (userId) {
           await loadUserProperties(userId)
+          // Обновляем заинтересованность
+          await loadInterestCount(userId)
         }
         setShowDeleteModal(false)
         setPropertyToDelete(null)
@@ -810,6 +844,92 @@ const OwnerDashboard = () => {
 
   const handleViewProperty = (id) => {
     navigate(`/property/${id}`, { state: { fromOwnerDashboard: true } })
+  }
+
+  // Проверка заполненности обязательных полей профиля
+  const checkProfileFields = async () => {
+    const dbUserId = localStorage.getItem('userId')
+    const effectiveUserId = (dbUserId && /^\d+$/.test(dbUserId)) ? dbUserId : userId
+    
+    if (!effectiveUserId) {
+      alert('Ошибка: пользователь не авторизован. Пожалуйста, войдите в систему.')
+      return false
+    }
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/users/${effectiveUserId}`)
+      if (response.ok) {
+        const result = await response.json()
+        if (result.success && result.data) {
+          const userData = result.data
+          const fields = []
+          
+          if (!userData.first_name || userData.first_name.trim() === '') {
+            fields.push('Имя')
+          }
+          if (!userData.last_name || userData.last_name.trim() === '') {
+            fields.push('Фамилия')
+          }
+          if (!userData.country || userData.country.trim() === '') {
+            fields.push('Страна')
+          }
+          if (!userData.email || userData.email.trim() === '') {
+            fields.push('Почта')
+          }
+          if (!userData.phone_number || userData.phone_number.trim() === '') {
+            fields.push('WhatsApp')
+          }
+          
+          if (fields.length > 0) {
+            setMissingFields(fields)
+            setShowProfileFieldsModal(true)
+            return false
+          }
+          
+          return true
+        }
+      }
+    } catch (error) {
+      console.error('Ошибка при проверке полей профиля:', error)
+      // Если не удалось проверить через API, проверяем через localStorage
+      const userData = getUserData()
+      if (userData) {
+        const fields = []
+        
+        if (!userData.firstName || !userData.firstName.trim()) {
+          fields.push('Имя')
+        }
+        if (!userData.lastName || !userData.lastName.trim()) {
+          fields.push('Фамилия')
+        }
+        if (!userData.country || !userData.country.trim()) {
+          fields.push('Страна')
+        }
+        if (!userData.email || !userData.email.trim()) {
+          fields.push('Почта')
+        }
+        if (!userData.phone && !userData.phoneFormatted) {
+          fields.push('WhatsApp')
+        }
+        
+        if (fields.length > 0) {
+          setMissingFields(fields)
+          setShowProfileFieldsModal(true)
+          return false
+        }
+      }
+      return true
+    }
+    
+    return true
+  }
+
+  // Обработчик нажатия на кнопку "Добавить объявление"
+  const handleAddProperty = async () => {
+    const canProceed = await checkProfileFields()
+    if (canProceed) {
+      navigate('/owner/property/new')
+    }
   }
 
   const getStatusBadge = (status) => {
@@ -951,7 +1071,7 @@ const OwnerDashboard = () => {
             </button>
             <button 
               className="owner-dashboard__add-btn"
-              onClick={() => navigate('/owner/property/new')}
+              onClick={handleAddProperty}
             >
               <FiPlus size={20} />
               <span>Добавить объявление</span>
@@ -1050,12 +1170,12 @@ const OwnerDashboard = () => {
 
           <div className="stat-card stat-card--views">
             <div className="stat-card__icon">
-              <FiEye size={32} />
+              <FiUsers size={32} />
             </div>
             <div className="stat-card__content">
-              <h3 className="stat-card__label">Просмотры</h3>
-              <p className="stat-card__value">{totalViews.toLocaleString('ru-RU')}</p>
-              <p className="stat-card__subtext">Запросов: {totalInquiries}</p>
+              <h3 className="stat-card__label">Заинтересованность</h3>
+              <p className="stat-card__value">{interestCount.toLocaleString('ru-RU')}</p>
+              <p className="stat-card__subtext">Уникальных пользователей</p>
             </div>
           </div>
 
@@ -1161,16 +1281,27 @@ const OwnerDashboard = () => {
                   <div className="property-card-owner__header">
                     <div className="property-card-owner__title-wrapper">
                       <h3 className="property-card-owner__title">{property.title}</h3>
-                      {property.isAuction && (
-                        <div className="auction-indicator">
-                          <FiTag size={16} />
-                          <span>Аукционный объект</span>
+                      {/* Показываем статус объекта вместо "Аукционный объект" */}
+                      <div className={`property-status-indicator property-status-indicator--${property.status}`}>
+                        {property.status === 'active' && <span>Активно</span>}
+                        {property.status === 'pending' && <span>На модерации</span>}
+                        {property.status === 'rejected' && <span>Отклонено</span>}
+                        {property.status === 'sold' && <span>Продано</span>}
+                      </div>
+                    </div>
+                    {/* Показываем цену только если: 
+                        1. Объект НЕ на аукционе ИЛИ
+                        2. Объект на аукционе, но есть цена "Купить сейчас" (price > 0)
+                    */}
+                    {(() => {
+                      const priceNum = Number(property.price) || 0
+                      const shouldShowPrice = (!property.isAuction || (property.isAuction && priceNum > 0)) && priceNum > 0
+                      return shouldShowPrice ? (
+                        <div className="property-card-owner__price">
+                          ${priceNum.toLocaleString('ru-RU')}
                         </div>
-                      )}
-                    </div>
-                    <div className="property-card-owner__price">
-                      ${property.price.toLocaleString('ru-RU')}
-                    </div>
+                      ) : null
+                    })()}
                   </div>
 
                   <p className="property-card-owner__location">{property.location}</p>
@@ -1480,6 +1611,167 @@ const OwnerDashboard = () => {
         onClose={() => setSelectedPropertyForHistory(null)}
         property={selectedPropertyForHistory}
       />
+
+      {/* Модальное окно о необходимости заполнить поля профиля */}
+      {showProfileFieldsModal && (
+        <div 
+          className="profile-fields-modal-overlay"
+          onClick={() => setShowProfileFieldsModal(false)}
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 10000
+          }}
+        >
+          <div 
+            className="profile-fields-modal-content"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              backgroundColor: 'white',
+              borderRadius: '16px',
+              padding: '2rem',
+              maxWidth: '500px',
+              width: '90%',
+              boxShadow: '0 4px 20px rgba(0, 0, 0, 0.3)'
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
+                <div style={{
+                  width: '48px',
+                  height: '48px',
+                  borderRadius: '12px',
+                  background: 'linear-gradient(135deg, #0ABAB5 0%, #089C97 100%)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0
+                }}>
+                  <FiAlertCircle size={24} color="#ffffff" />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <h2 style={{ margin: 0, fontSize: '1.5rem', fontWeight: '700', color: '#111827', marginBottom: '4px' }}>
+                    Заполните профиль
+                  </h2>
+                  <p style={{ margin: 0, fontSize: '14px', color: '#6b7280' }}>
+                    Для добавления объявления необходимо заполнить все обязательные поля
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowProfileFieldsModal(false)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  fontSize: '1.5rem',
+                  cursor: 'pointer',
+                  color: '#6b7280',
+                  padding: '0.25rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                  marginLeft: '12px'
+                }}
+              >
+                <FiX size={24} />
+              </button>
+            </div>
+            
+            <div style={{ marginBottom: '1.5rem' }}>
+              <p style={{ margin: '0 0 12px 0', color: '#374151', fontSize: '15px', fontWeight: '500' }}>
+                Не заполнены следующие поля:
+              </p>
+              <ul style={{ 
+                margin: 0, 
+                paddingLeft: '20px',
+                listStyle: 'none'
+              }}>
+                {missingFields.map((field, index) => (
+                  <li key={index} style={{
+                    marginBottom: '8px',
+                    color: '#6b7280',
+                    fontSize: '14px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}>
+                    <span style={{
+                      width: '6px',
+                      height: '6px',
+                      borderRadius: '50%',
+                      backgroundColor: '#0ABAB5',
+                      flexShrink: 0
+                    }}></span>
+                    {field}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => setShowProfileFieldsModal(false)}
+                style={{
+                  padding: '12px 24px',
+                  backgroundColor: '#f3f4f6',
+                  color: '#374151',
+                  border: 'none',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  fontWeight: '500',
+                  fontSize: '14px',
+                  transition: 'all 0.2s'
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.backgroundColor = '#e5e7eb';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.backgroundColor = '#f3f4f6';
+                }}
+              >
+                Отмена
+              </button>
+              <button
+                onClick={() => {
+                  setShowProfileFieldsModal(false)
+                  setIsProfilePanelOpen(true)
+                }}
+                style={{
+                  padding: '12px 24px',
+                  backgroundColor: '#000',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  fontWeight: '500',
+                  fontSize: '14px',
+                  transition: 'all 0.2s',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.backgroundColor = '#333';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.backgroundColor = '#000';
+                }}
+              >
+                <FiUser size={16} />
+                Перейти в профиль
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Модальное окно удаления объявления */}
       {showDeleteModal && propertyToDelete && (

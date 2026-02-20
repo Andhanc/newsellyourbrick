@@ -399,6 +399,11 @@
   object-fit: cover;
 }
 
+/* Скрываем все дочерние элементы изображения, кроме img и status-badge */
+.property-card-owner__image > *:not(img):not(.status-badge) {
+  display: none !important;
+}
+
 .status-badge {
   position: absolute;
   top: 12px;
@@ -468,6 +473,11 @@
   gap: 16px;
 }
 
+/* Скрываем пустое место справа, если цена не отображается */
+.property-card-owner__header:has(:only-child) {
+  justify-content: flex-start;
+}
+
 .property-card-owner__title-wrapper {
   flex: 1;
   display: flex;
@@ -482,7 +492,7 @@
   margin: 0;
 }
 
-/* Индикатор аукциона в заголовке */
+/* Индикатор аукциона в заголовке (оставляем для совместимости, но не используем) */
 .auction-indicator {
   display: inline-flex;
   align-items: center;
@@ -502,11 +512,62 @@
   flex-shrink: 0;
 }
 
+/* Индикатор статуса объекта в заголовке */
+.property-status-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+  width: fit-content;
+}
+
+/* Статус: Активно (зеленый) */
+.property-status-indicator--active {
+  background: #d1fae5;
+  color: #065f46;
+  border: 1px solid #6ee7b7;
+}
+
+/* Статус: На модерации (желтый) */
+.property-status-indicator--pending {
+  background: #fef3c7;
+  color: #d97706;
+  border: 1px solid #fcd34d;
+}
+
+/* Статус: Отклонено (красный) */
+.property-status-indicator--rejected {
+  background: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fca5a5;
+}
+
+/* Статус: Продано (синий) */
+.property-status-indicator--sold {
+  background: #dbeafe;
+  color: #1e40af;
+  border: 1px solid #93c5fd;
+}
+
 .property-card-owner__price {
   font-size: 24px;
   font-weight: 700;
   color: #000;
   white-space: nowrap;
+}
+
+/* Скрываем пустые элементы в заголовке (кроме title-wrapper) */
+.property-card-owner__header > *:not(.property-card-owner__title-wrapper):empty {
+  display: none !important;
+}
+
+/* Скрываем элементы цены, если они пустые */
+.property-card-owner__price:empty {
+  display: none !important;
 }
 
 .property-card-owner__location {
@@ -1566,7 +1627,8 @@
   border: 1px solid #ffc107;
   border-radius: 12px;
   padding: 20px 24px;
-  margin: 24px;
+  margin: 24px auto;
+  max-width: 1150px;
   display: flex;
   align-items: center;
   gap: 16px;

@@ -2575,6 +2575,95 @@ app.delete('/api/purchase-requests/:id', (req, res) => {
 });
 
 /**
+ * GET /api/owner/:sellerId/interest-count - Получить количество уникальных пользователей, 
+ * которые взаимодействовали с объектами продавца (ставки + запросы на покупку)
+ */
+app.get('/api/owner/:sellerId/interest-count', (req, res) => {
+  try {
+    const { sellerId } = req.params;
+    const db = getDatabase();
+    
+    // Проверяем, существует ли продавец
+    const seller = userQueries.getById(sellerId);
+    if (!seller) {
+      return res.status(404).json({ success: false, error: 'Продавец не найден' });
+    }
+    
+    // Получаем все объекты продавца
+    const properties = propertyQueries.getByUserId(sellerId);
+    if (!properties || properties.length === 0) {
+      return res.json({ success: true, data: { uniqueUsersCount: 0 } });
+    }
+    
+    // Получаем ID всех объектов продавца
+    const propertyIds = properties.map(p => p.id);
+    
+    // Получаем уникальных пользователей из ставок
+    const uniqueBidUsers = new Set();
+    try {
+      const placeholders = propertyIds.map(() => '?').join(',');
+      const bidsQuery = db.prepare(`
+        SELECT DISTINCT user_id 
+        FROM bids 
+        WHERE property_id IN (${placeholders})
+      `);
+      const bids = bidsQuery.all(...propertyIds);
+      bids.forEach(bid => {
+        if (bid.user_id) {
+          uniqueBidUsers.add(bid.user_id);
+        }
+      });
+    } catch (bidsError) {
+      console.warn('⚠️ Ошибка при получении ставок:', bidsError.message);
+      // Продолжаем выполнение, даже если таблица bids не существует
+    }
+    
+    // Получаем уникальных пользователей из запросов на покупку
+    const uniquePurchaseRequestUsers = new Set();
+    try {
+      const placeholders = propertyIds.map(() => '?').join(',');
+      const purchaseRequestsQuery = db.prepare(`
+        SELECT DISTINCT buyer_id 
+        FROM purchase_requests 
+        WHERE property_id IN (${placeholders}) AND buyer_id IS NOT NULL
+      `);
+      const purchaseRequests = purchaseRequestsQuery.all(...propertyIds);
+      purchaseRequests.forEach(pr => {
+        if (pr.buyer_id) {
+          uniquePurchaseRequestUsers.add(pr.buyer_id);
+        }
+      });
+    } catch (prError) {
+      console.warn('⚠️ Ошибка при получении запросов на покупку:', prError.message);
+    }
+    
+    // Объединяем уникальных пользователей из обеих таблиц
+    const allUniqueUsers = new Set([...uniqueBidUsers, ...uniquePurchaseRequestUsers]);
+    const uniqueUsersCount = allUniqueUsers.size;
+    
+    console.log(`✅ Подсчет заинтересованности для продавца ${sellerId}:`, {
+      propertiesCount: propertyIds.length,
+      uniqueBidUsers: uniqueBidUsers.size,
+      uniquePurchaseRequestUsers: uniquePurchaseRequestUsers.size,
+      totalUniqueUsers: uniqueUsersCount
+    });
+    
+    res.json({ 
+      success: true, 
+      data: { 
+        uniqueUsersCount,
+        propertiesCount: propertyIds.length,
+        bidsUsersCount: uniqueBidUsers.size,
+        purchaseRequestsUsersCount: uniquePurchaseRequestUsers.size
+      } 
+    });
+  } catch (error) {
+    console.error('❌ Ошибка при подсчете заинтересованности:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
  * POST /api/auth/email/register - Регистрация через Email
  */
 app.post('/api/auth/email/register', async (req, res) => {
