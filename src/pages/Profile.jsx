@@ -970,12 +970,12 @@ const Profile = () => {
               </svg>
               <span>Чат</span>
             </Link>
-            <a href="#" className="nav-item">
+            <Link to="/favorites" className="nav-item">
               <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
                 <path d="M10 2L12.5 7.5L19 10L12.5 12.5L10 19L7.5 12.5L1 10L7.5 7.5L10 2Z" fill="currentColor"/>
               </svg>
-              <span>Фаворит</span>
-            </a>
+              <span>Понравилось</span>
+            </Link>
           </nav>
 
           <div className="sidebar-footer">
