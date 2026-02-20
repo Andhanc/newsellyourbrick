@@ -86,12 +86,14 @@ const ClerkAuthSync = () => {
           let dbUserId = null
           
           // Сначала пытаемся найти пользователя по email
+          let foundUser = null
           if (userEmail) {
             const emailResponse = await fetch(`${API_BASE_URL}/users/email/${encodeURIComponent(userEmail.toLowerCase())}`)
             if (emailResponse.ok) {
               const emailData = await emailResponse.json()
               if (emailData.success && emailData.data) {
-                dbUserId = emailData.data.id
+                foundUser = emailData.data
+                dbUserId = foundUser.id
                 console.log('✅ ClerkAuthSync: Пользователь найден в БД по email:', dbUserId)
               }
             }
@@ -105,10 +107,35 @@ const ClerkAuthSync = () => {
               if (phoneResponse.ok) {
                 const phoneData = await phoneResponse.json()
                 if (phoneData.success && phoneData.data) {
-                  dbUserId = phoneData.data.id
+                  foundUser = phoneData.data
+                  dbUserId = foundUser.id
                   console.log('✅ ClerkAuthSync: Пользователь найден в БД по телефону:', dbUserId)
                 }
               }
+            }
+          }
+          
+          // Если пользователь найден, но у него нет user_id_number, генерируем его
+          if (foundUser && !foundUser.user_id_number) {
+            console.log('🔄 ClerkAuthSync: У пользователя нет user_id_number, генерируем...')
+            try {
+              const updateResponse = await fetch(`${API_BASE_URL}/users/${dbUserId}`, {
+                method: 'PUT',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({})
+              })
+              
+              if (updateResponse.ok) {
+                const updateData = await updateResponse.json()
+                if (updateData.success && updateData.data?.user_id_number) {
+                  console.log('✅ ClerkAuthSync: user_id_number сгенерирован:', updateData.data.user_id_number)
+                  foundUser.user_id_number = updateData.data.user_id_number
+                }
+              }
+            } catch (error) {
+              console.warn('⚠️ ClerkAuthSync: Не удалось сгенерировать user_id_number:', error)
             }
           }
           

@@ -86,6 +86,13 @@ function checkAndUpdateSchema(dbInstance) {
         needsUpdate = true;
       }
       
+      // Проверяем, есть ли поле user_id_number (5-значный идентификационный номер)
+      const userIdNumberColumn = pragmaInfo.find(col => col.name === 'user_id_number');
+      if (!userIdNumberColumn) {
+        console.log('🔄 Обновление схемы БД: добавляем поле user_id_number...');
+        needsUpdate = true;
+      }
+      
       if (needsUpdate) {
         try {
           // Если нет поля password, добавляем его
@@ -158,6 +165,21 @@ function checkAndUpdateSchema(dbInstance) {
             console.log('✅ Индекс idx_users_has_card создан');
           } catch (e) {
             // Индекс может уже существовать
+          }
+          
+          // Добавляем поле user_id_number, если его нет
+          if (!userIdNumberColumn) {
+            try {
+              // Добавляем поле БЕЗ UNIQUE (SQLite не позволяет добавить UNIQUE колонку в таблицу с данными)
+              // Уникальность обеспечивается функцией generateUniqueUserIdNumber()
+              dbInstance.exec("ALTER TABLE users ADD COLUMN user_id_number TEXT");
+              console.log('✅ Поле user_id_number добавлено в таблицу users');
+              // Создаем индекс для быстрого поиска
+              dbInstance.exec("CREATE INDEX IF NOT EXISTS idx_users_id_number ON users(user_id_number)");
+              console.log('✅ Индекс idx_users_id_number создан');
+            } catch (e) {
+              console.warn('⚠️ Не удалось добавить поле user_id_number:', e.message);
+            }
           }
           
           // Если email NOT NULL, исправляем
@@ -1188,6 +1210,34 @@ export function executeWithRetry(operation) {
   });
 }
 
+/**
+ * Генерирует уникальный 5-значный идентификационный номер
+ * @returns {string} Уникальный 5-значный номер (от 10000 до 99999)
+ */
+function generateUniqueUserIdNumber() {
+  const db = getDatabase();
+  let attempts = 0;
+  const maxAttempts = 100;
+  
+  while (attempts < maxAttempts) {
+    // Генерируем случайное 5-значное число (от 10000 до 99999)
+    const number = Math.floor(Math.random() * 90000) + 10000;
+    const idNumber = number.toString();
+    
+    // Проверяем, не существует ли уже такой номер
+    const existing = db.prepare('SELECT id FROM users WHERE user_id_number = ?').get(idNumber);
+    if (!existing) {
+      return idNumber;
+    }
+    
+    attempts++;
+  }
+  
+  // Если не удалось сгенерировать за 100 попыток, используем timestamp
+  const timestamp = Date.now().toString().slice(-5);
+  return timestamp.padStart(5, '0');
+}
+
 // Экспортируем функции для работы с пользователями
 export const userQueries = {
   /**
@@ -1196,9 +1246,15 @@ export const userQueries = {
   create: (userData) => {
     const db = getDatabase();
     
+    // Генерируем уникальный идентификационный номер, если он не передан
+    if (!userData.user_id_number) {
+      userData.user_id_number = generateUniqueUserIdNumber();
+    }
+    
     // Проверяем, есть ли поле password в таблице
     const pragmaInfo = db.prepare("PRAGMA table_info(users)").all();
     const hasPasswordColumn = pragmaInfo.some(col => col.name === 'password');
+    const hasUserIdNumber = pragmaInfo.some(col => col.name === 'user_id_number');
     
     if (hasPasswordColumn) {
       // Таблица имеет поле password
@@ -1207,16 +1263,26 @@ export const userQueries = {
       const hasIsBlocked = pragmaInfo.some(col => col.name === 'is_blocked');
       
       if (hasIsBlocked) {
-        const stmt = db.prepare(`
-          INSERT INTO users (
-            first_name, last_name, email, password, phone_number,
+        // Формируем список полей в зависимости от наличия user_id_number
+        const fields = hasUserIdNumber 
+          ? `first_name, last_name, email, password, phone_number,
             passport_series, passport_number, identification_number,
             address, country, passport_photo, user_photo,
-            is_verified, role, is_online, is_blocked
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            is_verified, role, is_online, is_blocked, user_id_number`
+          : `first_name, last_name, email, password, phone_number,
+            passport_series, passport_number, identification_number,
+            address, country, passport_photo, user_photo,
+            is_verified, role, is_online, is_blocked`;
+        
+        const placeholders = hasUserIdNumber 
+          ? '?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?'
+          : '?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?';
+        
+        const stmt = db.prepare(`
+          INSERT INTO users (${fields}) VALUES (${placeholders})
         `);
         
-        return stmt.run(
+        const values = [
           userData.first_name,
           userData.last_name,
           userData.email || null,
@@ -1233,18 +1299,33 @@ export const userQueries = {
           userData.role || 'buyer',
           userData.is_online ? 1 : 0,
           userData.is_blocked ? 1 : 0
-        );
+        ];
+        
+        if (hasUserIdNumber) {
+          values.push(userData.user_id_number);
+        }
+        
+        return stmt.run(...values);
       } else {
-        const stmt = db.prepare(`
-          INSERT INTO users (
-            first_name, last_name, email, password, phone_number,
+        const fields = hasUserIdNumber 
+          ? `first_name, last_name, email, password, phone_number,
             passport_series, passport_number, identification_number,
             address, country, passport_photo, user_photo,
-            is_verified, role, is_online
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            is_verified, role, is_online, user_id_number`
+          : `first_name, last_name, email, password, phone_number,
+            passport_series, passport_number, identification_number,
+            address, country, passport_photo, user_photo,
+            is_verified, role, is_online`;
+        
+        const placeholders = hasUserIdNumber 
+          ? '?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?'
+          : '?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?';
+        
+        const stmt = db.prepare(`
+          INSERT INTO users (${fields}) VALUES (${placeholders})
         `);
         
-        return stmt.run(
+        const values = [
           userData.first_name,
           userData.last_name,
           userData.email || null,
@@ -1260,20 +1341,35 @@ export const userQueries = {
           userData.is_verified ? 1 : 0,
           userData.role || 'buyer',
           userData.is_online ? 1 : 0
-        );
+        ];
+        
+        if (hasUserIdNumber) {
+          values.push(userData.user_id_number);
+        }
+        
+        return stmt.run(...values);
       }
     } else {
       // Старая схема без password (для обратной совместимости)
-      const stmt = db.prepare(`
-        INSERT INTO users (
-          first_name, last_name, email, phone_number,
+      const fields = hasUserIdNumber 
+        ? `first_name, last_name, email, phone_number,
           passport_series, passport_number, identification_number,
           address, country, passport_photo, user_photo,
-          is_verified, role, is_online
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          is_verified, role, is_online, user_id_number`
+        : `first_name, last_name, email, phone_number,
+          passport_series, passport_number, identification_number,
+          address, country, passport_photo, user_photo,
+          is_verified, role, is_online`;
+      
+      const placeholders = hasUserIdNumber 
+        ? '?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?'
+        : '?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?';
+      
+      const stmt = db.prepare(`
+        INSERT INTO users (${fields}) VALUES (${placeholders})
       `);
       
-      return stmt.run(
+      const values = [
         userData.first_name,
         userData.last_name,
         userData.email || null,
@@ -1288,7 +1384,13 @@ export const userQueries = {
         userData.is_verified ? 1 : 0,
         userData.role || 'buyer',
         userData.is_online ? 1 : 0
-      );
+      ];
+      
+      if (hasUserIdNumber) {
+        values.push(userData.user_id_number);
+      }
+      
+      return stmt.run(...values);
     }
   },
 
@@ -1324,6 +1426,46 @@ export const userQueries = {
    */
   update: (id, userData) => {
     const db = getDatabase();
+    
+    // Проверяем, есть ли поле user_id_number в таблице
+    const pragmaInfo = db.prepare("PRAGMA table_info(users)").all();
+    const hasUserIdNumber = pragmaInfo.some(col => col.name === 'user_id_number');
+    
+    // Проверяем, есть ли у пользователя user_id_number (только если поле существует)
+    let currentUser = null;
+    if (hasUserIdNumber) {
+      try {
+        currentUser = db.prepare('SELECT user_id_number FROM users WHERE id = ?').get(id);
+        if (currentUser && !currentUser.user_id_number && !userData.user_id_number) {
+          // Если у пользователя нет user_id_number, генерируем его
+          userData.user_id_number = generateUniqueUserIdNumber();
+          console.log(`🔄 Генерация user_id_number для пользователя ${id}: ${userData.user_id_number}`);
+        }
+      } catch (error) {
+        console.warn('⚠️ Ошибка при проверке user_id_number:', error.message);
+      }
+    } else {
+      // Если поля нет в таблице, пытаемся добавить его
+      console.log('🔄 Поле user_id_number отсутствует в таблице, добавляем...');
+      try {
+        // Добавляем поле БЕЗ UNIQUE (SQLite не позволяет добавить UNIQUE колонку в таблицу с данными)
+        db.exec("ALTER TABLE users ADD COLUMN user_id_number TEXT");
+        console.log('✅ Поле user_id_number добавлено в таблицу users');
+        // Создаем индекс для быстрого поиска
+        db.exec("CREATE INDEX IF NOT EXISTS idx_users_id_number ON users(user_id_number)");
+        console.log('✅ Индекс idx_users_id_number создан');
+        
+        // Теперь проверяем пользователя и генерируем номер, если нужно
+        currentUser = db.prepare('SELECT user_id_number FROM users WHERE id = ?').get(id);
+        if (currentUser && !currentUser.user_id_number && !userData.user_id_number) {
+          userData.user_id_number = generateUniqueUserIdNumber();
+          console.log(`🔄 Генерация user_id_number для пользователя ${id}: ${userData.user_id_number}`);
+        }
+      } catch (addError) {
+        console.warn('⚠️ Не удалось добавить поле user_id_number:', addError.message);
+      }
+    }
+    
     const fields = [];
     const values = [];
     
@@ -1333,6 +1475,11 @@ export const userQueries = {
       'address', 'country', 'passport_photo', 'user_photo',
       'is_verified', 'role', 'is_online', 'is_blocked'
     ];
+    
+    // Добавляем user_id_number в allowedFields только если поле существует в таблице
+    if (hasUserIdNumber) {
+      allowedFields.push('user_id_number');
+    }
     
     Object.keys(userData).forEach(key => {
       if (allowedFields.includes(key)) {
@@ -1348,8 +1495,15 @@ export const userQueries = {
       }
     });
     
-    if (fields.length === 0) {
+    // Если fields пустой, но мы сгенерировали user_id_number и поле существует, все равно обновляем
+    if (fields.length === 0 && !userData.user_id_number) {
       return { changes: 0 };
+    }
+    
+    // Если fields пустой, но user_id_number был сгенерирован и поле существует, добавляем его
+    if (fields.length === 0 && userData.user_id_number && hasUserIdNumber) {
+      fields.push('user_id_number = ?');
+      values.push(userData.user_id_number);
     }
     
     fields.push('updated_at = CURRENT_TIMESTAMP');

@@ -1131,6 +1131,33 @@ app.delete('/api/users/:id', (req, res) => {
 });
 
 /**
+ * DELETE /api/users/clear - Очистить БД (удалить всех пользователей)
+ * ВНИМАНИЕ: Это опасная операция! Используйте только для разработки/тестирования
+ */
+app.delete('/api/users/clear', (req, res) => {
+  try {
+    const db = getDatabase();
+    
+    // Удаляем всех пользователей
+    const result = db.prepare('DELETE FROM users').run();
+    
+    // Сбрасываем автоинкремент
+    db.exec("DELETE FROM sqlite_sequence WHERE name = 'users'");
+    
+    console.log(`🗑️ Очистка БД: удалено ${result.changes} пользователей`);
+    
+    res.json({ 
+      success: true, 
+      message: `База данных очищена. Удалено пользователей: ${result.changes}`,
+      deletedCount: result.changes
+    });
+  } catch (error) {
+    console.error('❌ Ошибка при очистке БД:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
  * POST /api/users/:id/upload-photo - Загрузить фото пользователя
  */
 app.post('/api/users/:id/upload-photo', upload.single('user_photo'), (req, res) => {
@@ -1866,7 +1893,8 @@ app.post('/api/auth/whatsapp', async (req, res) => {
         role: createdUser.role,
         country: createdUser.country,
         countryFlag: req.body.countryFlag || '',
-        picture: null
+        picture: null,
+        user_id_number: createdUser.user_id_number || null
       }
     });
   } catch (error) {
@@ -2622,7 +2650,8 @@ app.post('/api/auth/email/register', async (req, res) => {
         name: `${createdUser.first_name} ${createdUser.last_name}`.trim(),
         email: createdUser.email,
         role: createdUser.role,
-        phone: createdUser.phone_number
+        phone: createdUser.phone_number,
+        user_id_number: createdUser.user_id_number || null
       }
     });
   } catch (error) {
@@ -2926,7 +2955,8 @@ app.post('/api/auth/google', async (req, res) => {
           name: googleName,
           email: createdUser.email,
           picture: googlePicture,
-          role: createdUser.role
+          role: createdUser.role,
+          user_id_number: createdUser.user_id_number || null
         }
       });
     }

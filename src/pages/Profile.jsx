@@ -28,7 +28,8 @@ const Profile = () => {
     address: '',
     passportSeries: '',
     passportNumber: '',
-    identificationNumber: ''
+    identificationNumber: '',
+    userIdNumber: ''
   })
   const fileInputRef = useRef(null)
   const passportInputRef = useRef(null)
@@ -55,6 +56,36 @@ const Profile = () => {
         const data = await response.json()
         if (data.success && data.data) {
           const user = data.data
+          console.log('📥 Profile: Загружены данные пользователя из БД:', {
+            id: user.id,
+            user_id_number: user.user_id_number,
+            name: `${user.first_name || ''} ${user.last_name || ''}`.trim()
+          })
+          
+          // Если у пользователя нет user_id_number, генерируем его
+          if (!user.user_id_number) {
+            console.log('🔄 Profile: У пользователя нет user_id_number, генерируем через обновление...')
+            try {
+              const updateResponse = await fetch(`${API_BASE_URL}/users/${userId}`, {
+                method: 'PUT',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({})
+              })
+              
+              if (updateResponse.ok) {
+                const updateData = await updateResponse.json()
+                if (updateData.success && updateData.data?.user_id_number) {
+                  console.log('✅ Profile: user_id_number сгенерирован:', updateData.data.user_id_number)
+                  user.user_id_number = updateData.data.user_id_number
+                }
+              }
+            } catch (error) {
+              console.warn('⚠️ Profile: Не удалось сгенерировать user_id_number:', error)
+            }
+          }
+          
           // Обновляем profileData данными из БД
           setProfileData(prev => ({
             ...prev,
@@ -67,8 +98,11 @@ const Profile = () => {
             passportSeries: user.passport_series || '',
             passportNumber: user.passport_number || '',
             identificationNumber: user.identification_number || '',
+            userIdNumber: user.user_id_number || '',
             name: `${user.first_name || ''} ${user.last_name || ''}`.trim() || prev.name
           }))
+          
+          console.log('✅ Profile: profileData обновлен, userIdNumber:', user.user_id_number || 'отсутствует')
         }
       }
     } catch (error) {
@@ -396,12 +430,14 @@ const Profile = () => {
           let dbUserId = null
           
           // Сначала пытаемся найти пользователя по email
+          let foundUser = null
           if (userEmail) {
             const emailResponse = await fetch(`${API_BASE_URL}/users/email/${encodeURIComponent(userEmail.toLowerCase())}`)
             if (emailResponse.ok) {
               const emailData = await emailResponse.json()
               if (emailData.success && emailData.data) {
-                dbUserId = emailData.data.id
+                foundUser = emailData.data
+                dbUserId = foundUser.id
                 console.log('✅ Пользователь найден в БД по email:', dbUserId)
               }
             }
@@ -415,10 +451,37 @@ const Profile = () => {
               if (phoneResponse.ok) {
                 const phoneData = await phoneResponse.json()
                 if (phoneData.success && phoneData.data) {
-                  dbUserId = phoneData.data.id
+                  foundUser = phoneData.data
+                  dbUserId = foundUser.id
                   console.log('✅ Пользователь найден в БД по телефону:', dbUserId)
                 }
               }
+            }
+          }
+          
+          // Если пользователь найден, но у него нет user_id_number, генерируем его
+          if (foundUser && !foundUser.user_id_number) {
+            console.log('🔄 Profile: У пользователя нет user_id_number, генерируем...')
+            try {
+              const updateResponse = await fetch(`${API_BASE_URL}/users/${dbUserId}`, {
+                method: 'PUT',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({})
+              })
+              
+              if (updateResponse.ok) {
+                const updateData = await updateResponse.json()
+                if (updateData.success && updateData.data?.user_id_number) {
+                  console.log('✅ Profile: user_id_number сгенерирован:', updateData.data.user_id_number)
+                  foundUser.user_id_number = updateData.data.user_id_number
+                  // Перезагружаем данные пользователя из БД, чтобы получить все обновленные данные
+                  await loadUserDataFromDB(dbUserId)
+                }
+              }
+            } catch (error) {
+              console.warn('⚠️ Profile: Не удалось сгенерировать user_id_number:', error)
             }
           }
           
@@ -474,7 +537,8 @@ const Profile = () => {
             setUserId(dbUserId)
             // Обновляем localStorage с правильным ID
             localStorage.setItem('userId', String(dbUserId))
-            loadUserDataFromDB(dbUserId)
+            // Загружаем данные пользователя из БД (включая user_id_number)
+            await loadUserDataFromDB(dbUserId)
             loadUserDocuments(dbUserId)
             loadVerificationStatus(dbUserId)
           } else {
@@ -483,7 +547,7 @@ const Profile = () => {
             const fallbackId = localStorage.getItem('userId')
             if (fallbackId) {
               setUserId(fallbackId)
-              loadUserDataFromDB(fallbackId)
+              await loadUserDataFromDB(fallbackId)
               loadUserDocuments(fallbackId)
               loadVerificationStatus(fallbackId)
             }
@@ -494,7 +558,7 @@ const Profile = () => {
           const fallbackId = localStorage.getItem('userId')
           if (fallbackId) {
             setUserId(fallbackId)
-            loadUserDataFromDB(fallbackId)
+            await loadUserDataFromDB(fallbackId)
             loadUserDocuments(fallbackId)
             loadVerificationStatus(fallbackId)
           }
@@ -1007,6 +1071,24 @@ const Profile = () => {
                   </div>
                 )}
               </div>
+              {profileData.userIdNumber && (
+                <div className="user-id-number" style={{
+                  marginTop: '8px',
+                  padding: '8px 16px',
+                  backgroundColor: '#f0f9ff',
+                  borderRadius: '8px',
+                  border: '1px solid #0ABAB5',
+                  display: 'inline-block'
+                }}>
+                  <span style={{ 
+                    fontSize: '14px', 
+                    color: '#089a95', 
+                    fontWeight: '500' 
+                  }}>
+                    Ваш номер: <strong style={{ color: '#0ABAB5' }}>{profileData.userIdNumber}</strong>
+                  </span>
+                </div>
+              )}
               <div className="profile-contacts">
                 {profileData.email && (
                   <div className="contact-item">
