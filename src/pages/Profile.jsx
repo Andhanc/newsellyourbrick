@@ -1074,6 +1074,7 @@ const Profile = () => {
               {profileData.userIdNumber && (
                 <div className="user-id-number" style={{
                   marginTop: '8px',
+                  marginBottom: '16px',
                   padding: '8px 16px',
                   backgroundColor: '#f0f9ff',
                   borderRadius: '8px',
