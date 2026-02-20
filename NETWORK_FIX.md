@@ -2,6 +2,8 @@
 
 ## 🚨 Проблемы в логах Railway:
 
+ну ты и дурак
+
 1. **`NO_SOCKET`** - DNS запросы не могут создать сокет
 2. **`IPV6_NDISC_BAD_CODE`** - ошибка IPv6 Neighbor Discovery Protocol
 3. Проблемы с проксированием между Vite и сервером
