@@ -444,13 +444,15 @@ function MainPage() {
       localStorage.setItem('chatSessionId', sessionId)
     }
     return sessionId
-  }, [isLoggedIn])
+  }, [isLoggedIn, user, userLoaded])
 
-  // Загружаем историю чата из localStorage при монтировании компонента
+  // Загружаем историю чата из localStorage при монтировании компонента или изменении пользователя
+  const lastChatUserIdRef = useRef(null)
   useEffect(() => {
-    if (!chatHistoryLoadedRef.current) {
+    const chatUserId = getChatUserId
+    // Загружаем историю только если изменился идентификатор пользователя
+    if (lastChatUserIdRef.current !== chatUserId) {
       try {
-        const chatUserId = getChatUserId
         const historyKey = `aiChatHistory_${chatUserId}`
         const preferencesKey = `aiChatPreferences_${chatUserId}`
         
@@ -464,17 +466,8 @@ function MainPage() {
             timestamp: msg.timestamp ? new Date(msg.timestamp) : new Date()
           }))
           setChatMessages(messagesWithDates)
-        }
-        
-        // Загружаем предпочтения пользователя
-        const savedPreferences = localStorage.getItem(preferencesKey)
-        if (savedPreferences) {
-          const parsed = JSON.parse(savedPreferences)
-          setUserPreferences(parsed)
-        }
-        
-        // Если нет сохраненной истории, показываем приветственное сообщение
-        if (!savedChatHistory && chatMessages.length === 0) {
+        } else {
+          // Если нет сохраненной истории, показываем приветственное сообщение
           setChatMessages([{
             id: 1,
             text: 'Здравствуйте! Я ваш AI-консультант по недвижимости. Помогу подобрать идеальный вариант в Испании или Дубае. Для начала, скажите, для какой цели вы ищете недвижимость?',
@@ -484,9 +477,18 @@ function MainPage() {
           }])
         }
         
+        // Загружаем предпочтения пользователя
+        const savedPreferences = localStorage.getItem(preferencesKey)
+        if (savedPreferences) {
+          const parsed = JSON.parse(savedPreferences)
+          setUserPreferences(parsed)
+        }
+        
+        lastChatUserIdRef.current = chatUserId
         chatHistoryLoadedRef.current = true
       } catch (error) {
         console.error('Ошибка при загрузке истории чата:', error)
+        lastChatUserIdRef.current = chatUserId
         chatHistoryLoadedRef.current = true
       }
     }
@@ -519,49 +521,8 @@ function MainPage() {
     }
   }, [userPreferences, getChatUserId])
 
-  // Очищаем историю при закрытии сайта
-  useEffect(() => {
-    const handleBeforeUnload = () => {
-      // Очищаем историю чата при закрытии вкладки/браузера для текущего пользователя/сессии
-      const chatUserId = getChatUserId
-      const historyKey = `aiChatHistory_${chatUserId}`
-      const preferencesKey = `aiChatPreferences_${chatUserId}`
-      localStorage.removeItem(historyKey)
-      localStorage.removeItem(preferencesKey)
-      
-      // Если это сессия (неавторизованный пользователь), также удаляем ID сессии
-      if (chatUserId.startsWith('session_')) {
-        localStorage.removeItem('chatSessionId')
-      }
-    }
-
-    // Используем beforeunload для очистки при закрытии
-    window.addEventListener('beforeunload', handleBeforeUnload)
-    
-    // Также используем pagehide для более надежной очистки
-    const handlePageHide = (event) => {
-      // Если страница выгружается (не просто скрывается), очищаем данные
-      if (event.persisted === false) {
-        const chatUserId = getChatUserId
-        const historyKey = `aiChatHistory_${chatUserId}`
-        const preferencesKey = `aiChatPreferences_${chatUserId}`
-        localStorage.removeItem(historyKey)
-        localStorage.removeItem(preferencesKey)
-        
-        // Если это сессия (неавторизованный пользователь), также удаляем ID сессии
-        if (chatUserId.startsWith('session_')) {
-          localStorage.removeItem('chatSessionId')
-        }
-      }
-    }
-    
-    window.addEventListener('pagehide', handlePageHide)
-
-    return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload)
-      window.removeEventListener('pagehide', handlePageHide)
-    }
-  }, [getChatUserId])
+  // История чата сохраняется в localStorage и не очищается при закрытии страницы
+  // Каждый пользователь видит только свою переписку
   
   // Отладочная информация о состоянии i18n
   useEffect(() => {
