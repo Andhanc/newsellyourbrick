@@ -236,6 +236,7 @@ const PropertyList = ({ auctionProperties = null }) => {
                 const hasTestTimer = property.test_timer_end_date != null && property.test_timer_end_date !== ''
                 const hasTimer = (property.isAuction === true && property.endTime != null && property.endTime !== '') || hasTestTimer
                 const hasTestDrive = property.test_drive === 1 || property.testDrive === true || property.test_drive === true
+                const isReserved = property.is_reserved === true || property.is_reserved === 1
                 
                 // Проверяем, закончился ли таймер
                 const checkTimerExpired = () => {
@@ -276,6 +277,12 @@ const PropertyList = ({ auctionProperties = null }) => {
                     alt={propertyTitle}
                     className="property-image"
                   />
+                  {isReserved && (
+                    <div className="property-reserved-overlay">
+                      <div className="reserved-overlay-icon">🔒</div>
+                      <div className="reserved-overlay-text">Забронировано</div>
+                    </div>
+                  )}
                   <div 
                     className="property-buy-badge"
                     onClick={(e) => {
@@ -373,7 +380,7 @@ const PropertyList = ({ auctionProperties = null }) => {
                   </button>
                 </div>
                 <div className="property-content">
-                  {hasTimer && (
+                  {hasTimer && !isReserved && (
                     <div className="property-timer-wrapper">
                       {hasTestTimer ? (
                         <CircularTimer 
@@ -470,20 +477,34 @@ const PropertyList = ({ auctionProperties = null }) => {
                             state: { property }
                           })
                         }}
+                        disabled={isReserved}
+                        style={{
+                          opacity: isReserved ? 0.5 : 1,
+                          cursor: isReserved ? 'not-allowed' : 'pointer'
+                        }}
                       >
-                        Сделать ставку
+                        {isReserved ? 'Объект забронирован' : 'Сделать ставку'}
                       </button>
                       <button 
                         className="btn btn-buy-now btn-liquid-glass-buy"
                         onClick={(e) => {
                           e.preventDefault()
                           e.stopPropagation()
+                          if (isReserved) {
+                            alert('Объект временно забронирован. Покупка недоступна.')
+                            return
+                          }
                           navigate(`/property/${property.id}`, {
                             state: { property }
                           })
                         }}
+                        disabled={isReserved}
+                        style={{
+                          opacity: isReserved ? 0.5 : 1,
+                          cursor: isReserved ? 'not-allowed' : 'pointer'
+                        }}
                       >
-                        Купить сейчас
+                        {isReserved ? 'Объект забронирован' : 'Купить сейчас'}
                       </button>
                     </div>
                   </div>

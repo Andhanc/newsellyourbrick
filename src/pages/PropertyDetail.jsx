@@ -748,56 +748,7 @@ const PropertyDetail = () => {
           });
           
           return isValid;
-        })() && (
-          <div className="reservation-banner" style={{
-            background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)',
-            border: '2px solid #f59e0b',
-            borderRadius: '12px',
-            padding: '16px 20px',
-            margin: '20px 0',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '12px',
-            boxShadow: '0 4px 6px rgba(245, 158, 11, 0.1)',
-            zIndex: 1000,
-            position: 'relative'
-          }}>
-            <div style={{
-              background: '#f59e0b',
-              borderRadius: '50%',
-              width: '40px',
-              height: '40px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0
-            }}>
-              <FiLock size={20} color="#fff" />
-            </div>
-            <div style={{ flex: 1 }}>
-              <div style={{ 
-                fontWeight: 600, 
-                fontSize: '16px', 
-                color: '#92400e',
-                marginBottom: '4px'
-              }}>
-                🔒 Объект забронирован
-              </div>
-              <div style={{ 
-                fontSize: '14px', 
-                color: '#78350f'
-              }}>
-                Объект временно недоступен для ставок. Резервация действует до {new Date(normalizedProperty.reserved_until).toLocaleString('ru-RU', {
-                  year: 'numeric',
-                  month: '2-digit',
-                  day: '2-digit',
-                  hour: '2-digit',
-                  minute: '2-digit'
-                })} ({Math.ceil((new Date(normalizedProperty.reserved_until) - new Date()) / (1000 * 60 * 60))} часов)
-              </div>
-            </div>
-          </div>
-        )}
+        })() && null}
 
         <div className="detail-content">
           <div className="detail-left">
@@ -1102,7 +1053,25 @@ const PropertyDetail = () => {
                 Активный аукцион в процессе
               </div>
               
-              <CountdownTimer endTime={normalizedProperty.endTime} />
+              {normalizedProperty.is_reserved && normalizedProperty.reserved_until && new Date(normalizedProperty.reserved_until) > new Date() ? (
+                <div className="property-reservation-block">
+                  <div className="reservation-icon">🔒</div>
+                  <div className="reservation-text">
+                    <div className="reservation-title">Ставки приостановлены</div>
+                    <div className="reservation-subtitle">
+                      Резервация до {new Date(normalizedProperty.reserved_until).toLocaleString('ru-RU', {
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })} ({Math.ceil((new Date(normalizedProperty.reserved_until) - new Date()) / (1000 * 60 * 60))} ч)
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <CountdownTimer endTime={normalizedProperty.endTime} />
+              )}
 
               <div className="current-bid glass-panel">
                 <div className="bid-label">Текущая ставка</div>

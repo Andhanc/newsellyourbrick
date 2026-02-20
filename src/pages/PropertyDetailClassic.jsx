@@ -1108,6 +1108,12 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
   }
 
   const handleBookNow = () => {
+    // Проверяем резервацию перед открытием модального окна
+    if (displayProperty.is_reserved && displayProperty.reserved_until && new Date(displayProperty.reserved_until) > new Date()) {
+      alert('Объект временно забронирован. Покупка недоступна.')
+      return
+    }
+    
     // Проверяем авторизацию
     const isClerkAuth = user && userLoaded
     const isOldAuth = isAuthenticated()
@@ -1673,55 +1679,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
         });
         
         return isValid;
-      })() && (
-        <div className="reservation-banner" style={{
-          background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)',
-          border: '2px solid #f59e0b',
-          borderRadius: '12px',
-          padding: '16px 20px',
-          margin: '20px auto',
-          maxWidth: '1200px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px',
-          boxShadow: '0 4px 6px rgba(245, 158, 11, 0.1)'
-        }}>
-          <div style={{
-            background: '#f59e0b',
-            borderRadius: '50%',
-            width: '40px',
-            height: '40px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            flexShrink: 0
-          }}>
-            <FiLock size={20} color="#fff" />
-          </div>
-          <div style={{ flex: 1 }}>
-            <div style={{ 
-              fontWeight: 600, 
-              fontSize: '16px', 
-              color: '#92400e',
-              marginBottom: '4px'
-            }}>
-              🔒 Объект забронирован
-            </div>
-            <div style={{ 
-              fontSize: '14px', 
-              color: '#78350f'
-            }}>
-              Объект временно недоступен для ставок. Резервация действует до {new Date(displayProperty.reserved_until).toLocaleString('ru-RU', {
-                year: 'numeric',
-                month: '2-digit',
-                day: '2-digit',
-                hour: '2-digit',
-                minute: '2-digit'
-              })} ({Math.ceil((new Date(displayProperty.reserved_until) - new Date()) / (1000 * 60 * 60))} часов)
-            </div>
-          </div>
-        </div>
-      )}
+      })() && null}
 
       {/* Основной контент */}
       <div className="property-detail-main">
@@ -2237,8 +2195,13 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                       type="button"
                       className="property-detail-sidebar__buy-now-btn"
                       onClick={handleBookNow}
+                      disabled={displayProperty.is_reserved && displayProperty.reserved_until && new Date(displayProperty.reserved_until) > new Date()}
+                      style={{
+                        opacity: (displayProperty.is_reserved && displayProperty.reserved_until && new Date(displayProperty.reserved_until) > new Date()) ? 0.5 : 1,
+                        cursor: (displayProperty.is_reserved && displayProperty.reserved_until && new Date(displayProperty.reserved_until) > new Date()) ? 'not-allowed' : 'pointer'
+                      }}
                     >
-                      Купить сейчас
+                      {displayProperty.is_reserved && displayProperty.reserved_until && new Date(displayProperty.reserved_until) > new Date() ? 'Объект забронирован' : 'Купить сейчас'}
                     </button>
                   </>
                 ) : null;
@@ -2248,6 +2211,11 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                 <button
                   className="property-detail-sidebar__buy-btn property-detail-sidebar__buy-btn--winner"
                   onClick={handleBookNow}
+                  disabled={displayProperty.is_reserved && displayProperty.reserved_until && new Date(displayProperty.reserved_until) > new Date()}
+                  style={{
+                    opacity: (displayProperty.is_reserved && displayProperty.reserved_until && new Date(displayProperty.reserved_until) > new Date()) ? 0.5 : 1,
+                    cursor: (displayProperty.is_reserved && displayProperty.reserved_until && new Date(displayProperty.reserved_until) > new Date()) ? 'not-allowed' : 'pointer'
+                  }}
                 >
                   Перейти к покупке
                 </button>
@@ -2267,8 +2235,13 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                     type="button"
                     className="property-detail-sidebar__buy-now-btn"
                     onClick={handleBookNow}
+                    disabled={displayProperty.is_reserved && displayProperty.reserved_until && new Date(displayProperty.reserved_until) > new Date()}
+                    style={{
+                      opacity: (displayProperty.is_reserved && displayProperty.reserved_until && new Date(displayProperty.reserved_until) > new Date()) ? 0.5 : 1,
+                      cursor: (displayProperty.is_reserved && displayProperty.reserved_until && new Date(displayProperty.reserved_until) > new Date()) ? 'not-allowed' : 'pointer'
+                    }}
                   >
-                    Купить сейчас
+                    {displayProperty.is_reserved && displayProperty.reserved_until && new Date(displayProperty.reserved_until) > new Date() ? 'Объект забронирован' : 'Купить сейчас'}
                   </button>
                 </>
               )}
@@ -2290,7 +2263,26 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
               {/* Блок таймера аукциона, текущей ставки и истории ставок */}
               {(isAuctionProperty && auctionEndTime) || (!isAuctionProperty && displayProperty.price) ? (
                 <div className="property-detail-sidebar__auction-block">
-                  {(displayProperty.test_timer_end_date && 
+                  {/* Проверяем резервацию объекта */}
+                  {displayProperty.is_reserved && displayProperty.reserved_until && new Date(displayProperty.reserved_until) > new Date() ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '1rem' }}>
+                      <div className="property-reservation-block" style={{ minWidth: '250px' }}>
+                        <div className="reservation-icon">🔒</div>
+                        <div className="reservation-text">
+                          <div className="reservation-title">Ставки приостановлены</div>
+                          <div className="reservation-subtitle">
+                            Резервация до {new Date(displayProperty.reserved_until).toLocaleString('ru-RU', {
+                              year: 'numeric',
+                              month: '2-digit',
+                              day: '2-digit',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })} ({Math.ceil((new Date(displayProperty.reserved_until) - new Date()) / (1000 * 60 * 60))} ч)
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (displayProperty.test_timer_end_date && 
                     (typeof displayProperty.test_timer_end_date === 'string' 
                       ? displayProperty.test_timer_end_date.trim() !== '' 
                       : displayProperty.test_timer_end_date !== null && displayProperty.test_timer_end_date !== undefined)) ? (
@@ -2353,7 +2345,17 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                     </div>
                   ) : (
                     <>
-                      <PropertyTimer endTime={auctionEndTime} />
+                      {displayProperty.is_reserved && displayProperty.reserved_until && new Date(displayProperty.reserved_until) > new Date() ? (
+                        <div className="property-reservation-block" style={{ minWidth: '250px' }}>
+                          <div className="reservation-icon">🔒</div>
+                          <div className="reservation-text">
+                            <div className="reservation-title">Ставки приостановлены</div>
+                            <div className="reservation-subtitle">Объект забронирован на 72 ч</div>
+                          </div>
+                        </div>
+                      ) : (
+                        <PropertyTimer endTime={auctionEndTime} />
+                      )}
                       {/* Отображение лидера для обычных аукционов */}
                       {/* Старая карточка лидера (уходит вниз) */}
                       {previousLeader && !timerExpired && isLeaderChanging && (

@@ -325,6 +325,49 @@
   transform: scale(1.05);
 }
 
+/* Оверлей для забронированного объекта */
+.property-reserved-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(255, 193, 7, 0.85) 0%, rgba(255, 152, 0, 0.85) 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 5;
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+}
+
+.reserved-overlay-icon {
+  font-size: 64px;
+  margin-bottom: 12px;
+  animation: pulse 2s ease-in-out infinite;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+}
+
+.reserved-overlay-text {
+  font-size: 20px;
+  font-weight: 700;
+  color: #fff;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  letter-spacing: 0.5px;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 0.9;
+  }
+}
+
 .property-badge {
   position: absolute;
   top: 12px;
@@ -789,6 +832,57 @@
   margin-bottom: 12px;
   padding: 12px 0;
   overflow: visible;
+}
+
+.property-reservation-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px 24px;
+  background: linear-gradient(135deg, rgba(255, 193, 7, 0.1) 0%, rgba(255, 152, 0, 0.1) 100%);
+  border: 2px solid rgba(255, 193, 7, 0.3);
+  border-radius: 16px;
+  min-width: 200px;
+  box-shadow: 0 4px 16px rgba(255, 193, 7, 0.15);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.reservation-icon {
+  font-size: 48px;
+  margin-bottom: 12px;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 0.8;
+  }
+}
+
+.reservation-text {
+  text-align: center;
+}
+
+.reservation-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #f57c00;
+  margin-bottom: 4px;
+  letter-spacing: 0.3px;
+}
+
+.reservation-subtitle {
+  font-size: 13px;
+  color: #ff9800;
+  font-weight: 500;
+  opacity: 0.9;
 }
 
 .property-title {

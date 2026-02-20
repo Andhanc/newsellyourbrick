@@ -271,6 +271,13 @@ try {
 let waClientReady = false;
 let currentQRCode = null; // Сохраняем текущий QR-код для отображения в футере
 
+// ========== СИСТЕМА ОТСЛЕЖИВАНИЯ ОБЪЕКТОВ БЕЗ СТАВОК ==========
+// Map для хранения таймеров объектов: propertyId -> timeoutId
+const propertyTimers = new Map();
+// Map для отслеживания объектов, на которые уже отправлены уведомления: propertyId -> true
+const notifiedProperties = new Set();
+// ========== КОНЕЦ СИСТЕМЫ ОТСЛЕЖИВАНИЯ ==========
+
 const waClient = new Client({
   authStrategy: new LocalAuth({
     dataPath: join(__dirname, '.wwebjs_auth')
@@ -2423,6 +2430,19 @@ app.put('/api/purchase-requests/:id/status', async (req, res) => {
       }
     }
 
+    // Если статус "completed" или "cancelled", снимаем резервацию объекта
+    if ((status === 'completed' || status === 'cancelled') && request.property_id) {
+      try {
+        console.log(`🔍 PUT /api/purchase-requests/:id/status - Снятие резервации объекта ID=${request.property_id} для запроса #${req.params.id}`);
+        
+        propertyQueries.unreserve(request.property_id);
+        console.log(`✅ Резервация объекта #${request.property_id} снята для запроса #${req.params.id}`);
+      } catch (unreserveError) {
+        console.error('❌ Ошибка при снятии резервации объекта:', unreserveError);
+        // Продолжаем выполнение, даже если снятие резервации не удалось
+      }
+    }
+
     purchaseRequestQueries.updateStatus(req.params.id, status, adminNotes);
     const updatedRequest = purchaseRequestQueries.getById(req.params.id);
     
@@ -2501,6 +2521,19 @@ app.delete('/api/purchase-requests/:id', (req, res) => {
     const request = purchaseRequestQueries.getById(req.params.id);
     if (!request) {
       return res.status(404).json({ success: false, error: 'Запрос не найден' });
+    }
+
+    // Снимаем резервацию объекта при удалении запроса
+    if (request.property_id) {
+      try {
+        console.log(`🔍 DELETE /api/purchase-requests/:id - Снятие резервации объекта ID=${request.property_id} для запроса #${req.params.id}`);
+        
+        propertyQueries.unreserve(request.property_id);
+        console.log(`✅ Резервация объекта #${request.property_id} снята при удалении запроса #${req.params.id}`);
+      } catch (unreserveError) {
+        console.error('❌ Ошибка при снятии резервации объекта:', unreserveError);
+        // Продолжаем выполнение, даже если снятие резервации не удалось
+      }
     }
 
     purchaseRequestQueries.delete(req.params.id);
@@ -3438,6 +3471,28 @@ app.delete('/api/notifications/:id', (req, res) => {
     res.json({ success: true, message: 'Уведомление удалено' });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * POST /api/admin/check-properties-no-bids - Ручной запуск проверки объектов без ставок за 45 дней
+ * Используется для тестирования и ручного запуска проверки
+ */
+app.post('/api/admin/check-properties-no-bids', async (req, res) => {
+  try {
+    console.log('📥 Ручной запрос на проверку объектов без ставок');
+    const result = await checkPropertiesWithoutBids();
+    res.json({ 
+      success: true, 
+      message: 'Проверка завершена',
+      data: result
+    });
+  } catch (error) {
+    console.error('❌ Ошибка при ручной проверке:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message 
+    });
   }
 });
 
@@ -5219,6 +5274,19 @@ app.get('/api/properties/auctions', (req, res) => {
         formatted.land_area = formatted.land_area || null;
       }
       
+      // Проверяем резервацию объекта
+      try {
+        const reservationInfo = propertyQueries.isReserved(formatted.id);
+        formatted.is_reserved = reservationInfo.isReserved || false;
+        formatted.reserved_until = reservationInfo.reservedUntil || null;
+        formatted.reserved_by = reservationInfo.reservedBy || null;
+      } catch (reservationError) {
+        console.warn(`⚠️ Ошибка при проверке резервации для объекта ID=${formatted.id}:`, reservationError);
+        formatted.is_reserved = false;
+        formatted.reserved_until = null;
+        formatted.reserved_by = null;
+      }
+      
       return formatted;
     });
     
@@ -6404,6 +6472,12 @@ app.put('/api/properties/:id/approve', (req, res) => {
       
       // Получаем обновленное объявление для проверки
       const updatedProperty = propertyQueries.getById(id);
+      
+      // Запускаем таймер для отслеживания ставок (событийная модель)
+      if (updatedProperty && updatedProperty.moderation_status === 'approved') {
+        console.log(`⏰ Запуск таймера для отслеживания ставок на объекте ${id}`);
+        startPropertyTimer(parseInt(id));
+      }
       if (!updatedProperty) {
         console.error(`❌ Одобрение: объект ID=${id} не найден после обновления`);
         return res.status(404).json({ success: false, error: 'Объявление не найдено после обновления' });
@@ -7339,6 +7413,9 @@ app.post('/api/bids', (req, res) => {
     console.log(`✅ Ставка создана с ID: ${bidId}, user_id: ${user_id}, property_id: ${property_id}, amount: ${bidAmountNum}`);
     console.log(`📊 Результат INSERT: changes=${result.changes}, lastInsertRowid=${bidId}`);
     
+    // Отменяем таймер для объекта (появилась ставка)
+    cancelPropertyTimer(propertyIdNum);
+    
     // Сразу проверяем, что ставка сохранилась
     const verifyBid = db.prepare('SELECT * FROM bids WHERE id = ?').get(bidId);
     if (!verifyBid) {
@@ -8102,6 +8179,453 @@ app._router?.stack?.forEach((middleware) => {
   }
 });
 
+// ========== СОБЫТИЙНАЯ СИСТЕМА ОТСЛЕЖИВАНИЯ ОБЪЕКТОВ БЕЗ СТАВОК ==========
+
+/**
+ * Отправляет уведомления владельцу объекта о том, что за 45 дней не было ставок
+ * @param {number} propertyId - ID объекта
+ * @param {object} property - Данные объекта
+ */
+async function sendNoBidsNotification(propertyId, property) {
+  try {
+    console.log(`📧 Отправка уведомления для объекта ${propertyId}...`);
+    
+    // Проверяем, не отправляли ли уже уведомление
+    if (notifiedProperties.has(propertyId)) {
+      console.log(`⏭️ Уведомление для объекта ${propertyId} уже отправлено, пропускаем`);
+      return;
+    }
+    
+    // Получаем данные владельца
+    const owner = userQueries.getById(property.user_id);
+    if (!owner) {
+      console.warn(`⚠️ Владелец с ID ${property.user_id} не найден для объекта ${propertyId}`);
+      return;
+    }
+    
+    const propertyTitle = property.title || 'ваш объект';
+    const messageText = `За 45 дней с момента выставления вашего объекта "${propertyTitle}" не произошло ставок и взаимодействия с объявлением, предлагаем вам снизить цену в личном кабинете с помощью функции редактирования, с уважением команда sellyourbrick.`;
+    
+    // 1. Создаем уведомление в ЛК
+    try {
+      notificationQueries.create({
+        user_id: property.user_id,
+        type: 'no_bids_45_days', // Тип оставляем как есть для совместимости
+        title: 'Рекомендация по снижению цены',
+        message: messageText,
+        data: JSON.stringify({
+          property_id: propertyId,
+          property_title: propertyTitle
+        }),
+        is_read: 0,
+        view_count: 0
+      });
+      console.log(`✅ Уведомление в ЛК создано для пользователя ${property.user_id}, объект ${propertyId}`);
+    } catch (notifError) {
+      console.error(`❌ Ошибка создания уведомления в ЛК:`, notifError);
+    }
+    
+    // 2. Отправляем email (если есть email)
+    if (owner.email) {
+      try {
+        const emailJsConfig = {
+          serviceId: process.env.EMAILJS_SERVICE_ID || process.env.VITE_EMAILJS_SERVICE_ID || '',
+          templateId: process.env.EMAILJS_TEMPLATE_ID || process.env.VITE_EMAILJS_TEMPLATE_ID || '',
+          publicKey: process.env.EMAILJS_PUBLIC_KEY || process.env.VITE_EMAILJS_PUBLIC_KEY || ''
+        };
+        
+        if (emailJsConfig.serviceId && emailJsConfig.templateId && emailJsConfig.publicKey) {
+          const emailMessage = `Здравствуйте, ${owner.name || owner.first_name || 'Уважаемый пользователь'}!\n\n${messageText}`;
+          
+          const emailData = {
+            service_id: emailJsConfig.serviceId,
+            template_id: emailJsConfig.templateId,
+            user_id: emailJsConfig.publicKey,
+            template_params: {
+              to_email: owner.email,
+              email: owner.email,
+              message: emailMessage,
+              subject: 'Рекомендация по снижению цены - Sellyourbrick'
+            }
+          };
+          
+          const emailResponse = await axios.post('https://api.emailjs.com/api/v1.0/email/send', emailData, {
+            headers: { 'Content-Type': 'application/json' }
+          });
+          
+          if (emailResponse.status === 200) {
+            console.log(`✅ Email отправлен владельцу ${owner.email}, объект ${propertyId}`);
+          } else {
+            console.warn(`⚠️ Email не отправлен, статус: ${emailResponse.status}`);
+          }
+        } else {
+          console.warn(`⚠️ EmailJS не настроен, пропускаем отправку email`);
+        }
+      } catch (emailError) {
+        console.error(`❌ Ошибка отправки email:`, emailError.message);
+      }
+    } else {
+      console.log(`ℹ️ Email владельца не указан, пропускаем отправку email`);
+    }
+    
+    // 3. Отправляем WhatsApp (если есть номер телефона и клиент готов)
+    if (owner.phone_number && waClientReady) {
+      try {
+        const digits = String(owner.phone_number).replace(/\D/g, '');
+        if (digits) {
+          const chatId = `${digits}@c.us`;
+          const whatsappMessage = `Здравствуйте, ${owner.name || owner.first_name || 'Уважаемый пользователь'}!\n\n${messageText}`;
+          
+          await waClient.sendMessage(chatId, whatsappMessage);
+          console.log(`✅ WhatsApp сообщение отправлено владельцу ${owner.phone_number}, объект ${propertyId}`);
+        }
+      } catch (whatsappError) {
+        console.error(`❌ Ошибка отправки WhatsApp:`, whatsappError.message);
+      }
+    } else {
+      if (!owner.phone_number) {
+        console.log(`ℹ️ Номер телефона владельца не указан, пропускаем отправку WhatsApp`);
+      } else if (!waClientReady) {
+        console.log(`ℹ️ WhatsApp клиент не готов, пропускаем отправку WhatsApp`);
+      }
+    }
+    
+    // Помечаем объект как уведомленный
+    notifiedProperties.add(propertyId);
+    console.log(`✅ Уведомления отправлены для объекта ${propertyId} (${propertyTitle})`);
+    
+  } catch (error) {
+    console.error(`❌ Ошибка при отправке уведомления для объекта ${propertyId}:`, error);
+  }
+}
+
+/**
+ * Запускает таймер для объекта (45 дней)
+ * Если за это время не будет ставок, отправит уведомление
+ * @param {number} propertyId - ID объекта
+ */
+function startPropertyTimer(propertyId) {
+  // Отменяем предыдущий таймер, если он был
+  cancelPropertyTimer(propertyId);
+  
+  // Получаем данные объекта
+  const db = getDatabase();
+  let property = null;
+  
+  // Ищем объект во всех таблицах
+  try {
+    property = db.prepare('SELECT * FROM properties_apartments WHERE id = ?').get(propertyId);
+  } catch (e) {
+    // Игнорируем ошибку
+  }
+  
+  if (!property) {
+    try {
+      property = db.prepare('SELECT * FROM properties_houses WHERE id = ?').get(propertyId);
+    } catch (e) {
+      // Игнорируем ошибку
+    }
+  }
+  
+  if (!property) {
+    try {
+      property = db.prepare('SELECT * FROM properties WHERE id = ?').get(propertyId);
+    } catch (e) {
+      // Игнорируем ошибку
+    }
+  }
+  
+  if (!property) {
+    console.warn(`⚠️ Объект ${propertyId} не найден для запуска таймера`);
+    return;
+  }
+  
+  // Проверяем, что объект одобрен
+  if (property.moderation_status !== 'approved') {
+    console.log(`ℹ️ Объект ${propertyId} еще не одобрен, таймер не запускается`);
+    return;
+  }
+  
+  // Проверяем, не отправляли ли уже уведомление
+  if (notifiedProperties.has(propertyId)) {
+    console.log(`ℹ️ Уведомление для объекта ${propertyId} уже отправлено, таймер не запускается`);
+    return;
+  }
+  
+  // Запускаем таймер на 45 дней
+  const timerDuration = 45 * 24 * 60 * 60 * 1000; // 45 дней в миллисекундах
+  
+  console.log(`⏰ Запуск таймера для объекта ${propertyId} (${property.title || 'без названия'}) на 45 дней`);
+  
+  const timeoutId = setTimeout(async () => {
+    // Проверяем, есть ли ставки для этого объекта
+    const db = getDatabase();
+    const bidsCount = db.prepare('SELECT COUNT(*) as count FROM bids WHERE property_id = ?').get(propertyId);
+    
+    if (bidsCount && bidsCount.count > 0) {
+      console.log(`✅ Объект ${propertyId} имеет ставки, уведомление не отправляется`);
+      propertyTimers.delete(propertyId);
+      return;
+    }
+    
+    // Если ставок нет - отправляем уведомление
+    await sendNoBidsNotification(propertyId, property);
+    propertyTimers.delete(propertyId);
+  }, timerDuration);
+  
+  propertyTimers.set(propertyId, timeoutId);
+  console.log(`✅ Таймер установлен для объекта ${propertyId}`);
+}
+
+/**
+ * Отменяет таймер для объекта (вызывается при создании ставки)
+ * @param {number} propertyId - ID объекта
+ */
+function cancelPropertyTimer(propertyId) {
+  const timeoutId = propertyTimers.get(propertyId);
+  if (timeoutId) {
+    clearTimeout(timeoutId);
+    propertyTimers.delete(propertyId);
+    console.log(`🛑 Таймер отменен для объекта ${propertyId} (появилась ставка)`);
+  }
+}
+
+// ========== КОНЕЦ СОБЫТИЙНОЙ СИСТЕМЫ ==========
+
+/**
+ * Старая функция для обратной совместимости (используется только для endpoint)
+ * @deprecated Используйте событийную модель вместо этого
+ */
+async function checkPropertiesWithoutBids() {
+  try {
+    console.log('🔍 Начинаю проверку объектов без ставок за 5 минут (тестовый режим)...');
+    const db = getDatabase();
+    
+    // Вычисляем время 5 минут назад (для тестирования)
+    const now = new Date();
+    const minutesAgo5 = new Date(now);
+    minutesAgo5.setMinutes(minutesAgo5.getMinutes() - 5);
+    
+    console.log(`📅 Проверяю объекты, выставленные до ${minutesAgo5.toISOString()}`);
+    
+    // Проверяем существование новых таблиц
+    let useNewTables = false;
+    try {
+      db.prepare('SELECT 1 FROM properties_apartments LIMIT 1').get();
+      db.prepare('SELECT 1 FROM properties_houses LIMIT 1').get();
+      useNewTables = true;
+    } catch (e) {
+      useNewTables = false;
+    }
+    
+    let propertiesToCheck = [];
+    
+    if (useNewTables) {
+      // Получаем объекты из обеих таблиц
+      const apartments = db.prepare(`
+        SELECT id, user_id, title, auction_start_date, created_at, 
+               'apartment' as property_type
+        FROM properties_apartments
+        WHERE moderation_status = 'approved'
+          AND (auction_start_date IS NOT NULL OR created_at IS NOT NULL)
+      `).all();
+      
+      const houses = db.prepare(`
+        SELECT id, user_id, title, auction_start_date, created_at,
+               'house' as property_type
+        FROM properties_houses
+        WHERE moderation_status = 'approved'
+          AND (auction_start_date IS NOT NULL OR created_at IS NOT NULL)
+      `).all();
+      
+      propertiesToCheck = [...apartments, ...houses];
+    } else {
+      // Fallback на старую таблицу
+      propertiesToCheck = db.prepare(`
+        SELECT id, user_id, title, auction_start_date, created_at,
+               'property' as property_type
+        FROM properties
+        WHERE moderation_status = 'approved'
+          AND (auction_start_date IS NOT NULL OR created_at IS NOT NULL)
+      `).all();
+    }
+    
+    console.log(`📊 Найдено объектов для проверки: ${propertiesToCheck.length}`);
+    
+    let notificationsSent = 0;
+    let errorsCount = 0;
+    
+    for (const property of propertiesToCheck) {
+      try {
+        // Определяем дату начала отсчета (auction_start_date или created_at)
+        const startDateStr = property.auction_start_date || property.created_at;
+        if (!startDateStr) continue;
+        
+        const startDate = new Date(startDateStr);
+        // Вычисляем разницу в минутах (для тестирования)
+        const minutesSinceStart = Math.floor((now - startDate) / (1000 * 60));
+        
+        // Проверяем, прошло ли 5 минут (для тестирования)
+        if (minutesSinceStart < 5) {
+          continue; // Еще не прошло 5 минут
+        }
+        
+        // Проверяем, есть ли ставки для этого объекта
+        const bidsCount = db.prepare('SELECT COUNT(*) as count FROM bids WHERE property_id = ?').get(property.id);
+        if (bidsCount && bidsCount.count > 0) {
+          continue; // Есть ставки, пропускаем
+        }
+        
+        // Проверяем, не отправляли ли уже уведомление (по типу уведомления в БД)
+        // Ищем уведомления с типом 'no_bids_45_days' для этого пользователя и объекта
+        const existingNotifications = db.prepare(`
+          SELECT id, data FROM notifications 
+          WHERE user_id = ? 
+            AND type = 'no_bids_45_days'
+        `).all(property.user_id);
+        
+        let alreadyNotified = false;
+        for (const notif of existingNotifications) {
+          try {
+            if (notif.data) {
+              const notifData = JSON.parse(notif.data);
+              if (notifData.property_id === property.id) {
+                alreadyNotified = true;
+                break;
+              }
+            }
+          } catch (parseError) {
+            // Если не удалось распарсить JSON, проверяем строку
+            if (notif.data && notif.data.includes(`"property_id":${property.id}`)) {
+              alreadyNotified = true;
+              break;
+            }
+          }
+        }
+        
+        if (alreadyNotified) {
+          console.log(`⏭️ Уведомление для объекта ${property.id} уже отправлено, пропускаем`);
+          continue;
+        }
+        
+        // Получаем данные владельца
+        const owner = userQueries.getById(property.user_id);
+        if (!owner) {
+          console.warn(`⚠️ Владелец с ID ${property.user_id} не найден для объекта ${property.id}`);
+          continue;
+        }
+        
+        const propertyTitle = property.title || 'ваш объект';
+        // Для тестирования используем текст про 5 минут, в production заменить на 45 дней
+        const messageText = `За 5 минут с момента выставления вашего объекта "${propertyTitle}" не произошло ставок и взаимодействия с объявлением, предлагаем вам снизить цену в личном кабинете с помощью функции редактирования, с уважением команда sellyourbrick.`;
+        
+        // 1. Создаем уведомление в ЛК
+        try {
+          notificationQueries.create({
+            user_id: property.user_id,
+            type: 'no_bids_45_days', // Тип оставляем как есть для совместимости
+            title: 'Рекомендация по снижению цены',
+            message: messageText,
+            data: JSON.stringify({
+              property_id: property.id,
+              property_title: propertyTitle,
+              minutes_since_start: minutesSinceStart // Для теста используем минуты
+            }),
+            is_read: 0,
+            view_count: 0
+          });
+          console.log(`✅ Уведомление в ЛК создано для пользователя ${property.user_id}, объект ${property.id}`);
+        } catch (notifError) {
+          console.error(`❌ Ошибка создания уведомления в ЛК:`, notifError);
+        }
+        
+        // 2. Отправляем email (если есть email)
+        if (owner.email) {
+          try {
+            // Используем EmailJS API напрямую
+            const emailJsConfig = {
+              serviceId: process.env.EMAILJS_SERVICE_ID || process.env.VITE_EMAILJS_SERVICE_ID || '',
+              templateId: process.env.EMAILJS_TEMPLATE_ID || process.env.VITE_EMAILJS_TEMPLATE_ID || '',
+              publicKey: process.env.EMAILJS_PUBLIC_KEY || process.env.VITE_EMAILJS_PUBLIC_KEY || ''
+            };
+            
+            if (emailJsConfig.serviceId && emailJsConfig.templateId && emailJsConfig.publicKey) {
+              const emailMessage = `Здравствуйте, ${owner.name || owner.first_name || 'Уважаемый пользователь'}!\n\n${messageText}`;
+              
+              const emailData = {
+                service_id: emailJsConfig.serviceId,
+                template_id: emailJsConfig.templateId,
+                user_id: emailJsConfig.publicKey,
+                template_params: {
+                  to_email: owner.email,
+                  email: owner.email,
+                  message: emailMessage,
+                  subject: 'Рекомендация по снижению цены - Sellyourbrick'
+                }
+              };
+              
+              // Отправляем через EmailJS API
+              const emailResponse = await axios.post('https://api.emailjs.com/api/v1.0/email/send', emailData, {
+                headers: { 'Content-Type': 'application/json' }
+              });
+              
+              if (emailResponse.status === 200) {
+                console.log(`✅ Email отправлен владельцу ${owner.email}, объект ${property.id}`);
+              } else {
+                console.warn(`⚠️ Email не отправлен, статус: ${emailResponse.status}`);
+              }
+            } else {
+              console.warn(`⚠️ EmailJS не настроен, пропускаем отправку email`);
+            }
+          } catch (emailError) {
+            console.error(`❌ Ошибка отправки email:`, emailError.message);
+          }
+        } else {
+          console.log(`ℹ️ Email владельца не указан, пропускаем отправку email`);
+        }
+        
+        // 3. Отправляем WhatsApp (если есть номер телефона и клиент готов)
+        if (owner.phone_number && waClientReady) {
+          try {
+            const digits = String(owner.phone_number).replace(/\D/g, '');
+            if (digits) {
+              const chatId = `${digits}@c.us`;
+              const whatsappMessage = `Здравствуйте, ${owner.name || owner.first_name || 'Уважаемый пользователь'}!\n\n${messageText}`;
+              
+              await waClient.sendMessage(chatId, whatsappMessage);
+              console.log(`✅ WhatsApp сообщение отправлено владельцу ${owner.phone_number}, объект ${property.id}`);
+            }
+          } catch (whatsappError) {
+            console.error(`❌ Ошибка отправки WhatsApp:`, whatsappError.message);
+          }
+        } else {
+          if (!owner.phone_number) {
+            console.log(`ℹ️ Номер телефона владельца не указан, пропускаем отправку WhatsApp`);
+          } else if (!waClientReady) {
+            console.log(`ℹ️ WhatsApp клиент не готов, пропускаем отправку WhatsApp`);
+          }
+        }
+        
+        notificationsSent++;
+        console.log(`✅ Уведомления отправлены для объекта ${property.id} (${propertyTitle})`);
+        
+      } catch (propertyError) {
+        errorsCount++;
+        console.error(`❌ Ошибка при обработке объекта ${property.id}:`, propertyError);
+      }
+    }
+    
+    console.log(`✅ Проверка завершена. Уведомлений отправлено: ${notificationsSent}, ошибок: ${errorsCount}`);
+    return { notificationsSent, errorsCount };
+    
+  } catch (error) {
+    console.error('❌ Критическая ошибка при проверке объектов без ставок:', error);
+    return { notificationsSent: 0, errorsCount: 1 };
+  }
+}
+
+// ========== КОНЕЦ ФУНКЦИИ ПРОВЕРКИ ОБЪЕКТОВ ==========
+
 // Запуск сервера с обработкой ошибок
 const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Сервер запущен на порту ${PORT}`);
@@ -8119,6 +8643,8 @@ const server = app.listen(PORT, '0.0.0.0', () => {
   } else {
     console.warn(`⚠️ ВНИМАНИЕ: Маршруты test-timer не найдены в списке зарегистрированных!`);
   }
+  
+  console.log('✅ Событийная система отслеживания объектов без ставок активирована');
 });
 
 // Обработка ошибок при запуске сервера
