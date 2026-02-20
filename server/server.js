@@ -11,6 +11,7 @@ const { readFileSync } = fs;
 import crypto from 'crypto';
 import qrcode from 'qrcode-terminal';
 import whatsappPkg from 'whatsapp-web.js';
+import { calculatePropertyPrice } from './services/propertyParser.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -7986,6 +7987,82 @@ app.get('/api/users/health', (req, res) => {
   res.json({ status: 'ok', message: 'Server is running' })
 })
 
+// ========== РОУТЫ ДЛЯ ПАРСИНГА НЕДВИЖИМОСТИ ==========
+
+/**
+ * POST /api/properties/calculate-price - Парсинг похожих объектов с испанских сайтов недвижимости
+ * Принимает параметры недвижимости и возвращает рекомендуемую цену и похожие объекты
+ */
+app.post('/api/properties/calculate-price', async (req, res) => {
+    const { area, rooms, city, propertyType, maxPrice, minPrice } = req.body;
+
+    // Валидация обязательных полей
+    if (!area || (rooms !== 'studio' && !rooms) || !city) {
+        return res.status(400).json({
+            success: false,
+            error: 'Необходимо указать: площадь (area), количество комнат (rooms) и город (city)'
+        });
+    }
+
+    console.log('🔍 Начало парсинга недвижимости с параметрами:', {
+      area,
+      rooms,
+      city,
+      propertyType: propertyType || 'apartment',
+      maxPrice: maxPrice || 'не указано',
+      minPrice: minPrice || 'не указано'
+    });
+
+    try {
+      const result = await calculatePropertyPrice({
+        area,
+        rooms,
+        city,
+        propertyType,
+        maxPrice,
+        minPrice
+      });
+
+      return res.json({
+        success: true,
+        data: result
+      });
+    } catch (error) {
+      console.error('❌ Ошибка при расчете:', error);
+      
+      // Возвращаем пустой результат при ошибке
+      return res.json({
+        success: true,
+        data: {
+          recommendedPrice: null,
+          similarProperties: [],
+          searchParams: {
+            area: parseInt(area) || null,
+            rooms: rooms === 'studio' ? 'studio' : (parseInt(rooms) || null),
+            city: (city || '').toLowerCase(),
+            propertyType: propertyType || 'apartment',
+            searchLevel: 'error',
+            source: 'none'
+          },
+          note: `Произошла ошибка при поиске объектов. Попробуйте позже или измените параметры поиска.`
+        }
+      });
+    }
+});
+
+// Обработчик для необработанных маршрутов (для диагностики)
+app.use((req, res, next) => {
+  if (req.path.includes('test-timer')) {
+    console.log('⚠️ Необработанный запрос к test-timer:', {
+      method: req.method,
+      path: req.path,
+      url: req.url,
+      originalUrl: req.originalUrl
+    });
+  }
+  next();
+});
+
 // Обработчик для необработанных маршрутов (для диагностики)
 app.use((req, res, next) => {
   if (req.path.includes('test-timer')) {
@@ -8081,3 +8158,15 @@ process.on('SIGTERM', () => {
   process.exit(0);
 });
 
+// Обработчик для необработанных маршрутов (для диагностики)
+app.use((req, res, next) => {
+  if (req.path.includes('test-timer')) {
+    console.log('⚠️ Необработанный запрос к test-timer:', {
+      method: req.method,
+      path: req.path,
+      url: req.url,
+      originalUrl: req.originalUrl
+    });
+  }
+  next();
+});

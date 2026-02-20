@@ -1,112 +1,119 @@
 import { useState } from 'react'
-import { FiX, FiHome, FiMapPin, FiDollarSign, FiTrendingUp } from 'react-icons/fi'
+import { FiX, FiHome, FiMapPin, FiDollarSign, FiTrendingUp, FiLoader, FiExternalLink } from 'react-icons/fi'
 import { MdBed, MdOutlineBathtub } from 'react-icons/md'
 import { BiArea } from 'react-icons/bi'
+import axios from 'axios'
 import './PropertyCalculatorModal.css'
 
 const PropertyCalculatorModal = ({ isOpen, onClose }) => {
   const [formData, setFormData] = useState({
-    propertyType: 'apartment',
     area: '',
-    rooms: '1',
-    bathrooms: '1',
-    location: 'costa-adeje',
-    floor: '',
-    condition: 'good',
-    year: new Date().getFullYear(),
-    hasParking: false,
-    hasBalcony: false
+    rooms: 'studio',
+    city: 'barcelona',
+    maxPrice: '',
+    minPrice: ''
   })
 
-  const [calculatedPrice, setCalculatedPrice] = useState(null)
-  const [showResult, setShowResult] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+  const [results, setResults] = useState(null)
+  const [error, setError] = useState(null)
 
   if (!isOpen) return null
 
   const handleInputChange = (e) => {
-    const { name, value, type, checked } = e.target
+    const { name, value } = e.target
     setFormData(prev => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value
+      [name]: value
     }))
+    // Очищаем ошибки при изменении данных
+    if (error) setError(null)
   }
 
-  const calculatePrice = () => {
-    // Базовые цены за м² по местоположению (в USD)
-    const basePrices = {
-      'costa-adeje': 3500,
-      'playa-americas': 3200,
-      'los-cristianos': 3000,
-      'puerto-cruz': 2800,
-      'santa-cruz': 2500,
-      'other': 2200
-    }
-
-    // Множители по типу недвижимости
-    const typeMultipliers = {
-      'apartment': 1.0,
-      'house': 1.3,
-      'villa': 1.8,
-      'studio': 0.85,
-      'penthouse': 1.5
-    }
-
-    // Множители по состоянию
-    const conditionMultipliers = {
-      'excellent': 1.2,
-      'good': 1.0,
-      'average': 0.85,
-      'needs-renovation': 0.7
-    }
-
-    // Расчет базовой стоимости
-    const area = parseFloat(formData.area) || 0
-    const basePrice = basePrices[formData.location] || basePrices.other
-    const typeMultiplier = typeMultipliers[formData.propertyType] || 1.0
-    const conditionMultiplier = conditionMultipliers[formData.condition] || 1.0
-
-    let price = area * basePrice * typeMultiplier * conditionMultiplier
-
-    // Бонусы за дополнительные опции
-    if (formData.hasParking) price *= 1.05
-    if (formData.hasBalcony) price *= 1.03
-
-    // Корректировка по возрасту
-    const currentYear = new Date().getFullYear()
-    const age = currentYear - parseInt(formData.year || currentYear)
-    if (age > 0) {
-      price *= Math.max(0.7, 1 - (age * 0.01)) // -1% за каждый год
-    }
-
-    // Корректировка по количеству комнат
-    const rooms = parseInt(formData.rooms) || 1
-    if (rooms >= 4) price *= 1.1
-    else if (rooms === 3) price *= 1.05
-
-    setCalculatedPrice(Math.round(price))
-    setShowResult(true)
-  }
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    calculatePrice()
+    
+    // Валидация
+    if (!formData.area || !formData.rooms || !formData.city) {
+      setError('Пожалуйста, заполните все обязательные поля')
+      return
+    }
+
+    setIsLoading(true)
+    setError(null)
+    setResults(null)
+
+    try {
+      // Вызываем API для парсинга
+      const response = await axios.post('/api/properties/calculate-price', {
+        area: parseInt(formData.area),
+        rooms: parseInt(formData.rooms),
+        city: formData.city,
+        propertyType: 'apartment',
+        maxPrice: formData.maxPrice ? parseInt(formData.maxPrice) : null,
+        minPrice: formData.minPrice ? parseInt(formData.minPrice) : null
+      })
+
+      if (response.data.success) {
+        const data = response.data.data
+        
+        // Сохраняем результаты в sessionStorage
+        const searchId = `search_${Date.now()}`
+        const storageData = {
+          searchId,
+          timestamp: Date.now(),
+          queryParams: formData,
+          recommendedPrice: data.recommendedPrice,
+          similarProperties: data.similarProperties,
+          note: data.note,
+          searchParams: data.searchParams,
+          expiresAt: Date.now() + 3600000 // 1 час
+        }
+        
+        sessionStorage.setItem(searchId, JSON.stringify(storageData))
+        
+        // Сохраняем ID последнего поиска для быстрого доступа
+        sessionStorage.setItem('lastSearchId', searchId)
+        
+        setResults(data)
+      } else {
+        setError(response.data.error || 'Ошибка при получении данных')
+      }
+    } catch (err) {
+      console.error('Ошибка при парсинге:', err)
+      setError(err.response?.data?.error || 'Ошибка при подключении к серверу. Попробуйте позже.')
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   const handleReset = () => {
     setFormData({
-      propertyType: 'apartment',
       area: '',
-      rooms: '1',
-      bathrooms: '1',
-      location: 'costa-adeje',
-      floor: '',
-      condition: 'good',
-      year: new Date().getFullYear(),
-      hasParking: false,
-      hasBalcony: false
+      rooms: 'studio',
+      city: 'barcelona',
+      maxPrice: '',
+      minPrice: ''
     })
-    setCalculatedPrice(null)
-    setShowResult(false)
+    setResults(null)
+    setError(null)
+    
+    // Очищаем sessionStorage
+    const lastSearchId = sessionStorage.getItem('lastSearchId')
+    if (lastSearchId) {
+      sessionStorage.removeItem(lastSearchId)
+      sessionStorage.removeItem('lastSearchId')
+    }
+  }
+
+  const formatPrice = (price) => {
+    if (!price) return 'Не указано'
+    return new Intl.NumberFormat('es-ES', {
+      style: 'currency',
+      currency: 'EUR',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(price)
   }
 
   return (
@@ -127,212 +134,262 @@ const PropertyCalculatorModal = ({ isOpen, onClose }) => {
               Калькулятор стоимости недвижимости
             </h2>
             <p className="property-calculator-modal__subtitle">
-              Заполните данные о вашей недвижимости для получения ориентировочной стоимости
+              Введите параметры недвижимости для поиска похожих объектов на испанских сайтах
             </p>
           </div>
 
-          {!showResult ? (
-            <form className="property-calculator-form" onSubmit={handleSubmit}>
-              <div className="property-calculator-form__section">
-                <h3 className="property-calculator-form__section-title">
-                  <FiHome size={20} />
-                  Основная информация
-                </h3>
-                <div className="property-calculator-form__grid">
-                  <div className="property-calculator-form__field">
-                    <label className="property-calculator-form__label">Тип недвижимости</label>
-                    <select 
-                      name="propertyType" 
-                      value={formData.propertyType}
-                      onChange={handleInputChange}
-                      className="property-calculator-form__select"
-                    >
-                      <option value="apartment">Квартира</option>
-                      <option value="house">Дом</option>
-                      <option value="villa">Вилла</option>
-                      <option value="studio">Студия</option>
-                      <option value="penthouse">Пентхаус</option>
-                    </select>
-                  </div>
-
-                  <div className="property-calculator-form__field">
-                    <label className="property-calculator-form__label">
-                      Площадь (м²)
-                    </label>
-                    <input
-                      type="number"
-                      name="area"
-                      value={formData.area}
-                      onChange={handleInputChange}
-                      placeholder="Например, 80"
-                      className="property-calculator-form__input"
-                      min="1"
-                      required
-                    />
-                  </div>
-
-                  <div className="property-calculator-form__field">
-                    <label className="property-calculator-form__label">
-                      <MdBed size={18} />
-                      Комнат
-                    </label>
-                    <select 
-                      name="rooms" 
-                      value={formData.rooms}
-                      onChange={handleInputChange}
-                      className="property-calculator-form__select"
-                    >
-                      <option value="1">1</option>
-                      <option value="2">2</option>
-                      <option value="3">3</option>
-                      <option value="4">4</option>
-                      <option value="5+">5+</option>
-                    </select>
-                  </div>
-
-                  <div className="property-calculator-form__field">
-                    <label className="property-calculator-form__label">
-                      <MdOutlineBathtub size={18} />
-                      Ванных комнат
-                    </label>
-                    <select 
-                      name="bathrooms" 
-                      value={formData.bathrooms}
-                      onChange={handleInputChange}
-                      className="property-calculator-form__select"
-                    >
-                      <option value="1">1</option>
-                      <option value="2">2</option>
-                      <option value="3">3</option>
-                      <option value="4+">4+</option>
-                    </select>
-                  </div>
+          {!results ? (
+            <>
+              {isLoading ? (
+                <div className="property-calculator-loader">
+                  <FiLoader className="property-calculator-loader__icon" size={48} />
+                  <h3 className="property-calculator-loader__title">Поиск похожих объектов...</h3>
+                  <p className="property-calculator-loader__subtitle">
+                    Пожалуйста, подождите. Мы анализируем рынок недвижимости в Испании.
+                  </p>
                 </div>
-              </div>
+              ) : (
+                <form className="property-calculator-form" onSubmit={handleSubmit}>
+                  {error && (
+                    <div className="property-calculator-form__error">
+                      {error}
+                    </div>
+                  )}
 
-              <div className="property-calculator-form__section">
-                <h3 className="property-calculator-form__section-title">
-                  <FiMapPin size={20} />
-                  Местоположение
-                </h3>
-                <div className="property-calculator-form__field">
-                  <label className="property-calculator-form__label">Район</label>
-                  <select 
-                    name="location" 
-                    value={formData.location}
-                    onChange={handleInputChange}
-                    className="property-calculator-form__select"
-                  >
-                    <option value="costa-adeje">Costa Adeje</option>
-                    <option value="playa-americas">Playa de las Américas</option>
-                    <option value="los-cristianos">Los Cristianos</option>
-                    <option value="puerto-cruz">Puerto de la Cruz</option>
-                    <option value="santa-cruz">Santa Cruz de Tenerife</option>
-                    <option value="other">Другое</option>
-                  </select>
-                </div>
-              </div>
+                  <div className="property-calculator-form__section">
+                    <h3 className="property-calculator-form__section-title">
+                      <FiHome size={20} />
+                      Основная информация
+                    </h3>
+                    <div className="property-calculator-form__grid">
+                      <div className="property-calculator-form__field">
+                        <label className="property-calculator-form__label">
+                          <BiArea size={18} />
+                          Площадь (м²) *
+                        </label>
+                        <input
+                          type="number"
+                          name="area"
+                          value={formData.area}
+                          onChange={handleInputChange}
+                          placeholder="Например, 80"
+                          className="property-calculator-form__input"
+                          min="1"
+                          required
+                        />
+                      </div>
 
-              <div className="property-calculator-form__section">
-                <h3 className="property-calculator-form__section-title">
-                  <FiTrendingUp size={20} />
-                  Дополнительные характеристики
-                </h3>
-                <div className="property-calculator-form__grid">
-                  <div className="property-calculator-form__field">
-                    <label className="property-calculator-form__label">Этаж</label>
-                    <input
-                      type="number"
-                      name="floor"
-                      value={formData.floor}
-                      onChange={handleInputChange}
-                      placeholder="Не указано"
-                      className="property-calculator-form__input"
-                      min="0"
-                    />
+                      <div className="property-calculator-form__field">
+                        <label className="property-calculator-form__label">
+                          <MdBed size={18} />
+                          Комнат *
+                        </label>
+                        <select 
+                          name="rooms" 
+                          value={formData.rooms}
+                          onChange={handleInputChange}
+                          className="property-calculator-form__select"
+                          required
+                        >
+                          <option value="studio">Студия</option>
+                          <option value="1">1</option>
+                          <option value="2">2</option>
+                          <option value="3">3</option>
+                          <option value="4">4</option>
+                          <option value="5">5+</option>
+                        </select>
+                      </div>
+                    </div>
                   </div>
 
-                  <div className="property-calculator-form__field">
-                    <label className="property-calculator-form__label">Год постройки</label>
-                    <input
-                      type="number"
-                      name="year"
-                      value={formData.year}
-                      onChange={handleInputChange}
-                      className="property-calculator-form__input"
-                      min="1900"
-                      max={new Date().getFullYear()}
-                    />
+                  <div className="property-calculator-form__section">
+                    <h3 className="property-calculator-form__section-title">
+                      <FiMapPin size={20} />
+                      Местоположение
+                    </h3>
+                    <div className="property-calculator-form__grid">
+                      <div className="property-calculator-form__field">
+                        <label className="property-calculator-form__label">Регион/Город *</label>
+                        <select 
+                          name="city" 
+                          value={formData.city}
+                          onChange={handleInputChange}
+                          className="property-calculator-form__select"
+                          required
+                        >
+                          <optgroup label="Каталония">
+                            <option value="barcelona">Барселона</option>
+                          </optgroup>
+                          <optgroup label="Валенсийское сообщество">
+                            <option value="valencia">Валенсия</option>
+                            <option value="alicante">Аликанте</option>
+                            <option value="castellon">Кастельон</option>
+                            <option value="torrevieja">Торревьеха</option>
+                            <option value="benidorm">Бенидорм</option>
+                            <option value="denia">Дения</option>
+                            <option value="javea">Хавеа</option>
+                            <option value="calpe">Калпе</option>
+                            <option value="altea">Альтеа</option>
+                            <option value="santa-pola">Санта-Пола</option>
+                            <option value="villajoyosa">Виллахойоса</option>
+                            <option value="gandia">Гандия</option>
+                            <option value="oliva">Олива</option>
+                            <option value="piles">Пилес</option>
+                          </optgroup>
+                          <optgroup label="Андалусия">
+                            <option value="malaga">Малага</option>
+                            <option value="marbella">Марбелья</option>
+                            <option value="sevilla">Севилья</option>
+                            <option value="granada">Гранада</option>
+                          </optgroup>
+                          <optgroup label="Мурсия">
+                            <option value="murcia">Мурсия</option>
+                          </optgroup>
+                          <optgroup label="Мадрид">
+                            <option value="madrid">Мадрид</option>
+                          </optgroup>
+                          <optgroup label="Страна Басков">
+                            <option value="bilbao">Бильбао</option>
+                          </optgroup>
+                        </select>
+                      </div>
+                    </div>
                   </div>
 
-                  <div className="property-calculator-form__field">
-                    <label className="property-calculator-form__label">Состояние</label>
-                    <select 
-                      name="condition" 
-                      value={formData.condition}
-                      onChange={handleInputChange}
-                      className="property-calculator-form__select"
+                  <div className="property-calculator-form__section">
+                    <h3 className="property-calculator-form__section-title">
+                      <FiTrendingUp size={20} />
+                      Дополнительные фильтры (необязательно)
+                    </h3>
+                    <div className="property-calculator-form__grid">
+                      <div className="property-calculator-form__field">
+                        <label className="property-calculator-form__label">Максимальная цена (€)</label>
+                        <input
+                          type="number"
+                          name="maxPrice"
+                          value={formData.maxPrice}
+                          onChange={handleInputChange}
+                          placeholder="Например, 200000"
+                          className="property-calculator-form__input"
+                          min="0"
+                        />
+                      </div>
+
+                      <div className="property-calculator-form__field">
+                        <label className="property-calculator-form__label">Минимальная цена (€)</label>
+                        <input
+                          type="number"
+                          name="minPrice"
+                          value={formData.minPrice}
+                          onChange={handleInputChange}
+                          placeholder="Например, 100000"
+                          className="property-calculator-form__input"
+                          min="0"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="property-calculator-form__actions">
+                    <button 
+                      type="button"
+                      className="property-calculator-form__button property-calculator-form__button--secondary"
+                      onClick={onClose}
                     >
-                      <option value="excellent">Отличное</option>
-                      <option value="good">Хорошее</option>
-                      <option value="average">Среднее</option>
-                      <option value="needs-renovation">Требует ремонта</option>
-                    </select>
+                      Отмена
+                    </button>
+                    <button 
+                      type="submit"
+                      className="property-calculator-form__button property-calculator-form__button--primary"
+                      disabled={isLoading}
+                    >
+                      {isLoading ? 'Поиск...' : 'Рассчитать стоимость'}
+                    </button>
                   </div>
-                </div>
-
-                <div className="property-calculator-form__checkboxes">
-                  <label className="property-calculator-form__checkbox">
-                    <input
-                      type="checkbox"
-                      name="hasParking"
-                      checked={formData.hasParking}
-                      onChange={handleInputChange}
-                    />
-                    <span>Парковочное место</span>
-                  </label>
-
-                  <label className="property-calculator-form__checkbox">
-                    <input
-                      type="checkbox"
-                      name="hasBalcony"
-                      checked={formData.hasBalcony}
-                      onChange={handleInputChange}
-                    />
-                    <span>Балкон / Терраса</span>
-                  </label>
-                </div>
-              </div>
-
-              <div className="property-calculator-form__actions">
-                <button 
-                  type="button"
-                  className="property-calculator-form__button property-calculator-form__button--secondary"
-                  onClick={onClose}
-                >
-                  Отмена
-                </button>
-                <button 
-                  type="submit"
-                  className="property-calculator-form__button property-calculator-form__button--primary"
-                >
-                  Рассчитать стоимость
-                </button>
-              </div>
-            </form>
+                </form>
+              )}
+            </>
           ) : (
             <div className="property-calculator-result">
-              <div className="property-calculator-result__icon">
-                <FiDollarSign size={48} />
+              <div className="property-calculator-result__header">
+                <div className="property-calculator-result__icon">
+                  <FiDollarSign size={48} />
+                </div>
+                <h3 className="property-calculator-result__title">Рекомендуемая цена</h3>
+                <div className="property-calculator-result__price">
+                  {results.recommendedPrice ? formatPrice(results.recommendedPrice) : 'Не удалось определить'}
+                </div>
+                {results.note && (
+                  <div className="property-calculator-result__warning">
+                    {results.note}
+                  </div>
+                )}
+                <p className="property-calculator-result__note">
+                  {results.searchParams?.searchLevel === 'estimated' 
+                    ? '* Цена рассчитана на основе среднерыночных данных Испании (~2500€/м²)'
+                    : '* Цена рассчитана на основе анализа похожих объектов на Idealista.com'}
+                </p>
               </div>
-              <h3 className="property-calculator-result__title">Ориентировочная стоимость</h3>
-              <div className="property-calculator-result__price">
-                ${calculatedPrice.toLocaleString('ru-RU')}
-              </div>
-              <p className="property-calculator-result__note">
-                * Расчет является приблизительным и основан на среднерыночных данных. 
-                Точная стоимость может отличаться в зависимости от множества факторов.
-              </p>
+
+              {results.similarProperties && results.similarProperties.length > 0 ? (
+                <div className="property-calculator-result__similar">
+                  <h4 className="property-calculator-result__similar-title">
+                    Похожие объекты ({results.similarProperties.length})
+                    {results.searchParams?.city && results.searchParams.city !== formData.city && (
+                      <span className="property-calculator-result__similar-subtitle">
+                        {' '}(в городе {results.searchParams.city})
+                      </span>
+                    )}
+                  </h4>
+                  <div className="property-calculator-result__similar-list">
+                    {results.similarProperties.slice(0, 10).map((property, index) => (
+                      <div key={index} className="property-calculator-result__similar-item">
+                        {property.image && (
+                          <div className="property-calculator-result__similar-image">
+                            <img src={property.image} alt="Property" />
+                          </div>
+                        )}
+                        <div className="property-calculator-result__similar-content">
+                          <div className="property-calculator-result__similar-price">
+                            {formatPrice(property.price)}
+                          </div>
+                          <div className="property-calculator-result__similar-details">
+                            {property.area && <span>{property.area} м²</span>}
+                            {property.rooms && <span>{property.rooms} комн.</span>}
+                          </div>
+                          {property.address && (
+                            <div className="property-calculator-result__similar-address">
+                              {property.address}
+                            </div>
+                          )}
+                          {property.link && (
+                            <a 
+                              href={property.link} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="property-calculator-result__similar-link"
+                            >
+                              <FiExternalLink size={16} />
+                              Открыть на Idealista
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="property-calculator-result__no-results">
+                  <p className="property-calculator-result__no-results-text">
+                    Не удалось найти похожие объекты с указанными параметрами.
+                    Рекомендуемая цена рассчитана на основе среднерыночных данных.
+                  </p>
+                  <p className="property-calculator-result__no-results-suggestion">
+                    Попробуйте изменить параметры поиска или обратитесь к специалисту для точной оценки.
+                  </p>
+                </div>
+              )}
+
               <div className="property-calculator-result__actions">
                 <button 
                   className="property-calculator-form__button property-calculator-form__button--secondary"
