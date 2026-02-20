@@ -903,21 +903,31 @@ const Profile = () => {
       
       <div className="profile-container">
         <aside className="profile-sidebar">
-          <div className="sidebar-header">
-            <div className="sidebar-logo">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                <path d="M12 2L2 7L12 12L22 7L12 2Z" fill="url(#gradient1)"/>
-                <path d="M2 17L12 22L22 17" stroke="url(#gradient1)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M2 12L12 17L22 12" stroke="url(#gradient1)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                <defs>
-                  <linearGradient id="gradient1" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stopColor="#0ABAB5" />
-                    <stop offset="100%" stopColor="#089a95" />
-                  </linearGradient>
-                </defs>
+          <div className="sidebar-header" style={{ marginTop: '24px' }}>
+            <button 
+              onClick={() => navigate(-1)} 
+              className="back-button"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                padding: '12px 24px',
+                backgroundColor: 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                color: '#0ABAB5',
+                fontSize: '18px',
+                fontWeight: '600',
+                transition: 'opacity 0.2s'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.opacity = '0.7'}
+              onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
+            >
+              <svg width="24" height="24" viewBox="0 0 20 20" fill="none">
+                <path d="M12.5 15L7.5 10L12.5 5" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
-              <span>Профиль</span>
-            </div>
+              <span>Назад</span>
+            </button>
           </div>
           <nav className="sidebar-nav">
             <Link to="/profile" className="nav-item active">
