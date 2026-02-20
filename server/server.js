@@ -7296,6 +7296,15 @@ app.post('/api/bids', (req, res) => {
     // Для обычных объектов депозит не требуется
     const isAuction = property.is_auction === 1;
     if (isAuction) {
+      // Проверяем, что у пользователя заполнена страна
+      if (!user.country || user.country.trim() === '') {
+        console.error(`❌ У пользователя ${userIdNum} не заполнена страна`);
+        return res.status(400).json({ 
+          success: false, 
+          error: 'Для участия в аукционе необходимо указать страну в профиле. Пожалуйста, заполните страну в настройках профиля.' 
+        });
+      }
+      
       // Проверяем и добавляем колонку deposit_amount, если её нет
       try {
         const pragmaInfo = db.prepare("PRAGMA table_info(users)").all();
@@ -7576,11 +7585,12 @@ app.get('/api/bids/property/:id', (req, res) => {
     
     const bids = db.prepare(`
       SELECT 
-        b.*,
-        u.first_name,
-        u.last_name,
-        u.email,
-        u.phone_number
+        b.id,
+        b.user_id,
+        b.property_id,
+        b.bid_amount,
+        b.created_at,
+        u.user_id_number
       FROM bids b
       LEFT JOIN users u ON b.user_id = u.id
       WHERE b.property_id = ?

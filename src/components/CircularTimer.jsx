@@ -1,7 +1,79 @@
 import { useState, useEffect } from 'react';
 import './CircularTimer.css';
+import { countries } from './CountrySelect';
 
-const CircularTimer = ({ endTime, size = 120, strokeWidth = 6, originalDuration = null, isUserLeader = false }) => {
+// Объект с маппингом кодов стран к флагам
+const countryFlags = {};
+if (countries && countries.length > 0) {
+  countries.forEach(country => {
+    if (country.code && country.flag) {
+      countryFlags[country.code] = country.flag;
+    }
+  });
+  console.log('🏳️ Создан маппинг флагов. Всего стран:', Object.keys(countryFlags).length);
+  console.log('🏳️ Примеры флагов:', {
+    DE: countryFlags['DE'],
+    RU: countryFlags['RU'],
+    BY: countryFlags['BY'],
+    US: countryFlags['US']
+  });
+} else {
+  console.error('❌ ОШИБКА: Массив countries пуст или не загружен!');
+}
+
+// Также создаем маппинг по названиям стран (в нижнем регистре)
+const countryNamesMap = {};
+countries.forEach(country => {
+  countryNamesMap[country.name.toLowerCase()] = country.flag;
+});
+
+// Функция для получения emoji флага по коду или названию страны
+const getCountryFlag = (countryValue) => {
+  if (!countryValue) {
+    console.warn('⚠️ Пустое значение страны');
+    return '🌍'; // Fallback флаг
+  }
+  
+  const value = countryValue.trim();
+  console.log('🔍 Поиск флага для:', value);
+  
+  // Если значение уже является emoji флагом, возвращаем как есть
+  const flagRegex = /[\u{1F1E6}-\u{1F1FF}]{2}/u;
+  if (flagRegex.test(value)) {
+    console.log('✅ Значение уже является флагом:', value);
+    return value;
+  }
+  
+  // Ищем по коду страны (2 буквы, верхний регистр)
+  const upperValue = value.toUpperCase();
+  if (upperValue.length === 2) {
+    const flag = countryFlags[upperValue];
+    if (flag) {
+      console.log('✅ Найден флаг по коду:', upperValue, '->', flag);
+      // Убеждаемся, что возвращаем именно флаг (emoji), а не код
+      if (flag.length > 2 || /[\u{1F1E6}-\u{1F1FF}]/u.test(flag)) {
+        return flag;
+      } else {
+        console.error('❌ ОШИБКА: В маппинге хранится не флаг, а код!', upperValue, '->', flag);
+      }
+    } else {
+      console.warn('⚠️ Код страны не найден в маппинге:', upperValue, 'Доступные коды:', Object.keys(countryFlags).slice(0, 10));
+    }
+  }
+  
+  // Ищем по названию страны (в нижнем регистре)
+  const lowerValue = value.toLowerCase();
+  if (countryNamesMap[lowerValue]) {
+    console.log('✅ Найден флаг по названию:', lowerValue, '->', countryNamesMap[lowerValue]);
+    return countryNamesMap[lowerValue];
+  }
+  
+  // Если не нашли, возвращаем fallback флаг
+  console.warn('⚠️ Флаг не найден для:', value, 'используется fallback');
+  return '🌍';
+};
+
+const CircularTimer = ({ endTime, size = 120, strokeWidth = 6, originalDuration = null, isUserLeader = false, bidInfo = null }) => {
   const [timeLeft, setTimeLeft] = useState({
     days: 0,
     hours: 0,
@@ -236,7 +308,25 @@ const CircularTimer = ({ endTime, size = 120, strokeWidth = 6, originalDuration 
         
       </svg>
       <div className="circular-timer-content">
-        <div className="circular-timer-time">{formatTime()}</div>
+        {bidInfo ? (
+          <div className="circular-timer-bid-info">
+            <div className="circular-timer-flag">
+              {(() => {
+                const flag = getCountryFlag(bidInfo.country);
+                console.log('🏳️ Отображение флага. Входное значение:', bidInfo.country, 'Результат:', flag);
+                // Убеждаемся, что возвращаем именно флаг, а не код
+                if (!flag || flag.length === 2) {
+                  console.error('❌ ОШИБКА: Возвращается не флаг, а код!', flag);
+                  return '🌍';
+                }
+                return flag;
+              })()}
+            </div>
+            <div className="circular-timer-user-number">{bidInfo.userIdNumber}</div>
+          </div>
+        ) : (
+          <div className="circular-timer-time">{formatTime()}</div>
+        )}
       </div>
     </div>
   );

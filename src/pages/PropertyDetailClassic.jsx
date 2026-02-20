@@ -76,6 +76,8 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
   })
   const [selectedDocument, setSelectedDocument] = useState(null) // Выбранный документ для просмотра
   const [processedDocuments, setProcessedDocuments] = useState([]) // Обработанные документы
+  const [timerBidInfo, setTimerBidInfo] = useState(null) // Информация о ставке для отображения в таймере (флаг и номер)
+  const shownLeaderInfoRef = useRef(null) // Ref для отслеживания, какому лидеру уже показывали информацию
   
   // Отслеживаем изменения currentBid и запускаем анимацию при росте
   useEffect(() => {
@@ -671,23 +673,62 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
             // Сохраняем информацию о лидере
             setCurrentLeader({
               id: leaderBid.user_id,
-              firstName: leaderBid.first_name || '',
-              lastName: leaderBid.last_name || '',
-              email: leaderBid.email || '',
+              userId: leaderBid.user_id,
+              userIdNumber: leaderBid.user_id_number,
               bidAmount: maxBid,
               bidDate: leaderBid.created_at
             })
             
             // Обновляем ID текущего лидера
+            const previousLeaderId = currentLeaderId
             setCurrentLeaderId(newCurrentLeaderId)
             
+            // Если лидер изменился и мы еще не показывали информацию об этом лидере, получаем данные и показываем
+            if (previousLeaderId !== newCurrentLeaderId && leaderBid.user_id && shownLeaderInfoRef.current !== newCurrentLeaderId) {
+              shownLeaderInfoRef.current = newCurrentLeaderId // Помечаем, что показали информацию об этом лидере
+              
+              try {
+                const leaderUserResponse = await fetch(`${API_BASE_URL}/users/${leaderBid.user_id}`)
+                if (leaderUserResponse.ok) {
+                  const leaderUserData = await leaderUserResponse.json()
+                  if (leaderUserData.success && leaderUserData.data) {
+                    const leaderUser = leaderUserData.data
+                    // Показываем флаг и номер нового лидера в таймере на 3 секунды
+                    setTimerBidInfo({
+                      country: leaderUser.country || '',
+                      userIdNumber: leaderUser.user_id_number || leaderBid.user_id
+                    })
+                    
+                    // Скрываем информацию через 3 секунды
+                    setTimeout(() => {
+                      setTimerBidInfo(null)
+                    }, 3000)
+                    
+                    console.log('🏳️ Показан новый лидер в таймере:', {
+                      userId: leaderBid.user_id,
+                      userIdNumber: leaderUser.user_id_number,
+                      country: leaderUser.country
+                    })
+                  }
+                }
+              } catch (leaderError) {
+                console.warn('⚠️ Не удалось получить данные лидера для таймера:', leaderError)
+              }
+            }
+            
             // Проверяем, является ли текущий пользователь лидером
-            const isUserCurrentlyLeader = userId && newCurrentLeaderId === userId
+            // Приводим к числу для корректного сравнения
+            const userIdNum = userId ? parseInt(userId) : null
+            const leaderIdNum = newCurrentLeaderId ? parseInt(newCurrentLeaderId) : null
+            const isUserCurrentlyLeader = userIdNum && leaderIdNum && userIdNum === leaderIdNum
             if (isUserCurrentlyLeader) {
               setIsUserLeader(true)
-              console.log('🏆 Пользователь является лидером!', { userId, newCurrentLeaderId, maxBid })
+              console.log('🏆 Пользователь является лидером!', { userId: userIdNum, leaderId: leaderIdNum, maxBid })
             } else {
               setIsUserLeader(false)
+              if (userIdNum && leaderIdNum) {
+                console.log('ℹ️ Пользователь не лидер:', { userId: userIdNum, leaderId: leaderIdNum })
+              }
             }
             
             // Проверяем, изменился ли лидер (только если это не первая загрузка)
@@ -731,9 +772,14 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
               if (userBids.length > 0) {
                 const userMaxBid = Math.max(...userBids.map(b => b.bid_amount))
                 // Если пользователь сделал новую ставку (стал лидером), сбрасываем флаг
-                if (newCurrentLeaderId === userId) {
+                // Приводим к числу для корректного сравнения
+                const userIdNum = userId ? parseInt(userId) : null
+                const leaderIdNum = newCurrentLeaderId ? parseInt(newCurrentLeaderId) : null
+                if (userIdNum && leaderIdNum && userIdNum === leaderIdNum) {
                   setBidOutbidShown(false)
                   wasUserLeaderRef.current = true
+                  setIsUserLeader(true)
+                  console.log('✅ Пользователь стал лидером после ставки:', { userId: userIdNum, leaderId: leaderIdNum })
                 }
                 setUserLastBid(userMaxBid)
               } else {
@@ -863,6 +909,60 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
   // Сохраняем победителя когда таймер закончился
   useEffect(() => {
     if (!timerExpired || !isAuctionProperty || !currentLeader || !displayProperty.id) return;
+    
+    // Проверяем, является ли текущий пользователь победителем
+    const checkIfUserWon = async () => {
+      try {
+        const isClerkAuth = user && userLoaded;
+        const isOldAuth = isAuthenticated();
+        
+        let userId = null;
+        if (isClerkAuth && user) {
+          const savedUserId = localStorage.getItem('userId');
+          if (savedUserId && /^\d+$/.test(savedUserId)) {
+            userId = parseInt(savedUserId);
+          } else {
+            try {
+              const userEmail = user.primaryEmailAddress?.emailAddress || user.emailAddresses?.[0]?.emailAddress;
+              if (userEmail) {
+                const userResponse = await fetch(`${API_BASE_URL}/users/email/${encodeURIComponent(userEmail)}`);
+                if (userResponse.ok) {
+                  const userData = await userResponse.json();
+                  if (userData.success && userData.data && userData.data.id) {
+                    userId = userData.data.id;
+                    localStorage.setItem('userId', String(userId));
+                  }
+                }
+              }
+            } catch (e) {
+              console.warn('Не удалось получить userId:', e);
+            }
+          }
+        } else if (isOldAuth) {
+          const { getUserData } = await import('../services/authService');
+          const userData = getUserData();
+          userId = userData?.id;
+        }
+        
+        if (userId && currentLeader) {
+          const userIdNum = parseInt(userId);
+          const leaderIdNum = currentLeader.userId ? parseInt(currentLeader.userId) : (currentLeader.id ? parseInt(currentLeader.id) : null);
+          const userWon = leaderIdNum && userIdNum === leaderIdNum;
+          
+          if (userWon) {
+            setIsUserLeader(true);
+            console.log('🏆 Пользователь выиграл аукцион!', { userId: userIdNum, leaderId: leaderIdNum, currentLeader });
+          } else {
+            setIsUserLeader(false);
+            console.log('ℹ️ Пользователь не выиграл аукцион:', { userId: userIdNum, leaderId: leaderIdNum, currentLeader });
+          }
+        }
+      } catch (error) {
+        console.warn('⚠️ Ошибка при проверке победителя:', error);
+      }
+    };
+    
+    checkIfUserWon();
     
     const saveWinner = async () => {
       try {
@@ -1463,6 +1563,47 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
         // Сохраняем ставку пользователя для проверки перебития
         setUserLastBid(amount)
         setBidOutbidShown(false) // Сбрасываем флаг при новой ставке
+        
+        // После создания ставки пользователь становится лидером (временно, до обновления с сервера)
+        if (userId) {
+          const userIdNum = parseInt(userId)
+          // Временно устанавливаем пользователя как лидера
+          setIsUserLeader(true)
+          wasUserLeaderRef.current = true
+          
+          // Если пользователь стал новым лидером, показываем его информацию в таймере один раз
+          if (currentLeaderId !== userIdNum && shownLeaderInfoRef.current !== userIdNum) {
+            shownLeaderInfoRef.current = userIdNum // Помечаем, что показали информацию
+            
+            setCurrentLeaderId(userIdNum)
+            console.log('✅ После создания ставки пользователь временно установлен как лидер:', userIdNum)
+            
+            // Получаем данные пользователя для отображения в таймере
+            try {
+              const userResponse = await fetch(`${API_BASE_URL}/users/${userId}`)
+              if (userResponse.ok) {
+                const userData = await userResponse.json()
+                if (userData.success && userData.data) {
+                  const user = userData.data
+                  // Показываем флаг и номер в таймере на 3 секунды
+                  setTimerBidInfo({
+                    country: user.country || '',
+                    userIdNumber: user.user_id_number || userId
+                  })
+                  
+                  // Скрываем информацию через 3 секунды
+                  setTimeout(() => {
+                    setTimerBidInfo(null)
+                  }, 3000)
+                }
+              }
+            } catch (userError) {
+              console.warn('⚠️ Не удалось получить данные пользователя для таймера:', userError)
+            }
+          } else {
+            setCurrentLeaderId(userIdNum)
+          }
+        }
         // После новой ставки пользователь становится лидером
         wasUserLeaderRef.current = true
         // После успешной ставки пользователь становится лидером
@@ -1513,15 +1654,48 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                 }
                 
                 // Обновляем информацию о лидере
+                const previousLeaderIdSync = currentLeaderId
                 setCurrentLeader({
                   id: leaderBid.user_id,
-                  firstName: leaderBid.first_name || '',
-                  lastName: leaderBid.last_name || '',
-                  email: leaderBid.email || '',
+                  userId: leaderBid.user_id,
+                  userIdNumber: leaderBid.user_id_number,
                   bidAmount: maxBid,
                   bidDate: leaderBid.created_at
                 })
                 setCurrentLeaderId(newCurrentLeaderId)
+                
+                // Если лидер изменился и мы еще не показывали информацию об этом лидере, получаем данные и показываем
+                if (previousLeaderIdSync !== newCurrentLeaderId && leaderBid.user_id && shownLeaderInfoRef.current !== newCurrentLeaderId) {
+                  shownLeaderInfoRef.current = newCurrentLeaderId // Помечаем, что показали информацию об этом лидере
+                  
+                  try {
+                    const leaderUserResponse = await fetch(`${API_BASE_URL}/users/${leaderBid.user_id}`)
+                    if (leaderUserResponse.ok) {
+                      const leaderUserData = await leaderUserResponse.json()
+                      if (leaderUserData.success && leaderUserData.data) {
+                        const leaderUser = leaderUserData.data
+                        // Показываем флаг и номер нового лидера в таймере на 3 секунды
+                        setTimerBidInfo({
+                          country: leaderUser.country || '',
+                          userIdNumber: leaderUser.user_id_number || leaderBid.user_id
+                        })
+                        
+                        // Скрываем информацию через 3 секунды
+                        setTimeout(() => {
+                          setTimerBidInfo(null)
+                        }, 3000)
+                        
+                        console.log('🏳️ Показан новый лидер в таймере (после синхронизации):', {
+                          userId: leaderBid.user_id,
+                          userIdNumber: leaderUser.user_id_number,
+                          country: leaderUser.country
+                        })
+                      }
+                    }
+                  } catch (leaderError) {
+                    console.warn('⚠️ Не удалось получить данные лидера для таймера:', leaderError)
+                  }
+                }
                 
                 setCurrentBid(prev => {
                   if (prev !== maxBid) {
@@ -1539,9 +1713,15 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                     const userMaxBid = Math.max(...userBids.map(b => b.bid_amount))
                     setUserLastBid(userMaxBid)
                     setBidOutbidShown(false)
-                    const isUserLeaderNow = leaderBid.user_id === userId
+                    // Приводим к числу для корректного сравнения
+                    const userIdNum = userId ? parseInt(userId) : null
+                    const leaderIdNum = leaderBid.user_id ? parseInt(leaderBid.user_id) : null
+                    const isUserLeaderNow = userIdNum && leaderIdNum && userIdNum === leaderIdNum
                     setIsUserLeader(isUserLeaderNow)
                     wasUserLeaderRef.current = isUserLeaderNow
+                    if (isUserLeaderNow) {
+                      console.log('✅ Пользователь является лидером после синхронизации:', { userId: userIdNum, leaderId: leaderIdNum })
+                    }
                     console.log('✅ Обновлена userLastBid после синхронизации:', userMaxBid)
                   }
                 }
@@ -2294,6 +2474,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                           strokeWidth={8}
                           originalDuration={displayProperty.test_timer_duration || originalTestTimerDuration}
                           isUserLeader={isUserLeader}
+                          bidInfo={timerBidInfo}
                         />
                       )}
                       {/* Отображение лидера под таймером */}
@@ -2302,9 +2483,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                         <div className="auction-leader-card auction-leader-card--exiting">
                           <div className="auction-leader-label">Лидер аукциона</div>
                           <div className="auction-leader-name">
-                            {previousLeader.firstName && previousLeader.lastName 
-                              ? `${previousLeader.firstName} ${previousLeader.lastName}`
-                              : previousLeader.email || 'Игрок'}
+                            {previousLeader.userIdNumber || previousLeader.userId || previousLeader.id || 'Неизвестно'}
                           </div>
                           <div className="auction-leader-bid">
                             Ставка: {displayProperty.currency === 'USD' ? '$' : displayProperty.currency === 'EUR' ? '€' : displayProperty.currency === 'BYN' ? 'Br' : ''}
@@ -2317,9 +2496,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                         <div className={`auction-leader-card ${isLeaderChanging ? 'auction-leader-card--entering' : ''}`}>
                           <div className="auction-leader-label">Лидер аукциона</div>
                           <div className="auction-leader-name">
-                            {currentLeader.firstName && currentLeader.lastName 
-                              ? `${currentLeader.firstName} ${currentLeader.lastName}`
-                              : currentLeader.email || 'Игрок'}
+                            {currentLeader.userIdNumber || currentLeader.userId || currentLeader.id}
                           </div>
                           <div className="auction-leader-bid">
                             Ставка: {displayProperty.currency === 'USD' ? '$' : displayProperty.currency === 'EUR' ? '€' : displayProperty.currency === 'BYN' ? 'Br' : ''}
@@ -2332,9 +2509,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                         <div className="auction-winner-card">
                           <div className="auction-winner-label">🏆 Победитель аукциона</div>
                           <div className="auction-winner-name">
-                            {currentLeader.firstName && currentLeader.lastName 
-                              ? `${currentLeader.firstName} ${currentLeader.lastName}`
-                              : currentLeader.email || 'Игрок'}
+                            {currentLeader.userIdNumber || currentLeader.userId || currentLeader.id}
                           </div>
                           <div className="auction-winner-bid">
                             Выигрышная ставка: {displayProperty.currency === 'USD' ? '$' : displayProperty.currency === 'EUR' ? '€' : displayProperty.currency === 'BYN' ? 'Br' : ''}
@@ -2362,9 +2537,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                         <div className="auction-leader-card auction-leader-card--exiting">
                           <div className="auction-leader-label">Лидер аукциона</div>
                           <div className="auction-leader-name">
-                            {previousLeader.firstName && previousLeader.lastName 
-                              ? `${previousLeader.firstName} ${previousLeader.lastName}`
-                              : previousLeader.email || 'Игрок'}
+                            {previousLeader.userIdNumber || previousLeader.userId || previousLeader.id || 'Неизвестно'}
                           </div>
                           <div className="auction-leader-bid">
                             Ставка: {displayProperty.currency === 'USD' ? '$' : displayProperty.currency === 'EUR' ? '€' : displayProperty.currency === 'BYN' ? 'Br' : ''}
@@ -2377,9 +2550,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                         <div className={`auction-leader-card ${isLeaderChanging ? 'auction-leader-card--entering' : ''}`}>
                           <div className="auction-leader-label">Лидер аукциона</div>
                           <div className="auction-leader-name">
-                            {currentLeader.firstName && currentLeader.lastName 
-                              ? `${currentLeader.firstName} ${currentLeader.lastName}`
-                              : currentLeader.email || 'Игрок'}
+                            {currentLeader.userIdNumber || currentLeader.userId || currentLeader.id}
                           </div>
                           <div className="auction-leader-bid">
                             Ставка: {displayProperty.currency === 'USD' ? '$' : displayProperty.currency === 'EUR' ? '€' : displayProperty.currency === 'BYN' ? 'Br' : ''}
@@ -2392,9 +2563,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                         <div className="auction-winner-card">
                           <div className="auction-winner-label">🏆 Победитель аукциона</div>
                           <div className="auction-winner-name">
-                            {currentLeader.firstName && currentLeader.lastName 
-                              ? `${currentLeader.firstName} ${currentLeader.lastName}`
-                              : currentLeader.email || 'Игрок'}
+                            {currentLeader.userIdNumber || currentLeader.userId || currentLeader.id}
                           </div>
                           <div className="auction-winner-bid">
                             Выигрышная ставка: {displayProperty.currency === 'USD' ? '$' : displayProperty.currency === 'EUR' ? '€' : displayProperty.currency === 'BYN' ? 'Br' : ''}
@@ -2409,9 +2578,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                     <div className="auction-leader-card">
                       <div className="auction-leader-label">Текущий лидер</div>
                       <div className="auction-leader-name">
-                        {currentLeader.firstName && currentLeader.lastName 
-                          ? `${currentLeader.firstName} ${currentLeader.lastName}`
-                          : currentLeader.email || 'Игрок'}
+                        {currentLeader.userIdNumber || currentLeader.userId || currentLeader.id}
                       </div>
                       <div className="auction-leader-bid">
                         Ставка: {displayProperty.currency === 'USD' ? '$' : displayProperty.currency === 'EUR' ? '€' : displayProperty.currency === 'BYN' ? 'Br' : ''}
@@ -2537,9 +2704,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                                 <div className="recent-bid-item__user">
                                   <FiUser size={14} />
                                   <span className="recent-bid-item__user-name">
-                                    {bid.first_name && bid.last_name
-                                      ? `${bid.first_name} ${bid.last_name}`
-                                      : bid.email || bid.phone_number || 'Анонимный пользователь'}
+                                    {bid.user_id_number || bid.user_id || 'Неизвестно'}
                                   </span>
                                   {isHighest && (
                                     <span className="recent-bid-item__badge">Лидер</span>

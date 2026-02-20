@@ -231,9 +231,7 @@ const BiddingHistoryModal = ({ isOpen, onClose, property, refreshTrigger }) => {
                           <div className="bid-item__user">
                             <FiUser size={16} />
                             <span className="bid-item__user-name">
-                              {bid.first_name && bid.last_name
-                                ? `${bid.first_name} ${bid.last_name}`
-                                : bid.email || bid.phone_number || 'Анонимный пользователь'}
+                              {bid.user_id_number || bid.user_id || 'Неизвестно'}
                             </span>
                             {isHighest && (
                               <span className="bid-item__badge">Лидер</span>
