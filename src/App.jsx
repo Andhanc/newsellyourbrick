@@ -78,6 +78,22 @@ function SessionValidator({ onBlockedChange }) {
   return null
 }
 
+// Компонент для прокрутки страницы вверх при изменении маршрута
+function ScrollToTop() {
+  const location = useLocation()
+
+  useEffect(() => {
+    // Прокручиваем страницу вверх при каждом изменении маршрута
+    window.scrollTo({
+      top: 0,
+      left: 0,
+      behavior: 'instant' // Используем 'instant' вместо 'smooth' для мгновенной прокрутки
+    })
+  }, [location.pathname])
+
+  return null
+}
+
 // Компонент для очистки сессии администратора при переходе с админ-панели
 function AdminSessionCleaner() {
   const location = useLocation()
@@ -188,6 +204,7 @@ function App() {
   return (
     <Router>
       <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+      <ScrollToTop />
       <SessionValidator onBlockedChange={setIsBlocked} />
       <AdminSessionCleaner />
       <ClerkAuthSync />

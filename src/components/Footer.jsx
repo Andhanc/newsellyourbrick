@@ -16,7 +16,8 @@ const Footer = () => {
   const scrollToTop = () => {
     window.scrollTo({
       top: 0,
-      behavior: 'smooth'
+      left: 0,
+      behavior: 'instant' // Мгновенная прокрутка при переходе на новую страницу
     })
   }
 
