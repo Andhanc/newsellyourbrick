@@ -96,14 +96,18 @@ app.get('/health', (req, res) => {
 });
 
 // Root endpoint для проверки доступности
-app.get('/', (req, res) => {
-  res.status(200).json({ 
-    status: 'ok',
-    message: 'Server is running',
-    port: PORT,
-    timestamp: new Date().toISOString()
+// В production режиме НЕ регистрируем этот маршрут, чтобы статика могла отдать index.html
+// В development режиме возвращаем JSON для проверки
+if (process.env.NODE_ENV !== 'production') {
+  app.get('/', (req, res) => {
+    res.status(200).json({ 
+      status: 'ok',
+      message: 'Server is running',
+      port: PORT,
+      timestamp: new Date().toISOString()
+    });
   });
-});
+}
 
 app.use(cors({
   origin: function (origin, callback) {
@@ -317,21 +321,24 @@ const waClient = new Client({
 });
 
 waClient.on('qr', (qr) => {
-  console.log('📲 Отсканируйте этот QR-код в WhatsApp (телефон, который будет отправлять коды):');
   // Сохраняем QR-код для отображения в футере
   currentQRCode = qr;
+  
+  // Выводим компактный QR-код
+  console.log('\n📲 WhatsApp QR-код для сканирования:');
+  console.log('═══════════════════════════════════════════════════════');
   try {
     // Используем минимальный размер QR-кода для консоли
-    qrcode.generate(qr, { 
-      small: true,
-      // Дополнительные опции для уменьшения размера (если поддерживается)
-    });
-    // Также выводим URL для ручного ввода
-    console.log('\n💡 Если QR-код не сканируется, введите этот код вручную:');
-    console.log(`   ${qr}\n`);
+    // qrcode-terminal автоматически использует small: true для компактного вывода
+    qrcode.generate(qr, { small: true });
   } catch (e) {
-    console.log('QR-код (текстом):', qr);
+    // Если не удалось сгенерировать, просто выводим URL
+    console.log('⚠️ Не удалось сгенерировать QR-код, используйте URL ниже');
   }
+  console.log('═══════════════════════════════════════════════════════');
+  console.log('💡 Альтернатива: Введите этот код вручную в WhatsApp:');
+  console.log(`   ${qr}`);
+  console.log('═══════════════════════════════════════════════════════\n');
 });
 
 // Обработчик события authenticated - клиент успешно авторизован
@@ -8887,27 +8894,34 @@ if (process.env.NODE_ENV === 'production') {
     }
     
     console.log('📦 Production режим: раздача статики из dist');
-    // Раздаем статические файлы из dist (только для не-API маршрутов)
-    app.use((req, res, next) => {
-      // Пропускаем API и uploads маршруты
-      if (req.path.startsWith('/api') || req.path.startsWith('/uploads') || req.path.startsWith('/health')) {
-        return next();
-      }
-      // Для остальных маршрутов проверяем статические файлы
-      express.static(distPath)(req, res, next);
-    });
     
-    // Для всех остальных маршрутов отдаем index.html (SPA routing)
-    app.get('*', (req, res) => {
-      // Пропускаем API маршруты
-      if (req.path.startsWith('/api') || req.path.startsWith('/uploads') || req.path.startsWith('/health')) {
-        return res.status(404).json({ success: false, error: 'Not found' });
+    // Раздаем статические файлы из dist (JS, CSS, изображения и т.д.)
+    // Это должно быть ДО обработчика всех маршрутов
+    app.use(express.static(distPath, {
+      // Не кэшируем index.html, но кэшируем остальные файлы
+      setHeaders: (res, path) => {
+        if (path.endsWith('index.html')) {
+          res.setHeader('Cache-Control', 'no-cache');
+        } else {
+          res.setHeader('Cache-Control', 'public, max-age=31536000');
+        }
       }
-      // Отдаем index.html для всех остальных маршрутов
+    }));
+    
+    // Для всех остальных маршрутов (не API, не uploads, не health) отдаем index.html (SPA routing)
+    // ВАЖНО: Это должно быть ПОСЛЕ всех API маршрутов, но ПЕРЕД запуском сервера
+    app.get('*', (req, res, next) => {
+      // Пропускаем API маршруты, uploads и health
+      if (req.path.startsWith('/api') || req.path.startsWith('/uploads') || req.path.startsWith('/health')) {
+        return next(); // Передаем следующему обработчику (которого нет, поэтому вернется 404)
+      }
+      
+      // Отдаем index.html для всех остальных маршрутов (SPA routing)
       const indexPath = join(distPath, 'index.html');
       if (fs.existsSync(indexPath)) {
         res.sendFile(indexPath);
       } else {
+        console.error(`❌ index.html не найден по пути: ${indexPath}`);
         res.status(404).send('index.html not found');
       }
     });
