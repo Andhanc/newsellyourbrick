@@ -1619,8 +1619,15 @@ app.post('/api/documents', upload.single('document_photo'), (req, res) => {
     }
     
     // Преобразуем user_id в число и проверяем валидность
-    const userId = parseInt(req.body.user_id, 10);
+    const userIdStr = String(req.body.user_id).trim();
+    if (userIdStr === '' || userIdStr === 'null' || userIdStr === 'undefined') {
+      console.error('❌ Получен невалидный user_id:', req.body.user_id);
+      return res.status(400).json({ success: false, error: 'Неверный формат user_id. Ожидается положительное число' });
+    }
+    
+    const userId = parseInt(userIdStr, 10);
     if (isNaN(userId) || userId <= 0) {
+      console.error('❌ Не удалось преобразовать user_id в число:', req.body.user_id);
       return res.status(400).json({ success: false, error: 'Неверный формат user_id. Ожидается положительное число' });
     }
     

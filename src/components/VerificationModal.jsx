@@ -199,13 +199,21 @@ const VerificationModal = ({ isOpen, onClose, userId, onComplete }) => {
   }
 
   const uploadPhoto = async (file, documentType) => {
+    // Проверяем, что userId существует и является валидным числом
     if (!userId) {
       return { success: false, error: 'ID пользователя не найден' }
     }
 
+    // Преобразуем userId в число и проверяем валидность
+    const numericUserId = typeof userId === 'string' ? parseInt(userId, 10) : Number(userId)
+    if (isNaN(numericUserId) || numericUserId <= 0) {
+      console.error('❌ Неверный формат userId:', userId)
+      return { success: false, error: 'Неверный формат ID пользователя. Ожидается положительное число' }
+    }
+
     const formData = new FormData()
     formData.append('document_photo', file)
-    formData.append('user_id', String(userId))
+    formData.append('user_id', String(numericUserId))
     formData.append('document_type', documentType)
 
     try {

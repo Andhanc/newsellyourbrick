@@ -155,13 +155,21 @@ const Profile = () => {
       console.error('userId не установлен:', userId)
       return
     }
+
+    // Преобразуем userId в число и проверяем валидность
+    const numericUserId = typeof userId === 'string' ? parseInt(userId, 10) : Number(userId)
+    if (isNaN(numericUserId) || numericUserId <= 0) {
+      console.error('❌ Неверный формат userId:', userId)
+      showNotification('Ошибка: Неверный формат ID пользователя. Ожидается положительное число')
+      return
+    }
     
     setUploading(prev => ({ ...prev, [type]: true }))
     
     try {
       const formData = new FormData()
       formData.append('document_photo', file)
-      formData.append('user_id', String(userId))
+      formData.append('user_id', String(numericUserId))
       
       // Определяем тип документа
       let documentType = 'passport'
@@ -546,22 +554,28 @@ const Profile = () => {
             console.warn('⚠️ Не удалось получить ID пользователя из БД')
             // Fallback на ID из localStorage
             const fallbackId = localStorage.getItem('userId')
-            if (fallbackId) {
-              setUserId(fallbackId)
-              await loadUserDataFromDB(fallbackId)
-              loadUserDocuments(fallbackId)
-              loadVerificationStatus(fallbackId)
+            if (fallbackId && fallbackId !== 'null' && fallbackId !== 'undefined' && /^\d+$/.test(fallbackId)) {
+              const numericFallbackId = parseInt(fallbackId, 10)
+              if (!isNaN(numericFallbackId) && numericFallbackId > 0) {
+                setUserId(numericFallbackId)
+                await loadUserDataFromDB(numericFallbackId)
+                loadUserDocuments(numericFallbackId)
+                loadVerificationStatus(numericFallbackId)
+              }
             }
           }
         } catch (error) {
           console.error('❌ Ошибка при получении/создании пользователя в БД:', error)
           // Fallback на ID из localStorage
           const fallbackId = localStorage.getItem('userId')
-          if (fallbackId) {
-            setUserId(fallbackId)
-            await loadUserDataFromDB(fallbackId)
-            loadUserDocuments(fallbackId)
-            loadVerificationStatus(fallbackId)
+          if (fallbackId && fallbackId !== 'null' && fallbackId !== 'undefined' && /^\d+$/.test(fallbackId)) {
+            const numericFallbackId = parseInt(fallbackId, 10)
+            if (!isNaN(numericFallbackId) && numericFallbackId > 0) {
+              setUserId(numericFallbackId)
+              await loadUserDataFromDB(numericFallbackId)
+              loadUserDocuments(numericFallbackId)
+              loadVerificationStatus(numericFallbackId)
+            }
           }
         }
       }
@@ -685,16 +699,24 @@ const Profile = () => {
               console.warn('⚠️ Не удалось получить ID пользователя из БД')
               const fallbackId = userData.id || localStorage.getItem('userId')
               if (fallbackId) {
-                setUserId(fallbackId)
-                loadUserDocuments(fallbackId)
+                // Преобразуем fallbackId в число и проверяем валидность
+                const numericFallbackId = typeof fallbackId === 'string' ? parseInt(fallbackId, 10) : Number(fallbackId)
+                if (!isNaN(numericFallbackId) && numericFallbackId > 0) {
+                  setUserId(numericFallbackId)
+                  loadUserDocuments(numericFallbackId)
+                }
               }
             }
           } catch (error) {
             console.error('❌ Ошибка при получении/создании пользователя в БД:', error)
             const fallbackId = userData.id || localStorage.getItem('userId')
             if (fallbackId) {
-              setUserId(fallbackId)
-              loadUserDocuments(fallbackId)
+              // Преобразуем fallbackId в число и проверяем валидность
+              const numericFallbackId = typeof fallbackId === 'string' ? parseInt(fallbackId, 10) : Number(fallbackId)
+              if (!isNaN(numericFallbackId) && numericFallbackId > 0) {
+                setUserId(numericFallbackId)
+                loadUserDocuments(numericFallbackId)
+              }
             }
           }
         }

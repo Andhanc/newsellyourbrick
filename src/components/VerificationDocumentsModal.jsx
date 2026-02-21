@@ -82,12 +82,31 @@ const VerificationDocumentsModal = ({ isOpen, onClose, userId, onComplete }) => 
       return newErrors;
     });
 
+    // Проверяем userId перед использованием
+    if (!userId) {
+      setErrors(prev => ({
+        ...prev,
+        [key]: 'ID пользователя не найден. Пожалуйста, обновите страницу.'
+      }));
+      return;
+    }
+
+    // Преобразуем userId в число и проверяем валидность
+    const numericUserId = typeof userId === 'string' ? parseInt(userId, 10) : Number(userId);
+    if (isNaN(numericUserId) || numericUserId <= 0) {
+      setErrors(prev => ({
+        ...prev,
+        [key]: 'Неверный формат ID пользователя. Ожидается положительное число'
+      }));
+      return;
+    }
+
     setUploading(prev => ({ ...prev, [key]: true }));
 
     try {
       const formData = new FormData();
       formData.append('document_photo', file);
-      formData.append('user_id', userId);
+      formData.append('user_id', String(numericUserId));
       formData.append('document_type', documentTypes.find(d => d.key === key).documentType);
 
       const response = await fetch(`${API_BASE_URL}/documents`, {

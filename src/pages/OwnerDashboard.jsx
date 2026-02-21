@@ -209,9 +209,20 @@ const OwnerDashboard = () => {
         // Загружаем статус верификации и документы
         // Используем числовой ID из БД (из localStorage), если доступен, иначе userData.id
         const dbUserId = localStorage.getItem('userId')
-        const effectiveUserId = (dbUserId && /^\d+$/.test(dbUserId)) ? dbUserId : userData.id
+        let effectiveUserId = null
         
-        if (effectiveUserId) {
+        // Проверяем dbUserId из localStorage
+        if (dbUserId && dbUserId !== 'null' && dbUserId !== 'undefined' && /^\d+$/.test(dbUserId)) {
+          effectiveUserId = parseInt(dbUserId, 10)
+        } else if (userData.id) {
+          // Проверяем userData.id
+          const userDataId = typeof userData.id === 'string' ? parseInt(userData.id, 10) : Number(userData.id)
+          if (!isNaN(userDataId) && userDataId > 0) {
+            effectiveUserId = userDataId
+          }
+        }
+        
+        if (effectiveUserId && !isNaN(effectiveUserId) && effectiveUserId > 0) {
           setUserId(effectiveUserId)
           // При первой загрузке проверяем непросмотренное уведомление о верификации
           checkVerificationNotification(effectiveUserId)
@@ -524,12 +535,20 @@ const OwnerDashboard = () => {
       return
     }
 
+    // Преобразуем userId в число и проверяем валидность
+    const numericUserId = typeof userId === 'string' ? parseInt(userId, 10) : Number(userId)
+    if (isNaN(numericUserId) || numericUserId <= 0) {
+      console.error('❌ Неверный формат userId:', userId)
+      showNotification('Ошибка: Неверный формат ID пользователя. Ожидается положительное число')
+      return
+    }
+
     setUploading(prev => ({ ...prev, [type]: true }))
 
     try {
       const formData = new FormData()
       formData.append('document_photo', file)
-      formData.append('user_id', String(userId))
+      formData.append('user_id', String(numericUserId))
       formData.append('document_type', type === 'passport' ? 'passport' : 'passport_with_face')
 
       console.log('📤 Загрузка документа:', {
@@ -659,19 +678,27 @@ const OwnerDashboard = () => {
 
       // Используем числовой ID из БД (из localStorage), а не Clerk ID
       const dbUserId = localStorage.getItem('userId')
-      if (!dbUserId || !/^\d+$/.test(dbUserId)) {
+      if (!dbUserId) {
         showNotification('Ошибка: ID пользователя не найден. Пожалуйста, обновите страницу.')
-        console.error('userId не установлен:', dbUserId)
+        console.error('userId не установлен в localStorage')
+        return
+      }
+
+      // Преобразуем userId в число и проверяем валидность
+      const numericUserId = parseInt(dbUserId, 10)
+      if (isNaN(numericUserId) || numericUserId <= 0) {
+        showNotification('Ошибка: Неверный формат ID пользователя. Ожидается положительное число')
+        console.error('Неверный формат userId:', dbUserId)
         return
       }
 
       console.log('💾 Сохранение данных профиля в БД:', {
-        userId: dbUserId,
+        userId: numericUserId,
         updateData
       })
 
       // Обновляем данные в БД
-      const response = await fetch(`${API_BASE_URL}/users/${dbUserId}`, {
+      const response = await fetch(`${API_BASE_URL}/users/${numericUserId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json'

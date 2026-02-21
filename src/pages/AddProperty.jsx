@@ -758,8 +758,22 @@ const AddProperty = () => {
       // Подготавливаем данные для отправки
       const formDataToSend = new FormData()
       
+      // Проверяем и преобразуем userId в число
+      if (!userId) {
+        setIsSubmitting(false)
+        showNotification('Ошибка: ID пользователя не найден. Пожалуйста, обновите страницу.')
+        return false
+      }
+      
+      const numericUserId = typeof userId === 'string' ? parseInt(userId, 10) : Number(userId)
+      if (isNaN(numericUserId) || numericUserId <= 0) {
+        setIsSubmitting(false)
+        showNotification('Ошибка: Неверный формат ID пользователя. Ожидается положительное число')
+        return false
+      }
+      
       // Основные данные
-      formDataToSend.append('user_id', String(userId))
+      formDataToSend.append('user_id', String(numericUserId))
       formDataToSend.append('property_type', formData.propertyType)
       formDataToSend.append('title', formData.title)
       
