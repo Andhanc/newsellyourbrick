@@ -6275,15 +6275,62 @@ app.get('/api/properties/user/:userId', (req, res) => {
 app.put('/api/properties/:id/approve', (req, res) => {
   try {
     const { id } = req.params;
-    const { reviewed_by } = req.body;
+    const { reviewed_by, property_type: requestedPropertyType } = req.body;
 
-    // Используем функцию из propertyQueries, которая работает с новыми таблицами
-    const property = propertyQueries.getById(id);
+    // ВАЖНО: Если property_type передан в запросе, используем его для получения правильного объекта
+    // Это предотвращает получение объекта из неправильной таблицы при дубликатах ID
+    let property = null;
+    if (requestedPropertyType) {
+      console.log(`🔍 Одобрение: получен property_type=${requestedPropertyType} из запроса, используем для поиска`);
+      property = propertyQueries.getById(id, requestedPropertyType);
+      if (!property) {
+        console.error(`❌ Одобрение: объект ID=${id} не найден с типом ${requestedPropertyType} в правильной таблице!`);
+        // НЕ делаем fallback на поиск без типа - это может вернуть объект из неправильной таблицы
+        return res.status(404).json({ 
+          success: false, 
+          error: `Объявление с ID ${id} и типом ${requestedPropertyType} не найдено в правильной таблице` 
+        });
+      }
+    } else {
+      property = propertyQueries.getById(id);
+    }
+    
     if (!property) {
       return res.status(404).json({ success: false, error: 'Объявление не найдено' });
     }
-
-    console.log(`✅ Одобрение объявления ID: ${id}, Тип: ${property.property_type}, Аукцион: ${property.is_auction}`);
+    
+    // КРИТИЧЕСКАЯ ПРОВЕРКА: если был передан тип, убеждаемся что он ТОЧНО совпадает
+    if (requestedPropertyType && property.property_type !== requestedPropertyType) {
+      console.error(`❌ Одобрение: КРИТИЧЕСКАЯ ОШИБКА! Запрошен тип ${requestedPropertyType}, но получен ${property.property_type}`);
+      console.error(`   Source table: ${property.source_table || 'unknown'}`);
+      console.error(`   Это означает, что объект находится в неправильной таблице или имеет неправильный property_type.`);
+      console.error(`   Объект НЕ должен быть одобрен, так как это может привести к публикации неправильного объекта.`);
+      
+      // Дополнительная проверка: возможно, объект находится в неправильной таблице
+      const db = getDatabase();
+      try {
+        // Проверяем, есть ли объект с таким ID в правильной таблице
+        const correctTable = (requestedPropertyType === 'apartment' || requestedPropertyType === 'commercial') 
+          ? 'properties_apartments' 
+          : 'properties_houses';
+        const checkInCorrectTable = db.prepare(`SELECT id, property_type FROM ${correctTable} WHERE id = ?`).get(id);
+        
+        if (checkInCorrectTable) {
+          console.error(`   ⚠️ Объект найден в правильной таблице ${correctTable}, но property_type=${checkInCorrectTable.property_type} не соответствует запрошенному ${requestedPropertyType}`);
+        } else {
+          console.error(`   ⚠️ Объект НЕ найден в правильной таблице ${correctTable}`);
+        }
+      } catch (e) {
+        console.error(`   Ошибка при проверке правильной таблицы:`, e.message);
+      }
+      
+      return res.status(400).json({ 
+        success: false, 
+        error: `Несоответствие типов: запрошен ${requestedPropertyType}, но найден ${property.property_type}. Объект не может быть одобрен.` 
+      });
+    }
+    
+    console.log(`✅ Одобрение объявления ID: ${id}, Тип: ${property.property_type}, Аукцион: ${property.is_auction}, Source: ${property.source_table || 'unknown'}`);
 
     // Проверяем тип запроса (редактирование или удаление)
     const isEdit = property.rejection_reason && property.rejection_reason.startsWith('EDIT:');
@@ -6587,8 +6634,9 @@ app.put('/api/properties/:id/approve', (req, res) => {
       
       if (result.changes === 0) {
         console.warn(`⚠️ Одобрение: объект ID=${id} не был обновлен (changes=0). Проверяем текущий статус...`);
-        // Проверяем текущий статус объекта
-        const currentProperty = propertyQueries.getById(id);
+        // Проверяем текущий статус объекта с указанием правильного типа
+        const propertyTypeForCheck = requestedPropertyType || property.property_type;
+        const currentProperty = propertyQueries.getById(id, propertyTypeForCheck);
         if (currentProperty) {
           console.log(`📊 Текущий статус объекта ID=${id}:`, currentProperty.moderation_status);
           if (currentProperty.moderation_status === 'approved') {
@@ -6609,8 +6657,25 @@ app.put('/api/properties/:id/approve', (req, res) => {
         console.log(`✅ Одобрение: статус обновлен, changes=${result.changes}`);
       }
       
-      // Получаем обновленное объявление для проверки
-      const updatedProperty = propertyQueries.getById(id);
+      // ВАЖНО: Получаем обновленное объявление с указанием правильного типа
+      // Используем requestedPropertyType или property.property_type для гарантии получения из правильной таблицы
+      const propertyTypeForRetrieval = requestedPropertyType || property.property_type;
+      console.log(`🔍 Получение обновленного объекта ID=${id} с типом=${propertyTypeForRetrieval}`);
+      const updatedProperty = propertyQueries.getById(id, propertyTypeForRetrieval);
+      
+      // Если не нашли с указанием типа, пробуем без типа (но это не должно происходить)
+      if (!updatedProperty) {
+        console.warn(`⚠️ Не удалось получить объект с типом, пробуем без типа`);
+        const fallbackProperty = propertyQueries.getById(id);
+        if (fallbackProperty && fallbackProperty.property_type !== propertyTypeForRetrieval) {
+          console.error(`❌ КРИТИЧЕСКАЯ ОШИБКА: получен объект с неправильным типом! Запрошен ${propertyTypeForRetrieval}, получен ${fallbackProperty.property_type}`);
+          return res.status(500).json({ 
+            success: false, 
+            error: `Получен объект с неправильным типом: запрошен ${propertyTypeForRetrieval}, получен ${fallbackProperty.property_type}` 
+          });
+        }
+        return res.status(404).json({ success: false, error: 'Объявление не найдено после обновления' });
+      }
       
       // Запускаем таймер для отслеживания ставок (событийная модель)
       if (updatedProperty && updatedProperty.moderation_status === 'approved') {
@@ -6705,6 +6770,18 @@ app.put('/api/properties/:id/approve', (req, res) => {
         console.warn('Не удалось создать уведомление:', notifError);
       }
 
+      // ВАЖНО: Финальная проверка - убеждаемся, что возвращаем правильный объект
+      if (requestedPropertyType && updatedProperty.property_type !== requestedPropertyType) {
+        console.error(`❌ КРИТИЧЕСКАЯ ОШИБКА перед отправкой ответа! Запрошен тип ${requestedPropertyType}, но updatedProperty имеет тип ${updatedProperty.property_type}`);
+        console.error(`   Source table: ${updatedProperty.source_table || 'unknown'}`);
+        return res.status(500).json({ 
+          success: false, 
+          error: `Получен объект с неправильным типом: запрошен ${requestedPropertyType}, получен ${updatedProperty.property_type}` 
+        });
+      }
+      
+      console.log(`✅ Отправка ответа об одобрении: ID=${updatedProperty.id}, type=${updatedProperty.property_type}, source=${updatedProperty.source_table || 'unknown'}`);
+      
       res.json({ 
         success: true, 
         message: 'Объявление одобрено',

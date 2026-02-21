@@ -774,6 +774,8 @@ const Moderation = () => {
           });
         }
         
+        // ВАЖНО: Отправляем property_type для правильного определения таблицы
+        const propertyType = propertyToApprove?.property_type || propertyToApprove?.propertyType;
         const response = await fetch(`${API_BASE_URL}/properties/${id}/approve`, {
           method: 'PUT',
           headers: {
@@ -781,7 +783,8 @@ const Moderation = () => {
           },
           body: JSON.stringify({
             reviewed_by: adminId,
-            moderation_status: 'approved' // Явно указываем статус одобрения
+            moderation_status: 'approved', // Явно указываем статус одобрения
+            property_type: propertyType // Отправляем тип для правильного определения таблицы
           })
         });
 
