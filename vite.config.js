@@ -35,6 +35,14 @@ export default defineConfig(({ mode }) => {
     console.log('[VITE]    REACT_APP_CLERK_PUBLISHABLE_KEY из process.env:', process.env.REACT_APP_CLERK_PUBLISHABLE_KEY ? '✅ установлен' : '❌ не установлен');
     console.log('[VITE]    REACT_APP_CLERK_PUBLISHABLE_KEY из env файлов:', env.REACT_APP_CLERK_PUBLISHABLE_KEY ? '✅ установлен' : '❌ не установлен');
     console.log('[VITE]    Итоговое значение:', railwayEnv.REACT_APP_CLERK_PUBLISHABLE_KEY ? '✅ установлен' : '❌ не установлен');
+    console.log('[VITE] 📧 EmailJS переменные:');
+    console.log('[VITE]    REACT_APP_EMAILJS_SERVICE_ID из process.env:', process.env.REACT_APP_EMAILJS_SERVICE_ID || process.env.VITE_EMAILJS_SERVICE_ID ? '✅ установлен' : '❌ не установлен');
+    console.log('[VITE]    REACT_APP_EMAILJS_TEMPLATE_ID из process.env:', process.env.REACT_APP_EMAILJS_TEMPLATE_ID || process.env.VITE_EMAILJS_TEMPLATE_ID ? '✅ установлен' : '❌ не установлен');
+    console.log('[VITE]    REACT_APP_EMAILJS_PUBLIC_KEY из process.env:', process.env.REACT_APP_EMAILJS_PUBLIC_KEY || process.env.VITE_EMAILJS_PUBLIC_KEY ? '✅ установлен' : '❌ не установлен');
+    console.log('[VITE]    Итоговые значения EmailJS:');
+    console.log('[VITE]      Service ID:', railwayEnv.REACT_APP_EMAILJS_SERVICE_ID || railwayEnv.VITE_EMAILJS_SERVICE_ID ? '✅ установлен' : '❌ не установлен');
+    console.log('[VITE]      Template ID:', railwayEnv.REACT_APP_EMAILJS_TEMPLATE_ID || railwayEnv.VITE_EMAILJS_TEMPLATE_ID ? '✅ установлен' : '❌ не установлен');
+    console.log('[VITE]      Public Key:', railwayEnv.REACT_APP_EMAILJS_PUBLIC_KEY || railwayEnv.VITE_EMAILJS_PUBLIC_KEY ? '✅ установлен' : '❌ не установлен');
   }
   
   // ============================================================

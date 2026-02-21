@@ -1320,7 +1320,10 @@ export const sendEmailVerificationCode = async (email) => {
     
     // Попытка отправить через backend API
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/email/send-code`, {
+      const apiUrl = `${API_BASE_URL}/auth/email/send-code`
+      console.log('📧 Попытка отправить код через backend:', apiUrl)
+      
+      const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -1334,18 +1337,34 @@ export const sendEmailVerificationCode = async (email) => {
       if (response.ok) {
         const data = await response.json().catch(() => ({}))
         console.log('✅ Backend подтвердил отправку кода:', data.message || 'Код отправлен')
-        // Backend подтвердил отправку, но фактическая отправка идет через EmailJS ниже
-        // Продолжаем выполнение, чтобы отправить через EmailJS
+        if (data.warning) {
+          console.warn('⚠️ Backend предупреждение:', data.warning)
+        }
+        // Если backend успешно отправил, возвращаем успех
+        if (!data.warning) {
+          return {
+            success: true,
+            message: data.message || 'Код отправлен на email'
+          }
+        }
+        // Если есть warning, продолжаем с EmailJS на клиенте
       } else {
         // Если backend вернул ошибку, логируем и продолжаем с EmailJS
         const errorData = await response.json().catch(() => ({}))
-        console.warn('⚠️ Backend вернул ошибку, пробуем EmailJS:', errorData.error || 'Unknown error')
+        console.warn('⚠️ Backend вернул ошибку:', response.status, errorData.error || 'Unknown error')
+        console.warn('   Пробуем отправить через EmailJS на клиенте...')
       }
     } catch (backendError) {
-      console.log('ℹ️ Backend недоступен или ошибка, пробуем EmailJS:', backendError.message)
+      console.log('ℹ️ Backend недоступен или ошибка:', backendError.message)
+      console.log('   Пробуем отправить через EmailJS на клиенте...')
     }
     
-    // Отправка через EmailJS
+    // Отправка через EmailJS на клиенте (если backend не смог отправить)
+    console.log('📧 Проверка EmailJS на клиенте:');
+    console.log('   EMAILJS_SERVICE_ID:', EMAILJS_SERVICE_ID ? EMAILJS_SERVICE_ID.substring(0, 15) + '...' : '❌ не установлен');
+    console.log('   EMAILJS_TEMPLATE_ID:', EMAILJS_TEMPLATE_ID || '❌ не установлен');
+    console.log('   EMAILJS_PUBLIC_KEY:', EMAILJS_PUBLIC_KEY ? EMAILJS_PUBLIC_KEY.substring(0, 15) + '...' : '❌ не установлен');
+    
     if (EMAILJS_SERVICE_ID && EMAILJS_TEMPLATE_ID && EMAILJS_PUBLIC_KEY) {
       try {
         // Вычисляем время истечения (10 минут от текущего времени)

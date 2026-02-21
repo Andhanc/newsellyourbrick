@@ -25,6 +25,20 @@ console.log('[SERVER] 📋 Переменные окружения:');
 console.log('[SERVER]    - SERVER_PORT:', process.env.SERVER_PORT || 'не установлен (будет использован 3000)');
 console.log('[SERVER]    - PORT:', process.env.PORT || 'не установлен');
 console.log('[SERVER]    - NODE_ENV:', process.env.NODE_ENV || 'не установлен');
+console.log('[SERVER] 📧 EmailJS переменные:');
+console.log('[SERVER]    - REACT_APP_EMAILJS_SERVICE_ID:', process.env.REACT_APP_EMAILJS_SERVICE_ID ? '✅ установлен' : '❌ не установлен');
+console.log('[SERVER]    - VITE_EMAILJS_SERVICE_ID:', process.env.VITE_EMAILJS_SERVICE_ID ? '✅ установлен' : '❌ не установлен');
+console.log('[SERVER]    - REACT_APP_EMAILJS_TEMPLATE_ID:', process.env.REACT_APP_EMAILJS_TEMPLATE_ID ? '✅ установлен' : '❌ не установлен');
+console.log('[SERVER]    - VITE_EMAILJS_TEMPLATE_ID:', process.env.VITE_EMAILJS_TEMPLATE_ID ? '✅ установлен' : '❌ не установлен');
+console.log('[SERVER]    - REACT_APP_EMAILJS_PUBLIC_KEY:', process.env.REACT_APP_EMAILJS_PUBLIC_KEY ? '✅ установлен' : '❌ не установлен');
+console.log('[SERVER]    - VITE_EMAILJS_PUBLIC_KEY:', process.env.VITE_EMAILJS_PUBLIC_KEY ? '✅ установлен' : '❌ не установлен');
+const emailJsServiceId = process.env.REACT_APP_EMAILJS_SERVICE_ID || process.env.VITE_EMAILJS_SERVICE_ID || '';
+const emailJsTemplateId = process.env.REACT_APP_EMAILJS_TEMPLATE_ID || process.env.VITE_EMAILJS_TEMPLATE_ID || '';
+const emailJsPublicKey = process.env.REACT_APP_EMAILJS_PUBLIC_KEY || process.env.VITE_EMAILJS_PUBLIC_KEY || '';
+console.log('[SERVER] 📧 Итоговая конфигурация EmailJS:');
+console.log('[SERVER]    - Service ID:', emailJsServiceId ? emailJsServiceId.substring(0, 15) + '...' : '❌ не установлен');
+console.log('[SERVER]    - Template ID:', emailJsTemplateId || '❌ не установлен');
+console.log('[SERVER]    - Public Key:', emailJsPublicKey ? emailJsPublicKey.substring(0, 15) + '...' : '❌ не установлен');
 console.log('[SERVER] ═══════════════════════════════════════════════════════');
 
 const app = express();
@@ -2928,15 +2942,91 @@ app.post('/api/auth/email/send-code', async (req, res) => {
       });
     }
     
-    // В реальном приложении здесь должна быть отправка email
-    // Код уже отправлен через EmailJS на фронтенде
-    // Здесь можно сохранить код в БД для проверки
+    if (!code) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Необходимо указать код верификации' 
+      });
+    }
     
-    res.json({ 
-      success: true, 
-      message: 'Код отправлен на email' 
-    });
+    // Получаем конфигурацию EmailJS из переменных окружения
+    // Проверяем все возможные варианты имен переменных
+    const emailJsConfig = {
+      serviceId: process.env.REACT_APP_EMAILJS_SERVICE_ID || process.env.VITE_EMAILJS_SERVICE_ID || process.env.EMAILJS_SERVICE_ID || '',
+      templateId: process.env.REACT_APP_EMAILJS_TEMPLATE_ID || process.env.VITE_EMAILJS_TEMPLATE_ID || process.env.EMAILJS_TEMPLATE_ID || '',
+      publicKey: process.env.REACT_APP_EMAILJS_PUBLIC_KEY || process.env.VITE_EMAILJS_PUBLIC_KEY || process.env.EMAILJS_PUBLIC_KEY || ''
+    };
+    
+    // Логируем для диагностики
+    console.log('📧 [send-code] Проверка EmailJS конфигурации:');
+    console.log('   REACT_APP_EMAILJS_SERVICE_ID:', process.env.REACT_APP_EMAILJS_SERVICE_ID ? '✅' : '❌');
+    console.log('   VITE_EMAILJS_SERVICE_ID:', process.env.VITE_EMAILJS_SERVICE_ID ? '✅' : '❌');
+    console.log('   Итоговый serviceId:', emailJsConfig.serviceId ? emailJsConfig.serviceId.substring(0, 15) + '...' : '❌ не установлен');
+    console.log('   Итоговый templateId:', emailJsConfig.templateId || '❌ не установлен');
+    console.log('   Итоговый publicKey:', emailJsConfig.publicKey ? emailJsConfig.publicKey.substring(0, 15) + '...' : '❌ не установлен');
+    
+    // Отправляем email через EmailJS API
+    if (emailJsConfig.serviceId && emailJsConfig.templateId && emailJsConfig.publicKey) {
+      try {
+        const emailData = {
+          service_id: emailJsConfig.serviceId,
+          template_id: emailJsConfig.templateId,
+          user_id: emailJsConfig.publicKey,
+          template_params: {
+            to_email: email,
+            email: email,
+            verification_code: code,
+            code: code,
+            subject: 'Код верификации - Sellyourbrick'
+          }
+        };
+        
+        console.log('📧 Отправка кода верификации через EmailJS:', {
+          email: email,
+          serviceId: emailJsConfig.serviceId.substring(0, 15) + '...',
+          templateId: emailJsConfig.templateId
+        });
+        
+        const emailResponse = await axios.post('https://api.emailjs.com/api/v1.0/email/send', emailData, {
+          headers: { 'Content-Type': 'application/json' }
+        });
+        
+        if (emailResponse.status === 200) {
+          console.log(`✅ Email с кодом верификации отправлен на ${email}`);
+          return res.json({ 
+            success: true, 
+            message: 'Код отправлен на email' 
+          });
+        } else {
+          console.warn(`⚠️ EmailJS вернул статус ${emailResponse.status}`);
+          return res.status(500).json({ 
+            success: false, 
+            error: `Ошибка отправки email: статус ${emailResponse.status}` 
+          });
+        }
+      } catch (emailError) {
+        console.error('❌ Ошибка отправки email через EmailJS:', emailError.message);
+        // Если EmailJS не работает, все равно возвращаем успех (код может быть отправлен на фронтенде)
+        return res.json({ 
+          success: true, 
+          message: 'Код отправлен на email',
+          warning: 'EmailJS вернул ошибку, но код может быть отправлен на фронтенде'
+        });
+      }
+    } else {
+      console.warn('⚠️ EmailJS не настроен на сервере. Переменные окружения:');
+      console.warn('   REACT_APP_EMAILJS_SERVICE_ID:', emailJsConfig.serviceId ? '✅' : '❌');
+      console.warn('   REACT_APP_EMAILJS_TEMPLATE_ID:', emailJsConfig.templateId ? '✅' : '❌');
+      console.warn('   REACT_APP_EMAILJS_PUBLIC_KEY:', emailJsConfig.publicKey ? '✅' : '❌');
+      // Если EmailJS не настроен, все равно возвращаем успех (код может быть отправлен на фронтенде)
+      return res.json({ 
+        success: true, 
+        message: 'Код отправлен на email',
+        warning: 'EmailJS не настроен на сервере, код может быть отправлен на фронтенде'
+      });
+    }
   } catch (error) {
+    console.error('❌ Ошибка в /api/auth/email/send-code:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });
@@ -8498,9 +8588,9 @@ async function sendNoBidsNotification(propertyId, property) {
     if (owner.email) {
       try {
         const emailJsConfig = {
-          serviceId: process.env.EMAILJS_SERVICE_ID || process.env.VITE_EMAILJS_SERVICE_ID || '',
-          templateId: process.env.EMAILJS_TEMPLATE_ID || process.env.VITE_EMAILJS_TEMPLATE_ID || '',
-          publicKey: process.env.EMAILJS_PUBLIC_KEY || process.env.VITE_EMAILJS_PUBLIC_KEY || ''
+          serviceId: process.env.REACT_APP_EMAILJS_SERVICE_ID || process.env.VITE_EMAILJS_SERVICE_ID || process.env.EMAILJS_SERVICE_ID || '',
+          templateId: process.env.REACT_APP_EMAILJS_TEMPLATE_ID || process.env.VITE_EMAILJS_TEMPLATE_ID || process.env.EMAILJS_TEMPLATE_ID || '',
+          publicKey: process.env.REACT_APP_EMAILJS_PUBLIC_KEY || process.env.VITE_EMAILJS_PUBLIC_KEY || process.env.EMAILJS_PUBLIC_KEY || ''
         };
         
         if (emailJsConfig.serviceId && emailJsConfig.templateId && emailJsConfig.publicKey) {
@@ -8813,9 +8903,9 @@ async function checkPropertiesWithoutBids() {
           try {
             // Используем EmailJS API напрямую
             const emailJsConfig = {
-              serviceId: process.env.EMAILJS_SERVICE_ID || process.env.VITE_EMAILJS_SERVICE_ID || '',
-              templateId: process.env.EMAILJS_TEMPLATE_ID || process.env.VITE_EMAILJS_TEMPLATE_ID || '',
-              publicKey: process.env.EMAILJS_PUBLIC_KEY || process.env.VITE_EMAILJS_PUBLIC_KEY || ''
+              serviceId: process.env.REACT_APP_EMAILJS_SERVICE_ID || process.env.VITE_EMAILJS_SERVICE_ID || process.env.EMAILJS_SERVICE_ID || '',
+              templateId: process.env.REACT_APP_EMAILJS_TEMPLATE_ID || process.env.VITE_EMAILJS_TEMPLATE_ID || process.env.EMAILJS_TEMPLATE_ID || '',
+              publicKey: process.env.REACT_APP_EMAILJS_PUBLIC_KEY || process.env.VITE_EMAILJS_PUBLIC_KEY || process.env.EMAILJS_PUBLIC_KEY || ''
             };
             
             if (emailJsConfig.serviceId && emailJsConfig.templateId && emailJsConfig.publicKey) {
