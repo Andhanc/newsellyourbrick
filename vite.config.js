@@ -96,6 +96,9 @@ export default defineConfig(({ mode }) => {
           manualChunks: undefined, // Отключаем ручное разбиение для dev режима
         },
       },
+      // Увеличиваем лимит памяти для сборки
+      minify: 'esbuild',
+      sourcemap: false, // Отключаем sourcemap для уменьшения размера
     },
     server: {
       port: vitePort,

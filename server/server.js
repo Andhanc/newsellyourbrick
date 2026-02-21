@@ -8859,6 +8859,30 @@ async function checkPropertiesWithoutBids() {
 
 // ========== КОНЕЦ ФУНКЦИИ ПРОВЕРКИ ОБЪЕКТОВ ==========
 
+// Раздача статики из dist для продакшена (если папка существует)
+if (process.env.NODE_ENV === 'production') {
+  const distPath = join(__dirname, '..', 'dist');
+  const distExists = fs.existsSync(distPath);
+  
+  if (distExists) {
+    console.log('📦 Production режим: раздача статики из dist');
+    // Раздаем статические файлы из dist
+    app.use(express.static(distPath));
+    
+    // Для всех остальных маршрутов отдаем index.html (SPA routing)
+    app.get('*', (req, res) => {
+      // Пропускаем API маршруты
+      if (req.path.startsWith('/api') || req.path.startsWith('/uploads')) {
+        return res.status(404).json({ success: false, error: 'Not found' });
+      }
+      // Отдаем index.html для всех остальных маршрутов
+      res.sendFile(join(distPath, 'index.html'));
+    });
+  } else {
+    console.warn('⚠️ Production режим, но папка dist не найдена. Запустите npm run build перед деплоем.');
+  }
+}
+
 // Запуск сервера с обработкой ошибок
 const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Сервер запущен на порту ${PORT}`);

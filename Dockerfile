@@ -46,6 +46,9 @@ RUN npm ci --legacy-peer-deps
 # Копируем остальные файлы
 COPY . .
 
+# Собираем проект для продакшена
+RUN npm run build
+
 # Открываем порт для Vite
 # ВАЖНО: EXPOSE - это только метаданные (документация), НЕ реальный порт!
 # 
@@ -61,5 +64,8 @@ EXPOSE 8080
 # Используем переменную окружения для принудительного использования IPv4
 ENV NODE_OPTIONS="--dns-result-order=ipv4first"
 
-# Запускаем приложение
-CMD ["npm", "start"]
+# Устанавливаем NODE_ENV для production
+ENV NODE_ENV=production
+
+# Запускаем приложение в production режиме
+CMD ["node", "server/server.js"]
