@@ -1618,9 +1618,21 @@ app.post('/api/documents', upload.single('document_photo'), (req, res) => {
       return res.status(400).json({ success: false, error: 'Необходимо указать user_id' });
     }
     
+    // Преобразуем user_id в число и проверяем валидность
+    const userId = parseInt(req.body.user_id, 10);
+    if (isNaN(userId) || userId <= 0) {
+      return res.status(400).json({ success: false, error: 'Неверный формат user_id. Ожидается положительное число' });
+    }
+    
+    // Проверяем, существует ли пользователь с таким ID
+    const user = userQueries.getById(userId);
+    if (!user) {
+      return res.status(404).json({ success: false, error: `Пользователь с ID ${userId} не найден` });
+    }
+    
     const filePath = `/uploads/${req.file.filename}`;
     const documentData = {
-      user_id: req.body.user_id,
+      user_id: userId, // Используем преобразованный в число user_id
       document_type: req.body.document_type || null,
       document_photo: filePath,
       is_reviewed: false,
@@ -1647,6 +1659,14 @@ app.post('/api/documents', upload.single('document_photo'), (req, res) => {
     
     res.status(201).json({ success: true, data: newDocument });
   } catch (error) {
+    console.error('❌ Ошибка при создании документа:', error);
+    // Проверяем, является ли ошибка ошибкой внешнего ключа
+    if (error.message && error.message.includes('FOREIGN KEY constraint failed')) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Ошибка внешнего ключа: пользователь не найден. Убедитесь, что user_id корректен.' 
+      });
+    }
     res.status(500).json({ success: false, error: error.message });
   }
 });

@@ -1125,6 +1125,13 @@ export function getDatabase() {
     db = initDatabase();
   }
   
+  // Убеждаемся, что внешние ключи включены при каждом использовании
+  try {
+    db.pragma('foreign_keys = ON');
+  } catch (error) {
+    console.warn('⚠️ Не удалось включить внешние ключи:', error.message);
+  }
+  
   // Проверяем, что соединение все еще активно
   try {
     // Простая проверка - выполняем простой запрос
@@ -1590,6 +1597,25 @@ export const documentQueries = {
   create: (documentData) => {
     const db = getDatabase();
     
+    // Убеждаемся, что внешние ключи включены
+    db.pragma('foreign_keys = ON');
+    
+    // Преобразуем user_id в число, если это строка
+    const userId = typeof documentData.user_id === 'string' 
+      ? parseInt(documentData.user_id, 10) 
+      : documentData.user_id;
+    
+    // Проверяем, что user_id валидный
+    if (!userId || isNaN(userId) || userId <= 0) {
+      throw new Error(`Неверный user_id: ${documentData.user_id}. Ожидается положительное число.`);
+    }
+    
+    // Проверяем, существует ли пользователь с таким ID
+    const user = db.prepare('SELECT id FROM users WHERE id = ?').get(userId);
+    if (!user) {
+      throw new Error(`Пользователь с ID ${userId} не найден в базе данных. FOREIGN KEY constraint failed.`);
+    }
+    
     // Проверяем, есть ли поле verification_status в таблице
     const pragmaInfo = db.prepare("PRAGMA table_info(documents)").all();
     const hasVerificationStatus = pragmaInfo.some(col => col.name === 'verification_status');
@@ -1602,14 +1628,14 @@ export const documentQueries = {
       
       const verificationStatus = documentData.verification_status || 'pending';
       console.log('💾 Сохранение документа в БД:', {
-        user_id: documentData.user_id,
+        user_id: userId,
         document_type: documentData.document_type,
         verification_status: verificationStatus,
         is_reviewed: documentData.is_reviewed ? 1 : 0
       });
       
       const result = stmt.run(
-        documentData.user_id,
+        userId,
         documentData.document_type || null,
         documentData.document_photo,
         documentData.is_reviewed ? 1 : 0,
@@ -1633,7 +1659,7 @@ export const documentQueries = {
       `);
       
       return stmt.run(
-        documentData.user_id,
+        userId,
         documentData.document_type || null,
         documentData.document_photo,
         documentData.is_reviewed ? 1 : 0
