@@ -7,7 +7,35 @@ export default defineConfig(({ mode }) => {
   const actualMode = isProduction ? 'production' : (mode || 'development')
   
   // Загружаем переменные окружения
+  // Сначала загружаем из файлов .env
   const env = loadEnv(actualMode, process.cwd(), '')
+  
+  // Затем перезаписываем значениями из process.env (для Railway и других платформ)
+  // Это важно, так как на Railway переменные окружения доступны через process.env, а не через файлы
+  const railwayEnv = {
+    ...env,
+    // Перезаписываем значениями из process.env, если они есть
+    REACT_APP_CLERK_PUBLISHABLE_KEY: process.env.REACT_APP_CLERK_PUBLISHABLE_KEY || env.REACT_APP_CLERK_PUBLISHABLE_KEY || env.VITE_CLERK_PUBLISHABLE_KEY,
+    VITE_CLERK_PUBLISHABLE_KEY: process.env.VITE_CLERK_PUBLISHABLE_KEY || env.VITE_CLERK_PUBLISHABLE_KEY || env.REACT_APP_CLERK_PUBLISHABLE_KEY,
+    REACT_APP_GOOGLE_CLIENT_ID: process.env.REACT_APP_GOOGLE_CLIENT_ID || env.REACT_APP_GOOGLE_CLIENT_ID || env.VITE_GOOGLE_CLIENT_ID,
+    VITE_GOOGLE_CLIENT_ID: process.env.VITE_GOOGLE_CLIENT_ID || env.VITE_GOOGLE_CLIENT_ID || env.REACT_APP_GOOGLE_CLIENT_ID,
+    REACT_APP_EMAILJS_SERVICE_ID: process.env.REACT_APP_EMAILJS_SERVICE_ID || env.REACT_APP_EMAILJS_SERVICE_ID || env.VITE_EMAILJS_SERVICE_ID,
+    VITE_EMAILJS_SERVICE_ID: process.env.VITE_EMAILJS_SERVICE_ID || env.VITE_EMAILJS_SERVICE_ID || env.REACT_APP_EMAILJS_SERVICE_ID,
+    REACT_APP_EMAILJS_TEMPLATE_ID: process.env.REACT_APP_EMAILJS_TEMPLATE_ID || env.REACT_APP_EMAILJS_TEMPLATE_ID || env.VITE_EMAILJS_TEMPLATE_ID,
+    VITE_EMAILJS_TEMPLATE_ID: process.env.VITE_EMAILJS_TEMPLATE_ID || env.VITE_EMAILJS_TEMPLATE_ID || env.REACT_APP_EMAILJS_TEMPLATE_ID,
+    REACT_APP_EMAILJS_PUBLIC_KEY: process.env.REACT_APP_EMAILJS_PUBLIC_KEY || env.REACT_APP_EMAILJS_PUBLIC_KEY || env.VITE_EMAILJS_PUBLIC_KEY,
+    VITE_EMAILJS_PUBLIC_KEY: process.env.VITE_EMAILJS_PUBLIC_KEY || env.VITE_EMAILJS_PUBLIC_KEY || env.REACT_APP_EMAILJS_PUBLIC_KEY,
+    REACT_APP_API_BASE_URL: process.env.REACT_APP_API_BASE_URL || env.REACT_APP_API_BASE_URL || env.VITE_API_BASE_URL,
+    VITE_API_BASE_URL: process.env.VITE_API_BASE_URL || env.VITE_API_BASE_URL || env.REACT_APP_API_BASE_URL,
+  }
+  
+  // Логируем для диагностики (только в production, чтобы не засорять логи в dev)
+  if (actualMode === 'production') {
+    console.log('[VITE] 🔍 Проверка переменных окружения:');
+    console.log('[VITE]    REACT_APP_CLERK_PUBLISHABLE_KEY из process.env:', process.env.REACT_APP_CLERK_PUBLISHABLE_KEY ? '✅ установлен' : '❌ не установлен');
+    console.log('[VITE]    REACT_APP_CLERK_PUBLISHABLE_KEY из env файлов:', env.REACT_APP_CLERK_PUBLISHABLE_KEY ? '✅ установлен' : '❌ не установлен');
+    console.log('[VITE]    Итоговое значение:', railwayEnv.REACT_APP_CLERK_PUBLISHABLE_KEY ? '✅ установлен' : '❌ не установлен');
+  }
   
   // ============================================================
   // КОНФИГУРАЦИЯ ПОРТОВ:
@@ -169,13 +197,13 @@ export default defineConfig(({ mode }) => {
     },
     // Поддержка переменных REACT_APP_ (как в Create React App)
     define: {
-      // Пробрасываем REACT_APP_ переменные в код
-      'process.env.REACT_APP_CLERK_PUBLISHABLE_KEY': JSON.stringify(env.REACT_APP_CLERK_PUBLISHABLE_KEY || env.VITE_CLERK_PUBLISHABLE_KEY || ''),
-      'process.env.REACT_APP_GOOGLE_CLIENT_ID': JSON.stringify(env.REACT_APP_GOOGLE_CLIENT_ID || env.VITE_GOOGLE_CLIENT_ID || ''),
-      'process.env.REACT_APP_EMAILJS_SERVICE_ID': JSON.stringify(env.REACT_APP_EMAILJS_SERVICE_ID || env.VITE_EMAILJS_SERVICE_ID || ''),
-      'process.env.REACT_APP_EMAILJS_TEMPLATE_ID': JSON.stringify(env.REACT_APP_EMAILJS_TEMPLATE_ID || env.VITE_EMAILJS_TEMPLATE_ID || ''),
-      'process.env.REACT_APP_EMAILJS_PUBLIC_KEY': JSON.stringify(env.REACT_APP_EMAILJS_PUBLIC_KEY || env.VITE_EMAILJS_PUBLIC_KEY || ''),
-      'process.env.REACT_APP_API_BASE_URL': JSON.stringify(env.REACT_APP_API_BASE_URL || env.VITE_API_BASE_URL || '/api'),
+      // Пробрасываем REACT_APP_ переменные в код (используем railwayEnv, который включает значения из process.env)
+      'process.env.REACT_APP_CLERK_PUBLISHABLE_KEY': JSON.stringify(railwayEnv.REACT_APP_CLERK_PUBLISHABLE_KEY || railwayEnv.VITE_CLERK_PUBLISHABLE_KEY || ''),
+      'process.env.REACT_APP_GOOGLE_CLIENT_ID': JSON.stringify(railwayEnv.REACT_APP_GOOGLE_CLIENT_ID || railwayEnv.VITE_GOOGLE_CLIENT_ID || ''),
+      'process.env.REACT_APP_EMAILJS_SERVICE_ID': JSON.stringify(railwayEnv.REACT_APP_EMAILJS_SERVICE_ID || railwayEnv.VITE_EMAILJS_SERVICE_ID || ''),
+      'process.env.REACT_APP_EMAILJS_TEMPLATE_ID': JSON.stringify(railwayEnv.REACT_APP_EMAILJS_TEMPLATE_ID || railwayEnv.VITE_EMAILJS_TEMPLATE_ID || ''),
+      'process.env.REACT_APP_EMAILJS_PUBLIC_KEY': JSON.stringify(railwayEnv.REACT_APP_EMAILJS_PUBLIC_KEY || railwayEnv.VITE_EMAILJS_PUBLIC_KEY || ''),
+      'process.env.REACT_APP_API_BASE_URL': JSON.stringify(railwayEnv.REACT_APP_API_BASE_URL || railwayEnv.VITE_API_BASE_URL || '/api'),
       'process.env.NODE_ENV': JSON.stringify(actualMode === 'production' ? 'production' : 'development'),
     },
   }

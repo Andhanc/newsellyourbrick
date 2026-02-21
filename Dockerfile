@@ -48,6 +48,8 @@ RUN npm install --legacy-peer-deps
 COPY . .
 
 # Собираем проект для продакшена
+# Railway автоматически делает переменные окружения доступными через process.env
+# во время сборки, поэтому они будут доступны в vite.config.js
 RUN npm run build
 
 # Открываем порт для Vite
