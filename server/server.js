@@ -8403,22 +8403,27 @@ app.use((req, res, next) => {
 });
 
 // Обработчик 404 для всех остальных маршрутов
-app.use((req, res) => {
-  if (req.path.includes('test-timer')) {
-    console.error('❌ 404 для test-timer маршрута:', {
+// ВАЖНО: В production этот обработчик должен быть ПОСЛЕ раздачи статики
+// Поэтому он будет зарегистрирован позже, после настройки статики
+if (process.env.NODE_ENV !== 'production') {
+  // В development регистрируем сразу
+  app.use((req, res) => {
+    if (req.path.includes('test-timer')) {
+      console.error('❌ 404 для test-timer маршрута:', {
+        method: req.method,
+        path: req.path,
+        url: req.url
+      });
+    }
+    res.status(404).json({ 
+      success: false, 
+      error: 'Маршрут не найден',
       method: req.method,
       path: req.path,
       url: req.url
     });
-  }
-  res.status(404).json({ 
-    success: false, 
-    error: 'Маршрут не найден',
-    method: req.method,
-    path: req.path,
-    url: req.url
   });
-});
+}
 
 // Проверяем зарегистрированные маршруты перед запуском
 const registeredRoutes = [];
@@ -8895,6 +8900,17 @@ if (process.env.NODE_ENV === 'production') {
     
     console.log('📦 Production режим: раздача статики из dist');
     
+    // Явно обрабатываем корневой маршрут - отдаем index.html
+    app.get('/', (req, res) => {
+      const indexPath = join(distPath, 'index.html');
+      if (fs.existsSync(indexPath)) {
+        res.sendFile(indexPath);
+      } else {
+        console.error(`❌ index.html не найден по пути: ${indexPath}`);
+        res.status(404).send('index.html not found');
+      }
+    });
+    
     // Раздаем статические файлы из dist (JS, CSS, изображения и т.д.)
     // Это должно быть ДО обработчика всех маршрутов
     app.use(express.static(distPath, {
@@ -8905,30 +8921,38 @@ if (process.env.NODE_ENV === 'production') {
         } else {
           res.setHeader('Cache-Control', 'public, max-age=31536000');
         }
-      }
+      },
+      // Если файл не найден, передаем управление следующему обработчику
+      fallthrough: true
     }));
-    
-    // Для всех остальных маршрутов (не API, не uploads, не health) отдаем index.html (SPA routing)
-    // ВАЖНО: Это должно быть ПОСЛЕ всех API маршрутов, но ПЕРЕД запуском сервера
-    app.get('*', (req, res, next) => {
-      // Пропускаем API маршруты, uploads и health
-      if (req.path.startsWith('/api') || req.path.startsWith('/uploads') || req.path.startsWith('/health')) {
-        return next(); // Передаем следующему обработчику (которого нет, поэтому вернется 404)
-      }
-      
-      // Отдаем index.html для всех остальных маршрутов (SPA routing)
-      const indexPath = join(distPath, 'index.html');
-      if (fs.existsSync(indexPath)) {
-        res.sendFile(indexPath);
-      } else {
-        console.error(`❌ index.html не найден по пути: ${indexPath}`);
-        res.status(404).send('index.html not found');
-      }
-    });
   } else {
     console.warn('⚠️ Production режим, но папка dist не найдена. Запустите npm run build перед деплоем.');
     console.warn(`⚠️ Ожидаемый путь: ${distPath}`);
   }
+  
+  // Регистрируем обработчик для SPA routing ПОСЛЕ раздачи статики в production
+  // Этот обработчик отдает index.html для всех маршрутов, которые не являются статическими файлами
+  app.get('*', (req, res) => {
+    // Пропускаем API маршруты, uploads и health - для них возвращаем 404 JSON
+    if (req.path.startsWith('/api') || req.path.startsWith('/uploads') || req.path.startsWith('/health')) {
+      return res.status(404).json({ 
+        success: false, 
+        error: 'Маршрут не найден',
+        method: req.method,
+        path: req.path,
+        url: req.url
+      });
+    }
+    
+    // Для всех остальных маршрутов отдаем index.html (SPA routing)
+    const indexPath = join(distPath, 'index.html');
+    if (fs.existsSync(indexPath)) {
+      res.sendFile(indexPath);
+    } else {
+      console.error(`❌ index.html не найден по пути: ${indexPath}`);
+      res.status(404).send('index.html not found');
+    }
+  });
 }
 
 // Запуск сервера с обработкой ошибок
