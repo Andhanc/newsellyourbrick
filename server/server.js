@@ -28,10 +28,12 @@ console.log('[SERVER]    - NODE_ENV:', process.env.NODE_ENV || 'не устан�
 console.log('[SERVER] ═══════════════════════════════════════════════════════');
 
 const app = express();
-// На Railway: Vite использует PORT, сервер использует SERVER_PORT
-// Если SERVER_PORT не установлен, используем 3000 (для локальной разработки)
-// На Railway обязательно установите SERVER_PORT в переменных окружения
-const PORT = process.env.SERVER_PORT || 3000;
+// На Railway в production: сервер должен слушать на PORT (который устанавливает Railway, например 8080)
+// В development: используем SERVER_PORT или 3000
+// Логика: если NODE_ENV=production и есть PORT, используем PORT, иначе SERVER_PORT или 3000
+const PORT = (process.env.NODE_ENV === 'production' && process.env.PORT) 
+  ? parseInt(process.env.PORT, 10) 
+  : (process.env.SERVER_PORT ? parseInt(process.env.SERVER_PORT, 10) : 3000);
 
 /**
  * Валидация пароля
@@ -319,7 +321,14 @@ waClient.on('qr', (qr) => {
   // Сохраняем QR-код для отображения в футере
   currentQRCode = qr;
   try {
-    qrcode.generate(qr, { small: true });
+    // Используем минимальный размер QR-кода для консоли
+    qrcode.generate(qr, { 
+      small: true,
+      // Дополнительные опции для уменьшения размера (если поддерживается)
+    });
+    // Также выводим URL для ручного ввода
+    console.log('\n💡 Если QR-код не сканируется, введите этот код вручную:');
+    console.log(`   ${qr}\n`);
   } catch (e) {
     console.log('QR-код (текстом):', qr);
   }
@@ -8860,26 +8869,51 @@ async function checkPropertiesWithoutBids() {
 // ========== КОНЕЦ ФУНКЦИИ ПРОВЕРКИ ОБЪЕКТОВ ==========
 
 // Раздача статики из dist для продакшена (если папка существует)
+// ВАЖНО: Это должно быть ПОСЛЕ всех API маршрутов, но ПЕРЕД запуском сервера
 if (process.env.NODE_ENV === 'production') {
   const distPath = join(__dirname, '..', 'dist');
   const distExists = fs.existsSync(distPath);
   
+  console.log(`📦 Проверка dist папки: ${distPath}`);
+  console.log(`📦 Dist существует: ${distExists}`);
+  
   if (distExists) {
+    // Проверяем содержимое dist
+    try {
+      const distContents = fs.readdirSync(distPath);
+      console.log(`📦 Содержимое dist: ${distContents.join(', ')}`);
+    } catch (e) {
+      console.warn(`⚠️ Не удалось прочитать содержимое dist: ${e.message}`);
+    }
+    
     console.log('📦 Production режим: раздача статики из dist');
-    // Раздаем статические файлы из dist
-    app.use(express.static(distPath));
+    // Раздаем статические файлы из dist (только для не-API маршрутов)
+    app.use((req, res, next) => {
+      // Пропускаем API и uploads маршруты
+      if (req.path.startsWith('/api') || req.path.startsWith('/uploads') || req.path.startsWith('/health')) {
+        return next();
+      }
+      // Для остальных маршрутов проверяем статические файлы
+      express.static(distPath)(req, res, next);
+    });
     
     // Для всех остальных маршрутов отдаем index.html (SPA routing)
     app.get('*', (req, res) => {
       // Пропускаем API маршруты
-      if (req.path.startsWith('/api') || req.path.startsWith('/uploads')) {
+      if (req.path.startsWith('/api') || req.path.startsWith('/uploads') || req.path.startsWith('/health')) {
         return res.status(404).json({ success: false, error: 'Not found' });
       }
       // Отдаем index.html для всех остальных маршрутов
-      res.sendFile(join(distPath, 'index.html'));
+      const indexPath = join(distPath, 'index.html');
+      if (fs.existsSync(indexPath)) {
+        res.sendFile(indexPath);
+      } else {
+        res.status(404).send('index.html not found');
+      }
     });
   } else {
     console.warn('⚠️ Production режим, но папка dist не найдена. Запустите npm run build перед деплоем.');
+    console.warn(`⚠️ Ожидаемый путь: ${distPath}`);
   }
 }
 
