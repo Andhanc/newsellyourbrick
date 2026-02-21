@@ -47,9 +47,12 @@ RUN npm install --legacy-peer-deps
 # Копируем остальные файлы
 COPY . .
 
-# Собираем проект для продакшена
+# Создаем .env.production из переменных окружения Railway перед сборкой
 # Railway автоматически делает переменные окружения доступными через process.env
-# во время сборки, поэтому они будут доступны в vite.config.js
+RUN node scripts/create-env.js || echo "⚠️ Не удалось создать .env.production, продолжаем сборку..."
+
+# Собираем проект для продакшена
+# Переменные окружения теперь доступны через .env.production и process.env
 RUN npm run build
 
 # Открываем порт для Vite

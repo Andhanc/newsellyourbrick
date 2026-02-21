@@ -7,11 +7,22 @@ import './index.css'
 import './i18n/config'
 import { getClerkPublishableKey, getGoogleClientId } from './utils/env'
 
-// Поддержка как REACT_APP_ (Create React App), так и VITE_ (Vite)
-const GOOGLE_CLIENT_ID = getGoogleClientId()
-const PUBLISHABLE_KEY = getClerkPublishableKey()
+// Функция для загрузки конфигурации с сервера (runtime)
+async function loadConfigFromServer() {
+  try {
+    const response = await fetch('/api/config')
+    const data = await response.json()
+    if (data.success && data.data) {
+      return data.data
+    }
+  } catch (error) {
+    console.error('Ошибка загрузки конфигурации с сервера:', error)
+  }
+  return null
+}
 
-if (!PUBLISHABLE_KEY) {
+// Функция для отображения ошибки
+function showError() {
   const errorMessage = `
     ⚠️ Missing Clerk Publishable Key!
     
@@ -28,8 +39,7 @@ if (!PUBLISHABLE_KEY) {
     Create .env.local file with: REACT_APP_CLERK_PUBLISHABLE_KEY=pk_test_...
   `
   console.error(errorMessage)
-  // Показываем ошибку в консоли, но не падаем с белым экраном
-  // Вместо этого покажем сообщение пользователю
+  
   document.body.innerHTML = `
     <div style="display: flex; align-items: center; justify-content: center; min-height: 100vh; font-family: system-ui; padding: 20px;">
       <div style="max-width: 600px; background: #fff3cd; border: 2px solid #ffc107; border-radius: 8px; padding: 24px;">
@@ -49,35 +59,58 @@ if (!PUBLISHABLE_KEY) {
       </div>
     </div>
   `
-  throw new Error('Missing Clerk Publishable Key')
 }
 
-// Оборачиваем App в GoogleOAuthProvider только если client_id установлен
-const AppWrapper = () => {
-  if (GOOGLE_CLIENT_ID) {
-    return (
-      <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
-        <App />
-      </GoogleOAuthProvider>
-    )
+// Инициализация приложения
+async function initApp() {
+  // Поддержка как REACT_APP_ (Create React App), так и VITE_ (Vite)
+  let GOOGLE_CLIENT_ID = getGoogleClientId()
+  let PUBLISHABLE_KEY = getClerkPublishableKey()
+
+  // Если переменные не установлены во время сборки, загружаем их с сервера (runtime)
+  if (!PUBLISHABLE_KEY) {
+    console.log('⚠️ Clerk Publishable Key не найден во время сборки, загружаем с сервера...')
+    const serverConfig = await loadConfigFromServer()
+    if (serverConfig && serverConfig.clerkPublishableKey) {
+      PUBLISHABLE_KEY = serverConfig.clerkPublishableKey
+      GOOGLE_CLIENT_ID = serverConfig.googleClientId || GOOGLE_CLIENT_ID
+      console.log('✅ Конфигурация загружена с сервера')
+    } else {
+      showError()
+      return
+    }
   }
-  return <App />
+
+  if (!PUBLISHABLE_KEY) {
+    showError()
+    return
+  }
+
+  // Оборачиваем App в GoogleOAuthProvider только если client_id установлен
+  const AppWrapper = () => {
+    if (GOOGLE_CLIENT_ID) {
+      return (
+        <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
+          <App />
+        </GoogleOAuthProvider>
+      )
+    }
+    return <App />
+  }
+
+  ReactDOM.createRoot(document.getElementById('root')).render(
+    <React.StrictMode>
+      <ClerkProvider 
+        publishableKey={PUBLISHABLE_KEY} 
+        afterSignOutUrl="/"
+        afterSignInUrl="/profile"
+        afterSignUpUrl="/profile"
+      >
+        <AppWrapper />
+      </ClerkProvider>
+    </React.StrictMode>,
+  )
 }
 
-ReactDOM.createRoot(document.getElementById('root')).render(
-  <React.StrictMode>
-    <ClerkProvider 
-      publishableKey={PUBLISHABLE_KEY} 
-      afterSignOutUrl="/"
-      afterSignInUrl="/profile"
-      afterSignUpUrl="/profile"
-    >
-      <AppWrapper />
-    </ClerkProvider>
-  </React.StrictMode>,
-)
-
-
-
-
-
+// Запускаем приложение
+initApp()

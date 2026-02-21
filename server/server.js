@@ -95,6 +95,21 @@ app.get('/health', (req, res) => {
   });
 });
 
+// API endpoint для получения конфигурации клиента (runtime переменные)
+app.get('/api/config', (req, res) => {
+  res.json({
+    success: true,
+    data: {
+      clerkPublishableKey: process.env.REACT_APP_CLERK_PUBLISHABLE_KEY || process.env.VITE_CLERK_PUBLISHABLE_KEY || '',
+      googleClientId: process.env.REACT_APP_GOOGLE_CLIENT_ID || process.env.VITE_GOOGLE_CLIENT_ID || '',
+      emailjsServiceId: process.env.REACT_APP_EMAILJS_SERVICE_ID || process.env.VITE_EMAILJS_SERVICE_ID || '',
+      emailjsTemplateId: process.env.REACT_APP_EMAILJS_TEMPLATE_ID || process.env.VITE_EMAILJS_TEMPLATE_ID || '',
+      emailjsPublicKey: process.env.REACT_APP_EMAILJS_PUBLIC_KEY || process.env.VITE_EMAILJS_PUBLIC_KEY || '',
+      apiBaseUrl: process.env.REACT_APP_API_BASE_URL || process.env.VITE_API_BASE_URL || '/api'
+    }
+  });
+});
+
 // Root endpoint для проверки доступности
 // В production режиме НЕ регистрируем этот маршрут, чтобы статика могла отдать index.html
 // В development режиме возвращаем JSON для проверки
