@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react';
 import { FiX, FiUpload, FiFile, FiCheck, FiCamera } from 'react-icons/fi';
+import { showNotification } from '../utils/toastHelper';
 import './VerificationDocumentsModal.css';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
@@ -144,7 +145,7 @@ const VerificationDocumentsModal = ({ isOpen, onClose, userId, onComplete }) => 
   const handleComplete = () => {
     const allUploaded = Object.values(uploaded).every(v => v === true);
     if (!allUploaded) {
-      alert('Пожалуйста, загрузите все необходимые документы');
+      showNotification('Пожалуйста, загрузите все необходимые документы');
       return;
     }
     

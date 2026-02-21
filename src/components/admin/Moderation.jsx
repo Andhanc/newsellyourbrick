@@ -3,6 +3,7 @@ import { FiSearch, FiUser, FiHome, FiShield, FiShieldOff, FiX, FiCheck, FiXCircl
 import { FaBuilding } from 'react-icons/fa';
 import ModerationPropertyDetail from './ModerationPropertyDetail';
 import ModerationUserDetail from './ModerationUserDetail';
+import { showNotification } from '../../utils/toastHelper';
 import './Moderation.css';
 import { getApiBaseUrlSync } from '../../utils/apiConfig';
 
@@ -723,7 +724,7 @@ const Moderation = () => {
             // Удаляем объект из localStorage
             localStorageProperties.splice(index, 1);
             localStorage.setItem('pendingProperties', JSON.stringify(localStorageProperties));
-            alert('Объявление одобрено и удалено из списка модерации.');
+            showNotification('Объявление одобрено и удалено из списка модерации.');
             loadPendingProperties();
             setSelectedProperty(null);
           }
@@ -744,12 +745,12 @@ const Moderation = () => {
           if (index >= 0 && index < localStorageVerifications.length) {
             localStorageVerifications.splice(index, 1);
             localStorage.setItem('pendingVerifications', JSON.stringify(localStorageVerifications));
-            alert('Пользователь одобрен и удален из списка модерации.');
+            showNotification('Пользователь одобрен и удален из списка модерации.');
             loadPendingDocuments();
             setSelectedUser(null);
           } else {
             console.warn('Не удалось найти пользователя в localStorage с ID:', id);
-            alert('Пользователь не найден в localStorage. Возможно, он уже был обработан.');
+            showNotification('Пользователь не найден в localStorage. Возможно, он уже был обработан.');
             loadPendingDocuments();
             setSelectedUser(null);
           }
@@ -811,7 +812,7 @@ const Moderation = () => {
               console.log('📊 Статус объекта после одобрения:', data.data.moderation_status);
               if (data.data.moderation_status !== 'approved') {
                 console.warn('⚠️ ВНИМАНИЕ: Объект одобрен, но статус не обновлен на approved!', data.data);
-                alert('Объявление одобрено, но статус не обновлен. Возможно, проблема на сервере. Проверьте логи бэкенда.');
+                showNotification('Объявление одобрено, но статус не обновлен. Возможно, проблема на сервере. Проверьте логи бэкенда.');
               } else {
                 console.log('✅ Статус объекта успешно обновлен на approved');
               }
@@ -850,7 +851,7 @@ const Moderation = () => {
               });
             }, 5 * 60 * 1000); // 5 минут
             
-            alert('Объявление одобрено. Владельцу отправлено уведомление.');
+            showNotification('Объявление одобрено. Владельцу отправлено уведомление.');
             // Закрываем детальный вид
             setSelectedProperty(null);
             
@@ -865,7 +866,7 @@ const Moderation = () => {
             }, 1500);
           } else {
             console.error('❌ API вернул success: false:', data);
-            alert(data.error || data.message || 'Ошибка при одобрении объявления. Сервер вернул ошибку.');
+            showNotification(data.error || data.message || 'Ошибка при одобрении объявления. Сервер вернул ошибку.');
           }
         } else {
           const errorText = await response.text().catch(() => 'Неизвестная ошибка');
@@ -877,7 +878,7 @@ const Moderation = () => {
           } catch (e) {
             errorMessage = errorText || errorMessage;
           }
-          alert(errorMessage);
+          showNotification(errorMessage);
         }
       } else {
         // Одобрение пользователя
@@ -907,18 +908,18 @@ const Moderation = () => {
               console.warn('⚠️ Не удалось очистить localStorage:', e);
             }
             
-            alert('Пользователь одобрен и верифицирован. Ему отправлено уведомление.');
+            showNotification('Пользователь одобрен и верифицирован. Ему отправлено уведомление.');
             loadPendingDocuments();
             setSelectedUser(null);
           }
         } else {
           const errorData = await response.json().catch(() => ({}));
-          alert(errorData.error || 'Ошибка при одобрении пользователя');
+          showNotification(errorData.error || 'Ошибка при одобрении пользователя');
         }
       }
     } catch (error) {
       console.error('Ошибка при одобрении:', error);
-      alert('Ошибка при одобрении');
+      showNotification('Ошибка при одобрении');
     }
   };
 
@@ -935,7 +936,7 @@ const Moderation = () => {
           if (reversedIndex >= 0 && reversedIndex < localStorageProperties.length) {
             localStorageProperties.splice(reversedIndex, 1);
             localStorage.setItem('pendingProperties', JSON.stringify(localStorageProperties));
-            alert('Объявление отклонено и удалено из списка модерации.');
+            showNotification('Объявление отклонено и удалено из списка модерации.');
             loadPendingProperties();
             setSelectedProperty(null);
           }
@@ -948,7 +949,7 @@ const Moderation = () => {
           if (reversedIndex >= 0 && reversedIndex < localStorageVerifications.length) {
             localStorageVerifications.splice(reversedIndex, 1);
             localStorage.setItem('pendingVerifications', JSON.stringify(localStorageVerifications));
-            alert('Пользователь отклонен и удален из списка модерации.');
+            showNotification('Пользователь отклонен и удален из списка модерации.');
             loadPendingDocuments();
             setSelectedUser(null);
           }
@@ -974,13 +975,13 @@ const Moderation = () => {
         if (response.ok) {
           const data = await response.json();
           if (data.success) {
-            alert('Объявление отклонено. Владельцу отправлено уведомление.');
+            showNotification('Объявление отклонено. Владельцу отправлено уведомление.');
             loadPendingProperties();
             setSelectedProperty(null);
           }
         } else {
           const errorData = await response.json().catch(() => ({}));
-          alert(errorData.error || 'Ошибка при отклонении объявления');
+          showNotification(errorData.error || 'Ошибка при отклонении объявления');
         }
       } else {
         // Отклонение пользователя
@@ -1010,18 +1011,18 @@ const Moderation = () => {
               console.warn('⚠️ Не удалось очистить localStorage:', e);
             }
             
-            alert('Пользователь отклонен. Ему отправлено уведомление.');
+            showNotification('Пользователь отклонен. Ему отправлено уведомление.');
             loadPendingDocuments();
             setSelectedUser(null);
           }
         } else {
           const errorData = await response.json().catch(() => ({}));
-          alert(errorData.error || 'Ошибка при отклонении пользователя');
+          showNotification(errorData.error || 'Ошибка при отклонении пользователя');
         }
       }
     } catch (error) {
       console.error('Ошибка при отклонении:', error);
-      alert('Ошибка при отклонении');
+      showNotification('Ошибка при отклонении');
     }
   };
 
@@ -1051,7 +1052,7 @@ const Moderation = () => {
     if (window.confirm('Вы уверены, что хотите очистить все данные из localStorage? Это удалит все необработанные верификации и объявления из локального хранилища.')) {
       localStorage.removeItem('pendingVerifications');
       localStorage.removeItem('pendingProperties');
-      alert('localStorage очищен. Список модерации обновлен.');
+      showNotification('localStorage очищен. Список модерации обновлен.');
       if (activeTab === 'users') {
         loadPendingDocuments();
       } else {

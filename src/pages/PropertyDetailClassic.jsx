@@ -24,6 +24,7 @@ import BiddingHistoryModal from '../components/BiddingHistoryModal'
 import BuyNowModal from '../components/BuyNowModal'
 import LocationMap from '../components/LocationMap'
 import { showToast } from '../components/ToastContainer'
+import { showNotification } from '../utils/toastHelper'
 import BidOutbidNotification from '../components/BidOutbidNotification'
 import Confetti from 'react-confetti'
 import './PropertyDetailClassic.css'
@@ -101,7 +102,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
     // Если пользователь не авторизован и не админ, перенаправляем
     if (!isAdmin && (!isAuthenticated() || !userData || !userData.isLoggedIn)) {
       // Показываем сообщение и перенаправляем на главную страницу
-      alert('Для просмотра страницы объекта необходимо авторизоваться')
+      showNotification('Для просмотра страницы объекта необходимо авторизоваться')
       if (onBack) {
         onBack()
       } else {
@@ -1210,7 +1211,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
   const handleBookNow = () => {
     // Проверяем резервацию перед открытием модального окна
     if (displayProperty.is_reserved && displayProperty.reserved_until && new Date(displayProperty.reserved_until) > new Date()) {
-      alert('Объект временно забронирован. Покупка недоступна.')
+      showNotification('Объект временно забронирован. Покупка недоступна.')
       return
     }
     
@@ -1226,7 +1227,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
     // Проверяем, что пользователь не является продавцом
     const userRole = userData?.role || 'buyer'
     if (userRole === 'seller' || userRole === 'owner') {
-      alert('Продавцы не могут покупать объекты')
+      showNotification('Продавцы не могут покупать объекты')
       return
     }
     
@@ -1271,7 +1272,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
     // Проверяем, что пользователь не является продавцом
     const userRole = userData?.role || 'buyer'
     if (userRole === 'seller' || userRole === 'owner') {
-      alert('Продавцы не могут делать ставки на объекты')
+      showNotification('Продавцы не могут делать ставки на объекты')
       return
     }
 
@@ -1339,7 +1340,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
     // Проверяем, что пользователь не является продавцом
     const userRole = userData?.role || 'buyer'
     if (userRole === 'seller' || userRole === 'owner') {
-      alert('Продавцы не могут делать ставки на объекты')
+      showNotification('Продавцы не могут делать ставки на объекты')
       return
     }
 

@@ -5,6 +5,7 @@ import { FiSearch, FiShoppingCart, FiCheck, FiX, FiClock, FiFileText, FiExternal
 import { getApiBaseUrl } from '../../utils/apiConfig';
 import { getEmailJsConfig } from '../../utils/env';
 import emailjs from '@emailjs/browser';
+import { showNotification } from '../../utils/toastHelper';
 import './PurchaseRequests.css';
 
 const PurchaseRequests = () => {
@@ -186,15 +187,15 @@ const PurchaseRequests = () => {
           setSelectedRequest(null);
           setPropertyDetails(null);
         } else {
-          alert(`Ошибка: ${result.error || 'Не удалось обновить статус'}`);
+          showNotification(`Ошибка: ${result.error || 'Не удалось обновить статус'}`);
         }
       } else {
         const errorData = await response.json();
-        alert(`Ошибка: ${errorData.error || 'Не удалось обновить статус'}`);
+        showNotification(`Ошибка: ${errorData.error || 'Не удалось обновить статус'}`);
       }
     } catch (error) {
       console.error('Ошибка при обновлении статуса:', error);
-      alert('Произошла ошибка при обновлении статуса');
+      showNotification('Произошла ошибка при обновлении статуса');
     } finally {
       setUpdatingStatus(false);
     }
@@ -215,17 +216,17 @@ const PurchaseRequests = () => {
         const result = await response.json();
         if (result.success) {
           setRequests(requests.filter(req => req.id !== requestId));
-          alert('Запрос успешно удален');
+          showNotification('Запрос успешно удален');
         } else {
-          alert(`Ошибка: ${result.error || 'Не удалось удалить запрос'}`);
+          showNotification(`Ошибка: ${result.error || 'Не удалось удалить запрос'}`);
         }
       } else {
         const errorData = await response.json();
-        alert(`Ошибка: ${errorData.error || 'Не удалось удалить запрос'}`);
+        showNotification(`Ошибка: ${errorData.error || 'Не удалось удалить запрос'}`);
       }
     } catch (error) {
       console.error('Ошибка при удалении запроса:', error);
-      alert('Произошла ошибка при удалении запроса');
+      showNotification('Произошла ошибка при удалении запроса');
     }
   };
 

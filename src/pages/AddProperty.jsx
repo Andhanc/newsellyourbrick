@@ -31,6 +31,7 @@ import SellerVerificationModal from '../components/SellerVerificationModal'
 import CardBindingModal from '../components/CardBindingModal'
 import CountrySelect from '../components/CountrySelect'
 import { getUserData } from '../services/authService'
+import { showNotification } from '../utils/toastHelper'
 import './AddProperty.css'
 
 const AddProperty = () => {
@@ -223,7 +224,7 @@ const AddProperty = () => {
     const remainingSlots = 10 - photos.length
     
     if (files.length > remainingSlots) {
-      alert(`Можно загрузить максимум ${remainingSlots} фото`)
+      showNotification(`Можно загрузить максимум ${remainingSlots} фото`)
       return
     }
 
@@ -278,7 +279,7 @@ const AddProperty = () => {
   // Функция для проверки и обработки ссылки на видео
   const handleVideoLinkSubmit = () => {
     if (!videoLink.trim()) {
-      alert('Пожалуйста, введите ссылку')
+      showNotification('Пожалуйста, введите ссылку')
       return
     }
 
@@ -308,7 +309,7 @@ const AddProperty = () => {
       setVideoLink('')
       setShowVideoLinkModal(false)
     } else {
-      alert('Пожалуйста, введите корректную ссылку на YouTube или Google Drive')
+      showNotification('Пожалуйста, введите корректную ссылку на YouTube или Google Drive')
     }
   }
 
@@ -318,14 +319,14 @@ const AddProperty = () => {
     const remainingSlots = 3 - videos.length
     
     if (files.length > remainingSlots) {
-      alert(`Можно загрузить максимум ${remainingSlots} видео`)
+      showNotification(`Можно загрузить максимум ${remainingSlots} видео`)
       e.target.value = ''
       return
     }
 
     files.forEach((file, index) => {
       if (!file.type.startsWith('video/')) {
-        alert(`Файл ${file.name} не является видео`)
+        showNotification(`Файл ${file.name} не является видео`)
         return
       }
 
@@ -339,7 +340,7 @@ const AddProperty = () => {
         const duration = video.duration
         
         if (duration > 60) {
-          alert(`Видео "${file.name}" превышает максимальную длительность (1 минута). Текущая длительность: ${Math.round(duration)} секунд`)
+          showNotification(`Видео "${file.name}" превышает максимальную длительность (1 минута). Текущая длительность: ${Math.round(duration)} секунд`)
           return
         }
 
@@ -354,14 +355,14 @@ const AddProperty = () => {
           }])
         }
         reader.onerror = () => {
-          alert(`Ошибка при чтении файла "${file.name}"`)
+          showNotification(`Ошибка при чтении файла "${file.name}"`)
         }
         reader.readAsDataURL(file)
       }
 
       video.onerror = () => {
         window.URL.revokeObjectURL(objectUrl)
-        alert(`Ошибка при чтении видео "${file.name}"`)
+        showNotification(`Ошибка при чтении видео "${file.name}"`)
       }
 
       video.src = objectUrl
@@ -381,7 +382,7 @@ const AddProperty = () => {
     
     // Проверяем лимит документов
     if (additionalDocuments.length >= MAX_DOCUMENTS) {
-      alert(`Максимальное количество дополнительных документов: ${MAX_DOCUMENTS}`)
+      showNotification(`Максимальное количество дополнительных документов: ${MAX_DOCUMENTS}`)
       e.target.value = ''
       return
     }
@@ -390,7 +391,7 @@ const AddProperty = () => {
     const filesToAdd = files.slice(0, remainingSlots)
     
     if (files.length > remainingSlots) {
-      alert(`Можно загрузить еще ${remainingSlots} документ(ов). Остальные файлы не будут добавлены.`)
+      showNotification(`Можно загрузить еще ${remainingSlots} документ(ов). Остальные файлы не будут добавлены.`)
     }
     
     filesToAdd.forEach((file) => {
@@ -399,7 +400,7 @@ const AddProperty = () => {
       const isImage = file.type.startsWith('image/')
       
       if (!isPDF && !isImage) {
-        alert(`Файл ${file.name} не поддерживается. Разрешены только PDF и изображения.`)
+        showNotification(`Файл ${file.name} не поддерживается. Разрешены только PDF и изображения.`)
         return
       }
 
@@ -419,7 +420,7 @@ const AddProperty = () => {
         })
       }
       reader.onerror = () => {
-        alert(`Ошибка при чтении файла "${file.name}"`)
+        showNotification(`Ошибка при чтении файла "${file.name}"`)
       }
       reader.readAsDataURL(file)
     })
@@ -643,7 +644,7 @@ const AddProperty = () => {
 
   const handlePreview = () => {
     if (!formData.title || photos.length === 0) {
-      alert('Пожалуйста, заполните заголовок и загрузите хотя бы одно фото')
+      showNotification('Пожалуйста, заполните заголовок и загрузите хотя бы одно фото')
       return
     }
     setShowPreview(true)
@@ -651,15 +652,15 @@ const AddProperty = () => {
 
   const handlePublish = async () => {
     if (!formData.title || photos.length === 0) {
-      alert('Пожалуйста, заполните заголовок и загрузите хотя бы одно фото')
+      showNotification('Пожалуйста, заполните заголовок и загрузите хотя бы одно фото')
       return false
     }
     if (!uploadedDocuments.ownership || !uploadedDocuments.noDebts) {
-      alert('Пожалуйста, загрузите все необходимые документы')
+      showNotification('Пожалуйста, загрузите все необходимые документы')
       return false
     }
     if (!userId) {
-      alert('Ошибка: пользователь не авторизован. Пожалуйста, войдите в систему.')
+      showNotification('Ошибка: пользователь не авторизован. Пожалуйста, войдите в систему.')
       return false
     }
 
@@ -714,10 +715,8 @@ const AddProperty = () => {
         
         if (missingFields.length > 0) {
           setIsSubmitting(false)
-          alert(
-            `Для публикации объекта необходимо заполнить все обязательные поля профиля.\n\n` +
-            `Не заполнены следующие поля:\n${missingFields.map(f => `• ${f}`).join('\n')}\n\n` +
-            `Пожалуйста, перейдите в профиль и заполните недостающие данные.`
+          showNotification(
+            `Для публикации объекта необходимо заполнить все обязательные поля профиля. Не заполнены следующие поля: ${missingFields.join(', ')}. Пожалуйста, перейдите в профиль и заполните недостающие данные.`
           )
           // Перенаправляем в кабинет продавца, чтобы пользователь мог заполнить профиль
           navigate('/owner/dashboard')
@@ -747,10 +746,8 @@ const AddProperty = () => {
           
           if (missingFields.length > 0) {
             setIsSubmitting(false)
-            alert(
-              `Для публикации объекта необходимо заполнить все обязательные поля профиля.\n\n` +
-              `Не заполнены следующие поля:\n${missingFields.map(f => `• ${f}`).join('\n')}\n\n` +
-              `Пожалуйста, перейдите в профиль и заполните недостающие данные.`
+            showNotification(
+              `Для публикации объекта необходимо заполнить все обязательные поля профиля. Не заполнены следующие поля: ${missingFields.join(', ')}. Пожалуйста, перейдите в профиль и заполните недостающие данные.`
             )
             navigate('/owner/dashboard')
             return false
@@ -966,11 +963,11 @@ const AddProperty = () => {
       setIsSubmitting(false)
       // Показываем более детальное сообщение об ошибке
       if (error.message.includes('Field value too long')) {
-        alert('Ошибка: Размер данных слишком большой. Попробуйте уменьшить количество фото или размер файлов.')
+        showNotification('Ошибка: Размер данных слишком большой. Попробуйте уменьшить количество фото или размер файлов.')
       } else if (error.message.includes('ERR_CONNECTION_RESET') || error.message.includes('Failed to fetch')) {
-        alert('Ошибка соединения с сервером. Проверьте, что сервер запущен и попробуйте еще раз.')
+        showNotification('Ошибка соединения с сервером. Проверьте, что сервер запущен и попробуйте еще раз.')
       } else {
-        alert(`Произошла ошибка при отправке объявления: ${error.message}`)
+        showNotification(`Произошла ошибка при отправке объявления: ${error.message}`)
       }
       return false
     }
@@ -1473,7 +1470,7 @@ const AddProperty = () => {
       }
     } catch (error) {
       console.error('Ошибка загрузки данных объекта:', error)
-      alert('Не удалось загрузить данные объекта для редактирования')
+      showNotification('Не удалось загрузить данные объекта для редактирования')
       navigate('/owner')
     } finally {
       setIsLoadingProperty(false)
@@ -1650,17 +1647,17 @@ const AddProperty = () => {
     e.preventDefault()
     // Валидация основных полей
     if (!formData.title || photos.length === 0) {
-      alert('Пожалуйста, заполните заголовок и загрузите хотя бы одно фото')
+      showNotification('Пожалуйста, заполните заголовок и загрузите хотя бы одно фото')
       return
     }
     // Проверяем документы перед публикацией
     if (!uploadedDocuments.ownership || !uploadedDocuments.noDebts) {
-      alert('Пожалуйста, загрузите все необходимые документы')
+      showNotification('Пожалуйста, загрузите все необходимые документы')
       return
     }
     // Проверяем, что userId есть
     if (!userId) {
-      alert('Ошибка: пользователь не авторизован. Пожалуйста, войдите в систему.')
+      showNotification('Ошибка: пользователь не авторизован. Пожалуйста, войдите в систему.')
       return
     }
     // Открываем модальное окно верификации
@@ -1715,7 +1712,7 @@ const AddProperty = () => {
 
   const handleTranslateAll = async () => {
     if (!formData.title && !formData.description) {
-      alert('Пожалуйста, заполните заголовок или описание перед переводом')
+      showNotification('Пожалуйста, заполните заголовок или описание перед переводом')
       return
     }
 
@@ -1725,7 +1722,7 @@ const AddProperty = () => {
     const textToTranslate = `${formData.title || ''} ${formData.description || ''}`.trim()
 
     if (!textToTranslate) {
-      alert('Нет текста для перевода')
+      showNotification('Нет текста для перевода')
       setIsTranslating(false)
       return
     }
@@ -1760,7 +1757,7 @@ const AddProperty = () => {
       setShowTranslations(true)
     } catch (error) {
       console.error('Ошибка перевода:', error)
-      alert('Произошла ошибка при переводе. Попробуйте еще раз.')
+      showNotification('Произошла ошибка при переводе. Попробуйте еще раз.')
     } finally {
       setIsTranslating(false)
     }
@@ -1873,7 +1870,7 @@ const AddProperty = () => {
   // Обработчик перехода к форме после заполнения названия
   const handlePropertyNameContinue = () => {
     if (!formData.title) {
-      alert('Пожалуйста, введите название объекта')
+      showNotification('Пожалуйста, введите название объекта')
       return
     }
     setCurrentStep('location')
@@ -2571,7 +2568,7 @@ const AddProperty = () => {
                       savedLocationData?.location
     
     if (!hasAddress || (typeof hasAddress === 'string' && hasAddress.trim().length === 0)) {
-      alert('Пожалуйста, введите адрес')
+      showNotification('Пожалуйста, введите адрес')
       return
     }
     
@@ -2799,7 +2796,7 @@ const AddProperty = () => {
   // Обработчик перехода к форме после загрузки фотографий
   const handlePhotosContinue = () => {
     if (photos.length === 0) {
-      alert('Пожалуйста, загрузите хотя бы одно фото')
+      showNotification('Пожалуйста, загрузите хотя бы одно фото')
       return
     }
     setCurrentStep('documents')
@@ -2815,11 +2812,11 @@ const AddProperty = () => {
     // Цена "Купить сейчас" опциональна - не проверяем её
     // Все объекты всегда аукционные, поэтому проверяем только аукционные поля
     if (!formData.auctionStartDate || !formData.auctionEndDate) {
-      alert('Пожалуйста, укажите период проведения аукциона')
+      showNotification('Пожалуйста, укажите период проведения аукциона')
       return
     }
     if (!formData.auctionStartingPrice || formData.auctionStartingPrice <= 0) {
-      alert('Пожалуйста, укажите стартовую цену аукциона')
+      showNotification('Пожалуйста, укажите стартовую цену аукциона')
       return
     }
     
@@ -2830,7 +2827,7 @@ const AddProperty = () => {
       const startingPriceNum = Number(removeCommas(String(formData.auctionStartingPrice)))
       const priceNum = Number(removeCommas(String(formData.price)))
       if (startingPriceNum >= priceNum) {
-        alert('Стартовая сумма ставки должна быть меньше цены "Купить сейчас"')
+        showNotification('Стартовая сумма ставки должна быть меньше цены "Купить сейчас"')
         return
       }
     }
@@ -2948,7 +2945,7 @@ const AddProperty = () => {
     if (imageFiles.length > 0) {
       const remainingSlots = 10 - photos.length
       if (imageFiles.length > remainingSlots) {
-        alert(`Можно загрузить максимум ${remainingSlots} фото`)
+        showNotification(`Можно загрузить максимум ${remainingSlots} фото`)
         return
       }
       imageFiles.forEach(file => {
@@ -5652,7 +5649,7 @@ const AddProperty = () => {
                           className="translation-item__copy"
                           onClick={() => {
                             navigator.clipboard.writeText(translation.text)
-                            alert(`Перевод на ${translation.name} скопирован в буфер обмена`)
+                            showNotification(`Перевод на ${translation.name} скопирован в буфер обмена`)
                           }}
                         >
                           Копировать

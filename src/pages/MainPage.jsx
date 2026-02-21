@@ -50,6 +50,7 @@ import {
 import PropertyTimer from '../components/PropertyTimer'
 import PropertySearchBlock from '../components/PropertySearchBlock'
 import { showToast } from '../components/ToastContainer'
+import { showNotification } from '../utils/toastHelper'
 import LoginModal from '../components/LoginModal'
 import VerificationSuccessNotification from '../components/VerificationSuccessNotification'
 import '../components/PropertyList.css'
@@ -1115,7 +1116,7 @@ function MainPage() {
     const isOldAuth = isAuthenticated()
     
     if (!isClerkAuth && !isOldAuth) {
-      alert('Пожалуйста, войдите в систему, чтобы добавлять объявления в избранное')
+      showNotification('Пожалуйста, войдите в систему, чтобы добавлять объявления в избранное')
       return
     }
     
@@ -1148,7 +1149,7 @@ function MainPage() {
       fullName: '',
       message: '',
     })
-    alert(t('thankYouMessage'))
+    showNotification(t('thankYouMessage'))
   }
 
   const toggleChat = () => {
@@ -1487,7 +1488,7 @@ function MainPage() {
 
   const handleBookNow = () => {
     // Обработчик бронирования
-    alert('Функция бронирования будет реализована позже')
+    showNotification('Функция бронирования будет реализована позже')
   }
 
   const handleCallBroker = () => {
@@ -1498,7 +1499,7 @@ function MainPage() {
 
   const handleChatBroker = () => {
     // Обработчик чата с брокером
-    alert('Чат с брокером будет реализован позже')
+    showNotification('Чат с брокером будет реализован позже')
   }
 
   // Получаем все свойства для карты

@@ -8,6 +8,7 @@ import PassportRecognitionModal from '../components/PassportRecognitionModal'
 import CountrySelect, { countries as countryList } from '../components/CountrySelect'
 import VerificationToast from '../components/VerificationToast'
 import { extractPassportData } from '../services/aiService'
+import { showNotification } from '../utils/toastHelper'
 import './Data.css'
 import './Profile.css'
 
@@ -508,12 +509,12 @@ const Data = () => {
             setUserId(dbUserId)
           } else {
             // Если не удалось создать или найти пользователя, показываем ошибку
-            alert('❌ Не удалось синхронизировать данные с базой данных. Попробуйте обновить страницу.')
+            showNotification('❌ Не удалось синхронизировать данные с базой данных. Попробуйте обновить страницу.')
             return
           }
         } catch (error) {
           console.error('❌ Data handleSave: Ошибка синхронизации с БД:', error)
-          alert('❌ Ошибка синхронизации с базой данных. Попробуйте обновить страницу.')
+          showNotification('❌ Ошибка синхронизации с базой данных. Попробуйте обновить страницу.')
           return
         }
       }
@@ -535,12 +536,12 @@ const Data = () => {
             setShowEmailVerificationModal(true)
             return // Не сохраняем данные, пока не подтвержден email
           } else {
-            alert(codeResult.error || 'Не удалось отправить код подтверждения. Попробуйте позже.')
+            showNotification(codeResult.error || 'Не удалось отправить код подтверждения. Попробуйте позже.')
             return
           }
         } catch (error) {
           console.error('Ошибка отправки кода подтверждения:', error)
-          alert('Ошибка отправки кода подтверждения. Попробуйте позже.')
+          showNotification('Ошибка отправки кода подтверждения. Попробуйте позже.')
           return
         }
       }
@@ -567,7 +568,7 @@ const Data = () => {
         // Валидация пароля по требованиям (заглавная буква, спецсимвол, цифра)
         const passwordValidation = validatePassword(userData.password.trim())
         if (!passwordValidation.valid) {
-          alert(passwordValidation.message)
+          showNotification(passwordValidation.message)
           return // Не сохраняем, если пароль не валиден
         }
         
@@ -609,13 +610,13 @@ const Data = () => {
                 setShowEmailVerificationModal(true)
                 return
               } else {
-                alert(codeResult.error || 'Не удалось отправить код подтверждения. Попробуйте позже.')
+                showNotification(codeResult.error || 'Не удалось отправить код подтверждения. Попробуйте позже.')
                 return
               }
             }
           } catch (error) {
             console.error('Ошибка отправки кода подтверждения:', error)
-            alert('Ошибка отправки кода подтверждения. Попробуйте позже.')
+            showNotification('Ошибка отправки кода подтверждения. Попробуйте позже.')
             return
           }
         }
@@ -662,7 +663,7 @@ const Data = () => {
         loadVerificationStatus()
         // Отправляем событие для обновления уведомления о верификации
         window.dispatchEvent(new Event('verification-status-update'))
-        alert('Данные успешно сохранены!')
+        showNotification('Данные успешно сохранены!')
       } else {
         const errorText = await response.text().catch(() => 'Не удалось получить детали ошибки')
         let errorData = {}
@@ -711,7 +712,7 @@ const Data = () => {
         }
         localStorage.setItem('userData', JSON.stringify(updatedUserData))
         
-        alert(errorMessage)
+        showNotification(errorMessage)
         setIsEditing(false)
       }
     } catch (error) {
@@ -744,7 +745,7 @@ const Data = () => {
       }
       localStorage.setItem('userData', JSON.stringify(updatedUserData))
       
-      alert(errorMessage)
+      showNotification(errorMessage)
       setIsEditing(false)
     }
   }
@@ -899,7 +900,7 @@ const Data = () => {
             // Выходим из режима редактирования
             setIsEditing(false)
             
-            alert('Email успешно подтвержден и данные сохранены!')
+            showNotification('Email успешно подтвержден и данные сохранены!')
             return // Прерываем выполнение, так как уже все обновили
           }
         }
@@ -915,13 +916,13 @@ const Data = () => {
           setOriginalEmail(savedUserData.email)
           
           setIsEditing(false)
-          alert('Email успешно подтвержден! Данные обновлены из локального хранилища.')
+          showNotification('Email успешно подтвержден! Данные обновлены из локального хранилища.')
           return
         }
       }
     } catch (error) {
       console.error('Ошибка обновления данных после подтверждения email:', error)
-      alert('Email подтвержден, но возникла ошибка при обновлении данных. Попробуйте обновить страницу.')
+      showNotification('Email подтвержден, но возникла ошибка при обновлении данных. Попробуйте обновить страницу.')
       
       // Закрываем модальное окно даже при ошибке
       setShowEmailVerificationModal(false)
@@ -946,7 +947,7 @@ const Data = () => {
   const handleDeleteAccount = () => {
     if (window.confirm('Вы уверены, что хотите удалить аккаунт? Это действие необратимо.')) {
       // Здесь можно добавить логику удаления аккаунта
-      alert('Аккаунт будет удален')
+      showNotification('Аккаунт будет удален')
     }
   }
 
@@ -1024,7 +1025,7 @@ const Data = () => {
       }
     } catch (error) {
       console.error('❌ Ошибка при распознавании паспорта:', error)
-      alert('Ошибка при распознавании паспорта: ' + (error.message || 'Неизвестная ошибка'))
+      showNotification('Ошибка при распознавании паспорта: ' + (error.message || 'Неизвестная ошибка'))
     } finally {
       setIsRecognizingPassport(false)
     }

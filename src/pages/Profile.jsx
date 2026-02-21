@@ -5,6 +5,7 @@ import { getUserData, saveUserData, logout } from '../services/authService'
 import VerificationToast from '../components/VerificationToast'
 import VerificationModal from '../components/VerificationModal'
 import SellerVerificationModal from '../components/SellerVerificationModal'
+import { showNotification } from '../utils/toastHelper'
 import './Profile.css'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
@@ -145,12 +146,12 @@ const Profile = () => {
   
   const handleDocumentUpload = async (type, file) => {
     if (!file) {
-      alert('Файл не выбран')
+      showNotification('Файл не выбран')
       return
     }
     
     if (!userId) {
-      alert('Ошибка: ID пользователя не найден. Пожалуйста, обновите страницу.')
+      showNotification('Ошибка: ID пользователя не найден. Пожалуйста, обновите страницу.')
       console.error('userId не установлен:', userId)
       return
     }
@@ -191,7 +192,7 @@ const Profile = () => {
         console.log('✅ Данные от сервера:', data)
         
         if (data.success) {
-          alert('Документ успешно загружен и отправлен на верификацию')
+          showNotification('Документ успешно загружен и отправлен на верификацию')
           // Обновляем состояние сразу
           const newDoc = {
             id: data.data.id,
@@ -219,7 +220,7 @@ const Profile = () => {
           // Отправляем событие для обновления уведомления о верификации
           window.dispatchEvent(new Event('verification-status-update'))
         } else {
-          alert(data.error || 'Ошибка загрузки документа')
+          showNotification(data.error || 'Ошибка загрузки документа')
         }
       } else {
         const errorText = await response.text().catch(() => 'Неизвестная ошибка')
@@ -233,15 +234,15 @@ const Profile = () => {
           errorMessage = `Ошибка ${response.status}: ${errorText.substring(0, 100)}`
         }
         
-        alert(errorMessage)
+        showNotification(errorMessage)
       }
     } catch (error) {
       console.error('❌ Ошибка загрузки документа:', error)
       
       if (error.message === 'Failed to fetch') {
-        alert('Не удалось подключиться к серверу. Убедитесь, что сервер запущен на порту 3000.')
+        showNotification('Не удалось подключиться к серверу. Убедитесь, что сервер запущен на порту 3000.')
       } else {
-        alert(`Ошибка: ${error.message}`)
+        showNotification(`Ошибка: ${error.message}`)
       }
     } finally {
       setUploading(prev => ({ ...prev, [type]: false }))

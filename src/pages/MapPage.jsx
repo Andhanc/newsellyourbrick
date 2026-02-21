@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { useUser } from '@clerk/clerk-react'
 import { properties } from '../data/properties'
 import { isAuthenticated } from '../services/authService'
+import { showNotification } from '../utils/toastHelper'
 import maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import './MapPage.css'
@@ -728,7 +729,7 @@ const MapPage = () => {
                           
                           // Разрешаем удаление из избранного без авторизации, но добавление требует авторизации
                           if (!isFavorite && !isClerkAuth && !isOldAuth) {
-                            alert('Пожалуйста, войдите в систему, чтобы добавлять объявления в избранное')
+                            showNotification('Пожалуйста, войдите в систему, чтобы добавлять объявления в избранное')
                             return
                           }
                           

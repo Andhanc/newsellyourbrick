@@ -5,6 +5,7 @@ import CountdownTimer from '../components/CountdownTimer'
 import BiddingHistoryModal from '../components/BiddingHistoryModal'
 import DepositButton from '../components/DepositButton'
 import { getUserData, isAuthenticated } from '../services/authService'
+import { showNotification } from '../utils/toastHelper'
 import BidOutbidNotification from '../components/BidOutbidNotification'
 import { FiX, FiLayers, FiHome, FiCheck, FiX as FiXIcon, FiLock } from 'react-icons/fi'
 import { IoLocationOutline } from 'react-icons/io5'
@@ -66,7 +67,7 @@ const PropertyDetail = () => {
     // Если пользователь не авторизован и не админ, перенаправляем
     if (!isAdmin && (!isAuthenticated() || !userData || !userData.isLoggedIn)) {
       // Показываем сообщение и перенаправляем на главную страницу
-      alert('Для просмотра страницы объекта необходимо авторизоваться')
+      showNotification('Для просмотра страницы объекта необходимо авторизоваться')
       navigate('/')
     }
   }, [navigate])
@@ -579,7 +580,7 @@ const PropertyDetail = () => {
     // Проверяем, что пользователь не является продавцом
     const userRole = userData?.role || 'buyer'
     if (userRole === 'seller' || userRole === 'owner') {
-      alert('Продавцы не могут делать ставки на объекты')
+      showNotification('Продавцы не могут делать ставки на объекты')
       return
     }
     
@@ -588,7 +589,7 @@ const PropertyDetail = () => {
       const reservedUntil = property.reserved_until ? new Date(property.reserved_until) : null
       if (reservedUntil && reservedUntil > new Date()) {
         const hoursRemaining = Math.ceil((reservedUntil - new Date()) / (1000 * 60 * 60))
-        alert(`Объект забронирован на ${hoursRemaining} часов. Ставки временно недоступны.`)
+        showNotification(`Объект забронирован на ${hoursRemaining} часов. Ставки временно недоступны.`)
         return
       }
     }
@@ -676,7 +677,7 @@ const PropertyDetail = () => {
         await loadUserDeposit()
         
         // Показываем успешное сообщение
-        alert(`Ставка ${formatPrice(bidAmountNum)} успешно принята!`)
+        showNotification(`Ставка ${formatPrice(bidAmountNum)} успешно принята!`)
         
         // Перезагружаем данные и историю через небольшую задержку для гарантии
         setTimeout(async () => {
@@ -695,12 +696,12 @@ const PropertyDetail = () => {
       } else {
         console.error('❌ Ошибка создания ставки:', data)
         setBidError(data.error || 'Ошибка при создании ставки')
-        alert(`Ошибка: ${data.error || 'Ошибка при создании ставки'}`)
+        showNotification(`Ошибка: ${data.error || 'Ошибка при создании ставки'}`)
       }
     } catch (error) {
       console.error('❌ Ошибка при создании ставки:', error)
       setBidError('Ошибка при создании ставки. Попробуйте позже.')
-      alert(`Ошибка сети: ${error.message}`)
+      showNotification(`Ошибка сети: ${error.message}`)
     } finally {
       setIsSubmittingBid(false)
     }

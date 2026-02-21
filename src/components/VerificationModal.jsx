@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import * as faceapi from 'face-api.js'
+import { showNotification } from '../utils/toastHelper'
 import './VerificationModal.css'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
@@ -65,13 +66,13 @@ const VerificationModal = ({ isOpen, onClose, userId, onComplete }) => {
 
     // Проверяем, что это изображение
     if (!file.type.startsWith('image/')) {
-      alert('Пожалуйста, выберите изображение')
+      showNotification('Пожалуйста, выберите изображение')
       return
     }
 
     // Проверяем размер файла (максимум 10MB)
     if (file.size > 10 * 1024 * 1024) {
-      alert('Размер файла не должен превышать 10MB')
+      showNotification('Размер файла не должен превышать 10MB')
       return
     }
 
@@ -88,15 +89,15 @@ const VerificationModal = ({ isOpen, onClose, userId, onComplete }) => {
 
   const handleNext = () => {
     if (currentStep === 1 && !photos.passport) {
-      alert('Пожалуйста, загрузите или сфотографируйте паспорт')
+      showNotification('Пожалуйста, загрузите или сфотографируйте паспорт')
       return
     }
     if (currentStep === 2 && !photos.selfie) {
-      alert('Пожалуйста, сделайте селфи')
+      showNotification('Пожалуйста, сделайте селфи')
       return
     }
     if (currentStep === 3 && !photos.selfieWithPassport) {
-      alert('Пожалуйста, сделайте селфи с паспортом')
+      showNotification('Пожалуйста, сделайте селфи с паспортом')
       return
     }
     if (currentStep < 3) {
@@ -112,7 +113,7 @@ const VerificationModal = ({ isOpen, onClose, userId, onComplete }) => {
 
   const handleSubmit = async () => {
     if (!photos.passport || !photos.selfie || !photos.selfieWithPassport) {
-      alert('Пожалуйста, загрузите все три фотографии')
+      showNotification('Пожалуйста, загрузите все три фотографии')
       return
     }
 
@@ -182,16 +183,16 @@ const VerificationModal = ({ isOpen, onClose, userId, onComplete }) => {
           // Для продавцов модальное окно закроется в SellerVerificationModal
         } else {
           // Если нет onComplete (старый код), показываем alert и закрываем
-          alert('Все фотографии успешно отправлены на модерацию!')
+          showNotification('Все фотографии успешно отправлены на модерацию!')
           onClose()
         }
       } else {
         const errors = results.filter(r => !r.success).map(r => r.error).join(', ')
-        alert(`Ошибка при загрузке: ${errors}`)
+        showNotification(`Ошибка при загрузке: ${errors}`)
       }
     } catch (error) {
       console.error('Ошибка отправки:', error)
-      alert('Произошла ошибка при отправке фотографий. Попробуйте еще раз.')
+      showNotification('Произошла ошибка при отправке фотографий. Попробуйте еще раз.')
     } finally {
       setIsSubmitting(false)
     }
@@ -772,7 +773,7 @@ const Camera = ({ type, onCapture, onClose }) => {
       }
     } catch (error) {
       console.error('Ошибка доступа к камере:', error)
-      alert('Не удалось получить доступ к камере. Проверьте разрешения.')
+      showNotification('Не удалось получить доступ к камере. Проверьте разрешения.')
       onClose()
     }
   }

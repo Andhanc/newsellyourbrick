@@ -33,6 +33,7 @@ import PropertyCalculatorModal from '../components/PropertyCalculatorModal'
 import BiddingHistoryModal from '../components/BiddingHistoryModal'
 import CountrySelect, { countries as countryList } from '../components/CountrySelect'
 import { getUserData, saveUserData, logout, clearUserData } from '../services/authService'
+import { showNotification } from '../utils/toastHelper'
 import './OwnerDashboard.css'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
@@ -519,7 +520,7 @@ const OwnerDashboard = () => {
   // Загружаем документ
   const handleDocumentUpload = async (type, file) => {
     if (!userId) {
-      alert('Ошибка: ID пользователя не найден. Пожалуйста, обновите страницу.')
+      showNotification('Ошибка: ID пользователя не найден. Пожалуйста, обновите страницу.')
       return
     }
 
@@ -546,7 +547,7 @@ const OwnerDashboard = () => {
       if (response.ok) {
         const data = await response.json()
         if (data.success) {
-          alert('Документ успешно загружен и отправлен на верификацию')
+          showNotification('Документ успешно загружен и отправлен на верификацию')
           // Обновляем состояние
           const newDoc = {
             id: data.data.id,
@@ -566,15 +567,15 @@ const OwnerDashboard = () => {
           // Отправляем событие для обновления
           window.dispatchEvent(new Event('verification-status-update'))
         } else {
-          alert(data.error || 'Ошибка загрузки документа')
+          showNotification(data.error || 'Ошибка загрузки документа')
         }
       } else {
         const errorData = await response.json().catch(() => ({ error: 'Неизвестная ошибка' }))
-        alert(errorData.error || 'Ошибка загрузки документа')
+        showNotification(errorData.error || 'Ошибка загрузки документа')
       }
     } catch (error) {
       console.error('❌ Ошибка загрузки документа:', error)
-      alert(`Ошибка: ${error.message || 'Неизвестная ошибка'}`)
+      showNotification(`Ошибка: ${error.message || 'Неизвестная ошибка'}`)
     } finally {
       setUploading(prev => ({ ...prev, [type]: false }))
     }
@@ -637,7 +638,7 @@ const OwnerDashboard = () => {
       const userData = getUserData()
 
       if (!userData.id) {
-        alert('Ошибка: ID пользователя не найден. Пожалуйста, войдите заново.')
+        showNotification('Ошибка: ID пользователя не найден. Пожалуйста, войдите заново.')
         return
       }
 
@@ -659,7 +660,7 @@ const OwnerDashboard = () => {
       // Используем числовой ID из БД (из localStorage), а не Clerk ID
       const dbUserId = localStorage.getItem('userId')
       if (!dbUserId || !/^\d+$/.test(dbUserId)) {
-        alert('Ошибка: ID пользователя не найден. Пожалуйста, обновите страницу.')
+        showNotification('Ошибка: ID пользователя не найден. Пожалуйста, обновите страницу.')
         console.error('userId не установлен:', dbUserId)
         return
       }
@@ -681,7 +682,7 @@ const OwnerDashboard = () => {
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: 'Неизвестная ошибка' }))
         console.error('❌ Ошибка при сохранении в БД:', errorData)
-        alert(`Ошибка при сохранении данных: ${errorData.error || 'Неизвестная ошибка'}`)
+        showNotification(`Ошибка при сохранении данных: ${errorData.error || 'Неизвестная ошибка'}`)
         return
       }
 
@@ -689,7 +690,7 @@ const OwnerDashboard = () => {
       
       if (!result.success) {
         console.error('❌ Сервер вернул ошибку:', result.error)
-        alert(`Ошибка при сохранении данных: ${result.error || 'Неизвестная ошибка'}`)
+        showNotification(`Ошибка при сохранении данных: ${result.error || 'Неизвестная ошибка'}`)
         return
       }
 
@@ -731,10 +732,10 @@ const OwnerDashboard = () => {
       // Выходим из режима редактирования после успешного сохранения
       setIsProfileEditing(false)
       
-      alert('✅ Данные профиля успешно сохранены!')
+      showNotification('✅ Данные профиля успешно сохранены!')
     } catch (error) {
       console.error('❌ Ошибка при сохранении профиля владельца:', error)
-      alert(`Ошибка при сохранении данных: ${error.message || 'Неизвестная ошибка'}`)
+      showNotification(`Ошибка при сохранении данных: ${error.message || 'Неизвестная ошибка'}`)
     } finally {
       setIsSavingProfile(false)
     }
@@ -792,7 +793,7 @@ const OwnerDashboard = () => {
     if (!propertyToDelete) return
     
     if (!deleteReason.trim()) {
-      alert('Пожалуйста, укажите причину удаления')
+      showNotification('Пожалуйста, укажите причину удаления')
       return
     }
 
@@ -811,7 +812,7 @@ const OwnerDashboard = () => {
       const result = await response.json()
       
       if (response.ok && result.success) {
-        alert('Запрос на удаление отправлен на модерацию')
+        showNotification('Запрос на удаление отправлен на модерацию')
         // Обновляем список объявлений
         if (userId) {
           await loadUserProperties(userId)
@@ -822,11 +823,11 @@ const OwnerDashboard = () => {
         setPropertyToDelete(null)
         setDeleteReason('')
       } else {
-        alert(result.error || 'Ошибка при отправке запроса на удаление')
+        showNotification(result.error || 'Ошибка при отправке запроса на удаление')
       }
     } catch (error) {
       console.error('Ошибка при отправке запроса на удаление:', error)
-      alert('Ошибка при отправке запроса на удаление')
+      showNotification('Ошибка при отправке запроса на удаление')
     } finally {
       setIsSubmittingDelete(false)
     }
@@ -852,7 +853,7 @@ const OwnerDashboard = () => {
     const effectiveUserId = (dbUserId && /^\d+$/.test(dbUserId)) ? dbUserId : userId
     
     if (!effectiveUserId) {
-      alert('Ошибка: пользователь не авторизован. Пожалуйста, войдите в систему.')
+      showNotification('Ошибка: пользователь не авторизован. Пожалуйста, войдите в систему.')
       return false
     }
 

@@ -8,6 +8,7 @@ import EmailVerificationModal from './EmailVerificationModal'
 import VerificationDocumentsModal from './VerificationDocumentsModal'
 import { registerWithEmail, loginWithEmail, validatePassword } from '../services/authService'
 import { getApiBaseUrl } from '../utils/apiConfig'
+import { showNotification } from '../utils/toastHelper'
 import './LoginModal.css'
 
 const LoginModal = ({ isOpen, onClose }) => {
@@ -363,7 +364,7 @@ const LoginModal = ({ isOpen, onClose }) => {
     } else {
       // Для входа или продавца - обычный флоу
       onClose()
-      alert(`Добро пожаловать, ${user.name || 'Пользователь'}!`)
+      showNotification(`Добро пожаловать, ${user.name || 'Пользователь'}!`)
       
       if (userRole === 'seller') {
         localStorage.setItem('isOwnerLoggedIn', 'true')
@@ -386,7 +387,7 @@ const LoginModal = ({ isOpen, onClose }) => {
     } else {
       // Для продавца или если нет ID - обычный флоу
       onClose()
-      alert(`Добро пожаловать, ${user.name || 'Пользователь'}! Регистрация завершена.`)
+      showNotification(`Добро пожаловать, ${user.name || 'Пользователь'}! Регистрация завершена.`)
       
       if (userRole === 'seller') {
         localStorage.setItem('isOwnerLoggedIn', 'true')
@@ -402,7 +403,7 @@ const LoginModal = ({ isOpen, onClose }) => {
     // Документы загружены, закрываем модальное окно и перенаправляем
     setShowVerificationDocumentsModal(false)
     onClose()
-    alert('Документы отправлены на верификацию. Вы получите уведомление после проверки.')
+    showNotification('Документы отправлены на верификацию. Вы получите уведомление после проверки.')
     navigate('/profile')
   }
 

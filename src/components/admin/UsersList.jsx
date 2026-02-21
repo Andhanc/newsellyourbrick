@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { FiSearch, FiUser, FiUserCheck, FiShield, FiShieldOff, FiX } from 'react-icons/fi';
 import UserDetailModal from './UserDetailModal';
 import { getApiBaseUrl, getApiBaseUrlSync } from '../../utils/apiConfig';
+import { showNotification } from '../../utils/toastHelper';
 import './UsersList.css';
 
 // Константа для базового URL без /api (для изображений)
@@ -132,17 +133,17 @@ const UsersList = () => {
             ));
             
             // Показываем сообщение об успехе
-            alert(`Пользователь успешно ${action === 'заблокировать' ? 'заблокирован' : 'разблокирован'}`);
+            showNotification(`Пользователь успешно ${action === 'заблокировать' ? 'заблокирован' : 'разблокирован'}`);
           } else {
-            alert(`Ошибка: ${result.error || 'Не удалось изменить статус блокировки'}`);
+            showNotification(`Ошибка: ${result.error || 'Не удалось изменить статус блокировки'}`);
           }
         } else {
           const errorData = await response.json();
-          alert(`Ошибка: ${errorData.error || 'Не удалось изменить статус блокировки'}`);
+          showNotification(`Ошибка: ${errorData.error || 'Не удалось изменить статус блокировки'}`);
         }
       } catch (error) {
         console.error('Ошибка при изменении статуса блокировки:', error);
-        alert('Произошла ошибка при изменении статуса блокировки');
+        showNotification('Произошла ошибка при изменении статуса блокировки');
       }
     }
   };

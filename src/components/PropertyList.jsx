@@ -6,6 +6,7 @@ import { BiArea } from 'react-icons/bi'
 import { FiLayers, FiCalendar } from 'react-icons/fi'
 import { properties } from '../data/properties'
 import { isAuthenticated } from '../services/authService'
+import { showNotification } from '../utils/toastHelper'
 import PropertyTimer from './PropertyTimer'
 import CircularTimer from './CircularTimer'
 import PropertySearchModal from './PropertySearchModal'
@@ -347,7 +348,7 @@ const PropertyList = ({ auctionProperties = null }) => {
                       
                       // Разрешаем удаление из избранного без авторизации, но добавление требует авторизации
                       if (!isFavorite && !isClerkAuth && !isOldAuth) {
-                        alert('Пожалуйста, войдите в систему, чтобы добавлять объявления в избранное')
+                        showNotification('Пожалуйста, войдите в систему, чтобы добавлять объявления в избранное')
                         return
                       }
                       
@@ -498,7 +499,7 @@ const PropertyList = ({ auctionProperties = null }) => {
                           e.preventDefault()
                           e.stopPropagation()
                           if (isReserved) {
-                            alert('Объект временно забронирован. Покупка недоступна.')
+                            showNotification('Объект временно забронирован. Покупка недоступна.')
                             return
                           }
                           navigate(`/property/${property.id}`, {

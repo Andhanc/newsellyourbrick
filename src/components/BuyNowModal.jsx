@@ -5,6 +5,7 @@ import { getUserData } from '../services/authService'
 import { getApiBaseUrl } from '../utils/apiConfig'
 import { getEmailJsConfig } from '../utils/env'
 import emailjs from '@emailjs/browser'
+import { showNotification } from '../utils/toastHelper'
 import './BuyNowModal.css'
 
 const BuyNowModal = ({ isOpen, onClose, property }) => {
@@ -130,7 +131,7 @@ const BuyNowModal = ({ isOpen, onClose, property }) => {
       const userData = getUserData()
       const userRole = userData?.role || 'buyer'
       if (userRole === 'seller' || userRole === 'owner') {
-        alert('Продавцы не могут покупать объекты')
+        showNotification('Продавцы не могут покупать объекты')
         setIsSubmitting(false)
         return
       }
@@ -278,7 +279,7 @@ const BuyNowModal = ({ isOpen, onClose, property }) => {
           }
         }
 
-        alert('✅ Запрос на покупку успешно отправлен! Наш менеджер свяжется с вами в течение 24 часов. Проверьте вашу почту и WhatsApp.')
+        showNotification('✅ Запрос на покупку успешно отправлен! Наш менеджер свяжется с вами в течение 24 часов. Проверьте вашу почту и WhatsApp.')
         onClose()
       } else {
         throw new Error(data.error || 'Не удалось отправить запрос')
@@ -286,7 +287,7 @@ const BuyNowModal = ({ isOpen, onClose, property }) => {
     } catch (error) {
       console.error('Ошибка отправки запроса на покупку:', error)
       setSubmitError('Не удалось отправить запрос. Попробуйте еще раз.')
-      alert('❌ Ошибка при отправке запроса. Пожалуйста, попробуйте позже или свяжитесь с нами напрямую.')
+      showNotification('❌ Ошибка при отправке запроса. Пожалуйста, попробуйте позже или свяжитесь с нами напрямую.')
     } finally {
       setIsSubmitting(false)
     }

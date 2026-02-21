@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { FiChevronDown, FiChevronUp } from 'react-icons/fi'
+import { showNotification } from '../utils/toastHelper'
 import './WonPropertyCard.css'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
@@ -56,15 +57,15 @@ const WonPropertyCard = ({ purchase, formatPrice, formatDate, getStatusLabel }) 
           // Перезагружаем страницу для обновления данных
           window.location.reload()
         } else {
-          alert(result.error || 'Ошибка при оплате депозита')
+          showNotification(result.error || 'Ошибка при оплате депозита')
         }
       } else {
         const errorData = await response.json().catch(() => ({}))
-        alert(errorData.error || 'Ошибка при оплате депозита')
+        showNotification(errorData.error || 'Ошибка при оплате депозита')
       }
     } catch (error) {
       console.error('Ошибка при оплате депозита:', error)
-      alert('Ошибка сети. Попробуйте позже.')
+      showNotification('Ошибка сети. Попробуйте позже.')
     } finally {
       setIsPayingDeposit(false)
     }

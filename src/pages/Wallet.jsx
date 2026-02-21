@@ -8,6 +8,7 @@ import { validateLuhn, detectCardType, formatCardNumber, maskCardNumber } from '
 import { getApiBaseUrl, getApiBaseUrlSync } from '../utils/apiConfig'
 import UserBidHistoryModal from '../components/UserBidHistoryModal'
 import BuyNowModal from '../components/BuyNowModal'
+import { showNotification } from '../utils/toastHelper'
 import './Wallet.css'
 
 // Используем синхронную версию для инициализации, затем обновим при загрузке
@@ -540,13 +541,13 @@ const Wallet = () => {
         setDepositAmount(newDeposit)
         // Перезагружаем все данные для синхронизации
         await loadUserData()
-        alert(`Депозит пополнен на 3000 евро! Текущий баланс: ${formatAmount(newDeposit)}`)
+        showNotification(`Депозит пополнен на 3000 евро! Текущий баланс: ${formatAmount(newDeposit)}`)
       } else {
-        alert(data.error || 'Ошибка при пополнении депозита')
+        showNotification(data.error || 'Ошибка при пополнении депозита')
       }
     } catch (error) {
       console.error('Ошибка пополнения:', error)
-      alert('Ошибка при пополнении депозита')
+      showNotification('Ошибка при пополнении депозита')
     }
   }
 
@@ -569,13 +570,13 @@ const Wallet = () => {
       if (data.success) {
         setDepositAmount(data.data.depositAmount)
         await loadUserData()
-        alert(`Выведено ${amount} евро!`)
+        showNotification(`Выведено ${amount} евро!`)
       } else {
-        alert(data.error || 'Ошибка при выводе средств')
+        showNotification(data.error || 'Ошибка при выводе средств')
       }
     } catch (error) {
       console.error('Ошибка вывода:', error)
-      alert('Ошибка при выводе средств')
+      showNotification('Ошибка при выводе средств')
     }
   }
 
@@ -585,14 +586,14 @@ const Wallet = () => {
     const isOldAuth = isAuthenticated()
     
     if (!isClerkAuth && !isOldAuth) {
-      alert('Пожалуйста, войдите в систему для продолжения')
+      showNotification('Пожалуйста, войдите в систему для продолжения')
       return
     }
     
     // Проверяем, что пользователь не является продавцом
     const userRole = userData?.role || 'buyer'
     if (userRole === 'seller' || userRole === 'owner') {
-      alert('Продавцы не могут покупать объекты')
+      showNotification('Продавцы не могут покупать объекты')
       return
     }
     

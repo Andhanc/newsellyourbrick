@@ -17,6 +17,7 @@ import AccessManagement from '../components/admin/AccessManagement';
 import Testing from '../components/admin/Testing';
 import { mockBusinessInfo } from '../data/mockData';
 import { clearUserData, clearUserDataWithoutAdmin } from '../services/authService';
+import { showNotification } from '../utils/toastHelper';
 import '../styles/admin/global.css';
 import './AdminPanelPage.css';
 
@@ -114,7 +115,7 @@ const AdminPanelPage = () => {
     if (hasAccess(section)) {
       setActiveSection(section);
     } else {
-      alert('У вас нет прав доступа к этому разделу');
+      showNotification('У вас нет прав доступа к этому разделу');
     }
   };
 
