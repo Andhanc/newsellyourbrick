@@ -42,6 +42,7 @@ const Header = () => {
   const [isMenuClosing, setIsMenuClosing] = useState(false)
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
+  const [searchResults, setSearchResults] = useState([])
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
   const [userPhoto, setUserPhoto] = useState(null) // Фотография пользователя
   const [isLoggedIn, setIsLoggedIn] = useState(false) // Статус авторизации
@@ -50,6 +51,7 @@ const Header = () => {
   const notificationRef = useRef(null)
   const menuRef = useRef(null)
   const searchInputRef = useRef(null)
+  const searchWrapperRef = useRef(null)
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -59,13 +61,21 @@ const Header = () => {
       if (notificationRef.current && !notificationRef.current.contains(event.target)) {
         setIsNotificationOpen(false)
       }
+      if (searchWrapperRef.current && !searchWrapperRef.current.contains(event.target) && isSearchOpen) {
+        // Не закрываем поиск при клике вне, только если это не клик на другие элементы хедера
+        const headerElements = document.querySelectorAll('.new-header__search-btn, .new-header__user-btn, .new-header__notification-btn, .new-header__auction-btn')
+        const clickedOnHeaderElement = Array.from(headerElements).some(el => el.contains(event.target))
+        if (!clickedOnHeaderElement) {
+          setSearchResults([])
+        }
+      }
     }
 
     document.addEventListener('mousedown', handleClickOutside)
     return () => {
       document.removeEventListener('mousedown', handleClickOutside)
     }
-  }, [])
+  }, [isSearchOpen])
 
   useEffect(() => {
     if (isMenuOpen) {
@@ -181,6 +191,254 @@ const Header = () => {
     setSelectedLocation(location)
     setIsLocationOpen(false)
   }
+
+  // Определение страниц для поиска
+  const searchablePages = [
+    {
+      path: '/',
+      keywords: ['главная', 'home', 'начало', 'старт'],
+      title: 'Главная',
+      requiresAuth: false,
+      allowedRoles: ['buyer', 'seller', 'owner', 'admin', 'client'] // Доступна всем
+    },
+    {
+      path: '/auction',
+      keywords: ['аукцион', 'auction', 'торги', 'продажа', 'недвижимость'],
+      title: 'Аукцион',
+      requiresAuth: false,
+      allowedRoles: ['buyer', 'seller', 'owner', 'admin', 'client'] // Доступна всем
+    },
+    {
+      path: '/map',
+      keywords: ['карта', 'map', 'карты', 'локация', 'место'],
+      title: 'Карта',
+      requiresAuth: false,
+      allowedRoles: ['buyer', 'seller', 'owner', 'admin', 'client'] // Доступна всем
+    },
+    {
+      path: '/chat',
+      keywords: ['чат', 'chat', 'сообщения', 'messages', 'переписка'],
+      title: 'Чат',
+      requiresAuth: false,
+      allowedRoles: ['buyer', 'seller', 'owner', 'admin', 'client'] // Доступна всем
+    },
+    {
+      path: '/profile',
+      keywords: ['профиль', 'profile', 'аккаунт', 'личный кабинет', 'личный', 'кабинет', 'настройки', 'settings'],
+      title: 'Профиль',
+      requiresAuth: true,
+      allowedRoles: ['buyer', 'client', 'admin'] // Только для покупателей и админов
+    },
+    {
+      path: '/favorites',
+      keywords: ['избранное', 'favorites', 'избранные', 'закладки', 'bookmarks'],
+      title: 'Избранное',
+      requiresAuth: true,
+      allowedRoles: ['buyer', 'client', 'admin'] // Только для покупателей и админов
+    },
+    {
+      path: '/wallet',
+      keywords: ['кошелек', 'wallet', 'баланс', 'balance', 'деньги', 'money', 'платежи', 'payments'],
+      title: 'Кошелек',
+      requiresAuth: true,
+      allowedRoles: ['buyer', 'client', 'admin'] // Только для покупателей и админов
+    },
+    {
+      path: '/data',
+      keywords: ['данные', 'data', 'информация', 'information', 'персональные данные'],
+      title: 'Данные',
+      requiresAuth: true,
+      allowedRoles: ['buyer', 'client', 'admin'] // Только для покупателей и админов
+    },
+    {
+      path: '/subscriptions',
+      keywords: ['подписки', 'subscriptions', 'подписка', 'subscription', 'тарифы', 'tariffs'],
+      title: 'Подписки',
+      requiresAuth: true,
+      allowedRoles: ['buyer', 'client', 'admin'] // Только для покупателей и админов
+    },
+    {
+      path: '/history',
+      keywords: ['история', 'history', 'история покупок', 'покупки', 'purchases'],
+      title: 'История',
+      requiresAuth: true,
+      allowedRoles: ['buyer', 'client', 'admin'] // Только для покупателей и админов
+    },
+    {
+      path: '/owner',
+      keywords: ['кабинет продавца', 'owner', 'продавец', 'seller', 'владелец', 'dashboard', 'дашборд', 'панель продавца'],
+      title: 'Кабинет продавца',
+      requiresAuth: true,
+      requiresRole: ['seller', 'owner'],
+      allowedRoles: ['seller', 'owner', 'admin'] // Только для продавцов и админов
+    },
+    {
+      path: '/owner/property/new',
+      keywords: ['добавить недвижимость', 'add property', 'новая недвижимость', 'создать объявление', 'разместить'],
+      title: 'Добавить недвижимость',
+      requiresAuth: true,
+      requiresRole: ['seller', 'owner'],
+      allowedRoles: ['seller', 'owner', 'admin'] // Только для продавцов и админов
+    },
+    {
+      path: '/admin',
+      keywords: ['админ', 'admin', 'администратор', 'administrator', 'панель администратора', 'админка'],
+      title: 'Админ-панель',
+      requiresAuth: true,
+      requiresRole: ['admin'],
+      allowedRoles: ['admin'] // Только для админов
+    }
+  ]
+
+  // Получение текущей роли пользователя
+  const getUserRole = () => {
+    const userData = getUserData()
+    const localRole = localStorage.getItem('userRole')
+    const storedRole = userData.role || localRole || 'client'
+    const isAdmin = localStorage.getItem('isAdminLoggedIn') === 'true' && storedRole === 'admin'
+    const isOwner = storedRole === 'seller' || storedRole === 'owner' || localStorage.getItem('isOwnerLoggedIn') === 'true'
+    
+    // Админ имеет приоритет
+    if (isAdmin) return 'admin'
+    
+    // Проверяем продавца/владельца
+    if (isOwner) {
+      return storedRole === 'seller' ? 'seller' : 'owner'
+    }
+    
+    // Все остальные - покупатели (buyer или client)
+    // Если роль явно указана как buyer, возвращаем buyer, иначе client
+    return (storedRole === 'buyer' || storedRole === 'client') ? storedRole : 'client'
+  }
+
+  // Функция поиска страниц
+  const searchPages = (query) => {
+    if (!query.trim()) {
+      setSearchResults([])
+      return
+    }
+
+    const queryLower = query.toLowerCase().trim()
+    const currentUserRole = getUserRole()
+    
+    const results = searchablePages
+      .filter(page => {
+        // Проверяем совпадение по ключевым словам
+        const matchesKeywords = page.keywords.some(keyword => 
+          keyword.toLowerCase().includes(queryLower) || queryLower.includes(keyword.toLowerCase())
+        )
+        
+        // Проверяем совпадение по названию
+        const matchesTitle = page.title.toLowerCase().includes(queryLower)
+        
+        if (!(matchesKeywords || matchesTitle)) {
+          return false
+        }
+        
+        // Фильтруем по роли пользователя
+        // Если пользователь не авторизован, показываем только страницы без авторизации
+        const userData = getUserData()
+        const isUserLoggedIn = isLoggedIn || (userLoaded && user) || userData.isLoggedIn
+        
+        if (!isUserLoggedIn) {
+          return !page.requiresAuth
+        }
+        
+        // Если страница доступна всем ролям или не указаны ограничения
+        if (!page.allowedRoles || page.allowedRoles.length === 0) {
+          return true
+        }
+        
+        // Строго проверяем, есть ли роль пользователя в списке разрешенных
+        // Если роли нет в списке - страница НЕ показывается вообще
+        return page.allowedRoles.includes(currentUserRole)
+      })
+      .map(page => ({
+        ...page,
+        // Проверяем авторизацию
+        canAccess: checkPageAccess(page)
+      }))
+
+    setSearchResults(results)
+  }
+
+  // Проверка доступа к странице
+  const checkPageAccess = (page) => {
+    // Если страница не требует авторизации
+    if (!page.requiresAuth) {
+      return { allowed: true }
+    }
+
+    // Проверяем авторизацию
+    const userData = getUserData()
+    const isUserLoggedIn = isLoggedIn || (userLoaded && user) || userData.isLoggedIn
+
+    if (!isUserLoggedIn) {
+      return { 
+        allowed: false, 
+        reason: 'auth',
+        message: 'Для доступа к этой странице необходимо войти в систему'
+      }
+    }
+
+    // Проверяем роль, если требуется
+    if (page.requiresRole) {
+      const userRole = userData.role || localStorage.getItem('userRole') || 'client'
+      const isAdmin = localStorage.getItem('isAdminLoggedIn') === 'true' && userRole === 'admin'
+      const isOwner = userRole === 'seller' || userRole === 'owner' || localStorage.getItem('isOwnerLoggedIn') === 'true'
+
+      if (page.requiresRole.includes('admin') && !isAdmin) {
+        return { 
+          allowed: false, 
+          reason: 'role',
+          message: 'Доступ только для администраторов'
+        }
+      }
+
+      if (page.requiresRole.includes('seller') && !isOwner && !isAdmin) {
+        return { 
+          allowed: false, 
+          reason: 'role',
+          message: 'Доступ только для продавцов'
+        }
+      }
+    }
+
+    return { allowed: true }
+  }
+
+  // Обработка выбора результата поиска
+  const handleSearchResultClick = (page) => {
+    const access = checkPageAccess(page)
+    
+    if (!access.allowed) {
+      if (access.reason === 'auth') {
+        setIsSearchOpen(false)
+        setSearchQuery('')
+        setIsLoginModalOpen(true)
+      } else {
+        // Показываем сообщение об ошибке доступа
+        alert(access.message)
+      }
+      return
+    }
+
+    // Переходим на страницу
+    navigate(page.path)
+    setIsSearchOpen(false)
+    setSearchQuery('')
+    setSearchResults([])
+  }
+
+  // Обработка изменения поискового запроса
+  useEffect(() => {
+    if (isSearchOpen && searchQuery.trim()) {
+      searchPages(searchQuery)
+    } else if (!searchQuery.trim()) {
+      setSearchResults([])
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchQuery, isSearchOpen])
 
   const firstProperty = properties[0] || {
     id: 1,
@@ -393,33 +651,72 @@ const Header = () => {
 
           <div className="new-header__right" ref={notificationRef}>
             {isSearchOpen ? (
-              <div className="new-header__search-field">
-                <FiSearch size={18} className="new-header__search-icon" />
-                <input
-                  ref={searchInputRef}
-                  type="text"
-                  placeholder={t('search') || 'Поиск...'}
-                  className="new-header__search-input"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Escape') {
+              <div className="new-header__search-wrapper" ref={searchWrapperRef}>
+                <div className="new-header__search-field">
+                  <FiSearch size={18} className="new-header__search-icon" />
+                  <input
+                    ref={searchInputRef}
+                    type="text"
+                    placeholder={t('search') || 'Поиск...'}
+                    className="new-header__search-input"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Escape') {
+                        setIsSearchOpen(false)
+                        setSearchQuery('')
+                        setSearchResults([])
+                      } else if (e.key === 'Enter' && searchResults.length > 0) {
+                        // Переходим на первую доступную страницу
+                        const firstAccessible = searchResults.find(r => r.canAccess.allowed)
+                        if (firstAccessible) {
+                          handleSearchResultClick(firstAccessible)
+                        } else if (searchResults[0]) {
+                          handleSearchResultClick(searchResults[0])
+                        }
+                      }
+                    }}
+                  />
+                  <button
+                    type="button"
+                    className="new-header__search-close"
+                    onClick={() => {
                       setIsSearchOpen(false)
                       setSearchQuery('')
-                    }
-                  }}
-                />
-                <button
-                  type="button"
-                  className="new-header__search-close"
-                  onClick={() => {
-                    setIsSearchOpen(false)
-                    setSearchQuery('')
-                  }}
-                  aria-label="Закрыть поиск"
-                >
-                  <FiX size={18} />
-                </button>
+                      setSearchResults([])
+                    }}
+                    aria-label="Закрыть поиск"
+                  >
+                    <FiX size={18} />
+                  </button>
+                </div>
+                {searchResults.length > 0 && (
+                  <div className="new-header__search-results">
+                    {searchResults.map((result, index) => (
+                      <button
+                        key={`${result.path}-${index}`}
+                        type="button"
+                        className={`new-header__search-result ${!result.canAccess.allowed ? 'new-header__search-result--disabled' : ''}`}
+                        onClick={() => handleSearchResultClick(result)}
+                        disabled={!result.canAccess.allowed}
+                      >
+                        <span className="new-header__search-result-title">{result.title}</span>
+                        {!result.canAccess.allowed && (
+                          <span className="new-header__search-result-hint">
+                            {result.canAccess.reason === 'auth' ? '🔒 Требуется вход' : '⚠️ Нет доступа'}
+                          </span>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {searchQuery.trim() && searchResults.length === 0 && (
+                  <div className="new-header__search-results">
+                    <div className="new-header__search-result new-header__search-result--no-results">
+                      <span>Ничего не найдено</span>
+                    </div>
+                  </div>
+                )}
               </div>
             ) : (
               <>
@@ -432,7 +729,11 @@ const Header = () => {
                 </button>
                 <button 
                   className="new-header__search-btn"
-                  onClick={() => setIsSearchOpen(true)}
+                  onClick={() => {
+                    setIsSearchOpen(true)
+                    setSearchQuery('')
+                    setSearchResults([])
+                  }}
                   aria-label="Открыть поиск"
                 >
                   <FiSearch size={20} />

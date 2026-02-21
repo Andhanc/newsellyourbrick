@@ -3950,6 +3950,88 @@
     color: #111827;
   }
 
+  .new-header__search-wrapper {
+    position: relative;
+    width: 90%;
+  }
+
+  .new-header__search-results {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    right: 0;
+    background: #ffffff;
+    border: 1px solid rgba(17, 24, 39, 0.1);
+    border-radius: 12px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    max-height: 400px;
+    overflow-y: auto;
+    z-index: 1000;
+    animation: searchResultsSlideIn 0.2s ease;
+  }
+
+  @keyframes searchResultsSlideIn {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .new-header__search-result {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    border: none;
+    background: transparent;
+    width: 100%;
+    text-align: left;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    border-bottom: 1px solid rgba(17, 24, 39, 0.05);
+  }
+
+  .new-header__search-result:last-child {
+    border-bottom: none;
+  }
+
+  .new-header__search-result:hover:not(.new-header__search-result--disabled):not(.new-header__search-result--no-results) {
+    background: rgba(17, 24, 39, 0.05);
+  }
+
+  .new-header__search-result--disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .new-header__search-result--no-results {
+    cursor: default;
+    justify-content: center;
+    color: #999;
+    font-style: italic;
+  }
+
+  .new-header__search-result-title {
+    font-size: 15px;
+    color: #111827;
+    font-weight: 400;
+  }
+
+  .new-header__search-result--disabled .new-header__search-result-title {
+    color: #666;
+  }
+
+  .new-header__search-result-hint {
+    font-size: 12px;
+    color: #999;
+    margin-left: 12px;
+    white-space: nowrap;
+  }
+
   @media (max-width: 768px) {
     .new-header__search-field {
       width: 90%;
@@ -3958,6 +4040,26 @@
 
     .new-header__search-input {
       font-size: 14px;
+    }
+
+    .new-header__search-wrapper {
+      width: 90%;
+    }
+
+    .new-header__search-results {
+      max-height: 300px;
+    }
+
+    .new-header__search-result {
+      padding: 10px 12px;
+    }
+
+    .new-header__search-result-title {
+      font-size: 14px;
+    }
+
+    .new-header__search-result-hint {
+      font-size: 11px;
     }
   }
 

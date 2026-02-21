@@ -20,6 +20,7 @@ const PropertyList = ({ auctionProperties = null }) => {
   const [showFilters, setShowFilters] = useState(false)
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false)
   const [propertyType, setPropertyType] = useState('все')
+  const [tooltip, setTooltip] = useState({ show: false, text: '', x: 0, y: 0 })
   
   // Маппинг категорий из URL (английские) в русские названия для фильтра
   const categoryMap = {
@@ -151,8 +152,26 @@ const PropertyList = ({ auctionProperties = null }) => {
   }, [searchQuery, propertyType])
 
   return (
-    <section className="property-list">
-      <div className="property-list-container">
+    <>
+      {tooltip.show && (
+        <div 
+          className="property-tooltip"
+          style={{
+            position: 'fixed',
+            left: `${tooltip.x}px`,
+            top: `${tooltip.y}px`,
+            transform: 'translate(-50%, calc(-100% - 8px))',
+            zIndex: 1000000
+          }}
+        >
+          <div className="property-tooltip-content">
+            {tooltip.text}
+          </div>
+          <div className="property-tooltip-arrow"></div>
+        </div>
+      )}
+      <section className="property-list">
+        <div className="property-list-container">
         <h2 className="property-list-title">Активные аукционы</h2>
         
         <div className="search-filters-bar">
@@ -285,29 +304,21 @@ const PropertyList = ({ auctionProperties = null }) => {
                       <div className="reserved-overlay-text">Забронировано</div>
                     </div>
                   )}
-                  {hasTestTimer && (
-                    <div 
-                      className="property-auction-badge"
-                      onClick={(e) => {
-                        e.preventDefault()
-                        e.stopPropagation()
-                        navigate(`/property/${property.id}`, {
-                          state: { property }
-                        })
-                      }}
-                    >
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <circle cx="12" cy="12" r="10"/>
-                        <polyline points="12 6 12 12 16 14"/>
-                      </svg>
-                      <span>Аукцион</span>
-                    </div>
-                  )}
                   {(hasBuyNowPrice || hasTestDrive) && (
                     <div className="property-badges-center">
                       {hasBuyNowPrice && (
                         <div 
                           className="property-buy-badge"
+                          onMouseEnter={(e) => {
+                            const rect = e.currentTarget.getBoundingClientRect()
+                            setTooltip({
+                              show: true,
+                              text: 'Вы можете купить этот объект прямо сейчас по фиксированной цене без участия в аукционе.',
+                              x: rect.left + rect.width / 2,
+                              y: rect.top - 10
+                            })
+                          }}
+                          onMouseLeave={() => setTooltip({ show: false, text: '', x: 0, y: 0 })}
                           onClick={(e) => {
                             e.preventDefault()
                             e.stopPropagation()
@@ -322,6 +333,16 @@ const PropertyList = ({ auctionProperties = null }) => {
                       {hasTestDrive && (
                         <div 
                           className="property-testdrive-badge"
+                          onMouseEnter={(e) => {
+                            const rect = e.currentTarget.getBoundingClientRect()
+                            setTooltip({
+                              show: true,
+                              text: 'Для этого объекта доступен тест-драйв. Вы можете посетить недвижимость перед покупкой.',
+                              x: rect.left + rect.width / 2,
+                              y: rect.top - 10
+                            })
+                          }}
+                          onMouseLeave={() => setTooltip({ show: false, text: '', x: 0, y: 0 })}
                           onClick={(e) => {
                             e.preventDefault()
                             e.stopPropagation()
@@ -544,6 +565,7 @@ const PropertyList = ({ auctionProperties = null }) => {
         />
       )}
     </section>
+    </>
   )
 }
 
