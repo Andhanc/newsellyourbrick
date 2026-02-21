@@ -41,7 +41,8 @@ WORKDIR /app
 COPY package*.json ./
 
 # Устанавливаем зависимости
-RUN npm ci --legacy-peer-deps
+# Используем npm install вместо npm ci для большей гибкости
+RUN npm install --legacy-peer-deps
 
 # Копируем остальные файлы
 COPY . .

@@ -12,7 +12,7 @@
     "server": "node server/server.js",
     "server:dev": "node --watch server/server.js",
     "start": "echo '🚀 Запуск приложения...' && concurrently --restart-tries 3 --restart-after 2000 --kill-others-on-fail=false --names \"SERVER,FRONTEND\" --prefix-colors \"blue,green\" --prefix \"[{name}]\" \"npm run server\" \"npm run dev\"",
-    "start:prod": "cross-env NODE_ENV=production node server/server.js",
+    "start:prod": "node server/server.js",
     "delete-user": "node delete-user-by-id.js",
     "clear-properties": "node clear-properties.js"
   },
@@ -54,7 +54,6 @@
     "@types/react": "^19.2.2",
     "@types/react-dom": "^19.2.2",
     "@vitejs/plugin-react": "^5.1.0",
-    "baseline-browser-mapping": "^2.9.19",
-    "cross-env": "^7.0.3"
+    "baseline-browser-mapping": "^2.9.19"
   }
 }
