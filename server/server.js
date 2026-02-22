@@ -609,10 +609,12 @@ app.get('/api/users', (req, res) => {
     const limit = parseInt(req.query.limit) || 100;
     const offset = parseInt(req.query.offset) || 0;
     const users = userQueries.getAll(limit, offset);
+    console.log(`📋 Запрос пользователей: limit=${limit}, offset=${offset}, найдено=${users.length}`);
     // Удаляем пароли из всех пользователей перед отправкой
     const usersWithoutPasswords = removePasswordsFromUsers(users);
     res.json({ success: true, data: usersWithoutPasswords });
   } catch (error) {
+    console.error('❌ Ошибка при получении пользователей:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });
@@ -2816,8 +2818,25 @@ app.post('/api/auth/email/register', async (req, res) => {
       is_online: 1
     };
     
+    console.log('📝 Создание нового пользователя:', { email: emailLower, name, role: newUser.role });
     const result = userQueries.create(newUser);
+    console.log('✅ Пользователь создан, ID:', result.lastInsertRowid);
+    
     const createdUser = userQueries.getById(result.lastInsertRowid);
+    if (!createdUser) {
+      console.error('❌ Ошибка: Пользователь не найден после создания, ID:', result.lastInsertRowid);
+      return res.status(500).json({ 
+        success: false, 
+        error: 'Ошибка при создании пользователя' 
+      });
+    }
+    
+    console.log('✅ Пользователь успешно сохранен в БД:', { 
+      id: createdUser.id, 
+      email: createdUser.email, 
+      name: `${createdUser.first_name} ${createdUser.last_name}`.trim(),
+      role: createdUser.role 
+    });
     
     // Не возвращаем пароль в ответе (даже захешированный)
     const { password: userPassword, ...userWithoutPassword } = createdUser;

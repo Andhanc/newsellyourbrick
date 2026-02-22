@@ -1620,14 +1620,22 @@ export const verifyEmailCode = async (email, code, password, name, role = 'buyer
       if (response.ok) {
         const data = await response.json()
         if (data.success && data.user) {
+          // Пользователь успешно сохранен в БД
+          console.log('✅ Пользователь успешно зарегистрирован в БД:', data.user)
           saveUserData(data.user, 'email')
           return {
             success: true,
             user: data.user
           }
+        } else {
+          // Backend вернул ошибку
+          return {
+            success: false,
+            error: data.error || 'Не удалось зарегистрировать пользователя'
+          }
         }
       } else {
-        // Обрабатываем ошибки валидации пароля
+        // Обрабатываем ошибки валидации пароля и другие ошибки
         const errorData = await response.json().catch(() => ({}))
         if (response.status === 400 && errorData.passwordValidation) {
           let errorMessage = errorData.error || errorData.message || 'Пароль не соответствует требованиям'
@@ -1643,15 +1651,19 @@ export const verifyEmailCode = async (email, code, password, name, role = 'buyer
             passwordValidation: errorData.passwordValidation
           }
         }
-        // Общая обработка других ошибок
-        console.error('Ошибка при сохранении в БД:', errorData.error || 'Неизвестная ошибка')
+        // Общая обработка других ошибок (409 - пользователь уже существует, и т.д.)
+        console.error('❌ Ошибка при сохранении в БД:', errorData.error || 'Неизвестная ошибка')
+        return {
+          success: false,
+          error: errorData.error || 'Не удалось зарегистрировать пользователя'
+        }
       }
     } catch (backendError) {
+      // Backend недоступен - используем fallback только в этом случае
       console.error('❌ Backend недоступен, данные НЕ сохранены в БД:', backendError.message)
       console.warn('⚠️ Данные сохранены только в localStorage. Запустите backend сервер для полной функциональности.')
-    }
-    
-      // Fallback: создаем пользователя локально
+      
+      // Fallback: создаем пользователя локально (только если backend недоступен)
       const userData = {
         email: emailLower,
         name: registrationName || emailLower.split('@')[0],
@@ -1660,20 +1672,22 @@ export const verifyEmailCode = async (email, code, password, name, role = 'buyer
         loginMethod: 'email'
       }
     
-    // Сохраняем пароль в зашифрованном виде (в production должно быть на backend)
-    // Здесь просто сохраняем в localStorage для демо
-    if (registrationPassword) {
-      // ВНИМАНИЕ: В production пароли НЕ должны храниться на клиенте!
-      // Это только для демонстрации
-      const hashedPassword = btoa(registrationPassword) // Простое кодирование (не безопасно!)
-      localStorage.setItem(`userPassword_${emailLower}`, hashedPassword)
-    }
+      // Сохраняем пароль в зашифрованном виде (в production должно быть на backend)
+      // Здесь просто сохраняем в localStorage для демо
+      if (registrationPassword) {
+        // ВНИМАНИЕ: В production пароли НЕ должны храниться на клиенте!
+        // Это только для демонстрации
+        const hashedPassword = btoa(registrationPassword) // Простое кодирование (не безопасно!)
+        localStorage.setItem(`userPassword_${emailLower}`, hashedPassword)
+      }
     
-    saveUserData(userData, 'email')
+      saveUserData(userData, 'email')
     
-    return {
-      success: true,
-      user: userData
+      return {
+        success: true,
+        user: userData,
+        warning: 'Пользователь сохранен локально. Backend недоступен.'
+      }
     }
   } catch (error) {
     console.error('Ошибка верификации кода:', error)
