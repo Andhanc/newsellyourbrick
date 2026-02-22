@@ -4454,14 +4454,50 @@ app.post('/api/properties', upload.fields([
       if (property_type === 'apartment' || property_type === 'commercial') {
         console.log('🔍 Создание квартиры/коммерческой недвижимости...');
         result = apartmentQueries.create(propertyData);
+        console.log('✅ Результат создания:', { lastInsertRowid: result.lastInsertRowid, changes: result.changes });
+        
+        if (!result || !result.lastInsertRowid) {
+          console.error('❌ Ошибка: объект не был создан, result.lastInsertRowid отсутствует');
+          return res.status(500).json({ 
+            success: false, 
+            error: 'Не удалось создать объявление. Ошибка при сохранении в базу данных.' 
+          });
+        }
+        
         property = apartmentQueries.getById(result.lastInsertRowid);
+        if (!property) {
+          console.error('❌ Ошибка: объект создан, но не найден при получении, ID:', result.lastInsertRowid);
+          return res.status(500).json({ 
+            success: false, 
+            error: 'Объявление создано, но не найдено в базе данных. Обратитесь к администратору.' 
+          });
+        }
         console.log('✅ Квартира/коммерческая недвижимость создана с ID:', result.lastInsertRowid);
+        console.log('📋 Полученный объект:', { id: property.id, title: property.title, property_type: property.property_type });
       } else if (property_type === 'house' || property_type === 'villa') {
         console.log('🔍 Создание дома/виллы...');
         result = houseQueries.create(propertyData);
+        console.log('✅ Результат создания:', { lastInsertRowid: result.lastInsertRowid, changes: result.changes });
+        
+        if (!result || !result.lastInsertRowid) {
+          console.error('❌ Ошибка: объект не был создан, result.lastInsertRowid отсутствует');
+          return res.status(500).json({ 
+            success: false, 
+            error: 'Не удалось создать объявление. Ошибка при сохранении в базу данных.' 
+          });
+        }
+        
         property = houseQueries.getById(result.lastInsertRowid);
+        if (!property) {
+          console.error('❌ Ошибка: объект создан, но не найден при получении, ID:', result.lastInsertRowid);
+          return res.status(500).json({ 
+            success: false, 
+            error: 'Объявление создано, но не найдено в базе данных. Обратитесь к администратору.' 
+          });
+        }
         console.log('✅ Дом/вилла создана с ID:', result.lastInsertRowid);
         console.log('🔍 POST /api/properties - Создан дом/вилла, bedrooms в БД:', property.bedrooms, 'тип:', typeof property.bedrooms);
+        console.log('📋 Полученный объект:', { id: property.id, title: property.title, property_type: property.property_type });
       } else {
         return res.status(400).json({ 
           success: false, 
@@ -4518,6 +4554,22 @@ app.post('/api/properties', upload.fields([
     const propertyId = result.lastInsertRowid;
 
     console.log('✅ Объявление успешно создано с ID:', propertyId);
+    console.log('📋 Проверка property перед отправкой ответа:', {
+      propertyExists: !!property,
+      propertyId: property?.id,
+      propertyTitle: property?.title,
+      propertyType: property?.property_type,
+      moderationStatus: property?.moderation_status
+    });
+    
+    if (!property) {
+      console.error('❌ КРИТИЧЕСКАЯ ОШИБКА: property равен null или undefined после создания!');
+      return res.status(500).json({ 
+        success: false, 
+        error: 'Объявление создано, но не удалось получить данные. Обратитесь к администратору.' 
+      });
+    }
+    
     console.log('📋 Статус модерации из БД:', property.moderation_status);
     console.log('📋 Сохраненные данные в БД:', {
       property_type: property.property_type,
@@ -4564,11 +4616,34 @@ app.post('/api/properties', upload.fields([
     }
     console.log('📊 Всего объявлений на модерации:', pendingCount);
 
-    res.json({ 
-      success: true, 
-      data: property,
-      message: 'Объявление успешно отправлено на модерацию' 
+    // Убеждаемся, что property содержит все необходимые данные
+    const responseData = {
+      success: true,
+      data: {
+        id: property.id,
+        user_id: property.user_id,
+        property_type: property.property_type,
+        title: property.title,
+        description: property.description,
+        price: property.price,
+        currency: property.currency,
+        is_auction: property.is_auction,
+        moderation_status: property.moderation_status,
+        created_at: property.created_at,
+        ...property // Включаем все остальные поля
+      },
+      message: 'Объявление успешно отправлено на модерацию'
+    };
+    
+    console.log('📤 Отправка ответа клиенту:', {
+      success: responseData.success,
+      hasData: !!responseData.data,
+      propertyId: responseData.data?.id,
+      propertyTitle: responseData.data?.title,
+      message: responseData.message
     });
+
+    res.json(responseData);
   } catch (error) {
     console.error('❌ Ошибка при создании объявления:', error);
     console.error('❌ Тип ошибки:', error.constructor.name);
@@ -6346,6 +6421,13 @@ app.get('/api/properties/user/:userId', (req, res) => {
     const properties = propertyQueries.getByUserId(userId);
     
     console.log(`✅ Найдено объявлений пользователя: ${properties.length}`);
+    if (properties.length > 0) {
+      console.log('📋 ID объявлений:', properties.map(p => p.id).join(', '));
+      console.log('📋 Типы объявлений:', properties.map(p => p.property_type).join(', '));
+      console.log('📋 Статусы модерации:', properties.map(p => p.moderation_status).join(', '));
+    } else {
+      console.log('⚠️ Объявления не найдены для пользователя:', userId);
+    }
 
     // Добавляем информацию о пользователе к каждому объекту и парсим JSON поля
     const formattedProperties = properties.map(prop => {

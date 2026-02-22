@@ -954,8 +954,29 @@ const AddProperty = () => {
       
       const data = await response.json()
       console.log('✅ Данные от сервера:', data)
+      console.log('📋 Проверка данных:', {
+        success: data.success,
+        hasData: !!data.data,
+        dataId: data.data?.id,
+        dataTitle: data.data?.title,
+        dataPropertyType: data.data?.property_type,
+        dataModerationStatus: data.data?.moderation_status,
+        message: data.message
+      })
       
       if (data.success) {
+        // Проверяем, что данные действительно пришли
+        if (!data.data) {
+          console.warn('⚠️ Внимание: объект создан, но данные не возвращены в ответе')
+        } else {
+          console.log('✅ Объект успешно создан:', {
+            id: data.data.id,
+            title: data.data.title,
+            property_type: data.data.property_type,
+            moderation_status: data.data.moderation_status
+          })
+        }
+        
         // Данные успешно отправлены на сервер
         // НЕ сохраняем данные в localStorage, так как они уже на сервере
         // Это предотвращает ошибку QuotaExceededError из-за больших файлов (фото в base64)
