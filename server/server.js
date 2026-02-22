@@ -1986,7 +1986,7 @@ app.post('/api/auth/whatsapp', async (req, res) => {
         country: createdUser.country,
         countryFlag: req.body.countryFlag || '',
         picture: null,
-        user_id_number: createdUser.user_id_number || null
+        ...(createdUser.hasOwnProperty('user_id_number') && createdUser.user_id_number ? { user_id_number: createdUser.user_id_number } : {})
       }
     });
   } catch (error) {
@@ -2841,6 +2841,9 @@ app.post('/api/auth/email/register', async (req, res) => {
     // Не возвращаем пароль в ответе (даже захешированный)
     const { password: userPassword, ...userWithoutPassword } = createdUser;
     
+    // Безопасно получаем user_id_number (может не существовать в старых БД)
+    const userIdNumber = createdUser.hasOwnProperty('user_id_number') ? (createdUser.user_id_number || null) : null;
+    
     res.status(201).json({ 
       success: true, 
       user: {
@@ -2849,7 +2852,7 @@ app.post('/api/auth/email/register', async (req, res) => {
         email: createdUser.email,
         role: createdUser.role,
         phone: createdUser.phone_number,
-        user_id_number: createdUser.user_id_number || null
+        ...(userIdNumber !== null && { user_id_number: userIdNumber })
       }
     });
   } catch (error) {
@@ -3230,7 +3233,7 @@ app.post('/api/auth/google', async (req, res) => {
           email: createdUser.email,
           picture: googlePicture,
           role: createdUser.role,
-          user_id_number: createdUser.user_id_number || null
+          ...(createdUser.hasOwnProperty('user_id_number') && { user_id_number: createdUser.user_id_number || null })
         }
       });
     }

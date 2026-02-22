@@ -1253,15 +1253,15 @@ export const userQueries = {
   create: (userData) => {
     const db = getDatabase();
     
-    // Генерируем уникальный идентификационный номер, если он не передан
-    if (!userData.user_id_number) {
-      userData.user_id_number = generateUniqueUserIdNumber();
-    }
-    
     // Проверяем, есть ли поле password в таблице
     const pragmaInfo = db.prepare("PRAGMA table_info(users)").all();
     const hasPasswordColumn = pragmaInfo.some(col => col.name === 'password');
     const hasUserIdNumber = pragmaInfo.some(col => col.name === 'user_id_number');
+    
+    // Генерируем уникальный идентификационный номер, если он не передан И поле существует в таблице
+    if (hasUserIdNumber && !userData.user_id_number) {
+      userData.user_id_number = generateUniqueUserIdNumber();
+    }
     
     if (hasPasswordColumn) {
       // Таблица имеет поле password
