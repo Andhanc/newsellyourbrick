@@ -4,23 +4,81 @@
 
 import emailjs from '@emailjs/browser'
 
-import { getEmailJsConfig, isDevelopment } from '../utils/env'
+import { getEmailJsConfig, isDevelopment, loadRuntimeConfig } from '../utils/env'
 import { getApiBaseUrl, getApiBaseUrlSync } from '../utils/apiConfig'
 
 // Используем dev tunnel для API
 const API_BASE_URL = getApiBaseUrlSync()
 
-// EmailJS настройки
-const emailJsConfig = getEmailJsConfig()
-const EMAILJS_SERVICE_ID = emailJsConfig.serviceId || ''
-const EMAILJS_TEMPLATE_ID = emailJsConfig.templateId || ''
-const EMAILJS_PUBLIC_KEY = emailJsConfig.publicKey || ''
+// EmailJS настройки (будут обновлены после загрузки конфигурации)
+let emailJsConfig = getEmailJsConfig()
+let EMAILJS_SERVICE_ID = emailJsConfig.serviceId || ''
+let EMAILJS_TEMPLATE_ID = emailJsConfig.templateId || ''
+let EMAILJS_PUBLIC_KEY = emailJsConfig.publicKey || ''
+
+// Функция для обновления EmailJS конфигурации
+const updateEmailJsConfig = async () => {
+  // Если переменные уже есть, не загружаем через API
+  if (EMAILJS_SERVICE_ID && EMAILJS_TEMPLATE_ID && EMAILJS_PUBLIC_KEY) {
+    return true
+  }
+  
+  // Пытаемся загрузить конфигурацию через API
+  try {
+    const runtimeConfig = await loadRuntimeConfig()
+    if (runtimeConfig) {
+      // Обновляем конфигурацию из runtime
+      const newServiceId = runtimeConfig.emailjsServiceId || EMAILJS_SERVICE_ID
+      const newTemplateId = runtimeConfig.emailjsTemplateId || EMAILJS_TEMPLATE_ID
+      const newPublicKey = runtimeConfig.emailjsPublicKey || EMAILJS_PUBLIC_KEY
+      
+      // Обновляем переменные только если они изменились
+      if (newServiceId !== EMAILJS_SERVICE_ID || 
+          newTemplateId !== EMAILJS_TEMPLATE_ID || 
+          newPublicKey !== EMAILJS_PUBLIC_KEY) {
+        EMAILJS_SERVICE_ID = newServiceId
+        EMAILJS_TEMPLATE_ID = newTemplateId
+        EMAILJS_PUBLIC_KEY = newPublicKey
+        
+        // Обновляем конфигурацию в env.js
+        emailJsConfig = getEmailJsConfig()
+        
+        // Инициализируем EmailJS, если есть ключ
+        if (EMAILJS_PUBLIC_KEY) {
+          emailjs.init(EMAILJS_PUBLIC_KEY)
+        }
+        
+        if (EMAILJS_SERVICE_ID && EMAILJS_TEMPLATE_ID && EMAILJS_PUBLIC_KEY) {
+          console.log('✅ EmailJS конфигурация загружена через API:', {
+            serviceId: EMAILJS_SERVICE_ID.substring(0, 15) + '...',
+            templateId: EMAILJS_TEMPLATE_ID,
+            hasPublicKey: !!EMAILJS_PUBLIC_KEY
+          })
+        }
+      }
+      
+      return EMAILJS_SERVICE_ID && EMAILJS_TEMPLATE_ID && EMAILJS_PUBLIC_KEY
+    }
+  } catch (error) {
+    console.warn('⚠️ Не удалось загрузить EmailJS конфигурацию через API:', error.message)
+  }
+  
+  return false
+}
 
 // Инициализация EmailJS
 if (EMAILJS_PUBLIC_KEY) {
   emailjs.init(EMAILJS_PUBLIC_KEY)
-} else if (isDevelopment()) {
-  console.warn('⚠️ REACT_APP_EMAILJS_PUBLIC_KEY или VITE_EMAILJS_PUBLIC_KEY не установлен в .env.local')
+} else {
+  // Пытаемся загрузить конфигурацию через API при старте
+  updateEmailJsConfig().catch(() => {
+    // Игнорируем ошибки при загрузке
+  })
+  
+  if (isDevelopment()) {
+    console.warn('⚠️ REACT_APP_EMAILJS_PUBLIC_KEY или VITE_EMAILJS_PUBLIC_KEY не установлен в .env.local')
+    console.warn('   Пытаемся загрузить через API...')
+  }
 }
 
 // Диагностика в режиме разработки
@@ -1360,6 +1418,11 @@ export const sendEmailVerificationCode = async (email) => {
     }
     
     // Отправка через EmailJS на клиенте (если backend не смог отправить)
+    // Сначала пытаемся загрузить конфигурацию через API, если переменные не установлены
+    if (!EMAILJS_SERVICE_ID || !EMAILJS_TEMPLATE_ID || !EMAILJS_PUBLIC_KEY) {
+      await updateEmailJsConfig()
+    }
+    
     console.log('📧 Проверка EmailJS на клиенте:');
     console.log('   EMAILJS_SERVICE_ID:', EMAILJS_SERVICE_ID ? EMAILJS_SERVICE_ID.substring(0, 15) + '...' : '❌ не установлен');
     console.log('   EMAILJS_TEMPLATE_ID:', EMAILJS_TEMPLATE_ID || '❌ не установлен');

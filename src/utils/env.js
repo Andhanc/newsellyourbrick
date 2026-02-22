@@ -54,14 +54,82 @@ export const getApiBaseUrl = () => {
 }
 
 /**
+ * Кэш для конфигурации, загруженной через API
+ */
+let runtimeConfigCache = null
+let configLoadPromise = null
+
+/**
+ * Загружает конфигурацию через API endpoint
+ * @returns {Promise<object>} Конфигурация с EmailJS переменными
+ */
+export const loadRuntimeConfig = async () => {
+  // Если уже загружается, возвращаем существующий промис
+  if (configLoadPromise) {
+    return configLoadPromise
+  }
+  
+  // Если уже загружено, возвращаем из кэша
+  if (runtimeConfigCache) {
+    return runtimeConfigCache
+  }
+  
+  // Загружаем конфигурацию
+  configLoadPromise = (async () => {
+    try {
+      const apiBaseUrl = getApiBaseUrl()
+      const response = await fetch(`${apiBaseUrl}/config`)
+      if (response.ok) {
+        const data = await response.json()
+        if (data.success && data.data) {
+          runtimeConfigCache = data.data
+          return runtimeConfigCache
+        }
+      }
+    } catch (error) {
+      console.warn('⚠️ Не удалось загрузить конфигурацию через API:', error.message)
+    }
+    return null
+  })()
+  
+  return configLoadPromise
+}
+
+/**
  * Получает EmailJS переменные
+ * Сначала пытается получить из переменных окружения, затем из runtime конфигурации
+ * ВАЖНО: Эта функция всегда проверяет runtime конфигурацию, если она загружена
  */
 export const getEmailJsConfig = () => {
-  return {
+  // Сначала пытаемся получить из переменных окружения
+  const envConfig = {
     serviceId: getEnv('EMAILJS_SERVICE_ID'),
     templateId: getEnv('EMAILJS_TEMPLATE_ID'),
     publicKey: getEnv('EMAILJS_PUBLIC_KEY'),
   }
+  
+  // Если все переменные есть, возвращаем их
+  if (envConfig.serviceId && envConfig.templateId && envConfig.publicKey) {
+    return envConfig
+  }
+  
+  // Если переменных нет, пытаемся использовать runtime конфигурацию (если уже загружена)
+  if (runtimeConfigCache) {
+    const runtimeConfig = {
+      serviceId: runtimeConfigCache.emailjsServiceId || envConfig.serviceId,
+      templateId: runtimeConfigCache.emailjsTemplateId || envConfig.templateId,
+      publicKey: runtimeConfigCache.emailjsPublicKey || envConfig.publicKey,
+    }
+    // Если runtime конфигурация полная, возвращаем её
+    if (runtimeConfig.serviceId && runtimeConfig.templateId && runtimeConfig.publicKey) {
+      return runtimeConfig
+    }
+    // Иначе возвращаем смешанную конфигурацию
+    return runtimeConfig
+  }
+  
+  // Возвращаем то, что есть (может быть пустым)
+  return envConfig
 }
 
 /**
