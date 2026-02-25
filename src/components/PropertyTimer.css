@@ -194,11 +194,54 @@
   border: none !important;
   padding: 0;
   gap: 0;
-}.property-timer--detail .timer-compact-time--detail {
+}
+
+.property-timer--detail .timer-compact-time--detail {
   font-size: 28px;
   font-weight: 700;
   color: inherit;
   border: none;
   padding: 0;
   line-height: 1.2;
+}
+
+@media (max-width: 768px) {
+  /* Компактный таймер в карточках — не вылезает, компактные цифры */
+  .property-timer.compact {
+    margin-bottom: 6px;
+    max-width: 100%;
+  }
+
+  .property-timer.compact .timer-compact-time {
+    padding: 4px 6px;
+    gap: 2px;
+    max-width: 100%;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .property-timer.compact .time-value {
+    font-size: 13px;
+  }
+
+  .property-timer.compact .time-label {
+    font-size: 8px;
+    letter-spacing: 0.2px;
+  }
+
+  .property-timer.compact .timer-separator {
+    font-size: 12px;
+    margin: 0 0.5px;
+  }
+
+  .property-timer.compact .timer-icon-svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  /* Таймер в оверлее карточки */
+  .property-timer-overlay .timer-compact-time {
+    width: 100%;
+    justify-content: center;
+  }
 }

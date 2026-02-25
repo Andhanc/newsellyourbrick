@@ -113,10 +113,23 @@
   }
 
   .quick-add-card__value {
-    font-size: 20px;
+    font-size: 18px;
+    word-break: break-word;
   }
 
   .quick-add-card__content-wrapper {
     gap: 16px;
+  }
+}
+
+@media (max-width: 440px) {
+  .quick-add-card__icon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .quick-add-card__icon svg {
+    width: 17px;
+    height: 17px;
   }
 }

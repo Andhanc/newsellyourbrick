@@ -12,6 +12,8 @@ import CircularTimer from './CircularTimer'
 import PropertySearchModal from './PropertySearchModal'
 import './PropertyList.css'
 
+const MOBILE_BREAKPOINT = 768
+
 const PropertyList = ({ auctionProperties = null }) => {
   const navigate = useNavigate()
   const location = useLocation()
@@ -21,6 +23,14 @@ const PropertyList = ({ auctionProperties = null }) => {
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false)
   const [propertyType, setPropertyType] = useState('все')
   const [tooltip, setTooltip] = useState({ show: false, text: '', x: 0, y: 0 })
+  const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth <= MOBILE_BREAKPOINT)
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth <= MOBILE_BREAKPOINT)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
   
   // Маппинг категорий из URL (английские) в русские названия для фильтра
   const categoryMap = {
@@ -196,48 +206,49 @@ const PropertyList = ({ auctionProperties = null }) => {
               </button>
             )}
           </div>
-          <button 
-            className="filters-button"
-            onClick={() => setIsSearchModalOpen(true)}
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
-            </svg>
-            Фильтры
-          </button>
-        </div>
-
-        <div className="property-types">
-          <button 
-            className={`type-button ${propertyType === 'все' ? 'active' : ''}`}
-            onClick={() => setPropertyType('все')}
-          >
-            Все
-          </button>
-          <button 
-            className={`type-button ${propertyType === 'квартира' ? 'active' : ''}`}
-            onClick={() => setPropertyType('квартира')}
-          >
-            Квартира
-          </button>
-          <button 
-            className={`type-button ${propertyType === 'апартаменты' ? 'active' : ''}`}
-            onClick={() => setPropertyType('апартаменты')}
-          >
-            Апартаменты
-          </button>
-          <button 
-            className={`type-button ${propertyType === 'вилла' ? 'active' : ''}`}
-            onClick={() => setPropertyType('вилла')}
-          >
-            Вилла
-          </button>
-          <button 
-            className={`type-button ${propertyType === 'дом' ? 'active' : ''}`}
-            onClick={() => setPropertyType('дом')}
-          >
-            Дом
-          </button>
+          <div className="filters-and-types-grid">
+            <button 
+              className="filters-button"
+              onClick={() => setIsSearchModalOpen(true)}
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
+              </svg>
+              Фильтры
+            </button>
+            <div className="property-types">
+              <button 
+                className={`type-button ${propertyType === 'все' ? 'active' : ''}`}
+                onClick={() => setPropertyType('все')}
+              >
+                Все
+              </button>
+              <button 
+                className={`type-button ${propertyType === 'квартира' ? 'active' : ''}`}
+                onClick={() => setPropertyType('квартира')}
+              >
+                Квартира
+              </button>
+              <button 
+                className={`type-button ${propertyType === 'апартаменты' ? 'active' : ''}`}
+                onClick={() => setPropertyType('апартаменты')}
+              >
+                Апартаменты
+              </button>
+              <button 
+                className={`type-button ${propertyType === 'вилла' ? 'active' : ''}`}
+                onClick={() => setPropertyType('вилла')}
+              >
+                Вилла
+              </button>
+              <button 
+                className={`type-button ${propertyType === 'дом' ? 'active' : ''}`}
+                onClick={() => setPropertyType('дом')}
+              >
+                Дом
+              </button>
+            </div>
+          </div>
         </div>
 
         {filteredProperties.length === 0 ? (
@@ -414,8 +425,8 @@ const PropertyList = ({ auctionProperties = null }) => {
                       {hasTestTimer ? (
                         <CircularTimer 
                           endTime={property.test_timer_end_date} 
-                          size={120} 
-                          strokeWidth={6} 
+                          size={isMobile ? 56 : 120} 
+                          strokeWidth={isMobile ? 4 : 6} 
                         />
                       ) : (
                         <PropertyTimer endTime={property.endTime} compact={true} />

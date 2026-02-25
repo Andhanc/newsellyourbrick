@@ -128,6 +128,14 @@ const Footer = () => {
             <button type="button" className="footer__bottom-link">О приложении</button>
           </div>
 
+          <div className="footer__whatsapp-qr">
+            <img 
+              src={whatsappQR}
+              alt="WhatsApp QR код" 
+              className="footer__qr-image"
+            />
+          </div>
+
           <div className="footer__store-buttons">
             <button
               type="button"
@@ -178,46 +186,38 @@ const Footer = () => {
                 <span className="footer__store-name">WhatsApp</span>
               </div>
             </a>
-          </div>
 
-          <div className="footer__whatsapp-qr">
-            <img 
-              src={whatsappQR}
-              alt="WhatsApp QR код" 
-              className="footer__qr-image"
-            />
-          </div>
-
-          <div className="footer__language-selector" ref={languageDropdownRef}>
-            <button
-              type="button"
-              className="footer__language-selector-btn"
-              onClick={() => setIsLanguageDropdownOpen(!isLanguageDropdownOpen)}
-              aria-label="Выбрать язык"
-            >
-              <span className={`footer__language-flag ${currentLanguage.flagClass}`}></span>
-              <span className="footer__language-name">{currentLanguage.name}</span>
-              <FiChevronDown 
-                size={16} 
-                className={`footer__language-chevron ${isLanguageDropdownOpen ? 'footer__language-chevron--open' : ''}`}
-              />
-            </button>
-            {isLanguageDropdownOpen && (
-              <div className="footer__language-dropdown">
-                {languages.map((lang) => (
-                  <button
-                    key={lang.code}
-                    type="button"
-                    className={`footer__language-option ${i18n.language === lang.code ? 'footer__language-option--active' : ''}`}
-                    onClick={() => handleLanguageChange(lang.code)}
-                  >
-                    <span className={`footer__language-flag ${lang.flagClass}`}></span>
-                    <span className="footer__language-name">{lang.name}</span>
-                    {i18n.language === lang.code && <FiCheck size={16} className="footer__language-check" />}
-                  </button>
-                ))}
-              </div>
-            )}
+            <div className="footer__language-selector" ref={languageDropdownRef}>
+              <button
+                type="button"
+                className="footer__language-selector-btn"
+                onClick={() => setIsLanguageDropdownOpen(!isLanguageDropdownOpen)}
+                aria-label="Выбрать язык"
+              >
+                <span className={`footer__language-flag ${currentLanguage.flagClass}`}></span>
+                <span className="footer__language-name">{currentLanguage.name}</span>
+                <FiChevronDown 
+                  size={16} 
+                  className={`footer__language-chevron ${isLanguageDropdownOpen ? 'footer__language-chevron--open' : ''}`}
+                />
+              </button>
+              {isLanguageDropdownOpen && (
+                <div className="footer__language-dropdown">
+                  {languages.map((lang) => (
+                    <button
+                      key={lang.code}
+                      type="button"
+                      className={`footer__language-option ${i18n.language === lang.code ? 'footer__language-option--active' : ''}`}
+                      onClick={() => handleLanguageChange(lang.code)}
+                    >
+                      <span className={`footer__language-flag ${lang.flagClass}`}></span>
+                      <span className="footer__language-name">{lang.name}</span>
+                      {i18n.language === lang.code && <FiCheck size={16} className="footer__language-check" />}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>

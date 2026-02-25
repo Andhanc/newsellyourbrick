@@ -284,3 +284,42 @@
     font-size: 20px;
   }
 }
+
+@media (max-width: 480px) {
+  .favorites-container {
+    padding: 20px 12px;
+  }
+
+  .favorites-title {
+    font-size: 24px;
+  }
+
+  .favorites-subtitle {
+    font-size: 13px;
+  }
+
+  .favorite-card-image {
+    height: 180px;
+  }
+
+  .favorite-card-content {
+    padding: 14px;
+  }
+
+  .favorite-card-title {
+    font-size: 15px;
+  }
+
+  .favorite-card-price-value {
+    font-size: 18px;
+  }
+
+  .favorites-empty {
+    padding: 60px 16px;
+  }
+
+  .favorites-empty-button {
+    width: 100%;
+    justify-content: center;
+  }
+}

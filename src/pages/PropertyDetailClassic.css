@@ -630,9 +630,9 @@
 }
 
 .property-detail-info-block__content--amenities {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 8px 16px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .amenity-item {
@@ -739,11 +739,15 @@
   font-weight: 600;
 }
 
-/* Адаптивные стили для подробной информации */
+/* Адаптивные стили для подробной информации и мобильного хедера */
 @media (max-width: 768px) {
   .property-detail-info-block__content--grid {
     grid-template-columns: 1fr;
     gap: 12px;
+  }
+
+  .property-detail-info-block__content--amenities {
+    justify-content: flex-start;
   }
 }
 
@@ -1468,7 +1472,7 @@
   flex-direction: column;
   gap: 12px;
   margin-bottom: 16px;
-  padding: 16px;
+  padding: 14px;
   background: #ffffff;
   border-radius: 12px;
   border: 1px solid #e5e7eb;

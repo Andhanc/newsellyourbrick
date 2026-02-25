@@ -3059,8 +3059,8 @@
   }
 }
 
-/* Desktop styles */
-@media (min-width: 1024px) {
+/* Desktop и планшет (от 769px) */
+@media (min-width: 769px) {
   /* Градиент на весь блок */
   .hero-section::before {
     content: '';
@@ -4088,7 +4088,7 @@
     padding: 15px;
     border-radius: 12px;
     border: none;
-    background: transparent;
+    background: transparent !important;
     color: #111827;
     display: inline-flex;
     align-items: center;
@@ -4131,12 +4131,15 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(135deg, #0ABAB5 0%, #089a95 100%);
-    color: #ffffff;
+    background: transparent;
+    color: #111827;
     border-radius: 50%;
   }
 
-  /* без дополнительного спец-эффекта для аватара */
+  .new-header__user-btn svg {
+    width: 26px;
+    height: 26px;
+  }
 
   .new-header__profile-indicator {
     position: absolute;
@@ -4211,10 +4214,260 @@
   }
 }
 
-/* Мобильная версия - скрываем новый хедер */
-@media (max-width: 1023px) {
+/* Мобильная версия (0–768px) — компактный хедер: бургер слева, кнопка «Главная» и профиль справа */
+@media (max-width: 768px) {
   .new-header {
+    margin: 0;
+    width: 100%;
+  }
+
+  .new-header__container {
+    display: flex;
+    width: 90%;
+    max-width: 90%;
+    margin: 0 5%;
+    padding: 8px 16px;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0;
+    border-radius: 12px;
+    box-shadow: none;
+    background: transparent;
+    box-sizing: border-box;
+  }
+
+  /* В мобильной версии убираем локацию и горизонтальные фильтры */
+  .new-header__location,
+  .new-header__filters {
     display: none !important;
+  }
+
+  /* Бургер слева, не растягивается */
+  .new-header__left {
+    flex: 0 0 auto;
+    margin-right: 0;
+    margin-left: 0;
+  }
+
+  /* Кнопка «Главная»/«Аукцион» и иконка профиля прижаты к правому краю */
+  .new-header__right {
+    display: flex !important;
+    align-items: center;
+    gap: 8px;
+    margin-left: auto !important;
+    flex: 0 0 auto;
+    margin-right: 0;
+  }
+
+  /* Бургер-меню слева: компактная круглая кнопка без надписи */
+  .new-header__menu-btn {
+    padding: 10px;
+    border-radius: 999px;
+    background: linear-gradient(145deg, #ffffff 0%, #e5e7eb 40%, #d1d5db 100%);
+    box-shadow:
+      0 8px 20px rgba(15, 23, 42, 0.15),
+      0 0 0 1px rgba(15, 23, 42, 0.06);
+    color: #111827;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+  }
+
+  .new-header__menu-btn span {
+    display: none;
+  }
+
+  .new-header__menu-icon {
+    width: 20px;
+    height: 20px;
+  }
+
+  .new-header__menu-btn:hover {
+    background: linear-gradient(145deg, #f9fafb 0%, #e5e7eb 40%, #d1d5db 100%);
+    transform: translateY(-1px);
+    box-shadow:
+      0 10px 24px rgba(15, 23, 42, 0.2),
+      0 0 0 1px rgba(15, 23, 42, 0.08);
+  }
+
+  .new-header__menu-btn--active {
+    transform: translateY(0);
+    box-shadow:
+      0 4px 12px rgba(15, 23, 42, 0.18),
+      0 0 0 1px rgba(15, 23, 42, 0.12);
+  }
+
+  /* Градиентная кнопка «Главная» / «Аукцион» справа от бургера */
+  .new-header__auction-btn {
+    padding: 10px 18px;
+    min-width: auto;
+    height: auto;
+    border: none;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #d0d8f0 0%, #e8e8f5 40%, #f0e0eb 70%, #f8e8f0 100%);
+    color: #111827;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.18);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* В мобильной версии убираем поиск и уведомления, оставляем только профиль */
+  .new-header__search-btn,
+  .new-header__notification-btn {
+    display: none;
+  }
+
+  /* Иконка профиля: больше, без заднего фона */
+  .new-header__user-btn {
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  .new-header__user-btn--avatar {
+    background: transparent !important;
+  }
+
+  .new-header__avatar-placeholder {
+    background: transparent !important;
+    color: #111827;
+  }
+
+  .new-header__user-btn svg {
+    width: 26px;
+    height: 26px;
+  }
+
+  /* === Бургер-меню на мобильных: панель слева, вертикальный список === */
+  .menu-backdrop {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    z-index: 9998 !important;
+    background: rgba(17, 24, 39, 0.4) !important;
+    backdrop-filter: blur(4px);
+  }
+
+  .menu-dropdown {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    transform: none !important;
+    width: min(320px, 85vw) !important;
+    max-width: none !important;
+    height: 100vh !important;
+    max-height: 100vh !important;
+    z-index: 9999 !important;
+    background: #ffffff !important;
+    border-radius: 0 16px 16px 0 !important;
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.15) !important;
+    border: none !important;
+    overflow-y: auto !important;
+    animation: menuSlideInLeft 0.25s ease-out !important;
+  }
+
+  .menu-dropdown--closing {
+    animation: menuSlideOutLeft 0.2s ease-in !important;
+  }
+
+  @keyframes menuSlideInLeft {
+    from {
+      opacity: 0;
+      transform: translateX(-100%);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  @keyframes menuSlideOutLeft {
+    from {
+      opacity: 1;
+      transform: translateX(0);
+    }
+    to {
+      opacity: 0;
+      transform: translateX(-100%);
+    }
+  }
+
+  .menu-dropdown__content {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    padding: 24px 0 32px !important;
+    max-height: none !important;
+    overflow-y: auto;
+  }
+
+  .menu-dropdown__columns {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    grid-template-columns: none;
+  }
+
+  .menu-dropdown__column {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .menu-dropdown__column-items {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    grid-template-columns: none;
+  }
+
+  .menu-dropdown__column-title {
+    font-size: 11px;
+    font-weight: 600;
+    color: #9ca3af;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin: 0 0 12px 0;
+    padding: 0 20px;
+  }
+
+  .menu-dropdown__item {
+    display: flex !important;
+    align-items: center;
+    width: 100% !important;
+    min-height: 48px;
+    padding: 12px 20px !important;
+    margin: 0 !important;
+    font-size: 16px !important;
+    font-weight: 500;
+    border: none;
+    background: none;
+    color: #111827;
+    text-align: left;
+    cursor: pointer;
+    border-radius: 0;
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+
+  .menu-dropdown__item:hover {
+    background: rgba(17, 24, 39, 0.06);
+  }
+
+  .menu-dropdown__item:active {
+    background: rgba(17, 24, 39, 0.1);
+  }
+
+  .menu-dropdown__item span {
+    display: block;
   }
 }
 

@@ -261,12 +261,102 @@
 }
 
 @media (max-width: 768px) {
+  .hero {
+    padding: 32px 12px;
+  }
+
+  /* Три блока в один ряд, все видны сразу, без слайд-бара */
+  .hero-features {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 32px;
+  }
+
+  .hero-feature-card {
+    min-width: 0;
+  }
+
+  .hero-feature-image {
+    height: 100px;
+    padding: 12px;
+  }
+
+  .hero-feature-image img {
+    width: 56px;
+    height: 56px;
+  }
+
+  .hero-feature-content {
+    padding: 12px;
+  }
+
+  .hero-feature-content h3 {
+    font-size: 13px;
+    margin-bottom: 6px;
+    line-height: 1.25;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .hero-feature-content p {
+    font-size: 11px;
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
   .hero-cards {
     grid-template-columns: 1fr;
   }
-  
+}
+
+@media (max-width: 480px) {
+  .hero {
+    padding: 24px 8px;
+  }
+
   .hero-features {
-    grid-template-columns: 1fr;
+    gap: 6px;
+    margin-bottom: 24px;
+  }
+
+  .hero-feature-image {
+    height: 80px;
+    padding: 8px;
+  }
+
+  .hero-feature-image img {
+    width: 44px;
+    height: 44px;
+  }
+
+  .hero-feature-content {
+    padding: 8px;
+  }
+
+  .hero-feature-content h3 {
+    font-size: 11px;
+    -webkit-line-clamp: 2;
+  }
+
+  .hero-feature-content p {
+    font-size: 10px;
+    -webkit-line-clamp: 2;
+  }
+}
+
+@media (max-width: 768px) {
+  .hero-feature-card--expanded .hero-feature-content h3,
+  .hero-feature-card--expanded .hero-feature-content p {
+    display: block;
+    -webkit-line-clamp: unset;
+    line-clamp: unset;
+    overflow: visible;
   }
 }
 

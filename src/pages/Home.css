@@ -24,7 +24,13 @@
 }
 
 .home-page .menu-dropdown {
-  top: calc(20px + 63px + 50px) !important; /* padding-top хедера + высота хедера + отступ чтобы не залазило на хедер */
+  top: calc(20px + 63px + 50px) !important; /* padding-top хедера + высота хедера + отступ */
+}
+
+@media (max-width: 768px) {
+  .home-page .menu-dropdown {
+    top: 0 !important; /* на мобильных панель от левого края на всю высоту */
+  }
 }
 
 /* Стили для AI кнопки и чата */

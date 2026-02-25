@@ -3207,7 +3207,7 @@ const AddProperty = () => {
                     handlePropertyTypeSelect('house')
                   }}
                 >
-                  Опишите ваш объект
+                  Продолжить
                 </button>
               </div>
 
@@ -3230,7 +3230,7 @@ const AddProperty = () => {
                     handlePropertyTypeSelect('apartment')
                   }}
                 >
-                  Опишите ваш объект
+                  Продолжить
                 </button>
               </div>
 
@@ -3253,7 +3253,7 @@ const AddProperty = () => {
                     handlePropertyTypeSelect('villa')
                   }}
                 >
-                  Опишите ваш объект
+                  Продолжить
                 </button>
               </div>
 
@@ -3276,7 +3276,7 @@ const AddProperty = () => {
                     handlePropertyTypeSelect('commercial')
                   }}
                 >
-                  Опишите ваш объект
+                  Продолжить
                 </button>
               </div>
             </div>

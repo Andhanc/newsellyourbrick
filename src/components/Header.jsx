@@ -583,7 +583,20 @@ const Header = () => {
                               setIsMenuOpen(false)
                             }}
                           >
-                            <span>Избранное</span>
+                            <span>Понравилось</span>
+                          </button>
+                          <button 
+                            className="menu-dropdown__item"
+                            onClick={() => {
+                              if (location.pathname === '/auction') {
+                                window.dispatchEvent(new CustomEvent('openAIChat'))
+                              } else {
+                                navigate('/chat')
+                              }
+                              setIsMenuOpen(false)
+                            }}
+                          >
+                            <span>Умный помощник</span>
                           </button>
                           <button 
                             className="menu-dropdown__item"
@@ -599,7 +612,56 @@ const Header = () => {
                       <div className="menu-dropdown__column">
                         <h3 className="menu-dropdown__column-title">Профиль</h3>
                         <div className="menu-dropdown__column-items">
-                          {/* Ссылки будут добавлены позже */}
+                          {isLoggedIn ? (
+                            <>
+                              <button 
+                                className="menu-dropdown__item"
+                                onClick={() => {
+                                  navigate('/profile')
+                                  setIsMenuOpen(false)
+                                }}
+                              >
+                                <span>Профиль</span>
+                              </button>
+                              <button 
+                                className="menu-dropdown__item"
+                                onClick={() => {
+                                  navigate('/wallet')
+                                  setIsMenuOpen(false)
+                                }}
+                              >
+                                <span>Кошелек</span>
+                              </button>
+                              <button 
+                                className="menu-dropdown__item"
+                                onClick={() => {
+                                  navigate('/subscriptions')
+                                  setIsMenuOpen(false)
+                                }}
+                              >
+                                <span>Подписки</span>
+                              </button>
+                              <button 
+                                className="menu-dropdown__item"
+                                onClick={() => {
+                                  navigate('/data')
+                                  setIsMenuOpen(false)
+                                }}
+                              >
+                                <span>Данные</span>
+                              </button>
+                            </>
+                          ) : (
+                            <button 
+                              className="menu-dropdown__item"
+                              onClick={() => {
+                                setIsLoginModalOpen(true)
+                                setIsMenuOpen(false)
+                              }}
+                            >
+                              <span>Войти</span>
+                            </button>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -723,9 +785,9 @@ const Header = () => {
                 <button 
                   type="button"
                   className="new-header__auction-btn"
-                  onClick={() => navigate('/')}
+                  onClick={() => (location.pathname === '/auction' ? navigate('/') : navigate('/auction'))}
                 >
-                  Главная
+                  {location.pathname === '/auction' ? 'Главная' : 'Аукцион'}
                 </button>
                 <button 
                   className="new-header__search-btn"

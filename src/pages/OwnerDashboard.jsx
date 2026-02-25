@@ -22,7 +22,8 @@ import {
   FiClock,
   FiAlertCircle,
   FiCheck,
-  FiTag
+  FiTag,
+  FiMenu
 } from 'react-icons/fi'
 import { MdBed, MdOutlineBathtub } from 'react-icons/md'
 import { BiArea } from 'react-icons/bi'
@@ -128,6 +129,9 @@ const OwnerDashboard = () => {
     country: '',
     countryFlag: ''
   })
+  const headerContentRef = useRef(null)
+  const titleRef = useRef(null)
+  const [isMobileTitleStacked, setIsMobileTitleStacked] = useState(false) // на мобиле сворачиваем иконки в бургер-меню, когда имени не хватает места
   const [showPassword, setShowPassword] = useState(false)
   const [isProfileEditing, setIsProfileEditing] = useState(false)
   const [isSavingProfile, setIsSavingProfile] = useState(false)
@@ -247,6 +251,34 @@ const OwnerDashboard = () => {
       }
     }
   }, [navigate])
+
+  // На мобиле следим, хватает ли места имени рядом с полным набором иконок.
+  // Как только места не хватает, сворачиваем иконки в бургер-меню, а имя оставляем в полном размере.
+  useEffect(() => {
+    const updateHeaderLayout = () => {
+      if (!headerContentRef.current || !titleRef.current) return
+
+      const isMobile = window.innerWidth <= 768
+      if (!isMobile) {
+        setIsMobileTitleStacked(false)
+        return
+      }
+
+      const containerWidth = headerContentRef.current.clientWidth
+      const reservedForIcons = 190 // px под блок иконок
+      const gap = 16
+      const availableForTitle = Math.max(containerWidth - reservedForIcons - gap, 0)
+      const titleWidth = titleRef.current.scrollWidth
+
+      // Если имени не хватает места рядом с полным набором иконок,
+      // включаем компактный режим (бургер-меню вместо 4 иконок)
+      setIsMobileTitleStacked(titleWidth > availableForTitle)
+    }
+
+    updateHeaderLayout()
+    window.addEventListener('resize', updateHeaderLayout)
+    return () => window.removeEventListener('resize', updateHeaderLayout)
+  }, [ownerProfile.firstName, ownerProfile.lastName])
 
   // Загружаем объявления пользователя
   const loadUserProperties = async (userId) => {
@@ -1069,48 +1101,62 @@ const OwnerDashboard = () => {
   return (
     <div className="owner-dashboard">
       <header className="owner-dashboard__header">
-        <div className="owner-dashboard__header-content">
+        <div
+          className="owner-dashboard__header-content"
+          ref={headerContentRef}
+        >
           <div className="owner-dashboard__header-left">
-            <h1 className="owner-dashboard__title">
+            <h1 className="owner-dashboard__title" ref={titleRef}>
               {`${ownerProfile.firstName || ''} ${ownerProfile.lastName || ''}`.trim() || 'Ваш кабинет продавца'}
             </h1>
             <p className="owner-dashboard__subtitle">Управление вашей недвижимостью</p>
           </div>
           <div className="owner-dashboard__header-right">
-            <button 
-              className="owner-dashboard__icon-btn"
-              onClick={() => {
-                setIsProfilePanelOpen(true)
-                setIsSettingsPanelOpen(false)
-              }}
-              aria-label="Профиль"
-            >
-              <FiUser size={20} />
-            </button>
-            <button 
-              className="owner-dashboard__icon-btn"
-              onClick={() => {
-                setIsSettingsPanelOpen(true)
-                setIsProfilePanelOpen(false)
-              }}
-              aria-label="Настройки"
-            >
-              <FiSettings size={20} />
-            </button>
-            <button 
-              className="owner-dashboard__add-btn"
-              onClick={handleAddProperty}
-            >
-              <FiPlus size={20} />
-              <span>Добавить объявление</span>
-            </button>
-            <button 
-              className="owner-dashboard__logout-btn"
-              onClick={handleLogout}
-            >
-              <FiLogOut size={20} />
-              <span>Выйти</span>
-            </button>
+            {isMobileTitleStacked ? (
+              <button 
+                className="owner-dashboard__icon-btn owner-dashboard__burger-btn"
+                aria-label="Меню"
+              >
+                <FiMenu size={20} />
+              </button>
+            ) : (
+              <>
+                <button 
+                  className="owner-dashboard__icon-btn"
+                  onClick={() => {
+                    setIsProfilePanelOpen(true)
+                    setIsSettingsPanelOpen(false)
+                  }}
+                  aria-label="Профиль"
+                >
+                  <FiUser size={20} />
+                </button>
+                <button 
+                  className="owner-dashboard__icon-btn"
+                  onClick={() => {
+                    setIsSettingsPanelOpen(true)
+                    setIsProfilePanelOpen(false)
+                  }}
+                  aria-label="Настройки"
+                >
+                  <FiSettings size={20} />
+                </button>
+                <button 
+                  className="owner-dashboard__add-btn"
+                  onClick={handleAddProperty}
+                >
+                  <FiPlus size={20} />
+                  <span>Добавить объявление</span>
+                </button>
+                <button 
+                  className="owner-dashboard__logout-btn"
+                  onClick={handleLogout}
+                >
+                  <FiLogOut size={20} />
+                  <span>Выйти</span>
+                </button>
+              </>
+            )}
           </div>
         </div>
         
