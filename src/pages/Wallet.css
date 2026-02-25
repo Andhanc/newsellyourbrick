@@ -555,6 +555,10 @@
 }
 
 /* Блок депозита под карточкой */
+.deposit-main-block .deposit-info-block {
+  margin-top: 0;
+}
+
 .deposit-info-block {
   margin-top: 32px;
   padding: 24px;

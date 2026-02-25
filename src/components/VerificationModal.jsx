@@ -5,7 +5,7 @@ import './VerificationModal.css'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
 
-const VerificationModal = ({ isOpen, onClose, userId, onComplete }) => {
+const VerificationModal = ({ isOpen, onClose, userId, onComplete, required }) => {
   const [currentStep, setCurrentStep] = useState(1)
   const [photos, setPhotos] = useState({
     passport: null,
@@ -293,16 +293,18 @@ const VerificationModal = ({ isOpen, onClose, userId, onComplete }) => {
 
   return (
     <>
-      <div className="verification-modal-overlay" onClick={onClose}>
+      <div className="verification-modal-overlay" onClick={required ? undefined : onClose}>
         <div 
           className={`verification-modal ${animationClass}`}
           onClick={(e) => e.stopPropagation()}
         >
-          <button className="verification-modal__close" onClick={onClose}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-              <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-            </svg>
-          </button>
+          {!required && (
+            <button className="verification-modal__close" onClick={onClose}>
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+              </svg>
+            </button>
+          )}
 
           <div className="verification-modal__header">
             <div className="verification-progress">

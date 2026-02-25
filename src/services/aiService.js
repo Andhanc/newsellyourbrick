@@ -2,6 +2,19 @@ const AI_API_URL = "https://api.intelligence.io.solutions/api/v1/chat/completion
 const AI_MODEL = "deepseek-ai/DeepSeek-V3.2";
 const AI_API_KEY = "io-v2-eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJvd25lciI6ImE5YzAwNjc4LTFjNzEtNDY5Ny1hY2NiLTliYTU0NTdhMWU4NSIsImV4cCI6NDkyMTI0NDg2NX0.E92VNc-ri_VH1bRLZfJ4seHnvr_hdL0vzgBbRC97WYDaENrvqU-jV1gYxqG128Tvyf8yfEczZ9hfpdKeZ2E0UA";
 
+/** Убирает markdown из текста ответа для чистого отображения */
+function stripMarkdown(text) {
+  if (!text || typeof text !== 'string') return text;
+  return text
+    .replace(/\*\*/g, '')
+    .replace(/\*/g, '')
+    .replace(/^#+\s*/gm, '')
+    .replace(/^[-*]\s+/gm, '')
+    .replace(/^\d+\.\s+/gm, '')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
 /**
  * Отправляет запрос к AI для подбора недвижимости
  * @param {Array} conversationHistory - История сообщений чата
@@ -13,9 +26,7 @@ export async function askPropertyAssistant(conversationHistory, userPreferences,
   // Подсчитываем количество собранной информации
   const collectedInfoCount = Object.values(userPreferences).filter(v => v !== null && v !== '').length
   
-  // Ограничиваем историю сообщений, чтобы не отправлять слишком большой контекст
-  // Берем последние 10 сообщений для оптимизации
-  const limitedHistory = conversationHistory.slice(-10);
+  const limitedHistory = conversationHistory.slice(-6);
   
   const systemPrompt = `Ты — профессиональный консультант по недвижимости на платформе SellYourBrick. Твоя задача — помочь клиенту найти идеальный вариант недвижимости через аукцион, рассказать о платформе, процессе покупки, получении ВНЖ и всех деталях сделки.
 
@@ -126,22 +137,19 @@ SellYourBrick — это уникальная платформа для поку
 - Рекомендуй только недвижимость из доступных объявлений
 
 **ДОСТУПНАЯ НЕДВИЖИМОСТЬ:**
-${JSON.stringify(availableProperties.map(p => ({
+${JSON.stringify(availableProperties.slice(0, 20).map(p => ({
   id: p.id,
-  name: p.name || p.title || `Объявление ${p.id}`,
-  title: p.title || p.name || `Объявление ${p.id}`,
-  location: p.location || 'Локация не указана',
+  name: (p.name || p.title || `Объявление ${p.id}`).slice(0, 60),
+  location: (p.location || 'Локация не указана').slice(0, 40),
   price: p.price || 0,
   currentBid: p.currentBid || null,
   area: p.area || p.sqft || null,
   rooms: p.rooms || p.beds || null,
-  isAuction: p.isAuction || false,
-  endTime: p.endTime || null,
-  description: (p.description || '').substring(0, 200)
-})), null, 2)}
+  isAuction: p.isAuction || false
+})), null, 0)}
 
 **ПРЕДПОЧТЕНИЯ КЛИЕНТА:**
-${JSON.stringify(userPreferences, null, 2)}
+${JSON.stringify(userPreferences, null, 0)}
 
 **ПРАВИЛА ОТВЕТОВ:**
 1. Если клиент спрашивает о платформе SellYourBrick — расскажи о ней подробно
@@ -168,9 +176,14 @@ ${JSON.stringify(userPreferences, null, 2)}
   "recommendations": [1, 2, 3] или null
 }
 
+**СТИЛЬ ТЕКСТА (ОБЯЗАТЕЛЬНО):**
+- Пиши текст в поле "text" простым языком, без markdown: не используй ** для выделения, не используй ##, -, списки только переносами строк.
+- Ответы короткие: 2–4 предложения где возможно, по делу. Без длинных перечислений — только суть.
+- Если клиент спрашивает общее (платформа, аукцион, ВНЖ) — дай суть в 3–5 предложениях.
+
 Если нужны уточнения, установи "needsMoreInfo": true и предложи кнопки для выбора.
 Если готов дать рекомендации (после 3-4 уточнений), установи "recommendations" с массивом ID объявлений (максимум 5 рекомендаций).
-Если клиент задает общий вопрос (про платформу, аукцион, ВНЖ, документы), установи "needsMoreInfo": false и дай полный информативный ответ.`;
+Если клиент задает общий вопрос — установи "needsMoreInfo": false и дай краткий информативный ответ.`;
 
   const messages = [
     { role: "system", content: systemPrompt },
@@ -195,57 +208,21 @@ ${JSON.stringify(userPreferences, null, 2)}
     const payload = {
       "model": AI_MODEL,
       "messages": messages,
-      "temperature": 0.7
+      "temperature": 0.7,
+      "max_tokens": 400
     };
 
-    // Добавляем таймаут для запроса (90 секунд для сложных запросов)
-    // Увеличено с 30 до 90 секунд для обработки сложных запросов к AI
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 90000);
+    const timeoutId = setTimeout(() => controller.abort(), 45000);
 
-    let response;
-    
-    try {
-      response = await fetch(AI_API_URL, {
-        method: 'POST',
-        headers: headers,
-        body: JSON.stringify(payload),
-        signal: controller.signal
-      });
-      
-      clearTimeout(timeoutId);
-    } catch (error) {
-      clearTimeout(timeoutId);
-      
-      // Если это таймаут, пробуем еще раз с увеличенным временем
-      if (error.name === 'AbortError') {
-        console.log('⏱️ Первая попытка завершилась таймаутом, пробуем еще раз...');
-        
-        // Ждем 2 секунды перед повторной попыткой
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        
-        // Повторная попытка с новым таймаутом
-        const retryController = new AbortController();
-        const retryTimeoutId = setTimeout(() => retryController.abort(), 90000);
-        
-        try {
-          response = await fetch(AI_API_URL, {
-            method: 'POST',
-            headers: headers,
-            body: JSON.stringify(payload),
-            signal: retryController.signal
-          });
-          
-          clearTimeout(retryTimeoutId);
-          console.log('✅ Повторная попытка успешна');
-        } catch (retryError) {
-          clearTimeout(retryTimeoutId);
-          throw retryError; // Выбрасываем ошибку, если и повторная попытка не удалась
-        }
-      } else {
-        throw error; // Выбрасываем другие ошибки
-      }
-    }
+    const response = await fetch(AI_API_URL, {
+      method: 'POST',
+      headers: headers,
+      body: JSON.stringify(payload),
+      signal: controller.signal
+    });
+
+    clearTimeout(timeoutId);
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -333,7 +310,7 @@ ${JSON.stringify(userPreferences, null, 2)}
           }
           
           return {
-            text: parsed.text || messageContent,
+            text: stripMarkdown(parsed.text || messageContent),
             buttons: Array.isArray(parsed.buttons) ? parsed.buttons : null,
             needsMoreInfo: parsed.needsMoreInfo !== false,
             recommendations: recommendations
@@ -349,7 +326,7 @@ ${JSON.stringify(userPreferences, null, 2)}
       }
 
       return {
-        text: messageContent,
+        text: stripMarkdown(messageContent),
         buttons: null,
         needsMoreInfo: true,
         recommendations: null
@@ -372,9 +349,9 @@ ${JSON.stringify(userPreferences, null, 2)}
     });
     
     if (error.name === 'AbortError' || error.message?.includes('aborted')) {
-      console.error('⏱️ Запрос был прерван по таймауту после всех попыток');
+      console.error('⏱️ Запрос прерван по таймауту (45 сек)');
       return {
-        text: "Запрос занимает слишком много времени. Сервер AI обрабатывает ваш запрос, но это может занять больше времени, чем обычно. Пожалуйста, попробуйте:\n\n1. Упростить вопрос\n2. Разбить сложный вопрос на несколько простых\n3. Попробовать позже\n\nМы уже увеличили время ожидания до 90 секунд и добавили автоматические повторные попытки.",
+        text: "Не удалось получить ответ за отведённое время. Упростите вопрос или попробуйте позже.",
         buttons: null,
         needsMoreInfo: false,
         recommendations: null

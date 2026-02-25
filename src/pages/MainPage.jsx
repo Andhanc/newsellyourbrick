@@ -398,6 +398,8 @@ function MainPage() {
   const [chatMessages, setChatMessages] = useState([])
   const [chatInput, setChatInput] = useState('')
   const [isLoadingAI, setIsLoadingAI] = useState(false)
+  const [isSlowAIResponse, setIsSlowAIResponse] = useState(false)
+  const slowResponseTimerRef = useRef(null)
   const chatHistoryLoadedRef = useRef(false) // Флаг для отслеживания загрузки истории
   const [userPhoto, setUserPhoto] = useState(null) // Фотография пользователя
   const [isLoggedIn, setIsLoggedIn] = useState(false) // Статус авторизации
@@ -876,6 +878,7 @@ function MainPage() {
   const searchInputRef = useRef(null)
   const searchWrapperRef = useRef(null)
   const chatMessagesRef = useRef(null)
+  const lastMessageRef = useRef(null)
   const notificationRef = useRef(null)
   const menuRef = useRef(null)
   const languageDropdownRef = useRef(null)
@@ -1515,6 +1518,12 @@ function MainPage() {
     }
 
     setIsLoadingAI(true)
+    setIsSlowAIResponse(false)
+    if (slowResponseTimerRef.current) {
+      clearTimeout(slowResponseTimerRef.current)
+      slowResponseTimerRef.current = null
+    }
+    slowResponseTimerRef.current = setTimeout(() => setIsSlowAIResponse(true), 6000)
 
     try {
       // Получаем ответ от AI
@@ -1547,12 +1556,21 @@ function MainPage() {
       }
       setChatMessages((prev) => [...prev, errorMessage])
     } finally {
+      if (slowResponseTimerRef.current) {
+        clearTimeout(slowResponseTimerRef.current)
+        slowResponseTimerRef.current = null
+      }
       setIsLoadingAI(false)
+      setIsSlowAIResponse(false)
     }
   }
 
   useEffect(() => {
-    if (chatMessagesRef.current && isChatOpen) {
+    if (!chatMessagesRef.current || !isChatOpen) return
+    const last = chatMessages[chatMessages.length - 1]
+    if (last?.sender === 'bot' && lastMessageRef.current) {
+      lastMessageRef.current.scrollIntoView({ block: 'start', behavior: 'smooth' })
+    } else {
       chatMessagesRef.current.scrollTop = chatMessagesRef.current.scrollHeight
     }
   }, [chatMessages, isChatOpen])
@@ -3340,9 +3358,10 @@ function MainPage() {
           </div>
 
           <div className="chat-widget__messages" ref={chatMessagesRef}>
-            {chatMessages.map((message) => (
+            {chatMessages.map((message, idx) => (
               <div
                 key={message.id}
+                ref={idx === chatMessages.length - 1 ? lastMessageRef : null}
                 className={`chat-widget__message ${
                   message.sender === 'user'
                     ? 'chat-widget__message--user'
@@ -3420,6 +3439,9 @@ function MainPage() {
                     <span></span>
                     <span></span>
                   </div>
+                  {isSlowAIResponse && (
+                    <div className="chat-widget__slow-hint">Ищем ответ, подождите.</div>
+                  )}
                 </div>
               </div>
             )}

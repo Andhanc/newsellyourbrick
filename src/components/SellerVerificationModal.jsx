@@ -2,8 +2,10 @@ import { useState, useEffect } from 'react'
 import VerificationModal from './VerificationModal'
 import './SellerVerificationModal.css'
 
-const SellerVerificationModal = ({ isOpen, onClose, userId, onComplete }) => {
+const SellerVerificationModal = ({ isOpen, onClose, userId, onComplete, required, title, subtitle }) => {
   const [showVerification, setShowVerification] = useState(false)
+  const displayTitle = title ?? 'Для публикации объявлений необходимо пройти процедуру верификации'
+  const displaySubtitle = subtitle ?? 'Пожалуйста следуйте инструкциям ниже'
 
   useEffect(() => {
     if (isOpen) {
@@ -34,14 +36,13 @@ const SellerVerificationModal = ({ isOpen, onClose, userId, onComplete }) => {
     return (
       <VerificationModal
         isOpen={true}
+        required={required}
         onClose={() => {
           setShowVerification(false)
           onClose()
         }}
         userId={userId}
         onComplete={async () => {
-          // Не показываем alert и не закрываем сразу
-          // Просто вызываем handleVerificationComplete, который отправит объект
           await handleVerificationComplete()
         }}
       />
@@ -49,24 +50,29 @@ const SellerVerificationModal = ({ isOpen, onClose, userId, onComplete }) => {
   }
 
   return (
-    <div className="seller-verification-modal-overlay" onClick={onClose}>
-      <div 
+    <div
+      className="seller-verification-modal-overlay"
+      onClick={required ? undefined : onClose}
+    >
+      <div
         className="seller-verification-modal"
         onClick={(e) => e.stopPropagation()}
       >
-        <button className="seller-verification-modal__close" onClick={onClose}>
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-            <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-          </svg>
-        </button>
+        {!required && (
+          <button className="seller-verification-modal__close" onClick={onClose}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+              <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+            </svg>
+          </button>
+        )}
 
         <div className="seller-verification-modal__content">
           <div className="seller-verification-modal__header">
             <h2 className="seller-verification-modal__title">
-              Для публикации объявлений необходимо пройти процедуру верификации
+              {displayTitle}
             </h2>
             <p className="seller-verification-modal__subtitle">
-              Пожалуйста следуйте инструкциям ниже
+              {displaySubtitle}
             </p>
           </div>
 

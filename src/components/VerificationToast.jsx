@@ -1,14 +1,70 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { FiAlertCircle, FiCheck, FiX, FiChevronDown, FiChevronUp, FiFile, FiUser, FiMail, FiPhone, FiMapPin, FiCreditCard } from 'react-icons/fi';
+import { useNavigate } from 'react-router-dom';
+import { FiAlertCircle, FiCheck, FiX, FiChevronDown, FiChevronUp, FiChevronRight, FiFile, FiUser, FiMail, FiMapPin, FiCreditCard } from 'react-icons/fi';
 import './VerificationToast.css';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
+const VERIFICATION_SUCCESS_SHOWN_KEY = 'verification_success_shown';
+
+function VerificationSuccessToast({ onDismiss }) {
+  useEffect(() => {
+    const t = setTimeout(onDismiss, 10000);
+    return () => clearTimeout(t);
+  }, [onDismiss]);
+
+  return (
+    <div className="verification-toast verification-toast--success">
+      <div className="verification-toast__success-inner">
+        <div className="verification-toast__success-icon-wrap">
+          <FiCheck className="verification-toast__success-icon" size={36} />
+        </div>
+        <h4 className="verification-toast__success-title">Всё выполнено</h4>
+        <p className="verification-toast__success-text">
+          Все данные заполнены, подождите 24 часа для одобрения от менеджера.
+        </p>
+      </div>
+    </div>
+  );
+}
 
 const VerificationToast = ({ userId }) => {
+  const navigate = useNavigate();
   const [status, setStatus] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isExpanded, setIsExpanded] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
+  const [successDismissed, setSuccessDismissed] = useState(false);
+
+  const handleFieldClick = (field) => {
+    navigate(`/data?highlight=${field}`);
+  };
+
+  const successAlreadyShown = () => {
+    if (!userId) return true;
+    try {
+      const raw = localStorage.getItem(VERIFICATION_SUCCESS_SHOWN_KEY);
+      if (!raw) return false;
+      const ids = JSON.parse(raw);
+      return Array.isArray(ids) && ids.includes(String(userId));
+    } catch {
+      return false;
+    }
+  };
+
+  const markSuccessShown = () => {
+    if (!userId) return;
+    try {
+      const raw = localStorage.getItem(VERIFICATION_SUCCESS_SHOWN_KEY) || '[]';
+      const ids = JSON.parse(raw);
+      const sid = String(userId);
+      if (!ids.includes(sid)) {
+        ids.push(sid);
+        localStorage.setItem(VERIFICATION_SUCCESS_SHOWN_KEY, JSON.stringify(ids));
+      }
+    } catch (e) {
+      console.error('VerificationToast: markSuccessShown', e);
+    }
+  };
 
   const loadVerificationStatus = useCallback(async () => {
     if (!userId) return;
@@ -20,12 +76,11 @@ const VerificationToast = ({ userId }) => {
         if (result.success && result.data) {
           const newStatus = result.data;
           setStatus(newStatus);
-          // Показываем уведомление только если не готово
-          setIsVisible(!newStatus.isReady);
+          if (!newStatus.isReady) setIsVisible(true);
         }
       }
     } catch (error) {
-      console.error('Ошибка загрузки статуса верификации:', error);
+      console.error('Ошибка загрузки статуса регистрации:', error);
     } finally {
       setLoading(false);
     }
@@ -37,7 +92,7 @@ const VerificationToast = ({ userId }) => {
     }
   }, [userId, loadVerificationStatus]);
 
-  // Слушаем событие обновления статуса верификации
+  // Слушаем событие обновления статуса регистрации
   useEffect(() => {
     const handleStatusUpdate = () => {
       loadVerificationStatus();
@@ -47,15 +102,24 @@ const VerificationToast = ({ userId }) => {
     return () => window.removeEventListener('verification-status-update', handleStatusUpdate);
   }, [loadVerificationStatus]);
 
-  // Если загрузка, статус не загружен, уведомление скрыто или пользователь готов - не показываем
-  if (loading || !status || !isVisible || status.isReady) {
-    return null;
+  const handleSuccessDismiss = useCallback(() => {
+    markSuccessShown();
+    setSuccessDismissed(true);
+  }, [userId]);
+
+  // Успех (100%): один раз показать тост, через 10 сек скрыть и больше не показывать
+  const isReady = status?.isReady || (status?.progress === 100);
+  if (loading || !status) return null;
+
+  if (isReady) {
+    if (successAlreadyShown() || successDismissed) return null;
+
+    return <VerificationSuccessToast onDismiss={handleSuccessDismiss} />;
   }
 
-  // Проверяем наличие необходимых свойств
-  if (!status.missingFields || typeof status.missingFields !== 'object') {
-    return null;
-  }
+  // Ниже — уведомление «не завершена»
+  if (!isVisible) return null;
+  if (!status.missingFields || typeof status.missingFields !== 'object') return null;
 
   const fieldLabels = {
     firstName: { label: 'Имя', icon: <FiUser size={16} /> },
@@ -114,7 +178,7 @@ const VerificationToast = ({ userId }) => {
             <FiAlertCircle className="verification-toast__icon" />
           </div>
           <div className="verification-toast__header-text">
-            <h4 className="verification-toast__title">Верификация не завершена</h4>
+            <h4 className="verification-toast__title">Регистрация не завершена</h4>
             <p className="verification-toast__subtitle">
               Заполните все поля для отправки на модерацию
             </p>
@@ -218,9 +282,17 @@ const VerificationToast = ({ userId }) => {
               </h5>
               <ul className="verification-toast__fields-list verification-toast__fields-list--missing">
                 {missingFields.map((field, index) => (
-                  <li key={index} className="verification-toast__field-item verification-toast__field-item--missing">
+                  <li
+                    key={index}
+                    role="button"
+                    tabIndex={0}
+                    className="verification-toast__field-item verification-toast__field-item--missing verification-toast__field-item--clickable"
+                    onClick={() => handleFieldClick(field.field)}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleFieldClick(field.field); } }}
+                  >
                     <span className="verification-toast__field-icon">{field.icon}</span>
                     <span>{field.label}</span>
+                    <FiChevronRight className="verification-toast__field-chevron" size={18} />
                   </li>
                 ))}
               </ul>
@@ -230,7 +302,7 @@ const VerificationToast = ({ userId }) => {
           {!hasDocuments && (
             <div className="verification-toast__warning">
               <FiFile className="verification-toast__warning-icon" />
-              <span>Загрузите документы на верификацию в разделе профиля</span>
+              <span>Загрузите документы на регистрацию в разделе профиля</span>
             </div>
           )}
         </div>

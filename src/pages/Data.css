@@ -201,21 +201,109 @@
   border-bottom: 2px solid #e0e0e0;
 }
 
-.data-edit-controls {
-  display: flex;
-  justify-content: flex-start;
-  align-items: center;
-  margin-bottom: 32px;
-  padding: 0;
-}
-
 .data-header h1 {
   font-size: 32px;
   font-weight: 700;
   color: #333;
-  margin: 0;
+  margin: 0 0 20px 0;
 }
 
+.data-edit-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* Кнопка «Редактировать» — контурный стиль */
+.data-edit-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 24px;
+  background: transparent;
+  border: 2px solid #0ABAB5;
+  border-radius: 12px;
+  color: #0ABAB5;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  white-space: nowrap;
+}
+
+.data-edit-btn:hover {
+  background: rgba(10, 186, 181, 0.08);
+  border-color: #089a95;
+  color: #089a95;
+  transform: translateY(-1px);
+}
+
+.data-edit-btn svg {
+  flex-shrink: 0;
+}
+
+/* Кнопка «Сохранить» — активная только при наличии изменений */
+.data-save-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background: #0ABAB5;
+  border: none;
+  border-radius: 12px;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  white-space: nowrap;
+}
+
+.data-save-btn:hover:not(:disabled) {
+  background: #089a95;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(10, 186, 181, 0.4);
+}
+
+.data-save-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: #b0b0b0;
+}
+
+.data-save-btn svg {
+  flex-shrink: 0;
+}
+
+/* Кнопка «Отменить» в режиме редактирования */
+.data-cancel-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background: #fff;
+  border: 2px solid #d0d0d0;
+  border-radius: 12px;
+  color: #666;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  white-space: nowrap;
+}
+
+.data-cancel-btn:hover {
+  background: #f5f5f5;
+  border-color: #999;
+  color: #333;
+}
+
+.data-cancel-btn svg {
+  flex-shrink: 0;
+}
+
+/* Устаревшие классы оставлены для совместимости (например, страница профиля) */
 .edit-button {
   display: flex;
   align-items: center;
@@ -234,40 +322,6 @@
   overflow: hidden;
   white-space: nowrap;
   min-width: fit-content;
-}
-
-.edit-button::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
-  transition: left 0.5s;
-}
-
-.edit-button:hover::before {
-  left: 100%;
-}
-
-.edit-button:hover {
-  background: linear-gradient(135deg, #089a95 0%, #067a76 100%);
-  transform: translateY(-3px);
-  box-shadow: 0 8px 24px rgba(10, 186, 181, 0.5);
-}
-
-.edit-button:active {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(10, 186, 181, 0.4);
-}
-
-.edit-button svg {
-  transition: transform 0.3s ease;
-}
-
-.edit-button:hover svg {
-  transform: rotate(15deg) scale(1.1);
 }
 
 .edit-actions {
@@ -298,23 +352,10 @@
   color: white;
 }
 
-.save-button:hover {
-  background: #089a95;
-  border-color: #089a95;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(10, 186, 181, 0.4);
-}
-
 .cancel-button {
   background: #fff;
   border-color: #d0d0d0;
   color: #666;
-}
-
-.cancel-button:hover {
-  background: #f5f5f5;
-  border-color: #999;
-  color: #333;
 }
 
 .data-content {
@@ -414,6 +455,27 @@
 
 .data-field-full {
   grid-column: 1 / -1;
+}
+
+/* Однократная подсветка поля при переходе из уведомления верификации */
+.data-field--highlight {
+  border-radius: 8px;
+  animation: data-field-highlight 1.8s ease-out;
+}
+
+@keyframes data-field-highlight {
+  0% {
+    background-color: #fef3c7;
+    box-shadow: 0 0 0 2px #f59e0b;
+  }
+  30% {
+    background-color: #fef3c7;
+    box-shadow: 0 0 0 2px #f59e0b;
+  }
+  100% {
+    background-color: transparent;
+    box-shadow: none;
+  }
 }
 
 .data-field label {

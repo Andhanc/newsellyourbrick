@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { FiEye, FiEyeOff } from 'react-icons/fi'
 import { useUser, useAuth } from '@clerk/clerk-react'
 import { getUserData, logout, sendEmailVerificationCode, verifyEmailForProfileUpdate, validatePassword, saveUserData } from '../services/authService'
@@ -16,6 +16,7 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
 
 const Data = () => {
   const navigate = useNavigate()
+  const location = useLocation()
   const { user: clerkUser, isLoaded: userLoaded } = useUser()
   const { isSignedIn, isLoaded: authLoaded } = useAuth()
   const [isEditing, setIsEditing] = useState(false)
@@ -43,6 +44,7 @@ const Data = () => {
   const [showPassportRecognitionModal, setShowPassportRecognitionModal] = useState(false)
   const [extractedPassportData, setExtractedPassportData] = useState(null)
   const passportInputRef = useRef(null)
+  const editSnapshotRef = useRef(null) // снимок данных при входе в режим редактирования
   const [verificationStatus, setVerificationStatus] = useState(null)
   const [showPassword, setShowPassword] = useState(false)
   const [showPasswordView, setShowPasswordView] = useState(false)
@@ -312,6 +314,33 @@ const Data = () => {
     }
   }, [userId, userData])
 
+  // Скролл и подсветка поля по параметру ?highlight=fieldName (переход из уведомления верификации)
+  useEffect(() => {
+    const params = new URLSearchParams(location.search)
+    const highlight = params.get('highlight')
+    if (!highlight) return
+
+    let removeTimerId = null
+    const timerId = setTimeout(() => {
+      const el = document.getElementById(`data-field-${highlight}`)
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        el.classList.add('data-field--highlight')
+        removeTimerId = setTimeout(() => {
+          el.classList.remove('data-field--highlight')
+          navigate(location.pathname, { replace: true })
+        }, 1800)
+      } else {
+        navigate(location.pathname, { replace: true })
+      }
+    }, 300)
+
+    return () => {
+      clearTimeout(timerId)
+      if (removeTimerId) clearTimeout(removeTimerId)
+    }
+  }, [location.search, location.pathname, navigate])
+
   const loadVerificationStatus = async () => {
     if (!userId) return
     try {
@@ -368,11 +397,33 @@ const Data = () => {
     google: true
   })
 
+  // Проверка: есть ли несохранённые изменения (сравниваем с снимком при входе в редактирование)
+  const hasUnsavedChanges = (() => {
+    if (!isEditing || !editSnapshotRef.current) return false
+    const s = editSnapshotRef.current
+    const normalizePhone = (p) => (p || '').replace(/\D/g, '')
+    return (
+      (userData.firstName || '') !== (s.firstName || '') ||
+      (userData.lastName || '') !== (s.lastName || '') ||
+      (userData.email || '') !== (s.email || '') ||
+      (userData.login || '') !== (s.login || '') ||
+      (userData.password || '') !== (s.password || '') ||
+      normalizePhone(userData.phone) !== normalizePhone(s.phone) ||
+      (userData.country || '') !== (s.country || '') ||
+      (userData.address || '') !== (s.address || '') ||
+      (userData.passportSeries || '') !== (s.passportSeries || '') ||
+      (userData.passportNumber || '') !== (s.passportNumber || '') ||
+      (userData.identificationNumber || '') !== (s.identificationNumber || '')
+    )
+  })()
+
   const handleEdit = () => {
+    editSnapshotRef.current = { ...userData }
     setIsEditing(true)
   }
 
   const handleCancel = () => {
+    editSnapshotRef.current = null
     setIsEditing(false)
   }
 
@@ -658,6 +709,7 @@ const Data = () => {
           phone: formattedPhone || prev.phone
         }))
         
+        editSnapshotRef.current = null
         setIsEditing(false)
         // Перезагружаем статус верификации после сохранения
         loadVerificationStatus()
@@ -713,6 +765,7 @@ const Data = () => {
         localStorage.setItem('userData', JSON.stringify(updatedUserData))
         
         showNotification(errorMessage)
+        editSnapshotRef.current = null
         setIsEditing(false)
       }
     } catch (error) {
@@ -746,6 +799,7 @@ const Data = () => {
       localStorage.setItem('userData', JSON.stringify(updatedUserData))
       
       showNotification(errorMessage)
+      editSnapshotRef.current = null
       setIsEditing(false)
     }
   }
@@ -1044,21 +1098,32 @@ const Data = () => {
     <div className="data-page">
       <div className="data-container">
         <aside className="data-sidebar">
-          <div className="sidebar-header">
-            <div className="sidebar-logo">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                <path d="M12 2L2 7L12 12L22 7L12 2Z" fill="url(#gradient1)"/>
-                <path d="M2 17L12 22L22 17" stroke="url(#gradient1)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M2 12L12 17L22 12" stroke="url(#gradient1)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                <defs>
-                  <linearGradient id="gradient1" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stopColor="#0ABAB5" />
-                    <stop offset="100%" stopColor="#089a95" />
-                  </linearGradient>
-                </defs>
+          <div className="sidebar-header" style={{ marginTop: '24px' }}>
+            <button
+              type="button"
+              onClick={() => navigate('/')}
+              className="back-button"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                padding: '12px 24px',
+                backgroundColor: 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                color: '#0ABAB5',
+                fontSize: '18px',
+                fontWeight: '600',
+                transition: 'opacity 0.2s'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.opacity = '0.7'}
+              onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
+            >
+              <svg width="24" height="24" viewBox="0 0 20 20" fill="none">
+                <path d="M12.5 15L7.5 10L12.5 5" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
-              <span>Профиль</span>
-            </div>
+              <span>Назад</span>
+            </button>
           </div>
           <nav className="sidebar-nav">
             <Link to="/profile" className="nav-item">
@@ -1124,6 +1189,37 @@ const Data = () => {
         <main className="data-main">
           <div className="data-header">
             <h1>Личные данные</h1>
+            <div className="data-edit-controls">
+                {!isEditing ? (
+                  <button type="button" className="data-edit-btn" onClick={handleEdit} aria-label="Редактировать">
+                    <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                      <path d="M12.75 2.25C13.0721 1.92788 13.4563 1.70947 13.8874 1.61553C14.3185 1.52159 14.767 1.46849 15.2188 1.47159C15.6706 1.47469 16.1188 1.53394 16.5474 1.63628C16.976 1.73862 17.3638 1.96012 17.6875 2.28375C18.0111 2.60738 18.2326 2.99525 18.335 3.42381C18.4373 3.85237 18.4966 4.30056 18.4997 4.75237C18.5028 5.20419 18.4497 5.65269 18.3557 6.08381C18.2618 6.51494 18.0434 6.89912 17.7213 7.22125L6.375 18.5625L1.125 19.875L2.4375 14.625L13.7813 3.28125C13.9001 3.16245 14.0438 3.07141 14.2026 3.01406C14.3614 2.95671 14.5316 2.93439 14.7006 2.94844H14.8L12.75 2.25Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                    <span>Редактировать</span>
+                  </button>
+                ) : (
+                  <>
+                    <button type="button" className="data-cancel-btn" onClick={handleCancel} aria-label="Отменить">
+                      <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                        <path d="M13.5 4.5L4.5 13.5M4.5 4.5L13.5 13.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                      <span>Отменить</span>
+                    </button>
+                  </>
+                )}
+                <button
+                  type="button"
+                  className="data-save-btn"
+                  onClick={handleSave}
+                  disabled={!isEditing || !hasUnsavedChanges}
+                  aria-label="Сохранить"
+                >
+                  <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                    <path d="M15 4.5L6.75 12.75L3 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                  <span>Сохранить</span>
+                </button>
+              </div>
           </div>
 
           <div className="data-content">
@@ -1138,7 +1234,7 @@ const Data = () => {
                 )}
               </h2>
               <div className="data-grid">
-                <div className="data-field">
+                <div id="data-field-firstName" className="data-field">
                   <label>Имя</label>
                   {isEditing ? (
                     <input
@@ -1152,7 +1248,7 @@ const Data = () => {
                   )}
                 </div>
 
-                <div className="data-field">
+                <div id="data-field-lastName" className="data-field">
                   <label>Фамилия</label>
                   {isEditing ? (
                     <input
@@ -1166,7 +1262,7 @@ const Data = () => {
                   )}
                 </div>
 
-                <div className="data-field">
+                <div id="data-field-emailOrPhone" className="data-field">
                   <label>Email</label>
                   {isEditing ? (
                     <input
@@ -1246,7 +1342,7 @@ const Data = () => {
                   )}
                 </div>
 
-                <div className="data-field">
+                <div id="data-field-country" className="data-field">
                   <label>Страна *</label>
                   {isEditing ? (
                     <CountrySelect
@@ -1272,7 +1368,7 @@ const Data = () => {
                   )}
                 </div>
 
-                <div className="data-field">
+                <div id="data-field-address" className="data-field">
                   <label>Адрес проживания</label>
                   {isEditing ? (
                     <input
@@ -1288,33 +1384,6 @@ const Data = () => {
                 </div>
               </div>
             </section>
-
-            {/* Кнопки редактирования под блоком "Основная информация" */}
-            <div className="data-edit-controls">
-              {!isEditing ? (
-                <button className="edit-button" onClick={handleEdit}>
-                  <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                    <path d="M12.75 2.25C13.0721 1.92788 13.4563 1.70947 13.8874 1.61553C14.3185 1.52159 14.767 1.46849 15.2188 1.47159C15.6706 1.47469 16.1188 1.53394 16.5474 1.63628C16.976 1.73862 17.3638 1.96012 17.6875 2.28375C18.0111 2.60738 18.2326 2.99525 18.335 3.42381C18.4373 3.85237 18.4966 4.30056 18.4997 4.75237C18.5028 5.20419 18.4497 5.65269 18.3557 6.08381C18.2618 6.51494 18.0434 6.89912 17.7213 7.22125L6.375 18.5625L1.125 19.875L2.4375 14.625L13.7813 3.28125C13.9001 3.16245 14.0438 3.07141 14.2026 3.01406C14.3614 2.95671 14.5316 2.93439 14.7006 2.94844H14.8L12.75 2.25Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                  <span>Редактировать</span>
-                </button>
-              ) : (
-                <div className="edit-actions">
-                  <button className="save-button" onClick={handleSave}>
-                    <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                      <path d="M15 4.5L6.75 12.75L3 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                    <span>Сохранить</span>
-                  </button>
-                  <button className="cancel-button" onClick={handleCancel}>
-                    <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                      <path d="M13.5 4.5L4.5 13.5M4.5 4.5L13.5 13.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                    <span>Отменить</span>
-                  </button>
-                </div>
-              )}
-            </div>
 
             <section className="data-section">
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
@@ -1368,7 +1437,7 @@ const Data = () => {
                 }}
               />
               <div className="data-grid">
-                <div className="data-field">
+                <div id="data-field-passportSeries" className="data-field">
                   <label>Серия паспорта</label>
                   {isEditing ? (
                     <input
@@ -1383,7 +1452,7 @@ const Data = () => {
                   )}
                 </div>
 
-                <div className="data-field">
+                <div id="data-field-passportNumber" className="data-field">
                   <label>Номер паспорта</label>
                   {isEditing ? (
                     <input
@@ -1397,7 +1466,7 @@ const Data = () => {
                   )}
                 </div>
 
-                <div className="data-field data-field-full">
+                <div id="data-field-identificationNumber" className="data-field data-field-full">
                   <label>Идентификационный номер</label>
                   {isEditing ? (
                     <input

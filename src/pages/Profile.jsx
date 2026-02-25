@@ -342,14 +342,6 @@ const Profile = () => {
     return shouldShow
   }
 
-  // Проверяем, нужно ли показывать индикатор для "Профиль"
-  const shouldShowProfileIndicator = () => {
-    // Всегда проверяем наличие документов (приоритет userDocuments, потом verificationStatus)
-    const hasDocs = isDocumentsComplete()
-    // Показываем точку если НЕТ документов
-    return !hasDocs
-  }
-
   // Синхронизируем данные Clerk с localStorage и загружаем данные пользователя
   useEffect(() => {
     // Ждем загрузки данных Clerk
@@ -959,9 +951,6 @@ const Profile = () => {
                 <path d="M10 12C5.58172 12 2 13.7909 2 16V20H18V16C18 13.7909 14.4183 12 10 12Z" fill="currentColor"/>
               </svg>
               <span>Профиль</span>
-              {shouldShowProfileIndicator() && (
-                <span className="nav-item-indicator"></span>
-              )}
             </Link>
             <Link to="/data" className="nav-item">
               <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
@@ -1214,67 +1203,6 @@ const Profile = () => {
               </div>
             </section>
 
-            <section className="profile-section">
-              <div className="section-header">
-                <h2 className="section-title">Верификация</h2>
-                <div className="section-subtitle">Для публикации объявлений необходимо пройти процедуру верификации</div>
-              </div>
-              <div className="verification-form-container">
-                <div className="verification-form-content">
-                  <div className="verification-form-header">
-                    <h3 className="verification-form-title">
-                      Для публикации объявлений необходимо пройти процедуру верификации
-                    </h3>
-                    <p className="verification-form-subtitle">
-                      Пожалуйста следуйте инструкциям ниже
-                    </p>
-                  </div>
-
-                  <div className="verification-form-info">
-                    <div className="verification-form-info-item">
-                      <div className="verification-form-icon">📄</div>
-                      <div className="verification-form-info-content">
-                        <h3 className="verification-form-info-title">Фото паспорта</h3>
-                        <p className="verification-form-info-description">
-                          Загрузите фото или скан паспорта (разворот с фото)
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="verification-form-info-item">
-                      <div className="verification-form-icon">📷</div>
-                      <div className="verification-form-info-content">
-                        <h3 className="verification-form-info-title">Ваше селфи</h3>
-                        <p className="verification-form-info-description">
-                          Загрузите ваше селфи
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="verification-form-info-item">
-                      <div className="verification-form-icon">📸</div>
-                      <div className="verification-form-info-content">
-                        <h3 className="verification-form-info-title">Селфи с паспортом рядом с лицом</h3>
-                        <p className="verification-form-info-description">
-                          Загрузите фото, где вы держите паспорт рядом с лицом (селфи с паспортом)
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <button
-                    className="verification-form-btn"
-                    onClick={() => setIsVerificationFormOpen(true)}
-                  >
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                      <path d="M23 19C23 19.5304 22.7893 20.0391 22.4142 20.4142C22.0391 20.7893 21.5304 21 21 21H3C2.46957 21 1.96086 20.7893 1.58579 20.4142C1.21071 20.0391 1 19.5304 1 19V8C1 7.46957 1.21071 6.96086 1.58579 6.58579C1.96086 6.21071 2.46957 6 3 6H7L9 4H15L17 6H21C21.5304 6 22.0391 6.21071 22.4142 6.58579C22.7893 6.96086 23 7.46957 23 8V19Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                      <circle cx="12" cy="13" r="4" stroke="currentColor" strokeWidth="2"/>
-                    </svg>
-                    Начать верификацию
-                  </button>
-                </div>
-              </div>
-            </section>
           </div>
         </main>
       </div>

@@ -8,6 +8,10 @@ import { validateLuhn, detectCardType, formatCardNumber, maskCardNumber } from '
 import { getApiBaseUrl, getApiBaseUrlSync } from '../utils/apiConfig'
 import UserBidHistoryModal from '../components/UserBidHistoryModal'
 import BuyNowModal from '../components/BuyNowModal'
+import { useTonConnectUI } from '@tonconnect/ui-react'
+import DepositTopUpPicker from '../components/DepositTopUpPicker'
+import CardTopUpModal from '../components/CardTopUpModal'
+import SellerVerificationModal from '../components/SellerVerificationModal'
 import { showNotification } from '../utils/toastHelper'
 import './Wallet.css'
 
@@ -83,6 +87,10 @@ const Wallet = () => {
   const [showBidHistory, setShowBidHistory] = useState(false)
   const [wonProperty, setWonProperty] = useState(null) // Выигранный объект
   const [isBuyNowModalOpen, setIsBuyNowModalOpen] = useState(false)
+  const [showTopUpPicker, setShowTopUpPicker] = useState(false)
+  const [showCardTopUpModal, setShowCardTopUpModal] = useState(false)
+  const [showVerificationAfterTopUp, setShowVerificationAfterTopUp] = useState(false)
+  const [tonConnectUI] = useTonConnectUI()
 
   // Получаем числовой ID из БД для Clerk пользователей
   useEffect(() => {
@@ -833,221 +841,78 @@ const Wallet = () => {
           </div>
         </div>
 
-        {/* Банковская карта */}
-        <div className="wallet-card-section">
-          <div className="wallet-card-header">
-            <h2 className="wallet-card-title">{hasCard ? 'Моя карта' : 'Добавьте карту'}</h2>
+        {/* Блок депозита и пополнения — карта скрыта, пополнение через Picker */}
+        <div className="wallet-card-section deposit-main-block">
+          <div className="deposit-info-block">
+            <div className="deposit-info-label">Депозит</div>
+            <div className="deposit-info-amount">{formatAmount(depositAmount)}</div>
           </div>
-          
-          {/* Карточка всегда видна */}
-          <div className="wallet-cards-carousel">
-            <div
-              className={`bank-card ${isCardFlipped ? 'flipped' : ''} ${isEditingCard ? 'editing' : ''}`}
-              onClick={(e) => {
-                // Если пользователь кликает на карту и нет карты, всегда начинаем редактирование
-                if (!hasCard) {
-                  setIsEditingCard(true)
-                } else if (hasCard && !isEditingCard) {
-                  // Если карта есть, переворачиваем её
-                  setIsCardFlipped(!isCardFlipped)
-                }
-              }}
-              style={{ '--card-color': getCardColor() }}
+          <div className="wallet-actions">
+            <button
+              className="wallet-action-btn deposit-action"
+              onClick={() => setShowTopUpPicker(true)}
             >
-              <div className="bank-card__front">
-                <div className="bank-card__background" style={{ background: getCardColor() }}>
-                  <div className="bank-card__pattern"></div>
-                  <div className="bank-card__shine"></div>
-                </div>
-                <div className="bank-card__content">
-                  <div className="bank-card__top">
-                    <div className={`bank-card__logo ${cardType === 'MASTERCARD' ? 'mastercard' : ''}`}>
-                      {getCardLogo()}
-                    </div>
-                    {hasCard && !isEditingCard && (
-                      <div 
-                        className="bank-card__security"
-                        onClick={handleCardLockClick}
-                      >
-                        <FaLock className={`bank-card__lock-icon ${isCardDataVisible ? 'unlocked' : ''}`} />
-                      </div>
-                    )}
-                  </div>
-                  
-                  <div className="bank-card__middle">
-                    <div className="bank-card__chip">
-                      <div className="chip"></div>
-                    </div>
-                    <div className="bank-card__contactless">
-                      <FaWifi className="contactless-icon" />
-                    </div>
-                  </div>
-                  
-                  <div className="bank-card__number" onClick={(e) => e.stopPropagation()}>
-                    {isEditingCard ? (
-                      <input
-                        type="text"
-                        className="bank-card__number-input"
-                        value={cardNumber}
-                        onChange={(e) => handleCardNumberChange(e.target.value)}
-                        onClick={(e) => e.stopPropagation()}
-                        placeholder="1234 5678 9012 3456"
-                        maxLength="19"
-                        autoFocus
-                      />
-                    ) : (
-                      <span className="bank-card__number-text">
-                        {formatCardNumberForDisplay()}
-                      </span>
-                    )}
-                    {hasCard && isCardDataVisible && !isEditingCard && (
-                      <FaLock 
-                        className={`bank-card__number-lock unlocked`}
-                        onClick={handleCardLockClick}
-                      />
-                    )}
-                  </div>
-                  
-                  <div className="bank-card__bottom">
-                    <div className="bank-card__expiry" onClick={(e) => e.stopPropagation()}>
-                      {isEditingCard && !hasCard ? (
-                        <input
-                          type="text"
-                          className="bank-card__expiry-input"
-                          value={cardExpiry}
-                          onChange={(e) => {
-                            let value = e.target.value.replace(/\D/g, '').slice(0, 4)
-                            if (value.length >= 2) {
-                              value = value.slice(0, 2) + '/' + value.slice(2)
-                            }
-                            setCardExpiry(value)
-                            setCardError('')
-                          }}
-                          onClick={(e) => e.stopPropagation()}
-                          placeholder="MM/YY"
-                          maxLength="5"
-                        />
-                      ) : (
-                        <span className="bank-card__expiry-text">{getCardExpiryDisplay()}</span>
-                      )}
-                    </div>
-                  </div>
-                </div>
+              <div className="wallet-action-icon-wrapper">
+                <FaArrowUp className="wallet-action-icon" />
               </div>
-              <div className="bank-card__back">
-                <div className="bank-card__back-content">
-                  <div className="bank-card__magnetic-stripe"></div>
-                  <div className="bank-card__cvv" onClick={(e) => e.stopPropagation()}>
-                    <div className="cvv-label">CVV</div>
-                    <div className="cvv-value">
-                      {isEditingCard ? (
-                        <input
-                          type="text"
-                          className="bank-card__cvv-input"
-                          value={cardCvv}
-                          onChange={(e) => {
-                            const value = e.target.value.replace(/\D/g, '').slice(0, 4)
-                            setCardCvv(value)
-                            setCardError('')
-                          }}
-                          onClick={(e) => e.stopPropagation()}
-                          placeholder="___"
-                          maxLength="4"
-                        />
-                      ) : (
-                        getCardCvvDisplay()
-                      )}
-                    </div>
-                  </div>
-                </div>
+              <span>Пополнить</span>
+            </button>
+            <button
+              className="wallet-action-btn withdraw-action"
+              onClick={handleWithdraw}
+            >
+              <div className="wallet-action-icon-wrapper">
+                <FaArrowDown className="wallet-action-icon" />
               </div>
-            </div>
+              <span>Вывести</span>
+            </button>
           </div>
-
-          {/* Кнопка сохранения (показывается всегда при редактировании) */}
-          {isEditingCard && !hasCard && (
-            <div className="card-save-container">
-              {cardError && <div className="card-error">{cardError}</div>}
-              <button 
-                type="button"
-                onClick={handleCardSubmit}
-                className={`card-form-submit ${!canSaveCard() ? 'disabled' : ''}`}
-                disabled={!canSaveCard()}
-              >
-                Сохранить карту
-              </button>
-              {!canSaveCard() && !cardError && (() => {
-                const cleanedNumber = cardNumber.replace(/\D/g, '')
-                const hasValidNumber = cleanedNumber.length >= 13 && cleanedNumber.length <= 19
-                const hasValidExpiry = cardExpiry.length === 5 && /^\d{2}\/\d{2}$/.test(cardExpiry)
-                const hasValidCvv = cardCvv.length >= 3 && cardCvv.length <= 4
-                const isValidLuhn = cleanedNumber.length > 0 ? validateLuhn(cleanedNumber) : false
-                
-                const issues = []
-                if (!hasValidNumber) {
-                  issues.push('Номер карты должен содержать от 13 до 19 цифр')
-                } else if (!isValidLuhn) {
-                  issues.push('Номер карты не прошел проверку (используйте валидный номер, например: 4111 1111 1111 1111)')
-                }
-                if (!hasValidExpiry) {
-                  issues.push('Срок действия должен быть в формате MM/YY (например: 12/25)')
-                }
-                if (!hasValidCvv) {
-                  issues.push('CVV должен содержать 3 или 4 цифры')
-                }
-                
-                return (
-                  <div className="card-hint">
-                    {issues.length > 0 ? (
-                      <div>
-                        <div style={{ marginBottom: '8px', fontWeight: '600' }}>Заполните все поля:</div>
-                        {issues.map((issue, idx) => (
-                          <div key={idx} style={{ fontSize: '13px', marginTop: '4px', color: 'rgba(255, 255, 255, 0.7)' }}>
-                            • {issue}
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      'Заполните все поля карты для сохранения'
-                    )}
-                  </div>
-                )
-              })()}
-            </div>
-          )}
-
-          {/* Блок депозита (показывается только после сохранения карты) */}
-          {hasCard && (
-            <>
-              <div className="deposit-info-block">
-                <div className="deposit-info-label">Депозит</div>
-                <div className="deposit-info-amount">{formatAmount(depositAmount)}</div>
-              </div>
-              
-              {/* Кнопки действий */}
-              <div className="wallet-actions">
-                <button 
-                  className="wallet-action-btn deposit-action"
-                  onClick={handleTopUp}
-                >
-                  <div className="wallet-action-icon-wrapper">
-                    <FaArrowUp className="wallet-action-icon" />
-                  </div>
-                  <span>Пополнить</span>
-                </button>
-                <button 
-                  className="wallet-action-btn withdraw-action"
-                  onClick={handleWithdraw}
-                >
-                  <div className="wallet-action-icon-wrapper">
-                    <FaArrowDown className="wallet-action-icon" />
-                  </div>
-                  <span>Вывести</span>
-                </button>
-              </div>
-            </>
-          )}
         </div>
+
+        {/* Picker и модалки пополнения */}
+        <DepositTopUpPicker
+          isOpen={showTopUpPicker}
+          onClose={() => setShowTopUpPicker(false)}
+          onSelectCard={() => setShowCardTopUpModal(true)}
+          onSelectCrypto={() => {
+            setShowTopUpPicker(false)
+            tonConnectUI?.openModal?.()
+          }}
+        />
+        <CardTopUpModal
+          isOpen={showCardTopUpModal}
+          onClose={() => setShowCardTopUpModal(false)}
+          userId={dbUserId}
+          apiBaseUrl={API_BASE_URL}
+          onSuccess={async (newDeposit) => {
+            setDepositAmount(newDeposit)
+            await loadUserData()
+            try {
+              const res = await fetch(`${API_BASE_URL}/users/${dbUserId}/verification-status`)
+              if (res.ok) {
+                const json = await res.json()
+                if (json.success && json.data?.isVerified) {
+                  return
+                }
+              }
+            } catch (_) {}
+            setShowVerificationAfterTopUp(true)
+          }}
+        />
+        {dbUserId && (
+          <SellerVerificationModal
+            isOpen={showVerificationAfterTopUp}
+            onClose={() => setShowVerificationAfterTopUp(false)}
+            userId={dbUserId}
+            required
+            title="Чтобы продолжить, пройдите верификацию"
+            subtitle="Загрузите фото паспорта, селфи и селфи с паспортом"
+            onComplete={async () => {
+              setShowVerificationAfterTopUp(false)
+              return true
+            }}
+          />
+        )}
 
         {/* Выигранный объект */}
         {wonProperty && (

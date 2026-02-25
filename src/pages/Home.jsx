@@ -27,7 +27,10 @@ function Home() {
   const [chatMessages, setChatMessages] = useState([])
   const [chatInput, setChatInput] = useState('')
   const [isLoadingAI, setIsLoadingAI] = useState(false)
+  const [isSlowAIResponse, setIsSlowAIResponse] = useState(false)
+  const slowResponseTimerRef = useRef(null)
   const chatMessagesRef = useRef(null)
+  const lastMessageRef = useRef(null)
   const [userPreferences, setUserPreferences] = useState({
     purpose: null, // 'для себя', 'под сдачу', 'инвестиции'
     budget: null,
@@ -351,6 +354,12 @@ function Home() {
     }
 
     setIsLoadingAI(true)
+    setIsSlowAIResponse(false)
+    if (slowResponseTimerRef.current) {
+      clearTimeout(slowResponseTimerRef.current)
+      slowResponseTimerRef.current = null
+    }
+    slowResponseTimerRef.current = setTimeout(() => setIsSlowAIResponse(true), 6000)
 
     try {
       // Получаем ответ от AI
@@ -383,7 +392,12 @@ function Home() {
       }
       setChatMessages((prev) => [...prev, errorMessage])
     } finally {
+      if (slowResponseTimerRef.current) {
+        clearTimeout(slowResponseTimerRef.current)
+        slowResponseTimerRef.current = null
+      }
       setIsLoadingAI(false)
+      setIsSlowAIResponse(false)
     }
   }
 
@@ -497,9 +511,13 @@ function Home() {
     }
   }, [userPreferences, getChatUserId])
 
-  // Автоскролл к последнему сообщению
+  // При ответе бота — скролл к началу ответа; при своём сообщении — вниз
   useEffect(() => {
-    if (chatMessagesRef.current && isChatOpen) {
+    if (!chatMessagesRef.current || !isChatOpen) return
+    const last = chatMessages[chatMessages.length - 1]
+    if (last?.sender === 'bot' && lastMessageRef.current) {
+      lastMessageRef.current.scrollIntoView({ block: 'start', behavior: 'smooth' })
+    } else {
       chatMessagesRef.current.scrollTop = chatMessagesRef.current.scrollHeight
     }
   }, [chatMessages, isChatOpen])
@@ -578,9 +596,10 @@ function Home() {
           </div>
 
           <div className="chat-widget__messages" ref={chatMessagesRef}>
-            {chatMessages.map((message) => (
+            {chatMessages.map((message, idx) => (
               <div
                 key={message.id}
+                ref={idx === chatMessages.length - 1 ? lastMessageRef : null}
                 className={`chat-widget__message ${
                   message.sender === 'user'
                     ? 'chat-widget__message--user'
@@ -658,6 +677,9 @@ function Home() {
                     <span></span>
                     <span></span>
                   </div>
+                  {isSlowAIResponse && (
+                    <div className="chat-widget__slow-hint">Ищем ответ, подождите.</div>
+                  )}
                 </div>
               </div>
             )}

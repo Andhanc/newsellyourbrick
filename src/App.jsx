@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { useEffect, useState } from 'react'
+import { TonConnectUIProvider } from '@tonconnect/ui-react'
 import Home from './pages/Home'
 import MainPage from './pages/MainPage'
 import PropertyDetailPage from './pages/PropertyDetailPage'
@@ -201,7 +202,12 @@ function App() {
 
   console.log('🔍 App render, isBlocked:', isBlocked);
 
+  const tonManifestUrl = typeof window !== 'undefined'
+    ? `${window.location.origin}/tonconnect-manifest.json`
+    : '/tonconnect-manifest.json'
+
   return (
+    <TonConnectUIProvider manifestUrl={tonManifestUrl}>
     <Router>
       <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
       <ScrollToTop />
@@ -246,6 +252,7 @@ function App() {
       {isBlocked && <BlockedUserModal isOpen={true} />}
       <ToastContainer />
     </Router>
+    </TonConnectUIProvider>
   )
 }
 

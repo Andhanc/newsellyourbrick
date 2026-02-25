@@ -28,6 +28,70 @@
   border-color: #f59e0b;
 }
 
+/* Успех: всё заполнено */
+.verification-toast--success {
+  border-color: #86efac;
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+}
+
+.verification-toast__success-inner {
+  padding: 1.5rem 1.25rem;
+  text-align: center;
+}
+
+.verification-toast__success-icon-wrap {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 1rem;
+  border-radius: 50%;
+  background: #22c55e;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: verification-success-check 0.6s ease-out;
+}
+
+.verification-toast__success-icon {
+  animation: verification-success-check-scale 0.5s ease-out 0.2s both;
+}
+
+@keyframes verification-success-check {
+  from {
+    transform: scale(0);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes verification-success-check-scale {
+  from {
+    transform: scale(0.5);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.verification-toast__success-title {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #166534;
+  margin: 0 0 0.5rem 0;
+}
+
+.verification-toast__success-text {
+  font-size: 0.9375rem;
+  color: #15803d;
+  line-height: 1.5;
+  margin: 0;
+}
+
 .verification-toast__header {
   display: flex;
   align-items: center;
@@ -257,6 +321,20 @@
 .verification-toast__field-item--missing {
   background: #fef2f2;
   color: #991b1b;
+}
+
+.verification-toast__field-item--clickable {
+  cursor: pointer;
+}
+
+.verification-toast__field-item--clickable:hover {
+  background: #fee2e2;
+}
+
+.verification-toast__field-chevron {
+  margin-left: auto;
+  flex-shrink: 0;
+  opacity: 0.8;
 }
 
 .verification-toast__field-icon {
