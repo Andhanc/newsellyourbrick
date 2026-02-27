@@ -7302,6 +7302,7 @@ app.post('/api/users/:id/card', (req, res) => {
 app.get('/api/users/:id/deposit', (req, res) => {
   try {
     const userId = req.params.id;
+    const db = getDatabase();
     const user = userQueries.getById(userId);
     
     if (!user) {
