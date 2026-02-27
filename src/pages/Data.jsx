@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { FiEye, FiEyeOff } from 'react-icons/fi'
+import { FaPencilAlt } from 'react-icons/fa'
 import { useUser, useAuth } from '@clerk/clerk-react'
 import { getUserData, logout, sendEmailVerificationCode, verifyEmailForProfileUpdate, validatePassword, saveUserData } from '../services/authService'
 import EmailVerificationModal from '../components/EmailVerificationModal'
@@ -1206,9 +1207,7 @@ const Data = () => {
             <div className="data-edit-controls">
                 {!isEditing ? (
                   <button type="button" className="data-edit-btn" onClick={handleEdit} aria-label="Редактировать">
-                    <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                      <path d="M12.75 2.25C13.0721 1.92788 13.4563 1.70947 13.8874 1.61553C14.3185 1.52159 14.767 1.46849 15.2188 1.47159C15.6706 1.47469 16.1188 1.53394 16.5474 1.63628C16.976 1.73862 17.3638 1.96012 17.6875 2.28375C18.0111 2.60738 18.2326 2.99525 18.335 3.42381C18.4373 3.85237 18.4966 4.30056 18.4997 4.75237C18.5028 5.20419 18.4497 5.65269 18.3557 6.08381C18.2618 6.51494 18.0434 6.89912 17.7213 7.22125L6.375 18.5625L1.125 19.875L2.4375 14.625L13.7813 3.28125C13.9001 3.16245 14.0438 3.07141 14.2026 3.01406C14.3614 2.95671 14.5316 2.93439 14.7006 2.94844H14.8L12.75 2.25Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
+                    <FaPencilAlt size={18} />
                     <span>Редактировать</span>
                   </button>
                 ) : (

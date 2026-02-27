@@ -1,7 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
-import { useUser } from '@clerk/clerk-react'
-import { getUserData, isAuthenticated } from '../services/authService'
+import { useUser, useClerk } from '@clerk/clerk-react'
+import { getUserData, isAuthenticated, logout } from '../services/authService'
 import VerificationToast from '../components/VerificationToast'
 import WonPropertyCard from '../components/WonPropertyCard'
 import './History.css'
@@ -11,6 +11,7 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
 const History = () => {
   const navigate = useNavigate()
   const { user, isLoaded: userLoaded } = useUser()
+  const { signOut: clerkSignOut } = useClerk()
   const [userId, setUserId] = useState(null)
   const [verificationStatus, setVerificationStatus] = useState(null)
 
@@ -87,12 +88,15 @@ const History = () => {
     }
   }, [user, userLoaded])
 
-  // Загружаем статус верификации
+  // Загружаем статус верификации и реальные данные ставок/покупок
   useEffect(() => {
     if (userId) {
       loadVerificationStatus()
       loadWonProperties()
       loadBidHistory()
+    } else {
+      setIsLoadingPurchases(false)
+      setIsLoadingBids(false)
     }
   }, [userId])
 
@@ -269,6 +273,7 @@ const History = () => {
           // Для каждого объекта определяем статус и формируем данные
           const formattedBids = await Promise.all(
             Object.values(bidsByProperty).map(async ({ property, bids }) => {
+              const propertyId = property.property_id ?? property.id
               // Сортируем ставки пользователя по дате (последняя первая)
               const sortedBids = bids.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
               const userMaxBid = Math.max(...bids.map(b => b.bid_amount))
@@ -443,6 +448,21 @@ const History = () => {
         return 'status-failed'
       default:
         return ''
+    }
+  }
+
+  const handleLogout = async () => {
+    try {
+      if (user) {
+        await clerkSignOut()
+      }
+      logout()
+      localStorage.removeItem('userId')
+      navigate('/', { replace: true })
+    } catch (e) {
+      logout()
+      localStorage.removeItem('userId')
+      navigate('/', { replace: true })
     }
   }
 
