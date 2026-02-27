@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { FiSearch, FiSend, FiUsers, FiFilter, FiCheck, FiX, FiRefreshCw } from 'react-icons/fi';
 import { getApiBaseUrl } from '../../utils/apiConfig';
 import './WhatsApp.css';
@@ -33,15 +33,44 @@ const WhatsApp = () => {
   const [sending, setSending] = useState(false);
   const [sendResult, setSendResult] = useState(null);
   const [whatsappStatus, setWhatsappStatus] = useState({ ready: false, state: 'UNKNOWN' });
+  const [qrTimestamp, setQrTimestamp] = useState(Date.now());
+  const [qrAvailable, setQrAvailable] = useState(false);
+  const qrRefreshRef = useRef(null);
 
   // Загрузка WhatsApp пользователей с сервера
   useEffect(() => {
     loadUsers();
     checkWhatsAppStatus();
-    // Проверяем статус каждые 5 секунд
     const statusInterval = setInterval(checkWhatsAppStatus, 5000);
-    return () => clearInterval(statusInterval);
+    return () => {
+      clearInterval(statusInterval);
+      if (qrRefreshRef.current) clearInterval(qrRefreshRef.current);
+    };
   }, []);
+
+  // Когда статус меняется — управляем обновлением QR
+  useEffect(() => {
+    if (qrRefreshRef.current) clearInterval(qrRefreshRef.current);
+
+    if (!whatsappStatus.ready) {
+      checkQrAvailability();
+      qrRefreshRef.current = setInterval(() => {
+        setQrTimestamp(Date.now());
+        checkQrAvailability();
+      }, 20000);
+    } else {
+      setQrAvailable(false);
+    }
+  }, [whatsappStatus.ready]);
+
+  const checkQrAvailability = async () => {
+    try {
+      const res = await fetch('/api/whatsapp/qr', { method: 'HEAD' });
+      setQrAvailable(res.ok);
+    } catch {
+      setQrAvailable(false);
+    }
+  };
 
   const checkWhatsAppStatus = async () => {
     try {
@@ -57,6 +86,11 @@ const WhatsApp = () => {
     } catch (err) {
       console.error('Ошибка проверки статуса WhatsApp:', err);
     }
+  };
+
+  const handleRefreshQr = () => {
+    setQrTimestamp(Date.now());
+    checkQrAvailability();
   };
 
   const loadUsers = async () => {
@@ -217,26 +251,37 @@ const WhatsApp = () => {
         <p className="whatsapp-subtitle">Отправка сообщений выбранным пользователям</p>
         {!whatsappStatus.ready && (
           <div className="whatsapp-status-warning">
-            <span style={{ color: '#ef4444', fontWeight: '600' }}>⚠️ WhatsApp клиент не готов</span>
-            <p style={{ margin: '8px 0 0 0', fontSize: '0.9rem', color: '#6b7280' }}>
-              {whatsappStatus.message || 'Отсканируйте QR-код в консоли сервера для подключения'}
-            </p>
-            <button 
-              onClick={checkWhatsAppStatus}
-              style={{ 
-                marginTop: '8px', 
-                padding: '6px 12px', 
-                background: '#25D366', 
-                color: 'white', 
-                border: 'none', 
-                borderRadius: '4px', 
-                cursor: 'pointer',
-                fontSize: '0.85rem'
-              }}
-            >
-              <FiRefreshCw style={{ marginRight: '4px' }} />
-              Проверить статус
-            </button>
+            <div className="whatsapp-warning-top">
+              <div>
+                <span style={{ color: '#ef4444', fontWeight: '600' }}>⚠️ WhatsApp клиент не подключён</span>
+                <p style={{ margin: '6px 0 0 0', fontSize: '0.9rem', color: '#6b7280' }}>
+                  {qrAvailable
+                    ? 'Отсканируйте QR-код телефоном через WhatsApp → Настройки → Связанные устройства → Привязать устройство'
+                    : (whatsappStatus.message || 'QR-код ещё генерируется, подождите...')}
+                </p>
+              </div>
+              <div className="whatsapp-warning-actions">
+                <button onClick={handleRefreshQr} className="btn-qr-refresh" title="Обновить QR-код">
+                  <FiRefreshCw />
+                  Обновить QR
+                </button>
+                <button onClick={checkWhatsAppStatus} className="btn-qr-refresh" title="Проверить статус">
+                  <FiRefreshCw />
+                  Проверить статус
+                </button>
+              </div>
+            </div>
+            {qrAvailable && (
+              <div className="whatsapp-qr-block">
+                <img
+                  src={`/api/whatsapp/qr?t=${qrTimestamp}`}
+                  alt="WhatsApp QR-код"
+                  className="whatsapp-qr-image"
+                  onError={() => setQrAvailable(false)}
+                />
+                <p className="whatsapp-qr-hint">QR-код обновляется автоматически каждые 20 секунд</p>
+              </div>
+            )}
           </div>
         )}
         {whatsappStatus.ready && (

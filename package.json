@@ -38,6 +38,7 @@
     "puppeteer": "^24.0.0",
     "puppeteer-extra": "^3.3.6",
     "puppeteer-extra-plugin-stealth": "^2.11.2",
+    "qrcode": "^1.5.4",
     "qrcode-terminal": "^0.12.0",
     "react": "^19.0.0",
     "react-chartjs-2": "^5.3.1",
