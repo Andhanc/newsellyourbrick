@@ -4553,10 +4553,29 @@
   }
 
   .new-header__user-btn--avatar {
+    width: 36px !important;
+    height: 36px !important;
+    padding: 0 !important;
+    border-radius: 50% !important;
+    overflow: hidden !important;
     background: transparent !important;
+    flex-shrink: 0;
+  }
+
+  .new-header__avatar-img {
+    width: 36px !important;
+    height: 36px !important;
+    max-width: 36px !important;
+    max-height: 36px !important;
+    object-fit: cover;
+    border-radius: 50%;
+    display: block;
+    flex-shrink: 0;
   }
 
   .new-header__avatar-placeholder {
+    width: 36px;
+    height: 36px;
     background: transparent !important;
     color: #111827;
   }
