@@ -2091,7 +2091,8 @@
     0 0 0 1px rgba(17, 24, 39, 0.1);
   display: flex;
   flex-direction: column;
-  z-index: 100;
+  /* Делаем выше любого хедера и backdrop */
+  z-index: 11000;
   animation: chatSlideIn 0.3s ease-out;
   overflow: hidden;
 }
@@ -4395,7 +4396,7 @@
   }
 }
 
-/* Мобильная версия (0–768px) — компактный хедер: бургер слева, кнопка «Главная» и профиль справа */
+/* Мобильная версия (0–768px) — компактный хедер: как на странице Аукцион по размеру */
 @media (max-width: 768px) {
   .new-header {
     margin: 0;
@@ -4404,9 +4405,10 @@
     justify-content: center;
   }
 
+  /* Ширина как на Аукционе: 92vw и max-width 420px (на Главной родитель с padding, поэтому vw) */
   .new-header__container {
     display: flex;
-    width: 92%;
+    width: 92vw;
     max-width: 420px;
     margin: 12px auto 0;
     padding: 8px 16px;

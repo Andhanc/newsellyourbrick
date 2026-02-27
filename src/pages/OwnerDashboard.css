@@ -1011,8 +1011,10 @@
 
   .action-btn {
     padding: 10px 8px;
-    font-size: 13px;
-    word-break: break-word;
+    font-size: 12px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .owner-dashboard__tabs {
@@ -1069,8 +1071,10 @@
   .action-btn {
     width: 100%;
     padding: 10px 6px;
-    font-size: 12px;
-    word-break: break-word;
+    font-size: 11px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 }
 

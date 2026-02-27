@@ -751,6 +751,31 @@ body.admin-panel-active .footer .footer__bottom {
     text-overflow: ellipsis;
   }
 
+  /* На мобильных делаем кнопки как в админ-панели:
+     чуть меньше паддинги, иконки и текст, чтобы всё помещалось */
+  .footer__store-buttons {
+    gap: 4px;
+  }
+
+  .footer__store-btn {
+    padding: 6px 10px;
+    gap: 6px;
+  }
+
+  .footer__store-icon svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .footer__store-icon {
+    width: 14px;
+    height: 14px;
+  }
+
+  .footer__store-name {
+    font-size: 10px;
+  }
+
   .footer__language-name {
     display: none; /* в мобильной версии показываем только флаг */
   }

@@ -40,7 +40,7 @@ const resources = {
       mapLink: 'Карта',
       tariffs: 'Тарифы и цены',
       auctionLink: 'Аукцион',
-      legalDocs: 'Юридические документы',
+      legalDocs: 'Документы',
       advertising: 'Реклама на сайте',
       career: 'Карьера в Sellyourbrick',
       mapSearch: 'Поиск на карте',

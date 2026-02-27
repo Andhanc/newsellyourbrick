@@ -703,7 +703,7 @@ const Statistics = ({ businessInfo, onShowUsers }) => {
         iconClass: 'orange'
       },
       {
-        title: 'Количество Аукционов',
+        title: 'Аукционов',
         value: isLoadingCounts ? '...' : (auctionsCount !== null && auctionsCount !== undefined ? auctionsCount : 0),
         changePercent: '18.4',
         icon: 'fas fa-gavel',

@@ -385,6 +385,21 @@
     flex-direction: column;
     gap: 0.75rem;
   }
+
+  /* Чуть уменьшаем шрифт в карточках на мобильных,
+     чтобы длинные имена и подписи лучше помещались */
+  .user-card__name h3 {
+    font-size: 0.7rem;
+  }
+
+  .user-card__email {
+    font-size: 0.6rem;
+  }
+
+  .meta-label,
+  .meta-value {
+    font-size: 0.6rem;
+  }
 }
 
 
