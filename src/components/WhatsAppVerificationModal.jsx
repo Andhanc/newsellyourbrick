@@ -5,7 +5,6 @@ import { sendWhatsAppVerificationCode, verifyWhatsAppCode, validatePhoneNumber }
 import PhoneInput from './PhoneInput'
 import './PhoneInput.css'
 import './WhatsAppVerificationModal.css'
-
 /**
  * mode: 'login' | 'register'
  * role: 'buyer' | 'seller'

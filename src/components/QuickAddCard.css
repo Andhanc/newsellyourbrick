@@ -96,29 +96,25 @@
 /* Адаптивность */
 @media (max-width: 768px) {
   .quick-add-card {
-    padding: 16px 20px;
-    gap: 16px;
+    padding: 16px 16px 18px;
+    gap: 12px;
     min-height: 90px;
+    position: relative;
   }
 
-  .quick-add-card__icon {
-    width: 48px;
-    height: 48px;
-    border-radius: 12px;
+  /* В мобильной версии полностью убираем блок с иконкой,
+     чтобы карточка хорошо ложилась в сетку 2x2 */
+  .quick-add-card__icon-wrapper {
+    display: none;
   }
 
-  .quick-add-card__icon svg {
-    width: 20px;
-    height: 20px;
+  .quick-add-card__content-wrapper {
+    gap: 8px;
   }
 
   .quick-add-card__value {
     font-size: 18px;
     word-break: break-word;
-  }
-
-  .quick-add-card__content-wrapper {
-    gap: 16px;
   }
 }
 

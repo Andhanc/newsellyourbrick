@@ -218,6 +218,17 @@
   border: 2px solid #ffffff;
 }
 
+/* Мобильная версия: убираем старый хедер и поиск над картинкой */
+@media (max-width: 768px) {
+  .hero-section .header {
+    display: none;
+  }
+
+  .search {
+    display: none;
+  }
+}
+
 .notification-backdrop {
   position: fixed;
   top: 0;
@@ -615,6 +626,57 @@
     0 4px 12px rgba(10, 186, 181, 0.2);
   transition: all 0.3s ease;
   box-sizing: border-box;
+}
+
+/* Мобильная версия: убираем поисковый блок, но фон делаем как на десктопе */
+@media (max-width: 768px) {
+  /* Фон как на десктопе */
+  .hero-section {
+    position: relative;
+    overflow: hidden;
+    background: transparent;
+  }
+
+  .hero-section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 320px;
+    background: linear-gradient(135deg, #e8e8f5 0%, #f0e0eb 60%, #f8e8f0 100%);
+    z-index: 0;
+  }
+
+  .hero-section::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 320px;
+    background-image: url('https://static.cdn-cian.ru/frontend/valuation-my-home-page-frontend/my-home-bg.44b774c17192a1e1.png');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    z-index: 1;
+  }
+
+  /* Прячем старые фоновые div-ы и сам поиск */
+  .hero-section__image,
+  .hero-section__overlay {
+    display: none !important;
+  }
+
+  .search,
+  .search__field {
+    display: none !important;
+  }
+
+  /* Полностью убираем нижнюю навигацию на мобильной версии */
+  .bottom-nav {
+    display: none !important;
+  }
 }
 
 .search__field:focus-within {
@@ -1035,7 +1097,7 @@
   justify-content: center;
   cursor: pointer;
   transition: background 0.2s;
-  z-index: 3;
+  z-index: 1;
 }
 
 .property-favorite:hover {
@@ -1433,6 +1495,20 @@
   flex-shrink: 0;
 }
 
+@media (max-width: 768px) {
+  .property-bid-info {
+    padding: 8px 10px;
+  }
+
+  .bid-label {
+    font-size: 12px;
+  }
+
+  .bid-value {
+    font-size: 16px;
+  }
+}
+
 .bid-label {
   font-size: 14px;
   color: #666;
@@ -1459,8 +1535,8 @@
   display: flex;
   flex-direction: row;
   align-items: center;
-  gap: 6px;
-  font-size: 14px;
+  gap: 4px;
+  font-size: 13px;
   font-weight: 500;
   color: #666;
   padding: 0;
@@ -1470,8 +1546,8 @@
 .property-specs .spec-item svg {
   color: #666;
   flex-shrink: 0;
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
 }
 
 .property-specs .spec-item span {
@@ -1886,6 +1962,56 @@
 
   .contact-form__image img {
     max-width: 500px;
+  }
+}
+
+/* Мобильная версия: адаптивная форма и иллюстрация */
+@media (max-width: 768px) {
+  .contact-form-section {
+    padding: 40px 0 0;
+    margin-top: 32px;
+  }
+
+  .contact-form-container {
+    padding: 0 18px;
+  }
+
+  .contact-form-wrapper {
+    gap: 24px;
+  }
+
+  .contact-form__image-wrapper {
+    margin-left: 0;
+    margin-bottom: 0;
+    align-items: flex-start;
+    justify-content: flex-start;
+  }
+
+  .contact-form__image-title {
+    margin: 0 0 16px 0;
+    font-size: 22px;
+    text-align: left;
+  }
+
+  .contact-form__image {
+    width: 100%;
+    margin: 0;
+    margin-left: -20px; /* чуть смещаем левее относительно контейнера */
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+  }
+
+  /* Перекрываем десктопные !important-ширины, чтобы картинка не вылезала за экран */
+  .contact-form__image img {
+    width: 75% !important;
+    max-width: 220px !important;
+    height: auto !important;
+  }
+
+  .contact-form {
+    padding: 24px 20px;
+    border-radius: 20px;
   }
 }
 
@@ -3344,11 +3470,11 @@
     border: none !important;
     outline: none !important;
     display: block !important;
-    animation: backdropFadeIn 0.3s ease-out;
+    animation: backdropFadeIn 0.3s ease-out forwards;
   }
 
   .menu-backdrop--closing {
-    animation: backdropFadeOut 0.3s ease-out;
+    animation: backdropFadeOut 0.3s ease-out forwards;
   }
 
   @keyframes backdropFadeIn {
@@ -3388,12 +3514,12 @@
     width: calc(100% - 120px) !important; /* Ширина равна ширине хедера */
     max-width: 1249.5px !important; /* Максимальная ширина равна max-width хедера */
     max-height: calc(100vh - 120px) !important;
-    animation: menuSlideDown 0.3s ease-out;
+    animation: menuSlideDown 0.3s ease-out forwards;
     overflow: hidden !important;
   }
 
   .menu-dropdown--closing {
-    animation: menuSlideUp 0.3s ease-out;
+    animation: menuSlideUp 0.3s ease-out forwards;
   }
   
   /* Когда меню открыто, скругляем только верхние углы хедера */
@@ -3425,9 +3551,10 @@
   }
 
   .menu-dropdown__content {
+    position: relative;
     display: flex;
     gap: 20px;
-    padding: 20px;
+    padding: 20px 20px 24px;
     overflow-y: auto;
     max-height: calc(60vh - 64px);
     scrollbar-width: none; /* Firefox */
@@ -3436,6 +3563,43 @@
 
   .menu-dropdown__content::-webkit-scrollbar {
     display: none; /* Chrome, Safari, Opera */
+  }
+
+  .menu-dropdown__close-btn {
+    position: absolute;
+    top: 12px;
+    left: 16px;
+    width: 40px;
+    height: 40px;
+    border-radius: 0;
+    border: none;
+    background: transparent;
+    box-shadow: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: #111827;
+    transition: background-color 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
+    z-index: 2;
+  }
+
+  .menu-dropdown__close-btn:hover {
+    background: transparent;
+    transform: none;
+    box-shadow: none;
+  }
+
+  .menu-dropdown__close-btn:active {
+    transform: none;
+    box-shadow: none;
+  }
+
+  /* На десктопе крестик в меню не показываем */
+  @media (min-width: 769px) {
+    .menu-dropdown__close-btn {
+      display: none !important;
+    }
   }
 
   .menu-dropdown__columns {
@@ -3866,7 +4030,7 @@
   .new-header__right {
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 6px;
     margin-left: 8px;
     flex-shrink: 0;
     min-width: fit-content;
@@ -4142,14 +4306,15 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: transparent;
-    color: #111827;
+    /* Десктоп: зелёный круг как аватар по умолчанию */
+    background: linear-gradient(135deg, #0ABAB5 0%, #089a95 100%);
+    color: #ffffff;
     border-radius: 50%;
   }
 
   .new-header__user-btn svg {
-    width: 26px;
-    height: 26px;
+    width: 24px;
+    height: 24px;
   }
 
   .new-header__profile-indicator {
@@ -4179,6 +4344,11 @@
     position: relative;
     flex-shrink: 0;
     margin-right: 8px;
+  }
+
+  .new-header__notification-btn svg {
+    width: 20px;
+    height: 20px;
   }
 
   .new-header__notification-indicator {
@@ -4230,21 +4400,43 @@
   .new-header {
     margin: 0;
     width: 100%;
+    display: flex;
+    justify-content: center;
   }
 
   .new-header__container {
     display: flex;
-    width: 90%;
-    max-width: 90%;
-    margin: 0 5%;
+    width: 92%;
+    max-width: 420px;
+    margin: 12px auto 0;
     padding: 8px 16px;
     justify-content: space-between;
     align-items: center;
     gap: 0;
-    border-radius: 12px;
-    box-shadow: none;
-    background: transparent;
+    border-radius: 20px;
+    background: #ffffff;
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.22);
     box-sizing: border-box;
+  }
+
+  /* На мобильной версии кнопки поиска и уведомлений без подсветки фона */
+  .new-header__search-btn,
+  .new-header__notification-btn {
+    background: transparent !important;
+  }
+
+  .new-header__search-btn:hover,
+  .new-header__search-btn:active,
+  .new-header__notification-btn:hover,
+  .new-header__notification-btn:active {
+    background: transparent !important;
+  }
+
+  /* Размер иконок поиска и уведомлений 23x23px на мобиле */
+  .new-header__search-btn svg,
+  .new-header__notification-btn svg {
+    width: 23px;
+    height: 23px;
   }
 
   /* В мобильной версии убираем локацию и горизонтальные фильтры */
@@ -4268,6 +4460,30 @@
     margin-left: auto !important;
     flex: 0 0 auto;
     margin-right: 0;
+  }
+
+  /* Порядок элементов: сначала «Аукцион», потом лупа, затем профиль и колокольчик */
+  .new-header__auction-btn {
+    order: 1;
+  }
+
+  .new-header__search-btn {
+    order: 2;
+  }
+
+  .new-header__user-btn {
+    order: 3;
+  }
+
+  .new-header__notification-btn {
+    order: 4;
+  }
+
+  /* Убираем навигационные/рекомендательные блоки в мобильной версии */
+  .categories,
+  .section--recommended,
+  .section--spaced {
+    display: none !important;
   }
 
   /* Бургер-меню слева: компактная круглая кнопка без надписи */
@@ -4328,12 +4544,6 @@
     justify-content: center;
   }
 
-  /* В мобильной версии убираем поиск и уведомления, оставляем только профиль */
-  .new-header__search-btn,
-  .new-header__notification-btn {
-    display: none;
-  }
-
   /* Иконка профиля: больше, без заднего фона */
   .new-header__user-btn {
     background: transparent !important;
@@ -4383,11 +4593,11 @@
     box-shadow: 4px 0 24px rgba(0, 0, 0, 0.15) !important;
     border: none !important;
     overflow-y: auto !important;
-    animation: menuSlideInLeft 0.25s ease-out !important;
+    animation: menuSlideInLeft 0.3s ease-out forwards !important;
   }
 
   .menu-dropdown--closing {
-    animation: menuSlideOutLeft 0.2s ease-in !important;
+    animation: menuSlideOutLeft 0.3s ease-in forwards !important;
   }
 
   @keyframes menuSlideInLeft {
@@ -4479,6 +4689,23 @@
 
   .menu-dropdown__item span {
     display: block;
+  }
+
+  /* Крестик в правом верхнем углу в мобильном меню */
+  .menu-dropdown__close-btn {
+    position: absolute !important;
+    top: 16px !important;
+    right: 20px !important;
+    left: auto !important;
+    width: 40px !important;
+    height: 40px !important;
+    padding: 0 !important;
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
   }
 }
 

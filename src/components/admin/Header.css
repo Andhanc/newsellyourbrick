@@ -103,16 +103,67 @@
   cursor: pointer;
 }
 
-@media (max-width: 576px) {
-  .header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 1rem;
+/* Бургер-меню (по умолчанию скрыто, показывается только на мобильных) */
+.header-burger {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 10px;
+  border-radius: 999px;
+  border: none;
+  background: linear-gradient(145deg, #ffffff 0%, #e5e7eb 40%, #d1d5db 100%);
+  box-shadow:
+    0 8px 20px rgba(15, 23, 42, 0.15),
+    0 0 0 1px rgba(15, 23, 42, 0.06);
+  min-width: auto;
+  width: 40px;
+  height: 40px;
+  gap: 0;
+}
+
+.header-burger__icon {
+  width: 20px;
+  height: 20px;
+  display: block;
+}
+
+.header--mobile {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0;
+  background: transparent;
+  box-shadow: none;
+  padding: 0.5rem 0;
+  margin-bottom: 1rem;
+}
+
+@media (max-width: 768px) {
+  .header--mobile {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0;
+    background: transparent;
+    box-shadow: none;
+    padding: 0.5rem 0;
+    margin-bottom: 1rem;
   }
 
   .header-actions {
-    width: 100%;
-    justify-content: space-between;
+    width: auto;
+    justify-content: flex-end;
+    gap: 0.5rem;
+  }
+
+  .header-export-btn,
+  .user-avatar {
+    display: none;
+  }
+
+  .header-burger {
+    display: flex;
   }
 }
 

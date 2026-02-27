@@ -3929,11 +3929,16 @@ const AddProperty = () => {
                       </div>
                     </div>
 
-                    {/* Строка 2: Площадь общая | Площадь жилая */}
+                    {/* Строка 2: Площадь объекта | Площадь жилая */}
                     <div className="detail-form-field detail-form-field--split">
                       <div className="detail-form-field-half">
                         <label className="detail-form-label">
-                          <span className="detail-form-label-text">Общая площадь объекта</span>
+                          <span className="detail-form-label-text detail-form-label-text--desktop">
+                            Общая площадь объекта
+                          </span>
+                          <span className="detail-form-label-text detail-form-label-text--mobile">
+                            Площадь объекта
+                          </span>
                         </label>
                         <input
                           type="number"
@@ -4101,7 +4106,7 @@ const AddProperty = () => {
                       </div>
                     </div>
 
-                    {/* Строка: Площадь участка | Площадь общая */}
+                    {/* Строка: Площадь участка | Площадь объекта */}
                     <div className="detail-form-field detail-form-field--split">
                       <div className="detail-form-field-half">
                         <label className="detail-form-label">
@@ -4123,7 +4128,12 @@ const AddProperty = () => {
                       </div>
                       <div className="detail-form-field-half">
                         <label className="detail-form-label">
-                          <span className="detail-form-label-text">Общая площадь объекта</span>
+                          <span className="detail-form-label-text detail-form-label-text--desktop">
+                            Общая площадь объекта
+                          </span>
+                          <span className="detail-form-label-text detail-form-label-text--mobile">
+                            Площадь объекта
+                          </span>
                         </label>
                         <input
                           type="number"

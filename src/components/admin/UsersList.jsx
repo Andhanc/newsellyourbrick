@@ -165,7 +165,7 @@ const UsersList = () => {
   };
 
   return (
-    <div className="users-list-container">
+    <div className="admin-users-list-container">
       <div className="users-filter">
         <div className="filter-search">
           <FiSearch className="search-icon" size={20} />
@@ -254,7 +254,7 @@ const UsersList = () => {
           <button onClick={() => window.location.reload()}>Попробовать снова</button>
         </div>
       ) : (
-        <div className="users-list">
+        <div className="admin-users-list">
           {filteredUsers.length === 0 ? (
             <div className="users-empty">
               <p>Пользователи не найдены</p>

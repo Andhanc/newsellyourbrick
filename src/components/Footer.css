@@ -295,10 +295,7 @@ body.admin-panel-active .footer .footer__brand-text {
 }
 
 .footer__store-label {
-  font-size: 9px;
-  text-transform: uppercase;
-  opacity: 1;
-  color: #ffffff;
+  display: none; /* убираем подписи "Скачать из / Загрузите в" */
 }
 
 .footer__store-name {
@@ -662,8 +659,19 @@ body.admin-panel-active .footer .footer__bottom {
   }
 
   .footer__menu {
-    flex-wrap: wrap;
-    gap: 30px;
+    flex-wrap: nowrap;
+    gap: 24px;
+    justify-content: space-between;
+  }
+
+  /* В мобильной версии показываем только первые два блока меню (2x1) */
+  .footer__menu-column {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  .footer__menu-column:nth-child(n + 3) {
+    display: none;
   }
 
   .footer__bottom-wrapper {
@@ -698,27 +706,53 @@ body.admin-panel-active .footer .footer__bottom {
   }
 
 
+  /* Кнопки стора и выбор языка в один ряд */
   .footer__store-buttons {
     order: 2;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     width: 100%;
-    justify-content: center;
+    justify-content: space-between;
+    gap: 10px;
   }
 
   .footer__store-buttons > * {
-    flex: 1 1 calc(50% - 10px);
-    max-width: 140px;
+    flex: 1 1 0;
+    max-width: none;
   }
 
   .footer__language-selector {
     margin-left: 0;
     justify-content: center;
+    flex: 1 1 0;
   }
 
   .footer__language-selector-btn,
   .footer__store-btn {
     width: 100%;
     justify-content: center;
+    padding: 8px 6px;
+    min-width: 0;
+    height: 48px;
+    box-sizing: border-box;
+    overflow: hidden;
+  }
+
+  /* Текст в кнопках стора и селекторе языка на мобилке */
+  .footer__store-text {
+    align-items: center;
+  }
+
+  .footer__store-name {
+    font-size: 11px;
+    text-align: center;
+    white-space: nowrap;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .footer__language-name {
+    display: none; /* в мобильной версии показываем только флаг */
   }
 
   .footer__language-dropdown {
@@ -733,7 +767,7 @@ body.admin-panel-active .footer .footer__bottom {
   }
   
   body.admin-panel-active .footer .footer__container {
-    padding: 0 20px;
+    padding: 0 16px;
   }
   
   body.admin-panel-active .footer .footer__menu {
@@ -748,11 +782,39 @@ body.admin-panel-active .footer .footer__bottom {
   
   body.admin-panel-active .footer .footer__description {
     margin-bottom: 16px;
+    margin-left: 0;
   }
   
+  body.admin-panel-active .footer .footer__description-text {
+    margin-left: 0;
+  }
+
   body.admin-panel-active .footer .footer__store-buttons {
     width: 100%;
     justify-content: flex-start;
+  }
+
+  /* Убираем большие смещения влево, чтобы футер не выходил за экран */
+  body.admin-panel-active .footer .footer__bottom {
+    margin-left: 0;
+  }
+
+  body.admin-panel-active .footer .footer__brand-icon {
+    margin-left: 0;
+  }
+
+  body.admin-panel-active .footer .footer__whatsapp-qr {
+    margin-left: 0;
+  }
+
+  body.admin-panel-active .footer .footer__language-selector {
+    margin-left: 0;
+  }
+
+  body.admin-panel-active .footer .footer__qr-image {
+    position: static;
+    bottom: auto;
+    margin-top: 12px;
   }
 }
 

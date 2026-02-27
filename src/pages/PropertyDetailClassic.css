@@ -498,7 +498,7 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-  margin-top: 16px;
+  margin-top: 10px; /* миниатюры ближе к основной картинке */
   width: 100%;
 }
 
@@ -904,6 +904,48 @@
   line-height: 1.6;
   color: #4b5563;
   margin: 0;
+}
+
+/* Дополнительный блок описания/адреса под «Подробной информацией» (используется только на мобилке) */
+.property-detail-extra-text-mobile {
+  display: none;
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 16px 20px;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04);
+  margin-top: 16px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.property-detail-extra-description {
+  font-size: 14px;
+  line-height: 1.6;
+  color: #4b5563;
+  margin: 16px 0 8px;
+}
+
+.property-detail-extra-location {
+  font-size: 14px;
+  color: #6b7280;
+  margin-bottom: 16px;
+}
+
+/* Карта для мобильной версии под описанием */
+.property-detail-map-mobile {
+  display: none;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Наследуем прежние стили карты и растягиваем её на всю ширину блока */
+.property-detail-map-mobile .property-detail-sidebar__map {
+  margin-top: 24px;
+}
+
+.property-detail-map-mobile .property-detail-sidebar__map-container {
+  width: 100%;
 }
 
 /* Блок аукциона */
@@ -2092,8 +2134,124 @@
 
 @media (max-width: 960px) {
   .property-detail-main__container {
-    grid-template-columns: 1fr;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
     padding: 0 16px;
+  }
+
+  /* Делаем внутренние блоки прямыми детьми контейнера для управления порядком */
+  .property-detail-left-column {
+    display: contents;
+  }
+
+  /* Порядок блоков на мобильных:
+     1) Галерея
+     2) Сайдбар с аукционом/«Купить сейчас»
+     3) Подробная информация */
+  .property-detail-gallery {
+    order: 1;
+  }
+
+  /* В мобильной версии убираем миниатюры под основной картинкой */
+  .property-detail-gallery__thumbnails-wrapper {
+    display: none;
+  }
+
+  .property-detail-sidebar {
+    order: 2;
+    width: 100%;
+  }
+
+  .property-detail-info-section {
+    order: 3;
+    margin-top: 4px;
+  }
+
+  /* В мобильной версии внутри сайдбара управляем порядком блоков */
+  .property-detail-sidebar__content {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  /* Таймер + ставки идут раньше описания и адреса */
+  .property-detail-sidebar__auction-block {
+    order: 3;
+  }
+
+  .property-detail-sidebar__description {
+    order: 4;
+  }
+
+  .property-detail-sidebar__location {
+    order: 5;
+  }
+
+  /* Карта — после описания и адреса */
+  .property-detail-sidebar__map {
+    order: 6;
+  }
+
+  /* Форма с таймером чуть ближе к блоку "Купить сейчас" на мобиле */
+  .property-detail-sidebar__auction-block {
+    margin-top: -5px;
+    margin-bottom: 18px;
+  }
+
+  /* Центруем таймер внутри блока ставок */
+  .property-detail-sidebar__auction-block .property-timer,
+  .property-detail-sidebar__auction-block .circular-timer {
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  /* В мобильной версии описание и адрес показываем под блоком «Подробная информация»,
+     а внутри сайдбара скрываем */
+  .property-detail-sidebar__description,
+  .property-detail-sidebar__location {
+    display: none;
+  }
+
+  .property-detail-extra-text-mobile {
+    display: block;
+    order: 4;
+  }
+
+  /* На мобиле используем отдельный блок карты под описанием, а карту в сайдбаре скрываем */
+  .property-detail-map-mobile {
+    display: block;
+    order: 5;
+    margin-bottom: 24px;
+  }
+
+  /* Прячем карту только внутри сайдбара, но не в новом мобильном блоке */
+  .property-detail-sidebar__content > .property-detail-sidebar__map {
+    display: none;
+  }
+
+  /* В мобильной версии label и value в блоке цены/ставки в одну строку */
+  .property-detail-sidebar__current-bid {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .property-detail-sidebar__current-bid .current-bid-label {
+    flex-shrink: 0;
+    white-space: nowrap;
+    font-size: 15px; /* чуть крупнее подпись "Минимальная цена продажи" */
+  }
+
+  .property-detail-sidebar__current-bid .current-bid-value-wrapper,
+  .property-detail-sidebar__current-bid .current-bid-value {
+    white-space: nowrap;
+  }
+
+  /* Чуть уменьшаем число, чтобы всё влезало в строку */
+  .property-detail-sidebar__current-bid .current-bid-value {
+    font-size: 18px;
   }
 
   .property-detail-header__container,

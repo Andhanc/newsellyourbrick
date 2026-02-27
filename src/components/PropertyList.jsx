@@ -14,7 +14,7 @@ import './PropertyList.css'
 
 const MOBILE_BREAKPOINT = 768
 
-const PropertyList = ({ auctionProperties = null }) => {
+const PropertyList = ({ auctionProperties = null, onOpenAIChat }) => {
   const navigate = useNavigate()
   const location = useLocation()
   const { user, isLoaded: userLoaded } = useUser()
@@ -161,6 +161,8 @@ const PropertyList = ({ auctionProperties = null }) => {
     setVisibleCount(9)
   }, [searchQuery, propertyType])
 
+  const isAuctionPage = location.pathname === '/auction'
+
   return (
     <>
       {tooltip.show && (
@@ -182,7 +184,23 @@ const PropertyList = ({ auctionProperties = null }) => {
       )}
       <section className="property-list">
         <div className="property-list-container">
-        <h2 className="property-list-title">Активные аукционы</h2>
+        <div className="property-list-header">
+          <h2 className="property-list-title">Активные аукционы</h2>
+          {isMobile && isAuctionPage && onOpenAIChat && (
+            <button
+              type="button"
+              className="ai-button"
+              onClick={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                onOpenAIChat()
+              }}
+              aria-label="AI Assistant"
+            >
+              AI
+            </button>
+          )}
+        </div>
         
         <div className="search-filters-bar">
           <div className="search-box">
@@ -285,7 +303,25 @@ const PropertyList = ({ auctionProperties = null }) => {
                   return false;
                 };
                 const isTimerExpired = checkTimerExpired();
-                
+
+                // Зеленый линейный таймер (PropertyTimer)
+                const greenTimerBlock = hasTimer && !isReserved && !hasTestTimer && (
+                  <div className="property-timer-wrapper">
+                    <PropertyTimer endTime={property.endTime} compact={true} />
+                  </div>
+                );
+
+                // Красный круглый таймер (CircularTimer)
+                const redTimerBlock = hasTimer && !isReserved && hasTestTimer && (
+                  <div className="property-timer-wrapper">
+                    <CircularTimer 
+                      endTime={property.test_timer_end_date} 
+                      size={isMobile ? 56 : 120} 
+                      strokeWidth={isMobile ? 4 : 6} 
+                    />
+                  </div>
+                );
+
                 return (
             <div 
               key={property.id} 
@@ -420,20 +456,19 @@ const PropertyList = ({ auctionProperties = null }) => {
                   </button>
                 </div>
                 <div className="property-content">
-                  {hasTimer && !isReserved && (
-                    <div className="property-timer-wrapper">
-                      {hasTestTimer ? (
-                        <CircularTimer 
-                          endTime={property.test_timer_end_date} 
-                          size={isMobile ? 56 : 120} 
-                          strokeWidth={isMobile ? 4 : 6} 
-                        />
-                      ) : (
-                        <PropertyTimer endTime={property.endTime} compact={true} />
-                      )}
-                    </div>
+                  {isMobile ? (
+                    <>
+                      {greenTimerBlock}
+                      <h3 className="property-title">{propertyTitle}</h3>
+                      {redTimerBlock}
+                    </>
+                  ) : (
+                    <>
+                      {greenTimerBlock}
+                      {redTimerBlock}
+                      <h3 className="property-title">{propertyTitle}</h3>
+                    </>
                   )}
-                  <h3 className="property-title">{propertyTitle}</h3>
                   {!hasTimer && property.description && (
                     <p className="property-description">{property.description}</p>
                   )}

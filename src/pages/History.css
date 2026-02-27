@@ -82,6 +82,33 @@
   background: #ffffff;
 }
 
+@media (max-width: 768px) {
+  .history-sidebar .sidebar-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .history-sidebar .header-logout-button {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border-radius: 999px;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    background: rgba(254, 242, 242, 0.95);
+    color: #dc2626;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .history-sidebar .header-logout-button svg {
+    width: 16px;
+    height: 16px;
+  }
+}
+
 .sidebar-logo {
   display: flex;
   align-items: center;

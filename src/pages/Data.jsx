@@ -1098,7 +1098,7 @@ const Data = () => {
     <div className="data-page">
       <div className="data-container">
         <aside className="data-sidebar">
-          <div className="sidebar-header" style={{ marginTop: '24px' }}>
+          <div className="sidebar-header" style={{ marginTop: '24px', display: 'flex', alignItems: 'center' }}>
             <button
               type="button"
               onClick={() => navigate('/')}
@@ -1123,6 +1123,20 @@ const Data = () => {
                 <path d="M12.5 15L7.5 10L12.5 5" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
               <span>Назад</span>
+            </button>
+            <button 
+              type="button"
+              className="header-logout-button"
+              onClick={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                handleLogout()
+              }}
+            >
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                <path d="M7 2H3C2.44772 2 2 2.44772 2 3V15C2 15.5523 2.44772 16 3 16H7M12 13L15 10M15 10L12 7M15 10H6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+              <span>Выйти</span>
             </button>
           </div>
           <nav className="sidebar-nav">
@@ -1170,7 +1184,7 @@ const Data = () => {
               <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
                 <path d="M10 2L12.5 7.5L19 10L12.5 12.5L10 19L7.5 12.5L1 10L7.5 7.5L10 2Z" fill="currentColor"/>
               </svg>
-              <span>Фаворит</span>
+              <span>Понравилось</span>
             </a>
           </nav>
 
@@ -1394,7 +1408,7 @@ const Data = () => {
                   )}
                 </h2>
                 <button
-                  className="recognize-passport-button"
+                  className="recognize-passport-button recognize-passport-button--desktop"
                   onClick={() => passportInputRef.current?.click()}
                   disabled={isRecognizingPassport}
                 >
@@ -1480,6 +1494,36 @@ const Data = () => {
                   )}
                 </div>
               </div>
+
+              {/* Мобильная кнопка распознавания паспорта под формой */}
+              <button
+                className="recognize-passport-button recognize-passport-button--mobile"
+                onClick={() => passportInputRef.current?.click()}
+                disabled={isRecognizingPassport}
+              >
+                {isRecognizingPassport ? (
+                  <>
+                    <span className="spinner" style={{ 
+                      width: '16px', 
+                      height: '16px', 
+                      border: '2px solid #fff', 
+                      borderTop: '2px solid transparent', 
+                      borderRadius: '50%',
+                      animation: 'spin 1s linear infinite'
+                    }}></span>
+                    Распознавание...
+                  </>
+                ) : (
+                  <>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                      <polyline points="17 8 12 3 7 8"></polyline>
+                      <line x1="12" y1="3" x2="12" y2="15"></line>
+                    </svg>
+                    Распознать с фото паспорта
+                  </>
+                )}
+              </button>
             </section>
 
             <section className="data-section">

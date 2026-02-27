@@ -43,6 +43,7 @@ const Profile = () => {
   const [isVerificationModalOpen, setIsVerificationModalOpen] = useState(false)
   const [isVerificationFormOpen, setIsVerificationFormOpen] = useState(false)
   const [documentsCompleted, setDocumentsCompleted] = useState(false)
+  const [expandedSubscription, setExpandedSubscription] = useState(null)
   
   // Используем proxy из vite.config.js или полный URL
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
@@ -943,6 +944,20 @@ const Profile = () => {
               </svg>
               <span>Назад</span>
             </button>
+            <button 
+              type="button"
+              className="header-logout-button"
+              onClick={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                handleLogout()
+              }}
+            >
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                <path d="M7 2H3C2.44772 2 2 2.44772 2 3V15C2 15.5523 2.44772 16 3 16H7M12 13L15 10M15 10L12 7M15 10H6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+              <span>Выйти</span>
+            </button>
           </div>
           <nav className="sidebar-nav">
             <Link to="/profile" className="nav-item active">
@@ -1143,7 +1158,7 @@ const Profile = () => {
                 <div className="section-subtitle">Управляйте своими подписками</div>
               </div>
               <div className="section-cards">
-                <div className="section-card subscription-card subscription-active">
+                <div className={`section-card subscription-card subscription-active ${expandedSubscription === 'premium' ? 'subscription-card--expanded' : ''}`}>
                   <div className="subscription-badge">Активна</div>
                   <div className="card-icon-wrapper">
                     <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
@@ -1160,9 +1175,17 @@ const Profile = () => {
                     <h3>Премиум</h3>
                     <p>Полный доступ ко всем функциям</p>
                     <div className="subscription-price">$999 / month</div>
+                    <button 
+                      type="button" 
+                      className="subscription-more" 
+                      onClick={() => setExpandedSubscription(expandedSubscription === 'premium' ? null : 'premium')}
+                    >
+                      Подробнее
+                      <span className="subscription-more__arrow">›</span>
+                    </button>
                   </div>
                 </div>
-                <div className="section-card subscription-card subscription-inactive">
+                <div className={`section-card subscription-card subscription-inactive ${expandedSubscription === 'basic' ? 'subscription-card--expanded' : ''}`}>
                   <div className="card-icon-wrapper">
                     <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
                       <rect x="8" y="8" width="24" height="24" rx="3" fill="url(#subscriptionInactive1Grad)"/>
@@ -1179,9 +1202,17 @@ const Profile = () => {
                     <h3>Базовый</h3>
                     <p>Основные возможности</p>
                     <div className="subscription-price">$499 / month</div>
+                    <button 
+                      type="button" 
+                      className="subscription-more" 
+                      onClick={() => setExpandedSubscription(expandedSubscription === 'basic' ? null : 'basic')}
+                    >
+                      Подробнее
+                      <span className="subscription-more__arrow">›</span>
+                    </button>
                   </div>
                 </div>
-                <div className="section-card subscription-card subscription-inactive">
+                <div className={`section-card subscription-card subscription-inactive ${expandedSubscription === 'standard' ? 'subscription-card--expanded' : ''}`}>
                   <div className="card-icon-wrapper">
                     <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
                       <circle cx="20" cy="20" r="12" fill="url(#subscriptionInactive2Grad)"/>
@@ -1198,6 +1229,14 @@ const Profile = () => {
                     <h3>Стандарт</h3>
                     <p>Расширенные функции</p>
                     <div className="subscription-price">$749 / month</div>
+                    <button 
+                      type="button" 
+                      className="subscription-more" 
+                      onClick={() => setExpandedSubscription(expandedSubscription === 'standard' ? null : 'standard')}
+                    >
+                      Подробнее
+                      <span className="subscription-more__arrow">›</span>
+                    </button>
                   </div>
                 </div>
               </div>

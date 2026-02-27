@@ -125,7 +125,7 @@ const Subscriptions = () => {
       
       <div className="subscriptions-container">
         <aside className="subscriptions-sidebar">
-          <div className="sidebar-header" style={{ marginTop: '24px' }}>
+          <div className="sidebar-header" style={{ marginTop: '24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <button
               type="button"
               onClick={() => navigate('/')}
@@ -150,6 +150,20 @@ const Subscriptions = () => {
                 <path d="M12.5 15L7.5 10L12.5 5" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
               <span>Назад</span>
+            </button>
+            <button
+              type="button"
+              className="header-logout-button"
+              onClick={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                handleLogout()
+              }}
+            >
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                <path d="M7 2H3C2.44772 2 2 2.44772 2 3V15C2 15.5523 2.44772 16 3 16H7M12 13L15 10M15 10L12 7M15 10H6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+              <span>Выйти</span>
             </button>
           </div>
           <nav className="sidebar-nav">
@@ -197,7 +211,7 @@ const Subscriptions = () => {
               <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
                 <path d="M10 2L12.5 7.5L19 10L12.5 12.5L10 19L7.5 12.5L1 10L7.5 7.5L10 2Z" fill="currentColor"/>
               </svg>
-              <span>Фаворит</span>
+              <span>Понравилось</span>
             </a>
           </nav>
         </aside>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { FaChartBar, FaUsers, FaShieldAlt, FaComment, FaBuilding, FaSignOutAlt, FaKey, FaWhatsapp, FaAddressBook, FaShoppingCart, FaFlask } from 'react-icons/fa';
+import { FaChartBar, FaUsers, FaShieldAlt, FaComment, FaBuilding, FaSignOutAlt, FaKey, FaWhatsapp, FaAddressBook, FaShoppingCart, FaFlask, FaTimes } from 'react-icons/fa';
 import './Sidebar.css';
 
 const Sidebar = ({ activeSection, onSectionChange, onLogout, adminPermissions }) => {
@@ -28,10 +28,28 @@ const Sidebar = ({ activeSection, onSectionChange, onLogout, adminPermissions })
     return permissions[item.permission] || isSuperAdmin;
   });
 
+  const isMobile =
+    typeof window !== 'undefined' ? window.innerWidth <= 992 : false;
+
+  const handleCloseSidebar = () => {
+    const sidebar = document.getElementById('sidebar');
+    if (sidebar) {
+      sidebar.classList.remove('active');
+    }
+  };
+
   return (
     <div className="sidebar" id="sidebar">
       <div className="sidebar-header">
         <h2>Sellyourbrick</h2>
+        <button
+          type="button"
+          className="sidebar-close"
+          aria-label="Закрыть меню"
+          onClick={handleCloseSidebar}
+        >
+          <FaTimes size={18} />
+        </button>
       </div>
       <div className="sidebar-menu">
         {menuItems.map(item => {
@@ -47,6 +65,15 @@ const Sidebar = ({ activeSection, onSectionChange, onLogout, adminPermissions })
             </div>
           );
         })}
+        {isMobile && (
+          <div
+            className="menu-item menu-item--logout-inline"
+            onClick={onLogout}
+          >
+            <FaSignOutAlt size={20} />
+            <span>Выйти</span>
+          </div>
+        )}
       </div>
       <div className="sidebar-footer">
         <button className="menu-item menu-item--logout" onClick={onLogout}>

@@ -96,6 +96,9 @@
   overflow: hidden;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   transition: transform 0.2s, box-shadow 0.2s;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
 
 .property-card:hover {
@@ -122,6 +125,9 @@
 
 .property-card__content {
   padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
 }
 
 .property-card__badge {
@@ -167,6 +173,7 @@
   flex-direction: column;
   align-items: flex-start;
   gap: 0.25rem;
+  margin-top: auto;
 }
 
 .property-card__price-amount {
@@ -266,6 +273,10 @@
 }
 
 @media (max-width: 768px) {
+  .objects-list-container {
+    margin: 0 -1rem;
+  }
+
   .objects-list__filters {
     padding: 1rem;
   }
@@ -285,8 +296,50 @@
   }
 
   .objects-list__grid {
-    grid-template-columns: 1fr;
-    gap: 1rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem 0.2rem;
+  }
+
+  .property-card {
+    border-radius: 10px;
+  }
+
+  .property-card__content {
+    padding: 0.9rem;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+  }
+
+  .property-card__badge {
+    font-size: 1rem;
+    margin-left: 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    min-height: 2.2rem;
+  }
+
+  .property-card__owner {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    min-height: 2.0rem;
+  }
+
+  .property-card__info {
+    min-height: 1.8rem;
+    align-items: center;
+  }
+
+  .property-card__location {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    min-height: 2.2rem;
   }
 }
 

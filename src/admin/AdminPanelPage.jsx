@@ -94,8 +94,8 @@ const AdminPanelPage = () => {
 
   const handleLogout = () => {
     if (window.confirm('Вы уверены, что хотите выйти?')) {
-      // Очищаем все данные пользователя из localStorage, но сохраняем админские данные
-      clearUserDataWithoutAdmin();
+      // Полностью завершаем сессию, включая админскую
+      clearUserData();
       navigate('/');
       // Перезагружаем страницу для полной очистки состояния
       setTimeout(() => {

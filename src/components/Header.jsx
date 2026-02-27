@@ -545,6 +545,21 @@ const Header = () => {
                   onClick={(e) => e.stopPropagation()}
                 >
                   <div className="menu-dropdown__content">
+                    <button
+                      type="button"
+                      className="menu-dropdown__close-btn"
+                      aria-label="Закрыть меню"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setIsMenuClosing(true)
+                        setTimeout(() => {
+                          setIsMenuOpen(false)
+                          setIsMenuClosing(false)
+                        }, 300)
+                      }}
+                    >
+                      <FiX size={22} />
+                    </button>
                     <div className="menu-dropdown__columns">
                       <div className="menu-dropdown__column">
                         <h3 className="menu-dropdown__column-title">Навигация по сайту</h3>

@@ -717,7 +717,7 @@ const Statistics = ({ businessInfo, onShowUsers }) => {
         iconClass: 'green'
       },
       {
-        title: 'Текущий онлайн',
+        title: 'Онлайн',
         value: Math.round((businessInfo.stats.online_users || 42) * multiplier),
         changePercent: '5.3',
         icon: 'fas fa-circle',

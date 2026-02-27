@@ -752,8 +752,7 @@ const PropertyDetail = () => {
         })() && null}
 
         <div className="detail-content">
-          <div className="detail-left">
-            <div className="detail-images">
+          <div className="detail-images">
               <div className="main-image">
                 <img 
                   src={normalizedProperty.images[selectedImage]} 
@@ -788,8 +787,124 @@ const PropertyDetail = () => {
                 ))}
               </div>
             </div>
+          </div>
 
-            <div className="detail-main">
+          <div className="detail-sidebar">
+            <div className="auction-info">
+              <div className="auction-status active glass-panel glass-panel--pill">
+                Активный аукцион в процессе
+              </div>
+              
+              {normalizedProperty.is_reserved && normalizedProperty.reserved_until && new Date(normalizedProperty.reserved_until) > new Date() ? (
+                <div className="property-reservation-block">
+                  <div className="reservation-icon">🔒</div>
+                  <div className="reservation-text">
+                    <div className="reservation-title">Ставки приостановлены</div>
+                    <div className="reservation-subtitle">
+                      Резервация до {new Date(normalizedProperty.reserved_until).toLocaleString('ru-RU', {
+                        year: 'numeric',
+                        month: '2-digit',
+                        day: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })} ({Math.ceil((new Date(normalizedProperty.reserved_until) - new Date()) / (1000 * 60 * 60))} ч)
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <CountdownTimer endTime={normalizedProperty.endTime} />
+              )}
+
+              <div className="current-bid glass-panel">
+                <div className="bid-label">Текущая ставка</div>
+                <div className="bid-amount">{formatPrice(currentBid || normalizedProperty.currentBid)}</div>
+              </div>
+
+              <form onSubmit={handleBid} className="bid-form">
+                {normalizedProperty.is_reserved && normalizedProperty.reserved_until && new Date(normalizedProperty.reserved_until) > new Date() && (
+                  <div style={{
+                    background: 'rgba(245, 158, 11, 0.1)',
+                    border: '1px solid #f59e0b',
+                    borderRadius: '8px',
+                    padding: '12px',
+                    marginBottom: '16px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    color: '#92400e',
+                    fontSize: '14px'
+                  }}>
+                    <FiLock size={16} />
+                    <span>Ставки временно недоступны. Объект забронирован.</span>
+                  </div>
+                )}
+                <div className="bid-input-group">
+                  <label>Ваша ставка</label>
+                  <input
+                    type="number"
+                    value={bidAmount}
+                    onChange={(e) => {
+                      setBidAmount(e.target.value)
+                      setBidError('')
+                    }}
+                    placeholder={`Минимум ${formatPrice(minimumBid || (normalizedProperty.currentBid + (normalizedProperty.currentBid * 0.05)))}`}
+                    min={minimumBid || (normalizedProperty.currentBid + (normalizedProperty.currentBid * 0.05))}
+                    step="1000"
+                    disabled={isSubmittingBid || (normalizedProperty.is_reserved && normalizedProperty.reserved_until && new Date(normalizedProperty.reserved_until) > new Date())}
+                    style={{
+                      opacity: (normalizedProperty.is_reserved && normalizedProperty.reserved_until && new Date(normalizedProperty.reserved_until) > new Date()) ? 0.5 : 1,
+                      cursor: (normalizedProperty.is_reserved && normalizedProperty.reserved_until && new Date(normalizedProperty.reserved_until) > new Date()) ? 'not-allowed' : 'text'
+                    }}
+                  />
+                  {bidError && (
+                    <div className="bid-error" style={{ color: 'red', fontSize: '12px', marginTop: '5px' }}>
+                      {bidError}
+                    </div>
+                  )}
+                </div>
+                <button 
+                  type="submit" 
+                  className="btn btn-bid glass-button"
+                  disabled={isSubmittingBid || (normalizedProperty.is_reserved && normalizedProperty.reserved_until && new Date(normalizedProperty.reserved_until) > new Date())}
+                  style={{
+                    opacity: (normalizedProperty.is_reserved && normalizedProperty.reserved_until && new Date(normalizedProperty.reserved_until) > new Date()) ? 0.5 : 1,
+                    cursor: (normalizedProperty.is_reserved && normalizedProperty.reserved_until && new Date(normalizedProperty.reserved_until) > new Date()) ? 'not-allowed' : 'pointer'
+                  }}
+                >
+                  {isSubmittingBid ? 'Отправка...' : (normalizedProperty.is_reserved && normalizedProperty.reserved_until && new Date(normalizedProperty.reserved_until) > new Date()) ? 'Объект забронирован' : 'Сделать ставку сейчас'}
+                </button>
+              </form>
+
+              <div className="bid-warning glass-panel glass-panel--warning">
+                Все ставки и продажи финальные и не подлежат отмене.
+              </div>
+
+              <button 
+                type="button"
+                className="btn btn-bid-history glass-button glass-button--secondary"
+                onClick={() => setIsBidHistoryOpen(true)}
+              >
+                История ставок
+              </button>
+
+              <div className="bid-status">
+                <div className="status-item">
+                  <span className="status-label">Статус ставки:</span>
+                  <span className="status-value">У ВАС НЕТ СТАВОК</span>
+                </div>
+                <div className="status-item">
+                  <span className="status-label">Статус участника:</span>
+                  <span className="status-value link">Проверить сейчас &gt;</span>
+                </div>
+                <div className="status-item">
+                  <span className="status-label">Статус продажи:</span>
+                  <span className="status-value">Чистая продажа</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="detail-main">
               <div className="detail-header-info">
                 <h1 className="detail-title">{normalizedProperty.title}</h1>
                 <div className="detail-location">

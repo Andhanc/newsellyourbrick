@@ -559,20 +559,12 @@ function Home() {
           <p>Загрузка аукционных объявлений...</p>
         </div>
       ) : (
-        <PropertyList auctionProperties={auctionProperties} />
+        <PropertyList 
+          auctionProperties={auctionProperties} 
+          onOpenAIChat={toggleChat}
+        />
       )}
       <FAQ />
-
-      {/* Кнопка AI помощника */}
-      <button
-        type="button"
-        className="ai-button"
-        onClick={toggleChat}
-        aria-label="AI Assistant"
-        aria-expanded={isChatOpen}
-      >
-        AI
-      </button>
 
       {/* Модальное окно чата */}
       {isChatOpen && (

@@ -17,17 +17,18 @@
 .access-management-header .access-create-btn,
 .access-create-btn.btn-primary,
 button.access-create-btn.btn-primary {
-  padding: 0.6rem 0.3rem !important;
-  font-size: 0.85rem !important;
-  border-radius: 6px !important;
+  padding: 0.7rem 1.5rem !important;
+  font-size: 0.9rem !important;
+  border-radius: 999px !important;
   height: auto !important;
   line-height: 1.2 !important;
-  min-width: auto !important;
-  max-width: none !important;
-  width: 5rem !important;
+  min-width: 220px !important;
+  max-width: 260px !important;
+  width: auto !important;
   box-sizing: border-box !important;
   gap: 0.4rem !important;
   white-space: nowrap !important;
+  justify-content: center;
 }
 
 .access-management-header .access-create-btn svg,
@@ -153,6 +154,11 @@ button.access-create-btn svg {
   flex-wrap: wrap;
   gap: 0.5rem;
   max-width: 400px;
+  padding: 0.75rem 0.75rem 0.9rem;
+  margin-top: 0.5rem;
+  background: #f7fafc;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
 }
 
 .permission-tag {
@@ -468,8 +474,13 @@ button.access-create-btn svg {
 
   .access-management-header {
     flex-direction: column;
-    align-items: flex-start;
+    align-items: center;
     gap: 1rem;
+  }
+
+  .access-management-header .access-create-btn {
+    width: 100% !important;
+    max-width: 260px !important;
   }
 
   .access-management-table {
@@ -478,7 +489,7 @@ button.access-create-btn svg {
 
   .access-management-table th,
   .access-management-table td {
-    padding: 0.75rem 0.5rem;
+    padding: 0.3rem 0.3rem;
   }
 
   .access-management-table th:first-child,

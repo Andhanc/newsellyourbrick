@@ -152,7 +152,6 @@ const Footer = () => {
                 </svg>
               </div>
               <div className="footer__store-text">
-                <span className="footer__store-label">Скачать из</span>
                 <span className="footer__store-name">Google Play</span>
               </div>
             </button>
@@ -167,7 +166,6 @@ const Footer = () => {
                 <FaApple size={18} />
               </div>
               <div className="footer__store-text">
-                <span className="footer__store-label">{t('downloadIn')}</span>
                 <span className="footer__store-name">App Store</span>
               </div>
             </button>
@@ -182,7 +180,6 @@ const Footer = () => {
                 <FaWhatsapp size={18} />
               </div>
               <div className="footer__store-text">
-                <span className="footer__store-label">{t('downloadIn') || 'ЗАГРУЗИТЕ В'}</span>
                 <span className="footer__store-name">WhatsApp</span>
               </div>
             </a>

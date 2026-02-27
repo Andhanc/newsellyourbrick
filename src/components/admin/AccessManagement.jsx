@@ -174,15 +174,6 @@ const AccessManagement = () => {
         <button 
           className="btn btn-primary access-create-btn" 
           onClick={handleCreate}
-          style={{
-            padding: '0.6rem 0.3rem',
-            fontSize: '0.85rem',
-            borderRadius: '6px',
-            height: 'auto',
-            lineHeight: '1.2',
-            gap: '0.4rem',
-            whiteSpace: 'nowrap'
-          }}
         >
           <FaPlus style={{ fontSize: '0.75rem' }} /> Создать администратора
         </button>

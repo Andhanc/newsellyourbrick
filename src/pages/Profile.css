@@ -321,12 +321,63 @@
   height: 18px;
 }
 
+@media (max-width: 768px) {
+  /* В мобильной версии основная кнопка "Выйти" — в верхней полосе рядом с "Назад" */
+  .sidebar-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .sidebar-header .back-button {
+    margin-left: -10%;
+  }
+
+  .header-logout-button {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border-radius: 999px;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    background: rgba(254, 242, 242, 0.95);
+    color: #dc2626;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .header-logout-button svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  /* Нижнюю кнопку "Выйти" в футере скрываем на мобайле */
+  .sidebar-footer .logout-button {
+    display: none;
+  }
+}
+
+@media (max-width: 768px) {
+  /* В мобильной версии кнопку "Выйти" держим только внизу боковой панели,
+     а не в верхнем навигационном меню */
+  .sidebar-nav .logout-button {
+    display: none;
+  }
+
+  .sidebar-footer .logout-button {
+    display: flex;
+  }
+}
+
 .profile-main {
   flex: 1;
   padding: 48px 56px;
   background: #fff;
   min-height: calc(100vh - 200px);
   position: relative;
+  display: flex;
+  flex-direction: column;
 }
 
 .profile-header {
@@ -1426,7 +1477,7 @@
 
 @media (max-width: 768px) {
   .section-cards {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 12px;
   }
 
@@ -1442,16 +1493,76 @@
     padding: 20px 16px;
   }
 
-  .card-icon-wrapper {
-    margin-bottom: 12px;
+  /* Для карточек подписок уменьшаем верхний внутренний отступ,
+     чтобы блок с названием/ценой ("card-content") был выше */
+  .profile-section .subscription-card {
+    padding-top: 12px;
+    padding-bottom: 20px;
   }
 
-  .card-content h3 {
+  /* Во вкладке "Профиль" в мобильной версии для блока "Мои подписки"
+     по умолчанию убираем иконки и описание, оставляем только цену;
+     при раскрытии карточки показываем их. */
+  .profile-section .subscription-card .card-icon-wrapper,
+  .profile-section .subscription-card .card-content p {
+    display: none;
+  }
+
+  .profile-section .subscription-card.subscription-card--expanded .card-icon-wrapper,
+  .profile-section .subscription-card.subscription-card--expanded .card-content p {
+    display: block;
+  }
+
+  .profile-section .card-content h3 {
     font-size: 14px;
   }
 
-  .card-content p {
+  /* В активном тарифе поднимаем описание и цену ближе к названию */
+  .profile-section .subscription-card.subscription-active .card-content p {
+    margin-top: 4px;
+    margin-bottom: 4px;
+  }
+
+  .profile-section .subscription-card.subscription-active .subscription-price {
+    margin-top: 4px;
+  }
+
+  /* В неактивных тарифах поднимаем цену и "Подробнее" чуть выше,
+     уменьшая отступ сверху цены */
+
+
+  /* Скрываем бейдж "Активна" в мобильной версии */
+  .profile-section .subscription-badge {
+    display: none;
+  }
+
+  /* Кнопка "Подробнее" под ценой */
+  .profile-section .subscription-more {
+    margin-top: 6px;
+    padding: 0;
+    background: none;
+    border: none;
+    color: #0ABAB5;
     font-size: 12px;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+  }
+
+  .profile-section .subscription-more__arrow {
+    transition: transform 0.2s ease;
+  }
+
+  .profile-section .subscription-card.subscription-card--expanded .subscription-more__arrow {
+    transform: rotate(90deg);
+  }
+
+  /* При раскрытии карточки подписки на мобильных она растягивается на всю ширину,
+     чтобы контент не наезжал визуально на соседние карточки */
+  .profile-section .subscription-card.subscription-card--expanded {
+    grid-column: 1 / -1;
   }
 }
 
@@ -1461,7 +1572,8 @@
   }
 
   .section-cards {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
   }
 
   .profile-avatar {

@@ -193,6 +193,8 @@
   padding: 48px 56px;
   background: #fff;
   min-height: calc(100vh - 200px);
+  display: flex;
+  flex-direction: column;
 }
 
 .data-header {
@@ -818,6 +820,52 @@
     inset 0 1px 0 rgba(255, 255, 255, 0.3),
     inset 0 -1px 0 rgba(0, 0, 0, 0.1);
   font-family: inherit;
+}
+
+@media (max-width: 768px) {
+  /* В мобильной версии убираем верхнюю кнопку и показываем нижнюю под формой паспорта */
+  .recognize-passport-button--desktop {
+    display: none;
+  }
+
+  .recognize-passport-button--mobile {
+    display: flex;
+    margin: 16px auto 0;
+    justify-content: center;
+    width: 100%;
+    max-width: 260px;
+  }
+
+  /* В мобильной версии в данных также показываем "Выйти" в верхней полосе */
+  .data-sidebar .sidebar-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .header-logout-button {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border-radius: 999px;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    background: rgba(254, 242, 242, 0.95);
+    color: #dc2626;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .header-logout-button svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  /* Кнопку "Выйти" внизу боковой панели скрываем на мобайле */
+  .data-sidebar .logout-button {
+    display: none;
+  }
 }
 
 .recognize-passport-button::before {

@@ -35,6 +35,7 @@ import BiddingHistoryModal from '../components/BiddingHistoryModal'
 import CountrySelect, { countries as countryList } from '../components/CountrySelect'
 import { getUserData, saveUserData, logout, clearUserData } from '../services/authService'
 import { showNotification } from '../utils/toastHelper'
+import '../components/PropertyList.css'
 import './OwnerDashboard.css'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
@@ -132,6 +133,10 @@ const OwnerDashboard = () => {
   const headerContentRef = useRef(null)
   const titleRef = useRef(null)
   const [isMobileTitleStacked, setIsMobileTitleStacked] = useState(false) // на мобиле сворачиваем иконки в бургер-меню, когда имени не хватает места
+  const [isMobileViewport, setIsMobileViewport] = useState(
+    () => typeof window !== 'undefined' && window.innerWidth <= 768
+  )
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [isProfileEditing, setIsProfileEditing] = useState(false)
   const [isSavingProfile, setIsSavingProfile] = useState(false)
@@ -276,8 +281,15 @@ const OwnerDashboard = () => {
     }
 
     updateHeaderLayout()
-    window.addEventListener('resize', updateHeaderLayout)
-    return () => window.removeEventListener('resize', updateHeaderLayout)
+    const handleResize = () => {
+      updateHeaderLayout()
+      if (typeof window !== 'undefined') {
+        setIsMobileViewport(window.innerWidth <= 768)
+      }
+    }
+
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
   }, [ownerProfile.firstName, ownerProfile.lastName])
 
   // Загружаем объявления пользователя
@@ -380,29 +392,32 @@ const OwnerDashboard = () => {
             const photosCount = Array.isArray(photosArray) ? photosArray.length : 0
             
             return {
-            id: prop.id,
-            title: prop.title || 'Без названия',
-            location: prop.location || 'Не указано',
-            price: prop.price || 0,
-            image: imageUrl,
-            beds: beds,
-            baths: prop.bathrooms || 0,
-            sqft: prop.area || 0,
-            property_type: prop.property_type || 'apartment',
-            land_area: prop.land_area || null,
-            bedrooms: prop.bedrooms || null,
-            floors: prop.floors || prop.total_floors || null,
-            status: prop.moderation_status === 'approved' ? 'active' : 
-                   prop.moderation_status === 'pending' ? 'pending' : 
-                   prop.moderation_status === 'rejected' ? 'rejected' : 'pending',
-            moderationStatus: prop.moderation_status, // Сохраняем оригинальный статус
-            views: 0, // TODO: добавить подсчет просмотров
-            inquiries: 0, // TODO: добавить подсчет запросов
-            publishedDate: prop.created_at || new Date().toISOString(),
-            rejectionReason: prop.rejection_reason || null,
-            isAuction: prop.is_auction === 1 || prop.is_auction === true || prop.is_auction === '1' || prop.is_auction === 'true',
-            photosCount: photosCount
-          }
+              id: prop.id,
+              title: prop.title || 'Без названия',
+              location: prop.location || 'Не указано',
+              price: prop.price || 0,
+              image: imageUrl,
+              beds: beds,
+              baths: prop.bathrooms || 0,
+              sqft: prop.area || 0,
+              property_type: prop.property_type || 'apartment',
+              land_area: prop.land_area || null,
+              bedrooms: prop.bedrooms || null,
+              floors: prop.floors || prop.total_floors || null,
+              status: prop.moderation_status === 'approved' ? 'active' : 
+                     prop.moderation_status === 'pending' ? 'pending' : 
+                     prop.moderation_status === 'rejected' ? 'rejected' : 'pending',
+              moderationStatus: prop.moderation_status, // Сохраняем оригинальный статус
+              views: 0, // TODO: добавить подсчет просмотров
+              inquiries: 0, // TODO: добавить подсчет запросов
+              publishedDate: prop.created_at || new Date().toISOString(),
+              rejectionReason: prop.rejection_reason || null,
+              isAuction: prop.is_auction === 1 || prop.is_auction === true || prop.is_auction === '1' || prop.is_auction === 'true',
+              photosCount: photosCount,
+              // Поля аукциона для отображения стартовой суммы ставки
+              auction_starting_price: prop.auction_starting_price || prop.auctionStartingPrice || null,
+              currency: prop.currency || 'USD'
+            }
           })
           setProperties(formattedProperties)
         }
@@ -1112,13 +1127,63 @@ const OwnerDashboard = () => {
             <p className="owner-dashboard__subtitle">Управление вашей недвижимостью</p>
           </div>
           <div className="owner-dashboard__header-right">
-            {isMobileTitleStacked ? (
-              <button 
-                className="owner-dashboard__icon-btn owner-dashboard__burger-btn"
-                aria-label="Меню"
-              >
-                <FiMenu size={20} />
-              </button>
+            {isMobileViewport || isMobileTitleStacked ? (
+              <div className="owner-dashboard__burger-wrapper">
+                <button
+                  className="owner-dashboard__icon-btn owner-dashboard__burger-btn"
+                  aria-label="Меню"
+                  onClick={() => setIsMobileMenuOpen(prev => !prev)}
+                  aria-expanded={isMobileMenuOpen}
+                >
+                  <FiMenu size={20} />
+                </button>
+                {isMobileMenuOpen && (
+                  <div className="owner-dashboard__mobile-menu">
+                    <button
+                      className="owner-dashboard__mobile-menu-item owner-dashboard__mobile-menu-item--profile"
+                      onClick={() => {
+                        setIsProfilePanelOpen(true)
+                        setIsSettingsPanelOpen(false)
+                        setIsMobileMenuOpen(false)
+                      }}
+                      aria-label="Профиль"
+                    >
+                      <FiUser size={18} />
+                    </button>
+                    <button
+                      className="owner-dashboard__mobile-menu-item owner-dashboard__mobile-menu-item--settings"
+                      onClick={() => {
+                        setIsSettingsPanelOpen(true)
+                        setIsProfilePanelOpen(false)
+                        setIsMobileMenuOpen(false)
+                      }}
+                      aria-label="Настройки"
+                    >
+                      <FiSettings size={18} />
+                    </button>
+                    <button
+                      className="owner-dashboard__mobile-menu-item owner-dashboard__mobile-menu-item--add"
+                      onClick={() => {
+                        handleAddProperty()
+                        setIsMobileMenuOpen(false)
+                      }}
+                      aria-label="Добавить объявление"
+                    >
+                      <FiPlus size={18} />
+                    </button>
+                    <button
+                      className="owner-dashboard__mobile-menu-item owner-dashboard__mobile-menu-item--logout"
+                      onClick={() => {
+                        handleLogout()
+                        setIsMobileMenuOpen(false)
+                      }}
+                      aria-label="Выйти"
+                    >
+                      <FiLogOut size={18} />
+                    </button>
+                  </div>
+                )}
+              </div>
             ) : (
               <>
                 <button 
@@ -1327,7 +1392,7 @@ const OwnerDashboard = () => {
             </div>
           </div>
 
-          <div className="properties-list">
+          <div className="properties-grid owner-properties-grid">
             {propertiesLoading ? (
               <div style={{ textAlign: 'center', padding: '40px' }}>
                 <p>Загрузка объявлений...</p>
@@ -1337,124 +1402,173 @@ const OwnerDashboard = () => {
                 <p>У вас пока нет объявлений</p>
               </div>
             ) : (
-              getFilteredProperties().map((property) => (
-              <div key={property.id} className="property-card-owner">
-                <div className="property-card-owner__image">
-                  <img 
-                    src={property.image} 
-                    alt={property.title}
-                    onError={(e) => {
-                      // Если изображение не загрузилось, используем дефолтное
-                      e.target.src = 'https://images.unsplash.com/photo-1568605114967-8130f3a36994?auto=format&fit=crop&w=800&q=80'
-                    }}
-                  />
-                  {getStatusBadge(property.status)}
-                </div>
+              getFilteredProperties().map((property) => {
+                const startingPriceRaw =
+                  property.auction_starting_price ??
+                  property.auctionStartingPrice ??
+                  property.starting_price ??
+                  property.startingPrice ??
+                  null
 
-                <div className="property-card-owner__content">
-                  <div className="property-card-owner__header">
-                    <div className="property-card-owner__title-wrapper">
-                      <h3 className="property-card-owner__title">{property.title}</h3>
-                      {/* Показываем статус объекта вместо "Аукционный объект" */}
-                      <div className={`property-status-indicator property-status-indicator--${property.status}`}>
+                const formatPrice = (price) => {
+                  const num = Number(price)
+                  if (!num || Number.isNaN(num)) return '—'
+                  return num.toLocaleString('ru-RU')
+                }
+
+                const getCurrencySymbol = () => {
+                  const currency = property.currency || 'USD'
+                  if (currency === 'EUR') return '€'
+                  if (currency === 'BYN') return 'Br'
+                  if (currency === 'USD') return '$'
+                  return '$'
+                }
+
+                const minSalePriceNum = Number(property.price) || 0
+                const hasMinSalePrice = property.isAuction && minSalePriceNum > 0
+
+                return (
+                  <div key={property.id} className="property-card property-card-owner">
+                    <div className="property-image-container property-card-owner__image">
+                      <img 
+                        src={property.image} 
+                        alt={property.title}
+                        className="property-image"
+                        onError={(e) => {
+                          // Если изображение не загрузилось, используем дефолтное
+                          e.target.src = 'https://images.unsplash.com/photo-1568605114967-8130f3a36994?auto=format&fit=crop&w=800&q=80'
+                        }}
+                      />
+                      {getStatusBadge(property.status)}
+                      {hasMinSalePrice && (
+                        <div className="owner-min-price-badge">
+                          {getCurrencySymbol()}
+                          {formatPrice(minSalePriceNum)}
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="property-content property-card-owner__content">
+                      <div className="property-card-owner__header">
+                        <div className="property-card-owner__title-wrapper">
+                          <h3 className="property-card-owner__title">{property.title}</h3>
+                          {/* Показываем статус объекта вместо "Аукционный объект" */}
+                          <div className={`property-status-indicator property-status-indicator--${property.status}`}>
+                            {property.status === 'active' && <span>Активно</span>}
+                            {property.status === 'pending' && <span>На модерации</span>}
+                            {property.status === 'rejected' && <span>Отклонено</span>}
+                            {property.status === 'sold' && <span>Продано</span>}
+                          </div>
+                        </div>
+                        {/* Показываем цену только если: 
+                            1. Объект НЕ на аукционе ИЛИ
+                            2. Объект на аукционе, но есть цена "Купить сейчас" (price > 0)
+                        */}
+                        {(() => {
+                          const priceNum = Number(property.price) || 0
+                          const shouldShowPrice = (!property.isAuction || (property.isAuction && priceNum > 0)) && priceNum > 0
+                          return shouldShowPrice ? (
+                            <div className="property-card-owner__price">
+                              ${priceNum.toLocaleString('ru-RU')}
+                            </div>
+                          ) : null
+                        })()}
+                      </div>
+
+                      <p className="property-card-owner__location">{property.location}</p>
+
+                      <div className="property-card-owner__info">
+                        <div className="property-card-owner__info-item">
+                          <MdBed size={16} />
+                          <span>{property.beds}</span>
+                        </div>
+                        <div className="property-card-owner__info-item">
+                          <MdOutlineBathtub size={16} />
+                          <span>{property.baths}</span>
+                        </div>
+                        <div className="property-card-owner__info-item">
+                          <BiArea size={16} />
+                          <span>{property.sqft} м²</span>
+                        </div>
+                      </div>
+
+                      {/* Дублируем статус специально для мобильной версии под данными объекта */}
+                      <div className={`property-status-indicator property-status-indicator--${property.status} property-status-indicator--mobile`}>
                         {property.status === 'active' && <span>Активно</span>}
                         {property.status === 'pending' && <span>На модерации</span>}
                         {property.status === 'rejected' && <span>Отклонено</span>}
                         {property.status === 'sold' && <span>Продано</span>}
                       </div>
-                    </div>
-                    {/* Показываем цену только если: 
-                        1. Объект НЕ на аукционе ИЛИ
-                        2. Объект на аукционе, но есть цена "Купить сейчас" (price > 0)
-                    */}
-                    {(() => {
-                      const priceNum = Number(property.price) || 0
-                      const shouldShowPrice = (!property.isAuction || (property.isAuction && priceNum > 0)) && priceNum > 0
-                      return shouldShowPrice ? (
-                        <div className="property-card-owner__price">
-                          ${priceNum.toLocaleString('ru-RU')}
+
+                      {startingPriceRaw && (
+                        <div className="property-bid-info property-card-owner__starting-price">
+                          <span className="bid-label">Текущая ставка:</span>
+                          <span className="bid-value">
+                            {getCurrencySymbol()}
+                            {formatPrice(startingPriceRaw)}
+                          </span>
                         </div>
-                      ) : null
-                    })()}
-                  </div>
+                      )}
 
-                  <p className="property-card-owner__location">{property.location}</p>
-
-                  <div className="property-card-owner__info">
-                    <div className="property-card-owner__info-item">
-                      <MdBed size={16} />
-                      <span>{property.beds}</span>
-                    </div>
-                    <div className="property-card-owner__info-item">
-                      <MdOutlineBathtub size={16} />
-                      <span>{property.baths}</span>
-                    </div>
-                    <div className="property-card-owner__info-item">
-                      <BiArea size={16} />
-                      <span>{property.sqft} м²</span>
-                    </div>
-                  </div>
-
-                  <div className="property-card-owner__stats">
-                    <div className="property-card-owner__stat">
-                      <FiEye size={14} />
-                      <span>{property.views} просмотров</span>
-                    </div>
-                    <div className="property-card-owner__stat">
-                      <span>{property.inquiries} запросов</span>
-                    </div>
-                    <div className="property-card-owner__stat">
-                      <span>Опубликовано: {new Date(property.publishedDate).toLocaleDateString('ru-RU')}</span>
-                    </div>
-                    {property.rejectionReason && !property.rejectionReason.startsWith('EDIT:') && (
-                      <div className="property-card-owner__stat" style={{ color: '#ef4444', fontWeight: 500 }}>
-                        <FiAlertCircle size={14} />
-                        <span>Причина отклонения: {property.rejectionReason}</span>
+                      <div className="property-content-bottom">
+                      <div className="property-card-owner__stats">
+                        <div className="property-card-owner__stat">
+                          <FiEye size={14} />
+                          <span>{property.views} просмотров</span>
+                        </div>
+                        <div className="property-card-owner__stat">
+                          <span>{property.inquiries} запросов</span>
+                        </div>
+                        <div className="property-card-owner__stat">
+                          <span>Опубликовано: {new Date(property.publishedDate).toLocaleDateString('ru-RU')}</span>
+                        </div>
+                        {property.rejectionReason && !property.rejectionReason.startsWith('EDIT:') && (
+                          <div className="property-card-owner__stat" style={{ color: '#ef4444', fontWeight: 500 }}>
+                            <FiAlertCircle size={14} />
+                            <span>Причина отклонения: {property.rejectionReason}</span>
+                          </div>
+                        )}
+                        {property.rejectionReason && property.rejectionReason.startsWith('EDIT:') && (
+                          <div className="property-card-owner__stat" style={{ color: '#0ABAB5', fontWeight: 500 }}>
+                            <FiClock size={14} />
+                            <span>Запрос на редактирование отправлен на модерацию</span>
+                          </div>
+                        )}
                       </div>
-                    )}
-                    {property.rejectionReason && property.rejectionReason.startsWith('EDIT:') && (
-                      <div className="property-card-owner__stat" style={{ color: '#0ABAB5', fontWeight: 500 }}>
-                        <FiClock size={14} />
-                        <span>Запрос на редактирование отправлен на модерацию</span>
-                      </div>
-                    )}
-                  </div>
 
-                  <div className="property-card-owner__actions">
-                    {property.status === 'active' && (
-                      <button
-                        className="action-btn action-btn--history"
-                        onClick={() => setSelectedPropertyForHistory(property)}
-                      >
-                        <FiClock size={16} />
-                        История
-                      </button>
-                    )}
-                    <button
-                      className="action-btn action-btn--view"
-                      onClick={() => handleViewProperty(property.id)}
-                    >
-                      <FiEye size={16} />
-                      Просмотр
-                    </button>
-                    <button
-                      className="action-btn action-btn--edit"
-                      onClick={() => handleEditProperty(property.id)}
-                    >
-                      <FiEdit2 size={16} />
-                      Редактировать
-                    </button>
-                    <button
-                      className="action-btn action-btn--delete"
-                      onClick={() => handleDeleteProperty(property.id)}
-                    >
-                      <FiTrash2 size={16} />
-                      Удалить
-                    </button>
+                      <div className="property-card-owner__actions">
+                        {property.status === 'active' && (
+                          <button
+                            className="action-btn action-btn--history"
+                            onClick={() => setSelectedPropertyForHistory(property)}
+                          >
+                            История
+                          </button>
+                        )}
+                        <button
+                          className="action-btn action-btn--view"
+                          onClick={() => handleViewProperty(property.id)}
+                        >
+                          Просмотр
+                        </button>
+                        <button
+                          className="action-btn action-btn--edit"
+                          onClick={() => handleEditProperty(property.id)}
+                        >
+                          Изменить
+                        </button>
+                        <button
+                          className="action-btn action-btn--delete"
+                          onClick={() => handleDeleteProperty(property.id)}
+                        >
+                          Удалить
+                        </button>
+                      </div>
+                    </div>
+                    </div>
                   </div>
-                </div>
-              </div>
-              ))
+                )
+              })
             )}
           </div>
         </section>

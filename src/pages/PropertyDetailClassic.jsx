@@ -2340,6 +2340,73 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                 ) : null
               })()}
             </div>
+
+            {/* Описание и адрес — отдельный блок под подробной информацией (для мобилки, на десктопе скрыт через CSS) */}
+            <div className="property-detail-extra-text-mobile">
+              {displayProperty.description && (
+                <p className="property-detail-extra-description">
+                  {displayProperty.description}
+                </p>
+              )}
+              {displayProperty.location && (
+                <div className="property-detail-extra-location">
+                  {displayProperty.location}
+                </div>
+              )}
+            </div>
+
+            {/* Карта для мобильной версии — под описанием и адресом */}
+            <div className="property-detail-map-mobile">
+              <div className="property-detail-sidebar__map">
+                <h2 className="property-detail-sidebar__map-title">
+                  {t('locationTitle') || 'Местоположение'}
+                </h2>
+                <div className="property-detail-sidebar__map-container">
+                  {typeof window !== 'undefined' && (
+                    <>
+                      <LocationMap
+                        center={finalCoordinates}
+                        zoom={
+                          finalCoordinates &&
+                          finalCoordinates[0] !== 53.9045 &&
+                          finalCoordinates[1] !== 27.5615
+                            ? 15
+                            : undefined
+                        }
+                        marker={
+                          finalCoordinates &&
+                          finalCoordinates[0] !== 53.9045 &&
+                          finalCoordinates[1] !== 27.5615
+                            ? finalCoordinates
+                            : null
+                        }
+                      />
+                      {isGeocoding && (
+                        <div
+                          style={{
+                            position: 'absolute',
+                            top: '50%',
+                            left: '50%',
+                            transform: 'translate(-50%, -50%)',
+                            background: 'rgba(255, 255, 255, 0.95)',
+                            padding: '12px 20px',
+                            borderRadius: '8px',
+                            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
+                            zIndex: 1000,
+                            fontSize: '14px',
+                            color: '#4b5563',
+                            fontFamily: 'Montserrat, sans-serif',
+                            fontWeight: 500,
+                          }}
+                        >
+                          Поиск местоположения...
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Правая колонка */}

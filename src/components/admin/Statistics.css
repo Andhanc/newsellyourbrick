@@ -266,7 +266,7 @@
 .chart-container {
   background: white;
   border-radius: 12px;
-  padding: 1.5rem;
+  padding: 1.25rem;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.02);
 }
 
@@ -312,13 +312,30 @@
 
 .chart-wrapper {
   position: relative;
-  height: 300px;
+  height: 200px;
 }
 
 .demographics-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 1.5rem;
+}
+
+/* Более компактные графики на невысоких или узких экранах,
+   чтобы блоки не выходили за пределы видимой области */
+@media (max-height: 900px), (max-width: 1200px) {
+  .chart-container {
+    padding: 1rem;
+  }
+
+  .chart-wrapper {
+    height: 170px;
+  }
+
+  .charts-row,
+  .demographics-grid {
+    margin-bottom: 1rem;
+  }
 }
 
 .users-section {
@@ -368,15 +385,42 @@
 }
 
 @media (max-width: 768px) {
+  /* С 0 до 768px показываем карточки по 2 в ряд (2xN) */
   .stats-grid {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+  }
+
+  /* На мобильных заголовок "Статистика" уже есть в верхнем хедере,
+     поэтому внутри контента его скрываем, чтобы не дублировать */
+  .statistics-title {
+    display: none;
+  }
+
+  .statistics-header {
+    margin-bottom: 1.25rem;
+  }
+
+  /* Более компактные графики на мобильных, чтобы не вылезали за пределы контейнера */
+  .chart-container {
+    padding: 0.875rem;
+  }
+
+  .chart-title,
+  .chart-title-small {
+    font-size: 0.95rem;
+  }
+
+  .chart-wrapper {
+    height: 160px;
+  }
+
+  .charts-row,
+  .demographics-grid {
+    margin-bottom: 0.75rem;
+    gap: 1rem;
   }
 }
 
-@media (max-width: 576px) {
-  .stats-grid {
-    grid-template-columns: 1fr;
-  }
-}
 
 

@@ -17,6 +17,14 @@
   color: #333;
 }
 
+.property-list-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
 .search-filters-bar {
   display: flex;
   flex-wrap: wrap;
@@ -270,14 +278,16 @@
 .properties-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 20px;
+  column-gap: 20px;
+  row-gap: 28px;
   align-items: stretch;
 }
 
 @media (max-width: 1200px) {
   .properties-grid {
     grid-template-columns: repeat(2, 1fr);
-    gap: 20px;
+    column-gap: 20px;
+    row-gap: 28px;
   }
 }
 
@@ -481,7 +491,7 @@
   justify-content: center;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  z-index: 3;
+  z-index: 1;
   overflow: hidden;
   box-shadow: 
     0 4px 16px rgba(0, 0, 0, 0.2),
@@ -1035,7 +1045,7 @@
 /* Основные характеристики для аукционных объектов - в стиле личного кабинета продавца */
 .property-card-owner__info {
   display: flex;
-  gap: 20px;
+  gap: 8px;
   flex-wrap: wrap;
   margin-top: 12px;
   margin-bottom: 12px;
@@ -1046,7 +1056,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 14px;
+  font-size: 12px;
   color: #666;
 }
 
@@ -1064,12 +1074,14 @@
 .bid-label {
   font-size: 14px;
   color: #666;
+  white-space: nowrap;
 }
 
 .bid-value {
   font-size: 18px;
   font-weight: 600;
   color: #0ABAB5;
+  white-space: nowrap;
 }
 
 .property-actions {
@@ -1326,16 +1338,30 @@
 @media (max-width: 768px) {
   .properties-grid {
     grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
+    column-gap: 8px;
+    row-gap: 14px;
     align-items: stretch;
   }
 
+  .property-list-header .ai-button {
+    position: static !important;
+    width: 44px;
+    height: 44px;
+    font-size: 14px;
+    margin: 0;
+    flex-shrink: 0;
+  }
+
   .property-list {
-    padding: 24px 0;
+    padding: 28px 0;
   }
 
   .property-list-container {
-    padding: 0 20px;
+    padding: 0 16px;
+  }
+
+  .property-card {
+    margin: 0 4px 16px;
   }
 
   .property-list-title {
@@ -1353,13 +1379,13 @@
     width: 100%;
   }
 
-  /* Фильтры и типы по 2 в ряд: Фильтры|Все, Квартира|Апартаменты, Дом|Вилла */
+  /* Фильтры и типы: 2 ряда, по 3 кнопки в каждом (всего 6) */
   .filters-and-types-grid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 10px;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
     width: 100%;
-    padding: 0 10%;
+    padding: 0 4px;
   }
 
   .filters-and-types-grid .property-types {
@@ -1493,9 +1519,9 @@
 
   /* Блок текущей ставки: не обрезать сумму, компактно */
   .property-bid-info {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 2px;
+    flex-direction: row;
+    align-items: center;
+    gap: 4px;
     padding: 8px 10px;
     margin-bottom: 8px;
     min-width: 0;
@@ -1503,24 +1529,29 @@
 
   .bid-label {
     font-size: 11px;
+    white-space: nowrap;
   }
 
   .bid-value {
     font-size: 14px;
     min-width: 0;
-    word-break: break-word;
-    overflow-wrap: break-word;
+    white-space: nowrap;
   }
 
   /* Блок характеристик (площадь, комнаты и т.д.) — одна строка, компактно */
   .property-card-owner__info {
     flex-wrap: wrap;
-    gap: 6px;
-    margin-bottom: 8px;
+    gap: 4px;
+    margin-top: -20px;
+    margin-bottom: 4px;
   }
 
   .property-card-owner__info-item {
-    font-size: 11px;
+    font-size: 8px;
+  }
+
+  .property-card-owner__info-item span {
+    font-size: 8px;
   }
 
   .property-card-owner__info-item svg {
@@ -1564,6 +1595,14 @@
     padding: 10px 12px;
     font-size: 12px;
     min-height: 40px;
+  }
+
+/* Финальный оверрайд размера шрифта характеристик на мобильных,
+   чтобы точно применился поверх всех предыдущих медиа-правил */
+@media (max-width: 768px) {
+  .property-card-owner__info-item,
+  .property-card-owner__info-item span {
+    font-size: 11px !important;
   }
 
   /* Иконки на превью */
@@ -1648,7 +1687,8 @@
 
   .properties-grid {
     grid-template-columns: repeat(2, 1fr);
-    gap: 8px;
+    column-gap: 6px;
+    row-gap: 10px;
   }
 
   .property-card {
@@ -1671,12 +1711,13 @@
 /* От 500px и ниже: убираем «Купить сейчас» и «Тест-драйв», уменьшаем наполнение — 2 карточки в ряд без обрезки */
 @media (max-width: 500px) {
   .property-list-container {
-    padding: 0 6px;
+    padding: 0 8px;
   }
 
   .properties-grid {
     grid-template-columns: repeat(2, 1fr);
-    gap: 6px;
+    column-gap: 6px;
+    row-gap: 10px;
   }
 
   /* Убираем пометки «Купить сейчас» и «Тест-драйв» */
@@ -1749,12 +1790,16 @@
   }
 
   .property-card-owner__info {
-    gap: 4px;
+    gap: 2px;
     margin-bottom: 6px;
   }
 
   .property-card-owner__info-item {
-    font-size: 10px;
+    font-size: 9px;
+  }
+
+  .property-card-owner__info-item span {
+    font-size: 9px;
   }
 
   .property-content-bottom {
@@ -1766,11 +1811,12 @@
 /* Очень узкие экраны: до ~430px ещё сильнее уплотняем карточки */
 @media (max-width: 430px) {
   .property-list-container {
-    padding: 0 6px;
+    padding: 0 8px;
   }
 
   .properties-grid {
-    gap: 6px;
+    column-gap: 6px;
+    row-gap: 10px;
   }
 
   .property-image-container {
@@ -1807,11 +1853,12 @@
 /* Самые узкие экраны: до ~360px минимальные отступы, но всё ещё 2 карточки в ряд */
 @media (max-width: 360px) {
   .property-list-container {
-    padding: 0 4px;
+    padding: 0 6px;
   }
 
   .properties-grid {
-    gap: 4px;
+    column-gap: 4px;
+    row-gap: 8px;
   }
 
   .property-image-container {
@@ -1878,4 +1925,6 @@
   border-right: 6px solid transparent;
   border-top: 6px solid rgba(0, 0, 0, 0.95);
   margin-top: -1px;
+}
+
 }

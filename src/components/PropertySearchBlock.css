@@ -84,31 +84,33 @@
 
 @media (max-width: 768px) {
   .property-search-block {
-    padding: 40px 15px;
+    padding: 32px 15px;
   }
 
   .property-search-block__content {
     flex-direction: column;
     text-align: center;
-    padding: 30px 25px;
-    gap: 25px;
+    padding: 22px 20px;
+    gap: 20px;
   }
 
   .property-search-block__icon {
-    width: 80px;
-    height: 80px;
+    width: 64px;
+    height: 64px;
   }
 
   .property-search-block__title {
-    font-size: 24px;
+    font-size: 20px;
   }
 
   .property-search-block__description {
-    font-size: 14px;
+    font-size: 13px;
   }
 
   .property-search-block__button {
     width: 100%;
     justify-content: center;
+    padding: 12px 20px;
+    font-size: 14px;
   }
 }

@@ -3,6 +3,8 @@
   background: transparent;
   padding: 0;
   position: relative;
+  max-width: 100vw;
+  overflow-x: hidden;
 }
 
 .add-property-page::before {
@@ -12,7 +14,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  width: 100%;
+  width: 100vw;
   height: 100vh;
   background: linear-gradient(135deg, #e8e8f5 0%, #f0e0eb 60%, #f8e8f0 100%);
   z-index: 0;
@@ -26,7 +28,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  width: 100%;
+  width: 100vw;
   height: 100vh;
   background-image: url('https://static.cdn-cian.ru/frontend/valuation-my-home-page-frontend/my-home-bg.44b774c17192a1e1.png');
   background-size: cover;
@@ -2252,6 +2254,17 @@
   color: #1a1a1a;
 }
 
+/* Подписи для площади:
+   по умолчанию показываем короткий мобильный вариант,
+   а на широких экранах переключаемся на полный текст */
+.detail-form-label-text--desktop {
+  display: none;
+}
+
+.detail-form-label-text--mobile {
+  display: inline;
+}
+
 .detail-form-label-hint {
   font-size: 13px;
   font-weight: 500;
@@ -2277,6 +2290,16 @@
 .detail-form-input:hover {
   border-color: #d0d0d0;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+@media (min-width: 769px) {
+  .detail-form-label-text--desktop {
+    display: inline;
+  }
+
+  .detail-form-label-text--mobile {
+    display: none;
+  }
 }
 
 .detail-form-input:focus {
@@ -2473,10 +2496,7 @@
 .property-amenities-title {
   font-size: 32px;
   font-weight: 700;
-  background: linear-gradient(135deg, #1a1a1a 0%, #0ABAB5 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: #111111;
   margin: 0 0 36px 0;
   line-height: 1.3;
   flex-shrink: 0;
@@ -3908,12 +3928,18 @@
 }
 
 @media (max-width: 768px) {
+  /* На мобилке убираем фоновое изображение справа, оставляем только градиент */
+  .add-property-page::after {
+    display: none;
+  }
+
   .add-property-container {
-    padding: 20px;
+    margin: 0 auto 50px;
+    padding: 16px 20px 20px;
   }
 
   .property-type-selection-screen {
-    padding: 32px 20px;
+    padding: 32px 20px 50px;
     max-width: 100%;
     margin: 0 auto;
   }
@@ -3932,8 +3958,9 @@
   }
 
   .test-drive-question-screen {
-    padding: 32px 20px;
-    justify-content: center;
+    padding: 32px 20px 50px;
+    justify-content: flex-start;
+    align-items: stretch;
   }
 
   .test-drive-question-content {
@@ -3971,6 +3998,22 @@
     align-self: center;
   }
 
+  /* Детальная информация: выравнивание полей в две колонки */
+  .property-details-form {
+    gap: 20px;
+  }
+
+  .detail-form-field--split {
+    flex-direction: row;
+    align-items: stretch;
+    gap: 16px;
+  }
+
+  .detail-form-field-half {
+    flex: 1 1 0;
+    max-width: none;
+  }
+
   .property-name-screen {
     flex-direction: column;
     padding: 32px 20px;
@@ -3989,8 +4032,8 @@
   .property-name-hints {
     flex: 1;
     width: 100%;
-    max-width: 75%;
-    
+    max-width: 100%;
+    margin: 0; /* та же ширина, что и у блока с инпутами */
   }
 
   .property-name-hint-card {
@@ -4000,6 +4043,7 @@
   .property-name-actions {
     flex-direction: row;
     max-width: 100%;
+    margin: 24px auto 0;
   }
 
   .property-name-continue-btn {
@@ -4017,8 +4061,12 @@
     min-height: auto;
   }
 
-  .property-location-main {
-    max-width: 100%;
+  .property-location-main,
+  .property-location-map,
+  .property-location-actions {
+    width: 100%;
+    max-width: 600px;
+    margin: 0 auto; /* одна колонка той же ширины, что и инпуты */
   }
 
   .property-location-title {
@@ -4027,13 +4075,67 @@
   }
 
   .property-location-map {
-    min-height: 300px;
-    width: 100%;
+    min-height: 40vh;
+    height: 40vh;
+  }
+
+  /* Форсируем высоту карты (MapLibre) через canvas и контейнер на мобилке */
+  .property-location-map .maplibregl-map,
+  .property-location-map canvas.maplibregl-canvas {
+    height: 40vh !important;
+    min-height: 40vh !important;
+    width: 100% !important;
   }
 
   .property-location-actions {
     flex-direction: row;
-    max-width: 100%;
+  }
+
+  /* Единое расположение блока кнопок "Назад/Продолжить" на всех шагах */
+  .property-name-actions,
+  .property-location-actions,
+  .property-details-actions,
+  .property-amenities-actions,
+  .property-photos-actions,
+  .property-documents-actions,
+  .property-price-actions {
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+    gap: 12px;
+    width: 100%;
+    max-width: 600px;
+    margin: 24px auto 0;
+  }
+
+  /* Кнопки "Назад" — одинаковый размер */
+  .property-name-back-btn,
+  .property-location-back-btn,
+  .property-details-back-btn,
+  .property-amenities-back-btn,
+  .property-photos-back-btn,
+  .property-documents-back-btn,
+  .property-price-back-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 1 1 0;
+    padding: 12px 16px;
+  }
+
+  /* Кнопки "Продолжить" — одинаковый размер */
+  .property-name-continue-btn,
+  .property-location-continue-btn,
+  .property-details-continue-btn,
+  .property-amenities-continue-btn,
+  .property-photos-continue-btn,
+  .property-documents-continue-btn,
+  .property-price-continue-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 1 1 0;
+    padding: 12px 16px;
   }
 
   .property-location-continue-btn {
@@ -4042,6 +4144,136 @@
 
   .property-location-back-btn {
     flex-shrink: 0;
+  }
+
+  /* Экран загрузки фото и дропзона на мобилке */
+  .property-photos-screen {
+    padding: 32px 20px 24px;
+  }
+
+  .photos-upload-area {
+    height: 360px;
+    width: 100%;
+    max-width: 440px;
+    margin: 0 auto 20px;
+  }
+
+  .photos-carousel-container {
+    height: 360px;
+  }
+
+  .photos-carousel-image,
+  .photos-carousel-video,
+  .photos-carousel-item iframe {
+    height: 360px;
+  }
+
+  /* Кнопки "Добавить фото / видео / ссылку" шире на мобилке */
+  .photos-additional-options {
+    flex-wrap: nowrap;
+    justify-content: space-between;
+    width: 100%;
+    max-width: 440px;
+    margin: 0 auto 24px;
+    gap: 8px;
+  }
+
+  .photos-option-btn {
+    flex: 1 1 0;
+    min-width: 0;
+    padding: 14px 4px;
+  }
+
+  /* На шаге загрузки фото подсказки убираем, чтобы не сжимали контент */
+  .property-photos-screen .property-name-hints {
+    display: none;
+  }
+
+  /* На шаге документов подсказки тоже скрываем в мобильной версии */
+  .property-documents-screen .property-name-hints {
+    display: none;
+  }
+
+  /* Экран документов на мобилке — такие же отступы, как на фото/цене */
+  .property-documents-screen {
+    padding: 32px 20px 24px;
+  }
+
+  /* На шаге цены подсказки тоже скрываем в мобильной версии */
+  .property-price-screen .property-name-hints {
+    display: none;
+  }
+
+  /* Экран цены на мобайле — убираем боковые поля и делаем ширину 100% */
+  .property-price-screen {
+    padding: 32px 20px 40px;
+    max-width: 100%;
+    margin: 0 auto;
+  }
+
+  .property-price-main {
+    max-width: 100%;
+  }
+
+  /* На шаге удобств тоже скрываем подсказки в мобильной версии */
+  .property-amenities-screen .property-name-hints {
+    display: none;
+  }
+
+  /* Обязательные/дополнительные документы: мобильное расположение */
+  .document-upload-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .document-upload-info {
+    width: 100%;
+  }
+
+  .document-upload-action {
+    width: 100%;
+  }
+
+  .document-upload-btn {
+    width: 60%;
+    max-width: 260px;
+    justify-content: center;
+    margin: 0 auto;
+  }
+
+  .document-uploaded {
+    width: 60%;
+    max-width: 260px;
+    margin: 0 auto;
+    justify-content: space-between;
+  }
+
+  /* Убираем подписи про форматы файлов на мобилке */
+  .document-upload-hint {
+    display: none;
+  }
+
+  /* Экран подробной информации на мобильных */
+  .property-details-screen {
+    flex-direction: column;
+    padding: 32px 20px;
+    gap: 24px;
+    min-height: auto;
+    height: auto;
+  }
+
+  .property-details-main {
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+    max-height: none;
+    order: 1;
+  }
+
+  /* Полностью скрываем подсказки на шаге "Подробная информация" в мобильной версии */
+  .property-details-screen .property-name-hints {
+    display: none;
   }
 
   .property-type-card-large {
@@ -4180,8 +4412,29 @@
 }
 
 @media (max-width: 650px) {
+  .property-type-card-title {
+    font-size: 16px;
+    margin-bottom: 8px;
+  }
+
   .property-type-card-description {
-    display: none;
+    font-size: 12px;
+    line-height: 1.5;
+    margin-bottom: 16px;
+    max-height: 4.5em; /* до трёх строк текста */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+  }
+
+  .property-type-card-button {
+    width: 100%;
+    min-width: 100%;
+    max-width: 100%;
+    padding: 10px 16px;
+    font-size: 14px;
   }
 }
 

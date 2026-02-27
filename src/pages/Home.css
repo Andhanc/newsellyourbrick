@@ -28,8 +28,18 @@
 }
 
 @media (max-width: 768px) {
+  /* На мобильной версии меню должно начинаться прямо от верхнего края */
   .home-page .menu-dropdown {
-    top: 0 !important; /* на мобильных панель от левого края на всю высоту */
+    top: 0 !important;
+  }
+
+  /* На мобильной версии скрываем кнопку депозита, когда открыт бургер-меню */
+  .home-page:has(.menu-backdrop) .deposit-button {
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none;
+    transform: translateY(10px);
+    transition: opacity 0.2s ease, transform 0.2s ease;
   }
 }
 
