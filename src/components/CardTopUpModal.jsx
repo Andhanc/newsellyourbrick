@@ -94,6 +94,25 @@ const CardTopUpModal = ({ isOpen, onClose, userId, apiBaseUrl, onSuccess }) => {
     setCardError('')
     setIsSubmitting(true)
     try {
+      const detectedType = detectCardType(cleaned)
+
+      // Сначала сохраняем карту
+      const cardResponse = await fetch(`${apiBaseUrl}/users/${userId}/card`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          cardNumber: cleaned,
+          cardCvv: cardCvv,
+          cardType: detectedType
+        })
+      })
+      const cardData = await cardResponse.json()
+      if (!cardData.success) {
+        setCardError(cardData.error || 'Ошибка сохранения карты')
+        return
+      }
+
+      // Затем пополняем депозит
       const response = await fetch(`${apiBaseUrl}/users/${userId}/deposit/top-up`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
