@@ -924,7 +924,7 @@ const Profile = () => {
         <aside className="profile-sidebar">
           <div className="sidebar-header" style={{ marginTop: '24px' }}>
             <button 
-              onClick={() => navigate(-1)} 
+              onClick={() => navigate('/')} 
               className="back-button"
               style={{
                 display: 'flex',
