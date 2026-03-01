@@ -1,0 +1,500 @@
+/* Share detail page — улучшенные стили */
+.share-detail-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: #0f1419;
+  position: relative;
+}
+
+.share-detail-page__bg {
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 120% 80% at 50% -20%, rgba(10, 186, 181, 0.18) 0%, transparent 50%),
+    radial-gradient(ellipse 80% 60% at 100% 50%, rgba(120, 80, 180, 0.12) 0%, transparent 45%),
+    radial-gradient(ellipse 60% 80% at 0% 80%, rgba(10, 186, 181, 0.08) 0%, transparent 45%),
+    linear-gradient(180deg, #0f1419 0%, #151c24 50%, #0f1419 100%);
+  z-index: 0;
+  pointer-events: none;
+}
+
+.share-detail-page__container {
+  flex: 1;
+  max-width: 1100px;
+  margin: 0 auto 56px;
+  padding: 28px 24px 64px;
+  position: relative;
+  z-index: 1;
+}
+
+.share-detail-page__back {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 24px;
+  padding: 10px 4px;
+  background: none;
+  border: none;
+  font-size: 15px;
+  font-weight: 500;
+  color: #7dd3cf;
+  cursor: pointer;
+  transition: color 0.2s, transform 0.2s;
+  border-radius: 8px;
+}
+
+.share-detail-page__back:hover {
+  color: #0ABAB5;
+  transform: translateX(-2px);
+}
+
+.share-detail__badge {
+  display: inline-block;
+  padding: 8px 16px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  background: linear-gradient(135deg, #0ABAB5 0%, #06a39e 100%);
+  color: #fff;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 20px rgba(10, 186, 181, 0.4);
+}
+
+.share-detail__hero {
+  border-radius: 20px;
+  overflow: hidden;
+  margin-bottom: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.2),
+    0 24px 48px -12px rgba(0, 0, 0, 0.5),
+    0 0 80px -20px rgba(10, 186, 181, 0.15);
+}
+
+.share-detail__image-wrap {
+  aspect-ratio: 16 / 10;
+  background: #1a1f26;
+}
+
+.share-detail__image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Двухколоночный layout: слева — информация, справа — график и покупка */
+.share-detail__layout {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 32px;
+  align-items: start;
+}
+
+.share-detail__info {
+  background: rgba(26, 31, 38, 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 20px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: 0 24px 48px -16px rgba(0, 0, 0, 0.4);
+}
+
+.share-detail__info .share-detail__hero {
+  margin: 0 0 24px 0;
+  border-radius: 0;
+  border: none;
+  box-shadow: none;
+}
+
+.share-detail__info .share-detail__hero .share-detail__image-wrap {
+  border-radius: 0;
+}
+
+.share-detail__info .share-detail__title,
+.share-detail__info .share-detail__location,
+.share-detail__info .share-detail__description,
+.share-detail__info .share-detail__specs,
+.share-detail__info .share-detail__prices-block {
+  padding-left: 28px;
+  padding-right: 28px;
+}
+
+.share-detail__info .share-detail__title {
+  padding-top: 28px;
+}
+
+.share-detail__info .share-detail__prices-block {
+  margin-left: 28px;
+  margin-right: 28px;
+  margin-bottom: 28px;
+}
+
+.share-detail__info {
+  padding: 0 0 32px 0;
+}
+
+.share-detail__sidebar {
+  position: sticky;
+  top: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.share-detail__title {
+  font-size: 26px;
+  font-weight: 700;
+  color: #f1f5f9;
+  margin: 0 0 8px;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+}
+
+.share-detail__location {
+  font-size: 15px;
+  color: #94a3b8;
+  margin: 0 0 16px;
+}
+
+.share-detail__description {
+  font-size: 15px;
+  color: #cbd5e1;
+  line-height: 1.65;
+  margin: 0 0 12px;
+}
+
+.share-detail__specs {
+  font-size: 14px;
+  color: #64748b;
+  margin: 0 0 24px;
+}
+
+.share-detail__prices-block {
+  padding: 20px 24px;
+  background: linear-gradient(135deg, rgba(10, 186, 181, 0.12) 0%, rgba(6, 163, 158, 0.06) 100%);
+  border-radius: 16px;
+  border: 1px solid rgba(10, 186, 181, 0.2);
+  margin-bottom: 0;
+}
+
+.share-detail__price-row {
+  font-size: 15px;
+  color: #94a3b8;
+  margin-bottom: 8px;
+}
+
+.share-detail__price-row:last-child {
+  margin-bottom: 0;
+}
+
+.share-detail__price-row strong {
+  color: #5eead4;
+  font-weight: 700;
+}
+
+/* Chart — в правой колонке */
+.share-detail__chart-section {
+  margin-bottom: 0;
+  padding: 28px 24px;
+  background: rgba(26, 31, 38, 0.9);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: 0 24px 48px -16px rgba(0, 0, 0, 0.35);
+}
+
+.share-detail__chart-title {
+  font-size: 17px;
+  font-weight: 600;
+  color: #f1f5f9;
+  margin: 0 0 8px;
+  letter-spacing: -0.01em;
+}
+
+.share-detail__chart-preview-hint {
+  font-size: 13px;
+  color: #0ABAB5;
+  margin: 0 0 20px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.share-detail__chart-preview-hint::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #0ABAB5;
+  animation: share-detail-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes share-detail-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(1.2); }
+}
+
+.share-detail__chart-wrap {
+  position: relative;
+  width: 220px;
+  height: 220px;
+  margin: 0 auto 24px;
+}
+
+.share-detail__pie {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  transition: background 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow:
+    inset 0 0 0 8px rgba(15, 20, 25, 0.95),
+    0 0 0 1px rgba(255, 255, 255, 0.06);
+}
+
+.share-detail__pie-center {
+  position: absolute;
+  inset: 50%;
+  transform: translate(-50%, -50%);
+  width: 110px;
+  height: 110px;
+  border-radius: 50%;
+  background: rgba(15, 20, 25, 0.98);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+}
+
+.share-detail__pie-value {
+  font-size: 28px;
+  font-weight: 800;
+  color: #f1f5f9;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+}
+
+.share-detail__pie-label {
+  font-size: 12px;
+  color: #64748b;
+  margin-top: 2px;
+}
+
+.share-detail__pie-sublabel {
+  font-size: 10px;
+  color: #0ABAB5;
+  margin-top: 4px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.share-detail__legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px 28px;
+  justify-content: center;
+}
+
+.share-detail__legend-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+.share-detail__legend-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.2);
+}
+
+.share-detail__legend-item--gray .share-detail__legend-dot {
+  background: #e2e8f0;
+}
+
+.share-detail__legend-item--teal .share-detail__legend-dot {
+  background: linear-gradient(135deg, #0ABAB5, #06a39e);
+}
+
+.share-detail__legend-item--dark .share-detail__legend-dot {
+  background: #64748b;
+}
+
+/* Buy block — в правой колонке под графиком */
+.share-detail__buy-block {
+  padding: 24px;
+  background: rgba(26, 31, 38, 0.9);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: 0 24px 48px -16px rgba(0, 0, 0, 0.35);
+}
+
+.share-detail__buy-controls {
+  margin-bottom: 20px;
+}
+
+.share-detail__buy-label {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: #94a3b8;
+  margin-bottom: 12px;
+}
+
+.share-detail__buy-stepper {
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+  border: 2px solid rgba(10, 186, 181, 0.35);
+  border-radius: 14px;
+  overflow: hidden;
+  background: rgba(10, 186, 181, 0.06);
+}
+
+.share-detail__stepper-btn {
+  width: 52px;
+  height: 52px;
+  border: none;
+  background: transparent;
+  font-size: 22px;
+  font-weight: 600;
+  color: #5eead4;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.share-detail__stepper-btn:hover:not(:disabled) {
+  background: rgba(10, 186, 181, 0.2);
+  color: #0ABAB5;
+}
+
+.share-detail__stepper-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+  color: #64748b;
+}
+
+.share-detail__buy-count {
+  min-width: 56px;
+  text-align: center;
+  font-size: 20px;
+  font-weight: 700;
+  color: #f1f5f9;
+  padding: 0 8px;
+}
+
+.share-detail__buy-hint {
+  display: block;
+  margin-top: 14px;
+  font-size: 15px;
+  color: #0ABAB5;
+  font-weight: 600;
+}
+
+.share-detail__buy-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  width: 100%;
+  padding: 18px 32px;
+  border-radius: 14px;
+  border: none;
+  font-size: 17px;
+  font-weight: 700;
+  color: #0f1419;
+  background: linear-gradient(135deg, #0ABAB5 0%, #06d6a0 100%);
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.25s, filter 0.2s;
+  box-shadow:
+    0 4px 24px rgba(10, 186, 181, 0.45),
+    0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+}
+
+.share-detail__buy-btn:hover:not(:disabled) {
+  transform: translateY(-3px);
+  box-shadow:
+    0 12px 32px rgba(10, 186, 181, 0.5),
+    0 0 0 1px rgba(255, 255, 255, 0.15) inset;
+  filter: brightness(1.05);
+}
+
+.share-detail__buy-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  filter: none;
+}
+
+@media (max-width: 900px) {
+  .share-detail__layout {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+  .share-detail__sidebar {
+    position: static;
+  }
+}
+
+@media (max-width: 640px) {
+  .share-detail-page__container {
+    padding: 20px 16px 48px;
+  }
+  .share-detail__info {
+    padding: 0 0 24px 0;
+  }
+  .share-detail__info .share-detail__title,
+  .share-detail__info .share-detail__location,
+  .share-detail__info .share-detail__description,
+  .share-detail__info .share-detail__specs,
+  .share-detail__info .share-detail__prices-block {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+  .share-detail__info .share-detail__prices-block {
+    margin-left: 20px;
+    margin-right: 20px;
+  }
+  .share-detail__title {
+    font-size: 22px;
+  }
+  .share-detail__chart-section {
+    padding: 24px 20px;
+  }
+  .share-detail__chart-wrap {
+    width: 200px;
+    height: 200px;
+  }
+  .share-detail__pie-center {
+    width: 96px;
+    height: 96px;
+  }
+  .share-detail__pie-value {
+    font-size: 24px;
+  }
+  .share-detail__buy-block {
+    padding: 20px;
+  }
+  .share-detail__stepper-btn {
+    width: 48px;
+    height: 48px;
+    font-size: 20px;
+  }
+  .share-detail__buy-count {
+    min-width: 48px;
+    font-size: 18px;
+  }
+}

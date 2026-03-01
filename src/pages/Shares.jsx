@@ -1,0 +1,146 @@
+import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { FiPieChart, FiSearch } from 'react-icons/fi'
+import Header from '../components/Header'
+import './Shares.css'
+
+// Демо-объекты долей (пока без бэкенда — статичные)
+const DEMO_SHARE_OBJECTS = [
+  {
+    id: 'share-demo-1',
+    title: 'Квартира в центре, 2-комн.',
+    location: 'Минск, ул. Примерная, 10',
+    image: 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=800&q=80',
+    totalPrice: 120000,
+    pricePerShare: 6000,
+    totalShares: 20,
+    sharesSold: 8,
+    myShares: 0,
+    area: 65,
+    rooms: 2,
+  },
+  {
+    id: 'share-demo-2',
+    title: 'Апартаменты с видом на море',
+    location: 'Барселона, Eixample',
+    image: 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=800&q=80',
+    totalPrice: 250000,
+    pricePerShare: 12500,
+    totalShares: 20,
+    sharesSold: 15,
+    myShares: 2,
+    area: 95,
+    rooms: 3,
+  },
+]
+
+const Shares = () => {
+  const navigate = useNavigate()
+  const [searchQuery, setSearchQuery] = useState('')
+
+  const filtered = DEMO_SHARE_OBJECTS.filter(
+    (obj) =>
+      !searchQuery ||
+      (obj.title || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (obj.location || '').toLowerCase().includes(searchQuery.toLowerCase())
+  )
+
+  const formatPrice = (n) => {
+    if (n >= 1000000) return `$${(n / 1000000).toFixed(1)}M`
+    return `$${Number(n).toLocaleString('en-US')}`
+  }
+
+  return (
+    <div className="shares-page">
+      <Header />
+      <div className="shares-page__bg" />
+      <main className="shares-container">
+        <div className="shares-intro">
+          <div className="shares-intro__icon">
+            <FiPieChart size={32} />
+          </div>
+          <h1 className="shares-intro__title">Доли в недвижимости</h1>
+          <p className="shares-intro__text">
+            Доля — это часть объекта недвижимости, которую можно купить по фиксированной цене за одну долю.
+            Объект делится на равные доли: вы покупаете одну или несколько долей и становитесь совладельцем.
+            Доход от аренды или продажи распределяется между всеми владельцами долей пропорционально.
+          </p>
+          <p className="shares-intro__text">
+            Чтобы купить доли: выберите объект ниже, откройте карточку и нажмите «Купить долю» — можно указать
+            количество долей (1, 2, 3 и т.д.). Оплата производится за выбранное количество по цене за одну долю.
+          </p>
+        </div>
+
+        <div className="shares-search-bar">
+          <FiSearch className="shares-search-bar__icon" size={20} />
+          <input
+            type="text"
+            className="shares-search-bar__input"
+            placeholder="Поиск по названию или адресу..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+          {searchQuery && (
+            <button
+              type="button"
+              className="shares-search-bar__clear"
+              onClick={() => setSearchQuery('')}
+              aria-label="Очистить"
+            >
+              ×
+            </button>
+          )}
+        </div>
+
+        <div className="shares-grid">
+          {filtered.length === 0 ? (
+            <div className="shares-no-results">
+              <p>По вашему запросу ничего не найдено.</p>
+            </div>
+          ) : (
+            filtered.map((obj) => (
+              <article
+                key={obj.id}
+                className="share-card"
+                onClick={() => navigate(`/shares/${obj.id}`, { state: { shareObject: obj } })}
+              >
+                <div className="share-card__badge">Доля</div>
+                <div className="share-card__image-wrap">
+                  <img
+                    src={obj.image}
+                    alt={obj.title}
+                    className="share-card__image"
+                  />
+                </div>
+                <div className="share-card__content">
+                  <h2 className="share-card__title">{obj.title}</h2>
+                  <p className="share-card__location">{obj.location}</p>
+                  {obj.area && (
+                    <p className="share-card__specs">
+                      {obj.area} м² · {obj.rooms} комн.
+                    </p>
+                  )}
+                  <div className="share-card__prices">
+                    <div className="share-card__price-total">
+                      Общая стоимость: <strong>{formatPrice(obj.totalPrice)}</strong>
+                    </div>
+                    <div className="share-card__price-per-share">
+                      За 1 долю: <strong>{formatPrice(obj.pricePerShare)}</strong>
+                    </div>
+                  </div>
+                  <div className="share-card__footer">
+                    <span className="share-card__sold">
+                      Продано долей: {obj.sharesSold} из {obj.totalShares}
+                    </span>
+                  </div>
+                </div>
+              </article>
+            ))
+          )}
+        </div>
+      </main>
+    </div>
+  )
+}
+
+export default Shares

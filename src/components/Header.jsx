@@ -265,6 +265,13 @@ const Header = () => {
       allowedRoles: ['buyer', 'client', 'admin'] // Только для покупателей и админов
     },
     {
+      path: '/bonuses',
+      keywords: ['бонусы', 'bonuses', 'промокод', 'промокоды', 'задания', 'инстаграм', 'тикток'],
+      title: 'Бонусы',
+      requiresAuth: true,
+      allowedRoles: ['buyer', 'client', 'admin']
+    },
+    {
       path: '/owner',
       keywords: ['кабинет продавца', 'owner', 'продавец', 'seller', 'владелец', 'dashboard', 'дашборд', 'панель продавца'],
       title: 'Кабинет продавца',
@@ -621,6 +628,15 @@ const Header = () => {
                             }}
                           >
                             <span>Чат</span>
+                          </button>
+                          <button 
+                            className="menu-dropdown__item"
+                            onClick={() => {
+                              navigate('/bonuses')
+                              setIsMenuOpen(false)
+                            }}
+                          >
+                            <span>Бонусы</span>
                           </button>
                         </div>
                       </div>

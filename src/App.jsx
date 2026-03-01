@@ -11,6 +11,9 @@ import Subscriptions from './pages/Subscriptions'
 import History from './pages/History'
 import Chat from './pages/Chat'
 import Favorites from './pages/Favorites'
+import Bonuses from './pages/Bonuses'
+import Shares from './pages/Shares'
+import ShareDetailPage from './pages/ShareDetailPage'
 import OwnerDashboard from './pages/OwnerDashboard'
 import AddProperty from './pages/AddProperty'
 import Wallet from './pages/Wallet'
@@ -234,6 +237,9 @@ function App() {
           <Route path="/chat" element={<Chat />} />
           <Route path="/favorites" element={<Favorites />} />
           <Route path="/wallet" element={<Wallet />} />
+          <Route path="/bonuses" element={<Bonuses />} />
+          <Route path="/shares" element={<Shares />} />
+          <Route path="/shares/:id" element={<ShareDetailPage />} />
           
           {/* Страницы для владельцев */}
           <Route path="/owner" element={<OwnerDashboard />} />

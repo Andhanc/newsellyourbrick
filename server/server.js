@@ -2667,6 +2667,116 @@ app.delete('/api/purchase-requests/:id', (req, res) => {
 });
 
 /**
+ * POST /api/bonus-submissions - Отправить заявку на бонусное задание (ссылка на пост/профиль)
+ */
+app.post('/api/bonus-submissions', (req, res) => {
+  try {
+    const db = getDatabase();
+    const { user_id, task_id, link, promo_code } = req.body || {};
+    if (!user_id || !task_id || !link || typeof link !== 'string' || !link.trim()) {
+      return res.status(400).json({ success: false, message: 'Укажите user_id, task_id и ссылку.' });
+    }
+    const linkTrim = link.trim();
+    if (!/^https?:\/\/.+/i.test(linkTrim)) {
+      return res.status(400).json({ success: false, message: 'Некорректная ссылка.' });
+    }
+    const stmt = db.prepare(`
+      INSERT INTO bonus_task_submissions (user_id, task_id, link, status, promo_code)
+      VALUES (?, ?, ?, 'pending', ?)
+    `);
+    stmt.run(user_id, task_id, linkTrim, promo_code || null);
+    const id = db.prepare('SELECT last_insert_rowid() as id').get().id;
+    return res.status(201).json({ success: true, data: { id, status: 'pending' } });
+  } catch (error) {
+    console.error('❌ POST /api/bonus-submissions:', error);
+    return res.status(500).json({ success: false, message: error.message || 'Ошибка сервера.' });
+  }
+});
+
+/**
+ * GET /api/bonus-submissions/user/:userId - Заявки пользователя по заданиям
+ */
+app.get('/api/bonus-submissions/user/:userId', (req, res) => {
+  try {
+    const db = getDatabase();
+    const userId = req.params.userId;
+    const rows = db.prepare(`
+      SELECT id, user_id, task_id, link, status, promo_code, created_at
+      FROM bonus_task_submissions
+      WHERE user_id = ?
+      ORDER BY task_id ASC
+    `).all(userId);
+    return res.json({ success: true, data: rows });
+  } catch (error) {
+    console.error('❌ GET /api/bonus-submissions/user/:userId:', error);
+    return res.status(500).json({ success: false, message: error.message || 'Ошибка сервера.' });
+  }
+});
+
+/**
+ * GET /api/bonus-submissions/pending - Список заявок на проверке (для админа)
+ */
+app.get('/api/bonus-submissions/pending', (req, res) => {
+  try {
+    const db = getDatabase();
+    const rows = db.prepare(`
+      SELECT id, user_id, task_id, link, status, promo_code, created_at
+      FROM bonus_task_submissions
+      WHERE status = 'pending'
+      ORDER BY created_at ASC
+    `).all();
+    return res.json({ success: true, data: rows });
+  } catch (error) {
+    console.error('❌ GET /api/bonus-submissions/pending:', error);
+    return res.status(500).json({ success: false, message: error.message || 'Ошибка сервера.' });
+  }
+});
+
+/**
+ * PUT /api/bonus-submissions/:id/approve - Одобрить заявку (админ)
+ */
+app.put('/api/bonus-submissions/:id/approve', (req, res) => {
+  try {
+    const db = getDatabase();
+    const id = req.params.id;
+    const row = db.prepare('SELECT id, status, promo_code FROM bonus_task_submissions WHERE id = ?').get(id);
+    if (!row) return res.status(404).json({ success: false, message: 'Заявка не найдена.' });
+    if (row.status !== 'pending') {
+      return res.status(400).json({ success: false, message: 'Заявка уже обработана.' });
+    }
+    db.prepare(`
+      UPDATE bonus_task_submissions SET status = 'approved', reviewed_at = datetime('now') WHERE id = ?
+    `).run(id);
+    return res.json({ success: true, data: { id, status: 'approved', promo_code: row.promo_code } });
+  } catch (error) {
+    console.error('❌ PUT /api/bonus-submissions/:id/approve:', error);
+    return res.status(500).json({ success: false, message: error.message || 'Ошибка сервера.' });
+  }
+});
+
+/**
+ * PUT /api/bonus-submissions/:id/reject - Отклонить заявку (админ)
+ */
+app.put('/api/bonus-submissions/:id/reject', (req, res) => {
+  try {
+    const db = getDatabase();
+    const id = req.params.id;
+    const row = db.prepare('SELECT id, status FROM bonus_task_submissions WHERE id = ?').get(id);
+    if (!row) return res.status(404).json({ success: false, message: 'Заявка не найдена.' });
+    if (row.status !== 'pending') {
+      return res.status(400).json({ success: false, message: 'Заявка уже обработана.' });
+    }
+    db.prepare(`
+      UPDATE bonus_task_submissions SET status = 'rejected', reviewed_at = datetime('now') WHERE id = ?
+    `).run(id);
+    return res.json({ success: true, data: { id, status: 'rejected' } });
+  } catch (error) {
+    console.error('❌ PUT /api/bonus-submissions/:id/reject:', error);
+    return res.status(500).json({ success: false, message: error.message || 'Ошибка сервера.' });
+  }
+});
+
+/**
  * GET /api/owner/:sellerId/interest-count - Получить количество уникальных пользователей, 
  * которые взаимодействовали с объектами продавца (ставки + запросы на покупку)
  */

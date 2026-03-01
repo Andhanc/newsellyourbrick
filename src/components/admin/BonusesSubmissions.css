@@ -1,0 +1,125 @@
+.bonuses-submissions-admin {
+  padding: 0 1rem 2rem;
+}
+
+.bonuses-submissions-admin__header {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 24px;
+}
+
+.bonuses-submissions-admin__header h2 {
+  margin: 0;
+  font-size: 1.35rem;
+  color: #111827;
+}
+
+.bonuses-submissions-admin__header p {
+  margin: 0;
+  font-size: 14px;
+  color: #6b7280;
+}
+
+.bonuses-submissions-admin__header svg {
+  color: #0ABAB5;
+}
+
+.bonuses-submissions-admin__loading,
+.bonuses-submissions-admin__empty {
+  padding: 2rem;
+  text-align: center;
+  color: #6b7280;
+}
+
+.bonuses-submissions-admin__list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.bonuses-submissions-admin__card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.bonuses-submissions-admin__card-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.bonuses-submissions-admin__task {
+  font-weight: 600;
+  color: #111827;
+  font-size: 14px;
+}
+
+.bonuses-submissions-admin__user {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.bonuses-submissions-admin__link-row {
+  margin-bottom: 12px;
+}
+
+.bonuses-submissions-admin__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  color: #0ABAB5;
+  text-decoration: none;
+}
+
+.bonuses-submissions-admin__link:hover {
+  text-decoration: underline;
+}
+
+.bonuses-submissions-admin__actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.bonuses-submissions-admin__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.bonuses-submissions-admin__btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.bonuses-submissions-admin__btn--approve {
+  background: #d1fae5;
+  color: #059669;
+}
+
+.bonuses-submissions-admin__btn--approve:hover:not(:disabled) {
+  background: #a7f3d0;
+}
+
+.bonuses-submissions-admin__btn--reject {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.bonuses-submissions-admin__btn--reject:hover:not(:disabled) {
+  background: #fecaca;
+}

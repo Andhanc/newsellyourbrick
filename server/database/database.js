@@ -765,6 +765,33 @@ export function initDatabase() {
       } catch (purchaseRequestsError) {
         console.warn('⚠️ Не удалось создать/обновить таблицу запросов на покупку:', purchaseRequestsError.message);
       }
+
+      // Таблица заявок на бонусные задания (пользователь присылает ссылку, админ проверяет вручную)
+      try {
+        const bonusTable = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='bonus_task_submissions'").get();
+        if (!bonusTable) {
+          console.log('🔄 Создание таблицы bonus_task_submissions...');
+          db.exec(`
+            CREATE TABLE IF NOT EXISTS bonus_task_submissions (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              user_id INTEGER NOT NULL,
+              task_id INTEGER NOT NULL,
+              link TEXT NOT NULL,
+              status TEXT NOT NULL DEFAULT 'pending',
+              promo_code TEXT,
+              created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+              reviewed_at DATETIME,
+              FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+            );
+            CREATE INDEX IF NOT EXISTS idx_bonus_submissions_user_id ON bonus_task_submissions(user_id);
+            CREATE INDEX IF NOT EXISTS idx_bonus_submissions_status ON bonus_task_submissions(status);
+            CREATE INDEX IF NOT EXISTS idx_bonus_submissions_task_id ON bonus_task_submissions(task_id);
+          `);
+          console.log('✅ Таблица bonus_task_submissions создана');
+        }
+      } catch (bonusErr) {
+        console.warn('⚠️ Не удалось создать таблицу bonus_task_submissions:', bonusErr.message);
+      }
       
       // Создаем таблицы для квартир/апартаментов и домов/вилл
       try {
