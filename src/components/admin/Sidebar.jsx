@@ -32,11 +32,20 @@ const Sidebar = ({ activeSection, onSectionChange, onLogout, adminPermissions })
   const isMobile =
     typeof window !== 'undefined' ? window.innerWidth <= 992 : false;
 
+  const removeSidebarBackdrop = () => {
+    if (typeof document === 'undefined') return;
+    const existing = document.getElementById('admin-sidebar-backdrop');
+    if (existing && existing.parentNode) {
+      existing.parentNode.removeChild(existing);
+    }
+  };
+
   const handleCloseSidebar = () => {
     const sidebar = document.getElementById('sidebar');
     if (sidebar) {
       sidebar.classList.remove('active');
     }
+    removeSidebarBackdrop();
   };
 
   return (
@@ -75,12 +84,6 @@ const Sidebar = ({ activeSection, onSectionChange, onLogout, adminPermissions })
             <span>Выйти</span>
           </div>
         )}
-      </div>
-      <div className="sidebar-footer">
-        <button className="menu-item menu-item--logout" onClick={onLogout}>
-          <FaSignOutAlt size={20} />
-          <span>Выйти</span>
-        </button>
       </div>
     </div>
   );

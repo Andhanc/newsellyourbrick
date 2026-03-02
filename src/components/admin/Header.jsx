@@ -7,13 +7,55 @@ const Header = ({ title, onLogout, onBack }) => {
     typeof window !== 'undefined' ? window.innerWidth <= 768 : false
   );
 
+  const createSidebarBackdrop = () => {
+    if (typeof document === 'undefined') return;
+
+    if (document.getElementById('admin-sidebar-backdrop')) return;
+
+    const backdrop = document.createElement('div');
+    backdrop.id = 'admin-sidebar-backdrop';
+    backdrop.className = 'admin-sidebar-backdrop';
+
+    backdrop.addEventListener('click', () => {
+      const sidebar = document.getElementById('sidebar');
+      if (sidebar) {
+        sidebar.classList.remove('active');
+      }
+      backdrop.remove();
+    });
+
+    document.body.appendChild(backdrop);
+  };
+
+  const removeSidebarBackdrop = () => {
+    if (typeof document === 'undefined') return;
+    const existing = document.getElementById('admin-sidebar-backdrop');
+    if (existing && existing.parentNode) {
+      existing.parentNode.removeChild(existing);
+    }
+  };
+
   useEffect(() => {
     const handleResize = () => {
-      setIsMobile(window.innerWidth <= 768);
+      if (typeof window === 'undefined') return;
+
+      const mobile = window.innerWidth <= 768;
+      setIsMobile(mobile);
+
+      if (!mobile) {
+        const sidebar = document.getElementById('sidebar');
+        if (sidebar) {
+          sidebar.classList.remove('active');
+        }
+        removeSidebarBackdrop();
+      }
     };
 
     window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      removeSidebarBackdrop();
+    };
   }, []);
 
   const handleBack = () => {
@@ -25,7 +67,12 @@ const Header = ({ title, onLogout, onBack }) => {
   const handleBurgerClick = () => {
     const sidebar = document.getElementById('sidebar');
     if (sidebar) {
-      sidebar.classList.toggle('active');
+      const isActive = sidebar.classList.toggle('active');
+      if (isActive) {
+        createSidebarBackdrop();
+      } else {
+        removeSidebarBackdrop();
+      }
     }
   };
 

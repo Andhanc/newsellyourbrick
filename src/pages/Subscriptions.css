@@ -37,6 +37,13 @@
   background-attachment: fixed;
 }
 
+/* По умолчанию верхнюю кнопку выхода скрываем на десктопе (оставляем только нижнюю) */
+@media (min-width: 769px) {
+  .subscriptions-page .header-logout-button {
+    display: none;
+  }
+}
+
 .subscriptions-container {
   display: flex;
   flex: 1;

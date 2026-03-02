@@ -28,11 +28,18 @@ import { showNotification } from '../utils/toastHelper'
 import BidOutbidNotification from '../components/BidOutbidNotification'
 import Confetti from 'react-confetti'
 import './PropertyDetailClassic.css'
+import { countries as countryList } from '../components/CountrySelect'
 
 import { getApiBaseUrl, getApiBaseUrlSync } from '../utils/apiConfig'
 
 // Используем синхронную версию для инициализации, затем обновим при загрузке
 let API_BASE_URL = getApiBaseUrlSync()
+
+const getCountryFlagByName = (countryName) => {
+  if (!countryName) return ''
+  const country = countryList.find((c) => c.name === countryName)
+  return country?.flag || ''
+}
 
 // Классическая страница объекта.
 // Для аукционных объектов дополнительно отображает таймер и историю ставок.
@@ -694,9 +701,19 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                   const leaderUserData = await leaderUserResponse.json()
                   if (leaderUserData.success && leaderUserData.data) {
                     const leaderUser = leaderUserData.data
+                    const leaderCountry = leaderUser.country || ''
+                    const leaderFlag = getCountryFlagByName(leaderCountry)
+
+                    // Дополняем текущего лидера страной и флагом
+                    setCurrentLeader((prev) =>
+                      prev && prev.userId === leaderBid.user_id
+                        ? { ...prev, country: leaderCountry, countryFlag: leaderFlag }
+                        : prev
+                    )
+
                     // Показываем флаг и номер нового лидера в таймере на 3 секунды
                     setTimerBidInfo({
-                      country: leaderUser.country || '',
+                      country: leaderCountry,
                       userIdNumber: leaderUser.user_id_number || leaderBid.user_id
                     })
                     
@@ -1675,9 +1692,19 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                       const leaderUserData = await leaderUserResponse.json()
                       if (leaderUserData.success && leaderUserData.data) {
                         const leaderUser = leaderUserData.data
+                        const leaderCountry = leaderUser.country || ''
+                        const leaderFlag = getCountryFlagByName(leaderCountry)
+
+                        // Дополняем текущего лидера страной и флагом
+                        setCurrentLeader((prev) =>
+                          prev && prev.userId === leaderBid.user_id
+                            ? { ...prev, country: leaderCountry, countryFlag: leaderFlag }
+                            : prev
+                        )
+
                         // Показываем флаг и номер нового лидера в таймере на 3 секунды
                         setTimerBidInfo({
-                          country: leaderUser.country || '',
+                          country: leaderCountry,
                           userIdNumber: leaderUser.user_id_number || leaderBid.user_id
                         })
                         
@@ -2556,7 +2583,12 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                         <div className="auction-leader-card auction-leader-card--exiting">
                           <div className="auction-leader-label">Лидер аукциона</div>
                           <div className="auction-leader-name">
-                            {previousLeader.userIdNumber || previousLeader.userId || previousLeader.id || 'Неизвестно'}
+                            {previousLeader.countryFlag && (
+                              <span className="auction-leader-country-flag">{previousLeader.countryFlag}</span>
+                            )}
+                            <span className="auction-leader-id">
+                              {previousLeader.userIdNumber || previousLeader.userId || previousLeader.id || 'Неизвестно'}
+                            </span>
                           </div>
                           <div className="auction-leader-bid">
                             Ставка: {displayProperty.currency === 'USD' ? '$' : displayProperty.currency === 'EUR' ? '€' : displayProperty.currency === 'BYN' ? 'Br' : ''}
@@ -2569,7 +2601,12 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                         <div className={`auction-leader-card ${isLeaderChanging ? 'auction-leader-card--entering' : ''}`}>
                           <div className="auction-leader-label">Лидер аукциона</div>
                           <div className="auction-leader-name">
-                            {currentLeader.userIdNumber || currentLeader.userId || currentLeader.id}
+                            {currentLeader.countryFlag && (
+                              <span className="auction-leader-country-flag">{currentLeader.countryFlag}</span>
+                            )}
+                            <span className="auction-leader-id">
+                              {currentLeader.userIdNumber || currentLeader.userId || currentLeader.id}
+                            </span>
                           </div>
                           <div className="auction-leader-bid">
                             Ставка: {displayProperty.currency === 'USD' ? '$' : displayProperty.currency === 'EUR' ? '€' : displayProperty.currency === 'BYN' ? 'Br' : ''}
@@ -2610,7 +2647,12 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                         <div className="auction-leader-card auction-leader-card--exiting">
                           <div className="auction-leader-label">Лидер аукциона</div>
                           <div className="auction-leader-name">
-                            {previousLeader.userIdNumber || previousLeader.userId || previousLeader.id || 'Неизвестно'}
+                            {previousLeader.countryFlag && (
+                              <span className="auction-leader-country-flag">{previousLeader.countryFlag}</span>
+                            )}
+                            <span className="auction-leader-id">
+                              {previousLeader.userIdNumber || previousLeader.userId || previousLeader.id || 'Неизвестно'}
+                            </span>
                           </div>
                           <div className="auction-leader-bid">
                             Ставка: {displayProperty.currency === 'USD' ? '$' : displayProperty.currency === 'EUR' ? '€' : displayProperty.currency === 'BYN' ? 'Br' : ''}
@@ -2623,7 +2665,12 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                         <div className={`auction-leader-card ${isLeaderChanging ? 'auction-leader-card--entering' : ''}`}>
                           <div className="auction-leader-label">Лидер аукциона</div>
                           <div className="auction-leader-name">
-                            {currentLeader.userIdNumber || currentLeader.userId || currentLeader.id}
+                            {currentLeader.countryFlag && (
+                              <span className="auction-leader-country-flag">{currentLeader.countryFlag}</span>
+                            )}
+                            <span className="auction-leader-id">
+                              {currentLeader.userIdNumber || currentLeader.userId || currentLeader.id}
+                            </span>
                           </div>
                           <div className="auction-leader-bid">
                             Ставка: {displayProperty.currency === 'USD' ? '$' : displayProperty.currency === 'EUR' ? '€' : displayProperty.currency === 'BYN' ? 'Br' : ''}
@@ -2651,7 +2698,12 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                     <div className="auction-leader-card">
                       <div className="auction-leader-label">Текущий лидер</div>
                       <div className="auction-leader-name">
-                        {currentLeader.userIdNumber || currentLeader.userId || currentLeader.id}
+                        {currentLeader.countryFlag && (
+                          <span className="auction-leader-country-flag">{currentLeader.countryFlag}</span>
+                        )}
+                        <span className="auction-leader-id">
+                          {currentLeader.userIdNumber || currentLeader.userId || currentLeader.id}
+                        </span>
                       </div>
                       <div className="auction-leader-bid">
                         Ставка: {displayProperty.currency === 'USD' ? '$' : displayProperty.currency === 'EUR' ? '€' : displayProperty.currency === 'BYN' ? 'Br' : ''}
@@ -2660,26 +2712,35 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                     </div>
                   )}
 
-                  <div className="property-detail-sidebar__current-bid">
-                    <span className="current-bid-label">
-                      {currentBid !== null && currentBid !== (isAuctionProperty ? displayProperty.auction_starting_price : displayProperty.price)
-                        ? 'Текущая максимальная ставка:'
-                        : isAuctionProperty 
-                          ? 'Стартовая сумма ставки:'
-                          : 'Цена объекта:'}
-                    </span>
-                    <div className={`current-bid-value-wrapper ${priceAnimation ? 'current-bid-value-wrapper--animated' : ''}`}>
-                      <span className="current-bid-value">
-                        {displayProperty.currency === 'USD' ? '$' : displayProperty.currency === 'EUR' ? '€' : displayProperty.currency === 'BYN' ? 'Br' : ''}
-                        {(currentBid !== null ? currentBid : (isAuctionProperty ? (displayProperty.auction_starting_price || 0) : (displayProperty.price || 0))).toLocaleString('ru-RU')}
+                  {/* Блок с текущей/стартовой ценой.
+                      Для аукционных объектов, когда уже есть ставка и показывается карточка лидера,
+                      скрываем этот блок, чтобы не дублировать сумму. */}
+                  {!(
+                    isAuctionProperty &&
+                    currentBid !== null &&
+                    currentBid !== (displayProperty.auction_starting_price || 0)
+                  ) && (
+                    <div className="property-detail-sidebar__current-bid">
+                      <span className="current-bid-label">
+                        {currentBid !== null && currentBid !== (isAuctionProperty ? displayProperty.auction_starting_price : displayProperty.price)
+                          ? 'Текущая максимальная ставка:'
+                          : isAuctionProperty 
+                            ? 'Стартовая сумма ставки:'
+                            : 'Цена объекта:'}
                       </span>
-                      {priceAnimation && (
-                        <span className="current-bid-arrow">
-                          <FiArrowUp size={20} />
+                      <div className={`current-bid-value-wrapper ${priceAnimation ? 'current-bid-value-wrapper--animated' : ''}`}>
+                        <span className="current-bid-value">
+                          {displayProperty.currency === 'USD' ? '$' : displayProperty.currency === 'EUR' ? '€' : displayProperty.currency === 'BYN' ? 'Br' : ''}
+                          {(currentBid !== null ? currentBid : (isAuctionProperty ? (displayProperty.auction_starting_price || 0) : (displayProperty.price || 0))).toLocaleString('ru-RU')}
                         </span>
-                      )}
+                        {priceAnimation && (
+                          <span className="current-bid-arrow">
+                            <FiArrowUp size={20} />
+                          </span>
+                        )}
+                      </div>
                     </div>
-                  </div>
+                  )}
 
                   {/* Функционал ставки - скрываем когда таймер истек (только для аукционов) */}
                   {(!isAuctionProperty || !timerExpired) && (
