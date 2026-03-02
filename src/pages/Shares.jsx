@@ -32,6 +32,19 @@ const DEMO_SHARE_OBJECTS = [
     area: 95,
     rooms: 3,
   },
+  {
+    id: 'share-demo-3',
+    title: 'Студия в историческом центре',
+    location: 'Вена, 1-й район',
+    image: 'https://images.unsplash.com/photo-1502672023488-70e25813eb80?auto=format&fit=crop&w=800&q=80',
+    totalPrice: 180000,
+    pricePerShare: 9000,
+    totalShares: 20,
+    sharesSold: 20,
+    myShares: 0,
+    area: 42,
+    rooms: 1,
+  },
 ]
 
 const Shares = () => {
@@ -57,18 +70,22 @@ const Shares = () => {
       <main className="shares-container">
         <div className="shares-intro">
           <div className="shares-intro__icon">
-            <FiPieChart size={32} />
+            <FiPieChart size={28} />
           </div>
-          <h1 className="shares-intro__title">Доли в недвижимости</h1>
-          <p className="shares-intro__text">
-            Доля — это часть объекта недвижимости, которую можно купить по фиксированной цене за одну долю.
-            Объект делится на равные доли: вы покупаете одну или несколько долей и становитесь совладельцем.
-            Доход от аренды или продажи распределяется между всеми владельцами долей пропорционально.
-          </p>
-          <p className="shares-intro__text">
-            Чтобы купить доли: выберите объект ниже, откройте карточку и нажмите «Купить долю» — можно указать
-            количество долей (1, 2, 3 и т.д.). Оплата производится за выбранное количество по цене за одну долю.
-          </p>
+          <div className="shares-intro__body">
+            <span className="shares-intro__label">Долевая собственность</span>
+            <h1 className="shares-intro__title">Доли в недвижимости</h1>
+            <p className="shares-intro__lead">
+              Покупайте часть объекта по фиксированной цене за долю и получайте доход пропорционально своей доле.
+            </p>
+            <p className="shares-intro__text">
+              Объект делится на равные доли: вы покупаете одну или несколько долей и становитесь совладельцем.
+              Доход от аренды или продажи распределяется между всеми владельцами пропорционально.
+            </p>
+            <p className="shares-intro__text shares-intro__text--muted">
+              Выберите объект ниже → откройте карточку → нажмите «Купить долю» и укажите количество. Оплата по цене за одну долю.
+            </p>
+          </div>
         </div>
 
         <div className="shares-search-bar">
@@ -98,19 +115,36 @@ const Shares = () => {
               <p>По вашему запросу ничего не найдено.</p>
             </div>
           ) : (
-            filtered.map((obj) => (
+            filtered.map((obj) => {
+              const soldPercent = Math.round((obj.sharesSold / obj.totalShares) * 100)
+              const isSoldOut = obj.sharesSold >= obj.totalShares
+              return (
               <article
                 key={obj.id}
-                className="share-card"
+                className={`share-card ${isSoldOut ? 'share-card--sold-out' : ''}`}
                 onClick={() => navigate(`/shares/${obj.id}`, { state: { shareObject: obj } })}
               >
-                <div className="share-card__badge">Доля</div>
+                <div className="share-card__badge">
+                  {isSoldOut ? 'Sold out' : 'Доля'}
+                </div>
                 <div className="share-card__image-wrap">
                   <img
                     src={obj.image}
                     alt={obj.title}
                     className="share-card__image"
                   />
+                  <div
+                    className="share-card__sold-overlay"
+                    style={{ height: `${soldPercent}%` }}
+                    aria-hidden
+                  >
+                    {!isSoldOut && soldPercent > 0 && (
+                      <span className="share-card__sold-percent">{soldPercent}% продано</span>
+                    )}
+                  </div>
+                  {isSoldOut && (
+                    <div className="share-card__sold-out-label">Sold out</div>
+                  )}
                 </div>
                 <div className="share-card__content">
                   <h2 className="share-card__title">{obj.title}</h2>
@@ -130,12 +164,13 @@ const Shares = () => {
                   </div>
                   <div className="share-card__footer">
                     <span className="share-card__sold">
-                      Продано долей: {obj.sharesSold} из {obj.totalShares}
+                      {isSoldOut ? 'Все доли проданы' : `Продано долей: ${obj.sharesSold} из ${obj.totalShares}`}
                     </span>
                   </div>
                 </div>
               </article>
-            ))
+              )
+            })
           )}
         </div>
       </main>

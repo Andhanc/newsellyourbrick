@@ -33,6 +33,20 @@ const DEMO_SHARE_OBJECTS = [
     area: 95,
     rooms: 3,
   },
+  {
+    id: 'share-demo-3',
+    title: 'Студия в историческом центре',
+    location: 'Вена, 1-й район',
+    description: 'Компактная студия в самом центре Вены. Полная меблировка, вид во двор.',
+    image: 'https://images.unsplash.com/photo-1502672023488-70e25813eb80?auto=format&fit=crop&w=800&q=80',
+    totalPrice: 180000,
+    pricePerShare: 9000,
+    totalShares: 20,
+    sharesSold: 20,
+    myShares: 0,
+    area: 42,
+    rooms: 1,
+  },
 ]
 
 const ShareDetailPage = () => {
@@ -66,6 +80,7 @@ const ShareDetailPage = () => {
   const myShares = shareObject.myShares || 0
   const availableToBuy = totalShares - sharesSold
   const othersSold = sharesSold - myShares
+  const isSoldOut = sharesSold >= totalShares
 
   // Превью при выборе количества: как будет выглядеть распределение после покупки
   const previewMyShares = myShares + Math.min(buyCount, availableToBuy)
@@ -92,7 +107,7 @@ const ShareDetailPage = () => {
   }
 
   return (
-    <div className="share-detail-page">
+    <div className={`share-detail-page ${isSoldOut ? 'share-detail-page--sold-out' : ''}`}>
       <Header />
       <div className="share-detail-page__bg" />
       <div className="share-detail-page__container">
@@ -104,7 +119,9 @@ const ShareDetailPage = () => {
           <FiArrowLeft size={20} /> Назад к долевым объектам
         </button>
 
-        <div className="share-detail__badge">Доля</div>
+        <div className={`share-detail__badge ${isSoldOut ? 'share-detail__badge--sold-out' : ''}`}>
+          {isSoldOut ? 'Sold out' : 'Доля'}
+        </div>
 
         <div className="share-detail__layout">
           {/* Левая колонка — фото и информация об объекте */}
@@ -112,6 +129,7 @@ const ShareDetailPage = () => {
             <div className="share-detail__hero">
               <div className="share-detail__image-wrap">
                 <img src={shareObject.image} alt={shareObject.title} className="share-detail__image" />
+                {isSoldOut && <div className="share-detail__hero-sold-overlay" aria-hidden />}
               </div>
             </div>
             <h1 className="share-detail__title">{shareObject.title}</h1>
@@ -134,84 +152,111 @@ const ShareDetailPage = () => {
             </div>
           </div>
 
-          {/* Правая колонка — график и покупка */}
+          {/* Правая колонка — график и покупка или блок Sold out */}
           <div className="share-detail__sidebar">
-            <div className="share-detail__chart-section">
-              <h3 className="share-detail__chart-title">Распределение долей</h3>
-              {buyCount > 0 && availableToBuy > 0 && (
-                <p className="share-detail__chart-preview-hint">
-                  Превью: как будет после покупки {buyCount} {buyCount === 1 ? 'доли' : 'долей'}
+            {isSoldOut ? (
+              <div className="share-detail__sold-out-block">
+                <div className="share-detail__sold-out-icon" aria-hidden>
+                  <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                    <polyline points="22 4 12 14.01 9 11.01" />
+                  </svg>
+                </div>
+                <h3 className="share-detail__sold-out-title">Все доли проданы</h3>
+                <p className="share-detail__sold-out-text">
+                  Этот объект полностью выкуплен. Все {totalShares} долей находятся у совладельцев.
                 </p>
-              )}
-              <div className="share-detail__chart-wrap">
-                <div
-                  className="share-detail__pie"
-                  style={{
-                    background: `conic-gradient(
-                      #6b7280 0% ${pctOthers}%,
-                      #0ABAB5 ${pctOthers}% ${pctOthers + pctMyShares}%,
-                      #e5e7eb ${pctOthers + pctMyShares}% 100%
-                    )`,
-                  }}
-                />
-                <div className="share-detail__pie-center">
-                  <span className="share-detail__pie-value">{buyCount > 0 && availableToBuy > 0 ? previewSold : sharesSold}</span>
-                  <span className="share-detail__pie-label">из {totalShares}</span>
+                <p className="share-detail__sold-out-hint">
+                  Следите за новыми объектами — они появляются регулярно.
+                </p>
+                <button
+                  type="button"
+                  className="share-detail__sold-out-btn"
+                  onClick={() => navigate('/shares')}
+                >
+                  Смотреть другие объекты
+                </button>
+              </div>
+            ) : (
+              <>
+                <div className="share-detail__chart-section">
+                  <h3 className="share-detail__chart-title">Распределение долей</h3>
                   {buyCount > 0 && availableToBuy > 0 && (
-                    <span className="share-detail__pie-sublabel">после покупки</span>
+                    <p className="share-detail__chart-preview-hint">
+                      Превью: как будет после покупки {buyCount} {buyCount === 1 ? 'доли' : 'долей'}
+                    </p>
                   )}
-                </div>
-              </div>
-              <div className="share-detail__legend">
-                <div className="share-detail__legend-item share-detail__legend-item--gray">
-                  <span className="share-detail__legend-dot" /> Можно купить: {buyCount > 0 && availableToBuy > 0 ? previewAvailable : availableToBuy}
-                </div>
-                <div className="share-detail__legend-item share-detail__legend-item--teal">
-                  <span className="share-detail__legend-dot" /> Ваши доли: {buyCount > 0 && availableToBuy > 0 ? previewMyShares : myShares}
-                </div>
-                {othersSold > 0 && (
-                  <div className="share-detail__legend-item share-detail__legend-item--dark">
-                    <span className="share-detail__legend-dot" /> У других: {othersSold}
+                  <div className="share-detail__chart-wrap">
+                    <div
+                      className="share-detail__pie"
+                      style={{
+                        background: `conic-gradient(
+                          #6b7280 0% ${pctOthers}%,
+                          #0ABAB5 ${pctOthers}% ${pctOthers + pctMyShares}%,
+                          #e5e7eb ${pctOthers + pctMyShares}% 100%
+                        )`,
+                      }}
+                    />
+                    <div className="share-detail__pie-center">
+                      <span className="share-detail__pie-value">{buyCount > 0 && availableToBuy > 0 ? previewSold : sharesSold}</span>
+                      <span className="share-detail__pie-label">из {totalShares}</span>
+                      {buyCount > 0 && availableToBuy > 0 && (
+                        <span className="share-detail__pie-sublabel">после покупки</span>
+                      )}
+                    </div>
                   </div>
-                )}
-              </div>
-            </div>
+                  <div className="share-detail__legend">
+                    <div className="share-detail__legend-item share-detail__legend-item--gray">
+                      <span className="share-detail__legend-dot" /> Можно купить: {buyCount > 0 && availableToBuy > 0 ? previewAvailable : availableToBuy}
+                    </div>
+                    <div className="share-detail__legend-item share-detail__legend-item--teal">
+                      <span className="share-detail__legend-dot" /> Ваши доли: {buyCount > 0 && availableToBuy > 0 ? previewMyShares : myShares}
+                    </div>
+                    {othersSold > 0 && (
+                      <div className="share-detail__legend-item share-detail__legend-item--dark">
+                        <span className="share-detail__legend-dot" /> У других: {othersSold}
+                      </div>
+                    )}
+                  </div>
+                </div>
 
-            <div className="share-detail__buy-block">
-              <div className="share-detail__buy-controls">
-                <label className="share-detail__buy-label">Количество долей:</label>
-                <div className="share-detail__buy-stepper">
+                <div className="share-detail__buy-block">
+                  <div className="share-detail__buy-controls">
+                    <label className="share-detail__buy-label">Количество долей:</label>
+                    <div className="share-detail__buy-stepper">
+                      <button
+                        type="button"
+                        className="share-detail__stepper-btn"
+                        onClick={() => setBuyCount((c) => Math.max(1, c - 1))}
+                        disabled={buyCount <= 1}
+                      >
+                        −
+                      </button>
+                      <span className="share-detail__buy-count">{buyCount}</span>
+                      <button
+                        type="button"
+                        className="share-detail__stepper-btn"
+                        onClick={() => setBuyCount((c) => Math.min(availableToBuy, c + 1))}
+                        disabled={buyCount >= availableToBuy}
+                      >
+                        +
+                      </button>
+                    </div>
+                    <span className="share-detail__buy-hint">
+                      Итого: {formatPrice(shareObject.pricePerShare * buyCount)}
+                    </span>
+                  </div>
                   <button
                     type="button"
-                    className="share-detail__stepper-btn"
-                    onClick={() => setBuyCount((c) => Math.max(1, c - 1))}
-                    disabled={buyCount <= 1}
+                    className="share-detail__buy-btn"
+                    onClick={handleBuyShares}
+                    disabled={availableToBuy <= 0}
                   >
-                    −
-                  </button>
-                  <span className="share-detail__buy-count">{buyCount}</span>
-                  <button
-                    type="button"
-                    className="share-detail__stepper-btn"
-                    onClick={() => setBuyCount((c) => Math.min(availableToBuy, c + 1))}
-                    disabled={buyCount >= availableToBuy}
-                  >
-                    +
+                    <FiPlus size={22} /> Купить долю{buyCount > 1 ? ` (${buyCount})` : ''}
                   </button>
                 </div>
-                <span className="share-detail__buy-hint">
-                  Итого: {formatPrice(shareObject.pricePerShare * buyCount)}
-                </span>
-              </div>
-              <button
-                type="button"
-                className="share-detail__buy-btn"
-                onClick={handleBuyShares}
-                disabled={availableToBuy <= 0}
-              >
-                <FiPlus size={22} /> Купить долю{buyCount > 1 ? ` (${buyCount})` : ''}
-              </button>
-            </div>
+              </>
+            )}
           </div>
         </div>
       </div>

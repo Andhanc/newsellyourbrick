@@ -1,9 +1,9 @@
-/* Shares list page — улучшенные стили */
+/* Shares list page — светлая тема */
 .shares-page {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background: #0f1419;
+  background: #f1f5f9;
   position: relative;
 }
 
@@ -11,69 +11,121 @@
   position: fixed;
   inset: 0;
   background:
-    radial-gradient(ellipse 100% 70% at 50% -10%, rgba(10, 186, 181, 0.15) 0%, transparent 45%),
-    radial-gradient(ellipse 70% 50% at 90% 30%, rgba(120, 80, 180, 0.1) 0%, transparent 40%),
-    linear-gradient(180deg, #0f1419 0%, #151c24 40%, #0f1419 100%);
+    radial-gradient(ellipse 100% 70% at 50% -10%, rgba(10, 186, 181, 0.12) 0%, transparent 45%),
+    radial-gradient(ellipse 70% 50% at 90% 30%, rgba(120, 80, 180, 0.06) 0%, transparent 40%),
+    linear-gradient(180deg, #f1f5f9 0%, #e2e8f0 40%, #f1f5f9 100%);
   z-index: 0;
   pointer-events: none;
 }
 
 .shares-container {
   flex: 1;
-  max-width: 1000px;
+  width: 100%;
+  max-width: 1320px;
   margin: 0 auto 56px;
-  padding: 32px 24px 64px;
+  padding: 24px 16px 64px;
   position: relative;
   z-index: 1;
+  box-sizing: border-box;
 }
 
-/* Intro */
+/* Intro — иконка слева, текст по левому краю */
 .shares-intro {
-  text-align: center;
+  display: flex;
+  align-items: flex-start;
+  gap: 28px;
+  text-align: left;
   margin-bottom: 40px;
-  padding: 36px 28px;
-  background: rgba(26, 31, 38, 0.75);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-radius: 24px;
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 36px 40px 40px;
+  background: linear-gradient(165deg, #ffffff 0%, #f8fafc 100%);
+  border-radius: 28px;
+  border: 1px solid rgba(10, 186, 181, 0.15);
   box-shadow:
-    0 24px 48px -16px rgba(0, 0, 0, 0.35),
-    0 0 0 1px rgba(0, 0, 0, 0.2);
+    0 0 0 1px rgba(0, 0, 0, 0.04),
+    0 4px 6px -2px rgba(0, 0, 0, 0.04),
+    0 24px 48px -16px rgba(10, 186, 181, 0.12);
+  position: relative;
+  overflow: hidden;
+}
+
+.shares-intro::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #0ABAB5 0%, #06d6a0 50%, #0ABAB5 100%);
+  background-size: 200% 100%;
+  opacity: 0.9;
 }
 
 .shares-intro__icon {
-  width: 72px;
-  height: 72px;
-  margin: 0 auto 20px;
-  border-radius: 22px;
-  background: linear-gradient(135deg, #0ABAB5 0%, #06a39e 100%);
+  flex-shrink: 0;
+  width: 64px;
+  height: 64px;
+  border-radius: 20px;
+  background: linear-gradient(145deg, #0ABAB5 0%, #06a39e 100%);
   color: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
   box-shadow:
-    0 8px 32px rgba(10, 186, 181, 0.4),
-    0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+    0 8px 24px rgba(10, 186, 181, 0.35),
+    0 0 0 1px rgba(255, 255, 255, 0.25) inset;
+}
+
+.shares-intro__body {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+}
+
+.shares-intro__label {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: #0d9488;
+  margin-bottom: 12px;
+  padding: 6px 14px;
+  background: rgba(10, 186, 181, 0.1);
+  border-radius: 100px;
+  border: 1px solid rgba(10, 186, 181, 0.2);
 }
 
 .shares-intro__title {
-  font-size: 28px;
+  font-size: 30px;
   font-weight: 800;
-  color: #f1f5f9;
-  margin: 0 0 20px;
-  letter-spacing: -0.03em;
-  line-height: 1.2;
+  color: #0f172a;
+  margin: 0 0 12px;
+  letter-spacing: -0.04em;
+  line-height: 1.25;
+}
+
+.shares-intro__lead {
+  font-size: 17px;
+  color: #334155;
+  line-height: 1.6;
+  margin: 0 0 16px;
+  font-weight: 500;
 }
 
 .shares-intro__text {
   font-size: 15px;
-  color: #94a3b8;
+  color: #475569;
   line-height: 1.7;
-  margin: 0 0 14px;
-  max-width: 560px;
-  margin-left: auto;
-  margin-right: auto;
+  margin: 0 0 10px;
+}
+
+.shares-intro__text--muted {
+  font-size: 14px;
+  color: #64748b;
+  margin-bottom: 0;
+  padding-top: 14px;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+  margin-top: 2px;
 }
 
 .shares-intro__text:last-of-type {
@@ -99,23 +151,23 @@
 .shares-search-bar__input {
   width: 100%;
   padding: 16px 48px 16px 52px;
-  border: 2px solid rgba(255, 255, 255, 0.08);
+  border: 2px solid rgba(0, 0, 0, 0.08);
   border-radius: 16px;
   font-size: 16px;
-  background: rgba(26, 31, 38, 0.8);
-  color: #f1f5f9;
+  background: #fff;
+  color: #0f172a;
   box-sizing: border-box;
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 .shares-search-bar__input::placeholder {
-  color: #64748b;
+  color: #94a3b8;
 }
 
 .shares-search-bar__input:focus {
   outline: none;
-  border-color: rgba(10, 186, 181, 0.5);
-  box-shadow: 0 0 0 4px rgba(10, 186, 181, 0.12);
+  border-color: rgba(10, 186, 181, 0.6);
+  box-shadow: 0 0 0 4px rgba(10, 186, 181, 0.15);
 }
 
 .shares-search-bar:focus-within .shares-search-bar__icon {
@@ -125,14 +177,14 @@
 .shares-search-bar__clear {
   position: absolute;
   right: 16px;
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(0, 0, 0, 0.06);
   border: none;
   width: 32px;
   height: 32px;
   border-radius: 10px;
   font-size: 20px;
   line-height: 1;
-  color: #94a3b8;
+  color: #64748b;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -141,15 +193,15 @@
 }
 
 .shares-search-bar__clear:hover {
-  background: rgba(255, 255, 255, 0.12);
-  color: #f1f5f9;
+  background: rgba(0, 0, 0, 0.1);
+  color: #0f172a;
 }
 
-/* Grid */
+/* Grid — 3 карточки в ряд на десктопе */
 .shares-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 28px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
 }
 
 .shares-no-results {
@@ -158,34 +210,34 @@
   padding: 64px 24px;
   color: #64748b;
   font-size: 16px;
-  background: rgba(26, 31, 38, 0.5);
+  background: rgba(255, 255, 255, 0.8);
   border-radius: 20px;
-  border: 1px dashed rgba(255, 255, 255, 0.08);
+  border: 1px dashed rgba(0, 0, 0, 0.12);
 }
 
 /* Cards */
 .share-card {
-  background: rgba(26, 31, 38, 0.85);
+  background: #fff;
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border-radius: 20px;
   overflow: hidden;
   cursor: pointer;
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s, border-color 0.3s;
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(0, 0, 0, 0.06);
   box-shadow:
-    0 4px 24px -4px rgba(0, 0, 0, 0.35),
-    0 0 0 1px rgba(0, 0, 0, 0.15);
+    0 4px 24px -4px rgba(0, 0, 0, 0.08),
+    0 0 0 1px rgba(0, 0, 0, 0.04);
   position: relative;
 }
 
 .share-card:hover {
   transform: translateY(-6px);
   box-shadow:
-    0 24px 48px -12px rgba(0, 0, 0, 0.5),
-    0 0 0 1px rgba(10, 186, 181, 0.25),
-    0 0 60px -15px rgba(10, 186, 181, 0.2);
-  border-color: rgba(10, 186, 181, 0.3);
+    0 24px 48px -12px rgba(0, 0, 0, 0.12),
+    0 0 0 1px rgba(10, 186, 181, 0.3),
+    0 0 60px -15px rgba(10, 186, 181, 0.15);
+  border-color: rgba(10, 186, 181, 0.35);
 }
 
 .share-card__badge {
@@ -205,9 +257,10 @@
 }
 
 .share-card__image-wrap {
+  position: relative;
   aspect-ratio: 16 / 10;
   overflow: hidden;
-  background: #1a1f26;
+  background: #e2e8f0;
 }
 
 .share-card__image {
@@ -221,6 +274,68 @@
   transform: scale(1.04);
 }
 
+/* Затемнение по проценту проданных долей (снизу вверх) */
+.share-card__sold-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.75) 0%, rgba(0, 0, 0, 0.4) 60%, transparent 100%);
+  pointer-events: none;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 10px;
+  min-height: 28px;
+  transition: height 0.3s ease;
+}
+
+.share-card__sold-percent {
+  font-size: 12px;
+  font-weight: 700;
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  letter-spacing: 0.02em;
+}
+
+/* Полностью продан — Sold out */
+.share-card--sold-out .share-card__image-wrap::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  pointer-events: none;
+}
+
+.share-card__sold-out-label {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: 0.2em;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.6);
+  pointer-events: none;
+}
+
+.share-card--sold-out {
+  cursor: pointer;
+  opacity: 0.92;
+}
+
+.share-card--sold-out:hover {
+  transform: translateY(-6px);
+}
+
+.share-card--sold-out .share-card__badge {
+  background: linear-gradient(135deg, #64748b 0%, #475569 100%);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+}
+
 .share-card__content {
   padding: 22px 20px;
 }
@@ -228,7 +343,7 @@
 .share-card__title {
   font-size: 18px;
   font-weight: 700;
-  color: #f1f5f9;
+  color: #0f172a;
   margin: 0 0 8px;
   line-height: 1.3;
   letter-spacing: -0.01em;
@@ -236,7 +351,7 @@
 
 .share-card__location {
   font-size: 14px;
-  color: #94a3b8;
+  color: #475569;
   margin: 0 0 10px;
 }
 
@@ -252,20 +367,20 @@
   gap: 8px;
   margin-bottom: 14px;
   padding: 16px 18px;
-  background: linear-gradient(135deg, rgba(10, 186, 181, 0.12) 0%, rgba(6, 163, 158, 0.05) 100%);
+  background: linear-gradient(135deg, rgba(10, 186, 181, 0.1) 0%, rgba(6, 163, 158, 0.05) 100%);
   border-radius: 14px;
-  border: 1px solid rgba(10, 186, 181, 0.2);
+  border: 1px solid rgba(10, 186, 181, 0.25);
 }
 
 .share-card__price-total,
 .share-card__price-per-share {
   font-size: 13px;
-  color: #94a3b8;
+  color: #475569;
 }
 
 .share-card__price-total strong,
 .share-card__price-per-share strong {
-  color: #5eead4;
+  color: #0d9488;
   font-weight: 700;
 }
 
@@ -276,23 +391,46 @@
 }
 
 .share-card__sold {
-  color: #94a3b8;
+  color: #475569;
+}
+
+@media (max-width: 1024px) {
+  .shares-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+  }
 }
 
 @media (max-width: 640px) {
   .shares-container {
-    padding: 24px 16px 48px;
+    padding: 20px 12px 48px;
   }
   .shares-intro {
-    padding: 28px 20px;
+    flex-direction: column;
+    padding: 28px 20px 32px;
     margin-bottom: 32px;
+    border-radius: 22px;
+    gap: 20px;
+  }
+  .shares-intro__icon {
+    align-self: flex-start;
+  }
+  .shares-intro__label {
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    padding: 5px 12px;
+    margin-bottom: 10px;
   }
   .shares-intro__title {
     font-size: 24px;
   }
+  .shares-intro__lead {
+    font-size: 15px;
+    margin-bottom: 14px;
+  }
   .shares-grid {
     grid-template-columns: 1fr;
-    gap: 24px;
+    gap: 20px;
   }
   .shares-search-bar__input {
     padding: 14px 44px 14px 48px;
