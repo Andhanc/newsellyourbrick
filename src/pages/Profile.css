@@ -37,6 +37,13 @@
   background-attachment: fixed;
 }
 
+/* По умолчанию кнопку выхода в верхней части сайдбара скрываем на десктопе (оставляем только нижнюю) */
+@media (min-width: 769px) {
+  .profile-page .header-logout-button {
+    display: none;
+  }
+}
+
 .profile-container {
   display: flex;
   flex: 1;

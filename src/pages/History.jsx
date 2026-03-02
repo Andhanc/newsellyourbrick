@@ -5,6 +5,7 @@ import { getUserData, isAuthenticated, logout } from '../services/authService'
 import VerificationToast from '../components/VerificationToast'
 import WonPropertyCard from '../components/WonPropertyCard'
 import './History.css'
+import './Profile.css'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
 
@@ -562,6 +563,54 @@ const History = () => {
               <span>Понравилось</span>
             </a>
           </nav>
+          <div className="sidebar-footer">
+            <div className="language-selector">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.5" />
+                <path
+                  d="M8 1C9.5 3 10.5 5.5 10.5 8C10.5 10.5 9.5 13 8 15M8 1C6.5 3 5.5 5.5 5.5 8C5.5 10.5 6.5 13 8 15M1 8H15"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                />
+              </svg>
+              <span>Русский</span>
+            </div>
+            <a href="#" className="help-link">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.5" />
+                <path d="M8 5V8M8 11H8.01" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+              </svg>
+              <span>Справка</span>
+            </a>
+            <a href="#" className="help-link">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" strokeWidth="1.5" />
+                <path d="M6 6H10M6 10H10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+              </svg>
+              <span>Яндекс ID для сайта</span>
+            </a>
+            <div className="copyright">© 2001-2025 Яндекс</div>
+            <button
+              type="button"
+              className="logout-button"
+              onClick={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                handleLogout()
+              }}
+            >
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                <path
+                  d="M7 2H3C2.44772 2 2 2.44772 2 3V15C2 15.5523 2.44772 16 3 16H7M12 13L15 10M15 10L12 7M15 10H6"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+              <span>Выйти</span>
+            </button>
+          </div>
         </aside>
 
         <main className="history-main">
