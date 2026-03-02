@@ -18,7 +18,10 @@ import {
   FiCheck,
   FiFile,
   FiThumbsUp,
-  FiClock
+  FiClock,
+  FiPieChart,
+  FiCreditCard,
+  FiGift
 } from 'react-icons/fi'
 import { PiBuildingApartment, PiBuildings, PiWarehouse } from 'react-icons/pi'
 import { MdBed, MdOutlineBathtub, MdLightbulb } from 'react-icons/md'
@@ -62,6 +65,11 @@ const AddProperty = () => {
   const [showPreview, setShowPreview] = useState(false)
   const [showVerificationModal, setShowVerificationModal] = useState(false)
   const [showCardBindingModal, setShowCardBindingModal] = useState(false)
+  const [showListingFeeModal, setShowListingFeeModal] = useState(false)
+  const [showPromoInputInFeeModal, setShowPromoInputInFeeModal] = useState(false)
+  const [listingFeePromoCode, setListingFeePromoCode] = useState('')
+  const [listingFeePromoError, setListingFeePromoError] = useState(null)
+  const [listingFeePromoLoading, setListingFeePromoLoading] = useState(false)
   const [userId, setUserId] = useState(null)
   const [showSuccessModal, setShowSuccessModal] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -202,7 +210,9 @@ const AddProperty = () => {
     feature24: false,
     feature25: false,
     feature26: false,
-    additionalAmenities: ''
+    additionalAmenities: '',
+    isShareProperty: false,
+    totalShares: ''
   })
 
   // Закрытие выпадающего списка валют при клике вне его
@@ -794,15 +804,19 @@ const AddProperty = () => {
       formDataToSend.append('description', formData.description || '')
       if (formData.price) formDataToSend.append('price', String(formData.price))
       formDataToSend.append('currency', currency)
-      formDataToSend.append('is_auction', '1') // Все объекты всегда аукционные
-      // Всегда отправляем test_drive: если null или undefined, то '0', иначе в зависимости от значения
-      const testDriveValue = (formData.testDrive === true || formData.testDrive === 1) ? '1' : '0'
-      console.log('🔍 Отправка test_drive на сервер:', {
-        formData_testDrive: formData.testDrive,
-        formData_testDrive_type: typeof formData.testDrive,
-        testDriveValue: testDriveValue
-      })
-      formDataToSend.append('test_drive', testDriveValue)
+      // Для доли: без аукциона и тест-драйва
+      const isShare = !!formData.isShareProperty
+      formDataToSend.append('is_share', isShare ? '1' : '0')
+      if (isShare) {
+        formDataToSend.append('is_auction', '0')
+        formDataToSend.append('test_drive', '0')
+        if (formData.totalShares) formDataToSend.append('total_shares', String(formData.totalShares))
+      } else {
+        formDataToSend.append('is_auction', '1')
+        const testDriveValue = (formData.testDrive === true || formData.testDrive === 1) ? '1' : '0'
+        console.log('🔍 Отправка test_drive на сервер:', { formData_testDrive: formData.testDrive, testDriveValue })
+        formDataToSend.append('test_drive', testDriveValue)
+      }
       if (formData.auctionStartDate) formDataToSend.append('auction_start_date', formData.auctionStartDate)
       if (formData.auctionEndDate) formDataToSend.append('auction_end_date', formData.auctionEndDate)
       if (formData.auctionStartingPrice) formDataToSend.append('auction_starting_price', String(formData.auctionStartingPrice))
@@ -1305,7 +1319,9 @@ const AddProperty = () => {
           title: property.title || '',
           description: property.description || '',
           price: property.price ? String(property.price) : '',
-          isAuction: true, // Все объекты всегда аукционные
+          isShareProperty: !!(property.is_shared_ownership === 1 || property.is_shared_ownership === true),
+          totalShares: (property.total_shares != null && property.total_shares !== '') ? String(property.total_shares) : '',
+          isAuction: !(property.is_shared_ownership === 1 || property.is_shared_ownership === true),
           auctionStartDate: property.auction_start_date || '',
           auctionEndDate: property.auction_end_date || '',
           auctionStartingPrice: property.auction_starting_price ? String(property.auction_starting_price) : '',
@@ -1873,22 +1889,20 @@ const AddProperty = () => {
     }
   }
 
-  // Обработчик выбора типа недвижимости
-  const handlePropertyTypeSelect = (type) => {
-    // Очищаем поля rooms и bedrooms при смене типа, чтобы избежать путаницы
-    // Для квартир/апартаментов используем rooms, для домов/вилл - bedrooms
+  // Обработчик выбора типа недвижимости (isShare = true при выборе типа для долевого объекта)
+  const handlePropertyTypeSelect = (type, isShare = false) => {
     const isApartmentOrCommercial = type === 'apartment' || type === 'commercial'
     const isHouseOrVilla = type === 'house' || type === 'villa'
     
     setFormData(prev => ({
       ...prev,
       propertyType: type,
-      // Очищаем bedrooms для квартир/апартаментов
+      isShareProperty: !!isShare,
       bedrooms: isApartmentOrCommercial ? '' : prev.bedrooms,
-      // Очищаем rooms для домов/вилл
       rooms: isHouseOrVilla ? '' : prev.rooms
     }))
-    setCurrentStep('test-drive-question')
+    // Для доли: без тест-драйва и аукциона — сразу к названию
+    setCurrentStep(isShare ? 'property-name' : 'test-drive-question')
   }
 
   // Обработчик ответа на вопрос о тест-драйве
@@ -2844,118 +2858,82 @@ const AddProperty = () => {
 
   // Обработчик перехода к форме после указания цены
   const handlePriceContinue = async () => {
-    // Цена "Купить сейчас" опциональна - не проверяем её
-    // Все объекты всегда аукционные, поэтому проверяем только аукционные поля
-    if (!formData.auctionStartDate || !formData.auctionEndDate) {
-      showNotification('Пожалуйста, укажите период проведения аукциона')
-      return
-    }
-    if (!formData.auctionStartingPrice || formData.auctionStartingPrice <= 0) {
-      showNotification('Пожалуйста, укажите стартовую цену аукциона')
-      return
-    }
-    
-    // Если указана цена "Купить сейчас", проверяем, что стартовая цена меньше
-    if (formData.price && formData.price > 0) {
-      // Проверка: Стартовая сумма ставки должна быть меньше цены "Купить сейчас"
-      // Преобразуем строки в числа, убирая запятые если они есть
-      const startingPriceNum = Number(removeCommas(String(formData.auctionStartingPrice)))
-      const priceNum = Number(removeCommas(String(formData.price)))
-      if (startingPriceNum >= priceNum) {
-        showNotification('Стартовая сумма ставки должна быть меньше цены "Купить сейчас"')
+    if (formData.isShareProperty) {
+      // Для доли: обязательны общая цена и количество долей
+      const priceNum = Number(removeCommas(String(formData.price || '')))
+      const totalSharesNum = parseInt(formData.totalShares, 10)
+      if (!formData.price || priceNum <= 0) {
+        showNotification('Укажите общую стоимость объекта')
         return
       }
-    }
-    
-    // Проверяем статус верификации и привязки карты пользователя
-    let isUserVerified = false
-    let isCardBound = false
-    if (userId) {
-      try {
-        // Используем относительный путь через proxy для лучшей совместимости
-        // Если VITE_API_BASE_URL не установлен, используем '/api' который работает через vite proxy
-        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
-        
-        // Создаем AbortController для таймаута (совместимость с браузерами)
-        const controller = new AbortController()
-        const timeoutId = setTimeout(() => controller.abort(), 5000) // 5 секунд таймаут
-        
-        const verificationResponse = await fetch(`${API_BASE_URL}/users/${userId}/verification-status`, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          signal: controller.signal
-        })
-        
-        clearTimeout(timeoutId)
-        
-        if (verificationResponse.ok) {
-          const verificationData = await verificationResponse.json()
-          if (verificationData.success && verificationData.data) {
-            isUserVerified = verificationData.data.isVerified === true
-            isCardBound = verificationData.data.cardBound === true
-            console.log('✅ Статус верификации получен:', isUserVerified, 'Статус привязки карты:', isCardBound)
-          }
-        } else {
-          console.warn('⚠️ Не удалось получить статус верификации, статус ответа:', verificationResponse.status)
-        }
-      } catch (error) {
-        // Если ошибка подключения, логируем но продолжаем работу
-        if (error.name === 'AbortError') {
-          console.warn('⚠️ Таймаут при проверке статуса верификации. Продолжаем с проверкой localStorage.')
-        } else if (error.message && (error.message.includes('Failed to fetch') || error.message.includes('CONNECTION_REFUSED') || error.message.includes('NetworkError'))) {
-          console.warn('⚠️ Сервер недоступен при проверке статуса верификации. Продолжаем с проверкой localStorage.')
-        } else {
-          console.error('❌ Ошибка при проверке статуса верификации:', error)
-        }
-        // При ошибке считаем что пользователь не верифицирован (безопаснее)
-        // Продолжаем проверку флага verificationSubmitted в localStorage
-      }
-    }
-    
-    // Если пользователь уже верифицирован и карта привязана, отправляем объявление
-    if (isUserVerified && isCardBound) {
-      await handlePublish()
-      // Модальное окно покажется из handlePublish, навигация произойдет при закрытии модального окна
-      return
-    }
-    
-    // Если пользователь верифицирован, но карта не привязана, проверяем localStorage
-    if (isUserVerified && !isCardBound) {
-      const cardBoundLocal = localStorage.getItem('cardBound')
-      if (cardBoundLocal === 'true') {
-        // Если в localStorage есть флаг, но в БД нет, синхронизируем
-        // Отправляем объявление
-        await handlePublish()
+      if (!formData.totalShares || isNaN(totalSharesNum) || totalSharesNum <= 0) {
+        showNotification('Укажите количество долей (целое число больше 0)')
         return
-      } else {
-        // Если карточка не привязана, открываем модальное окно привязки карточки
-        setShowCardBindingModal(true)
-        return
-      }
-    }
-    
-    // Проверяем, была ли верификация отправлена (для первого раза)
-    const verificationData = localStorage.getItem('verificationSubmitted')
-    if (verificationData === 'true') {
-      // Проверяем, была ли привязана карточка
-      const cardBound = localStorage.getItem('cardBound')
-      if (cardBound === 'true') {
-        // Если верификация и привязка карточки завершены, отправляем форму объекта на модерацию
-        const success = await handlePublish()
-        if (success) {
-          // Очищаем флаг верификации (но НЕ очищаем cardBound, чтобы карта считалась привязанной навсегда)
-          localStorage.removeItem('verificationSubmitted')
-          // Модальное окно покажется из handlePublish, навигация произойдет при закрытии модального окна
-        }
-      } else {
-        // Если карточка не привязана, открываем модальное окно привязки карточки
-        setShowCardBindingModal(true)
       }
     } else {
-      // Если верификация еще не отправлена, открываем модальное окно верификации
-      setShowVerificationModal(true)
+      // Цена "Купить сейчас" опциональна; проверяем аукционные поля
+      if (!formData.auctionStartDate || !formData.auctionEndDate) {
+        showNotification('Пожалуйста, укажите период проведения аукциона')
+        return
+      }
+      if (!formData.auctionStartingPrice || formData.auctionStartingPrice <= 0) {
+        showNotification('Пожалуйста, укажите стартовую цену аукциона')
+        return
+      }
+      if (formData.price && formData.price > 0) {
+        const startingPriceNum = Number(removeCommas(String(formData.auctionStartingPrice)))
+        const priceNum = Number(removeCommas(String(formData.price)))
+        if (startingPriceNum >= priceNum) {
+          showNotification('Стартовая сумма ставки должна быть меньше цены "Купить сейчас"')
+          return
+        }
+      }
+    }
+
+    // Показываем модальное окно оплаты публикации (29 € или промокод)
+    setShowListingFeeModal(true)
+    setShowPromoInputInFeeModal(false)
+    setListingFeePromoCode('')
+    setListingFeePromoError(null)
+  }
+
+  const handleApplyListingFeePromo = async () => {
+    const code = (listingFeePromoCode || '').trim()
+    if (!code) {
+      setListingFeePromoError('Введите промокод')
+      return
+    }
+    if (!userId) {
+      setListingFeePromoError('Ошибка: войдите в аккаунт')
+      return
+    }
+    setListingFeePromoError(null)
+    setListingFeePromoLoading(true)
+    try {
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
+      const res = await fetch(`${API_BASE_URL}/bonus-submissions/use-promo`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: userId, promo_code: code }),
+      })
+      const data = await res.json()
+      if (data.success) {
+        setShowListingFeeModal(false)
+        setShowPromoInputInFeeModal(false)
+        setListingFeePromoCode('')
+        setListingFeePromoError(null)
+        await handlePublish()
+      } else {
+        if (data.reason === 'used') {
+          setListingFeePromoError('Этот промокод уже был использован')
+        } else {
+          setListingFeePromoError(data.message || 'Промокод не найден или не подходит')
+        }
+      }
+    } catch (e) {
+      setListingFeePromoError('Ошибка сети. Попробуйте позже.')
+    } finally {
+      setListingFeePromoLoading(false)
     }
   }
 
@@ -3139,16 +3117,18 @@ const AddProperty = () => {
               className="back-btn"
               onClick={() => {
                 if (currentStep === 'test-drive-question') {
-                  // В режиме редактирования тип уже выбран, поэтому возвращаемся на главную
                   if (isEditMode) {
                     navigate('/owner')
                   } else {
                     setCurrentStep('type-selection')
-                    setFormData(prev => ({ ...prev, propertyType: '' }))
+                    setFormData(prev => ({ ...prev, propertyType: '', isShareProperty: false }))
                   }
+                } else if (currentStep === 'share-type-selection') {
+                  setCurrentStep('type-selection')
+                  setFormData(prev => ({ ...prev, propertyType: '', isShareProperty: false }))
                 } else if (currentStep === 'property-name') {
-                  setCurrentStep('test-drive-question')
-                  setFormData(prev => ({ ...prev, testDrive: null }))
+                  setCurrentStep(formData.isShareProperty ? 'share-type-selection' : 'test-drive-question')
+                  if (!formData.isShareProperty) setFormData(prev => ({ ...prev, testDrive: null }))
                 } else if (currentStep === 'location') {
                   setCurrentStep('property-name')
                 } else if (currentStep === 'details') {
@@ -3279,9 +3259,70 @@ const AddProperty = () => {
                   Продолжить
                 </button>
               </div>
+
+              <div 
+                className="property-type-card-large property-type-card-large--share"
+                onClick={() => setCurrentStep('share-type-selection')}
+              >
+                <div className="property-type-card-icon property-type-card-icon--share">
+                  <FiPieChart size={48} />
+                </div>
+                <h3 className="property-type-card-title">Доля</h3>
+                <p className="property-type-card-description">
+                  Долевая собственность: объект делится на доли, покупатели приобретают одну или несколько долей по фиксированной цене. Без аукциона и тест-драйва.
+                </p>
+                <button 
+                  type="button"
+                  className="property-type-card-button"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setCurrentStep('share-type-selection')
+                  }}
+                >
+                  Продолжить
+                </button>
+              </div>
             </div>
 
      
+          </div>
+        ) : currentStep === 'share-type-selection' ? (
+          /* Выбор типа объекта для доли (те же 4 типа) */
+          <div className="property-type-selection-screen">
+            <div className="property-type-selection-header">
+              <h2 className="property-type-selection-title">
+                Выберите тип объекта для долевой собственности
+              </h2>
+              <p className="property-type-selection-subtitle">
+                Дом, квартира, вилла или апартаменты — затем укажете общую цену и количество долей.
+              </p>
+            </div>
+            <div className="property-type-cards-container">
+              <div className="property-type-card-large" onClick={() => handlePropertyTypeSelect('house', true)}>
+                <div className="property-type-card-icon"><FiHome size={48} /></div>
+                <h3 className="property-type-card-title">Дом</h3>
+                <p className="property-type-card-description">Дома, коттеджи, загородные дома.</p>
+                <button type="button" className="property-type-card-button" onClick={(e) => { e.stopPropagation(); handlePropertyTypeSelect('house', true) }}>Продолжить</button>
+              </div>
+              <div className="property-type-card-large" onClick={() => handlePropertyTypeSelect('apartment', true)}>
+                <div className="property-type-card-icon"><PiBuildingApartment size={48} /></div>
+                <h3 className="property-type-card-title">Квартира</h3>
+                <p className="property-type-card-description">Меблированные помещения, вся площадь.</p>
+                <button type="button" className="property-type-card-button" onClick={(e) => { e.stopPropagation(); handlePropertyTypeSelect('apartment', true) }}>Продолжить</button>
+              </div>
+              <div className="property-type-card-large" onClick={() => handlePropertyTypeSelect('villa', true)}>
+                <div className="property-type-card-icon"><PiBuildings size={48} /></div>
+                <h3 className="property-type-card-title">Вилла</h3>
+                <p className="property-type-card-description">Загородные дома с участками.</p>
+                <button type="button" className="property-type-card-button" onClick={(e) => { e.stopPropagation(); handlePropertyTypeSelect('villa', true) }}>Продолжить</button>
+              </div>
+              <div className="property-type-card-large" onClick={() => handlePropertyTypeSelect('commercial', true)}>
+                <div className="property-type-card-icon"><PiWarehouse size={48} /></div>
+                <h3 className="property-type-card-title">Апартаменты</h3>
+                <p className="property-type-card-description">Апартаменты с удобствами.</p>
+                <button type="button" className="property-type-card-button" onClick={(e) => { e.stopPropagation(); handlePropertyTypeSelect('commercial', true) }}>Продолжить</button>
+              </div>
+            </div>
           </div>
         ) : currentStep === 'test-drive-question' ? (
           /* Экран вопроса о тест-драйве */
@@ -5321,17 +5362,65 @@ const AddProperty = () => {
             </div>
           </div>
         ) : currentStep === 'price' ? (
-          /* Экран цены и аукциона */
+          /* Экран цены (и аукциона для обычных объектов; для доли — только цена и доли) */
           <div className="property-price-screen">
             <div className="property-price-main">
               <h2 className="property-price-title">
-                Укажите стоимость
+                {formData.isShareProperty ? 'Стоимость и доли' : 'Укажите стоимость'}
               </h2>
               
-              <p className="property-price-description">
-                Все объекты размещаются на аукционе. Вы можете указать опциональную цену "Купить сейчас" - это цена, за которую вы готовы мгновенно продать объект. Если не укажете, объект будет только на аукционе.
-              </p>
+              {formData.isShareProperty ? (
+                <p className="property-price-description">
+                  Укажите общую стоимость объекта и на сколько долей он делится. Цена за одну долю рассчитается автоматически. Аукцион и тест-драйв для долевых объектов не предусмотрены.
+                </p>
+              ) : (
+                <p className="property-price-description">
+                  Все объекты размещаются на аукционе. Вы можете указать опциональную цену "Купить сейчас" - это цена, за которую вы готовы мгновенно продать объект. Если не укажете, объект будет только на аукционе.
+                </p>
+              )}
 
+              {/* Для доли: общая цена + количество долей + цена за долю */}
+              {formData.isShareProperty && (
+                <>
+                  <div className="price-input-section">
+                    <label className="price-input-label">Общая стоимость объекта</label>
+                    <div className="price-input-wrapper-large">
+                      <div className="currency-selector">
+                        <button type="button" className="currency-button" onClick={() => setShowCurrencyDropdown(showCurrencyDropdown === 'price' ? null : 'price')}>
+                          <span className="currency-symbol">{currencies.find(c => c.code === currency)?.symbol || '$'}</span>
+                          <FiChevronDown className="currency-chevron" size={14} />
+                        </button>
+                        {showCurrencyDropdown === 'price' && (
+                          <div className="currency-dropdown">
+                            {currencies.map((curr) => (
+                              <button key={curr.code} type="button" className={`currency-option ${currency === curr.code ? 'active' : ''}`} onClick={(e) => { e.preventDefault(); e.stopPropagation(); setCurrency(curr.code); setShowCurrencyDropdown(null) }}>
+                                <span className="currency-option-symbol">{curr.symbol}</span>
+                                <span className="currency-option-name">{curr.name}</span>
+                                <span className="currency-option-code">({curr.code})</span>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                      <input type="text" name="price" value={formData.price ? formatNumberWithCommas(formData.price) : ''} onChange={handlePriceChange} className="price-input-large" placeholder="0" inputMode="numeric" />
+                    </div>
+                  </div>
+                  <div className="price-input-section" style={{ marginTop: '20px' }}>
+                    <label className="price-input-label">Количество долей</label>
+                    <input type="number" min="1" step="1" name="totalShares" value={formData.totalShares} onChange={(e) => setFormData(prev => ({ ...prev, totalShares: e.target.value.replace(/\D/g, '') }))} className="price-input-large" placeholder="Например: 20" inputMode="numeric" style={{ maxWidth: '200px' }} />
+                    <p style={{ fontSize: '14px', color: '#64748b', marginTop: '8px' }}>Объект будет разделён на равные доли. Покупатели смогут купить одну или несколько долей.</p>
+                  </div>
+                  {formData.price && formData.totalShares && parseInt(formData.totalShares, 10) > 0 && (
+                    <div className="share-price-per-unit" style={{ marginTop: '16px', padding: '16px', background: 'rgba(10, 186, 181, 0.1)', borderRadius: '12px', border: '1px solid rgba(10, 186, 181, 0.25)' }}>
+                      <strong>Цена за 1 долю:</strong>{' '}
+                      <span>{currencies.find(c => c.code === currency)?.symbol || '$'}{(Number(removeCommas(String(formData.price))) / parseInt(formData.totalShares, 10)).toLocaleString('en-US')}</span>
+                    </div>
+                  )}
+                </>
+              )}
+
+              {!formData.isShareProperty && (
+                <>
               {/* Блок цены "Купить сейчас" */}
               <div className="price-input-section">
                 <label className="price-input-label">
@@ -5459,6 +5548,9 @@ const AddProperty = () => {
                   )}
                 </div>
               </div>
+
+                </>
+              )}
 
               <div className="property-price-actions">
                 <button
@@ -6155,6 +6247,109 @@ const AddProperty = () => {
         userId={userId}
         onComplete={handleCardBindingComplete}
       />
+
+      {/* Модальное окно оплаты публикации (29 € / промокод) */}
+      {showListingFeeModal && (
+        <div
+          className="listing-fee-modal-overlay"
+          onClick={() => {
+            if (!showPromoInputInFeeModal) setShowListingFeeModal(false)
+          }}
+        >
+          <div
+            className={`listing-fee-modal ${showPromoInputInFeeModal ? 'listing-fee-modal--promo' : ''}`}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              className="listing-fee-modal__close"
+              onClick={() => {
+                setShowListingFeeModal(false)
+                setShowPromoInputInFeeModal(false)
+                setListingFeePromoCode('')
+                setListingFeePromoError(null)
+              }}
+              aria-label="Закрыть"
+            >
+              <FiX size={22} />
+            </button>
+            {!showPromoInputInFeeModal ? (
+              <>
+                <div className="listing-fee-modal__icon">
+                  <FiDollarSign size={32} />
+                </div>
+                <h2 className="listing-fee-modal__title">Оплата публикации объекта</h2>
+                <p className="listing-fee-modal__text">
+                  Чтобы выложить объект, необходимо оплатить <strong>29 €</strong> за размещение на платформе.
+                </p>
+                <div className="listing-fee-modal__options">
+                  <button type="button" className="listing-fee-modal__option listing-fee-modal__option--disabled" disabled>
+                    <FiCreditCard size={24} />
+                    <span>Карта</span>
+                    <span className="listing-fee-modal__option-badge">Пока недоступно</span>
+                  </button>
+                  <button
+                    type="button"
+                    className="listing-fee-modal__option listing-fee-modal__option--promo"
+                    onClick={() => setShowPromoInputInFeeModal(true)}
+                  >
+                    <FiGift size={24} />
+                    <span>Есть промокод</span>
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  className="listing-fee-modal__back"
+                  onClick={() => {
+                    setShowPromoInputInFeeModal(false)
+                    setListingFeePromoCode('')
+                    setListingFeePromoError(null)
+                  }}
+                >
+                  <FiChevronLeft size={18} /> Назад
+                </button>
+                <div className="listing-fee-modal__icon listing-fee-modal__icon--promo">
+                  <FiGift size={32} />
+                </div>
+                <h2 className="listing-fee-modal__title">Введите промокод</h2>
+                <p className="listing-fee-modal__text">
+                  Промокод из бонусных заданий для продавцов позволяет бесплатно опубликовать объект.
+                </p>
+                <div className="listing-fee-modal__promo-row">
+                  <input
+                    type="text"
+                    className="listing-fee-modal__input"
+                    placeholder="Например: BONUS-SELLER-INSTA-10"
+                    value={listingFeePromoCode}
+                    onChange={(e) => {
+                      setListingFeePromoCode(e.target.value)
+                      setListingFeePromoError(null)
+                    }}
+                    onKeyDown={(e) => e.key === 'Enter' && handleApplyListingFeePromo()}
+                    disabled={listingFeePromoLoading}
+                  />
+                  <button
+                    type="button"
+                    className="listing-fee-modal__apply"
+                    onClick={handleApplyListingFeePromo}
+                    disabled={listingFeePromoLoading}
+                  >
+                    {listingFeePromoLoading ? <FiLoader size={20} className="listing-fee-modal__spinner" /> : 'Применить'}
+                  </button>
+                </div>
+                {listingFeePromoError && (
+                  <p className="listing-fee-modal__error" role="alert">
+                    {listingFeePromoError}
+                  </p>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Модальное окно об успешной отправке */}
       {showSuccessModal && (

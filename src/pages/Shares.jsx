@@ -1,10 +1,12 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { FiPieChart, FiSearch } from 'react-icons/fi'
 import Header from '../components/Header'
 import './Shares.css'
 
-// Демо-объекты долей (пока без бэкенда — статичные)
+const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api'
+
+// Демо-объекты долей (показываются вместе с объектами из API)
 const DEMO_SHARE_OBJECTS = [
   {
     id: 'share-demo-1',
@@ -50,8 +52,27 @@ const DEMO_SHARE_OBJECTS = [
 const Shares = () => {
   const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState('')
+  const [apiShares, setApiShares] = useState([])
+  const [loadingShares, setLoadingShares] = useState(true)
 
-  const filtered = DEMO_SHARE_OBJECTS.filter(
+  useEffect(() => {
+    fetch(`${API_BASE}/properties/shares`)
+      .then((res) => res.ok ? res.json() : { success: false, data: [] })
+      .then((json) => {
+        if (json.success && Array.isArray(json.data)) {
+          setApiShares(json.data.map((p) => ({
+            ...p,
+            id: p.shareId || `${p.property_type}-${p.id}`,
+            image: p.image || (Array.isArray(p.photos) && p.photos[0] ? (typeof p.photos[0] === 'string' ? p.photos[0] : p.photos[0].url) : null)
+          })))
+        }
+      })
+      .catch(() => setApiShares([]))
+      .finally(() => setLoadingShares(false))
+  }, [])
+
+  const allShareObjects = [...DEMO_SHARE_OBJECTS, ...apiShares]
+  const filtered = allShareObjects.filter(
     (obj) =>
       !searchQuery ||
       (obj.title || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -116,7 +137,7 @@ const Shares = () => {
             </div>
           ) : (
             filtered.map((obj) => {
-              const soldPercent = Math.round((obj.sharesSold / obj.totalShares) * 100)
+              const soldPercent = (obj.totalShares > 0) ? Math.round((obj.sharesSold / obj.totalShares) * 100) : 0
               const isSoldOut = obj.sharesSold >= obj.totalShares
               return (
               <article
@@ -129,7 +150,7 @@ const Shares = () => {
                 </div>
                 <div className="share-card__image-wrap">
                   <img
-                    src={obj.image}
+                    src={obj.image || 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=800&q=80'}
                     alt={obj.title}
                     className="share-card__image"
                   />

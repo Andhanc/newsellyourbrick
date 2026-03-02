@@ -2701,7 +2701,7 @@ app.get('/api/bonus-submissions/user/:userId', (req, res) => {
     const db = getDatabase();
     const userId = req.params.userId;
     const rows = db.prepare(`
-      SELECT id, user_id, task_id, link, status, promo_code, created_at
+      SELECT id, user_id, task_id, link, status, promo_code, created_at, used_at
       FROM bonus_task_submissions
       WHERE user_id = ?
       ORDER BY task_id ASC
@@ -2773,6 +2773,51 @@ app.put('/api/bonus-submissions/:id/reject', (req, res) => {
   } catch (error) {
     console.error('❌ PUT /api/bonus-submissions/:id/reject:', error);
     return res.status(500).json({ success: false, message: error.message || 'Ошибка сервера.' });
+  }
+});
+
+/** Список task_id для промокодов продавца (бонусы для продавцов) */
+const SELLER_PROMO_TASK_IDS = [5, 6, 7, 8];
+
+/**
+ * POST /api/bonus-submissions/use-promo - Проверить и использовать промокод при публикации объекта (для продавца)
+ * Body: { user_id, promo_code }
+ * Проверяет: промокод существует, принадлежит пользователю, задание для продавца (task_id 5-8), ещё не использован.
+ * При успехе помечает заявку used_at и возвращает success.
+ */
+app.post('/api/bonus-submissions/use-promo', (req, res) => {
+  try {
+    const db = getDatabase();
+    const { user_id, promo_code } = req.body || {};
+    if (!user_id || !promo_code || typeof promo_code !== 'string') {
+      return res.status(400).json({ success: false, reason: 'invalid', message: 'Укажите user_id и промокод.' });
+    }
+    const codeTrim = String(promo_code).trim().toUpperCase();
+    if (!codeTrim) {
+      return res.status(400).json({ success: false, reason: 'invalid', message: 'Введите промокод.' });
+    }
+
+    const row = db.prepare(`
+      SELECT id, user_id, task_id, status, promo_code, used_at
+      FROM bonus_task_submissions
+      WHERE user_id = ? AND UPPER(TRIM(promo_code)) = ? AND status = 'approved'
+    `).get(user_id, codeTrim);
+
+    if (!row) {
+      return res.json({ success: false, reason: 'invalid', message: 'Промокод не найден или не подходит.' });
+    }
+    if (!SELLER_PROMO_TASK_IDS.includes(row.task_id)) {
+      return res.json({ success: false, reason: 'invalid', message: 'Этот промокод не для оплаты публикации объекта.' });
+    }
+    if (row.used_at) {
+      return res.json({ success: false, reason: 'used', message: 'Этот промокод уже был использован.' });
+    }
+
+    db.prepare('UPDATE bonus_task_submissions SET used_at = datetime(\'now\') WHERE id = ?').run(row.id);
+    return res.json({ success: true, data: { submission_id: row.id, promo_code: row.promo_code } });
+  } catch (error) {
+    console.error('❌ POST /api/bonus-submissions/use-promo:', error);
+    return res.status(500).json({ success: false, reason: 'error', message: error.message || 'Ошибка сервера.' });
   }
 });
 
@@ -4259,8 +4304,12 @@ app.post('/api/properties', upload.fields([
       is_auction = 0,
       auction_start_date,
       auction_end_date,
-      auction_starting_price
+      auction_starting_price,
+      is_share = 0,
+      total_shares
     } = req.body;
+    
+    const isShare = (is_share === '1' || is_share === 1 || is_share === true);
     
     // Проверяем, что property_type валиден для новых таблиц
     if (!property_type || !['apartment', 'commercial', 'house', 'villa'].includes(property_type)) {
@@ -4270,9 +4319,11 @@ app.post('/api/properties', upload.fields([
       });
     }
     
-    // Нормализуем is_auction: может быть строкой '0'/'1', числом 0/1, или булевым значением
+    // Для долевого объекта: без аукциона и тест-драйва
     let normalizedIsAuction = 0;
-    if (typeof is_auction === 'string') {
+    if (isShare) {
+      normalizedIsAuction = 0;
+    } else if (typeof is_auction === 'string') {
       normalizedIsAuction = (is_auction === '1' || is_auction === 'true') ? 1 : 0;
     } else if (typeof is_auction === 'boolean') {
       normalizedIsAuction = is_auction ? 1 : 0;
@@ -4280,7 +4331,7 @@ app.post('/api/properties', upload.fields([
       normalizedIsAuction = is_auction ? 1 : 0;
     }
     
-    console.log('📋 Получен is_auction:', is_auction, 'тип:', typeof is_auction, 'нормализован:', normalizedIsAuction);
+    console.log('📋 Получен is_auction:', is_auction, 'is_share:', isShare, 'нормализован is_auction:', normalizedIsAuction);
     
     // Извлекаем feature поля из req.body
     const featureFields = {};
@@ -4338,9 +4389,11 @@ app.post('/api/properties', upload.fields([
     } = req.body;
     
 
-    // Нормализуем test_drive: может быть строкой '0'/'1', числом 0/1, или булевым значением
+    // Для долевого объекта тест-драйв недоступен
     let normalizedTestDrive = 0;
-    if (typeof test_drive === 'string') {
+    if (isShare) {
+      normalizedTestDrive = 0;
+    } else if (typeof test_drive === 'string') {
       normalizedTestDrive = (test_drive === '1' || test_drive === 'true') ? 1 : 0;
     } else if (typeof test_drive === 'boolean') {
       normalizedTestDrive = test_drive ? 1 : 0;
@@ -4498,7 +4551,10 @@ app.post('/api/properties', upload.fields([
       no_debts_document: noDebtsDocumentPath,
       test_drive: normalizedTestDrive,
       test_drive_data: test_drive_data ? (typeof test_drive_data === 'string' ? JSON.parse(test_drive_data) : test_drive_data) : null,
-      moderation_status: 'pending'
+      moderation_status: 'pending',
+      is_shared_ownership: isShare ? 1 : 0,
+      total_shares: isShare && total_shares ? parseInt(total_shares, 10) : null,
+      shares_sold: isShare ? 0 : null
     };
 
     // Добавляем поля для домов/вилл
@@ -6258,6 +6314,49 @@ app.delete('/api/properties/:id/test-timer', (req, res) => {
 });
 
 /**
+ * GET /api/properties/shares - Получить одобренные объекты долевой собственности
+ * ВАЖНО: Должен быть ПЕРЕД /api/properties/:id
+ */
+app.get('/api/properties/shares', (req, res) => {
+  try {
+    const limit = Math.min(parseInt(req.query.limit, 10) || 100, 100);
+    const offset = parseInt(req.query.offset, 10) || 0;
+    const properties = propertyQueries.getShares(limit, offset);
+    // Нормализуем для карточек: id, property_type, title, location, image (первое фото), price, total_shares, shares_sold, area, rooms
+    const list = properties.map((p) => {
+      const photos = (p.photos && (Array.isArray(p.photos) ? p.photos : (typeof p.photos === 'string' ? (() => { try { return JSON.parse(p.photos); } catch (e) { return []; } })() : []))) || [];
+      const firstPhoto = photos[0];
+      const image = typeof firstPhoto === 'string' ? firstPhoto : (firstPhoto && firstPhoto.url) ? firstPhoto.url : null;
+      const totalShares = p.total_shares != null ? Number(p.total_shares) : 0;
+      const sharesSold = p.shares_sold != null ? Number(p.shares_sold) : 0;
+      const price = p.price != null ? Number(p.price) : 0;
+      return {
+        id: p.id,
+        property_type: p.property_type,
+        shareId: `${p.property_type}-${p.id}`,
+        title: p.title,
+        location: p.location || '',
+        description: p.description || '',
+        image: image || (photos[0] || null),
+        totalPrice: price,
+        pricePerShare: totalShares > 0 ? price / totalShares : 0,
+        totalShares,
+        sharesSold,
+        myShares: 0,
+        area: p.area,
+        rooms: p.rooms,
+        bedrooms: p.bedrooms,
+        ...p
+      };
+    });
+    res.json({ success: true, data: list });
+  } catch (err) {
+    console.error('GET /api/properties/shares error:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
  * GET /api/properties/:id - Получить объявление по ID
  * ВАЖНО: Этот маршрут должен быть ПОСЛЕ всех специфичных маршрутов
  */
@@ -6265,15 +6364,15 @@ app.get('/api/properties/:id', (req, res) => {
   const { id } = req.params;
   
   // Игнорируем специальные пути, которые должны обрабатываться другими маршрутами
-  if (id === 'test-timers' || id === 'pending' || id === 'approved' || id === 'auctions' || id === 'user') {
+  if (id === 'test-timers' || id === 'pending' || id === 'approved' || id === 'auctions' || id === 'user' || id === 'shares') {
     console.log('⚠️ GET /api/properties/:id - Игнорируем специальный путь:', id);
     return res.status(404).json({ success: false, error: 'Маршрут не найден' });
   }
   
   try {
-    // Используем функцию из propertyQueries, которая работает с новыми таблицами
-    console.log(`🔍 GET /api/properties/:id - Поиск объекта с ID=${id}`);
-    const property = propertyQueries.getById(id);
+    const requestedPropertyType = req.query.property_type || null; // apartment | commercial | house | villa — для однозначного поиска доли
+    console.log(`🔍 GET /api/properties/:id - Поиск объекта с ID=${id}, property_type=${requestedPropertyType || 'любой'}`);
+    const property = propertyQueries.getById(id, requestedPropertyType);
     
     if (!property) {
       console.log(`❌ GET /api/properties/:id - Объект с ID=${id} не найден`);

@@ -781,6 +781,7 @@ export function initDatabase() {
               promo_code TEXT,
               created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
               reviewed_at DATETIME,
+              used_at DATETIME,
               FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
             );
             CREATE INDEX IF NOT EXISTS idx_bonus_submissions_user_id ON bonus_task_submissions(user_id);
@@ -788,6 +789,16 @@ export function initDatabase() {
             CREATE INDEX IF NOT EXISTS idx_bonus_submissions_task_id ON bonus_task_submissions(task_id);
           `);
           console.log('✅ Таблица bonus_task_submissions создана');
+        }
+        // Добавляем колонку used_at если её нет (для существующих БД)
+        try {
+          const info = db.prepare('PRAGMA table_info(bonus_task_submissions)').all();
+          if (info && !info.some((c) => c.name === 'used_at')) {
+            db.exec('ALTER TABLE bonus_task_submissions ADD COLUMN used_at DATETIME');
+            console.log('✅ Добавлена колонка used_at в bonus_task_submissions');
+          }
+        } catch (alterErr) {
+          console.warn('⚠️ bonus_task_submissions used_at:', alterErr.message);
         }
       } catch (bonusErr) {
         console.warn('⚠️ Не удалось создать таблицу bonus_task_submissions:', bonusErr.message);
@@ -2749,8 +2760,9 @@ export const apartmentQueries = {
           photos, videos, additional_documents,
           ownership_document, no_debts_document,
           test_drive, test_drive_data,
+          is_shared_ownership, total_shares, shares_sold,
           moderation_status
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `);
     } catch (prepareError) {
       if (prepareError.message && prepareError.message.includes('no such table: properties_apartments')) {
@@ -2768,8 +2780,9 @@ export const apartmentQueries = {
             photos, videos, additional_documents,
             ownership_document, no_debts_document,
             test_drive, test_drive_data,
+            is_shared_ownership, total_shares, shares_sold,
             moderation_status
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `);
       } else {
         throw prepareError;
@@ -2817,6 +2830,9 @@ export const apartmentQueries = {
       propertyData.no_debts_document || null,
       propertyData.test_drive ? 1 : 0,
       propertyData.test_drive_data ? JSON.stringify(propertyData.test_drive_data) : null,
+      propertyData.is_shared_ownership ? 1 : 0,
+      propertyData.total_shares || null,
+      propertyData.shares_sold != null ? propertyData.shares_sold : 0,
       propertyData.moderation_status || 'pending'
     );
   },
@@ -2981,6 +2997,10 @@ export const apartmentQueries = {
     if (filters.property_type) {
       query += ' AND property_type = ?';
       params.push(filters.property_type);
+    }
+    
+    if (filters.is_shared_ownership === 1 || filters.is_shared_ownership === true) {
+      query += ' AND is_shared_ownership = 1';
     }
     
     if (filters.city) {
@@ -3239,8 +3259,9 @@ export const houseQueries = {
         photos, videos, additional_documents,
         ownership_document, no_debts_document,
         test_drive, test_drive_data,
+        is_shared_ownership, total_shares, shares_sold,
         moderation_status
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
     
     return stmt.run(
@@ -3293,6 +3314,9 @@ export const houseQueries = {
       propertyData.no_debts_document || null,
       propertyData.test_drive ? 1 : 0,
       propertyData.test_drive_data ? JSON.stringify(propertyData.test_drive_data) : null,
+      propertyData.is_shared_ownership ? 1 : 0,
+      propertyData.total_shares || null,
+      propertyData.shares_sold != null ? propertyData.shares_sold : 0,
       propertyData.moderation_status || 'pending'
     );
   },
@@ -3400,17 +3424,21 @@ export const houseQueries = {
     const db = getDatabase();
     let query = 'SELECT * FROM properties_houses WHERE 1=1';
     const params = [];
-    
+
     if (filters.moderation_status) {
       query += ' AND moderation_status = ?';
       params.push(filters.moderation_status);
     }
-    
+
     if (filters.property_type) {
       query += ' AND property_type = ?';
       params.push(filters.property_type);
     }
-    
+
+    if (filters.is_shared_ownership === 1 || filters.is_shared_ownership === true) {
+      query += ' AND is_shared_ownership = 1';
+    }
+
     if (filters.city) {
       query += ' AND city = ?';
       params.push(filters.city);
@@ -3732,6 +3760,26 @@ export const propertyQueries = {
       const result = db.prepare(query).get(...params);
       return result.count || 0;
     }
+  },
+
+  /**
+   * Получить все одобренные объекты долевой собственности (из обеих таблиц)
+   */
+  getShares: (limit = 100, offset = 0) => {
+    const apartments = apartmentQueries.getAll(
+      { moderation_status: 'approved', is_shared_ownership: 1 },
+      limit,
+      offset
+    );
+    const houses = houseQueries.getAll(
+      { moderation_status: 'approved', is_shared_ownership: 1 },
+      limit,
+      offset
+    );
+    const combined = [...apartments, ...houses].sort((a, b) => {
+      return new Date(b.created_at) - new Date(a.created_at);
+    });
+    return combined.slice(0, limit);
   },
 
   /**

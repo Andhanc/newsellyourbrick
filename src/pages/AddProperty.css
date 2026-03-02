@@ -1100,6 +1100,14 @@
   transform: scale(1.1);
 }
 
+.property-type-card-large--share .property-type-card-icon--share {
+  background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);
+  color: #fff;
+}
+.property-type-card-large--share:hover .property-type-card-icon--share {
+  background: linear-gradient(135deg, #0ABAB5 0%, #089C97 100%);
+}
+
 .property-type-card-title {
   font-size: 20px;
   font-weight: 700;
@@ -4436,6 +4444,231 @@
     padding: 10px 16px;
     font-size: 14px;
   }
+}
+
+/* Модальное окно оплаты публикации (29 € / промокод) */
+.listing-fee-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  padding: 20px;
+  animation: fadeIn 0.25s ease-out;
+}
+
+.listing-fee-modal {
+  background: #fff;
+  border-radius: 20px;
+  max-width: 420px;
+  width: 100%;
+  padding: 32px 28px;
+  text-align: center;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
+  position: relative;
+  animation: slideUp 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: padding 0.3s ease;
+}
+
+.listing-fee-modal--promo {
+  max-width: 400px;
+}
+
+.listing-fee-modal__close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 40px;
+  height: 40px;
+  border: none;
+  background: #f3f4f6;
+  border-radius: 12px;
+  color: #6b7280;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s, color 0.2s;
+}
+
+.listing-fee-modal__close:hover {
+  background: #e5e7eb;
+  color: #111827;
+}
+
+.listing-fee-modal__icon {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 20px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #0ABAB5 0%, #089a95 100%);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.listing-fee-modal__icon--promo {
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+}
+
+.listing-fee-modal__title {
+  font-size: 22px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 12px;
+}
+
+.listing-fee-modal__text {
+  font-size: 15px;
+  color: #6b7280;
+  line-height: 1.5;
+  margin: 0 0 24px;
+}
+
+.listing-fee-modal__text strong {
+  color: #0ABAB5;
+}
+
+.listing-fee-modal__options {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.listing-fee-modal__option {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 16px 20px;
+  border: 2px solid #e5e7eb;
+  border-radius: 14px;
+  background: #fff;
+  font-size: 16px;
+  font-weight: 600;
+  color: #374151;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s, transform 0.15s;
+}
+
+.listing-fee-modal__option:hover:not(:disabled) {
+  border-color: #0ABAB5;
+  background: rgba(10, 186, 181, 0.06);
+  transform: translateY(-1px);
+}
+
+.listing-fee-modal__option--disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  justify-content: flex-start;
+}
+
+.listing-fee-modal__option--promo {
+  border-color: #6366f1;
+  background: rgba(99, 102, 241, 0.08);
+  color: #4f46e5;
+}
+
+.listing-fee-modal__option--promo:hover {
+  border-color: #4f46e5;
+  background: rgba(99, 102, 241, 0.14);
+}
+
+.listing-fee-modal__option-badge {
+  margin-left: auto;
+  font-size: 12px;
+  font-weight: 500;
+  color: #9ca3af;
+}
+
+.listing-fee-modal__back {
+  position: absolute;
+  top: 16px;
+  left: 20px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border: none;
+  background: #f3f4f6;
+  border-radius: 10px;
+  font-size: 14px;
+  color: #6b7280;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.listing-fee-modal__back:hover {
+  background: #e5e7eb;
+  color: #111827;
+}
+
+.listing-fee-modal__promo-row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.listing-fee-modal__input {
+  flex: 1;
+  padding: 14px 16px;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  font-size: 15px;
+  color: #111827;
+  transition: border-color 0.2s;
+}
+
+.listing-fee-modal__input:focus {
+  outline: none;
+  border-color: #6366f1;
+}
+
+.listing-fee-modal__input::placeholder {
+  color: #9ca3af;
+}
+
+.listing-fee-modal__apply {
+  padding: 14px 22px;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.15s;
+}
+
+.listing-fee-modal__apply:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.listing-fee-modal__apply:disabled {
+  opacity: 0.8;
+  cursor: not-allowed;
+}
+
+.listing-fee-modal__spinner {
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.listing-fee-modal__error {
+  margin: 0;
+  font-size: 14px;
+  color: #dc2626;
+  text-align: left;
 }
 
 /* Модальное окно об успешной отправке */
