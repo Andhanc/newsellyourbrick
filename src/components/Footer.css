@@ -444,11 +444,16 @@ body.admin-panel-active .footer {
   margin-top: 20px;
 }
 
-body.admin-panel-active .footer .footer__container {
-  padding: 0 40px 0 40px;
-  max-width: 100%;
-  overflow: visible;
-  box-sizing: border-box;
+@media (min-width: 993px) {
+  /* Смещаем контент футера вправо, чтобы его не перекрывало левое меню */
+  body.admin-panel-active .footer .footer__container {
+    max-width: calc(100% - 280px);
+    margin-left: 280px; /* ширина админ-меню слева */
+    margin-right: auto;
+    padding: 0 40px;
+    overflow: visible;
+    box-sizing: border-box;
+  }
 }
 
 body.admin-panel-active .footer .footer__menu {
@@ -474,7 +479,8 @@ body.admin-panel-active .footer .footer__description {
   word-wrap: break-word;
   overflow-wrap: break-word;
   text-align: left;
-  margin-left: 80px;
+  /* чуть смещаем блок вправо внутри контейнера, как на основном сайте */
+  margin-left: 40px;
 }
 
 body.admin-panel-active .footer .footer__description-text {
@@ -485,8 +491,7 @@ body.admin-panel-active .footer .footer__description-text {
   max-width: 100%;
   padding-left: 0;
   padding-right: 0;
-  
-  margin-left: 15%;
+  margin-left: 0;
 }
 
 body.admin-panel-active .footer .footer__bottom-wrapper {
@@ -503,7 +508,7 @@ body.admin-panel-active .footer .footer__bottom {
   align-items: center;
   flex: 1;
   margin-top: 20px;
-  margin-left: 80px;
+  margin-left: 0;
 }
 
 body.admin-panel-active .footer .footer__brand {
@@ -524,7 +529,7 @@ body.admin-panel-active .footer .footer__brand-icon {
   padding: 6px;
   box-sizing: border-box;
   flex-shrink: 0;
-  margin-left: 205px;
+  margin-left: 0;
 }
 
 body.admin-panel-active .footer .footer__brand-text {
@@ -547,7 +552,7 @@ body.admin-panel-active .footer .footer__whatsapp-qr {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  margin-left: 40px;
+  margin: 0 16px;
 }
 
 body.admin-panel-active .footer .footer__qr-image {
@@ -562,6 +567,8 @@ body.admin-panel-active .footer .footer__qr-image {
 body.admin-panel-active .footer .footer__store-btn {
   padding: 6px 10px;
   gap: 6px;
+  min-width: 110px;
+  justify-content: center;
 }
 
 body.admin-panel-active .footer .footer__store-icon svg {
@@ -580,6 +587,25 @@ body.admin-panel-active .footer .footer__store-label {
 
 body.admin-panel-active .footer .footer__store-name {
   font-size: 10px;
+}
+
+/* Языковой переключатель в админке рядом с кнопками стора */
+body.admin-panel-active .footer .footer__language-selector {
+  margin-left: 4px;
+}
+
+body.admin-panel-active .footer .footer__language-selector-btn {
+  min-width: 110px;
+}
+
+/* В админке в переключателе языков показываем только флаг (без названия) */
+body.admin-panel-active .footer .footer__language-name {
+  display: none;
+}
+
+/* Выравниваем текст под иконками по центру внутри кнопок стора в админке */
+body.admin-panel-active .footer .footer__store-text {
+  align-items: center;
 }
 
 body.admin-panel-active .footer .footer__language-selector {

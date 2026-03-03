@@ -2897,6 +2897,21 @@ const AddProperty = () => {
     setListingFeePromoError(null)
   }
 
+  // После успешной "оплаты" (промокод принят или оплата станет доступна)
+  // решаем, запускать ли цепочку верификация + привязка карты, или сразу публиковать
+  const handleAfterListingFeeSuccess = async () => {
+    const cardBound = localStorage.getItem('cardBound') === 'true'
+
+    if (cardBound) {
+      // Карта уже привязана (и, по текущей логике, верификация уже проходила) — просто публикуем
+      await handlePublish()
+    } else {
+      // Запускаем прежний поток: верификация продавца -> привязка карты -> публикация
+      setShowListingFeeModal(false)
+      setShowVerificationModal(true)
+    }
+  }
+
   const handleApplyListingFeePromo = async () => {
     const code = (listingFeePromoCode || '').trim()
     if (!code) {
@@ -2922,7 +2937,7 @@ const AddProperty = () => {
         setShowPromoInputInFeeModal(false)
         setListingFeePromoCode('')
         setListingFeePromoError(null)
-        await handlePublish()
+        await handleAfterListingFeeSuccess()
       } else {
         if (data.reason === 'used') {
           setListingFeePromoError('Этот промокод уже был использован')

@@ -270,6 +270,17 @@ const ObjectsList = () => {
                   );
                 })()}
               </div>
+              <div className="property-card__link-wrapper">
+                <a
+                  href={`/property/${property.id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="property-card__link"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  Перейти к объекту
+                </a>
+              </div>
             </div>
           </article>
         ))}

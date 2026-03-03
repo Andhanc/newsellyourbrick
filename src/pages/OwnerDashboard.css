@@ -204,28 +204,35 @@
 }
 
 .owner-dashboard__content {
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
   padding: 32px 5%;
 }
 
 /* Статистика */
- .owner-dashboard__stats {
+.owner-dashboard__stats {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   gap: 24px;
   margin-bottom: 40px;
 }
 
+/* На десктопе четыре статистических блока в один ряд */
+@media (min-width: 900px) {
+  .owner-dashboard__stats {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
 /* QuickAddCard должен иметь такой же размер как stat-card */
 .owner-dashboard__stats .quick-add-card {
-  min-height: 120px;
+  min-height: 100px;
 }
 
 .stat-card {
   background: #fff;
   border-radius: 16px;
-  padding: 24px;
+  padding: 14px 24px;
   display: flex;
   gap: 20px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
@@ -238,8 +245,8 @@
 }
 
 .stat-card__icon {
-  width: 64px;
-  height: 64px;
+  width: 56px;
+  height: 56px;
   border-radius: 12px;
   display: flex;
   align-items: center;
@@ -671,9 +678,11 @@
 }
 
 .property-card-owner__info {
-  display: flex;
-  gap: 20px;
-  flex-wrap: wrap;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: max-content;
+  column-gap: 20px;
+  align-items: center;
 }
 
 .property-card-owner__info-item {
@@ -2015,8 +2024,8 @@
   border: 1px solid #ffc107;
   border-radius: 12px;
   padding: 20px 24px;
-  margin: 24px 5%;
-  max-width: 1150px;
+  margin: 24px auto;
+  max-width: 900px;
   display: flex;
   align-items: center;
   gap: 16px;
@@ -2025,9 +2034,12 @@
 
 .owner-verification-notification__content {
   display: flex;
+  flex-direction: row;
   align-items: center;
+  justify-content: space-between;
   gap: 16px;
   width: 100%;
+  text-align: left;
 }
 
 .owner-verification-notification__icon {

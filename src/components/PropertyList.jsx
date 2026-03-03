@@ -479,39 +479,43 @@ const PropertyList = ({ auctionProperties = null, onOpenAIChat }) => {
                     {/* Основные характеристики для аукционных карточек - в стиле личного кабинета продавца */}
                     {hasTimer && (
                       <div className="property-card-owner__info">
-                        {(property.area || property.sqft) && (
-                          <div className="property-card-owner__info-item">
-                            <BiArea size={16} />
-                            <span>{property.area || property.sqft} м²</span>
-                          </div>
-                        )}
-                        {(property.rooms || property.beds || property.bedrooms) && (
-                          <div className="property-card-owner__info-item">
-                            <MdBed size={16} />
-                            <span>{property.rooms || property.beds || property.bedrooms}</span>
-                          </div>
-                        )}
-                        {property.bathrooms && (
-                          <div className="property-card-owner__info-item">
-                            <MdOutlineBathtub size={16} />
-                            <span>{property.bathrooms}</span>
-                          </div>
-                        )}
-                        {property.floor && (
-                          <div className="property-card-owner__info-item">
-                            <FiLayers size={16} />
-                            <span>
-                              {property.floor}
-                              {(property.total_floors || property.totalFloors) && `/${property.total_floors || property.totalFloors}`}
-                            </span>
-                          </div>
-                        )}
-                        {property.year_built && (
-                          <div className="property-card-owner__info-item">
-                            <FiCalendar size={16} />
-                            <span>{property.year_built}</span>
-                          </div>
-                        )}
+                        <div className="property-card-owner__info-row">
+                          {(property.area || property.sqft) && (
+                            <div className="property-card-owner__info-item">
+                              <BiArea size={16} />
+                              <span>{property.area || property.sqft} м²</span>
+                            </div>
+                          )}
+                          {(property.rooms || property.beds || property.bedrooms) && (
+                            <div className="property-card-owner__info-item">
+                              <MdBed size={16} />
+                              <span>{property.rooms || property.beds || property.bedrooms}</span>
+                            </div>
+                          )}
+                          {property.bathrooms && (
+                            <div className="property-card-owner__info-item">
+                              <MdOutlineBathtub size={16} />
+                              <span>{property.bathrooms}</span>
+                            </div>
+                          )}
+                        </div>
+                        <div className="property-card-owner__info-row">
+                          {property.floor && (
+                            <div className="property-card-owner__info-item">
+                              <FiLayers size={16} />
+                              <span>
+                                {property.floor}
+                                {(property.total_floors || property.totalFloors) && `/${property.total_floors || property.totalFloors}`}
+                              </span>
+                            </div>
+                          )}
+                          {property.year_built && (
+                            <div className="property-card-owner__info-item">
+                              <FiCalendar size={16} />
+                              <span>{property.year_built}</span>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     )}
                     

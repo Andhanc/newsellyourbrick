@@ -1047,11 +1047,17 @@
 /* Основные характеристики для аукционных объектов - в стиле личного кабинета продавца */
 .property-card-owner__info {
   display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: 4px;
   margin-top: 12px;
   margin-bottom: 12px;
   flex-shrink: 0;
+}
+
+.property-card-owner__info-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .property-card-owner__info-item {
@@ -1556,9 +1562,10 @@
   /* Блок характеристик (площадь, комнаты и т.д.) — одна строка, компактно */
   .property-card-owner__info {
     flex-wrap: wrap;
-    gap: 4px;
-    margin-top: -20px;
-    margin-bottom: 4px;
+    row-gap: 0px;
+    column-gap: 8px;
+    margin-top: 0;
+    margin-bottom: 2px;
   }
 
   .property-card-owner__info-item {
@@ -1618,6 +1625,7 @@
   .property-card-owner__info-item,
   .property-card-owner__info-item span {
     font-size: 11px !important;
+    line-height: 1.05;
   }
 
   /* Иконки на превью */
@@ -1669,6 +1677,29 @@
   .property-buy-now-overlay {
     font-size: 11px;
     padding: 6px 10px;
+  }
+
+  /* Уменьшаем вертикальные отступы в мобильных карточках аукциона */
+  .property-timer-wrapper {
+    margin-bottom: 2px;
+    padding: 0;
+    height: 56px;
+  }
+
+  .property-title {
+    margin-top: -6px;
+    margin-bottom: 0;
+  }
+
+  .property-card-owner__info {
+    gap: 2px;
+    margin-top: 0;
+    margin-bottom: 2px;
+  }
+
+  /* Поднимаем второй ряд характеристик ближе к первому */
+  .property-card-owner__info-row + .property-card-owner__info-row {
+    margin-top: 2px;
   }
 
   .load-more-button {
@@ -1805,8 +1836,8 @@
   }
 
   .property-card-owner__info {
-    gap: 2px;
-    margin-bottom: 6px;
+    gap: 0;
+    margin-bottom: 2px;
   }
 
   .property-card-owner__info-item {

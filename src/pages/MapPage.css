@@ -6,6 +6,32 @@
   padding: 0;
 }
 
+.map-page__top-bar {
+  padding: 16px 20px 8px;
+  z-index: 10;
+}
+
+.map-page__back {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: #ffffff;
+  border-radius: 999px;
+  border: 1px solid #e5e7eb;
+  font-size: 14px;
+  color: #4b5563;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.18);
+  transition: all 0.2s ease;
+}
+
+.map-page__back:hover {
+  border-color: #0abab5;
+  color: #0abab5;
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.2);
+}
+
 .map-container {
   display: flex;
   min-height: 100vh;
@@ -120,7 +146,8 @@
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s;
-  border: 2px solid transparent;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
   width: 100%;
   max-width: 100%;
 }
@@ -287,10 +314,7 @@
 }
 
 .maplibregl-ctrl-attrib {
-  background: rgba(255, 255, 255, 0.8) !important;
-  padding: 4px 8px !important;
-  font-size: 11px !important;
-  border-radius: 4px !important;
+  display: none !important;
 }
 
 /* Стили для кастомных маркеров */
@@ -672,6 +696,39 @@
     width: auto;
     max-width: none;
   }
+
+  /* Мобильная версия: даём карте больше «воздуха»,
+     компактные переключатели и вкладки */
+  .map-tabs {
+    top: 10px;
+    left: 10px;
+    right: auto;
+    padding: 2px 4px;
+    border-radius: 999px;
+    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.25);
+  }
+
+  .map-controls {
+    top: auto;
+    bottom: 10px;
+    left: 10px;
+    right: auto;
+    flex-direction: row;
+    gap: 8px;
+  }
+
+  /* Прячем тяжёлую панель выбора стиля карты на мобиле,
+     чтобы она не закрывала саму карту */
+  .map-style-control {
+    display: none;
+  }
+
+  .map-3d-toggle,
+  .map-control-toggle {
+    padding: 8px 12px;
+    font-size: 12px;
+    box-shadow: 0 3px 10px rgba(15, 23, 42, 0.3);
+  }
 }
 
 .map-tab {
@@ -698,18 +755,28 @@
 }
 
 @media (max-width: 1024px) {
+  .map-page {
+    min-height: auto;
+  }
+
   .map-container {
     flex-direction: column;
     height: auto;
+    min-height: auto;
   }
 
   .map-sidebar {
     width: 100%;
-    height: 50vh;
+    height: auto;
+    min-height: auto;
   }
 
   .map-view {
-    height: 50vh;
+    height: 40vh;
+    width: 100%;
+    position: relative;
+    top: auto;
+    min-height: 40vh;
   }
 }
 

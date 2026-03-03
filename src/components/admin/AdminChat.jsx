@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { FiSend, FiSearch, FiZap, FiUser, FiMessageCircle, FiCpu } from 'react-icons/fi';
 import './AdminChat.css';
+import { askPropertyAssistant } from '../../services/aiService';
 
 const AdminChat = () => {
   const [selectedChat, setSelectedChat] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [inputMessage, setInputMessage] = useState('');
+  const [isLoadingAI, setIsLoadingAI] = useState(false);
   const messagesEndRef = useRef(null);
 
   const [chats] = useState([
@@ -158,7 +160,7 @@ const AdminChat = () => {
     chat.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const handleSendMessage = (e) => {
+  const handleSendMessage = async (e) => {
     e.preventDefault();
     if (!inputMessage.trim() || !selectedChat) return;
 
@@ -169,6 +171,8 @@ const AdminChat = () => {
       timestamp: new Date()
     };
 
+    const previousMessages = messages[selectedChat.id] || [];
+
     setMessages(prev => ({
       ...prev,
       [selectedChat.id]: [...(prev[selectedChat.id] || []), newMessage]
@@ -176,28 +180,71 @@ const AdminChat = () => {
 
     setInputMessage('');
 
-    setTimeout(() => {
-      let responseText = '';
-      if (selectedChat.type === 'ai') {
-        responseText = 'Понял! Могу помочь с дополнительной информацией. Что именно вас интересует?';
-      } else if (selectedChat.type === 'manager') {
-        responseText = 'Хорошо, разберусь и вернусь с ответом.';
-      } else {
-        responseText = 'Спасибо за сообщение! Я свяжусь с вами в ближайшее время.';
+    if (selectedChat.type === 'ai') {
+      try {
+        setIsLoadingAI(true);
+        const aiResponse = await askPropertyAssistant(
+          [...previousMessages, { sender: 'user', text: newMessage.text }],
+          {
+            purpose: null,
+            budget: null,
+            location: null,
+            propertyType: null,
+            rooms: null,
+            area: null,
+            other: null
+          },
+          []
+        );
+
+        const botMessage = {
+          id: (messages[selectedChat.id]?.length || 0) + 2,
+          text: aiResponse?.text || 'Не удалось получить ответ от AI. Попробуйте ещё раз.',
+          sender: 'ai',
+          timestamp: new Date()
+        };
+
+        setMessages(prev => ({
+          ...prev,
+          [selectedChat.id]: [...(prev[selectedChat.id] || []), botMessage]
+        }));
+      } catch (error) {
+        console.error('Ошибка AI в админ-чате:', error);
+        const errorMessage = {
+          id: (messages[selectedChat.id]?.length || 0) + 2,
+          text: 'Произошла ошибка при обращении к AI. Попробуйте позже.',
+          sender: 'ai',
+          timestamp: new Date()
+        };
+        setMessages(prev => ({
+          ...prev,
+          [selectedChat.id]: [...(prev[selectedChat.id] || []), errorMessage]
+        }));
+      } finally {
+        setIsLoadingAI(false);
       }
+    } else {
+      setTimeout(() => {
+        let responseText = '';
+        if (selectedChat.type === 'manager') {
+          responseText = 'Хорошо, разберусь и вернусь с ответом.';
+        } else {
+          responseText = 'Спасибо за сообщение! Я свяжусь с вами в ближайшее время.';
+        }
 
-      const response = {
-        id: (messages[selectedChat.id]?.length || 0) + 2,
-        text: responseText,
-        sender: selectedChat.id,
-        timestamp: new Date()
-      };
+        const response = {
+          id: (messages[selectedChat.id]?.length || 0) + 2,
+          text: responseText,
+          sender: selectedChat.id,
+          timestamp: new Date()
+        };
 
-      setMessages(prev => ({
-        ...prev,
-        [selectedChat.id]: [...(prev[selectedChat.id] || []), response]
-      }));
-    }, 1000);
+        setMessages(prev => ({
+          ...prev,
+          [selectedChat.id]: [...(prev[selectedChat.id] || []), response]
+        }));
+      }, 1000);
+    }
   };
 
   const formatTime = (date) => {

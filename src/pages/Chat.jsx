@@ -1,9 +1,39 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import './Chat.css'
+import { askPropertyAssistant } from '../services/aiService'
+
+// Получаем идентификатор чата, общий с виджетом AI на главной
+function getChatUserId() {
+  try {
+    const savedUserDataRaw = localStorage.getItem('userData')
+    const savedUserData = savedUserDataRaw ? JSON.parse(savedUserDataRaw) : null
+    const numericId = savedUserData?.id || localStorage.getItem('userId')
+
+    if (numericId) {
+      return `user_${numericId}`
+    }
+
+    let sessionId = localStorage.getItem('chatSessionId')
+    if (!sessionId) {
+      sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+      localStorage.setItem('chatSessionId', sessionId)
+    }
+    return sessionId
+  } catch (e) {
+    console.warn('Не удалось получить chatUserId, используем сессию по умолчанию:', e)
+    let sessionId = localStorage.getItem('chatSessionId')
+    if (!sessionId) {
+      sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+      localStorage.setItem('chatSessionId', sessionId)
+    }
+    return sessionId
+  }
+}
 
 const Chat = () => {
   const navigate = useNavigate()
+  const [chatUserId] = useState(() => getChatUserId())
   const [activeChat, setActiveChat] = useState('tech-support')
   const [notificationsEnabled, setNotificationsEnabled] = useState(false)
   const [showNotificationModal, setShowNotificationModal] = useState(false)
@@ -13,8 +43,9 @@ const Chat = () => {
         id: 1,
         text: 'Здравствуйте! С вами бот 😊 Уточните ваш вопрос. Попробую помочь.',
         sender: 'bot',
-        time: '23:05',
-        date: 'Сегодня'
+        time: new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }),
+        date: 'Сегодня',
+        timestamp: new Date()
       }
     ],
     'expert': [
@@ -28,6 +59,58 @@ const Chat = () => {
     ]
   })
   const [inputMessage, setInputMessage] = useState('')
+  const [isLoadingAI, setIsLoadingAI] = useState(false)
+
+  // Загружаем историю AI-чата из того же ключа, что и виджет умного помощника
+  useEffect(() => {
+    try {
+      const historyKey = `aiChatHistory_${chatUserId}`
+      const savedChatHistory = localStorage.getItem(historyKey)
+      if (savedChatHistory) {
+        const parsed = JSON.parse(savedChatHistory)
+        const mapped = parsed.map((msg, index) => {
+          const dateObj = msg.timestamp ? new Date(msg.timestamp) : new Date()
+          return {
+            id: msg.id || index + 1,
+            text: msg.text || '',
+            sender: msg.sender === 'user' ? 'user' : 'bot',
+            time: dateObj.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }),
+            date: 'Сегодня',
+            timestamp: dateObj
+          }
+        })
+
+        if (mapped.length > 0) {
+          setMessages(prev => ({
+            ...prev,
+            'tech-support': mapped
+          }))
+        }
+      }
+    } catch (e) {
+      console.error('Ошибка загрузки истории AI-чата в Chat.jsx:', e)
+    }
+  }, [chatUserId])
+
+  // Сохраняем историю AI-чата в общий ключ, чтобы виджет и /chat делили одну историю
+  useEffect(() => {
+    try {
+      const techMessages = messages['tech-support'] || []
+      if (!techMessages.length) return
+
+      const historyKey = `aiChatHistory_${chatUserId}`
+      const serializable = techMessages.map(msg => ({
+        id: msg.id,
+        text: msg.text,
+        sender: msg.sender,
+        timestamp: msg.timestamp ? msg.timestamp.toISOString() : new Date().toISOString()
+      }))
+
+      localStorage.setItem(historyKey, JSON.stringify(serializable))
+    } catch (e) {
+      console.error('Ошибка сохранения истории AI-чата в Chat.jsx:', e)
+    }
+  }, [messages, chatUserId])
 
   const chats = [
     {
@@ -57,39 +140,92 @@ const Chat = () => {
     }, 3000)
   }
 
-  const handleSendMessage = (e) => {
+  const handleSendMessage = async (e) => {
     e.preventDefault()
     if (!inputMessage.trim()) return
 
-    const newMessage = {
+    const now = new Date()
+    const userMessage = {
       id: messages[activeChat].length + 1,
       text: inputMessage,
       sender: 'user',
-      time: new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }),
-      date: 'Сегодня'
+      time: now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }),
+      date: 'Сегодня',
+      timestamp: now
     }
 
     setMessages(prev => ({
       ...prev,
-      [activeChat]: [...prev[activeChat], newMessage]
+      [activeChat]: [...prev[activeChat], userMessage]
     }))
 
+    const previousMessages = messages[activeChat] || []
     setInputMessage('')
 
-    // Автоответ бота
-    setTimeout(() => {
-      const botResponse = {
-        id: messages[activeChat].length + 2,
-        text: 'Спасибо за ваше сообщение! Мы обработаем ваш запрос и ответим в ближайшее время.',
-        sender: 'bot',
-        time: new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }),
-        date: 'Сегодня'
+    if (activeChat === 'tech-support') {
+      try {
+        setIsLoadingAI(true)
+        const aiResponse = await askPropertyAssistant(
+          [...previousMessages, userMessage],
+          {
+            purpose: null,
+            budget: null,
+            location: null,
+            propertyType: null,
+            rooms: null,
+            area: null,
+            other: null
+          },
+          []
+        )
+
+        const botMessage = {
+          id: (messages[activeChat]?.length || 0) + 2,
+          text: aiResponse?.text || 'Извините, не удалось получить ответ от AI. Попробуйте ещё раз.',
+          sender: 'bot',
+          time: new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }),
+          date: 'Сегодня',
+          timestamp: new Date()
+        }
+
+        setMessages(prev => ({
+          ...prev,
+          [activeChat]: [...prev[activeChat], botMessage]
+        }))
+      } catch (error) {
+        console.error('Ошибка AI-чата:', error)
+        const errorMessage = {
+          id: (messages[activeChat]?.length || 0) + 2,
+          text: 'Произошла ошибка при обращении к AI. Попробуйте ещё раз позже.',
+          sender: 'bot',
+          time: new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }),
+          date: 'Сегодня',
+          timestamp: new Date()
+        }
+        setMessages(prev => ({
+          ...prev,
+          [activeChat]: [...prev[activeChat], errorMessage]
+        }))
+      } finally {
+        setIsLoadingAI(false)
       }
-      setMessages(prev => ({
-        ...prev,
-        [activeChat]: [...prev[activeChat], botResponse]
-      }))
-    }, 1000)
+    } else {
+      // Для остальных чатов оставляем простой автоответ
+      setTimeout(() => {
+        const botResponse = {
+          id: messages[activeChat].length + 2,
+          text: 'Спасибо за ваше сообщение! Мы обработаем ваш запрос и ответим в ближайшее время.',
+          sender: 'bot',
+          time: new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }),
+          date: 'Сегодня',
+          timestamp: new Date()
+        }
+        setMessages(prev => ({
+          ...prev,
+          [activeChat]: [...prev[activeChat], botResponse]
+        }))
+      }, 1000)
+    }
   }
 
   const currentChat = chats.find(chat => chat.id === activeChat)

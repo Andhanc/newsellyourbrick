@@ -176,6 +176,32 @@
   margin-top: auto;
 }
 
+.property-card__link-wrapper {
+  margin-top: 0.75rem;
+}
+
+.property-card__link {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #0ABAB5;
+  text-decoration: none;
+  cursor: pointer;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.property-card__link:hover {
+  color: #089A95;
+}
+
+.property-card__link::after {
+  content: '→';
+  margin-left: 6px;
+  font-size: 0.9em;
+  color: inherit;
+}
+
 .property-card__price-amount {
   font-size: 0.875rem;
   font-weight: 500;

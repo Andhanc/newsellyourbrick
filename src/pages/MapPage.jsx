@@ -1,15 +1,17 @@
 import { useState, useEffect, useRef } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useUser } from '@clerk/clerk-react'
 import { properties } from '../data/properties'
 import { isAuthenticated } from '../services/authService'
 import { showNotification } from '../utils/toastHelper'
 import maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
+import { FiArrowLeft } from 'react-icons/fi'
 import './MapPage.css'
 
 const MapPage = () => {
   const { user, isLoaded: userLoaded } = useUser()
+  const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedProperty, setSelectedProperty] = useState(null)
   const [favorites, setFavorites] = useState(new Set())
@@ -532,6 +534,16 @@ const MapPage = () => {
 
   return (
     <div className="map-page" style={{ margin: 0, padding: 0 }}>
+      <div className="map-page__top-bar">
+        <button
+          type="button"
+          className="map-page__back"
+          onClick={() => navigate(-1)}
+        >
+          <FiArrowLeft size={20} />
+          <span>Назад</span>
+        </button>
+      </div>
       <div className="map-container">
         <div className="map-view">
           <div ref={mapRef} className="maplibre-map"></div>

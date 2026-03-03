@@ -85,6 +85,17 @@ const Sidebar = ({ activeSection, onSectionChange, onLogout, adminPermissions })
           </div>
         )}
       </div>
+      {!isMobile && (
+        <div className="sidebar-footer">
+          <div
+            className="menu-item menu-item--logout"
+            onClick={onLogout}
+          >
+            <FaSignOutAlt size={20} />
+            <span>Выйти</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

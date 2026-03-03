@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import * as faceapi from 'face-api.js'
 import { showNotification } from '../utils/toastHelper'
+import { saveVerificationPhoto, loadVerificationPhotos, clearVerificationPhotos } from '../utils/verificationStorage'
 import './VerificationModal.css'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
@@ -29,16 +30,80 @@ const VerificationModal = ({ isOpen, onClose, userId, onComplete, required }) =>
   const selfieFileInputRef = useRef(null)
   const selfieWithPassportFileInputRef = useRef(null)
 
+  // Анимация открытия модалки
   useEffect(() => {
     if (isOpen) {
       setAnimationClass('slide-in')
-      // Сброс при открытии
-      if (currentStep === 1) {
-        setPhotos({ passport: null, selfie: null, selfieWithPassport: null })
-        setPreviews({ passport: null, selfie: null, selfieWithPassport: null })
-      }
     }
   }, [isOpen])
+
+  // Подгружаем сохранённые локально фотографии из IndexedDB
+  useEffect(() => {
+    if (!isOpen || !userId) return
+
+    let cancelled = false
+
+    const load = async () => {
+      const saved = await loadVerificationPhotos(userId)
+      if (cancelled) return
+
+      const hasAny =
+        saved.passport !== null || saved.selfie !== null || saved.selfieWithPassport !== null
+
+      if (hasAny) {
+        // Восстанавливаем превью
+        setPreviews({
+          passport: saved.passport,
+          selfie: saved.selfie,
+          selfieWithPassport: saved.selfieWithPassport
+        })
+
+        // Восстанавливаем File-объекты из dataURL для корректной отправки на сервер
+        const dataUrlToFile = (dataUrl, name) => {
+          if (!dataUrl) return null
+          const arr = dataUrl.split(',')
+          const mimeMatch = arr[0].match(/:(.*?);/)
+          const mime = mimeMatch ? mimeMatch[1] : 'image/jpeg'
+          const bstr = atob(arr[1])
+          const n = bstr.length
+          const u8arr = new Uint8Array(n)
+          for (let i = 0; i < n; i += 1) {
+            u8arr[i] = bstr.charCodeAt(i)
+          }
+          return new File([u8arr], name, { type: mime })
+        }
+
+        setPhotos({
+          passport: dataUrlToFile(saved.passport, `photo_passport_restored.jpg`),
+          selfie: dataUrlToFile(saved.selfie, `photo_selfie_restored.jpg`),
+          selfieWithPassport: dataUrlToFile(
+            saved.selfieWithPassport,
+            `photo_selfieWithPassport_restored.jpg`
+          )
+        })
+
+        // Переходим на следующий незаполненный шаг
+        if (!saved.passport) {
+          setCurrentStep(1)
+        } else if (!saved.selfie) {
+          setCurrentStep(2)
+        } else {
+          setCurrentStep(3)
+        }
+      } else {
+        // Если сохранённых данных нет, начинаем "с чистого листа"
+        setPhotos({ passport: null, selfie: null, selfieWithPassport: null })
+        setPreviews({ passport: null, selfie: null, selfieWithPassport: null })
+        setCurrentStep(1)
+      }
+    }
+
+    load()
+
+    return () => {
+      cancelled = true
+    }
+  }, [isOpen, userId])
 
   const handleStepChange = (newStep) => {
     setAnimationClass('slide-out')
@@ -54,6 +119,10 @@ const VerificationModal = ({ isOpen, onClose, userId, onComplete, required }) =>
       const file = new File([imageBlob], `photo_${type}_${Date.now()}.jpg`, { type: 'image/jpeg' })
       setPhotos(prev => ({ ...prev, [type]: file }))
       setPreviews(prev => ({ ...prev, [type]: reader.result }))
+      // Сохраняем превью (dataURL) локально, чтобы пережить перезагрузку
+      if (userId) {
+        saveVerificationPhoto(userId, type, reader.result)
+      }
       setIsCameraOpen(false)
       setCameraType(null)
     }
@@ -186,6 +255,9 @@ const VerificationModal = ({ isOpen, onClose, userId, onComplete, required }) =>
           showNotification('Все фотографии успешно отправлены на модерацию!')
           onClose()
         }
+
+        // После успешной отправки очищаем локальное хранилище фотографий
+        clearVerificationPhotos(userId)
       } else {
         const errors = results.filter(r => !r.success).map(r => r.error).join(', ')
         showNotification(`Ошибка при загрузке: ${errors}`)
@@ -379,20 +451,6 @@ const VerificationModal = ({ isOpen, onClose, userId, onComplete, required }) =>
                         </svg>
                         Сфотографировать
                       </button>
-                      <button 
-                        className="verification-step__btn verification-step__btn--secondary"
-                        onClick={() => passportFileInputRef.current?.click()}
-                        type="button"
-                      >
-                        Загрузить файл
-                      </button>
-                      <input
-                        ref={passportFileInputRef}
-                        type="file"
-                        accept="image/*"
-                        style={{ display: 'none' }}
-                        onChange={(e) => handleFileUpload('passport', e)}
-                      />
                     </div>
                   </>
                 )}
@@ -445,20 +503,6 @@ const VerificationModal = ({ isOpen, onClose, userId, onComplete, required }) =>
                         </svg>
                         Сделать селфи
                       </button>
-                      <button 
-                        className="verification-step__btn verification-step__btn--secondary"
-                        onClick={() => selfieFileInputRef.current?.click()}
-                        type="button"
-                      >
-                        Загрузить файл
-                      </button>
-                      <input
-                        ref={selfieFileInputRef}
-                        type="file"
-                        accept="image/*"
-                        style={{ display: 'none' }}
-                        onChange={(e) => handleFileUpload('selfie', e)}
-                      />
                     </div>
                   </>
                 )}
@@ -511,20 +555,6 @@ const VerificationModal = ({ isOpen, onClose, userId, onComplete, required }) =>
                         </svg>
                         Сделать селфи с паспортом
                       </button>
-                      <button 
-                        className="verification-step__btn verification-step__btn--secondary"
-                        onClick={() => selfieWithPassportFileInputRef.current?.click()}
-                        type="button"
-                      >
-                        Загрузить файл
-                      </button>
-                      <input
-                        ref={selfieWithPassportFileInputRef}
-                        type="file"
-                        accept="image/*"
-                        style={{ display: 'none' }}
-                        onChange={(e) => handleFileUpload('selfieWithPassport', e)}
-                      />
                     </div>
                   </>
                 )}

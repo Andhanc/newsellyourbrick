@@ -8,6 +8,62 @@
   transition: background 0.4s ease;
 }
 
+/* Новый header на странице бонусов — такой же, как на Главной/домашней */
+.bonuses-page .new-header {
+  background: #f8fafc;
+  padding: 20px 0;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  display: flex;
+  justify-content: center;
+}
+
+.bonuses-page .new-header__container {
+  background: #ffffff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-radius: 16px;
+  width: calc(100% - 120px);
+  max-width: 1250px;
+  gap: 8px;
+}
+
+.bonuses-page .menu-dropdown {
+  top: calc(20px + 63px + 50px) !important;
+}
+
+@media (max-width: 768px) {
+  /* На мобильной версии меню должно начинаться от верхнего края */
+  .bonuses-page .menu-dropdown {
+    top: 0 !important;
+  }
+
+  /* На мобильной делаем new-header компактным и по центру */
+  .bonuses-page .new-header {
+    margin: 0;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+  }
+
+  .bonuses-page .new-header__container {
+    width: 92%;
+    max-width: 420px;
+    margin: 12px auto 0;
+    padding: 8px 16px;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0;
+    border-radius: 20px;
+    box-sizing: border-box;
+  }
+}
+
 .bonuses-page__bg {
   position: fixed;
   inset: 0;
@@ -864,7 +920,6 @@
   }
 
   .bonuses-tabs {
-    flex-direction: column;
     margin-bottom: 20px;
   }
 

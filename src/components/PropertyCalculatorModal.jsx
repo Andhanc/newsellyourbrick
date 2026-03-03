@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { FiX, FiHome, FiMapPin, FiDollarSign, FiTrendingUp, FiLoader, FiExternalLink } from 'react-icons/fi'
+import { FiX, FiHome, FiMapPin, FiDollarSign, FiTrendingUp, FiLoader } from 'react-icons/fi'
 import { MdBed, MdOutlineBathtub } from 'react-icons/md'
 import { BiArea } from 'react-icons/bi'
 import axios from 'axios'
@@ -134,7 +134,7 @@ const PropertyCalculatorModal = ({ isOpen, onClose }) => {
               Калькулятор стоимости недвижимости
             </h2>
             <p className="property-calculator-modal__subtitle">
-              Введите параметры недвижимости для поиска похожих объектов на испанских сайтах
+              Введите параметры недвижимости, чтобы получить ориентировочную стоимость и похожие объекты
             </p>
           </div>
 
@@ -327,7 +327,7 @@ const PropertyCalculatorModal = ({ isOpen, onClose }) => {
                 <p className="property-calculator-result__note">
                   {results.searchParams?.searchLevel === 'estimated' 
                     ? '* Цена рассчитана на основе среднерыночных данных Испании (~2500€/м²)'
-                    : '* Цена рассчитана на основе анализа похожих объектов на Idealista.com'}
+                    : '* Цена рассчитана на основе анализа похожих объектов из внешних источников.'}
                 </p>
               </div>
 
@@ -362,17 +362,8 @@ const PropertyCalculatorModal = ({ isOpen, onClose }) => {
                               {property.address}
                             </div>
                           )}
-                          {property.link && (
-                            <a 
-                              href={property.link} 
-                              target="_blank" 
-                              rel="noopener noreferrer"
-                              className="property-calculator-result__similar-link"
-                            >
-                              <FiExternalLink size={16} />
-                              Открыть на Idealista
-                            </a>
-                          )}
+                          {/* Ссылку на внешний сайт больше не показываем,
+                              оставляем только карточку похожего объекта */}
                         </div>
                       </div>
                     ))}

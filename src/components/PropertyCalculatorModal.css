@@ -463,22 +463,8 @@
   color: #999;
 }
 
-.property-calculator-result__similar-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  color: #000;
-  text-decoration: none;
-  font-size: 14px;
-  font-weight: 500;
-  margin-top: 4px;
-  transition: color 0.2s;
-}
-
-.property-calculator-result__similar-link:hover {
-  color: #666;
-  text-decoration: underline;
-}
+/* Раньше здесь были стили для ссылки на внешний сайт,
+   сейчас ссылка не отображается, поэтому класс не используется */
 
 .property-calculator-form__button:disabled {
   opacity: 0.6;
