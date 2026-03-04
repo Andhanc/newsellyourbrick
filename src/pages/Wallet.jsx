@@ -13,14 +13,14 @@ import DepositTopUpPicker from '../components/DepositTopUpPicker'
 import CardTopUpModal from '../components/CardTopUpModal'
 import SellerVerificationModal from '../components/SellerVerificationModal'
 import { showNotification } from '../utils/toastHelper'
+import { getUsdtJettonWalletAddress, buildUsdtTransferTransaction } from '../utils/tonUsdt'
 import './Wallet.css'
 
 // Используем синхронную версию для инициализации, затем обновим при загрузке
 let API_BASE_URL = getApiBaseUrlSync()
 
-// Адрес кошелька для приёма оплаты TON (0.01 TON)
-const TON_PAYMENT_RECIPIENT = 'UQA8j4T1Au4jDjWTfl_PrB4_Whoo15RZhszE9E6gxUvu7OTI'
-const TON_PAYMENT_AMOUNT_NANOTONS = '10000000' // 0.01 TON
+// Адрес кошелька для приёма оплаты (0.01 USDT приходит на этот TON-адрес)
+const USDT_PAYMENT_RECIPIENT = 'UQA8j4T1Au4jDjWTfl_PrB4_Whoo15RZhszE9E6gxUvu7OTI'
 
 const Wallet = () => {
   const navigate = useNavigate()
@@ -105,34 +105,39 @@ const Wallet = () => {
     return `${addr.slice(0, 6)}…${addr.slice(-4)}`
   }
 
-  const handlePayTon = async () => {
-    if (!tonConnectUI) return
+  const handlePayUsdt = async () => {
+    if (!tonConnectUI || !tonAddress) return
     setTonPaymentLoading(true)
     setTonPaymentSuccess(false)
     try {
-      const transaction = {
-        validUntil: Math.floor(Date.now() / 1000) + 300,
-        messages: [
-          {
-            address: TON_PAYMENT_RECIPIENT,
-            amount: TON_PAYMENT_AMOUNT_NANOTONS
-          }
-        ]
+      const apiBase = typeof API_BASE_URL === 'string' ? API_BASE_URL : ''
+      const senderJettonWallet = await getUsdtJettonWalletAddress(tonAddress, apiBase)
+      if (!senderJettonWallet) {
+        showNotification('Не удалось определить USDT-кошелёк. Убедитесь, что у вас есть USDT в TON.', 'error')
+        setTonPaymentLoading(false)
+        return
+      }
+      const transaction = buildUsdtTransferTransaction(
+        senderJettonWallet,
+        USDT_PAYMENT_RECIPIENT,
+        tonAddress
+      )
+      if (!transaction) {
+        showNotification('Ошибка формирования транзакции USDT', 'error')
+        setTonPaymentLoading(false)
+        return
       }
       await tonConnectUI.sendTransaction(transaction)
       setTonPaymentSuccess(true)
-      showNotification('Оплата 0.01 TON успешно отправлена!')
+      showNotification('Оплата 0.01 USDT успешно отправлена!')
     } catch (err) {
       const message = String(err?.message || '')
       const isRejected = /reject|cancel|denied/i.test(message)
       const isNotSent = /transaction was not sent|not sent/i.test(message)
-      if (isRejected) {
-        // Пользователь отменил в кошельке — не показываем ошибку
-        return
-      }
+      if (isRejected) return
       if (isNotSent) {
         showNotification(
-          'Транзакция не была отправлена. Проверьте, что в кошельке достаточно TON (0.01 + комиссия), и подтвердите перевод в приложении кошелька.',
+          'Транзакция не была отправлена. Проверьте баланс USDT и TON (на комиссию) и подтвердите перевод в кошельке.',
           'error'
         )
         return
@@ -945,7 +950,7 @@ const Wallet = () => {
                 </div>
               </div>
               <div className="crypto-wallet-card__pay-section">
-                <p className="crypto-wallet-card__pay-hint">Оплатите 0.01 TON для пополнения депозита</p>
+                <p className="crypto-wallet-card__pay-hint">Оплатите 0.01 USDT для пополнения депозита</p>
                 {tonPaymentSuccess ? (
                   <div className="crypto-wallet-card__success">
                     <span className="crypto-wallet-card__success-icon">✓</span>
@@ -956,7 +961,7 @@ const Wallet = () => {
                     <button
                       type="button"
                       className="crypto-wallet-card__pay-btn"
-                      onClick={handlePayTon}
+                      onClick={handlePayUsdt}
                       disabled={tonPaymentLoading}
                     >
                       {tonPaymentLoading ? (
@@ -965,12 +970,12 @@ const Wallet = () => {
                           Ожидаем подтверждения…
                         </>
                       ) : (
-                        'Оплатить 0.01 TON'
+                        'Оплатить 0.01 USDT'
                       )}
                     </button>
                     {tonPaymentLoading && (
                       <p className="crypto-wallet-card__pay-phone-hint">
-                        Подтвердите перевод <strong>на телефоне</strong>: откройте приложение кошелька (Tonkeeper и т.п.) — там появится запрос на оплату 0.01 TON.
+                        Подтвердите перевод <strong>на телефоне</strong>: откройте приложение кошелька (Tonkeeper и т.п.) — там появится запрос на оплату 0.01 USDT.
                       </p>
                     )}
                     <p className="crypto-wallet-card__pay-cross-device-note">

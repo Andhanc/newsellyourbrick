@@ -12,6 +12,7 @@ import crypto from 'crypto';
 import qrcode from 'qrcode-terminal';
 import whatsappPkg from 'whatsapp-web.js';
 import { calculatePropertyPrice } from './services/propertyParser.js';
+import { Address, beginCell, Cell } from '@ton/core';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -122,6 +123,47 @@ app.get('/api/config', (req, res) => {
       apiBaseUrl: process.env.REACT_APP_API_BASE_URL || process.env.VITE_API_BASE_URL || '/api'
     }
   });
+});
+
+// Получить адрес Jetton-кошелька по владельцу и мастер-контракту (для USDT и др.)
+app.get('/api/ton/jetton-wallet', async (req, res) => {
+  try {
+    const owner = req.query.owner;
+    const master = req.query.master || 'EQA_fTd7v1HOV3UqVh2EIkT7-A28MoQbr0opM7ZeqcJi97N4';
+    if (!owner) {
+      return res.status(400).json({ success: false, error: 'owner required' });
+    }
+    const ownerCell = beginCell().storeAddress(Address.parse(owner)).endCell();
+    const stackB64 = ownerCell.toBoc().toString('base64');
+    const payload = {
+      address: master,
+      method: 'get_wallet_address',
+      stack: [['slice', stackB64]]
+    };
+    const r = await axios.post('https://toncenter.com/api/v2/runGetMethod', payload, {
+      headers: { 'Content-Type': 'application/json' },
+      timeout: 10000
+    });
+    const data = r.data;
+    if (!data || data.ok === false) {
+      return res.status(502).json({ success: false, error: 'TonCenter error' });
+    }
+    const stack = data.result?.stack ?? data.stack ?? [];
+    const first = Array.isArray(stack) && stack[0];
+    const cellB64 = Array.isArray(first) ? first[1] : (first?.value ?? first?.cell);
+    if (!cellB64) {
+      return res.status(502).json({ success: false, error: 'Invalid response' });
+    }
+    const cell = Cell.fromBase64(cellB64);
+    const jettonWalletAddress = cell.beginParse().loadAddress();
+    return res.json({
+      success: true,
+      walletAddress: jettonWalletAddress.toString()
+    });
+  } catch (err) {
+    console.error('jetton-wallet error', err.message);
+    return res.status(500).json({ success: false, error: err.message || 'Internal error' });
+  }
 });
 
 // Root endpoint для проверки доступности
