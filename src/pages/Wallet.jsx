@@ -18,6 +18,10 @@ import './Wallet.css'
 // Используем синхронную версию для инициализации, затем обновим при загрузке
 let API_BASE_URL = getApiBaseUrlSync()
 
+// Адрес кошелька для приёма оплаты TON (0.01 TON)
+const TON_PAYMENT_RECIPIENT = 'UQA8j4T1Au4jDjWTfl_PrB4_Whoo15RZhszE9E6gxUvu7OTI'
+const TON_PAYMENT_AMOUNT_NANOTONS = '10000000' // 0.01 TON
+
 const Wallet = () => {
   const navigate = useNavigate()
   const { user, isLoaded: userLoaded } = useUser()
@@ -93,10 +97,39 @@ const Wallet = () => {
   const [tonConnectUI] = useTonConnectUI()
   const tonAddress = useTonAddress()
   const tonWallet = useTonWallet()
+  const [tonPaymentLoading, setTonPaymentLoading] = useState(false)
+  const [tonPaymentSuccess, setTonPaymentSuccess] = useState(false)
 
   const shortenAddress = (addr) => {
     if (!addr || addr.length < 12) return addr || ''
     return `${addr.slice(0, 6)}…${addr.slice(-4)}`
+  }
+
+  const handlePayTon = async () => {
+    if (!tonConnectUI) return
+    setTonPaymentLoading(true)
+    setTonPaymentSuccess(false)
+    try {
+      const transaction = {
+        validUntil: Math.floor(Date.now() / 1000) + 300,
+        messages: [
+          {
+            address: TON_PAYMENT_RECIPIENT,
+            amount: TON_PAYMENT_AMOUNT_NANOTONS
+          }
+        ]
+      }
+      await tonConnectUI.sendTransaction(transaction)
+      setTonPaymentSuccess(true)
+      showNotification('Оплата 0.01 TON успешно отправлена!')
+    } catch (err) {
+      const message = err?.message || 'Транзакция отменена или не удалась'
+      if (!/reject|cancel|denied/i.test(String(message))) {
+        showNotification(message, 'error')
+      }
+    } finally {
+      setTonPaymentLoading(false)
+    }
   }
 
   // Получаем числовой ID из БД для Clerk пользователей
@@ -899,6 +932,31 @@ const Wallet = () => {
                     {shortenAddress(tonAddress)}
                   </span>
                 </div>
+              </div>
+              <div className="crypto-wallet-card__pay-section">
+                <p className="crypto-wallet-card__pay-hint">Оплатите 0.01 TON для пополнения депозита</p>
+                {tonPaymentSuccess ? (
+                  <div className="crypto-wallet-card__success">
+                    <span className="crypto-wallet-card__success-icon">✓</span>
+                    <span>Оплата успешна</span>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    className="crypto-wallet-card__pay-btn"
+                    onClick={handlePayTon}
+                    disabled={tonPaymentLoading}
+                  >
+                    {tonPaymentLoading ? (
+                      <>
+                        <span className="crypto-wallet-card__pay-btn-spinner" />
+                        Отправка…
+                      </>
+                    ) : (
+                      'Оплатить 0.01 TON'
+                    )}
+                  </button>
+                )}
               </div>
               <div className="crypto-wallet-card__actions">
                 <button
