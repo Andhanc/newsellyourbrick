@@ -715,6 +715,190 @@
   color: rgba(255, 255, 255, 0.9);
 }
 
+/* Блок криптокошелька TON */
+.crypto-wallet-block {
+  margin-top: 24px;
+  padding: 24px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 2px solid rgba(0, 152, 234, 0.35);
+  border-radius: 20px;
+  backdrop-filter: blur(10px);
+  animation: fadeInUp 0.5s ease-out 0.15s both;
+}
+
+.crypto-wallet-block__header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.crypto-wallet-block__icon {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  flex-shrink: 0;
+}
+
+.crypto-wallet-block__icon--ton {
+  background: rgba(0, 152, 234, 0.25);
+  box-shadow: 0 2px 12px rgba(0, 152, 234, 0.2);
+}
+
+.crypto-wallet-block__icon svg {
+  width: 28px;
+  height: 28px;
+}
+
+.crypto-wallet-block__title {
+  font-size: 18px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.crypto-wallet-card {
+  border-radius: 16px;
+  overflow: hidden;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.crypto-wallet-card--connected {
+  background: linear-gradient(135deg, rgba(0, 152, 234, 0.12) 0%, rgba(0, 152, 234, 0.06) 100%);
+  border: 1px solid rgba(0, 152, 234, 0.3);
+  padding: 20px;
+}
+
+.crypto-wallet-card--disconnected {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px dashed rgba(255, 255, 255, 0.2);
+  padding: 24px;
+  text-align: center;
+}
+
+.crypto-wallet-card__wallet-info {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.crypto-wallet-card__wallet-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  object-fit: contain;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.crypto-wallet-card__wallet-details {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.crypto-wallet-card__wallet-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.crypto-wallet-card__address {
+  font-size: 14px;
+  font-family: 'SF Mono', 'Monaco', 'Consolas', monospace;
+  color: rgba(255, 255, 255, 0.75);
+  letter-spacing: 0.02em;
+}
+
+.crypto-wallet-card__actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.crypto-wallet-card__btn {
+  flex: 1;
+  min-width: 100px;
+  padding: 10px 16px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s, transform 0.15s;
+  border: none;
+}
+
+.crypto-wallet-card__btn--change {
+  background: rgba(0, 152, 234, 0.35);
+  color: #fff;
+}
+
+.crypto-wallet-card__btn--change:hover {
+  background: rgba(0, 152, 234, 0.5);
+  transform: translateY(-1px);
+}
+
+.crypto-wallet-card__btn--disconnect {
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.crypto-wallet-card__btn--disconnect:hover {
+  background: rgba(239, 68, 68, 0.25);
+  border-color: rgba(239, 68, 68, 0.4);
+  color: #fca5a5;
+  transform: translateY(-1px);
+}
+
+.crypto-wallet-card__hint {
+  margin: 0 0 20px;
+  font-size: 15px;
+  color: rgba(255, 255, 255, 0.8);
+  line-height: 1.5;
+}
+
+.crypto-wallet-card__connect-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 14px 24px;
+  background: linear-gradient(135deg, #0098ea 0%, #0077b8 100%);
+  color: #fff;
+  border: none;
+  border-radius: 14px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 20px rgba(0, 152, 234, 0.4);
+  transition: transform 0.2s, box-shadow 0.2s, filter 0.2s;
+}
+
+.crypto-wallet-card__connect-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 24px rgba(0, 152, 234, 0.5);
+  filter: brightness(1.05);
+}
+
+.crypto-wallet-card__connect-btn:active {
+  transform: translateY(0);
+}
+
+.crypto-wallet-card__connect-btn-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.crypto-wallet-card__connect-btn-icon svg {
+  width: 24px;
+  height: 24px;
+}
+
 /* Форма карты */
 .card-form-container {
   background: rgba(255, 255, 255, 0.05);

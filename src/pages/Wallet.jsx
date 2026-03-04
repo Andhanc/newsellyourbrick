@@ -8,7 +8,7 @@ import { validateLuhn, detectCardType, formatCardNumber, maskCardNumber } from '
 import { getApiBaseUrl, getApiBaseUrlSync } from '../utils/apiConfig'
 import UserBidHistoryModal from '../components/UserBidHistoryModal'
 import BuyNowModal from '../components/BuyNowModal'
-import { useTonConnectUI } from '@tonconnect/ui-react'
+import { useTonConnectUI, useTonAddress, useTonWallet } from '@tonconnect/ui-react'
 import DepositTopUpPicker from '../components/DepositTopUpPicker'
 import CardTopUpModal from '../components/CardTopUpModal'
 import SellerVerificationModal from '../components/SellerVerificationModal'
@@ -91,6 +91,13 @@ const Wallet = () => {
   const [showCardTopUpModal, setShowCardTopUpModal] = useState(false)
   const [showVerificationAfterTopUp, setShowVerificationAfterTopUp] = useState(false)
   const [tonConnectUI] = useTonConnectUI()
+  const tonAddress = useTonAddress()
+  const tonWallet = useTonWallet()
+
+  const shortenAddress = (addr) => {
+    if (!addr || addr.length < 12) return addr || ''
+    return `${addr.slice(0, 6)}…${addr.slice(-4)}`
+  }
 
   // Получаем числовой ID из БД для Clerk пользователей
   useEffect(() => {
@@ -867,6 +874,67 @@ const Wallet = () => {
               <span>Вывести</span>
             </button>
           </div>
+        </div>
+
+        {/* Блок криптокошелька TON — подключение и отображение */}
+        <div className="crypto-wallet-block">
+          <div className="crypto-wallet-block__header">
+            <span className="crypto-wallet-block__icon crypto-wallet-block__icon--ton">
+              <svg width="28" height="28" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M28 56c15.464 0 28-12.536 28-28S43.464 0 28 0 0 12.536 0 28s12.536 28 28 28z" fill="#0098EA"/>
+                <path d="M37.56 15.027H18.44c-.577 0-.866.32-1.01.96L14.028 35.46c-.144.64.072 1.04.577 1.2l5.34 1.44c.577.16.865-.08 1.01-.72l2.017-8.4c.144-.64.721-1.2 1.298-1.2h4.392c5.772 0 9.063-2.88 10.11-8.64l.433-2.4c.144-.72-.217-1.04-.721-1.12l-4.68-.64c-.576-.08-.864-.4-.72-1.04l.288-1.2c.144-.64.576-.96 1.153-.96h2.88c.576 0 .864-.32.72-.96l-.576-2.4c-.145-.64-.433-.96-1.01-.96z" fill="#fff"/>
+              </svg>
+            </span>
+            <span className="crypto-wallet-block__title">Криптокошелёк</span>
+          </div>
+          {tonWallet && tonAddress ? (
+            <div className="crypto-wallet-card crypto-wallet-card--connected">
+              <div className="crypto-wallet-card__wallet-info">
+                {tonWallet.icon && (
+                  <img src={tonWallet.icon} alt="" className="crypto-wallet-card__wallet-icon" />
+                )}
+                <div className="crypto-wallet-card__wallet-details">
+                  <span className="crypto-wallet-card__wallet-name">{tonWallet.name || 'TON кошелёк'}</span>
+                  <span className="crypto-wallet-card__address" title={tonAddress}>
+                    {shortenAddress(tonAddress)}
+                  </span>
+                </div>
+              </div>
+              <div className="crypto-wallet-card__actions">
+                <button
+                  type="button"
+                  className="crypto-wallet-card__btn crypto-wallet-card__btn--change"
+                  onClick={() => tonConnectUI?.openModal?.()}
+                >
+                  Изменить
+                </button>
+                <button
+                  type="button"
+                  className="crypto-wallet-card__btn crypto-wallet-card__btn--disconnect"
+                  onClick={() => tonConnectUI?.disconnect?.()}
+                >
+                  Отключить
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="crypto-wallet-card crypto-wallet-card--disconnected">
+              <p className="crypto-wallet-card__hint">Подключите кошелёк TON для пополнения депозита в USDT</p>
+              <button
+                type="button"
+                className="crypto-wallet-card__connect-btn"
+                onClick={() => tonConnectUI?.openModal?.()}
+              >
+                <span className="crypto-wallet-card__connect-btn-icon">
+                  <svg width="24" height="24" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M28 56c15.464 0 28-12.536 28-28S43.464 0 28 0 0 12.536 0 28s12.536 28 28 28z" fill="#0098EA"/>
+                    <path d="M37.56 15.027H18.44c-.577 0-.866.32-1.01.96L14.028 35.46c-.144.64.072 1.04.577 1.2l5.34 1.44c.577.16.865-.08 1.01-.72l2.017-8.4c.144-.64.721-1.2 1.298-1.2h4.392c5.772 0 9.063-2.88 10.11-8.64l.433-2.4c.144-.72-.217-1.04-.721-1.12l-4.68-.64c-.576-.08-.864-.4-.72-1.04l.288-1.2c.144-.64.576-.96 1.153-.96h2.88c.576 0 .864-.32.72-.96l-.576-2.4c-.145-.64-.433-.96-1.01-.96z" fill="#fff"/>
+                  </svg>
+                </span>
+                Подключить кошелёк
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Picker и модалки пополнения */}
