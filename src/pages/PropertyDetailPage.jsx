@@ -1,5 +1,5 @@
 import { useParams, useLocation, useNavigate } from 'react-router-dom'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { properties } from '../data/properties'
 import PropertyDetailClassic from './PropertyDetailClassic'
 
@@ -19,17 +19,17 @@ const PropertyDetailPage = () => {
 
   // Получаем объект из state (если передан из MainPage)
   const propertyFromState = location.state?.property
-
+  const initializedFromStateRef = useRef(false)
+  
   useEffect(() => {
     const loadProperty = async () => {
-      // Если объект передан из state, используем его
-      if (propertyFromState) {
+      // Если объект передан из state, используем его один раз как начальные данные
+      if (propertyFromState && !initializedFromStateRef.current) {
         setProperty(propertyFromState)
-        setIsLoading(false)
-        return
+        initializedFromStateRef.current = true
       }
-
-      // Иначе загружаем из API (всегда загружаем актуальные данные, включая резервацию)
+ 
+      // Загружаем из API (всегда загружаем актуальные данные, включая резервацию)
       if (id) {
         try {
           setIsLoading(true)
@@ -229,6 +229,7 @@ const PropertyDetailPage = () => {
                 livingArea: (prop.living_area !== undefined && prop.living_area !== null && prop.living_area !== '') ? prop.living_area : null,
                 rooms: (prop.rooms !== undefined && prop.rooms !== null) ? prop.rooms : ((prop.bedrooms !== undefined && prop.bedrooms !== null) ? prop.bedrooms : 0),
                 beds: (prop.bedrooms !== undefined && prop.bedrooms !== null) ? prop.bedrooms : ((prop.rooms !== undefined && prop.rooms !== null) ? prop.rooms : 0),
+                bedrooms: (prop.bedrooms !== undefined && prop.bedrooms !== null && prop.bedrooms !== '') ? prop.bedrooms : null,
                 bathrooms: (prop.bathrooms !== undefined && prop.bathrooms !== null) ? prop.bathrooms : ((prop.baths !== undefined && prop.baths !== null) ? prop.baths : 0),
                 baths: (prop.baths !== undefined && prop.baths !== null) ? prop.baths : ((prop.bathrooms !== undefined && prop.bathrooms !== null) ? prop.bathrooms : 0),
                 floor: (prop.floor !== undefined && prop.floor !== null) ? prop.floor : null,
@@ -260,6 +261,9 @@ const PropertyDetailPage = () => {
                 commercial_type: prop.commercial_type || null,
                 business_hours: prop.business_hours || null,
                 currency: prop.currency || 'USD',
+                // Тест-драйв (флаг и удобное булево поле)
+                test_drive: prop.test_drive === 1 || prop.test_drive === true || prop.test_drive === '1' || prop.test_drive === 'true',
+                testDrive: prop.test_drive === 1 || prop.test_drive === true || prop.test_drive === '1' || prop.test_drive === 'true',
                 is_auction: prop.is_auction === 1 || prop.is_auction === true,
                 auction_start_date: prop.auction_start_date || null,
                 auction_end_date: prop.auction_end_date || null,

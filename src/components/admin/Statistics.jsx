@@ -227,8 +227,8 @@ const Statistics = ({ businessInfo, onShowUsers }) => {
           }
         }
 
-        // Форматируем данные для слайдера
-        const formattedAuctions = allAuctions.map(auction => ({
+        // Форматируем данные для слайдера (без учета ставок)
+        const formattedAuctionsBase = allAuctions.map(auction => ({
           id: auction.id,
           object_title: auction.title || auction.name || 'Без названия',
           description: auction.description || '',
@@ -236,6 +236,7 @@ const Statistics = ({ businessInfo, onShowUsers }) => {
           image_url: auction.image || (auction.images && auction.images[0]) || 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=800&q=80',
           starting_price: auction.auction_starting_price || auction.price || 0,
           auction_starting_price: auction.auction_starting_price || auction.price || 0,
+          // Пока используем стартовую цену, актуальную ставку подставим ниже после загрузки истории торгов
           current_bid: auction.currentBid || auction.auction_starting_price || auction.price || 0,
           end_date: auction.auction_end_date || auction.endTime || null,
           bedrooms: auction.bedrooms || auction.rooms || auction.beds || 0,
@@ -244,8 +245,31 @@ const Statistics = ({ businessInfo, onShowUsers }) => {
           object_type: auction.property_type || 'apartment',
         }));
 
-        setRealAuctions(formattedAuctions);
-        console.log('✅ Загружено аукционных объявлений для слайдера:', formattedAuctions.length);
+        // Для каждой аукционной карточки подтягиваем реальную текущую ставку из истории торгов
+        const formattedAuctionsWithBids = await Promise.all(
+          formattedAuctionsBase.map(async (auction) => {
+            try {
+              const bidsResponse = await fetch(`${API_BASE_URL}/bids/property/${auction.id}`);
+              if (bidsResponse.ok) {
+                const bidsData = await bidsResponse.json();
+                if (bidsData.success && Array.isArray(bidsData.data) && bidsData.data.length > 0) {
+                  const maxBid = Math.max(...bidsData.data.map(b => Number(b.bid_amount) || 0));
+                  return {
+                    ...auction,
+                    current_bid: maxBid || auction.current_bid || auction.auction_starting_price || auction.starting_price || 0,
+                  };
+                }
+              }
+            } catch (e) {
+              console.warn(`⚠️ Не удалось загрузить ставки для аукциона ${auction.id}:`, e);
+            }
+
+            return auction;
+          })
+        );
+
+        setRealAuctions(formattedAuctionsWithBids);
+        console.log('✅ Загружено аукционных объявлений для слайдера:', formattedAuctionsWithBids.length);
       } catch (error) {
         console.error('❌ Ошибка при загрузке аукционных объявлений:', error);
       } finally {

@@ -2,41 +2,10 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { MdBed, MdOutlineBathtub } from 'react-icons/md';
 import { BiArea } from 'react-icons/bi';
 import BiddingHistoryModal from '../BiddingHistoryModal';
+import PropertyTimer from '../PropertyTimer';
 import './NearestAuctionsSlider.css';
 
 const AuctionCardItem = ({ auction, onHistoryClick }) => {
-  const [timeLeft, setTimeLeft] = useState({
-    days: 0,
-    hours: 0,
-    minutes: 0,
-    seconds: 0
-  });
-  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
-
-  useEffect(() => {
-    const calculateTimeLeft = () => {
-      const now = new Date().getTime();
-      const end = new Date(auction.end_date).getTime();
-      const difference = end - now;
-
-      if (difference > 0) {
-        const days = Math.floor(difference / (1000 * 60 * 60 * 24));
-        const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-        const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
-        const seconds = Math.floor((difference % (1000 * 60)) / 1000);
-
-        setTimeLeft({ days, hours, minutes, seconds });
-      } else {
-        setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
-      }
-    };
-
-    calculateTimeLeft();
-    const interval = setInterval(calculateTimeLeft, 1000);
-
-    return () => clearInterval(interval);
-  }, [auction.end_date]);
-
   const getTypeLabel = (type) => {
     const types = {
       apartment: 'Квартира',
@@ -48,51 +17,31 @@ const AuctionCardItem = ({ auction, onHistoryClick }) => {
 
   return (
     <div className="auction-card">
-      <div className="nearest-auction-timer-centered">
-        <div className="nearest-auction-timer">
-          <div className="timer-item">
-            <div className="timer-value">{String(timeLeft.days).padStart(2, '0')}</div>
-            <div className="timer-label">дней</div>
-          </div>
-          <div className="timer-separator">:</div>
-          <div className="timer-item">
-            <div className="timer-value">{String(timeLeft.hours).padStart(2, '0')}</div>
-            <div className="timer-label">часов</div>
-          </div>
-          <div className="timer-separator">:</div>
-          <div className="timer-item">
-            <div className="timer-value">{String(timeLeft.minutes).padStart(2, '0')}</div>
-            <div className="timer-label">мин</div>
-          </div>
-          <div className="timer-separator">:</div>
-          <div className="timer-item">
-            <div className="timer-value">{String(timeLeft.seconds).padStart(2, '0')}</div>
-            <div className="timer-label">сек</div>
-          </div>
-        </div>
-      </div>
       <div className="nearest-auction-content">
         <div className="nearest-auction-image-wrapper">
           <div className="nearest-auction-image">
             <img src={auction.image_url} alt={auction.object_title} />
           </div>
-          <div className="nearest-auction-image-info">
-            <div className="image-info-item">
-              <MdBed size={16} />
-              <span>{auction.bedrooms || 3}</span>
-            </div>
-            <div className="image-info-item">
-              <MdOutlineBathtub size={16} />
-              <span>{auction.bathrooms || 2}</span>
-            </div>
-            <div className="image-info-item">
-              <BiArea size={16} />
-              <span>{auction.area || 120} м²</span>
-            </div>
+          <div className="nearest-auction-timer-below">
+            <PropertyTimer endTime={auction.end_date} compact />
           </div>
         </div>
         <div className="nearest-auction-info">
           <div className="nearest-auction-object-title">{auction.object_title}</div>
+          <div className="nearest-auction-stats-row">
+            <div className="nearest-auction-stat">
+              <MdBed size={16} />
+              <span>{auction.bedrooms || 3}</span>
+            </div>
+            <div className="nearest-auction-stat">
+              <MdOutlineBathtub size={16} />
+              <span>{auction.bathrooms || 2}</span>
+            </div>
+            <div className="nearest-auction-stat">
+              <BiArea size={16} />
+              <span>{auction.area || 120} м²</span>
+            </div>
+          </div>
           <div className="nearest-auction-object-description">
             {auction.description || `${getTypeLabel(auction.object_type)} в престижном районе с современной отделкой и всеми удобствами`}
           </div>
@@ -101,10 +50,16 @@ const AuctionCardItem = ({ auction, onHistoryClick }) => {
             {auction.object_location}
           </div>
           <div className="nearest-auction-price">
-        <div className="price-label">Стартовая ставка:</div>
-        <div className="price-value">
-          ${Number(auction.starting_price || auction.auction_starting_price || auction.current_bid || 0).toLocaleString('ru-RU')}
-        </div>
+            <div className="price-label">Текущая ставка:</div>
+            <div className="price-value">
+              ${Number(
+                auction.current_bid ??
+                auction.currentBid ??
+                auction.auction_starting_price ??
+                auction.starting_price ??
+                0
+              ).toLocaleString('ru-RU')}
+            </div>
           </div>
           <button 
             className="history-button"
@@ -244,31 +199,54 @@ const NearestAuctionsSlider = ({ auctions }) => {
     }
   };
 
+  const handleTouchStart = (e) => {
+    if (isTransitioning) return;
+    if (!e.touches || e.touches.length === 0) return;
+    const touchX = e.touches[0].clientX;
+    setIsDragging(true);
+    setStartX(touchX);
+    setCurrentX(touchX);
+    setOffset(0);
+    if (sliderRef.current) {
+      sliderRef.current.style.transition = 'none';
+    }
+  };
+
 
   useEffect(() => {
-    const handleMouseMoveEvent = (e) => {
+    const handlePointerMove = (clientX, event) => {
       if (!isDragging) return;
-      e.preventDefault();
-      const diff = e.clientX - startX;
-      setCurrentX(e.clientX);
+      if (event && typeof event.preventDefault === 'function') {
+        event.preventDefault();
+      }
+      const diff = clientX - startX;
+      setCurrentX(clientX);
       setOffset(diff);
-      
+
       if (sliderRef.current && trackWrapperRef.current) {
         const itemWidth = 100 / itemsPerView;
         const baseOffset = currentIndex * itemWidth;
-        const trackWidth = trackWrapperRef.current.offsetWidth;
+        const trackWidth = trackWrapperRef.current.offsetWidth || 1;
         const dragOffset = (diff / trackWidth) * 100;
         const translateValue = -baseOffset + dragOffset;
         sliderRef.current.style.transform = `translate3d(${translateValue}%, 0, 0)`;
       }
     };
 
-    const handleMouseUpEvent = () => {
+    const handleMouseMoveEvent = (e) => {
+      handlePointerMove(e.clientX, e);
+    };
+
+    const handleTouchMoveEvent = (e) => {
+      if (!e.touches || e.touches.length === 0) return;
+      handlePointerMove(e.touches[0].clientX, e);
+    };
+
+    const finishDrag = () => {
       if (!isDragging) return;
       setIsDragging(false);
       
       const threshold = 50; // Минимальное расстояние для переключения слайда
-      const itemWidth = 100 / itemsPerView;
       
       if (Math.abs(offset) > threshold) {
         if (offset > 0) {
@@ -291,12 +269,26 @@ const NearestAuctionsSlider = ({ auctions }) => {
       setOffset(0);
     };
 
+    const handleMouseUpEvent = () => {
+      finishDrag();
+    };
+
+    const handleTouchEndEvent = () => {
+      finishDrag();
+    };
+
     if (isDragging) {
       document.addEventListener('mousemove', handleMouseMoveEvent);
       document.addEventListener('mouseup', handleMouseUpEvent);
+      document.addEventListener('touchmove', handleTouchMoveEvent, { passive: false });
+      document.addEventListener('touchend', handleTouchEndEvent);
+      document.addEventListener('touchcancel', handleTouchEndEvent);
       return () => {
         document.removeEventListener('mousemove', handleMouseMoveEvent);
         document.removeEventListener('mouseup', handleMouseUpEvent);
+        document.removeEventListener('touchmove', handleTouchMoveEvent);
+        document.removeEventListener('touchend', handleTouchEndEvent);
+        document.removeEventListener('touchcancel', handleTouchEndEvent);
       };
     }
   }, [isDragging, startX, offset, currentIndex, itemsPerView, goToSlide]);
@@ -316,18 +308,11 @@ const NearestAuctionsSlider = ({ auctions }) => {
       </div>
       
       <div className="slider-wrapper">
-        <button 
-          className="slider-arrow slider-arrow-left" 
-          onClick={prevSlide}
-          disabled={isTransitioning || isDragging}
-          aria-label="Предыдущий слайд"
-        >
-          <i className="fas fa-chevron-left"></i>
-        </button>
         <div 
           className="slider-track-wrapper"
           ref={trackWrapperRef}
           onMouseDown={handleMouseDown}
+          onTouchStart={handleTouchStart}
           style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
         >
           <div 
@@ -344,14 +329,24 @@ const NearestAuctionsSlider = ({ auctions }) => {
             ))}
           </div>
         </div>
-        <button 
-          className="slider-arrow slider-arrow-right" 
-          onClick={nextSlide}
-          disabled={isTransitioning || isDragging}
-          aria-label="Следующий слайд"
-        >
-          <i className="fas fa-chevron-right"></i>
-        </button>
+        <div className="slider-arrows">
+          <button 
+            className="slider-arrow slider-arrow-left" 
+            onClick={prevSlide}
+            disabled={isTransitioning || isDragging}
+            aria-label="Предыдущий слайд"
+          >
+            <i className="fas fa-chevron-left"></i>
+          </button>
+          <button 
+            className="slider-arrow slider-arrow-right" 
+            onClick={nextSlide}
+            disabled={isTransitioning || isDragging}
+            aria-label="Следующий слайд"
+          >
+            <i className="fas fa-chevron-right"></i>
+          </button>
+        </div>
       </div>
 
       {selectedAuctionForHistory && (
