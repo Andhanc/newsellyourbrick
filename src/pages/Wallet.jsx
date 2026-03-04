@@ -123,10 +123,21 @@ const Wallet = () => {
       setTonPaymentSuccess(true)
       showNotification('Оплата 0.01 TON успешно отправлена!')
     } catch (err) {
-      const message = err?.message || 'Транзакция отменена или не удалась'
-      if (!/reject|cancel|denied/i.test(String(message))) {
-        showNotification(message, 'error')
+      const message = String(err?.message || '')
+      const isRejected = /reject|cancel|denied/i.test(message)
+      const isNotSent = /transaction was not sent|not sent/i.test(message)
+      if (isRejected) {
+        // Пользователь отменил в кошельке — не показываем ошибку
+        return
       }
+      if (isNotSent) {
+        showNotification(
+          'Транзакция не была отправлена. Проверьте, что в кошельке достаточно TON (0.01 + комиссия), и подтвердите перевод в приложении кошелька.',
+          'error'
+        )
+        return
+      }
+      showNotification(message || 'Не удалось отправить транзакцию', 'error')
     } finally {
       setTonPaymentLoading(false)
     }
@@ -941,21 +952,31 @@ const Wallet = () => {
                     <span>Оплата успешна</span>
                   </div>
                 ) : (
-                  <button
-                    type="button"
-                    className="crypto-wallet-card__pay-btn"
-                    onClick={handlePayTon}
-                    disabled={tonPaymentLoading}
-                  >
-                    {tonPaymentLoading ? (
-                      <>
-                        <span className="crypto-wallet-card__pay-btn-spinner" />
-                        Отправка…
-                      </>
-                    ) : (
-                      'Оплатить 0.01 TON'
+                  <>
+                    <button
+                      type="button"
+                      className="crypto-wallet-card__pay-btn"
+                      onClick={handlePayTon}
+                      disabled={tonPaymentLoading}
+                    >
+                      {tonPaymentLoading ? (
+                        <>
+                          <span className="crypto-wallet-card__pay-btn-spinner" />
+                          Ожидаем подтверждения…
+                        </>
+                      ) : (
+                        'Оплатить 0.01 TON'
+                      )}
+                    </button>
+                    {tonPaymentLoading && (
+                      <p className="crypto-wallet-card__pay-phone-hint">
+                        Подтвердите перевод <strong>на телефоне</strong>: откройте приложение кошелька (Tonkeeper и т.п.) — там появится запрос на оплату 0.01 TON.
+                      </p>
                     )}
-                  </button>
+                    <p className="crypto-wallet-card__pay-cross-device-note">
+                      Кошелёк подключён с телефона → окно «Подтвердить» откроется в приложении на телефоне.
+                    </p>
+                  </>
                 )}
               </div>
               <div className="crypto-wallet-card__actions">

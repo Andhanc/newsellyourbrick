@@ -825,6 +825,27 @@
   color: rgba(255, 255, 255, 0.85);
 }
 
+.crypto-wallet-card__pay-phone-hint {
+  margin: 12px 0 0;
+  padding: 12px;
+  background: rgba(0, 152, 234, 0.15);
+  border-radius: 10px;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.9);
+  line-height: 1.45;
+}
+
+.crypto-wallet-card__pay-phone-hint strong {
+  color: #fff;
+}
+
+.crypto-wallet-card__pay-cross-device-note {
+  margin: 10px 0 0;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+  line-height: 1.4;
+}
+
 .crypto-wallet-card__pay-btn {
   display: inline-flex;
   align-items: center;
