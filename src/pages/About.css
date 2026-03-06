@@ -1,0 +1,66 @@
+/* About page & ScrollExpandMedia — стили без Tailwind */
+
+.scroll-expand-media__bg-img {
+  object-fit: cover;
+  object-position: center;
+}
+
+.about-page-content h2 {
+  font-size: 1.875rem;
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+  color: #111;
+}
+
+.about-page-content p {
+  font-size: 1.125rem;
+  margin-bottom: 2rem;
+  color: #333;
+  line-height: 1.75;
+}
+
+@media (prefers-color-scheme: dark) {
+  .about-page-content h2,
+  .about-page-content p {
+    color: #e5e5e5;
+  }
+}
+
+.scroll-expand-media__section .container {
+  width: 100%;
+  max-width: 1280px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+.scroll-expand-media__content .max-w-4xl {
+  max-width: 56rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.scroll-expand-media__date,
+.scroll-expand-media__hint {
+  color: #93c5fd;
+}
+
+.scroll-expand-media__title {
+  font-size: clamp(1.5rem, 4vw, 3rem);
+  font-weight: 700;
+  color: #93c5fd;
+  margin: 0;
+}
+
+@media (min-width: 768px) {
+  .scroll-expand-media__title {
+    font-size: clamp(2rem, 5vw, 3.75rem);
+  }
+}
+
+@media (min-width: 1024px) {
+  .scroll-expand-media__title {
+    font-size: 3.75rem;
+  }
+}

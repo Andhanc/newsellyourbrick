@@ -1,5 +1,9 @@
 import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
+import path from 'path'
+import { fileURLToPath } from 'url'
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 export default defineConfig(({ mode }) => {
   // Определяем режим: если NODE_ENV=production или запущено на Railway (есть PORT), то production
@@ -98,6 +102,11 @@ export default defineConfig(({ mode }) => {
         fastRefresh: actualMode !== 'production',
       })
     ],
+    resolve: {
+      alias: {
+        '@': path.resolve(__dirname, 'src'),
+      },
+    },
     // Настройки esbuild для стабильной работы на Railway
     esbuild: {
       // Увеличиваем лимит для больших файлов

@@ -601,6 +601,15 @@ const Header = () => {
                           <button 
                             className="menu-dropdown__item"
                             onClick={() => {
+                              navigate('/about')
+                              setIsMenuOpen(false)
+                            }}
+                          >
+                            <span>О нас</span>
+                          </button>
+                          <button 
+                            className="menu-dropdown__item"
+                            onClick={() => {
                               navigate('/favorites')
                               setIsMenuOpen(false)
                             }}

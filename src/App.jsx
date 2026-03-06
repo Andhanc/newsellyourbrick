@@ -19,6 +19,7 @@ import AddProperty from './pages/AddProperty'
 import Wallet from './pages/Wallet'
 import SearchResults from './pages/SearchResults'
 import AdminPanelPage from './admin/AdminPanelPage'
+import About from './pages/About'
 import Footer from './components/Footer'
 import ClerkAuthSync from './components/ClerkAuthSync'
 import ClerkAuthHandler from './components/ClerkAuthHandler'
@@ -239,6 +240,7 @@ function App() {
           <Route path="/wallet" element={<Wallet />} />
           <Route path="/bonuses" element={<Bonuses />} />
           <Route path="/shares" element={<Shares />} />
+          <Route path="/about" element={<About />} />
           <Route path="/shares/:id" element={<ShareDetailPage />} />
           
           {/* Страницы для владельцев */}
