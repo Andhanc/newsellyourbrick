@@ -1,5 +1,5 @@
 import React from 'react';
-import { FaChartBar, FaUsers, FaShieldAlt, FaComment, FaBuilding, FaSignOutAlt, FaKey, FaWhatsapp, FaAddressBook, FaShoppingCart, FaFlask, FaTimes, FaGift } from 'react-icons/fa';
+import { FaChartBar, FaUsers, FaShieldAlt, FaComment, FaBuilding, FaSignOutAlt, FaKey, FaWhatsapp, FaAddressBook, FaShoppingCart, FaFlask, FaTimes, FaGift, FaRobot } from 'react-icons/fa';
 import './Sidebar.css';
 
 const Sidebar = ({ activeSection, onSectionChange, onLogout, adminPermissions }) => {
@@ -12,6 +12,7 @@ const Sidebar = ({ activeSection, onSectionChange, onLogout, adminPermissions })
     { id: 'users', icon: FaUsers, label: 'Пользователи', permission: 'can_access_users' },
     { id: 'moderation', icon: FaShieldAlt, label: 'Модерация', permission: 'can_access_moderation' },
     { id: 'chat', icon: FaComment, label: 'Чат', permission: 'can_access_chat' },
+    { id: 'smart_assistant', icon: FaRobot, label: 'Умный помощник', permission: 'can_access_chat' },
     { id: 'objects', icon: FaBuilding, label: 'Объекты', permission: 'can_access_objects' },
     { id: 'whatsapp', icon: FaWhatsapp, label: 'WhatsApp', permission: 'can_access_whatsapp' },
     { id: 'clients', icon: FaAddressBook, label: 'Клиенты', permission: 'can_access_clients' },

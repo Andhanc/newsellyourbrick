@@ -2,7 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import axios from 'axios';
 import { initDatabase, closeDatabase, getDatabase } from './database/database.js';
-import { userQueries, documentQueries, notificationQueries, administratorQueries, whatsappUserQueries, purchaseRequestQueries, apartmentQueries, houseQueries, propertyQueries } from './database/database.js';
+import { userQueries, documentQueries, notificationQueries, administratorQueries, whatsappUserQueries, purchaseRequestQueries, assistantLeadQueries, apartmentQueries, houseQueries, propertyQueries } from './database/database.js';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import multer from 'multer';
@@ -2705,6 +2705,59 @@ app.delete('/api/purchase-requests/:id', (req, res) => {
   } catch (error) {
     console.error('❌ Ошибка удаления запроса:', error);
     res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * POST /api/assistant-leads - Сохранить/обновить сессию чата с умным помощником
+ */
+app.post('/api/assistant-leads', (req, res) => {
+  try {
+    const { sessionId, userId, messages, preferences, email, phone } = req.body || {};
+    if (!sessionId || typeof sessionId !== 'string' || !sessionId.trim()) {
+      return res.status(400).json({ success: false, error: 'sessionId обязателен' });
+    }
+    const result = assistantLeadQueries.upsert({
+      sessionId: sessionId.trim(),
+      userId: userId ? parseInt(userId, 10) : null,
+      messages: messages || [],
+      preferences: preferences || {},
+      email: email && String(email).trim() || null,
+      phone: phone && String(phone).trim() || null
+    });
+    return res.json({ success: true, id: result.id, created: result.created });
+  } catch (error) {
+    console.error('❌ POST /api/assistant-leads:', error);
+    return res.status(500).json({ success: false, error: error.message || 'Ошибка сервера' });
+  }
+});
+
+/**
+ * GET /api/assistant-leads - Список лидов умного помощника (для админки)
+ */
+app.get('/api/assistant-leads', (req, res) => {
+  try {
+    const list = assistantLeadQueries.getAll();
+    return res.json({ success: true, data: list });
+  } catch (error) {
+    console.error('❌ GET /api/assistant-leads:', error);
+    return res.status(500).json({ success: false, error: error.message || 'Ошибка сервера' });
+  }
+});
+
+/**
+ * GET /api/assistant-leads/:id - Один лид по ID (карточка клиента)
+ */
+app.get('/api/assistant-leads/:id', (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) return res.status(400).json({ success: false, error: 'Некорректный id' });
+    const lead = assistantLeadQueries.getById(id);
+    if (!lead) return res.status(404).json({ success: false, error: 'Лид не найден' });
+    return res.json({ success: true, data: lead });
+  } catch (error) {
+    console.error('❌ GET /api/assistant-leads/:id:', error);
+    return res.status(500).json({ success: false, error: error.message || 'Ошибка сервера' });
   }
 });
 

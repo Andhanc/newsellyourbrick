@@ -11,6 +11,7 @@ import Moderation from '../components/admin/Moderation';
 import ObjectsList from '../components/admin/ObjectsList';
 import AdminChat from '../components/admin/AdminChat';
 import WhatsApp from '../components/admin/WhatsApp';
+import SmartAssistant from '../components/admin/SmartAssistant';
 import Clients from '../components/admin/Clients';
 import PurchaseRequests from '../components/admin/PurchaseRequests';
 import BonusesSubmissions from '../components/admin/BonusesSubmissions';
@@ -62,6 +63,7 @@ const AdminPanelPage = () => {
     users: 'Пользователи',
     moderation: 'Модерация',
     chat: 'Чат',
+    smart_assistant: 'Умный помощник',
     objects: 'Объекты',
     whatsapp: 'WhatsApp',
     clients: 'Клиенты',
@@ -83,6 +85,7 @@ const AdminPanelPage = () => {
       users: adminPermissions.can_access_users,
       moderation: adminPermissions.can_access_moderation,
       chat: adminPermissions.can_access_chat,
+      smart_assistant: adminPermissions.can_access_chat,
       objects: adminPermissions.can_access_objects,
       whatsapp: adminPermissions.can_access_whatsapp,
       clients: adminPermissions.can_access_clients,
@@ -142,6 +145,8 @@ const AdminPanelPage = () => {
         return <Moderation />;
       case 'chat':
         return <AdminChat />;
+      case 'smart_assistant':
+        return <SmartAssistant />;
       case 'objects':
         return <ObjectsList />;
       case 'whatsapp':

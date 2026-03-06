@@ -803,6 +803,39 @@ export function initDatabase() {
       } catch (bonusErr) {
         console.warn('⚠️ Не удалось создать таблицу bonus_task_submissions:', bonusErr.message);
       }
+
+      // Таблица лидов умного помощника (чат с ботом)
+      try {
+        const assistantLeadsTable = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='assistant_leads'").get();
+        if (!assistantLeadsTable) {
+          console.log('🔄 Создание таблицы assistant_leads...');
+          db.exec(`
+            CREATE TABLE IF NOT EXISTS assistant_leads (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              session_id TEXT UNIQUE NOT NULL,
+              user_id INTEGER,
+              messages TEXT,
+              preferences TEXT,
+              summary TEXT,
+              lead_type TEXT DEFAULT 'cold',
+              email TEXT,
+              phone TEXT,
+              country TEXT,
+              region TEXT,
+              property_type TEXT,
+              created_at TEXT DEFAULT (datetime('now')),
+              updated_at TEXT DEFAULT (datetime('now')),
+              FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_assistant_leads_session_id ON assistant_leads(session_id);
+            CREATE INDEX IF NOT EXISTS idx_assistant_leads_lead_type ON assistant_leads(lead_type);
+            CREATE INDEX IF NOT EXISTS idx_assistant_leads_updated_at ON assistant_leads(updated_at);
+          `);
+          console.log('✅ Таблица assistant_leads создана');
+        }
+      } catch (assistantLeadsError) {
+        console.warn('⚠️ Не удалось создать таблицу assistant_leads:', assistantLeadsError.message);
+      }
       
       // Создаем таблицы для квартир/апартаментов и домов/вилл
       try {
@@ -2584,6 +2617,102 @@ export const purchaseRequestQueries = {
     const db = getDatabase();
     const stmt = db.prepare('DELETE FROM purchase_requests WHERE id = ?');
     return stmt.run(id);
+  }
+};
+
+// ========== ЛИДЫ УМНОГО ПОМОЩНИКА ==========
+
+/**
+ * Вычисление типа лида по сообщениям и предпочтениям
+ * hot — горячий (обсуждал цену/бюджет, много сообщений, готов к контакту)
+ * warm — тёплый (уточнял параметры, есть предпочтения)
+ * cold — холодный (мало сообщений, общие вопросы)
+ */
+function computeLeadType(messages, preferences) {
+  const msgList = Array.isArray(messages) ? messages : (messages ? JSON.parse(messages || '[]') : []);
+  const prefs = typeof preferences === 'object' ? preferences : (preferences ? JSON.parse(preferences || '{}') : {});
+  const userMessages = msgList.filter(m => m.sender === 'user').map(m => (m.text || '').toLowerCase()).join(' ');
+  const hasBudget = !!(prefs.budget || /бюджет|цена|евро|€|euro|стоимость|сколько стоит/i.test(userMessages));
+  const hasContactIntent = /контакт|телефон|позвонить|почта|email|связь|связаться/i.test(userMessages);
+  const hasLocation = !!(prefs.location || prefs.region || /испани|дубай|барселон|мадрид|оаэ|страна|регион|город/i.test(userMessages));
+  const hasPropertyType = !!(prefs.propertyType || /квартир|дом|апартамент|вилл|недвижимость/i.test(userMessages));
+  const count = msgList.length;
+
+  if (count >= 8 || (hasBudget && (hasContactIntent || count >= 6))) return 'hot';
+  if (count >= 4 || hasBudget || hasLocation || hasPropertyType) return 'warm';
+  return 'cold';
+}
+
+/**
+ * Формирование краткой выжимки по диалогу и предпочтениям
+ */
+function buildSummary(messages, preferences) {
+  const prefs = typeof preferences === 'object' ? preferences : (preferences ? JSON.parse(preferences || '{}') : {});
+  const msgList = Array.isArray(messages) ? messages : (messages ? JSON.parse(messages || '[]') : []);
+  const parts = [];
+
+  if (prefs.purpose) parts.push(`Цель: ${prefs.purpose}`);
+  if (prefs.budget) parts.push(`Бюджет: ${prefs.budget}`);
+  if (prefs.location) parts.push(`Регион/локация: ${prefs.location}`);
+  if (prefs.propertyType) parts.push(`Тип объекта: ${prefs.propertyType}`);
+  if (prefs.rooms) parts.push(`Комнат: ${prefs.rooms}`);
+  if (prefs.area) parts.push(`Площадь: ${prefs.area}`);
+  if (prefs.other) parts.push(`Прочее: ${prefs.other}`);
+
+  const userTexts = msgList.filter(m => m.sender === 'user').map(m => m.text || '');
+  if (userTexts.some(t => /цена|бюджет|евро|стоимость/i.test(t))) parts.push('Дошли до обсуждения цены.');
+  if (userTexts.some(t => /квартир|дом|апартамент|объект/i.test(t))) parts.push('Уточнял тип недвижимости.');
+  if (userTexts.some(t => /испани|дубай|барселон|оаэ|страна|регион/i.test(t))) parts.push('Уточнял регион/страну.');
+
+  return parts.length ? parts.join(' ') : 'Общение с ботом без выделенных предпочтений.';
+}
+
+export const assistantLeadQueries = {
+  upsert: (data) => {
+    const db = getDatabase();
+    const { sessionId, userId, messages, preferences, email, phone } = data;
+    const messagesStr = typeof messages === 'string' ? messages : JSON.stringify(messages || []);
+    const preferencesStr = typeof preferences === 'string' ? preferences : JSON.stringify(preferences || {});
+    const leadType = computeLeadType(messages, preferences);
+    const summary = buildSummary(messages, preferences);
+
+    const prefs = typeof preferences === 'object' ? preferences : JSON.parse(preferencesStr);
+    const country = prefs.country || (prefs.location && String(prefs.location).split(/[,;]/)[0]) || null;
+    const region = prefs.location || prefs.region || null;
+    const propertyType = prefs.propertyType || null;
+
+    const existing = db.prepare('SELECT id FROM assistant_leads WHERE session_id = ?').get(sessionId);
+    if (existing) {
+      const stmt = db.prepare(`
+        UPDATE assistant_leads SET
+          user_id = ?, messages = ?, preferences = ?, summary = ?, lead_type = ?,
+          email = COALESCE(?, email), phone = COALESCE(?, phone),
+          country = ?, region = ?, property_type = ?, updated_at = datetime('now')
+        WHERE session_id = ?
+      `);
+      stmt.run(userId || null, messagesStr, preferencesStr, summary, leadType, email || null, phone || null, country, region, propertyType, sessionId);
+      return { id: existing.id, created: false };
+    }
+    const result = db.prepare(`
+      INSERT INTO assistant_leads (session_id, user_id, messages, preferences, summary, lead_type, email, phone, country, region, property_type)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(sessionId, userId || null, messagesStr, preferencesStr, summary, leadType, email || null, phone || null, country, region, propertyType);
+    return { id: result.lastInsertRowid, created: true };
+  },
+
+  getAll: () => {
+    const db = getDatabase();
+    const stmt = db.prepare(`
+      SELECT id, session_id, user_id, summary, lead_type, email, phone, country, region, property_type, created_at, updated_at
+      FROM assistant_leads ORDER BY updated_at DESC
+    `);
+    return stmt.all();
+  },
+
+  getById: (id) => {
+    const db = getDatabase();
+    const stmt = db.prepare('SELECT * FROM assistant_leads WHERE id = ?');
+    return stmt.get(id);
   }
 };
 

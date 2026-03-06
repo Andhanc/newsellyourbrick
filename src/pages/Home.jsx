@@ -8,6 +8,7 @@ import PropertyList from '../components/PropertyList'
 import FAQ from '../components/FAQ'
 import DepositButton from '../components/DepositButton'
 import { getUserData, isAuthenticated } from '../services/authService'
+import { syncAssistantLead } from '../services/assistantLeadService'
 import { askPropertyAssistant } from '../services/aiService'
 import './Home.css'
 
@@ -484,7 +485,7 @@ function Home() {
     }
   }, [getChatUserId]) // Загружаем при изменении идентификатора пользователя
 
-  // Сохраняем историю чата в localStorage при каждом изменении
+  // Сохраняем историю чата в localStorage при каждом изменении и синхронизируем с сервером для раздела «Умный помощник»
   useEffect(() => {
     if (chatHistoryLoadedRef.current && chatMessages.length > 0) {
       try {
@@ -492,11 +493,14 @@ function Home() {
         const historyKey = `aiChatHistory_${chatUserId}`
         // Сохраняем историю в localStorage с привязкой к пользователю
         localStorage.setItem(historyKey, JSON.stringify(chatMessages))
+        // Синхронизация с сервером для админки «Умный помощник»
+        const userData = getUserData()
+        syncAssistantLead(chatUserId, chatMessages, userPreferences, userData?.isLoggedIn ? userData : null)
       } catch (error) {
         console.error('Ошибка при сохранении истории чата:', error)
       }
     }
-  }, [chatMessages, getChatUserId])
+  }, [chatMessages, userPreferences, getChatUserId])
 
   // Сохраняем предпочтения пользователя в localStorage
   useEffect(() => {

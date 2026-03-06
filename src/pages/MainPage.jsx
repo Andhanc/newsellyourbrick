@@ -56,6 +56,7 @@ import VerificationSuccessNotification from '../components/VerificationSuccessNo
 import '../components/PropertyList.css'
 import { askPropertyAssistant, filterPropertiesByLocation } from '../services/aiService'
 import { getUserData, clearUserData, isAuthenticated } from '../services/authService'
+import { syncAssistantLead } from '../services/assistantLeadService'
 
 import { getApiBaseUrl, getApiBaseUrlSync } from '../utils/apiConfig'
 
@@ -497,7 +498,7 @@ function MainPage() {
     }
   }, [getChatUserId]) // Загружаем при изменении идентификатора пользователя
 
-  // Сохраняем историю чата в localStorage при каждом изменении
+  // Сохраняем историю чата в localStorage при каждом изменении и синхронизируем с сервером для раздела «Умный помощник»
   useEffect(() => {
     if (chatHistoryLoadedRef.current && chatMessages.length > 0) {
       try {
@@ -505,11 +506,14 @@ function MainPage() {
         const historyKey = `aiChatHistory_${chatUserId}`
         // Сохраняем историю в localStorage с привязкой к пользователю
         localStorage.setItem(historyKey, JSON.stringify(chatMessages))
+        // Синхронизация с сервером для админки «Умный помощник»
+        const userData = getUserData()
+        syncAssistantLead(chatUserId, chatMessages, userPreferences, userData?.isLoggedIn ? userData : null)
       } catch (error) {
         console.error('Ошибка при сохранении истории чата:', error)
       }
     }
-  }, [chatMessages, getChatUserId])
+  }, [chatMessages, userPreferences, getChatUserId])
 
   // Сохраняем предпочтения пользователя в localStorage
   useEffect(() => {

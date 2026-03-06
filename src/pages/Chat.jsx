@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import './Chat.css'
 import { askPropertyAssistant } from '../services/aiService'
+import { getUserData } from '../services/authService'
+import { syncAssistantLead } from '../services/assistantLeadService'
 
 // Получаем идентификатор чата, общий с виджетом AI на главной
 function getChatUserId() {
@@ -92,7 +94,7 @@ const Chat = () => {
     }
   }, [chatUserId])
 
-  // Сохраняем историю AI-чата в общий ключ, чтобы виджет и /chat делили одну историю
+  // Сохраняем историю AI-чата в общий ключ, чтобы виджет и /chat делили одну историю, и синхронизируем с сервером
   useEffect(() => {
     try {
       const techMessages = messages['tech-support'] || []
@@ -107,6 +109,8 @@ const Chat = () => {
       }))
 
       localStorage.setItem(historyKey, JSON.stringify(serializable))
+      const userData = getUserData()
+      syncAssistantLead(chatUserId, serializable, {}, userData?.isLoggedIn ? userData : null)
     } catch (e) {
       console.error('Ошибка сохранения истории AI-чата в Chat.jsx:', e)
     }
