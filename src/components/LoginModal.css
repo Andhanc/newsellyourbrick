@@ -368,6 +368,10 @@
   font-weight: 500;
 }
 
+.login-modal__telegram-loading .login-modal__telegram-caption {
+  color: #888;
+}
+
 /* Контейнер для Telegram Login Widget (iframe от telegram.org) */
 .login-modal__telegram-widget {
   display: flex;

@@ -33,28 +33,39 @@ const LoginModal = ({ isOpen, onClose }) => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const telegramWidgetRef = useRef(null)
   const [telegramBotUsername, setTelegramBotUsername] = useState(() => import.meta.env.VITE_TELEGRAM_BOT_USERNAME || '')
+  const [telegramConfigLoaded, setTelegramConfigLoaded] = useState(!!import.meta.env.VITE_TELEGRAM_BOT_USERNAME)
 
-  // На Railway и др. VITE_* подставляются только при сборке; загружаем имя бота с сервера в рантайме
-  useEffect(() => {
+  // На Railway VITE_* нет в сборке — загружаем имя бота с сервера при открытии модалки
+  const fetchTelegramConfig = () => {
     const fromEnv = import.meta.env.VITE_TELEGRAM_BOT_USERNAME || ''
     if (fromEnv) {
       setTelegramBotUsername(fromEnv)
+      setTelegramConfigLoaded(true)
       return
     }
-    let cancelled = false
     getApiBaseUrl().then((apiBase) => {
-      if (cancelled) return
-      fetch(`${apiBase}/config`)
-        .then((res) => res.ok ? res.json() : null)
+      const url = apiBase.startsWith('http') ? apiBase : `${window.location.origin}${apiBase.startsWith('/') ? '' : '/'}${apiBase}`
+      fetch(`${url.replace(/\/$/, '')}/config`)
+        .then((res) => (res.ok ? res.json() : null))
         .then((data) => {
-          if (cancelled || !data?.success?.data) return
-          const username = data.data.telegramBotUsername || ''
+          const username = data?.success && data?.data ? (data.data.telegramBotUsername || '') : ''
           if (username) setTelegramBotUsername(username)
+          setTelegramConfigLoaded(true)
         })
-        .catch(() => {})
-    })
-    return () => { cancelled = true }
+        .catch(() => setTelegramConfigLoaded(true))
+    }).catch(() => setTelegramConfigLoaded(true))
+  }
+
+  useEffect(() => {
+    fetchTelegramConfig()
   }, [])
+
+  // При открытии модалки повторно запрашиваем конфиг (на случай если первый запрос был до готовности API)
+  useEffect(() => {
+    if (isOpen && !telegramBotUsername) {
+      fetchTelegramConfig()
+    }
+  }, [isOpen])
 
   // Сохраняем режим и роль для callback после редиректа из Telegram
   useEffect(() => {
@@ -598,6 +609,10 @@ const LoginModal = ({ isOpen, onClose }) => {
                 {isLogin ? 'Войти через Telegram' : 'Зарегистрироваться через Telegram'}
               </span>
               <div className="login-modal__telegram-widget" ref={telegramWidgetRef} aria-label={isLogin ? 'Войти через Telegram' : 'Зарегистрироваться через Telegram'} />
+            </div>
+          ) : !telegramConfigLoaded ? (
+            <div className="login-modal__telegram-row login-modal__telegram-loading">
+              <span className="login-modal__telegram-caption">Загрузка…</span>
             </div>
           ) : (
             <button
