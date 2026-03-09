@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { FiX, FiMail, FiLock, FiUser, FiEye, FiEyeOff } from 'react-icons/fi'
-import { FaGoogle, FaWhatsapp, FaFacebook } from 'react-icons/fa'
+import { FaGoogle, FaWhatsapp, FaFacebook, FaTelegram } from 'react-icons/fa'
 import { useSignIn, useSignUp } from '@clerk/clerk-react'
 import WhatsAppVerificationModal from './WhatsAppVerificationModal'
 import EmailVerificationModal from './EmailVerificationModal'
@@ -384,6 +384,11 @@ const LoginModal = ({ isOpen, onClose }) => {
     setShowWhatsAppModal(true)
   }
 
+  const handleTelegramClick = () => {
+    if (telegramBotUsername) return // виджет сам обрабатывает клик
+    showNotification('Добавьте VITE_TELEGRAM_BOT_USERNAME в .env и перезапустите приложение, чтобы включить вход через Telegram.')
+  }
+
   const handleWhatsAppSuccess = (user) => {
     // Успешная авторизация через WhatsApp
     const userRole = user.role || localStorage.getItem('userRole') || 'buyer'
@@ -567,8 +572,23 @@ const LoginModal = ({ isOpen, onClose }) => {
           </button>
 
           {telegramBotUsername ? (
-            <div className="login-modal__telegram-widget" ref={telegramWidgetRef} aria-label={isLogin ? 'Войти через Telegram' : 'Зарегистрироваться через Telegram'} />
-          ) : null}
+            <div className="login-modal__telegram-row">
+              <span className="login-modal__telegram-caption">
+                {isLogin ? 'Войти через Telegram' : 'Зарегистрироваться через Telegram'}
+              </span>
+              <div className="login-modal__telegram-widget" ref={telegramWidgetRef} aria-label={isLogin ? 'Войти через Telegram' : 'Зарегистрироваться через Telegram'} />
+            </div>
+          ) : (
+            <button
+              type="button"
+              className="login-modal__social-btn login-modal__social-btn--telegram"
+              onClick={handleTelegramClick}
+              title="Добавьте VITE_TELEGRAM_BOT_USERNAME в .env и перезапустите приложение"
+            >
+              <FaTelegram size={20} />
+              <span>{isLogin ? 'Войти через Telegram' : 'Зарегистрироваться через Telegram'}</span>
+            </button>
+          )}
         </div>
 
         <div className="login-modal__divider">
