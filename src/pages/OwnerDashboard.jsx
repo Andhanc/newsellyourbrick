@@ -1781,9 +1781,9 @@ const OwnerDashboard = () => {
       <FileUploadModal
         isOpen={showFileUploadModal}
         onClose={() => setShowFileUploadModal(false)}
+        userId={userId}
         onSuccess={() => {
-          // Здесь можно обновить список объявлений после успешной загрузки
-          console.log('Файл успешно загружен!')
+          if (userId) loadUserProperties(userId)
         }}
       />
 

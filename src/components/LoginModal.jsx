@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { FiX, FiMail, FiLock, FiUser, FiEye, FiEyeOff } from 'react-icons/fi'
 import { FaGoogle, FaWhatsapp, FaFacebook } from 'react-icons/fa'
@@ -31,6 +31,38 @@ const LoginModal = ({ isOpen, onClose }) => {
   const [newUserId, setNewUserId] = useState(null)
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const telegramWidgetRef = useRef(null)
+
+  const telegramBotUsername = import.meta.env.VITE_TELEGRAM_BOT_USERNAME || ''
+
+  // Сохраняем режим и роль для callback после редиректа из Telegram
+  useEffect(() => {
+    if (isOpen) {
+      sessionStorage.setItem('telegram_auth_mode', isLogin ? 'login' : 'register')
+      sessionStorage.setItem('telegram_auth_role', userRole)
+    }
+  }, [isOpen, isLogin, userRole])
+
+  // Подключаем скрипт Telegram Login Widget при открытой модалке и наличии бота
+  useEffect(() => {
+    if (!isOpen || !telegramBotUsername || !telegramWidgetRef.current) return
+
+    const container = telegramWidgetRef.current
+    container.innerHTML = ''
+
+    const script = document.createElement('script')
+    script.src = 'https://telegram.org/js/telegram-widget.js?22'
+    script.setAttribute('data-telegram-login', telegramBotUsername)
+    script.setAttribute('data-auth-url', `${window.location.origin}/auth/telegram-callback`)
+    script.setAttribute('data-size', 'large')
+    script.setAttribute('data-radius', '8')
+    script.async = true
+    container.appendChild(script)
+
+    return () => {
+      container.innerHTML = ''
+    }
+  }, [isOpen, telegramBotUsername])
 
   // Не скрываем LoginModal полностью, чтобы EmailVerificationModal мог рендериться
   // Вместо этого скрываем только содержимое LoginModal
@@ -533,6 +565,10 @@ const LoginModal = ({ isOpen, onClose }) => {
             <FaWhatsapp size={20} />
             <span>{isLogin ? 'Войти через WhatsApp' : 'Зарегистрироваться через WhatsApp'}</span>
           </button>
+
+          {telegramBotUsername ? (
+            <div className="login-modal__telegram-widget" ref={telegramWidgetRef} aria-label={isLogin ? 'Войти через Telegram' : 'Зарегистрироваться через Telegram'} />
+          ) : null}
         </div>
 
         <div className="login-modal__divider">

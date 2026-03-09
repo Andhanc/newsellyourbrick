@@ -92,6 +92,13 @@ function checkAndUpdateSchema(dbInstance) {
         console.log('🔄 Обновление схемы БД: добавляем поле user_id_number...');
         needsUpdate = true;
       }
+
+      // Проверяем поля для Telegram Login
+      const telegramIdColumn = pragmaInfo.find(col => col.name === 'telegram_id');
+      if (!telegramIdColumn) {
+        console.log('🔄 Обновление схемы БД: добавляем поля telegram_id, telegram_username, telegram_photo_url...');
+        needsUpdate = true;
+      }
       
       if (needsUpdate) {
         try {
@@ -179,6 +186,22 @@ function checkAndUpdateSchema(dbInstance) {
               console.log('✅ Индекс idx_users_id_number создан');
             } catch (e) {
               console.warn('⚠️ Не удалось добавить поле user_id_number:', e.message);
+            }
+          }
+
+          // Добавляем поля для Telegram Login Widget
+          if (!telegramIdColumn) {
+            try {
+              dbInstance.exec("ALTER TABLE users ADD COLUMN telegram_id TEXT");
+              console.log('✅ Поле telegram_id добавлено в таблицу users');
+              dbInstance.exec("ALTER TABLE users ADD COLUMN telegram_username TEXT");
+              console.log('✅ Поле telegram_username добавлено в таблицу users');
+              dbInstance.exec("ALTER TABLE users ADD COLUMN telegram_photo_url TEXT");
+              console.log('✅ Поле telegram_photo_url добавлено в таблицу users');
+              dbInstance.exec("CREATE INDEX IF NOT EXISTS idx_users_telegram_id ON users(telegram_id)");
+              console.log('✅ Индекс idx_users_telegram_id создан');
+            } catch (e) {
+              console.warn('⚠️ Не удалось добавить поля Telegram:', e.message);
             }
           }
           
@@ -1500,6 +1523,17 @@ export const userQueries = {
   },
 
   /**
+   * Получить пользователя по Telegram ID
+   */
+  getByTelegramId: (telegramId) => {
+    const db = getDatabase();
+    const pragmaInfo = db.prepare("PRAGMA table_info(users)").all();
+    if (!pragmaInfo.some(col => col.name === 'telegram_id')) return null;
+    const stmt = db.prepare('SELECT * FROM users WHERE telegram_id = ?');
+    return stmt.get(String(telegramId));
+  },
+
+  /**
    * Обновить данные пользователя
    */
   update: (id, userData) => {
@@ -1551,7 +1585,8 @@ export const userQueries = {
       'first_name', 'last_name', 'email', 'password', 'phone_number',
       'passport_series', 'passport_number', 'identification_number',
       'address', 'country', 'passport_photo', 'user_photo',
-      'is_verified', 'role', 'is_online', 'is_blocked'
+      'is_verified', 'role', 'is_online', 'is_blocked',
+      'telegram_id', 'telegram_username', 'telegram_photo_url'
     ];
     
     // Добавляем user_id_number в allowedFields только если поле существует в таблице

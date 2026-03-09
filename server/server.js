@@ -12,6 +12,7 @@ import crypto from 'crypto';
 import qrcode from 'qrcode-terminal';
 import whatsappPkg from 'whatsapp-web.js';
 import { calculatePropertyPrice } from './services/propertyParser.js';
+import { parseBulkImportFile, rowToPropertyData } from './services/bulkImportProperties.js';
 import { Address, beginCell, Cell } from '@ton/core';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -232,6 +233,12 @@ const upload = multer({
     fields: 100, // Максимальное количество полей
     files: 20 // Максимальное количество файлов
   }
+});
+
+// Multer в памяти для массовой загрузки Excel/CSV (нужен buffer для парсинга)
+const uploadMemory = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 }
 });
 
 // Статическая папка для загрузок
@@ -3499,6 +3506,154 @@ app.post('/api/auth/google', async (req, res) => {
 });
 
 /**
+ * Проверка подписи данных от Telegram Login Widget
+ * @see https://core.telegram.org/widgets/login#checking-authorization
+ * secret_key = SHA256(bot_token), hash = HMAC_SHA256(data_check_string, secret_key)
+ */
+function verifyTelegramAuthPayload(payload, botToken) {
+  if (!payload.hash || !botToken) return false;
+  const { hash, ...rest } = payload;
+  const dataCheckString = Object.keys(rest)
+    .sort()
+    .map((k) => `${k}=${rest[k]}`)
+    .join('\n');
+  const secretKey = crypto.createHash('sha256').update(botToken).digest();
+  const calculatedHash = crypto.createHmac('sha256', secretKey).update(dataCheckString).digest('hex');
+  return calculatedHash === hash;
+}
+
+/**
+ * POST /api/auth/telegram - Вход/регистрация через Telegram Login Widget
+ * Тело: id, first_name, last_name, username, photo_url, auth_date, hash (от Telegram) + mode, role (от фронта)
+ */
+app.post('/api/auth/telegram', async (req, res) => {
+  try {
+    const botToken = process.env.TELEGRAM_BOT_TOKEN;
+    if (!botToken) {
+      return res.status(503).json({
+        success: false,
+        error: 'Telegram-авторизация не настроена (нет TELEGRAM_BOT_TOKEN)',
+      });
+    }
+
+    const { id, first_name, last_name, username, photo_url, auth_date, hash: telegramHash, mode = 'register', role } = req.body;
+
+    if (!id || !telegramHash) {
+      return res.status(400).json({
+        success: false,
+        error: 'Не получены данные от Telegram (id и hash обязательны)',
+      });
+    }
+
+    const payload = {
+      id: String(id),
+      first_name: first_name || '',
+      last_name: last_name || '',
+      username: username || '',
+      photo_url: photo_url || '',
+      auth_date: String(auth_date || ''),
+    };
+    payload.hash = telegramHash;
+
+    if (!verifyTelegramAuthPayload(payload, botToken)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Неверная подпись данных Telegram',
+      });
+    }
+
+    const authDate = parseInt(String(auth_date || '0'), 10);
+    const oneDayAgo = Math.floor(Date.now() / 1000) - 86400;
+    if (!authDate || authDate < oneDayAgo) {
+      return res.status(400).json({
+        success: false,
+        error: 'Данные авторизации устарели. Войдите через Telegram снова.',
+      });
+    }
+
+    const telegramId = String(id);
+    let user = userQueries.getByTelegramId(telegramId);
+
+    if (user) {
+      if (user.is_blocked === 1) {
+        return res.status(403).json({
+          success: false,
+          error: 'Пользователь заблокирован',
+          is_blocked: true,
+        });
+      }
+      userQueries.update(user.id, {
+        is_online: 1,
+        telegram_username: username || null,
+        telegram_photo_url: photo_url || null,
+      });
+      const updatedUser = userQueries.getById(user.id);
+      return res.json({
+        success: true,
+        user: {
+          id: updatedUser.id,
+          name: `${updatedUser.first_name} ${updatedUser.last_name}`.trim() || [first_name, last_name].filter(Boolean).join(' ') || username || 'Пользователь',
+          email: updatedUser.email,
+          picture: updatedUser.telegram_photo_url || updatedUser.user_photo || photo_url,
+          role: updatedUser.role,
+          is_blocked: updatedUser.is_blocked === 1,
+          telegram_id: updatedUser.telegram_id,
+          telegram_username: updatedUser.telegram_username,
+        },
+      });
+    }
+
+    if (mode === 'login') {
+      return res.status(404).json({
+        success: false,
+        error: 'Пользователь с этим Telegram не найден. Сначала зарегистрируйтесь через Telegram.',
+      });
+    }
+
+    const fullName = [first_name, last_name].filter(Boolean).join(' ').trim() || username || `Telegram ${telegramId}`;
+    const nameParts = fullName.split(' ');
+    const firstName = nameParts[0] || '';
+    const lastName = nameParts.slice(1).join(' ') || '';
+
+    const newUser = {
+      first_name: firstName,
+      last_name: lastName,
+      email: null,
+      phone_number: null,
+      user_photo: photo_url || null,
+      role: role || 'buyer',
+      is_verified: 0,
+      is_online: 1,
+    };
+    const result = userQueries.create(newUser);
+    const createdUser = userQueries.getById(result.lastInsertRowid);
+    userQueries.update(createdUser.id, {
+      telegram_id: telegramId,
+      telegram_username: username || null,
+      telegram_photo_url: photo_url || null,
+    });
+    const finalUser = userQueries.getById(createdUser.id);
+
+    return res.status(201).json({
+      success: true,
+      user: {
+        id: finalUser.id,
+        name: fullName,
+        email: finalUser.email,
+        picture: finalUser.telegram_photo_url || finalUser.user_photo,
+        role: finalUser.role,
+        telegram_id: finalUser.telegram_id,
+        telegram_username: finalUser.telegram_username,
+        ...(finalUser.hasOwnProperty('user_id_number') && finalUser.user_id_number ? { user_id_number: finalUser.user_id_number } : {}),
+      },
+    });
+  } catch (error) {
+    console.error('Ошибка auth/telegram:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
  * GET /api/auth/whatsapp/user-info - Получение информации о пользователе WhatsApp по номеру
  */
 app.get('/api/auth/whatsapp/user-info', async (req, res) => {
@@ -4936,6 +5091,73 @@ app.post('/api/properties', upload.fields([
       success: false, 
       error: errorMessage,
       details: errorDetails
+    });
+  }
+});
+
+/**
+ * POST /api/properties/bulk-import - Массовое добавление объектов из Excel/CSV
+ */
+app.post('/api/properties/bulk-import', uploadMemory.single('file'), (req, res) => {
+  try {
+    const user_id = req.body.user_id ? parseInt(req.body.user_id, 10) : null;
+    if (!user_id || isNaN(user_id)) {
+      return res.status(400).json({ success: false, error: 'Необходимо указать user_id' });
+    }
+
+    if (!req.file || !req.file.buffer) {
+      return res.status(400).json({ success: false, error: 'Файл не загружен' });
+    }
+
+    const fileBuffer = req.file.buffer;
+    const originalName = req.file.originalname || '';
+
+    const { rows, errors: parseErrors } = parseBulkImportFile(fileBuffer, originalName);
+
+    const found = rows.length + parseErrors.length;
+    if (found === 0) {
+      return res.json({
+        success: true,
+        found: 0,
+        loaded: 0,
+        failed: parseErrors.length,
+        errors: parseErrors
+      });
+    }
+
+    let loaded = 0;
+    const errors = [...parseErrors];
+
+    for (const row of rows) {
+      try {
+        const propertyData = rowToPropertyData(row, user_id);
+        if (row.property_type === 'apartment' || row.property_type === 'commercial') {
+          apartmentQueries.create(propertyData);
+        } else {
+          houseQueries.create(propertyData);
+        }
+        loaded++;
+      } catch (err) {
+        errors.push({
+          row: row.rowIndex,
+          message: err.message || 'Ошибка сохранения в базу'
+        });
+      }
+    }
+
+    const failed = errors.length;
+    return res.json({
+      success: true,
+      found: rows.length,
+      loaded,
+      failed,
+      errors: errors.slice(0, 50)
+    });
+  } catch (error) {
+    console.error('❌ Ошибка bulk-import:', error);
+    return res.status(500).json({
+      success: false,
+      error: error.message || 'Ошибка при обработке файла'
     });
   }
 });

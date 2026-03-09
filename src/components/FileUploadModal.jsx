@@ -1,15 +1,21 @@
 import { useState, useRef } from 'react'
-import { FiX, FiUpload, FiFile, FiDownload, FiCheckCircle } from 'react-icons/fi'
+import { FiX, FiUpload, FiFile, FiDownload, FiCheckCircle, FiAlertCircle } from 'react-icons/fi'
 import Confetti from './Confetti'
 import './FileUploadModal.css'
 
-const FileUploadModal = ({ isOpen, onClose, onSuccess }) => {
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
+
+const FileUploadModal = ({ isOpen, onClose, onSuccess, userId: propsUserId }) => {
   const [file, setFile] = useState(null)
   const [isUploading, setIsUploading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
   const [showSuccess, setShowSuccess] = useState(false)
   const [showConfetti, setShowConfetti] = useState(false)
+  const [result, setResult] = useState(null) // { found, loaded, failed, errors }
+  const [uploadError, setUploadError] = useState(null)
   const fileInputRef = useRef(null)
+
+  const userId = propsUserId || (typeof localStorage !== 'undefined' ? localStorage.getItem('userId') : null)
 
   if (!isOpen) return null
 
@@ -23,18 +29,24 @@ const FileUploadModal = ({ isOpen, onClose, onSuccess }) => {
       ]
       const validExtensions = ['.csv', '.xls', '.xlsx']
       const fileExtension = selectedFile.name.substring(selectedFile.name.lastIndexOf('.')).toLowerCase()
-      
+
       if (validTypes.includes(selectedFile.type) || validExtensions.includes(fileExtension)) {
         setFile(selectedFile)
+        setUploadError(null)
       } else {
-        alert('Пожалуйста, выберите файл CSV или Excel (.csv, .xls, .xlsx)')
+        setUploadError('Выберите файл CSV или Excel (.csv, .xls, .xlsx)')
       }
     }
   }
 
   const handleUpload = async () => {
     if (!file) {
-      alert('Пожалуйста, выберите файл для загрузки')
+      setUploadError('Выберите файл для загрузки')
+      return
+    }
+    const effectiveUserId = propsUserId ?? (typeof localStorage !== 'undefined' ? localStorage.getItem('userId') : null)
+    if (!effectiveUserId || !/^\d+$/.test(String(effectiveUserId))) {
+      setUploadError('Не удалось определить пользователя. Войдите снова.')
       return
     }
 
@@ -42,34 +54,47 @@ const FileUploadModal = ({ isOpen, onClose, onSuccess }) => {
     setUploadProgress(0)
     setShowSuccess(false)
     setShowConfetti(false)
+    setResult(null)
+    setUploadError(null)
 
-    // Имитация загрузки файла (более медленная)
-    const interval = setInterval(() => {
-      setUploadProgress((prev) => {
-        if (prev >= 100) {
-          clearInterval(interval)
-          setIsUploading(false)
-          setShowSuccess(true)
-          setShowConfetti(true)
-          
-          // Скрываем конфетти через 10 секунд (было 3)
-          setTimeout(() => {
-            setShowConfetti(false)
-          }, 10000)
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('user_id', String(effectiveUserId))
 
-          // Вызываем callback успешной загрузки
-          if (onSuccess) {
-            setTimeout(() => {
-              onSuccess()
-              handleClose()
-            }, 5000)
-          }
-          return 100
-        }
-        // Уменьшаем шаг и увеличиваем интервал для более медленной загрузки
-        return prev + 2
+      const response = await fetch(`${API_BASE_URL}/properties/bulk-import`, {
+        method: 'POST',
+        body: formData
       })
-    }, 150)
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        setUploadError(data.error || 'Ошибка при загрузке файла')
+        setIsUploading(false)
+        return
+      }
+
+      setResult({
+        found: data.found ?? 0,
+        loaded: data.loaded ?? 0,
+        failed: data.failed ?? 0,
+        errors: data.errors || []
+      })
+      setUploadProgress(100)
+      setShowSuccess(true)
+      if ((data.loaded ?? 0) > 0) {
+        setShowConfetti(true)
+        setTimeout(() => setShowConfetti(false), 5000)
+      }
+      if (onSuccess && (data.loaded ?? 0) > 0) {
+        onSuccess()
+      }
+    } catch (err) {
+      setUploadError(err.message || 'Ошибка сети при загрузке файла')
+    } finally {
+      setIsUploading(false)
+    }
   }
 
   const handleClose = () => {
@@ -78,34 +103,40 @@ const FileUploadModal = ({ isOpen, onClose, onSuccess }) => {
     setUploadProgress(0)
     setShowSuccess(false)
     setShowConfetti(false)
+    setResult(null)
+    setUploadError(null)
     onClose()
   }
 
   const handleExampleDownload = () => {
-    // Создаем пример CSV файла
-    const csvContent = `Название,Локация,Цена,Спальни,Ванные,Площадь (м²),Описание
-Lakeshore Blvd West,Costa Adeje, Tenerife,797500,2,2,2000,Роскошная недвижимость с панорамными видами
-Eleanor Pena Property,Playa de las Américas, Tenerife,1200000,3,2,1800,Современная вилла в элитном районе
-Bessie Cooper Property,Los Cristianos, Tenerife,950000,2,1,1500,Уютный дом рядом с пляжем`
+    const csvContent = `тип_объекта,название,описание,цена,валюта,страна,город,адрес,площадь,жилая_площадь,комнаты,ванные,этаж,всего_этажей,год_постройки,тип_здания,квартира,спален,этажей_здания,участок_м2,бассейн,сад,гараж,балкон,парковка,лифт
+apartment,Квартира в центре,Уютная квартира с видом на парк,150000,USD,Испания,Тенерифе,ул. Примерная 1,85,70,3,2,5,10,2015,многоквартирный,42,,,,,0,0,1,1,1
+house,Дом с садом,Частный дом с участком,320000,EUR,Испания,Коста-дель-Соль,Шоссе 12 км,180,150,5,3,,2,2010,частный дом,,4,2,500,0,1,1,0,0,0
+villa,Вилла у моря,Вилла с бассейном,850000,USD,Испания,Марбелья,Пляжная аллея,250,200,6,4,,2,2018,вилла,,6,2,800,1,1,1,0,1,0`
 
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' })
     const link = document.createElement('a')
     const url = URL.createObjectURL(blob)
     link.setAttribute('href', url)
-    link.setAttribute('download', 'example_properties.csv')
+    link.setAttribute('download', 'шаблон_объекты_недвижимости.csv')
     link.style.visibility = 'hidden'
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
+    URL.revokeObjectURL(url)
   }
+
+  const percentLoaded = result && result.found > 0
+    ? Math.round((result.loaded / result.found) * 100)
+    : 0
 
   return (
     <>
       {showConfetti && <Confetti />}
       <div className="file-upload-modal-overlay" onClick={!isUploading ? handleClose : undefined}>
         <div className="file-upload-modal" onClick={(e) => e.stopPropagation()}>
-          <button 
-            className="file-upload-modal__close" 
+          <button
+            className="file-upload-modal__close"
             onClick={handleClose}
             disabled={isUploading}
             aria-label="Закрыть"
@@ -119,11 +150,18 @@ Bessie Cooper Property,Los Cristianos, Tenerife,950000,2,1,1500,Уютный д�
                 <div className="file-upload-modal__icon">
                   <FiUpload size={48} />
                 </div>
-                <h2 className="file-upload-modal__title">Загрузка файла</h2>
+                <h2 className="file-upload-modal__title">Быстрое добавление</h2>
                 <p className="file-upload-modal__subtitle">
-                  Загрузите файл CSV или Excel с данными о недвижимости
+                  Загрузите файл CSV или Excel с объектами недвижимости (квартиры, дома, виллы, коммерция)
                 </p>
               </div>
+
+              {uploadError && (
+                <div className="file-upload-modal__error">
+                  <FiAlertCircle size={20} />
+                  <span>{uploadError}</span>
+                </div>
+              )}
 
               <div className="file-upload-area" onClick={() => fileInputRef.current?.click()}>
                 <input
@@ -161,7 +199,7 @@ Bessie Cooper Property,Los Cristianos, Tenerife,950000,2,1,1500,Уютный д�
                       Нажмите или перетащите файл сюда
                     </p>
                     <p className="file-upload-area__hint">
-                      Поддерживаются форматы: CSV, XLS, XLSX
+                      Поддерживаются форматы: CSV, XLS, XLSX. Первая строка — заголовки.
                     </p>
                   </div>
                 )}
@@ -173,18 +211,23 @@ Bessie Cooper Property,Los Cristianos, Tenerife,950000,2,1,1500,Уютный д�
                 disabled={isUploading}
               >
                 <FiDownload size={18} />
-                <span>Смотреть пример файла</span>
+                <span>Скачать шаблон Excel/CSV</span>
               </button>
+
+              <details className="file-upload-modal__format-hint">
+                <summary>Как должен выглядеть файл</summary>
+                <p>Первая строка — заголовки. Обязательно: <strong>тип_объекта</strong> (apartment / house / villa / commercial) и <strong>название</strong>. Дополнительно: описание, цена, валюта, страна, город, адрес, площадь, комнаты, ванные, этаж, всего_этажей, год_постройки; для домов/вилл — спален, участок_м2, бассейн, сад, гараж. Удобства: балкон, парковка, лифт (0 или 1).</p>
+              </details>
 
               {isUploading && (
                 <div className="file-upload-modal__progress">
+                  <p className="progress-text">Обработка файла...</p>
                   <div className="progress-bar">
-                    <div 
-                      className="progress-bar__fill"
-                      style={{ width: `${uploadProgress}%` }}
-                    ></div>
+                    <div
+                      className="progress-bar__fill progress-bar__fill--indeterminate"
+                      style={{ width: '60%' }}
+                    />
                   </div>
-                  <p className="progress-text">{uploadProgress}%</p>
                 </div>
               )}
 
@@ -210,10 +253,35 @@ Bessie Cooper Property,Los Cristianos, Tenerife,950000,2,1,1500,Уютный д�
               <div className="success-icon">
                 <FiCheckCircle size={64} />
               </div>
-              <h2 className="success-title">Объекты успешно загружены!</h2>
-              <p className="success-text">
-                Все объекты из файла были добавлены в вашу базу данных
+              <h2 className="success-title">
+                {result?.loaded > 0 ? 'Загрузка завершена' : 'Обработка завершена'}
+              </h2>
+              <p className="success-text success-text--stats">
+                В файле найдено объектов: <strong>{result?.found ?? 0}</strong>
               </p>
+              <p className="success-text success-text--stats">
+                Загружено: <strong>{percentLoaded}%</strong> ({result?.loaded ?? 0} из {result?.found ?? 0})
+              </p>
+              <div className="file-upload-modal__progress file-upload-modal__progress--result">
+                <div className="progress-bar">
+                  <div
+                    className="progress-bar__fill"
+                    style={{ width: `${percentLoaded}%` }}
+                  />
+                </div>
+              </div>
+              {result?.failed > 0 && (
+                <p className="success-text success-text--warn">
+                  С ошибками: {result.failed} {result.errors?.length ? `(первые сообщения: ${result.errors.slice(0, 3).map(e => `стр. ${e.row}: ${e.message}`).join('; ')})` : ''}
+                </p>
+              )}
+              <button
+                className="file-upload-modal__upload-btn"
+                onClick={handleClose}
+                style={{ marginTop: 16 }}
+              >
+                Закрыть
+              </button>
             </div>
           )}
         </div>

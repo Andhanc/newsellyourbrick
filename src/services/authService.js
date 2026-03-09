@@ -1108,6 +1108,60 @@ const handleGoogleAccessToken = async (accessToken) => {
 }
 
 /**
+ * Вход/регистрация через Telegram Login Widget.
+ * @param {Object} telegramData - Данные от виджета: id, first_name, last_name, username, photo_url, auth_date, hash
+ * @param {string} mode - 'login' | 'register'
+ * @param {string} role - 'buyer' | 'seller'
+ */
+export const verifyTelegramAuth = async (telegramData, mode = 'register', role = 'buyer') => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/auth/telegram`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id: telegramData.id,
+        first_name: telegramData.first_name,
+        last_name: telegramData.last_name,
+        username: telegramData.username,
+        photo_url: telegramData.photo_url,
+        auth_date: telegramData.auth_date,
+        hash: telegramData.hash,
+        mode,
+        role
+      })
+    })
+    const data = await response.json()
+
+    if (!response.ok) {
+      return {
+        success: false,
+        error: data.error || 'Ошибка авторизации через Telegram'
+      }
+    }
+
+    const user = data.user
+    const userDataToSave = {
+      id: user.id,
+      name: user.name,
+      email: user.email || '',
+      picture: user.picture || null,
+      role: user.role || role,
+      telegram_id: user.telegram_id,
+      telegram_username: user.telegram_username
+    }
+    saveUserData(userDataToSave, 'telegram')
+
+    return { success: true, user: userDataToSave }
+  } catch (error) {
+    console.error('Ошибка verifyTelegramAuth:', error)
+    return {
+      success: false,
+      error: error.message || 'Не удалось войти через Telegram'
+    }
+  }
+}
+
+/**
  * Проверяет, авторизован ли пользователь
  */
 export const isAuthenticated = () => {

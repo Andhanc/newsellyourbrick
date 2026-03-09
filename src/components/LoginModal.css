@@ -339,6 +339,19 @@
   background-color: #f0fff4;
 }
 
+/* Контейнер для Telegram Login Widget (iframe от telegram.org) */
+.login-modal__telegram-widget {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  margin-top: 8px;
+}
+
+.login-modal__telegram-widget iframe {
+  border: none;
+}
+
 .login-modal__divider {
   padding: 0 32px 24px;
   display: flex;

@@ -15,6 +15,7 @@ import Bonuses from './pages/Bonuses'
 import Shares from './pages/Shares'
 import ShareDetailPage from './pages/ShareDetailPage'
 import OwnerDashboard from './pages/OwnerDashboard'
+import TelegramAuthCallback from './pages/TelegramAuthCallback'
 import AddProperty from './pages/AddProperty'
 import Wallet from './pages/Wallet'
 import SearchResults from './pages/SearchResults'
@@ -232,6 +233,7 @@ function App() {
           <Route path="/search-results" element={<SearchResults />} />
           <Route path="/map" element={<MapPage />} />
           <Route path="/profile" element={<Profile />} />
+          <Route path="/auth/telegram-callback" element={<TelegramAuthCallback />} />
           <Route path="/data" element={<Data />} />
           <Route path="/subscriptions" element={<Subscriptions />} />
           <Route path="/history" element={<History />} />
