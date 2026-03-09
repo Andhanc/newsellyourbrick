@@ -3546,15 +3546,17 @@ app.post('/api/auth/telegram', async (req, res) => {
       });
     }
 
-    const payload = {
-      id: String(id),
-      first_name: first_name || '',
-      last_name: last_name || '',
-      username: username || '',
-      photo_url: photo_url || '',
-      auth_date: String(auth_date || ''),
-    };
-    payload.hash = telegramHash;
+    // В подпись входят только поля, реально пришедшие от Telegram (непустые).
+    // Пустые/отсутствующие опциональные поля не должны попадать в data_check_string.
+    const payload = { hash: telegramHash };
+    const optional = { first_name, last_name, username, photo_url };
+    payload.id = String(id);
+    payload.auth_date = String(auth_date || '');
+    for (const [k, v] of Object.entries(optional)) {
+      if (v !== undefined && v !== null && String(v).trim() !== '') {
+        payload[k] = String(v);
+      }
+    }
 
     if (!verifyTelegramAuthPayload(payload, botToken)) {
       return res.status(400).json({
