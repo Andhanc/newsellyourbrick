@@ -3606,13 +3606,7 @@ app.post('/api/auth/telegram', async (req, res) => {
       });
     }
 
-    if (mode === 'login') {
-      return res.status(404).json({
-        success: false,
-        error: 'Пользователь с этим Telegram не найден. Сначала зарегистрируйтесь через Telegram.',
-      });
-    }
-
+    // Пользователя нет: при любом выборе (Войти / Регистрация) создаём аккаунт при первом входе через Telegram
     const fullName = [first_name, last_name].filter(Boolean).join(' ').trim() || username || `Telegram ${telegramId}`;
     const nameParts = fullName.split(' ');
     const firstName = nameParts[0] || '';

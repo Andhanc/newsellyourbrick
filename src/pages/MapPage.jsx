@@ -16,7 +16,7 @@ const MapPage = () => {
   const [selectedProperty, setSelectedProperty] = useState(null)
   const [favorites, setFavorites] = useState(new Set())
   const [activeTab, setActiveTab] = useState('listings') // 'listings' или 'favorites'
-  const [mapStyle, setMapStyle] = useState('osm') // 'osm', 'carto', 'dark', 'satellite'
+  const [mapStyle, setMapStyle] = useState('satellite') // по умолчанию спутник: 'osm', 'carto', 'dark', 'satellite', 'satellite_eox'
   const [is3DEnabled, setIs3DEnabled] = useState(true)
   const [isControlMode, setIsControlMode] = useState(false)
   const [walkSpeed, setWalkSpeed] = useState(0.0001) // Скорость движения
@@ -161,9 +161,28 @@ const MapPage = () => {
             source: 'satellite'
           }
         ]
+      },
+      // Красивая спутниковая подложка EOX Sentinel-2 (открытая, без ключа)
+      satellite_eox: {
+        version: 8,
+        sources: {
+          satellite_eox: {
+            type: 'raster',
+            tiles: ['https://tiles.maps.eox.at/wmts/1.0.0/s2cloudless-2020_3857/default/g/{z}/{y}/{x}.jpg'],
+            tileSize: 256,
+            attribution: '© <a href="https://s2maps.eu" target="_blank" rel="noopener">Sentinel-2 cloudless</a> by EOX (Copernicus Sentinel data)'
+          }
+        },
+        layers: [
+          {
+            id: 'satellite_eox',
+            type: 'raster',
+            source: 'satellite_eox'
+          }
+        ]
       }
     }
-    return styles[styleName] || styles.osm
+    return styles[styleName] || styles.satellite
   }
 
   useEffect(() => {
@@ -187,8 +206,7 @@ const MapPage = () => {
         map.addControl(new maplibregl.NavigationControl({ showCompass: true }), 'top-right')
         map.addControl(
           new maplibregl.AttributionControl({
-            compact: true,
-            customAttribution: 'MapLibre GL | © OpenStreetMap contributors'
+            compact: true
           }),
           'bottom-right'
         )
@@ -569,10 +587,11 @@ const MapPage = () => {
                 onChange={(e) => setMapStyle(e.target.value)}
                 className="style-select"
               >
-                <option value="osm">OpenStreetMap</option>
+                <option value="satellite">Спутник (Esri)</option>
+                <option value="satellite_eox">Спутник (Sentinel-2)</option>
+                <option value="osm">Схема (OpenStreetMap)</option>
                 <option value="carto">Светлая</option>
                 <option value="dark">Темная</option>
-                <option value="satellite">Спутник</option>
               </select>
             </div>
             <button 
