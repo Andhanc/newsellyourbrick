@@ -26,12 +26,18 @@ export default function TelegramAuthCallback() {
 
     const telegramData = {
       id,
-      first_name: params.get('first_name') || '',
-      last_name: params.get('last_name') || '',
-      username: params.get('username') || '',
-      photo_url: params.get('photo_url') || '',
-      auth_date: params.get('auth_date') || '',
       hash
+    }
+    const telegramParamKeys = ['auth_date', 'first_name', 'last_name', 'username', 'photo_url']
+    telegramParamKeys.forEach((key) => {
+      if (params.has(key)) {
+        telegramData[key] = params.get(key) || ''
+      }
+    })
+    if (!telegramData.auth_date) {
+      setStatus('error')
+      setErrorMessage('Не получены данные от Telegram. Попробуйте войти снова.')
+      return
     }
 
     const mode = sessionStorage.getItem('telegram_auth_mode') || 'register'

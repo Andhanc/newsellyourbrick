@@ -144,38 +144,25 @@ const PropertyDetailPage = () => {
               // Обрабатываем видео
               let processedVideos = []
               if (prop.videos && Array.isArray(prop.videos) && prop.videos.length > 0) {
-                processedVideos = prop.videos.map(video => {
-                  // Если видео - строка, пытаемся определить тип
-                  if (typeof video === 'string') {
-                    // Проверяем, является ли это YouTube URL
-                    const youtubeMatch = video.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)/)
-                    if (youtubeMatch) {
-                      return {
-                        type: 'youtube',
-                        videoId: youtubeMatch[1],
-                        url: video
-                      }
-                    }
-                    // Проверяем, является ли это Google Drive URL
-                    const driveMatch = video.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/)
-                    if (driveMatch) {
-                      return {
-                        type: 'googledrive',
-                        videoId: driveMatch[1],
-                        url: video
-                      }
-                    }
-                    // Иначе считаем обычным URL
-                    return {
-                      type: 'file',
-                      url: video
-                    }
-                  } else if (video && typeof video === 'object') {
-                    // Если видео - объект, используем его как есть
-                    return video
+                const normalizeVideo = (video) => {
+                  const url = typeof video === 'string' ? video : (video && (video.url || video.embedUrl))
+                  if (!url) return video
+                  const urlStr = String(url).trim()
+                  const youtubeMatch = urlStr.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)/)
+                  if (youtubeMatch) {
+                    return { type: 'youtube', videoId: youtubeMatch[1], url: urlStr }
                   }
-                  return video
-                })
+                  const driveMatch = urlStr.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/)
+                  if (driveMatch) {
+                    return { type: 'googledrive', videoId: driveMatch[1], url: urlStr }
+                  }
+                  const driveOpenMatch = urlStr.match(/drive\.google\.com\/open\?id=([a-zA-Z0-9_-]+)/)
+                  if (driveOpenMatch) {
+                    return { type: 'googledrive', videoId: driveOpenMatch[1], url: urlStr }
+                  }
+                  return typeof video === 'object' && video ? { type: 'file', url: urlStr, ...video } : { type: 'file', url: urlStr }
+                }
+                processedVideos = prop.videos.map(video => normalizeVideo(video)).filter(Boolean)
               }
               
               // Обрабатываем координаты

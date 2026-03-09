@@ -536,4 +536,11 @@
   }
 }
 
+/* Карта в карточке объекта — спутниковая подложка */
+.moderation-property-detail__map-section .location-map-container,
+.moderation-property-detail__map-section .location-map {
+  height: 100%;
+  min-height: 0;
+}
+
 

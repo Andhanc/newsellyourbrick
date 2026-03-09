@@ -1540,8 +1540,25 @@ export const userQueries = {
     const db = getDatabase();
     
     // Проверяем, есть ли поле user_id_number в таблице
-    const pragmaInfo = db.prepare("PRAGMA table_info(users)").all();
+    let pragmaInfo = db.prepare("PRAGMA table_info(users)").all();
     const hasUserIdNumber = pragmaInfo.some(col => col.name === 'user_id_number');
+    
+    // Проверяем поля Telegram — при необходимости добавляем (на случай старой БД без миграции)
+    const hasTelegramColumns = pragmaInfo.some(col => col.name === 'telegram_id');
+    const needsTelegram = userData.telegram_id != null || userData.telegram_username != null || userData.telegram_photo_url != null;
+    if (needsTelegram && !hasTelegramColumns) {
+      try {
+        db.exec("ALTER TABLE users ADD COLUMN telegram_id TEXT");
+        db.exec("ALTER TABLE users ADD COLUMN telegram_username TEXT");
+        db.exec("ALTER TABLE users ADD COLUMN telegram_photo_url TEXT");
+        db.exec("CREATE INDEX IF NOT EXISTS idx_users_telegram_id ON users(telegram_id)");
+        console.log('✅ Поля telegram_id, telegram_username, telegram_photo_url добавлены в users');
+        pragmaInfo = db.prepare("PRAGMA table_info(users)").all();
+      } catch (e) {
+        console.warn('⚠️ Не удалось добавить поля Telegram:', e.message);
+      }
+    }
+    const hasTelegramColumnsNow = pragmaInfo.some(col => col.name === 'telegram_id');
     
     // Проверяем, есть ли у пользователя user_id_number (только если поле существует)
     let currentUser = null;
@@ -1586,8 +1603,10 @@ export const userQueries = {
       'passport_series', 'passport_number', 'identification_number',
       'address', 'country', 'passport_photo', 'user_photo',
       'is_verified', 'role', 'is_online', 'is_blocked',
-      'telegram_id', 'telegram_username', 'telegram_photo_url'
     ];
+    if (hasTelegramColumnsNow) {
+      allowedFields.push('telegram_id', 'telegram_username', 'telegram_photo_url');
+    }
     
     // Добавляем user_id_number в allowedFields только если поле существует в таблице
     if (hasUserIdNumber) {

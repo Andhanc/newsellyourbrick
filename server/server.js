@@ -3510,17 +3510,24 @@ app.post('/api/auth/google', async (req, res) => {
  * Проверка подписи данных от Telegram Login Widget
  * @see https://core.telegram.org/widgets/login#checking-authorization
  * secret_key = SHA256(bot_token), hash = HMAC_SHA256(data_check_string, secret_key)
+ * В data_check_string только поля, реально пришедшие в payload (без hash).
  */
 function verifyTelegramAuthPayload(payload, botToken) {
-  if (!payload.hash || !botToken) return false;
-  const { hash, ...rest } = payload;
+  const hash = payload.hash;
+  if (!hash || !botToken) return false;
+  const trimmedToken = String(botToken).trim();
+  if (!trimmedToken) return false;
+  const rest = { ...payload };
+  delete rest.hash;
+  delete rest.mode;
+  delete rest.role;
   const dataCheckString = Object.keys(rest)
     .sort()
     .map((k) => `${k}=${rest[k]}`)
     .join('\n');
-  const secretKey = crypto.createHash('sha256').update(botToken).digest();
+  const secretKey = crypto.createHash('sha256').update(trimmedToken).digest();
   const calculatedHash = crypto.createHmac('sha256', secretKey).update(dataCheckString).digest('hex');
-  return calculatedHash === hash;
+  return calculatedHash.toLowerCase() === String(hash).toLowerCase();
 }
 
 /**
@@ -3546,15 +3553,13 @@ app.post('/api/auth/telegram', async (req, res) => {
       });
     }
 
-    // В подпись входят только поля, реально пришедшие от Telegram (непустые).
-    // Пустые/отсутствующие опциональные поля не должны попадать в data_check_string.
+    // В подпись входят только поля, которые пришли от Telegram (те же ключи и значения, что в редиректе).
+    const telegramKeys = ['id', 'auth_date', 'first_name', 'last_name', 'username', 'photo_url'];
     const payload = { hash: telegramHash };
-    const optional = { first_name, last_name, username, photo_url };
-    payload.id = String(id);
-    payload.auth_date = String(auth_date || '');
-    for (const [k, v] of Object.entries(optional)) {
-      if (v !== undefined && v !== null && String(v).trim() !== '') {
-        payload[k] = String(v);
+    for (const k of telegramKeys) {
+      if (req.body.hasOwnProperty(k)) {
+        const v = req.body[k];
+        payload[k] = v === undefined || v === null ? '' : String(v);
       }
     }
 

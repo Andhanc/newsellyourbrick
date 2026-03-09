@@ -3,6 +3,7 @@ import { FiArrowLeft, FiChevronLeft, FiChevronRight, FiCheck, FiXCircle, FiFileT
 import { IoLocationOutline as IoLocation } from 'react-icons/io5';
 import { MdBed, MdOutlineBathtub } from 'react-icons/md';
 import { BiArea } from 'react-icons/bi';
+import LocationMap from '../LocationMap';
 import './ModerationPropertyDetail.css';
 import { getApiBaseUrlSync } from '../../utils/apiConfig';
 
@@ -104,15 +105,34 @@ const ModerationPropertyDetail = ({ property, onBack, onApprove, onReject }) => 
     }
   }
   
-  // Получаем видео из property
+  // Получаем видео из property и нормализуем (для импорта из Excel/CSV приходят только { url })
+  const normalizeVideoItem = (video) => {
+    const url = typeof video === 'string' ? video : (video && (video.url || video.embedUrl))
+    if (!url) return null
+    const urlStr = String(url).trim()
+    const youtubeMatch = urlStr.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)/)
+    if (youtubeMatch) {
+      return { type: 'youtube', videoId: youtubeMatch[1], url: urlStr }
+    }
+    const driveMatch = urlStr.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/)
+    if (driveMatch) {
+      return { type: 'googledrive', videoId: driveMatch[1], url: urlStr }
+    }
+    const driveOpenMatch = urlStr.match(/drive\.google\.com\/open\?id=([a-zA-Z0-9_-]+)/)
+    if (driveOpenMatch) {
+      return { type: 'googledrive', videoId: driveOpenMatch[1], url: urlStr }
+    }
+    return typeof video === 'object' && video ? { type: 'file', url: urlStr, ...video } : { type: 'file', url: urlStr }
+  };
+
   let videos = [];
   if (property.videos && Array.isArray(property.videos) && property.videos.length > 0) {
-    videos = property.videos;
+    videos = property.videos.map(normalizeVideoItem).filter(Boolean);
   } else if (property.videos && typeof property.videos === 'string') {
     try {
       const parsed = JSON.parse(property.videos);
       if (Array.isArray(parsed)) {
-        videos = parsed;
+        videos = parsed.map(normalizeVideoItem).filter(Boolean);
       }
     } catch (e) {
       console.warn('Ошибка парсинга videos:', e);
@@ -485,6 +505,31 @@ const ModerationPropertyDetail = ({ property, onBack, onApprove, onReject }) => 
             <IoLocation size={20} />
             <span>{property.location || property.address || 'Локация не указана'}</span>
           </div>
+
+          {/* Карта (спутник) при наличии координат */}
+          {(() => {
+            let coords = null;
+            if (property.coordinates) {
+              if (Array.isArray(property.coordinates) && property.coordinates.length >= 2) {
+                const lat = parseFloat(property.coordinates[0]);
+                const lng = parseFloat(property.coordinates[1]);
+                if (!isNaN(lat) && !isNaN(lng)) coords = [lat, lng];
+              } else if (typeof property.coordinates === 'string') {
+                try {
+                  const parsed = property.coordinates.includes('[') ? JSON.parse(property.coordinates) : property.coordinates.split(',').map(Number);
+                  if (Array.isArray(parsed) && parsed.length >= 2) coords = [parseFloat(parsed[0]), parseFloat(parsed[1])];
+                } catch (_) {}
+              }
+            }
+            return coords ? (
+              <div className="moderation-property-detail__map-section" style={{ marginTop: '16px' }}>
+                <h3 style={{ margin: '0 0 12px 0', fontSize: '16px', fontWeight: 600 }}>Карта</h3>
+                <div style={{ height: '300px', borderRadius: '12px', overflow: 'hidden', border: '1px solid #e5e7eb' }}>
+                  <LocationMap center={coords} zoom={15} marker={coords} />
+                </div>
+              </div>
+            ) : null;
+          })()}
 
           <div className="moderation-property-detail__features">
             {property.area && (

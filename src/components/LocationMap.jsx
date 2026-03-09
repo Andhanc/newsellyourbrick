@@ -47,29 +47,29 @@ const LocationMap = ({ center, zoom = 10, marker }) => {
       console.log('🗺️ LocationMap: инициализация с дефолтными координатами (вид над Европой)', initialCenter, 'zoom:', initialZoom)
     }
 
-    // Стиль с растровыми тайлами OpenStreetMap
-    const osmStyle = {
+    // Спутниковая подложка (та же, что на странице карты — Esri, без ключа)
+    const satelliteStyle = {
       version: 8,
       sources: {
-        osm: {
+        satellite: {
           type: 'raster',
-          tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
+          tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],
           tileSize: 256,
-          attribution: '© OpenStreetMap contributors'
+          attribution: '© Esri'
         }
       },
       layers: [
         {
-          id: 'osm',
+          id: 'satellite',
           type: 'raster',
-          source: 'osm'
+          source: 'satellite'
         }
       ]
     }
 
     const map = new maplibregl.Map({
       container: mapContainerRef.current,
-      style: osmStyle,
+      style: satelliteStyle,
       center: initialCenter,
       zoom: initialZoom,
       attributionControl: false

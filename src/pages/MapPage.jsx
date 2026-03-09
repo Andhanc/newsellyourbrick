@@ -16,17 +16,12 @@ const MapPage = () => {
   const [selectedProperty, setSelectedProperty] = useState(null)
   const [favorites, setFavorites] = useState(new Set())
   const [activeTab, setActiveTab] = useState('listings') // 'listings' или 'favorites'
-  const [mapStyle, setMapStyle] = useState('satellite') // по умолчанию спутник: 'osm', 'carto', 'dark', 'satellite', 'satellite_eox'
   const [is3DEnabled, setIs3DEnabled] = useState(true)
-  const [isControlMode, setIsControlMode] = useState(false)
-  const [walkSpeed, setWalkSpeed] = useState(0.0001) // Скорость движения
   const [showMapillary, setShowMapillary] = useState(false)
   const [mapillaryPosition, setMapillaryPosition] = useState(null)
   const mapRef = useRef(null)
   const mapInstanceRef = useRef(null)
   const markersRef = useRef([])
-  const controlModeIntervalRef = useRef(null)
-  const keysPressedRef = useRef({})
 
   const formatPrice = (price) => {
     if (price >= 1000000) {
@@ -87,102 +82,24 @@ const MapPage = () => {
     return [baseCoords[0] + offsetLat, baseCoords[1] + offsetLng]
   }
 
-  // Определение стилей карты
-  const getMapStyle = (styleName) => {
-    const styles = {
-      osm: {
-        version: 8,
-        sources: {
-          osm: {
-            type: 'raster',
-            tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
-            tileSize: 256,
-            attribution: '© OpenStreetMap contributors'
-          }
-        },
-        layers: [
-          {
-            id: 'osm',
-            type: 'raster',
-            source: 'osm'
-          }
-        ]
-      },
-      carto: {
-        version: 8,
-        sources: {
-          carto: {
-            type: 'raster',
-            tiles: ['https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png'],
-            tileSize: 256,
-            attribution: '© CARTO, © OpenStreetMap contributors'
-          }
-        },
-        layers: [
-          {
-            id: 'carto',
-            type: 'raster',
-            source: 'carto'
-          }
-        ]
-      },
-      dark: {
-        version: 8,
-        sources: {
-          dark: {
-            type: 'raster',
-            tiles: ['https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png'],
-            tileSize: 256,
-            attribution: '© CARTO, © OpenStreetMap contributors'
-          }
-        },
-        layers: [
-          {
-            id: 'dark',
-            type: 'raster',
-            source: 'dark'
-          }
-        ]
-      },
+  // Только спутниковая подложка (Esri, без ключа)
+  const SATELLITE_STYLE = {
+    version: 8,
+    sources: {
       satellite: {
-        version: 8,
-        sources: {
-          satellite: {
-            type: 'raster',
-            tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],
-            tileSize: 256,
-            attribution: '© Esri'
-          }
-        },
-        layers: [
-          {
-            id: 'satellite',
-            type: 'raster',
-            source: 'satellite'
-          }
-        ]
-      },
-      // Красивая спутниковая подложка EOX Sentinel-2 (открытая, без ключа)
-      satellite_eox: {
-        version: 8,
-        sources: {
-          satellite_eox: {
-            type: 'raster',
-            tiles: ['https://tiles.maps.eox.at/wmts/1.0.0/s2cloudless-2020_3857/default/g/{z}/{y}/{x}.jpg'],
-            tileSize: 256,
-            attribution: '© <a href="https://s2maps.eu" target="_blank" rel="noopener">Sentinel-2 cloudless</a> by EOX (Copernicus Sentinel data)'
-          }
-        },
-        layers: [
-          {
-            id: 'satellite_eox',
-            type: 'raster',
-            source: 'satellite_eox'
-          }
-        ]
+        type: 'raster',
+        tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],
+        tileSize: 256,
+        attribution: '© Esri'
       }
-    }
-    return styles[styleName] || styles.satellite
+    },
+    layers: [
+      {
+        id: 'satellite',
+        type: 'raster',
+        source: 'satellite'
+      }
+    ]
   }
 
   useEffect(() => {
@@ -194,7 +111,7 @@ const MapPage = () => {
       try {
         const map = new maplibregl.Map({
           container: mapRef.current,
-          style: getMapStyle(mapStyle),
+          style: SATELLITE_STYLE,
           center: [37.6173, 55.7558], // [lng, lat]
           zoom: 10,
           pitch: is3DEnabled ? 45 : 0,
@@ -260,20 +177,6 @@ const MapPage = () => {
     }
   }, [])
 
-  // Обновление стиля карты при изменении
-  useEffect(() => {
-    if (!mapInstanceRef.current) return
-    
-    const map = mapInstanceRef.current
-    if (map.loaded()) {
-      map.setStyle(getMapStyle(mapStyle))
-    } else {
-      map.once('load', () => {
-        map.setStyle(getMapStyle(mapStyle))
-      })
-    }
-  }, [mapStyle])
-
   // Обновление 3D режима
   useEffect(() => {
     if (!mapInstanceRef.current) return
@@ -295,145 +198,6 @@ const MapPage = () => {
       }
     }
   }, [is3DEnabled])
-
-  // Режим управления - управление клавиатурой
-  useEffect(() => {
-    if (!isControlMode || !mapInstanceRef.current) {
-      // Очищаем интервал при выходе из режима управления
-      if (controlModeIntervalRef.current) {
-        clearInterval(controlModeIntervalRef.current)
-        controlModeIntervalRef.current = null
-      }
-      return
-    }
-
-    const map = mapInstanceRef.current
-    if (!map.loaded()) return
-
-    // Включаем 3D режим для управления
-    if (!is3DEnabled) {
-      setIs3DEnabled(true)
-    }
-
-    // Устанавливаем начальный угол обзора для управления
-    map.setPitch(60)
-    map.setBearing(0)
-
-    // Обработка нажатий клавиш
-    const handleKeyDown = (e) => {
-      const key = e.key.toLowerCase()
-      if (['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(key)) {
-        e.preventDefault()
-        keysPressedRef.current[key] = true
-      }
-    }
-
-    const handleKeyUp = (e) => {
-      const key = e.key.toLowerCase()
-      if (['w', 'a', 's', 'd', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(key)) {
-        keysPressedRef.current[key] = false
-      }
-    }
-
-    // Обработка движения мыши для поворота камеры
-    let isMouseDown = false
-    let lastMouseX = 0
-    let lastMouseY = 0
-
-    const handleMouseDown = (e) => {
-      if (e.button === 0) { // Левая кнопка мыши
-        isMouseDown = true
-        lastMouseX = e.clientX
-        lastMouseY = e.clientY
-      }
-    }
-
-    const handleMouseMove = (e) => {
-      if (isMouseDown && mapInstanceRef.current) {
-        const deltaX = e.clientX - lastMouseX
-        const deltaY = e.clientY - lastMouseY
-        
-        const currentBearing = map.getBearing()
-        const currentPitch = map.getPitch()
-        
-        map.setBearing(currentBearing + deltaX * 0.5)
-        map.setPitch(Math.max(0, Math.min(85, currentPitch - deltaY * 0.3)))
-        
-        lastMouseX = e.clientX
-        lastMouseY = e.clientY
-      }
-    }
-
-    const handleMouseUp = () => {
-      isMouseDown = false
-    }
-
-    // Добавляем обработчики событий
-    window.addEventListener('keydown', handleKeyDown)
-    window.addEventListener('keyup', handleKeyUp)
-    map.getCanvas().addEventListener('mousedown', handleMouseDown)
-    window.addEventListener('mousemove', handleMouseMove)
-    window.addEventListener('mouseup', handleMouseUp)
-
-    // Анимация движения
-    const moveInterval = setInterval(() => {
-      if (!mapInstanceRef.current) return
-
-      const center = map.getCenter()
-      let newLng = center.lng
-      let newLat = center.lat
-      let newBearing = map.getBearing()
-
-      const speed = walkSpeed
-      const bearingRad = (newBearing * Math.PI) / 180
-
-      // Движение вперед (W или стрелка вверх)
-      if (keysPressedRef.current['w'] || keysPressedRef.current['arrowup']) {
-        newLat += Math.cos(bearingRad) * speed
-        newLng += Math.sin(bearingRad) * speed
-      }
-
-      // Движение назад (S или стрелка вниз)
-      if (keysPressedRef.current['s'] || keysPressedRef.current['arrowdown']) {
-        newLat -= Math.cos(bearingRad) * speed
-        newLng -= Math.sin(bearingRad) * speed
-      }
-
-      // Поворот влево (A или стрелка влево)
-      if (keysPressedRef.current['a'] || keysPressedRef.current['arrowleft']) {
-        newBearing -= 2
-      }
-
-      // Поворот вправо (D или стрелка вправо)
-      if (keysPressedRef.current['d'] || keysPressedRef.current['arrowright']) {
-        newBearing += 2
-      }
-
-      // Обновляем позицию карты
-      if (newLat !== center.lat || newLng !== center.lng || newBearing !== map.getBearing()) {
-        map.jumpTo({
-          center: [newLng, newLat],
-          bearing: newBearing
-        })
-      }
-    }, 16) // ~60 FPS
-
-    controlModeIntervalRef.current = moveInterval
-
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown)
-      window.removeEventListener('keyup', handleKeyUp)
-      if (map.getCanvas()) {
-        map.getCanvas().removeEventListener('mousedown', handleMouseDown)
-      }
-      window.removeEventListener('mousemove', handleMouseMove)
-      window.removeEventListener('mouseup', handleMouseUp)
-      if (controlModeIntervalRef.current) {
-        clearInterval(controlModeIntervalRef.current)
-        controlModeIntervalRef.current = null
-      }
-    }
-  }, [isControlMode, is3DEnabled, walkSpeed])
 
   // Обновление маркеров при изменении фильтров или выбранного объекта
   useEffect(() => {
@@ -536,8 +300,6 @@ const MapPage = () => {
     const map = mapInstanceRef.current
     
     const handleMapClick = (e) => {
-      if (isControlMode) return // Не открываем Mapillary в режиме управления
-      
       const { lng, lat } = e.lngLat
       setMapillaryPosition([lat, lng])
       setShowMapillary(true)
@@ -548,7 +310,7 @@ const MapPage = () => {
     return () => {
       map.off('click', handleMapClick)
     }
-  }, [isControlMode])
+  }, [])
 
   return (
     <div className="map-page" style={{ margin: 0, padding: 0 }}>
@@ -580,20 +342,6 @@ const MapPage = () => {
             </button>
           </div>
           <div className="map-controls">
-            <div className="map-style-control">
-              <label>Стиль карты:</label>
-              <select 
-                value={mapStyle} 
-                onChange={(e) => setMapStyle(e.target.value)}
-                className="style-select"
-              >
-                <option value="satellite">Спутник (Esri)</option>
-                <option value="satellite_eox">Спутник (Sentinel-2)</option>
-                <option value="osm">Схема (OpenStreetMap)</option>
-                <option value="carto">Светлая</option>
-                <option value="dark">Темная</option>
-              </select>
-            </div>
             <button 
               className={`map-3d-toggle ${is3DEnabled ? 'active' : ''}`}
               onClick={() => setIs3DEnabled(!is3DEnabled)}
@@ -601,64 +349,7 @@ const MapPage = () => {
             >
               {is3DEnabled ? '3D ✓' : '3D'}
             </button>
-            <button 
-              className={`map-control-toggle ${isControlMode ? 'active' : ''}`}
-              onClick={() => setIsControlMode(!isControlMode)}
-              title="Режим управления (WASD/стрелки для движения, мышь для поворота)"
-            >
-              {isControlMode ? ' Stetings ✓' : '  Stetings'}
-            </button>
           </div>
-          {isControlMode && (
-            <div className="control-mode-controls">
-              <div className="control-instructions">
-                <p><strong> Stetings:</strong></p>
-                <p>W/↑ - Вперед | S/↓ - Назад</p>
-                <p>A/← - Влево | D/→ - Вправо</p>
-                <p>Мышь - Поворот камеры</p>
-              </div>
-              <div className="control-buttons">
-                <button 
-                  className="control-btn control-forward"
-                  onMouseDown={() => keysPressedRef.current['w'] = true}
-                  onMouseUp={() => keysPressedRef.current['w'] = false}
-                  onTouchStart={() => keysPressedRef.current['w'] = true}
-                  onTouchEnd={() => keysPressedRef.current['w'] = false}
-                >
-                  ↑
-                </button>
-                <div className="control-buttons-row">
-                  <button 
-                    className="control-btn control-left"
-                    onMouseDown={() => keysPressedRef.current['a'] = true}
-                    onMouseUp={() => keysPressedRef.current['a'] = false}
-                    onTouchStart={() => keysPressedRef.current['a'] = true}
-                    onTouchEnd={() => keysPressedRef.current['a'] = false}
-                  >
-                    ←
-                  </button>
-                  <button 
-                    className="control-btn control-back"
-                    onMouseDown={() => keysPressedRef.current['s'] = true}
-                    onMouseUp={() => keysPressedRef.current['s'] = false}
-                    onTouchStart={() => keysPressedRef.current['s'] = true}
-                    onTouchEnd={() => keysPressedRef.current['s'] = false}
-                  >
-                    ↓
-                  </button>
-                  <button 
-                    className="control-btn control-right"
-                    onMouseDown={() => keysPressedRef.current['d'] = true}
-                    onMouseUp={() => keysPressedRef.current['d'] = false}
-                    onTouchStart={() => keysPressedRef.current['d'] = true}
-                    onTouchEnd={() => keysPressedRef.current['d'] = false}
-                  >
-                    →
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
           {showMapillary && mapillaryPosition && (
             <div className="mapillary-panel">
               <button 

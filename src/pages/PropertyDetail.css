@@ -311,6 +311,12 @@
   border: 1px solid #e5e7eb;
 }
 
+.detail-map-container .location-map-container,
+.detail-map-container .location-map {
+  height: 100%;
+  min-height: 0;
+}
+
 .detail-sidebar {
   grid-area: sidebar;
   position: sticky;

@@ -11,18 +11,8 @@ import { FiX, FiLayers, FiHome, FiCheck, FiX as FiXIcon, FiLock } from 'react-ic
 import { IoLocationOutline } from 'react-icons/io5'
 import { MdBed, MdOutlineBathtub } from 'react-icons/md'
 import { BiArea } from 'react-icons/bi'
-import { MapContainer, TileLayer, Marker } from 'react-leaflet'
-import L from 'leaflet'
-import 'leaflet/dist/leaflet.css'
+import LocationMap from '../components/LocationMap'
 import './PropertyDetail.css'
-
-// Фикс для иконок Leaflet
-delete L.Icon.Default.prototype._getIconUrl
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
-  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
-})
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
 
@@ -124,33 +114,25 @@ const PropertyDetail = () => {
     // Обрабатываем видео
     let processedVideos = []
     if (prop.videos && Array.isArray(prop.videos) && prop.videos.length > 0) {
-      processedVideos = prop.videos.map(video => {
-        if (typeof video === 'string') {
-          const youtubeMatch = video.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)/)
-          if (youtubeMatch) {
-            return {
-              type: 'youtube',
-              videoId: youtubeMatch[1],
-              url: video
-            }
-          }
-          const driveMatch = video.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/)
-          if (driveMatch) {
-            return {
-              type: 'googledrive',
-              videoId: driveMatch[1],
-              url: video
-            }
-          }
-          return {
-            type: 'file',
-            url: video
-          }
-        } else if (video && typeof video === 'object') {
-          return video
+      const normalizeVideo = (video) => {
+        const url = typeof video === 'string' ? video : (video && (video.url || video.embedUrl))
+        if (!url) return video
+        const urlStr = String(url).trim()
+        const youtubeMatch = urlStr.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)/)
+        if (youtubeMatch) {
+          return { type: 'youtube', videoId: youtubeMatch[1], url: urlStr }
         }
-        return video
-      })
+        const driveMatch = urlStr.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/)
+        if (driveMatch) {
+          return { type: 'googledrive', videoId: driveMatch[1], url: urlStr }
+        }
+        const driveOpenMatch = urlStr.match(/drive\.google\.com\/open\?id=([a-zA-Z0-9_-]+)/)
+        if (driveOpenMatch) {
+          return { type: 'googledrive', videoId: driveOpenMatch[1], url: urlStr }
+        }
+        return typeof video === 'object' && video ? { type: 'file', url: urlStr, ...video } : { type: 'file', url: urlStr }
+      }
+      processedVideos = prop.videos.map(video => normalizeVideo(video)).filter(Boolean)
     }
     
     // Обрабатываем координаты
@@ -1142,19 +1124,11 @@ const PropertyDetail = () => {
                     <h3 className="detail-section-title">Местоположение</h3>
                     <div className="detail-map">
                       <div className="detail-map-container">
-                        <MapContainer
+                        <LocationMap
                           center={normalizedProperty.coordinates}
                           zoom={15}
-                          style={{ height: '400px', width: '100%', borderRadius: '12px' }}
-                          scrollWheelZoom={true}
-                          zoomControl={true}
-                        >
-                          <TileLayer
-                            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                          />
-                          <Marker position={normalizedProperty.coordinates} />
-                        </MapContainer>
+                          marker={normalizedProperty.coordinates}
+                        />
                       </div>
                     </div>
                   </div>
