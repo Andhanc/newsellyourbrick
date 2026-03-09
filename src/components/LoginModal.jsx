@@ -32,8 +32,29 @@ const LoginModal = ({ isOpen, onClose }) => {
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const telegramWidgetRef = useRef(null)
+  const [telegramBotUsername, setTelegramBotUsername] = useState(() => import.meta.env.VITE_TELEGRAM_BOT_USERNAME || '')
 
-  const telegramBotUsername = import.meta.env.VITE_TELEGRAM_BOT_USERNAME || ''
+  // На Railway и др. VITE_* подставляются только при сборке; загружаем имя бота с сервера в рантайме
+  useEffect(() => {
+    const fromEnv = import.meta.env.VITE_TELEGRAM_BOT_USERNAME || ''
+    if (fromEnv) {
+      setTelegramBotUsername(fromEnv)
+      return
+    }
+    let cancelled = false
+    getApiBaseUrl().then((apiBase) => {
+      if (cancelled) return
+      fetch(`${apiBase}/config`)
+        .then((res) => res.ok ? res.json() : null)
+        .then((data) => {
+          if (cancelled || !data?.success?.data) return
+          const username = data.data.telegramBotUsername || ''
+          if (username) setTelegramBotUsername(username)
+        })
+        .catch(() => {})
+    })
+    return () => { cancelled = true }
+  }, [])
 
   // Сохраняем режим и роль для callback после редиректа из Telegram
   useEffect(() => {
