@@ -822,24 +822,49 @@ const Header = () => {
               </div>
             ) : (
               <>
-                <button 
-                  type="button"
-                  className="new-header__auction-btn"
-                  onClick={() => (location.pathname === '/auction' ? navigate('/') : navigate('/auction'))}
-                >
-                  {location.pathname === '/auction' ? 'Главная' : 'Аукцион'}
-                </button>
-                <button 
-                  className="new-header__search-btn"
-                  onClick={() => {
-                    setIsSearchOpen(true)
-                    setSearchQuery('')
-                    setSearchResults([])
-                  }}
-                  aria-label="Открыть поиск"
-                >
-                  <FiSearch size={20} />
-                </button>
+                {location.pathname === '/auction' ? (
+                  <>
+                    <button 
+                      className="new-header__search-btn"
+                      onClick={() => {
+                        setIsSearchOpen(true)
+                        setSearchQuery('')
+                        setSearchResults([])
+                      }}
+                      aria-label="Открыть поиск"
+                    >
+                      <FiSearch size={20} />
+                    </button>
+                    <button 
+                      type="button"
+                      className="new-header__auction-btn"
+                      onClick={() => navigate('/')}
+                    >
+                      Главная
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button 
+                      type="button"
+                      className="new-header__auction-btn"
+                      onClick={() => navigate('/auction')}
+                    >
+                      Аукцион
+                    </button>
+                    <button 
+                      className="new-header__search-btn"
+                      onClick={() => {
+                        setIsSearchOpen(true)
+                        setSearchQuery('')
+                        setSearchResults([])
+                      }}
+                      aria-label="Открыть поиск"
+                    >
+                      <FiSearch size={20} />
+                    </button>
+                  </>
+                )}
                 <button 
                   className={`new-header__user-btn ${isLoggedIn ? 'new-header__user-btn--avatar' : ''}`}
                   onClick={() => {

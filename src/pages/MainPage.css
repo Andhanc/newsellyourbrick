@@ -1291,12 +1291,42 @@
   flex: 1;
 }
 
+/* Фиксированный по высоте блок заголовка (таймер + название + адрес)
+   чтобы строка с данными (площадь и т.д.) начиналась на одном уровне во всех карточках */
+.property-header-fixed {
+  display: flex;
+  flex-direction: column;
+  /* Минимальный зазор между элементами заголовка
+     (таймер, название, адрес), чтобы они были визуально ближе друг к другу */
+  gap: 2px;
+  /* Фиксированная высота для выравнивания на десктопе */
+  min-height: 80px;
+}
+
+/* В мобильной версии убираем фиксированную высоту заголовка,
+   чтобы не было большого пустого пространства между названием
+   и строкой с данными */
+@media (max-width: 768px) {
+  .property-header-fixed {
+    min-height: auto;
+  }
+}
+
 .property-title {
   font-size: 18px;
   font-weight: 600;
-  margin-bottom: 8px;
+  /* Чуть уменьшаем отступ снизу, чтобы адрес был ближе */
+  margin-bottom: 4px;
   color: #333;
   line-height: 1.4;
+  /* Фиксированная высота на 2 строки, чтобы
+     строка с данными находилась на одном уровне во всех карточках */
+  min-height: 2.8em;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .property-description {
@@ -1315,9 +1345,15 @@
 .property-location {
   font-size: 14px;
   color: #666;
-  margin-bottom: 12px;
+  /* Чуть меньше отступ снизу, чтобы текст был визуально выше */
+  margin-bottom: 4px;
   line-height: 1.5;
-  min-height: 0px;
+  /* Фиксируем высоту одной строки для выравнивания блока характеристик
+     и запрещаем перенос, чтобы все карточки занимали одинаковое место */
+  min-height: 1.5em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   flex-shrink: 0;
 }
 
@@ -1526,6 +1562,9 @@
   flex-direction: row;
   gap: 16px;
   margin-top: 8px;
+  /* Небольшой отступ снизу перед следующими блоками
+     (ставка или цена), чтобы дыхание было одинаковым */
+  margin-bottom: 6px;
   align-items: center;
   flex-wrap: wrap;
   flex-shrink: 0;

@@ -313,6 +313,17 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
       }
 
       const docs = []
+      const isDebtProperty =
+        displayProperty.sale_type === 'debt' ||
+        property.sale_type === 'debt' ||
+        displayProperty.is_debt === 1 ||
+        displayProperty.is_debt === true ||
+        displayProperty.has_debt === 1 ||
+        displayProperty.has_debt === true ||
+        property.is_debt === 1 ||
+        property.is_debt === true ||
+        property.has_debt === 1 ||
+        property.has_debt === true;
       
       // Документ о праве собственности
       if (displayProperty.ownership_document || property.ownership_document || property.ownershipDocument) {
@@ -328,8 +339,11 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
         }
       }
       
-      // Справка об отсутствии долгов
-      if (displayProperty.no_debts_document || property.no_debts_document || property.noDebtsDocument) {
+      // Справка об отсутствии долгов (не показываем для объектов с долгами)
+      if (
+        !isDebtProperty &&
+        (displayProperty.no_debts_document || property.no_debts_document || property.noDebtsDocument)
+      ) {
         const docUrl = displayProperty.no_debts_document || property.no_debts_document || property.noDebtsDocument
         if (docUrl) {
           const processedUrl = await processDocumentUrl(docUrl)
@@ -461,9 +475,26 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
     ownership_document: property.ownership_document || property.ownershipDocument,
     no_debts_document: property.no_debts_document || property.noDebtsDocument,
     additional_documents: property.additional_documents || property.additionalDocuments,
-    // Тест-драйв - сохраняем значение как есть из property
-    test_drive: property.test_drive,
-    testDrive: property.testDrive !== undefined ? property.testDrive : (property.test_drive !== undefined ? (property.test_drive === 1 || property.test_drive === true) : false),
+    // Тест-драйв - отключаем для объектов с долгами
+    test_drive:
+      !(
+        property.sale_type === 'debt' ||
+        property.is_debt === 1 ||
+        property.is_debt === true ||
+        property.has_debt === 1 ||
+        property.has_debt === true
+      ) && property.test_drive,
+    testDrive:
+      !(
+        property.sale_type === 'debt' ||
+        property.is_debt === 1 ||
+        property.is_debt === true ||
+        property.has_debt === 1 ||
+        property.has_debt === true
+      ) &&
+      (property.testDrive !== undefined
+        ? property.testDrive
+        : (property.test_drive !== undefined ? (property.test_drive === 1 || property.test_drive === true) : false)),
     // Тестовый таймер
     test_timer_end_date: property.test_timer_end_date || null,
     test_timer_duration: property.test_timer_duration || null, // Исходная длительность таймера в миллисекундах
@@ -474,6 +505,13 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
     reserved_by: property.reserved_by || null,
     reservation_time_remaining: property.reservation_time_remaining || null,
   }
+  
+  const isDebtProperty =
+    displayProperty.sale_type === 'debt' ||
+    displayProperty.is_debt === 1 ||
+    displayProperty.is_debt === true ||
+    displayProperty.has_debt === 1 ||
+    displayProperty.has_debt === true;
   
   // Логируем данные о резервации для отладки
   console.log('🔍 PropertyDetailClassic - Данные о резервации:', {
@@ -566,11 +604,14 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
 
   const [isFavorite, setIsFavorite] = useState(false)
 
-  // Признак аукционного объекта
+  // Признак аукционного объекта (объекты с долгами всегда считаем неаукционными)
   const isAuctionProperty =
-    displayProperty.isAuction === true ||
-    displayProperty.is_auction === true ||
-    displayProperty.is_auction === 1
+    !isDebtProperty &&
+    (
+      displayProperty.isAuction === true ||
+      displayProperty.is_auction === true ||
+      displayProperty.is_auction === 1
+    )
 
   const auctionEndTime =
     displayProperty.test_timer_end_date ||
@@ -2102,16 +2143,18 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                           {(displayProperty.year_built !== undefined && displayProperty.year_built !== null) ? displayProperty.year_built : '—'}
                         </span>
                       </div>
-                      <div className="property-detail-info-item property-detail-info-item--horizontal">
-                        <span className="property-detail-info-label">Есть тест-драйв:</span>
-                        <span className="property-detail-info-value">
-                          {(() => {
-                            const testDriveValue = displayProperty.test_drive;
-                            const isTestDrive = testDriveValue === 1 || testDriveValue === true || displayProperty.testDrive === true;
-                            return isTestDrive ? 'Да' : 'Нет';
-                          })()}
-                        </span>
-                      </div>
+                      {!isDebtProperty && (
+                        <div className="property-detail-info-item property-detail-info-item--horizontal">
+                          <span className="property-detail-info-label">Есть тест-драйв:</span>
+                          <span className="property-detail-info-value">
+                            {(() => {
+                              const testDriveValue = displayProperty.test_drive;
+                              const isTestDrive = testDriveValue === 1 || testDriveValue === true || displayProperty.testDrive === true;
+                              return isTestDrive ? 'Да' : 'Нет';
+                            })()}
+                          </span>
+                        </div>
+                      )}
                     </>
                   ) : (
                     /* Для квартир и апартаментов показываем стандартные поля */
@@ -2175,16 +2218,18 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                           {(displayProperty.year_built !== undefined && displayProperty.year_built !== null) ? displayProperty.year_built : '—'}
                         </span>
                       </div>
-                      <div className="property-detail-info-item property-detail-info-item--horizontal">
-                        <span className="property-detail-info-label">Есть тест-драйв:</span>
-                        <span className="property-detail-info-value">
-                          {(() => {
-                            const testDriveValue = displayProperty.test_drive;
-                            const isTestDrive = testDriveValue === 1 || testDriveValue === true || displayProperty.testDrive === true;
-                            return isTestDrive ? 'Да' : 'Нет';
-                          })()}
-                        </span>
-                      </div>
+                      {!isDebtProperty && (
+                        <div className="property-detail-info-item property-detail-info-item--horizontal">
+                          <span className="property-detail-info-label">Есть тест-драйв:</span>
+                          <span className="property-detail-info-value">
+                            {(() => {
+                              const testDriveValue = displayProperty.test_drive;
+                              const isTestDrive = testDriveValue === 1 || testDriveValue === true || displayProperty.testDrive === true;
+                              return isTestDrive ? 'Да' : 'Нет';
+                            })()}
+                          </span>
+                        </div>
+                      )}
                     </>
                   )}
                 </div>
@@ -2456,7 +2501,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                 // 3. Цена "Купить сейчас" больше стартовой цены аукциона (логическая проверка)
                 // 4. Таймер не истек
                 // 5. Текущая ставка меньше минимальной цены продажи (если ставка >= цены, блок скрывается)
-                const shouldShowBuyNow = isAuctionProperty && 
+                const shouldShowBuyNow = isAuctionProperty && !isDebtProperty &&
                                          buyNowPrice > 0 && 
                                          buyNowPrice > startingPrice && 
                                          !timerExpired &&
@@ -2501,11 +2546,11 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                 </button>
               )}
 
-              {/* Цена для неаукционных объектов */}
+              {/* Цена для неаукционных объектов (включая объекты с долгами) */}
               {!isAuctionProperty && displayProperty.price && Number(displayProperty.price) > 0 && (
                 <>
                   <div className="property-detail-sidebar__price-block">
-                    <span className="price-label">Стоимость:</span>
+                    <span className="price-label">{isDebtProperty ? 'Сумма продажи:' : 'Стоимость:'}</span>
                     <span className="price-value">
                       {displayProperty.currency === 'USD' ? '$' : displayProperty.currency === 'EUR' ? '€' : displayProperty.currency === 'BYN' ? 'Br' : ''}
                       {displayProperty.price.toLocaleString('ru-RU')}
@@ -2521,7 +2566,9 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                       cursor: (displayProperty.is_reserved && displayProperty.reserved_until && new Date(displayProperty.reserved_until) > new Date()) ? 'not-allowed' : 'pointer'
                     }}
                   >
-                    {displayProperty.is_reserved && displayProperty.reserved_until && new Date(displayProperty.reserved_until) > new Date() ? 'Объект забронирован' : 'Купить сейчас'}
+                    {displayProperty.is_reserved && displayProperty.reserved_until && new Date(displayProperty.reserved_until) > new Date()
+                      ? 'Объект забронирован'
+                      : (isDebtProperty ? 'Купить' : 'Купить сейчас')}
                   </button>
                 </>
               )}

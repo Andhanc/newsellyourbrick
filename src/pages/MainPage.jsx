@@ -1173,6 +1173,8 @@ function MainPage() {
 
   // Фильтрованные данные
   // Состояние для одобренных объявлений из API
+  // и общий список объектов для главной страницы
+  const [homeProperties, setHomeProperties] = useState([])
   const [approvedProperties, setApprovedProperties] = useState({
     apartments: [],
     villas: [],
@@ -1261,6 +1263,179 @@ function MainPage() {
   const filteredTownhouses = useMemo(() => filterBySearch(combinedTownhouses), [searchQuery, combinedTownhouses])
   const filteredRecommended = useMemo(() => filterBySearch(recommendedProperties), [searchQuery])
   const filteredNearby = useMemo(() => filterBySearch(nearbyProperties), [searchQuery])
+
+  // Загрузка реальных объектов для главной страницы
+  useEffect(() => {
+    const loadHomeProperties = async () => {
+      try {
+        const apiBase = await getApiBaseUrl()
+
+        const [approvedRes, auctionsRes] = await Promise.all([
+          fetch(`${apiBase}/properties/approved`),
+          fetch(`${apiBase}/properties/auctions`)
+        ])
+
+        let approved = []
+        let auctions = []
+
+        if (approvedRes.ok) {
+          const json = await approvedRes.json()
+          if (json?.success && Array.isArray(json.data)) {
+            approved = json.data
+          }
+        }
+
+        if (auctionsRes.ok) {
+          const json = await auctionsRes.json()
+          if (json?.success && Array.isArray(json.data)) {
+            auctions = json.data
+          }
+        }
+
+        const normalizeProperty = (prop, options = {}) => {
+          const { forceAuction = null } = options
+
+          const isAuction =
+            forceAuction !== null
+              ? forceAuction
+              : (prop.isAuction === true ||
+                 prop.is_auction === 1 ||
+                 prop.is_auction === true)
+
+          const isShare =
+            prop.is_share === 1 ||
+            prop.is_share === true ||
+            prop.is_shared_ownership === 1 ||
+            prop.is_shared_ownership === true
+
+          const priceNumber =
+            prop.price != null && prop.price !== ''
+              ? Number(prop.price)
+              : 0
+
+          const auctionStartingPrice =
+            prop.auction_starting_price != null && prop.auction_starting_price !== ''
+              ? Number(prop.auction_starting_price)
+              : (prop.auctionStartingPrice != null && prop.auctionStartingPrice !== ''
+                  ? Number(prop.auctionStartingPrice)
+                  : null)
+
+          return {
+            ...prop,
+            isAuction,
+            is_share: isShare ? 1 : 0,
+            title: prop.title || prop.name || '',
+            name: prop.name || prop.title || '',
+            image:
+              prop.image ||
+              (Array.isArray(prop.images) && prop.images[0]
+                ? (typeof prop.images[0] === 'string'
+                    ? prop.images[0]
+                    : prop.images[0].url)
+                : null),
+            images: Array.isArray(prop.images)
+              ? prop.images
+              : (prop.image ? [prop.image] : []),
+            price: priceNumber,
+            auction_starting_price: auctionStartingPrice,
+            currentBid:
+              prop.currentBid ||
+              prop.auction_current_bid ||
+              prop.auctionCurrentBid ||
+              null,
+            endTime:
+              prop.endTime ||
+              prop.auction_end_date ||
+              prop.auctionEndDate ||
+              prop.test_timer_end_date ||
+              null,
+            beds: prop.beds || prop.rooms || prop.bedrooms || 0,
+            baths: prop.baths || prop.bathrooms || 0,
+            sqft: prop.sqft || prop.area || 0,
+            area: prop.area || prop.sqft || 0,
+          }
+        }
+
+        const normalizedApproved = approved.map((p) => normalizeProperty(p))
+        const normalizedAuctions = auctions.map((p) => normalizeProperty(p, { forceAuction: true }))
+
+        // Объединяем по ID, приоритет у аукционных записей
+        const byId = new Map()
+        normalizedApproved.forEach((p) => {
+          if (p && p.id != null) {
+            byId.set(p.id, p)
+          }
+        })
+        normalizedAuctions.forEach((p) => {
+          if (p && p.id != null) {
+            byId.set(p.id, p)
+          }
+        })
+
+        setHomeProperties(Array.from(byId.values()))
+      } catch (error) {
+        console.error('❌ Ошибка загрузки объектов для главной страницы:', error)
+      }
+    }
+
+    loadHomeProperties()
+  }, [])
+
+  // Разделы для главной страницы (по типу продажи)
+  const auctionSection = useMemo(() => {
+    // Аукционы без цены "Купить сейчас"
+    const base = homeProperties.filter((p) => {
+      if (!p || !p.isAuction) return false
+
+      const price = p.price || 0
+      const start = p.auction_starting_price || 0
+
+      // Если нет цены или она равна стартовой — считаем чистым аукционом
+      if (!price) return true
+      if (!start) return true
+      return Number(price) <= Number(start)
+    })
+
+    return filterBySearch(base).slice(0, 8)
+  }, [homeProperties, searchQuery])
+
+  const buyNowSection = useMemo(() => {
+    // Аукционы с опцией "Купить сейчас" (фиксированная цена выше стартовой)
+    const base = homeProperties.filter((p) => {
+      if (!p || !p.isAuction) return false
+      const price = p.price || 0
+      const start = p.auction_starting_price || 0
+      if (!price || !start) return false
+      return Number(price) > Number(start)
+    })
+
+    return filterBySearch(base).slice(0, 8)
+  }, [homeProperties, searchQuery])
+
+  const debtsSection = useMemo(() => {
+    // Объекты с долгами (ожидаем флаги от бэкенда)
+    const base = homeProperties.filter((p) =>
+      p &&
+      (p.sale_type === 'debt' ||
+       p.is_debt === 1 ||
+       p.has_debt === 1)
+    )
+
+    return filterBySearch(base).slice(0, 8)
+  }, [homeProperties, searchQuery])
+
+  const sharesSection = useMemo(() => {
+    // Долевая собственность
+    const base = homeProperties.filter((p) =>
+      p &&
+      (p.is_share === 1 ||
+       p.is_share === true ||
+       p.is_shared_ownership === 1 ||
+       p.is_shared_ownership === true)
+    )
+
+    return filterBySearch(base).slice(0, 8)
+  }, [homeProperties, searchQuery])
 
   // Чтение URL параметров и применение фильтров
   useEffect(() => {
@@ -2516,35 +2691,42 @@ function MainPage() {
           <div 
             className="apartments-section__header"
             onClick={() => {
-              // Принудительный переход на страницу с фильтром
+              // Принудительный переход на страницу с фильтром "Аукцион"
               window.location.href = '/auction?category=Apartment&filter=auction'
             }}
             style={{ cursor: 'pointer' }}
           >
-            <h2 className="apartments-section__title">{t('apartmentsSection')}</h2>
+          <h2 className="apartments-section__title">Аукцион</h2>
             <FiArrowRight size={24} className="apartments-section__arrow" />
           </div>
           
           <div className="apartments-section__content">
             <div className="properties-grid">
-              {filteredApartments.map((apartment, index) => {
+              {auctionSection.map((apartment) => {
                 const formatPrice = (price) => {
+                  if (!price) return '$0'
                   if (price >= 1000000) {
                     return `$${(price / 1000000).toFixed(1)}M`
                   }
                   return `$${price.toLocaleString('en-US')}`
                 }
+
+                const hasTimer =
+                  apartment.isAuction === true &&
+                  apartment.endTime != null &&
+                  apartment.endTime !== ''
+
+                const currentBidValue =
+                  apartment.currentBid != null
+                    ? apartment.currentBid
+                    : (apartment.auction_starting_price || apartment.price || 0)
                 
                 return (
                   <div key={apartment.id} className="property-card">
                     <div 
                       className="property-link"
                       onClick={() => {
-                        // hasTimer определяется только по данным объекта, не зависит от индекса
-                        const hasTimer = apartment.isAuction === true && apartment.endTime != null && apartment.endTime !== ''
-                        // showTimer используется только для визуального отображения таймера
-                        const showTimer = index % 2 === 1 && hasTimer
-                        handlePropertyClick('apartment', apartment.id, !showTimer, hasTimer, apartment)
+                        handlePropertyClick('apartment', apartment.id, false, hasTimer, apartment)
                       }}
                       style={{ cursor: 'pointer' }}
                     >
@@ -2576,46 +2758,40 @@ function MainPage() {
                         </button>
                       </div>
                       <div className="property-content">
-                        {index % 2 === 1 && apartment.isAuction && apartment.endTime && (
-                          <PropertyTimer endTime={apartment.endTime} compact={true} />
-                        )}
-                        <h3 className="property-title">{apartment.name}</h3>
-                        {!(index % 2 === 1 && apartment.isAuction && apartment.endTime) && apartment.description && (
-                          <p className="property-description">{apartment.description}</p>
-                        )}
-                        <p className="property-location">{apartment.location}</p>
-                        {index % 2 === 1 && apartment.isAuction && apartment.endTime ? (
-                          apartment.currentBid && (
-                            <div className="property-bid-info">
-                              <span className="bid-label">Текущая ставка:</span>
-                              <span className="bid-value">{formatPrice(apartment.currentBid)}</span>
+                        <div className="property-header-fixed">
+                          {hasTimer && (
+                            <PropertyTimer endTime={apartment.endTime} compact={true} />
+                          )}
+                          <h3 className="property-title">{apartment.name}</h3>
+                          <p className="property-location">{apartment.location}</p>
+                        </div>
+                        {/* Строка характеристик под блоком заголовка */}
+                        <div className="property-specs">
+                          {apartment.beds && (
+                            <div className="spec-item">
+                              <MdBed size={18} />
+                              <span>{apartment.beds}</span>
                             </div>
-                          )
-                        ) : (
-                          <>
-                            <div className="property-price">{formatPrice(apartment.price)}</div>
-                            <div className="property-specs">
-                            {apartment.beds && (
-                              <div className="spec-item">
-                                <MdBed size={18} />
-                                <span>{apartment.beds}</span>
-                              </div>
-                            )}
-                            {apartment.baths && (
-                              <div className="spec-item">
-                                <MdOutlineBathtub size={18} />
-                                <span>{apartment.baths}</span>
-                              </div>
-                            )}
-                            {apartment.sqft && (
-                              <div className="spec-item">
-                                <BiArea size={18} />
-                                <span>{apartment.sqft} м²</span>
-                              </div>
-                            )}
+                          )}
+                          {apartment.baths && (
+                            <div className="spec-item">
+                              <MdOutlineBathtub size={18} />
+                              <span>{apartment.baths}</span>
                             </div>
-                          </>
-                        )}
+                          )}
+                          {apartment.sqft && (
+                            <div className="spec-item">
+                              <BiArea size={18} />
+                              <span>{apartment.sqft} м²</span>
+                            </div>
+                          )}
+                        </div>
+                        <div className="property-bid-info">
+                          <span className="bid-label">Текущая ставка:</span>
+                          <span className="bid-value">
+                            {formatPrice(currentBidValue)}
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -2632,34 +2808,32 @@ function MainPage() {
           <div 
             className="apartments-section__header"
             onClick={() => {
-              window.location.href = '/auction?category=Villa&filter=auction'
+              // Переход на страницу аукциона с фильтром "Купить сейчас"
+              window.location.href = '/auction?category=Villa&filter=buy_now'
             }}
             style={{ cursor: 'pointer' }}
           >
-            <h2 className="apartments-section__title">{t('villasSection')}</h2>
+            <h2 className="apartments-section__title">Купить сейчас</h2>
             <FiArrowRight size={24} className="apartments-section__arrow" />
           </div>
           
           <div className="apartments-section__content">
             <div className="properties-grid">
-              {filteredVillas.map((villa, index) => {
+              {buyNowSection.map((villa) => {
                 const formatPrice = (price) => {
+                  if (!price) return '$0'
                   if (price >= 1000000) {
                     return `$${(price / 1000000).toFixed(1)}M`
                   }
                   return `$${price.toLocaleString('en-US')}`
                 }
-                
+
                 return (
                   <div key={villa.id} className="property-card">
                     <div 
                       className="property-link"
                       onClick={() => {
-                        // hasTimer определяется только по данным объекта, не зависит от индекса
-                        const hasTimer = villa.isAuction === true && villa.endTime != null && villa.endTime !== ''
-                        // showTimer используется только для визуального отображения таймера
-                        const showTimer = index % 2 === 1 && hasTimer
-                        handlePropertyClick('villa', villa.id, !showTimer, hasTimer, villa)
+                        handlePropertyClick('villa', villa.id, false, false, villa)
                       }}
                       style={{ cursor: 'pointer' }}
                     >
@@ -2691,46 +2865,34 @@ function MainPage() {
                         </button>
                       </div>
                       <div className="property-content">
-                        {index % 2 === 1 && villa.isAuction && villa.endTime && (
-                          <PropertyTimer endTime={villa.endTime} compact={true} />
-                        )}
-                        <h3 className="property-title">{villa.name}</h3>
-                        {!(index % 2 === 1 && villa.isAuction && villa.endTime) && villa.description && (
-                          <p className="property-description">{villa.description}</p>
-                        )}
-                        <p className="property-location">{villa.location}</p>
-                        {index % 2 === 1 && villa.isAuction && villa.endTime ? (
-                          villa.currentBid && (
-                            <div className="property-bid-info">
-                              <span className="bid-label">Текущая ставка:</span>
-                              <span className="bid-value">{formatPrice(villa.currentBid)}</span>
+                        <div className="property-header-fixed">
+                          <h3 className="property-title">{villa.name}</h3>
+                          <p className="property-location">{villa.location}</p>
+                        </div>
+                        {/* Строка характеристик под блоком заголовка */}
+                        <div className="property-specs">
+                          {villa.beds && (
+                            <div className="spec-item">
+                              <MdBed size={18} />
+                              <span>{villa.beds}</span>
                             </div>
-                          )
-                        ) : (
-                          <>
-                            <div className="property-price">{formatPrice(villa.price)}</div>
-                            <div className="property-specs">
-                            {villa.beds && (
-                              <div className="spec-item">
-                                <MdBed size={18} />
-                                <span>{villa.beds}</span>
-                              </div>
-                            )}
-                            {villa.baths && (
-                              <div className="spec-item">
-                                <MdOutlineBathtub size={18} />
-                                <span>{villa.baths}</span>
-                              </div>
-                            )}
-                            {villa.sqft && (
-                              <div className="spec-item">
-                                <BiArea size={18} />
-                                <span>{villa.sqft} м²</span>
-                              </div>
-                            )}
+                          )}
+                          {villa.baths && (
+                            <div className="spec-item">
+                              <MdOutlineBathtub size={18} />
+                              <span>{villa.baths}</span>
                             </div>
-                          </>
-                        )}
+                          )}
+                          {villa.sqft && (
+                            <div className="spec-item">
+                              <BiArea size={18} />
+                              <span>{villa.sqft} м²</span>
+                            </div>
+                          )}
+                        </div>
+                        <div className="property-content-bottom">
+                          <div className="property-price">{formatPrice(villa.price)}</div>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -2747,17 +2909,17 @@ function MainPage() {
           <div 
             className="apartments-section__header"
             onClick={() => {
-              window.location.href = '/auction?category=Flat&filter=auction'
+              window.location.href = '/debts'
             }}
             style={{ cursor: 'pointer' }}
           >
-            <h2 className="apartments-section__title">Квартиры</h2>
+            <h2 className="apartments-section__title">Долги</h2>
             <FiArrowRight size={24} className="apartments-section__arrow" />
           </div>
           
           <div className="apartments-section__content">
             <div className="properties-grid">
-              {filteredFlats.map((flat, index) => {
+              {debtsSection.map((flat, index) => {
                 const formatPrice = (price) => {
                   if (price >= 1000000) {
                     return `$${(price / 1000000).toFixed(1)}M`
@@ -2862,17 +3024,18 @@ function MainPage() {
           <div 
             className="apartments-section__header"
             onClick={() => {
-              window.location.href = '/auction?category=House&filter=auction'
+              // Для долевых объектов ведём на страницу всех долей
+              navigate('/shares')
             }}
             style={{ cursor: 'pointer' }}
           >
-            <h2 className="apartments-section__title">Дома</h2>
+            <h2 className="apartments-section__title">Долевая продажа</h2>
             <FiArrowRight size={24} className="apartments-section__arrow" />
           </div>
           
           <div className="apartments-section__content">
             <div className="properties-grid">
-              {filteredTownhouses.map((townhouse, index) => {
+              {sharesSection.map((townhouse, index) => {
                 const formatPrice = (price) => {
                   if (price >= 1000000) {
                     return `$${(price / 1000000).toFixed(1)}M`
@@ -2885,11 +3048,10 @@ function MainPage() {
                     <div 
                       className="property-link"
                       onClick={() => {
-                        // hasTimer определяется только по данным объекта, не зависит от индекса
-                        const hasTimer = townhouse.isAuction === true && townhouse.endTime != null && townhouse.endTime !== ''
-                        // showTimer используется только для визуального отображения таймера
-                        const showTimer = index % 2 === 1 && hasTimer
-                        handlePropertyClick('townhouse', townhouse.id, !showTimer, hasTimer, townhouse)
+                        // Для долевых объектов открываем специальную страницу долей
+                        const propertyType = townhouse.property_type || townhouse.propertyType || 'apartment'
+                        const shareId = `${propertyType}-${townhouse.id}`
+                        navigate(`/shares/${shareId}`)
                       }}
                       style={{ cursor: 'pointer' }}
                     >

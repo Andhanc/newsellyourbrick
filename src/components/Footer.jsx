@@ -78,6 +78,7 @@ const Footer = () => {
             <Link to="/subscriptions" onClick={scrollToTop} className="footer__menu-link">{t('tariffs')}</Link>
             <Link to="/bonuses" onClick={scrollToTop} className="footer__menu-link">Бонусы</Link>
             <Link to="/shares" onClick={scrollToTop} className="footer__menu-link">Доли</Link>
+            <Link to="/debts" onClick={scrollToTop} className="footer__menu-link">Долги</Link>
           </div>
           <div className="footer__menu-column">
             <Link to="/auction" onClick={scrollToTop} className="footer__menu-link">{t('auction')}</Link>

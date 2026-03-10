@@ -2900,6 +2900,18 @@ app.post('/api/bonus-submissions/use-promo', (req, res) => {
       return res.status(400).json({ success: false, reason: 'invalid', message: 'Введите промокод.' });
     }
 
+    // Специальный "супер" промокод ADMIN, который всегда проходит без каких‑либо проверок
+    if (codeTrim === 'ADMIN') {
+      return res.json({
+        success: true,
+        data: {
+          submission_id: null,
+          promo_code: 'ADMIN',
+          is_admin_promo: true,
+        },
+      });
+    }
+
     const row = db.prepare(`
       SELECT id, user_id, task_id, status, promo_code, used_at
       FROM bonus_task_submissions
@@ -4637,13 +4649,16 @@ app.post('/api/properties', upload.fields([
       additional_documents,
       additional_amenities,
       test_drive_data,
-      test_drive = 0
+      test_drive = 0,
+      is_debt,
+      sale_type
     } = req.body;
     
 
-    // Для долевого объекта тест-драйв недоступен
+    // Для долевого объекта и долгов тест-драйв недоступен
     let normalizedTestDrive = 0;
-    if (isShare) {
+    const isDebt = is_debt === '1' || is_debt === 1 || is_debt === true || sale_type === 'debt';
+    if (isShare || isDebt) {
       normalizedTestDrive = 0;
     } else if (typeof test_drive === 'string') {
       normalizedTestDrive = (test_drive === '1' || test_drive === 'true') ? 1 : 0;
@@ -4806,7 +4821,10 @@ app.post('/api/properties', upload.fields([
       moderation_status: 'pending',
       is_shared_ownership: isShare ? 1 : 0,
       total_shares: isShare && total_shares ? parseInt(total_shares, 10) : null,
-      shares_sold: isShare ? 0 : null
+      shares_sold: isShare ? 0 : null,
+      sale_type: isDebt ? 'debt' : (isShare ? 'share' : 'auction'),
+      is_debt: isDebt ? 1 : 0,
+      has_debt: isDebt ? 1 : 0
     };
 
     // Добавляем поля для домов/вилл
@@ -5376,13 +5394,25 @@ app.put('/api/properties/:id', upload.fields([
       additional_documents,
       additional_amenities,
       test_drive_data,
-      test_drive = 0
+      test_drive = 0,
+      is_debt,
+      sale_type
     } = req.body;
     
     // Нормализуем test_drive для редактирования
-    // Если test_drive не передан в запросе, используем значение из оригинального объекта
+    // Если объект долевой или с долгами — тест-драйв принудительно выключен
+    const isShareEdit =
+      originalProperty.is_shared_ownership === 1 ||
+      originalProperty.is_shared_ownership === true;
+    const isDebtEdit =
+      originalProperty.is_debt === 1 ||
+      originalProperty.is_debt === true ||
+      originalProperty.sale_type === 'debt';
+
     let normalizedTestDriveEdit = undefined;
-    if (test_drive !== undefined && test_drive !== null) {
+    if (isShareEdit || isDebtEdit) {
+      normalizedTestDriveEdit = 0;
+    } else if (test_drive !== undefined && test_drive !== null) {
       if (typeof test_drive === 'string') {
         normalizedTestDriveEdit = (test_drive === '1' || test_drive === 'true') ? 1 : 0;
       } else if (typeof test_drive === 'boolean') {

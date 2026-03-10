@@ -5515,6 +5515,12 @@
   max-width: 300px;
 }
 
+/* Вариант обёртки для поля "Количество долей" —
+   чуть уже, но с тем же визуальным стилем */
+.price-input-wrapper-shares {
+  max-width: 220px;
+}
+
 .price-input-wrapper-large::before {
   content: '';
   position: absolute;

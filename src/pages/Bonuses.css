@@ -10,7 +10,7 @@
 
 /* Новый header на странице бонусов — такой же, как на Главной/домашней */
 .bonuses-page .new-header {
-  background: #f8fafc;
+  background: transparent;
   padding: 20px 0;
   position: sticky;
   top: 0;

@@ -142,7 +142,7 @@ const AddProperty = () => {
     title: '',
     description: '',
     price: '',
-    isAuction: true, // Все объекты всегда аукционные
+    isAuction: true, // Все объекты всегда аукционные (кроме долей и долгов)
     auctionStartDate: '',
     auctionEndDate: '',
     auctionStartingPrice: '',
@@ -212,6 +212,7 @@ const AddProperty = () => {
     feature26: false,
     additionalAmenities: '',
     isShareProperty: false,
+    isDebtProperty: false,
     totalShares: ''
   })
 
@@ -665,7 +666,8 @@ const AddProperty = () => {
       showNotification('Пожалуйста, заполните заголовок и загрузите хотя бы одно фото')
       return false
     }
-    if (!uploadedDocuments.ownership || !uploadedDocuments.noDebts) {
+    const requiresNoDebts = !formData.isDebtProperty
+    if (!uploadedDocuments.ownership || (requiresNoDebts && !uploadedDocuments.noDebts)) {
       showNotification('Пожалуйста, загрузите все необходимые документы')
       return false
     }
@@ -804,15 +806,23 @@ const AddProperty = () => {
       formDataToSend.append('description', formData.description || '')
       if (formData.price) formDataToSend.append('price', String(formData.price))
       formDataToSend.append('currency', currency)
-      // Для доли: без аукциона и тест-драйва
+      // Для доли и долгов: без аукциона и тест-драйва
       const isShare = !!formData.isShareProperty
+      const isDebt = !!formData.isDebtProperty
       formDataToSend.append('is_share', isShare ? '1' : '0')
+      formDataToSend.append('is_debt', isDebt ? '1' : '0')
       if (isShare) {
         formDataToSend.append('is_auction', '0')
         formDataToSend.append('test_drive', '0')
+        formDataToSend.append('sale_type', 'share')
         if (formData.totalShares) formDataToSend.append('total_shares', String(formData.totalShares))
+      } else if (isDebt) {
+        formDataToSend.append('is_auction', '0')
+        formDataToSend.append('test_drive', '0')
+        formDataToSend.append('sale_type', 'debt')
       } else {
         formDataToSend.append('is_auction', '1')
+        formDataToSend.append('sale_type', 'auction')
         const testDriveValue = (formData.testDrive === true || formData.testDrive === 1) ? '1' : '0'
         console.log('🔍 Отправка test_drive на сервер:', { formData_testDrive: formData.testDrive, testDriveValue })
         formDataToSend.append('test_drive', testDriveValue)
@@ -925,7 +935,7 @@ const AddProperty = () => {
           console.log('📄 Документ о праве собственности уже загружен, пропускаем')
         }
       }
-      if (requiredDocuments.noDebts) {
+      if (!formData.isDebtProperty && requiredDocuments.noDebts) {
         // Проверяем, является ли это File объектом (новый файл) или существующим документом
         if (requiredDocuments.noDebts instanceof File) {
           formDataToSend.append('no_debts_document', requiredDocuments.noDebts)
@@ -1320,8 +1330,9 @@ const AddProperty = () => {
           description: property.description || '',
           price: property.price ? String(property.price) : '',
           isShareProperty: !!(property.is_shared_ownership === 1 || property.is_shared_ownership === true),
+          isDebtProperty: !!(property.is_debt === 1 || property.is_debt === true || property.sale_type === 'debt' || property.has_debt === 1 || property.has_debt === true),
           totalShares: (property.total_shares != null && property.total_shares !== '') ? String(property.total_shares) : '',
-          isAuction: !(property.is_shared_ownership === 1 || property.is_shared_ownership === true),
+          isAuction: !(property.is_shared_ownership === 1 || property.is_shared_ownership === true || property.is_debt === 1 || property.is_debt === true || property.sale_type === 'debt'),
           auctionStartDate: property.auction_start_date || '',
           auctionEndDate: property.auction_end_date || '',
           auctionStartingPrice: property.auction_starting_price ? String(property.auction_starting_price) : '',
@@ -1513,9 +1524,16 @@ const AddProperty = () => {
           }
         }
         
-        // Начинаем пошаговый процесс редактирования с вопроса о тест-драйве
-        // (тип объекта уже известен, поэтому пропускаем type-selection)
-        setCurrentStep('test-drive-question')
+        // Начинаем пошаговый процесс редактирования:
+        // для долей и долгов сразу переходим к названию, для остальных — к вопросу о тест-драйве
+        const isShare = property.is_shared_ownership === 1 || property.is_shared_ownership === true
+        const isDebt =
+          property.is_debt === 1 ||
+          property.is_debt === true ||
+          property.sale_type === 'debt' ||
+          property.has_debt === 1 ||
+          property.has_debt === true
+        setCurrentStep(isShare || isDebt ? 'property-name' : 'test-drive-question')
       } else {
         throw new Error('Данные объекта не найдены')
       }
@@ -1702,7 +1720,8 @@ const AddProperty = () => {
       return
     }
     // Проверяем документы перед публикацией
-    if (!uploadedDocuments.ownership || !uploadedDocuments.noDebts) {
+    const requiresNoDebts = !formData.isDebtProperty
+    if (!uploadedDocuments.ownership || (requiresNoDebts && !uploadedDocuments.noDebts)) {
       showNotification('Пожалуйста, загрузите все необходимые документы')
       return
     }
@@ -1898,11 +1917,32 @@ const AddProperty = () => {
       ...prev,
       propertyType: type,
       isShareProperty: !!isShare,
+      isDebtProperty: false,
       bedrooms: isApartmentOrCommercial ? '' : prev.bedrooms,
       rooms: isHouseOrVilla ? '' : prev.rooms
     }))
     // Для доли: без тест-драйва и аукциона — сразу к названию
     setCurrentStep(isShare ? 'property-name' : 'test-drive-question')
+  }
+
+  // Обработчик выбора типа недвижимости для объявления \"Долги\"
+  const handleDebtPropertyTypeSelect = (type) => {
+    const isApartmentOrCommercial = type === 'apartment' || type === 'commercial'
+    const isHouseOrVilla = type === 'house' || type === 'villa'
+
+    setFormData(prev => ({
+      ...prev,
+      propertyType: type,
+      isShareProperty: false,
+      isDebtProperty: true,
+      isAuction: false,
+      testDrive: false,
+      bedrooms: isApartmentOrCommercial ? '' : prev.bedrooms,
+      rooms: isHouseOrVilla ? '' : prev.rooms
+    }))
+
+    // Для долгов: без тест-драйва и аукциона — сразу к названию
+    setCurrentStep('property-name')
   }
 
   // Обработчик ответа на вопрос о тест-драйве
@@ -2870,6 +2910,13 @@ const AddProperty = () => {
         showNotification('Укажите количество долей (целое число больше 0)')
         return
       }
+    } else if (formData.isDebtProperty) {
+      // Для долгов: обязательна фиксированная сумма продажи, без аукциона
+      const priceNum = Number(removeCommas(String(formData.price || '')))
+      if (!formData.price || priceNum <= 0) {
+        showNotification('Укажите сумму продажи долга')
+        return
+      }
     } else {
       // Цена "Купить сейчас" опциональна; проверяем аукционные поля
       if (!formData.auctionStartDate || !formData.auctionEndDate) {
@@ -3128,7 +3175,7 @@ const AddProperty = () => {
       <div className="add-property-container">
         <div className="add-property-header">
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <button 
+            <button
               className="back-btn"
               onClick={() => {
                 if (currentStep === 'test-drive-question') {
@@ -3136,14 +3183,20 @@ const AddProperty = () => {
                     navigate('/owner')
                   } else {
                     setCurrentStep('type-selection')
-                    setFormData(prev => ({ ...prev, propertyType: '', isShareProperty: false }))
+                    setFormData(prev => ({ ...prev, propertyType: '', isShareProperty: false, isDebtProperty: false }))
                   }
-                } else if (currentStep === 'share-type-selection') {
+                } else if (currentStep === 'share-type-selection' || currentStep === 'debt-type-selection') {
                   setCurrentStep('type-selection')
-                  setFormData(prev => ({ ...prev, propertyType: '', isShareProperty: false }))
+                  setFormData(prev => ({ ...prev, propertyType: '', isShareProperty: false, isDebtProperty: false }))
                 } else if (currentStep === 'property-name') {
-                  setCurrentStep(formData.isShareProperty ? 'share-type-selection' : 'test-drive-question')
-                  if (!formData.isShareProperty) setFormData(prev => ({ ...prev, testDrive: null }))
+                  if (formData.isShareProperty) {
+                    setCurrentStep('share-type-selection')
+                  } else if (formData.isDebtProperty) {
+                    setCurrentStep('debt-type-selection')
+                  } else {
+                    setCurrentStep('test-drive-question')
+                    setFormData(prev => ({ ...prev, testDrive: null }))
+                  }
                 } else if (currentStep === 'location') {
                   setCurrentStep('property-name')
                 } else if (currentStep === 'details') {
@@ -3297,6 +3350,29 @@ const AddProperty = () => {
                   Продолжить
                 </button>
               </div>
+
+              <div 
+                className="property-type-card-large property-type-card-large--debt"
+                onClick={() => setCurrentStep('debt-type-selection')}
+              >
+                <div className="property-type-card-icon property-type-card-icon--debt">
+                  <FiPieChart size={48} />
+                </div>
+                <h3 className="property-type-card-title">Долги</h3>
+                <p className="property-type-card-description">
+                  Продажа объектов с долгами: вы указываете фиксированную сумму продажи без аукциона, покупатель выкупает объект вместе с обязательствами.
+                </p>
+                <button 
+                  type="button"
+                  className="property-type-card-button"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setCurrentStep('debt-type-selection')
+                  }}
+                >
+                  Продолжить
+                </button>
+              </div>
             </div>
 
      
@@ -3336,6 +3412,44 @@ const AddProperty = () => {
                 <h3 className="property-type-card-title">Апартаменты</h3>
                 <p className="property-type-card-description">Апартаменты с удобствами.</p>
                 <button type="button" className="property-type-card-button" onClick={(e) => { e.stopPropagation(); handlePropertyTypeSelect('commercial', true) }}>Продолжить</button>
+              </div>
+            </div>
+          </div>
+        ) : currentStep === 'debt-type-selection' ? (
+          /* Выбор типа объекта для продажи долгов (те же 4 типа) */
+          <div className="property-type-selection-screen">
+            <div className="property-type-selection-header">
+              <h2 className="property-type-selection-title">
+                Выберите тип объекта для продажи с долгами
+              </h2>
+              <p className="property-type-selection-subtitle">
+                Дом, квартира, вилла или апартаменты — далее вы укажете фиксированную сумму продажи без аукциона.
+              </p>
+            </div>
+            <div className="property-type-cards-container">
+              <div className="property-type-card-large" onClick={() => handleDebtPropertyTypeSelect('house')}>
+                <div className="property-type-card-icon"><FiHome size={48} /></div>
+                <h3 className="property-type-card-title">Дом</h3>
+                <p className="property-type-card-description">Дома, коттеджи, загородные дома.</p>
+                <button type="button" className="property-type-card-button" onClick={(e) => { e.stopPropagation(); handleDebtPropertyTypeSelect('house') }}>Продолжить</button>
+              </div>
+              <div className="property-type-card-large" onClick={() => handleDebtPropertyTypeSelect('apartment')}>
+                <div className="property-type-card-icon"><PiBuildingApartment size={48} /></div>
+                <h3 className="property-type-card-title">Квартира</h3>
+                <p className="property-type-card-description">Меблированные помещения, вся площадь.</p>
+                <button type="button" className="property-type-card-button" onClick={(e) => { e.stopPropagation(); handleDebtPropertyTypeSelect('apartment') }}>Продолжить</button>
+              </div>
+              <div className="property-type-card-large" onClick={() => handleDebtPropertyTypeSelect('villa')}>
+                <div className="property-type-card-icon"><PiBuildings size={48} /></div>
+                <h3 className="property-type-card-title">Вилла</h3>
+                <p className="property-type-card-description">Загородные дома с участками.</p>
+                <button type="button" className="property-type-card-button" onClick={(e) => { e.stopPropagation(); handleDebtPropertyTypeSelect('villa') }}>Продолжить</button>
+              </div>
+              <div className="property-type-card-large" onClick={() => handleDebtPropertyTypeSelect('commercial')}>
+                <div className="property-type-card-icon"><PiWarehouse size={48} /></div>
+                <h3 className="property-type-card-title">Апартаменты</h3>
+                <p className="property-type-card-description">Апартаменты с удобствами.</p>
+                <button type="button" className="property-type-card-button" onClick={(e) => { e.stopPropagation(); handleDebtPropertyTypeSelect('commercial') }}>Продолжить</button>
               </div>
             </div>
           </div>
@@ -5179,13 +5293,14 @@ const AddProperty = () => {
                   </div>
                 </div>
 
-                {/* Документ об отсутствии долгов */}
+              {/* Документ об отсутствии долгов — не требуется для объектов с долгами */}
+              {!formData.isDebtProperty && (
                 <div className="document-upload-item">
                   <div className="document-upload-info">
                     <div className="document-upload-icon">
                       <FiFileText size={24} />
                     </div>
-              <div className="document-upload-text">
+                    <div className="document-upload-text">
                       <h4 className="document-upload-title">Справка об отсутствии долгов</h4>
                       <p className="document-upload-hint">PDF или изображение (JPG, PNG)</p>
                     </div>
@@ -5218,6 +5333,7 @@ const AddProperty = () => {
                     )}
                   </div>
                 </div>
+              )}
               </div>
 
               {/* Блок для дополнительных документов */}
@@ -5377,16 +5493,27 @@ const AddProperty = () => {
             </div>
           </div>
         ) : currentStep === 'price' ? (
-          /* Экран цены (и аукциона для обычных объектов; для доли — только цена и доли) */
+          /* Экран цены:
+             - для доли — только общая цена и количество долей
+             - для долгов — только фиксированная сумма продажи без аукциона
+             - для обычных объектов — аукцион + опциональная цена "Купить сейчас" */
           <div className="property-price-screen">
             <div className="property-price-main">
               <h2 className="property-price-title">
-                {formData.isShareProperty ? 'Стоимость и доли' : 'Укажите стоимость'}
+                {formData.isShareProperty
+                  ? 'Стоимость и доли'
+                  : formData.isDebtProperty
+                    ? 'Сумма продажи долга'
+                    : 'Укажите стоимость'}
               </h2>
               
               {formData.isShareProperty ? (
                 <p className="property-price-description">
                   Укажите общую стоимость объекта и на сколько долей он делится. Цена за одну долю рассчитается автоматически. Аукцион и тест-драйв для долевых объектов не предусмотрены.
+                </p>
+              ) : formData.isDebtProperty ? (
+                <p className="property-price-description">
+                  Укажите фиксированную сумму, за которую вы готовы продать объект с долгами. Для таких объявлений аукцион и тест-драйв не используются — покупатель выкупает объект по этой цене.
                 </p>
               ) : (
                 <p className="property-price-description">
@@ -5420,10 +5547,29 @@ const AddProperty = () => {
                       <input type="text" name="price" value={formData.price ? formatNumberWithCommas(formData.price) : ''} onChange={handlePriceChange} className="price-input-large" placeholder="0" inputMode="numeric" />
                     </div>
                   </div>
-                  <div className="price-input-section" style={{ marginTop: '20px' }}>
+                 <div className="price-input-section" style={{ marginTop: '20px' }}>
                     <label className="price-input-label">Количество долей</label>
-                    <input type="number" min="1" step="1" name="totalShares" value={formData.totalShares} onChange={(e) => setFormData(prev => ({ ...prev, totalShares: e.target.value.replace(/\D/g, '') }))} className="price-input-large" placeholder="Например: 20" inputMode="numeric" style={{ maxWidth: '200px' }} />
-                    <p style={{ fontSize: '14px', color: '#64748b', marginTop: '8px' }}>Объект будет разделён на равные доли. Покупатели смогут купить одну или несколько долей.</p>
+                    <div className="price-input-wrapper-large price-input-wrapper-shares">
+                      <input
+                        type="number"
+                        min="1"
+                        step="1"
+                        name="totalShares"
+                        value={formData.totalShares}
+                        onChange={(e) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            totalShares: e.target.value.replace(/\D/g, ''),
+                          }))
+                        }
+                        className="price-input-large"
+                        placeholder="Например: 20"
+                        inputMode="numeric"
+                      />
+                    </div>
+                    <p style={{ fontSize: '14px', color: '#64748b', marginTop: '8px' }}>
+                      Объект будет разделён на равные доли. Покупатели смогут купить одну или несколько долей.
+                    </p>
                   </div>
                   {formData.price && formData.totalShares && parseInt(formData.totalShares, 10) > 0 && (
                     <div className="share-price-per-unit" style={{ marginTop: '16px', padding: '16px', background: 'rgba(10, 186, 181, 0.1)', borderRadius: '12px', border: '1px solid rgba(10, 186, 181, 0.25)' }}>
@@ -5434,7 +5580,61 @@ const AddProperty = () => {
                 </>
               )}
 
-              {!formData.isShareProperty && (
+              {/* Для долгов: одна фиксированная цена продажи без аукциона */}
+              {formData.isDebtProperty && !formData.isShareProperty && (
+                <div className="price-input-section">
+                  <label className="price-input-label">Сумма продажи объекта с долгами</label>
+                  <div className="price-input-wrapper-large">
+                    <div className="currency-selector">
+                      <button
+                        type="button"
+                        className="currency-button"
+                        onClick={() =>
+                          setShowCurrencyDropdown(
+                            showCurrencyDropdown === 'price' ? null : 'price'
+                          )
+                        }
+                      >
+                        <span className="currency-symbol">
+                          {currencies.find(c => c.code === currency)?.symbol || '$'}
+                        </span>
+                        <FiChevronDown className="currency-chevron" size={14} />
+                      </button>
+                      {showCurrencyDropdown === 'price' && (
+                        <div className="currency-dropdown">
+                          {currencies.map(c => (
+                            <button
+                              key={c.code}
+                              type="button"
+                              className={`currency-option ${
+                                c.code === currency ? 'currency-option--active' : ''
+                              }`}
+                              onClick={() => {
+                                setCurrency(c.code)
+                                setShowCurrencyDropdown(null)
+                              }}
+                            >
+                              <span className="currency-option-symbol">{c.symbol}</span>
+                              <span className="currency-option-name">{c.name}</span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    <input
+                      type="text"
+                      name="price"
+                      value={formData.price ? formatNumberWithCommas(formData.price) : ''}
+                      onChange={handlePriceChange}
+                      className="price-input-large"
+                      placeholder="0"
+                      inputMode="numeric"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {!formData.isShareProperty && !formData.isDebtProperty && (
                 <>
               {/* Блок цены "Купить сейчас" */}
               <div className="price-input-section">
@@ -5997,6 +6197,7 @@ const AddProperty = () => {
               </div>
 
               {/* Справка об отсутствии долгов */}
+            {!formData.isDebtProperty && (
               <div className="document-upload-item">
                 <div className="document-upload-header">
                   <div className="document-upload-info">
@@ -6007,41 +6208,42 @@ const AddProperty = () => {
                       Загрузите справку об отсутствии задолженностей
                     </p>
                   </div>
-                  {uploadedDocuments.noDebts && (
-                    <div className="document-upload-check">
-                      <FiCheck size={20} />
+                    {uploadedDocuments.noDebts && (
+                      <div className="document-upload-check">
+                        <FiCheck size={20} />
+                      </div>
+                    )}
+                  </div>
+
+                  {!uploadedDocuments.noDebts ? (
+                    <label className="document-upload-label">
+                      <input
+                        type="file"
+                        ref={noDebtsInputRef}
+                        accept="image/*,.pdf"
+                        onChange={(e) => handleRequiredDocumentChange('noDebts', e)}
+                        style={{ display: 'none' }}
+                      />
+                      <FiUpload size={24} />
+                      <span>Загрузить файл</span>
+                    </label>
+                  ) : (
+                    <div className="document-upload-file-info">
+                      <FiFile size={20} />
+                      <span className="document-upload-file-name">
+                        {requiredDocuments.noDebts?.name || 'Файл загружен'}
+                      </span>
+                      <button
+                        type="button"
+                        className="document-upload-remove"
+                        onClick={() => handleRemoveRequiredDocument('noDebts')}
+                      >
+                        Удалить
+                      </button>
                     </div>
                   )}
                 </div>
-
-                {!uploadedDocuments.noDebts ? (
-                  <label className="document-upload-label">
-                    <input
-                      type="file"
-                      ref={noDebtsInputRef}
-                      accept="image/*,.pdf"
-                      onChange={(e) => handleRequiredDocumentChange('noDebts', e)}
-                      style={{ display: 'none' }}
-                    />
-                    <FiUpload size={24} />
-                    <span>Загрузить файл</span>
-                  </label>
-                ) : (
-                  <div className="document-upload-file-info">
-                    <FiFile size={20} />
-                    <span className="document-upload-file-name">
-                      {requiredDocuments.noDebts?.name || 'Файл загружен'}
-                    </span>
-                    <button
-                      type="button"
-                      className="document-upload-remove"
-                      onClick={() => handleRemoveRequiredDocument('noDebts')}
-                    >
-                      Удалить
-                    </button>
-                  </div>
-                )}
-              </div>
+              )}
             </div>
           </section>
 

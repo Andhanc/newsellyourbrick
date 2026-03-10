@@ -13,6 +13,7 @@ import Chat from './pages/Chat'
 import Favorites from './pages/Favorites'
 import Bonuses from './pages/Bonuses'
 import Shares from './pages/Shares'
+import Debts from './pages/Debts'
 import ShareDetailPage from './pages/ShareDetailPage'
 import OwnerDashboard from './pages/OwnerDashboard'
 import TelegramAuthCallback from './pages/TelegramAuthCallback'
@@ -242,6 +243,7 @@ function App() {
           <Route path="/wallet" element={<Wallet />} />
           <Route path="/bonuses" element={<Bonuses />} />
           <Route path="/shares" element={<Shares />} />
+          <Route path="/debts" element={<Debts />} />
           <Route path="/about" element={<About />} />
           <Route path="/shares/:id" element={<ShareDetailPage />} />
           

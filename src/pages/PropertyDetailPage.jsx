@@ -248,9 +248,21 @@ const PropertyDetailPage = () => {
                 commercial_type: prop.commercial_type || null,
                 business_hours: prop.business_hours || null,
                 currency: prop.currency || 'USD',
-                // Тест-драйв (флаг и удобное булево поле)
-                test_drive: prop.test_drive === 1 || prop.test_drive === true || prop.test_drive === '1' || prop.test_drive === 'true',
-                testDrive: prop.test_drive === 1 || prop.test_drive === true || prop.test_drive === '1' || prop.test_drive === 'true',
+                // Тест-драйв (флаг и удобное булево поле) — отключаем для объектов с долгами
+                test_drive: !(
+                  prop.sale_type === 'debt' ||
+                  prop.is_debt === 1 ||
+                  prop.is_debt === true ||
+                  prop.has_debt === 1 ||
+                  prop.has_debt === true
+                ) && (prop.test_drive === 1 || prop.test_drive === true || prop.test_drive === '1' || prop.test_drive === 'true'),
+                testDrive: !(
+                  prop.sale_type === 'debt' ||
+                  prop.is_debt === 1 ||
+                  prop.is_debt === true ||
+                  prop.has_debt === 1 ||
+                  prop.has_debt === true
+                ) && (prop.test_drive === 1 || prop.test_drive === true || prop.test_drive === '1' || prop.test_drive === 'true'),
                 is_auction: prop.is_auction === 1 || prop.is_auction === true,
                 auction_start_date: prop.auction_start_date || null,
                 auction_end_date: prop.auction_end_date || null,

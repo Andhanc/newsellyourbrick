@@ -14,6 +14,62 @@ import './PropertyList.css'
 
 const MOBILE_BREAKPOINT = 768
 
+// Проверка, что у объекта реально есть опция "Купить сейчас"
+const hasBuyNowOption = (property) => {
+  if (!property) return false
+
+  const isAuction =
+    property.isAuction === true ||
+    property.is_auction === 1 ||
+    property.is_auction === true
+
+  const buyNowPrice = property.price ? Number(property.price) : 0
+
+  // Стартовая цена аукциона
+  const startingPriceRaw =
+    property.auction_starting_price ??
+    property.auctionStartingPrice ??
+    property.currentBid ??
+    0
+  const startingPrice = startingPriceRaw ? Number(startingPriceRaw) : 0
+
+  // Время окончания аукциона / тест-таймера
+  const endTimeRaw =
+    property.test_timer_end_date ||
+    property.endTime ||
+    property.auction_end_date ||
+    null
+
+  let timerExpired = false
+  if (endTimeRaw) {
+    const endTs = new Date(endTimeRaw).getTime()
+    if (!Number.isNaN(endTs)) {
+      timerExpired = endTs <= Date.now()
+    }
+  }
+
+  const effectiveCurrentBid = property.currentBid
+    ? Number(property.currentBid)
+    : startingPrice
+
+  // Для аукционных объектов "Купить сейчас" есть только если:
+  // - указана цена buyNowPrice > 0
+  // - она строго больше стартовой цены
+  // - таймер не истёк
+  // - текущая ставка меньше этой цены
+  if (isAuction) {
+    return (
+      buyNowPrice > 0 &&
+      buyNowPrice > startingPrice &&
+      !timerExpired &&
+      effectiveCurrentBid < buyNowPrice
+    )
+  }
+
+  // Фолбэк для неаукционных объектов (на всякий случай)
+  return buyNowPrice > 0
+}
+
 const PropertyList = ({ auctionProperties = null, onOpenAIChat }) => {
   const navigate = useNavigate()
   const location = useLocation()
@@ -22,6 +78,7 @@ const PropertyList = ({ auctionProperties = null, onOpenAIChat }) => {
   const [showFilters, setShowFilters] = useState(false)
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false)
   const [propertyType, setPropertyType] = useState('все')
+  const [saleFilter, setSaleFilter] = useState('all')
   const [tooltip, setTooltip] = useState({ show: false, text: '', x: 0, y: 0 })
   const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth <= MOBILE_BREAKPOINT)
 
@@ -45,9 +102,19 @@ const PropertyList = ({ auctionProperties = null, onOpenAIChat }) => {
   useEffect(() => {
     const searchParams = new URLSearchParams(location.search)
     const category = searchParams.get('category')
+    const filter = searchParams.get('filter')
     
     if (category && categoryMap[category]) {
       setPropertyType(categoryMap[category])
+    }
+    
+    // Применяем фильтр типа продажи (аукцион / купить сейчас)
+    if (filter === 'auction') {
+      setSaleFilter('auction')
+    } else if (filter === 'buy_now') {
+      setSaleFilter('buy_now')
+    } else {
+      setSaleFilter('all')
     }
     
     // Прокрутка к блоку объектов при наличии параметров в URL
@@ -116,6 +183,7 @@ const PropertyList = ({ auctionProperties = null, onOpenAIChat }) => {
   const propertiesToUse = auctionProperties || properties
 
   const filteredProperties = propertiesToUse.filter(property => {
+    const hasBuyNowPrice = hasBuyNowOption(property)
     // Фильтрация по типу недвижимости
     if (propertyType !== 'все') {
       // Если есть property_type из API, используем его
@@ -143,6 +211,14 @@ const PropertyList = ({ auctionProperties = null, onOpenAIChat }) => {
           return false
         }
       }
+    }
+    
+    // Фильтрация по типу продажи
+    if (saleFilter === 'auction' && property.isAuction !== true) {
+      return false
+    }
+    if (saleFilter === 'buy_now' && !hasBuyNowPrice) {
+      return false
     }
     
     // Фильтрация по поисковому запросу
@@ -176,10 +252,37 @@ const PropertyList = ({ auctionProperties = null, onOpenAIChat }) => {
             zIndex: 1000000
           }}
         >
-          <div className="property-tooltip-content">
+          <div
+            className="property-tooltip-content"
+            style={{
+              background: '#111827',
+              color: '#ffffff',
+              padding: '8px 12px',
+              borderRadius: '14px',
+              fontSize: '13px',
+              fontWeight: 400,
+              whiteSpace: 'normal',
+              maxWidth: '260px',
+              minWidth: '180px',
+              textAlign: 'center',
+              lineHeight: 1.5,
+              boxShadow: '0 6px 20px rgba(0, 0, 0, 0.4)',
+              wordWrap: 'break-word'
+            }}
+          >
             {tooltip.text}
           </div>
-          <div className="property-tooltip-arrow"></div>
+          <div
+            className="property-tooltip-arrow"
+            style={{
+              width: 0,
+              height: 0,
+              borderLeft: '6px solid transparent',
+              borderRight: '6px solid transparent',
+              borderTop: '6px solid #111827',
+              marginLeft: '50%'
+            }}
+          ></div>
         </div>
       )}
       <section className="property-list">
@@ -284,9 +387,17 @@ const PropertyList = ({ auctionProperties = null, onOpenAIChat }) => {
                 const propertyImage = propertyImages[0] || 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=800&q=80'
                 const hasTestTimer = property.test_timer_end_date != null && property.test_timer_end_date !== ''
                 const hasTimer = (property.isAuction === true && property.endTime != null && property.endTime !== '') || hasTestTimer
-                const hasTestDrive = property.test_drive === 1 || property.testDrive === true || property.test_drive === true
+                const isDebtProperty =
+                  property.sale_type === 'debt' ||
+                  property.is_debt === 1 ||
+                  property.is_debt === true ||
+                  property.has_debt === 1 ||
+                  property.has_debt === true
+                const hasTestDrive =
+                  !isDebtProperty &&
+                  (property.test_drive === 1 || property.testDrive === true || property.test_drive === true)
                 const isReserved = property.is_reserved === true || property.is_reserved === 1
-                const hasBuyNowPrice = property.price && Number(property.price) > 0
+                const hasBuyNowPrice = hasBuyNowOption(property)
                 
                 // Проверяем, закончился ли таймер
                 const checkTimerExpired = () => {
@@ -564,27 +675,29 @@ const PropertyList = ({ auctionProperties = null, onOpenAIChat }) => {
                       >
                         {isReserved ? 'Объект забронирован' : 'Сделать ставку'}
                       </button>
-                      <button 
-                        className="btn btn-buy-now btn-liquid-glass-buy"
-                        onClick={(e) => {
-                          e.preventDefault()
-                          e.stopPropagation()
-                          if (isReserved) {
-                            showNotification('Объект временно забронирован. Покупка недоступна.')
-                            return
-                          }
-                          navigate(`/property/${property.id}`, {
-                            state: { property }
-                          })
-                        }}
-                        disabled={isReserved}
-                        style={{
-                          opacity: isReserved ? 0.5 : 1,
-                          cursor: isReserved ? 'not-allowed' : 'pointer'
-                        }}
-                      >
-                        {isReserved ? 'Объект забронирован' : 'Купить сейчас'}
-                      </button>
+                      {hasBuyNowPrice && (
+                        <button 
+                          className="btn btn-buy-now btn-liquid-glass-buy"
+                          onClick={(e) => {
+                            e.preventDefault()
+                            e.stopPropagation()
+                            if (isReserved) {
+                              showNotification('Объект временно забронирован. Покупка недоступна.')
+                              return
+                            }
+                            navigate(`/property/${property.id}`, {
+                              state: { property }
+                            })
+                          }}
+                          disabled={isReserved}
+                          style={{
+                            opacity: isReserved ? 0.5 : 1,
+                            cursor: isReserved ? 'not-allowed' : 'pointer'
+                          }}
+                        >
+                          {isReserved ? 'Объект забронирован' : 'Купить сейчас'}
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>

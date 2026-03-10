@@ -66,11 +66,14 @@ CREATE TABLE IF NOT EXISTS properties_apartments (
     test_drive INTEGER DEFAULT 0,
     test_drive_data TEXT, -- JSON данные тест-драйва
     
-    -- Статус модерации
+    -- Статус модерации и тип сделки
     moderation_status TEXT DEFAULT 'pending', -- 'pending', 'approved', 'rejected'
     reviewed_by TEXT,
     reviewed_at DATETIME,
     rejection_reason TEXT,
+    sale_type TEXT, -- Тип сделки: 'auction', 'share', 'debt' и т.п.
+    is_debt INTEGER DEFAULT 0, -- Флаг объекта с долгами
+    has_debt INTEGER DEFAULT 0, -- Альтернативный флаг наличия долга
     
     -- Бронирование
     reserved_until TEXT,
@@ -150,11 +153,14 @@ CREATE TABLE IF NOT EXISTS properties_houses (
     test_drive INTEGER DEFAULT 0,
     test_drive_data TEXT, -- JSON данные тест-драйва
     
-    -- Статус модерации
+    -- Статус модерации и тип сделки
     moderation_status TEXT DEFAULT 'pending', -- 'pending', 'approved', 'rejected'
     reviewed_by TEXT,
     reviewed_at DATETIME,
     rejection_reason TEXT,
+    sale_type TEXT, -- Тип сделки: 'auction', 'share', 'debt' и т.п.
+    is_debt INTEGER DEFAULT 0, -- Флаг объекта с долгами
+    has_debt INTEGER DEFAULT 0, -- Альтернативный флаг наличия долга
     
     -- Бронирование
     reserved_until TEXT,

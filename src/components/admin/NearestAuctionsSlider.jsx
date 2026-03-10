@@ -17,13 +17,13 @@ const AuctionCardItem = ({ auction, onHistoryClick }) => {
 
   return (
     <div className="auction-card">
+      <div className="nearest-auction-header">
+        <PropertyTimer endTime={auction.end_date} compact />
+      </div>
       <div className="nearest-auction-content">
         <div className="nearest-auction-image-wrapper">
           <div className="nearest-auction-image">
             <img src={auction.image_url} alt={auction.object_title} />
-          </div>
-          <div className="nearest-auction-timer-below">
-            <PropertyTimer endTime={auction.end_date} compact />
           </div>
         </div>
         <div className="nearest-auction-info">
@@ -41,9 +41,6 @@ const AuctionCardItem = ({ auction, onHistoryClick }) => {
               <BiArea size={16} />
               <span>{auction.area || 120} м²</span>
             </div>
-          </div>
-          <div className="nearest-auction-object-description">
-            {auction.description || `${getTypeLabel(auction.object_type)} в престижном районе с современной отделкой и всеми удобствами`}
           </div>
           <div className="nearest-auction-object-location">
             <i className="fas fa-map-marker-alt"></i>
@@ -308,6 +305,15 @@ const NearestAuctionsSlider = ({ auctions }) => {
       </div>
       
       <div className="slider-wrapper">
+        <button 
+          className="slider-arrow slider-arrow-left" 
+          onClick={prevSlide}
+          disabled={isTransitioning || isDragging}
+          aria-label="Предыдущий слайд"
+        >
+          <i className="fas fa-chevron-left"></i>
+        </button>
+
         <div 
           className="slider-track-wrapper"
           ref={trackWrapperRef}
@@ -329,24 +335,14 @@ const NearestAuctionsSlider = ({ auctions }) => {
             ))}
           </div>
         </div>
-        <div className="slider-arrows">
-          <button 
-            className="slider-arrow slider-arrow-left" 
-            onClick={prevSlide}
-            disabled={isTransitioning || isDragging}
-            aria-label="Предыдущий слайд"
-          >
-            <i className="fas fa-chevron-left"></i>
-          </button>
-          <button 
-            className="slider-arrow slider-arrow-right" 
-            onClick={nextSlide}
-            disabled={isTransitioning || isDragging}
-            aria-label="Следующий слайд"
-          >
-            <i className="fas fa-chevron-right"></i>
-          </button>
-        </div>
+        <button 
+          className="slider-arrow slider-arrow-right" 
+          onClick={nextSlide}
+          disabled={isTransitioning || isDragging}
+          aria-label="Следующий слайд"
+        >
+          <i className="fas fa-chevron-right"></i>
+        </button>
       </div>
 
       {selectedAuctionForHistory && (

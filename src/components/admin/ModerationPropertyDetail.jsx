@@ -28,6 +28,15 @@ const ModerationPropertyDetail = ({ property, onBack, onApprove, onReject }) => 
   const [originalProperty, setOriginalProperty] = useState(null); // Оригинальный объект для сравнения
   const [showChangesModal, setShowChangesModal] = useState(false); // Модальное окно с изменениями
   const [loadingOriginal, setLoadingOriginal] = useState(false);
+  const isDebtProperty =
+    !!property &&
+    (
+      property.sale_type === 'debt' ||
+      property.is_debt === 1 ||
+      property.is_debt === true ||
+      property.has_debt === 1 ||
+      property.has_debt === true
+    );
   
   // Функция для обработки URL документа
   const processDocumentUrl = (docUrl) => {
@@ -440,6 +449,11 @@ const ModerationPropertyDetail = ({ property, onBack, onApprove, onReject }) => 
               <div className="moderation-property-detail__badge">
                 {getTypeLabel(property.property_type || property.type)}
               </div>
+              {isDebtProperty && (
+                <div className="moderation-property-detail__badge">
+                  Долг
+                </div>
+              )}
               <span 
                 style={{
                   backgroundColor: requestTypeColors[requestType] + '20',
@@ -558,24 +572,29 @@ const ModerationPropertyDetail = ({ property, onBack, onApprove, onReject }) => 
           </div>
 
           <div className="moderation-property-detail__price">
-            {/* Купить сейчас - показываем только если указана */}
+            {/* Цена / сумма продажи */}
             {property.price && Number(property.price) > 0 && (
               <div style={{ marginBottom: '10px' }}>
-                <strong>Купить сейчас:</strong> <span style={{ color: '#0ABAB5' }}>{property.price.toLocaleString('ru-RU')} {property.currency || 'USD'}</span>
+                <strong>{isDebtProperty ? 'Сумма продажи:' : 'Купить сейчас:'}</strong>{' '}
+                <span style={{ color: '#0ABAB5' }}>
+                  {property.price.toLocaleString('ru-RU')} {property.currency || 'USD'}
+                </span>
               </div>
             )}
-            <div style={{ fontSize: '14px', color: '#666' }}>
-              <div style={{ marginBottom: '8px' }}>Аукционный объект</div>
-              {property.auction_start_date && (
-                <div>Начало: {new Date(property.auction_start_date).toLocaleDateString('ru-RU')}</div>
-              )}
-              {property.auction_end_date && (
-                <div>Окончание: {new Date(property.auction_end_date).toLocaleDateString('ru-RU')}</div>
-              )}
-              {property.auction_starting_price && (
-                <div>Начальная сумма ставки: {property.auction_starting_price.toLocaleString('ru-RU')} {property.currency || 'USD'}</div>
-              )}
-            </div>
+            {!isDebtProperty && (
+              <div style={{ fontSize: '14px', color: '#666' }}>
+                <div style={{ marginBottom: '8px' }}>Аукционный объект</div>
+                {property.auction_start_date && (
+                  <div>Начало: {new Date(property.auction_start_date).toLocaleDateString('ru-RU')}</div>
+                )}
+                {property.auction_end_date && (
+                  <div>Окончание: {new Date(property.auction_end_date).toLocaleDateString('ru-RU')}</div>
+                )}
+                {property.auction_starting_price && (
+                  <div>Начальная сумма ставки: {property.auction_starting_price.toLocaleString('ru-RU')} {property.currency || 'USD'}</div>
+                )}
+              </div>
+            )}
           </div>
 
           {property.description && (
@@ -937,8 +956,8 @@ const ModerationPropertyDetail = ({ property, onBack, onApprove, onReject }) => 
               );
             })()}
             
-            {/* Справка об отсутствии долгов */}
-            {(property.no_debts_document || property.noDebtsDocument) && (() => {
+            {/* Справка об отсутствии долгов — не показываем для объектов с долгами */}
+            {!isDebtProperty && (property.no_debts_document || property.noDebtsDocument) && (() => {
               const rawDocUrl = property.no_debts_document || property.noDebtsDocument;
               const docUrl = processDocumentUrl(rawDocUrl);
               const docName = property.no_debts_document_name || property.noDebtsDocumentName || 'Справка об отсутствии долгов';

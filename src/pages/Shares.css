@@ -9,7 +9,7 @@
 
 /* Новый header на странице долей — такой же, как на Главной/домашней */
 .shares-page .new-header {
-  background: #f1f5f9;
+  background: transparent;
   padding: 20px 0;
   position: sticky;
   top: 0;

@@ -956,7 +956,10 @@ export function initDatabase() {
             'purchase_request_id': 'INTEGER',
             'is_shared_ownership': 'INTEGER DEFAULT 0',
             'total_shares': 'INTEGER',
-            'shares_sold': 'INTEGER DEFAULT 0'
+            'shares_sold': 'INTEGER DEFAULT 0',
+            'sale_type': 'TEXT',
+            'is_debt': 'INTEGER DEFAULT 0',
+            'has_debt': 'INTEGER DEFAULT 0'
           };
           
           for (const [fieldName, fieldType] of Object.entries(requiredFields)) {
@@ -1054,7 +1057,10 @@ export function initDatabase() {
             'purchase_request_id': 'INTEGER',
             'is_shared_ownership': 'INTEGER DEFAULT 0',
             'total_shares': 'INTEGER',
-            'shares_sold': 'INTEGER DEFAULT 0'
+            'shares_sold': 'INTEGER DEFAULT 0',
+            'sale_type': 'TEXT',
+            'is_debt': 'INTEGER DEFAULT 0',
+            'has_debt': 'INTEGER DEFAULT 0'
           };
           
           for (const [fieldName, fieldType] of Object.entries(requiredFields)) {
@@ -2944,8 +2950,19 @@ export const apartmentQueries = {
           ownership_document, no_debts_document,
           test_drive, test_drive_data,
           is_shared_ownership, total_shares, shares_sold,
-          moderation_status
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          moderation_status, sale_type, is_debt, has_debt
+        ) VALUES (
+          ?, ?, ?, ?, ?, ?,        -- user_id ... currency
+          ?, ?, ?, ?,              -- is_auction ... auction_starting_price
+          ?, ?, ?, ?, ?, ?, ?, ?,  -- area ... year_built
+          ?, ?, ?, ?, ?, ?,        -- location ... coordinates
+          ?, ?, ?, ?, ?, ?,        -- amenities ... sewerage
+          ?, ?, ?,                 -- commercial_type ... additional_amenities
+          ?, ?, ?,                 -- photos, videos, additional_documents
+          ?, ?, ?, ?,              -- ownership_document ... test_drive_data
+          ?, ?, ?,                 -- is_shared_ownership, total_shares, shares_sold
+          ?, ?, ?, ?               -- moderation_status, sale_type, is_debt, has_debt
+        )
       `);
     } catch (prepareError) {
       if (prepareError.message && prepareError.message.includes('no such table: properties_apartments')) {
@@ -2964,8 +2981,19 @@ export const apartmentQueries = {
             ownership_document, no_debts_document,
             test_drive, test_drive_data,
             is_shared_ownership, total_shares, shares_sold,
-            moderation_status
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            moderation_status, sale_type, is_debt, has_debt
+          ) VALUES (
+            ?, ?, ?, ?, ?, ?,        -- user_id ... currency
+            ?, ?, ?, ?,              -- is_auction ... auction_starting_price
+            ?, ?, ?, ?, ?, ?, ?, ?,  -- area ... year_built
+            ?, ?, ?, ?, ?, ?,        -- location ... coordinates
+            ?, ?, ?, ?, ?, ?,        -- amenities ... sewerage
+            ?, ?, ?,                 -- commercial_type ... additional_amenities
+            ?, ?, ?,                 -- photos, videos, additional_documents
+            ?, ?, ?, ?,              -- ownership_document ... test_drive_data
+            ?, ?, ?,                 -- is_shared_ownership, total_shares, shares_sold
+            ?, ?, ?, ?               -- moderation_status, sale_type, is_debt, has_debt
+          )
         `);
       } else {
         throw prepareError;
@@ -3016,7 +3044,10 @@ export const apartmentQueries = {
       propertyData.is_shared_ownership ? 1 : 0,
       propertyData.total_shares || null,
       propertyData.shares_sold != null ? propertyData.shares_sold : 0,
-      propertyData.moderation_status || 'pending'
+      propertyData.moderation_status || 'pending',
+      propertyData.sale_type || null,
+      propertyData.is_debt ? 1 : 0,
+      propertyData.has_debt ? 1 : 0
     );
   },
 
@@ -3443,8 +3474,20 @@ export const houseQueries = {
         ownership_document, no_debts_document,
         test_drive, test_drive_data,
         is_shared_ownership, total_shares, shares_sold,
-        moderation_status
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        moderation_status, sale_type, is_debt, has_debt
+      ) VALUES (
+        ?, ?, ?, ?, ?, ?,        -- user_id ... currency
+        ?, ?, ?, ?,              -- is_auction ... auction_starting_price
+        ?, ?, ?, ?, ?, ?, ?, ?,  -- area ... year_built
+        ?, ?, ?, ?, ?, ?,        -- location ... coordinates
+        ?, ?, ?, ?, ?, ?,        -- amenities ... sewerage
+        ?,                       -- additional_amenities
+        ?, ?, ?,                 -- photos, videos, additional_documents
+        ?, ?,                    -- ownership_document, no_debts_document
+        ?, ?,                    -- test_drive, test_drive_data
+        ?, ?, ?,                 -- is_shared_ownership, total_shares, shares_sold
+        ?, ?, ?, ?               -- moderation_status, sale_type, is_debt, has_debt
+      )
     `);
     
     return stmt.run(
@@ -3500,7 +3543,10 @@ export const houseQueries = {
       propertyData.is_shared_ownership ? 1 : 0,
       propertyData.total_shares || null,
       propertyData.shares_sold != null ? propertyData.shares_sold : 0,
-      propertyData.moderation_status || 'pending'
+      propertyData.moderation_status || 'pending',
+      propertyData.sale_type || null,
+      propertyData.is_debt ? 1 : 0,
+      propertyData.has_debt ? 1 : 0
     );
   },
 
