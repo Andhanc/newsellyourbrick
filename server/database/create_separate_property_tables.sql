@@ -75,6 +75,17 @@ CREATE TABLE IF NOT EXISTS properties_apartments (
     is_debt INTEGER DEFAULT 0, -- Флаг объекта с долгами
     has_debt INTEGER DEFAULT 0, -- Альтернативный флаг наличия долга
     
+    -- Детализация долгов по объекту
+    debt_utilities INTEGER DEFAULT 0, -- Долги по коммунальным услугам
+    debt_mortgage_pledge INTEGER DEFAULT 0, -- Залог у банка
+    debt_property_taxes INTEGER DEFAULT 0, -- Неоплаченные налоги на имущество
+    debt_arrest INTEGER DEFAULT 0, -- Арест / ограничения
+    debt_inherited INTEGER DEFAULT 0, -- Долги наследодателя
+    debt_third_party INTEGER DEFAULT 0, -- Долги перед третьими лицами
+    debt_other TEXT, -- Описание других долгов
+    debt_amount REAL, -- Общая сумма долга
+    debt_severity TEXT, -- Критичность объекта: 'red', 'yellow', 'green'
+    
     -- Бронирование
     reserved_until TEXT,
     reserved_by TEXT,
@@ -161,6 +172,17 @@ CREATE TABLE IF NOT EXISTS properties_houses (
     sale_type TEXT, -- Тип сделки: 'auction', 'share', 'debt' и т.п.
     is_debt INTEGER DEFAULT 0, -- Флаг объекта с долгами
     has_debt INTEGER DEFAULT 0, -- Альтернативный флаг наличия долга
+    
+    -- Детализация долгов по объекту
+    debt_utilities INTEGER DEFAULT 0, -- Долги по коммунальным услугам
+    debt_mortgage_pledge INTEGER DEFAULT 0, -- Залог у банка
+    debt_property_taxes INTEGER DEFAULT 0, -- Неоплаченные налоги на имущество
+    debt_arrest INTEGER DEFAULT 0, -- Арест / ограничения
+    debt_inherited INTEGER DEFAULT 0, -- Долги наследодателя
+    debt_third_party INTEGER DEFAULT 0, -- Долги перед третьими лицами
+    debt_other TEXT, -- Описание других долгов
+    debt_amount REAL, -- Общая сумма долга
+    debt_severity TEXT, -- Критичность объекта: 'red', 'yellow', 'green'
     
     -- Бронирование
     reserved_until TEXT,

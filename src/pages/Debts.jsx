@@ -61,12 +61,18 @@ const Debts = () => {
                 ? Number(p.price)
                 : 0
 
+            const debtAmount =
+              p.debt_amount != null && p.debt_amount !== ''
+                ? Number(p.debt_amount)
+                : null
+
             return {
               id: p.id,
               title: p.title || p.name || '',
               location,
               image,
               totalPrice: priceNumber,
+              debt_amount: debtAmount,
               area: p.area || p.sqft || 0,
               rooms: p.rooms || p.bedrooms || 0,
               isAuction:
@@ -115,8 +121,17 @@ const Debts = () => {
               Здесь собраны объекты, по которым есть задолженности: ипотека, коммунальные платежи и другие обязательства.
               Вы можете выкупить такой объект и урегулировать долг на выгодных для себя условиях.
             </p>
+            <p className="shares-intro__text">
+              Для каждого объекта мы указываем уровень критичности долгов:{' '}
+              <span style={{ color: '#DC2626', fontWeight: 600 }}>красный</span> — сложные и существенные задолженности,
+              требующие глубокой юридической и финансовой проверки;{' '}
+              <span style={{ color: '#CA8A04', fontWeight: 600 }}>жёлтый</span> — средняя тяжесть, часть вопросов потребует
+              времени и дополнительных расходов, но, как правило, решаемы;{' '}
+              <span style={{ color: '#16A34A', fontWeight: 600 }}>зелёный</span> — лёгкая тяжесть, в основном технические и
+              процедурные моменты, которые обычно закрываются стандартными действиями при сделке.
+            </p>
             <p className="shares-intro__text shares-intro__text--muted">
-              Выберите объект ниже → откройте карточку → изучите детали долга и условия сделки на странице объекта.
+              Выберите объект ниже → откройте карточку → изучите детали долга, уровень критичности и условия сделки на странице объекта.
             </p>
           </div>
         </div>
@@ -188,11 +203,16 @@ const Debts = () => {
                     <div className="share-card__price-total">
                       Стоимость объекта: <strong>{formatPrice(obj.totalPrice)}</strong>
                     </div>
-                  </div>
-                  <div className="share-card__footer">
-                    <span className="share-card__sold">
-                      Тип сделки: продажа объекта с долгом
-                    </span>
+                    {obj.debt_amount != null &&
+                      obj.debt_amount !== '' &&
+                      !Number.isNaN(Number(obj.debt_amount)) && (
+                        <div className="share-card__price-total" style={{ marginTop: 4 }}>
+                          Сумма долга:{' '}
+                          <span className="share-card__price" style={{ fontWeight: 700 }}>
+                            {formatPrice(obj.debt_amount)}
+                          </span>
+                        </div>
+                      )}
                   </div>
                 </div>
               </article>

@@ -959,7 +959,17 @@ export function initDatabase() {
             'shares_sold': 'INTEGER DEFAULT 0',
             'sale_type': 'TEXT',
             'is_debt': 'INTEGER DEFAULT 0',
-            'has_debt': 'INTEGER DEFAULT 0'
+            'has_debt': 'INTEGER DEFAULT 0',
+            // Детализация долгов
+            'debt_utilities': 'INTEGER DEFAULT 0',
+            'debt_mortgage_pledge': 'INTEGER DEFAULT 0',
+            'debt_property_taxes': 'INTEGER DEFAULT 0',
+            'debt_arrest': 'INTEGER DEFAULT 0',
+            'debt_inherited': 'INTEGER DEFAULT 0',
+            'debt_third_party': 'INTEGER DEFAULT 0',
+            'debt_other': 'TEXT',
+            'debt_amount': 'REAL',
+            'debt_severity': 'TEXT'
           };
           
           for (const [fieldName, fieldType] of Object.entries(requiredFields)) {
@@ -1032,6 +1042,17 @@ export function initDatabase() {
               is_shared_ownership INTEGER DEFAULT 0,
               total_shares INTEGER,
               shares_sold INTEGER DEFAULT 0,
+              sale_type TEXT,
+              is_debt INTEGER DEFAULT 0,
+              has_debt INTEGER DEFAULT 0,
+              debt_utilities INTEGER DEFAULT 0,
+              debt_mortgage_pledge INTEGER DEFAULT 0,
+              debt_property_taxes INTEGER DEFAULT 0,
+              debt_arrest INTEGER DEFAULT 0,
+              debt_inherited INTEGER DEFAULT 0,
+              debt_third_party INTEGER DEFAULT 0,
+              debt_other TEXT,
+              debt_amount REAL,
               reserved_until TEXT,
               reserved_by INTEGER,
               purchase_request_id INTEGER,
@@ -1060,7 +1081,17 @@ export function initDatabase() {
             'shares_sold': 'INTEGER DEFAULT 0',
             'sale_type': 'TEXT',
             'is_debt': 'INTEGER DEFAULT 0',
-            'has_debt': 'INTEGER DEFAULT 0'
+            'has_debt': 'INTEGER DEFAULT 0',
+            // Детализация долгов
+            'debt_utilities': 'INTEGER DEFAULT 0',
+            'debt_mortgage_pledge': 'INTEGER DEFAULT 0',
+            'debt_property_taxes': 'INTEGER DEFAULT 0',
+            'debt_arrest': 'INTEGER DEFAULT 0',
+            'debt_inherited': 'INTEGER DEFAULT 0',
+            'debt_third_party': 'INTEGER DEFAULT 0',
+            'debt_other': 'TEXT',
+            'debt_amount': 'REAL',
+            'debt_severity': 'TEXT'
           };
           
           for (const [fieldName, fieldType] of Object.entries(requiredFields)) {
@@ -1166,6 +1197,16 @@ export function initDatabase() {
               is_shared_ownership INTEGER DEFAULT 0,
               total_shares INTEGER,
               shares_sold INTEGER DEFAULT 0,
+              sale_type TEXT,
+              is_debt INTEGER DEFAULT 0,
+              has_debt INTEGER DEFAULT 0,
+              debt_utilities INTEGER DEFAULT 0,
+              debt_mortgage_pledge INTEGER DEFAULT 0,
+              debt_property_taxes INTEGER DEFAULT 0,
+              debt_arrest INTEGER DEFAULT 0,
+              debt_inherited INTEGER DEFAULT 0,
+              debt_other TEXT,
+              debt_amount REAL,
               reserved_until TEXT,
               reserved_by INTEGER,
               purchase_request_id INTEGER,
@@ -2950,7 +2991,9 @@ export const apartmentQueries = {
           ownership_document, no_debts_document,
           test_drive, test_drive_data,
           is_shared_ownership, total_shares, shares_sold,
-          moderation_status, sale_type, is_debt, has_debt
+          moderation_status, sale_type, is_debt, has_debt,
+          debt_utilities, debt_mortgage_pledge, debt_property_taxes,
+          debt_arrest, debt_inherited, debt_third_party, debt_other, debt_amount
         ) VALUES (
           ?, ?, ?, ?, ?, ?,        -- user_id ... currency
           ?, ?, ?, ?,              -- is_auction ... auction_starting_price
@@ -2961,7 +3004,8 @@ export const apartmentQueries = {
           ?, ?, ?,                 -- photos, videos, additional_documents
           ?, ?, ?, ?,              -- ownership_document ... test_drive_data
           ?, ?, ?,                 -- is_shared_ownership, total_shares, shares_sold
-          ?, ?, ?, ?               -- moderation_status, sale_type, is_debt, has_debt
+          ?, ?, ?, ?,              -- moderation_status, sale_type, is_debt, has_debt
+          ?, ?, ?, ?, ?, ?, ?, ?   -- debt_* поля
         )
       `);
     } catch (prepareError) {
@@ -2980,8 +3024,10 @@ export const apartmentQueries = {
             photos, videos, additional_documents,
             ownership_document, no_debts_document,
             test_drive, test_drive_data,
-            is_shared_ownership, total_shares, shares_sold,
-            moderation_status, sale_type, is_debt, has_debt
+          is_shared_ownership, total_shares, shares_sold,
+          moderation_status, sale_type, is_debt, has_debt,
+          debt_utilities, debt_mortgage_pledge, debt_property_taxes,
+          debt_arrest, debt_inherited, debt_third_party, debt_other, debt_amount
           ) VALUES (
             ?, ?, ?, ?, ?, ?,        -- user_id ... currency
             ?, ?, ?, ?,              -- is_auction ... auction_starting_price
@@ -2992,7 +3038,8 @@ export const apartmentQueries = {
             ?, ?, ?,                 -- photos, videos, additional_documents
             ?, ?, ?, ?,              -- ownership_document ... test_drive_data
             ?, ?, ?,                 -- is_shared_ownership, total_shares, shares_sold
-            ?, ?, ?, ?               -- moderation_status, sale_type, is_debt, has_debt
+            ?, ?, ?, ?,              -- moderation_status, sale_type, is_debt, has_debt
+            ?, ?, ?, ?, ?, ?, ?, ?   -- debt_* поля
           )
         `);
       } else {
@@ -3047,7 +3094,15 @@ export const apartmentQueries = {
       propertyData.moderation_status || 'pending',
       propertyData.sale_type || null,
       propertyData.is_debt ? 1 : 0,
-      propertyData.has_debt ? 1 : 0
+      propertyData.has_debt ? 1 : 0,
+      propertyData.debt_utilities ? 1 : 0,
+      propertyData.debt_mortgage_pledge ? 1 : 0,
+      propertyData.debt_property_taxes ? 1 : 0,
+      propertyData.debt_arrest ? 1 : 0,
+      propertyData.debt_inherited ? 1 : 0,
+      propertyData.debt_third_party ? 1 : 0,
+      propertyData.debt_other || null,
+      propertyData.debt_amount != null ? propertyData.debt_amount : null
     );
   },
 
@@ -3339,15 +3394,16 @@ export const apartmentQueries = {
   /**
    * Обновить статус модерации
    */
-  updateModerationStatus: (id, status, reviewedBy = null, rejectionReason = null) => {
+  updateModerationStatus: (id, status, reviewedBy = null, rejectionReason = null, debtSeverity = null) => {
     const db = getDatabase();
     console.log(`🏢 apartmentQueries.updateModerationStatus: обновление properties_apartments, ID=${id}, status=${status}`);
     const stmt = db.prepare(`
       UPDATE properties_apartments 
-      SET moderation_status = ?, reviewed_by = ?, reviewed_at = CURRENT_TIMESTAMP, rejection_reason = ?
+      SET moderation_status = ?, reviewed_by = ?, reviewed_at = CURRENT_TIMESTAMP, rejection_reason = ?, 
+          debt_severity = COALESCE(?, debt_severity)
       WHERE id = ?
     `);
-    const result = stmt.run(status, reviewedBy, rejectionReason, id);
+    const result = stmt.run(status, reviewedBy, rejectionReason, debtSeverity, id);
     console.log(`✅ apartmentQueries.updateModerationStatus: обновлено в properties_apartments, ID=${id}, changes=${result.changes}`);
     return result;
   },
@@ -3474,19 +3530,22 @@ export const houseQueries = {
         ownership_document, no_debts_document,
         test_drive, test_drive_data,
         is_shared_ownership, total_shares, shares_sold,
-        moderation_status, sale_type, is_debt, has_debt
+        moderation_status, sale_type, is_debt, has_debt,
+        debt_utilities, debt_mortgage_pledge, debt_property_taxes,
+        debt_arrest, debt_inherited, debt_third_party, debt_other, debt_amount
       ) VALUES (
         ?, ?, ?, ?, ?, ?,        -- user_id ... currency
         ?, ?, ?, ?,              -- is_auction ... auction_starting_price
         ?, ?, ?, ?, ?, ?, ?, ?,  -- area ... year_built
-        ?, ?, ?, ?, ?, ?,        -- location ... coordinates
+        ?, ?, ?, ?, ?,           -- location ... coordinates (5 колонок)
         ?, ?, ?, ?, ?, ?,        -- amenities ... sewerage
         ?,                       -- additional_amenities
         ?, ?, ?,                 -- photos, videos, additional_documents
         ?, ?,                    -- ownership_document, no_debts_document
         ?, ?,                    -- test_drive, test_drive_data
         ?, ?, ?,                 -- is_shared_ownership, total_shares, shares_sold
-        ?, ?, ?, ?               -- moderation_status, sale_type, is_debt, has_debt
+        ?, ?, ?, ?,              -- moderation_status, sale_type, is_debt, has_debt
+        ?, ?, ?, ?, ?, ?, ?      -- debt_* поля
       )
     `);
     
@@ -3546,7 +3605,15 @@ export const houseQueries = {
       propertyData.moderation_status || 'pending',
       propertyData.sale_type || null,
       propertyData.is_debt ? 1 : 0,
-      propertyData.has_debt ? 1 : 0
+      propertyData.has_debt ? 1 : 0,
+      propertyData.debt_utilities ? 1 : 0,
+      propertyData.debt_mortgage_pledge ? 1 : 0,
+      propertyData.debt_property_taxes ? 1 : 0,
+      propertyData.debt_arrest ? 1 : 0,
+      propertyData.debt_inherited ? 1 : 0,
+      propertyData.debt_third_party ? 1 : 0,
+      propertyData.debt_other || null,
+      propertyData.debt_amount != null ? propertyData.debt_amount : null
     );
   },
 
@@ -3821,14 +3888,15 @@ export const houseQueries = {
   /**
    * Обновить статус модерации
    */
-  updateModerationStatus: (id, status, reviewedBy = null, rejectionReason = null) => {
+  updateModerationStatus: (id, status, reviewedBy = null, rejectionReason = null, debtSeverity = null) => {
     const db = getDatabase();
     const stmt = db.prepare(`
       UPDATE properties_houses 
-      SET moderation_status = ?, reviewed_by = ?, reviewed_at = CURRENT_TIMESTAMP, rejection_reason = ?
+      SET moderation_status = ?, reviewed_by = ?, reviewed_at = CURRENT_TIMESTAMP, rejection_reason = ?,
+          debt_severity = COALESCE(?, debt_severity)
       WHERE id = ?
     `);
-    return stmt.run(status, reviewedBy, rejectionReason, id);
+    return stmt.run(status, reviewedBy, rejectionReason, debtSeverity, id);
   },
 
   /**
@@ -4164,7 +4232,7 @@ export const propertyQueries = {
   /**
    * Обновить статус модерации (работает с обеими таблицами)
    */
-  updateModerationStatus: (id, status, reviewedBy = null, rejectionReason = null) => {
+  updateModerationStatus: (id, status, reviewedBy = null, rejectionReason = null, debtSeverity = null) => {
     const db = getDatabase();
     
     // Проверяем существование новых таблиц
@@ -4265,7 +4333,7 @@ export const propertyQueries = {
           propertyInHouses = null; // Игнорируем houses, если property_type не соответствует
         } else {
           try {
-            result = houseQueries.updateModerationStatus(id, status, reviewedBy, rejectionReason);
+            result = houseQueries.updateModerationStatus(id, status, reviewedBy, rejectionReason, debtSeverity);
             console.log(`📊 updateModerationStatus houses: changes=${result?.changes || 0}`);
             if (result && result.changes > 0) {
               console.log(`✅ updateModerationStatus: обновлено в houses, ID=${id}, type=${propertyInHouses.property_type}`);
@@ -4291,7 +4359,7 @@ export const propertyQueries = {
         } else {
           try {
             console.log(`🏢 updateModerationStatus: обновление в таблице properties_apartments для ID=${id}, type=${propertyInApartments.property_type}, status=${status}`);
-            result = apartmentQueries.updateModerationStatus(id, status, reviewedBy, rejectionReason);
+            result = apartmentQueries.updateModerationStatus(id, status, reviewedBy, rejectionReason, debtSeverity);
             console.log(`📊 updateModerationStatus apartments: changes=${result?.changes || 0}`);
             if (result && result.changes > 0) {
               console.log(`✅ updateModerationStatus: успешно обновлено в properties_apartments, ID=${id}, type=${propertyInApartments.property_type}, status=${status}`);
@@ -4861,6 +4929,9 @@ export const propertyQueries = {
         WHERE p.moderation_status = 'approved' 
           AND (p.is_auction = 1 OR p.is_auction = '1')
           AND (p.auction_end_date IS NOT NULL AND p.auction_end_date != '' OR p.auction_starting_price IS NOT NULL)
+          AND (p.sale_type IS NULL OR p.sale_type != 'debt')
+          AND (p.is_debt IS NULL OR p.is_debt = 0)
+          AND (p.has_debt IS NULL OR p.has_debt = 0)
       `;
       
       let housesQuery = `
@@ -4877,6 +4948,9 @@ export const propertyQueries = {
         WHERE p.moderation_status = 'approved' 
           AND (p.is_auction = 1 OR p.is_auction = '1')
           AND (p.auction_end_date IS NOT NULL AND p.auction_end_date != '' OR p.auction_starting_price IS NOT NULL)
+          AND (p.sale_type IS NULL OR p.sale_type != 'debt')
+          AND (p.is_debt IS NULL OR p.is_debt = 0)
+          AND (p.has_debt IS NULL OR p.has_debt = 0)
       `;
       
       const params = [];

@@ -211,6 +211,15 @@ const AddProperty = () => {
     feature25: false,
     feature26: false,
     additionalAmenities: '',
+    // Поля для объектов с долгами
+    debtUtilities: false,
+    debtBankPledge: false,
+    debtPropertyTaxes: false,
+    debtArrest: false,
+    debtInherited: false,
+    debtThirdParty: false,
+    debtOther: '',
+    debtAmount: '',
     isShareProperty: false,
     isDebtProperty: false,
     totalShares: ''
@@ -907,6 +916,23 @@ const AddProperty = () => {
       for (let i = 1; i <= 26; i++) {
         const featureKey = `feature${i}`
         formDataToSend.append(featureKey, formData[featureKey] ? '1' : '0')
+      }
+
+      // Детализация долгов - только для объектов с долгами
+      if (formData.isDebtProperty) {
+        formDataToSend.append('debt_utilities', formData.debtUtilities ? '1' : '0')
+        formDataToSend.append('debt_mortgage_pledge', formData.debtBankPledge ? '1' : '0')
+        formDataToSend.append('debt_property_taxes', formData.debtPropertyTaxes ? '1' : '0')
+        formDataToSend.append('debt_arrest', formData.debtArrest ? '1' : '0')
+        formDataToSend.append('debt_inherited', formData.debtInherited ? '1' : '0')
+        formDataToSend.append('debt_third_party', formData.debtThirdParty ? '1' : '0')
+        if (formData.debtOther) {
+          formDataToSend.append('debt_other', formData.debtOther)
+        }
+        if (formData.debtAmount) {
+          const normalizedDebtAmount = removeCommas(String(formData.debtAmount))
+          formDataToSend.append('debt_amount', normalizedDebtAmount)
+        }
       }
       
       // Дополнительные удобства (текстовое поле)
@@ -4671,288 +4697,480 @@ const AddProperty = () => {
             </div>
           </div>
         ) : currentStep === 'amenities' ? (
-          /* Экран удобств */
-          <div className="property-amenities-screen">
-            <div className="property-amenities-main">
-              <h2 className="property-amenities-title">
-                Дополнительные удобства и особенности
-              </h2>
-              
-              <div className="property-amenities-content-scrollable">
-                {/* Парковка */}
-                <div className="amenities-category">
-                  <h4 className="amenities-category-title">
-                    <span className="amenities-category-icon">🚗</span>
-                    Парковка
-                  </h4>
-                  <div className="amenities-list">
-                    <label className="amenity-item">
-                      <input
-                        type="checkbox"
-                        checked={formData.parking || false}
-                        onChange={(e) => handleDetailChange('parking', e.target.checked)}
-                        className="amenity-checkbox"
+          /* Экран удобств / долговых обязательств */
+          formData.isDebtProperty ? (
+            <div className="property-amenities-screen">
+              <div className="property-amenities-main">
+                <h2 className="property-amenities-title">
+                  Долговые обязательства по объекту
+                </h2>
+
+                <div className="property-amenities-content-scrollable">
+                  {/* Типы долгов */}
+                  <div className="amenities-category">
+                    <h4 className="amenities-category-title">
+                      <span className="amenities-category-icon">⚖️</span>
+                      Виды долгов
+                    </h4>
+                    <div className="amenities-list amenities-list--debt-grid">
+                      {/* Ряд 1 */}
+                      <label className="amenity-item">
+                        <input
+                          type="checkbox"
+                          checked={formData.debtUtilities || false}
+                          onChange={(e) => handleDetailChange('debtUtilities', e.target.checked)}
+                          className="amenity-checkbox"
+                        />
+                        <span className="amenity-label">Долги по коммунальным услугам</span>
+                      </label>
+                      <label className="amenity-item">
+                        <input
+                          type="checkbox"
+                          checked={formData.debtPropertyTaxes || false}
+                          onChange={(e) => handleDetailChange('debtPropertyTaxes', e.target.checked)}
+                          className="amenity-checkbox"
+                        />
+                        <span className="amenity-label">Неоплаченные налоги на имущество</span>
+                      </label>
+
+                      {/* Ряд 2 */}
+                      <label className="amenity-item">
+                        <input
+                          type="checkbox"
+                          checked={formData.debtBankPledge || false}
+                          onChange={(e) => handleDetailChange('debtBankPledge', e.target.checked)}
+                          className="amenity-checkbox"
+                        />
+                        <span className="amenity-label">Залог у банка (ипотека, кредит)</span>
+                      </label>
+                      <label className="amenity-item">
+                        <input
+                          type="checkbox"
+                          checked={formData.debtArrest || false}
+                          onChange={(e) => handleDetailChange('debtArrest', e.target.checked)}
+                          className="amenity-checkbox"
+                        />
+                        <span className="amenity-label">Арест / ограничения на регистрационные действия</span>
+                      </label>
+
+                      {/* Ряд 3 */}
+                      <label className="amenity-item">
+                        <input
+                          type="checkbox"
+                          checked={formData.debtInherited || false}
+                          onChange={(e) => handleDetailChange('debtInherited', e.target.checked)}
+                          className="amenity-checkbox"
+                        />
+                          <span className="amenity-label">Долги наследодателя</span>
+                      </label>
+                      <label className="amenity-item">
+                        <input
+                          type="checkbox"
+                          checked={formData.debtThirdParty || false}
+                          onChange={(e) => handleDetailChange('debtThirdParty', e.target.checked)}
+                          className="amenity-checkbox"
+                        />
+                        <span className="amenity-label">Долги перед третьими лицами</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* Другое долговое обязательство */}
+                  <div className="amenities-category">
+                    <h4 className="amenities-category-title">
+                      <span className="amenities-category-icon">✏️</span>
+                      Другое долговое обязательство
+                    </h4>
+                    <div className="amenities-additional-field">
+                      <label className="amenities-additional-label">
+                        Опишите другие виды долгов, если они есть
+                      </label>
+                      <textarea
+                        className="amenities-additional-textarea"
+                        placeholder="Например: долг по договору займа, исполнительное производство и т.п."
+                        value={formData.debtOther || ''}
+                        onChange={(e) => handleDetailChange('debtOther', e.target.value)}
+                        rows={3}
                       />
-                      <span className="amenity-label">Парковочное место</span>
-                    </label>
-                    <label className="amenity-item">
-                      <input
-                        type="checkbox"
-                        checked={formData.feature1 || false}
-                        onChange={(e) => handleDetailChange('feature1', e.target.checked)}
-                        className="amenity-checkbox"
-                      />
-                      <span className="amenity-label">Подземная парковка</span>
-                    </label>
-                    <label className="amenity-item">
-                      <input
-                        type="checkbox"
-                        checked={formData.feature12 || false}
-                        onChange={(e) => handleDetailChange('feature12', e.target.checked)}
-                        className="amenity-checkbox"
-                      />
-                      <span className="amenity-label">Парковка для велосипедов</span>
-                    </label>
+                    </div>
+                  </div>
+
+                  {/* Сумма долга */}
+                  <div className="amenities-category">
+                    <h4 className="amenities-category-title">
+                      <span className="amenities-category-icon">💰</span>
+                      Сумма долга
+                    </h4>
+                    <div className="price-input-section">
+                      <label className="price-input-label">
+                        Общая сумма задолженности по объекту
+                      </label>
+                      <div className="price-input-wrapper-large">
+                        <div className="currency-selector">
+                          <button
+                            type="button"
+                            className="currency-button"
+                            onClick={() =>
+                              setShowCurrencyDropdown(
+                                showCurrencyDropdown === 'debt_amount' ? null : 'debt_amount'
+                              )
+                            }
+                          >
+                            <span className="currency-symbol">
+                              {currencies.find(c => c.code === currency)?.symbol || '$'}
+                            </span>
+                            <FiChevronDown className="currency-chevron" size={14} />
+                          </button>
+                          {showCurrencyDropdown === 'debt_amount' && (
+                            <div className="currency-dropdown">
+                              {currencies.map(c => (
+                                <button
+                                  key={c.code}
+                                  type="button"
+                                  className={`currency-option ${
+                                    c.code === currency ? 'currency-option--active' : ''
+                                  }`}
+                                  onClick={() => {
+                                    setCurrency(c.code)
+                                    setShowCurrencyDropdown(null)
+                                  }}
+                                >
+                                  <span className="currency-option-symbol">{c.symbol}</span>
+                                  <span className="currency-option-name">{c.name}</span>
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                        <input
+                          type="text"
+                          className="price-input-large price-input-large--debt"
+                          placeholder="Введите сумму долга"
+                          value={formData.debtAmount || ''}
+                          onChange={(e) => handleDetailChange('debtAmount', e.target.value)}
+                        />
+                      </div>
+                    </div>
                   </div>
                 </div>
 
-                {/* Мебель и техника */}
-                <div className="amenities-category">
-                  <h4 className="amenities-category-title">
-                    <span className="amenities-category-icon">🛋️</span>
-                    Мебель и техника
-                  </h4>
-                  <div className="amenities-list">
-                    <label className="amenity-item">
-                      <input
-                        type="checkbox"
-                        checked={formData.feature2 || false}
-                        onChange={(e) => handleDetailChange('feature2', e.target.checked)}
-                        className="amenity-checkbox"
-                      />
-                      <span className="amenity-label">Кухонная мебель</span>
-                    </label>
-                    <label className="amenity-item">
-                      <input
-                        type="checkbox"
-                        checked={formData.furniture || false}
-                        onChange={(e) => handleDetailChange('furniture', e.target.checked)}
-                        className="amenity-checkbox"
-                      />
-                      <span className="amenity-label">Встроенная мебель</span>
-                    </label>
-                    <label className="amenity-item">
-                      <input
-                        type="checkbox"
-                        checked={formData.feature3 || false}
-                        onChange={(e) => handleDetailChange('feature3', e.target.checked)}
-                        className="amenity-checkbox"
-                      />
-                      <span className="amenity-label">Стиральная машина</span>
-                    </label>
-                    <label className="amenity-item">
-                      <input
-                        type="checkbox"
-                        checked={formData.feature4 || false}
-                        onChange={(e) => handleDetailChange('feature4', e.target.checked)}
-                        className="amenity-checkbox"
-                      />
-                      <span className="amenity-label">Посудомоечная машина</span>
-                    </label>
-                    <label className="amenity-item">
-                      <input
-                        type="checkbox"
-                        checked={formData.electricity || false}
-                        onChange={(e) => handleDetailChange('electricity', e.target.checked)}
-                        className="amenity-checkbox"
-                      />
-                      <span className="amenity-label">Кондиционер</span>
-                    </label>
-                    <label className="amenity-item">
-                      <input
-                        type="checkbox"
-                        checked={formData.feature18 || false}
-                        onChange={(e) => handleDetailChange('feature18', e.target.checked)}
-                        className="amenity-checkbox"
-                      />
-                      <span className="amenity-label">Гардеробная</span>
-                    </label>
-                  </div>
-                </div>
-
-                {/* Коммуникации и безопасность */}
-                <div className="amenities-category">
-                  <h4 className="amenities-category-title">
-                    <span className="amenities-category-icon">🔒</span>
-                    Коммуникации и безопасность
-                  </h4>
-                  <div className="amenities-list">
-                    <label className="amenity-item">
-                      <input
-                        type="checkbox"
-                        checked={formData.internet || false}
-                        onChange={(e) => handleDetailChange('internet', e.target.checked)}
-                        className="amenity-checkbox"
-                      />
-                      <span className="amenity-label">Интернет</span>
-                    </label>
-                    <label className="amenity-item">
-                      <input
-                        type="checkbox"
-                        checked={formData.security || false}
-                        onChange={(e) => handleDetailChange('security', e.target.checked)}
-                        className="amenity-checkbox"
-                      />
-                      <span className="amenity-label">Охрана</span>
-                    </label>
-                    <label className="amenity-item">
-                      <input
-                        type="checkbox"
-                        checked={formData.feature5 || false}
-                        onChange={(e) => handleDetailChange('feature5', e.target.checked)}
-                        className="amenity-checkbox"
-                      />
-                      <span className="amenity-label">Домофон</span>
-                    </label>
-                    <label className="amenity-item">
-                      <input
-                        type="checkbox"
-                        checked={formData.feature6 || false}
-                        onChange={(e) => handleDetailChange('feature6', e.target.checked)}
-                        className="amenity-checkbox"
-                      />
-                      <span className="amenity-label">Видеонаблюдение</span>
-                    </label>
-                    <label className="amenity-item">
-                      <input
-                        type="checkbox"
-                        checked={formData.feature16 || false}
-                        onChange={(e) => handleDetailChange('feature16', e.target.checked)}
-                        className="amenity-checkbox"
-                      />
-                      <span className="amenity-label">Видеодомофон</span>
-                    </label>
-                    <label className="amenity-item">
-                      <input
-                        type="checkbox"
-                        checked={formData.feature17 || false}
-                        onChange={(e) => handleDetailChange('feature17', e.target.checked)}
-                        className="amenity-checkbox"
-                      />
-                      <span className="amenity-label">Консьерж</span>
-                    </label>
-                  </div>
-                </div>
-
-                {/* Дополнительные помещения */}
-                <div className="amenities-category">
-                  <h4 className="amenities-category-title">
-                    <span className="amenities-category-icon">🏠</span>
-                    Дополнительные помещения
-                  </h4>
-                  <div className="amenities-list">
-                    <label className="amenity-item">
-                      <input
-                        type="checkbox"
-                        checked={formData.balcony || false}
-                        onChange={(e) => handleDetailChange('balcony', e.target.checked)}
-                        className="amenity-checkbox"
-                      />
-                      <span className="amenity-label">Балкон</span>
-                    </label>
-                    <label className="amenity-item">
-                      <input
-                        type="checkbox"
-                        checked={formData.feature7 || false}
-                        onChange={(e) => handleDetailChange('feature7', e.target.checked)}
-                        className="amenity-checkbox"
-                      />
-                      <span className="amenity-label">Лоджия</span>
-                    </label>
-                    <label className="amenity-item">
-                      <input
-                        type="checkbox"
-                        checked={formData.feature8 || false}
-                        onChange={(e) => handleDetailChange('feature8', e.target.checked)}
-                        className="amenity-checkbox"
-                      />
-                      <span className="amenity-label">Кладовая</span>
-                    </label>
-                    <label className="amenity-item">
-                      <input
-                        type="checkbox"
-                        checked={formData.elevator || false}
-                        onChange={(e) => handleDetailChange('elevator', e.target.checked)}
-                        className="amenity-checkbox"
-                      />
-                      <span className="amenity-label">Лифт</span>
-                    </label>
-                  </div>
-                </div>
-
-                {/* Дополнительно */}
-                <div className="amenities-category">
-                  <h4 className="amenities-category-title">
-                    <span className="amenities-category-icon">➕</span>
-                    Дополнительно
-                  </h4>
-                  <div className="amenities-additional-field">
-                    <label className="amenities-additional-label">
-                      Укажите другие удобства, если такие есть
-                    </label>
-                    <textarea
-                      className="amenities-additional-textarea"
-                      placeholder="Например: встроенная система умного дома, проектор, музыкальная система и т.д."
-                      value={formData.additionalAmenities || ''}
-                      onChange={(e) => handleDetailChange('additionalAmenities', e.target.value)}
-                      rows={3}
-                    />
-                  </div>
+                <div className="property-amenities-actions">
+                  <button
+                    type="button"
+                    className="property-amenities-back-btn"
+                    onClick={() => setCurrentStep('details')}
+                  >
+                    <FiChevronLeft size={16} />
+                    Назад
+                  </button>
+                  <button
+                    type="button"
+                    className="property-amenities-continue-btn"
+                    onClick={handleAmenitiesContinue}
+                  >
+                    Продолжить
+                  </button>
                 </div>
               </div>
 
-              <div className="property-amenities-actions">
-                <button
-                  type="button"
-                  className="property-amenities-back-btn"
-                  onClick={() => setCurrentStep('details')}
-                >
-                  <FiChevronLeft size={16} />
-                  Назад
-                </button>
-                <button
-                  type="button"
-                  className="property-amenities-continue-btn"
-                  onClick={handleAmenitiesContinue}
-                >
-                  Продолжить
-                </button>
+              <div className="property-name-hints" style={{ marginLeft: '150px' , marginTop: '75px'}}>
+                <HintCard
+                  icon={MdLightbulb}
+                  iconColor="property-name-hint-icon--thumbs"
+                  title="Как описать долг?"
+                  content={[
+                    "Отметьте все виды долгов, которые действуют по объекту",
+                    "Укажите ориентировочную общую сумму задолженности",
+                    "Чем прозрачнее информация, тем выше доверие покупателей"
+                  ]}
+                  show={showHints['amenities']}
+                  onClose={() => setShowHints(prev => ({ ...prev, 'amenities': false }))}
+                />
               </div>
             </div>
+          ) : (
+            <div className="property-amenities-screen">
+              <div className="property-amenities-main">
+                <h2 className="property-amenities-title">
+                  Дополнительные удобства и особенности
+                </h2>
+                
+                <div className="property-amenities-content-scrollable">
+                  {/* Парковка */}
+                  <div className="amenities-category">
+                    <h4 className="amenities-category-title">
+                      <span className="amenities-category-icon">🚗</span>
+                      Парковка
+                    </h4>
+                    <div className="amenities-list">
+                      <label className="amenity-item">
+                        <input
+                          type="checkbox"
+                          checked={formData.parking || false}
+                          onChange={(e) => handleDetailChange('parking', e.target.checked)}
+                          className="amenity-checkbox"
+                        />
+                        <span className="amenity-label">Парковочное место</span>
+                      </label>
+                      <label className="amenity-item">
+                        <input
+                          type="checkbox"
+                          checked={formData.feature1 || false}
+                          onChange={(e) => handleDetailChange('feature1', e.target.checked)}
+                          className="amenity-checkbox"
+                        />
+                        <span className="amenity-label">Подземная парковка</span>
+                      </label>
+                      <label className="amenity-item">
+                        <input
+                          type="checkbox"
+                          checked={formData.feature12 || false}
+                          onChange={(e) => handleDetailChange('feature12', e.target.checked)}
+                          className="amenity-checkbox"
+                        />
+                        <span className="amenity-label">Парковка для велосипедов</span>
+                      </label>
+                    </div>
+                  </div>
 
-            <div className="property-name-hints" style={{ marginLeft: '150px' , marginTop: '75px'}}>
-              <HintCard
-                icon={MdLightbulb}
-                iconColor="property-name-hint-icon--thumbs"
-                title="Какие удобства указать?"
-                content={[
-                  "Укажите все доступные удобства для привлечения покупателей",
-                  "Будьте честны - это повысит доверие",
-                  "Удобства влияют на цену и привлекательность объекта"
-                ]}
-                show={showHints['amenities']}
-                onClose={() => setShowHints(prev => ({ ...prev, 'amenities': false }))}
-              />
-              <HintCard
-                icon={FiThumbsUp}
-                iconColor="property-name-hint-icon--bulb"
-                title="Зачем указывать удобства?"
-                content="Полный список удобств помогает покупателям понять, что они получают за свою цену, и делает ваше объявление более привлекательным."
-                show={showHints['amenities']}
-                onClose={() => setShowHints(prev => ({ ...prev, 'amenities': false }))}
-              />
+                  {/* Мебель и техника */}
+                  <div className="amenities-category">
+                    <h4 className="amenities-category-title">
+                      <span className="amenities-category-icon">🛋️</span>
+                      Мебель и техника
+                    </h4>
+                    <div className="amenities-list">
+                      <label className="amenity-item">
+                        <input
+                          type="checkbox"
+                          checked={formData.feature2 || false}
+                          onChange={(e) => handleDetailChange('feature2', e.target.checked)}
+                          className="amenity-checkbox"
+                        />
+                        <span className="amenity-label">Кухонная мебель</span>
+                      </label>
+                      <label className="amenity-item">
+                        <input
+                          type="checkbox"
+                          checked={formData.furniture || false}
+                          onChange={(e) => handleDetailChange('furniture', e.target.checked)}
+                          className="amenity-checkbox"
+                        />
+                        <span className="amenity-label">Встроенная мебель</span>
+                      </label>
+                      <label className="amenity-item">
+                        <input
+                          type="checkbox"
+                          checked={formData.feature3 || false}
+                          onChange={(e) => handleDetailChange('feature3', e.target.checked)}
+                          className="amenity-checkbox"
+                        />
+                        <span className="amenity-label">Стиральная машина</span>
+                      </label>
+                      <label className="amenity-item">
+                        <input
+                          type="checkbox"
+                          checked={formData.feature4 || false}
+                          onChange={(e) => handleDetailChange('feature4', e.target.checked)}
+                          className="amenity-checkbox"
+                        />
+                        <span className="amenity-label">Посудомоечная машина</span>
+                      </label>
+                      <label className="amenity-item">
+                        <input
+                          type="checkbox"
+                          checked={formData.electricity || false}
+                          onChange={(e) => handleDetailChange('electricity', e.target.checked)}
+                          className="amenity-checkbox"
+                        />
+                        <span className="amenity-label">Кондиционер</span>
+                      </label>
+                      <label className="amenity-item">
+                        <input
+                          type="checkbox"
+                          checked={formData.feature18 || false}
+                          onChange={(e) => handleDetailChange('feature18', e.target.checked)}
+                          className="amenity-checkbox"
+                        />
+                        <span className="amenity-label">Гардеробная</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* Коммуникации и безопасность */}
+                  <div className="amenities-category">
+                    <h4 className="amenities-category-title">
+                      <span className="amenities-category-icon">🔒</span>
+                      Коммуникации и безопасность
+                    </h4>
+                    <div className="amenities-list">
+                      <label className="amenity-item">
+                        <input
+                          type="checkbox"
+                          checked={formData.internet || false}
+                          onChange={(e) => handleDetailChange('internet', e.target.checked)}
+                          className="amenity-checkbox"
+                        />
+                        <span className="amenity-label">Интернет</span>
+                      </label>
+                      <label className="amenity-item">
+                        <input
+                          type="checkbox"
+                          checked={formData.security || false}
+                          onChange={(e) => handleDetailChange('security', e.target.checked)}
+                          className="amenity-checkbox"
+                        />
+                        <span className="amenity-label">Охрана</span>
+                      </label>
+                      <label className="amenity-item">
+                        <input
+                          type="checkbox"
+                          checked={formData.feature5 || false}
+                          onChange={(e) => handleDetailChange('feature5', e.target.checked)}
+                          className="amenity-checkbox"
+                        />
+                        <span className="amenity-label">Домофон</span>
+                      </label>
+                      <label className="amenity-item">
+                        <input
+                          type="checkbox"
+                          checked={formData.feature6 || false}
+                          onChange={(e) => handleDetailChange('feature6', e.target.checked)}
+                          className="amenity-checkbox"
+                        />
+                        <span className="amenity-label">Видеонаблюдение</span>
+                      </label>
+                      <label className="amenity-item">
+                        <input
+                          type="checkbox"
+                          checked={formData.feature16 || false}
+                          onChange={(e) => handleDetailChange('feature16', e.target.checked)}
+                          className="amenity-checkbox"
+                        />
+                        <span className="amenity-label">Видеодомофон</span>
+                      </label>
+                      <label className="amenity-item">
+                        <input
+                          type="checkbox"
+                          checked={formData.feature17 || false}
+                          onChange={(e) => handleDetailChange('feature17', e.target.checked)}
+                          className="amenity-checkbox"
+                        />
+                        <span className="amenity-label">Консьерж</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* Дополнительные помещения */}
+                  <div className="amenities-category">
+                    <h4 className="amenities-category-title">
+                      <span className="amenities-category-icon">🏠</span>
+                      Дополнительные помещения
+                    </h4>
+                    <div className="amenities-list">
+                      <label className="amenity-item">
+                        <input
+                          type="checkbox"
+                          checked={formData.balcony || false}
+                          onChange={(e) => handleDetailChange('balcony', e.target.checked)}
+                          className="amenity-checkbox"
+                        />
+                        <span className="amenity-label">Балкон</span>
+                      </label>
+                      <label className="amenity-item">
+                        <input
+                          type="checkbox"
+                          checked={formData.feature7 || false}
+                          onChange={(e) => handleDetailChange('feature7', e.target.checked)}
+                          className="amenity-checkbox"
+                        />
+                        <span className="amenity-label">Лоджия</span>
+                      </label>
+                      <label className="amenity-item">
+                        <input
+                          type="checkbox"
+                          checked={formData.feature8 || false}
+                          onChange={(e) => handleDetailChange('feature8', e.target.checked)}
+                          className="amenity-checkbox"
+                        />
+                        <span className="amenity-label">Кладовая</span>
+                      </label>
+                      <label className="amenity-item">
+                        <input
+                          type="checkbox"
+                          checked={formData.elevator || false}
+                          onChange={(e) => handleDetailChange('elevator', e.target.checked)}
+                          className="amenity-checkbox"
+                        />
+                        <span className="amenity-label">Лифт</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* Дополнительно */}
+                  <div className="amenities-category">
+                    <h4 className="amenities-category-title">
+                      <span className="amenities-category-icon">➕</span>
+                      Дополнительно
+                    </h4>
+                    <div className="amenities-additional-field">
+                      <label className="amenities-additional-label">
+                        Укажите другие удобства, если такие есть
+                      </label>
+                      <textarea
+                        className="amenities-additional-textarea"
+                        placeholder="Например: встроенная система умного дома, проектор, музыкальная система и т.д."
+                        value={formData.additionalAmenities || ''}
+                        onChange={(e) => handleDetailChange('additionalAmenities', e.target.value)}
+                        rows={3}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="property-amenities-actions">
+                  <button
+                    type="button"
+                    className="property-amenities-back-btn"
+                    onClick={() => setCurrentStep('details')}
+                  >
+                    <FiChevronLeft size={16} />
+                    Назад
+                  </button>
+                  <button
+                    type="button"
+                    className="property-amenities-continue-btn"
+                    onClick={handleAmenitiesContinue}
+                  >
+                    Продолжить
+                  </button>
+                </div>
+              </div>
+
+              <div className="property-name-hints" style={{ marginLeft: '150px' , marginTop: '75px'}}>
+                <HintCard
+                  icon={MdLightbulb}
+                  iconColor="property-name-hint-icon--thumbs"
+                  title="Какие удобства указать?"
+                  content={[
+                    "Укажите все доступные удобства для привлечения покупателей",
+                    "Будьте честны - это повысит доверие",
+                    "Удобства влияют на цену и привлекательность объекта"
+                  ]}
+                  show={showHints['amenities']}
+                  onClose={() => setShowHints(prev => ({ ...prev, 'amenities': false }))}
+                />
+                <HintCard
+                  icon={FiThumbsUp}
+                  iconColor="property-name-hint-icon--bulb"
+                  title="Зачем указывать удобства?"
+                  content="Полный список удобств помогает покупателям понять, что они получают за свою цену, и делает ваше объявление более привлекательным."
+                  show={showHints['amenities']}
+                  onClose={() => setShowHints(prev => ({ ...prev, 'amenities': false }))}
+                />
+              </div>
             </div>
-          </div>
+          )
         ) : currentStep === 'photos' ? (
           /* Экран загрузки фотографий */
           <div className="property-photos-screen">

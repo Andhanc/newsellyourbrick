@@ -573,7 +573,7 @@ const Moderation = () => {
     });
   }, [activeTab, searchQuery, pendingProperties, requestTypeFilter]);
 
-  const handleApprove = async (type, id) => {
+  const handleApprove = async (type, id, debtSeverity = null) => {
     try {
       // Проверяем, является ли это элементом из localStorage
       if (typeof id === 'string' && id.startsWith('local_')) {
@@ -666,7 +666,11 @@ const Moderation = () => {
                   ownership_document_name: property.ownershipDocumentName || null,
                   no_debts_document_name: property.noDebtsDocumentName || null,
                   test_drive: property.testDrive ? 1 : 0,
-                  moderation_status: 'approved' // Сразу одобряем
+                  moderation_status: 'approved', // Сразу одобряем
+                  // Статус критичности для объектов с долгами
+                  debt_severity: property.sale_type === 'debt' || property.is_debt || property.has_debt
+                    ? (property.debt_severity || null)
+                    : null
                 };
 
                 // Создаем объявление в БД
@@ -784,7 +788,8 @@ const Moderation = () => {
           body: JSON.stringify({
             reviewed_by: adminId,
             moderation_status: 'approved', // Явно указываем статус одобрения
-            property_type: propertyType // Отправляем тип для правильного определения таблицы
+            property_type: propertyType, // Отправляем тип для правильного определения таблицы
+            debt_severity: debtSeverity || null
           })
         });
 
@@ -1081,7 +1086,7 @@ const Moderation = () => {
       <ModerationPropertyDetail
         property={selectedProperty}
         onBack={() => setSelectedProperty(null)}
-        onApprove={() => handleApprove('properties', selectedProperty.id)}
+        onApprove={(id, severity) => handleApprove('properties', id, severity)}
         onReject={(reason) => handleReject('properties', selectedProperty.id, reason)}
       />
     );

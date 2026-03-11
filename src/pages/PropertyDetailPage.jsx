@@ -280,6 +280,17 @@ const PropertyDetailPage = () => {
                 ownership_document: prop.ownership_document || null,
                 no_debts_document: prop.no_debts_document || null,
                 additional_documents: prop.additional_documents || null,
+                // Тип сделки и флаги долга
+                sale_type: prop.sale_type || null,
+                is_debt: prop.is_debt,
+                has_debt: prop.has_debt,
+                debt_severity: prop.debt_severity || null,
+                debt_utilities: prop.debt_utilities,
+                debt_mortgage_pledge: prop.debt_mortgage_pledge,
+                debt_property_taxes: prop.debt_property_taxes,
+                debt_arrest: prop.debt_arrest,
+                debt_inherited: prop.debt_inherited,
+                debt_third_party: prop.debt_third_party,
                 // Резервация
                 is_reserved: prop.is_reserved === true || prop.is_reserved === 1 || prop.is_reserved === 'true' || false,
                 reserved_until: prop.reserved_until || null,

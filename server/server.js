@@ -4651,7 +4651,15 @@ app.post('/api/properties', upload.fields([
       test_drive_data,
       test_drive = 0,
       is_debt,
-      sale_type
+      sale_type,
+      debt_utilities,
+      debt_mortgage_pledge,
+      debt_property_taxes,
+      debt_arrest,
+      debt_inherited,
+      debt_third_party,
+      debt_other,
+      debt_amount
     } = req.body;
     
 
@@ -4824,7 +4832,16 @@ app.post('/api/properties', upload.fields([
       shares_sold: isShare ? 0 : null,
       sale_type: isDebt ? 'debt' : (isShare ? 'share' : 'auction'),
       is_debt: isDebt ? 1 : 0,
-      has_debt: isDebt ? 1 : 0
+      has_debt: isDebt ? 1 : 0,
+      // Детализация долгов
+      debt_utilities: debt_utilities === '1' || debt_utilities === 1 || debt_utilities === true,
+      debt_mortgage_pledge: debt_mortgage_pledge === '1' || debt_mortgage_pledge === 1 || debt_mortgage_pledge === true,
+      debt_property_taxes: debt_property_taxes === '1' || debt_property_taxes === 1 || debt_property_taxes === true,
+      debt_arrest: debt_arrest === '1' || debt_arrest === 1 || debt_arrest === true,
+      debt_inherited: debt_inherited === '1' || debt_inherited === 1 || debt_inherited === true,
+      debt_third_party: debt_third_party === '1' || debt_third_party === 1 || debt_third_party === true,
+      debt_other: debt_other || null,
+      debt_amount: debt_amount ? parseFloat(debt_amount) : null
     };
 
     // Добавляем поля для домов/вилл
@@ -5396,7 +5413,15 @@ app.put('/api/properties/:id', upload.fields([
       test_drive_data,
       test_drive = 0,
       is_debt,
-      sale_type
+      sale_type,
+      debt_utilities,
+      debt_mortgage_pledge,
+      debt_property_taxes,
+      debt_arrest,
+      debt_inherited,
+      debt_third_party,
+      debt_other,
+      debt_amount
     } = req.body;
     
     // Нормализуем test_drive для редактирования
@@ -7083,7 +7108,7 @@ app.get('/api/properties/user/:userId', (req, res) => {
 app.put('/api/properties/:id/approve', (req, res) => {
   try {
     const { id } = req.params;
-    const { reviewed_by, property_type: requestedPropertyType } = req.body;
+    const { reviewed_by, property_type: requestedPropertyType, debt_severity } = req.body;
 
     // ВАЖНО: Если property_type передан в запросе, используем его для получения правильного объекта
     // Это предотвращает получение объекта из неправильной таблицы при дубликатах ID
@@ -7427,7 +7452,7 @@ app.put('/api/properties/:id/approve', (req, res) => {
       
       // Используем функцию из propertyQueries, которая работает с новыми таблицами
       console.log(`🔄 Вызов updateModerationStatus для ID=${id}, status=approved`);
-      const result = propertyQueries.updateModerationStatus(id, 'approved', reviewed_by, null);
+      const result = propertyQueries.updateModerationStatus(id, 'approved', reviewed_by, null, debt_severity || null);
       
       console.log(`📊 Результат updateModerationStatus:`, {
         changes: result?.changes || 0,

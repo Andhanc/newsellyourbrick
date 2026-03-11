@@ -504,6 +504,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
     reserved_until: property.reserved_until || null,
     reserved_by: property.reserved_by || null,
     reservation_time_remaining: property.reservation_time_remaining || null,
+    debt_severity: property.debt_severity || null,
   }
   
   const isDebtProperty =
@@ -2292,11 +2293,12 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                 </div>
               )}
 
-              {/* Удобства - красивый горизонтальный блок */}
-              <div className="property-detail-info-block">
-                <h3 className="property-detail-info-block__title">Удобства</h3>
-                <div className="property-detail-info-block__content property-detail-info-block__content--amenities">
-                  {(() => {
+              {/* Удобства - красивый горизонтальный блок (для обычных объектов, не долгов) */}
+              {!isDebtProperty && (
+                <div className="property-detail-info-block">
+                  <h3 className="property-detail-info-block__title">Удобства</h3>
+                  <div className="property-detail-info-block__content property-detail-info-block__content--amenities">
+                    {(() => {
                     // Функция для проверки удобства (работает с разными форматами)
                     const hasAmenity = (value) => {
                       return value === 1 || value === true || value === '1' || value === 'true'
@@ -2376,16 +2378,17 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                     // Логируем только один раз при монтировании (для отладки)
                     // Убрали логирование, чтобы избежать бесконечного цикла
                     
-                    if (amenities.length === 0) {
-                      return <span className="amenity-item">Удобства не указаны</span>
-                    }
-                    
-                    return amenities.map((amenity, index) => (
-                      <span key={index} className="amenity-item">{amenity}</span>
-                    ))
-                  })()}
+                      if (amenities.length === 0) {
+                        return <span className="amenity-item">Удобства не указаны</span>
+                      }
+
+                      return amenities.map((amenity, index) => (
+                        <span key={index} className="amenity-item">{amenity}</span>
+                      ))
+                    })()}
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Дополнительная информация (текст, который пользователь написал сам) */}
               {(() => {
@@ -2488,8 +2491,8 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
               <h1 className="property-detail-sidebar__title">{propertyInfo}</h1>
 
               {/* Минимальная цена продажи для аукционных объектов */}
-              {/* Показываем только если указана цена "Купить сейчас" (price должна быть больше стартовой цены аукциона) */}
-              {(() => {
+              {/* Для долгов этот блок не показываем вообще */}
+              {!isDebtProperty && (() => {
                 const buyNowPrice = displayProperty.price ? Number(displayProperty.price) : 0;
                 const startingPrice = displayProperty.auction_starting_price ? Number(displayProperty.auction_starting_price) : 0;
                 // Получаем текущую максимальную ставку
@@ -2551,7 +2554,10 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                 <>
                   <div className="property-detail-sidebar__price-block">
                     <span className="price-label">{isDebtProperty ? 'Сумма продажи:' : 'Стоимость:'}</span>
-                    <span className="price-value">
+                    <span
+                      className="price-value"
+                      style={isDebtProperty ? { fontSize: '26px', fontWeight: 700 } : undefined}
+                    >
                       {displayProperty.currency === 'USD' ? '$' : displayProperty.currency === 'EUR' ? '€' : displayProperty.currency === 'BYN' ? 'Br' : ''}
                       {displayProperty.price.toLocaleString('ru-RU')}
                     </span>
@@ -2587,8 +2593,9 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                 <span>{displayProperty.location}</span>
               </div>
 
-              {/* Блок таймера аукциона, текущей ставки и истории ставок */}
-              {(isAuctionProperty && auctionEndTime) || (!isAuctionProperty && displayProperty.price) ? (
+              {/* Блок таймера аукциона, текущей ставки и истории ставок.
+                  Для долгов полностью скрываем этот блок. */}
+              {!isDebtProperty && ((isAuctionProperty && auctionEndTime) || (!isAuctionProperty && displayProperty.price)) ? (
                 <div className="property-detail-sidebar__auction-block">
                   {/* Проверяем резервацию объекта */}
                   {displayProperty.is_reserved && displayProperty.reserved_until && new Date(displayProperty.reserved_until) > new Date() ? (
@@ -2924,6 +2931,199 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                 </div>
               ) : null}
 
+              {/* Блок критичности и долговых обязательств для объектов с долгами (над картой) */}
+              {isDebtProperty && (
+                <div
+                  style={{
+                    marginTop: '20px',
+                    padding: '18px 20px',
+                    borderRadius: '16px',
+                    backgroundColor: '#ffffff',
+                    boxShadow: '0 12px 40px rgba(15, 23, 42, 0.06)',
+                    border: '1px solid rgba(148, 163, 184, 0.25)',
+                  }}
+                >
+                  <h3
+                    style={{
+                      margin: 0,
+                      marginBottom: '10px',
+                      fontSize: '16px',
+                      fontWeight: 600,
+                      color: '#111827',
+                    }}
+                  >
+                    Статус объекта с долгами
+                  </h3>
+
+                  {/* Уровень критичности */}
+                  {displayProperty.debt_severity && (
+                    <div style={{ marginBottom: '12px' }}>
+                      <span
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          padding: '4px 12px',
+                          borderRadius: '999px',
+                          fontSize: '12px',
+                          fontWeight: 600,
+                          backgroundColor:
+                            displayProperty.debt_severity === 'red'
+                              ? '#fee2e2'
+                              : displayProperty.debt_severity === 'yellow'
+                              ? '#fef9c3'
+                              : '#dcfce7',
+                          color:
+                            displayProperty.debt_severity === 'red'
+                              ? '#b91c1c'
+                              : displayProperty.debt_severity === 'yellow'
+                              ? '#854d0e'
+                              : '#166534',
+                        }}
+                      >
+                        {displayProperty.debt_severity === 'red'
+                          ? 'Критичный объект'
+                          : displayProperty.debt_severity === 'yellow'
+                          ? 'Объект средней тяжести'
+                          : 'Объект лёгкой тяжести'}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Параметры долговых обязательств */}
+                  <div style={{ marginBottom: '10px' }}>
+                    <div
+                      style={{
+                        fontSize: '13px',
+                        fontWeight: 500,
+                        color: '#6b7280',
+                        marginBottom: '6px',
+                      }}
+                    >
+                      Долговые обязательства по объекту:
+                    </div>
+
+                    <div
+                      style={{
+                        display: 'flex',
+                        flexWrap: 'wrap',
+                        gap: '6px',
+                      }}
+                    >
+                      {displayProperty.debt_utilities ? (
+                        <span
+                          style={{
+                            padding: '6px 12px',
+                            borderRadius: '999px',
+                            backgroundColor: '#e3f5e8',
+                            fontSize: '12px',
+                            color: '#111827',
+                          }}
+                        >
+                          Долги по коммунальным услугам
+                        </span>
+                      ) : null}
+                      {displayProperty.debt_mortgage_pledge ? (
+                        <span
+                          style={{
+                            padding: '6px 12px',
+                            borderRadius: '999px',
+                            backgroundColor: '#e3f5e8',
+                            fontSize: '12px',
+                            color: '#111827',
+                          }}
+                        >
+                          Залог у банка
+                        </span>
+                      ) : null}
+                      {displayProperty.debt_property_taxes ? (
+                        <span
+                          style={{
+                            padding: '6px 12px',
+                            borderRadius: '999px',
+                            backgroundColor: '#e3f5e8',
+                            fontSize: '12px',
+                            color: '#111827',
+                          }}
+                        >
+                          Неоплаченные налоги на имущество
+                        </span>
+                      ) : null}
+                      {displayProperty.debt_arrest ? (
+                        <span
+                          style={{
+                            padding: '6px 12px',
+                            borderRadius: '999px',
+                            backgroundColor: '#e3f5e8',
+                            fontSize: '12px',
+                            color: '#111827',
+                          }}
+                        >
+                          Арест / ограничения
+                        </span>
+                      ) : null}
+                      {displayProperty.debt_inherited ? (
+                        <span
+                          style={{
+                            padding: '6px 12px',
+                            borderRadius: '999px',
+                            backgroundColor: '#e3f5e8',
+                            fontSize: '12px',
+                            color: '#111827',
+                          }}
+                        >
+                          Долги наследодателя
+                        </span>
+                      ) : null}
+                      {displayProperty.debt_third_party ? (
+                        <span
+                          style={{
+                            padding: '6px 12px',
+                            borderRadius: '999px',
+                            backgroundColor: '#e3f5e8',
+                            fontSize: '12px',
+                            color: '#111827',
+                          }}
+                        >
+                          Долги перед третьими лицами
+                        </span>
+                      ) : null}
+                      {displayProperty.debt_other ? (
+                        <span
+                          style={{
+                            padding: '6px 12px',
+                            borderRadius: '999px',
+                            backgroundColor: '#e3f5e8',
+                            fontSize: '12px',
+                            color: '#111827',
+                          }}
+                        >
+                          {displayProperty.debt_other}
+                        </span>
+                      ) : null}
+                    </div>
+                  </div>
+
+                  {/* Пояснение, что значит эта критичность */}
+                  <p
+                    style={{
+                      margin: 0,
+                      fontSize: '12px',
+                      lineHeight: 1.5,
+                      color: '#6b7280',
+                    }}
+                  >
+                    {displayProperty.debt_severity === 'red' &&
+                      'Критичный уровень: по объекту есть существенные задолженности и/или ограничения. Перед покупкой потребуется глубокая юридическая и финансовая проверка.'}
+                    {displayProperty.debt_severity === 'yellow' &&
+                      'Средний уровень: по объекту есть вопросы, которые могут потребовать времени и дополнительных расходов, но, как правило, решаемы при грамотном сопровождении.'}
+                    {displayProperty.debt_severity === 'green' &&
+                      'Лёгкий уровень: в основном технические или процедурные вопросы, которые обычно решаются стандартными действиями при сделке.'}
+                    {!displayProperty.debt_severity &&
+                      'По данному объекту есть долговые обязательства. Пожалуйста, внимательно ознакомьтесь с условиями и проконсультируйтесь со специалистом перед покупкой.'}
+                  </p>
+                </div>
+              )}
+
               {/* Карта */}
               <div className="property-detail-sidebar__map">
                 <h2 className="property-detail-sidebar__map-title">
@@ -2934,25 +3134,39 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                     <>
                       <LocationMap
                         center={finalCoordinates}
-                        zoom={finalCoordinates && finalCoordinates[0] !== 53.9045 && finalCoordinates[1] !== 27.5615 ? 15 : undefined}
-                        marker={finalCoordinates && finalCoordinates[0] !== 53.9045 && finalCoordinates[1] !== 27.5615 ? finalCoordinates : null}
+                        zoom={
+                          finalCoordinates &&
+                          finalCoordinates[0] !== 53.9045 &&
+                          finalCoordinates[1] !== 27.5615
+                            ? 15
+                            : undefined
+                        }
+                        marker={
+                          finalCoordinates &&
+                          finalCoordinates[0] !== 53.9045 &&
+                          finalCoordinates[1] !== 27.5615
+                            ? finalCoordinates
+                            : null
+                        }
                       />
                       {isGeocoding && (
-                        <div style={{
-                          position: 'absolute',
-                          top: '50%',
-                          left: '50%',
-                          transform: 'translate(-50%, -50%)',
-                          background: 'rgba(255, 255, 255, 0.95)',
-                          padding: '12px 20px',
-                          borderRadius: '8px',
-                          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
-                          zIndex: 1000,
-                          fontSize: '14px',
-                          color: '#4b5563',
-                          fontFamily: 'Montserrat, sans-serif',
-                          fontWeight: 500
-                        }}>
+                        <div
+                          style={{
+                            position: 'absolute',
+                            top: '50%',
+                            left: '50%',
+                            transform: 'translate(-50%, -50%)',
+                            background: 'rgba(255, 255, 255, 0.95)',
+                            padding: '12px 20px',
+                            borderRadius: '8px',
+                            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
+                            zIndex: 1000,
+                            fontSize: '14px',
+                            color: '#4b5563',
+                            fontFamily: 'Montserrat, sans-serif',
+                            fontWeight: 500,
+                          }}
+                        >
                           Поиск местоположения...
                         </div>
                       )}
@@ -2960,6 +3174,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                   )}
                 </div>
               </div>
+
             </div>
 
             {/* Документы - отдельный блок под property-detail-sidebar__content (только в кабинете продавца) */}

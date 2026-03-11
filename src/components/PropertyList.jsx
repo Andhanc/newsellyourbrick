@@ -184,6 +184,18 @@ const PropertyList = ({ auctionProperties = null, onOpenAIChat }) => {
 
   const filteredProperties = propertiesToUse.filter(property => {
     const hasBuyNowPrice = hasBuyNowOption(property)
+    const isDebtProperty =
+      property.sale_type === 'debt' ||
+      property.is_debt === 1 ||
+      property.is_debt === true ||
+      property.has_debt === 1 ||
+      property.has_debt === true
+
+    // На странице аукциона полностью исключаем объекты с долгами
+    if (location.pathname === '/auction' && isDebtProperty) {
+      return false
+    }
+
     // Фильтрация по типу недвижимости
     if (propertyType !== 'все') {
       // Если есть property_type из API, используем его

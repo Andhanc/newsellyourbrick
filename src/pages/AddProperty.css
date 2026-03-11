@@ -2675,6 +2675,10 @@
   gap: 12px;
 }
 
+.amenities-list--debt-grid {
+  grid-template-columns: repeat(2, minmax(240px, 1fr));
+}
+
 .amenity-item {
   display: flex;
   align-items: center;
@@ -5598,6 +5602,10 @@
   font-weight: 600;
   color: #1a1a1a;
   background: transparent;
+}
+
+.price-input-large--debt {
+  font-size: 16px;
 }
 
 .price-input-large::placeholder {

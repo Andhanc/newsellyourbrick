@@ -37,6 +37,7 @@ const ModerationPropertyDetail = ({ property, onBack, onApprove, onReject }) => 
       property.has_debt === 1 ||
       property.has_debt === true
     );
+  const [debtSeverity, setDebtSeverity] = useState(property.debt_severity || null);
   
   // Функция для обработки URL документа
   const processDocumentUrl = (docUrl) => {
@@ -361,7 +362,7 @@ const ModerationPropertyDetail = ({ property, onBack, onApprove, onReject }) => 
 
   const handleApproveClick = () => {
     if (window.confirm('Вы уверены, что хотите одобрить этот объект недвижимости?')) {
-      onApprove(property.id);
+      onApprove(property.id, debtSeverity);
     }
   };
 
@@ -515,35 +516,7 @@ const ModerationPropertyDetail = ({ property, onBack, onApprove, onReject }) => 
             </div>
           )}
 
-          <div className="moderation-property-detail__location">
-            <IoLocation size={20} />
-            <span>{property.location || property.address || 'Локация не указана'}</span>
-          </div>
-
-          {/* Карта (спутник) при наличии координат */}
-          {(() => {
-            let coords = null;
-            if (property.coordinates) {
-              if (Array.isArray(property.coordinates) && property.coordinates.length >= 2) {
-                const lat = parseFloat(property.coordinates[0]);
-                const lng = parseFloat(property.coordinates[1]);
-                if (!isNaN(lat) && !isNaN(lng)) coords = [lat, lng];
-              } else if (typeof property.coordinates === 'string') {
-                try {
-                  const parsed = property.coordinates.includes('[') ? JSON.parse(property.coordinates) : property.coordinates.split(',').map(Number);
-                  if (Array.isArray(parsed) && parsed.length >= 2) coords = [parseFloat(parsed[0]), parseFloat(parsed[1])];
-                } catch (_) {}
-              }
-            }
-            return coords ? (
-              <div className="moderation-property-detail__map-section" style={{ marginTop: '16px' }}>
-                <h3 style={{ margin: '0 0 12px 0', fontSize: '16px', fontWeight: 600 }}>Карта</h3>
-                <div style={{ height: '300px', borderRadius: '12px', overflow: 'hidden', border: '1px solid #e5e7eb' }}>
-                  <LocationMap center={coords} zoom={15} marker={coords} />
-                </div>
-              </div>
-            ) : null;
-          })()}
+          {/* Локацию и карту в модерации сейчас не показываем */}
 
           <div className="moderation-property-detail__features">
             {property.area && (
@@ -575,9 +548,11 @@ const ModerationPropertyDetail = ({ property, onBack, onApprove, onReject }) => 
             {/* Цена / сумма продажи */}
             {property.price && Number(property.price) > 0 && (
               <div style={{ marginBottom: '10px' }}>
-                <strong>{isDebtProperty ? 'Сумма продажи:' : 'Купить сейчас:'}</strong>{' '}
-                <span style={{ color: '#0ABAB5' }}>
-                  {property.price.toLocaleString('ru-RU')} {property.currency || 'USD'}
+                <span style={{ color: '#111827', fontWeight: 500 }}>
+                  {isDebtProperty ? 'Сумма продажи:' : 'Купить сейчас:'}
+                </span>{' '}
+                <span style={{ color: '#4b5563', fontWeight: 400 }}>
+                  {Number(property.price).toLocaleString('ru-RU')} {property.currency || 'USD'}
                 </span>
               </div>
             )}
@@ -591,11 +566,106 @@ const ModerationPropertyDetail = ({ property, onBack, onApprove, onReject }) => 
                   <div>Окончание: {new Date(property.auction_end_date).toLocaleDateString('ru-RU')}</div>
                 )}
                 {property.auction_starting_price && (
-                  <div>Начальная сумма ставки: {property.auction_starting_price.toLocaleString('ru-RU')} {property.currency || 'USD'}</div>
+                  <div>Начальная сумма ставки: {Number(property.auction_starting_price).toLocaleString('ru-RU')} {property.currency || 'USD'}</div>
                 )}
               </div>
             )}
           </div>
+
+          {/* Статус критичности объекта (для долгов) */}
+          {isDebtProperty && (
+            <div style={{ marginTop: '8px', marginBottom: '16px' }}>
+              <h4 style={{ fontSize: '14px', fontWeight: 600, marginBottom: '8px' }}>
+                Статус критичности объекта
+              </h4>
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                {[
+                  { id: 'red', label: 'Критичный', bg: '#ef4444' },
+                  { id: 'yellow', label: 'Средней тяжести', bg: '#eab308' },
+                  { id: 'green', label: 'Легкой тяжести', bg: '#16a34a' }
+                ].map(option => {
+                  const isActive = debtSeverity === option.id;
+                  return (
+                    <button
+                      key={option.id}
+                      type="button"
+                      onClick={() => setDebtSeverity(option.id)}
+                      style={{
+                        padding: '6px 14px',
+                        borderRadius: '999px',
+                        border: `1px solid ${option.bg}`,
+                        backgroundColor: isActive ? option.bg : '#ffffff',
+                        color: isActive ? '#ffffff' : option.bg,
+                        fontSize: '12px',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        boxShadow: 'none',
+                        transition: 'background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease'
+                      }}
+                    >
+                      {option.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Блок долгов по объекту — только для объявлений с долгами */}
+          {isDebtProperty && (
+            <div className="moderation-property-detail__additional-info">
+              <h3>Долговые обязательства по объекту</h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '10px' }}>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                  {(property.debt_utilities === 1 || property.debt_utilities === true) && (
+                    <span style={{ padding: '6px 14px', borderRadius: '8px', backgroundColor: '#e3f5e8', fontSize: '13px', color: '#111827' }}>
+                      Долги по коммунальным услугам
+                    </span>
+                  )}
+                  {(property.debt_mortgage_pledge === 1 || property.debt_mortgage_pledge === true) && (
+                    <span style={{ padding: '6px 14px', borderRadius: '8px', backgroundColor: '#e3f5e8', fontSize: '13px', color: '#111827' }}>
+                      Залог у банка
+                    </span>
+                  )}
+                  {(property.debt_property_taxes === 1 || property.debt_property_taxes === true) && (
+                    <span style={{ padding: '6px 14px', borderRadius: '8px', backgroundColor: '#e3f5e8', fontSize: '13px', color: '#111827' }}>
+                      Неоплаченные налоги на имущество
+                    </span>
+                  )}
+                  {(property.debt_arrest === 1 || property.debt_arrest === true) && (
+                    <span style={{ padding: '6px 14px', borderRadius: '8px', backgroundColor: '#e3f5e8', fontSize: '13px', color: '#111827' }}>
+                      Арест / ограничения
+                    </span>
+                  )}
+                  {(property.debt_inherited === 1 || property.debt_inherited === true) && (
+                    <span style={{ padding: '6px 14px', borderRadius: '8px', backgroundColor: '#e3f5e8', fontSize: '13px', color: '#111827' }}>
+                      Долги наследодателя
+                    </span>
+                  )}
+                  {(property.debt_third_party === 1 || property.debt_third_party === true) && (
+                    <span style={{ padding: '6px 14px', borderRadius: '8px', backgroundColor: '#e3f5e8', fontSize: '13px', color: '#111827' }}>
+                      Долги перед третьими лицами
+                    </span>
+                  )}
+                </div>
+
+                {property.debt_other && (
+                  <div style={{ fontSize: '14px', color: '#4b5563' }}>
+                    <strong>Другое:</strong> {property.debt_other}
+                  </div>
+                )}
+
+                {property.debt_amount != null && property.debt_amount !== '' && !Number.isNaN(Number(property.debt_amount)) && (
+                  <div style={{ fontSize: '14px', color: '#111827' }}>
+                    <strong>Ориентировочная сумма долга:</strong>{' '}
+                    <span style={{ color: '#0ABAB5' }}>
+                      {Number(property.debt_amount).toLocaleString('ru-RU')} {property.currency || 'USD'}
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
           {property.description && (
             <div className="moderation-property-detail__description">
