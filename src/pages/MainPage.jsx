@@ -1383,9 +1383,10 @@ function MainPage() {
 
   // Разделы для главной страницы (по типу продажи)
   const auctionSection = useMemo(() => {
-    // Аукционы без цены "Купить сейчас"
+    // Аукционы без цены "Купить сейчас"; объекты с долями не показываем на аукционе
     const base = homeProperties.filter((p) => {
       if (!p || !p.isAuction) return false
+      if (p.is_shared_ownership === 1 || p.is_shared_ownership === true) return false
 
       const price = p.price || 0
       const start = p.auction_starting_price || 0
@@ -1400,9 +1401,10 @@ function MainPage() {
   }, [homeProperties, searchQuery])
 
   const buyNowSection = useMemo(() => {
-    // Аукционы с опцией "Купить сейчас" (фиксированная цена выше стартовой)
+    // Аукционы с опцией "Купить сейчас"; объекты с долями не показываем
     const base = homeProperties.filter((p) => {
       if (!p || !p.isAuction) return false
+      if (p.is_shared_ownership === 1 || p.is_shared_ownership === true) return false
       const price = p.price || 0
       const start = p.auction_starting_price || 0
       if (!price || !start) return false
@@ -2685,8 +2687,8 @@ function MainPage() {
       {/* Блок подборки недвижимости */}
       <PropertySearchBlock />
 
-      {/* Блок "Аппартаменты" */}
-      <section className="apartments-section">
+      {/* Блок "Аукцион" */}
+      <section className="apartments-section apartments-section--auction">
         <div className="apartments-section__container">
           <div 
             className="apartments-section__header"
@@ -2763,6 +2765,9 @@ function MainPage() {
                             <PropertyTimer endTime={apartment.endTime} compact={true} />
                           )}
                           <h3 className="property-title">{apartment.name}</h3>
+                          {apartment.description && (
+                            <p className="property-description">{apartment.description}</p>
+                          )}
                           <p className="property-location">{apartment.location}</p>
                         </div>
                         {/* Строка характеристик под блоком заголовка */}
@@ -2803,7 +2808,7 @@ function MainPage() {
       </section>
 
       {/* Блок "Виллы" */}
-      <section className="apartments-section">
+      <section className="apartments-section apartments-section--main-cards">
         <div className="apartments-section__container">
           <div 
             className="apartments-section__header"
@@ -2867,6 +2872,9 @@ function MainPage() {
                       <div className="property-content">
                         <div className="property-header-fixed">
                           <h3 className="property-title">{villa.name}</h3>
+                          {villa.description && (
+                            <p className="property-description">{villa.description}</p>
+                          )}
                           <p className="property-location">{villa.location}</p>
                         </div>
                         {/* Строка характеристик под блоком заголовка */}
@@ -2904,7 +2912,7 @@ function MainPage() {
       </section>
 
       {/* Блок "Квартиры" */}
-      <section className="apartments-section">
+      <section className="apartments-section apartments-section--main-cards">
         <div className="apartments-section__container">
           <div 
             className="apartments-section__header"
@@ -2985,7 +2993,6 @@ function MainPage() {
                           )
                         ) : (
                           <>
-                            <div className="property-price">{formatPrice(flat.price)}</div>
                             <div className="property-specs">
                             {flat.beds && (
                               <div className="spec-item">
@@ -3006,6 +3013,7 @@ function MainPage() {
                               </div>
                             )}
                             </div>
+                            <div className="property-price">{formatPrice(flat.price)}</div>
                           </>
                         )}
                       </div>
@@ -3019,7 +3027,7 @@ function MainPage() {
       </section>
 
       {/* Блок "Дома" */}
-      <section className="apartments-section">
+      <section className="apartments-section apartments-section--main-cards">
         <div className="apartments-section__container">
           <div 
             className="apartments-section__header"
@@ -3100,7 +3108,6 @@ function MainPage() {
                           )
                         ) : (
                           <>
-                            <div className="property-price">{formatPrice(townhouse.price)}</div>
                             <div className="property-specs">
                             {townhouse.beds && (
                               <div className="spec-item">
@@ -3121,6 +3128,7 @@ function MainPage() {
                               </div>
                             )}
                             </div>
+                            <div className="property-price">{formatPrice(townhouse.price)}</div>
                           </>
                         )}
                       </div>

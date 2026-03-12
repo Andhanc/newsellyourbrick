@@ -2051,11 +2051,183 @@ app.post('/api/auth/whatsapp', async (req, res) => {
 });
 
 /**
+ * Определяет язык сообщения по коду страны в номере телефона (для WhatsApp верификации)
+ * @param {string} phoneDigits - Номер телефона (только цифры, с кодом страны)
+ * @returns {string} - Код языка: ru, en, uk, be, de, fr, it, es, tr, zh, ja, ko, pt, ar
+ */
+function getLanguageByPhone(phoneDigits) {
+  const digits = String(phoneDigits).replace(/\D/g, '');
+  const countryToLang = {
+    '375': 'ru',  // Беларусь
+    '7': 'ru',    // Россия, Казахстан
+    '380': 'en',  // Украина
+    '374': 'en',  // Армения
+    '994': 'en',  // Азербайджан
+    '996': 'en',  // Киргизия
+    '373': 'en',  // Молдова
+    '992': 'en',  // Таджикистан
+    '998': 'en',  // Узбекистан
+    '971': 'ar',  // ОАЭ
+    '1': 'en',    // США / Канада
+    '44': 'en',   // Великобритания
+    '49': 'de',   // Германия
+    '33': 'fr',   // Франция
+    '39': 'it',   // Италия
+    '34': 'es',   // Испания
+    '90': 'tr',   // Турция
+    '86': 'zh',   // Китай
+    '81': 'ja',   // Япония
+    '82': 'ko',   // Южная Корея
+    '91': 'en',   // Индия
+    '55': 'pt',   // Бразилия
+    '52': 'es',   // Мексика
+    '61': 'en',   // Австралия
+    '27': 'en',   // ЮАР
+    '20': 'ar',   // Египет
+  };
+  const sortedCodes = Object.keys(countryToLang).sort((a, b) => b.length - a.length);
+  for (const code of sortedCodes) {
+    if (digits.startsWith(code)) return countryToLang[code];
+  }
+  return 'en';
+}
+
+/**
+ * Шаблоны сообщения верификации WhatsApp по языкам (красивый формат)
+ */
+const WHATSAPP_VERIFICATION_MESSAGES = {
+  ru: `Здравствуйте! 
+  
+Добро пожаловать на платформу *Sellyourbrick* — сервис для покупки и продажи недвижимости.
+
+Для завершения регистрации введите проверочный код:
+
+*${'{CODE}'}*
+
+Код действителен 10 минут. Если вы не запрашивали код — проигнорируйте это сообщение.`,
+
+  en: `Hello! Welcome to *Sellyourbrick* — a platform for buying and selling real estate.
+
+To complete your registration, enter this verification code:
+
+*${'{CODE}'}*
+
+The code is valid for 10 minutes. If you didn't request this code, please ignore this message.`,
+
+  uk: `Вітаємо! Ласкаво просимо на платформу *Sellyourbrick* — сервіс для купівлі та продажу нерухомості.
+
+Щоб завершити реєстрацію, введіть перевірочний код:
+
+*${'{CODE}'}*
+
+Код дійсний 10 хвилин. Якщо ви не запитували код — проігноруйте це повідомлення.`,
+
+  be: `Вітаем! Сардэчна запрашаем на платформу *Sellyourbrick* — сэрвіс для куплі і продажу нерухомасці.
+
+Каб скончыць рэгістрацыю, увядзіце правярочны код:
+
+*${'{CODE}'}*
+
+Код дзейнічае 10 хвілін. Калі вы не запытвалі код — ігнаруйце гэта паведамленне.`,
+
+  de: `Hallo! Willkommen bei *Sellyourbrick* — der Plattform für den Kauf und Verkauf von Immobilien.
+
+Um die Registrierung abzuschließen, geben Sie bitte diesen Bestätigungscode ein:
+
+*${'{CODE}'}*
+
+Der Code ist 10 Minuten gültig. Falls Sie diesen Code nicht angefordert haben, ignorieren Sie diese Nachricht.`,
+
+  fr: `Bonjour ! Bienvenue sur *Sellyourbrick* — une plateforme pour acheter et vendre des biens immobiliers.
+
+Pour terminer l'inscription, entrez ce code de vérification :
+
+*${'{CODE}'}*
+
+Le code est valable 10 minutes. Si vous n'avez pas demandé ce code, ignorez ce message.`,
+
+  it: `Buongiorno! Benvenuto su *Sellyourbrick* — una piattaforma per comprare e vendere immobili.
+
+Per completare la registrazione, inserisca questo codice di verifica:
+
+*${'{CODE}'}*
+
+Il codice è valido per 10 minuti. Se non ha richiesto questo codice, ignori questo messaggio.`,
+
+  es: `¡Hola! Bienvenido a *Sellyourbrick* — una plataforma para comprar y vender inmuebles.
+
+Para completar el registro, introduzca este código de verificación:
+
+*${'{CODE}'}*
+
+El código es válido durante 10 minutos. Si no ha solicitado este código, ignore este mensaje.`,
+
+  tr: `Merhaba! *Sellyourbrick* platformuna hoş geldiniz — emlak alım satımı için hizmet.
+
+Kaydı tamamlamak için bu doğrulama kodunu girin:
+
+*${'{CODE}'}*
+
+Kod 10 dakika geçerlidir. Bu kodu siz talep etmediyseniz, bu mesajı yok sayın.`,
+
+  zh: `🏠 *Sellyourbrick*
+
+您好！
+
+您已在 *Sellyourbrick* 平台开始注册 — 便捷的房地产买卖服务。
+
+请输入以下验证码完成注册：
+
+*${'{CODE}'}*
+
+⏱ 验证码有效期为 10 分钟。
+
+如非本人操作，请忽略此消息。`,
+
+  ja: `こんにちは！*Sellyourbrick* へようこそ — 不動産の売買のためのプラットフォームです。
+
+登録を完了するには、以下の認証コードを入力してください：
+
+*${'{CODE}'}*
+
+コードの有効期限は10分です。心当たりがない場合は、このメッセージを無視してください。`,
+
+  ko: `안녕하세요! *Sellyourbrick* 플랫폼에 오신 것을 환영합니다 — 부동산 거래 서비스입니다.
+
+가입을 완료하려면 아래 인증 코드를 입력하세요:
+
+*${'{CODE}'}*
+
+코드는 10분간 유효합니다. 요청하지 않으셨다면 이 메시지를 무시하세요.`,
+
+  pt: `Olá! Bem-vindo à *Sellyourbrick* — uma plataforma para comprar e vender imóveis.
+
+Para concluir o cadastro, digite este código de verificação:
+
+*${'{CODE}'}*
+
+O código é válido por 10 minutos. Se você não solicitou este código, ignore esta mensagem.`,
+
+  ar: `مرحباً! أهلاً بك في منصة *Sellyourbrick* — خدمة لشراء وبيع العقارات.
+
+لإكمال التسجيل، أدخل رمز التحقق:
+
+*${'{CODE}'}*
+
+الرمز صالح لمدة 10 دقائق. إن لم تطلب هذا الرمز، تجاهل هذه الرسالة.`
+};
+
+function getVerificationMessage(lang, code) {
+  const template = WHATSAPP_VERIFICATION_MESSAGES[lang] || WHATSAPP_VERIFICATION_MESSAGES.en;
+  return template.replace(/\{CODE\}/g, code);
+}
+
+/**
  * POST /api/auth/whatsapp/send-code - Отправка кода верификации через WhatsApp (whatsapp-web.js)
  */
 app.post('/api/auth/whatsapp/send-code', async (req, res) => {
   try {
-    const { phone, code } = req.body;
+    const { phone, code, lang: preferredLang } = req.body;
 
     if (!phone || !code) {
       return res.status(400).json({
@@ -2098,7 +2270,11 @@ app.post('/api/auth/whatsapp/send-code', async (req, res) => {
     }
 
     const chatId = `${digits}@c.us`;
-    const message = `🔐 Ваш код авторизации: ${code}\n\nКод действителен в течение 10 минут.\n\nЕсли вы не запрашивали этот код, просто проигнорируйте это сообщение.`;
+    // Язык: из запроса (выбранная пользователем страна) или по коду страны в номере
+    const lang = (preferredLang && WHATSAPP_VERIFICATION_MESSAGES[preferredLang])
+      ? preferredLang
+      : getLanguageByPhone(digits);
+    const message = getVerificationMessage(lang, code);
 
     let contactName = null;
     let profilePicUrl = null;
@@ -2117,15 +2293,25 @@ app.post('/api/auth/whatsapp/send-code', async (req, res) => {
       // Если контакт не найден, просто продолжаем отправку сообщения
     }
 
-    // Применяем патч sendSeen перед отправкой (на случай, если он не был применен ранее)
-    await applySendSeenPatch();
-    
+    // Применяем патч sendSeen перед отправкой (на случай, если он не был применен ранее). Не блокируем отправку при ошибке патча.
+    await applySendSeenPatch().catch(() => {});
+
     // Отправляем сообщение с дополнительной диагностикой
     try {
       await waClient.sendMessage(chatId, message);
     } catch (sendError) {
       const errorMessage = sendError.message || '';
       const errorStack = sendError.stack || '';
+      const isDetachedFrame = errorMessage.includes('detached') || errorStack.includes('detached Frame');
+      if (isDetachedFrame) {
+        waClientReady = false;
+        console.warn('⚠️ Сессия WhatsApp устарела (detached Frame). Требуется повторная привязка по QR-коду.');
+        return res.status(503).json({
+          success: false,
+          error: 'Сессия WhatsApp устарела. Зайдите в админ-панель → WhatsApp и заново отсканируйте QR-код, либо перезапустите сервер.',
+          code: 'WHATSAPP_SESSION_EXPIRED'
+        });
+      }
       const isMarkedUnreadError = 
         errorMessage.includes('markedUnread') || 
         errorStack.includes('markedUnread') ||
@@ -2190,6 +2376,16 @@ app.post('/api/auth/whatsapp/send-code', async (req, res) => {
       }
     });
   } catch (error) {
+    const errMsg = error.message || '';
+    if (errMsg.includes('detached') || (error.stack && error.stack.includes('detached Frame'))) {
+      waClientReady = false;
+      console.warn('⚠️ Сессия WhatsApp устарела (detached Frame). Требуется повторная привязка по QR-коду.');
+      return res.status(503).json({
+        success: false,
+        error: 'Сессия WhatsApp устарела. Зайдите в админ-панель → WhatsApp и заново отсканируйте QR-код, либо перезапустите сервер.',
+        code: 'WHATSAPP_SESSION_EXPIRED'
+      });
+    }
     console.error('Ошибка отправки кода через WhatsApp:', error);
     return res.status(500).json({
       success: false,

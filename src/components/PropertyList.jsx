@@ -3,7 +3,6 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { useUser } from '@clerk/clerk-react'
 import { MdBed, MdOutlineBathtub, MdDirectionsCar } from 'react-icons/md'
 import { BiArea } from 'react-icons/bi'
-import { FiLayers, FiCalendar } from 'react-icons/fi'
 import { properties } from '../data/properties'
 import { isAuthenticated } from '../services/authService'
 import { showNotification } from '../utils/toastHelper'
@@ -190,9 +189,17 @@ const PropertyList = ({ auctionProperties = null, onOpenAIChat }) => {
       property.is_debt === true ||
       property.has_debt === 1 ||
       property.has_debt === true
+    const isShareProperty =
+      property.sale_type === 'share' ||
+      property.is_shared_ownership === 1 ||
+      property.is_shared_ownership === true
 
-    // На странице аукциона полностью исключаем объекты с долгами
+    // На странице аукциона исключаем объекты с долгами
     if (location.pathname === '/auction' && isDebtProperty) {
+      return false
+    }
+    // На странице аукциона исключаем объекты с долями (долевая продажа)
+    if (location.pathname === '/auction' && isShareProperty) {
       return false
     }
 
@@ -619,23 +626,6 @@ const PropertyList = ({ auctionProperties = null, onOpenAIChat }) => {
                             <div className="property-card-owner__info-item">
                               <MdOutlineBathtub size={16} />
                               <span>{property.bathrooms}</span>
-                            </div>
-                          )}
-                        </div>
-                        <div className="property-card-owner__info-row">
-                          {property.floor && (
-                            <div className="property-card-owner__info-item">
-                              <FiLayers size={16} />
-                              <span>
-                                {property.floor}
-                                {(property.total_floors || property.totalFloors) && `/${property.total_floors || property.totalFloors}`}
-                              </span>
-                            </div>
-                          )}
-                          {property.year_built && (
-                            <div className="property-card-owner__info-item">
-                              <FiCalendar size={16} />
-                              <span>{property.year_built}</span>
                             </div>
                           )}
                         </div>

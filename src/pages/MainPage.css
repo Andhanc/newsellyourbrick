@@ -1313,7 +1313,7 @@
 }
 
 .property-title {
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 600;
   /* Чуть уменьшаем отступ снизу, чтобы адрес был ближе */
   margin-bottom: 4px;
@@ -1330,7 +1330,7 @@
 }
 
 .property-description {
-  font-size: 14px;
+  font-size: 13px;
   color: #555;
   margin-bottom: 8px;
   line-height: 1.5;
@@ -1342,8 +1342,18 @@
   text-overflow: ellipsis;
 }
 
+/* Десктоп: описание чуть ближе к названию */
+@media (min-width: 769px) {
+  .property-title {
+    margin-bottom: 2px;
+  }
+  .property-description {
+    margin-top: -2px;
+  }
+}
+
 .property-location {
-  font-size: 14px;
+  font-size: 13px;
   color: #666;
   /* Чуть меньше отступ снизу, чтобы текст был визуально выше */
   margin-bottom: 4px;
@@ -1355,6 +1365,82 @@
   overflow: hidden;
   text-overflow: ellipsis;
   flex-shrink: 0;
+}
+
+/* На Главной в мобильной версии показываем местоположение в карточках всех разделов */
+@media (max-width: 600px) {
+  .apartments-section .property-location {
+    display: -webkit-box !important;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    white-space: normal;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-height: 2.25em;
+    font-size: 11px;
+  }
+}
+
+/* На Главной в мобильной версии скрываем блок с описанием */
+@media (max-width: 768px) {
+  .apartments-section .property-description {
+    display: none !important;
+  }
+}
+
+/* Купить сейчас, Долги, Доли: в мобильной версии опускаем название */
+@media (max-width: 768px) {
+  .apartments-section--main-cards .property-title {
+    margin-top: 10px;
+  }
+}
+
+/* Аукцион: небольшой отступ сверху у названия (после таймера) */
+.apartments-section--auction .property-title {
+  margin-top: 6px;
+}
+
+/* Купить сейчас, Долги, Доли: сумма сразу под данными, без пустого зазора; одинаковый отступ снизу */
+@media (max-width: 768px) {
+  .apartments-section--main-cards .property-content {
+    padding-bottom: 10px !important;
+  }
+  /* Убираем margin-top: auto, чтобы в «Купить сейчас» сумма не уезжала вниз карточки */
+  .apartments-section--main-cards .property-content-bottom {
+    margin-top: 0 !important;
+    padding-bottom: 0;
+    margin-bottom: 0;
+  }
+  .apartments-section--main-cards .property-price {
+    margin-bottom: 0 !important;
+    padding-bottom: 0 !important;
+  }
+  .apartments-section--main-cards .property-specs {
+    margin-bottom: 4px;
+  }
+}
+
+/* На Главной в мобильной версии — название крупнее, меньше отступ до адреса */
+@media (max-width: 768px) {
+  .apartments-section .property-title {
+    font-size: 17px !important;
+    margin-bottom: 0 !important;
+  }
+  .apartments-section .property-location {
+    margin-top: -2px !important;
+  }
+}
+
+@media (max-width: 600px) {
+  .apartments-section .property-title {
+    font-size: 16px !important;
+  }
+}
+
+@media (max-width: 430px) {
+  .apartments-section .property-title {
+    font-size: 15px !important;
+  }
 }
 
 .property-price {
