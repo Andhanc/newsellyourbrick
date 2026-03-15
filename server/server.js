@@ -2,7 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import axios from 'axios';
 import { initDatabase, closeDatabase, getDatabase } from './database/database.js';
-import { userQueries, documentQueries, notificationQueries, administratorQueries, whatsappUserQueries, purchaseRequestQueries, assistantLeadQueries, apartmentQueries, houseQueries, propertyQueries } from './database/database.js';
+import { userQueries, documentQueries, notificationQueries, administratorQueries, debtReasonQueries, debtDocumentQueries, whatsappUserQueries, purchaseRequestQueries, assistantLeadQueries, apartmentQueries, houseQueries, propertyQueries } from './database/database.js';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import multer from 'multer';
@@ -109,6 +109,45 @@ app.get('/health', (req, res) => {
     railwayPort: process.env.PORT || 'not set',
     uptime: process.uptime()
   });
+});
+
+// Хранилище онлайн-посетителей: sessionId -> lastSeen (timestamp)
+const onlineVisitors = new Map();
+const ONLINE_TIMEOUT_MS = 2 * 60 * 1000; // 2 минуты
+
+function pruneOnlineVisitors() {
+  const now = Date.now();
+  for (const [id, lastSeen] of onlineVisitors.entries()) {
+    if (now - lastSeen > ONLINE_TIMEOUT_MS) onlineVisitors.delete(id);
+  }
+}
+
+/**
+ * POST /api/visitor-heartbeat - Пинг от посетителя сайта (открытая вкладка)
+ * Тело: { sessionId: string } или query sessionId. Обновляет lastSeen для учёта в "Онлайн".
+ */
+app.post('/api/visitor-heartbeat', express.json(), (req, res) => {
+  const sessionId = req.body?.sessionId || req.query?.sessionId || req.headers['x-visitor-id'] || null;
+  if (!sessionId || typeof sessionId !== 'string' || sessionId.length > 128) {
+    return res.status(400).json({ success: false, error: 'sessionId required' });
+  }
+  pruneOnlineVisitors();
+  onlineVisitors.set(sessionId, Date.now());
+  res.json({ success: true });
+});
+
+/**
+ * GET /api/admin/online-count - Количество посетителей онлайн (для админки)
+ */
+app.get('/api/admin/online-count', (req, res) => {
+  try {
+    pruneOnlineVisitors();
+    const count = onlineVisitors.size;
+    res.json({ success: true, count });
+  } catch (error) {
+    console.error('Ошибка при получении online count:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
 });
 
 // API endpoint для получения конфигурации клиента (runtime переменные)
@@ -232,7 +271,7 @@ const upload = multer({
     fieldSize: 50 * 1024 * 1024, // 50MB максимум для текстовых полей (JSON с большими массивами URL)
     fieldNameSize: 100, // Максимальная длина имени поля
     fields: 100, // Максимальное количество полей
-    files: 20 // Максимальное количество файлов
+    files: 70 // Максимальное количество файлов (6 категорий × 10 + photo/doc fields)
   }
 });
 
@@ -2096,9 +2135,7 @@ function getLanguageByPhone(phoneDigits) {
  * Шаблоны сообщения верификации WhatsApp по языкам (красивый формат)
  */
 const WHATSAPP_VERIFICATION_MESSAGES = {
-  ru: `Здравствуйте! 
-  
-Добро пожаловать на платформу *Sellyourbrick* — сервис для покупки и продажи недвижимости.
+  ru: `Добро пожаловать на платформу *Sellyourbrick* — инвестиционный маркетплейс для покупки и продажи недвижимости.
 
 Для завершения регистрации введите проверочный код:
 
@@ -2106,7 +2143,7 @@ const WHATSAPP_VERIFICATION_MESSAGES = {
 
 Код действителен 10 минут. Если вы не запрашивали код — проигнорируйте это сообщение.`,
 
-  en: `Hello! Welcome to *Sellyourbrick* — a platform for buying and selling real estate.
+  en: `Welcome to *Sellyourbrick* — the investment marketplace for buying and selling real estate.
 
 To complete your registration, enter this verification code:
 
@@ -2114,7 +2151,7 @@ To complete your registration, enter this verification code:
 
 The code is valid for 10 minutes. If you didn't request this code, please ignore this message.`,
 
-  uk: `Вітаємо! Ласкаво просимо на платформу *Sellyourbrick* — сервіс для купівлі та продажу нерухомості.
+  uk: `Ласкаво просимо на платформу *Sellyourbrick* — інвестиційний маркетплейс для купівлі та продажу нерухомості.
 
 Щоб завершити реєстрацію, введіть перевірочний код:
 
@@ -2122,7 +2159,7 @@ The code is valid for 10 minutes. If you didn't request this code, please ignore
 
 Код дійсний 10 хвилин. Якщо ви не запитували код — проігноруйте це повідомлення.`,
 
-  be: `Вітаем! Сардэчна запрашаем на платформу *Sellyourbrick* — сэрвіс для куплі і продажу нерухомасці.
+  be: `Сардэчна запрашаем на платформу *Sellyourbrick* — інвестыцыйны маркетплейс для куплі і продажу нерухомасці.
 
 Каб скончыць рэгістрацыю, увядзіце правярочны код:
 
@@ -2130,7 +2167,7 @@ The code is valid for 10 minutes. If you didn't request this code, please ignore
 
 Код дзейнічае 10 хвілін. Калі вы не запытвалі код — ігнаруйце гэта паведамленне.`,
 
-  de: `Hallo! Willkommen bei *Sellyourbrick* — der Plattform für den Kauf und Verkauf von Immobilien.
+  de: `Willkommen bei *Sellyourbrick* — dem Investment-Marktplatz für Kauf und Verkauf von Immobilien.
 
 Um die Registrierung abzuschließen, geben Sie bitte diesen Bestätigungscode ein:
 
@@ -2138,7 +2175,7 @@ Um die Registrierung abzuschließen, geben Sie bitte diesen Bestätigungscode ei
 
 Der Code ist 10 Minuten gültig. Falls Sie diesen Code nicht angefordert haben, ignorieren Sie diese Nachricht.`,
 
-  fr: `Bonjour ! Bienvenue sur *Sellyourbrick* — une plateforme pour acheter et vendre des biens immobiliers.
+  fr: `Bienvenue sur *Sellyourbrick* — la place de marché d'investissement pour l'achat et la vente de biens immobiliers.
 
 Pour terminer l'inscription, entrez ce code de vérification :
 
@@ -2146,7 +2183,7 @@ Pour terminer l'inscription, entrez ce code de vérification :
 
 Le code est valable 10 minutes. Si vous n'avez pas demandé ce code, ignorez ce message.`,
 
-  it: `Buongiorno! Benvenuto su *Sellyourbrick* — una piattaforma per comprare e vendere immobili.
+  it: `Benvenuto su *Sellyourbrick* — il marketplace degli investimenti per comprare e vendere immobili.
 
 Per completare la registrazione, inserisca questo codice di verifica:
 
@@ -2154,7 +2191,7 @@ Per completare la registrazione, inserisca questo codice di verifica:
 
 Il codice è valido per 10 minuti. Se non ha richiesto questo codice, ignori questo messaggio.`,
 
-  es: `¡Hola! Bienvenido a *Sellyourbrick* — una plataforma para comprar y vender inmuebles.
+  es: `Bienvenido a *Sellyourbrick* — el marketplace de inversiones para comprar y vender inmuebles.
 
 Para completar el registro, introduzca este código de verificación:
 
@@ -2162,7 +2199,7 @@ Para completar el registro, introduzca este código de verificación:
 
 El código es válido durante 10 minutos. Si no ha solicitado este código, ignore este mensaje.`,
 
-  tr: `Merhaba! *Sellyourbrick* platformuna hoş geldiniz — emlak alım satımı için hizmet.
+  tr: `*Sellyourbrick* platformuna hoş geldiniz — gayrimenkul alım satımı için yatırım pazarı.
 
 Kaydı tamamlamak için bu doğrulama kodunu girin:
 
@@ -2170,21 +2207,15 @@ Kaydı tamamlamak için bu doğrulama kodunu girin:
 
 Kod 10 dakika geçerlidir. Bu kodu siz talep etmediyseniz, bu mesajı yok sayın.`,
 
-  zh: `🏠 *Sellyourbrick*
-
-您好！
-
-您已在 *Sellyourbrick* 平台开始注册 — 便捷的房地产买卖服务。
+  zh: `欢迎使用 *Sellyourbrick* — 房地产买卖投资平台。
 
 请输入以下验证码完成注册：
 
 *${'{CODE}'}*
 
-⏱ 验证码有效期为 10 分钟。
+验证码有效期为 10 分钟。如非本人操作，请忽略此消息。`,
 
-如非本人操作，请忽略此消息。`,
-
-  ja: `こんにちは！*Sellyourbrick* へようこそ — 不動産の売買のためのプラットフォームです。
+  ja: `*Sellyourbrick* へようこそ — 不動産の売買のための投資マーケットプレイスです。
 
 登録を完了するには、以下の認証コードを入力してください：
 
@@ -2192,7 +2223,7 @@ Kod 10 dakika geçerlidir. Bu kodu siz talep etmediyseniz, bu mesajı yok sayın
 
 コードの有効期限は10分です。心当たりがない場合は、このメッセージを無視してください。`,
 
-  ko: `안녕하세요! *Sellyourbrick* 플랫폼에 오신 것을 환영합니다 — 부동산 거래 서비스입니다.
+  ko: `*Sellyourbrick* 플랫폼에 오신 것을 환영합니다 — 부동산 매매를 위한 투자 마켓플레이스입니다.
 
 가입을 완료하려면 아래 인증 코드를 입력하세요:
 
@@ -2200,7 +2231,7 @@ Kod 10 dakika geçerlidir. Bu kodu siz talep etmediyseniz, bu mesajı yok sayın
 
 코드는 10분간 유효합니다. 요청하지 않으셨다면 이 메시지를 무시하세요.`,
 
-  pt: `Olá! Bem-vindo à *Sellyourbrick* — uma plataforma para comprar e vender imóveis.
+  pt: `Bem-vindo ao *Sellyourbrick* — marketplace de investimentos para comprar e vender imóveis.
 
 Para concluir o cadastro, digite este código de verificação:
 
@@ -2208,7 +2239,7 @@ Para concluir o cadastro, digite este código de verificação:
 
 O código é válido por 10 minutos. Se você não solicitou este código, ignore esta mensagem.`,
 
-  ar: `مرحباً! أهلاً بك في منصة *Sellyourbrick* — خدمة لشراء وبيع العقارات.
+  ar: `أهلاً بك في منصة *Sellyourbrick* — المنصة الاستثمارية لشراء وبيع العقارات.
 
 لإكمال التسجيل، أدخل رمز التحقق:
 
@@ -4459,6 +4490,61 @@ app.get('/api/admin/users/role-stats', (req, res) => {
   }
 });
 
+/**
+ * GET /api/admin/users/registrations-by-day - Регистрации по дням за неделю
+ * Query: weekStart=YYYY-MM-DD (понедельник выбранной недели)
+ */
+app.get('/api/admin/users/registrations-by-day', (req, res) => {
+  try {
+    let { weekStart } = req.query;
+    if (!weekStart) {
+      const now = new Date();
+      const day = now.getDay();
+      const mondayOffset = day === 0 ? -6 : 1 - day;
+      const monday = new Date(now);
+      monday.setDate(now.getDate() + mondayOffset);
+      weekStart = monday.toISOString().slice(0, 10);
+    }
+    const start = new Date(weekStart);
+    const end = new Date(start);
+    end.setDate(end.getDate() + 6);
+    const weekEnd = end.toISOString().slice(0, 10);
+    const data = userQueries.getRegistrationsByDay(weekStart, weekEnd);
+    res.json({ success: true, data, weekStart, weekEnd });
+  } catch (error) {
+    console.error('Ошибка при получении регистраций по дням:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * GET /api/admin/properties/category-stats - Статистика по категориям недвижимости (по типу и по разделам)
+ */
+app.get('/api/admin/properties/category-stats', (req, res) => {
+  try {
+    const byType = propertyQueries.getCategoryStatsByType();
+    const bySection = propertyQueries.getCategoryStatsBySection();
+    res.json({ success: true, byType, bySection });
+  } catch (error) {
+    console.error('Ошибка при получении статистики категорий:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * GET /api/admin/stats/counts - Количество выставленных объектов и аукционов (для карточек админки)
+ */
+app.get('/api/admin/stats/counts', (req, res) => {
+  try {
+    const propertiesCount = propertyQueries.getApprovedCount();
+    const auctionsCount = propertyQueries.getAuctionsCount();
+    res.json({ success: true, propertiesCount, auctionsCount });
+  } catch (error) {
+    console.error('Ошибка при получении счётчиков:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // ========== РОУТЫ ДЛЯ УПРАВЛЕНИЯ АДМИНИСТРАТОРАМИ ==========
 
 /**
@@ -4735,6 +4821,76 @@ app.delete('/api/admin/administrators/:id', (req, res) => {
 
 /**
  * ============================================
+ * API: Причины долга (для объявлений «Долги»)
+ * ============================================
+ */
+app.get('/api/admin/debt-reasons', (req, res) => {
+  try {
+    const list = debtReasonQueries.getAll();
+    res.json({ success: true, data: list });
+  } catch (error) {
+    console.error('Ошибка при получении причин долга:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+app.post('/api/admin/debt-reasons', (req, res) => {
+  try {
+    const { title_ru, code, sort_order } = req.body || {};
+    if (!title_ru || !String(title_ru).trim()) {
+      return res.status(400).json({ success: false, error: 'Укажите название причины (title_ru)' });
+    }
+    const result = debtReasonQueries.create({
+      title_ru: String(title_ru).trim(),
+      code: code ? String(code).trim() || null : null,
+      sort_order: sort_order != null ? parseInt(sort_order, 10) : 0
+    });
+    const item = debtReasonQueries.getById(result.id);
+    res.status(201).json({ success: true, data: item });
+  } catch (error) {
+    console.error('Ошибка при создании причины долга:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+app.put('/api/admin/debt-reasons/:id', (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    const existing = debtReasonQueries.getById(id);
+    if (!existing) {
+      return res.status(404).json({ success: false, error: 'Причина долга не найдена' });
+    }
+    const { title_ru, code, sort_order } = req.body || {};
+    debtReasonQueries.update(id, {
+      title_ru: title_ru != null ? String(title_ru).trim() : existing.title_ru,
+      code: code !== undefined ? (code ? String(code).trim() || null : null) : existing.code,
+      sort_order: sort_order !== undefined ? parseInt(sort_order, 10) : existing.sort_order
+    });
+    const item = debtReasonQueries.getById(id);
+    res.json({ success: true, data: item });
+  } catch (error) {
+    console.error('Ошибка при обновлении причины долга:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+app.delete('/api/admin/debt-reasons/:id', (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    const existing = debtReasonQueries.getById(id);
+    if (!existing) {
+      return res.status(404).json({ success: false, error: 'Причина долга не найдена' });
+    }
+    debtReasonQueries.delete(id);
+    res.json({ success: true, message: 'Причина долга удалена' });
+  } catch (error) {
+    console.error('Ошибка при удалении причины долга:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * ============================================
  * API ENDPOINTS ДЛЯ НЕДВИЖИМОСТИ
  * ============================================
  */
@@ -4742,9 +4898,19 @@ app.delete('/api/admin/administrators/:id', (req, res) => {
 /**
  * POST /api/properties - Создать новое объявление о недвижимости
  */
+const debtDocFieldNames = [
+  'debt_doc_cat1',
+  'debt_doc_cat2',
+  'debt_doc_cat3',
+  'debt_doc_cat4',
+  'debt_doc_cat5',
+  'debt_doc_cat6'
+];
+
 app.post('/api/properties', upload.fields([
   { name: 'ownership_document', maxCount: 1 },
-  { name: 'no_debts_document', maxCount: 1 }
+  { name: 'no_debts_document', maxCount: 1 },
+  ...debtDocFieldNames.map(name => ({ name, maxCount: 10 }))
 ]), (req, res) => {
   try {
     console.log('📥 Получен запрос на создание объявления');
@@ -5202,6 +5368,25 @@ app.post('/api/properties', upload.fields([
 
     const propertyId = result.lastInsertRowid;
 
+    // Сохранение документов по долгу (6 категорий, в каждой — несколько файлов)
+    if (isDebt && req.files) {
+      const propertyType = property_type;
+      for (const fieldName of debtDocFieldNames) {
+        const docType = fieldName.replace('debt_doc_', '');
+        const files = req.files[fieldName];
+        if (files && Array.isArray(files)) {
+          for (const file of files) {
+            const filePath = `/uploads/${file.filename}`;
+            try {
+              debtDocumentQueries.insert(propertyId, propertyType, docType, filePath, file.originalname || null);
+            } catch (docErr) {
+              console.warn('⚠️ Не удалось сохранить документ долга:', docType, docErr.message);
+            }
+          }
+        }
+      }
+    }
+
     console.log('✅ Объявление успешно создано с ID:', propertyId);
     console.log('📋 Проверка property перед отправкой ответа:', {
       propertyExists: !!property,
@@ -5524,7 +5709,8 @@ app.put('/api/properties/:id/delete-request', (req, res) => {
  */
 app.put('/api/properties/:id', upload.fields([
   { name: 'ownership_document', maxCount: 1 },
-  { name: 'no_debts_document', maxCount: 1 }
+  { name: 'no_debts_document', maxCount: 1 },
+  ...debtDocFieldNames.map(name => ({ name, maxCount: 10 }))
 ]), (req, res) => {
   try {
     console.log('📥 Получен запрос на обновление объявления');
@@ -5702,6 +5888,24 @@ app.put('/api/properties/:id', upload.fields([
       }
       if (req.files['no_debts_document'] && req.files['no_debts_document'][0]) {
         noDebtsDocumentPath = `/uploads/${req.files['no_debts_document'][0].filename}`;
+      }
+    }
+
+    // Документы по долгу: обновляем у оригинального объекта (6 категорий, несколько файлов в каждой)
+    if (isDebtEdit && req.files) {
+      try {
+        debtDocumentQueries.deleteByProperty(originalPropertyId, originalProperty.property_type);
+        for (const fieldName of debtDocFieldNames) {
+          const docType = fieldName.replace('debt_doc_', '');
+          const files = req.files[fieldName];
+          if (files && Array.isArray(files)) {
+            for (const file of files) {
+              debtDocumentQueries.insert(originalPropertyId, originalProperty.property_type, docType, `/uploads/${file.filename}`, file.originalname || null);
+            }
+          }
+        }
+      } catch (docErr) {
+        console.warn('⚠️ Ошибка сохранения документов долга при обновлении:', docErr.message);
       }
     }
     
@@ -7161,6 +7365,17 @@ app.get('/api/properties/:id', (req, res) => {
     formatted.reserved_until = reservationInfo.reservedUntil || null;
     formatted.reserved_by = reservationInfo.reservedBy || null;
     formatted.reservation_time_remaining = reservationInfo.timeRemaining || null;
+
+    // Документы по долгу (необходимые документы при продаже долга)
+    if (formatted.is_debt === 1 || formatted.sale_type === 'debt' || formatted.has_debt === 1) {
+      try {
+        formatted.debt_documents = debtDocumentQueries.getByProperty(formatted.id, formatted.property_type);
+      } catch (e) {
+        formatted.debt_documents = [];
+      }
+    } else {
+      formatted.debt_documents = [];
+    }
     
     console.log('🔍 GET /api/properties/:id - Отправляем formatted с резервацией:', {
       test_drive: formatted.test_drive,

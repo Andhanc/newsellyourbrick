@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { FiArrowLeft, FiChevronLeft, FiChevronRight, FiCheck, FiXCircle, FiFileText, FiVideo, FiImage, FiEye, FiX, FiAlertCircle } from 'react-icons/fi';
+import { FiArrowLeft, FiChevronLeft, FiChevronRight, FiCheck, FiXCircle, FiFileText, FiVideo, FiImage, FiEye, FiX, FiAlertCircle, FiExternalLink } from 'react-icons/fi';
 import { IoLocationOutline as IoLocation } from 'react-icons/io5';
 import { MdBed, MdOutlineBathtub } from 'react-icons/md';
 import { BiArea } from 'react-icons/bi';
@@ -38,6 +38,7 @@ const ModerationPropertyDetail = ({ property, onBack, onApprove, onReject }) => 
       property.has_debt === true
     );
   const [debtSeverity, setDebtSeverity] = useState(property.debt_severity || null);
+  const [debtDocuments, setDebtDocuments] = useState(property.debt_documents || []);
   
   // Функция для обработки URL документа
   const processDocumentUrl = (docUrl) => {
@@ -234,6 +235,23 @@ const ModerationPropertyDetail = ({ property, onBack, onApprove, onReject }) => 
       }
     }
   }, [property, requestType]);
+
+  // Подгружаем документы по долгу, если объект — долг и debt_documents отсутствуют или пусты
+  useEffect(() => {
+    if (!isDebtProperty || !property?.id) return;
+    if (debtDocuments && debtDocuments.length > 0) return;
+
+    fetch(`${API_BASE_URL}/properties/${property.id}`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && data.data && Array.isArray(data.data.debt_documents)) {
+          setDebtDocuments(data.data.debt_documents);
+        }
+      })
+      .catch(err => {
+        console.warn('Ошибка загрузки документов по долгу для модерации:', err);
+      });
+  }, [isDebtProperty, property?.id, API_BASE_URL]);
 
   // Функция для сравнения изменений
   const getPropertyChanges = () => {
@@ -446,7 +464,7 @@ const ModerationPropertyDetail = ({ property, onBack, onApprove, onReject }) => 
         <div className="moderation-property-detail__info">
           <div className="moderation-property-detail__header">
             <h1 className="moderation-property-detail__title">{property.title || 'Без названия'}</h1>
-            <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'center' }}>
+            <div className="moderation-property-detail__statuses">
               <div className="moderation-property-detail__badge">
                 {getTypeLabel(property.property_type || property.type)}
               </div>
@@ -551,7 +569,7 @@ const ModerationPropertyDetail = ({ property, onBack, onApprove, onReject }) => 
                 <span style={{ color: '#111827', fontWeight: 500 }}>
                   {isDebtProperty ? 'Сумма продажи:' : 'Купить сейчас:'}
                 </span>{' '}
-                <span style={{ color: '#4b5563', fontWeight: 400 }}>
+                <span style={{ color: '#0ABAB5', fontWeight: 600 }}>
                   {Number(property.price).toLocaleString('ru-RU')} {property.currency || 'USD'}
                 </span>
               </div>
@@ -572,97 +590,94 @@ const ModerationPropertyDetail = ({ property, onBack, onApprove, onReject }) => 
             )}
           </div>
 
-          {/* Статус критичности объекта (для долгов) */}
+          {/* Блок риска и долгов — один визуальный блок */}
           {isDebtProperty && (
-            <div style={{ marginTop: '8px', marginBottom: '16px' }}>
-              <h4 style={{ fontSize: '14px', fontWeight: 600, marginBottom: '8px' }}>
-                Статус критичности объекта
-              </h4>
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                {[
-                  { id: 'red', label: 'Критичный', bg: '#ef4444' },
-                  { id: 'yellow', label: 'Средней тяжести', bg: '#eab308' },
-                  { id: 'green', label: 'Легкой тяжести', bg: '#16a34a' }
-                ].map(option => {
-                  const isActive = debtSeverity === option.id;
-                  return (
-                    <button
-                      key={option.id}
-                      type="button"
-                      onClick={() => setDebtSeverity(option.id)}
-                      style={{
-                        padding: '6px 14px',
-                        borderRadius: '999px',
-                        border: `1px solid ${option.bg}`,
-                        backgroundColor: isActive ? option.bg : '#ffffff',
-                        color: isActive ? '#ffffff' : option.bg,
-                        fontSize: '12px',
-                        fontWeight: 600,
-                        cursor: 'pointer',
-                        boxShadow: 'none',
-                        transition: 'background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease'
-                      }}
-                    >
-                      {option.label}
-                    </button>
-                  );
-                })}
+            <div className="moderation-property-detail__debt-block">
+              <div className="moderation-property-detail__debt-block-risk">
+                <h4 className="moderation-property-detail__debt-block-title">Уровень риска объекта</h4>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  {[
+                    { id: 'red', label: 'Высокий', bg: '#ef4444' },
+                    { id: 'yellow', label: 'Средний', bg: '#eab308' },
+                    { id: 'green', label: 'Низкий', bg: '#16a34a' }
+                  ].map(option => {
+                    const isActive = debtSeverity === option.id;
+                    return (
+                      <button
+                        key={option.id}
+                        type="button"
+                        onClick={() => setDebtSeverity(option.id)}
+                        style={{
+                          padding: '6px 14px',
+                          borderRadius: '999px',
+                          border: `1px solid ${option.bg}`,
+                          backgroundColor: isActive ? option.bg : '#ffffff',
+                          color: isActive ? '#ffffff' : option.bg,
+                          fontSize: '12px',
+                          fontWeight: 600,
+                          cursor: 'pointer',
+                          boxShadow: 'none',
+                          transition: 'background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease'
+                        }}
+                      >
+                        {option.label}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
-          )}
 
-          {/* Блок долгов по объекту — только для объявлений с долгами */}
-          {isDebtProperty && (
-            <div className="moderation-property-detail__additional-info">
-              <h3>Долговые обязательства по объекту</h3>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '10px' }}>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                  {(property.debt_utilities === 1 || property.debt_utilities === true) && (
-                    <span style={{ padding: '6px 14px', borderRadius: '8px', backgroundColor: '#e3f5e8', fontSize: '13px', color: '#111827' }}>
-                      Долги по коммунальным услугам
-                    </span>
+              <div className="moderation-property-detail__debt-block-obligations">
+                
+                <div className="moderation-property-detail__debt-block-content">
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                    {(property.debt_utilities === 1 || property.debt_utilities === true) && (
+                      <span style={{ padding: '6px 14px', borderRadius: '8px', backgroundColor: '#e3f5e8', fontSize: '13px', color: '#111827' }}>
+                        Долги по коммунальным услугам
+                      </span>
+                    )}
+                    {(property.debt_mortgage_pledge === 1 || property.debt_mortgage_pledge === true) && (
+                      <span style={{ padding: '6px 14px', borderRadius: '8px', backgroundColor: '#e3f5e8', fontSize: '13px', color: '#111827' }}>
+                        Залог у банка
+                      </span>
+                    )}
+                    {(property.debt_property_taxes === 1 || property.debt_property_taxes === true) && (
+                      <span style={{ padding: '6px 14px', borderRadius: '8px', backgroundColor: '#e3f5e8', fontSize: '13px', color: '#111827' }}>
+                        Неоплаченные налоги на имущество
+                      </span>
+                    )}
+                    {(property.debt_arrest === 1 || property.debt_arrest === true) && (
+                      <span style={{ padding: '6px 14px', borderRadius: '8px', backgroundColor: '#e3f5e8', fontSize: '13px', color: '#111827' }}>
+                        Арест / ограничения
+                      </span>
+                    )}
+                    {(property.debt_inherited === 1 || property.debt_inherited === true) && (
+                      <span style={{ padding: '6px 14px', borderRadius: '8px', backgroundColor: '#e3f5e8', fontSize: '13px', color: '#111827' }}>
+                        Долги наследодателя
+                      </span>
+                    )}
+                    {(property.debt_third_party === 1 || property.debt_third_party === true) && (
+                      <span style={{ padding: '6px 14px', borderRadius: '8px', backgroundColor: '#e3f5e8', fontSize: '13px', color: '#111827' }}>
+                        Долги перед третьими лицами
+                      </span>
+                    )}
+                  </div>
+
+                  {property.debt_other && (
+                    <div style={{ fontSize: '14px', color: '#111827' }}>
+                      <strong>Другое:</strong> {property.debt_other}
+                    </div>
                   )}
-                  {(property.debt_mortgage_pledge === 1 || property.debt_mortgage_pledge === true) && (
-                    <span style={{ padding: '6px 14px', borderRadius: '8px', backgroundColor: '#e3f5e8', fontSize: '13px', color: '#111827' }}>
-                      Залог у банка
-                    </span>
-                  )}
-                  {(property.debt_property_taxes === 1 || property.debt_property_taxes === true) && (
-                    <span style={{ padding: '6px 14px', borderRadius: '8px', backgroundColor: '#e3f5e8', fontSize: '13px', color: '#111827' }}>
-                      Неоплаченные налоги на имущество
-                    </span>
-                  )}
-                  {(property.debt_arrest === 1 || property.debt_arrest === true) && (
-                    <span style={{ padding: '6px 14px', borderRadius: '8px', backgroundColor: '#e3f5e8', fontSize: '13px', color: '#111827' }}>
-                      Арест / ограничения
-                    </span>
-                  )}
-                  {(property.debt_inherited === 1 || property.debt_inherited === true) && (
-                    <span style={{ padding: '6px 14px', borderRadius: '8px', backgroundColor: '#e3f5e8', fontSize: '13px', color: '#111827' }}>
-                      Долги наследодателя
-                    </span>
-                  )}
-                  {(property.debt_third_party === 1 || property.debt_third_party === true) && (
-                    <span style={{ padding: '6px 14px', borderRadius: '8px', backgroundColor: '#e3f5e8', fontSize: '13px', color: '#111827' }}>
-                      Долги перед третьими лицами
-                    </span>
+
+                  {property.debt_amount != null && property.debt_amount !== '' && !Number.isNaN(Number(property.debt_amount)) && (
+                    <div style={{ fontSize: '14px', color: '#111827' }}>
+                      <strong>Ориентировочная сумма долга:</strong>{' '}
+                      <span style={{ color: '#0ABAB5', fontWeight: 600 }}>
+                        {Number(property.debt_amount).toLocaleString('ru-RU')} {property.currency || 'USD'}
+                      </span>
+                    </div>
                   )}
                 </div>
-
-                {property.debt_other && (
-                  <div style={{ fontSize: '14px', color: '#4b5563' }}>
-                    <strong>Другое:</strong> {property.debt_other}
-                  </div>
-                )}
-
-                {property.debt_amount != null && property.debt_amount !== '' && !Number.isNaN(Number(property.debt_amount)) && (
-                  <div style={{ fontSize: '14px', color: '#111827' }}>
-                    <strong>Ориентировочная сумма долга:</strong>{' '}
-                    <span style={{ color: '#0ABAB5' }}>
-                      {Number(property.debt_amount).toLocaleString('ru-RU')} {property.currency || 'USD'}
-                    </span>
-                  </div>
-                )}
               </div>
             </div>
           )}
@@ -988,7 +1003,7 @@ const ModerationPropertyDetail = ({ property, onBack, onApprove, onReject }) => 
       {/* Документы на недвижимость */}
       {(property.documents || property.ownership_document || property.no_debts_document || 
         property.ownershipDocument || property.noDebtsDocument || 
-        property.additional_documents) && (
+        property.additional_documents || (isDebtProperty && debtDocuments && debtDocuments.length > 0)) && (
         <div className="moderation-property-detail__documents-section">
           <h2 className="moderation-property-detail__documents-title">
             <FiFileText size={24} />
@@ -1134,6 +1149,78 @@ const ModerationPropertyDetail = ({ property, onBack, onApprove, onReject }) => 
                   </div>
                 );
               });
+            })()}
+
+            {/* Документы по долгу (категории cat1..cat6 из property_debt_documents) */}
+            {isDebtProperty && debtDocuments && Array.isArray(debtDocuments) && debtDocuments.length > 0 && (() => {
+              // Группируем по document_type (cat1..cat6)
+              const groups = debtDocuments.reduce((acc, doc) => {
+                const type = doc.document_type || 'other';
+                if (!acc[type]) acc[type] = [];
+                acc[type].push(doc);
+                return acc;
+              }, {});
+
+              const typeTitles = {
+                cat1: 'Документы по самому долгу',
+                cat2: 'Документы по обеспечению (недвижимости)',
+                cat3: 'Юридические документы',
+                cat4: 'Документы по заемщику',
+                cat5: 'Документы по сделке покупки долга',
+                cat6: 'Дополнительно'
+              };
+
+              const entries = Object.entries(groups);
+
+              return entries.map(([type, docs]) => (
+                <div key={`debt_docs_${type}`} className="moderation-property-detail__document-card moderation-property-detail__document-card--debt-group">
+                  <div className="moderation-property-detail__document-icon">
+                    <FiFileText size={32} />
+                  </div>
+                  <div className="moderation-property-detail__document-info">
+                    <h3 className="moderation-property-detail__document-name">
+                      {typeTitles[type] || `Документы категории ${type}`}
+                    </h3>
+                    <ul className="moderation-property-detail__debt-documents-list">
+                      {docs.map((doc, index) => {
+                        const rawUrl = doc.file_path;
+                        const url = processDocumentUrl(rawUrl);
+                        const name = doc.original_name || `Документ ${index + 1}`;
+                        const docType = getDocumentType(rawUrl, name);
+                        return (
+                          <li key={doc.id || `${type}_${index}`} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                            {url ? (
+                              <>
+                                <button
+                                  className="moderation-property-detail__debt-document-link"
+                                  style={{ border: 'none', cursor: 'pointer', textAlign: 'left' }}
+                                  onClick={() => setSelectedDocument({ type: docType, url, name })}
+                                  title="Открыть предпросмотр"
+                                >
+                                  {name}
+                                </button>
+                                <a
+                                  href={url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  title="Открыть в новой вкладке"
+                                  style={{ color: '#9ca3af', flexShrink: 0, display: 'flex', alignItems: 'center' }}
+                                >
+                                  <FiExternalLink size={14} />
+                                </a>
+                              </>
+                            ) : (
+                              <span className="moderation-property-detail__debt-document-link moderation-property-detail__debt-document-link--disabled">
+                                {name}
+                              </span>
+                            )}
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
+                </div>
+              ));
             })()}
           </div>
         </div>

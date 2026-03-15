@@ -26,17 +26,34 @@
   background: #ffffff;
   border-radius: 16px;
   width: 100%;
-  max-width: 440px;
+  max-width: 830px;
   max-height: 90vh;
-  overflow-y: auto;
+  overflow: hidden;
   position: relative;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
   animation: slideUp 0.3s ease-out;
   transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: row;
 }
 
-/* Декоративный градиентный фон */
-.login-modal::before {
+/* Left panel — animated characters */
+.login-modal__side-panel {
+  width: 330px;
+  flex-shrink: 0;
+  display: flex;
+}
+
+/* Right panel — form content */
+.login-modal__form-panel {
+  flex: 1;
+  overflow-y: auto;
+  position: relative;
+  min-width: 0;
+}
+
+/* Декоративный градиентный фон — только на правой панели */
+.login-modal__form-panel::before {
   content: '';
   position: absolute;
   top: 0;
@@ -49,12 +66,12 @@
   z-index: 1;
 }
 
-.login-modal--buyer::before {
+.login-modal--buyer .login-modal__form-panel::before {
   opacity: 1;
   background: linear-gradient(90deg, #0ABAB5 0%, #25d366 100%);
 }
 
-.login-modal--seller::before {
+.login-modal--seller .login-modal__form-panel::before {
   opacity: 1;
   background: linear-gradient(90deg, #ff6b6b 0%, #ff8e53 100%);
 }
@@ -93,7 +110,7 @@
 }
 
 .login-modal__header {
-  padding: 32px 32px 24px;
+  padding: 20px 32px 24px;
   text-align: center;
   position: relative;
   transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
@@ -101,12 +118,10 @@
 
 .login-modal--buyer .login-modal__header {
   background: linear-gradient(135deg, rgba(10, 186, 181, 0.03) 0%, rgba(37, 211, 102, 0.03) 100%);
-  border-radius: 16px 16px 0 0;
 }
 
 .login-modal--seller .login-modal__header {
   background: linear-gradient(135deg, rgba(255, 107, 107, 0.03) 0%, rgba(255, 142, 83, 0.03) 100%);
-  border-radius: 16px 16px 0 0;
 }
 
 .login-modal__title {
@@ -655,6 +670,12 @@
 }
 
 /* Адаптивность для мобильных устройств */
+@media (max-width: 640px) {
+  .login-modal__side-panel {
+    display: none;
+  }
+}
+
 @media (max-width: 480px) {
   .login-modal {
     max-width: 100%;

@@ -310,6 +310,49 @@
   color: white;
 }
 
+.chart-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.chart-week-label {
+  font-size: 0.8rem;
+  color: var(--text-muted, #6b7280);
+  align-self: center;
+  min-width: 8rem;
+  text-align: center;
+}
+
+.chart-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  color: var(--text-muted, #6b7280);
+  font-size: 0.9rem;
+}
+
+.chart-error-hint {
+  position: absolute;
+  bottom: 0.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  margin: 0;
+  font-size: 0.75rem;
+  text-align: center;
+  background: rgba(254, 226, 226, 0.9);
+  color: #991b1b;
+  padding: 0.35rem 0.6rem;
+  border-radius: 6px;
+}
+
+.chart-error-hint code {
+  font-size: 0.7rem;
+  background: rgba(0, 0, 0, 0.06);
+  padding: 0.1rem 0.25rem;
+  border-radius: 4px;
+}
+
 .chart-wrapper {
   position: relative;
   height: 200px;

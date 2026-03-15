@@ -35,6 +35,7 @@ import CardBindingModal from '../components/CardBindingModal'
 import CountrySelect from '../components/CountrySelect'
 import { getUserData } from '../services/authService'
 import { showNotification } from '../utils/toastHelper'
+import AddPropertyProgress from '../components/AddPropertyProgress'
 import './AddProperty.css'
 
 const AddProperty = () => {
@@ -46,6 +47,88 @@ const AddProperty = () => {
   const documentInputRef = useRef(null)
   const ownershipInputRef = useRef(null)
   const noDebtsInputRef = useRef(null)
+
+  // 6 блоков документов по долгу (категории)
+  const DEBT_DOC_CATEGORIES = [
+    { key: 'cat1', title: 'Документы по самому долгу' },
+    { key: 'cat2', title: 'Документы по обеспечению' },
+    { key: 'cat3', title: 'Юридические документы' },
+    { key: 'cat4', title: 'Документы по заемщику' },
+    { key: 'cat5', title: 'Документы по сделке покупки долга' },
+    { key: 'cat6', title: 'Дополнительно' }
+  ]
+
+  // Списки конкретных документов по каждой категории (из файла "тест.txt")
+  const DEBT_DOC_CATEGORY_DOCS = {
+    cat1: [
+      'Кредитный договор (Loan Agreement)',
+      'Все дополнительные соглашения к кредитному договору',
+      'График платежей по кредиту',
+      'Подтверждение текущей задолженности (Debt Statement / Outstanding Balance)',
+      'История платежей заемщика',
+      'Документы о дефолте (уведомления о просрочке, default notice)',
+      'Договор уступки долга (если долг уже перепродавался ранее)'
+    ],
+    cat2: [
+      'Нотариальный договор ипотеки',
+      'Выписка из реестра недвижимости — Registro de la Propiedad',
+      'Nota Simple (актуальная выписка по объекту)',
+      'Оценка недвижимости (Appraisal / Tasación)',
+      'Кадастровые данные — Catastro',
+      'Фотографии объекта',
+      'Адрес и описание объекта',
+      'Наличие других обременений или ипотек'
+    ],
+    cat3: [
+      'Документы по судебному процессу (если он уже начат)',
+      'Номер судебного дела',
+      'Статус процедуры взыскания',
+      'Решения суда (если есть)',
+      'Документы по исполнительному производству'
+    ],
+    cat4: [
+      'Информация о заемщике (паспорт / регистрация компании)',
+      'Финансовое состояние заемщика',
+      'Контактные данные',
+      'Наличие других долгов или банкротства'
+    ],
+    cat5: [
+      'Loan Sale Agreement / NPL Sale Agreement',
+      'Договор уступки права требования (Assignment Agreement)',
+      'Подтверждение права фонда продавать долг',
+      'Нотариальная передача прав требования',
+      'Письмо-уведомление должнику о смене кредитора'
+    ],
+    cat6: [
+      'Legal Due Diligence от юристов',
+      'Valuation report',
+      'Strategy memo (план взыскания)',
+      'Оценка сроков судебного взыскания',
+      'Расчет потенциальной доходности'
+    ]
+  }
+
+  const debtDocItemInputRefs = useRef({}) // { 'cat1_0': inputEl, 'cat1_1': inputEl, ... }
+  const [debtDocumentsByCategory, setDebtDocumentsByCategory] = useState(() => {
+    const init = {}
+    DEBT_DOC_CATEGORIES.forEach(({ key }) => {
+      init[key] = {} // { docIndex: File }
+    })
+    return init
+  })
+  const [selectedDebtDocCategory, setSelectedDebtDocCategory] = useState(null)
+  const [missingRequiredDebtDocs, setMissingRequiredDebtDocs] = useState([])
+
+  // Обязательные документы (логические пункты) и их категории
+  const REQUIRED_DEBT_DOCS = [
+    { id: 'credit_agreement', label: 'Кредитный договор',                    categoryKey: 'cat1', docIndex: 0, docTitle: 'Кредитный договор (Loan Agreement)' },
+    { id: 'notary_mortgage',  label: 'Нотариальная ипотека',                  categoryKey: 'cat2', docIndex: 0, docTitle: 'Нотариальный договор ипотеки' },
+    { id: 'registro_extract', label: 'Выписка из Registro de la Propiedad',   categoryKey: 'cat2', docIndex: 1, docTitle: 'Выписка из реестра недвижимости' },
+    { id: 'nota_simple',      label: 'Nota Simple',                           categoryKey: 'cat2', docIndex: 2, docTitle: 'Nota Simple' },
+    { id: 'debt_amount',      label: 'Подтверждение размера долга',           categoryKey: 'cat1', docIndex: 3, docTitle: 'Подтверждение текущей задолженности' },
+    { id: 'appraisal',        label: 'Оценка недвижимости',                   categoryKey: 'cat2', docIndex: 3, docTitle: 'Оценка недвижимости (Appraisal' },
+    { id: 'court_status',     label: 'Статус судебного процесса',             categoryKey: 'cat3', docIndex: 2, docTitle: 'Статус процедуры взыскания' }
+  ]
   
   const [photos, setPhotos] = useState([])
   const [videos, setVideos] = useState([])
@@ -122,6 +205,7 @@ const AddProperty = () => {
   const [isCitySearching, setIsCitySearching] = useState(false)
   const [isAddressSearching, setIsAddressSearching] = useState(false)
   const [validationErrors, setValidationErrors] = useState({})
+  const [highlightedField, setHighlightedField] = useState(null)
   const [isLoadingProperty, setIsLoadingProperty] = useState(false)
   const [originalPropertyId, setOriginalPropertyId] = useState(null) // ID оригинального объекта при редактировании
   const [originalPropertyData, setOriginalPropertyData] = useState(null) // Оригинальные данные объекта для сравнения
@@ -675,10 +759,12 @@ const AddProperty = () => {
       showNotification('Пожалуйста, заполните заголовок и загрузите хотя бы одно фото')
       return false
     }
-    const requiresNoDebts = !formData.isDebtProperty
-    if (!uploadedDocuments.ownership || (requiresNoDebts && !uploadedDocuments.noDebts)) {
-      showNotification('Пожалуйста, загрузите все необходимые документы')
-      return false
+    if (!formData.isDebtProperty) {
+      const requiresNoDebts = true
+      if (!uploadedDocuments.ownership || (requiresNoDebts && !uploadedDocuments.noDebts)) {
+        showNotification('Пожалуйста, загрузите все необходимые документы')
+        return false
+      }
     }
     if (!userId) {
       showNotification('Ошибка: пользователь не авторизован. Пожалуйста, войдите в систему.')
@@ -970,6 +1056,15 @@ const AddProperty = () => {
           // Сервер сохранит существующий документ
           console.log('📄 Справка об отсутствии долгов уже загружена, пропускаем')
         }
+      }
+      // Документы по долгу — 6 категорий (cat1..cat6)
+      if (formData.isDebtProperty) {
+        DEBT_DOC_CATEGORIES.forEach(({ key }) => {
+          const files = Object.values(debtDocumentsByCategory[key] || {}).filter(f => f instanceof File)
+          files.forEach(file => {
+            formDataToSend.append(`debt_doc_${key}`, file)
+          })
+        })
       }
       
       console.log('📤 Отправка объявления на сервер...')
@@ -1534,7 +1629,6 @@ const AddProperty = () => {
           }))
           setUploadedDocuments(prev => ({ ...prev, noDebts: true }))
         }
-        
         // Проверяем валидацию цен после загрузки данных
         // Очищаем ошибки валидации, если значения корректны
         if (property.price && property.auction_starting_price) {
@@ -2842,7 +2936,7 @@ const AddProperty = () => {
         bedrooms: bedrooms.filter(b => getTotalBedsCount(b.beds) > 0).length
       }
     })
-    setCurrentStep('amenities')
+    setCurrentStep(formData.isDebtProperty ? 'photos' : 'amenities')
   }
 
   // Обработчик перехода к загрузке фотографий после заполнения удобств
@@ -2917,8 +3011,80 @@ const AddProperty = () => {
     setCurrentStep('documents')
   }
 
+  // Навигация к полю из виджета прогресса: переходим на нужный шаг и подсвечиваем поле
+  const handleGoToField = (step, fieldId) => {
+    setCurrentStep(step)
+    setHighlightedField(fieldId)
+    setTimeout(() => {
+      const el = document.getElementById(fieldId)
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        el.classList.add('ap-field-highlight')
+        el.focus?.()
+        setTimeout(() => el.classList.remove('ap-field-highlight'), 2000)
+      }
+      setHighlightedField(null)
+    }, 150)
+  }
+
+  // Навигация к категории документов из виджета прогресса:
+  // сразу открываем нужную категорию и подсвечиваем только нужный блок
+  const handleGoToDoc = (categoryKey, docId) => {
+    setCurrentStep('documents')
+    setSelectedDebtDocCategory(categoryKey)
+    setMissingRequiredDebtDocs([])
+
+    // Находим точное название документа для поиска в DOM
+    const reqDoc = REQUIRED_DEBT_DOCS.find(d => d.id === docId)
+    const searchText = reqDoc?.docTitle || reqDoc?.label || ''
+
+    setTimeout(() => {
+      // Ищем среди document-upload-item тот, чей текст содержит нужный docTitle
+      const allItems = document.querySelectorAll('.documents-debt-details-list .document-upload-item')
+      let target = null
+      if (searchText) {
+        allItems.forEach(el => {
+          if (!target && el.textContent.includes(searchText)) {
+            target = el
+          }
+        })
+      }
+      // Если не нашли по label — берём первый
+      if (!target) target = allItems[0] || null
+
+      if (target) {
+        target.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        target.classList.add('ap-doc-highlight')
+        setTimeout(() => target.classList.remove('ap-doc-highlight'), 2200)
+      }
+    }, 200)
+  }
+
   // Обработчик перехода к цене после загрузки документов
   const handleDocumentsContinue = () => {
+    // Для долгов: проверяем обязательные документы
+    if (formData.isDebtProperty) {
+      const missing = REQUIRED_DEBT_DOCS.filter(req => {
+        // Проверяем конкретный слот документа по docIndex
+        return !debtDocumentsByCategory[req.categoryKey]?.[req.docIndex]
+      })
+
+      if (missing.length > 0) {
+        setMissingRequiredDebtDocs(missing)
+
+        // Переходим к первой категории, где нет документов
+        const firstMissingCategory = missing[0].categoryKey
+        setSelectedDebtDocCategory(firstMissingCategory)
+
+        const missingLabels = missing.map(m => `• ${m.label}`).join('\n')
+        showNotification(
+          `Чтобы продолжить, загрузите обязательные документы:\n${missingLabels}`
+        )
+        return
+      }
+    }
+
+    // Для обычных объектов и при полном наборе документов по долгу просто идем дальше
     setCurrentStep('price')
   }
 
@@ -3230,7 +3396,7 @@ const AddProperty = () => {
                 } else if (currentStep === 'amenities') {
                   setCurrentStep('details')
                 } else if (currentStep === 'photos') {
-                  setCurrentStep('amenities')
+                  setCurrentStep(formData.isDebtProperty ? 'details' : 'amenities')
                 } else if (currentStep === 'documents') {
                   setCurrentStep('photos')
                 } else if (currentStep === 'price') {
@@ -3524,6 +3690,7 @@ const AddProperty = () => {
                 <label className="property-name-label">Название объекта</label>
                 <input
                   type="text"
+                  id="add-property-title"
                   name="title"
                   value={formData.title}
                   onChange={handleInputChange}
@@ -3763,6 +3930,7 @@ const AddProperty = () => {
                 <label className="property-location-label">Название улицы</label>
                 <div className="property-location-search-wrapper">
                   <input
+                    id="address-search-input"
                     type="text"
                     value={addressSearch}
                     onChange={(e) => {
@@ -4706,95 +4874,6 @@ const AddProperty = () => {
                 </h2>
 
                 <div className="property-amenities-content-scrollable">
-                  {/* Типы долгов */}
-                  <div className="amenities-category">
-                    <h4 className="amenities-category-title">
-                      <span className="amenities-category-icon">⚖️</span>
-                      Виды долгов
-                    </h4>
-                    <div className="amenities-list amenities-list--debt-grid">
-                      {/* Ряд 1 */}
-                      <label className="amenity-item">
-                        <input
-                          type="checkbox"
-                          checked={formData.debtUtilities || false}
-                          onChange={(e) => handleDetailChange('debtUtilities', e.target.checked)}
-                          className="amenity-checkbox"
-                        />
-                        <span className="amenity-label">Долги по коммунальным услугам</span>
-                      </label>
-                      <label className="amenity-item">
-                        <input
-                          type="checkbox"
-                          checked={formData.debtPropertyTaxes || false}
-                          onChange={(e) => handleDetailChange('debtPropertyTaxes', e.target.checked)}
-                          className="amenity-checkbox"
-                        />
-                        <span className="amenity-label">Неоплаченные налоги на имущество</span>
-                      </label>
-
-                      {/* Ряд 2 */}
-                      <label className="amenity-item">
-                        <input
-                          type="checkbox"
-                          checked={formData.debtBankPledge || false}
-                          onChange={(e) => handleDetailChange('debtBankPledge', e.target.checked)}
-                          className="amenity-checkbox"
-                        />
-                        <span className="amenity-label">Залог у банка (ипотека, кредит)</span>
-                      </label>
-                      <label className="amenity-item">
-                        <input
-                          type="checkbox"
-                          checked={formData.debtArrest || false}
-                          onChange={(e) => handleDetailChange('debtArrest', e.target.checked)}
-                          className="amenity-checkbox"
-                        />
-                        <span className="amenity-label">Арест / ограничения на регистрационные действия</span>
-                      </label>
-
-                      {/* Ряд 3 */}
-                      <label className="amenity-item">
-                        <input
-                          type="checkbox"
-                          checked={formData.debtInherited || false}
-                          onChange={(e) => handleDetailChange('debtInherited', e.target.checked)}
-                          className="amenity-checkbox"
-                        />
-                          <span className="amenity-label">Долги наследодателя</span>
-                      </label>
-                      <label className="amenity-item">
-                        <input
-                          type="checkbox"
-                          checked={formData.debtThirdParty || false}
-                          onChange={(e) => handleDetailChange('debtThirdParty', e.target.checked)}
-                          className="amenity-checkbox"
-                        />
-                        <span className="amenity-label">Долги перед третьими лицами</span>
-                      </label>
-                    </div>
-                  </div>
-
-                  {/* Другое долговое обязательство */}
-                  <div className="amenities-category">
-                    <h4 className="amenities-category-title">
-                      <span className="amenities-category-icon">✏️</span>
-                      Другое долговое обязательство
-                    </h4>
-                    <div className="amenities-additional-field">
-                      <label className="amenities-additional-label">
-                        Опишите другие виды долгов, если они есть
-                      </label>
-                      <textarea
-                        className="amenities-additional-textarea"
-                        placeholder="Например: долг по договору займа, исполнительное производство и т.п."
-                        value={formData.debtOther || ''}
-                        onChange={(e) => handleDetailChange('debtOther', e.target.value)}
-                        rows={3}
-                      />
-                    </div>
-                  </div>
-
                   {/* Сумма долга */}
                   <div className="amenities-category">
                     <h4 className="amenities-category-title">
@@ -4843,6 +4922,7 @@ const AddProperty = () => {
                           )}
                         </div>
                         <input
+                          id="debt-amount-input"
                           type="text"
                           className="price-input-large price-input-large--debt"
                           placeholder="Введите сумму долга"
@@ -4877,10 +4957,9 @@ const AddProperty = () => {
                 <HintCard
                   icon={MdLightbulb}
                   iconColor="property-name-hint-icon--thumbs"
-                  title="Как описать долг?"
+                  title="Сумма долга"
                   content={[
-                    "Отметьте все виды долгов, которые действуют по объекту",
-                    "Укажите ориентировочную общую сумму задолженности",
+                    "Укажите ориентировочную общую сумму задолженности по объекту",
                     "Чем прозрачнее информация, тем выше доверие покупателей"
                   ]}
                   show={showHints['amenities']}
@@ -5347,7 +5426,7 @@ const AddProperty = () => {
                 <button
                   type="button"
                   className="property-photos-back-btn"
-                  onClick={() => setCurrentStep('amenities')}
+                  onClick={() => setCurrentStep(formData.isDebtProperty ? 'details' : 'amenities')}
                 >
                   <FiChevronLeft size={16} />
                   Назад
@@ -5456,22 +5535,129 @@ const AddProperty = () => {
             </div>
           </div>
         ) : currentStep === 'documents' ? (
-          /* Экран загрузки документов на собственность */
+          /* Экран загрузки документов: для долга — 6 блоков в сетке 2×3 */
           <div className="property-documents-screen">
             <div className="property-documents-main">
               <h2 className="property-documents-title">
-                Документы на собственность
+                {formData.isDebtProperty ? 'Необходимые документы при продаже долга' : 'Документы на собственность'}
               </h2>
               
               <p className="property-documents-description">
-                Загрузите документы, подтверждающие право собственности на недвижимость. Это поможет быстрее продать вашу недвижимость.
+                {formData.isDebtProperty
+                  ? 'Загрузите документы по категориям. PDF или изображения (JPG, PNG).'
+                  : 'Загрузите документы, подтверждающие право собственности на недвижимость. Это поможет быстрее продать вашу недвижимость.'}
               </p>
 
-              {/* Блок для обязательных документов */}
+              {formData.isDebtProperty ? (
+                <>
+                  {/* Шаг 1: выбор категории документов по долгу */}
+                  {!selectedDebtDocCategory && (
+                    <div id="documents-debt-grid" className="documents-debt-grid">
+                      {DEBT_DOC_CATEGORIES.map(({ key, title }) => (
+                        <button
+                          key={key}
+                          id={`doc-category-${key}`}
+                          type="button"
+                          className="documents-debt-grid-item"
+                          onClick={() => setSelectedDebtDocCategory(key)}
+                        >
+                          <h4 className="documents-debt-grid-item-title">{title}</h4>
+                          <div className="documents-debt-grid-upload">
+                            <FiFileText size={28} />
+                            <span className="documents-debt-grid-upload-text">Выбрать</span>
+                            <span className="documents-debt-grid-upload-hint">Нажмите, чтобы открыть список документов</span>
+                          </div>
+                          {Object.values(debtDocumentsByCategory[key] || {}).filter(Boolean).length > 0 && (
+                            <ul className="documents-debt-grid-list">
+                              {Object.values(debtDocumentsByCategory[key] || {}).filter(Boolean).map((file, idx) => (
+                                <li key={idx} className="documents-debt-grid-list-item">
+                                  <span title={file.name}>{file.name}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+
+                  {/* Шаг 2: список конкретных документов внутри выбранной категории */}
+                  {selectedDebtDocCategory && (
+                    <div id="debt-doc-details" className="documents-debt-details">
+                      <div className="documents-debt-details-header">
+                        <button
+                          type="button"
+                          className="documents-debt-back-btn"
+                          onClick={() => setSelectedDebtDocCategory(null)}
+                        >
+                          <FiChevronLeft size={16} />
+                          Все категории
+                        </button>
+                        <h3 className="documents-debt-details-title">
+                          {
+                            DEBT_DOC_CATEGORIES.find(cat => cat.key === selectedDebtDocCategory)?.title
+                          }
+                        </h3>
+                      </div>
+
+                      <div className="documents-debt-details-list">
+                        {DEBT_DOC_CATEGORY_DOCS[selectedDebtDocCategory]?.map((docTitle, index) => {
+                          const uploadedFile = debtDocumentsByCategory[selectedDebtDocCategory]?.[index]
+                          return (
+                            <div key={index} id={index === 0 ? 'debt-doc-upload-btn' : undefined} className="document-upload-item">
+                              <div className="document-upload-info">
+                                <div className="document-upload-icon">
+                                  <FiFileText size={24} />
+                                </div>
+                                <div className="document-upload-text">
+                                  <h4 className="document-upload-title">{docTitle}</h4>
+                                  <p className="document-upload-hint">PDF или изображение (JPG, PNG)</p>
+                                </div>
+                              </div>
+                              <div className="document-upload-action">
+                                {uploadedFile ? (
+                                  <div className="document-uploaded">
+                                    <FiCheck size={20} />
+                                    <span title={uploadedFile.name}>{uploadedFile.name}</span>
+                                    <button
+                                      type="button"
+                                      className="document-remove-btn"
+                                      onClick={() => {
+                                        setDebtDocumentsByCategory(prev => {
+                                          const updated = { ...prev[selectedDebtDocCategory] }
+                                          delete updated[index]
+                                          return { ...prev, [selectedDebtDocCategory]: updated }
+                                        })
+                                      }}
+                                    >
+                                      <FiX size={16} />
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    className="document-upload-btn"
+                                    onClick={() => debtDocItemInputRefs.current[`${selectedDebtDocCategory}_${index}`]?.click()}
+                                  >
+                                    <FiUpload size={18} />
+                                    Загрузить
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </>
+              ) : (
+              <>
+              {/* Блок для обязательных документов (не долг) */}
               <div className="documents-required-section">
                 <h3 className="documents-section-title">Обязательные документы</h3>
                 
-                {/* Документ о праве собственности */}
                 <div className="document-upload-item">
                   <div className="document-upload-info">
                     <div className="document-upload-icon">
@@ -5511,8 +5697,6 @@ const AddProperty = () => {
                   </div>
                 </div>
 
-              {/* Документ об отсутствии долгов — не требуется для объектов с долгами */}
-              {!formData.isDebtProperty && (
                 <div className="document-upload-item">
                   <div className="document-upload-info">
                     <div className="document-upload-icon">
@@ -5551,7 +5735,6 @@ const AddProperty = () => {
                     )}
                   </div>
                 </div>
-              )}
               </div>
 
               {/* Блок для дополнительных документов */}
@@ -5629,8 +5812,44 @@ const AddProperty = () => {
                   )}
                 </div>
               </div>
+              </>
+              )}
 
               {/* Скрытые input для загрузки документов */}
+              <input
+                type="file"
+                multiple
+                accept="application/pdf,image/jpeg,image/jpg,image/png"
+                style={{ display: 'none' }}
+                ref={el => {
+                  if (!el) return
+                  // этот инпут-резерв не используется, категории ниже
+                }}
+              />
+
+              {/* Скрытые input для категорий документов по долгу */}
+              {DEBT_DOC_CATEGORIES.map(({ key }) =>
+                DEBT_DOC_CATEGORY_DOCS[key]?.map((_, docIndex) => (
+                  <input
+                    key={`${key}_${docIndex}`}
+                    type="file"
+                    ref={el => { if (el) debtDocItemInputRefs.current[`${key}_${docIndex}`] = el }}
+                    accept="application/pdf,image/jpeg,image/jpg,image/png"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0]
+                      if (file) {
+                        setDebtDocumentsByCategory(prev => ({
+                          ...prev,
+                          [key]: { ...prev[key], [docIndex]: file }
+                        }))
+                      }
+                      e.target.value = ''
+                    }}
+                    style={{ display: 'none' }}
+                  />
+                ))
+              )}
+
               <input
                 type="file"
                 ref={ownershipInputRef}
@@ -5688,15 +5907,26 @@ const AddProperty = () => {
             </div>
 
             <div className="property-name-hints" style={{ marginLeft: '150px' , marginTop: '75px'}}>
+              <AddPropertyProgress
+                debtDocumentsByCategory={debtDocumentsByCategory}
+                requiredDebtDocs={REQUIRED_DEBT_DOCS}
+                onGoToDoc={handleGoToDoc}
+                isDebtProperty={formData.isDebtProperty}
+              />
               <HintCard
                 icon={FiFileText}
                 iconColor="property-name-hint-icon--thumbs"
-                title="Какие документы нужны?"
-                content={[
-                  "Обязательно загрузите документ о праве собственности",
-                  "Добавьте справку об отсутствии долгов",
-                  "Можно загрузить дополнительные документы для доверия покупателей"
-                ]}
+                title={formData.isDebtProperty ? 'Какие документы нужны для продажи долга?' : 'Какие документы нужны?'}
+                content={formData.isDebtProperty
+                  ? [
+                      'Загрузите документы по категориям: по долгу, по обеспечению, юридические, по заемщику, по сделке, дополнительно',
+                      'PDF или изображения (JPG, PNG). В каждый блок можно добавить несколько файлов.'
+                    ]
+                  : [
+                      'Обязательно загрузите документ о праве собственности',
+                      'Добавьте справку об отсутствии долгов',
+                      'Можно загрузить дополнительные документы для доверия покупателей'
+                    ]}
                 show={showHints['documents']}
                 onClose={() => setShowHints(prev => ({ ...prev, 'documents': false }))}
               />
@@ -5704,7 +5934,9 @@ const AddProperty = () => {
                 icon={MdLightbulb}
                 iconColor="property-name-hint-icon--bulb"
                 title="Зачем нужны документы?"
-                content="Документы подтверждают ваше право собственности и отсутствие обременений, что повышает доверие покупателей и ускоряет процесс продажи."
+                content={formData.isDebtProperty
+                  ? 'При покупке долга фонды и банки запрашивают пакет документов. Чем полнее пакет, тем выше доверие инвесторов и быстрее сделка.'
+                  : 'Документы подтверждают ваше право собственности и отсутствие обременений, что повышает доверие покупателей и ускоряет процесс продажи.'}
                 show={showHints['documents']}
                 onClose={() => setShowHints(prev => ({ ...prev, 'documents': false }))}
               />
@@ -5798,9 +6030,59 @@ const AddProperty = () => {
                 </>
               )}
 
-              {/* Для долгов: одна фиксированная цена продажи без аукциона */}
+              {/* Для долгов: сумма долга + фиксированная цена продажи */}
               {formData.isDebtProperty && !formData.isShareProperty && (
+                <>
                 <div className="price-input-section">
+                  <label className="price-input-label">Сумма долга</label>
+                  <div className="price-input-wrapper-large">
+                    <div className="currency-selector">
+                      <button
+                        type="button"
+                        className="currency-button"
+                        onClick={() =>
+                          setShowCurrencyDropdown(
+                            showCurrencyDropdown === 'debt_amount' ? null : 'debt_amount'
+                          )
+                        }
+                      >
+                        <span className="currency-symbol">
+                          {currencies.find(c => c.code === currency)?.symbol || '$'}
+                        </span>
+                        <FiChevronDown className="currency-chevron" size={14} />
+                      </button>
+                      {showCurrencyDropdown === 'debt_amount' && (
+                        <div className="currency-dropdown">
+                          {currencies.map(c => (
+                            <button
+                              key={c.code}
+                              type="button"
+                              className={`currency-option ${c.code === currency ? 'currency-option--active' : ''}`}
+                              onClick={() => { setCurrency(c.code); setShowCurrencyDropdown(null) }}
+                            >
+                              <span className="currency-option-symbol">{c.symbol}</span>
+                              <span className="currency-option-name">{c.name}</span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    <input
+                      id="debt-amount-input"
+                      type="text"
+                      className="price-input-large"
+                      placeholder="0"
+                      inputMode="numeric"
+                      value={formData.debtAmount ? formatNumberWithCommas(formData.debtAmount) : ''}
+                      onChange={(e) => {
+                        const raw = removeCommas(e.target.value.replace(/[^\d,]/g, ''))
+                        setFormData(prev => ({ ...prev, debtAmount: raw }))
+                      }}
+                    />
+                  </div>
+                </div>
+
+                <div className="price-input-section" style={{ marginTop: '24px' }}>
                   <label className="price-input-label">Сумма продажи объекта с долгами</label>
                   <div className="price-input-wrapper-large">
                     <div className="currency-selector">
@@ -5840,6 +6122,7 @@ const AddProperty = () => {
                       )}
                     </div>
                     <input
+                      id="price-debt-input"
                       type="text"
                       name="price"
                       value={formData.price ? formatNumberWithCommas(formData.price) : ''}
@@ -5850,6 +6133,7 @@ const AddProperty = () => {
                     />
                   </div>
                 </div>
+                </>
               )}
 
               {!formData.isShareProperty && !formData.isDebtProperty && (

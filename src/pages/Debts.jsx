@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { FiPieChart, FiSearch } from 'react-icons/fi'
+import { FiSearch } from 'react-icons/fi'
 import Header from '../components/Header'
+import FlipCard from '../components/ui/FlipCard'
 import './Shares.css'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api'
@@ -107,33 +108,46 @@ const Debts = () => {
       <Header />
       <div className="shares-page__bg" />
       <main className="shares-container">
-        <div className="shares-intro">
-          <div className="shares-intro__icon">
-            <FiPieChart size={28} />
-          </div>
-          <div className="shares-intro__body">
-            <span className="shares-intro__label">Продажа долгов</span>
-            <h1 className="shares-intro__title">Долги по недвижимости</h1>
-            <p className="shares-intro__lead">
-              Покупайте объекты с долгами по привлекательной цене и зарабатывайте на их последующей продаже или аренде.
-            </p>
-            <p className="shares-intro__text">
-              Здесь собраны объекты, по которым есть задолженности: ипотека, коммунальные платежи и другие обязательства.
-              Вы можете выкупить такой объект и урегулировать долг на выгодных для себя условиях.
-            </p>
-            <p className="shares-intro__text">
-              Для каждого объекта мы указываем уровень критичности долгов:{' '}
-              <span style={{ color: '#DC2626', fontWeight: 600 }}>красный</span> — сложные и существенные задолженности,
-              требующие глубокой юридической и финансовой проверки;{' '}
-              <span style={{ color: '#CA8A04', fontWeight: 600 }}>жёлтый</span> — средняя тяжесть, часть вопросов потребует
-              времени и дополнительных расходов, но, как правило, решаемы;{' '}
-              <span style={{ color: '#16A34A', fontWeight: 600 }}>зелёный</span> — лёгкая тяжесть, в основном технические и
-              процедурные моменты, которые обычно закрываются стандартными действиями при сделке.
-            </p>
-            <p className="shares-intro__text shares-intro__text--muted">
-              Выберите объект ниже → откройте карточку → изучите детали долга, уровень критичности и условия сделки на странице объекта.
-            </p>
-          </div>
+        <div className="shares-flip-cards">
+          <FlipCard
+            color="#DC2626"
+            title="Высокий риск"
+            subtitle="Красный — сложные и существенные задолженности"
+            description="Объекты с серьёзными долгами: ипотека, просрочки, судебные споры. Требуют глубокой юридической и финансовой проверки. Подходят для опытных инвесторов."
+            features={[
+              'Глубокая юридическая проверка',
+              'Финансовый аудит обязателен',
+              'Серьёзные задолженности',
+              'Высокий потенциал при оценке',
+            ]}
+            ctaText="🔥 Высокий шанс заработать"
+          />
+          <FlipCard
+            color="#CA8A04"
+            title="Средний риск"
+            subtitle="Жёлтый — часть вопросов потребует времени и расходов"
+            description="Долги средней тяжести: вопросы решаемы дополнительными расходами и временем. Ситуации, как правило, прозрачны и поддаются урегулированию при сделке."
+            features={[
+              'Вопросы решаемы при сделке',
+              'Возможны доп. расходы',
+              'Предсказуемые сроки',
+              'Умеренные риски',
+            ]}
+            ctaText="📈 Средний шанс заработать"
+          />
+          <FlipCard
+            color="#16A34A"
+            title="Низкий риск"
+            subtitle="Зелёный — технические и процедурные моменты"
+            description="Лёгкая тяжесть долгов: технические и процедурные вопросы, которые закрываются стандартными действиями при сделке. Минимальные риски для покупателя."
+            features={[
+              'Стандартные действия при сделке',
+              'Технические моменты',
+              'Минимальные риски',
+              'Быстрое урегулирование',
+            ]}
+            ctaText="✅ Стабильный шанс заработать"
+          />
         </div>
 
         <div className="shares-search-bar">

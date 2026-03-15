@@ -463,6 +463,64 @@ export function initDatabase() {
         console.warn('⚠️ Не удалось создать таблицу администраторов:', adminError.message);
       }
 
+      // Таблица причин долга (для кабинета продавца / админки)
+      try {
+        const debtReasonsTable = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='debt_reasons'").get();
+        if (!debtReasonsTable) {
+          console.log('🔄 Создание таблицы debt_reasons...');
+          db.exec(`
+            CREATE TABLE IF NOT EXISTS debt_reasons (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              title_ru TEXT NOT NULL,
+              code TEXT UNIQUE,
+              sort_order INTEGER DEFAULT 0,
+              created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+              updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            );
+            CREATE INDEX IF NOT EXISTS idx_debt_reasons_sort ON debt_reasons(sort_order);
+          `);
+          const insert = db.prepare(`INSERT INTO debt_reasons (title_ru, code, sort_order) VALUES (?, ?, ?)`);
+          const defaultReasons = [
+            ['Долги по коммунальным услугам', 'utilities', 1],
+            ['Неоплаченные налоги на имущество', 'property_taxes', 2],
+            ['Залог у банка (ипотека, кредит)', 'mortgage_pledge', 3],
+            ['Арест / ограничения на регистрационные действия', 'arrest', 4],
+            ['Долги наследодателя', 'inherited', 5],
+            ['Долги перед третьими лицами', 'third_party', 6],
+            ['Другое (произвольное описание)', 'other', 7]
+          ];
+          for (const r of defaultReasons) {
+            insert.run(r[0], r[1], r[2]);
+          }
+          console.log('✅ Таблица debt_reasons создана и заполнена');
+        }
+      } catch (debtReasonsError) {
+        console.warn('⚠️ Не удалось создать таблицу debt_reasons:', debtReasonsError.message);
+      }
+
+      // Таблица документов по долгу (для объявлений «Долги»)
+      try {
+        const debtDocsTable = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='property_debt_documents'").get();
+        if (!debtDocsTable) {
+          console.log('🔄 Создание таблицы property_debt_documents...');
+          db.exec(`
+            CREATE TABLE IF NOT EXISTS property_debt_documents (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              property_id INTEGER NOT NULL,
+              property_type TEXT NOT NULL,
+              document_type TEXT NOT NULL,
+              file_path TEXT NOT NULL,
+              original_name TEXT,
+              created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            );
+            CREATE INDEX IF NOT EXISTS idx_debt_docs_property ON property_debt_documents(property_id, property_type);
+          `);
+          console.log('✅ Таблица property_debt_documents создана');
+        }
+      } catch (debtDocsError) {
+        console.warn('⚠️ Не удалось создать таблицу property_debt_documents:', debtDocsError.message);
+      }
+
       // Создаем таблицу недвижимости, если её нет
       try {
         const propertiesTable = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='properties'").get();
@@ -1758,6 +1816,32 @@ export const userQueries = {
       GROUP BY role
     `);
     return stmt.all();
+  },
+
+  /**
+   * Получить количество регистраций по дням за период (startDate, endDate — строки YYYY-MM-DD)
+   * Возвращает массив { date, count } для каждого дня периода, включая дни с 0 регистраций
+   */
+  getRegistrationsByDay: (startDate, endDate) => {
+    const db = getDatabase();
+    const stmt = db.prepare(`
+      SELECT date(created_at) as date, COUNT(*) as count
+      FROM users
+      WHERE date(created_at) >= ? AND date(created_at) <= ?
+      GROUP BY date(created_at)
+      ORDER BY date
+    `);
+    const rows = stmt.all(startDate, endDate);
+    const countByDate = Object.fromEntries(rows.map(r => [r.date, r.count]));
+
+    const result = [];
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+      const dateStr = d.toISOString().slice(0, 10);
+      result.push({ date: dateStr, count: countByDate[dateStr] || 0 });
+    }
+    return result;
   }
 };
 
@@ -2359,6 +2443,85 @@ export const administratorQueries = {
     const db = getDatabase();
     const stmt = db.prepare('DELETE FROM administrators WHERE id = ?');
     return stmt.run(id);
+  }
+};
+
+// ========== ФУНКЦИИ ДЛЯ РАБОТЫ С ПРИЧИНАМИ ДОЛГА ==========
+
+export const debtReasonQueries = {
+  getAll: () => {
+    const db = getDatabase();
+    const stmt = db.prepare('SELECT * FROM debt_reasons ORDER BY sort_order ASC, id ASC');
+    return stmt.all();
+  },
+
+  getById: (id) => {
+    const db = getDatabase();
+    const stmt = db.prepare('SELECT * FROM debt_reasons WHERE id = ?');
+    return stmt.get(id);
+  },
+
+  create: (data) => {
+    const db = getDatabase();
+    const stmt = db.prepare(`
+      INSERT INTO debt_reasons (title_ru, code, sort_order)
+      VALUES (?, ?, ?)
+    `);
+    const result = stmt.run(
+      data.title_ru || '',
+      data.code || null,
+      data.sort_order != null ? data.sort_order : 0
+    );
+    return { id: result.lastInsertRowid, changes: result.changes };
+  },
+
+  update: (id, data) => {
+    const db = getDatabase();
+    const stmt = db.prepare(`
+      UPDATE debt_reasons SET
+        title_ru = ?,
+        code = ?,
+        sort_order = ?,
+        updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `);
+    return stmt.run(
+      data.title_ru || '',
+      data.code || null,
+      data.sort_order != null ? data.sort_order : 0,
+      id
+    );
+  },
+
+  delete: (id) => {
+    const db = getDatabase();
+    const stmt = db.prepare('DELETE FROM debt_reasons WHERE id = ?');
+    return stmt.run(id);
+  }
+};
+
+// ========== ДОКУМЕНТЫ ПО ДОЛГУ (НЕОБХОДИМЫЕ ДОКУМЕНТЫ ПРИ ПРОДАЖЕ ДОЛГА) ==========
+
+export const debtDocumentQueries = {
+  getByProperty: (propertyId, propertyType) => {
+    const db = getDatabase();
+    const stmt = db.prepare('SELECT * FROM property_debt_documents WHERE property_id = ? AND property_type = ? ORDER BY document_type');
+    return stmt.all(propertyId, propertyType);
+  },
+
+  insert: (propertyId, propertyType, documentType, filePath, originalName) => {
+    const db = getDatabase();
+    const stmt = db.prepare(`
+      INSERT INTO property_debt_documents (property_id, property_type, document_type, file_path, original_name)
+      VALUES (?, ?, ?, ?, ?)
+    `);
+    return stmt.run(propertyId, propertyType, documentType, filePath, originalName || null);
+  },
+
+  deleteByProperty: (propertyId, propertyType) => {
+    const db = getDatabase();
+    const stmt = db.prepare('DELETE FROM property_debt_documents WHERE property_id = ? AND property_type = ?');
+    return stmt.run(propertyId, propertyType);
   }
 };
 
@@ -4057,6 +4220,136 @@ export const propertyQueries = {
       const result = db.prepare(query).get(...params);
       return result.count || 0;
     }
+  },
+
+  /**
+   * Количество одобренных объектов (выставленных)
+   */
+  getApprovedCount: () => {
+    return propertyQueries.getCount({ moderation_status: 'approved' });
+  },
+
+  /**
+   * Количество одобренных аукционов
+   */
+  getAuctionsCount: () => {
+    const db = getDatabase();
+    let useNewTables = false;
+    try {
+      db.prepare('SELECT 1 FROM properties_apartments LIMIT 1').get();
+      db.prepare('SELECT 1 FROM properties_houses LIMIT 1').get();
+      useNewTables = true;
+    } catch (e) {
+      useNewTables = false;
+    }
+    if (useNewTables) {
+      const apt = db.prepare(`
+        SELECT COUNT(*) as c FROM properties_apartments
+        WHERE moderation_status = 'approved' AND (is_auction = 1 OR is_auction = '1')
+      `).get();
+      const house = db.prepare(`
+        SELECT COUNT(*) as c FROM properties_houses
+        WHERE moderation_status = 'approved' AND (is_auction = 1 OR is_auction = '1')
+      `).get();
+      return (apt?.c || 0) + (house?.c || 0);
+    }
+    const r = db.prepare(`
+      SELECT COUNT(*) as c FROM properties
+      WHERE moderation_status = 'approved' AND (is_auction = 1 OR is_auction = '1')
+    `).get();
+    return r?.c || 0;
+  },
+
+  /**
+   * Статистика одобренных объектов по типу недвижимости (для графика «Категории недвижимости»)
+   * Возвращает: [{ type: 'villa'|'house'|'apartment'|'commercial', count }, ...]
+   */
+  getCategoryStatsByType: () => {
+    const db = getDatabase();
+    let useNewTables = false;
+    try {
+      db.prepare('SELECT 1 FROM properties_apartments LIMIT 1').get();
+      db.prepare('SELECT 1 FROM properties_houses LIMIT 1').get();
+      useNewTables = true;
+    } catch (e) {
+      return [];
+    }
+    const result = [];
+    const apt = db.prepare(`
+      SELECT property_type, COUNT(*) as count FROM properties_apartments
+      WHERE moderation_status = 'approved'
+      GROUP BY property_type
+    `).all();
+    const house = db.prepare(`
+      SELECT property_type, COUNT(*) as count FROM properties_houses
+      WHERE moderation_status = 'approved'
+      GROUP BY property_type
+    `).all();
+    const order = ['villa', 'house', 'apartment', 'commercial'];
+    const map = {};
+    apt.forEach((r) => { map[r.property_type] = (map[r.property_type] || 0) + r.count; });
+    house.forEach((r) => { map[r.property_type] = (map[r.property_type] || 0) + r.count; });
+    order.forEach((t) => { if (map[t] != null) result.push({ type: t, count: map[t] }); });
+    return result;
+  },
+
+  /**
+   * Статистика одобренных объектов по разделам: Аукцион, Купить сейчас, Доли, Долги
+   * Возвращает: [{ section: 'auction'|'buy_now'|'share'|'debt', count }, ...]
+   */
+  getCategoryStatsBySection: () => {
+    const db = getDatabase();
+    let useNewTables = false;
+    try {
+      db.prepare('SELECT 1 FROM properties_apartments LIMIT 1').get();
+      db.prepare('SELECT 1 FROM properties_houses LIMIT 1').get();
+      useNewTables = true;
+    } catch (e) {
+      return [];
+    }
+    const tables = ['properties_apartments', 'properties_houses'];
+    const debt = tables.reduce((sum, t) => {
+      const r = db.prepare(`
+        SELECT COUNT(*) as c FROM ${t}
+        WHERE moderation_status = 'approved'
+        AND (sale_type = 'debt' OR is_debt = 1 OR has_debt = 1)
+      `).get();
+      return sum + (r?.c || 0);
+    }, 0);
+    const auction = tables.reduce((sum, t) => {
+      const r = db.prepare(`
+        SELECT COUNT(*) as c FROM ${t}
+        WHERE moderation_status = 'approved'
+        AND (is_auction = 1 OR is_auction = '1')
+        AND (sale_type IS NULL OR sale_type != 'debt')
+        AND (is_debt IS NULL OR is_debt = 0)
+        AND (has_debt IS NULL OR has_debt = 0)
+      `).get();
+      return sum + (r?.c || 0);
+    }, 0);
+    const share = tables.reduce((sum, t) => {
+      const r = db.prepare(`
+        SELECT COUNT(*) as c FROM ${t}
+        WHERE moderation_status = 'approved'
+        AND (sale_type = 'share' OR is_shared_ownership = 1)
+        AND (is_auction IS NULL OR is_auction = 0 OR is_auction = '0')
+        AND (sale_type IS NULL OR sale_type != 'debt')
+        AND (is_debt IS NULL OR is_debt = 0)
+        AND (has_debt IS NULL OR has_debt = 0)
+      `).get();
+      return sum + (r?.c || 0);
+    }, 0);
+    const totalApproved = tables.reduce((sum, t) => {
+      const r = db.prepare(`SELECT COUNT(*) as c FROM ${t} WHERE moderation_status = 'approved'`).get();
+      return sum + (r?.c || 0);
+    }, 0);
+    const buyNow = Math.max(0, totalApproved - debt - auction - share);
+    const out = [];
+    if (auction > 0) out.push({ section: 'auction', count: auction });
+    if (buyNow > 0) out.push({ section: 'buy_now', count: buyNow });
+    if (share > 0) out.push({ section: 'share', count: share });
+    if (debt > 0) out.push({ section: 'debt', count: debt });
+    return out;
   },
 
   /**

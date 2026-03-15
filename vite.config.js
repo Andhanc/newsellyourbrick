@@ -209,6 +209,14 @@ export default defineConfig(({ mode }) => {
           family: 4,
           timeout: 5000,
           proxyTimeout: 5000
+        },
+        '/uploads': {
+          target: apiUrl,
+          changeOrigin: true,
+          secure: false,
+          family: 4,
+          timeout: 30000,
+          proxyTimeout: 30000
         }
       }
     },

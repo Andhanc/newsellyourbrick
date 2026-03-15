@@ -601,11 +601,11 @@ const Header = () => {
                           <button 
                             className="menu-dropdown__item"
                             onClick={() => {
-                              navigate('/about')
+                              navigate('/debts')
                               setIsMenuOpen(false)
                             }}
                           >
-                            <span>О нас</span>
+                            <span>Долги</span>
                           </button>
                           <button 
                             className="menu-dropdown__item"
@@ -619,15 +619,11 @@ const Header = () => {
                           <button 
                             className="menu-dropdown__item"
                             onClick={() => {
-                              if (location.pathname === '/auction') {
-                                window.dispatchEvent(new CustomEvent('openAIChat'))
-                              } else {
-                                navigate('/chat')
-                              }
+                              navigate('/shares')
                               setIsMenuOpen(false)
                             }}
                           >
-                            <span>Умный помощник</span>
+                            <span>Доли</span>
                           </button>
                           <button 
                             className="menu-dropdown__item"

@@ -2297,6 +2297,21 @@ function MainPage() {
                 onClick={(e) => e.stopPropagation()}
               >
                 <div className="menu-dropdown__content">
+                  <button
+                    type="button"
+                    className="menu-dropdown__close-btn"
+                    aria-label="Закрыть меню"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setIsMenuClosing(true)
+                      setTimeout(() => {
+                        setIsMenuOpen(false)
+                        setIsMenuClosing(false)
+                      }, 300)
+                    }}
+                  >
+                    <FiX size={22} />
+                  </button>
                   <div className="menu-dropdown__columns">
                     <div className="menu-dropdown__column">
                       <h3 className="menu-dropdown__column-title">Навигация по сайту</h3>
@@ -2331,11 +2346,29 @@ function MainPage() {
                         <button 
                           className="menu-dropdown__item"
                           onClick={() => {
+                            navigate('/debts')
+                            setIsMenuOpen(false)
+                          }}
+                        >
+                          <span>Долги</span>
+                        </button>
+                        <button 
+                          className="menu-dropdown__item"
+                          onClick={() => {
                             navigate('/favorites')
                             setIsMenuOpen(false)
                           }}
                         >
-                          <span>Избранное</span>
+                          <span>Понравилось</span>
+                        </button>
+                        <button 
+                          className="menu-dropdown__item"
+                          onClick={() => {
+                            navigate('/shares')
+                            setIsMenuOpen(false)
+                          }}
+                        >
+                          <span>Доли</span>
                         </button>
                         <button 
                           className="menu-dropdown__item"
@@ -2346,12 +2379,70 @@ function MainPage() {
                         >
                           <span>Чат</span>
                         </button>
+                        <button 
+                          className="menu-dropdown__item"
+                          onClick={() => {
+                            navigate('/bonuses')
+                            setIsMenuOpen(false)
+                          }}
+                        >
+                          <span>Бонусы</span>
+                        </button>
                       </div>
                     </div>
                     <div className="menu-dropdown__column">
                       <h3 className="menu-dropdown__column-title">Профиль</h3>
                       <div className="menu-dropdown__column-items">
-                        {/* Ссылки будут добавлены позже */}
+                        {isLoggedIn ? (
+                          <>
+                            <button 
+                              className="menu-dropdown__item"
+                              onClick={() => {
+                                navigate('/profile')
+                                setIsMenuOpen(false)
+                              }}
+                            >
+                              <span>Профиль</span>
+                            </button>
+                            <button 
+                              className="menu-dropdown__item"
+                              onClick={() => {
+                                navigate('/wallet')
+                                setIsMenuOpen(false)
+                              }}
+                            >
+                              <span>Кошелек</span>
+                            </button>
+                            <button 
+                              className="menu-dropdown__item"
+                              onClick={() => {
+                                navigate('/subscriptions')
+                                setIsMenuOpen(false)
+                              }}
+                            >
+                              <span>Подписки</span>
+                            </button>
+                            <button 
+                              className="menu-dropdown__item"
+                              onClick={() => {
+                                navigate('/data')
+                                setIsMenuOpen(false)
+                              }}
+                            >
+                              <span>Данные</span>
+                            </button>
+                          </>
+                        ) : (
+                          <button 
+                            className="menu-dropdown__item"
+                            onClick={() => {
+                              setIsLoginModalOpen(true)
+                              setIsMenuOpen(false)
+                            }}
+                          >
+                            <span>Войти</span>
+                          </button>
+                        )}
                       </div>
                     </div>
                   </div>

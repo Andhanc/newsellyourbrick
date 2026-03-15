@@ -17,6 +17,8 @@ import PurchaseRequests from '../components/admin/PurchaseRequests';
 import BonusesSubmissions from '../components/admin/BonusesSubmissions';
 import AccessManagement from '../components/admin/AccessManagement';
 import Testing from '../components/admin/Testing';
+import DebtReasons from '../components/admin/DebtReasons';
+import DebtDocuments from '../components/admin/DebtDocuments';
 import { mockBusinessInfo } from '../data/mockData';
 import { clearUserData, clearUserDataWithoutAdmin } from '../services/authService';
 import { showNotification } from '../utils/toastHelper';
@@ -65,6 +67,8 @@ const AdminPanelPage = () => {
     chat: 'Чат',
     smart_assistant: 'Умный помощник',
     objects: 'Объекты',
+    debt_reasons: 'Причина долга',
+    debt_documents: 'Необходимые документы',
     whatsapp: 'WhatsApp',
     clients: 'Клиенты',
     purchase_requests: 'Запросы на покупку',
@@ -87,6 +91,8 @@ const AdminPanelPage = () => {
       chat: adminPermissions.can_access_chat,
       smart_assistant: adminPermissions.can_access_chat,
       objects: adminPermissions.can_access_objects,
+      debt_reasons: adminPermissions.can_access_objects,
+      debt_documents: adminPermissions.can_access_objects,
       whatsapp: adminPermissions.can_access_whatsapp,
       clients: adminPermissions.can_access_clients,
       purchase_requests: adminPermissions.can_access_purchase_requests,
@@ -149,6 +155,10 @@ const AdminPanelPage = () => {
         return <SmartAssistant />;
       case 'objects':
         return <ObjectsList />;
+      case 'debt_reasons':
+        return <DebtReasons />;
+      case 'debt_documents':
+        return <DebtDocuments />;
       case 'whatsapp':
         return <WhatsApp />;
       case 'clients':

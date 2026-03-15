@@ -75,25 +75,21 @@ const Footer = () => {
             <Link to="/" onClick={scrollToTop} className="footer__menu-link">{t('home') || 'Главная'}</Link>
             <Link to="/about" onClick={scrollToTop} className="footer__menu-link">{t('aboutUs') || 'О нас'}</Link>
             <Link to="/map" onClick={scrollToTop} className="footer__menu-link">{t('mapLink')}</Link>
-            <Link to="/subscriptions" onClick={scrollToTop} className="footer__menu-link">{t('tariffs')}</Link>
-            <Link to="/bonuses" onClick={scrollToTop} className="footer__menu-link">Бонусы</Link>
-            <Link to="/shares" onClick={scrollToTop} className="footer__menu-link">Доли</Link>
-            <Link to="/debts" onClick={scrollToTop} className="footer__menu-link">Долги</Link>
           </div>
           <div className="footer__menu-column">
             <Link to="/auction" onClick={scrollToTop} className="footer__menu-link">{t('auction')}</Link>
             <Link to="/data" onClick={scrollToTop} className="footer__menu-link">{t('legalDocs')}</Link>
-            <button type="button" className="footer__menu-link">{t('advertising')}</button>
+            <Link to="/bonuses" onClick={scrollToTop} className="footer__menu-link">Бонусы</Link>
           </div>
           <div className="footer__menu-column">
             <button type="button" className="footer__menu-link">{t('career')}</button>
             <Link to="/map" onClick={scrollToTop} className="footer__menu-link">{t('mapSearch')}</Link>
-            <button type="button" className="footer__menu-link">{t('promotion')}</button>
+            <Link to="/debts" onClick={scrollToTop} className="footer__menu-link">Долги</Link>
           </div>
           <div className="footer__menu-column">
             <button type="button" className="footer__menu-link">{t('investors')}</button>
-            <button type="button" className="footer__menu-link">{t('vacancies')}</button>
-            <button type="button" className="footer__menu-link">{t('tvAdvertising')}</button>
+            <Link to="/subscriptions" onClick={scrollToTop} className="footer__menu-link">Тарифы и цены</Link>
+            <Link to="/shares" onClick={scrollToTop} className="footer__menu-link">Доли</Link>
           </div>
           <div className="footer__menu-column">
             <Link to="/chat" onClick={scrollToTop} className="footer__menu-link">{t('help')}</Link>

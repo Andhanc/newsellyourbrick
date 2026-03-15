@@ -131,9 +131,9 @@
 
 .moderation-property-detail__header {
   display: flex;
+  flex-direction: column;
   align-items: flex-start;
-  justify-content: space-between;
-  gap: 1rem;
+  gap: 0.75rem;
   margin-bottom: 1rem;
 }
 
@@ -142,7 +142,13 @@
   font-weight: 700;
   color: #111827;
   margin: 0;
-  flex: 1;
+}
+
+.moderation-property-detail__statuses {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  align-items: center;
 }
 
 .moderation-property-detail__badge {
@@ -186,6 +192,52 @@
   font-weight: 700;
   color: #4361ee;
   margin-bottom: 1.5rem;
+}
+
+/* Объединённый блок: уровень риска + долговые обязательства */
+.moderation-property-detail__debt-block {
+  background: linear-gradient(135deg, #f0fdfc 0%, #f8fafc 100%);
+  border: 1px solid rgba(10, 186, 181, 0.2);
+  border-radius: 12px;
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.moderation-property-detail__debt-block-risk {
+  margin-bottom: 1.25rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid rgba(10, 186, 181, 0.15);
+}
+
+.moderation-property-detail__debt-block-risk:last-of-type {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.moderation-property-detail__debt-block-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 0.5rem 0;
+}
+
+.moderation-property-detail__debt-block-obligations {
+  margin-top: 0;
+}
+
+.moderation-property-detail__debt-block-h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 0.75rem 0;
+}
+
+.moderation-property-detail__debt-block-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
 }
 
 .moderation-property-detail__description {
@@ -446,6 +498,67 @@
 .moderation-property-detail__document-type {
   font-size: 0.8125rem;
   color: #6b7280;
+}
+
+/* Debt document group card modifier */
+.moderation-property-detail__document-card--debt-group {
+  align-items: flex-start;
+  background: #f0fffe;
+  border-color: #c7f5f3;
+}
+
+.moderation-property-detail__document-card--debt-group:hover {
+  border-color: #0ABAB5;
+  background: #e6fffe;
+}
+
+/* Debt documents list inside the card */
+.moderation-property-detail__debt-documents-list {
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+/* Individual debt document link */
+.moderation-property-detail__debt-document-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.875rem;
+  color: #0ABAB5;
+  text-decoration: none;
+  font-weight: 500;
+  padding: 0.3rem 0.6rem;
+  border-radius: 6px;
+  background: rgba(10, 186, 181, 0.08);
+  transition: background 0.15s, color 0.15s;
+  word-break: break-word;
+}
+
+.moderation-property-detail__debt-document-link::before {
+  content: '📄';
+  font-size: 0.9rem;
+  flex-shrink: 0;
+}
+
+.moderation-property-detail__debt-document-link:hover {
+  background: rgba(10, 186, 181, 0.18);
+  color: #089e9a;
+  text-decoration: underline;
+}
+
+.moderation-property-detail__debt-document-link--disabled {
+  color: #9ca3af;
+  background: #f3f4f6;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.moderation-property-detail__debt-document-link--disabled::before {
+  content: '🚫';
 }
 
 /* Модальное окно для просмотра документа */

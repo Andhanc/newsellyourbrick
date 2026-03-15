@@ -31,6 +31,7 @@ import './PropertyDetailClassic.css'
 import { countries as countryList } from '../components/CountrySelect'
 
 import { getApiBaseUrl, getApiBaseUrlSync } from '../utils/apiConfig'
+import FlipCard from '../components/ui/FlipCard'
 
 // Используем синхронную версию для инициализации, затем обновим при загрузке
 let API_BASE_URL = getApiBaseUrlSync()
@@ -2931,198 +2932,65 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                 </div>
               ) : null}
 
-              {/* Блок критичности и долговых обязательств для объектов с долгами (над картой) */}
-              {isDebtProperty && (
-                <div
-                  style={{
-                    marginTop: '20px',
-                    padding: '18px 20px',
-                    borderRadius: '16px',
-                    backgroundColor: '#ffffff',
-                    boxShadow: '0 12px 40px rgba(15, 23, 42, 0.06)',
-                    border: '1px solid rgba(148, 163, 184, 0.25)',
-                  }}
-                >
-                  <h3
-                    style={{
-                      margin: 0,
-                      marginBottom: '10px',
-                      fontSize: '16px',
-                      fontWeight: 600,
-                      color: '#111827',
-                    }}
-                  >
-                    Статус объекта с долгами
-                  </h3>
+              {/* Блок риска и долговых обязательств — FlipCard */}
+              {isDebtProperty && (() => {
+                const sev = displayProperty.debt_severity
+                const accentColor =
+                  sev === 'red' ? '#DC2626' :
+                  sev === 'yellow' ? '#CA8A04' :
+                  '#16A34A'
 
-                  {/* Уровень критичности */}
-                  {displayProperty.debt_severity && (
-                    <div style={{ marginBottom: '12px' }}>
-                      <span
-                        style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          padding: '4px 12px',
-                          borderRadius: '999px',
-                          fontSize: '12px',
-                          fontWeight: 600,
-                          backgroundColor:
-                            displayProperty.debt_severity === 'red'
-                              ? '#fee2e2'
-                              : displayProperty.debt_severity === 'yellow'
-                              ? '#fef9c3'
-                              : '#dcfce7',
-                          color:
-                            displayProperty.debt_severity === 'red'
-                              ? '#b91c1c'
-                              : displayProperty.debt_severity === 'yellow'
-                              ? '#854d0e'
-                              : '#166534',
-                        }}
-                      >
-                        {displayProperty.debt_severity === 'red'
-                          ? 'Критичный объект'
-                          : displayProperty.debt_severity === 'yellow'
-                          ? 'Объект средней тяжести'
-                          : 'Объект лёгкой тяжести'}
-                      </span>
-                    </div>
-                  )}
+                const riskTitle =
+                  sev === 'red' ? 'Высокий риск' :
+                  sev === 'yellow' ? 'Средний риск' :
+                  'Низкий риск'
 
-                  {/* Параметры долговых обязательств */}
-                  <div style={{ marginBottom: '10px' }}>
-                    <div
-                      style={{
-                        fontSize: '13px',
-                        fontWeight: 500,
-                        color: '#6b7280',
-                        marginBottom: '6px',
-                      }}
-                    >
-                      Долговые обязательства по объекту:
-                    </div>
+                const riskSubtitle =
+                  sev === 'red' ? 'Красный — существенные задолженности' :
+                  sev === 'yellow' ? 'Жёлтый — требуют времени и расходов' :
+                  'Зелёный — технические и процедурные моменты'
 
-                    <div
-                      style={{
-                        display: 'flex',
-                        flexWrap: 'wrap',
-                        gap: '6px',
-                      }}
-                    >
-                      {displayProperty.debt_utilities ? (
-                        <span
-                          style={{
-                            padding: '6px 12px',
-                            borderRadius: '999px',
-                            backgroundColor: '#e3f5e8',
-                            fontSize: '12px',
-                            color: '#111827',
-                          }}
-                        >
-                          Долги по коммунальным услугам
-                        </span>
-                      ) : null}
-                      {displayProperty.debt_mortgage_pledge ? (
-                        <span
-                          style={{
-                            padding: '6px 12px',
-                            borderRadius: '999px',
-                            backgroundColor: '#e3f5e8',
-                            fontSize: '12px',
-                            color: '#111827',
-                          }}
-                        >
-                          Залог у банка
-                        </span>
-                      ) : null}
-                      {displayProperty.debt_property_taxes ? (
-                        <span
-                          style={{
-                            padding: '6px 12px',
-                            borderRadius: '999px',
-                            backgroundColor: '#e3f5e8',
-                            fontSize: '12px',
-                            color: '#111827',
-                          }}
-                        >
-                          Неоплаченные налоги на имущество
-                        </span>
-                      ) : null}
-                      {displayProperty.debt_arrest ? (
-                        <span
-                          style={{
-                            padding: '6px 12px',
-                            borderRadius: '999px',
-                            backgroundColor: '#e3f5e8',
-                            fontSize: '12px',
-                            color: '#111827',
-                          }}
-                        >
-                          Арест / ограничения
-                        </span>
-                      ) : null}
-                      {displayProperty.debt_inherited ? (
-                        <span
-                          style={{
-                            padding: '6px 12px',
-                            borderRadius: '999px',
-                            backgroundColor: '#e3f5e8',
-                            fontSize: '12px',
-                            color: '#111827',
-                          }}
-                        >
-                          Долги наследодателя
-                        </span>
-                      ) : null}
-                      {displayProperty.debt_third_party ? (
-                        <span
-                          style={{
-                            padding: '6px 12px',
-                            borderRadius: '999px',
-                            backgroundColor: '#e3f5e8',
-                            fontSize: '12px',
-                            color: '#111827',
-                          }}
-                        >
-                          Долги перед третьими лицами
-                        </span>
-                      ) : null}
-                      {displayProperty.debt_other ? (
-                        <span
-                          style={{
-                            padding: '6px 12px',
-                            borderRadius: '999px',
-                            backgroundColor: '#e3f5e8',
-                            fontSize: '12px',
-                            color: '#111827',
-                          }}
-                        >
-                          {displayProperty.debt_other}
-                        </span>
-                      ) : null}
-                    </div>
+                const riskDescription =
+                  sev === 'red'
+                    ? 'Существенные задолженности и/или ограничения. Перед покупкой потребуется глубокая юридическая и финансовая проверка.'
+                    : sev === 'yellow'
+                    ? 'Вопросы, которые могут потребовать времени и дополнительных расходов, но, как правило, решаемы при грамотном сопровождении.'
+                    : 'В основном технические или процедурные вопросы, решаемые стандартными действиями при сделке.'
+
+                const ctaText =
+                  sev === 'red' ? '🔥 Высокий шанс заработать' :
+                  sev === 'yellow' ? '📈 Средний шанс заработать' :
+                  '✅ Стабильный шанс заработать'
+
+                const debtFeatures = [
+                  displayProperty.debt_utilities && 'Долги по коммунальным услугам',
+                  displayProperty.debt_mortgage_pledge && 'Залог у банка',
+                  displayProperty.debt_property_taxes && 'Неоплаченные налоги на имущество',
+                  displayProperty.debt_arrest && 'Арест / ограничения',
+                  displayProperty.debt_inherited && 'Долги наследодателя',
+                  displayProperty.debt_third_party && 'Долги перед третьими лицами',
+                  displayProperty.debt_other && displayProperty.debt_other,
+                  displayProperty.debt_amount
+                    ? `Сумма долга: $${Number(displayProperty.debt_amount).toLocaleString('en-US')}`
+                    : null,
+                ].filter(Boolean)
+
+                if (debtFeatures.length === 0) debtFeatures.push('Долговые обязательства уточняются')
+
+                return (
+                  <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'center' }}>
+                    <FlipCard
+                      color={accentColor}
+                      title={riskTitle}
+                      subtitle={riskSubtitle}
+                      description={riskDescription}
+                      features={debtFeatures.slice(0, 4)}
+                      ctaText={ctaText}
+                      clickToFlip
+                    />
                   </div>
-
-                  {/* Пояснение, что значит эта критичность */}
-                  <p
-                    style={{
-                      margin: 0,
-                      fontSize: '12px',
-                      lineHeight: 1.5,
-                      color: '#6b7280',
-                    }}
-                  >
-                    {displayProperty.debt_severity === 'red' &&
-                      'Критичный уровень: по объекту есть существенные задолженности и/или ограничения. Перед покупкой потребуется глубокая юридическая и финансовая проверка.'}
-                    {displayProperty.debt_severity === 'yellow' &&
-                      'Средний уровень: по объекту есть вопросы, которые могут потребовать времени и дополнительных расходов, но, как правило, решаемы при грамотном сопровождении.'}
-                    {displayProperty.debt_severity === 'green' &&
-                      'Лёгкий уровень: в основном технические или процедурные вопросы, которые обычно решаются стандартными действиями при сделке.'}
-                    {!displayProperty.debt_severity &&
-                      'По данному объекту есть долговые обязательства. Пожалуйста, внимательно ознакомьтесь с условиями и проконсультируйтесь со специалистом перед покупкой.'}
-                  </p>
-                </div>
-              )}
+                )
+              })()}
 
               {/* Карта */}
               <div className="property-detail-sidebar__map">

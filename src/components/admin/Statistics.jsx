@@ -48,6 +48,16 @@ const Statistics = ({ businessInfo, onShowUsers }) => {
   const [propertiesCount, setPropertiesCount] = useState(null); // Количество объектов из БД
   const [auctionsCount, setAuctionsCount] = useState(null); // Количество аукционов из БД
   const [isLoadingCounts, setIsLoadingCounts] = useState(true);
+  const [usersByDayWeekOffset, setUsersByDayWeekOffset] = useState(0); // 0 = текущая неделя, -1 = прошлая и т.д.
+  const [usersByDayData, setUsersByDayData] = useState([]); // { date, count }[] за выбранную неделю
+  const [usersByDayWeekRange, setUsersByDayWeekRange] = useState({ weekStart: null, weekEnd: null });
+  const [isLoadingUsersByDay, setIsLoadingUsersByDay] = useState(true);
+  const [usersByDayLoadError, setUsersByDayLoadError] = useState(false);
+  const [categoryViewMode, setCategoryViewMode] = useState('type'); // 'type' | 'sections'
+  const [categoryStats, setCategoryStats] = useState({ byType: [], bySection: [] });
+  const [isLoadingCategoryStats, setIsLoadingCategoryStats] = useState(true);
+  const [onlineCount, setOnlineCount] = useState(null); // количество посетителей онлайн
+  const [isLoadingOnlineCount, setIsLoadingOnlineCount] = useState(true);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -135,71 +145,123 @@ const Statistics = ({ businessInfo, onShowUsers }) => {
     fetchStats();
   }, []);
 
-  // Загружаем количество объектов и аукционов из API
+  // Загружаем регистрации по дням за выбранную неделю
+  useEffect(() => {
+    const getMondayForWeekOffset = (offset) => {
+      const now = new Date();
+      const day = now.getDay();
+      const mondayOffset = day === 0 ? -6 : 1 - day;
+      const monday = new Date(now);
+      monday.setDate(now.getDate() + mondayOffset + offset * 7);
+      return monday.toISOString().slice(0, 10);
+    };
+
+    const fetchRegistrationsByDay = async () => {
+      try {
+        setIsLoadingUsersByDay(true);
+        const API_BASE_URL = await getApiBaseUrl();
+        const weekStart = getMondayForWeekOffset(usersByDayWeekOffset);
+        const start = new Date(weekStart);
+        const end = new Date(start);
+        end.setDate(end.getDate() + 6);
+        const weekEnd = end.toISOString().slice(0, 10);
+        setUsersByDayWeekRange({ weekStart, weekEnd });
+        setUsersByDayLoadError(false);
+        const response = await fetch(`${API_BASE_URL}/admin/users/registrations-by-day?weekStart=${weekStart}`);
+        if (response.ok) {
+          const json = await response.json();
+          if (json.success && Array.isArray(json.data)) {
+            setUsersByDayData(json.data);
+            setUsersByDayWeekRange({ weekStart: json.weekStart, weekEnd: json.weekEnd });
+          } else {
+            setUsersByDayData(Array(7).fill(0).map((_, i) => ({ date: new Date(start.getTime() + i * 86400000).toISOString().slice(0, 10), count: 0 })));
+          }
+        } else {
+          setUsersByDayLoadError(true);
+          setUsersByDayData(Array(7).fill(0).map((_, i) => ({ date: new Date(start.getTime() + i * 86400000).toISOString().slice(0, 10), count: 0 })));
+        }
+      } catch (error) {
+        console.error('Ошибка загрузки регистраций по дням:', error);
+        setUsersByDayLoadError(true);
+        const weekStart = getMondayForWeekOffset(usersByDayWeekOffset);
+        const start = new Date(weekStart);
+        setUsersByDayData(Array(7).fill(0).map((_, i) => ({ date: new Date(start.getTime() + i * 86400000).toISOString().slice(0, 10), count: 0 })));
+      } finally {
+        setIsLoadingUsersByDay(false);
+      }
+    };
+
+    fetchRegistrationsByDay();
+  }, [usersByDayWeekOffset]);
+
+  // Загружаем количество объектов и аукционов из API (лёгкий эндпоинт счётчиков)
   useEffect(() => {
     const fetchCounts = async () => {
       try {
         setIsLoadingCounts(true);
         const API_BASE_URL = await getApiBaseUrl();
-        
-        // Загружаем количество одобренных объектов
-        let approvedCount = 0;
-        try {
-          const approvedResponse = await fetch(`${API_BASE_URL}/properties/approved`);
-          if (approvedResponse.ok) {
-            const approvedData = await approvedResponse.json();
-            console.log('📊 Ответ /properties/approved:', approvedData);
-            if (approvedData.success && Array.isArray(approvedData.data)) {
-              approvedCount = approvedData.data.length;
-            } else {
-              console.warn('⚠️ Неверный формат ответа /properties/approved:', approvedData);
-            }
-          } else {
-            console.warn('⚠️ Ошибка HTTP при загрузке одобренных объектов:', approvedResponse.status, approvedResponse.statusText);
-            const errorText = await approvedResponse.text();
-            console.warn('⚠️ Текст ошибки:', errorText);
-          }
-        } catch (error) {
-          console.error('❌ Ошибка при загрузке одобренных объектов:', error);
-        }
-
-        // Загружаем количество аукционных объявлений по всем типам
-        const types = ['commercial', 'villa', 'apartment', 'house'];
-        let totalAuctionsCount = 0;
-        
-        for (const type of types) {
-          try {
-            const response = await fetch(`${API_BASE_URL}/properties/auctions?type=${type}`);
-            if (response.ok) {
-              const data = await response.json();
-              console.log(`📊 Ответ /properties/auctions?type=${type}:`, data);
-              if (data.success && Array.isArray(data.data)) {
-                totalAuctionsCount += data.data.length;
-              } else {
-                console.warn(`⚠️ Неверный формат ответа для типа ${type}:`, data);
-              }
-            } else {
-              console.warn(`⚠️ Ошибка HTTP при загрузке аукционов типа ${type}:`, response.status, response.statusText);
-            }
-          } catch (error) {
-            console.error(`❌ Ошибка загрузки аукционных объявлений типа ${type}:`, error);
+        const response = await fetch(`${API_BASE_URL}/admin/stats/counts`);
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success) {
+            setPropertiesCount(data.propertiesCount ?? 0);
+            setAuctionsCount(data.auctionsCount ?? 0);
           }
         }
-
-        console.log('✅ Итоговые данные - объектов:', approvedCount, 'аукционов:', totalAuctionsCount);
-        setPropertiesCount(approvedCount);
-        setAuctionsCount(totalAuctionsCount);
       } catch (error) {
-        console.error('❌ Критическая ошибка при загрузке количества объектов и аукционов:', error);
-        // Устанавливаем 0, чтобы показать, что данные не загрузились
+        console.error('Ошибка загрузки счётчиков объектов и аукционов:', error);
         setPropertiesCount(0);
         setAuctionsCount(0);
       } finally {
         setIsLoadingCounts(false);
       }
     };
-
     fetchCounts();
+  }, []);
+
+  // Загружаем и периодически обновляем количество посетителей онлайн
+  useEffect(() => {
+    const fetchOnlineCount = async () => {
+      try {
+        const API_BASE_URL = await getApiBaseUrl();
+        const response = await fetch(`${API_BASE_URL}/admin/online-count`);
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success && typeof data.count === 'number') {
+            setOnlineCount(data.count);
+          }
+        }
+      } catch (error) {
+        console.error('Ошибка загрузки online count:', error);
+      } finally {
+        setIsLoadingOnlineCount(false);
+      }
+    };
+    fetchOnlineCount();
+    const interval = setInterval(fetchOnlineCount, 20000); // каждые 20 сек
+    return () => clearInterval(interval);
+  }, []);
+
+  // Загружаем статистику категорий недвижимости (по типу и по разделам)
+  useEffect(() => {
+    const fetchCategoryStats = async () => {
+      try {
+        setIsLoadingCategoryStats(true);
+        const API_BASE_URL = await getApiBaseUrl();
+        const response = await fetch(`${API_BASE_URL}/admin/properties/category-stats`);
+        if (response.ok) {
+          const json = await response.json();
+          if (json.success) {
+            setCategoryStats({ byType: json.byType || [], bySection: json.bySection || [] });
+          }
+        }
+      } catch (error) {
+        console.error('Ошибка загрузки статистики категорий:', error);
+      } finally {
+        setIsLoadingCategoryStats(false);
+      }
+    };
+    fetchCategoryStats();
   }, []);
 
   // Загружаем реальные аукционные объявления из API
@@ -460,40 +522,44 @@ const Statistics = ({ businessInfo, onShowUsers }) => {
     };
   }, [countryStats, isLoadingStats]);
 
-  // Данные для диаграммы пользователей по дням недели
+  // Данные для диаграммы пользователей по дням недели (реальные регистрации за выбранную неделю)
   const usersByWeekdayData = useMemo(() => {
-    // Дефолтные значения для Пн-Вс
-    const baseData = [120, 145, 135, 160, 180, 200, 150];
     const dayNames = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
-    
+    const data = usersByDayData.length === 7
+      ? usersByDayData.map((d) => d.count)
+      : Array(7).fill(0);
     return {
       labels: dayNames,
       datasets: [{
-        label: 'Количество пользователей',
-        data: baseData,
+        label: 'Регистраций',
+        data,
         borderColor: '#4361ee',
         backgroundColor: 'rgba(67, 97, 238, 0.1)',
         fill: true,
         tension: 0.4
       }]
     };
-  }, []);
+  }, [usersByDayData]);
 
-  const propertyCategoriesData = useMemo(() => ({
-    labels: ['Виллы', 'Дома', 'Квартиры', 'Апартаменты', 'Земля'],
-    datasets: [{
-      label: 'Процент',
-      data: [15, 20, 35, 18, 12],
-      backgroundColor: [
-        '#4361ee',
-        '#4895ef',
-        '#3f37c9',
-        '#4cc9f0',
-        '#10b981'
-      ],
-      borderRadius: 6
-    }]
-  }), []);
+  const typeLabels = { villa: 'Виллы', house: 'Дома', apartment: 'Квартиры', commercial: 'Апартаменты' };
+  const sectionLabels = { auction: 'Аукцион', buy_now: 'Купить сейчас', share: 'Доли', debt: 'Долги' };
+  const propertyCategoriesData = useMemo(() => {
+    const isType = categoryViewMode === 'type';
+    const list = isType ? categoryStats.byType : categoryStats.bySection;
+    const labelKey = isType ? 'type' : 'section';
+    const labels = list.map((item) => (isType ? typeLabels[item.type] : sectionLabels[item.section]) || item[labelKey]);
+    const data = list.map((item) => item.count);
+    const colors = ['#4361ee', '#4895ef', '#3f37c9', '#4cc9f0', '#10b981'];
+    return {
+      labels: labels.length ? labels : (isType ? ['Виллы', 'Дома', 'Квартиры', 'Апартаменты'] : ['Аукцион', 'Купить сейчас', 'Доли', 'Долги']),
+      datasets: [{
+        label: isType ? 'По типу' : 'По разделам',
+        data: data.length ? data : (isType ? [0, 0, 0, 0] : [0, 0, 0, 0]),
+        backgroundColor: colors.slice(0, Math.max(data.length, 1)),
+        borderRadius: 6
+      }]
+    };
+  }, [categoryStats, categoryViewMode]);
 
   const userRoleData = useMemo(() => {
     // Используем реальные данные из БД, если они загружены
@@ -566,7 +632,7 @@ const Statistics = ({ businessInfo, onShowUsers }) => {
         callbacks: {
           label: function (context) {
             const value = context.parsed.y ?? 0;
-            return `${value} пользователей`;
+            return `${value} регистраций`;
           }
         }
       }
@@ -618,7 +684,7 @@ const Statistics = ({ businessInfo, onShowUsers }) => {
         callbacks: {
           label: function(context) {
             const value = context.parsed.y;
-            return `${value}%`;
+            return `${value} объектов`;
           }
         }
       }
@@ -626,10 +692,10 @@ const Statistics = ({ businessInfo, onShowUsers }) => {
     scales: {
       y: {
         beginAtZero: true,
-        max: 100,
         ticks: {
+          stepSize: 1,
           callback: function(value) {
-            return value + '%';
+            return Number.isInteger(value) ? value : value;
           }
         },
         grid: {
@@ -742,7 +808,7 @@ const Statistics = ({ businessInfo, onShowUsers }) => {
       },
       {
         title: 'Онлайн',
-        value: Math.round((businessInfo.stats.online_users || 42) * multiplier),
+        value: isLoadingOnlineCount ? '...' : (onlineCount !== null && onlineCount !== undefined ? onlineCount : 0),
         changePercent: '5.3',
         icon: 'fas fa-circle',
         iconClass: 'red'
@@ -924,12 +990,55 @@ const Statistics = ({ businessInfo, onShowUsers }) => {
         <div className="chart-container">
           <div className="chart-header">
             <h3 className="chart-title-small">Пользователей по дням</h3>
+            <div className="chart-actions">
+              <button
+                type="button"
+                className="chart-btn"
+                onClick={() => setUsersByDayWeekOffset((o) => o - 1)}
+                disabled={isLoadingUsersByDay}
+                title="Предыдущая неделя"
+              >
+                ←
+              </button>
+              <span className="chart-week-label">
+                {usersByDayWeekRange.weekStart && usersByDayWeekRange.weekEnd
+                  ? (() => {
+                      const fmt = (s) => {
+                        const d = new Date(s + 'T12:00:00');
+                        const months = 'янв фев мар апр май июн июл авг сен окт ноя дек'.split(' ');
+                        return `${d.getDate()} ${months[d.getMonth()]}`;
+                      };
+                      return `${fmt(usersByDayWeekRange.weekStart)} – ${fmt(usersByDayWeekRange.weekEnd)} ${new Date(usersByDayWeekRange.weekStart + 'T12:00:00').getFullYear()}`;
+                    })()
+                  : 'Загрузка...'}
+              </span>
+              <button
+                type="button"
+                className="chart-btn"
+                onClick={() => setUsersByDayWeekOffset((o) => o + 1)}
+                disabled={isLoadingUsersByDay || usersByDayWeekOffset >= 0}
+                title="Следующая неделя"
+              >
+                →
+              </button>
+            </div>
           </div>
           <div className="chart-wrapper">
-            <Line 
-              data={usersByWeekdayData} 
-              options={usersByWeekdayChartOptions} 
-            />
+            {isLoadingUsersByDay ? (
+              <div className="chart-loading">Загрузка...</div>
+            ) : (
+              <>
+                <Line 
+                  data={usersByWeekdayData} 
+                  options={usersByWeekdayChartOptions} 
+                />
+                {usersByDayLoadError && (
+                  <p className="chart-error-hint">
+                    Не удалось загрузить данные. Запустите сервер: <code>npm run server</code> или <code>npm start</code>.
+                  </p>
+                )}
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -938,9 +1047,31 @@ const Statistics = ({ businessInfo, onShowUsers }) => {
         <div className="chart-container">
           <div className="chart-header">
             <h3 className="chart-title">Категории недвижимости</h3>
+            <div className="chart-actions">
+              <button
+                type="button"
+                className={`chart-btn ${categoryViewMode === 'type' ? 'active' : ''}`}
+                onClick={() => setCategoryViewMode('type')}
+                disabled={isLoadingCategoryStats}
+              >
+                Тип
+              </button>
+              <button
+                type="button"
+                className={`chart-btn ${categoryViewMode === 'sections' ? 'active' : ''}`}
+                onClick={() => setCategoryViewMode('sections')}
+                disabled={isLoadingCategoryStats}
+              >
+                Разделы
+              </button>
+            </div>
           </div>
           <div className="chart-wrapper">
-            <Bar data={propertyCategoriesData} options={propertyCategoriesOptions} />
+            {isLoadingCategoryStats ? (
+              <div className="chart-loading">Загрузка...</div>
+            ) : (
+              <Bar data={propertyCategoriesData} options={propertyCategoriesOptions} />
+            )}
           </div>
         </div>
 

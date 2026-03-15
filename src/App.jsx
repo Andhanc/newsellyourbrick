@@ -27,6 +27,7 @@ import ClerkAuthSync from './components/ClerkAuthSync'
 import ClerkAuthHandler from './components/ClerkAuthHandler'
 import BlockedUserModal from './components/BlockedUserModal'
 import ToastContainer from './components/ToastContainer'
+import VisitorHeartbeat from './components/VisitorHeartbeat'
 import { validateSession, getUserData } from './services/authService'
 import './App.css'
 
@@ -217,6 +218,7 @@ function App() {
     <Router>
       <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
       <ScrollToTop />
+      <VisitorHeartbeat />
       <SessionValidator onBlockedChange={setIsBlocked} />
       <AdminSessionCleaner />
       <ClerkAuthSync />

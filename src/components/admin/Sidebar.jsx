@@ -1,5 +1,5 @@
 import React from 'react';
-import { FaChartBar, FaUsers, FaShieldAlt, FaComment, FaBuilding, FaSignOutAlt, FaKey, FaWhatsapp, FaAddressBook, FaShoppingCart, FaFlask, FaTimes, FaGift, FaRobot } from 'react-icons/fa';
+import { FaChartBar, FaUsers, FaShieldAlt, FaComment, FaBuilding, FaSignOutAlt, FaKey, FaWhatsapp, FaAddressBook, FaShoppingCart, FaFlask, FaTimes, FaGift, FaRobot, FaFileInvoiceDollar, FaFileAlt } from 'react-icons/fa';
 import './Sidebar.css';
 
 const Sidebar = ({ activeSection, onSectionChange, onLogout, adminPermissions }) => {
@@ -14,6 +14,8 @@ const Sidebar = ({ activeSection, onSectionChange, onLogout, adminPermissions })
     { id: 'chat', icon: FaComment, label: 'Чат', permission: 'can_access_chat' },
     { id: 'smart_assistant', icon: FaRobot, label: 'Умный помощник', permission: 'can_access_chat' },
     { id: 'objects', icon: FaBuilding, label: 'Объекты', permission: 'can_access_objects' },
+    { id: 'debt_reasons', icon: FaFileInvoiceDollar, label: 'Причина долга', permission: 'can_access_objects' },
+    { id: 'debt_documents', icon: FaFileAlt, label: 'Необходимые документы', permission: 'can_access_objects' },
     { id: 'whatsapp', icon: FaWhatsapp, label: 'WhatsApp', permission: 'can_access_whatsapp' },
     { id: 'clients', icon: FaAddressBook, label: 'Клиенты', permission: 'can_access_clients' },
     { id: 'purchase_requests', icon: FaShoppingCart, label: 'Запросы на покупку', permission: 'can_access_purchase_requests' },
@@ -76,27 +78,14 @@ const Sidebar = ({ activeSection, onSectionChange, onLogout, adminPermissions })
             </div>
           );
         })}
-        {isMobile && (
-          <div
-            className="menu-item menu-item--logout-inline"
-            onClick={onLogout}
-          >
-            <FaSignOutAlt size={20} />
-            <span>Выйти</span>
-          </div>
-        )}
-      </div>
-      {!isMobile && (
-        <div className="sidebar-footer">
-          <div
-            className="menu-item menu-item--logout"
-            onClick={onLogout}
-          >
-            <FaSignOutAlt size={20} />
-            <span>Выйти</span>
-          </div>
+        <div
+          className="menu-item menu-item--logout"
+          onClick={onLogout}
+        >
+          <FaSignOutAlt size={20} />
+          <span>Выйти</span>
         </div>
-      )}
+      </div>
     </div>
   );
 };

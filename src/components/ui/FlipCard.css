@@ -1,0 +1,18 @@
+@keyframes flip-card-slideIn {
+  0% {
+    transform: translateX(-100px);
+    opacity: 0;
+  }
+  50% {
+    transform: translateX(0);
+    opacity: 0.8;
+  }
+  100% {
+    transform: translateX(100px);
+    opacity: 0;
+  }
+}
+
+.flip-card-line {
+  animation: flip-card-slideIn 2s ease-in-out infinite;
+}

@@ -100,17 +100,10 @@
   flex-shrink: 0;
 }
 
-.sidebar-footer {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  padding: 1rem 0;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(0, 0, 0, 0.1);
-}
-
 .menu-item--logout {
+  margin-top: 0.75rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
   color: rgba(255, 255, 255, 0.9);
   background: transparent !important;
   border-left: none !important;
@@ -128,18 +121,6 @@
 
 .menu-item--logout.active::before {
   display: none;
-}
-
-.menu-item--logout-inline {
-  margin-top: 0.75rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-  padding-top: 1rem;
-  color: rgba(248, 113, 113, 0.9);
-}
-
-.menu-item--logout-inline:hover {
-  background: rgba(248, 113, 113, 0.15);
-  color: #fecaca;
 }
 
 .admin-sidebar-backdrop {

@@ -9,6 +9,7 @@ import VerificationDocumentsModal from './VerificationDocumentsModal'
 import { registerWithEmail, loginWithEmail, validatePassword } from '../services/authService'
 import { getApiBaseUrl } from '../utils/apiConfig'
 import { showNotification } from '../utils/toastHelper'
+import AnimatedCharacters from './AnimatedCharacters'
 import './LoginModal.css'
 
 const LoginModal = ({ isOpen, onClose }) => {
@@ -31,6 +32,8 @@ const LoginModal = ({ isOpen, onClose }) => {
   const [newUserId, setNewUserId] = useState(null)
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [isPasswordFocused, setIsPasswordFocused] = useState(false)
+  const [isEmailFocused, setIsEmailFocused] = useState(false)
   const telegramWidgetRef = useRef(null)
   const [telegramBotUsername, setTelegramBotUsername] = useState(() => import.meta.env.VITE_TELEGRAM_BOT_USERNAME || '')
   const [telegramConfigLoaded, setTelegramConfigLoaded] = useState(!!import.meta.env.VITE_TELEGRAM_BOT_USERNAME)
@@ -494,6 +497,18 @@ const LoginModal = ({ isOpen, onClose }) => {
       {!showEmailVerificationModal && (
         <div className="login-modal-overlay" onClick={onClose}>
           <div className={`login-modal ${!isLogin ? `login-modal--${userRole}` : ''}`} onClick={(e) => e.stopPropagation()}>
+
+            {/* Side panel with animated characters (hidden on mobile) */}
+            <div className="login-modal__side-panel">
+              <AnimatedCharacters
+                isTypingPassword={isPasswordFocused && formData.password.length > 0}
+                isPasswordVisible={showPassword && formData.password.length > 0}
+                isEmailFocused={isEmailFocused}
+              />
+            </div>
+
+            {/* Main form panel */}
+            <div className="login-modal__form-panel">
         <button 
           className="login-modal__close" 
           onClick={onClose}
@@ -662,6 +677,8 @@ const LoginModal = ({ isOpen, onClose }) => {
               name="email"
               value={formData.email}
               onChange={handleInputChange}
+              onFocus={() => setIsEmailFocused(true)}
+              onBlur={() => setIsEmailFocused(false)}
               className="login-modal__input"
               placeholder={isLogin ? "Введите email или логин (admin/owner/client)" : "Введите ваш email"}
               required
@@ -680,6 +697,8 @@ const LoginModal = ({ isOpen, onClose }) => {
                 name="password"
                 value={formData.password}
                 onChange={handleInputChange}
+                onFocus={() => setIsPasswordFocused(true)}
+                onBlur={() => setIsPasswordFocused(false)}
                 className="login-modal__input login-modal__input--password"
                 placeholder="Введите пароль"
                 required
@@ -751,8 +770,10 @@ const LoginModal = ({ isOpen, onClose }) => {
             {isLogin ? 'Зарегистрироваться' : 'Войти'}
           </button>
         </div>
-      </div>
-      </div>
+
+            </div>
+          </div>
+        </div>
       )}
       
       <WhatsAppVerificationModal
