@@ -1,0 +1,431 @@
+/* PricingCards — glassmorphism, две карточки Starter (светлая) и Pro (тёмная) */
+
+.pricing-cards {
+  width: 100%;
+}
+
+.pricing-cards__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 32px;
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+@media (max-width: 767px) {
+  .pricing-cards__grid {
+    grid-template-columns: 1fr;
+    max-width: 100%;
+  }
+}
+
+.pricing-cards__grid--compact {
+  max-width: 100%;
+}
+
+/* ---------- Starter (светлая карточка) ---------- */
+.pricing-card--starter {
+  position: relative;
+  border-radius: 24px;
+  padding: 8px;
+  background: rgba(255, 255, 255, 0.65);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 12px 40px -15px rgba(0, 0, 0, 0.15);
+  box-sizing: border-box;
+}
+
+.pricing-card--starter::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.5) 0%, rgba(255,255,255,0.1) 100%);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+.pricing-card--starter .pricing-card__header {
+  border-radius: 16px;
+  padding: 32px;
+  margin-bottom: 8px;
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+
+.pricing-card--starter .pricing-card__title {
+  font-size: 1.875rem;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  color: #171717;
+  margin: 0 0 4px 0;
+}
+
+.pricing-card--starter .pricing-card__desc {
+  font-size: 1rem;
+  line-height: 1.6;
+  color: #525252;
+  margin: 0;
+}
+
+.pricing-card--starter .pricing-card__badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  border: 1px solid rgba(10, 186, 181, 0.5);
+  background: rgba(10, 186, 181, 0.12);
+  backdrop-filter: blur(6px);
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #089a95;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.pricing-card--starter .pricing-card__price {
+  font-size: 3rem;
+  font-weight: 700;
+  letter-spacing: -0.05em;
+  color: #171717;
+  margin: 0 0 32px 0;
+}
+
+.pricing-card--starter .pricing-card__price-unit {
+  font-size: 1.125rem;
+  color: #a3a3a3;
+  font-weight: 400;
+  margin-left: 4px;
+}
+
+.pricing-card--starter .pricing-card__cta {
+  width: 100%;
+  padding: 16px 24px;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #fff;
+  background: #171717;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  box-shadow: 0 4px 18px -6px rgba(0, 0, 0, 0.4);
+  transition: opacity 0.2s ease;
+}
+
+.pricing-card--starter .pricing-card__cta:hover {
+  opacity: 0.95;
+}
+
+.pricing-card--starter .pricing-card__features {
+  border-radius: 16px;
+  padding: 16px 24px 24px;
+  background: rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+.pricing-card--starter .pricing-card__features-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.pricing-card--starter .pricing-card__feature {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #262626;
+}
+
+.pricing-card--starter .pricing-card__toggle-wrap {
+  margin-top: 32px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.pricing-card--starter .pricing-card__toggle-label {
+  font-size: 0.875rem;
+  color: #525252;
+}
+
+/* Toggle Starter (светлый) — бирюзовый при включении */
+.pricing-card--starter .pricing-card__toggle {
+  position: relative;
+  width: 44px;
+  height: 24px;
+  border-radius: 9999px;
+  background: #e5e5e5;
+  border: 1px solid #d4d4d4;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.pricing-card--starter .pricing-card__toggle[data-enabled="true"] {
+  background: #0ABAB5;
+  border-color: #089a95;
+}
+
+.pricing-card--starter .pricing-card__toggle-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+  transition: transform 0.2s ease;
+}
+
+.pricing-card--starter .pricing-card__toggle[data-enabled="true"] .pricing-card__toggle-thumb {
+  transform: translateX(20px);
+}
+
+/* ---------- Pro (тёмная карточка) ---------- */
+.pricing-card--pro {
+  position: relative;
+  border-radius: 24px;
+  padding: 8px;
+  background: rgba(23, 23, 23, 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid #262626;
+  box-shadow: 0 12px 50px -15px rgba(0, 0, 0, 0.55);
+  box-sizing: border-box;
+}
+
+.pricing-card--pro::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.02) 100%);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+.pricing-card--pro .pricing-card__header {
+  border-radius: 16px;
+  padding: 32px;
+  margin-bottom: 8px;
+  background: rgba(23, 23, 23, 0.7);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid #262626;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.pricing-card--pro .pricing-card__title {
+  font-size: 1.875rem;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  color: #fafafa;
+  margin: 0 0 4px 0;
+}
+
+.pricing-card--pro .pricing-card__desc {
+  font-size: 1rem;
+  line-height: 1.6;
+  color: #a3a3a3;
+  margin: 0;
+}
+
+.pricing-card--pro .pricing-card__badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  border: 1px solid rgba(10, 186, 181, 0.6);
+  background: rgba(10, 186, 181, 0.2);
+  backdrop-filter: blur(6px);
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #5ddad6;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.pricing-card--pro .pricing-card__price {
+  font-size: 3rem;
+  font-weight: 700;
+  letter-spacing: -0.05em;
+  color: #fff;
+  margin: 0 0 32px 0;
+}
+
+.pricing-card--pro .pricing-card__price-unit {
+  font-size: 1.125rem;
+  color: #737373;
+  font-weight: 400;
+  margin-left: 4px;
+}
+
+.pricing-card--pro .pricing-card__cta {
+  width: 100%;
+  padding: 16px 24px;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #171717;
+  background: #fff;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  box-shadow: 0 4px 18px -6px rgba(255, 255, 255, 0.35);
+  transition: opacity 0.2s ease;
+}
+
+.pricing-card--pro .pricing-card__cta:hover {
+  opacity: 0.95;
+}
+
+.pricing-card--pro .pricing-card__cta svg {
+  color: #525252;
+}
+
+.pricing-card--pro .pricing-card__features {
+  border-radius: 16px;
+  padding: 16px 24px 24px;
+  background: rgba(23, 23, 23, 0.55);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid #262626;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.pricing-card--pro .pricing-card__features-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.pricing-card--pro .pricing-card__feature {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #d4d4d4;
+}
+
+.pricing-card--pro .pricing-card__toggle-wrap {
+  margin-top: 32px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.pricing-card--pro .pricing-card__toggle-label {
+  font-size: 0.875rem;
+  color: #a3a3a3;
+}
+
+/* Toggle Pro (тёмный) — бирюзовый при включении */
+.pricing-card--pro .pricing-card__toggle {
+  position: relative;
+  width: 44px;
+  height: 24px;
+  border-radius: 9999px;
+  background: #262626;
+  border: 1px solid #404040;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.pricing-card--pro .pricing-card__toggle[data-enabled="true"] {
+  background: #0ABAB5;
+  border-color: #089a95;
+}
+
+.pricing-card--pro .pricing-card__toggle-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #737373;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.3);
+  transition: transform 0.2s ease;
+}
+
+.pricing-card--pro .pricing-card__toggle[data-enabled="true"] .pricing-card__toggle-thumb {
+  background: #fff;
+  transform: translateX(20px);
+}
+
+/* Иконки галочек */
+.pricing-card__check-light {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+}
+
+.pricing-card__check-light circle {
+  fill: #171717;
+}
+
+.pricing-card__check-dark {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+}
+
+.pricing-card__check-dark circle {
+  fill: none;
+  stroke: #737373;
+  stroke-width: 1;
+}
+
+.pricing-card__check-dark path,
+.pricing-card__check-light path {
+  stroke: #fff;
+  stroke-width: 1.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Общие */
+.pricing-card__header-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  gap: 16px;
+  flex-wrap: nowrap;
+}
+
+.pricing-card__header-top-left {
+  min-width: 0;
+}
+
+.pricing-card__price-row {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+}

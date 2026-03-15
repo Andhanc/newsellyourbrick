@@ -242,6 +242,11 @@
   gap: 32px;
 }
 
+.subscriptions-cards--pricing {
+  display: block;
+  max-width: 100%;
+}
+
 .subscription-card {
   background: #fff;
   border: 2px solid #e0e0e0;

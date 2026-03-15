@@ -22,6 +22,8 @@ import Wallet from './pages/Wallet'
 import SearchResults from './pages/SearchResults'
 import AdminPanelPage from './admin/AdminPanelPage'
 import About from './pages/About'
+import InvestmentCalculator from './pages/InvestmentCalculator'
+import JetonPage from './pages/JetonPage'
 import Footer from './components/Footer'
 import ClerkAuthSync from './components/ClerkAuthSync'
 import ClerkAuthHandler from './components/ClerkAuthHandler'
@@ -246,6 +248,8 @@ function App() {
           <Route path="/debts" element={<Debts />} />
           <Route path="/about" element={<About />} />
           <Route path="/shares/:id" element={<ShareDetailPage />} />
+          <Route path="/calculator" element={<InvestmentCalculator />} />
+          <Route path="/jeton" element={<JetonPage />} />
           
           {/* Страницы для владельцев */}
           <Route path="/owner" element={<OwnerDashboard />} />

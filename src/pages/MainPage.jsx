@@ -23,6 +23,7 @@ import {
   FiStar,
   FiMail,
   FiShoppingCart,
+  FiPieChart,
 } from 'react-icons/fi'
 import {
   FaHome,
@@ -35,6 +36,8 @@ import {
   FaApple,
   FaYoutube,
   FaCar,
+  FaBolt,
+  FaGem,
 } from 'react-icons/fa'
 import { FaXTwitter } from 'react-icons/fa6'
 import { IoLocationOutline } from 'react-icons/io5'
@@ -49,6 +52,8 @@ import {
 } from 'react-icons/pi'
 import PropertyTimer from '../components/PropertyTimer'
 import PropertySearchBlock from '../components/PropertySearchBlock'
+import AnimatedFolder from '../components/ui/3d-folder'
+import { FrostedGlassCard } from '../components/ui/interactive-frosted-glass-card'
 import { showToast } from '../components/ToastContainer'
 import { showNotification } from '../utils/toastHelper'
 import LoginModal from '../components/LoginModal'
@@ -62,6 +67,52 @@ import { getApiBaseUrl, getApiBaseUrlSync } from '../utils/apiConfig'
 
 // Используем синхронную версию для инициализации, затем обновим при загрузке
 let API_BASE_URL = getApiBaseUrlSync()
+
+// Данные для 4 блоков 3D-папок (инвестиционные модели)
+const landingFolderData = [
+  {
+    title: 'Active Bidding / Аукционы',
+    gradient: 'linear-gradient(135deg, #0d9488 0%, #0f766e 100%)',
+    projects: [
+      { id: 'ab1', image: 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&q=80&w=800', title: 'Аукцион недвижимости' },
+      { id: 'ab2', image: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&q=80&w=800', title: 'Торги объектами' },
+      { id: 'ab3', image: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&q=80&w=800', title: 'Концентрация спроса' },
+      { id: 'ab4', image: 'https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?auto=format&fit=crop&q=80&w=800', title: 'Рыночные ставки' },
+    ],
+  },
+  {
+    title: 'Immediate Purchase',
+    gradient: 'linear-gradient(to right, #f59e0b 0%, #d97706 100%)',
+    projects: [
+      { id: 'ip1', image: 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&q=80&w=800', title: 'Сделка по цене' },
+      { id: 'ip2', image: 'https://images.unsplash.com/photo-1484154218962-a197022b5858?auto=format&fit=crop&q=80&w=800', title: 'Ликвидность сейчас' },
+      { id: 'ip3', image: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&q=80&w=800', title: 'Без ожидания' },
+      { id: 'ip4', image: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&q=80&w=800', title: 'Твёрдая цена' },
+    ],
+  },
+  {
+    title: 'Distressed Assets',
+    gradient: 'linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%)',
+    linkLabel: 'Как мы проверяем объекты',
+    linkHref: '/about',
+    projects: [
+      { id: 'da1', image: 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&q=80&w=800', title: 'Арбитраж активов' },
+      { id: 'da2', image: 'https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?auto=format&fit=crop&q=80&w=800', title: 'Специальные ситуации' },
+      { id: 'da3', image: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&q=80&w=800', title: 'Верификация лотов' },
+      { id: 'da4', image: 'https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?auto=format&fit=crop&q=80&w=800', title: 'Due Diligence' },
+    ],
+  },
+  {
+    title: 'Fractional Ownership (Co-investment)',
+    gradient: 'linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%)',
+    projects: [
+      { id: 'fo1', image: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&q=80&w=800', title: 'Долевое участие' },
+      { id: 'fo2', image: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&q=80&w=800', title: 'Премиальные активы' },
+      { id: 'fo3', image: 'https://images.unsplash.com/photo-1503387762-592deb58ef4e?auto=format&fit=crop&q=80&w=800', title: 'Co-investment' },
+      { id: 'fo4', image: 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&q=80&w=800', title: 'Доли в объектах' },
+    ],
+  },
+]
 
 const resortLocations = [
   'Costa Adeje, Tenerife',
@@ -886,6 +937,8 @@ function MainPage() {
   const notificationRef = useRef(null)
   const menuRef = useRef(null)
   const languageDropdownRef = useRef(null)
+  const landingStatsRef = useRef(null)
+  const [statsScrollProgress, setStatsScrollProgress] = useState(0)
 
   const heroImages = {
     rent: 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=1200&q=80',
@@ -893,7 +946,29 @@ function MainPage() {
   }
   
   const heroImage = heroImages[propertyMode]
-  
+
+  // Прогресс скролла для секции «Цифры»: 0 = секция внизу экрана, 1 = контент по центру (секция белая)
+  useEffect(() => {
+    const el = landingStatsRef.current
+    if (!el) return
+    const onScroll = () => {
+      const rect = el.getBoundingClientRect()
+      const viewportCenter = window.innerHeight / 2
+      const sectionCenter = rect.top + rect.height / 2
+      // progress 0: центр секции ниже центра экрана; 1: центр секции по центру экрана или выше
+      const raw = (viewportCenter - rect.top) / (rect.height * 0.5)
+      const progress = Math.min(1, Math.max(0, raw))
+      setStatsScrollProgress(progress)
+    }
+    onScroll()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    window.addEventListener('resize', onScroll)
+    return () => {
+      window.removeEventListener('scroll', onScroll)
+      window.removeEventListener('resize', onScroll)
+    }
+  }, [])
+
   // Функция фильтрации по поисковому запросу
   const filterBySearch = (properties) => {
     if (!searchQuery) return properties
@@ -1987,6 +2062,7 @@ function MainPage() {
         <div className={`hero-section__image hero-section__image--rent ${propertyMode === 'rent' ? 'hero-section__image--active' : ''}`} style={{ backgroundImage: `url(${heroImages.rent})` }}></div>
         <div className={`hero-section__image hero-section__image--buy ${propertyMode === 'buy' ? 'hero-section__image--active' : ''}`} style={{ backgroundImage: `url(${heroImages.buy})` }}></div>
         <div className="hero-section__overlay"></div>
+        <div className="hero-section__inner">
         <div className="hero-section__content">
           {/* Старый хедер для мобильной версии */}
           <header className="header">
@@ -2655,33 +2731,98 @@ function MainPage() {
         </div>
         </div>
       </header>
+
+          {/* Hero headline — Saleyourbrick */}
+          <div className="hero-headline">
+            <span className="hero-headline__accent" aria-hidden="true" />
+            <p className="hero-headline__brand">Saleyourbrick</p>
+            <h1 className="hero-headline__title">Инвестиционный маркетплейс</h1>
+            <p className="hero-headline__subtitle">
+              Конвертируйте активы в капитал за короткий срок или инвестируйте в верифицированную доходность
+            </p>
+            <a
+              href="#landing-models"
+              className="hero-headline__cta"
+              onClick={(e) => {
+                e.preventDefault()
+                document.getElementById('landing-models')?.scrollIntoView({ behavior: 'smooth' })
+              }}
+            >
+              Смотреть возможности
+              <FiArrowRight size={18} aria-hidden="true" />
+            </a>
+          </div>
         </div>
 
-      <section className="search">
-        <div className="search__field">
-          <FiSearch size={18} className="search__icon" />
-          <input
-            type="text"
-            placeholder={t('search') || 'Поиск по названию или адресу...'}
-            className="search__input"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-          {searchQuery && (
-            <button 
-              type="button"
-              className="search__clear"
-              onClick={() => setSearchQuery('')}
-              aria-label="Очистить поиск"
+          <section className="search">
+            <div className="search__field">
+              <FiSearch size={18} className="search__icon" />
+              <input
+                type="text"
+                placeholder={t('search') || 'Поиск по названию или адресу...'}
+                className="search__input"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+              {searchQuery && (
+                <button 
+                  type="button"
+                  className="search__clear"
+                  onClick={() => setSearchQuery('')}
+                  aria-label="Очистить поиск"
+                >
+                  <FiX size={18} />
+                </button>
+              )}
+              <button type="button" className="search__filter">
+                <FiSliders size={18} />
+              </button>
+            </div>
+          </section>
+
+          {/* CTA-карточки справа на фото hero (glassmorphism + 3D tilt) */}
+          <div className="hero-section__cta">
+            <FrostedGlassCard
+              variant="investor"
+              title="Стать инвестором"
+              buttonText="Начать"
+              onButtonClick={() => navigate('/auction')}
             >
-              <FiX size={18} />
-            </button>
-          )}
-          <button type="button" className="search__filter">
-            <FiSliders size={18} />
-          </button>
+              Пройдите верификацию и получите доступ к активам с доходностью от 12% до 25% и аналитике рынка.
+            </FrostedGlassCard>
+            <FrostedGlassCard
+              variant="seller"
+              title="Стать продавцом"
+              buttonText="Разместить объект"
+              onButtonClick={() => navigate('/owner')}
+            >
+              Узнайте, сколько верифицированных инвесторов готовы бороться за ваш объект прямо сейчас.
+            </FrostedGlassCard>
+          </div>
         </div>
       </section>
+
+      {/* Блок: 4 инвестиционные модели (3D-папки) */}
+      <section id="landing-models" className="landing-models">
+        <div className="landing-models__container">
+          <h2 className="landing-models__title">
+            4 инвестиционные модели управления активами на одной платформе.
+          </h2>
+          <p className="landing-models__subtitle">Выберите вашу стратегию. Наведите на папку — откроются превью.</p>
+          <div className="landing-models__grid landing-models__grid--folders">
+            {landingFolderData.map((folder) => (
+              <AnimatedFolder
+                key={folder.title}
+                title={folder.title}
+                projects={folder.projects}
+                gradient={folder.gradient}
+                linkLabel={folder.linkLabel}
+                linkHref={folder.linkHref}
+                className="landing-models__folder"
+              />
+            ))}
+          </div>
+        </div>
       </section>
 
       {/* Блок подборки недвижимости */}
@@ -3136,6 +3277,29 @@ function MainPage() {
                   </div>
                 )
               })}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Блок: Цифры Sally Your Brick — 70vh, анимация берюза → белый треугольник при скролле */}
+      <section
+        ref={landingStatsRef}
+        className="landing-stats"
+        style={{ '--stats-scroll-progress': statsScrollProgress }}
+      >
+        <div className="landing-stats__bg-teal" aria-hidden="true" />
+        <div className="landing-stats__bg-white-triangle" aria-hidden="true" />
+        <div className="landing-stats__container">
+          <h2 className="landing-stats__title">Цифры Sally Your Brick</h2>
+          <div className="landing-stats__grid">
+            <div className="landing-stat">
+              <span className="landing-stat__value">€1.4B+</span>
+              <span className="landing-stat__label">Совокупный объем капитала инвесторов</span>
+            </div>
+            <div className="landing-stat">
+              <span className="landing-stat__value">12–25%</span>
+              <span className="landing-stat__label">Средняя доходность в категории Distressed Assets</span>
             </div>
           </div>
         </div>

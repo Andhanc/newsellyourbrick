@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams, useLocation } from 'react-router-dom'
 import { 
   FiUpload, 
   FiX, 
@@ -37,8 +37,45 @@ import { getUserData } from '../services/authService'
 import { showNotification } from '../utils/toastHelper'
 import './AddProperty.css'
 
+const DRAFT_KEY = 'addPropertyDraft'
+const DRAFT_SAVE_DEBOUNCE_MS = 600
+
+function loadDraft() {
+  try {
+    const raw = localStorage.getItem(DRAFT_KEY)
+    if (!raw) return null
+    return JSON.parse(raw)
+  } catch {
+    return null
+  }
+}
+
+function saveDraftPayload(payload) {
+  try {
+    localStorage.setItem(DRAFT_KEY, JSON.stringify(payload))
+  } catch (e) {
+    if (e?.name === 'QuotaExceededError') {
+      try {
+        const withoutMedia = { ...payload, photos: [], videos: [], additionalDocuments: [] }
+        localStorage.setItem(DRAFT_KEY, JSON.stringify(withoutMedia))
+      } catch {
+        // ignore
+      }
+    }
+  }
+}
+
+function clearDraft() {
+  try {
+    localStorage.removeItem(DRAFT_KEY)
+  } catch {
+    // ignore
+  }
+}
+
 const AddProperty = () => {
   const navigate = useNavigate()
+  const location = useLocation()
   const { id } = useParams() // ID объекта для редактирования
   const isEditMode = !!id // Режим редактирования
   const fileInputRef = useRef(null)
@@ -1035,8 +1072,9 @@ const AddProperty = () => {
         // Закрываем модальное окно верификации
         setShowVerificationModal(false)
         
-        // Показываем модальное окно об успешной отправке
+        // Показываем модальное окно об успешной отправке и стираем черновик
         setIsSubmitting(false)
+        clearDraft()
         setShowSuccessModal(true)
         
         return true
@@ -1072,6 +1110,84 @@ const AddProperty = () => {
       loadPropertyData(id)
     }
   }, [isEditMode, id])
+
+  // Восстановление черновика только для нового объекта (не редактирование)
+  const draftRestoredRef = useRef(false)
+  useEffect(() => {
+    if (isEditMode || draftRestoredRef.current) return
+    const draft = loadDraft()
+    if (!draft) return
+    draftRestoredRef.current = true
+    if (draft.formData) setFormData(draft.formData)
+    if (draft.currentStep) setCurrentStep(draft.currentStep)
+    if (Array.isArray(draft.photos) && draft.photos.length > 0) setPhotos(draft.photos)
+    if (Array.isArray(draft.videos)) setVideos(draft.videos)
+    if (Array.isArray(draft.bedrooms)) setBedrooms(draft.bedrooms)
+    if (typeof draft.guests === 'number') setGuests(draft.guests)
+    if (draft.addressSearch !== undefined) setAddressSearch(draft.addressSearch)
+    if (draft.selectedCoordinates) setSelectedCoordinates(draft.selectedCoordinates)
+    if (draft.mapCenter) setMapCenter(draft.mapCenter)
+    if (draft.citySearch !== undefined) setCitySearch(draft.citySearch)
+    if (draft.currency) setCurrency(draft.currency)
+    if (draft.areaUnit) setAreaUnit(draft.areaUnit)
+    if (draft.savedLocationData) setSavedLocationData(draft.savedLocationData)
+    if (draft.showHints) setShowHints(draft.showHints)
+    if (typeof draft.showHint1 === 'boolean') setShowHint1(draft.showHint1)
+    if (typeof draft.showHint2 === 'boolean') setShowHint2(draft.showHint2)
+    if (Array.isArray(draft.additionalDocuments)) setAdditionalDocuments(draft.additionalDocuments)
+  }, [isEditMode])
+
+  // Сохранение черновика в localStorage (с дебаунсом), только для нового объекта
+  const saveDraftTimeoutRef = useRef(null)
+  useEffect(() => {
+    if (isEditMode) return
+    if (saveDraftTimeoutRef.current) clearTimeout(saveDraftTimeoutRef.current)
+    saveDraftTimeoutRef.current = setTimeout(() => {
+      saveDraftTimeoutRef.current = null
+      const payload = {
+        formData,
+        currentStep,
+        photos: photos.map(p => ({ id: p.id, url: p.url })),
+        videos: videos.map(v => ({ ...v })),
+        bedrooms,
+        guests,
+        addressSearch,
+        selectedCoordinates,
+        mapCenter,
+        citySearch,
+        currency,
+        areaUnit,
+        savedLocationData,
+        showHints,
+        showHint1,
+        showHint2,
+        additionalDocuments: additionalDocuments.map(d => ({ name: d.name, url: d.url, type: d.type }))
+      }
+      saveDraftPayload(payload)
+    }, DRAFT_SAVE_DEBOUNCE_MS)
+    return () => {
+      if (saveDraftTimeoutRef.current) clearTimeout(saveDraftTimeoutRef.current)
+    }
+  }, [
+    isEditMode,
+    formData,
+    currentStep,
+    photos,
+    videos,
+    bedrooms,
+    guests,
+    addressSearch,
+    selectedCoordinates,
+    mapCenter,
+    citySearch,
+    currency,
+    areaUnit,
+    savedLocationData,
+    showHints,
+    showHint1,
+    showHint2,
+    additionalDocuments
+  ])
 
   // Функция геокодирования адреса при редактировании
   const geocodeAddressForEdit = async (address) => {
@@ -3024,6 +3140,17 @@ const AddProperty = () => {
       setListingFeePromoLoading(false)
     }
   }
+
+  // При возврате со страницы бонусов — снова открыть модалку оплаты публикации
+  useEffect(() => {
+    if (location.state?.openListingFeeModal) {
+      setShowListingFeeModal(true)
+      setShowPromoInputInFeeModal(false)
+      setListingFeePromoCode('')
+      setListingFeePromoError(null)
+      navigate(location.pathname, { replace: true, state: {} })
+    }
+  }, [location.state?.openListingFeeModal, location.pathname, navigate])
 
   // Обработчик drag and drop для фотографий
   const [isDragging, setIsDragging] = useState(false)
@@ -6732,6 +6859,21 @@ const AddProperty = () => {
                     <span>Есть промокод</span>
                   </button>
                 </div>
+                <p className="listing-fee-modal__get-promo">
+                  <button
+                    type="button"
+                    className="listing-fee-modal__get-promo-link"
+                    onClick={() => {
+                      setShowListingFeeModal(false)
+                      setShowPromoInputInFeeModal(false)
+                      setListingFeePromoCode('')
+                      setListingFeePromoError(null)
+                      navigate('/bonuses?tab=seller', { state: { fromListingFee: true, returnPath: location.pathname } })
+                    }}
+                  >
+                    получить промокод
+                  </button>
+                </p>
               </>
             ) : (
               <>

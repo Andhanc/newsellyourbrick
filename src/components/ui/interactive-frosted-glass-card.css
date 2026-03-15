@@ -1,0 +1,149 @@
+/* Frosted glass card: 3D perspective container */
+.frosted-glass-card-container {
+  perspective: 1000px;
+  width: 100%;
+  max-width: 360px;
+}
+
+/* Card: glassmorphism + 3D transform origin */
+.frosted-glass-card {
+  --mouse-x: 50%;
+  --mouse-y: 50%;
+  position: relative;
+  width: 100%;
+  min-height: 200px;
+  border-radius: 24px;
+  padding: 28px 24px;
+  text-align: left;
+  overflow: hidden;
+  transform-style: preserve-3d;
+  transform: rotateX(0deg) rotateY(0deg);
+  transition: transform 0.15s ease-out;
+  background: rgba(255, 255, 255, 0.4);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow:
+    0 25px 50px -12px rgba(0, 0, 0, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+/* Dynamic glare overlay */
+.frosted-glass-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(
+    500px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+    rgba(255, 255, 255, 0.25),
+    transparent 45%
+  );
+  pointer-events: none;
+}
+
+.frosted-glass-card__content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  color: #111827;
+}
+
+.frosted-glass-card__header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.frosted-glass-card__icon-wrap {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.frosted-glass-card--investor .frosted-glass-card__icon-wrap {
+  background: rgba(10, 186, 181, 0.9);
+  box-shadow: 0 4px 14px rgba(10, 186, 181, 0.35);
+}
+
+.frosted-glass-card--seller .frosted-glass-card__icon-wrap {
+  background: rgba(124, 58, 237, 0.9);
+  box-shadow: 0 4px 14px rgba(124, 58, 237, 0.35);
+}
+
+.frosted-glass-card__icon {
+  color: #fff;
+}
+
+.frosted-glass-card__title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 2px;
+  letter-spacing: -0.02em;
+}
+
+.frosted-glass-card__subtitle {
+  font-size: 14px;
+  color: #4b5563;
+  margin: 0;
+}
+
+.frosted-glass-card__text {
+  font-size: 15px;
+  line-height: 1.5;
+  color: #4b5563;
+  margin: 0 0 20px;
+  flex: 1;
+}
+
+.frosted-glass-card__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #fff;
+  padding: 12px 20px;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  transition: filter 0.2s ease, transform 0.1s ease;
+  align-self: flex-start;
+}
+
+.frosted-glass-card__btn--investor {
+  background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);
+  box-shadow: 0 4px 14px rgba(13, 148, 136, 0.4);
+}
+
+.frosted-glass-card__btn--seller {
+  background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%);
+  box-shadow: 0 4px 14px rgba(124, 58, 237, 0.4);
+}
+
+.frosted-glass-card__btn:hover {
+  filter: brightness(1.1);
+}
+
+.frosted-glass-card__btn:active {
+  transform: scale(0.98);
+}
+
+@media (min-width: 640px) {
+  .frosted-glass-card {
+    padding: 32px 28px;
+    min-height: 209px;
+  }
+
+  .frosted-glass-card__title {
+    font-size: 22px;
+  }
+}

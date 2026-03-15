@@ -85,72 +85,101 @@
   box-sizing: border-box;
 }
 
-/* Intro — иконка слева, текст по левому краю */
-.shares-intro {
-  display: flex;
-  align-items: flex-start;
-  gap: 28px;
+/* Блок карточек описания доли — широкий и выразительный */
+.shares-cards-grid {
+  margin-bottom: 56px;
+  width: 100%;
+  max-width: 1280px;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 0 8px;
+}
+
+.shares-cards-grid__header {
+  margin-bottom: 32px;
   text-align: left;
-  margin-bottom: 40px;
-  padding: 36px 40px 40px;
-  background: linear-gradient(165deg, #ffffff 0%, #f8fafc 100%);
-  border-radius: 28px;
-  border: 1px solid rgba(10, 186, 181, 0.15);
-  box-shadow:
-    0 0 0 1px rgba(0, 0, 0, 0.04),
-    0 4px 6px -2px rgba(0, 0, 0, 0.04),
-    0 24px 48px -16px rgba(10, 186, 181, 0.12);
-  position: relative;
-  overflow: hidden;
+  padding-left: 4px;
 }
 
-.shares-intro::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
-  background: linear-gradient(90deg, #0ABAB5 0%, #06d6a0 50%, #0ABAB5 100%);
-  background-size: 200% 100%;
-  opacity: 0.9;
-}
-
-.shares-intro__icon {
-  flex-shrink: 0;
-  width: 64px;
-  height: 64px;
-  border-radius: 20px;
-  background: linear-gradient(145deg, #0ABAB5 0%, #06a39e 100%);
-  color: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow:
-    0 8px 24px rgba(10, 186, 181, 0.35),
-    0 0 0 1px rgba(255, 255, 255, 0.25) inset;
-}
-
-.shares-intro__body {
-  flex: 1;
-  min-width: 0;
-  text-align: left;
-}
-
-.shares-intro__label {
+.shares-cards-grid__label {
   display: inline-block;
   font-size: 11px;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.2em;
+  letter-spacing: 0.22em;
   color: #0d9488;
-  margin-bottom: 12px;
-  padding: 6px 14px;
-  background: rgba(10, 186, 181, 0.1);
+  margin-bottom: 14px;
+  padding: 8px 18px;
+  background: rgba(10, 186, 181, 0.08);
   border-radius: 100px;
-  border: 1px solid rgba(10, 186, 181, 0.2);
+  border: 1px solid rgba(10, 186, 181, 0.18);
 }
 
+.shares-cards-grid__title {
+  font-size: clamp(26px, 4vw, 36px);
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0;
+  letter-spacing: -0.04em;
+  line-height: 1.2;
+}
+
+.shares-cards-grid__grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 28px 32px;
+  overflow: visible;
+}
+
+@media (max-width: 768px) {
+  .shares-cards-grid__grid {
+    gap: 20px;
+  }
+}
+
+@media (max-width: 640px) {
+  .shares-cards-grid__grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+}
+
+/* Карточки сервиса — как в примере: тень, скругления, картинка выходит за край */
+.shares-cards-grid .service-card {
+  min-height: 200px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 4px 12px rgba(0, 0, 0, 0.04);
+}
+
+.shares-cards-grid .service-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1), 0 12px 28px rgba(0, 0, 0, 0.06);
+}
+
+.shares-cards-grid .service-card__description {
+  color: inherit;
+  opacity: 0.92;
+  max-width: 75%;
+}
+
+.shares-cards-grid .service-card:not([class*="red"]):not([class*="blue"]) .service-card__description {
+  color: #475569;
+}
+
+/* Картинка выходит за край карточки, без круга — как в референсе */
+.shares-cards-grid .service-card__img-wrap {
+  z-index: 0;
+}
+
+.shares-cards-grid .service-card__img {
+  object-position: right bottom;
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.08));
+}
+
+.shares-cards-grid .service-card[class*="red"] .service-card__img,
+.shares-cards-grid .service-card[class*="blue"] .service-card__img {
+  filter: drop-shadow(0 4px 16px rgba(0, 0, 0, 0.15));
+}
+
+/* Legacy intro (unused, kept for reference) */
 .shares-intro__title {
   font-size: 30px;
   font-weight: 800;

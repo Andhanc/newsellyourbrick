@@ -79,6 +79,7 @@ const Footer = () => {
             <Link to="/bonuses" onClick={scrollToTop} className="footer__menu-link">Бонусы</Link>
             <Link to="/shares" onClick={scrollToTop} className="footer__menu-link">Доли</Link>
             <Link to="/debts" onClick={scrollToTop} className="footer__menu-link">Долги</Link>
+            <Link to="/calculator" onClick={scrollToTop} className="footer__menu-link">💰 Калькулятор доходности</Link>
           </div>
           <div className="footer__menu-column">
             <Link to="/auction" onClick={scrollToTop} className="footer__menu-link">{t('auction')}</Link>
@@ -97,6 +98,7 @@ const Footer = () => {
           </div>
           <div className="footer__menu-column">
             <Link to="/chat" onClick={scrollToTop} className="footer__menu-link">{t('help')}</Link>
+            <Link to="/jeton" onClick={scrollToTop} className="footer__menu-link">Jeton</Link>
             <button type="button" className="footer__menu-link">{t('superAgents')}</button>
             <button type="button" className="footer__menu-link">{t('mortgage')}</button>
           </div>

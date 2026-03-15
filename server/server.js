@@ -14,6 +14,7 @@ import whatsappPkg from 'whatsapp-web.js';
 import { calculatePropertyPrice } from './services/propertyParser.js';
 import { parseBulkImportFile, rowToPropertyData } from './services/bulkImportProperties.js';
 import { Address, beginCell, Cell } from '@ton/core';
+import { getMarketData, getMortgageRates, getRentalYieldByRegion } from './services/investmentDataService.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -2911,6 +2912,60 @@ app.delete('/api/purchase-requests/:id', (req, res) => {
     res.status(500).json({ success: false, error: error.message });
   }
 });
+
+// ========== API ENDPOINTS ДЛЯ ИНВЕСТИЦИОННОГО КАЛЬКУЛЯТОРА ==========
+
+/**
+ * GET /api/investment/market-data - Получить данные о рынке недвижимости
+ */
+app.get('/api/investment/market-data', async (req, res) => {
+  try {
+    const result = await getMarketData();
+    return res.json(result);
+  } catch (error) {
+    console.error('❌ GET /api/investment/market-data:', error);
+    return res.status(500).json({ 
+      success: false, 
+      error: error.message || 'Ошибка получения данных о рынке' 
+    });
+  }
+});
+
+/**
+ * GET /api/investment/mortgage-rates - Получить актуальные ипотечные ставки
+ */
+app.get('/api/investment/mortgage-rates', async (req, res) => {
+  try {
+    const result = await getMortgageRates();
+    return res.json(result);
+  } catch (error) {
+    console.error('❌ GET /api/investment/mortgage-rates:', error);
+    return res.status(500).json({ 
+      success: false, 
+      error: error.message || 'Ошибка получения ипотечных ставок' 
+    });
+  }
+});
+
+/**
+ * GET /api/investment/rental-yield - Получить данные о доходности аренды по региону
+ * Query: region (опционально, по умолчанию 'Москва')
+ */
+app.get('/api/investment/rental-yield', async (req, res) => {
+  try {
+    const region = req.query.region || 'Москва';
+    const result = await getRentalYieldByRegion(region);
+    return res.json(result);
+  } catch (error) {
+    console.error('❌ GET /api/investment/rental-yield:', error);
+    return res.status(500).json({ 
+      success: false, 
+      error: error.message || 'Ошибка получения данных о доходности аренды' 
+    });
+  }
+});
+
+// ========== КОНЕЦ API ENDPOINTS ДЛЯ ИНВЕСТИЦИОННОГО КАЛЬКУЛЯТОРА ==========
 
 /**
  * POST /api/assistant-leads - Сохранить/обновить сессию чата с умным помощником
