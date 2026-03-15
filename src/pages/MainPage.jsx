@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState, useMemo } from 'react'
+import { useEffect, useRef, useState, useMemo, useCallback } from 'react'
+import { useLazyLoad } from '../hooks/useLazyLoad'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useUser } from '@clerk/clerk-react'
@@ -831,21 +832,9 @@ function MainPage() {
 
     if (isLoggedIn) {
       loadNotifications()
-      
-      // Обновляем уведомления при фокусе окна (когда пользователь возвращается на страницу)
-      const handleFocus = () => {
-        loadNotifications()
-      }
-      
+      const handleFocus = () => loadNotifications()
       window.addEventListener('focus', handleFocus)
-      
-      // Обновляем уведомления каждые 60 секунд (1 минута) вместо каждых 5 секунд
-      const interval = setInterval(loadNotifications, 60000)
-      
-      return () => {
-        clearInterval(interval)
-        window.removeEventListener('focus', handleFocus)
-      }
+      return () => window.removeEventListener('focus', handleFocus)
     }
   }, [user, userLoaded, isLoggedIn])
 
@@ -1232,50 +1221,29 @@ function MainPage() {
     houses: []
   })
 
-  // Загрузка одобренных объявлений без аукциона из API
-  useEffect(() => {
-    const loadApprovedProperties = async () => {
-      try {
-        // Загружаем объявления по типам
-        const types = [
-          { apiType: 'commercial', stateKey: 'apartments' },
-          { apiType: 'villa', stateKey: 'villas' },
-          { apiType: 'apartment', stateKey: 'flats' },
-          { apiType: 'house', stateKey: 'houses' }
-        ]
-
-        const loadedProperties = {
-          apartments: [],
-          villas: [],
-          flats: [],
-          houses: []
-        }
-
-        for (const { apiType, stateKey } of types) {
-          try {
-            const url = `${API_BASE_URL}/properties/approved?type=${apiType}`
-            const response = await fetch(url)
-            if (response.ok) {
-              const data = await response.json()
-              if (data.success && data.data) {
-                loadedProperties[stateKey] = data.data
-              }
-            }
-          } catch (error) {
-            // Тихо игнорируем ошибки загрузки
+  // Загрузка одобренных объявлений — только когда секция попадает во вьюпорт (без polling)
+  const loadApprovedProperties = useCallback(async () => {
+    try {
+      const types = [
+        { apiType: 'commercial', stateKey: 'apartments' },
+        { apiType: 'villa', stateKey: 'villas' },
+        { apiType: 'apartment', stateKey: 'flats' },
+        { apiType: 'house', stateKey: 'houses' }
+      ]
+      const loadedProperties = { apartments: [], villas: [], flats: [], houses: [] }
+      for (const { apiType, stateKey } of types) {
+        try {
+          const res = await fetch(`${API_BASE_URL}/properties/approved?type=${apiType}`)
+          if (res.ok) {
+            const data = await res.json()
+            if (data.success && data.data) loadedProperties[stateKey] = data.data
           }
-        }
-        setApprovedProperties(loadedProperties)
-      } catch (error) {
-        console.error('❌ Ошибка загрузки одобренных объявлений:', error)
+        } catch (_) {}
       }
+      setApprovedProperties(loadedProperties)
+    } catch (error) {
+      console.error('❌ Ошибка загрузки одобренных объявлений:', error)
     }
-
-    loadApprovedProperties()
-    
-    // Обновляем каждые 5 минут для получения новых одобренных объявлений
-    const interval = setInterval(loadApprovedProperties, 300000)
-    return () => clearInterval(interval)
   }, [])
 
   // Объединяем статические данные с данными из API
@@ -1314,122 +1282,67 @@ function MainPage() {
   const filteredRecommended = useMemo(() => filterBySearch(recommendedProperties), [searchQuery])
   const filteredNearby = useMemo(() => filterBySearch(nearbyProperties), [searchQuery])
 
-  // Загрузка реальных объектов для главной страницы
-  useEffect(() => {
-    const loadHomeProperties = async () => {
-      try {
-        const apiBase = await getApiBaseUrl()
-
-        const [approvedRes, auctionsRes] = await Promise.all([
-          fetch(`${apiBase}/properties/approved`),
-          fetch(`${apiBase}/properties/auctions`)
-        ])
-
-        let approved = []
-        let auctions = []
-
-        if (approvedRes.ok) {
-          const json = await approvedRes.json()
-          if (json?.success && Array.isArray(json.data)) {
-            approved = json.data
-          }
-        }
-
-        if (auctionsRes.ok) {
-          const json = await auctionsRes.json()
-          if (json?.success && Array.isArray(json.data)) {
-            auctions = json.data
-          }
-        }
-
-        const normalizeProperty = (prop, options = {}) => {
-          const { forceAuction = null } = options
-
-          const isAuction =
-            forceAuction !== null
-              ? forceAuction
-              : (prop.isAuction === true ||
-                 prop.is_auction === 1 ||
-                 prop.is_auction === true)
-
-          const isShare =
-            prop.is_share === 1 ||
-            prop.is_share === true ||
-            prop.is_shared_ownership === 1 ||
-            prop.is_shared_ownership === true
-
-          const priceNumber =
-            prop.price != null && prop.price !== ''
-              ? Number(prop.price)
-              : 0
-
-          const auctionStartingPrice =
-            prop.auction_starting_price != null && prop.auction_starting_price !== ''
-              ? Number(prop.auction_starting_price)
-              : (prop.auctionStartingPrice != null && prop.auctionStartingPrice !== ''
-                  ? Number(prop.auctionStartingPrice)
-                  : null)
-
-          return {
-            ...prop,
-            isAuction,
-            is_share: isShare ? 1 : 0,
-            title: prop.title || prop.name || '',
-            name: prop.name || prop.title || '',
-            image:
-              prop.image ||
-              (Array.isArray(prop.images) && prop.images[0]
-                ? (typeof prop.images[0] === 'string'
-                    ? prop.images[0]
-                    : prop.images[0].url)
-                : null),
-            images: Array.isArray(prop.images)
-              ? prop.images
-              : (prop.image ? [prop.image] : []),
-            price: priceNumber,
-            auction_starting_price: auctionStartingPrice,
-            currentBid:
-              prop.currentBid ||
-              prop.auction_current_bid ||
-              prop.auctionCurrentBid ||
-              null,
-            endTime:
-              prop.endTime ||
-              prop.auction_end_date ||
-              prop.auctionEndDate ||
-              prop.test_timer_end_date ||
-              null,
-            beds: prop.beds || prop.rooms || prop.bedrooms || 0,
-            baths: prop.baths || prop.bathrooms || 0,
-            sqft: prop.sqft || prop.area || 0,
-            area: prop.area || prop.sqft || 0,
-          }
-        }
-
-        const normalizedApproved = approved.map((p) => normalizeProperty(p))
-        const normalizedAuctions = auctions.map((p) => normalizeProperty(p, { forceAuction: true }))
-
-        // Объединяем по ID, приоритет у аукционных записей
-        const byId = new Map()
-        normalizedApproved.forEach((p) => {
-          if (p && p.id != null) {
-            byId.set(p.id, p)
-          }
-        })
-        normalizedAuctions.forEach((p) => {
-          if (p && p.id != null) {
-            byId.set(p.id, p)
-          }
-        })
-
-        setHomeProperties(Array.from(byId.values()))
-      } catch (error) {
-        console.error('❌ Ошибка загрузки объектов для главной страницы:', error)
+  // Один раз 2 запроса (approved + auctions), заполняем homeProperties и approvedProperties
+  const loadHomeProperties = useCallback(async () => {
+    try {
+      const apiBase = await getApiBaseUrl()
+      const [approvedRes, auctionsRes] = await Promise.all([
+        fetch(`${apiBase}/properties/approved`),
+        fetch(`${apiBase}/properties/auctions`)
+      ])
+      let approved = []
+      let auctions = []
+      if (approvedRes.ok) {
+        const json = await approvedRes.json()
+        if (json?.success && Array.isArray(json.data)) approved = json.data
       }
+      if (auctionsRes.ok) {
+        const json = await auctionsRes.json()
+        if (json?.success && Array.isArray(json.data)) auctions = json.data
+      }
+      const normalizeProperty = (prop, options = {}) => {
+        const { forceAuction = null } = options
+        const isAuction = forceAuction !== null ? forceAuction : (prop.isAuction === true || prop.is_auction === 1 || prop.is_auction === true)
+        const isShare = prop.is_share === 1 || prop.is_share === true || prop.is_shared_ownership === 1 || prop.is_shared_ownership === true
+        const priceNumber = prop.price != null && prop.price !== '' ? Number(prop.price) : 0
+        const auctionStartingPrice = prop.auction_starting_price != null && prop.auction_starting_price !== '' ? Number(prop.auction_starting_price) : (prop.auctionStartingPrice != null && prop.auctionStartingPrice !== '' ? Number(prop.auctionStartingPrice) : null)
+        return {
+          ...prop,
+          isAuction,
+          is_share: isShare ? 1 : 0,
+          title: prop.title || prop.name || '',
+          name: prop.name || prop.title || '',
+          image: prop.image || (Array.isArray(prop.images) && prop.images[0] ? (typeof prop.images[0] === 'string' ? prop.images[0] : prop.images[0].url) : null),
+          images: Array.isArray(prop.images) ? prop.images : (prop.image ? [prop.image] : []),
+          price: priceNumber,
+          auction_starting_price: auctionStartingPrice,
+          currentBid: prop.currentBid || prop.auction_current_bid || prop.auctionCurrentBid || null,
+          endTime: prop.endTime || prop.auction_end_date || prop.auctionEndDate || prop.test_timer_end_date || null,
+          beds: prop.beds || prop.rooms || prop.bedrooms || 0,
+          baths: prop.baths || prop.bathrooms || 0,
+          sqft: prop.sqft || prop.area || 0,
+          area: prop.area || prop.sqft || 0,
+        }
+      }
+      const byId = new Map()
+      approved.map((p) => normalizeProperty(p)).forEach((p) => { if (p && p.id != null) byId.set(p.id, p) })
+      auctions.map((p) => normalizeProperty(p, { forceAuction: true })).forEach((p) => { if (p && p.id != null) byId.set(p.id, p) })
+      setHomeProperties(Array.from(byId.values()))
+      const pt = (p) => (p && p.property_type) ? String(p.property_type).toLowerCase() : ''
+      setApprovedProperties({
+        apartments: approved.filter((p) => pt(p) === 'commercial'),
+        villas: approved.filter((p) => pt(p) === 'villa'),
+        flats: approved.filter((p) => pt(p) === 'apartment'),
+        houses: approved.filter((p) => pt(p) === 'house')
+      })
+    } catch (error) {
+      console.error('❌ Ошибка загрузки объектов для главной страницы:', error)
     }
-
-    loadHomeProperties()
   }, [])
+
+  const loadMainPageData = loadHomeProperties
+
+  const [mainSectionRef, mainSectionState] = useLazyLoad(loadMainPageData, { rootMargin: '300px' })
 
   // Разделы для главной страницы (по типу продажи)
   const auctionSection = useMemo(() => {
@@ -2130,7 +2043,7 @@ function MainPage() {
                                 {notification.data && notification.data.property_id && (
                                   <div className="notification-item__property">
                                     <div className="notification-item__image">
-                                      <img 
+                                      <img loading="lazy" 
                                         src={recommendedProperties[0]?.image || 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=400&q=80'}
                                         alt={recommendedProperties[0]?.name || 'Property'}
                                         onError={(e) => {
@@ -2212,7 +2125,7 @@ function MainPage() {
                 {isLoggedIn ? (
                   <div className="header__avatar-wrapper">
                     {userPhoto ? (
-                      <img 
+                      <img loading="lazy" 
                         src={userPhoto} 
                         alt="Profile" 
                         className="header__avatar-img"
@@ -2654,7 +2567,7 @@ function MainPage() {
             {isLoggedIn ? (
               <div className="new-header__avatar-wrapper">
                 {userPhoto ? (
-                  <img 
+                  <img loading="lazy" 
                     src={userPhoto} 
                     alt="Profile" 
                     className="new-header__avatar-img"
@@ -2734,7 +2647,7 @@ function MainPage() {
                           {notification.data && notification.data.property_id && (
                             <div className="notification-item__property">
                               <div className="notification-item__image">
-                                <img 
+                                <img loading="lazy" 
                                   src={recommendedProperties[0]?.image || 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=400&q=80'}
                                   alt={recommendedProperties[0]?.name || 'Property'}
                                   onError={(e) => {
@@ -2884,13 +2797,12 @@ function MainPage() {
       {/* Блок подборки недвижимости */}
       <PropertySearchBlock />
 
-      {/* Блок "Аукцион" */}
-      <section className="apartments-section apartments-section--auction">
+      {/* Блок "Аукцион" — загрузка данных только когда секция во вьюпорте */}
+      <section ref={mainSectionRef} className="apartments-section apartments-section--auction">
         <div className="apartments-section__container">
           <div 
             className="apartments-section__header"
             onClick={() => {
-              // Принудительный переход на страницу с фильтром "Аукцион"
               window.location.href = '/auction?category=Apartment&filter=auction'
             }}
             style={{ cursor: 'pointer' }}
@@ -2930,7 +2842,7 @@ function MainPage() {
                       style={{ cursor: 'pointer' }}
                     >
                       <div className="property-image-container">
-                        <img 
+                        <img loading="lazy" 
                           src={apartment.image} 
                           alt={apartment.name}
                           className="property-image"
@@ -3040,7 +2952,7 @@ function MainPage() {
                       style={{ cursor: 'pointer' }}
                     >
                       <div className="property-image-container">
-                        <img 
+                        <img loading="lazy" 
                           src={villa.image} 
                           alt={villa.name}
                           className="property-image"
@@ -3146,7 +3058,7 @@ function MainPage() {
                       style={{ cursor: 'pointer' }}
                     >
                       <div className="property-image-container">
-                        <img 
+                        <img loading="lazy" 
                           src={flat.image} 
                           alt={flat.name}
                           className="property-image"
@@ -3261,7 +3173,7 @@ function MainPage() {
                       style={{ cursor: 'pointer' }}
                     >
                       <div className="property-image-container">
-                        <img 
+                        <img loading="lazy" 
                           src={townhouse.image} 
                           alt={townhouse.name}
                           className="property-image"
@@ -3368,7 +3280,7 @@ function MainPage() {
             <div className="contact-form__image-wrapper">
               <h2 className="contact-form__image-title">{t('haveQuestions')}</h2>
               <div className="contact-form__image">
-                <img 
+                <img loading="lazy" 
                   src="https://static.cdn-cian.ru/frontend/valuation-my-home-page-frontend/card_6_1.9222208e0e2f6d4d.svg" 
                   alt="Contact illustration" 
                 />
@@ -3459,7 +3371,7 @@ function MainPage() {
             >
               <span className="categories__icon">
                 {type.image ? (
-                  <img 
+                  <img loading="lazy" 
                     src={type.image} 
                     alt={type.displayLabel}
                     className="categories__icon-image"
@@ -3502,7 +3414,7 @@ function MainPage() {
                   style={{ cursor: 'pointer' }}
                 >
                   <div className="property-image-container">
-                    <img 
+                    <img loading="lazy" 
                       src={property.image} 
                       alt={property.name}
                       className="property-image"
@@ -3602,7 +3514,7 @@ function MainPage() {
                   style={{ cursor: 'pointer' }}
                 >
                   <div className="property-image-container">
-                    <img 
+                    <img loading="lazy" 
                       src={property.image} 
                       alt={property.name}
                       className="property-image"

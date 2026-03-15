@@ -233,13 +233,11 @@ const Wallet = () => {
     }
     initAndLoad()
     
-    // Обновляем данные каждые 5 секунд без показа загрузки
-    const interval = setInterval(() => {
-      if (API_BASE_URL && !API_BASE_URL.includes('localhost')) {
-        loadUserData(false)
-      }
-    }, 5000)
-    return () => clearInterval(interval)
+    const onFocus = () => {
+      if (API_BASE_URL && !API_BASE_URL.includes('localhost')) loadUserData(false)
+    }
+    window.addEventListener('focus', onFocus)
+    return () => window.removeEventListener('focus', onFocus)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dbUserId])
 

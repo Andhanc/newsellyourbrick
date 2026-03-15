@@ -12,6 +12,9 @@ const DB_PATH = join(__dirname, '..', 'database.sqlite');
 // Создаем или открываем базу данных
 let db = null;
 
+/** Кэш наличия таблиц недвижимости (заполняется при init, не вызывать sqlite_master в рантайме) */
+export const schemaCache = { properties: false, properties_apartments: false, properties_houses: false };
+
 // Настройки для стабильной работы БД
 const DB_CONFIG = {
   // Включаем WAL режим для лучшего параллелизма чтения/записи
@@ -282,34 +285,45 @@ function performMaintenance(dbInstance) {
 }
 
 /**
+ * Удаляет повреждённый файл БД и переименовывает в .corrupted (если возможно)
+ */
+function removeCorruptedDatabase() {
+  const corruptedPath = join(__dirname, '..', 'database.sqlite.corrupted');
+  try {
+    if (db) {
+      try { db.close(); } catch (_) {}
+      db = null;
+    }
+    if (!existsSync(DB_PATH)) return;
+    if (existsSync(corruptedPath)) unlinkSync(corruptedPath);
+    renameSync(DB_PATH, corruptedPath);
+    console.log('📦 Поврежденная БД сохранена как database.sqlite.corrupted');
+  } catch (e) {
+    console.warn('⚠️ Не удалось переименовать поврежденную БД, удаляю:', e.message);
+    try { unlinkSync(DB_PATH); } catch (_) {}
+  }
+}
+
+function isCorruptError(err) {
+  return (err && (err.code === 'SQLITE_CORRUPT' || (err.message && err.message.includes('malformed'))));
+}
+
+/**
  * Инициализация базы данных
  */
 export function initDatabase() {
+  const retryOnce = arguments[0] === true;
   try {
-    // Проверяем, не повреждена ли существующая БД
-    if (existsSync(DB_PATH)) {
+    // Проверяем, не повреждена ли существующая БД (быстрая проверка)
+    if (existsSync(DB_PATH) && !retryOnce) {
       try {
         const testDb = new Database(DB_PATH, { readonly: true });
         testDb.prepare('SELECT 1').get();
         testDb.close();
       } catch (testError) {
-        if (testError.message && testError.message.includes('malformed')) {
-          console.error('❌ Обнаружена поврежденная БД! Переименовываю и пересоздаю...');
-          const corruptedPath = join(__dirname, '..', 'database.sqlite.corrupted');
-          try {
-            if (existsSync(corruptedPath)) {
-              unlinkSync(corruptedPath);
-            }
-            renameSync(DB_PATH, corruptedPath);
-            console.log('📦 Поврежденная БД сохранена как database.sqlite.corrupted');
-          } catch (renameError) {
-            console.warn('⚠️ Не удалось переименовать поврежденную БД, удаляю:', renameError.message);
-            try {
-              unlinkSync(DB_PATH);
-            } catch (unlinkError) {
-              console.error('❌ Не удалось удалить поврежденную БД:', unlinkError.message);
-            }
-          }
+        if (isCorruptError(testError)) {
+          console.error('❌ Обнаружена поврежденная БД при проверке! Переименовываю и пересоздаю...');
+          removeCorruptedDatabase();
         }
       }
     }
@@ -643,36 +657,56 @@ export function initDatabase() {
         const bidsTable = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='bids'").get();
         if (!bidsTable) {
           console.log('🔄 Создание таблицы ставок...');
-          const bidsSql = readFileSync(join(__dirname, 'add_bids_table.sql'), 'utf8');
-          db.exec(bidsSql);
+          db.exec(`
+            CREATE TABLE IF NOT EXISTS bids (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              user_id INTEGER NOT NULL,
+              property_id INTEGER NOT NULL,
+              property_table TEXT,
+              bid_amount REAL NOT NULL,
+              created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+              FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+            );
+            CREATE INDEX IF NOT EXISTS idx_bids_user_id ON bids(user_id);
+            CREATE INDEX IF NOT EXISTS idx_bids_property_id ON bids(property_id);
+            CREATE INDEX IF NOT EXISTS idx_bids_created_at ON bids(created_at);
+            CREATE INDEX IF NOT EXISTS idx_bids_user_property ON bids(user_id, property_id);
+            CREATE INDEX IF NOT EXISTS idx_bids_property_id_table ON bids(property_id, property_table);
+          `);
           console.log('✅ Таблица ставок создана');
+        } else {
+          // Миграция: добавить property_table в bids для оптимизации
+          const bidsPragma = db.prepare("PRAGMA table_info(bids)").all();
+          const hasPropertyTable = bidsPragma.some(col => col.name === 'property_table');
+          if (!hasPropertyTable) {
+            console.log('🔄 Миграция bids: добавляем колонку property_table...');
+            db.exec('ALTER TABLE bids ADD COLUMN property_table TEXT');
+            db.exec('CREATE INDEX IF NOT EXISTS idx_bids_property_id_table ON bids(property_id, property_table)');
+            // Backfill: для каждой ставки с property_table IS NULL определить таблицу
+            const rows = db.prepare('SELECT id, property_id FROM bids WHERE property_table IS NULL').all();
+            const updateStmt = db.prepare('UPDATE bids SET property_table = ? WHERE id = ?');
+            for (const row of rows) {
+              let tbl = null;
+              try {
+                if (db.prepare('SELECT 1 FROM properties_apartments WHERE id = ?').get(row.property_id)) tbl = 'properties_apartments';
+              } catch (_) {}
+              if (!tbl) {
+                try {
+                  if (db.prepare('SELECT 1 FROM properties_houses WHERE id = ?').get(row.property_id)) tbl = 'properties_houses';
+                } catch (_) {}
+              }
+              if (!tbl) {
+                try {
+                  if (db.prepare('SELECT 1 FROM properties WHERE id = ?').get(row.property_id)) tbl = 'properties';
+                } catch (_) {}
+              }
+              updateStmt.run(tbl || 'properties', row.id);
+            }
+            console.log(`✅ Backfill bids.property_table: обновлено ${rows.length} записей`);
+          }
         }
       } catch (bidsError) {
-        // Если файл не найден, создаем таблицу напрямую
-        if (bidsError.code === 'ENOENT') {
-          try {
-            db.exec(`
-              CREATE TABLE IF NOT EXISTS bids (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                user_id INTEGER NOT NULL,
-                property_id INTEGER NOT NULL,
-                bid_amount REAL NOT NULL,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-                FOREIGN KEY (property_id) REFERENCES properties(id) ON DELETE CASCADE
-              );
-              CREATE INDEX IF NOT EXISTS idx_bids_user_id ON bids(user_id);
-              CREATE INDEX IF NOT EXISTS idx_bids_property_id ON bids(property_id);
-              CREATE INDEX IF NOT EXISTS idx_bids_created_at ON bids(created_at);
-              CREATE INDEX IF NOT EXISTS idx_bids_user_property ON bids(user_id, property_id);
-            `);
-            console.log('✅ Таблица ставок создана');
-          } catch (fallbackError) {
-            console.warn('⚠️ Не удалось создать таблицу ставок:', fallbackError.message);
-          }
-        } else {
-          console.warn('⚠️ Не удалось создать таблицу ставок:', bidsError.message);
-        }
+        console.warn('⚠️ Не удалось создать/обновить таблицу ставок:', bidsError.message);
       }
 
       // Проверяем и добавляем поле auction_minimum_bid в таблицу properties
@@ -1287,6 +1321,73 @@ export function initDatabase() {
     } catch (migrationError) {
       console.warn('⚠️ Не удалось обновить схему документов:', migrationError.message);
     }
+
+    // Таблица победителей аукционов (одно место создания — без дублирования в server.js)
+    try {
+      const awTable = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='auction_winners'").get();
+      if (!awTable) {
+        console.log('🔄 Создание таблицы auction_winners...');
+        db.exec(`
+          CREATE TABLE IF NOT EXISTS auction_winners (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            property_id INTEGER NOT NULL,
+            property_table TEXT NOT NULL,
+            winning_bid_amount REAL NOT NULL,
+            currency TEXT DEFAULT 'USD',
+            auction_end_date TEXT NOT NULL,
+            won_at TEXT DEFAULT (datetime('now')),
+            deposit_amount REAL NOT NULL,
+            deposit_due_date TEXT NOT NULL,
+            deposit_paid INTEGER DEFAULT 0,
+            deposit_paid_at TEXT,
+            status TEXT DEFAULT 'pending_deposit',
+            created_at TEXT DEFAULT (datetime('now')),
+            updated_at TEXT DEFAULT (datetime('now')),
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+          );
+          CREATE INDEX IF NOT EXISTS idx_auction_winners_user_id ON auction_winners(user_id);
+          CREATE INDEX IF NOT EXISTS idx_auction_winners_property_id ON auction_winners(property_id);
+          CREATE INDEX IF NOT EXISTS idx_auction_winners_status ON auction_winners(status);
+          CREATE INDEX IF NOT EXISTS idx_auction_winners_deposit_paid ON auction_winners(deposit_paid);
+        `);
+        console.log('✅ Таблица auction_winners создана');
+      }
+    } catch (awError) {
+      console.warn('⚠️ Не удалось создать таблицу auction_winners:', awError.message);
+    }
+
+    // purchase_requests: колонка property_table для связки с таблицей недвижимости
+    try {
+      const prTable = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='purchase_requests'").get();
+      if (prTable) {
+        const prPragma = db.prepare("PRAGMA table_info(purchase_requests)").all();
+        if (!prPragma.some(col => col.name === 'property_table')) {
+          db.exec('ALTER TABLE purchase_requests ADD COLUMN property_table TEXT');
+          db.exec('CREATE INDEX IF NOT EXISTS idx_purchase_requests_property_id_table ON purchase_requests(property_id, property_table)');
+          console.log('✅ В purchase_requests добавлена колонка property_table');
+        }
+      }
+    } catch (prError) {
+      console.warn('⚠️ Миграция purchase_requests.property_table:', prError.message);
+    }
+
+    // Индекс для быстрой выборки непрочитанных уведомлений по пользователю
+    try {
+      db.exec('CREATE INDEX IF NOT EXISTS idx_notifications_user_read ON notifications(user_id, is_read)');
+    } catch (idxError) {
+      if (!idxError.message.includes('already exists')) console.warn('⚠️ Индекс notifications(user_id, is_read):', idxError.message);
+    }
+    
+    // Кэш наличия таблиц недвижимости (один раз при старте — без PRAGMA/sqlite_master в рантайме)
+    try {
+      schemaCache.properties = !!db.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='properties'").get();
+      schemaCache.properties_apartments = !!db.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='properties_apartments'").get();
+      schemaCache.properties_houses = !!db.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='properties_houses'").get();
+      console.log('✅ Кэш схемы таблиц недвижимости обновлён:', schemaCache);
+    } catch (scError) {
+      console.warn('⚠️ Кэш схемы:', scError.message);
+    }
     
     // Выполняем начальное обслуживание БД
     performMaintenance(db);
@@ -1303,9 +1404,15 @@ export function initDatabase() {
     console.log('✅ База данных успешно инициализирована:', DB_PATH);
     return db;
   } catch (error) {
-    console.error('❌ Ошибка при инициализации базы данных:', error);
+    console.error('❌ Ошибка при инициализации базы данных:', error.message || error);
     
-    // Если это ошибка блокировки, даем рекомендацию
+    // Повреждённая БД: один раз переименовываем и пробуем снова (создастся новая пустая)
+    if (isCorruptError(error) && !retryOnce) {
+      console.error('❌ Обнаружена поврежденная БД! Переименовываю и пересоздаю с нуля...');
+      removeCorruptedDatabase();
+      return initDatabase(true);
+    }
+    
     if (error.message?.includes('locked') || error.code?.includes('SQLITE_BUSY')) {
       console.error('💡 Рекомендация: Убедитесь, что другой процесс не использует БД.');
       console.error('   Закройте другие экземпляры сервера или другие инструменты работы с БД.');
@@ -3082,7 +3189,36 @@ function ensureApartmentsTable() {
         console.error('❌ Таблица properties_apartments не была создана!');
         throw new Error('Не удалось создать таблицу properties_apartments');
       }
-    } else {
+    }
+    // Для существующей или только что созданной таблицы — добавляем недостающие колонки (sale_type, is_debt, debt_* и т.д.)
+    const apartmentsPragma = db.prepare("PRAGMA table_info(properties_apartments)").all();
+    const existingFields = apartmentsPragma.map(f => f.name);
+    const requiredFields = {
+      'sale_type': 'TEXT',
+      'is_debt': 'INTEGER DEFAULT 0',
+      'has_debt': 'INTEGER DEFAULT 0',
+      'debt_utilities': 'INTEGER DEFAULT 0',
+      'debt_mortgage_pledge': 'INTEGER DEFAULT 0',
+      'debt_property_taxes': 'INTEGER DEFAULT 0',
+      'debt_arrest': 'INTEGER DEFAULT 0',
+      'debt_inherited': 'INTEGER DEFAULT 0',
+      'debt_third_party': 'INTEGER DEFAULT 0',
+      'debt_other': 'TEXT',
+      'debt_amount': 'REAL',
+      'debt_severity': 'TEXT'
+    };
+    for (const [fieldName, fieldType] of Object.entries(requiredFields)) {
+      if (!existingFields.includes(fieldName)) {
+        try {
+          db.exec(`ALTER TABLE properties_apartments ADD COLUMN ${fieldName} ${fieldType}`);
+          console.log(`✅ Добавлено поле ${fieldName} в properties_apartments`);
+          existingFields.push(fieldName);
+        } catch (alterError) {
+          console.warn(`⚠️ Не удалось добавить поле ${fieldName}:`, alterError.message);
+        }
+      }
+    }
+    if (tableExists) {
       console.log('✅ Таблица properties_apartments уже существует');
     }
   } catch (tableError) {
@@ -3708,7 +3844,7 @@ export const houseQueries = {
         ?, ?,                    -- test_drive, test_drive_data
         ?, ?, ?,                 -- is_shared_ownership, total_shares, shares_sold
         ?, ?, ?, ?,              -- moderation_status, sale_type, is_debt, has_debt
-        ?, ?, ?, ?, ?, ?, ?      -- debt_* поля
+        ?, ?, ?, ?, ?, ?, ?, ?   -- debt_* (8 полей)
       )
     `);
     
@@ -4378,14 +4514,18 @@ export const propertyQueries = {
   getByUserId: (userId, limit = 50, offset = 0) => {
     const db = getDatabase();
     
-    // Проверяем существование новых таблиц
+    // Проверяем существование новых таблиц (через sqlite_master)
     let useNewTables = false;
     try {
-      db.prepare('SELECT 1 FROM properties_apartments LIMIT 1').get();
-      db.prepare('SELECT 1 FROM properties_houses LIMIT 1').get();
-      useNewTables = true;
+      const hasApartments = db.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='properties_apartments'").get();
+      const hasHouses = db.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='properties_houses'").get();
+      useNewTables = !!(hasApartments && hasHouses);
+      if (!useNewTables) {
+        console.warn('⚠️ getByUserId: таблицы properties_apartments или properties_houses отсутствуют — объявления читаются из старой таблицы properties');
+      }
     } catch (e) {
       useNewTables = false;
+      console.warn('⚠️ getByUserId: ошибка проверки таблиц:', e.message);
     }
     
     if (useNewTables) {
@@ -5384,14 +5524,18 @@ export const propertyQueries = {
   getPending: () => {
     const db = getDatabase();
     
-    // Проверяем существование новых таблиц
+    // Проверяем существование новых таблиц (через sqlite_master — надёжнее, чем запрос к данным)
     let useNewTables = false;
     try {
-      db.prepare('SELECT 1 FROM properties_apartments LIMIT 1').get();
-      db.prepare('SELECT 1 FROM properties_houses LIMIT 1').get();
-      useNewTables = true;
+      const hasApartments = db.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='properties_apartments'").get();
+      const hasHouses = db.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='properties_houses'").get();
+      useNewTables = !!(hasApartments && hasHouses);
+      if (!useNewTables) {
+        console.warn('⚠️ getPending: таблицы properties_apartments или properties_houses отсутствуют — объявления на модерации читаются из старой таблицы properties (может быть пусто)');
+      }
     } catch (e) {
       useNewTables = false;
+      console.warn('⚠️ getPending: ошибка проверки таблиц:', e.message);
     }
     
     if (useNewTables) {

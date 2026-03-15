@@ -31,7 +31,7 @@ const BiddingHistoryModal = ({ isOpen, onClose, property, refreshTrigger }) => {
       }
       initAndLoad()
       // Обновляем историю каждые 3 секунды, пока модальное окно открыто (без показа загрузки)
-      const interval = setInterval(() => loadBids(false), 3000)
+      const interval = setInterval(() => loadBids(false), 15000)
       return () => clearInterval(interval)
     } else if (!isOpen) {
       // Сбрасываем состояние при закрытии

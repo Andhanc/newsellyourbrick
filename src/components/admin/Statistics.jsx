@@ -238,8 +238,13 @@ const Statistics = ({ businessInfo, onShowUsers }) => {
       }
     };
     fetchOnlineCount();
-    const interval = setInterval(fetchOnlineCount, 20000); // каждые 20 сек
-    return () => clearInterval(interval);
+    const interval = setInterval(fetchOnlineCount, 60000);
+    const onFocus = () => fetchOnlineCount();
+    window.addEventListener('focus', onFocus);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('focus', onFocus);
+    };
   }, []);
 
   // Загружаем статистику категорий недвижимости (по типу и по разделам)

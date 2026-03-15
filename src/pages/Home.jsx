@@ -1,4 +1,5 @@
-import { useState, useEffect, useMemo, useRef } from 'react'
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
+import { useLazyLoad } from '../hooks/useLazyLoad'
 import { useUser } from '@clerk/clerk-react'
 import { useNavigate } from 'react-router-dom'
 import { FiX, FiSend } from 'react-icons/fi'
@@ -13,6 +14,36 @@ import { askPropertyAssistant } from '../services/aiService'
 import './Home.css'
 
 import { getApiBaseUrl } from '../utils/apiConfig'
+
+function formatPropertyForList(prop, isAuction) {
+  return {
+    ...prop,
+    title: prop.title || prop.name || '',
+    location: prop.location || '',
+    price: prop.price || (isAuction ? prop.auction_starting_price : 0) || 0,
+    currentBid: isAuction ? (prop.currentBid || prop.auction_starting_price || prop.price || 0) : null,
+    endTime: isAuction ? (prop.test_timer_end_date || prop.endTime || prop.auction_end_date || null) : null,
+    isAuction,
+    test_timer_end_date: prop.test_timer_end_date || null,
+    images: prop.images || (prop.image ? [prop.image] : []),
+    image: prop.image || (prop.images && prop.images[0] ? prop.images[0] : null),
+    rooms: prop.rooms || prop.beds || 0,
+    beds: prop.bedrooms || prop.rooms || prop.beds || 0,
+    bedrooms: prop.bedrooms || prop.rooms || 0,
+    bathrooms: prop.bathrooms || 0,
+    area: prop.area || prop.sqft || 0,
+    sqft: prop.area || prop.sqft || 0,
+    floor: prop.floor || null,
+    total_floors: prop.total_floors || prop.totalFloors || null,
+    year_built: prop.year_built || null,
+    land_area: prop.land_area || null,
+    renovation: prop.renovation || null,
+    condition: prop.condition || null,
+    heating: prop.heating || null,
+    water_supply: prop.water_supply || null,
+    sewerage: prop.sewerage || null
+  }
+}
 
 function Home() {
   const [auctionProperties, setAuctionProperties] = useState([])
@@ -42,136 +73,105 @@ function Home() {
     other: null
   })
 
-  // Загрузка аукционных и не аукционных объявлений из API
-  useEffect(() => {
-    const loadProperties = async () => {
+  // Загрузка объявлений только когда секция во вьюпорте (без polling)
+  const loadProperties = useCallback(async () => {
+    try {
+      const API_BASE_URL = await getApiBaseUrl()
+      setLoading(true)
+      const types = [{ apiType: 'commercial' }, { apiType: 'villa' }, { apiType: 'apartment' }, { apiType: 'house' }]
+      const allAuctionProperties = []
+      const allNonAuctionProperties = []
+      let allTestProperties = []
       try {
-        // Убеждаемся, что API URL инициализирован ПЕРЕД загрузкой
-        const API_BASE_URL = await getApiBaseUrl()
-        
-        setLoading(true)
-        // Загружаем объявления по типам
-        const types = [
-          { apiType: 'commercial', stateKey: 'apartments' },
-          { apiType: 'villa', stateKey: 'villas' },
-          { apiType: 'apartment', stateKey: 'flats' },
-          { apiType: 'house', stateKey: 'houses' }
-        ]
-
-        const allAuctionProperties = []
-        const allNonAuctionProperties = []
-        const allTestProperties = []
-
-        // Загружаем тестовые объявления (они уже включают все типы)
+        const testRes = await fetch(`${API_BASE_URL}/properties/test-timers`)
+        if (testRes.ok) {
+          const data = await testRes.json()
+          if (data.success && data.data) allTestProperties = data.data
+        }
+      } catch (_) {}
+      for (const { apiType } of types) {
         try {
-          const testUrl = `${API_BASE_URL}/properties/test-timers`
-          console.log('📡 Запрос тестовых объявлений:', testUrl)
-          const testResponse = await fetch(testUrl)
-          if (testResponse.ok) {
-            const data = await testResponse.json()
+          const [auctionRes, approvedRes] = await Promise.all([
+            fetch(`${API_BASE_URL}/properties/auctions?type=${apiType}`),
+            fetch(`${API_BASE_URL}/properties/approved?type=${apiType}`)
+          ])
+          if (auctionRes.ok) {
+            const data = await auctionRes.json()
             if (data.success && data.data) {
-              allTestProperties.push(...data.data)
+              const nonTest = data.data.filter(prop => !prop.test_timer_end_date)
+              allAuctionProperties.push(...nonTest)
             }
-          } else {
-            console.warn('⚠️ Ошибка загрузки тестовых объявлений:', testResponse.status)
           }
-        } catch (error) {
-          console.error('Ошибка загрузки тестовых объявлений:', error)
-        }
-
-        for (const { apiType } of types) {
-          try {
-            // Загружаем аукционные объявления
-            const auctionUrl = `${API_BASE_URL}/properties/auctions?type=${apiType}`
-            console.log('📡 Запрос аукционных:', auctionUrl)
-            const auctionResponse = await fetch(auctionUrl)
-            if (auctionResponse.ok) {
-              const data = await auctionResponse.json()
-              if (data.success && data.data) {
-                // Исключаем тестовые объявления, чтобы не дублировать
-                const nonTestAuction = data.data.filter(prop => 
-                  !prop.test_timer_end_date
-                )
-                allAuctionProperties.push(...nonTestAuction)
-              }
-            } else {
-              console.warn(`⚠️ Ошибка загрузки аукционных объявлений типа ${apiType}:`, auctionResponse.status)
+          if (approvedRes.ok) {
+            const data = await approvedRes.json()
+            if (data.success && data.data) {
+              const nonAuction = data.data.filter(prop => !prop.is_auction || prop.is_auction === 0 || prop.is_auction === false)
+              allNonAuctionProperties.push(...nonAuction)
             }
-
-            // Загружаем не аукционные объявления (одобренные)
-            const approvedUrl = `${API_BASE_URL}/properties/approved?type=${apiType}`
-            console.log('📡 Запрос одобренных:', approvedUrl)
-            const approvedResponse = await fetch(approvedUrl)
-            if (approvedResponse.ok) {
-              const data = await approvedResponse.json()
-              if (data.success && data.data) {
-                // Фильтруем только не аукционные объекты
-                const nonAuction = data.data.filter(prop => 
-                  !prop.is_auction || prop.is_auction === 0 || prop.is_auction === false
-                )
-                allNonAuctionProperties.push(...nonAuction)
-              }
-            }
-          } catch (error) {
-            console.error(`Ошибка загрузки объявлений типа ${apiType}:`, error)
           }
+        } catch (_) {}
+      }
+      const allProperties = [
+        ...allTestProperties.map(p => formatPropertyForList(p, true)),
+        ...allAuctionProperties.map(p => formatPropertyForList(p, true)),
+        ...allNonAuctionProperties.map(p => formatPropertyForList(p, false))
+      ]
+      setAuctionProperties(allProperties)
+    } catch (error) {
+      console.error('❌ Ошибка загрузки объявлений:', error)
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  const [homeListRef] = useLazyLoad(loadProperties, { rootMargin: '300px' })
+
+  // Подписка на новые объекты аукциона по SSE — без polling, только push от сервера при одобрении админом
+  useEffect(() => {
+    let eventSource = null
+    let reconnectTimer = null
+    const baseUrlRef = { current: null }
+
+    const connect = async () => {
+      const base = await getApiBaseUrl()
+      baseUrlRef.current = base
+      const url = base.startsWith('http') ? `${base}/events/auction-updates` : `${window.location.origin}${base}/events/auction-updates`
+      eventSource = new EventSource(url)
+      eventSource.onopen = () => {
+        if (reconnectTimer) clearTimeout(reconnectTimer)
+        reconnectTimer = null
+      }
+      eventSource.onmessage = (event) => {
+        try {
+          if (event.data.startsWith(':')) return
+          const data = JSON.parse(event.data)
+          if (data.type !== 'new_auction_objects' || !Array.isArray(data.properties) || data.properties.length === 0) return
+          const newFormatted = data.properties.map(p => formatPropertyForList(p, true))
+          setAuctionProperties((prev) => {
+            const prevIds = new Set(prev.map((x) => Number(x.id)))
+            const toAdd = newFormatted.filter((p) => p.id != null && !prevIds.has(Number(p.id)))
+            if (toAdd.length === 0) return prev
+            return [...toAdd, ...prev]
+          })
+        } catch (_) {}
+      }
+      eventSource.onerror = () => {
+        if (eventSource) {
+          eventSource.close()
+          eventSource = null
         }
-
-        // Форматируем данные для PropertyList
-        const formatProperty = (prop, isAuction) => ({
-          ...prop,
-          // Убеждаемся, что все необходимые поля присутствуют
-          title: prop.title || prop.name || '',
-          location: prop.location || '',
-          price: prop.price || (isAuction ? prop.auction_starting_price : 0) || 0,
-          currentBid: isAuction ? (prop.currentBid || prop.auction_starting_price || prop.price || 0) : null,
-          endTime: isAuction ? (prop.test_timer_end_date || prop.endTime || prop.auction_end_date || null) : null,
-          isAuction: isAuction,
-          test_timer_end_date: prop.test_timer_end_date || null,
-          images: prop.images || (prop.image ? [prop.image] : []),
-          image: prop.image || (prop.images && prop.images[0] ? prop.images[0] : null),
-          // Основные характеристики
-          rooms: prop.rooms || prop.beds || 0,
-          beds: prop.bedrooms || prop.rooms || prop.beds || 0,
-          bedrooms: prop.bedrooms || prop.rooms || 0,
-          bathrooms: prop.bathrooms || 0,
-          area: prop.area || prop.sqft || 0,
-          sqft: prop.area || prop.sqft || 0,
-          floor: prop.floor || null,
-          total_floors: prop.total_floors || prop.totalFloors || null,
-          year_built: prop.year_built || null,
-          land_area: prop.land_area || null,
-          // Дополнительная информация
-          renovation: prop.renovation || null,
-          condition: prop.condition || null,
-          heating: prop.heating || null,
-          water_supply: prop.water_supply || null,
-          sewerage: prop.sewerage || null
-        })
-
-        const formattedAuction = allAuctionProperties.map(prop => formatProperty(prop, true))
-        const formattedTest = allTestProperties.map(prop => formatProperty(prop, true))
-        const formattedNonAuction = allNonAuctionProperties.map(prop => formatProperty(prop, false))
-        
-        // Объединяем тестовые, аукционные и не аукционные объекты (тестовые первыми)
-        const allProperties = [...formattedTest, ...formattedAuction, ...formattedNonAuction]
-
-        setAuctionProperties(allProperties)
-        console.log('✅ Загружено тестовых объявлений:', formattedTest.length)
-        console.log('✅ Загружено аукционных объявлений:', formattedAuction.length)
-        console.log('✅ Загружено не аукционных объявлений:', formattedNonAuction.length)
-      } catch (error) {
-        console.error('❌ Ошибка загрузки объявлений:', error)
-      } finally {
-        setLoading(false)
+        if (reconnectTimer) return
+        reconnectTimer = setTimeout(() => {
+          reconnectTimer = null
+          connect()
+        }, 2000)
       }
     }
-
-    loadProperties()
-    
-    // Обновляем каждые 5 минут для получения новых объявлений
-    const interval = setInterval(loadProperties, 300000)
-    return () => clearInterval(interval)
+    connect()
+    return () => {
+      if (reconnectTimer) clearTimeout(reconnectTimer)
+      if (eventSource) eventSource.close()
+    }
   }, [])
 
   // Получаем числовой ID из БД для Clerk пользователей
@@ -255,9 +255,9 @@ function Home() {
     }
     
     loadUserDeposit()
-    // Обновляем каждые 5 секунд для актуальности данных
-    const interval = setInterval(loadUserDeposit, 5000)
-    return () => clearInterval(interval)
+    const onFocus = () => loadUserDeposit()
+    window.addEventListener('focus', onFocus)
+    return () => window.removeEventListener('focus', onFocus)
   }, [dbUserId])
 
   // Функции для чата AI
@@ -558,16 +558,18 @@ function Home() {
       {canShowDeposit() && <DepositButton amount={userDeposit} />}
       <Header />
       <Hero />
-      {loading ? (
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
-          <p>Загрузка аукционных объявлений...</p>
-        </div>
-      ) : (
-        <PropertyList 
-          auctionProperties={auctionProperties} 
-          onOpenAIChat={toggleChat}
-        />
-      )}
+      <div ref={homeListRef}>
+        {loading ? (
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
+            <p>Загрузка объявлений...</p>
+          </div>
+        ) : (
+          <PropertyList 
+            auctionProperties={auctionProperties} 
+            onOpenAIChat={toggleChat}
+          />
+        )}
+      </div>
       <FAQ />
 
       {/* Модальное окно чата */}

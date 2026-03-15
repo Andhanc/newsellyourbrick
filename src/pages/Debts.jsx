@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react'
+import { useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { FiSearch } from 'react-icons/fi'
 import Header from '../components/Header'
 import FlipCard from '../components/ui/FlipCard'
+import { useLazyLoad } from '../hooks/useLazyLoad'
 import './Shares.css'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api'
@@ -13,82 +14,49 @@ const Debts = () => {
   const [apiDebts, setApiDebts] = useState([])
   const [loadingDebts, setLoadingDebts] = useState(true)
 
-  useEffect(() => {
-    fetch(`${API_BASE}/properties/approved`)
-      .then((res) => (res.ok ? res.json() : { success: false, data: [] }))
-      .then((json) => {
-        if (json.success && Array.isArray(json.data)) {
-          const onlyDebts = json.data.filter(
-            (p) =>
-              p &&
-              (p.sale_type === 'debt' ||
-                p.is_debt === 1 ||
-                p.is_debt === true ||
-                p.has_debt === 1 ||
-                p.has_debt === true)
-          )
-
-          const mapped = onlyDebts.map((p) => {
-            const photos =
-              (p.photos &&
-                (Array.isArray(p.photos)
-                  ? p.photos
-                  : typeof p.photos === 'string'
-                    ? (() => {
-                        try {
-                          return JSON.parse(p.photos)
-                        } catch (e) {
-                          return []
-                        }
-                      })()
-                    : [])) ||
-              []
-
-            const firstPhoto = photos[0]
-            const image =
-              typeof firstPhoto === 'string'
-                ? firstPhoto
-                : firstPhoto && firstPhoto.url
-                  ? firstPhoto.url
-                  : null
-
-            const location =
-              p.location ||
-              [p.city, p.country].filter(Boolean).join(', ') ||
-              ''
-
-            const priceNumber =
-              p.price != null && p.price !== ''
-                ? Number(p.price)
-                : 0
-
-            const debtAmount =
-              p.debt_amount != null && p.debt_amount !== ''
-                ? Number(p.debt_amount)
-                : null
-
-            return {
-              id: p.id,
-              title: p.title || p.name || '',
-              location,
-              image,
-              totalPrice: priceNumber,
-              debt_amount: debtAmount,
-              area: p.area || p.sqft || 0,
-              rooms: p.rooms || p.bedrooms || 0,
-              isAuction:
-                p.isAuction === true ||
-                p.is_auction === 1 ||
-                p.is_auction === true,
-            }
-          })
-
-          setApiDebts(mapped)
-        }
-      })
-      .catch(() => setApiDebts([]))
-      .finally(() => setLoadingDebts(false))
+  const loadDebts = useCallback(async () => {
+    try {
+      const res = await fetch(`${API_BASE}/properties/approved`)
+      const json = await (res.ok ? res.json() : { success: false, data: [] })
+      if (json.success && Array.isArray(json.data)) {
+        const onlyDebts = json.data.filter(
+          (p) =>
+            p &&
+            (p.sale_type === 'debt' ||
+              p.is_debt === 1 ||
+              p.is_debt === true ||
+              p.has_debt === 1 ||
+              p.has_debt === true)
+        )
+        const mapped = onlyDebts.map((p) => {
+          const photos = (p.photos && (Array.isArray(p.photos) ? p.photos : typeof p.photos === 'string' ? (() => { try { return JSON.parse(p.photos) } catch (e) { return [] } })() : [])) || []
+          const firstPhoto = photos[0]
+          const image = typeof firstPhoto === 'string' ? firstPhoto : firstPhoto && firstPhoto.url ? firstPhoto.url : null
+          const location = p.location || [p.city, p.country].filter(Boolean).join(', ') || ''
+          const priceNumber = p.price != null && p.price !== '' ? Number(p.price) : 0
+          const debtAmount = p.debt_amount != null && p.debt_amount !== '' ? Number(p.debt_amount) : null
+          return {
+            id: p.id,
+            title: p.title || p.name || '',
+            location,
+            image,
+            totalPrice: priceNumber,
+            debt_amount: debtAmount,
+            area: p.area || p.sqft || 0,
+            rooms: p.rooms || p.bedrooms || 0,
+            isAuction: p.isAuction === true || p.is_auction === 1 || p.is_auction === true,
+          }
+        })
+        setApiDebts(mapped)
+      }
+    } catch (_) {
+      setApiDebts([])
+    } finally {
+      setLoadingDebts(false)
+    }
   }, [])
+
+  const [debtsSectionRef] = useLazyLoad(loadDebts, { rootMargin: '200px' })
 
   const filtered = apiDebts.filter(
     (obj) =>
@@ -107,7 +75,7 @@ const Debts = () => {
     <div className="shares-page">
       <Header />
       <div className="shares-page__bg" />
-      <main className="shares-container">
+      <main ref={debtsSectionRef} className="shares-container">
         <div className="shares-flip-cards">
           <FlipCard
             color="#DC2626"

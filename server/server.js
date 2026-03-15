@@ -1,7 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import axios from 'axios';
-import { initDatabase, closeDatabase, getDatabase } from './database/database.js';
+import { initDatabase, closeDatabase, getDatabase, schemaCache } from './database/database.js';
 import { userQueries, documentQueries, notificationQueries, administratorQueries, debtReasonQueries, debtDocumentQueries, whatsappUserQueries, purchaseRequestQueries, assistantLeadQueries, apartmentQueries, houseQueries, propertyQueries } from './database/database.js';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
@@ -149,6 +149,53 @@ app.get('/api/admin/online-count', (req, res) => {
     console.error('Ошибка при получении online count:', error);
     res.status(500).json({ success: false, error: error.message });
   }
+});
+
+// Подписчики SSE для автообновления списка аукциона (без polling)
+const auctionSSEClients = new Set();
+
+function broadcastAuctionNewObjects(properties) {
+  if (!properties || properties.length === 0) return;
+  const payload = JSON.stringify({ type: 'new_auction_objects', properties });
+  console.log(`[SSE] 📤 Рассылка новых объектов аукциона подписчикам: ${auctionSSEClients.size} клиент(ов), объектов: ${properties.length}`);
+  auctionSSEClients.forEach((res) => {
+    try {
+      res.write(`data: ${payload}\n\n`);
+      if (typeof res.flush === 'function') res.flush();
+    } catch (e) {
+      auctionSSEClients.delete(res);
+    }
+  });
+}
+
+/**
+ * GET /api/events/auction-updates - Server-Sent Events для новых объектов на странице аукциона.
+ * Клиент подписывается один раз; сервер пушит события только при появлении новых объектов (после одобрения).
+ */
+app.get('/api/events/auction-updates', (req, res) => {
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.setHeader('X-Accel-Buffering', 'no');
+  res.flushHeaders();
+  auctionSSEClients.add(res);
+  console.log(`[SSE] 🔌 Подключён подписчик аукциона. Всего: ${auctionSSEClients.size}`);
+  res.write(': connected\n\n');
+  if (typeof res.flush === 'function') res.flush();
+  const heartbeat = setInterval(() => {
+    if (!auctionSSEClients.has(res)) return;
+    try {
+      res.write(': hb\n\n');
+      if (typeof res.flush === 'function') res.flush();
+    } catch (e) {
+      clearInterval(heartbeat);
+      auctionSSEClients.delete(res);
+    }
+  }, 15000);
+  req.on('close', () => {
+    clearInterval(heartbeat);
+    auctionSSEClients.delete(res);
+  });
 });
 
 // API endpoint для получения конфигурации клиента (runtime переменные)
@@ -353,44 +400,8 @@ try {
   // Не останавливаем сервер, но логируем ошибку
   // Сервер может работать даже если БД не инициализирована (для диагностики)
 }
-  
-  // Создаем таблицу auction_winners после инициализации БД
-  try {
-    const db = getDatabase();
-    const tableExists = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='auction_winners'").get();
-    if (!tableExists) {
-      console.log('🔄 Создание таблицы auction_winners...');
-      db.exec(`
-        CREATE TABLE IF NOT EXISTS auction_winners (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          user_id INTEGER NOT NULL,
-          property_id INTEGER NOT NULL,
-          property_table TEXT NOT NULL,
-          winning_bid_amount REAL NOT NULL,
-          currency TEXT DEFAULT 'USD',
-          auction_end_date TEXT NOT NULL,
-          won_at TEXT DEFAULT (datetime('now')),
-          deposit_amount REAL NOT NULL,
-          deposit_due_date TEXT NOT NULL,
-          deposit_paid INTEGER DEFAULT 0,
-          deposit_paid_at TEXT,
-          status TEXT DEFAULT 'pending_deposit',
-          created_at TEXT DEFAULT (datetime('now')),
-          updated_at TEXT DEFAULT (datetime('now')),
-          FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-        );
-        CREATE INDEX IF NOT EXISTS idx_auction_winners_user_id ON auction_winners(user_id);
-        CREATE INDEX IF NOT EXISTS idx_auction_winners_property_id ON auction_winners(property_id);
-        CREATE INDEX IF NOT EXISTS idx_auction_winners_status ON auction_winners(status);
-        CREATE INDEX IF NOT EXISTS idx_auction_winners_deposit_paid ON auction_winners(deposit_paid);
-      `);
-      console.log('✅ Таблица auction_winners создана');
-    } else {
-      console.log('✅ Таблица auction_winners уже существует');
-    }
-  } catch (tableError) {
-    console.error('❌ Ошибка при создании таблицы auction_winners:', tableError);
-  }
+
+// Таблица auction_winners создаётся в database.js при init — дублирование убрано
 
 // ========== НАСТРОЙКА WHATSAPP WEB КЛИЕНТА ==========
 let waClientReady = false;
@@ -6412,6 +6423,88 @@ app.get('/api/properties/approved', (req, res) => {
 });
 
 /**
+ * Форматирует один объект аукциона в формат API (для SSE broadcast и повторного использования).
+ */
+function formatOneAuctionPropertyForApi(prop) {
+  const formatted = { ...prop };
+  if (formatted.photos && typeof formatted.photos === 'string') {
+    try { formatted.photos = JSON.parse(formatted.photos); } catch (e) { formatted.photos = []; }
+  } else if (!formatted.photos) formatted.photos = [];
+  if (formatted.videos && typeof formatted.videos === 'string') {
+    try { formatted.videos = JSON.parse(formatted.videos); } catch (e) { formatted.videos = []; }
+  } else if (!formatted.videos) formatted.videos = [];
+  let amenitiesArray = [];
+  if (formatted.amenities && typeof formatted.amenities === 'string') {
+    try { amenitiesArray = JSON.parse(formatted.amenities); } catch (e) { amenitiesArray = []; }
+  } else if (Array.isArray(formatted.amenities)) amenitiesArray = formatted.amenities;
+  formatted.amenities = amenitiesArray;
+  formatted.balcony = amenitiesArray.includes('balcony') || formatted.balcony === 1 || formatted.balcony === true;
+  formatted.parking = amenitiesArray.includes('parking') || formatted.parking === 1 || formatted.parking === true;
+  formatted.elevator = amenitiesArray.includes('elevator') || formatted.elevator === 1 || formatted.elevator === true;
+  formatted.electricity = amenitiesArray.includes('electricity') || formatted.electricity === 1 || formatted.electricity === true;
+  formatted.internet = amenitiesArray.includes('internet') || formatted.internet === 1 || formatted.internet === true;
+  formatted.security = amenitiesArray.includes('security') || formatted.security === 1 || formatted.security === true;
+  formatted.furniture = amenitiesArray.includes('furniture') || formatted.furniture === 1 || formatted.furniture === true;
+  for (let i = 1; i <= 26; i++) {
+    const featureKey = `feature${i}`;
+    formatted[featureKey] = amenitiesArray.includes(featureKey) || formatted[featureKey] === 1 || formatted[featureKey] === true;
+  }
+  if (formatted.additional_amenities === undefined || formatted.additional_amenities === null) formatted.additional_amenities = formatted.additional_amenities || null;
+  if (formatted.coordinates && typeof formatted.coordinates === 'string') {
+    try {
+      if (formatted.coordinates.startsWith('[') || formatted.coordinates.startsWith('{')) formatted.coordinates = JSON.parse(formatted.coordinates);
+      else formatted.coordinates = formatted.coordinates.split(',').map(Number);
+    } catch (e) { formatted.coordinates = null; }
+  }
+  if (formatted.additional_documents && typeof formatted.additional_documents === 'string') {
+    try { formatted.additional_documents = JSON.parse(formatted.additional_documents); } catch (e) { formatted.additional_documents = []; }
+  } else if (!formatted.additional_documents) formatted.additional_documents = [];
+  if (formatted.test_drive_data && typeof formatted.test_drive_data === 'string') {
+    try { formatted.test_drive_data = JSON.parse(formatted.test_drive_data); } catch (e) { formatted.test_drive_data = null; }
+  }
+  formatted.name = formatted.title;
+  formatted.image = formatted.photos && formatted.photos.length > 0 ? formatted.photos[0] : 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=800&q=80';
+  formatted.images = formatted.photos || [];
+  formatted.owner = { firstName: formatted.first_name || '', lastName: formatted.last_name || '', email: formatted.email || '' };
+  if (formatted.property_type === 'house' || formatted.property_type === 'villa') {
+    formatted.beds = formatted.bedrooms || 0;
+    formatted.rooms = formatted.bedrooms || 0;
+  } else {
+    formatted.beds = formatted.bedrooms || formatted.rooms || 0;
+    formatted.rooms = formatted.bedrooms || formatted.rooms || 0;
+  }
+  formatted.baths = formatted.bathrooms || 0;
+  formatted.sqft = formatted.area || 0;
+  formatted.hasSamolyot = false;
+  formatted.isAuction = true;
+  formatted.currentBid = formatted.auction_starting_price || formatted.price || 0;
+  formatted.endTime = formatted.test_timer_end_date || formatted.auction_end_date || null;
+  formatted.originalPrice = formatted.price || null;
+  formatted.auctionStartingPrice = formatted.auction_starting_price || null;
+  formatted.tag = formatted.property_type === 'apartment' ? 'apartment' : formatted.property_type === 'villa' ? 'villa' : formatted.property_type === 'house' ? 'house' : formatted.property_type === 'commercial' ? 'apartment' : 'apartment';
+  if (formatted.property_type === 'house' || formatted.property_type === 'villa') {
+    if (formatted.floors !== undefined && formatted.floors !== null) formatted.total_floors = formatted.floors;
+    if (Array.isArray(formatted.amenities)) {
+      formatted.pool = formatted.amenities.includes('pool') || formatted.pool === 1 || formatted.pool === true;
+      formatted.garden = formatted.amenities.includes('garden') || formatted.garden === 1 || formatted.garden === true;
+      formatted.garage = formatted.amenities.includes('garage') || formatted.garage === 1 || formatted.garage === true;
+    }
+    formatted.land_area = formatted.land_area || null;
+  }
+  try {
+    const reservationInfo = propertyQueries.isReserved(formatted.id);
+    formatted.is_reserved = reservationInfo.isReserved || false;
+    formatted.reserved_until = reservationInfo.reservedUntil || null;
+    formatted.reserved_by = reservationInfo.reservedBy || null;
+  } catch (e) {
+    formatted.is_reserved = false;
+    formatted.reserved_until = null;
+    formatted.reserved_by = null;
+  }
+  return formatted;
+}
+
+/**
  * GET /api/properties/auctions - Получить одобренные объявления с аукционом
  * ВАЖНО: Этот маршрут должен быть ПЕРЕД /api/properties/:id, иначе он будет перехвачен
  */
@@ -8069,6 +8162,18 @@ app.put('/api/properties/:id/approve', (req, res) => {
         console.warn('Не удалось создать уведомление:', notifError);
       }
 
+      // Push по SSE подписчикам страницы аукциона — новый объект появится без перезагрузки
+      const isAuction = updatedProperty.is_auction === 1 || updatedProperty.is_auction === '1' || updatedProperty.is_auction === true;
+      if (isAuction) {
+        try {
+          console.log(`[SSE] 📤 Аукционный объект ID=${id} одобрен — рассылаем подписчикам страницы аукциона`);
+          const formatted = formatOneAuctionPropertyForApi(updatedProperty);
+          broadcastAuctionNewObjects([formatted]);
+        } catch (broadcastErr) {
+          console.warn('Не удалось отправить SSE обновление аукциона:', broadcastErr);
+        }
+      }
+
       // ВАЖНО: Финальная проверка - убеждаемся, что возвращаем правильный объект
       if (requestedPropertyType && updatedProperty.property_type !== requestedPropertyType) {
         console.error(`❌ КРИТИЧЕСКАЯ ОШИБКА перед отправкой ответа! Запрошен тип ${requestedPropertyType}, но updatedProperty имеет тип ${updatedProperty.property_type}`);
@@ -8689,15 +8794,16 @@ app.post('/api/bids', (req, res) => {
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             user_id INTEGER NOT NULL,
             property_id INTEGER NOT NULL,
+            property_table TEXT,
             bid_amount REAL NOT NULL,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-            -- ВАЖНО: property_id НЕ имеет FOREIGN KEY, так как объекты могут быть в properties или properties_houses
           );
           CREATE INDEX IF NOT EXISTS idx_bids_user_id ON bids(user_id);
           CREATE INDEX IF NOT EXISTS idx_bids_property_id ON bids(property_id);
           CREATE INDEX IF NOT EXISTS idx_bids_created_at ON bids(created_at);
           CREATE INDEX IF NOT EXISTS idx_bids_user_property ON bids(user_id, property_id);
+          CREATE INDEX IF NOT EXISTS idx_bids_property_id_table ON bids(property_id, property_table);
         `);
         console.log('✅ Таблица bids создана');
       } else {
@@ -8912,11 +9018,17 @@ app.post('/api/bids', (req, res) => {
     let result;
     let bidId;
     try {
-      const stmt = db.prepare(`
-        INSERT INTO bids (user_id, property_id, bid_amount, created_at)
-        VALUES (?, ?, ?, CURRENT_TIMESTAMP)
-      `);
-      result = stmt.run(userIdNum, propertyIdNum, bidAmountNum);
+      const hasPropertyTableCol = db.prepare("PRAGMA table_info(bids)").all().some(c => c.name === 'property_table');
+      const stmt = hasPropertyTableCol
+        ? db.prepare(`
+            INSERT INTO bids (user_id, property_id, property_table, bid_amount, created_at)
+            VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
+          `)
+        : db.prepare(`
+            INSERT INTO bids (user_id, property_id, bid_amount, created_at)
+            VALUES (?, ?, ?, CURRENT_TIMESTAMP)
+          `);
+      result = hasPropertyTableCol ? stmt.run(userIdNum, propertyIdNum, tableName, bidAmountNum) : stmt.run(userIdNum, propertyIdNum, bidAmountNum);
       bidId = result.lastInsertRowid;
     } catch (insertError) {
       // Включаем обратно проверку внешних ключей
@@ -9093,106 +9205,121 @@ app.get('/api/bids/property/:id', (req, res) => {
 });
 
 /**
- * GET /api/bids/user/:id - Получить ставки пользователя
+ * GET /api/bids/user/:id - Получить ставки пользователя (оптимизировано: batch по property_table)
  */
 app.get('/api/bids/user/:id', (req, res) => {
   try {
     const userId = req.params.id;
     const db = getDatabase();
     
-    console.log(`📊 GET /api/bids/user/:id - Запрос ставок для пользователя ${userId}`);
-    
-    // Проверяем, существует ли таблица ставок
-    const tableExists = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='bids'").get();
-    if (!tableExists) {
-      console.log('⚠️ Таблица bids не существует');
+    if (!schemaCache.properties && !schemaCache.properties_apartments && !schemaCache.properties_houses) {
       return res.json({ success: true, data: [] });
     }
     
-    // Получаем все ставки пользователя
     const bids = db.prepare(`
-      SELECT * FROM bids
-      WHERE user_id = ?
-      ORDER BY created_at DESC
+      SELECT * FROM bids WHERE user_id = ? ORDER BY created_at DESC
     `).all(userId);
     
-    console.log(`📊 Найдено ${bids.length} ставок для пользователя ${userId}`);
+    if (bids.length === 0) {
+      return res.json({ success: true, data: [] });
+    }
     
-    // Для каждой ставки получаем информацию об объекте из соответствующей таблицы
-    const formattedBids = bids.map(bid => {
-      let property = null;
-      
-      // Пытаемся найти объект во всех возможных таблицах
-      try {
-        // Сначала проверяем properties_apartments
-        property = db.prepare('SELECT * FROM properties_apartments WHERE id = ?').get(bid.property_id);
-        if (property) {
-          property.source_table = 'properties_apartments';
-        }
-      } catch (e) {
-        // Таблица может не существовать
+    const hasPropertyTable = bids[0].hasOwnProperty('property_table');
+    const propertyMap = new Map();
+    
+    if (hasPropertyTable) {
+      const byTable = { properties_apartments: [], properties_houses: [], properties: [] };
+      for (const bid of bids) {
+        const tbl = bid.property_table || 'properties';
+        if (!byTable[tbl]) byTable[tbl] = [];
+        byTable[tbl].push(bid.property_id);
       }
-      
-      if (!property) {
+      const unique = (arr) => [...new Set(arr)];
+      if (schemaCache.properties_apartments && byTable.properties_apartments.length) {
+        const ids = unique(byTable.properties_apartments);
+        const placeholders = ids.map(() => '?').join(',');
         try {
-          // Проверяем properties_houses
-          property = db.prepare('SELECT * FROM properties_houses WHERE id = ?').get(bid.property_id);
-          if (property) {
-            property.source_table = 'properties_houses';
-          }
-        } catch (e) {
-          // Таблица может не существовать
-        }
+          const rows = db.prepare(`SELECT * FROM properties_apartments WHERE id IN (${placeholders})`).all(...ids);
+          for (const p of rows) propertyMap.set(`properties_apartments:${p.id}`, p);
+        } catch (_) {}
       }
-      
-      if (!property) {
+      if (schemaCache.properties_houses && byTable.properties_houses.length) {
+        const ids = unique(byTable.properties_houses);
+        const placeholders = ids.map(() => '?').join(',');
         try {
-          // Проверяем старую таблицу properties
-          property = db.prepare('SELECT * FROM properties WHERE id = ?').get(bid.property_id);
-          if (property) {
-            property.source_table = 'properties';
-          }
-        } catch (e) {
-          // Таблица может не существовать
-        }
+          const rows = db.prepare(`SELECT * FROM properties_houses WHERE id IN (${placeholders})`).all(...ids);
+          for (const p of rows) propertyMap.set(`properties_houses:${p.id}`, p);
+        } catch (_) {}
       }
-      
-      // Парсим JSON поля
-      if (property && property.photos) {
+      if (schemaCache.properties && byTable.properties.length) {
+        const ids = unique(byTable.properties);
+        const placeholders = ids.map(() => '?').join(',');
         try {
-          property.photos = typeof property.photos === 'string' 
-            ? JSON.parse(property.photos) 
-            : property.photos;
-        } catch (e) {
-          property.photos = [];
-        }
-      } else if (property) {
-        property.photos = [];
+          const rows = db.prepare(`SELECT * FROM properties WHERE id IN (${placeholders})`).all(...ids);
+          for (const p of rows) propertyMap.set(`properties:${p.id}`, p);
+        } catch (_) {}
       }
-      
-      const formatted = {
-        ...bid,
-        title: property?.title || null,
-        location: property?.location || property?.address || null,
-        price: property?.price || null,
-        auction_starting_price: property?.auction_starting_price || null,
-        auction_minimum_bid: property?.auction_minimum_bid || null,
-        photos: property?.photos || [],
-        is_auction: property?.is_auction || 0,
-        auction_end_date: property?.auction_end_date || null,
-        currency: property?.currency || 'USD'
+    } else {
+      const allIds = [...new Set(bids.map(b => b.property_id))];
+      for (const pid of allIds) {
+        let p = null;
+        if (schemaCache.properties_apartments) {
+          try { p = db.prepare('SELECT * FROM properties_apartments WHERE id = ?').get(pid); if (p) { p.source_table = 'properties_apartments'; } } catch (_) {}
+        }
+        if (!p && schemaCache.properties_houses) {
+          try { p = db.prepare('SELECT * FROM properties_houses WHERE id = ?').get(pid); if (p) { p.source_table = 'properties_houses'; } } catch (_) {}
+        }
+        if (!p && schemaCache.properties) {
+          try { p = db.prepare('SELECT * FROM properties WHERE id = ?').get(pid); if (p) { p.source_table = 'properties'; } } catch (_) {}
+        }
+        if (p) propertyMap.set(`${p.source_table}:${pid}`, p);
+      }
+    }
+    
+    const formatProp = (property) => {
+      if (!property) return { title: null, location: null, price: null, auction_starting_price: null, auction_minimum_bid: null, photos: [], is_auction: 0, auction_end_date: null, currency: 'USD' };
+      let photos = property.photos;
+      if (photos && typeof photos === 'string') {
+        try { photos = JSON.parse(photos); } catch (_) { photos = []; }
+      }
+      if (!Array.isArray(photos)) photos = [];
+      return {
+        title: property.title || null,
+        location: property.location || property.address || null,
+        price: property.price ?? null,
+        auction_starting_price: property.auction_starting_price ?? null,
+        auction_minimum_bid: property.auction_minimum_bid ?? null,
+        photos,
+        is_auction: property.is_auction || 0,
+        auction_end_date: property.auction_end_date || null,
+        currency: property.currency || 'USD'
       };
-      
-      console.log(`📊 Ставка ${bid.id} для объекта ${bid.property_id}:`, {
-        title: formatted.title,
-        is_auction: formatted.is_auction,
-        hasProperty: !!property
-      });
-      
-      return formatted;
+    };
+    
+    const formattedBids = bids.map(bid => {
+      let key;
+      if (hasPropertyTable) {
+        const tbl = bid.property_table || 'properties';
+        key = `${tbl}:${bid.property_id}`;
+      } else {
+        key = propertyMap.has(`properties_apartments:${bid.property_id}`) ? `properties_apartments:${bid.property_id}` : propertyMap.has(`properties_houses:${bid.property_id}`) ? `properties_houses:${bid.property_id}` : `properties:${bid.property_id}`;
+      }
+      const property = propertyMap.get(key);
+      const fp = formatProp(property);
+      return {
+        ...bid,
+        title: fp.title,
+        location: fp.location,
+        price: fp.price,
+        auction_starting_price: fp.auction_starting_price,
+        auction_minimum_bid: fp.auction_minimum_bid,
+        photos: fp.photos,
+        is_auction: fp.is_auction,
+        auction_end_date: fp.auction_end_date,
+        currency: fp.currency
+      };
     });
     
-    console.log(`✅ Возвращаем ${formattedBids.length} ставок для пользователя ${userId}`);
     res.json({ success: true, data: formattedBids });
   } catch (error) {
     console.error('Ошибка при получении ставок пользователя:', error);
@@ -9261,43 +9388,8 @@ app.get('/api/bids/user/:userId/property/:propertyId', (req, res) => {
 
 /**
  * ========== РОУТЫ ДЛЯ ВЫИГРАННЫХ ОБЪЕКТОВ НА АУКЦИОНЕ ==========
+ * Таблица auction_winners создаётся в database.js при init.
  */
-
-// Создаем таблицу auction_winners при запуске сервера
-try {
-  const db = getDatabase();
-  const tableExists = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='auction_winners'").get();
-  if (!tableExists) {
-    console.log('🔄 Создание таблицы auction_winners...');
-    db.exec(`
-      CREATE TABLE IF NOT EXISTS auction_winners (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_id INTEGER NOT NULL,
-        property_id INTEGER NOT NULL,
-        property_table TEXT NOT NULL,
-        winning_bid_amount REAL NOT NULL,
-        currency TEXT DEFAULT 'USD',
-        auction_end_date TEXT NOT NULL,
-        won_at TEXT DEFAULT (datetime('now')),
-        deposit_amount REAL NOT NULL,
-        deposit_due_date TEXT NOT NULL,
-        deposit_paid INTEGER DEFAULT 0,
-        deposit_paid_at TEXT,
-        status TEXT DEFAULT 'pending_deposit',
-        created_at TEXT DEFAULT (datetime('now')),
-        updated_at TEXT DEFAULT (datetime('now')),
-        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-      );
-      CREATE INDEX IF NOT EXISTS idx_auction_winners_user_id ON auction_winners(user_id);
-      CREATE INDEX IF NOT EXISTS idx_auction_winners_property_id ON auction_winners(property_id);
-      CREATE INDEX IF NOT EXISTS idx_auction_winners_status ON auction_winners(status);
-      CREATE INDEX IF NOT EXISTS idx_auction_winners_deposit_paid ON auction_winners(deposit_paid);
-    `);
-    console.log('✅ Таблица auction_winners создана');
-  }
-} catch (error) {
-  console.error('❌ Ошибка при создании таблицы auction_winners:', error);
-}
 
 /**
  * POST /api/auction-winners - Сохранить победителя аукциона
@@ -9394,84 +9486,56 @@ app.get('/api/auction-winners/user/:id', (req, res) => {
     
     const db = getDatabase();
     
-    // Проверяем и создаем таблицу, если её нет
-    try {
-      const tableExists = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='auction_winners'").get();
-      if (!tableExists) {
-        console.log('🔄 Таблица auction_winners не найдена, создаем...');
-        db.exec(`
-          CREATE TABLE IF NOT EXISTS auction_winners (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id INTEGER NOT NULL,
-            property_id INTEGER NOT NULL,
-            property_table TEXT NOT NULL,
-            winning_bid_amount REAL NOT NULL,
-            currency TEXT DEFAULT 'USD',
-            auction_end_date TEXT NOT NULL,
-            won_at TEXT DEFAULT (datetime('now')),
-            deposit_amount REAL NOT NULL,
-            deposit_due_date TEXT NOT NULL,
-            deposit_paid INTEGER DEFAULT 0,
-            deposit_paid_at TEXT,
-            status TEXT DEFAULT 'pending_deposit',
-            created_at TEXT DEFAULT (datetime('now')),
-            updated_at TEXT DEFAULT (datetime('now')),
-            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-          );
-          CREATE INDEX IF NOT EXISTS idx_auction_winners_user_id ON auction_winners(user_id);
-          CREATE INDEX IF NOT EXISTS idx_auction_winners_property_id ON auction_winners(property_id);
-          CREATE INDEX IF NOT EXISTS idx_auction_winners_status ON auction_winners(status);
-          CREATE INDEX IF NOT EXISTS idx_auction_winners_deposit_paid ON auction_winners(deposit_paid);
-        `);
-        console.log('✅ Таблица auction_winners создана');
-      }
-    } catch (tableError) {
-      console.error('❌ Ошибка при проверке/создании таблицы auction_winners:', tableError);
-    }
-    
     console.log(`📊 Запрос выигранных объектов для пользователя ${userId}`);
     
-    // Получаем выигранные объекты
     const winners = db.prepare(`
-      SELECT * FROM auction_winners
-      WHERE user_id = ?
-      ORDER BY won_at DESC
+      SELECT * FROM auction_winners WHERE user_id = ? ORDER BY won_at DESC
     `).all(userId);
     
-    // Для каждого объекта получаем детальную информацию
+    if (winners.length === 0) {
+      return res.json({ success: true, data: [] });
+    }
+    
+    const propertyById = new Map();
+    const byTable = { properties_apartments: [], properties_houses: [], properties: [] };
+    for (const w of winners) {
+      const t = w.property_table || 'properties';
+      if (!byTable[t]) byTable[t] = [];
+      byTable[t].push(w.property_id);
+    }
+    const uniq = (arr) => [...new Set(arr)];
+    try {
+      if (byTable.properties_apartments.length) {
+        const ids = uniq(byTable.properties_apartments);
+        const ph = ids.map(() => '?').join(',');
+        const rows = db.prepare(`SELECT * FROM properties_apartments WHERE id IN (${ph})`).all(...ids);
+        for (const p of rows) propertyById.set(`properties_apartments:${p.id}`, p);
+      }
+      if (byTable.properties_houses.length) {
+        const ids = uniq(byTable.properties_houses);
+        const ph = ids.map(() => '?').join(',');
+        const rows = db.prepare(`SELECT * FROM properties_houses WHERE id IN (${ph})`).all(...ids);
+        for (const p of rows) propertyById.set(`properties_houses:${p.id}`, p);
+      }
+      if (byTable.properties.length) {
+        const ids = uniq(byTable.properties);
+        const ph = ids.map(() => '?').join(',');
+        const rows = db.prepare(`SELECT * FROM properties WHERE id IN (${ph})`).all(...ids);
+        for (const p of rows) propertyById.set(`properties:${p.id}`, p);
+      }
+    } catch (e) {
+      console.warn('⚠️ Ошибка batch-загрузки объектов для auction_winners:', e.message);
+    }
+    
     const winnersWithDetails = winners.map(winner => {
-      let property = null;
-      
-      // Пытаемся получить объект из соответствующей таблицы
-      try {
-        if (winner.property_table === 'properties_apartments') {
-          property = db.prepare('SELECT * FROM properties_apartments WHERE id = ?').get(winner.property_id);
-        } else if (winner.property_table === 'properties_houses') {
-          property = db.prepare('SELECT * FROM properties_houses WHERE id = ?').get(winner.property_id);
-        } else {
-          property = db.prepare('SELECT * FROM properties WHERE id = ?').get(winner.property_id);
-        }
-      } catch (e) {
-        console.warn(`⚠️ Не удалось получить объект ${winner.property_id} из таблицы ${winner.property_table}:`, e.message);
+      const t = winner.property_table || 'properties';
+      let property = propertyById.get(`${t}:${winner.property_id}`) || null;
+      if (property && property.photos) {
+        try { property = { ...property, photos: JSON.parse(property.photos) }; } catch (_) { property = { ...property, photos: [] }; }
+      } else if (property) {
+        property = { ...property, photos: [] };
       }
-      
-      // Парсим JSON поля
-      if (property) {
-        if (property.photos) {
-          try {
-            property.photos = JSON.parse(property.photos);
-          } catch (e) {
-            property.photos = [];
-          }
-        } else {
-          property.photos = [];
-        }
-      }
-      
-      return {
-        ...winner,
-        property: property || null
-      };
+      return { ...winner, property: property || null };
     });
     
     console.log(`✅ Найдено ${winnersWithDetails.length} выигранных объектов для пользователя ${userId}`);

@@ -31,9 +31,10 @@ export default function VisitorHeartbeat() {
       }
     };
 
-    sendHeartbeat();
+    const firstDelayId = setTimeout(sendHeartbeat, 12000);
     intervalRef.current = setInterval(sendHeartbeat, HEARTBEAT_INTERVAL_MS);
     return () => {
+      clearTimeout(firstDelayId);
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
   }, []);

@@ -905,10 +905,10 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
       }
     }
 
-    loadBids() 
-    // Обновляем каждые 3 секунды
-    const interval = setInterval(loadBids, 3000)
-    return () => clearInterval(interval)
+    loadBids()
+    const onFocus = () => loadBids()
+    window.addEventListener('focus', onFocus)
+    return () => window.removeEventListener('focus', onFocus)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [displayProperty.id])
 
@@ -942,8 +942,8 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
       }
     };
 
-    // Обновляем каждые 2 секунды для синхронизации таймера
-    const interval = setInterval(updatePropertyData, 2000);
+    // Обновление таймера с сервера реже (каждые 30 сек), без агрессивного polling
+    const interval = setInterval(updatePropertyData, 30000);
     return () => clearInterval(interval);
   }, [displayProperty.id, displayProperty.test_timer_end_date, property.test_timer_end_date]);
 
@@ -1236,9 +1236,9 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
     }
 
     checkNotifications()
-    // Проверяем каждые 5 секунд
-    const interval = setInterval(checkNotifications, 5000)
-    return () => clearInterval(interval)
+    const onFocus = () => checkNotifications()
+    window.addEventListener('focus', onFocus)
+    return () => window.removeEventListener('focus', onFocus)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [displayProperty.id, user, userLoaded])
 

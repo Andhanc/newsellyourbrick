@@ -1,37 +1,42 @@
+import { lazy, Suspense } from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import { TonConnectUIProvider } from '@tonconnect/ui-react'
-import Home from './pages/Home'
 import MainPage from './pages/MainPage'
-import PropertyDetailPage from './pages/PropertyDetailPage'
-import MapPage from './pages/MapPage'
-import Profile from './pages/Profile'
-import Data from './pages/Data'
-import Subscriptions from './pages/Subscriptions'
-import History from './pages/History'
-import Chat from './pages/Chat'
-import Favorites from './pages/Favorites'
-import Bonuses from './pages/Bonuses'
-import Shares from './pages/Shares'
-import Debts from './pages/Debts'
-import ShareDetailPage from './pages/ShareDetailPage'
-import OwnerDashboard from './pages/OwnerDashboard'
-import TelegramAuthCallback from './pages/TelegramAuthCallback'
-import AddProperty from './pages/AddProperty'
-import Wallet from './pages/Wallet'
-import SearchResults from './pages/SearchResults'
-import AdminPanelPage from './admin/AdminPanelPage'
-import About from './pages/About'
-import InvestmentCalculator from './pages/InvestmentCalculator'
-import JetonPage from './pages/JetonPage'
 import Footer from './components/Footer'
 import ClerkAuthSync from './components/ClerkAuthSync'
 import ClerkAuthHandler from './components/ClerkAuthHandler'
-import BlockedUserModal from './components/BlockedUserModal'
 import ToastContainer from './components/ToastContainer'
 import VisitorHeartbeat from './components/VisitorHeartbeat'
 import { validateSession, getUserData } from './services/authService'
 import './App.css'
+
+// Ленивая загрузка страниц — чанк грузится только при переходе на маршрут
+const Home = lazy(() => import('./pages/Home'))
+const PropertyDetailPage = lazy(() => import('./pages/PropertyDetailPage'))
+const MapPage = lazy(() => import('./pages/MapPage'))
+const Profile = lazy(() => import('./pages/Profile'))
+const Data = lazy(() => import('./pages/Data'))
+const Subscriptions = lazy(() => import('./pages/Subscriptions'))
+const History = lazy(() => import('./pages/History'))
+const Chat = lazy(() => import('./pages/Chat'))
+const Favorites = lazy(() => import('./pages/Favorites'))
+const Bonuses = lazy(() => import('./pages/Bonuses'))
+const Shares = lazy(() => import('./pages/Shares'))
+const Debts = lazy(() => import('./pages/Debts'))
+const ShareDetailPage = lazy(() => import('./pages/ShareDetailPage'))
+const OwnerDashboard = lazy(() => import('./pages/OwnerDashboard'))
+const TelegramAuthCallback = lazy(() => import('./pages/TelegramAuthCallback'))
+const AddProperty = lazy(() => import('./pages/AddProperty'))
+const Wallet = lazy(() => import('./pages/Wallet'))
+const SearchResults = lazy(() => import('./pages/SearchResults'))
+const AdminPanelPage = lazy(() => import('./admin/AdminPanelPage'))
+const About = lazy(() => import('./pages/About'))
+const InvestmentCalculator = lazy(() => import('./pages/InvestmentCalculator'))
+const JetonPage = lazy(() => import('./pages/JetonPage'))
+const BlockedUserModal = lazy(() => import('./components/BlockedUserModal'))
+
+const PageFallback = () => <div className="app-page-fallback" style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }} aria-hidden="true" />
 
 // Компонент для валидации сессии при запуске приложения
 function SessionValidator({ onBlockedChange }) {
@@ -202,11 +207,8 @@ function App() {
       }
     };
     
-    // Запускаем проверку сразу и с небольшой задержкой для надежности
     checkBlockedStatus();
-    const timeoutId = setTimeout(checkBlockedStatus, 300);
-    
-    return () => clearTimeout(timeoutId);
+    return () => {};
   }, [])
 
   console.log('🔍 App render, isBlocked:', isBlocked);
@@ -227,47 +229,44 @@ function App() {
       <ClerkAuthHandler />
       <div className={`app-layout ${isBlocked ? 'app-layout--blocked' : ''}`}>
         <div className="app-layout__content">
-          <Routes>
-          {/* Главная страница - открывается по умолчанию */}
-          <Route path="/" element={<MainPage />} />
-          
-          {/* Страница аукциона */}
-          <Route path="/auction" element={<Home />} />
-          <Route path="/main" element={<Home />} />
-          <Route path="/property/:id" element={<PropertyDetailPage />} />
-          <Route path="/search-results" element={<SearchResults />} />
-          <Route path="/map" element={<MapPage />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/auth/telegram-callback" element={<TelegramAuthCallback />} />
-          <Route path="/data" element={<Data />} />
-          <Route path="/subscriptions" element={<Subscriptions />} />
-          <Route path="/history" element={<History />} />
-          <Route path="/chat" element={<Chat />} />
-          <Route path="/favorites" element={<Favorites />} />
-          <Route path="/wallet" element={<Wallet />} />
-          <Route path="/bonuses" element={<Bonuses />} />
-          <Route path="/shares" element={<Shares />} />
-          <Route path="/debts" element={<Debts />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/shares/:id" element={<ShareDetailPage />} />
-          <Route path="/calculator" element={<InvestmentCalculator />} />
-          <Route path="/jeton" element={<JetonPage />} />
-          
-          {/* Страницы для владельцев */}
-          <Route path="/owner" element={<OwnerDashboard />} />
-          <Route path="/owner/property/new" element={<AddProperty />} />
-          <Route path="/property/:id/edit" element={<AddProperty />} />
-          
-          {/* Админ-панель */}
-          <Route path="/admin" element={<AdminPanelPage />} />
-          
-            {/* Редирект для несуществующих маршрутов на главную страницу */}
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
+          <Suspense fallback={<PageFallback />}>
+            <Routes>
+              <Route path="/" element={<MainPage />} />
+              <Route path="/auction" element={<Home />} />
+              <Route path="/main" element={<Home />} />
+              <Route path="/property/:id" element={<PropertyDetailPage />} />
+              <Route path="/search-results" element={<SearchResults />} />
+              <Route path="/map" element={<MapPage />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/auth/telegram-callback" element={<TelegramAuthCallback />} />
+              <Route path="/data" element={<Data />} />
+              <Route path="/subscriptions" element={<Subscriptions />} />
+              <Route path="/history" element={<History />} />
+              <Route path="/chat" element={<Chat />} />
+              <Route path="/favorites" element={<Favorites />} />
+              <Route path="/wallet" element={<Wallet />} />
+              <Route path="/bonuses" element={<Bonuses />} />
+              <Route path="/shares" element={<Shares />} />
+              <Route path="/debts" element={<Debts />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/shares/:id" element={<ShareDetailPage />} />
+              <Route path="/calculator" element={<InvestmentCalculator />} />
+              <Route path="/jeton" element={<JetonPage />} />
+              <Route path="/owner" element={<OwnerDashboard />} />
+              <Route path="/owner/property/new" element={<AddProperty />} />
+              <Route path="/property/:id/edit" element={<AddProperty />} />
+              <Route path="/admin" element={<AdminPanelPage />} />
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </Suspense>
         </div>
         <Footer />
       </div>
-      {isBlocked && <BlockedUserModal isOpen={true} />}
+      {isBlocked && (
+        <Suspense fallback={null}>
+          <BlockedUserModal isOpen={true} />
+        </Suspense>
+      )}
       <ToastContainer />
     </Router>
     </TonConnectUIProvider>

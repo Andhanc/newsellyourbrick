@@ -41,9 +41,12 @@ const WhatsApp = () => {
   useEffect(() => {
     loadUsers();
     checkWhatsAppStatus();
-    const statusInterval = setInterval(checkWhatsAppStatus, 5000);
+    const statusInterval = setInterval(checkWhatsAppStatus, 30000);
+    const onFocus = () => checkWhatsAppStatus();
+    window.addEventListener('focus', onFocus);
     return () => {
       clearInterval(statusInterval);
+      window.removeEventListener('focus', onFocus);
       if (qrRefreshRef.current) clearInterval(qrRefreshRef.current);
     };
   }, []);

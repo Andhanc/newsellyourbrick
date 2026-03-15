@@ -3245,6 +3245,8 @@ const AddProperty = () => {
       }
     }
 
+    // Переходим на шаг «Публикация» (форма с фото, документами и кнопкой «Опубликовать»)
+    setCurrentStep('form')
     // Показываем модальное окно оплаты публикации (29 € или промокод)
     setShowListingFeeModal(true)
     setShowPromoInputInFeeModal(false)
@@ -6439,7 +6441,13 @@ const AddProperty = () => {
             </div>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="add-property-form">
+          <form
+            className="add-property-form"
+            onSubmit={(e) => {
+              e.preventDefault()
+              handleSubmit(e)
+            }}
+          >
             {/* Фото/Видео Объекта */}
             <section className="form-section">
               <h2 className="section-title">Фото/Видео Объекта</h2>
@@ -6934,8 +6942,12 @@ const AddProperty = () => {
               Предпросмотр
             </button>
             <button
-              type="submit"
+              type="button"
               className="btn-submit"
+              onClick={(e) => {
+                e.preventDefault()
+                handleSubmit(e)
+              }}
             >
               Опубликовать объявление
             </button>

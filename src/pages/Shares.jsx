@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react'
+import { useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { FiSearch } from 'react-icons/fi'
 import Header from '../components/Header'
 import { ServiceCard } from '../components/ui/service-card'
+import { useLazyLoad } from '../hooks/useLazyLoad'
 import './Shares.css'
 
 // Карточки-блоки описания доли в недвижимости (как в примере: заголовок + «Узнать больше»)
@@ -92,21 +93,25 @@ const Shares = () => {
   const [apiShares, setApiShares] = useState([])
   const [loadingShares, setLoadingShares] = useState(true)
 
-  useEffect(() => {
-    fetch(`${API_BASE}/properties/shares`)
-      .then((res) => res.ok ? res.json() : { success: false, data: [] })
-      .then((json) => {
-        if (json.success && Array.isArray(json.data)) {
-          setApiShares(json.data.map((p) => ({
-            ...p,
-            id: p.shareId || `${p.property_type}-${p.id}`,
-            image: p.image || (Array.isArray(p.photos) && p.photos[0] ? (typeof p.photos[0] === 'string' ? p.photos[0] : p.photos[0].url) : null)
-          })))
-        }
-      })
-      .catch(() => setApiShares([]))
-      .finally(() => setLoadingShares(false))
+  const loadShares = useCallback(async () => {
+    try {
+      const res = await fetch(`${API_BASE}/properties/shares`)
+      const json = await (res.ok ? res.json() : { success: false, data: [] })
+      if (json.success && Array.isArray(json.data)) {
+        setApiShares(json.data.map((p) => ({
+          ...p,
+          id: p.shareId || `${p.property_type}-${p.id}`,
+          image: p.image || (Array.isArray(p.photos) && p.photos[0] ? (typeof p.photos[0] === 'string' ? p.photos[0] : p.photos[0].url) : null)
+        })))
+      }
+    } catch (_) {
+      setApiShares([])
+    } finally {
+      setLoadingShares(false)
+    }
   }, [])
+
+  const [sharesSectionRef] = useLazyLoad(loadShares, { rootMargin: '200px' })
 
   const allShareObjects = [...DEMO_SHARE_OBJECTS, ...apiShares]
   const filtered = allShareObjects.filter(
@@ -125,7 +130,7 @@ const Shares = () => {
     <div className="shares-page">
       <Header />
       <div className="shares-page__bg" />
-      <main className="shares-container">
+      <main ref={sharesSectionRef} className="shares-container">
         <div className="shares-cards-grid">
           <div className="shares-cards-grid__header">
             <span className="shares-cards-grid__label">Долевая собственность</span>

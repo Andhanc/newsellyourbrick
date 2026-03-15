@@ -352,12 +352,11 @@ const PropertyDetail = () => {
     }
   }, [id, normalizedProperty, isLoading])
 
-  // Загружаем депозит пользователя
   useEffect(() => {
     loadUserDeposit()
-    // Обновляем каждые 5 секунд для актуальности данных
-    const interval = setInterval(loadUserDeposit, 5000)
-    return () => clearInterval(interval)
+    const onFocus = () => loadUserDeposit()
+    window.addEventListener('focus', onFocus)
+    return () => window.removeEventListener('focus', onFocus)
   }, [userId])
 
   // Периодическое обновление данных объекта (ставки, текущая ставка)
@@ -392,9 +391,13 @@ const PropertyDetail = () => {
       }
     }
     
-    // Обновляем каждые 3 секунды
-    const interval = setInterval(updateBids, 3000)
-    return () => clearInterval(interval)
+    const interval = setInterval(updateBids, 30000)
+    const onFocus = () => updateBids()
+    window.addEventListener('focus', onFocus)
+    return () => {
+      clearInterval(interval)
+      window.removeEventListener('focus', onFocus)
+    }
   }, [normalizedProperty?.id, normalizedProperty?.is_auction, currentBid])
 
   // Проверяем уведомления о перебитой ставке для текущего объекта
@@ -482,9 +485,9 @@ const PropertyDetail = () => {
     }
 
     checkNotifications()
-    // Проверяем каждые 5 секунд
-    const interval = setInterval(checkNotifications, 5000)
-    return () => clearInterval(interval)
+    const onFocus = () => checkNotifications()
+    window.addEventListener('focus', onFocus)
+    return () => window.removeEventListener('focus', onFocus)
   }, [normalizedProperty?.id, normalizedProperty?.is_auction, userId])
 
   if (isLoading) {

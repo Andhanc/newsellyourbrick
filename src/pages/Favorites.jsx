@@ -233,12 +233,11 @@ const Favorites = () => {
     }
 
     window.addEventListener('storage', handleStorageChange)
-    // Также проверяем изменения в том же окне
-    const interval = setInterval(handleStorageChange, 500)
-
+    const onFocus = () => handleStorageChange()
+    window.addEventListener('focus', onFocus)
     return () => {
       window.removeEventListener('storage', handleStorageChange)
-      clearInterval(interval)
+      window.removeEventListener('focus', onFocus)
     }
   }, [])
 
