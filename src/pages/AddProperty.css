@@ -4641,6 +4641,28 @@
   color: #9ca3af;
 }
 
+.listing-fee-modal__get-promo {
+  margin: 14px 0 0;
+  font-size: 13px;
+  color: #6b7280;
+  text-align: center;
+}
+
+.listing-fee-modal__get-promo-link {
+  padding: 0;
+  border: none;
+  background: none;
+  font-size: inherit;
+  color: #6366f1;
+  text-decoration: underline;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.listing-fee-modal__get-promo-link:hover {
+  color: #4f46e5;
+}
+
 .listing-fee-modal__back {
   position: absolute;
   top: 16px;

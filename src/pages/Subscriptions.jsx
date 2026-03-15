@@ -2,9 +2,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import { getUserData, logout } from '../services/authService'
 import VerificationToast from '../components/VerificationToast'
-import premiumImage from '../img/premium.png'
-import standardImage from '../img/standart.png'
-import basicImage from '../img/basicc.png'
+import PricingCards from '../components/ui/PricingCards'
 import './Subscriptions.css'
 import './Profile.css'
 
@@ -83,29 +81,11 @@ const Subscriptions = () => {
     return !isBasicInfoComplete() || !isPassportDataComplete()
   }
 
-  const subscriptions = [
-    {
-      id: 'premium',
-      title: 'Премиум',
-      description: 'Получите полный доступ ко всем функциям платформы. Неограниченный просмотр объявлений, приоритетная поддержка и эксклюзивные возможности для работы с недвижимостью.',
-      price: 999,
-      icon: 'premium'
-    },
-    {
-      id: 'standard',
-      title: 'Стандарт',
-      description: 'Расширенные возможности для работы с недвижимостью. Доступ к базе объявлений, уведомления о новых предложениях и базовые инструменты для анализа рынка.',
-      price: 749,
-      icon: 'standard'
-    },
-    {
-      id: 'basic',
-      title: 'Базовый',
-      description: 'Начните работу с платформой. Базовый доступ к объявлениям, возможность просмотра основных данных и простые инструменты для поиска недвижимости.',
-      price: 499,
-      icon: 'basic'
-    }
-  ]
+  const handleBookCall = (plan) => {
+    const amount = plan === 'pro' ? 9900 : 2900
+    const paymentUrl = `https://checkout.stripe.com/pay?amount=${amount}&currency=usd&description=${encodeURIComponent(plan === 'pro' ? 'Подписка Pro' : 'Подписка Starter')}`
+    window.open(paymentUrl, '_blank', 'width=600,height=800')
+  }
 
   const handleLogout = async () => {
     if (!window.confirm('Вы уверены, что хотите выйти?')) {
@@ -122,18 +102,6 @@ const Subscriptions = () => {
     setTimeout(() => {
       window.location.reload()
     }, 100)
-  }
-
-  const handleActivate = (subscription) => {
-    // Открываем внешний платежный сервис (Stripe или аналогичный)
-    // Валюта оплаты — доллары США (USD)
-    const paymentUrl = `https://checkout.stripe.com/pay?amount=${subscription.price * 100}&currency=usd&description=${encodeURIComponent(`Подписка ${subscription.title}`)}`
-    
-    // Открываем в новом окне
-    window.open(paymentUrl, '_blank', 'width=600,height=800')
-    
-    // Альтернативный вариант - редирект на страницу оплаты
-    // window.location.href = paymentUrl
   }
 
   return (
@@ -283,52 +251,9 @@ const Subscriptions = () => {
         </aside>
 
         <main className="subscriptions-main">
-          <h1 className="subscriptions-title">Мои подписки</h1>
-          
-          <div className="subscriptions-cards">
-            {subscriptions.map((subscription) => (
-              <div key={subscription.id} className="subscription-card">
-                <div className="card-content">
-                  <h2 className="card-title">{subscription.title}</h2>
-                  <p className="card-description">{subscription.description}</p>
-                  <div className="card-price">
-                    <span className="price-value">${subscription.price}</span>
-                    <span className="price-period">/month</span>
-                  </div>
-                  <button 
-                    className="card-button"
-                    onClick={() => handleActivate(subscription)}
-                  >
-                    Активировать
-                  </button>
-                </div>
-                <div className="card-image">
-                  {subscription.icon === 'premium' && (
-                    <img 
-                      src={premiumImage} 
-                      alt="Премиум подписка"
-                      className="subscription-image"
-                    />
-                  )}
-                  {subscription.icon === 'standard' && (
-                    <img 
-                      src={standardImage} 
-                      alt="Стандартный тариф"
-                      className="subscription-image"
-                    />
-                  )}
-                  {subscription.icon === 'basic' && (
-                    <div className="basic-image-wrapper">
-                      <img 
-                        src={basicImage} 
-                        alt="Базовый тариф"
-                        className="subscription-image"
-                      />
-                    </div>
-                  )}
-                </div>
-              </div>
-            ))}
+          <h1 className="subscriptions-title">Подписки</h1>
+          <div className="subscriptions-cards subscriptions-cards--pricing">
+            <PricingCards onBookCall={handleBookCall} />
           </div>
         </main>
       </div>

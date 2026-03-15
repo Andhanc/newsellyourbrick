@@ -1,8 +1,45 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { FiPieChart, FiSearch } from 'react-icons/fi'
+import { FiSearch } from 'react-icons/fi'
 import Header from '../components/Header'
+import { ServiceCard } from '../components/ui/service-card'
 import './Shares.css'
+
+// Карточки-блоки описания доли в недвижимости (как в примере: заголовок + «Узнать больше»)
+const SHARES_SERVICE_CARDS = [
+  {
+    title: 'Долевая собственность',
+    href: '#shares-grid',
+    linkLabel: 'УЗНАТЬ БОЛЬШЕ',
+    imgSrc: 'https://images.unsplash.com/photo-1589939705384-5185137a7f0f?auto=format&fit=crop&w=400&q=85',
+    imgAlt: 'Ключи от недвижимости',
+    variant: 'red',
+  },
+  {
+    title: 'Доходность',
+    href: '#shares-grid',
+    linkLabel: 'УЗНАТЬ БОЛЬШЕ',
+    imgSrc: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=400&q=85',
+    imgAlt: 'График роста доходности',
+    variant: 'default',
+  },
+  {
+    title: 'Прозрачность',
+    href: '#shares-grid',
+    linkLabel: 'УЗНАТЬ БОЛЬШЕ',
+    imgSrc: 'https://images.unsplash.com/photo-1586281380349-632531db7ed4?auto=format&fit=crop&w=400&q=85',
+    imgAlt: 'Документы и безопасность',
+    variant: 'gray',
+  },
+  {
+    title: 'Выбрать объект',
+    href: '#shares-grid',
+    linkLabel: 'УЗНАТЬ БОЛЬШЕ',
+    imgSrc: 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&w=400&q=85',
+    imgAlt: 'Дом',
+    variant: 'blue',
+  },
+]
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api'
 
@@ -89,23 +126,24 @@ const Shares = () => {
       <Header />
       <div className="shares-page__bg" />
       <main className="shares-container">
-        <div className="shares-intro">
-          <div className="shares-intro__icon">
-            <FiPieChart size={28} />
+        <div className="shares-cards-grid">
+          <div className="shares-cards-grid__header">
+            <span className="shares-cards-grid__label">Долевая собственность</span>
+            <h1 className="shares-cards-grid__title">Доли в недвижимости</h1>
           </div>
-          <div className="shares-intro__body">
-            <span className="shares-intro__label">Долевая собственность</span>
-            <h1 className="shares-intro__title">Доли в недвижимости</h1>
-            <p className="shares-intro__lead">
-              Покупайте часть объекта по фиксированной цене за долю и получайте доход пропорционально своей доле.
-            </p>
-            <p className="shares-intro__text">
-              Объект делится на равные доли: вы покупаете одну или несколько долей и становитесь совладельцем.
-              Доход от аренды или продажи распределяется между всеми владельцами пропорционально.
-            </p>
-            <p className="shares-intro__text shares-intro__text--muted">
-              Выберите объект ниже → откройте карточку → нажмите «Купить долю» и укажите количество. Оплата по цене за одну долю.
-            </p>
+          <div className="shares-cards-grid__grid">
+            {SHARES_SERVICE_CARDS.map((card) => (
+              <ServiceCard
+                key={card.title}
+                title={card.title}
+                href={card.href}
+                linkLabel={card.linkLabel}
+                imgSrc={card.imgSrc}
+                imgAlt={card.imgAlt}
+                variant={card.variant}
+                className="min-h-[200px] sm:min-h-[220px]"
+              />
+            ))}
           </div>
         </div>
 
@@ -130,7 +168,7 @@ const Shares = () => {
           )}
         </div>
 
-        <div className="shares-grid">
+        <div id="shares-grid" className="shares-grid">
           {filtered.length === 0 ? (
             <div className="shares-no-results">
               <p>По вашему запросу ничего не найдено.</p>

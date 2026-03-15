@@ -6,6 +6,7 @@ import { getUserData, saveUserData, logout } from '../services/authService'
 import VerificationToast from '../components/VerificationToast'
 import VerificationModal from '../components/VerificationModal'
 import SellerVerificationModal from '../components/SellerVerificationModal'
+import PricingCards from '../components/ui/PricingCards'
 import { showNotification } from '../utils/toastHelper'
 import './Profile.css'
 
@@ -45,8 +46,6 @@ const Profile = () => {
   const [isVerificationModalOpen, setIsVerificationModalOpen] = useState(false)
   const [isVerificationFormOpen, setIsVerificationFormOpen] = useState(false)
   const [documentsCompleted, setDocumentsCompleted] = useState(false)
-  const [expandedSubscription, setExpandedSubscription] = useState(null)
-  
   // Используем proxy из vite.config.js или полный URL
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
   
@@ -1050,110 +1049,107 @@ const Profile = () => {
 
         <main className="profile-main">
           <div className="profile-header">
-            <div className="profile-avatar-wrapper">
-              <div 
-                className={`profile-avatar ${isEditing ? 'editable' : ''}`}
-                onClick={handleAvatarClick}
-              >
-                {profileData.avatar ? (
-                  <img src={profileData.avatar} alt="Avatar" className="avatar-image" />
-                ) : (
-                  <svg width="120" height="120" viewBox="0 0 120 120" fill="none">
-                    <defs>
-                      <linearGradient id="avatarGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                        <stop offset="0%" stopColor="#0ABAB5" />
-                        <stop offset="100%" stopColor="#089a95" />
-                      </linearGradient>
-                    </defs>
-                    <circle cx="60" cy="60" r="60" fill="url(#avatarGradient)"/>
-                    <circle cx="60" cy="48" r="18" fill="white" opacity="0.9"/>
-                    <path d="M30 90 Q30 75 60 75 Q90 75 90 90 L90 100 L30 100 Z" fill="white" opacity="0.9"/>
-                  </svg>
-                )}
-                {isEditing && (
-                  <div className="avatar-edit-overlay">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                      <path d="M12 4V20M4 12H20" stroke="white" strokeWidth="2" strokeLinecap="round"/>
+            <div className="profile-header-top">
+              <div className="profile-avatar-wrapper">
+                <div 
+                  className={`profile-avatar ${isEditing ? 'editable' : ''}`}
+                  onClick={handleAvatarClick}
+                >
+                  {profileData.avatar ? (
+                    <img src={profileData.avatar} alt="Avatar" className="avatar-image" />
+                  ) : (
+                    <svg width="120" height="120" viewBox="0 0 120 120" fill="none">
+                      <defs>
+                        <linearGradient id="avatarGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                          <stop offset="0%" stopColor="#0ABAB5" />
+                          <stop offset="100%" stopColor="#089a95" />
+                        </linearGradient>
+                      </defs>
+                      <circle cx="60" cy="60" r="60" fill="url(#avatarGradient)"/>
+                      <circle cx="60" cy="48" r="18" fill="white" opacity="0.9"/>
+                      <path d="M30 90 Q30 75 60 75 Q90 75 90 90 L90 100 L30 100 Z" fill="white" opacity="0.9"/>
                     </svg>
-                    <span className="avatar-edit-text">Изменить фото</span>
-                  </div>
-                )}
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={handleAvatarChange}
-                  style={{ display: 'none' }}
-                />
+                  )}
+                  {isEditing && (
+                    <div className="avatar-edit-overlay">
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                        <path d="M12 4V20M4 12H20" stroke="white" strokeWidth="2" strokeLinecap="round"/>
+                      </svg>
+                      <span className="avatar-edit-text">Изменить фото</span>
+                    </div>
+                  )}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleAvatarChange}
+                    style={{ display: 'none' }}
+                  />
+                </div>
+              </div>
+              <div className="profile-info">
+                <div className="profile-name">
+                  <h1>{profileData.name || 'Загрузка...'}</h1>
+                  {!isEditing ? (
+                    <button className="edit-button" onClick={handleEdit} aria-label="Редактировать">
+                      <FaPencilAlt size={18} />
+                    </button>
+                  ) : (
+                    <div className="edit-actions">
+                      <button className="save-button" onClick={handleSave} aria-label="Сохранить">
+                        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                          <path d="M15 4.5L6.75 12.75L3 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      </button>
+                      <button className="cancel-button" onClick={handleCancel} aria-label="Отменить">
+                        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                          <path d="M13.5 4.5L4.5 13.5M4.5 4.5L13.5 13.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
-            <div className="profile-info">
-              <div className="profile-name">
-                <h1>{profileData.name || 'Загрузка...'}</h1>
-                {!isEditing ? (
-                  <button className="edit-button" onClick={handleEdit} aria-label="Редактировать">
-                    <FaPencilAlt size={18} />
-                  </button>
-                ) : (
-                  <div className="edit-actions">
-                    <button className="save-button" onClick={handleSave} aria-label="Сохранить">
-                      <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                        <path d="M15 4.5L6.75 12.75L3 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                      </svg>
-                    </button>
-                    <button className="cancel-button" onClick={handleCancel} aria-label="Отменить">
-                      <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                        <path d="M13.5 4.5L4.5 13.5M4.5 4.5L13.5 13.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                      </svg>
-                    </button>
-                  </div>
-                )}
-              </div>
-              <div className="profile-status-badge">
-                <span className="profile-status-label">Ваш статус</span>
-                <span className={`profile-status-value profile-status-value--${profileData.role === 'seller' ? 'seller' : 'buyer'}`}>
-                  {profileData.role === 'seller' ? 'Продавец' : 'Покупатель'}
-                </span>
-              </div>
-              {profileData.userIdNumber && (
-                <div className="user-id-number" style={{
-                  marginTop: '20px',
-                  marginBottom: '16px',
-                  padding: '8px 16px',
-                  backgroundColor: '#f0f9ff',
-                  borderRadius: '8px',
-                  border: '1px solid #0ABAB5',
-                  display: 'inline-block'
-                }}>
-                  <span style={{ 
-                    fontSize: '14px', 
-                    color: '#089a95', 
-                    fontWeight: '500' 
-                  }}>
-                    Ваш номер: <strong style={{ color: '#0ABAB5' }}>{profileData.userIdNumber}</strong>
+            <div className="profile-header-left">
+              <div className="profile-badges-row">
+                <div className="profile-status-badge profile-badge profile-badge-cell">
+                  <span className="profile-status-label">Ваш статус</span>
+                  <span className={`profile-status-value profile-status-value--${profileData.role === 'seller' ? 'seller' : 'buyer'}`}>
+                    {profileData.role === 'seller' ? 'Продавец' : 'Покупатель'}
                   </span>
                 </div>
-              )}
-              <div className="profile-contacts">
-                {profileData.email && (
-                  <div className="contact-item">
-                    <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                      <rect x="2" y="4" width="14" height="10" rx="2" stroke="currentColor" strokeWidth="1.5"/>
-                      <path d="M2 6L9 10L16 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-                    </svg>
-                    {isEditing ? (
-                      <input
-                        type="email"
-                        className="contact-input"
-                        value={profileData.email}
-                        onChange={(e) => handleChange('email', e.target.value)}
-                        placeholder="email@example.com"
-                      />
-                    ) : (
-                      <span>{profileData.email}</span>
-                    )}
+                {profileData.userIdNumber ? (
+                  <div className="profile-badge profile-badge--number profile-badge-cell">
+                    <span className="profile-badge-label">Ваш номер</span>
+                    <span className="profile-badge-value">{profileData.userIdNumber}</span>
                   </div>
+                ) : (
+                  <div className="profile-badge profile-badge-cell profile-badge--placeholder" aria-hidden />
                 )}
+                <div className="profile-contacts profile-contacts--inline profile-badge-cell">
+                  {profileData.email ? (
+                    <div className="contact-item profile-badge profile-badge--email">
+                      <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                        <rect x="2" y="4" width="14" height="10" rx="2" stroke="currentColor" strokeWidth="1.5"/>
+                        <path d="M2 6L9 10L16 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+                      </svg>
+                      {isEditing ? (
+                        <input
+                          type="email"
+                          className="contact-input"
+                          value={profileData.email}
+                          onChange={(e) => handleChange('email', e.target.value)}
+                          placeholder="email@example.com"
+                        />
+                      ) : (
+                        <span className="profile-badge-value">{profileData.email}</span>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="profile-badge profile-badge--email profile-badge--placeholder" aria-hidden />
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -1164,88 +1160,8 @@ const Profile = () => {
                 <h2 className="section-title">Мои подписки</h2>
                 <div className="section-subtitle">Управляйте своими подписками</div>
               </div>
-              <div className="section-cards">
-                <div className={`section-card subscription-card subscription-active ${expandedSubscription === 'premium' ? 'subscription-card--expanded' : ''}`}>
-                  <div className="subscription-badge">Активна</div>
-                  <div className="card-icon-wrapper">
-                    <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
-                      <path d="M20 5L25 15H35L27 22L30 32L20 26L10 32L13 22L5 15H15L20 5Z" fill="url(#subscriptionActiveGrad)"/>
-                      <defs>
-                        <linearGradient id="subscriptionActiveGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                          <stop offset="0%" stopColor="#0ABAB5" />
-                          <stop offset="100%" stopColor="#089a95" />
-                        </linearGradient>
-                      </defs>
-                    </svg>
-                  </div>
-                  <div className="card-content">
-                    <h3>Премиум</h3>
-                    <p>Полный доступ ко всем функциям</p>
-                    <div className="subscription-price">$999 / month</div>
-                    <button 
-                      type="button" 
-                      className="subscription-more" 
-                      onClick={() => setExpandedSubscription(expandedSubscription === 'premium' ? null : 'premium')}
-                    >
-                      Подробнее
-                      <span className="subscription-more__arrow">›</span>
-                    </button>
-                  </div>
-                </div>
-                <div className={`section-card subscription-card subscription-inactive ${expandedSubscription === 'basic' ? 'subscription-card--expanded' : ''}`}>
-                  <div className="card-icon-wrapper">
-                    <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
-                      <rect x="8" y="8" width="24" height="24" rx="3" fill="url(#subscriptionInactive1Grad)"/>
-                      <path d="M12 20H28M20 12V28" stroke="white" strokeWidth="2" strokeLinecap="round" opacity="0.5"/>
-                      <defs>
-                        <linearGradient id="subscriptionInactive1Grad" x1="0%" y1="0%" x2="100%" y2="100%">
-                          <stop offset="0%" stopColor="#999" />
-                          <stop offset="100%" stopColor="#666" />
-                        </linearGradient>
-                      </defs>
-                    </svg>
-                  </div>
-                  <div className="card-content">
-                    <h3>Базовый</h3>
-                    <p>Основные возможности</p>
-                    <div className="subscription-price">$499 / month</div>
-                    <button 
-                      type="button" 
-                      className="subscription-more" 
-                      onClick={() => setExpandedSubscription(expandedSubscription === 'basic' ? null : 'basic')}
-                    >
-                      Подробнее
-                      <span className="subscription-more__arrow">›</span>
-                    </button>
-                  </div>
-                </div>
-                <div className={`section-card subscription-card subscription-inactive ${expandedSubscription === 'standard' ? 'subscription-card--expanded' : ''}`}>
-                  <div className="card-icon-wrapper">
-                    <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
-                      <circle cx="20" cy="20" r="12" fill="url(#subscriptionInactive2Grad)"/>
-                      <path d="M20 12V20L26 26" stroke="white" strokeWidth="2" strokeLinecap="round" opacity="0.5"/>
-                      <defs>
-                        <linearGradient id="subscriptionInactive2Grad" x1="0%" y1="0%" x2="100%" y2="100%">
-                          <stop offset="0%" stopColor="#999" />
-                          <stop offset="100%" stopColor="#666" />
-                        </linearGradient>
-                      </defs>
-                    </svg>
-                  </div>
-                  <div className="card-content">
-                    <h3>Стандарт</h3>
-                    <p>Расширенные функции</p>
-                    <div className="subscription-price">$749 / month</div>
-                    <button 
-                      type="button" 
-                      className="subscription-more" 
-                      onClick={() => setExpandedSubscription(expandedSubscription === 'standard' ? null : 'standard')}
-                    >
-                      Подробнее
-                      <span className="subscription-more__arrow">›</span>
-                    </button>
-                  </div>
-                </div>
+              <div className="profile-subscriptions-cards">
+                <PricingCards compact onBookCall={(plan) => { /* можно открыть модалку или ссылку */ }} />
               </div>
             </section>
 

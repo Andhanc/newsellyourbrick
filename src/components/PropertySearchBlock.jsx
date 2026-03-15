@@ -1,9 +1,11 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { FiSearch, FiHome } from 'react-icons/fi'
 import PropertySearchModal from './PropertySearchModal'
 import './PropertySearchBlock.css'
 
 const PropertySearchBlock = () => {
+  const { t } = useTranslation()
   const [isModalOpen, setIsModalOpen] = useState(false)
 
   return (
@@ -15,9 +17,9 @@ const PropertySearchBlock = () => {
               <FiHome size={48} />
             </div>
             <div className="property-search-block__text">
-              <h2 className="property-search-block__title">Подборка недвижимости</h2>
+              <h2 className="property-search-block__title">{t('propertySearchTitle')}</h2>
               <p className="property-search-block__description">
-                Найдите идеальный вариант недвижимости по вашим критериям
+                {t('propertySearchDescription')}
               </p>
             </div>
             <button 
@@ -25,7 +27,7 @@ const PropertySearchBlock = () => {
               onClick={() => setIsModalOpen(true)}
             >
               <FiSearch size={20} />
-              <span>Найти недвижимость</span>
+              <span>{t('findProperty')}</span>
             </button>
           </div>
         </div>

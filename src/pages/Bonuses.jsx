@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { FiChevronDown, FiCheck, FiGift, FiExternalLink, FiCopy, FiShoppingCart, FiUser } from 'react-icons/fi'
+import { useNavigate, useSearchParams, useLocation } from 'react-router-dom'
+import { FiChevronDown, FiCheck, FiGift, FiExternalLink, FiCopy, FiShoppingCart, FiUser, FiArrowLeft } from 'react-icons/fi'
 import { FaInstagram, FaTiktok, FaGift, FaStar } from 'react-icons/fa'
 import { MdCardGiftcard } from 'react-icons/md'
 import Header from '../components/Header'
@@ -137,6 +137,11 @@ const SELLER_TASKS = [
 
 const Bonuses = () => {
   const navigate = useNavigate()
+  const location = useLocation()
+  const [searchParams] = useSearchParams()
+  const tabParam = searchParams.get('tab')
+  const fromListingFee = location.state?.fromListingFee === true
+  const returnPath = location.state?.returnPath || '/owner/property/new'
   const [userId, setUserId] = useState(null)
   const [submissions, setSubmissions] = useState({})
   const [expandedTask, setExpandedTask] = useState(null)
@@ -146,7 +151,7 @@ const Bonuses = () => {
   const [error, setError] = useState(null)
   const [copiedTaskId, setCopiedTaskId] = useState(null)
   const [usedMessageTaskId, setUsedMessageTaskId] = useState(null)
-  const [bonusMode, setBonusMode] = useState('buyer') // 'buyer' | 'seller'
+  const [bonusMode, setBonusMode] = useState(() => (tabParam === 'seller' ? 'seller' : 'buyer')) // 'buyer' | 'seller'
   const celebratedRef = useRef(false)
 
   const currentTasks = bonusMode === 'seller' ? SELLER_TASKS : BUYER_TASKS
@@ -320,6 +325,17 @@ const Bonuses = () => {
             <FaStar size={14} />
           </div>
         </div>
+
+        {fromListingFee && (
+          <button
+            type="button"
+            className="bonuses-return-hint"
+            onClick={() => navigate(returnPath, { state: { openListingFeeModal: true } })}
+          >
+            <FiArrowLeft size={20} className="bonuses-return-hint__icon" />
+            <span className="bonuses-return-hint__text">Нажмите, чтобы вернуться к вашему объекту</span>
+          </button>
+        )}
 
         {userId === null && <div className="bonuses-loading">Загрузка...</div>}
         {userId !== null && !isLoggedIn && (

@@ -23,6 +23,7 @@ import {
   FiStar,
   FiMail,
   FiShoppingCart,
+  FiPieChart,
 } from 'react-icons/fi'
 import {
   FaHome,
@@ -35,6 +36,8 @@ import {
   FaApple,
   FaYoutube,
   FaCar,
+  FaBolt,
+  FaGem,
 } from 'react-icons/fa'
 import { FaXTwitter } from 'react-icons/fa6'
 import { IoLocationOutline } from 'react-icons/io5'
@@ -49,6 +52,8 @@ import {
 } from 'react-icons/pi'
 import PropertyTimer from '../components/PropertyTimer'
 import PropertySearchBlock from '../components/PropertySearchBlock'
+import AnimatedFolder from '../components/ui/3d-folder'
+import { FrostedGlassCard } from '../components/ui/interactive-frosted-glass-card'
 import { showToast } from '../components/ToastContainer'
 import { showNotification } from '../utils/toastHelper'
 import LoginModal from '../components/LoginModal'
@@ -62,6 +67,34 @@ import { getApiBaseUrl, getApiBaseUrlSync } from '../utils/apiConfig'
 
 // Используем синхронную версию для инициализации, затем обновим при загрузке
 let API_BASE_URL = getApiBaseUrlSync()
+
+// Базовые данные для 4 блоков 3D-папок (заголовки переводятся в компоненте через useMemo)
+const landingFolderDataBase = [
+  { titleKey: 'folderActiveBidding', gradient: 'linear-gradient(135deg, #0d9488 0%, #0f766e 100%)', projects: [
+    { id: 'ab1', image: 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&q=80&w=800', title: 'Аукцион недвижимости' },
+    { id: 'ab2', image: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&q=80&w=800', title: 'Торги объектами' },
+    { id: 'ab3', image: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&q=80&w=800', title: 'Концентрация спроса' },
+    { id: 'ab4', image: 'https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?auto=format&fit=crop&q=80&w=800', title: 'Рыночные ставки' },
+  ] },
+  { titleKey: 'folderImmediatePurchase', gradient: 'linear-gradient(to right, #f59e0b 0%, #d97706 100%)', projects: [
+    { id: 'ip1', image: 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&q=80&w=800', title: 'Сделка по цене' },
+    { id: 'ip2', image: 'https://images.unsplash.com/photo-1484154218962-a197022b5858?auto=format&fit=crop&q=80&w=800', title: 'Ликвидность сейчас' },
+    { id: 'ip3', image: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&q=80&w=800', title: 'Без ожидания' },
+    { id: 'ip4', image: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&q=80&w=800', title: 'Твёрдая цена' },
+  ] },
+  { titleKey: 'folderDistressedAssets', gradient: 'linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%)', linkLabelKey: 'howWeVerify', linkHref: '/about', projects: [
+    { id: 'da1', image: 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&q=80&w=800', title: 'Арбитраж активов' },
+    { id: 'da2', image: 'https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?auto=format&fit=crop&q=80&w=800', title: 'Специальные ситуации' },
+    { id: 'da3', image: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&q=80&w=800', title: 'Верификация лотов' },
+    { id: 'da4', image: 'https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?auto=format&fit=crop&q=80&w=800', title: 'Due Diligence' },
+  ] },
+  { titleKey: 'folderFractional', gradient: 'linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%)', projects: [
+    { id: 'fo1', image: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&q=80&w=800', title: 'Долевое участие' },
+    { id: 'fo2', image: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&q=80&w=800', title: 'Премиальные активы' },
+    { id: 'fo3', image: 'https://images.unsplash.com/photo-1503387762-592deb58ef4e?auto=format&fit=crop&q=80&w=800', title: 'Co-investment' },
+    { id: 'fo4', image: 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&q=80&w=800', title: 'Доли в объектах' },
+  ] },
+]
 
 const resortLocations = [
   'Costa Adeje, Tenerife',
@@ -532,13 +565,6 @@ function MainPage() {
   // Каждый пользователь видит только свою переписку
   
   // Отладочная информация о состоянии i18n
-  useEffect(() => {
-    console.log('🌐 i18n initialized:', i18n.isInitialized)
-    console.log('🌐 Current language:', i18n.language)
-    console.log('🌐 Available languages:', i18n.languages)
-    console.log('🌐 Test translation (home):', t('home'))
-  }, [i18n.language, i18n.isInitialized, t])
-
   // Функция для проверки заполненности профиля
   const checkProfileCompleteness = (userData) => {
     if (!userData) return false
@@ -886,6 +912,8 @@ function MainPage() {
   const notificationRef = useRef(null)
   const menuRef = useRef(null)
   const languageDropdownRef = useRef(null)
+  const landingStatsRef = useRef(null)
+  const [statsScrollProgress, setStatsScrollProgress] = useState(0)
 
   const heroImages = {
     rent: 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=1200&q=80',
@@ -893,7 +921,29 @@ function MainPage() {
   }
   
   const heroImage = heroImages[propertyMode]
-  
+
+  // Прогресс скролла для секции «Цифры»: 0 = секция внизу экрана, 1 = контент по центру (секция белая)
+  useEffect(() => {
+    const el = landingStatsRef.current
+    if (!el) return
+    const onScroll = () => {
+      const rect = el.getBoundingClientRect()
+      const viewportCenter = window.innerHeight / 2
+      const sectionCenter = rect.top + rect.height / 2
+      // progress 0: центр секции ниже центра экрана; 1: центр секции по центру экрана или выше
+      const raw = (viewportCenter - rect.top) / (rect.height * 0.5)
+      const progress = Math.min(1, Math.max(0, raw))
+      setStatsScrollProgress(progress)
+    }
+    onScroll()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    window.addEventListener('resize', onScroll)
+    return () => {
+      window.removeEventListener('scroll', onScroll)
+      window.removeEventListener('resize', onScroll)
+    }
+  }, [])
+
   // Функция фильтрации по поисковому запросу
   const filterBySearch = (properties) => {
     if (!searchQuery) return properties
@@ -1767,46 +1817,36 @@ function MainPage() {
 
   const handleLanguageChange = async (langCode) => {
     try {
-      console.log('🔄 Changing language to:', langCode)
-      console.log('📊 Current i18n language before change:', i18n.language)
-      console.log('📊 i18n ready:', i18n.isInitialized)
-      
-      // Меняем язык в i18n - это обновит весь статический контент
       await i18n.changeLanguage(langCode)
-      
-      console.log('✅ Language changed to:', i18n.language)
-      console.log('📝 Test translation (home):', t('home'))
-      console.log('📝 Test translation (recommended):', t('recommended'))
-      
       setIsLanguageDropdownOpen(false)
     } catch (error) {
-      console.error('❌ Error changing language:', error)
+      console.error('Error changing language:', error)
     }
   }
 
   const currentLanguage = languages.find(lang => lang.code === i18n.language) || languages[0]
   
   // Функции для получения переведенных элементов (обновляются при смене языка)
-  const getPropertyTypes = useMemo(() => {
-    console.log('🔄 Updating getPropertyTypes, language:', i18n.language)
-    return [
+  const getPropertyTypes = useMemo(() => [
       { label: 'House', displayLabel: t('house'), icon: PiHouseLine, image: '/house.png' },
       { label: 'Map', displayLabel: t('map'), icon: FiMap, isMap: true, image: '/map.png' },
       { label: 'Apartment', displayLabel: t('apartment'), icon: PiBuildingApartment, image: '/appartaments.png' },
       { label: 'Villa', displayLabel: t('villa'), icon: PiBuildings, image: '/villa.png' },
-    ]
-  }, [t, i18n.language])
+  ], [t, i18n.language])
   
-  const navigationItems = useMemo(() => {
-    console.log('🔄 Updating navigationItems, language:', i18n.language)
-    return [
+  const navigationItems = useMemo(() => [
       { id: 'home', label: t('home'), icon: FaHome },
       { id: 'favourite', label: t('favorites'), icon: FaHeartSolid },
       { id: 'auction', label: t('auction'), icon: FaGavel },
       { id: 'chat', label: t('chat'), icon: FaComment },
       { id: 'profile', label: t('profile'), icon: FaUser },
-    ]
-  }, [t, i18n.language])
+  ], [t, i18n.language])
+
+  const landingFolderData = useMemo(() => landingFolderDataBase.map((folder) => ({
+    ...folder,
+    title: t(folder.titleKey),
+    linkLabel: folder.linkLabelKey ? t(folder.linkLabelKey) : undefined,
+  })), [t, i18n.language])
   
   // Автоматический перевод пользовательского контента отключен из-за лимитов API
   // Статический контент переводится через i18next
@@ -1978,7 +2018,7 @@ function MainPage() {
 
   // Проверка на ошибки рендеринга
   if (!recommendedProperties || !nearbyProperties) {
-    return <div className="app">Загрузка...</div>
+    return <div className="app">{t('loading')}</div>
   }
 
   return (
@@ -1987,6 +2027,7 @@ function MainPage() {
         <div className={`hero-section__image hero-section__image--rent ${propertyMode === 'rent' ? 'hero-section__image--active' : ''}`} style={{ backgroundImage: `url(${heroImages.rent})` }}></div>
         <div className={`hero-section__image hero-section__image--buy ${propertyMode === 'buy' ? 'hero-section__image--active' : ''}`} style={{ backgroundImage: `url(${heroImages.buy})` }}></div>
         <div className="hero-section__overlay"></div>
+        <div className="hero-section__inner">
         <div className="hero-section__content">
           {/* Старый хедер для мобильной версии */}
           <header className="header">
@@ -2049,21 +2090,21 @@ function MainPage() {
                   <div className="notification-panel">
                     <div className="notification-panel__content">
                       <div className="notification-panel__header">
-                        <h3 className="notification-panel__title">Уведомления</h3>
+                        <h3 className="notification-panel__title">{t('notifications')}</h3>
                         <button 
                           type="button" 
                           className="notification-panel__close"
                           onClick={() => setIsNotificationOpen(false)}
-                          aria-label="Закрыть уведомления"
+                          aria-label={t('closeNotifications')}
                         >
                           <FiX size={20} />
                         </button>
                       </div>
                       <div className="notification-panel__list">
                         {notificationsLoading ? (
-                          <div style={{ padding: '20px', textAlign: 'center' }}>Загрузка...</div>
+                          <div style={{ padding: '20px', textAlign: 'center' }}>{t('loading')}</div>
                         ) : notifications.length === 0 ? (
-                          <div style={{ padding: '20px', textAlign: 'center', color: '#6b7280' }}>Нет уведомлений</div>
+                          <div style={{ padding: '20px', textAlign: 'center', color: '#6b7280' }}>{t('noNotifications')}</div>
                         ) : (
                           notifications.map((notification) => {
                             let notificationClass = 'notification-item--property';
@@ -2124,7 +2165,7 @@ function MainPage() {
                                       setIsNotificationOpen(false)
                                     }}
                                   >
-                                    Закрыть
+                                    {t('close')}
                                   </button>
                                 )}
                               </div>
@@ -2259,7 +2300,7 @@ function MainPage() {
               aria-expanded={isMenuOpen}
             >
               <FiMenu size={20} className="new-header__menu-icon" />
-              <span>Меню</span>
+              <span>{t('menu')}</span>
             </button>
           </div>
           
@@ -2314,7 +2355,7 @@ function MainPage() {
                   </button>
                   <div className="menu-dropdown__columns">
                     <div className="menu-dropdown__column">
-                      <h3 className="menu-dropdown__column-title">Навигация по сайту</h3>
+                      <h3 className="menu-dropdown__column-title">{t('navSiteTitle')}</h3>
                       <div className="menu-dropdown__column-items">
                         <button 
                           className="menu-dropdown__item"
@@ -2323,7 +2364,7 @@ function MainPage() {
                             setIsMenuOpen(false)
                           }}
                         >
-                          <span>Главная</span>
+                          <span>{t('home')}</span>
                         </button>
                         <button 
                           className="menu-dropdown__item"
@@ -2332,7 +2373,7 @@ function MainPage() {
                             setIsMenuOpen(false)
                           }}
                         >
-                          <span>Аукцион</span>
+                          <span>{t('auction')}</span>
                         </button>
                         <button 
                           className="menu-dropdown__item"
@@ -2341,7 +2382,7 @@ function MainPage() {
                             setIsMenuOpen(false)
                           }}
                         >
-                          <span>Карта</span>
+                          <span>{t('map')}</span>
                         </button>
                         <button 
                           className="menu-dropdown__item"
@@ -2359,7 +2400,7 @@ function MainPage() {
                             setIsMenuOpen(false)
                           }}
                         >
-                          <span>Понравилось</span>
+                          <span>{t('favorites')}</span>
                         </button>
                         <button 
                           className="menu-dropdown__item"
@@ -2377,7 +2418,7 @@ function MainPage() {
                             setIsMenuOpen(false)
                           }}
                         >
-                          <span>Чат</span>
+                          <span>{t('chat')}</span>
                         </button>
                         <button 
                           className="menu-dropdown__item"
@@ -2391,7 +2432,7 @@ function MainPage() {
                       </div>
                     </div>
                     <div className="menu-dropdown__column">
-                      <h3 className="menu-dropdown__column-title">Профиль</h3>
+                      <h3 className="menu-dropdown__column-title">{t('profile')}</h3>
                       <div className="menu-dropdown__column-items">
                         {isLoggedIn ? (
                           <>
@@ -2472,7 +2513,7 @@ function MainPage() {
                 className={`new-header__filter-btn new-header__filter-btn--hide-2 ${isChatOpen ? 'new-header__filter-btn--active' : ''}`}
                 onClick={toggleChat}
               >
-                <span>{t('aiAssistant') || 'Умный помощник'}</span>
+                <span>{t('aiAssistant')}</span>
               </button>
               <button
                 type="button"
@@ -2491,7 +2532,7 @@ function MainPage() {
                 <input
                   ref={searchInputRef}
                   type="text"
-                  placeholder={t('search') || 'Поиск...'}
+                  placeholder={t('search')}
                   className="new-header__search-input"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
@@ -2519,7 +2560,7 @@ function MainPage() {
                     setSearchQuery('')
                     setPageSearchResults([])
                   }}
-                  aria-label="Закрыть поиск"
+                  aria-label={t('closeSearch')}
                 >
                   <FiX size={18} />
                 </button>
@@ -2547,7 +2588,7 @@ function MainPage() {
               {searchQuery.trim() && pageSearchResults.length === 0 && (
                 <div className="new-header__search-results">
                   <div className="new-header__search-result new-header__search-result--no-results">
-                    <span>Ничего не найдено</span>
+                    <span>{t('nothingFound')}</span>
                   </div>
                 </div>
               )}
@@ -2653,21 +2694,21 @@ function MainPage() {
               <div className="notification-panel">
                 <div className="notification-panel__content">
                 <div className="notification-panel__header">
-                  <h3 className="notification-panel__title">Уведомления</h3>
-                  <button 
-                    type="button" 
-                    className="notification-panel__close"
-                    onClick={() => setIsNotificationOpen(false)}
-                    aria-label="Закрыть уведомления"
+<h3 className="notification-panel__title">{t('notifications')}</h3>
+                    <button 
+                      type="button" 
+                      className="notification-panel__close"
+                      onClick={() => setIsNotificationOpen(false)}
+                      aria-label={t('closeNotifications')}
                   >
                     <FiX size={20} />
                   </button>
                 </div>
                 <div className="notification-panel__list">
                   {notificationsLoading ? (
-                    <div style={{ padding: '20px', textAlign: 'center' }}>Загрузка...</div>
-                  ) : notifications.length === 0 ? (
-                    <div style={{ padding: '20px', textAlign: 'center', color: '#6b7280' }}>Нет уведомлений</div>
+<div style={{ padding: '20px', textAlign: 'center' }}>{t('loading')}</div>
+                    ) : notifications.length === 0 ? (
+                    <div style={{ padding: '20px', textAlign: 'center', color: '#6b7280' }}>{t('noNotifications')}</div>
                   ) : (
                     notifications.map((notification) => {
                       let notificationClass = 'notification-item--property';
@@ -2746,33 +2787,98 @@ function MainPage() {
         </div>
         </div>
       </header>
+
+          {/* Hero headline — Saleyourbrick */}
+          <div className="hero-headline">
+            <span className="hero-headline__accent" aria-hidden="true" />
+            <p className="hero-headline__brand">Saleyourbrick</p>
+            <h1 className="hero-headline__title">{t('heroTitle')}</h1>
+            <p className="hero-headline__subtitle">
+              {t('heroSubtitle')}
+            </p>
+            <a
+              href="#landing-models"
+              className="hero-headline__cta"
+              onClick={(e) => {
+                e.preventDefault()
+                document.getElementById('landing-models')?.scrollIntoView({ behavior: 'smooth' })
+              }}
+            >
+              {t('heroCta')}
+              <FiArrowRight size={18} aria-hidden="true" />
+            </a>
+          </div>
         </div>
 
-      <section className="search">
-        <div className="search__field">
-          <FiSearch size={18} className="search__icon" />
-          <input
-            type="text"
-            placeholder={t('search') || 'Поиск по названию или адресу...'}
-            className="search__input"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-          {searchQuery && (
-            <button 
-              type="button"
-              className="search__clear"
-              onClick={() => setSearchQuery('')}
-              aria-label="Очистить поиск"
+          <section className="search">
+            <div className="search__field">
+              <FiSearch size={18} className="search__icon" />
+              <input
+                type="text"
+                placeholder={t('searchPlaceholderLong')}
+                className="search__input"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+              {searchQuery && (
+                <button 
+                  type="button"
+                  className="search__clear"
+                  onClick={() => setSearchQuery('')}
+                  aria-label={t('clearSearch')}
+                >
+                  <FiX size={18} />
+                </button>
+              )}
+              <button type="button" className="search__filter">
+                <FiSliders size={18} />
+              </button>
+            </div>
+          </section>
+
+          {/* CTA-карточки справа на фото hero (glassmorphism + 3D tilt) */}
+          <div className="hero-section__cta">
+            <FrostedGlassCard
+              variant="investor"
+              title={t('becomeInvestor')}
+              buttonText={t('startBtn')}
+              onButtonClick={() => navigate('/auction')}
             >
-              <FiX size={18} />
-            </button>
-          )}
-          <button type="button" className="search__filter">
-            <FiSliders size={18} />
-          </button>
+              {t('investorCardText')}
+            </FrostedGlassCard>
+            <FrostedGlassCard
+              variant="seller"
+              title={t('becomeSeller')}
+              buttonText={t('listProperty')}
+              onButtonClick={() => navigate('/owner')}
+            >
+              {t('sellerCardText')}
+            </FrostedGlassCard>
+          </div>
         </div>
       </section>
+
+      {/* Блок: 4 инвестиционные модели (3D-папки) */}
+      <section id="landing-models" className="landing-models">
+        <div className="landing-models__container">
+          <h2 className="landing-models__title">
+            {t('landingModelsTitle')}
+          </h2>
+          <p className="landing-models__subtitle">{t('landingModelsSubtitle')}</p>
+          <div className="landing-models__grid landing-models__grid--folders">
+            {landingFolderData.map((folder) => (
+              <AnimatedFolder
+                key={folder.title}
+                title={folder.title}
+                projects={folder.projects}
+                gradient={folder.gradient}
+                linkLabel={folder.linkLabel}
+                linkHref={folder.linkHref}
+                className="landing-models__folder"
+              />
+            ))}
+          </div>
+        </div>
       </section>
 
       {/* Блок подборки недвижимости */}
@@ -2789,7 +2895,7 @@ function MainPage() {
             }}
             style={{ cursor: 'pointer' }}
           >
-          <h2 className="apartments-section__title">Аукцион</h2>
+          <h2 className="apartments-section__title">{t('auctionSectionTitle')}</h2>
             <FiArrowRight size={24} className="apartments-section__arrow" />
           </div>
           
@@ -2878,12 +2984,12 @@ function MainPage() {
                           {apartment.sqft && (
                             <div className="spec-item">
                               <BiArea size={18} />
-                              <span>{apartment.sqft} м²</span>
+                              <span>{apartment.sqft} {t('squareMeters')}</span>
                             </div>
                           )}
                         </div>
                         <div className="property-bid-info">
-                          <span className="bid-label">Текущая ставка:</span>
+                          <span className="bid-label">{t('currentBid')}</span>
                           <span className="bid-value">
                             {formatPrice(currentBidValue)}
                           </span>
@@ -2909,7 +3015,7 @@ function MainPage() {
             }}
             style={{ cursor: 'pointer' }}
           >
-            <h2 className="apartments-section__title">Купить сейчас</h2>
+            <h2 className="apartments-section__title">{t('buyNowSectionTitle')}</h2>
             <FiArrowRight size={24} className="apartments-section__arrow" />
           </div>
           
@@ -2985,7 +3091,7 @@ function MainPage() {
                           {villa.sqft && (
                             <div className="spec-item">
                               <BiArea size={18} />
-                              <span>{villa.sqft} м²</span>
+                              <span>{villa.sqft} {t('squareMeters')}</span>
                             </div>
                           )}
                         </div>
@@ -3012,7 +3118,7 @@ function MainPage() {
             }}
             style={{ cursor: 'pointer' }}
           >
-            <h2 className="apartments-section__title">Долги</h2>
+            <h2 className="apartments-section__title">{t('debtsTitle')}</h2>
             <FiArrowRight size={24} className="apartments-section__arrow" />
           </div>
           
@@ -3078,7 +3184,7 @@ function MainPage() {
                         {index % 2 === 1 && flat.isAuction && flat.endTime ? (
                           flat.currentBid && (
                             <div className="property-bid-info">
-                              <span className="bid-label">Текущая ставка:</span>
+                              <span className="bid-label">{t('currentBid')}</span>
                               <span className="bid-value">{formatPrice(flat.currentBid)}</span>
                             </div>
                           )
@@ -3100,7 +3206,7 @@ function MainPage() {
                             {flat.sqft && (
                               <div className="spec-item">
                                 <BiArea size={18} />
-                                <span>{flat.sqft} м²</span>
+                                <span>{flat.sqft} {t('squareMeters')}</span>
                               </div>
                             )}
                             </div>
@@ -3128,7 +3234,7 @@ function MainPage() {
             }}
             style={{ cursor: 'pointer' }}
           >
-            <h2 className="apartments-section__title">Долевая продажа</h2>
+            <h2 className="apartments-section__title">{t('fractionalSaleTitle')}</h2>
             <FiArrowRight size={24} className="apartments-section__arrow" />
           </div>
           
@@ -3193,7 +3299,7 @@ function MainPage() {
                         {index % 2 === 1 && townhouse.isAuction && townhouse.endTime ? (
                           townhouse.currentBid && (
                             <div className="property-bid-info">
-                              <span className="bid-label">Текущая ставка:</span>
+                              <span className="bid-label">{t('currentBid')}</span>
                               <span className="bid-value">{formatPrice(townhouse.currentBid)}</span>
                             </div>
                           )
@@ -3215,7 +3321,7 @@ function MainPage() {
                             {townhouse.sqft && (
                               <div className="spec-item">
                                 <BiArea size={18} />
-                                <span>{townhouse.sqft} м²</span>
+                                <span>{townhouse.sqft} {t('squareMeters')}</span>
                               </div>
                             )}
                             </div>
@@ -3227,6 +3333,29 @@ function MainPage() {
                   </div>
                 )
               })}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Блок: Цифры Sally Your Brick — 70vh, анимация берюза → белый треугольник при скролле */}
+      <section
+        ref={landingStatsRef}
+        className="landing-stats"
+        style={{ '--stats-scroll-progress': statsScrollProgress }}
+      >
+        <div className="landing-stats__bg-teal" aria-hidden="true" />
+        <div className="landing-stats__bg-white-triangle" aria-hidden="true" />
+        <div className="landing-stats__container">
+          <h2 className="landing-stats__title">{t('statsTitle')}</h2>
+          <div className="landing-stats__grid">
+            <div className="landing-stat">
+              <span className="landing-stat__value">€1.4B+</span>
+              <span className="landing-stat__label">{t('statLabel1')}</span>
+            </div>
+            <div className="landing-stat">
+              <span className="landing-stat__value">12–25%</span>
+              <span className="landing-stat__label">{t('statLabel2')}</span>
             </div>
           </div>
         </div>
@@ -3255,7 +3384,7 @@ function MainPage() {
             <div className="contact-form__row">
               <div className="contact-form__field">
                 <label htmlFor="email-contact" className="contact-form__label">
-                  Email
+                  {t('emailLabel')}
                 </label>
                 <input
                   type="email"
@@ -3264,7 +3393,7 @@ function MainPage() {
                   value={contactForm.email}
                   onChange={handleContactFormChange}
                   className="contact-form__input"
-                  placeholder="your@email.com"
+                  placeholder={t('emailPlaceholder')}
                   required
                 />
               </div>
@@ -3347,7 +3476,7 @@ function MainPage() {
 
       <section className="section section--recommended">
         <div className="section__header">
-          <h2 className="section__title">{t('recommended')} Property</h2>
+          <h2 className="section__title">{t('recommended')} {t('propertyWord')}</h2>
         </div>
 
         <div className="properties-grid">
@@ -3408,7 +3537,7 @@ function MainPage() {
                     {index % 2 === 1 && property.isAuction && property.endTime ? (
                       property.currentBid && (
                         <div className="property-bid-info">
-                          <span className="bid-label">Текущая ставка:</span>
+                          <span className="bid-label">{t('currentBid')}</span>
                           <span className="bid-value">{formatPrice(property.currentBid)}</span>
                         </div>
                       )
@@ -3431,7 +3560,7 @@ function MainPage() {
                           {property.sqft && (
                             <div className="spec-item">
                               <BiArea size={18} />
-                              <span>{property.sqft} м²</span>
+                              <span>{property.sqft} {t('squareMeters')}</span>
                             </div>
                           )}
                         </div>
@@ -3447,7 +3576,7 @@ function MainPage() {
 
       <section className="section section--spaced">
         <div className="section__header">
-          <h2 className="section__title">{t('nearby')} Property</h2>
+          <h2 className="section__title">{t('nearby')} {t('propertyWord')}</h2>
         </div>
 
         <div className="properties-grid">
@@ -3511,7 +3640,7 @@ function MainPage() {
                     {index % 2 === 1 && property.isAuction && property.endTime ? (
                       property.currentBid && (
                         <div className="property-bid-info">
-                          <span className="bid-label">Текущая ставка:</span>
+                          <span className="bid-label">{t('currentBid')}</span>
                           <span className="bid-value">{formatPrice(property.currentBid)}</span>
                         </div>
                       )
@@ -3534,7 +3663,7 @@ function MainPage() {
                           {property.sqft && (
                             <div className="spec-item">
                               <BiArea size={18} />
-                              <span>{property.sqft} м²</span>
+                              <span>{property.sqft} {t('squareMeters')}</span>
                             </div>
                           )}
                         </div>
@@ -3608,15 +3737,15 @@ function MainPage() {
             <div className="chat-widget__header-info">
               <div className="chat-widget__avatar">AI</div>
               <div className="chat-widget__header-text">
-                <h3 className="chat-widget__title">AI Консультант</h3>
-                <span className="chat-widget__status">Онлайн</span>
+                <h3 className="chat-widget__title">{t('chatTitle')}</h3>
+                <span className="chat-widget__status">{t('chatOnline')}</span>
               </div>
             </div>
             <button
               type="button"
               className="chat-widget__close"
               onClick={toggleChat}
-              aria-label="Закрыть чат"
+              aria-label={t('closeChat')}
             >
               <FiX size={20} />
             </button>
@@ -3637,12 +3766,12 @@ function MainPage() {
                   {message.text}
                   {message.recommendations && message.recommendations.length > 0 && (
                     <div className="chat-widget__recommendations">
-                      <div className="chat-widget__recommendations-title">Рекомендуемые объявления:</div>
+                      <div className="chat-widget__recommendations-title">{t('chatRecommendationsTitle')}</div>
                       {message.recommendations.map((recId) => {
                         const property = allProperties.find(p => p.id === recId)
                         if (!property) return null
-                        const propertyName = property.name || property.title || 'Объявление'
-                        const propertyPrice = property.price ? `${property.price.toLocaleString('ru-RU')} €` : 'Цена не указана'
+                        const propertyName = property.name || property.title || t('listingDefault')
+                        const propertyPrice = property.price ? `${property.price.toLocaleString('ru-RU')} €` : t('priceNotSpecified')
                         const propertyArea = property.area || property.sqft
                         const propertyRooms = property.rooms || property.beds
                         
@@ -3663,8 +3792,8 @@ function MainPage() {
                               <div className="chat-widget__recommendation-title">{propertyName}</div>
                               <div className="chat-widget__recommendation-location">{property.location}</div>
                               <div className="chat-widget__recommendation-details">
-                                {propertyRooms && <span>{propertyRooms} {propertyRooms === 1 ? 'комната' : propertyRooms < 5 ? 'комнаты' : 'комнат'}</span>}
-                                {propertyArea && <span>{propertyArea} м²</span>}
+                                {propertyRooms && <span>{t('roomCount', { count: propertyRooms })}</span>}
+                                {propertyArea && <span>{propertyArea} {t('squareMeters')}</span>}
                               </div>
                               <div className="chat-widget__recommendation-price">{propertyPrice}</div>
                             </div>
@@ -3705,7 +3834,7 @@ function MainPage() {
                     <span></span>
                   </div>
                   {isSlowAIResponse && (
-                    <div className="chat-widget__slow-hint">Ищем ответ, подождите.</div>
+                    <div className="chat-widget__slow-hint">{t('chatSlowHint')}</div>
                   )}
                 </div>
               </div>
@@ -3716,7 +3845,7 @@ function MainPage() {
             <input
               type="text"
               className="chat-widget__input"
-              placeholder={isLoadingAI ? "AI думает..." : "Введите ваше сообщение..."}
+              placeholder={isLoadingAI ? t('aiThinking') : t('chatPlaceholder')}
               value={chatInput}
               onChange={handleChatInputChange}
               disabled={isLoadingAI}
