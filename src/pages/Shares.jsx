@@ -3,15 +3,19 @@ import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { FiSearch } from 'react-icons/fi'
 import Header from '../components/Header'
-import { ServiceCard } from '../components/ui/service-card'
+import { AnimatedMarqueeHero } from '../components/ui/hero-3'
 import { useLazyLoad } from '../hooks/useLazyLoad'
 import './Shares.css'
 
-const SHARES_SERVICE_CARDS = [
-  { titleKey: 'sharesCard1Title', href: '#shares-grid', imgSrc: 'https://images.unsplash.com/photo-1589939705384-5185137a7f0f?auto=format&fit=crop&w=400&q=85', imgAltKey: 'sharesCard1Alt', variant: 'red' },
-  { titleKey: 'sharesCard2Title', href: '#shares-grid', imgSrc: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=400&q=85', imgAltKey: 'sharesCard2Alt', variant: 'default' },
-  { titleKey: 'sharesCard3Title', href: '#shares-grid', imgSrc: 'https://images.unsplash.com/photo-1586281380349-632531db7ed4?auto=format&fit=crop&w=400&q=85', imgAltKey: 'sharesCard3Alt', variant: 'gray' },
-  { titleKey: 'sharesCard4Title', href: '#shares-grid', imgSrc: 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&w=400&q=85', imgAltKey: 'sharesCard4Alt', variant: 'blue' },
+const HERO_MARQUEE_IMAGES = [
+  'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=900&auto=format&fit=crop&q=60',
+  'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=900&auto=format&fit=crop&q=60',
+  'https://images.unsplash.com/photo-1589939705384-5185137a7f0f?w=900&auto=format&fit=crop&q=60',
+  'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=900&auto=format&fit=crop&q=60',
+  'https://images.unsplash.com/photo-1586281380349-632531db7ed4?w=900&auto=format&fit=crop&q=60',
+  'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=900&auto=format&fit=crop&q=60',
+  'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=900&auto=format&fit=crop&q=60',
+  'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=900&auto=format&fit=crop&q=60',
 ]
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api'
@@ -103,28 +107,19 @@ const Shares = () => {
     <div className="shares-page">
       <Header />
       <div className="shares-page__bg" />
+      <AnimatedMarqueeHero
+        tagline={t('sharesHeroTagline')}
+        title={
+          <>
+            {t('sharesHeroTitleLine1')}
+            <br />
+            {t('sharesHeroTitleLine2')}
+          </>
+        }
+        description={t('sharesHeroDescription')}
+        images={HERO_MARQUEE_IMAGES}
+      />
       <main ref={sharesSectionRef} className="shares-container">
-        <div className="shares-cards-grid">
-          <div className="shares-cards-grid__header">
-            <span className="shares-cards-grid__label">{t('sharesLabel')}</span>
-            <h1 className="shares-cards-grid__title">{t('sharesTitle')}</h1>
-          </div>
-          <div className="shares-cards-grid__grid">
-            {SHARES_SERVICE_CARDS.map((card) => (
-              <ServiceCard
-                key={card.titleKey}
-                title={t(card.titleKey)}
-                href={card.href}
-                linkLabel={t('sharesLearnMore')}
-                imgSrc={card.imgSrc}
-                imgAlt={t(card.imgAltKey)}
-                variant={card.variant}
-                className="min-h-[200px] sm:min-h-[220px]"
-              />
-            ))}
-          </div>
-        </div>
-
         <div className="shares-search-bar">
           <FiSearch className="shares-search-bar__icon" size={20} />
           <input
@@ -155,6 +150,8 @@ const Shares = () => {
             filtered.map((obj) => {
               const soldPercent = (obj.totalShares > 0) ? Math.round((obj.sharesSold / obj.totalShares) * 100) : 0
               const isSoldOut = obj.sharesSold >= obj.totalShares
+              const total = Math.max(1, Number(obj.totalShares) || 1)
+              const sold = Math.min(obj.sharesSold || 0, total)
               return (
               <article
                 key={obj.id}
@@ -165,6 +162,19 @@ const Shares = () => {
                   {isSoldOut ? t('sharesSoldOut') : t('sharesBadgeShare')}
                 </div>
                 <div className="share-card__image-wrap">
+                  <div className="share-card__scale" aria-hidden>
+                    <div className="share-card__scale-track">
+                      <div
+                        className="share-card__scale-fill"
+                        style={{ height: `${(sold / total) * 100}%` }}
+                      />
+                    </div>
+                    <span className="share-card__scale-label share-card__scale-label--bottom">0</span>
+                    <span className="share-card__scale-label share-card__scale-label--top">{total}</span>
+                    <span className="share-card__scale-sold" style={{ bottom: `${(sold / total) * 100}%` }}>
+                      {sold}
+                    </span>
+                  </div>
                   <img
                     src={obj.image || 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=800&q=80'}
                     alt={obj.title}
