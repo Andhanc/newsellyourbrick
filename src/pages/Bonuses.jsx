@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useSearchParams, useLocation } from 'react-router-dom'
-import { FiChevronDown, FiCheck, FiGift, FiExternalLink, FiCopy, FiShoppingCart, FiUser, FiArrowLeft } from 'react-icons/fi'
+import { FiChevronDown, FiCheck, FiGift, FiExternalLink, FiCopy, FiShoppingCart, FiUser, FiArrowLeft, FiUserPlus } from 'react-icons/fi'
 import { FaInstagram, FaTiktok, FaGift, FaStar } from 'react-icons/fa'
 import { MdCardGiftcard } from 'react-icons/md'
 import Header from '../components/Header'
@@ -69,6 +69,22 @@ const BUYER_TASKS = [
     ],
     linkPlaceholder: 'https://www.instagram.com/p/...',
     linkHint: 'Ссылка на пост со ссылкой на нас',
+  },
+  {
+    id: 9,
+    title: 'Пригласи друга',
+    icon: FiUserPlus,
+    promoCode: 'BONUS-REFER-10',
+    promoUsageLimit: 1,
+    referral: true,
+    steps: [
+      'Скопируйте вашу реферальную ссылку ниже.',
+      'Отправьте её другу (соцсети, мессенджер — как удобно).',
+      'Когда друг перейдёт по ссылке и зарегистрируется на сайте, задание будет выполнено.',
+      'Промокод появится здесь автоматически — используйте его при покупке или в корзине.',
+    ],
+    linkPlaceholder: '',
+    linkHint: '',
   },
 ]
 
@@ -454,27 +470,64 @@ const Bonuses = () => {
                             ))}
                           </ol>
                         </div>
-                        <div className="bonuses-task__submit">
-                          <label className="bonuses-task__label" htmlFor={`bonus-link-${task.id}`}>
-                            {task.linkHint}
-                          </label>
-                          <input
-                            id={`bonus-link-${task.id}`}
-                            type="url"
-                            className="bonuses-task__input"
-                            placeholder={task.linkPlaceholder}
-                            value={linkInputs[task.id] || ''}
-                            onChange={(e) => setLinkInputs((prev) => ({ ...prev, [task.id]: e.target.value }))}
-                          />
-                          <button
-                            type="button"
-                            className="bonuses-task__btn bonuses-task__btn--primary"
-                            disabled={submitting === task.id}
-                            onClick={() => handleSubmit(task.id)}
-                          >
-                            {submitting === task.id ? 'Отправка...' : 'Проверить'}
-                          </button>
-                        </div>
+                        {task.referral ? (
+                          <div className="bonuses-task__submit">
+                            <label className="bonuses-task__label">Ваша реферальная ссылка</label>
+                            <div className="bonuses-task__referral-row">
+                              <input
+                                readOnly
+                                type="text"
+                                className="bonuses-task__input bonuses-task__input--referral"
+                                value={userId ? `${typeof window !== 'undefined' ? window.location.origin : ''}/?ref=${userId}` : ''}
+                                aria-label="Реферальная ссылка"
+                              />
+                              <button
+                                type="button"
+                                className="bonuses-task__copy-btn bonuses-task__copy-btn--link"
+                                onClick={() => {
+                                  const link = userId ? `${window.location.origin}/?ref=${userId}` : ''
+                                  if (link && navigator.clipboard?.writeText) {
+                                    navigator.clipboard.writeText(link).then(() => {
+                                      setCopiedTaskId(task.id)
+                                      setTimeout(() => setCopiedTaskId(null), 2600)
+                                    })
+                                  }
+                                }}
+                                title="Скопировать ссылку"
+                                aria-label="Скопировать реферальную ссылку"
+                              >
+                                {copiedTaskId === task.id ? (
+                                  <FiCheck size={18} className="bonuses-task__copy-icon bonuses-task__copy-icon--done" />
+                                ) : (
+                                  <FiCopy size={18} className="bonuses-task__copy-icon" />
+                                )}
+                              </button>
+                            </div>
+                            <p className="bonuses-task__referral-hint">Поделитесь ссылкой с другом. После его регистрации вы получите промокод здесь.</p>
+                          </div>
+                        ) : (
+                          <div className="bonuses-task__submit">
+                            <label className="bonuses-task__label" htmlFor={`bonus-link-${task.id}`}>
+                              {task.linkHint}
+                            </label>
+                            <input
+                              id={`bonus-link-${task.id}`}
+                              type="url"
+                              className="bonuses-task__input"
+                              placeholder={task.linkPlaceholder}
+                              value={linkInputs[task.id] || ''}
+                              onChange={(e) => setLinkInputs((prev) => ({ ...prev, [task.id]: e.target.value }))}
+                            />
+                            <button
+                              type="button"
+                              className="bonuses-task__btn bonuses-task__btn--primary"
+                              disabled={submitting === task.id}
+                              onClick={() => handleSubmit(task.id)}
+                            >
+                              {submitting === task.id ? 'Отправка...' : 'Проверить'}
+                            </button>
+                          </div>
+                        )}
                       </>
                     )}
 

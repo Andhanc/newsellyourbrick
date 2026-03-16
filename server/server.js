@@ -910,10 +910,12 @@ app.get('/api/users/role/:role', (req, res) => {
 
 /**
  * POST /api/users - Создать нового пользователя
+ * Поддерживает referrer_id для реферальной программы (Clerk/Google и др.)
  */
 app.post('/api/users', (req, res) => {
   try {
-    const userData = { ...req.body };
+    const { referrer_id: referrerId, ...rest } = req.body || {};
+    const userData = { ...rest };
     
     // Валидация обязательных полей
     if (!userData.first_name) {
@@ -941,6 +943,14 @@ app.post('/api/users', (req, res) => {
     
     const result = userQueries.create(userData);
     const newUser = userQueries.getById(result.lastInsertRowid);
+    
+    if (referrerId) {
+      try {
+        grantReferralBonus(getDatabase(), referrerId, newUser.id);
+      } catch (refErr) {
+        console.warn('⚠️ Реферальный бонус не выдан (POST /api/users):', refErr.message);
+      }
+    }
     
     // Удаляем пароль перед отправкой (для безопасности)
     const userWithoutPassword = removePasswordFromUser(newUser);
@@ -2004,7 +2014,7 @@ app.delete('/api/documents/:id', (req, res) => {
  */
 app.post('/api/auth/whatsapp', async (req, res) => {
   try {
-    const { phone, code, mode = 'register', role } = req.body;
+    const { phone, code, mode = 'register', role, referrer_id: referrerId } = req.body;
     
     if (!phone) {
       return res.status(400).json({ success: false, error: 'Необходимо указать номер телефона' });
@@ -2074,6 +2084,14 @@ app.post('/api/auth/whatsapp', async (req, res) => {
     
     const result = userQueries.create(newUser);
     const createdUser = userQueries.getById(result.lastInsertRowid);
+
+    if (referrerId) {
+      try {
+        grantReferralBonus(getDatabase(), referrerId, createdUser.id);
+      } catch (refErr) {
+        console.warn('⚠️ Реферальный бонус (WhatsApp) не выдан:', refErr.message);
+      }
+    }
     
     return res.status(201).json({ 
       success: true, 
@@ -3062,6 +3080,33 @@ app.get('/api/assistant-leads/:id', (req, res) => {
   }
 });
 
+/** ID задания «Пригласи друга» и промокод за реферала */
+const REFERRAL_TASK_ID = 9;
+const BONUS_REFER_PROMO = 'BONUS-REFER-10';
+
+/**
+ * Выдать бонус «Пригласи друга» пригласителю после регистрации нового пользователя по реферальной ссылке.
+ * @param {object} db - экземпляр БД
+ * @param {string|number} referrerId - ID пригласителя
+ * @param {number} newUserId - ID только что зарегистрированного пользователя
+ */
+function grantReferralBonus(db, referrerId, newUserId) {
+  if (!referrerId || !newUserId) return;
+  const refId = String(referrerId).trim();
+  const refNum = parseInt(refId, 10);
+  if (!refNum || refNum === parseInt(newUserId, 10)) return;
+  const referrer = userQueries.getById(refNum);
+  if (!referrer) return;
+  const existing = db.prepare(`
+    SELECT id FROM bonus_task_submissions WHERE user_id = ? AND task_id = ? AND status = 'approved'
+  `).get(refNum, REFERRAL_TASK_ID);
+  if (existing) return;
+  db.prepare(`
+    INSERT INTO bonus_task_submissions (user_id, task_id, link, status, promo_code)
+    VALUES (?, ?, 'referral', 'approved', ?)
+  `).run(refNum, REFERRAL_TASK_ID, BONUS_REFER_PROMO);
+}
+
 /**
  * POST /api/bonus-submissions - Отправить заявку на бонусное задание (ссылка на пост/профиль)
  */
@@ -3323,7 +3368,7 @@ app.get('/api/owner/:sellerId/interest-count', (req, res) => {
  */
 app.post('/api/auth/email/register', async (req, res) => {
   try {
-    const { email, password, name, code } = req.body;
+    const { email, password, name, code, referrer_id: referrerId } = req.body;
     
     if (!email || !password || !name) {
       return res.status(400).json({ 
@@ -3388,17 +3433,25 @@ app.post('/api/auth/email/register', async (req, res) => {
     const createdUser = userQueries.getById(result.lastInsertRowid);
     if (!createdUser) {
       console.error('❌ Ошибка: Пользователь не найден после создания, ID:', result.lastInsertRowid);
-      return res.status(500).json({ 
-        success: false, 
-        error: 'Ошибка при создании пользователя' 
+      return res.status(500).json({
+        success: false,
+        error: 'Ошибка при создании пользователя'
       });
     }
-    
-    console.log('✅ Пользователь успешно сохранен в БД:', { 
-      id: createdUser.id, 
-      email: createdUser.email, 
+
+    if (referrerId) {
+      try {
+        grantReferralBonus(getDatabase(), referrerId, createdUser.id);
+      } catch (refErr) {
+        console.warn('⚠️ Реферальный бонус не выдан:', refErr.message);
+      }
+    }
+
+    console.log('✅ Пользователь успешно сохранен в БД:', {
+      id: createdUser.id,
+      email: createdUser.email,
       name: `${createdUser.first_name} ${createdUser.last_name}`.trim(),
-      role: createdUser.role 
+      role: createdUser.role
     });
     
     // Не возвращаем пароль в ответе (даже захешированный)
@@ -3849,7 +3902,7 @@ app.post('/api/auth/telegram', async (req, res) => {
       });
     }
 
-    const { id, first_name, last_name, username, photo_url, auth_date, hash: telegramHash, mode = 'register', role } = req.body;
+    const { id, first_name, last_name, username, photo_url, auth_date, hash: telegramHash, mode = 'register', role, referrer_id: referrerId } = req.body;
 
     if (!id || !telegramHash) {
       return res.status(400).json({
@@ -3940,6 +3993,14 @@ app.post('/api/auth/telegram', async (req, res) => {
       telegram_photo_url: photo_url || null,
     });
     const finalUser = userQueries.getById(createdUser.id);
+
+    if (referrerId) {
+      try {
+        grantReferralBonus(getDatabase(), referrerId, finalUser.id);
+      } catch (refErr) {
+        console.warn('⚠️ Реферальный бонус (Telegram) не выдан:', refErr.message);
+      }
+    }
 
     return res.status(201).json({
       success: true,

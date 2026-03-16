@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth, useUser, useSession } from '@clerk/clerk-react'
-import { saveUserData } from '../services/authService'
+import { saveUserData, getReferrerId, clearReferrerId } from '../services/authService'
 
 /**
  * Компонент для обработки успешной авторизации через Clerk OAuth
@@ -221,6 +221,7 @@ const ClerkAuthHandler = () => {
             
             console.log('ClerkAuthHandler: Создание пользователя с ролью:', userRole)
             
+            const referrerId = getReferrerId()
             const createResponse = await fetch(`${API_BASE_URL}/users`, {
               method: 'POST',
               headers: {
@@ -231,9 +232,10 @@ const ClerkAuthHandler = () => {
                 last_name: lastName,
                 email: userEmail || null,
                 phone_number: userPhone ? userPhone.replace(/\D/g, '') : null,
-                role: userRole === 'seller' ? 'seller' : 'buyer', // Убеждаемся, что роль правильная
+                role: userRole === 'seller' ? 'seller' : 'buyer',
                 is_verified: 0,
-                is_online: 1
+                is_online: 1,
+                ...(referrerId && { referrer_id: referrerId })
               })
             })
             
@@ -241,6 +243,7 @@ const ClerkAuthHandler = () => {
               const createData = await createResponse.json()
               if (createData.success && createData.data) {
                 dbUserId = createData.data.id
+                if (referrerId) clearReferrerId()
                 console.log('✅ ClerkAuthHandler: Пользователь создан в БД:', dbUserId)
               }
             } else {

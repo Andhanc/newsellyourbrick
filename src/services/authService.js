@@ -270,6 +270,23 @@ export const getUserData = () => {
   }
 }
 
+/** Реферальная программа: ID пригласителя сохраняется при переходе по ссылке ?ref=userId */
+export const getReferrerId = () => {
+  try {
+    const id = localStorage.getItem('referral_id')
+    if (!id || !String(id).trim()) return null
+    return String(id).trim()
+  } catch {
+    return null
+  }
+}
+
+export const clearReferrerId = () => {
+  try {
+    localStorage.removeItem('referral_id')
+  } catch {}
+}
+
 /**
  * Очищает данные пользователя из localStorage, но сохраняет админские данные
  */
@@ -834,6 +851,7 @@ export const verifyWhatsAppCode = async (phone, code, role = 'buyer', mode = 're
         }
       }
 
+      const referrerId = getReferrerId()
       const response = await fetch(`${API_BASE_URL}/auth/whatsapp`, {
         method: 'POST',
         headers: {
@@ -845,14 +863,16 @@ export const verifyWhatsAppCode = async (phone, code, role = 'buyer', mode = 're
           name: whatsappInfo?.name || `Пользователь ${formattedPhone.substring(formattedPhone.length - 4)}`,
           phoneFormatted: formatPhoneForDisplay(formattedPhone),
           countryFlag: countryInfo.flag,
-          role: role, // Передаем роль в backend
-          mode // login или register
+          role: role,
+          mode,
+          ...(referrerId && mode === 'register' && { referrer_id: referrerId })
         })
       })
       
       if (response.ok) {
         const data = await response.json()
         if (data.success && data.user) {
+          if (referrerId && mode === 'register') clearReferrerId()
           // Проверяем, заблокирован ли пользователь
           if (data.user.is_blocked === true || data.user.is_blocked === 1) {
             return {
@@ -1115,6 +1135,7 @@ const handleGoogleAccessToken = async (accessToken) => {
  */
 export const verifyTelegramAuth = async (telegramData, mode = 'register', role = 'buyer') => {
   try {
+    const referrerId = getReferrerId()
     const response = await fetch(`${API_BASE_URL}/auth/telegram`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -1127,7 +1148,8 @@ export const verifyTelegramAuth = async (telegramData, mode = 'register', role =
         auth_date: telegramData.auth_date,
         hash: telegramData.hash,
         mode,
-        role
+        role,
+        ...(referrerId && mode === 'register' && { referrer_id: referrerId })
       })
     })
     const data = await response.json()
@@ -1140,6 +1162,7 @@ export const verifyTelegramAuth = async (telegramData, mode = 'register', role =
     }
 
     const user = data.user
+    if (referrerId && mode === 'register') clearReferrerId()
     const userDataToSave = {
       id: user.id,
       name: user.name,
@@ -1657,6 +1680,7 @@ export const verifyEmailCode = async (email, code, password, name, role = 'buyer
     
     // Отправляем данные на backend для сохранения в БД
     try {
+      const referrerId = getReferrerId()
       const response = await fetch(`${API_BASE_URL}/auth/email/register`, {
         method: 'POST',
         headers: {
@@ -1667,13 +1691,15 @@ export const verifyEmailCode = async (email, code, password, name, role = 'buyer
           password: registrationPassword,
           name: registrationName,
           code,
-          role: role // Передаем роль в backend
+          role: role,
+          ...(referrerId && { referrer_id: referrerId })
         })
       })
       
       if (response.ok) {
         const data = await response.json()
         if (data.success && data.user) {
+          if (referrerId) clearReferrerId()
           // Пользователь успешно сохранен в БД
           console.log('✅ Пользователь успешно зарегистрирован в БД:', data.user)
           saveUserData(data.user, 'email')

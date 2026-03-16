@@ -708,6 +708,43 @@
   cursor: not-allowed;
 }
 
+.bonuses-task__referral-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.bonuses-task__input--referral {
+  flex: 1;
+  font-size: 13px;
+}
+
+.bonuses-task__copy-btn--link {
+  flex-shrink: 0;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #0ABAB5 0%, #089a95 100%);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.bonuses-task__copy-btn--link:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(10, 186, 181, 0.35);
+}
+
+.bonuses-task--seller .bonuses-task__copy-btn--link {
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+}
+
+.bonuses-task__referral-hint {
+  font-size: 13px;
+  color: #6b7280;
+  margin: 0;
+}
+
 /* Congrats block */
 .bonuses-task__congrats {
   position: relative;

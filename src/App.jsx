@@ -109,6 +109,19 @@ function ScrollToTop() {
   return null
 }
 
+// Сохраняем реферальный ref из URL (?ref=userId) в localStorage для использования при регистрации
+function ReferralCapture() {
+  const location = useLocation()
+  useEffect(() => {
+    const params = new URLSearchParams(location.search)
+    const ref = params.get('ref')
+    if (ref && ref.trim()) {
+      localStorage.setItem('referral_id', ref.trim())
+    }
+  }, [location.search])
+  return null
+}
+
 // Компонент для очистки сессии администратора при переходе с админ-панели
 function AdminSessionCleaner() {
   const location = useLocation()
@@ -222,6 +235,7 @@ function App() {
     <Router>
       <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
       <ScrollToTop />
+      <ReferralCapture />
       <VisitorHeartbeat />
       <SessionValidator onBlockedChange={setIsBlocked} />
       <AdminSessionCleaner />

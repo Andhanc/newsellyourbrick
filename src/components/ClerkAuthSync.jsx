@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { useUser, useAuth } from '@clerk/clerk-react'
-import { saveUserData } from '../services/authService'
+import { saveUserData, getReferrerId, clearReferrerId } from '../services/authService'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
 
@@ -158,6 +158,7 @@ const ClerkAuthSync = () => {
             
             console.log('ClerkAuthSync: Создание пользователя с ролью:', userRole)
             
+            const referrerId = getReferrerId()
             const createResponse = await fetch(`${API_BASE_URL}/users`, {
               method: 'POST',
               headers: {
@@ -168,9 +169,10 @@ const ClerkAuthSync = () => {
                 last_name: lastName,
                 email: userEmail || null,
                 phone_number: userPhone ? userPhone.replace(/\D/g, '') : null,
-                role: userRole === 'seller' ? 'seller' : 'buyer', // Убеждаемся, что роль правильная
+                role: userRole === 'seller' ? 'seller' : 'buyer',
                 is_verified: 0,
-                is_online: 1
+                is_online: 1,
+                ...(referrerId && { referrer_id: referrerId })
               })
             })
             
@@ -178,6 +180,7 @@ const ClerkAuthSync = () => {
               const createData = await createResponse.json()
               if (createData.success && createData.data) {
                 dbUserId = createData.data.id
+                if (referrerId) clearReferrerId()
                 console.log('✅ ClerkAuthSync: Пользователь создан в БД:', dbUserId)
               }
             } else {
