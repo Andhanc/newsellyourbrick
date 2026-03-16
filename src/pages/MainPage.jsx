@@ -905,8 +905,8 @@ function MainPage() {
   const [statsScrollProgress, setStatsScrollProgress] = useState(0)
 
   const heroImages = {
-    rent: 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=1200&q=80',
-    buy: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=1200&q=80'
+    rent: '/hero-bg.jpeg',
+    buy: '/hero-bg.jpeg'
   }
   
   const heroImage = heroImages[propertyMode]

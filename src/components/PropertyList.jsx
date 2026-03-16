@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { useUser } from '@clerk/clerk-react'
 import { MdBed, MdOutlineBathtub, MdDirectionsCar } from 'react-icons/md'
 import { BiArea } from 'react-icons/bi'
@@ -69,7 +70,16 @@ const hasBuyNowOption = (property) => {
   return buyNowPrice > 0
 }
 
+const PROPERTY_TYPE_KEYS = {
+  'все': 'propertyTypeAll',
+  'квартира': 'propertyTypeFlat',
+  'апартаменты': 'propertyTypeApartment',
+  'вилла': 'propertyTypeVilla',
+  'дом': 'propertyTypeHouse'
+}
+
 const PropertyList = ({ auctionProperties = null, onOpenAIChat }) => {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const location = useLocation()
   const { user, isLoaded: userLoaded } = useUser()
@@ -307,7 +317,7 @@ const PropertyList = ({ auctionProperties = null, onOpenAIChat }) => {
       <section className="property-list">
         <div className="property-list-container">
         <div className="property-list-header">
-          <h2 className="property-list-title">Активные аукционы</h2>
+          <h2 className="property-list-title">{t('activeAuctions')}</h2>
           {isMobile && isAuctionPage && onOpenAIChat && (
             <button
               type="button"
@@ -333,7 +343,7 @@ const PropertyList = ({ auctionProperties = null, onOpenAIChat }) => {
             <input
               type="text"
               className="search-input"
-              placeholder="Поиск по названию или адресу..."
+              placeholder={t('searchPlaceholderLong')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -354,39 +364,18 @@ const PropertyList = ({ auctionProperties = null, onOpenAIChat }) => {
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
               </svg>
-              Фильтры
+              {t('filters')}
             </button>
             <div className="property-types">
-              <button 
-                className={`type-button ${propertyType === 'все' ? 'active' : ''}`}
-                onClick={() => setPropertyType('все')}
-              >
-                Все
-              </button>
-              <button 
-                className={`type-button ${propertyType === 'квартира' ? 'active' : ''}`}
-                onClick={() => setPropertyType('квартира')}
-              >
-                Квартира
-              </button>
-              <button 
-                className={`type-button ${propertyType === 'апартаменты' ? 'active' : ''}`}
-                onClick={() => setPropertyType('апартаменты')}
-              >
-                Апартаменты
-              </button>
-              <button 
-                className={`type-button ${propertyType === 'вилла' ? 'active' : ''}`}
-                onClick={() => setPropertyType('вилла')}
-              >
-                Вилла
-              </button>
-              <button 
-                className={`type-button ${propertyType === 'дом' ? 'active' : ''}`}
-                onClick={() => setPropertyType('дом')}
-              >
-                Дом
-              </button>
+              {(['все', 'квартира', 'апартаменты', 'вилла', 'дом']).map((type) => (
+                <button
+                  key={type}
+                  className={`type-button ${propertyType === type ? 'active' : ''}`}
+                  onClick={() => setPropertyType(type)}
+                >
+                  {t(PROPERTY_TYPE_KEYS[type])}
+                </button>
+              ))}
             </div>
           </div>
         </div>
@@ -394,8 +383,8 @@ const PropertyList = ({ auctionProperties = null, onOpenAIChat }) => {
         {filteredProperties.length === 0 ? (
           <div className="no-results">
             <div className="no-results-icon">🔍</div>
-            <h3 className="no-results-title">Ничего не найдено</h3>
-            <p className="no-results-text">Попробуйте изменить параметры поиска или фильтры</p>
+            <h3 className="no-results-title">{t('nothingFound')}</h3>
+            <p className="no-results-text">{t('noResultsHint')}</p>
           </div>
         ) : (
           <>
@@ -478,7 +467,7 @@ const PropertyList = ({ auctionProperties = null, onOpenAIChat }) => {
                   {isReserved && (
                     <div className="property-reserved-overlay">
                       <div className="reserved-overlay-icon">🔒</div>
-                      <div className="reserved-overlay-text">Забронировано</div>
+                      <div className="reserved-overlay-text">{t('reserved')}</div>
                     </div>
                   )}
                   {(hasBuyNowPrice || hasTestDrive) && (
@@ -490,7 +479,7 @@ const PropertyList = ({ auctionProperties = null, onOpenAIChat }) => {
                             const rect = e.currentTarget.getBoundingClientRect()
                             setTooltip({
                               show: true,
-                              text: 'Вы можете купить этот объект прямо сейчас по фиксированной цене без участия в аукционе.',
+                              text: t('buyNowTooltip'),
                               x: rect.left + rect.width / 2,
                               y: rect.top - 10
                             })
@@ -504,7 +493,7 @@ const PropertyList = ({ auctionProperties = null, onOpenAIChat }) => {
                             })
                           }}
                         >
-                          <span>Купить сейчас</span>
+                          <span>{t('buyNowSectionTitle')}</span>
                         </div>
                       )}
                       {hasTestDrive && (
@@ -514,7 +503,7 @@ const PropertyList = ({ auctionProperties = null, onOpenAIChat }) => {
                             const rect = e.currentTarget.getBoundingClientRect()
                             setTooltip({
                               show: true,
-                              text: 'Для этого объекта доступен тест-драйв. Вы можете посетить недвижимость перед покупкой.',
+                              text: t('testDriveTooltip'),
                               x: rect.left + rect.width / 2,
                               y: rect.top - 10
                             })
@@ -528,7 +517,7 @@ const PropertyList = ({ auctionProperties = null, onOpenAIChat }) => {
                             })
                           }}
                         >
-                          <span>Тест-драйв</span>
+                          <span>{t('testDrive')}</span>
                         </div>
                       )}
                     </div>
@@ -546,7 +535,7 @@ const PropertyList = ({ auctionProperties = null, onOpenAIChat }) => {
                       
                       // Разрешаем удаление из избранного без авторизации, но добавление требует авторизации
                       if (!isFavorite && !isClerkAuth && !isOldAuth) {
-                        showNotification('Пожалуйста, войдите в систему, чтобы добавлять объявления в избранное')
+                        showNotification(t('loginToAddFavorites'))
                         return
                       }
                       
@@ -613,7 +602,7 @@ const PropertyList = ({ auctionProperties = null, onOpenAIChat }) => {
                           {(property.area || property.sqft) && (
                             <div className="property-card-owner__info-item">
                               <BiArea size={16} />
-                              <span>{property.area || property.sqft} м²</span>
+                              <span>{property.area || property.sqft} {t('squareMeters')}</span>
                             </div>
                           )}
                           {(property.rooms || property.beds || property.bedrooms) && (
@@ -634,7 +623,7 @@ const PropertyList = ({ auctionProperties = null, onOpenAIChat }) => {
                     
                     {hasTimer ? (
                       <div className="property-bid-info">
-                        <span className="bid-label">Текущая ставка:</span>
+                        <span className="bid-label">{t('currentBid')}</span>
                         <span className="bid-value">{formatPrice(property.currentBid || property.price || 0)}</span>
                       </div>
                     ) : (
@@ -650,11 +639,11 @@ const PropertyList = ({ auctionProperties = null, onOpenAIChat }) => {
                         {(property.area || property.sqft) && (
                           <div className="spec-item">
                             <BiArea size={18} />
-                            <span>{property.area || property.sqft} м²</span>
+                            <span>{property.area || property.sqft} {t('squareMeters')}</span>
                           </div>
                         )}
                         {property.floor && (
-                          <span className="spec-item">{property.floor} этаж</span>
+                          <span className="spec-item">{property.floor} {t('floor')}</span>
                         )}
                         </div>
                       </>
@@ -675,7 +664,7 @@ const PropertyList = ({ auctionProperties = null, onOpenAIChat }) => {
                           cursor: isReserved ? 'not-allowed' : 'pointer'
                         }}
                       >
-                        {isReserved ? 'Объект забронирован' : 'Сделать ставку'}
+                        {isReserved ? t('objectReserved') : t('placeBid')}
                       </button>
                       {hasBuyNowPrice && (
                         <button 
@@ -684,7 +673,7 @@ const PropertyList = ({ auctionProperties = null, onOpenAIChat }) => {
                             e.preventDefault()
                             e.stopPropagation()
                             if (isReserved) {
-                              showNotification('Объект временно забронирован. Покупка недоступна.')
+                              showNotification(t('objectReservedNotification'))
                               return
                             }
                             navigate(`/property/${property.id}`, {
@@ -697,7 +686,7 @@ const PropertyList = ({ auctionProperties = null, onOpenAIChat }) => {
                             cursor: isReserved ? 'not-allowed' : 'pointer'
                           }}
                         >
-                          {isReserved ? 'Объект забронирован' : 'Купить сейчас'}
+                          {isReserved ? t('objectReserved') : t('buyNowSectionTitle')}
                         </button>
                       )}
                     </div>
@@ -715,7 +704,7 @@ const PropertyList = ({ auctionProperties = null, onOpenAIChat }) => {
               className="load-more-button"
               onClick={() => setVisibleCount(filteredProperties.length)}
             >
-              Показать еще ({filteredProperties.length - visibleCount})
+              {t('showMore', { count: filteredProperties.length - visibleCount })}
             </button>
           </div>
         )}

@@ -67,8 +67,9 @@ server/uploads/
 server/.wwebjs_auth/
 server/.wwebjs_cache/
 
-# Database files
+# Database files and folder
+server/database/
+server/database.sqlite
 *.sqlite
 *.sqlite3
 *.db
-!server/database.sqlite

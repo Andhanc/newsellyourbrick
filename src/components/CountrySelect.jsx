@@ -1,4 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import './CountrySelect.css';
 
 // Полный список всех стран мира с флагами (emoji флаги)
@@ -256,10 +257,29 @@ export const countries = [
 ];
 
 const CountrySelect = ({ value, onChange, placeholder = 'Выберите страну', className = '' }) => {
+  const { i18n, t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const containerRef = useRef(null);
   const inputRef = useRef(null);
+
+  const locale = useMemo(() => {
+    const lang = (i18n.language || 'ru').split('-')[0];
+    return ['ru', 'en', 'de', 'es', 'fr', 'sv'].includes(lang) ? lang : 'en';
+  }, [i18n.language]);
+
+  const displayNames = useMemo(
+    () => new Intl.DisplayNames(locale, { type: 'region' }),
+    [locale]
+  );
+
+  const getCountryName = (code) => {
+    try {
+      return displayNames.of(code) ?? code;
+    } catch {
+      return countries.find(c => c.code === code)?.name ?? code;
+    }
+  };
 
   // Закрываем выпадающий список при клике вне компонента
   useEffect(() => {
@@ -278,16 +298,17 @@ const CountrySelect = ({ value, onChange, placeholder = 'Выберите стр
     }
   }, [isOpen]);
 
-  // Фильтруем страны по запросу поиска
-  const filteredCountries = countries.filter(country =>
-    country.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    country.code.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Фильтруем страны по запросу поиска (по локализованному имени и коду)
+  const filteredCountries = countries.filter(country => {
+    const name = getCountryName(country.code);
+    const q = searchQuery.toLowerCase();
+    return name.toLowerCase().includes(q) || country.code.toLowerCase().includes(q);
+  });
 
-  // Получаем выбранную страну
-  const selectedCountry = countries.find(c => c.name === value);
+  // Получаем выбранную страну (value — название на русском или код для обратной совместимости)
+  const selectedCountry = countries.find(c => c.name === value || c.code === value);
 
-  // Обработка выбора страны
+  // Обработка выбора страны (передаём родителю русское название для совместимости с API)
   const handleSelect = (country) => {
     onChange(country.name);
     setSearchQuery('');
@@ -328,7 +349,7 @@ const CountrySelect = ({ value, onChange, placeholder = 'Выберите стр
               isOpen
                 ? searchQuery
                 : selectedCountry
-                  ? selectedCountry.name
+                  ? getCountryName(selectedCountry.code)
                   : ''
             }
             onChange={(e) => {
@@ -376,7 +397,7 @@ const CountrySelect = ({ value, onChange, placeholder = 'Выберите стр
                   onClick={() => handleSelect(country)}
                 >
                   <span className="country-select__flag">{country.flag}</span>
-                  <span className="country-select__name">{country.name}</span>
+                  <span className="country-select__name">{getCountryName(country.code)}</span>
                   {selectedCountry?.code === country.code && (
                     <svg 
                       className="country-select__check" 
@@ -398,7 +419,7 @@ const CountrySelect = ({ value, onChange, placeholder = 'Выберите стр
               ))
             ) : (
               <div className="country-select__no-results">
-                Страны не найдены
+                {t('countryNoResults')}
               </div>
             )}
           </div>

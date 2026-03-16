@@ -1,7 +1,10 @@
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import './AuctionPeriodPicker.css'
 
 const AuctionPeriodPicker = ({ startDate, endDate, onStartDateChange, onEndDateChange, label }) => {
+  const { t } = useTranslation()
+
   const [endDateValue, setEndDateValue] = useState(endDate || '')
   const [error, setError] = useState('')
 
@@ -58,8 +61,12 @@ const AuctionPeriodPicker = ({ startDate, endDate, onStartDateChange, onEndDateC
     minEnd.setDate(minEnd.getDate() + MIN_DAYS)
     
     if (end < minEnd) {
-      const minDateStr = minEnd.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' })
-      setError(`Минимальный период аукциона составляет 3 месяца и 15 дней. Минимальная дата окончания: ${minDateStr}`)
+      const minDateStr = minEnd.toLocaleDateString(undefined, {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+      })
+      setError(t('addPropertyPriceAuctionMinPeriodError', { date: minDateStr }))
       return false
     }
     
@@ -84,7 +91,7 @@ const AuctionPeriodPicker = ({ startDate, endDate, onStartDateChange, onEndDateC
       
       <div className="auction-period-content">
         <div className="auction-period-end-date">
-          <label className="auction-period-field-label">Дата окончания аукциона</label>
+          <label className="auction-period-field-label">{t('addPropertyPriceAuctionEndDateLabel')}</label>
           <input
             type="date"
             value={endDateValue}
@@ -99,7 +106,12 @@ const AuctionPeriodPicker = ({ startDate, endDate, onStartDateChange, onEndDateC
           )}
           {!error && minEndDate && (
             <div className="auction-period-hint">
-              Минимальная дата окончания: {new Date(minEndDate).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+              {t('addPropertyPriceMinEndDateHint')}{' '}
+              {new Date(minEndDate).toLocaleDateString(undefined, {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric'
+              })}
             </div>
           )}
         </div>

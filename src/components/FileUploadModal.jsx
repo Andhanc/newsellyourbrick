@@ -1,11 +1,13 @@
 import { useState, useRef } from 'react'
 import { FiX, FiUpload, FiFile, FiDownload, FiCheckCircle, FiAlertCircle } from 'react-icons/fi'
+import { useTranslation } from 'react-i18next'
 import Confetti from './Confetti'
 import './FileUploadModal.css'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
 
 const FileUploadModal = ({ isOpen, onClose, onSuccess, userId: propsUserId }) => {
+  const { t } = useTranslation()
   const [file, setFile] = useState(null)
   const [isUploading, setIsUploading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
@@ -150,9 +152,9 @@ villa,Вилла у моря,Вилла с бассейном,850000,USD,Исп�
                 <div className="file-upload-modal__icon">
                   <FiUpload size={48} />
                 </div>
-                <h2 className="file-upload-modal__title">Быстрое добавление</h2>
+                <h2 className="file-upload-modal__title">{t('fileUploadTitle')}</h2>
                 <p className="file-upload-modal__subtitle">
-                  Загрузите файл CSV или Excel с объектами недвижимости (квартиры, дома, виллы, коммерция)
+                  {t('fileUploadSubtitle')}
                 </p>
               </div>
 
@@ -196,10 +198,10 @@ villa,Вилла у моря,Вилла с бассейном,850000,USD,Исп�
                   <div className="file-upload-area__empty">
                     <FiUpload size={48} />
                     <p className="file-upload-area__text">
-                      Нажмите или перетащите файл сюда
+                      {t('fileUploadDropText')}
                     </p>
                     <p className="file-upload-area__hint">
-                      Поддерживаются форматы: CSV, XLS, XLSX. Первая строка — заголовки.
+                      {t('fileUploadDropHint')}
                     </p>
                   </div>
                 )}
@@ -211,17 +213,17 @@ villa,Вилла у моря,Вилла с бассейном,850000,USD,Исп�
                 disabled={isUploading}
               >
                 <FiDownload size={18} />
-                <span>Скачать шаблон Excel/CSV</span>
+                <span>{t('fileUploadDownloadTemplate')}</span>
               </button>
 
               <details className="file-upload-modal__format-hint">
-                <summary>Как должен выглядеть файл</summary>
-                <p>Первая строка — заголовки. Обязательно: <strong>тип_объекта</strong> (apartment / house / villa / commercial) и <strong>название</strong>. Дополнительно: описание, цена, валюта, страна, город, адрес, площадь, комнаты, ванные, этаж, всего_этажей, год_постройки; для домов/вилл — спален, участок_м2, бассейн, сад, гараж. Удобства: балкон, парковка, лифт (0 или 1).</p>
+                <summary>{t('fileUploadFormatSummary')}</summary>
+                <p>{t('fileUploadFormatDetails')}</p>
               </details>
 
               {isUploading && (
                 <div className="file-upload-modal__progress">
-                  <p className="progress-text">Обработка файла...</p>
+                  <p className="progress-text">{t('fileUploadProcessing')}</p>
                   <div className="progress-bar">
                     <div
                       className="progress-bar__fill progress-bar__fill--indeterminate"
@@ -237,14 +239,14 @@ villa,Вилла у моря,Вилла с бассейном,850000,USD,Исп�
                   onClick={handleClose}
                   disabled={isUploading}
                 >
-                  Отмена
+                  {t('fileUploadCancel')}
                 </button>
                 <button
                   className="file-upload-modal__upload-btn"
                   onClick={handleUpload}
                   disabled={!file || isUploading}
                 >
-                  {isUploading ? 'Загрузка...' : 'Загрузить'}
+                  {isUploading ? t('fileUploadUploading') : t('fileUploadUpload')}
                 </button>
               </div>
             </div>
@@ -254,13 +256,13 @@ villa,Вилла у моря,Вилла с бассейном,850000,USD,Исп�
                 <FiCheckCircle size={64} />
               </div>
               <h2 className="success-title">
-                {result?.loaded > 0 ? 'Загрузка завершена' : 'Обработка завершена'}
+                {result?.loaded > 0 ? t('fileUploadSuccessTitle') : t('fileUploadProcessingTitle')}
               </h2>
               <p className="success-text success-text--stats">
-                В файле найдено объектов: <strong>{result?.found ?? 0}</strong>
+                {t('fileUploadFound')} <strong>{result?.found ?? 0}</strong>
               </p>
               <p className="success-text success-text--stats">
-                Загружено: <strong>{percentLoaded}%</strong> ({result?.loaded ?? 0} из {result?.found ?? 0})
+                {t('fileUploadLoaded')} <strong>{percentLoaded}%</strong> ({result?.loaded ?? 0} {t('fileUploadOf')} {result?.found ?? 0})
               </p>
               <div className="file-upload-modal__progress file-upload-modal__progress--result">
                 <div className="progress-bar">
@@ -272,7 +274,7 @@ villa,Вилла у моря,Вилла с бассейном,850000,USD,Исп�
               </div>
               {result?.failed > 0 && (
                 <p className="success-text success-text--warn">
-                  С ошибками: {result.failed} {result.errors?.length ? `(первые сообщения: ${result.errors.slice(0, 3).map(e => `стр. ${e.row}: ${e.message}`).join('; ')})` : ''}
+                  {t('fileUploadWithErrors')} {result.failed} {result.errors?.length ? `(первые сообщения: ${result.errors.slice(0, 3).map(e => `стр. ${e.row}: ${e.message}`).join('; ')})` : ''}
                 </p>
               )}
               <button
@@ -280,7 +282,7 @@ villa,Вилла у моря,Вилла с бассейном,850000,USD,Исп�
                 onClick={handleClose}
                 style={{ marginTop: 16 }}
               >
-                Закрыть
+                {t('fileUploadClose')}
               </button>
             </div>
           )}

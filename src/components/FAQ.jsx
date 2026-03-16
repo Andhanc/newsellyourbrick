@@ -1,39 +1,26 @@
+import { useTranslation } from 'react-i18next'
 import './FAQ.css'
 
+const FAQ_KEYS = [
+  { questionKey: 'faq1Question', answerKey: 'faq1Answer', avatar: '👩' },
+  { questionKey: 'faq2Question', answerKey: 'faq2Answer', avatar: '👨‍💼' },
+  { questionKey: 'faq3Question', answerKey: 'faq3Answer', avatar: '👨' },
+  { questionKey: 'faq4Question', answerKey: 'faq4Answer', avatar: '👩‍💼' }
+]
+
 const FAQ = () => {
-  const faqItems = [
-    {
-      question: "Такая проверка обычно стоит намного меньше...",
-      answer: "Наша проверка намного серьезнее. Кроме выписок из ЕГРН, юристы изучают правоустанавливающие документы, проверяют продавца на банкротство, причастность к уголовным делам и т. д. В случае проблем вам порекомендуют, как обезопасить себя от рисков.",
-      avatar: "👩"
-    },
-    {
-      question: "Даёте ли вы гарантию, что проверка объекта недвижимости полностью исключит вероятность ее потери после покупки?",
-      answer: "Мы снижаем риски до минимума: опытные юристы-практики вручную проверяют документы и изучают продавца. Другие подобные сервисы занимаются автоматической проверкой документов из открытых источников.",
-      avatar: "👨‍💼"
-    },
-    {
-      question: "Я беру квартиру в ипотеку. Разве банк её не проверит?",
-      answer: "Банк оценивает ликвидность недвижимости для оформления залога, поэтому анализирует квартиру по общим критериям. Этого мало, чтобы определить все возможные риски.",
-      avatar: "👨"
-    },
-    {
-      question: "У меня есть риелтор, он проверит недвижимость и продавца",
-      answer: "Да, опытные риелторы могут определить проблемную квартиру или продавца. Но в сложных случаях за более глубоким анализом или для перепроверки они тоже могут обратиться к юристам",
-      avatar: "👩‍💼"
-    }
-  ]
+  const { t } = useTranslation()
 
   return (
     <section className="faq">
       <div className="faq-container">
-        <h2 className="faq-title">Часто задаваемые вопросы</h2>
+        <h2 className="faq-title">{t('faqTitle')}</h2>
         <div className="faq-grid">
-          {faqItems.map((item, index) => (
+          {FAQ_KEYS.map((item, index) => (
             <div key={index} className="faq-item">
               <div className="faq-question">
                 <div className="faq-avatar">{item.avatar}</div>
-                <p>{item.question}</p>
+                <p>{t(item.questionKey)}</p>
               </div>
               <div className="faq-answer">
                 <div className="faq-icon">
@@ -43,7 +30,7 @@ const FAQ = () => {
                     <circle cx="18" cy="12" r="2" fill="white"/>
                   </svg>
                 </div>
-                <p>{item.answer}</p>
+                <p>{t(item.answerKey)}</p>
               </div>
             </div>
           ))}

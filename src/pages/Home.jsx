@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useLazyLoad } from '../hooks/useLazyLoad'
 import { useUser } from '@clerk/clerk-react'
 import { useNavigate } from 'react-router-dom'
@@ -46,6 +47,7 @@ function formatPropertyForList(prop, isAuction) {
 }
 
 function Home() {
+  const { t } = useTranslation()
   const [auctionProperties, setAuctionProperties] = useState([])
   const [loading, setLoading] = useState(true)
   const [userDeposit, setUserDeposit] = useState(0)
@@ -385,7 +387,7 @@ function Home() {
       console.error('Ошибка при обращении к AI:', error)
       const errorMessage = {
         id: Date.now() + 1,
-        text: 'Извините, произошла ошибка. Попробуйте еще раз.',
+        text: t('chatError'),
         sender: 'bot',
         timestamp: new Date(),
         buttons: null,
@@ -461,10 +463,10 @@ function Home() {
           // Если нет сохраненной истории, показываем приветственное сообщение
           setChatMessages([{
             id: 1,
-            text: 'Здравствуйте! Я ваш AI-консультант по недвижимости. Помогу подобрать идеальный вариант в Испании или Дубае. Для начала, скажите, для какой цели вы ищете недвижимость?',
+            text: t('chatWelcomeMessage'),
             sender: 'bot',
             timestamp: new Date(),
-            buttons: ['Для себя', 'Под сдачу', 'Инвестиции'],
+            buttons: [t('chatPurposeSelf'), t('chatPurposeRent'), t('chatPurposeInvest')],
           }])
         }
         
@@ -561,7 +563,7 @@ function Home() {
       <div ref={homeListRef}>
         {loading ? (
           <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
-            <p>Загрузка объявлений...</p>
+            <p>{t('loadingListings')}</p>
           </div>
         ) : (
           <PropertyList 
@@ -579,15 +581,15 @@ function Home() {
             <div className="chat-widget__header-info">
               <div className="chat-widget__avatar">AI</div>
               <div className="chat-widget__header-text">
-                <h3 className="chat-widget__title">AI Консультант</h3>
-                <span className="chat-widget__status">Онлайн</span>
+                <h3 className="chat-widget__title">{t('chatTitle')}</h3>
+                <span className="chat-widget__status">{t('chatOnline')}</span>
               </div>
             </div>
             <button
               type="button"
               className="chat-widget__close"
               onClick={toggleChat}
-              aria-label="Закрыть чат"
+              aria-label={t('closeChat')}
             >
               <FiX size={20} />
             </button>
@@ -608,12 +610,12 @@ function Home() {
                   {message.text}
                   {message.recommendations && message.recommendations.length > 0 && (
                     <div className="chat-widget__recommendations">
-                      <div className="chat-widget__recommendations-title">Рекомендуемые объявления:</div>
+                      <div className="chat-widget__recommendations-title">{t('chatRecommendationsTitle')}</div>
                       {message.recommendations.map((recId) => {
                         const property = auctionProperties.find(p => p.id === recId)
                         if (!property) return null
-                        const propertyName = property.name || property.title || 'Объявление'
-                        const propertyPrice = property.price ? `${property.price.toLocaleString('ru-RU')} €` : 'Цена не указана'
+                        const propertyName = property.name || property.title || t('listingDefault')
+                        const propertyPrice = property.price ? `${property.price.toLocaleString('ru-RU')} €` : t('priceNotSpecified')
                         const propertyArea = property.area || property.sqft
                         const propertyRooms = property.rooms || property.beds
                         
@@ -634,8 +636,8 @@ function Home() {
                               <div className="chat-widget__recommendation-title">{propertyName}</div>
                               <div className="chat-widget__recommendation-location">{property.location}</div>
                               <div className="chat-widget__recommendation-details">
-                                {propertyRooms && <span>{propertyRooms} {propertyRooms === 1 ? 'комната' : propertyRooms < 5 ? 'комнаты' : 'комнат'}</span>}
-                                {propertyArea && <span>{propertyArea} м²</span>}
+                                {propertyRooms && <span>{t('roomCount', { count: propertyRooms })}</span>}
+                                {propertyArea && <span>{propertyArea} {t('squareMeters')}</span>}
                               </div>
                               <div className="chat-widget__recommendation-price">{propertyPrice}</div>
                             </div>
@@ -676,7 +678,7 @@ function Home() {
                     <span></span>
                   </div>
                   {isSlowAIResponse && (
-                    <div className="chat-widget__slow-hint">Ищем ответ, подождите.</div>
+                    <div className="chat-widget__slow-hint">{t('chatSlowHint')}</div>
                   )}
                 </div>
               </div>
@@ -687,7 +689,7 @@ function Home() {
             <input
               type="text"
               className="chat-widget__input"
-              placeholder={isLoadingAI ? "AI думает..." : "Введите ваше сообщение..."}
+              placeholder={isLoadingAI ? t('aiThinking') : t('chatPlaceholder')}
               value={chatInput}
               onChange={handleChatInputChange}
               disabled={isLoadingAI}
@@ -696,7 +698,7 @@ function Home() {
             <button
               type="submit"
               className="chat-widget__send"
-              aria-label="Отправить сообщение"
+              aria-label={t('sendMessage')}
               disabled={isLoadingAI}
             >
               <FiSend size={18} />

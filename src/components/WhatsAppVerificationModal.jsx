@@ -5,11 +5,13 @@ import { sendWhatsAppVerificationCode, verifyWhatsAppCode, validatePhoneNumber }
 import PhoneInput from './PhoneInput'
 import './PhoneInput.css'
 import './WhatsAppVerificationModal.css'
+import { useTranslation } from 'react-i18next'
 /**
  * mode: 'login' | 'register'
  * role: 'buyer' | 'seller'
  */
 const WhatsAppVerificationModal = ({ isOpen, onClose, onSuccess, phoneNumber, role = 'buyer', mode = 'login' }) => {
+  const { t } = useTranslation()
   const [phone, setPhone] = useState(phoneNumber || '')
   const [phoneDigits, setPhoneDigits] = useState('') // Сохраняем номер в цифровом формате
   const [code, setCode] = useState(['', '', '', '', '', ''])
@@ -50,7 +52,7 @@ const WhatsAppVerificationModal = ({ isOpen, onClose, onSuccess, phoneNumber, ro
     // Валидация номера телефона
     const validation = validatePhoneNumber(phone)
     if (!validation.valid) {
-      setError(validation.error || 'Введите корректный номер телефона')
+      setError(validation.error || t('enterValidPhone') || 'Введите корректный номер телефона')
       return
     }
 
@@ -61,7 +63,7 @@ const WhatsAppVerificationModal = ({ isOpen, onClose, onSuccess, phoneNumber, ro
       // Используем сохраненный номер в цифровом формате или форматируем текущий
       const digitsToSend = phoneDigits || phone.replace(/\D/g, '')
       if (!digitsToSend) {
-        setError('Введите номер телефона')
+        setError(t('enterPhone') || 'Введите номер телефона')
         setIsLoading(false)
         return
       }
@@ -97,11 +99,11 @@ const WhatsAppVerificationModal = ({ isOpen, onClose, onSuccess, phoneNumber, ro
           }
         }, 100)
       } else {
-        setError(result.error || 'Не удалось отправить код')
+        setError(result.error || t('whatsappSendError') || 'Не удалось отправить код')
       }
     } catch (error) {
       console.error('Ошибка отправки кода:', error)
-      setError('Произошла ошибка. Попробуйте позже.')
+      setError(t('genericError') || 'Произошла ошибка. Попробуйте позже.')
     } finally {
       setIsLoading(false)
     }
@@ -164,7 +166,7 @@ const WhatsAppVerificationModal = ({ isOpen, onClose, onSuccess, phoneNumber, ro
     const codeString = codeToVerify || code.join('')
     
     if (codeString.length !== 6) {
-      setError('Введите полный код')
+      setError(t('codeFullRequired'))
       return
     }
 
@@ -175,7 +177,7 @@ const WhatsAppVerificationModal = ({ isOpen, onClose, onSuccess, phoneNumber, ro
       // Используем сохраненный номер в цифровом формате или форматируем текущий
       const digitsToVerify = phoneDigits || phone.replace(/\D/g, '')
       if (!digitsToVerify) {
-        setError('Номер телефона не найден. Запросите новый код.')
+        setError(t('phoneNotFound') || 'Номер телефона не найден. Запросите новый код.')
         setIsLoading(false)
         return
       }
@@ -188,14 +190,14 @@ const WhatsAppVerificationModal = ({ isOpen, onClose, onSuccess, phoneNumber, ro
         }
         onClose()
       } else {
-        setError(result.error || 'Неверный код. Попробуйте еще раз.')
+        setError(result.error || t('invalidCode') || 'Неверный код. Попробуйте еще раз.')
         // Очищаем поля ввода
         setCode(['', '', '', '', '', ''])
         inputRefs.current[0]?.focus()
       }
     } catch (error) {
       console.error('Ошибка верификации кода:', error)
-      setError('Произошла ошибка. Попробуйте позже.')
+      setError(t('genericError') || 'Произошла ошибка. Попробуйте позже.')
     } finally {
       setIsLoading(false)
     }
@@ -215,7 +217,7 @@ const WhatsAppVerificationModal = ({ isOpen, onClose, onSuccess, phoneNumber, ro
         <button 
           className="whatsapp-verification-modal__close" 
           onClick={onClose}
-          aria-label="Закрыть"
+          aria-label={t('closeModalAria')}
         >
           <FiX size={24} />
         </button>
@@ -226,13 +228,13 @@ const WhatsAppVerificationModal = ({ isOpen, onClose, onSuccess, phoneNumber, ro
           </div>
           <h2 className="whatsapp-verification-modal__title">
             {step === 'phone'
-              ? (mode === 'login' ? 'Вход через WhatsApp' : 'Регистрация через WhatsApp')
-              : 'Введите код'}
+              ? (mode === 'login' ? t('whatsappLoginTitle') : t('whatsappRegisterTitle'))
+              : t('enterCodeTitle')}
           </h2>
           <p className="whatsapp-verification-modal__subtitle">
             {step === 'phone' 
-              ? 'Введите номер телефона, и мы отправим код в WhatsApp'
-              : `Код отправлен на номер ${phone}`}
+              ? t('whatsappSubtitlePhone')
+              : t('whatsappSubtitleCode', { target: phone })}
           </p>
         </div>
 
@@ -246,7 +248,7 @@ const WhatsAppVerificationModal = ({ isOpen, onClose, onSuccess, phoneNumber, ro
           <div className="whatsapp-verification-modal__form">
             <div className="whatsapp-verification-modal__field">
               <label htmlFor="phone" className="whatsapp-verification-modal__label">
-                Номер телефона
+                {t('whatsappPhoneLabel')}
               </label>
               <PhoneInput
                 value={phone}
@@ -262,7 +264,7 @@ const WhatsAppVerificationModal = ({ isOpen, onClose, onSuccess, phoneNumber, ro
               onClick={handleSendCode}
               disabled={isLoading || !phone || phone.replace(/[^\d+]/g, '').replace(/^\+/, '').length < 10}
             >
-              {isLoading ? 'Отправка...' : 'Отправить код'}
+              {isLoading ? t('whatsappSendCodeLoading') : t('whatsappSendCode')}
             </button>
           </div>
         ) : (
@@ -288,7 +290,7 @@ const WhatsAppVerificationModal = ({ isOpen, onClose, onSuccess, phoneNumber, ro
 
             <div className="whatsapp-verification-modal__resend">
               <span className="whatsapp-verification-modal__resend-text">
-                Не получили код?
+                {t('codeResendQuestion')}
               </span>
               <button
                 type="button"
@@ -296,7 +298,7 @@ const WhatsAppVerificationModal = ({ isOpen, onClose, onSuccess, phoneNumber, ro
                 onClick={handleResendCode}
                 disabled={countdown > 0 || isLoading}
               >
-                {countdown > 0 ? `Отправить снова (${countdown}с)` : 'Отправить снова'}
+                {countdown > 0 ? t('codeResendWithTimer', { seconds: countdown }) : t('codeResend')}
               </button>
             </div>
 
@@ -306,7 +308,7 @@ const WhatsAppVerificationModal = ({ isOpen, onClose, onSuccess, phoneNumber, ro
               onClick={() => handleVerifyCode()}
               disabled={isLoading || code.some(digit => !digit)}
             >
-              {isLoading ? 'Проверка...' : 'Проверить код'}
+              {isLoading ? t('whatsappVerifyLoading') : t('whatsappVerify')}
             </button>
           </div>
         )}
@@ -322,7 +324,7 @@ const WhatsAppVerificationModal = ({ isOpen, onClose, onSuccess, phoneNumber, ro
             }}
             style={{ display: step === 'code' ? 'block' : 'none' }}
           >
-            Изменить номер
+            {t('changePhone')}
           </button>
         </div>
       </div>

@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { FiSearch } from 'react-icons/fi'
 import Header from '../components/Header'
 import FlipCard from '../components/ui/FlipCard'
@@ -9,6 +10,7 @@ import './Shares.css'
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api'
 
 const Debts = () => {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState('')
   const [apiDebts, setApiDebts] = useState([])
@@ -79,42 +81,42 @@ const Debts = () => {
         <div className="shares-flip-cards">
           <FlipCard
             color="#DC2626"
-            title="Высокий риск"
-            subtitle="Красный — сложные и существенные задолженности"
-            description="Объекты с серьёзными долгами: ипотека, просрочки, судебные споры. Требуют глубокой юридической и финансовой проверки. Подходят для опытных инвесторов."
+            title={t('debtsHighRisk')}
+            subtitle={t('debtsHighRiskSubtitle')}
+            description={t('debtsHighRiskDescription')}
             features={[
-              'Глубокая юридическая проверка',
-              'Финансовый аудит обязателен',
-              'Серьёзные задолженности',
-              'Высокий потенциал при оценке',
+              t('debtsHighRiskFeature1'),
+              t('debtsHighRiskFeature2'),
+              t('debtsHighRiskFeature3'),
+              t('debtsHighRiskFeature4'),
             ]}
-            ctaText="🔥 Высокий шанс заработать"
+            ctaText={t('debtsHighRiskCta')}
           />
           <FlipCard
             color="#CA8A04"
-            title="Средний риск"
-            subtitle="Жёлтый — часть вопросов потребует времени и расходов"
-            description="Долги средней тяжести: вопросы решаемы дополнительными расходами и временем. Ситуации, как правило, прозрачны и поддаются урегулированию при сделке."
+            title={t('debtsMediumRisk')}
+            subtitle={t('debtsMediumRiskSubtitle')}
+            description={t('debtsMediumRiskDescription')}
             features={[
-              'Вопросы решаемы при сделке',
-              'Возможны доп. расходы',
-              'Предсказуемые сроки',
-              'Умеренные риски',
+              t('debtsMediumRiskFeature1'),
+              t('debtsMediumRiskFeature2'),
+              t('debtsMediumRiskFeature3'),
+              t('debtsMediumRiskFeature4'),
             ]}
-            ctaText="📈 Средний шанс заработать"
+            ctaText={t('debtsMediumRiskCta')}
           />
           <FlipCard
             color="#16A34A"
-            title="Низкий риск"
-            subtitle="Зелёный — технические и процедурные моменты"
-            description="Лёгкая тяжесть долгов: технические и процедурные вопросы, которые закрываются стандартными действиями при сделке. Минимальные риски для покупателя."
+            title={t('debtsLowRisk')}
+            subtitle={t('debtsLowRiskSubtitle')}
+            description={t('debtsLowRiskDescription')}
             features={[
-              'Стандартные действия при сделке',
-              'Технические моменты',
-              'Минимальные риски',
-              'Быстрое урегулирование',
+              t('debtsLowRiskFeature1'),
+              t('debtsLowRiskFeature2'),
+              t('debtsLowRiskFeature3'),
+              t('debtsLowRiskFeature4'),
             ]}
-            ctaText="✅ Стабильный шанс заработать"
+            ctaText={t('debtsLowRiskCta')}
           />
         </div>
 
@@ -123,7 +125,7 @@ const Debts = () => {
           <input
             type="text"
             className="shares-search-bar__input"
-            placeholder="Поиск по названию или адресу..."
+            placeholder={t('searchPlaceholderLong')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -132,7 +134,7 @@ const Debts = () => {
               type="button"
               className="shares-search-bar__clear"
               onClick={() => setSearchQuery('')}
-              aria-label="Очистить"
+              aria-label={t('clearSearch')}
             >
               ×
             </button>
@@ -142,13 +144,13 @@ const Debts = () => {
         <div className="shares-grid">
           {loadingDebts && (
             <div className="shares-no-results">
-              <p>Загружаем объекты с долгами...</p>
+              <p>{t('debtsLoading')}</p>
             </div>
           )}
 
           {!loadingDebts && filtered.length === 0 && (
             <div className="shares-no-results">
-              <p>Пока нет объектов с долгами по вашему запросу.</p>
+              <p>{t('debtsEmpty')}</p>
             </div>
           )}
 
@@ -161,7 +163,7 @@ const Debts = () => {
                 onClick={() => navigate(`/property/${obj.id}`)}
               >
                 <div className="share-card__badge">
-                  {obj.isAuction ? 'Аукцион (с долгом)' : 'Долг'}
+                  {obj.isAuction ? t('debtsBadgeAuction') : t('debtsBadgeDebt')}
                 </div>
                 <div className="share-card__image-wrap">
                   <img
@@ -178,18 +180,18 @@ const Debts = () => {
                   <p className="share-card__location">{obj.location}</p>
                   {obj.area && (
                     <p className="share-card__specs">
-                      {obj.area} м²{obj.rooms ? ` · ${obj.rooms} комн.` : ''}
+                      {obj.area} {t('squareMeters')}{obj.rooms ? ` · ${obj.rooms} ${t('roomsShort')}` : ''}
                     </p>
                   )}
                   <div className="share-card__prices">
                     <div className="share-card__price-total">
-                      Стоимость объекта: <strong>{formatPrice(obj.totalPrice)}</strong>
+                      {t('debtsTotalPrice')} <strong>{formatPrice(obj.totalPrice)}</strong>
                     </div>
                     {obj.debt_amount != null &&
                       obj.debt_amount !== '' &&
                       !Number.isNaN(Number(obj.debt_amount)) && (
                         <div className="share-card__price-total" style={{ marginTop: 4 }}>
-                          Сумма долга:{' '}
+                          {t('debtsDebtAmount')}{' '}
                           <span className="share-card__price" style={{ fontWeight: 700 }}>
                             {formatPrice(obj.debt_amount)}
                           </span>

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { FiX, FiMail, FiLock, FiUser, FiEye, FiEyeOff } from 'react-icons/fi'
 import { FaGoogle, FaWhatsapp, FaFacebook, FaTelegram } from 'react-icons/fa'
 import { useSignIn, useSignUp } from '@clerk/clerk-react'
+import { useTranslation } from 'react-i18next'
 import WhatsAppVerificationModal from './WhatsAppVerificationModal'
 import EmailVerificationModal from './EmailVerificationModal'
 import VerificationDocumentsModal from './VerificationDocumentsModal'
@@ -13,6 +14,7 @@ import AnimatedCharacters from './AnimatedCharacters'
 import './LoginModal.css'
 
 const LoginModal = ({ isOpen, onClose }) => {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const { signIn, isLoaded: signInLoaded } = useSignIn()
   const { signUp, isLoaded: signUpLoaded } = useSignUp()
@@ -512,25 +514,25 @@ const LoginModal = ({ isOpen, onClose }) => {
         <button 
           className="login-modal__close" 
           onClick={onClose}
-          aria-label="Закрыть"
+          aria-label={t('closeModalAria')}
         >
           <FiX size={24} />
         </button>
 
         <div className="login-modal__header">
           <h2 className="login-modal__title">
-            {isLogin ? 'Вход' : 'Регистрация'}
+            {isLogin ? t('loginTitle') : t('registerTitle')}
           </h2>
           <p className="login-modal__subtitle">
             {isLogin 
-              ? 'Войдите в свой аккаунт, чтобы продолжить' 
-              : 'Создайте новый аккаунт для начала работы'}
+              ? t('loginSubtitle') 
+              : t('registerSubtitle')}
           </p>
         </div>
 
         {!isLogin && (
           <div className="login-modal__role-section">
-            <span className="login-modal__role-label">Вы регистрируетесь как</span>
+            <span className="login-modal__role-label">{t('loginAsLabel')}</span>
             <div className="login-modal__role-switch">
               <button
                 type="button"
@@ -538,7 +540,7 @@ const LoginModal = ({ isOpen, onClose }) => {
                 onClick={() => setUserRole('buyer')}
                 disabled={isLoading}
               >
-                Покупатель
+                {t('roleBuyer')}
               </button>
               <button
                 type="button"
@@ -546,7 +548,7 @@ const LoginModal = ({ isOpen, onClose }) => {
                 onClick={() => setUserRole('seller')}
                 disabled={isLoading}
               >
-                Продавец
+                {t('roleSeller')}
               </button>
             </div>
           </div>
@@ -581,8 +583,8 @@ const LoginModal = ({ isOpen, onClose }) => {
             <FaFacebook size={20} />
             <span>
               {isLoading 
-                ? 'Подключение...' 
-                : (isLogin ? 'Войти через Facebook' : 'Зарегистрироваться через Facebook')}
+                ? t('socialConnecting')
+                : (isLogin ? t('loginWithFacebook') : t('registerWithFacebook'))}
             </span>
           </button>
           
@@ -599,8 +601,8 @@ const LoginModal = ({ isOpen, onClose }) => {
             <FaGoogle size={20} />
             <span>
               {isLoading 
-                ? 'Подключение...' 
-                : (isLogin ? 'Войти через Google' : 'Зарегистрироваться через Google')}
+                ? t('socialConnecting')
+                : (isLogin ? t('loginWithGoogle') : t('registerWithGoogle'))}
             </span>
           </button>
           
@@ -615,35 +617,35 @@ const LoginModal = ({ isOpen, onClose }) => {
             }}
           >
             <FaWhatsapp size={20} />
-            <span>{isLogin ? 'Войти через WhatsApp' : 'Зарегистрироваться через WhatsApp'}</span>
+            <span>{isLogin ? t('loginWithWhatsApp') : t('registerWithWhatsApp')}</span>
           </button>
 
           {telegramBotUsername ? (
             <div className="login-modal__telegram-row">
               <span className="login-modal__telegram-caption">
-                {isLogin ? 'Войти через Telegram' : 'Зарегистрироваться через Telegram'}
+                {isLogin ? t('loginWithTelegram') : t('registerWithTelegram')}
               </span>
-              <div className="login-modal__telegram-widget" ref={telegramWidgetRef} aria-label={isLogin ? 'Войти через Telegram' : 'Зарегистрироваться через Telegram'} />
+              <div className="login-modal__telegram-widget" ref={telegramWidgetRef} aria-label={isLogin ? t('loginWithTelegram') : t('registerWithTelegram')} />
             </div>
           ) : !telegramConfigLoaded ? (
             <div className="login-modal__telegram-row login-modal__telegram-loading">
-              <span className="login-modal__telegram-caption">Загрузка…</span>
+              <span className="login-modal__telegram-caption">{t('telegramLoading')}</span>
             </div>
           ) : (
             <button
               type="button"
               className="login-modal__social-btn login-modal__social-btn--telegram"
               onClick={handleTelegramClick}
-              title="Добавьте VITE_TELEGRAM_BOT_USERNAME в .env и перезапустите приложение"
+              title={t('telegramEnvHint')}
             >
               <FaTelegram size={20} />
-              <span>{isLogin ? 'Войти через Telegram' : 'Зарегистрироваться через Telegram'}</span>
+              <span>{isLogin ? t('loginWithTelegram') : t('registerWithTelegram')}</span>
             </button>
           )}
         </div>
 
         <div className="login-modal__divider">
-          <span>или</span>
+          <span>{t('loginOr')}</span>
         </div>
 
         <form className="login-modal__form" onSubmit={handleSubmit}>
@@ -651,7 +653,7 @@ const LoginModal = ({ isOpen, onClose }) => {
             <div className="login-modal__field">
               <label htmlFor="name" className="login-modal__label">
                 <FiUser size={18} />
-                Имя
+                {t('nameLabel')}
               </label>
               <input
                 type="text"
@@ -660,7 +662,7 @@ const LoginModal = ({ isOpen, onClose }) => {
                 value={formData.name}
                 onChange={handleInputChange}
                 className="login-modal__input"
-                placeholder="Введите ваше имя"
+                placeholder={t('namePlaceholder')}
                 required={!isLogin}
               />
             </div>
@@ -669,7 +671,7 @@ const LoginModal = ({ isOpen, onClose }) => {
           <div className="login-modal__field">
             <label htmlFor="email" className="login-modal__label">
               <FiMail size={18} />
-              {isLogin ? 'Email или логин' : 'Email'}
+                {isLogin ? t('emailOrLoginLabel') : t('emailLabelShort')}
             </label>
             <input
               type="text"
@@ -680,7 +682,7 @@ const LoginModal = ({ isOpen, onClose }) => {
               onFocus={() => setIsEmailFocused(true)}
               onBlur={() => setIsEmailFocused(false)}
               className="login-modal__input"
-              placeholder={isLogin ? "Введите email или логин (admin/owner/client)" : "Введите ваш email"}
+              placeholder={isLogin ? t('emailOrLoginPlaceholder') : t('emailPlaceholderShort')}
               required
             />
           </div>
@@ -688,7 +690,7 @@ const LoginModal = ({ isOpen, onClose }) => {
           <div className="login-modal__field">
             <label htmlFor="password" className="login-modal__label">
               <FiLock size={18} />
-              Пароль
+                {t('passwordLabel')}
             </label>
             <div className="login-modal__password-wrapper">
               <input
@@ -700,14 +702,14 @@ const LoginModal = ({ isOpen, onClose }) => {
                 onFocus={() => setIsPasswordFocused(true)}
                 onBlur={() => setIsPasswordFocused(false)}
                 className="login-modal__input login-modal__input--password"
-                placeholder="Введите пароль"
+                placeholder={t('passwordPlaceholder')}
                 required
               />
               <button
                 type="button"
                 className="login-modal__password-toggle"
                 onClick={() => setShowPassword(!showPassword)}
-                title={showPassword ? "Скрыть пароль" : "Показать пароль"}
+                title={showPassword ? t('hidePassword') : t('showPassword')}
                 tabIndex={-1}
               >
                 {showPassword ? <FiEyeOff size={18} /> : <FiEye size={18} />}
@@ -719,7 +721,7 @@ const LoginModal = ({ isOpen, onClose }) => {
             <div className="login-modal__field">
               <label htmlFor="confirmPassword" className="login-modal__label">
                 <FiLock size={18} />
-                Подтвердите пароль
+                {t('confirmPasswordLabel')}
               </label>
               <div className="login-modal__password-wrapper">
                 <input
@@ -729,14 +731,14 @@ const LoginModal = ({ isOpen, onClose }) => {
                   value={formData.confirmPassword}
                   onChange={handleInputChange}
                   className="login-modal__input login-modal__input--password"
-                  placeholder="Повторите пароль"
+                  placeholder={t('confirmPasswordPlaceholder')}
                   required={!isLogin}
                 />
                 <button
                   type="button"
                   className="login-modal__password-toggle"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  title={showConfirmPassword ? "Скрыть пароль" : "Показать пароль"}
+                  title={showConfirmPassword ? t('hidePassword') : t('showPassword')}
                   tabIndex={-1}
                 >
                   {showConfirmPassword ? <FiEyeOff size={18} /> : <FiEye size={18} />}
@@ -748,26 +750,28 @@ const LoginModal = ({ isOpen, onClose }) => {
           {isLogin && (
             <div className="login-modal__forgot">
               <button type="button" className="login-modal__forgot-link">
-                Забыли пароль?
+                {t('forgotPassword')}
               </button>
             </div>
           )}
 
           <button type="submit" className="login-modal__submit" disabled={isLoading}>
-            {isLoading ? (isLogin ? 'Вход...' : 'Регистрация...') : (isLogin ? 'Войти' : 'Зарегистрироваться')}
+            {isLoading 
+              ? (isLogin ? t('loginProcessing') : t('registerProcessing')) 
+              : (isLogin ? t('loginButton') : t('registerButton'))}
           </button>
         </form>
 
         <div className="login-modal__footer">
           <span className="login-modal__footer-text">
-            {isLogin ? 'Нет аккаунта? ' : 'Уже есть аккаунт? '}
+            {isLogin ? t('noAccount') : t('haveAccount')}
           </span>
           <button 
             type="button"
             className="login-modal__footer-link"
             onClick={toggleMode}
           >
-            {isLogin ? 'Зарегистрироваться' : 'Войти'}
+            {isLogin ? t('registerButton') : t('loginButton')}
           </button>
         </div>
 

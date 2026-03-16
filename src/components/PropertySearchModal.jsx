@@ -1,9 +1,18 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { FiX, FiSearch, FiDollarSign, FiMapPin, FiHome, FiCheck } from 'react-icons/fi'
 import './PropertySearchModal.css'
 
+const REGION_KEYS = ['regionSpain', 'regionDubai', 'regionTenerife', 'regionCostaAdeje', 'regionLasPalmas', 'regionMadrid', 'regionBarcelona']
+const REGION_VALUES = ['Испания', 'Дубай', 'Тенерифе', 'Коста-Адехе', 'Лас-Пальмас', 'Мадрид', 'Барселона']
+const PROPERTY_TYPE_KEYS = ['propertyTypeFlat', 'propertyTypeApartment', 'propertyTypeVilla', 'propertyTypeHouse', 'propertyTypeTownhouse']
+const PROPERTY_TYPE_VALUES = ['Квартира', 'Апартаменты', 'Вилла', 'Дом', 'Таунхаус']
+const AMENITY_KEYS = ['amenityPool', 'amenityParking', 'amenityBalcony', 'amenityTerrace', 'amenityElevator', 'amenityAC', 'amenityHeating', 'amenitySecurity', 'amenityGym', 'amenityBeach']
+const AMENITY_VALUES = ['Бассейн', 'Парковка', 'Балкон', 'Терраса', 'Лифт', 'Кондиционер', 'Отопление', 'Охрана', 'Спортзал', 'Пляж рядом']
+
 const PropertySearchModal = ({ isOpen, onClose }) => {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const [filters, setFilters] = useState({
     minPrice: '',
@@ -16,13 +25,6 @@ const PropertySearchModal = ({ isOpen, onClose }) => {
     maxArea: ''
   })
 
-  const regions = ['Испания', 'Дубай', 'Тенерифе', 'Коста-Адехе', 'Лас-Пальмас', 'Мадрид', 'Барселона']
-  const propertyTypes = ['Квартира', 'Апартаменты', 'Вилла', 'Дом', 'Таунхаус']
-  const amenitiesList = [
-    'Бассейн', 'Парковка', 'Балкон', 'Терраса', 'Лифт', 
-    'Кондиционер', 'Отопление', 'Охрана', 'Спортзал', 'Пляж рядом'
-  ]
-
   const handleFilterChange = (field, value) => {
     setFilters(prev => ({
       ...prev,
@@ -30,12 +32,12 @@ const PropertySearchModal = ({ isOpen, onClose }) => {
     }))
   }
 
-  const handleAmenityToggle = (amenity) => {
+  const handleAmenityToggle = (amenityValue) => {
     setFilters(prev => ({
       ...prev,
-      amenities: prev.amenities.includes(amenity)
-        ? prev.amenities.filter(a => a !== amenity)
-        : [...prev.amenities, amenity]
+      amenities: prev.amenities.includes(amenityValue)
+        ? prev.amenities.filter(a => a !== amenityValue)
+        : [...prev.amenities, amenityValue]
     }))
   }
 
@@ -67,28 +69,27 @@ const PropertySearchModal = ({ isOpen, onClose }) => {
     <div className="property-search-modal-overlay" onClick={onClose}>
       <div className="property-search-modal" onClick={(e) => e.stopPropagation()}>
         <div className="property-search-modal__header">
-          <h2 className="property-search-modal__title">Подборка недвижимости</h2>
+          <h2 className="property-search-modal__title">{t('propertySearchTitle')}</h2>
           <button 
             className="property-search-modal__close"
             onClick={onClose}
-            aria-label="Закрыть"
+            aria-label={t('closeAria')}
           >
             <FiX size={24} />
           </button>
         </div>
 
         <div className="property-search-modal__content">
-          {/* Цена */}
           <div className="property-search-modal__section">
             <label className="property-search-modal__label">
               <FiDollarSign size={20} />
-              Цена (€)
+              {t('modalPriceLabel')}
             </label>
             <div className="property-search-modal__range">
               <input
                 type="number"
                 className="property-search-modal__input"
-                placeholder="От"
+                placeholder={t('modalFrom')}
                 value={filters.minPrice}
                 onChange={(e) => handleFilterChange('minPrice', e.target.value)}
               />
@@ -96,60 +97,57 @@ const PropertySearchModal = ({ isOpen, onClose }) => {
               <input
                 type="number"
                 className="property-search-modal__input"
-                placeholder="До"
+                placeholder={t('modalTo')}
                 value={filters.maxPrice}
                 onChange={(e) => handleFilterChange('maxPrice', e.target.value)}
               />
             </div>
           </div>
 
-          {/* Регион */}
           <div className="property-search-modal__section">
             <label className="property-search-modal__label">
               <FiMapPin size={20} />
-              Регион
+              {t('modalRegion')}
             </label>
             <select
               className="property-search-modal__select"
               value={filters.region}
               onChange={(e) => handleFilterChange('region', e.target.value)}
             >
-              <option value="">Выберите регион</option>
-              {regions.map(region => (
-                <option key={region} value={region}>{region}</option>
+              <option value="">{t('modalSelectRegion')}</option>
+              {REGION_VALUES.map((region, i) => (
+                <option key={region} value={region}>{t(REGION_KEYS[i])}</option>
               ))}
             </select>
           </div>
 
-          {/* Тип недвижимости */}
           <div className="property-search-modal__section">
             <label className="property-search-modal__label">
               <FiHome size={20} />
-              Тип недвижимости
+              {t('modalPropertyType')}
             </label>
             <select
               className="property-search-modal__select"
               value={filters.propertyType}
               onChange={(e) => handleFilterChange('propertyType', e.target.value)}
             >
-              <option value="">Любой тип</option>
-              {propertyTypes.map(type => (
-                <option key={type} value={type}>{type}</option>
+              <option value="">{t('modalAnyType')}</option>
+              {PROPERTY_TYPE_VALUES.map((type, i) => (
+                <option key={type} value={type}>{t(PROPERTY_TYPE_KEYS[i])}</option>
               ))}
             </select>
           </div>
 
-          {/* Количество комнат */}
           <div className="property-search-modal__section">
             <label className="property-search-modal__label">
-              Количество комнат
+              {t('modalRooms')}
             </label>
             <select
               className="property-search-modal__select"
               value={filters.rooms}
               onChange={(e) => handleFilterChange('rooms', e.target.value)}
             >
-              <option value="">Любое</option>
+              <option value="">{t('modalAnyRooms')}</option>
               <option value="1">1</option>
               <option value="2">2</option>
               <option value="3">3</option>
@@ -158,16 +156,15 @@ const PropertySearchModal = ({ isOpen, onClose }) => {
             </select>
           </div>
 
-          {/* Площадь */}
           <div className="property-search-modal__section">
             <label className="property-search-modal__label">
-              Площадь (м²)
+              {t('modalArea')}
             </label>
             <div className="property-search-modal__range">
               <input
                 type="number"
                 className="property-search-modal__input"
-                placeholder="От"
+                placeholder={t('modalFrom')}
                 value={filters.minArea}
                 onChange={(e) => handleFilterChange('minArea', e.target.value)}
               />
@@ -175,28 +172,27 @@ const PropertySearchModal = ({ isOpen, onClose }) => {
               <input
                 type="number"
                 className="property-search-modal__input"
-                placeholder="До"
+                placeholder={t('modalTo')}
                 value={filters.maxArea}
                 onChange={(e) => handleFilterChange('maxArea', e.target.value)}
               />
             </div>
           </div>
 
-          {/* Удобства */}
           <div className="property-search-modal__section">
             <label className="property-search-modal__label">
-              Удобства
+              {t('modalAmenities')}
             </label>
             <div className="property-search-modal__amenities">
-              {amenitiesList.map(amenity => (
+              {AMENITY_VALUES.map((amenityValue, i) => (
                 <button
-                  key={amenity}
+                  key={amenityValue}
                   type="button"
-                  className={`property-search-modal__amenity ${filters.amenities.includes(amenity) ? 'active' : ''}`}
-                  onClick={() => handleAmenityToggle(amenity)}
+                  className={`property-search-modal__amenity ${filters.amenities.includes(amenityValue) ? 'active' : ''}`}
+                  onClick={() => handleAmenityToggle(amenityValue)}
                 >
-                  {filters.amenities.includes(amenity) && <FiCheck size={16} />}
-                  <span>{amenity}</span>
+                  {filters.amenities.includes(amenityValue) && <FiCheck size={16} />}
+                  <span>{t(AMENITY_KEYS[i])}</span>
                 </button>
               ))}
             </div>
@@ -208,14 +204,14 @@ const PropertySearchModal = ({ isOpen, onClose }) => {
             className="property-search-modal__button property-search-modal__button--reset"
             onClick={handleReset}
           >
-            Сбросить
+            {t('modalReset')}
           </button>
           <button
             className="property-search-modal__button property-search-modal__button--search"
             onClick={handleSearch}
           >
             <FiSearch size={18} />
-            Найти
+            {t('modalFind')}
           </button>
         </div>
       </div>

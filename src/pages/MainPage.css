@@ -3440,20 +3440,12 @@
 
 /* Desktop и планшет (от 769px) */
 @media (min-width: 769px) {
-  /* Градиент на весь блок */
+  /* Градиент справа убран — фон только картинка */
   .hero-section::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    height: 90vh;
-    background: linear-gradient(135deg, #e8e8f5 0%, #f0e0eb 60%, #f8e8f0 100%);
-    z-index: 0;
+    display: none;
   }
 
-  /* Фоновое изображение для десктопа поверх градиента (отражено по горизонтали) */
+  /* Фоновое изображение на всю ширину, без обрезки справа */
   .hero-section::after {
     content: '';
     position: absolute;
@@ -3462,29 +3454,12 @@
     right: 0;
     bottom: 0;
     height: 90vh;
-    background-image: url('https://static.cdn-cian.ru/frontend/valuation-my-home-page-frontend/my-home-bg.44b774c17192a1e1.png');
+    background-image: url('/hero-bg.jpeg');
     background-size: cover;
-    background-position: top right;
+    background-position: center;
     background-repeat: no-repeat;
     z-index: 1;
-    clip-path: polygon(15% 0, 100% 0, 100% 100%, 0 100%);
     transform: scaleX(-1);
-    mask-image: linear-gradient(
-      to right,
-      transparent 0%,
-      transparent 15%,
-      rgba(0, 0, 0, 0.3) 20%,
-      rgba(0, 0, 0, 1) 30%,
-      rgba(0, 0, 0, 1) 100%
-    );
-    -webkit-mask-image: linear-gradient(
-      to right,
-      transparent 0%,
-      transparent 15%,
-      rgba(0, 0, 0, 0.3) 20%,
-      rgba(0, 0, 0, 1) 30%,
-      rgba(0, 0, 0, 1) 100%
-    );
   }
 
   .hero-section {

@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { useNavigate, useParams, useLocation } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { 
   FiUpload, 
   FiX, 
@@ -75,6 +76,7 @@ function clearDraft() {
 }
 
 const AddProperty = () => {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const location = useLocation()
   const { id } = useParams() // ID объекта для редактирования
@@ -85,17 +87,27 @@ const AddProperty = () => {
   const ownershipInputRef = useRef(null)
   const noDebtsInputRef = useRef(null)
 
-  // 6 блоков документов по долгу (категории)
+  // 6 блоков документов по долгу (категории) — названия через i18n
   const DEBT_DOC_CATEGORIES = [
-    { key: 'cat1', title: 'Документы по самому долгу' },
-    { key: 'cat2', title: 'Документы по обеспечению' },
-    { key: 'cat3', title: 'Юридические документы' },
-    { key: 'cat4', title: 'Документы по заемщику' },
-    { key: 'cat5', title: 'Документы по сделке покупки долга' },
-    { key: 'cat6', title: 'Дополнительно' }
+    { key: 'cat1', titleKey: 'addPropertyDebtDocCat1Title' },
+    { key: 'cat2', titleKey: 'addPropertyDebtDocCat2Title' },
+    { key: 'cat3', titleKey: 'addPropertyDebtDocCat3Title' },
+    { key: 'cat4', titleKey: 'addPropertyDebtDocCat4Title' },
+    { key: 'cat5', titleKey: 'addPropertyDebtDocCat5Title' },
+    { key: 'cat6', titleKey: 'addPropertyDebtDocCat6Title' }
   ]
 
-  // Списки конкретных документов по каждой категории (из файла "тест.txt")
+  // Ключи i18n для названий документов по категориям (то же количество элементов, что и в DEBT_DOC_CATEGORY_DOCS)
+  const DEBT_DOC_CATEGORY_DOCS_KEYS = {
+    cat1: ['addPropertyDebtDocCat1_0', 'addPropertyDebtDocCat1_1', 'addPropertyDebtDocCat1_2', 'addPropertyDebtDocCat1_3', 'addPropertyDebtDocCat1_4', 'addPropertyDebtDocCat1_5', 'addPropertyDebtDocCat1_6'],
+    cat2: ['addPropertyDebtDocCat2_0', 'addPropertyDebtDocCat2_1', 'addPropertyDebtDocCat2_2', 'addPropertyDebtDocCat2_3', 'addPropertyDebtDocCat2_4', 'addPropertyDebtDocCat2_5', 'addPropertyDebtDocCat2_6', 'addPropertyDebtDocCat2_7'],
+    cat3: ['addPropertyDebtDocCat3_0', 'addPropertyDebtDocCat3_1', 'addPropertyDebtDocCat3_2', 'addPropertyDebtDocCat3_3', 'addPropertyDebtDocCat3_4'],
+    cat4: ['addPropertyDebtDocCat4_0', 'addPropertyDebtDocCat4_1', 'addPropertyDebtDocCat4_2', 'addPropertyDebtDocCat4_3'],
+    cat5: ['addPropertyDebtDocCat5_0', 'addPropertyDebtDocCat5_1', 'addPropertyDebtDocCat5_2', 'addPropertyDebtDocCat5_3', 'addPropertyDebtDocCat5_4'],
+    cat6: ['addPropertyDebtDocCat6_0', 'addPropertyDebtDocCat6_1', 'addPropertyDebtDocCat6_2', 'addPropertyDebtDocCat6_3', 'addPropertyDebtDocCat6_4']
+  }
+
+  // Списки конкретных документов по каждой категории (из файла "тест.txt") — отображение через DEBT_DOC_CATEGORY_DOCS_KEYS + t()
   const DEBT_DOC_CATEGORY_DOCS = {
     cat1: [
       'Кредитный договор (Loan Agreement)',
@@ -156,15 +168,15 @@ const AddProperty = () => {
   const [selectedDebtDocCategory, setSelectedDebtDocCategory] = useState(null)
   const [missingRequiredDebtDocs, setMissingRequiredDebtDocs] = useState([])
 
-  // Обязательные документы (логические пункты) и их категории
+  // Обязательные документы (логические пункты) и их категории — label через i18n (labelKey)
   const REQUIRED_DEBT_DOCS = [
-    { id: 'credit_agreement', label: 'Кредитный договор',                    categoryKey: 'cat1', docIndex: 0, docTitle: 'Кредитный договор (Loan Agreement)' },
-    { id: 'notary_mortgage',  label: 'Нотариальная ипотека',                  categoryKey: 'cat2', docIndex: 0, docTitle: 'Нотариальный договор ипотеки' },
-    { id: 'registro_extract', label: 'Выписка из Registro de la Propiedad',   categoryKey: 'cat2', docIndex: 1, docTitle: 'Выписка из реестра недвижимости' },
-    { id: 'nota_simple',      label: 'Nota Simple',                           categoryKey: 'cat2', docIndex: 2, docTitle: 'Nota Simple' },
-    { id: 'debt_amount',      label: 'Подтверждение размера долга',           categoryKey: 'cat1', docIndex: 3, docTitle: 'Подтверждение текущей задолженности' },
-    { id: 'appraisal',        label: 'Оценка недвижимости',                   categoryKey: 'cat2', docIndex: 3, docTitle: 'Оценка недвижимости (Appraisal' },
-    { id: 'court_status',     label: 'Статус судебного процесса',             categoryKey: 'cat3', docIndex: 2, docTitle: 'Статус процедуры взыскания' }
+    { id: 'credit_agreement', labelKey: 'addPropertyDebtRequired_credit_agreement',    categoryKey: 'cat1', docIndex: 0 },
+    { id: 'notary_mortgage',  labelKey: 'addPropertyDebtRequired_notary_mortgage',      categoryKey: 'cat2', docIndex: 0 },
+    { id: 'registro_extract', labelKey: 'addPropertyDebtRequired_registro_extract',    categoryKey: 'cat2', docIndex: 1 },
+    { id: 'nota_simple',      labelKey: 'addPropertyDebtRequired_nota_simple',         categoryKey: 'cat2', docIndex: 2 },
+    { id: 'debt_amount',      labelKey: 'addPropertyDebtRequired_debt_amount',         categoryKey: 'cat1', docIndex: 3 },
+    { id: 'appraisal',        labelKey: 'addPropertyDebtRequired_appraisal',           categoryKey: 'cat2', docIndex: 3 },
+    { id: 'court_status',     labelKey: 'addPropertyDebtRequired_court_status',         categoryKey: 'cat3', docIndex: 2 }
   ]
   
   const [photos, setPhotos] = useState([])
@@ -3150,9 +3162,10 @@ const AddProperty = () => {
     setSelectedDebtDocCategory(categoryKey)
     setMissingRequiredDebtDocs([])
 
-    // Находим точное название документа для поиска в DOM
+    // Находим точное название документа для поиска в DOM (переведённый текст, как в списке)
     const reqDoc = REQUIRED_DEBT_DOCS.find(d => d.id === docId)
-    const searchText = reqDoc?.docTitle || reqDoc?.label || ''
+    const docTitleKey = reqDoc && DEBT_DOC_CATEGORY_DOCS_KEYS[reqDoc.categoryKey]?.[reqDoc.docIndex]
+    const searchText = docTitleKey ? t(docTitleKey) : ''
 
     setTimeout(() => {
       // Ищем среди document-upload-item тот, чей текст содержит нужный docTitle
@@ -3192,9 +3205,9 @@ const AddProperty = () => {
         const firstMissingCategory = missing[0].categoryKey
         setSelectedDebtDocCategory(firstMissingCategory)
 
-        const missingLabels = missing.map(m => `• ${m.label}`).join('\n')
+        const missingLabels = missing.map(m => `• ${t(m.labelKey)}`).join('\n')
         showNotification(
-          `Чтобы продолжить, загрузите обязательные документы:\n${missingLabels}`
+          `${t('addPropertyDebtUploadRequiredNotification')}:\n${missingLabels}`
         )
         return
       }
@@ -3538,9 +3551,11 @@ const AddProperty = () => {
               }}
             >
               <FiChevronLeft size={20} />
-              Назад
+              {t('addPropertyBack')}
             </button>
-            <h1 className="page-title">{isEditMode ? 'Редактировать объявление' : 'Добавить объявление'}</h1>
+            <h1 className="page-title">
+              {isEditMode ? t('addPropertyTitleEdit') : t('addPropertyTitleNew')}
+            </h1>
           </div>
         </div>
 
@@ -3549,10 +3564,10 @@ const AddProperty = () => {
           <div className="property-type-selection-screen">
             <div className="property-type-selection-header">
               <h2 className="property-type-selection-title">
-                Разместите вашу недвижимость на платформе и начните принимать гостей в кратчайшие сроки!
+                {t('addPropertyTypeTitle')}
               </h2>
               <p className="property-type-selection-subtitle">
-                Для начала выберите тип недвижимости, которую вы хотите разместить
+                {t('addPropertyTypeSubtitle')}
               </p>
             </div>
             
@@ -3564,9 +3579,9 @@ const AddProperty = () => {
                 <div className="property-type-card-icon">
                   <FiHome size={48} />
                 </div>
-                <h3 className="property-type-card-title">Дом</h3>
+                <h3 className="property-type-card-title">{t('addPropertyTypeHouseTitle')}</h3>
                 <p className="property-type-card-description">
-                  Недвижимость, такая как дома, коттеджи, загородные дома и т.д.
+                  {t('addPropertyTypeHouseDescription')}
                 </p>
                 <button 
                   type="button"
@@ -3576,7 +3591,7 @@ const AddProperty = () => {
                     handlePropertyTypeSelect('house')
                   }}
                 >
-                  Продолжить
+                  {t('addPropertyTypeContinue')}
                 </button>
               </div>
 
@@ -3587,9 +3602,9 @@ const AddProperty = () => {
                 <div className="property-type-card-icon">
                   <PiBuildingApartment size={48} />
                 </div>
-                <h3 className="property-type-card-title">Квартира</h3>
+                <h3 className="property-type-card-title">{t('addPropertyTypeApartmentTitle')}</h3>
                 <p className="property-type-card-description">
-                  Меблированные и самообслуживаемые помещения, где гости арендуют всю площадь.
+                  {t('addPropertyTypeApartmentDescription')}
                 </p>
                 <button 
                   type="button"
@@ -3599,7 +3614,7 @@ const AddProperty = () => {
                     handlePropertyTypeSelect('apartment')
                   }}
                 >
-                  Продолжить
+                  {t('addPropertyTypeContinue')}
                 </button>
               </div>
 
@@ -3610,9 +3625,9 @@ const AddProperty = () => {
                 <div className="property-type-card-icon">
                   <PiBuildings size={48} />
                 </div>
-                <h3 className="property-type-card-title">Вилла</h3>
+                <h3 className="property-type-card-title">{t('addPropertyTypeVillaTitle')}</h3>
                 <p className="property-type-card-description">
-                  Роскошные загородные дома с большими участками и современными удобствами.
+                  {t('addPropertyTypeVillaDescription')}
                 </p>
                 <button 
                   type="button"
@@ -3622,7 +3637,7 @@ const AddProperty = () => {
                     handlePropertyTypeSelect('villa')
                   }}
                 >
-                  Продолжить
+                  {t('addPropertyTypeContinue')}
                 </button>
               </div>
 
@@ -3633,9 +3648,9 @@ const AddProperty = () => {
                 <div className="property-type-card-icon">
                   <PiWarehouse size={48} />
                 </div>
-                <h3 className="property-type-card-title">Апартаменты</h3>
+                <h3 className="property-type-card-title">{t('addPropertyTypeApartmentsTitle')}</h3>
                 <p className="property-type-card-description">
-                  Современные апартаменты с полным набором удобств для комфортного проживания.
+                  {t('addPropertyTypeApartmentsDescription')}
                 </p>
                 <button 
                   type="button"
@@ -3645,7 +3660,7 @@ const AddProperty = () => {
                     handlePropertyTypeSelect('commercial')
                   }}
                 >
-                  Продолжить
+                  {t('addPropertyTypeContinue')}
                 </button>
               </div>
 
@@ -3656,9 +3671,9 @@ const AddProperty = () => {
                 <div className="property-type-card-icon property-type-card-icon--share">
                   <FiPieChart size={48} />
                 </div>
-                <h3 className="property-type-card-title">Доля</h3>
+                <h3 className="property-type-card-title">{t('addPropertyTypeShareTitle')}</h3>
                 <p className="property-type-card-description">
-                  Долевая собственность: объект делится на доли, покупатели приобретают одну или несколько долей по фиксированной цене. Без аукциона и тест-драйва.
+                  {t('addPropertyTypeShareDescription')}
                 </p>
                 <button 
                   type="button"
@@ -3668,7 +3683,7 @@ const AddProperty = () => {
                     setCurrentStep('share-type-selection')
                   }}
                 >
-                  Продолжить
+                  {t('addPropertyTypeContinue')}
                 </button>
               </div>
 
@@ -3679,9 +3694,9 @@ const AddProperty = () => {
                 <div className="property-type-card-icon property-type-card-icon--debt">
                   <FiPieChart size={48} />
                 </div>
-                <h3 className="property-type-card-title">Долги</h3>
+                <h3 className="property-type-card-title">{t('addPropertyTypeDebtTitle')}</h3>
                 <p className="property-type-card-description">
-                  Продажа объектов с долгами: вы указываете фиксированную сумму продажи без аукциона, покупатель выкупает объект вместе с обязательствами.
+                  {t('addPropertyTypeDebtDescription')}
                 </p>
                 <button 
                   type="button"
@@ -3691,7 +3706,7 @@ const AddProperty = () => {
                     setCurrentStep('debt-type-selection')
                   }}
                 >
-                  Продолжить
+                  {t('addPropertyTypeContinue')}
                 </button>
               </div>
             </div>
@@ -3703,36 +3718,36 @@ const AddProperty = () => {
           <div className="property-type-selection-screen">
             <div className="property-type-selection-header">
               <h2 className="property-type-selection-title">
-                Выберите тип объекта для долевой собственности
+                {t('addPropertyShareTypeTitle')}
               </h2>
               <p className="property-type-selection-subtitle">
-                Дом, квартира, вилла или апартаменты — затем укажете общую цену и количество долей.
+                {t('addPropertyShareTypeSubtitle')}
               </p>
             </div>
             <div className="property-type-cards-container">
               <div className="property-type-card-large" onClick={() => handlePropertyTypeSelect('house', true)}>
                 <div className="property-type-card-icon"><FiHome size={48} /></div>
-                <h3 className="property-type-card-title">Дом</h3>
-                <p className="property-type-card-description">Дома, коттеджи, загородные дома.</p>
-                <button type="button" className="property-type-card-button" onClick={(e) => { e.stopPropagation(); handlePropertyTypeSelect('house', true) }}>Продолжить</button>
+                <h3 className="property-type-card-title">{t('addPropertyTypeHouseTitle')}</h3>
+                <p className="property-type-card-description">{t('addPropertyTypeHouseDescription')}</p>
+                <button type="button" className="property-type-card-button" onClick={(e) => { e.stopPropagation(); handlePropertyTypeSelect('house', true) }}>{t('addPropertyTypeContinue')}</button>
               </div>
               <div className="property-type-card-large" onClick={() => handlePropertyTypeSelect('apartment', true)}>
                 <div className="property-type-card-icon"><PiBuildingApartment size={48} /></div>
-                <h3 className="property-type-card-title">Квартира</h3>
-                <p className="property-type-card-description">Меблированные помещения, вся площадь.</p>
-                <button type="button" className="property-type-card-button" onClick={(e) => { e.stopPropagation(); handlePropertyTypeSelect('apartment', true) }}>Продолжить</button>
+                <h3 className="property-type-card-title">{t('addPropertyTypeApartmentTitle')}</h3>
+                <p className="property-type-card-description">{t('addPropertyTypeApartmentDescription')}</p>
+                <button type="button" className="property-type-card-button" onClick={(e) => { e.stopPropagation(); handlePropertyTypeSelect('apartment', true) }}>{t('addPropertyTypeContinue')}</button>
               </div>
               <div className="property-type-card-large" onClick={() => handlePropertyTypeSelect('villa', true)}>
                 <div className="property-type-card-icon"><PiBuildings size={48} /></div>
-                <h3 className="property-type-card-title">Вилла</h3>
-                <p className="property-type-card-description">Загородные дома с участками.</p>
-                <button type="button" className="property-type-card-button" onClick={(e) => { e.stopPropagation(); handlePropertyTypeSelect('villa', true) }}>Продолжить</button>
+                <h3 className="property-type-card-title">{t('addPropertyTypeVillaTitle')}</h3>
+                <p className="property-type-card-description">{t('addPropertyTypeVillaDescription')}</p>
+                <button type="button" className="property-type-card-button" onClick={(e) => { e.stopPropagation(); handlePropertyTypeSelect('villa', true) }}>{t('addPropertyTypeContinue')}</button>
               </div>
               <div className="property-type-card-large" onClick={() => handlePropertyTypeSelect('commercial', true)}>
                 <div className="property-type-card-icon"><PiWarehouse size={48} /></div>
-                <h3 className="property-type-card-title">Апартаменты</h3>
-                <p className="property-type-card-description">Апартаменты с удобствами.</p>
-                <button type="button" className="property-type-card-button" onClick={(e) => { e.stopPropagation(); handlePropertyTypeSelect('commercial', true) }}>Продолжить</button>
+                <h3 className="property-type-card-title">{t('addPropertyTypeApartmentsTitle')}</h3>
+                <p className="property-type-card-description">{t('addPropertyTypeApartmentsDescription')}</p>
+                <button type="button" className="property-type-card-button" onClick={(e) => { e.stopPropagation(); handlePropertyTypeSelect('commercial', true) }}>{t('addPropertyTypeContinue')}</button>
               </div>
             </div>
           </div>
@@ -3741,36 +3756,36 @@ const AddProperty = () => {
           <div className="property-type-selection-screen">
             <div className="property-type-selection-header">
               <h2 className="property-type-selection-title">
-                Выберите тип объекта для продажи с долгами
+                {t('addPropertyDebtTypeTitle')}
               </h2>
               <p className="property-type-selection-subtitle">
-                Дом, квартира, вилла или апартаменты — далее вы укажете фиксированную сумму продажи без аукциона.
+                {t('addPropertyDebtTypeSubtitle')}
               </p>
             </div>
             <div className="property-type-cards-container">
               <div className="property-type-card-large" onClick={() => handleDebtPropertyTypeSelect('house')}>
                 <div className="property-type-card-icon"><FiHome size={48} /></div>
-                <h3 className="property-type-card-title">Дом</h3>
-                <p className="property-type-card-description">Дома, коттеджи, загородные дома.</p>
-                <button type="button" className="property-type-card-button" onClick={(e) => { e.stopPropagation(); handleDebtPropertyTypeSelect('house') }}>Продолжить</button>
+                <h3 className="property-type-card-title">{t('addPropertyTypeHouseTitle')}</h3>
+                <p className="property-type-card-description">{t('addPropertyTypeHouseDescription')}</p>
+                <button type="button" className="property-type-card-button" onClick={(e) => { e.stopPropagation(); handleDebtPropertyTypeSelect('house') }}>{t('addPropertyTypeContinue')}</button>
               </div>
               <div className="property-type-card-large" onClick={() => handleDebtPropertyTypeSelect('apartment')}>
                 <div className="property-type-card-icon"><PiBuildingApartment size={48} /></div>
-                <h3 className="property-type-card-title">Квартира</h3>
-                <p className="property-type-card-description">Меблированные помещения, вся площадь.</p>
-                <button type="button" className="property-type-card-button" onClick={(e) => { e.stopPropagation(); handleDebtPropertyTypeSelect('apartment') }}>Продолжить</button>
+                <h3 className="property-type-card-title">{t('addPropertyTypeApartmentTitle')}</h3>
+                <p className="property-type-card-description">{t('addPropertyTypeApartmentDescription')}</p>
+                <button type="button" className="property-type-card-button" onClick={(e) => { e.stopPropagation(); handleDebtPropertyTypeSelect('apartment') }}>{t('addPropertyTypeContinue')}</button>
               </div>
               <div className="property-type-card-large" onClick={() => handleDebtPropertyTypeSelect('villa')}>
                 <div className="property-type-card-icon"><PiBuildings size={48} /></div>
-                <h3 className="property-type-card-title">Вилла</h3>
-                <p className="property-type-card-description">Загородные дома с участками.</p>
-                <button type="button" className="property-type-card-button" onClick={(e) => { e.stopPropagation(); handleDebtPropertyTypeSelect('villa') }}>Продолжить</button>
+                <h3 className="property-type-card-title">{t('addPropertyTypeVillaTitle')}</h3>
+                <p className="property-type-card-description">{t('addPropertyTypeVillaDescription')}</p>
+                <button type="button" className="property-type-card-button" onClick={(e) => { e.stopPropagation(); handleDebtPropertyTypeSelect('villa') }}>{t('addPropertyTypeContinue')}</button>
               </div>
               <div className="property-type-card-large" onClick={() => handleDebtPropertyTypeSelect('commercial')}>
                 <div className="property-type-card-icon"><PiWarehouse size={48} /></div>
-                <h3 className="property-type-card-title">Апартаменты</h3>
-                <p className="property-type-card-description">Апартаменты с удобствами.</p>
-                <button type="button" className="property-type-card-button" onClick={(e) => { e.stopPropagation(); handleDebtPropertyTypeSelect('commercial') }}>Продолжить</button>
+                <h3 className="property-type-card-title">{t('addPropertyTypeApartmentsTitle')}</h3>
+                <p className="property-type-card-description">{t('addPropertyTypeApartmentsDescription')}</p>
+                <button type="button" className="property-type-card-button" onClick={(e) => { e.stopPropagation(); handleDebtPropertyTypeSelect('commercial') }}>{t('addPropertyTypeContinue')}</button>
               </div>
             </div>
           </div>
@@ -3782,10 +3797,10 @@ const AddProperty = () => {
                 {getPropertyTypeIcon(formData.propertyType)}
               </div>
               <h2 className="test-drive-question-title">
-                Планируете ли вы проводить тест-драйв вашей недвижимости?
+                {t('addPropertyTestDriveTitle')}
               </h2>
               <p className="test-drive-question-description">
-                Покупатель может снять недвижимость на некоторое время с последующим правом покупки
+                {t('addPropertyTestDriveSubtitle')}
               </p>
               <div className="test-drive-buttons">
                 <button
@@ -3793,14 +3808,14 @@ const AddProperty = () => {
                   className="test-drive-button test-drive-button--yes"
                   onClick={() => handleTestDriveAnswer(true)}
                 >
-                  Да, планирую
+                  {t('addPropertyTestDriveYes')}
                 </button>
                 <button
                   type="button"
                   className="test-drive-button test-drive-button--no"
                   onClick={() => handleTestDriveAnswer(false)}
                 >
-                  Нет, не планирую
+                  {t('addPropertyTestDriveNo')}
                 </button>
               </div>
             </div>
@@ -3812,11 +3827,11 @@ const AddProperty = () => {
           <div className="property-name-screen">
             <div className="property-name-main">
               <h2 className="property-name-title">
-                Какое название у вашего объекта?
+                {t('addPropertyNameTitle')}
               </h2>
               
               <div className="property-name-input-group">
-                <label className="property-name-label">Название объекта</label>
+                <label className="property-name-label">{t('addPropertyNameLabelTitle')}</label>
                 <input
                   type="text"
                   id="add-property-title"
@@ -3824,18 +3839,18 @@ const AddProperty = () => {
                   value={formData.title}
                   onChange={handleInputChange}
                   className="property-name-input"
-                  placeholder="Новая квартира"
+                  placeholder={t('addPropertyNamePlaceholderTitle')}
                 />
               </div>
 
               <div className="property-name-input-group">
-                <label className="property-name-label">Описание</label>
+                <label className="property-name-label">{t('addPropertyNameLabelDescription')}</label>
                 <textarea
                   name="description"
                   value={formData.description}
                   onChange={handleInputChange}
                   className="property-name-textarea"
-                  placeholder="Опишите ваш объект недвижимости"
+                  placeholder={t('addPropertyNamePlaceholderDescription')}
                   rows="6"
                 />
               </div>
@@ -3847,14 +3862,14 @@ const AddProperty = () => {
                   onClick={() => setCurrentStep('test-drive-question')}
                 >
                   <FiChevronLeft size={16} />
-                  Назад
+                  {t('addPropertyBack')}
                 </button>
                 <button
                   type="button"
                   className="property-name-continue-btn"
                   onClick={handlePropertyNameContinue}
                 >
-                  Продолжить
+                  {t('addPropertyTypeContinue')}
                 </button>
               </div>
             </div>
@@ -3867,7 +3882,7 @@ const AddProperty = () => {
                       <FiThumbsUp size={20} />
                     </div>
                     <h3 className="property-name-hint-title">
-                      Что следует учитывать при выборе названия?
+                      {t('addPropertyNameHint1Title')}
                     </h3>
                     <button
                       type="button"
@@ -3878,9 +3893,9 @@ const AddProperty = () => {
                     </button>
                   </div>
                   <ul className="property-name-hint-list">
-                    <li>Сделайте его коротким и запоминающимся</li>
-                    <li>Избегайте аббревиатур</li>
-                    <li>Придерживайтесь фактов</li>
+                    <li>{t('addPropertyNameHint1Item1')}</li>
+                    <li>{t('addPropertyNameHint1Item2')}</li>
+                    <li>{t('addPropertyNameHint1Item3')}</li>
                   </ul>
                 </div>
               )}
@@ -3892,7 +3907,7 @@ const AddProperty = () => {
                       <MdLightbulb size={20} />
                     </div>
                     <h3 className="property-name-hint-title">
-                      Зачем нужно называть недвижимость?
+                      {t('addPropertyNameHint2Title')}
                     </h3>
                     <button
                       type="button"
@@ -3903,8 +3918,7 @@ const AddProperty = () => {
                     </button>
                   </div>
                   <p className="property-name-hint-text">
-                    Название будет заголовком вашего объявления. Оно должно быть конкретным, 
-                    видимым для всех и не должно содержать адрес.
+                    {t('addPropertyNameHint2Text')}
                   </p>
                 </div>
               )}
@@ -3915,13 +3929,15 @@ const AddProperty = () => {
           <div className="property-location-screen">
             <div className="property-location-main">
               <h2 className="property-location-title">
-                Где находится ваша недвижимость?
+                {t('addPropertyLocationTitle')}
               </h2>
               
               {/* Упрощенный режим для редактирования - только поле Адрес */}
               {isEditMode && !isEditingLocation && (formData.address || formData.location) ? (
                 <div className="property-location-input-group">
-                  <label className="property-location-label">Адрес</label>
+                  <label className="property-location-label">
+                    {t('addPropertyLocationSimpleAddressLabel')}
+                  </label>
                   <div className="property-location-search-wrapper">
                     <input
                       type="text"
@@ -3957,18 +3973,20 @@ const AddProperty = () => {
                         }
                       }}
                       className="property-location-input"
-                      placeholder="Введите адрес"
+                      placeholder={t('addPropertyLocationSimpleAddressPlaceholder')}
                     />
                   </div>
                   <p className="property-location-hint" style={{ marginTop: '8px', fontSize: '14px', color: '#666' }}>
-                    Очистите поле, чтобы изменить адрес
+                    {t('addPropertyLocationSimpleHint')}
                   </p>
                 </div>
               ) : (
                 <>
                   {/* Полная форма для добавления или редактирования */}
                   <div className="property-location-input-group">
-                    <label className="property-location-label">Страна</label>
+                    <label className="property-location-label">
+                      {t('addPropertyLocationCountryLabel')}
+                    </label>
                     <CountrySelect
                       value={formData.country}
                       onChange={(countryName) => {
@@ -3978,13 +3996,15 @@ const AddProperty = () => {
                           searchCity(citySearch, countryName)
                         }
                       }}
-                      placeholder="Выберите страну"
+                      placeholder={t('addPropertyLocationCountryPlaceholder')}
                       className="property-location-country-select"
                     />
                   </div>
 
               <div className="property-location-input-group">
-                <label className="property-location-label">Город</label>
+                <label className="property-location-label">
+                  {t('addPropertyLocationCityLabel')}
+                </label>
                 <div className="property-location-search-wrapper">
                   <input
                     type="text"
@@ -4027,7 +4047,7 @@ const AddProperty = () => {
                       setTimeout(() => setShowCitySuggestions(false), 200)
                     }}
                     className="property-location-input property-location-input--with-icon"
-                    placeholder="Введите город"
+                    placeholder={t('addPropertyLocationCityPlaceholder')}
                   />
                   <div className="property-location-input-icon">
                     {isCitySearching ? (
@@ -4056,7 +4076,9 @@ const AddProperty = () => {
               </div>
 
               <div className="property-location-input-group">
-                <label className="property-location-label">Название улицы</label>
+                <label className="property-location-label">
+                  {t('addPropertyLocationStreetLabel')}
+                </label>
                 <div className="property-location-search-wrapper">
                   <input
                     id="address-search-input"
@@ -4103,7 +4125,11 @@ const AddProperty = () => {
                       setTimeout(() => setShowSuggestions(false), 200)
                     }}
                     className="property-location-input property-location-input--with-icon"
-                    placeholder={formData.city ? "Введите адрес" : "Сначала выберите город"}
+                    placeholder={
+                      formData.city
+                        ? t('addPropertyLocationStreetPlaceholder')
+                        : t('addPropertyLocationStreetPlaceholderNoCity')
+                    }
                     disabled={!formData.city}
                   />
                   {formData.city && (
@@ -4135,7 +4161,9 @@ const AddProperty = () => {
               </div>
 
               <div className="property-location-input-group">
-                <label className="property-location-label">Номер дома</label>
+              <label className="property-location-label">
+                {t('addPropertyLocationHouseNumberLabel')}
+              </label>
                 <div className="property-location-search-wrapper">
                   <input
                     type="text"
@@ -4167,7 +4195,7 @@ const AddProperty = () => {
                       setTimeout(() => setShowHouseSuggestions(false), 200)
                     }}
                     className="property-location-input"
-                    placeholder="Номер дома"
+                    placeholder={t('addPropertyLocationHouseNumberPlaceholder')}
                   />
                   {showHouseSuggestions && houseSuggestions.length > 0 && (
                     <div className="property-location-suggestions">
@@ -4195,14 +4223,14 @@ const AddProperty = () => {
                   onClick={() => setCurrentStep('property-name')}
                 >
                   <FiChevronLeft size={16} />
-                  Назад
+                  {t('addPropertyBack')}
                 </button>
                 <button
                   type="button"
                   className="property-location-continue-btn"
                   onClick={handleLocationContinue}
                 >
-                  Продолжить
+                  {t('addPropertyTypeContinue')}
                 </button>
               </div>
             </div>
@@ -4377,7 +4405,7 @@ const AddProperty = () => {
           <div className="property-details-screen">
             <div className="property-details-main">
               <h2 className="property-details-title">
-                Подробная информация
+                {t('addPropertyDetailsTitle')}
               </h2>
               
               <div className="property-details-content-scrollable">
@@ -4388,7 +4416,7 @@ const AddProperty = () => {
                     <div className="detail-form-field detail-form-field--split">
                       <div className="detail-form-field-half">
                         <label className="detail-form-label">
-                          <span className="detail-form-label-text">Количество комнат</span>
+                          <span className="detail-form-label-text">{t('addPropertyDetailsRoomsLabel')}</span>
                         </label>
                         <input
                           type="number"
@@ -4405,7 +4433,7 @@ const AddProperty = () => {
                       </div>
                       <div className="detail-form-field-half">
                         <label className="detail-form-label">
-                          <span className="detail-form-label-text">Количество ванных комнат</span>
+                          <span className="detail-form-label-text">{t('addPropertyDetailsBathroomsLabel')}</span>
                         </label>
                         <input
                           type="number"
@@ -4427,10 +4455,10 @@ const AddProperty = () => {
                       <div className="detail-form-field-half">
                         <label className="detail-form-label">
                           <span className="detail-form-label-text detail-form-label-text--desktop">
-                            Общая площадь объекта
+                            {t('addPropertyDetailsAreaLabel')}
                           </span>
                           <span className="detail-form-label-text detail-form-label-text--mobile">
-                            Площадь объекта
+                            {t('addPropertyDetailsAreaLabelShort')}
                           </span>
                         </label>
                         <input
@@ -4449,7 +4477,7 @@ const AddProperty = () => {
                       </div>
                       <div className="detail-form-field-half">
                         <label className="detail-form-label">
-                          <span className="detail-form-label-text">Площадь жилая</span>
+                          <span className="detail-form-label-text">{t('addPropertyDetailsLivingAreaLabel')}</span>
                         </label>
                         <input
                           type="number"
@@ -4470,7 +4498,7 @@ const AddProperty = () => {
                     {/* Переключатель единиц измерения */}
                     <div className="detail-form-field detail-form-field--centered">
                       <label className="detail-form-label">
-                        <span className="detail-form-label-text">Единицы измерения</span>
+                        <span className="detail-form-label-text">{t('addPropertyDetailsUnitsLabel')}</span>
                       </label>
                       <div className="area-unit-toggle">
                         <button
@@ -4478,14 +4506,14 @@ const AddProperty = () => {
                           className={`area-unit-toggle-btn ${areaUnit === 'square_meters' ? 'active' : ''}`}
                           onClick={() => setAreaUnit('square_meters')}
                         >
-                          Метры квадратные
+                          {t('addPropertyDetailsUnitSqm')}
                         </button>
                         <button
                           type="button"
                           className={`area-unit-toggle-btn ${areaUnit === 'square_feet' ? 'active' : ''}`}
                           onClick={() => setAreaUnit('square_feet')}
                         >
-                          Футы квадратные
+                          {t('addPropertyDetailsUnitSqft')}
                         </button>
                       </div>
                     </div>
@@ -4494,7 +4522,7 @@ const AddProperty = () => {
                     <div className="detail-form-field detail-form-field--split">
                       <div className="detail-form-field-half">
                         <label className="detail-form-label">
-                          <span className="detail-form-label-text">Этаж</span>
+                          <span className="detail-form-label-text">{t('addPropertyDetailsFloorLabel')}</span>
                         </label>
                         <input
                           type="number"
@@ -4511,7 +4539,7 @@ const AddProperty = () => {
                       </div>
                       <div className="detail-form-field-half">
                         <label className="detail-form-label">
-                          <span className="detail-form-label-text">Этажность</span>
+                          <span className="detail-form-label-text">{t('addPropertyDetailsTotalFloorsLabel')}</span>
                         </label>
                         <input
                           type="number"
@@ -4528,11 +4556,11 @@ const AddProperty = () => {
                       </div>
                     </div>
 
-                    {/* Строка 4: Год постройки | Площадь кухни */}
+                    {/* Строка 4: Год постройки | Тип дома/здания */}
                     <div className="detail-form-field detail-form-field--split">
                       <div className="detail-form-field-half">
                         <label className="detail-form-label">
-                          <span className="detail-form-label-text">Год постройки</span>
+                          <span className="detail-form-label-text">{t('addPropertyDetailsYearBuiltLabel')}</span>
                         </label>
                         <input
                           type="number"
@@ -4549,23 +4577,23 @@ const AddProperty = () => {
                       </div>
                       <div className="detail-form-field-half">
                         <label className="detail-form-label">
-                          <span className="detail-form-label-text">Тип дома/здания</span>
+                          <span className="detail-form-label-text">{t('addPropertyDetailsBuildingTypeLabel')}</span>
                         </label>
                         <select
                           value={formData.buildingType}
                           onChange={(e) => handleDetailChange('buildingType', e.target.value)}
                           className={`detail-form-input detail-form-input--narrow detail-form-select ${validationErrors.buildingType ? 'detail-form-input--error' : ''}`}
                         >
-                          <option value="">Выберите тип</option>
-                          <option value="monolithic">Монолитный</option>
-                          <option value="brick">Кирпичный</option>
-                          <option value="panel">Панельный</option>
-                          <option value="block">Блочный</option>
-                          <option value="wood">Деревянный</option>
-                          <option value="frame">Каркасный</option>
-                          <option value="aerated_concrete">Газобетонный</option>
-                          <option value="foam_concrete">Пенобетонный</option>
-                          <option value="other">Другой</option>
+                          <option value="">{t('addPropertyDetailsSelectType')}</option>
+                          <option value="monolithic">{t('addPropertyDetailsBuildingMonolithic')}</option>
+                          <option value="brick">{t('addPropertyDetailsBuildingBrick')}</option>
+                          <option value="panel">{t('addPropertyDetailsBuildingPanel')}</option>
+                          <option value="block">{t('addPropertyDetailsBuildingBlock')}</option>
+                          <option value="wood">{t('addPropertyDetailsBuildingWood')}</option>
+                          <option value="frame">{t('addPropertyDetailsBuildingFrame')}</option>
+                          <option value="aerated_concrete">{t('addPropertyDetailsBuildingAerated')}</option>
+                          <option value="foam_concrete">{t('addPropertyDetailsBuildingFoam')}</option>
+                          <option value="other">{t('addPropertyDetailsBuildingOther')}</option>
                         </select>
                         {validationErrors.buildingType && (
                           <span className="detail-form-error">{validationErrors.buildingType}</span>
@@ -4579,7 +4607,7 @@ const AddProperty = () => {
                     {/* Переключатель единиц измерения */}
                     <div className="detail-form-field detail-form-field--centered">
                       <label className="detail-form-label">
-                        <span className="detail-form-label-text">Единицы измерения</span>
+                        <span className="detail-form-label-text">{t('addPropertyDetailsUnitsLabel')}</span>
                       </label>
                       <div className="area-unit-toggle">
                         <button
@@ -4587,14 +4615,14 @@ const AddProperty = () => {
                           className={`area-unit-toggle-btn ${areaUnit === 'square_meters' ? 'active' : ''}`}
                           onClick={() => setAreaUnit('square_meters')}
                         >
-                          Метры квадратные
+                          {t('addPropertyDetailsUnitSqm')}
                         </button>
                         <button
                           type="button"
                           className={`area-unit-toggle-btn ${areaUnit === 'square_feet' ? 'active' : ''}`}
                           onClick={() => setAreaUnit('square_feet')}
                         >
-                          Футы квадратные
+                          {t('addPropertyDetailsUnitSqft')}
                         </button>
                       </div>
                     </div>
@@ -4603,7 +4631,7 @@ const AddProperty = () => {
                     <div className="detail-form-field detail-form-field--split">
                       <div className="detail-form-field-half">
                         <label className="detail-form-label">
-                          <span className="detail-form-label-text">Площадь участка</span>
+                          <span className="detail-form-label-text">{t('addPropertyDetailsLandAreaLabel')}</span>
                         </label>
                         <input
                           type="number"
@@ -4622,10 +4650,10 @@ const AddProperty = () => {
                       <div className="detail-form-field-half">
                         <label className="detail-form-label">
                           <span className="detail-form-label-text detail-form-label-text--desktop">
-                            Общая площадь объекта
+                            {t('addPropertyDetailsAreaLabel')}
                           </span>
                           <span className="detail-form-label-text detail-form-label-text--mobile">
-                            Площадь объекта
+                            {t('addPropertyDetailsAreaLabelShort')}
                           </span>
                         </label>
                         <input
@@ -4648,7 +4676,7 @@ const AddProperty = () => {
                     <div className="detail-form-field detail-form-field--split">
                       <div className="detail-form-field-half">
                         <label className="detail-form-label">
-                          <span className="detail-form-label-text">Площадь жилая</span>
+                          <span className="detail-form-label-text">{t('addPropertyDetailsLivingAreaLabel')}</span>
                         </label>
                         <input
                           type="number"
@@ -4666,7 +4694,7 @@ const AddProperty = () => {
                       </div>
                       <div className="detail-form-field-half">
                         <label className="detail-form-label">
-                          <span className="detail-form-label-text">Количество этажей</span>
+                          <span className="detail-form-label-text">{t('addPropertyDetailsFloorsCountLabel')}</span>
                         </label>
                         <input
                           type="number"
@@ -4687,7 +4715,7 @@ const AddProperty = () => {
                     <div className="detail-form-field detail-form-field--split">
                       <div className="detail-form-field-half">
                         <label className="detail-form-label">
-                          <span className="detail-form-label-text">Кол-во спален</span>
+                          <span className="detail-form-label-text">{t('addPropertyDetailsBedroomsLabel')}</span>
                         </label>
                         <input
                           type="number"
@@ -4704,7 +4732,7 @@ const AddProperty = () => {
                       </div>
                       <div className="detail-form-field-half">
                         <label className="detail-form-label">
-                          <span className="detail-form-label-text">Кол-во ванных</span>
+                          <span className="detail-form-label-text">{t('addPropertyDetailsBathroomsShortLabel')}</span>
                         </label>
                         <input
                           type="number"
@@ -4725,7 +4753,7 @@ const AddProperty = () => {
                     <div className="detail-form-field detail-form-field--split">
                       <div className="detail-form-field-half">
                         <label className="detail-form-label">
-                          <span className="detail-form-label-text">Год постройки</span>
+                          <span className="detail-form-label-text">{t('addPropertyDetailsYearBuiltLabel')}</span>
                         </label>
                         <input
                           type="number"
@@ -4742,23 +4770,23 @@ const AddProperty = () => {
                       </div>
                       <div className="detail-form-field-half">
                         <label className="detail-form-label">
-                          <span className="detail-form-label-text">Материал постройки</span>
+                          <span className="detail-form-label-text">{t('addPropertyDetailsBuildingMaterialLabel')}</span>
                         </label>
                         <select
                           value={formData.buildingType}
                           onChange={(e) => handleDetailChange('buildingType', e.target.value)}
                           className={`detail-form-input detail-form-input--narrow detail-form-select ${validationErrors.buildingType ? 'detail-form-input--error' : ''}`}
                         >
-                          <option value="">Выберите материал</option>
-                          <option value="monolithic">Монолитный</option>
-                          <option value="brick">Кирпичный</option>
-                          <option value="panel">Панельный</option>
-                          <option value="block">Блочный</option>
-                          <option value="wood">Деревянный</option>
-                          <option value="frame">Каркасный</option>
-                          <option value="aerated_concrete">Газобетонный</option>
-                          <option value="foam_concrete">Пенобетонный</option>
-                          <option value="other">Другой</option>
+                          <option value="">{t('addPropertyDetailsSelectMaterial')}</option>
+                          <option value="monolithic">{t('addPropertyDetailsBuildingMonolithic')}</option>
+                          <option value="brick">{t('addPropertyDetailsBuildingBrick')}</option>
+                          <option value="panel">{t('addPropertyDetailsBuildingPanel')}</option>
+                          <option value="block">{t('addPropertyDetailsBuildingBlock')}</option>
+                          <option value="wood">{t('addPropertyDetailsBuildingWood')}</option>
+                          <option value="frame">{t('addPropertyDetailsBuildingFrame')}</option>
+                          <option value="aerated_concrete">{t('addPropertyDetailsBuildingAerated')}</option>
+                          <option value="foam_concrete">{t('addPropertyDetailsBuildingFoam')}</option>
+                          <option value="other">{t('addPropertyDetailsBuildingOther')}</option>
                         </select>
                         {validationErrors.buildingType && (
                           <span className="detail-form-error">{validationErrors.buildingType}</span>
@@ -4893,14 +4921,14 @@ const AddProperty = () => {
                   onClick={() => setCurrentStep('location')}
                 >
                   <FiChevronLeft size={16} />
-                  Назад
+                  {t('addPropertyBack')}
                 </button>
                 <button
                   type="button"
                   className="property-details-continue-btn"
                   onClick={handleDetailsContinue}
                 >
-                  Продолжить
+                  {t('addPropertyTypeContinue')}
                 </button>
               </div>
             </div>
@@ -4974,11 +5002,11 @@ const AddProperty = () => {
               <HintCard
                 icon={MdBed}
                 iconColor="property-name-hint-icon--thumbs"
-                title="Как правильно указать детали недвижимости?"
+                title={t('addPropertyDetailsHint1Title')}
                 content={[
-                  "Укажите точное количество спален и ванных комнат",
-                  "Добавьте информацию о площади для лучшего понимания размера",
-                  "Укажите количество этажей, если это многоэтажное здание"
+                  t('addPropertyDetailsHint1Item1'),
+                  t('addPropertyDetailsHint1Item2'),
+                  t('addPropertyDetailsHint1Item3')
                 ]}
                 show={showHints['details']}
                 onClose={() => setShowHints(prev => ({ ...prev, 'details': false }))}
@@ -4986,8 +5014,8 @@ const AddProperty = () => {
               <HintCard
                 icon={MdLightbulb}
                 iconColor="property-name-hint-icon--bulb"
-                title="Зачем нужны детали?"
-                content="Подробная информация о недвижимости помогает покупателям лучше понять объект и принять обоснованное решение о покупке."
+                title={t('addPropertyDetailsHint2Title')}
+                content={t('addPropertyDetailsHint2Text')}
                 show={showHints['details']}
                 onClose={() => setShowHints(prev => ({ ...prev, 'details': false }))}
               />
@@ -5100,7 +5128,7 @@ const AddProperty = () => {
             <div className="property-amenities-screen">
               <div className="property-amenities-main">
                 <h2 className="property-amenities-title">
-                  Дополнительные удобства и особенности
+                  {t('addPropertyAmenitiesTitle')}
                 </h2>
                 
                 <div className="property-amenities-content-scrollable">
@@ -5108,7 +5136,7 @@ const AddProperty = () => {
                   <div className="amenities-category">
                     <h4 className="amenities-category-title">
                       <span className="amenities-category-icon">🚗</span>
-                      Парковка
+                      {t('addPropertyAmenitiesCategoryParking')}
                     </h4>
                     <div className="amenities-list">
                       <label className="amenity-item">
@@ -5118,7 +5146,7 @@ const AddProperty = () => {
                           onChange={(e) => handleDetailChange('parking', e.target.checked)}
                           className="amenity-checkbox"
                         />
-                        <span className="amenity-label">Парковочное место</span>
+                        <span className="amenity-label">{t('addPropertyAmenitiesParkingSpace')}</span>
                       </label>
                       <label className="amenity-item">
                         <input
@@ -5127,7 +5155,7 @@ const AddProperty = () => {
                           onChange={(e) => handleDetailChange('feature1', e.target.checked)}
                           className="amenity-checkbox"
                         />
-                        <span className="amenity-label">Подземная парковка</span>
+                        <span className="amenity-label">{t('addPropertyAmenitiesUndergroundParking')}</span>
                       </label>
                       <label className="amenity-item">
                         <input
@@ -5136,7 +5164,7 @@ const AddProperty = () => {
                           onChange={(e) => handleDetailChange('feature12', e.target.checked)}
                           className="amenity-checkbox"
                         />
-                        <span className="amenity-label">Парковка для велосипедов</span>
+                        <span className="amenity-label">{t('addPropertyAmenitiesBikeParking')}</span>
                       </label>
                     </div>
                   </div>
@@ -5145,7 +5173,7 @@ const AddProperty = () => {
                   <div className="amenities-category">
                     <h4 className="amenities-category-title">
                       <span className="amenities-category-icon">🛋️</span>
-                      Мебель и техника
+                      {t('addPropertyAmenitiesCategoryFurniture')}
                     </h4>
                     <div className="amenities-list">
                       <label className="amenity-item">
@@ -5155,7 +5183,7 @@ const AddProperty = () => {
                           onChange={(e) => handleDetailChange('feature2', e.target.checked)}
                           className="amenity-checkbox"
                         />
-                        <span className="amenity-label">Кухонная мебель</span>
+                        <span className="amenity-label">{t('addPropertyAmenitiesKitchenFurniture')}</span>
                       </label>
                       <label className="amenity-item">
                         <input
@@ -5164,7 +5192,7 @@ const AddProperty = () => {
                           onChange={(e) => handleDetailChange('furniture', e.target.checked)}
                           className="amenity-checkbox"
                         />
-                        <span className="amenity-label">Встроенная мебель</span>
+                        <span className="amenity-label">{t('addPropertyAmenitiesBuiltInFurniture')}</span>
                       </label>
                       <label className="amenity-item">
                         <input
@@ -5173,7 +5201,7 @@ const AddProperty = () => {
                           onChange={(e) => handleDetailChange('feature3', e.target.checked)}
                           className="amenity-checkbox"
                         />
-                        <span className="amenity-label">Стиральная машина</span>
+                        <span className="amenity-label">{t('addPropertyAmenitiesWashingMachine')}</span>
                       </label>
                       <label className="amenity-item">
                         <input
@@ -5182,7 +5210,7 @@ const AddProperty = () => {
                           onChange={(e) => handleDetailChange('feature4', e.target.checked)}
                           className="amenity-checkbox"
                         />
-                        <span className="amenity-label">Посудомоечная машина</span>
+                        <span className="amenity-label">{t('addPropertyAmenitiesDishwasher')}</span>
                       </label>
                       <label className="amenity-item">
                         <input
@@ -5191,7 +5219,7 @@ const AddProperty = () => {
                           onChange={(e) => handleDetailChange('electricity', e.target.checked)}
                           className="amenity-checkbox"
                         />
-                        <span className="amenity-label">Кондиционер</span>
+                        <span className="amenity-label">{t('addPropertyAmenitiesAirConditioning')}</span>
                       </label>
                       <label className="amenity-item">
                         <input
@@ -5200,7 +5228,7 @@ const AddProperty = () => {
                           onChange={(e) => handleDetailChange('feature18', e.target.checked)}
                           className="amenity-checkbox"
                         />
-                        <span className="amenity-label">Гардеробная</span>
+                        <span className="amenity-label">{t('addPropertyAmenitiesWardrobe')}</span>
                       </label>
                     </div>
                   </div>
@@ -5209,7 +5237,7 @@ const AddProperty = () => {
                   <div className="amenities-category">
                     <h4 className="amenities-category-title">
                       <span className="amenities-category-icon">🔒</span>
-                      Коммуникации и безопасность
+                      {t('addPropertyAmenitiesCategorySecurity')}
                     </h4>
                     <div className="amenities-list">
                       <label className="amenity-item">
@@ -5219,7 +5247,7 @@ const AddProperty = () => {
                           onChange={(e) => handleDetailChange('internet', e.target.checked)}
                           className="amenity-checkbox"
                         />
-                        <span className="amenity-label">Интернет</span>
+                        <span className="amenity-label">{t('addPropertyAmenitiesInternet')}</span>
                       </label>
                       <label className="amenity-item">
                         <input
@@ -5228,7 +5256,7 @@ const AddProperty = () => {
                           onChange={(e) => handleDetailChange('security', e.target.checked)}
                           className="amenity-checkbox"
                         />
-                        <span className="amenity-label">Охрана</span>
+                        <span className="amenity-label">{t('addPropertyAmenitiesSecurity')}</span>
                       </label>
                       <label className="amenity-item">
                         <input
@@ -5237,7 +5265,7 @@ const AddProperty = () => {
                           onChange={(e) => handleDetailChange('feature5', e.target.checked)}
                           className="amenity-checkbox"
                         />
-                        <span className="amenity-label">Домофон</span>
+                        <span className="amenity-label">{t('addPropertyAmenitiesIntercom')}</span>
                       </label>
                       <label className="amenity-item">
                         <input
@@ -5246,7 +5274,7 @@ const AddProperty = () => {
                           onChange={(e) => handleDetailChange('feature6', e.target.checked)}
                           className="amenity-checkbox"
                         />
-                        <span className="amenity-label">Видеонаблюдение</span>
+                        <span className="amenity-label">{t('addPropertyAmenitiesCctv')}</span>
                       </label>
                       <label className="amenity-item">
                         <input
@@ -5255,7 +5283,7 @@ const AddProperty = () => {
                           onChange={(e) => handleDetailChange('feature16', e.target.checked)}
                           className="amenity-checkbox"
                         />
-                        <span className="amenity-label">Видеодомофон</span>
+                        <span className="amenity-label">{t('addPropertyAmenitiesVideoIntercom')}</span>
                       </label>
                       <label className="amenity-item">
                         <input
@@ -5264,7 +5292,7 @@ const AddProperty = () => {
                           onChange={(e) => handleDetailChange('feature17', e.target.checked)}
                           className="amenity-checkbox"
                         />
-                        <span className="amenity-label">Консьерж</span>
+                        <span className="amenity-label">{t('addPropertyAmenitiesConcierge')}</span>
                       </label>
                     </div>
                   </div>
@@ -5273,7 +5301,7 @@ const AddProperty = () => {
                   <div className="amenities-category">
                     <h4 className="amenities-category-title">
                       <span className="amenities-category-icon">🏠</span>
-                      Дополнительные помещения
+                      {t('addPropertyAmenitiesCategoryRooms')}
                     </h4>
                     <div className="amenities-list">
                       <label className="amenity-item">
@@ -5283,7 +5311,7 @@ const AddProperty = () => {
                           onChange={(e) => handleDetailChange('balcony', e.target.checked)}
                           className="amenity-checkbox"
                         />
-                        <span className="amenity-label">Балкон</span>
+                        <span className="amenity-label">{t('addPropertyAmenitiesBalcony')}</span>
                       </label>
                       <label className="amenity-item">
                         <input
@@ -5292,7 +5320,7 @@ const AddProperty = () => {
                           onChange={(e) => handleDetailChange('feature7', e.target.checked)}
                           className="amenity-checkbox"
                         />
-                        <span className="amenity-label">Лоджия</span>
+                        <span className="amenity-label">{t('addPropertyAmenitiesLoggia')}</span>
                       </label>
                       <label className="amenity-item">
                         <input
@@ -5301,7 +5329,7 @@ const AddProperty = () => {
                           onChange={(e) => handleDetailChange('feature8', e.target.checked)}
                           className="amenity-checkbox"
                         />
-                        <span className="amenity-label">Кладовая</span>
+                        <span className="amenity-label">{t('addPropertyAmenitiesStorage')}</span>
                       </label>
                       <label className="amenity-item">
                         <input
@@ -5310,7 +5338,7 @@ const AddProperty = () => {
                           onChange={(e) => handleDetailChange('elevator', e.target.checked)}
                           className="amenity-checkbox"
                         />
-                        <span className="amenity-label">Лифт</span>
+                        <span className="amenity-label">{t('addPropertyAmenitiesElevator')}</span>
                       </label>
                     </div>
                   </div>
@@ -5319,15 +5347,15 @@ const AddProperty = () => {
                   <div className="amenities-category">
                     <h4 className="amenities-category-title">
                       <span className="amenities-category-icon">➕</span>
-                      Дополнительно
+                      {t('addPropertyAmenitiesCategoryOther')}
                     </h4>
                     <div className="amenities-additional-field">
                       <label className="amenities-additional-label">
-                        Укажите другие удобства, если такие есть
+                        {t('addPropertyAmenitiesOtherLabel')}
                       </label>
                       <textarea
                         className="amenities-additional-textarea"
-                        placeholder="Например: встроенная система умного дома, проектор, музыкальная система и т.д."
+                        placeholder={t('addPropertyAmenitiesOtherPlaceholder')}
                         value={formData.additionalAmenities || ''}
                         onChange={(e) => handleDetailChange('additionalAmenities', e.target.value)}
                         rows={3}
@@ -5343,14 +5371,14 @@ const AddProperty = () => {
                     onClick={() => setCurrentStep('details')}
                   >
                     <FiChevronLeft size={16} />
-                    Назад
+                    {t('addPropertyBack')}
                   </button>
                   <button
                     type="button"
                     className="property-amenities-continue-btn"
                     onClick={handleAmenitiesContinue}
                   >
-                    Продолжить
+                    {t('addPropertyTypeContinue')}
                   </button>
                 </div>
               </div>
@@ -5359,11 +5387,11 @@ const AddProperty = () => {
                 <HintCard
                   icon={MdLightbulb}
                   iconColor="property-name-hint-icon--thumbs"
-                  title="Какие удобства указать?"
+                  title={t('addPropertyAmenitiesHint1Title')}
                   content={[
-                    "Укажите все доступные удобства для привлечения покупателей",
-                    "Будьте честны - это повысит доверие",
-                    "Удобства влияют на цену и привлекательность объекта"
+                    t('addPropertyAmenitiesHint1Item1'),
+                    t('addPropertyAmenitiesHint1Item2'),
+                    t('addPropertyAmenitiesHint1Item3')
                   ]}
                   show={showHints['amenities']}
                   onClose={() => setShowHints(prev => ({ ...prev, 'amenities': false }))}
@@ -5371,8 +5399,8 @@ const AddProperty = () => {
                 <HintCard
                   icon={FiThumbsUp}
                   iconColor="property-name-hint-icon--bulb"
-                  title="Зачем указывать удобства?"
-                  content="Полный список удобств помогает покупателям понять, что они получают за свою цену, и делает ваше объявление более привлекательным."
+                  title={t('addPropertyAmenitiesHint2Title')}
+                  content={t('addPropertyAmenitiesHint2Text')}
                   show={showHints['amenities']}
                   onClose={() => setShowHints(prev => ({ ...prev, 'amenities': false }))}
                 />
@@ -5384,11 +5412,11 @@ const AddProperty = () => {
           <div className="property-photos-screen">
             <div className="property-photos-main">
               <h2 className="property-photos-title">
-                Как выглядит ваше место?
+                {t('addPropertyPhotosTitle')}
               </h2>
               
               <p className="property-photos-description">
-                Загрузите минимум 10 фотографий вашей недвижимости. Чем больше вы загрузите, тем больше вероятность продать недвижимость. Вы можете добавить больше позже.
+                {t('addPropertyPhotosDescription')}
               </p>
 
               {/* Большой блок для drag and drop и отображения медиа */}
@@ -5403,16 +5431,16 @@ const AddProperty = () => {
                     <div className="photos-upload-icon">
                       <FiUpload size={48} />
                     </div>
-                    <p className="photos-upload-text">Перетащите файлы сюда или</p>
+                    <p className="photos-upload-text">{t('addPropertyPhotosDragText')}</p>
                     <button
                       type="button"
                       className="photos-upload-btn"
                       onClick={() => fileInputRef.current?.click()}
                     >
                       <FiUpload size={20} />
-                      Загрузить фотографии
+                      {t('addPropertyPhotosUploadBtn')}
                     </button>
-                    <p className="photos-upload-hint">jpg/jpeg или png, максимум 47MB каждый</p>
+                    <p className="photos-upload-hint">{t('addPropertyPhotosFormatHint')}</p>
                   </div>
                 ) : (
                   <div className="photos-carousel-container">
@@ -5522,7 +5550,7 @@ const AddProperty = () => {
                     onClick={() => fileInputRef.current?.click()}
                   >
                     <FiUpload size={20} />
-                    Добавить фото
+                    {t('addPropertyPhotosAddPhoto')}
                     <span className="photos-option-count">{photos.length}/10</span>
                   </button>
                 )}
@@ -5534,8 +5562,8 @@ const AddProperty = () => {
                       onClick={() => videoInputRef.current?.click()}
                     >
                       <FiVideo size={20} />
-                      Загрузить видео
-                      <span className="photos-option-hint">до 1 минуты</span>
+                      {t('addPropertyPhotosUploadVideo')}
+                      <span className="photos-option-hint">{t('addPropertyPhotosVideoDuration')}</span>
                       <span className="photos-option-count">{videos.length}/3</span>
                     </button>
                     <button
@@ -5544,8 +5572,8 @@ const AddProperty = () => {
                       onClick={() => setShowVideoLinkModal(true)}
                     >
                       <FiLink size={20} />
-                      Добавить ссылку
-                      <span className="photos-option-hint">YouTube / Google Drive</span>
+                      {t('addPropertyPhotosAddLink')}
+                      <span className="photos-option-hint">{t('addPropertyPhotosLinkHint')}</span>
                     </button>
                   </>
                 )}
@@ -5558,7 +5586,7 @@ const AddProperty = () => {
                   onClick={() => setCurrentStep(formData.isDebtProperty ? 'details' : 'amenities')}
                 >
                   <FiChevronLeft size={16} />
-                  Назад
+                  {t('addPropertyBack')}
                 </button>
                 <button
                   type="button"
@@ -5566,7 +5594,7 @@ const AddProperty = () => {
                   onClick={handlePhotosContinue}
                   disabled={photos.length === 0}
                 >
-                  Продолжить
+                  {t('addPropertyTypeContinue')}
                 </button>
               </div>
 
@@ -5599,14 +5627,14 @@ const AddProperty = () => {
                     >
                       <FiX size={20} />
                     </button>
-                    <h3 className="video-link-modal-title">Добавить ссылку на видео</h3>
+                    <h3 className="video-link-modal-title">{t('addPropertyPhotosVideoLinkTitle')}</h3>
                     <p className="video-link-modal-subtitle">
-                      Вставьте ссылку на видео с YouTube или Google Drive
+                      {t('addPropertyPhotosVideoLinkSubtitle')}
                     </p>
                     <input
                       type="text"
                       className="video-link-input"
-                      placeholder="https://youtube.com/watch?v=... или https://drive.google.com/file/d/..."
+                      placeholder={t('addPropertyPhotosVideoLinkPlaceholder')}
                       value={videoLink}
                       onChange={(e) => setVideoLink(e.target.value)}
                       onKeyPress={(e) => {
@@ -5624,14 +5652,14 @@ const AddProperty = () => {
                           setVideoLink('')
                         }}
                       >
-                        Отмена
+                        {t('addPropertyPhotosVideoLinkCancel')}
                       </button>
                       <button
                         type="button"
                         className="video-link-modal-submit"
                         onClick={handleVideoLinkSubmit}
                       >
-                        Добавить
+                        {t('addPropertyPhotosVideoLinkSubmit')}
                       </button>
                     </div>
                   </div>
@@ -5644,11 +5672,11 @@ const AddProperty = () => {
               <HintCard
                 icon={FiUpload}
                 iconColor="property-name-hint-icon--thumbs"
-                title="Как правильно загрузить фотографии?"
+                title={t('addPropertyPhotosHint1Title')}
                 content={[
-                  "Загрузите качественные фотографии в формате JPG или PNG",
-                  "Добавьте видео для лучшего представления объекта",
-                  "Первое фото будет главным изображением объявления"
+                  t('addPropertyPhotosHint1Item1'),
+                  t('addPropertyPhotosHint1Item2'),
+                  t('addPropertyPhotosHint1Item3')
                 ]}
                 show={showHints['photos']}
                 onClose={() => setShowHints(prev => ({ ...prev, 'photos': false }))}
@@ -5656,8 +5684,8 @@ const AddProperty = () => {
               <HintCard
                 icon={MdLightbulb}
                 iconColor="property-name-hint-icon--bulb"
-                title="Зачем нужны фотографии?"
-                content="Качественные фотографии и видео помогают покупателям лучше представить объект и увеличивают интерес к вашему объявлению."
+                title={t('addPropertyPhotosHint2Title')}
+                content={t('addPropertyPhotosHint2Text')}
                 show={showHints['photos']}
                 onClose={() => setShowHints(prev => ({ ...prev, 'photos': false }))}
               />
@@ -5668,13 +5696,13 @@ const AddProperty = () => {
           <div className="property-documents-screen">
             <div className="property-documents-main">
               <h2 className="property-documents-title">
-                {formData.isDebtProperty ? 'Необходимые документы при продаже долга' : 'Документы на собственность'}
+                {formData.isDebtProperty ? t('addPropertyDocumentsTitleDebt') : t('addPropertyDocumentsTitle')}
               </h2>
               
               <p className="property-documents-description">
                 {formData.isDebtProperty
-                  ? 'Загрузите документы по категориям. PDF или изображения (JPG, PNG).'
-                  : 'Загрузите документы, подтверждающие право собственности на недвижимость. Это поможет быстрее продать вашу недвижимость.'}
+                  ? t('addPropertyDocumentsDescriptionDebt')
+                  : t('addPropertyDocumentsDescription')}
               </p>
 
               {formData.isDebtProperty ? (
@@ -5682,7 +5710,7 @@ const AddProperty = () => {
                   {/* Шаг 1: выбор категории документов по долгу */}
                   {!selectedDebtDocCategory && (
                     <div id="documents-debt-grid" className="documents-debt-grid">
-                      {DEBT_DOC_CATEGORIES.map(({ key, title }) => (
+                      {DEBT_DOC_CATEGORIES.map(({ key, titleKey }) => (
                         <button
                           key={key}
                           id={`doc-category-${key}`}
@@ -5690,11 +5718,11 @@ const AddProperty = () => {
                           className="documents-debt-grid-item"
                           onClick={() => setSelectedDebtDocCategory(key)}
                         >
-                          <h4 className="documents-debt-grid-item-title">{title}</h4>
+                          <h4 className="documents-debt-grid-item-title">{t(titleKey)}</h4>
                           <div className="documents-debt-grid-upload">
                             <FiFileText size={28} />
-                            <span className="documents-debt-grid-upload-text">Выбрать</span>
-                            <span className="documents-debt-grid-upload-hint">Нажмите, чтобы открыть список документов</span>
+                            <span className="documents-debt-grid-upload-text">{t('addPropertyDocumentsSelectBtn')}</span>
+                            <span className="documents-debt-grid-upload-hint">{t('addPropertyDocumentsSelectHint')}</span>
                           </div>
                           {Object.values(debtDocumentsByCategory[key] || {}).filter(Boolean).length > 0 && (
                             <ul className="documents-debt-grid-list">
@@ -5721,17 +5749,18 @@ const AddProperty = () => {
                           onClick={() => setSelectedDebtDocCategory(null)}
                         >
                           <FiChevronLeft size={16} />
-                          Все категории
+                          {t('addPropertyDocumentsAllCategories')}
                         </button>
                         <h3 className="documents-debt-details-title">
-                          {
-                            DEBT_DOC_CATEGORIES.find(cat => cat.key === selectedDebtDocCategory)?.title
-                          }
+                          {(() => {
+                            const cat = DEBT_DOC_CATEGORIES.find(c => c.key === selectedDebtDocCategory)
+                            return cat?.titleKey ? t(cat.titleKey) : ''
+                          })()}
                         </h3>
                       </div>
 
                       <div className="documents-debt-details-list">
-                        {DEBT_DOC_CATEGORY_DOCS[selectedDebtDocCategory]?.map((docTitle, index) => {
+                        {(DEBT_DOC_CATEGORY_DOCS_KEYS[selectedDebtDocCategory] || []).map((docKey, index) => {
                           const uploadedFile = debtDocumentsByCategory[selectedDebtDocCategory]?.[index]
                           return (
                             <div key={index} id={index === 0 ? 'debt-doc-upload-btn' : undefined} className="document-upload-item">
@@ -5740,8 +5769,8 @@ const AddProperty = () => {
                                   <FiFileText size={24} />
                                 </div>
                                 <div className="document-upload-text">
-                                  <h4 className="document-upload-title">{docTitle}</h4>
-                                  <p className="document-upload-hint">PDF или изображение (JPG, PNG)</p>
+                                  <h4 className="document-upload-title">{t(docKey)}</h4>
+                                  <p className="document-upload-hint">{t('addPropertyDocumentsFormatHint')}</p>
                                 </div>
                               </div>
                               <div className="document-upload-action">
@@ -5770,7 +5799,7 @@ const AddProperty = () => {
                                     onClick={() => debtDocItemInputRefs.current[`${selectedDebtDocCategory}_${index}`]?.click()}
                                   >
                                     <FiUpload size={18} />
-                                    Загрузить
+                                    {t('addPropertyDocumentsUploadBtn')}
                                   </button>
                                 )}
                               </div>
@@ -5785,7 +5814,7 @@ const AddProperty = () => {
               <>
               {/* Блок для обязательных документов (не долг) */}
               <div className="documents-required-section">
-                <h3 className="documents-section-title">Обязательные документы</h3>
+                <h3 className="documents-section-title">{t('addPropertyDocumentsRequiredTitle')}</h3>
                 
                 <div className="document-upload-item">
                   <div className="document-upload-info">
@@ -5793,8 +5822,8 @@ const AddProperty = () => {
                       <FiFileText size={24} />
                     </div>
                     <div className="document-upload-text">
-                      <h4 className="document-upload-title">Документ о праве собственности</h4>
-                      <p className="document-upload-hint">PDF или изображение (JPG, PNG)</p>
+                      <h4 className="document-upload-title">{t('addPropertyDocumentsDocOwnership')}</h4>
+                      <p className="document-upload-hint">{t('addPropertyDocumentsFormatHint')}</p>
                     </div>
                   </div>
                   <div className="document-upload-action">
@@ -5820,7 +5849,7 @@ const AddProperty = () => {
                         onClick={() => ownershipInputRef.current?.click()}
                       >
                         <FiUpload size={18} />
-                        Загрузить
+                        {t('addPropertyDocumentsUploadBtn')}
                       </button>
                     )}
                   </div>
@@ -5832,8 +5861,8 @@ const AddProperty = () => {
                       <FiFileText size={24} />
                     </div>
                     <div className="document-upload-text">
-                      <h4 className="document-upload-title">Справка об отсутствии долгов</h4>
-                      <p className="document-upload-hint">PDF или изображение (JPG, PNG)</p>
+                      <h4 className="document-upload-title">{t('addPropertyDocumentsDocNoDebts')}</h4>
+                      <p className="document-upload-hint">{t('addPropertyDocumentsFormatHint')}</p>
                     </div>
                   </div>
                   <div className="document-upload-action">
@@ -5859,7 +5888,7 @@ const AddProperty = () => {
                         onClick={() => noDebtsInputRef.current?.click()}
                       >
                         <FiUpload size={18} />
-                        Загрузить
+                        {t('addPropertyDocumentsUploadBtn')}
                       </button>
                     )}
                   </div>
@@ -5868,8 +5897,8 @@ const AddProperty = () => {
 
               {/* Блок для дополнительных документов */}
               <div className="documents-additional-section">
-                <h3 className="documents-section-title">Дополнительные документы</h3>
-                <p className="documents-section-hint">Вы можете загрузить до 5 дополнительных документов, которые помогут покупателю принять решение</p>
+                <h3 className="documents-section-title">{t('addPropertyDocumentsAdditionalTitle')}</h3>
+                <p className="documents-section-hint">{t('addPropertyDocumentsAdditionalHint')}</p>
                 
                 {/* Drag and drop область для дополнительных документов */}
                 <div 
@@ -5893,16 +5922,16 @@ const AddProperty = () => {
                       <div className="documents-upload-icon">
                         <FiFileText size={48} />
                       </div>
-                      <p className="documents-upload-text">Перетащите документы сюда или</p>
+                      <p className="documents-upload-text">{t('addPropertyDocumentsDragText')}</p>
                       <button
                         type="button"
                         className="documents-upload-btn"
                         onClick={() => documentInputRef.current?.click()}
                       >
                         <FiUpload size={20} />
-                        Загрузить документы
+                        {t('addPropertyDocumentsUploadDocumentsBtn')}
                       </button>
-                      <p className="documents-upload-hint">PDF или изображения (JPG, PNG)</p>
+                      <p className="documents-upload-hint">{t('addPropertyDocumentsFormatHintPlural')}</p>
                     </div>
                   ) : (
                     <div className="documents-list-horizontal">
@@ -5934,7 +5963,7 @@ const AddProperty = () => {
                           onClick={() => documentInputRef.current?.click()}
                         >
                           <FiUpload size={24} />
-                          <span>Добавить</span>
+                          <span>{t('addPropertyDocumentsAddBtn')}</span>
                         </div>
                       )}
                     </div>
@@ -6023,14 +6052,14 @@ const AddProperty = () => {
                   onClick={() => setCurrentStep('photos')}
                 >
                   <FiChevronLeft size={16} />
-                  Назад
+                  {t('addPropertyBack')}
                 </button>
                 <button
                   type="button"
                   className="property-documents-continue-btn"
                   onClick={handleDocumentsContinue}
                 >
-                  Продолжить
+                  {t('addPropertyTypeContinue')}
                 </button>
               </div>
             </div>
@@ -6038,23 +6067,23 @@ const AddProperty = () => {
             <div className="property-name-hints" style={{ marginLeft: '150px' , marginTop: '75px'}}>
               <AddPropertyProgress
                 debtDocumentsByCategory={debtDocumentsByCategory}
-                requiredDebtDocs={REQUIRED_DEBT_DOCS}
+                requiredDebtDocs={REQUIRED_DEBT_DOCS.map(d => ({ ...d, label: t(d.labelKey) }))}
                 onGoToDoc={handleGoToDoc}
                 isDebtProperty={formData.isDebtProperty}
               />
               <HintCard
                 icon={FiFileText}
                 iconColor="property-name-hint-icon--thumbs"
-                title={formData.isDebtProperty ? 'Какие документы нужны для продажи долга?' : 'Какие документы нужны?'}
+                title={formData.isDebtProperty ? t('addPropertyDocumentsDebtHint1Title') : t('addPropertyDocumentsHint1Title')}
                 content={formData.isDebtProperty
                   ? [
-                      'Загрузите документы по категориям: по долгу, по обеспечению, юридические, по заемщику, по сделке, дополнительно',
-                      'PDF или изображения (JPG, PNG). В каждый блок можно добавить несколько файлов.'
+                      t('addPropertyDocumentsDebtHint1Item1'),
+                      t('addPropertyDocumentsDebtHint1Item2')
                     ]
                   : [
-                      'Обязательно загрузите документ о праве собственности',
-                      'Добавьте справку об отсутствии долгов',
-                      'Можно загрузить дополнительные документы для доверия покупателей'
+                      t('addPropertyDocumentsHint1Item1'),
+                      t('addPropertyDocumentsHint1Item2'),
+                      t('addPropertyDocumentsHint1Item3')
                     ]}
                 show={showHints['documents']}
                 onClose={() => setShowHints(prev => ({ ...prev, 'documents': false }))}
@@ -6062,10 +6091,10 @@ const AddProperty = () => {
               <HintCard
                 icon={MdLightbulb}
                 iconColor="property-name-hint-icon--bulb"
-                title="Зачем нужны документы?"
+                title={t('addPropertyDocumentsHint2Title')}
                 content={formData.isDebtProperty
-                  ? 'При покупке долга фонды и банки запрашивают пакет документов. Чем полнее пакет, тем выше доверие инвесторов и быстрее сделка.'
-                  : 'Документы подтверждают ваше право собственности и отсутствие обременений, что повышает доверие покупателей и ускоряет процесс продажи.'}
+                  ? t('addPropertyDocumentsDebtHint2Text')
+                  : t('addPropertyDocumentsHint2Text')}
                 show={showHints['documents']}
                 onClose={() => setShowHints(prev => ({ ...prev, 'documents': false }))}
               />
@@ -6080,23 +6109,23 @@ const AddProperty = () => {
             <div className="property-price-main">
               <h2 className="property-price-title">
                 {formData.isShareProperty
-                  ? 'Стоимость и доли'
+                  ? t('addPropertyPriceTitleShares')
                   : formData.isDebtProperty
-                    ? 'Сумма продажи долга'
-                    : 'Укажите стоимость'}
+                    ? t('addPropertyPriceTitleDebt')
+                    : t('addPropertyPriceTitle')}
               </h2>
               
               {formData.isShareProperty ? (
                 <p className="property-price-description">
-                  Укажите общую стоимость объекта и на сколько долей он делится. Цена за одну долю рассчитается автоматически. Аукцион и тест-драйв для долевых объектов не предусмотрены.
+                  {t('addPropertyPriceDescriptionShares')}
                 </p>
               ) : formData.isDebtProperty ? (
                 <p className="property-price-description">
-                  Укажите фиксированную сумму, за которую вы готовы продать объект с долгами. Для таких объявлений аукцион и тест-драйв не используются — покупатель выкупает объект по этой цене.
+                  {t('addPropertyPriceDescriptionDebt')}
                 </p>
               ) : (
                 <p className="property-price-description">
-                  Все объекты размещаются на аукционе. Вы можете указать опциональную цену "Купить сейчас" - это цена, за которую вы готовы мгновенно продать объект. Если не укажете, объект будет только на аукционе.
+                  {t('addPropertyPriceDescriptionAuction')}
                 </p>
               )}
 
@@ -6104,7 +6133,7 @@ const AddProperty = () => {
               {formData.isShareProperty && (
                 <>
                   <div className="price-input-section">
-                    <label className="price-input-label">Общая стоимость объекта</label>
+                    <label className="price-input-label">{t('addPropertyPriceSharesTotalLabel')}</label>
                     <div className="price-input-wrapper-large">
                       <div className="currency-selector">
                         <button type="button" className="currency-button" onClick={() => setShowCurrencyDropdown(showCurrencyDropdown === 'price' ? null : 'price')}>
@@ -6127,7 +6156,7 @@ const AddProperty = () => {
                     </div>
                   </div>
                  <div className="price-input-section" style={{ marginTop: '20px' }}>
-                    <label className="price-input-label">Количество долей</label>
+                    <label className="price-input-label">{t('addPropertyPriceSharesCountLabel')}</label>
                     <div className="price-input-wrapper-large price-input-wrapper-shares">
                       <input
                         type="number"
@@ -6142,17 +6171,17 @@ const AddProperty = () => {
                           }))
                         }
                         className="price-input-large"
-                        placeholder="Например: 20"
+                        placeholder={t('addPropertyPriceSharesCountPlaceholder')}
                         inputMode="numeric"
                       />
                     </div>
                     <p style={{ fontSize: '14px', color: '#64748b', marginTop: '8px' }}>
-                      Объект будет разделён на равные доли. Покупатели смогут купить одну или несколько долей.
+                      {t('addPropertyPriceSharesDescription')}
                     </p>
                   </div>
                   {formData.price && formData.totalShares && parseInt(formData.totalShares, 10) > 0 && (
                     <div className="share-price-per-unit" style={{ marginTop: '16px', padding: '16px', background: 'rgba(10, 186, 181, 0.1)', borderRadius: '12px', border: '1px solid rgba(10, 186, 181, 0.25)' }}>
-                      <strong>Цена за 1 долю:</strong>{' '}
+                      <strong>{t('addPropertyPriceSharesPerUnit')}</strong>{' '}
                       <span>{currencies.find(c => c.code === currency)?.symbol || '$'}{(Number(removeCommas(String(formData.price))) / parseInt(formData.totalShares, 10)).toLocaleString('en-US')}</span>
                     </div>
                   )}
@@ -6163,7 +6192,7 @@ const AddProperty = () => {
               {formData.isDebtProperty && !formData.isShareProperty && (
                 <>
                 <div className="price-input-section">
-                  <label className="price-input-label">Сумма долга</label>
+                  <label className="price-input-label">{t('addPropertyPriceDebtAmountLabel')}</label>
                   <div className="price-input-wrapper-large">
                     <div className="currency-selector">
                       <button
@@ -6212,7 +6241,7 @@ const AddProperty = () => {
                 </div>
 
                 <div className="price-input-section" style={{ marginTop: '24px' }}>
-                  <label className="price-input-label">Сумма продажи объекта с долгами</label>
+                  <label className="price-input-label">{t('addPropertyPriceDebtSaleAmountLabel')}</label>
                   <div className="price-input-wrapper-large">
                     <div className="currency-selector">
                       <button
@@ -6324,8 +6353,8 @@ const AddProperty = () => {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                   <FiDollarSign size={20} color="#0ea5e9" />
                   <div>
-                    <div style={{ fontWeight: '600', color: '#0c4a6e', marginBottom: '4px' }}>Аукционный объект</div>
-                    <div style={{ fontSize: '14px', color: '#075985' }}>Все объекты размещаются на аукционе. Покупатели смогут делать ставки.</div>
+                    <div style={{ fontWeight: '600', color: '#0c4a6e', marginBottom: '4px' }}>{t('addPropertyPriceAuctionObjectTitle')}</div>
+                    <div style={{ fontSize: '14px', color: '#075985' }}>{t('addPropertyPriceAuctionObjectDesc')}</div>
                   </div>
                 </div>
               </div>
@@ -6334,7 +6363,7 @@ const AddProperty = () => {
               <div className="auction-fields-section">
                 <div className="auction-date-range">
                   <AuctionPeriodPicker
-                    label="Период проведения аукциона"
+                    label={t('addPropertyPriceAuctionPeriodLabel')}
                     startDate={formData.auctionStartDate}
                     endDate={formData.auctionEndDate}
                     onStartDateChange={(date) => setFormData(prev => ({ ...prev, auctionStartDate: date }))}
@@ -6344,7 +6373,7 @@ const AddProperty = () => {
                 
                 <div className="auction-starting-price">
                   <label className="auction-starting-price-label">
-                    Стартовая сумма ставки
+                    {t('addPropertyPriceStartingBidLabel')}
                   </label>
                   <div className="bid-step-input-wrapper-large">
                     <div className="currency-selector">
@@ -6405,40 +6434,40 @@ const AddProperty = () => {
                   onClick={() => setCurrentStep('documents')}
                 >
                   <FiChevronLeft size={16} />
-                  Назад
+                  {t('addPropertyBack')}
                 </button>
                 <button
                   type="button"
                   className="property-price-continue-btn"
                   onClick={handlePriceContinue}
                 >
-                  Продолжить
+                  {t('addPropertyTypeContinue')}
                 </button>
               </div>
             </div>
 
-            <div className="property-name-hints" style={{ marginLeft: '150px'}}>
-              <HintCard
-                icon={FiDollarSign}
-                iconColor="property-name-hint-icon--thumbs"
-                title="Как установить цену?"
-                content={[
-                  "Изучите цены на аналогичные объекты в вашем районе",
-                  "Учитывайте состояние и особенности недвижимости",
-                  "Можно установить фиксированную цену или начать аукцион"
-                ]}
-                show={showHints['price']}
-                onClose={() => setShowHints(prev => ({ ...prev, 'price': false }))}
-              />
-              <HintCard
-                icon={MdLightbulb}
-                iconColor="property-name-hint-icon--bulb"
-                title="Что такое аукцион?"
-                content="Аукцион позволяет покупателям делать ставки, что может привести к более высокой цене продажи. Вы устанавливаете стартовую цену, а покупатели соревнуются за объект."
-                show={showHints['price']}
-                onClose={() => setShowHints(prev => ({ ...prev, 'price': false }))}
-              />
-            </div>
+              <div className="property-name-hints" style={{ marginLeft: '150px'}}>
+                <HintCard
+                  icon={FiDollarSign}
+                  iconColor="property-name-hint-icon--thumbs"
+                  title={t('addPropertyPriceHint1Title')}
+                  content={[
+                    t('addPropertyPriceHint1Item1'),
+                    t('addPropertyPriceHint1Item2'),
+                    t('addPropertyPriceHint1Item3')
+                  ]}
+                  show={showHints['price']}
+                  onClose={() => setShowHints(prev => ({ ...prev, 'price': false }))}
+                />
+                <HintCard
+                  icon={MdLightbulb}
+                  iconColor="property-name-hint-icon--bulb"
+                  title={t('addPropertyPriceHint2Title')}
+                  content={t('addPropertyPriceHint2Text')}
+                  show={showHints['price']}
+                  onClose={() => setShowHints(prev => ({ ...prev, 'price': false }))}
+                />
+              </div>
           </div>
         ) : (
           <form
@@ -7057,14 +7086,14 @@ const AddProperty = () => {
             >
               <FiX size={20} />
             </button>
-            <h3 className="video-link-modal-title">Добавить ссылку на видео</h3>
+            <h3 className="video-link-modal-title">{t('addPropertyPhotosVideoLinkTitle')}</h3>
             <p className="video-link-modal-subtitle">
-              Вставьте ссылку на YouTube или Google Drive
+              {t('addPropertyPhotosVideoLinkSubtitle')}
             </p>
             <input
               type="text"
               className="video-link-input"
-              placeholder="https://youtube.com/watch?v=... или https://drive.google.com/file/d/..."
+              placeholder={t('addPropertyPhotosVideoLinkPlaceholder')}
               value={videoLink}
               onChange={(e) => setVideoLink(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && handleVideoLinkSubmit()}
@@ -7078,14 +7107,14 @@ const AddProperty = () => {
                   setVideoLink('')
                 }}
               >
-                Отмена
+                {t('addPropertyPhotosVideoLinkCancel')}
               </button>
               <button
                 type="button"
                 className="video-link-modal-submit"
                 onClick={handleVideoLinkSubmit}
               >
-                Добавить
+                {t('addPropertyPhotosVideoLinkSubmit')}
               </button>
             </div>
           </div>

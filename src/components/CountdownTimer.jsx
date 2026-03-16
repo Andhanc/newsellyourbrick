@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import './CountdownTimer.css'
 
 const CountdownTimer = ({ endTime }) => {
+  const { t } = useTranslation()
   const [timeLeft, setTimeLeft] = useState({
     days: 0,
     hours: 0,
@@ -50,19 +52,19 @@ const CountdownTimer = ({ endTime }) => {
       <div className="timer-segments">
         <div className="timer-segment">
           <span className="timer-value">{String(timeLeft.days).padStart(2, '0')}</span>
-          <span className="timer-unit">Д</span>
+          <span className="timer-unit">{t('timerDay')}</span>
         </div>
         <div className="timer-segment">
           <span className="timer-value">{String(timeLeft.hours).padStart(2, '0')}</span>
-          <span className="timer-unit">Ч</span>
+          <span className="timer-unit">{t('timerHour')}</span>
         </div>
         <div className="timer-segment">
           <span className="timer-value">{String(timeLeft.minutes).padStart(2, '0')}</span>
-          <span className="timer-unit">М</span>
+          <span className="timer-unit">{t('timerMin')}</span>
         </div>
         <div className="timer-segment">
           <span className="timer-value">{String(timeLeft.seconds).padStart(2, '0')}</span>
-          <span className="timer-unit">С</span>
+          <span className="timer-unit">{t('timerSec')}</span>
         </div>
       </div>
     </div>

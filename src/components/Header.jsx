@@ -194,107 +194,20 @@ const Header = () => {
 
   // Определение страниц для поиска
   const searchablePages = [
-    {
-      path: '/',
-      keywords: ['главная', 'home', 'начало', 'старт'],
-      title: 'Главная',
-      requiresAuth: false,
-      allowedRoles: ['buyer', 'seller', 'owner', 'admin', 'client'] // Доступна всем
-    },
-    {
-      path: '/auction',
-      keywords: ['аукцион', 'auction', 'торги', 'продажа', 'недвижимость'],
-      title: 'Аукцион',
-      requiresAuth: false,
-      allowedRoles: ['buyer', 'seller', 'owner', 'admin', 'client'] // Доступна всем
-    },
-    {
-      path: '/map',
-      keywords: ['карта', 'map', 'карты', 'локация', 'место'],
-      title: 'Карта',
-      requiresAuth: false,
-      allowedRoles: ['buyer', 'seller', 'owner', 'admin', 'client'] // Доступна всем
-    },
-    {
-      path: '/chat',
-      keywords: ['чат', 'chat', 'сообщения', 'messages', 'переписка'],
-      title: 'Чат',
-      requiresAuth: false,
-      allowedRoles: ['buyer', 'seller', 'owner', 'admin', 'client'] // Доступна всем
-    },
-    {
-      path: '/profile',
-      keywords: ['профиль', 'profile', 'аккаунт', 'личный кабинет', 'личный', 'кабинет', 'настройки', 'settings'],
-      title: 'Профиль',
-      requiresAuth: true,
-      allowedRoles: ['buyer', 'client', 'admin'] // Только для покупателей и админов
-    },
-    {
-      path: '/favorites',
-      keywords: ['избранное', 'favorites', 'избранные', 'закладки', 'bookmarks'],
-      title: 'Избранное',
-      requiresAuth: true,
-      allowedRoles: ['buyer', 'client', 'admin'] // Только для покупателей и админов
-    },
-    {
-      path: '/wallet',
-      keywords: ['кошелек', 'wallet', 'баланс', 'balance', 'деньги', 'money', 'платежи', 'payments'],
-      title: 'Кошелек',
-      requiresAuth: true,
-      allowedRoles: ['buyer', 'client', 'admin'] // Только для покупателей и админов
-    },
-    {
-      path: '/data',
-      keywords: ['данные', 'data', 'информация', 'information', 'персональные данные'],
-      title: 'Данные',
-      requiresAuth: true,
-      allowedRoles: ['buyer', 'client', 'admin'] // Только для покупателей и админов
-    },
-    {
-      path: '/subscriptions',
-      keywords: ['подписки', 'subscriptions', 'подписка', 'subscription', 'тарифы', 'tariffs'],
-      title: 'Подписки',
-      requiresAuth: true,
-      allowedRoles: ['buyer', 'client', 'admin'] // Только для покупателей и админов
-    },
-    {
-      path: '/history',
-      keywords: ['история', 'history', 'история покупок', 'покупки', 'purchases'],
-      title: 'История',
-      requiresAuth: true,
-      allowedRoles: ['buyer', 'client', 'admin'] // Только для покупателей и админов
-    },
-    {
-      path: '/bonuses',
-      keywords: ['бонусы', 'bonuses', 'промокод', 'промокоды', 'задания', 'инстаграм', 'тикток'],
-      title: 'Бонусы',
-      requiresAuth: true,
-      allowedRoles: ['buyer', 'client', 'admin']
-    },
-    {
-      path: '/owner',
-      keywords: ['кабинет продавца', 'owner', 'продавец', 'seller', 'владелец', 'dashboard', 'дашборд', 'панель продавца'],
-      title: 'Кабинет продавца',
-      requiresAuth: true,
-      requiresRole: ['seller', 'owner'],
-      allowedRoles: ['seller', 'owner', 'admin'] // Только для продавцов и админов
-    },
-    {
-      path: '/owner/property/new',
-      keywords: ['добавить недвижимость', 'add property', 'новая недвижимость', 'создать объявление', 'разместить'],
-      title: 'Добавить недвижимость',
-      requiresAuth: true,
-      requiresRole: ['seller', 'owner'],
-      allowedRoles: ['seller', 'owner', 'admin'] // Только для продавцов и админов
-    },
-    {
-      path: '/admin',
-      keywords: ['админ', 'admin', 'администратор', 'administrator', 'панель администратора', 'админка'],
-      title: 'Админ-панель',
-      requiresAuth: true,
-      requiresRole: ['admin'],
-      allowedRoles: ['admin'] // Только для админов
-    }
+    { path: '/', keywords: ['главная', 'home', 'начало', 'старт'], titleKey: 'home', requiresAuth: false, allowedRoles: ['buyer', 'seller', 'owner', 'admin', 'client'] },
+    { path: '/auction', keywords: ['аукцион', 'auction', 'торги', 'продажа', 'недвижимость'], titleKey: 'auction', requiresAuth: false, allowedRoles: ['buyer', 'seller', 'owner', 'admin', 'client'] },
+    { path: '/map', keywords: ['карта', 'map', 'карты', 'локация', 'место'], titleKey: 'mapLink', requiresAuth: false, allowedRoles: ['buyer', 'seller', 'owner', 'admin', 'client'] },
+    { path: '/chat', keywords: ['чат', 'chat', 'сообщения', 'messages', 'переписка'], titleKey: 'chat', requiresAuth: false, allowedRoles: ['buyer', 'seller', 'owner', 'admin', 'client'] },
+    { path: '/profile', keywords: ['профиль', 'profile', 'аккаунт', 'личный кабинет', 'настройки', 'settings'], titleKey: 'profile', requiresAuth: true, allowedRoles: ['buyer', 'client', 'admin'] },
+    { path: '/favorites', keywords: ['избранное', 'favorites', 'избранные', 'закладки', 'bookmarks'], titleKey: 'favorites', requiresAuth: true, allowedRoles: ['buyer', 'client', 'admin'] },
+    { path: '/wallet', keywords: ['кошелек', 'wallet', 'баланс', 'balance', 'деньги', 'money', 'платежи', 'payments'], titleKey: 'wallet', requiresAuth: true, allowedRoles: ['buyer', 'client', 'admin'] },
+    { path: '/data', keywords: ['данные', 'data', 'информация', 'information', 'персональные данные'], titleKey: 'data', requiresAuth: true, allowedRoles: ['buyer', 'client', 'admin'] },
+    { path: '/subscriptions', keywords: ['подписки', 'subscriptions', 'подписка', 'subscription', 'тарифы', 'tariffs'], titleKey: 'subscriptions', requiresAuth: true, allowedRoles: ['buyer', 'client', 'admin'] },
+    { path: '/history', keywords: ['история', 'history', 'история покупок', 'покупки', 'purchases'], titleKey: 'history', requiresAuth: true, allowedRoles: ['buyer', 'client', 'admin'] },
+    { path: '/bonuses', keywords: ['бонусы', 'bonuses', 'промокод', 'промокоды', 'задания'], titleKey: 'bonuses', requiresAuth: true, allowedRoles: ['buyer', 'client', 'admin'] },
+    { path: '/owner', keywords: ['кабинет продавца', 'owner', 'продавец', 'seller', 'владелец', 'dashboard', 'дашборд'], titleKey: 'ownerDashboard', requiresAuth: true, requiresRole: ['seller', 'owner'], allowedRoles: ['seller', 'owner', 'admin'] },
+    { path: '/owner/property/new', keywords: ['добавить недвижимость', 'add property', 'новая недвижимость', 'создать объявление', 'разместить'], titleKey: 'addProperty', requiresAuth: true, requiresRole: ['seller', 'owner'], allowedRoles: ['seller', 'owner', 'admin'] },
+    { path: '/admin', keywords: ['админ', 'admin', 'администратор', 'administrator', 'панель администратора', 'админка'], titleKey: 'adminPanel', requiresAuth: true, requiresRole: ['admin'], allowedRoles: ['admin'] }
   ]
 
   // Получение текущей роли пользователя
@@ -336,7 +249,7 @@ const Header = () => {
         )
         
         // Проверяем совпадение по названию
-        const matchesTitle = page.title.toLowerCase().includes(queryLower)
+        const matchesTitle = t(page.titleKey).toLowerCase().includes(queryLower)
         
         if (!(matchesKeywords || matchesTitle)) {
           return false
@@ -515,11 +428,11 @@ const Header = () => {
                     setIsMenuOpen(true)
                   }
                 }}
-                aria-label="Меню"
+                aria-label={t('menu')}
                 aria-expanded={isMenuOpen}
               >
                 <FiMenu size={20} className="new-header__menu-icon" />
-                <span>Меню</span>
+                <span>{t('menu')}</span>
               </button>
             </div>
             
@@ -555,7 +468,7 @@ const Header = () => {
                     <button
                       type="button"
                       className="menu-dropdown__close-btn"
-                      aria-label="Закрыть меню"
+                      aria-label={t('closeMenu')}
                       onClick={(e) => {
                         e.stopPropagation()
                         setIsMenuClosing(true)
@@ -569,7 +482,7 @@ const Header = () => {
                     </button>
                     <div className="menu-dropdown__columns">
                       <div className="menu-dropdown__column">
-                        <h3 className="menu-dropdown__column-title">Навигация по сайту</h3>
+                        <h3 className="menu-dropdown__column-title">{t('navSiteTitle')}</h3>
                         <div className="menu-dropdown__column-items">
                           <button 
                             className="menu-dropdown__item"
@@ -578,7 +491,7 @@ const Header = () => {
                               setIsMenuOpen(false)
                             }}
                           >
-                            <span>Главная</span>
+                            <span>{t('home')}</span>
                           </button>
                           <button 
                             className="menu-dropdown__item"
@@ -587,7 +500,7 @@ const Header = () => {
                               setIsMenuOpen(false)
                             }}
                           >
-                            <span>Аукцион</span>
+                            <span>{t('auction')}</span>
                           </button>
                           <button 
                             className="menu-dropdown__item"
@@ -596,7 +509,7 @@ const Header = () => {
                               setIsMenuOpen(false)
                             }}
                           >
-                            <span>Карта</span>
+                            <span>{t('mapLink')}</span>
                           </button>
                           <button 
                             className="menu-dropdown__item"
@@ -605,7 +518,7 @@ const Header = () => {
                               setIsMenuOpen(false)
                             }}
                           >
-                            <span>Долги</span>
+                            <span>{t('debtsTitle')}</span>
                           </button>
                           <button 
                             className="menu-dropdown__item"
@@ -614,7 +527,7 @@ const Header = () => {
                               setIsMenuOpen(false)
                             }}
                           >
-                            <span>Понравилось</span>
+                            <span>{t('favorites')}</span>
                           </button>
                           <button 
                             className="menu-dropdown__item"
@@ -623,7 +536,7 @@ const Header = () => {
                               setIsMenuOpen(false)
                             }}
                           >
-                            <span>Доли</span>
+                            <span>{t('shares')}</span>
                           </button>
                           <button 
                             className="menu-dropdown__item"
@@ -632,7 +545,7 @@ const Header = () => {
                               setIsMenuOpen(false)
                             }}
                           >
-                            <span>Чат</span>
+                            <span>{t('chat')}</span>
                           </button>
                           <button 
                             className="menu-dropdown__item"
@@ -641,12 +554,12 @@ const Header = () => {
                               setIsMenuOpen(false)
                             }}
                           >
-                            <span>Бонусы</span>
+                            <span>{t('bonuses')}</span>
                           </button>
                         </div>
                       </div>
                       <div className="menu-dropdown__column">
-                        <h3 className="menu-dropdown__column-title">Профиль</h3>
+                        <h3 className="menu-dropdown__column-title">{t('profile')}</h3>
                         <div className="menu-dropdown__column-items">
                           {isLoggedIn ? (
                             <>
@@ -657,7 +570,7 @@ const Header = () => {
                                   setIsMenuOpen(false)
                                 }}
                               >
-                                <span>Профиль</span>
+                                <span>{t('profile')}</span>
                               </button>
                               <button 
                                 className="menu-dropdown__item"
@@ -666,7 +579,7 @@ const Header = () => {
                                   setIsMenuOpen(false)
                                 }}
                               >
-                                <span>Кошелек</span>
+                                <span>{t('wallet')}</span>
                               </button>
                               <button 
                                 className="menu-dropdown__item"
@@ -675,7 +588,7 @@ const Header = () => {
                                   setIsMenuOpen(false)
                                 }}
                               >
-                                <span>Подписки</span>
+                                <span>{t('subscriptions')}</span>
                               </button>
                               <button 
                                 className="menu-dropdown__item"
@@ -684,7 +597,7 @@ const Header = () => {
                                   setIsMenuOpen(false)
                                 }}
                               >
-                                <span>Данные</span>
+                                <span>{t('data')}</span>
                               </button>
                             </>
                           ) : (
@@ -695,7 +608,7 @@ const Header = () => {
                                 setIsMenuOpen(false)
                               }}
                             >
-                              <span>Войти</span>
+                              <span>{t('logIn')}</span>
                             </button>
                           )}
                         </div>
@@ -736,7 +649,7 @@ const Header = () => {
                 }
               }}
             >
-              <span>{t('aiAssistant') || 'Умный помощник'}</span>
+              <span>{t('aiAssistant')}</span>
             </button>
             <button
               type="button"
@@ -755,7 +668,7 @@ const Header = () => {
                   <input
                     ref={searchInputRef}
                     type="text"
-                    placeholder={t('search') || 'Поиск...'}
+                    placeholder={t('search')}
                     className="new-header__search-input"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
@@ -783,7 +696,7 @@ const Header = () => {
                       setSearchQuery('')
                       setSearchResults([])
                     }}
-                    aria-label="Закрыть поиск"
+                    aria-label={t('closeSearch')}
                   >
                     <FiX size={18} />
                   </button>
@@ -798,10 +711,10 @@ const Header = () => {
                         onClick={() => handleSearchResultClick(result)}
                         disabled={!result.canAccess.allowed}
                       >
-                        <span className="new-header__search-result-title">{result.title}</span>
+                        <span className="new-header__search-result-title">{t(result.titleKey)}</span>
                         {!result.canAccess.allowed && (
                           <span className="new-header__search-result-hint">
-                            {result.canAccess.reason === 'auth' ? '🔒 Требуется вход' : '⚠️ Нет доступа'}
+                            {result.canAccess.reason === 'auth' ? `🔒 ${t('authRequired')}` : `⚠️ ${t('noAccess')}`}
                           </span>
                         )}
                       </button>
@@ -811,7 +724,7 @@ const Header = () => {
                 {searchQuery.trim() && searchResults.length === 0 && (
                   <div className="new-header__search-results">
                     <div className="new-header__search-result new-header__search-result--no-results">
-                      <span>Ничего не найдено</span>
+                      <span>{t('nothingFound')}</span>
                     </div>
                   </div>
                 )}
@@ -827,7 +740,7 @@ const Header = () => {
                         setSearchQuery('')
                         setSearchResults([])
                       }}
-                      aria-label="Открыть поиск"
+                      aria-label={t('openSearch')}
                     >
                       <FiSearch size={20} />
                     </button>
@@ -836,7 +749,7 @@ const Header = () => {
                       className="new-header__auction-btn"
                       onClick={() => navigate('/')}
                     >
-                      Главная
+                      {t('home')}
                     </button>
                   </>
                 ) : (
@@ -846,7 +759,7 @@ const Header = () => {
                       className="new-header__auction-btn"
                       onClick={() => navigate('/auction')}
                     >
-                      Аукцион
+                      {t('auction')}
                     </button>
                     <button 
                       className="new-header__search-btn"
@@ -855,7 +768,7 @@ const Header = () => {
                         setSearchQuery('')
                         setSearchResults([])
                       }}
-                      aria-label="Открыть поиск"
+                      aria-label={t('openSearch')}
                     >
                       <FiSearch size={20} />
                     </button>
@@ -942,12 +855,12 @@ const Header = () => {
                 <div className="notification-panel">
                   <div className="notification-panel__content">
                     <div className="notification-panel__header">
-                      <h3 className="notification-panel__title">Уведомления</h3>
+                      <h3 className="notification-panel__title">{t('notifications')}</h3>
                       <button 
                         type="button" 
                         className="notification-panel__close"
                         onClick={() => setIsNotificationOpen(false)}
-                        aria-label="Закрыть уведомления"
+                        aria-label={t('closeNotifications')}
                       >
                         <FiX size={20} />
                       </button>
@@ -955,7 +868,7 @@ const Header = () => {
                     <div className="notification-panel__list">
                       <div className="notification-item notification-item--property">
                         <div className="notification-item__content">
-                          <h4 className="notification-item__title">{t('foundProperty') || 'Нашли для вас объявление!'}</h4>
+                          <h4 className="notification-item__title">{t('foundProperty')}</h4>
                           <div className="notification-item__property">
                             <div className="notification-item__image">
                               <img 

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useSearchParams, useLocation } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { FiChevronDown, FiCheck, FiGift, FiExternalLink, FiCopy, FiShoppingCart, FiUser, FiArrowLeft, FiUserPlus } from 'react-icons/fi'
 import { FaInstagram, FaTiktok, FaGift, FaStar } from 'react-icons/fa'
 import { MdCardGiftcard } from 'react-icons/md'
@@ -10,148 +11,22 @@ import './Bonuses.css'
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
 
 const BUYER_TASKS = [
-  {
-    id: 1,
-    title: 'Пост в Instagram с хештегом #sellyoubrick',
-    icon: FaInstagram,
-    promoCode: 'BONUS-INSTA-10',
-    promoUsageLimit: 1,
-    steps: [
-      'Создайте пост про Sellyourbrick (фото или карусель).',
-      'Добавьте в описание хештег #sellyoubrick.',
-      'Опубликуйте пост и скопируйте ссылку на него.',
-      'Вставьте ссылку ниже и нажмите «Проверить».',
-    ],
-    linkPlaceholder: 'https://www.instagram.com/p/...',
-    linkHint: 'Ссылка на ваш пост в Instagram',
-  },
-  {
-    id: 2,
-    title: 'Видео в TikTok с хештегом #sellyoubrick',
-    icon: FaTiktok,
-    promoCode: 'BONUS-TIKTOK-10',
-    promoUsageLimit: 1,
-    steps: [
-      'Снимите короткое видео про Sellyourbrick или недвижимость.',
-      'Добавьте хештег #sellyoubrick в описание.',
-      'Опубликуйте видео и скопируйте ссылку.',
-      'Вставьте ссылку ниже и нажмите «Проверить».',
-    ],
-    linkPlaceholder: 'https://www.tiktok.com/@username/video/...',
-    linkHint: 'Ссылка на ваше видео в TikTok',
-  },
-  {
-    id: 3,
-    title: 'Ссылка на нас в описании профиля',
-    icon: FaInstagram,
-    promoCode: 'BONUS-BIO-15',
-    promoUsageLimit: 1,
-    steps: [
-      'Откройте профиль в Instagram или TikTok.',
-      'Добавьте в описание профиля (bio) ссылку на Sellyourbrick.',
-      'Сохраните изменения.',
-      'Вставьте ссылку на ваш профиль ниже и нажмите «Проверить».',
-    ],
-    linkPlaceholder: 'https://www.instagram.com/yourprofile/ или https://www.tiktok.com/@yourprofile',
-    linkHint: 'Ссылка на ваш профиль (Instagram или TikTok)',
-  },
-  {
-    id: 4,
-    title: 'Ссылка на нас в посте в Instagram',
-    icon: FaInstagram,
-    promoCode: 'BONUS-LINK-15',
-    promoUsageLimit: 1,
-    steps: [
-      'Опубликуйте пост в Instagram (сторис или лента).',
-      'Добавьте в пост ссылку на Sellyourbrick (в подписи или кнопка).',
-      'Скопируйте ссылку на этот пост.',
-      'Вставьте ссылку ниже и нажмите «Проверить».',
-    ],
-    linkPlaceholder: 'https://www.instagram.com/p/...',
-    linkHint: 'Ссылка на пост со ссылкой на нас',
-  },
-  {
-    id: 9,
-    title: 'Пригласи друга',
-    icon: FiUserPlus,
-    promoCode: 'BONUS-REFER-10',
-    promoUsageLimit: 1,
-    referral: true,
-    steps: [
-      'Скопируйте вашу реферальную ссылку ниже.',
-      'Отправьте её другу (соцсети, мессенджер — как удобно).',
-      'Когда друг перейдёт по ссылке и зарегистрируется на сайте, задание будет выполнено.',
-      'Промокод появится здесь автоматически — используйте его при покупке или в корзине.',
-    ],
-    linkPlaceholder: '',
-    linkHint: '',
-  },
+  { id: 1, titleKey: 'bonus1Title', icon: FaInstagram, promoCode: 'BONUS-INSTA-10', promoUsageLimit: 1, stepKeys: ['bonus1Step1', 'bonus1Step2', 'bonus1Step3', 'bonus1Step4'], linkPlaceholderKey: 'bonus1Placeholder', linkHintKey: 'bonus1Hint' },
+  { id: 2, titleKey: 'bonus2Title', icon: FaTiktok, promoCode: 'BONUS-TIKTOK-10', promoUsageLimit: 1, stepKeys: ['bonus2Step1', 'bonus2Step2', 'bonus2Step3', 'bonus2Step4'], linkPlaceholderKey: 'bonus2Placeholder', linkHintKey: 'bonus2Hint' },
+  { id: 3, titleKey: 'bonus3Title', icon: FaInstagram, promoCode: 'BONUS-BIO-15', promoUsageLimit: 1, stepKeys: ['bonus3Step1', 'bonus3Step2', 'bonus3Step3', 'bonus3Step4'], linkPlaceholderKey: 'bonus3Placeholder', linkHintKey: 'bonus3Hint' },
+  { id: 4, titleKey: 'bonus4Title', icon: FaInstagram, promoCode: 'BONUS-LINK-15', promoUsageLimit: 1, stepKeys: ['bonus4Step1', 'bonus4Step2', 'bonus4Step3', 'bonus4Step4'], linkPlaceholderKey: 'bonus4Placeholder', linkHintKey: 'bonus4Hint' },
+  { id: 9, titleKey: 'bonus9Title', icon: FiUserPlus, promoCode: 'BONUS-REFER-10', promoUsageLimit: 1, referral: true, stepKeys: ['bonus9Step1', 'bonus9Step2', 'bonus9Step3', 'bonus9Step4'], linkPlaceholderKey: '', linkHintKey: '' },
 ]
 
 const SELLER_TASKS = [
-  {
-    id: 5,
-    title: 'Пост в Instagram с хештегом #sellyoubrick',
-    icon: FaInstagram,
-    promoCode: 'BONUS-SELLER-INSTA-10',
-    promoUsageLimit: 1,
-    steps: [
-      'Создайте пост про ваше объявление или Sellyourbrick (фото или карусель).',
-      'Добавьте в описание хештег #sellyoubrick.',
-      'Опубликуйте пост и скопируйте ссылку на него.',
-      'Вставьте ссылку ниже и нажмите «Проверить».',
-    ],
-    linkPlaceholder: 'https://www.instagram.com/p/...',
-    linkHint: 'Ссылка на ваш пост в Instagram',
-  },
-  {
-    id: 6,
-    title: 'Видео в TikTok с хештегом #sellyoubrick',
-    icon: FaTiktok,
-    promoCode: 'BONUS-SELLER-TIKTOK-10',
-    promoUsageLimit: 1,
-    steps: [
-      'Снимите короткое видео про вашу долю, недвижимость или Sellyourbrick.',
-      'Добавьте хештег #sellyoubrick в описание.',
-      'Опубликуйте видео и скопируйте ссылку.',
-      'Вставьте ссылку ниже и нажмите «Проверить».',
-    ],
-    linkPlaceholder: 'https://www.tiktok.com/@username/video/...',
-    linkHint: 'Ссылка на ваше видео в TikTok',
-  },
-  {
-    id: 7,
-    title: 'Ссылка на нас в описании профиля',
-    icon: FaInstagram,
-    promoCode: 'BONUS-SELLER-BIO-15',
-    promoUsageLimit: 1,
-    steps: [
-      'Откройте профиль в Instagram или TikTok.',
-      'Добавьте в описание профиля (bio) ссылку на Sellyourbrick.',
-      'Сохраните изменения.',
-      'Вставьте ссылку на ваш профиль ниже и нажмите «Проверить».',
-    ],
-    linkPlaceholder: 'https://www.instagram.com/yourprofile/ или https://www.tiktok.com/@yourprofile',
-    linkHint: 'Ссылка на ваш профиль (Instagram или TikTok)',
-  },
-  {
-    id: 8,
-    title: 'Ссылка на нас в посте в Instagram',
-    icon: FaInstagram,
-    promoCode: 'BONUS-SELLER-LINK-15',
-    promoUsageLimit: 1,
-    steps: [
-      'Опубликуйте пост в Instagram (сторис или лента) про ваше объявление или Sellyourbrick.',
-      'Добавьте в пост ссылку на Sellyourbrick (в подписи или кнопка).',
-      'Скопируйте ссылку на этот пост.',
-      'Вставьте ссылку ниже и нажмите «Проверить».',
-    ],
-    linkPlaceholder: 'https://www.instagram.com/p/...',
-    linkHint: 'Ссылка на пост со ссылкой на нас',
-  },
+  { id: 5, titleKey: 'bonus5Title', icon: FaInstagram, promoCode: 'BONUS-SELLER-INSTA-10', promoUsageLimit: 1, stepKeys: ['bonus5Step1', 'bonus5Step2', 'bonus5Step3', 'bonus5Step4'], linkPlaceholderKey: 'bonus5Placeholder', linkHintKey: 'bonus5Hint' },
+  { id: 6, titleKey: 'bonus6Title', icon: FaTiktok, promoCode: 'BONUS-SELLER-TIKTOK-10', promoUsageLimit: 1, stepKeys: ['bonus6Step1', 'bonus6Step2', 'bonus6Step3', 'bonus6Step4'], linkPlaceholderKey: 'bonus6Placeholder', linkHintKey: 'bonus6Hint' },
+  { id: 7, titleKey: 'bonus7Title', icon: FaInstagram, promoCode: 'BONUS-SELLER-BIO-15', promoUsageLimit: 1, stepKeys: ['bonus7Step1', 'bonus7Step2', 'bonus7Step3', 'bonus7Step4'], linkPlaceholderKey: 'bonus7Placeholder', linkHintKey: 'bonus7Hint' },
+  { id: 8, titleKey: 'bonus8Title', icon: FaInstagram, promoCode: 'BONUS-SELLER-LINK-15', promoUsageLimit: 1, stepKeys: ['bonus8Step1', 'bonus8Step2', 'bonus8Step3', 'bonus8Step4'], linkPlaceholderKey: 'bonus8Placeholder', linkHintKey: 'bonus8Hint' },
 ]
 
 const Bonuses = () => {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const location = useLocation()
   const [searchParams] = useSearchParams()
@@ -226,13 +101,13 @@ const Bonuses = () => {
   const handleSubmit = async (taskId) => {
     const link = (linkInputs[taskId] || '').trim()
     if (!link) {
-      setError('Вставьте ссылку на пост или профиль.')
+      setError(t('bonusesErrorLink'))
       return
     }
-    const task = currentTasks.find((t) => t.id === taskId)
+    const task = currentTasks.find((x) => x.id === taskId)
     if (!task) return
     if (!/^https?:\/\/.+/i.test(link)) {
-      setError('Введите корректную ссылку (начинается с https://).')
+      setError(t('bonusesErrorInvalidLink'))
       return
     }
     setError(null)
@@ -254,10 +129,10 @@ const Bonuses = () => {
         await loadSubmissions()
         setExpandedTask(null)
       } else {
-        setError(data.message || 'Не удалось отправить заявку.')
+        setError(data.message || t('bonusesErrorSubmit'))
       }
     } catch (e) {
-      setError('Ошибка сети. Попробуйте позже.')
+      setError(t('bonusesErrorNetwork'))
     } finally {
       setSubmitting(null)
     }
@@ -326,12 +201,10 @@ const Bonuses = () => {
             </div>
           </div>
           <h1 className="bonuses-header__title">
-            {bonusMode === 'seller' ? 'Бонусы для продавцов' : 'Бонусные задания'}
+            {bonusMode === 'seller' ? t('bonusesTitleSeller') : t('bonusesTitleBuyer')}
           </h1>
           <p className="bonuses-header__subtitle">
-            {bonusMode === 'seller'
-              ? 'Выполняйте задания и получайте скидки на комиссию и бонусы. Пришлите ссылку — мы проверим заявку.'
-              : 'Выполняйте задания и получайте промокоды. Пришлите ссылку — мы проверим и одобрим заявку.'}
+            {bonusMode === 'seller' ? t('bonusesSubtitleSeller') : t('bonusesSubtitleBuyer')}
           </p>
           <div className="bonuses-header__strip" aria-hidden>
             <FaStar size={14} />
@@ -349,20 +222,20 @@ const Bonuses = () => {
             onClick={() => navigate(returnPath, { state: { openListingFeeModal: true } })}
           >
             <FiArrowLeft size={20} className="bonuses-return-hint__icon" />
-            <span className="bonuses-return-hint__text">Нажмите, чтобы вернуться к вашему объекту</span>
+            <span className="bonuses-return-hint__text">{t('bonusesReturnHint')}</span>
           </button>
         )}
 
-        {userId === null && <div className="bonuses-loading">Загрузка...</div>}
+        {userId === null && <div className="bonuses-loading">{t('loading')}</div>}
         {userId !== null && !isLoggedIn && (
           <div className="bonuses-login-prompt">
-            <p className="bonuses-login-prompt__text">Войдите в аккаунт, чтобы участвовать в бонусных заданиях и получать промокоды.</p>
+            <p className="bonuses-login-prompt__text">{t('bonusesLoginText')}</p>
             <button
               type="button"
               className="bonuses-login-prompt__btn"
               onClick={() => navigate('/profile')}
             >
-              Войти в аккаунт
+              {t('bonusesLoginBtn')}
             </button>
           </div>
         )}
@@ -371,7 +244,7 @@ const Bonuses = () => {
 
         {isLoggedIn && (
           <>
-            <div className={`bonuses-tabs ${bonusMode === 'seller' ? 'bonuses-tabs--seller' : ''}`} role="tablist" aria-label="Тип бонусов">
+            <div className={`bonuses-tabs ${bonusMode === 'seller' ? 'bonuses-tabs--seller' : ''}`} role="tablist" aria-label={t('bonusesTabsAria')}>
               <div className="bonuses-tabs__track" aria-hidden>
                 <div className="bonuses-tabs__pill" data-active={bonusMode} />
               </div>
@@ -385,7 +258,7 @@ const Bonuses = () => {
                 onClick={() => { setBonusMode('buyer'); setExpandedTask(null) }}
               >
                 <FiShoppingCart size={20} className="bonuses-tabs__icon" />
-                Для покупателя
+                {t('bonusesTabBuyer')}
               </button>
               <button
                 type="button"
@@ -397,7 +270,7 @@ const Bonuses = () => {
                 onClick={() => { setBonusMode('seller'); setExpandedTask(null) }}
               >
                 <FiUser size={20} className="bonuses-tabs__icon" />
-                Для продавца
+                {t('bonusesTabSeller')}
               </button>
             </div>
             <div className={`bonuses-tasks bonuses-tasks--${bonusMode}`} id={bonusMode === 'buyer' ? 'bonuses-tasks-buyer' : 'bonuses-tasks-seller'} role="tabpanel" aria-labelledby={bonusMode === 'buyer' ? 'tab-buyer' : 'tab-seller'}>
@@ -425,14 +298,14 @@ const Bonuses = () => {
                     <Icon size={24} className="bonuses-task__icon" />
                   </div>
                   <div className="bonuses-task__title-wrap">
-                    <h2 className="bonuses-task__title">{task.title}</h2>
+                    <h2 className="bonuses-task__title">{t(task.titleKey)}</h2>
                     {isApproved && (
                       <span className="bonuses-task__badge bonuses-task__badge--done">
-                        <FiCheck size={14} /> Выполнено
+                        <FiCheck size={14} /> {t('bonusesTaskDone')}
                       </span>
                     )}
                     {isPending && (
-                      <span className="bonuses-task__badge bonuses-task__badge--pending">На проверке</span>
+                      <span className="bonuses-task__badge bonuses-task__badge--pending">{t('bonusesTaskPending')}</span>
                     )}
                   </div>
                   {!isApproved && !isPending && (
@@ -442,7 +315,7 @@ const Bonuses = () => {
                       onClick={() => setExpandedTask(isExpanded ? null : task.id)}
                       aria-expanded={isExpanded}
                     >
-                      <span>{isExpanded ? 'Свернуть' : 'Начать'}</span>
+                      <span>{isExpanded ? t('bonusesTaskCollapse') : t('bonusesTaskExpand')}</span>
                       <FiChevronDown size={20} className={isExpanded ? 'bonuses-task__chevron--open' : ''} />
                     </button>
                   )}
@@ -453,7 +326,7 @@ const Bonuses = () => {
                       rel="noopener noreferrer"
                       className="bonuses-task__link-out"
                     >
-                      <FiExternalLink size={18} /> Открыть ссылку
+                      <FiExternalLink size={18} /> {t('bonusesTaskOpenLink')}
                     </a>
                   )}
                 </div>
@@ -463,23 +336,23 @@ const Bonuses = () => {
                     {!isApproved && (
                       <>
                         <div className="bonuses-task__steps">
-                          <h3 className="bonuses-task__steps-title">Что сделать:</h3>
+                          <h3 className="bonuses-task__steps-title">{t('bonusesTaskStepsTitle')}</h3>
                           <ol className="bonuses-task__steps-list">
-                            {task.steps.map((step, i) => (
-                              <li key={i}>{step}</li>
+                            {task.stepKeys.map((stepKey, i) => (
+                              <li key={i}>{t(stepKey)}</li>
                             ))}
                           </ol>
                         </div>
-                        {task.referral ? (
+{task.referral ? (
                           <div className="bonuses-task__submit">
-                            <label className="bonuses-task__label">Ваша реферальная ссылка</label>
+                            <label className="bonuses-task__label">{t('bonusesReferralLabel')}</label>
                             <div className="bonuses-task__referral-row">
                               <input
                                 readOnly
                                 type="text"
                                 className="bonuses-task__input bonuses-task__input--referral"
                                 value={userId ? `${typeof window !== 'undefined' ? window.location.origin : ''}/?ref=${userId}` : ''}
-                                aria-label="Реферальная ссылка"
+                                aria-label={t('bonusesReferralLabel')}
                               />
                               <button
                                 type="button"
@@ -493,8 +366,8 @@ const Bonuses = () => {
                                     })
                                   }
                                 }}
-                                title="Скопировать ссылку"
-                                aria-label="Скопировать реферальную ссылку"
+                                title={t('bonusesCopyLink')}
+                                aria-label={t('bonusesCopyLinkAria')}
                               >
                                 {copiedTaskId === task.id ? (
                                   <FiCheck size={18} className="bonuses-task__copy-icon bonuses-task__copy-icon--done" />
@@ -503,18 +376,18 @@ const Bonuses = () => {
                                 )}
                               </button>
                             </div>
-                            <p className="bonuses-task__referral-hint">Поделитесь ссылкой с другом. После его регистрации вы получите промокод здесь.</p>
+                            <p className="bonuses-task__referral-hint">{t('bonusesReferralHint')}</p>
                           </div>
                         ) : (
                           <div className="bonuses-task__submit">
                             <label className="bonuses-task__label" htmlFor={`bonus-link-${task.id}`}>
-                              {task.linkHint}
+                              {t(task.linkHintKey)}
                             </label>
                             <input
                               id={`bonus-link-${task.id}`}
                               type="url"
                               className="bonuses-task__input"
-                              placeholder={task.linkPlaceholder}
+                              placeholder={t(task.linkPlaceholderKey)}
                               value={linkInputs[task.id] || ''}
                               onChange={(e) => setLinkInputs((prev) => ({ ...prev, [task.id]: e.target.value }))}
                             />
@@ -524,7 +397,7 @@ const Bonuses = () => {
                               disabled={submitting === task.id}
                               onClick={() => handleSubmit(task.id)}
                             >
-                              {submitting === task.id ? 'Отправка...' : 'Проверить'}
+                              {submitting === task.id ? t('bonusesTaskSubmitting') : t('bonusesTaskCheck')}
                             </button>
                           </div>
                         )}
@@ -549,15 +422,15 @@ const Bonuses = () => {
                             ))}
                           </div>
                         )}
-                        <p className="bonuses-task__congrats-text">Задание выполнено. Ваш промокод:</p>
+                        <p className="bonuses-task__congrats-text">{t('bonusesTaskCongrats')}</p>
                         <div className="bonuses-task__promo-row">
                           <span className="bonuses-task__promo">{submission?.promo_code || task.promoCode}</span>
                           <button
                             type="button"
                             className="bonuses-task__copy-btn"
                             onClick={() => copyPromoCode(task.id, submission?.promo_code || task.promoCode, !!submission?.used_at)}
-                            title={submission?.used_at ? 'Промокод уже использован' : 'Скопировать промокод'}
-                            aria-label={submission?.used_at ? 'Промокод уже использован' : 'Скопировать промокод'}
+                            title={submission?.used_at ? t('bonusesTaskPromoUsed') : t('bonusesTaskCopyPromo')}
+                            aria-label={submission?.used_at ? t('bonusesTaskPromoUsed') : t('bonusesTaskCopyPromo')}
                           >
                             {copiedTaskId === task.id ? (
                               <FiCheck size={18} className="bonuses-task__copy-icon bonuses-task__copy-icon--done" />
@@ -569,19 +442,18 @@ const Bonuses = () => {
                         {usedMessageTaskId === task.id && (
                           <div className="bonuses-task__used-toast" role="alert">
                             <FiCheck size={16} />
-                            <span>Промокод уже использован</span>
+                            <span>{t('bonusesTaskPromoUsed')}</span>
                           </div>
                         )}
                         <p className="bonuses-task__promo-usage">
-                          Можно использовать: {task.promoUsageLimit ?? 1}{' '}
-                          {(task.promoUsageLimit ?? 1) >= 2 && (task.promoUsageLimit ?? 1) <= 4 ? 'раза' : 'раз'}
+                          {t('bonusesTaskUsage', { count: task.promoUsageLimit ?? 1 })}
                         </p>
                         {submission?.used_at ? (
                           <p className="bonuses-task__promo-used">
-                            <FiCheck size={14} /> Промокод использован при публикации объекта
+                            <FiCheck size={14} /> {t('bonusesTaskUsedAt')}
                           </p>
                         ) : (
-                          <p className="bonuses-task__congrats-hint">Используйте его при оплате или в корзине.</p>
+                          <p className="bonuses-task__congrats-hint">{t('bonusesTaskUseHint')}</p>
                         )}
                       </div>
                     )}

@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Line } from 'react-chartjs-2';
 import {
@@ -31,6 +32,7 @@ ChartJS.register(
 );
 
 const InvestmentCalculator = () => {
+  const { t, i18n } = useTranslation();
   const [propertyPrice, setPropertyPrice] = useState('');
   const [renovationCost, setRenovationCost] = useState('');
   const [ownershipPeriod, setOwnershipPeriod] = useState('');
@@ -88,7 +90,7 @@ const InvestmentCalculator = () => {
         }
       }
     } catch (error) {
-      console.error('Ошибка загрузки данных:', error);
+      console.error('Error loading data:', error);
     } finally {
       setIsLoading(false);
     }
@@ -180,13 +182,13 @@ const InvestmentCalculator = () => {
   // График соотношения доходов к расходам (при отсутствии данных — одна точка 0)
   const hasYearlyData = calculations.yearlyData.length > 0;
   const chartLabels = hasYearlyData
-    ? calculations.yearlyData.map((_, i) => `Год ${i + 1}`)
-    : ['Год 1'];
+    ? calculations.yearlyData.map((_, i) => `${t('calcYearLabel')} ${i + 1}`)
+    : [`${t('calcYearLabel')} 1`];
   const incomeExpensesChartData = {
     labels: chartLabels,
     datasets: [
       {
-        label: 'Доходы',
+        label: t('calcChartIncome'),
         data: hasYearlyData ? calculations.yearlyData.map(d => d.rentalIncome) : [0],
         borderColor: '#34d399',
         backgroundColor: 'rgba(52, 211, 153, 0.1)',
@@ -200,7 +202,7 @@ const InvestmentCalculator = () => {
         pointBorderWidth: 2,
       },
       {
-        label: 'Расходы',
+        label: t('calcChartExpenses'),
         data: hasYearlyData ? calculations.yearlyData.map(d => d.totalExpenses) : [0],
         borderColor: '#f87171',
         backgroundColor: 'rgba(248, 113, 113, 0.1)',
@@ -221,7 +223,7 @@ const InvestmentCalculator = () => {
     labels: chartLabels,
     datasets: [
       {
-        label: 'Стоимость недвижимости',
+        label: t('calcChartPropertyValue'),
         data: hasYearlyData ? calculations.yearlyData.map(d => d.propertyValue) : [0],
         borderColor: '#6366f1',
         backgroundColor: 'rgba(99, 102, 241, 0.1)',
@@ -269,7 +271,7 @@ const InvestmentCalculator = () => {
         cornerRadius: 8,
         callbacks: {
           label: function(context) {
-            return `${context.dataset.label}: ${formatCurrency(context.parsed.y)}`;
+            return `${context.dataset.label}: ${formatCurrency(context.parsed.y, i18n.language)}`;
           }
         }
       }
@@ -302,7 +304,7 @@ const InvestmentCalculator = () => {
             } else if (value >= 1000) {
               return (value / 1000).toFixed(0) + 'K €';
             }
-            return formatCurrency(value);
+            return formatCurrency(value, i18n.language);
           }
         }
       }
@@ -319,10 +321,10 @@ const InvestmentCalculator = () => {
           animate={{ opacity: 1, y: 0 }}
           className="calculator-header"
         >
-          <span className="calculator-badge">Инвестиции в недвижимость</span>
-          <h1 className="calculator-title">Калькулятор доходности</h1>
+          <span className="calculator-badge">{t('calcBadge')}</span>
+          <h1 className="calculator-title">{t('calculator')}</h1>
           <p className="calculator-subtitle">
-            Оцените доходность объекта с учётом аренды, роста рынка и ипотеки
+            {t('calcSubtitle')}
           </p>
         </motion.div>
 
@@ -338,8 +340,8 @@ const InvestmentCalculator = () => {
               <PiggyBank size={20} strokeWidth={2} />
             </div>
             <div className="summary-card__content">
-              <span className="summary-card__label">Общие вложения</span>
-              <span className="summary-card__value">{formatCurrency(calculations.totalInvestment)}</span>
+              <span className="summary-card__label">{t('calcTotalInvestment')}</span>
+              <span className="summary-card__value">{formatCurrency(calculations.totalInvestment, i18n.language)}</span>
             </div>
           </div>
           <div className="summary-card">
@@ -348,9 +350,9 @@ const InvestmentCalculator = () => {
             </div>
             <div className="summary-card__content">
               <span className="summary-card__label">
-                {(Number(ownershipPeriod) || 0) > 0 ? `Стоимость через ${Number(ownershipPeriod) || 0} ${(Number(ownershipPeriod) || 0) === 1 ? 'год' : 'лет'}` : 'Стоимость через период'}
+                {(Number(ownershipPeriod) || 0) > 0 ? t('calcFinalValueYears', { count: Number(ownershipPeriod) || 0 }) : t('calcFinalValue')}
               </span>
-              <span className="summary-card__value">{formatCurrency(calculations.finalPropertyValue)}</span>
+              <span className="summary-card__value">{formatCurrency(calculations.finalPropertyValue, i18n.language)}</span>
             </div>
           </div>
           <div className="summary-card">
@@ -358,8 +360,8 @@ const InvestmentCalculator = () => {
               <Wallet size={20} strokeWidth={2} />
             </div>
             <div className="summary-card__content">
-              <span className="summary-card__label">Доход от аренды за период</span>
-              <span className="summary-card__value">{formatCurrency(calculations.totalRentalIncome)}</span>
+              <span className="summary-card__label">{t('calcRentalIncomePeriod')}</span>
+              <span className="summary-card__value">{formatCurrency(calculations.totalRentalIncome, i18n.language)}</span>
             </div>
           </div>
           <div className="summary-card">
@@ -367,16 +369,16 @@ const InvestmentCalculator = () => {
               <Home size={20} strokeWidth={2} />
             </div>
             <div className="summary-card__content">
-              <span className="summary-card__label">Чистый денежный поток</span>
+              <span className="summary-card__label">{t('calcNetCashFlow')}</span>
               <span className={`summary-card__value ${calculations.netCashFlow >= 0 ? 'summary-card__value--positive' : 'summary-card__value--negative'}`}>
-                {formatCurrency(calculations.netCashFlow)}
+                {formatCurrency(calculations.netCashFlow, i18n.language)}
               </span>
             </div>
           </div>
         </motion.div>
 
         <p className="scroll-hint" aria-hidden="true">
-          Введите параметры ниже — прокрутите вниз
+          {t('calcScrollHint')}
           <ChevronDown className="scroll-hint__icon" size={18} strokeWidth={2.5} />
         </p>
 
@@ -393,13 +395,13 @@ const InvestmentCalculator = () => {
                 className={`chart-tab ${activeChart === 'income-expenses' ? 'active' : ''}`}
                 onClick={() => setActiveChart('income-expenses')}
               >
-                Доходы vs Расходы
+                {t('calcChartIncomeVsExpenses')}
               </button>
               <button
                 className={`chart-tab ${activeChart === 'property-value' ? 'active' : ''}`}
                 onClick={() => setActiveChart('property-value')}
               >
-                Рост стоимости
+                {t('calcChartPropertyGrowth')}
               </button>
             </div>
           </div>
@@ -415,7 +417,7 @@ const InvestmentCalculator = () => {
                 >
                   <IncomeExpensesChart 
                     yearlyData={calculations.yearlyData} 
-                    formatCurrency={formatCurrency}
+                    formatCurrency={(v) => formatCurrency(v, i18n.language)}
                   />
                 </motion.div>
               ) : (
@@ -433,7 +435,7 @@ const InvestmentCalculator = () => {
                       options={chartOptions}
                     />
                   ) : (
-                    <div className="chart-empty-state">Нет данных</div>
+                    <div className="chart-empty-state">{t('calcNoData')}</div>
                   )}
                 </motion.div>
               )}
@@ -448,10 +450,10 @@ const InvestmentCalculator = () => {
           transition={{ delay: 0.4 }}
           className="parameters-section"
         >
-          <h2 className="section-title">Основные параметры</h2>
+          <h2 className="section-title">{t('calcMainParams')}</h2>
           <div className="parameters-grid">
             <div className="parameter-group">
-              <label>Цена объекта (€)</label>
+              <label>{t('calcPriceLabel')}</label>
               <input
                 type="number"
                 min="0"
@@ -462,7 +464,7 @@ const InvestmentCalculator = () => {
               />
             </div>
             <div className="parameter-group">
-              <label>Стоимость ремонта (€)</label>
+              <label>{t('calcRenovationLabel')}</label>
               <input
                 type="number"
                 min="0"
@@ -473,7 +475,7 @@ const InvestmentCalculator = () => {
               />
             </div>
             <div className="parameter-group">
-              <label>Срок владения (лет)</label>
+              <label>{t('calcPeriodLabel')}</label>
               <input
                 type="number"
                 min="1"
@@ -485,7 +487,7 @@ const InvestmentCalculator = () => {
               />
             </div>
             <div className="parameter-group">
-              <label>Процент роста рынка в год</label>
+              <label>{t('calcMarketGrowthLabel')}</label>
               <input
                 type="number"
                 step="0.1"
@@ -497,16 +499,16 @@ const InvestmentCalculator = () => {
               />
             </div>
             <div className="parameter-group">
-              <label>Сценарий</label>
+              <label>{t('calcScenarioLabel')}</label>
               <select
                 value={scenario}
                 onChange={(e) => setScenario(e.target.value)}
                 className="parameter-input"
               >
-                <option value="custom">Пользовательский</option>
-                <option value="optimistic">Оптимистичный</option>
-                <option value="stable">Стабильный</option>
-                <option value="pessimistic">Пессимистичный</option>
+                <option value="custom">{t('calcScenarioCustom')}</option>
+                <option value="optimistic">{t('calcScenarioOptimistic')}</option>
+                <option value="stable">{t('calcScenarioStable')}</option>
+                <option value="pessimistic">{t('calcScenarioPessimistic')}</option>
               </select>
             </div>
           </div>
@@ -526,7 +528,7 @@ const InvestmentCalculator = () => {
           >
             <span className="expandable-button__label">
               <Wallet className="expandable-button__icon" size={20} strokeWidth={2} />
-              Арендный доход
+              {t('calcRentalSection')}
             </span>
             <ChevronDown className={`expand-icon ${showRentalIncome ? 'expanded' : ''}`} size={22} strokeWidth={2} />
           </button>
@@ -541,7 +543,7 @@ const InvestmentCalculator = () => {
               >
                 <div className="expandable-grid">
                   <div className="parameter-group">
-                    <label>Годовой доход от аренды (€)</label>
+                    <label>{t('calcRentalIncomeLabel')}</label>
                     <input
                       type="number"
                       min="0"
@@ -552,7 +554,7 @@ const InvestmentCalculator = () => {
                     />
                   </div>
                   <div className="parameter-group">
-                    <label>Рост арендной платы (% в год)</label>
+                    <label>{t('calcRentalGrowthLabel')}</label>
                     <input
                       type="number"
                       step="0.1"
@@ -564,7 +566,7 @@ const InvestmentCalculator = () => {
                     />
                   </div>
                   <div className="parameter-group">
-                    <label>Операционные расходы (% от дохода)</label>
+                    <label>{t('calcOperatingExpensesLabel')}</label>
                     <input
                       type="number"
                       step="0.1"
@@ -595,7 +597,7 @@ const InvestmentCalculator = () => {
           >
             <span className="expandable-button__label">
               <Home className="expandable-button__icon" size={20} strokeWidth={2} />
-              Ипотека
+              {t('calcMortgageSection')}
             </span>
             <ChevronDown className={`expand-icon ${showMortgage ? 'expanded' : ''}`} size={22} strokeWidth={2} />
           </button>
@@ -616,13 +618,13 @@ const InvestmentCalculator = () => {
                         checked={useMortgage}
                         onChange={(e) => setUseMortgage(e.target.checked)}
                       />
-                      Использовать ипотеку
+                      {t('calcUseMortgageLabel')}
                     </label>
                   </div>
                   {useMortgage && (
                     <>
                       <div className="parameter-group">
-                        <label>Ипотечная ставка (% годовых)</label>
+                        <label>{t('calcMortgageRateLabel')}</label>
                         <input
                           type="number"
                           step="0.1"
@@ -634,12 +636,12 @@ const InvestmentCalculator = () => {
                         />
                         {mortgageRates && (
                           <span className="data-hint">
-                            Средняя: {mortgageRates.averageRate?.toFixed(1)}%
+                            {t('calcMortgageAverage', { rate: mortgageRates.averageRate?.toFixed(1) })}
                           </span>
                         )}
                       </div>
                       <div className="parameter-group">
-                        <label>Срок кредита (лет)</label>
+                        <label>{t('calcMortgageTermLabel')}</label>
                         <input
                           type="number"
                           min="1"
@@ -651,7 +653,7 @@ const InvestmentCalculator = () => {
                         />
                       </div>
                       <div className="parameter-group">
-                        <label>Первоначальный взнос (%)</label>
+                        <label>{t('calcDownPaymentLabel')}</label>
                         <input
                           type="number"
                           min="10"
@@ -681,8 +683,10 @@ function calculateMonthlyPayment(principal, monthlyRate, numberOfPayments) {
          (Math.pow(1 + monthlyRate, numberOfPayments) - 1);
 }
 
-function formatCurrency(value) {
-  return new Intl.NumberFormat('ru-RU', {
+function formatCurrency(value, locale = 'ru') {
+  const localeMap = { ru: 'ru-RU', en: 'en-US', de: 'de-DE', es: 'es-ES', fr: 'fr-FR', sv: 'sv-SE' };
+  const resolvedLocale = localeMap[locale] || 'ru-RU';
+  return new Intl.NumberFormat(resolvedLocale, {
     style: 'currency',
     currency: 'EUR',
     minimumFractionDigits: 0,

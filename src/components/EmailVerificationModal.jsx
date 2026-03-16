@@ -1,9 +1,11 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { FiX, FiMail } from 'react-icons/fi'
+import { useTranslation } from 'react-i18next'
 import { sendEmailVerificationCode, verifyEmailCode, verifyEmailForProfileUpdate, validateEmail } from '../services/authService'
 import './EmailVerificationModal.css'
 
 const EmailVerificationModal = ({ isOpen, onClose, onSuccess, email: initialEmail, password, name, isProfileUpdate = false, userId = null, role = 'buyer' }) => {
+  const { t } = useTranslation()
   const [email, setEmail] = useState(initialEmail || '')
   const [code, setCode] = useState(['', '', '', '', '', ''])
   const [isLoading, setIsLoading] = useState(false)
@@ -22,7 +24,7 @@ const EmailVerificationModal = ({ isOpen, onClose, onSuccess, email: initialEmai
     setIsValidatingEmail(false)
     
     if (!validation.valid) {
-      setError(validation.error || 'Введите корректный email адрес')
+      setError(validation.error || t('enterValidEmail') || 'Введите корректный email адрес')
       return
     }
 
@@ -65,7 +67,7 @@ const EmailVerificationModal = ({ isOpen, onClose, onSuccess, email: initialEmai
       }
     } catch (error) {
       console.error('Ошибка отправки кода:', error)
-      setError('Произошла ошибка. Попробуйте позже.')
+      setError(t('genericError') || 'Произошла ошибка. Попробуйте позже.')
       setDevCode(null)
       setDevWarning(null)
     } finally {
@@ -178,7 +180,7 @@ const EmailVerificationModal = ({ isOpen, onClose, onSuccess, email: initialEmai
     const codeString = codeToVerify || code.join('')
     
     if (codeString.length !== 6) {
-      setError('Введите полный код')
+      setError(t('codeFullRequired'))
       return
     }
 
@@ -201,7 +203,7 @@ const EmailVerificationModal = ({ isOpen, onClose, onSuccess, email: initialEmai
             onClose()
           }
         } else {
-          setError(result.error || 'Неверный код. Попробуйте еще раз.')
+          setError(result.error || t('invalidCode') || 'Неверный код. Попробуйте еще раз.')
           // Очищаем поля ввода
           setCode(['', '', '', '', '', ''])
           inputRefs.current[0]?.focus()
@@ -217,7 +219,7 @@ const EmailVerificationModal = ({ isOpen, onClose, onSuccess, email: initialEmai
           }
           onClose()
         } else {
-          setError(result.error || 'Неверный код. Попробуйте еще раз.')
+          setError(result.error || t('invalidCode') || 'Неверный код. Попробуйте еще раз.')
           // Очищаем поля ввода
           setCode(['', '', '', '', '', ''])
           inputRefs.current[0]?.focus()
@@ -225,7 +227,7 @@ const EmailVerificationModal = ({ isOpen, onClose, onSuccess, email: initialEmai
       }
     } catch (error) {
       console.error('Ошибка верификации кода:', error)
-      setError('Произошла ошибка. Попробуйте позже.')
+      setError(t('genericError') || 'Произошла ошибка. Попробуйте позже.')
     } finally {
       setIsLoading(false)
     }
@@ -263,7 +265,7 @@ const EmailVerificationModal = ({ isOpen, onClose, onSuccess, email: initialEmai
         <button 
           className="email-verification-modal__close" 
           onClick={onClose}
-          aria-label="Закрыть"
+          aria-label={t('closeModalAria')}
         >
           <FiX size={24} />
         </button>
@@ -273,12 +275,12 @@ const EmailVerificationModal = ({ isOpen, onClose, onSuccess, email: initialEmai
             <FiMail size={32} />
           </div>
           <h2 className="email-verification-modal__title">
-            {step === 'email' ? 'Подтверждение email' : 'Введите код'}
+            {step === 'email' ? t('verifyEmailTitle') : t('enterCodeTitle')}
           </h2>
           <p className="email-verification-modal__subtitle">
             {step === 'email' 
-              ? 'Введите email адрес, и мы отправим код подтверждения'
-              : `Код отправлен на ${email}`}
+              ? t('verifyEmailSubtitle')
+              : t('codeSentTo', { target: email })}
           </p>
         </div>
 
@@ -292,7 +294,7 @@ const EmailVerificationModal = ({ isOpen, onClose, onSuccess, email: initialEmai
           <div className="email-verification-modal__form">
             <div className="email-verification-modal__field">
               <label htmlFor="email" className="email-verification-modal__label">
-                Email адрес
+                {t('emailFieldLabel')}
               </label>
               <input
                 type="email"
@@ -300,13 +302,13 @@ const EmailVerificationModal = ({ isOpen, onClose, onSuccess, email: initialEmai
                 value={email}
                 onChange={handleEmailChange}
                 className="email-verification-modal__input"
-                placeholder="example@mail.com"
+                placeholder={t('emailFieldPlaceholder')}
                 disabled={isLoading || isValidatingEmail}
                 autoFocus
               />
               {isValidatingEmail && (
                 <p className="email-verification-modal__validating">
-                  Проверка email адреса...
+                  {t('emailValidating')}
                 </p>
               )}
             </div>
@@ -317,7 +319,7 @@ const EmailVerificationModal = ({ isOpen, onClose, onSuccess, email: initialEmai
               onClick={handleSendCode}
               disabled={isLoading || isValidatingEmail || !email || !email.includes('@')}
             >
-              {isLoading || isValidatingEmail ? 'Проверка...' : 'Отправить код'}
+              {isLoading || isValidatingEmail ? t('emailSendCodeLoading') : t('emailSendCode')}
             </button>
           </div>
         ) : (
@@ -326,14 +328,14 @@ const EmailVerificationModal = ({ isOpen, onClose, onSuccess, email: initialEmai
             {devCode && (
               <div className="email-verification-modal__dev-code">
                 <div className="email-verification-modal__dev-code-label">
-                  ⚠️ Режим разработки: код не отправлен на email
+                  {t('emailDevModeLabel')}
                 </div>
                 <div className="email-verification-modal__dev-code-value">
-                  Ваш код: <strong>{devCode}</strong>
+                  {t('emailDevModeCode', { code: devCode })}
                 </div>
                 {devWarning && (
                   <div className="email-verification-modal__dev-warning">
-                    {devWarning}
+                    {devWarning || t('emailDevModeWarning')}
                   </div>
                 )}
               </div>
@@ -360,7 +362,7 @@ const EmailVerificationModal = ({ isOpen, onClose, onSuccess, email: initialEmai
 
             <div className="email-verification-modal__resend">
               <span className="email-verification-modal__resend-text">
-                Не получили код?
+                {t('codeResendQuestion')}
               </span>
               <button
                 type="button"
@@ -368,7 +370,7 @@ const EmailVerificationModal = ({ isOpen, onClose, onSuccess, email: initialEmai
                 onClick={handleResendCode}
                 disabled={countdown > 0 || isLoading}
               >
-                {countdown > 0 ? `Отправить снова (${countdown}с)` : 'Отправить снова'}
+                {countdown > 0 ? t('codeResendWithTimer', { seconds: countdown }) : t('codeResend')}
               </button>
             </div>
 
@@ -378,7 +380,7 @@ const EmailVerificationModal = ({ isOpen, onClose, onSuccess, email: initialEmai
               onClick={() => handleVerifyCode()}
               disabled={isLoading || code.some(digit => !digit)}
             >
-              {isLoading ? 'Проверка...' : 'Подтвердить'}
+              {isLoading ? t('codeConfirmLoading') : t('codeConfirm')}
             </button>
           </div>
         )}
@@ -394,7 +396,7 @@ const EmailVerificationModal = ({ isOpen, onClose, onSuccess, email: initialEmai
             }}
             style={{ display: step === 'code' ? 'block' : 'none' }}
           >
-            Изменить email
+            {t('changeEmail')}
           </button>
         </div>
       </div>

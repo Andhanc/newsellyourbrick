@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   FiCheck, FiX, FiChevronDown, FiChevronUp, FiChevronRight,
   FiAlertCircle, FiFileText, FiFolder,
@@ -21,6 +22,7 @@ const AddPropertyProgress = ({
   onGoToDoc,
   isDebtProperty,
 }) => {
+  const { t } = useTranslation()
   const [isExpanded, setIsExpanded] = useState(false)
   const [isVisible, setIsVisible] = useState(true)
 
@@ -64,10 +66,10 @@ const AddPropertyProgress = ({
           </div>
           <div>
             <h4 className="ap-progress__title">
-              {progress === 100 ? 'Документы загружены!' : 'Обязательные документы'}
+              {progress === 100 ? t('addPropertyDebtProgressAllUploaded') : t('addPropertyDebtProgressRequired')}
             </h4>
             <p className="ap-progress__subtitle">
-              {filled.length} из {docFields.length} загружено
+              {t('addPropertyDebtProgressCount', { filled: filled.length, total: docFields.length })}
             </p>
           </div>
         </div>
@@ -87,14 +89,14 @@ const AddPropertyProgress = ({
           <button
             className="ap-progress__toggle"
             onClick={e => { e.stopPropagation(); setIsExpanded(v => !v) }}
-            aria-label="Развернуть"
+            aria-label={t('addPropertyExpand')}
           >
             {isExpanded ? <FiChevronUp size={18} /> : <FiChevronDown size={18} />}
           </button>
           <button
             className="ap-progress__close"
             onClick={e => { e.stopPropagation(); setIsVisible(false) }}
-            aria-label="Закрыть"
+            aria-label={t('addPropertyProgressClose')}
           >
             <FiX size={16} />
           </button>
@@ -111,7 +113,7 @@ const AddPropertyProgress = ({
 
           {/* ── Uploaded docs ── */}
           {filled.length > 0 && (
-            <Section title={`Загружено (${filled.length})`} type="success" icon={<FiFolder size={14} />}>
+            <Section title={t('addPropertyDebtProgressUploaded', { count: filled.length })} type="success" icon={<FiFolder size={14} />}>
               {filled.map(f => (
                 <Item key={f.id} field={f} variant="filled" />
               ))}
@@ -120,7 +122,7 @@ const AddPropertyProgress = ({
 
           {/* ── Missing docs ── */}
           {missing.length > 0 && (
-            <Section title={`Не загружено (${missing.length})`} type="warning" icon={<FiFolder size={14} />}>
+            <Section title={t('addPropertyDebtProgressMissing', { count: missing.length })} type="warning" icon={<FiFolder size={14} />}>
               {missing.map(f => (
                 <Item
                   key={f.id}

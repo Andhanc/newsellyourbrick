@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import './PropertyTimer.css'
 
 const PropertyTimer = ({ endTime, compact = false }) => {
+  const { t } = useTranslation()
   const [timeLeft, setTimeLeft] = useState({
     days: 0,
     hours: 0,
@@ -60,19 +62,19 @@ const PropertyTimer = ({ endTime, compact = false }) => {
         <div className="timer-compact-time">
           {hasDays && (
             <>
-              <span className="time-unit"><span className="time-value">{String(timeLeft.days).padStart(2, '0')}</span><span className="time-label">д</span></span>
+              <span className="time-unit"><span className="time-value">{String(timeLeft.days).padStart(2, '0')}</span><span className="time-label">{t('timerDay')}</span></span>
               <span className="timer-separator">:</span>
             </>
           )}
           {hasHours && (
             <>
-              <span className="time-unit"><span className="time-value">{String(timeLeft.hours).padStart(2, '0')}</span><span className="time-label">ч</span></span>
+              <span className="time-unit"><span className="time-value">{String(timeLeft.hours).padStart(2, '0')}</span><span className="time-label">{t('timerHour')}</span></span>
               <span className="timer-separator">:</span>
             </>
           )}
-          <span className="time-unit"><span className="time-value">{String(timeLeft.minutes).padStart(2, '0')}</span><span className="time-label">м</span></span>
+          <span className="time-unit"><span className="time-value">{String(timeLeft.minutes).padStart(2, '0')}</span><span className="time-label">{t('timerMin')}</span></span>
           <span className="timer-separator">:</span>
-          <span className="time-unit"><span className="time-value">{String(timeLeft.seconds).padStart(2, '0')}</span><span className="time-label">с</span></span>
+          <span className="time-unit"><span className="time-value">{String(timeLeft.seconds).padStart(2, '0')}</span><span className="time-label">{t('timerSec')}</span></span>
         </div>
       </div>
     )
@@ -81,7 +83,7 @@ const PropertyTimer = ({ endTime, compact = false }) => {
   return (
     <div className={`property-timer property-timer--detail ${statusClass} ${isCritical ? 'timer-critical' : ''}`}>
       <div className="timer-compact-time timer-compact-time--detail">
-        {String(timeLeft.days).padStart(2, '0')}д {String(timeLeft.hours).padStart(2, '0')}ч {String(timeLeft.minutes).padStart(2, '0')}м {String(timeLeft.seconds).padStart(2, '0')}с
+        {String(timeLeft.days).padStart(2, '0')}{t('timerDay')} {String(timeLeft.hours).padStart(2, '0')}{t('timerHour')} {String(timeLeft.minutes).padStart(2, '0')}{t('timerMin')} {String(timeLeft.seconds).padStart(2, '0')}{t('timerSec')}
       </div>
     </div>
   )

@@ -1,45 +1,17 @@
 import { useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { FiSearch } from 'react-icons/fi'
 import Header from '../components/Header'
 import { ServiceCard } from '../components/ui/service-card'
 import { useLazyLoad } from '../hooks/useLazyLoad'
 import './Shares.css'
 
-// Карточки-блоки описания доли в недвижимости (как в примере: заголовок + «Узнать больше»)
 const SHARES_SERVICE_CARDS = [
-  {
-    title: 'Долевая собственность',
-    href: '#shares-grid',
-    linkLabel: 'УЗНАТЬ БОЛЬШЕ',
-    imgSrc: 'https://images.unsplash.com/photo-1589939705384-5185137a7f0f?auto=format&fit=crop&w=400&q=85',
-    imgAlt: 'Ключи от недвижимости',
-    variant: 'red',
-  },
-  {
-    title: 'Доходность',
-    href: '#shares-grid',
-    linkLabel: 'УЗНАТЬ БОЛЬШЕ',
-    imgSrc: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=400&q=85',
-    imgAlt: 'График роста доходности',
-    variant: 'default',
-  },
-  {
-    title: 'Прозрачность',
-    href: '#shares-grid',
-    linkLabel: 'УЗНАТЬ БОЛЬШЕ',
-    imgSrc: 'https://images.unsplash.com/photo-1586281380349-632531db7ed4?auto=format&fit=crop&w=400&q=85',
-    imgAlt: 'Документы и безопасность',
-    variant: 'gray',
-  },
-  {
-    title: 'Выбрать объект',
-    href: '#shares-grid',
-    linkLabel: 'УЗНАТЬ БОЛЬШЕ',
-    imgSrc: 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&w=400&q=85',
-    imgAlt: 'Дом',
-    variant: 'blue',
-  },
+  { titleKey: 'sharesCard1Title', href: '#shares-grid', imgSrc: 'https://images.unsplash.com/photo-1589939705384-5185137a7f0f?auto=format&fit=crop&w=400&q=85', imgAltKey: 'sharesCard1Alt', variant: 'red' },
+  { titleKey: 'sharesCard2Title', href: '#shares-grid', imgSrc: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=400&q=85', imgAltKey: 'sharesCard2Alt', variant: 'default' },
+  { titleKey: 'sharesCard3Title', href: '#shares-grid', imgSrc: 'https://images.unsplash.com/photo-1586281380349-632531db7ed4?auto=format&fit=crop&w=400&q=85', imgAltKey: 'sharesCard3Alt', variant: 'gray' },
+  { titleKey: 'sharesCard4Title', href: '#shares-grid', imgSrc: 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&w=400&q=85', imgAltKey: 'sharesCard4Alt', variant: 'blue' },
 ]
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api'
@@ -88,6 +60,7 @@ const DEMO_SHARE_OBJECTS = [
 ]
 
 const Shares = () => {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState('')
   const [apiShares, setApiShares] = useState([])
@@ -133,18 +106,18 @@ const Shares = () => {
       <main ref={sharesSectionRef} className="shares-container">
         <div className="shares-cards-grid">
           <div className="shares-cards-grid__header">
-            <span className="shares-cards-grid__label">Долевая собственность</span>
-            <h1 className="shares-cards-grid__title">Доли в недвижимости</h1>
+            <span className="shares-cards-grid__label">{t('sharesLabel')}</span>
+            <h1 className="shares-cards-grid__title">{t('sharesTitle')}</h1>
           </div>
           <div className="shares-cards-grid__grid">
             {SHARES_SERVICE_CARDS.map((card) => (
               <ServiceCard
-                key={card.title}
-                title={card.title}
+                key={card.titleKey}
+                title={t(card.titleKey)}
                 href={card.href}
-                linkLabel={card.linkLabel}
+                linkLabel={t('sharesLearnMore')}
                 imgSrc={card.imgSrc}
-                imgAlt={card.imgAlt}
+                imgAlt={t(card.imgAltKey)}
                 variant={card.variant}
                 className="min-h-[200px] sm:min-h-[220px]"
               />
@@ -157,7 +130,7 @@ const Shares = () => {
           <input
             type="text"
             className="shares-search-bar__input"
-            placeholder="Поиск по названию или адресу..."
+            placeholder={t('searchPlaceholderLong')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -166,7 +139,7 @@ const Shares = () => {
               type="button"
               className="shares-search-bar__clear"
               onClick={() => setSearchQuery('')}
-              aria-label="Очистить"
+              aria-label={t('clearSearch')}
             >
               ×
             </button>
@@ -176,7 +149,7 @@ const Shares = () => {
         <div id="shares-grid" className="shares-grid">
           {filtered.length === 0 ? (
             <div className="shares-no-results">
-              <p>По вашему запросу ничего не найдено.</p>
+              <p>{t('sharesEmpty')}</p>
             </div>
           ) : (
             filtered.map((obj) => {
@@ -189,7 +162,7 @@ const Shares = () => {
                 onClick={() => navigate(`/shares/${obj.id}`, { state: { shareObject: obj } })}
               >
                 <div className="share-card__badge">
-                  {isSoldOut ? 'Sold out' : 'Доля'}
+                  {isSoldOut ? t('sharesSoldOut') : t('sharesBadgeShare')}
                 </div>
                 <div className="share-card__image-wrap">
                   <img
@@ -203,11 +176,11 @@ const Shares = () => {
                     aria-hidden
                   >
                     {!isSoldOut && soldPercent > 0 && (
-                      <span className="share-card__sold-percent">{soldPercent}% продано</span>
+                      <span className="share-card__sold-percent">{t('sharesPercentSold', { percent: soldPercent })}</span>
                     )}
                   </div>
                   {isSoldOut && (
-                    <div className="share-card__sold-out-label">Sold out</div>
+                    <div className="share-card__sold-out-label">{t('sharesSoldOut')}</div>
                   )}
                 </div>
                 <div className="share-card__content">
@@ -215,20 +188,20 @@ const Shares = () => {
                   <p className="share-card__location">{obj.location}</p>
                   {obj.area && (
                     <p className="share-card__specs">
-                      {obj.area} м² · {obj.rooms} комн.
+                      {obj.area} {t('squareMeters')} · {obj.rooms} {t('roomsShort')}
                     </p>
                   )}
                   <div className="share-card__prices">
                     <div className="share-card__price-total">
-                      Общая стоимость: <strong>{formatPrice(obj.totalPrice)}</strong>
+                      {t('sharesTotalCost')} <strong>{formatPrice(obj.totalPrice)}</strong>
                     </div>
                     <div className="share-card__price-per-share">
-                      За 1 долю: <strong>{formatPrice(obj.pricePerShare)}</strong>
+                      {t('sharesPerShare')} <strong>{formatPrice(obj.pricePerShare)}</strong>
                     </div>
                   </div>
                   <div className="share-card__footer">
                     <span className="share-card__sold">
-                      {isSoldOut ? 'Все доли проданы' : `Продано долей: ${obj.sharesSold} из ${obj.totalShares}`}
+                      {isSoldOut ? t('sharesAllSold') : t('sharesSoldCount', { sold: obj.sharesSold, total: obj.totalShares })}
                     </span>
                   </div>
                 </div>

@@ -72,29 +72,29 @@ const Footer = () => {
         {/* Верхний блок ссылок, как на ЦИАН — по колонкам */}
         <div className="footer__menu">
           <div className="footer__menu-column">
-            <Link to="/" onClick={scrollToTop} className="footer__menu-link">{t('home') || 'Главная'}</Link>
-            <Link to="/about" onClick={scrollToTop} className="footer__menu-link">{t('aboutUs') || 'О нас'}</Link>
+            <Link to="/" onClick={scrollToTop} className="footer__menu-link">{t('home')}</Link>
+            <Link to="/about" onClick={scrollToTop} className="footer__menu-link">{t('aboutUs')}</Link>
             <Link to="/map" onClick={scrollToTop} className="footer__menu-link">{t('mapLink')}</Link>
             <Link to="/subscriptions" onClick={scrollToTop} className="footer__menu-link">{t('tariffs')}</Link>
-            <Link to="/bonuses" onClick={scrollToTop} className="footer__menu-link">Бонусы</Link>
-            <Link to="/shares" onClick={scrollToTop} className="footer__menu-link">Доли</Link>
-            <Link to="/debts" onClick={scrollToTop} className="footer__menu-link">Долги</Link>
-            <Link to="/calculator" onClick={scrollToTop} className="footer__menu-link">💰 Калькулятор доходности</Link>
+            <Link to="/bonuses" onClick={scrollToTop} className="footer__menu-link">{t('bonuses')}</Link>
+            <Link to="/shares" onClick={scrollToTop} className="footer__menu-link">{t('shares')}</Link>
+            <Link to="/debts" onClick={scrollToTop} className="footer__menu-link">{t('debtsTitle')}</Link>
+            <Link to="/calculator" onClick={scrollToTop} className="footer__menu-link">💰 {t('calculator')}</Link>
           </div>
           <div className="footer__menu-column">
             <Link to="/auction" onClick={scrollToTop} className="footer__menu-link">{t('auction')}</Link>
             <Link to="/data" onClick={scrollToTop} className="footer__menu-link">{t('legalDocs')}</Link>
-            <Link to="/bonuses" onClick={scrollToTop} className="footer__menu-link">Бонусы</Link>
+            <Link to="/bonuses" onClick={scrollToTop} className="footer__menu-link">{t('bonuses')}</Link>
           </div>
           <div className="footer__menu-column">
             <button type="button" className="footer__menu-link">{t('career')}</button>
             <Link to="/map" onClick={scrollToTop} className="footer__menu-link">{t('mapSearch')}</Link>
-            <Link to="/debts" onClick={scrollToTop} className="footer__menu-link">Долги</Link>
+            <Link to="/debts" onClick={scrollToTop} className="footer__menu-link">{t('debtsTitle')}</Link>
           </div>
           <div className="footer__menu-column">
             <button type="button" className="footer__menu-link">{t('investors')}</button>
-            <Link to="/subscriptions" onClick={scrollToTop} className="footer__menu-link">Тарифы и цены</Link>
-            <Link to="/shares" onClick={scrollToTop} className="footer__menu-link">Доли</Link>
+            <Link to="/subscriptions" onClick={scrollToTop} className="footer__menu-link">{t('tariffs')}</Link>
+            <Link to="/shares" onClick={scrollToTop} className="footer__menu-link">{t('shares')}</Link>
           </div>
           <div className="footer__menu-column">
             <Link to="/chat" onClick={scrollToTop} className="footer__menu-link">{t('help')}</Link>
@@ -130,8 +130,8 @@ const Footer = () => {
           </div>
 
           <div className="footer__bottom-links">
-            <button type="button" className="footer__bottom-link">Мобильная версия сайта</button>
-            <button type="button" className="footer__bottom-link">О приложении</button>
+            <button type="button" className="footer__bottom-link">{t('mobileVersion')}</button>
+            <button type="button" className="footer__bottom-link">{t('aboutApp')}</button>
           </div>
 
           <div className="footer__whatsapp-qr">
@@ -147,7 +147,7 @@ const Footer = () => {
               type="button"
               className="footer__store-btn"
               onClick={() => handleDownloadApp('android')}
-              aria-label="Скачать из Google Play"
+              aria-label={t('downloadGooglePlay')}
             >
               <div className="footer__store-icon footer__store-icon--google">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -195,7 +195,7 @@ const Footer = () => {
                 type="button"
                 className="footer__language-selector-btn"
                 onClick={() => setIsLanguageDropdownOpen(!isLanguageDropdownOpen)}
-                aria-label="Выбрать язык"
+                aria-label={t('selectLanguageAria')}
               >
                 <span className={`footer__language-flag ${currentLanguage.flagClass}`}></span>
                 <span className="footer__language-name">{currentLanguage.name}</span>

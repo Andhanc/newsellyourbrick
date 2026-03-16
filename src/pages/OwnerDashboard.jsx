@@ -37,6 +37,7 @@ import { getUserData, saveUserData, logout, clearUserData } from '../services/au
 import { showNotification } from '../utils/toastHelper'
 import '../components/PropertyList.css'
 import './OwnerDashboard.css'
+import { useTranslation } from 'react-i18next'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
 
@@ -108,6 +109,7 @@ const mockOwnerProperties = [
 ]
 
 const OwnerDashboard = () => {
+  const { t, i18n } = useTranslation()
   const navigate = useNavigate()
   const [properties, setProperties] = useState([])
   const [activeTab, setActiveTab] = useState('properties') // 'properties' или 'analytics'
@@ -164,7 +166,7 @@ const OwnerDashboard = () => {
     } else {
       // Подтягиваем данные пользователя из локального хранилища
       const userData = getUserData()
-      if (userData && userData.isLoggedIn) {
+          if (userData && userData.isLoggedIn) {
         // Парсим имя из полного имени
         const fullName = userData.name || 'Пользователь'
         const nameParts = fullName.split(' ').filter(Boolean)
@@ -940,19 +942,19 @@ const OwnerDashboard = () => {
           const fields = []
           
           if (!userData.first_name || userData.first_name.trim() === '') {
-            fields.push('Имя')
+            fields.push(t('ownerProfileFirstName'))
           }
           if (!userData.last_name || userData.last_name.trim() === '') {
-            fields.push('Фамилия')
+            fields.push(t('ownerProfileLastName'))
           }
           if (!userData.country || userData.country.trim() === '') {
-            fields.push('Страна')
+            fields.push(t('ownerProfileCountry'))
           }
           if (!userData.email || userData.email.trim() === '') {
-            fields.push('Почта')
+            fields.push(t('ownerProfileEmail'))
           }
           if (!userData.phone_number || userData.phone_number.trim() === '') {
-            fields.push('WhatsApp')
+            fields.push(t('ownerProfileWhatsApp'))
           }
           
           if (fields.length > 0) {
@@ -968,23 +970,23 @@ const OwnerDashboard = () => {
       console.error('Ошибка при проверке полей профиля:', error)
       // Если не удалось проверить через API, проверяем через localStorage
       const userData = getUserData()
-      if (userData) {
+        if (userData) {
         const fields = []
         
         if (!userData.firstName || !userData.firstName.trim()) {
-          fields.push('Имя')
+          fields.push(t('ownerProfileFirstName'))
         }
         if (!userData.lastName || !userData.lastName.trim()) {
-          fields.push('Фамилия')
+          fields.push(t('ownerProfileLastName'))
         }
         if (!userData.country || !userData.country.trim()) {
-          fields.push('Страна')
+          fields.push(t('ownerProfileCountry'))
         }
         if (!userData.email || !userData.email.trim()) {
-          fields.push('Почта')
+          fields.push(t('ownerProfileEmail'))
         }
         if (!userData.phone && !userData.phoneFormatted) {
-          fields.push('WhatsApp')
+          fields.push(t('ownerProfileWhatsApp'))
         }
         
         if (fields.length > 0) {
@@ -1122,16 +1124,16 @@ const OwnerDashboard = () => {
         >
           <div className="owner-dashboard__header-left">
             <h1 className="owner-dashboard__title" ref={titleRef}>
-              {`${ownerProfile.firstName || ''} ${ownerProfile.lastName || ''}`.trim() || 'Ваш кабинет продавца'}
+              {`${ownerProfile.firstName || ''} ${ownerProfile.lastName || ''}`.trim() || t('ownerDashboardTitleFallback')}
             </h1>
-            <p className="owner-dashboard__subtitle">Управление вашей недвижимостью</p>
+            <p className="owner-dashboard__subtitle">{t('ownerDashboardSubtitle')}</p>
           </div>
           <div className="owner-dashboard__header-right">
             {isMobileViewport || isMobileTitleStacked ? (
               <div className="owner-dashboard__burger-wrapper">
                 <button
                   className="owner-dashboard__icon-btn owner-dashboard__burger-btn"
-                  aria-label="Меню"
+                  aria-label={t('menu')}
                   onClick={() => setIsMobileMenuOpen(prev => !prev)}
                   aria-expanded={isMobileMenuOpen}
                 >
@@ -1146,7 +1148,7 @@ const OwnerDashboard = () => {
                         setIsSettingsPanelOpen(false)
                         setIsMobileMenuOpen(false)
                       }}
-                      aria-label="Профиль"
+                      aria-label={t('profile')}
                     >
                       <FiUser size={18} />
                     </button>
@@ -1157,7 +1159,7 @@ const OwnerDashboard = () => {
                         setIsProfilePanelOpen(false)
                         setIsMobileMenuOpen(false)
                       }}
-                      aria-label="Настройки"
+                      aria-label={t('settingsLabel') || 'Настройки'}
                     >
                       <FiSettings size={18} />
                     </button>
@@ -1167,7 +1169,7 @@ const OwnerDashboard = () => {
                         handleAddProperty()
                         setIsMobileMenuOpen(false)
                       }}
-                      aria-label="Добавить объявление"
+                      aria-label={t('addProperty')}
                     >
                       <FiPlus size={18} />
                     </button>
@@ -1177,7 +1179,7 @@ const OwnerDashboard = () => {
                         handleLogout()
                         setIsMobileMenuOpen(false)
                       }}
-                      aria-label="Выйти"
+                      aria-label={t('logOutLabel') || 'Выйти'}
                     >
                       <FiLogOut size={18} />
                     </button>
@@ -1192,7 +1194,7 @@ const OwnerDashboard = () => {
                     setIsProfilePanelOpen(true)
                     setIsSettingsPanelOpen(false)
                   }}
-                  aria-label="Профиль"
+                  aria-label={t('profile')}
                 >
                   <FiUser size={20} />
                 </button>
@@ -1202,7 +1204,7 @@ const OwnerDashboard = () => {
                     setIsSettingsPanelOpen(true)
                     setIsProfilePanelOpen(false)
                   }}
-                  aria-label="Настройки"
+                  aria-label={t('settingsLabel') || 'Настройки'}
                 >
                   <FiSettings size={20} />
                 </button>
@@ -1211,14 +1213,14 @@ const OwnerDashboard = () => {
                   onClick={handleAddProperty}
                 >
                   <FiPlus size={20} />
-                  <span>Добавить объявление</span>
+                  <span>{t('addProperty')}</span>
                 </button>
                 <button 
                   className="owner-dashboard__logout-btn"
                   onClick={handleLogout}
                 >
                   <FiLogOut size={20} />
-                  <span>Выйти</span>
+                  <span>{t('logOutLabel') || 'Выйти'}</span>
                 </button>
               </>
             )}
@@ -1232,14 +1234,14 @@ const OwnerDashboard = () => {
             onClick={() => setActiveTab('properties')}
           >
             <FiList size={20} />
-            <span>Объявления</span>
+            <span>{t('ownerTabListings')}</span>
           </button>
           <button
             className={`owner-dashboard__tab ${activeTab === 'analytics' ? 'owner-dashboard__tab--active' : ''}`}
             onClick={() => setActiveTab('analytics')}
           >
             <FiBarChart2 size={20} />
-            <span>Аналитика</span>
+            <span>{t('ownerTabAnalytics')}</span>
           </button>
         </div>
       </header>
@@ -1252,17 +1254,16 @@ const OwnerDashboard = () => {
               <FiAlertCircle size={24} />
             </div>
             <div className="owner-verification-notification__text">
-              <h4 className="owner-verification-notification__title">Заполните данные для верификации</h4>
+              <h4 className="owner-verification-notification__title">{t('ownerVerificationBannerTitle')}</h4>
               <p className="owner-verification-notification__message">
-                Для прохождения верификации необходимо заполнить все поля в разделе профиля. 
-                Перейдите в профиль, чтобы завершить заполнение данных.
+                {t('ownerVerificationBannerText')}
               </p>
             </div>
             <button
               className="owner-verification-notification__button"
               onClick={() => setIsProfilePanelOpen(true)}
             >
-              Перейти в профиль
+              {t('ownerVerificationBannerBtn')}
             </button>
           </div>
         </div>
@@ -1276,9 +1277,9 @@ const OwnerDashboard = () => {
               <FiCheck size={24} />
             </div>
             <div className="owner-verification-success__text">
-              <h4 className="owner-verification-success__title">Поздравляем!</h4>
+              <h4 className="owner-verification-success__title">{t('verificationSuccessTitle') || 'Поздравляем!'}</h4>
               <p className="owner-verification-success__message">
-                Ваша верификация успешно одобрена администратором. Теперь вы можете использовать все возможности платформы.
+                {t('verificationSuccessText') || 'Ваша верификация успешно одобрена администратором. Теперь вы можете использовать все возможности платформы.'}
               </p>
             </div>
             <button
@@ -1301,9 +1302,9 @@ const OwnerDashboard = () => {
               <FiHome size={32} />
             </div>
             <div className="stat-card__content">
-              <h3 className="stat-card__label">Всего объявлений</h3>
+              <h3 className="stat-card__label">{t('ownerStatsTotalListingsLabel')}</h3>
               <p className="stat-card__value">{totalProperties}</p>
-              <p className="stat-card__subtext">Активных: {activeProperties}</p>
+              <p className="stat-card__subtext">{t('ownerStatsTotalListingsActive', { count: activeProperties })}</p>
             </div>
           </div>
 
@@ -1312,9 +1313,9 @@ const OwnerDashboard = () => {
               <FiUsers size={32} />
             </div>
             <div className="stat-card__content">
-              <h3 className="stat-card__label">Заинтересованность</h3>
+              <h3 className="stat-card__label">{t('ownerStatsInterestLabel')}</h3>
               <p className="stat-card__value">{interestCount.toLocaleString('ru-RU')}</p>
-              <p className="stat-card__subtext">Уникальных пользователей</p>
+              <p className="stat-card__subtext">{t('ownerStatsInterestSubtitle')}</p>
             </div>
           </div>
 
@@ -1323,11 +1324,11 @@ const OwnerDashboard = () => {
               <FiTrendingUp size={32} />
             </div>
             <div className="stat-card__content">
-              <h3 className="stat-card__label">Средняя цена</h3>
+              <h3 className="stat-card__label">{t('ownerStatsAveragePriceLabel')}</h3>
               <p className="stat-card__value">
                 ${totalProperties > 0 ? Math.round(properties.reduce((sum, p) => sum + (p.price || 0), 0) / totalProperties).toLocaleString('ru-RU') : '0'}
               </p>
-              <p className="stat-card__subtext">За объект</p>
+              <p className="stat-card__subtext">{t('ownerStatsAveragePriceSubtitle')}</p>
             </div>
           </div>
         </section>
@@ -1338,19 +1339,19 @@ const OwnerDashboard = () => {
             <div className="property-calculator-card__image">
               <img 
                 src="https://t4.ftcdn.net/jpg/18/28/02/25/360_F_1828022572_oAUGr6FsgeCSUty8xFbtsj2pOwXdthho.jpg" 
-                alt="Рассчитать стоимость объекта" 
+                alt={t('ownerCalcTitle')} 
               />
             </div>
             <div className="property-calculator-card__content">
-              <h2 className="property-calculator-card__title">Рассчитать стоимость объекта</h2>
+              <h2 className="property-calculator-card__title">{t('ownerCalcTitle')}</h2>
               <p className="property-calculator-card__description">
-                Узнайте рыночную стоимость вашей недвижимости за несколько минут
+                {t('ownerCalcSubtitle')}
               </p>
               <button 
                 className="property-calculator-card__button"
                 onClick={() => setIsCalculatorModalOpen(true)}
               >
-                Начать расчет
+                {t('ownerCalcButton')}
               </button>
             </div>
           </div>
@@ -1578,23 +1579,23 @@ const OwnerDashboard = () => {
           <section className="owner-dashboard__analytics">
             <div className="analytics-section">
               <div className="analytics-section__header">
-                <h2 className="analytics-section__title">Аналитика продаж</h2>
+                <h2 className="analytics-section__title">{t('ownerAnalyticsTitle')}</h2>
                 <button 
                   className="analytics-section__export-btn"
                   onClick={handleExportToExcel}
-                  aria-label="Получить Excel отчет"
+                  aria-label={t('ownerAnalyticsExportExcel')}
                 >
                   <FiDownload size={18} />
-                  <span>Получить Excel отчет</span>
+                  <span>{t('ownerAnalyticsExportExcel')}</span>
                 </button>
               </div>
               
               <div className="analytics-grid">
                 <div className="analytics-card">
-                  <h3 className="analytics-card__title">Динамика продаж</h3>
+                  <h3 className="analytics-card__title">{t('ownerAnalyticsSalesDynamics')}</h3>
                   <div className="analytics-chart">
                     <div className="chart-placeholder">
-                      <p>График динамики продаж</p>
+                      <p>{t('ownerAnalyticsChartLabel')}</p>
                       <div className="chart-bars">
                         <div className="chart-bar" style={{ height: '60%' }}></div>
                         <div className="chart-bar" style={{ height: '80%' }}></div>
@@ -1608,7 +1609,7 @@ const OwnerDashboard = () => {
                 </div>
 
                 <div className="analytics-card">
-                  <h3 className="analytics-card__title">Топ объявления</h3>
+                  <h3 className="analytics-card__title">{t('ownerAnalyticsTopListings')}</h3>
                   <div className="top-properties">
                     {properties
                       .sort((a, b) => b.views - a.views)
@@ -1619,7 +1620,7 @@ const OwnerDashboard = () => {
                           <div className="top-property-item__content">
                             <h4 className="top-property-item__title">{property.title}</h4>
                             <p className="top-property-item__stats">
-                              {property.views} просмотров · {property.inquiries} запросов
+                              {t('ownerAnalyticsViewsInquiriesFormat', { views: property.views, inquiries: property.inquiries })}
                             </p>
                           </div>
                         </div>
@@ -1628,22 +1629,22 @@ const OwnerDashboard = () => {
                 </div>
 
                 <div className="analytics-card">
-                  <h3 className="analytics-card__title">Конверсия</h3>
+                  <h3 className="analytics-card__title">{t('ownerAnalyticsConversion')}</h3>
                   <div className="conversion-stats">
                     <div className="conversion-item">
-                      <span className="conversion-item__label">Просмотры → Запросы</span>
+                      <span className="conversion-item__label">{t('ownerAnalyticsViewsToInquiries')}</span>
                       <span className="conversion-item__value">
                         {totalViews > 0 ? ((totalInquiries / totalViews) * 100).toFixed(1) : 0}%
                       </span>
                     </div>
                     <div className="conversion-item">
-                      <span className="conversion-item__label">Запросы → Продажи</span>
+                      <span className="conversion-item__label">{t('ownerAnalyticsInquiriesToSales')}</span>
                       <span className="conversion-item__value">
                         {totalInquiries > 0 ? ((soldProperties / totalInquiries) * 100).toFixed(1) : 0}%
                       </span>
                     </div>
                     <div className="conversion-item">
-                      <span className="conversion-item__label">Общая конверсия</span>
+                      <span className="conversion-item__label">{t('ownerAnalyticsOverallConversion')}</span>
                       <span className="conversion-item__value">
                         {totalViews > 0 ? ((soldProperties / totalViews) * 100).toFixed(1) : 0}%
                       </span>
@@ -1655,33 +1656,33 @@ const OwnerDashboard = () => {
               {/* Блоки "Статистика по статусам" и "Мои продажи" в одной линии */}
               <div className="analytics-bottom-row">
                 <div className="analytics-card analytics-card--half">
-                  <h3 className="analytics-card__title">Статистика по статусам</h3>
+                  <h3 className="analytics-card__title">{t('ownerAnalyticsStatsByStatus')}</h3>
                   <div className="status-stats">
                     <div className="status-stat-item">
                       <div className="status-stat-item__indicator status-stat-item__indicator--active"></div>
                       <div className="status-stat-item__content">
-                        <span className="status-stat-item__label">Активные</span>
+                        <span className="status-stat-item__label">{t('ownerAnalyticsStatusActive')}</span>
                         <span className="status-stat-item__value">{activeProperties}</span>
                       </div>
                     </div>
                     <div className="status-stat-item">
                       <div className="status-stat-item__indicator status-stat-item__indicator--sold"></div>
                       <div className="status-stat-item__content">
-                        <span className="status-stat-item__label">Продано</span>
+                        <span className="status-stat-item__label">{t('ownerAnalyticsStatusSold')}</span>
                         <span className="status-stat-item__value">{soldProperties}</span>
                       </div>
                     </div>
                     <div className="status-stat-item">
                       <div className="status-stat-item__indicator status-stat-item__indicator--pending"></div>
                       <div className="status-stat-item__content">
-                        <span className="status-stat-item__label">На модерации</span>
+                        <span className="status-stat-item__label">{t('ownerAnalyticsStatusPending')}</span>
                         <span className="status-stat-item__value">{pendingProperties}</span>
                       </div>
                     </div>
                     <div className="status-stat-item">
                       <div className="status-stat-item__indicator status-stat-item__indicator--rejected"></div>
                       <div className="status-stat-item__content">
-                        <span className="status-stat-item__label">Отклонено</span>
+                        <span className="status-stat-item__label">{t('ownerAnalyticsStatusRejected')}</span>
                         <span className="status-stat-item__value">{rejectedProperties}</span>
                       </div>
                     </div>
@@ -1695,7 +1696,7 @@ const OwnerDashboard = () => {
                   onClick={() => setIsSalesExpanded(!isSalesExpanded)}
                   aria-expanded={isSalesExpanded}
                 >
-                  <h3 className="my-sales-card__title">Мои продажи</h3>
+                  <h3 className="my-sales-card__title">{t('ownerAnalyticsMySales')}</h3>
                   <FiChevronDown 
                     size={24} 
                     className={`my-sales-card__icon ${isSalesExpanded ? 'my-sales-card__icon--expanded' : ''}`}
@@ -1721,21 +1722,21 @@ const OwnerDashboard = () => {
                                   <div className="sale-item__buyer-info">
                                     <div className="sale-item__buyer-field">
                                       <FiUser size={16} />
-                                      <span className="sale-item__buyer-label">Покупатель:</span>
+                                      <span className="sale-item__buyer-label">{t('ownerAnalyticsBuyerLabel')}</span>
                                       <span className="sale-item__buyer-value">{property.buyer.name}</span>
                                     </div>
                                     <div className="sale-item__buyer-field">
                                       <FiDollar size={16} />
-                                      <span className="sale-item__buyer-label">Цена продажи:</span>
+                                      <span className="sale-item__buyer-label">{t('ownerAnalyticsSalePriceLabel')}</span>
                                       <span className="sale-item__buyer-value sale-item__buyer-value--price">
                                         ${property.buyer.purchasePrice.toLocaleString('ru-RU')}
                                       </span>
                                     </div>
                                     <div className="sale-item__buyer-field">
                                       <FiCalendar size={16} />
-                                      <span className="sale-item__buyer-label">Дата продажи:</span>
+                                      <span className="sale-item__buyer-label">{t('ownerAnalyticsSaleDateLabel')}</span>
                                       <span className="sale-item__buyer-value">
-                                        {new Date(property.soldDate).toLocaleDateString('ru-RU', {
+                                        {new Date(property.soldDate).toLocaleDateString(i18n.language === 'ru' ? 'ru-RU' : i18n.language === 'de' ? 'de-DE' : i18n.language === 'es' ? 'es-ES' : i18n.language === 'fr' ? 'fr-FR' : i18n.language === 'sv' ? 'sv-SE' : 'en-US', {
                                           day: 'numeric',
                                           month: 'long',
                                           year: 'numeric'
@@ -1743,11 +1744,11 @@ const OwnerDashboard = () => {
                                       </span>
                                     </div>
                                     <div className="sale-item__buyer-field">
-                                      <span className="sale-item__buyer-label">Email:</span>
+                                      <span className="sale-item__buyer-label">{t('ownerAnalyticsEmailLabel')}</span>
                                       <span className="sale-item__buyer-value">{property.buyer.email}</span>
                                     </div>
                                     <div className="sale-item__buyer-field">
-                                      <span className="sale-item__buyer-label">Телефон:</span>
+                                      <span className="sale-item__buyer-label">{t('ownerAnalyticsPhoneLabel')}</span>
                                       <span className="sale-item__buyer-value">{property.buyer.phone}</span>
                                     </div>
                                   </div>
@@ -1758,7 +1759,7 @@ const OwnerDashboard = () => {
                       </div>
                     ) : (
                       <div className="sales-empty">
-                        <p>У вас пока нет завершенных продаж</p>
+                        <p>{t('ownerAnalyticsNoSalesYet')}</p>
                       </div>
                     )}
                     </div>
@@ -1846,10 +1847,10 @@ const OwnerDashboard = () => {
                 </div>
                 <div style={{ flex: 1 }}>
                   <h2 style={{ margin: 0, fontSize: '1.5rem', fontWeight: '700', color: '#111827', marginBottom: '4px' }}>
-                    Заполните профиль
+                    {t('profileFieldsModalTitle')}
                   </h2>
                   <p style={{ margin: 0, fontSize: '14px', color: '#6b7280' }}>
-                    Для добавления объявления необходимо заполнить все обязательные поля
+                    {t('profileFieldsModalSubtitle')}
                   </p>
                 </div>
               </div>
@@ -1875,7 +1876,7 @@ const OwnerDashboard = () => {
             
             <div style={{ marginBottom: '1.5rem' }}>
               <p style={{ margin: '0 0 12px 0', color: '#374151', fontSize: '15px', fontWeight: '500' }}>
-                Не заполнены следующие поля:
+                {t('profileFieldsModalMissingTitle')}
               </p>
               <ul style={{ 
                 margin: 0, 
@@ -1925,7 +1926,7 @@ const OwnerDashboard = () => {
                   e.target.style.backgroundColor = '#f3f4f6';
                 }}
               >
-                Отмена
+                {t('profileFieldsModalCancel')}
               </button>
               <button
                 onClick={() => {
@@ -1954,7 +1955,7 @@ const OwnerDashboard = () => {
                 }}
               >
                 <FiUser size={16} />
-                Перейти в профиль
+                {t('profileFieldsModalGoToProfile')}
               </button>
             </div>
           </div>
@@ -2135,12 +2136,12 @@ const OwnerDashboard = () => {
           <div className="owner-sidebar-panel owner-sidebar-panel--profile">
             <div className="owner-sidebar-panel__content">
               <div className="owner-sidebar-panel__header">
-                <h3 className="owner-sidebar-panel__title">Профиль</h3>
+                <h3 className="owner-sidebar-panel__title">{t('ownerProfileTitle')}</h3>
                 <button 
                   type="button" 
                   className="owner-sidebar-panel__close"
                   onClick={handleCloseProfilePanel}
-                  aria-label="Закрыть профиль"
+                  aria-label={t('ownerProfileCloseAria')}
                 >
                   <FiX size={20} />
                 </button>
@@ -2156,7 +2157,7 @@ const OwnerDashboard = () => {
                           onClick={handleProfileSave}
                           disabled={isSavingProfile}
                         >
-                          {isSavingProfile ? 'Сохранение...' : 'Сохранить'}
+                          {isSavingProfile ? t('ownerProfileSaving') : t('ownerProfileSave')}
                         </button>
                         <button
                         type="button"
@@ -2173,7 +2174,7 @@ const OwnerDashboard = () => {
                         disabled={isSavingProfile}
                         style={{ marginLeft: 8 }}
                       >
-                        Отмена
+                        {t('ownerProfileCancel')}
                       </button>
                       </>
                     ) : (
@@ -2186,36 +2187,36 @@ const OwnerDashboard = () => {
                           setIsProfileEditing(true)
                         }}
                       >
-                        Редактировать профиль
+                        {t('ownerProfileEdit')}
                       </button>
                     )}
                   </div>
                 </div>
 
                 <div className="owner-profile-section">
-                  <h4 className="owner-profile-section__title">Имя</h4>
+                  <h4 className="owner-profile-section__title">{t('ownerProfileFirstName')}</h4>
                   <input
                     type="text"
                     className="owner-profile-section__value-input"
                     value={ownerProfile.firstName}
                     onChange={(e) => handleProfileFieldChange('firstName', e.target.value)}
-                    placeholder="Введите имя"
+                    placeholder={t('ownerProfilePlaceholderFirstName')}
                     disabled={!isProfileEditing}
                   />
                 </div>
                 <div className="owner-profile-section">
-                  <h4 className="owner-profile-section__title">Фамилия</h4>
+                  <h4 className="owner-profile-section__title">{t('ownerProfileLastName')}</h4>
                   <input
                     type="text"
                     className="owner-profile-section__value-input"
                     value={ownerProfile.lastName}
                     onChange={(e) => handleProfileFieldChange('lastName', e.target.value)}
-                    placeholder="Введите фамилию"
+                    placeholder={t('ownerProfilePlaceholderLastName')}
                     disabled={!isProfileEditing}
                   />
                 </div>
                 <div className="owner-profile-section">
-                  <h4 className="owner-profile-section__title">Страна</h4>
+                  <h4 className="owner-profile-section__title">{t('ownerProfileCountry')}</h4>
                   {isProfileEditing ? (
                     <CountrySelect
                       value={ownerProfile.country}
@@ -2227,53 +2228,62 @@ const OwnerDashboard = () => {
                           handleProfileFieldChange('countryFlag', selectedCountry.flag)
                         }
                       }}
-                      placeholder="Выберите страну"
+                      placeholder={t('ownerProfilePlaceholderCountry')}
                     />
                   ) : (
                     <div className="owner-profile-section__value">
                       {(() => {
-                        const selectedCountry = countryList.find(c => c.name === ownerProfile.country)
-                        return ownerProfile.country ? (
+                        const selectedCountry = countryList.find(c => c.name === ownerProfile.country || c.code === ownerProfile.country)
+                        if (!ownerProfile.country) return t('ownerProfileCountryNotSpecified')
+                        const code = selectedCountry?.code ?? (ownerProfile.country?.length === 2 ? ownerProfile.country : null)
+                        const displayName = code
+                          ? (() => {
+                              try {
+                                return new Intl.DisplayNames([i18n.language?.split('-')[0] || 'ru'], { type: 'region' }).of(code)
+                              } catch {
+                                return selectedCountry?.name ?? ownerProfile.country
+                              }
+                            })()
+                          : ownerProfile.country
+                        return (
                           <>
                             {selectedCountry && <span style={{ marginRight: '6px' }}>{selectedCountry.flag}</span>}
-                            {ownerProfile.country}
+                            {displayName}
                           </>
-                        ) : (
-                          'Не указана'
                         )
                       })()}
                     </div>
                   )}
                 </div>
                 <div className="owner-profile-section">
-                  <h4 className="owner-profile-section__title">Подписка</h4>
-                  <p className="owner-profile-section__value">Базовая</p>
-                  <button className="owner-profile-section__button">Изменить подписку</button>
+                  <h4 className="owner-profile-section__title">{t('ownerProfileSubscription')}</h4>
+                  <p className="owner-profile-section__value">{t('ownerProfileSubscriptionBasic')}</p>
+                  <button className="owner-profile-section__button">{t('ownerProfileChangeSubscription')}</button>
                 </div>
                 <div className="owner-profile-section">
-                  <h4 className="owner-profile-section__title">Почта</h4>
+                  <h4 className="owner-profile-section__title">{t('ownerProfileEmail')}</h4>
                   <input
                     type="email"
                     className="owner-profile-section__value-input"
                     value={ownerProfile.email}
                     onChange={(e) => handleProfileFieldChange('email', e.target.value)}
-                    placeholder="Введите email"
+                    placeholder={t('ownerProfilePlaceholderEmail')}
                     disabled={!isProfileEditing}
                   />
                 </div>
                 <div className="owner-profile-section">
-                  <h4 className="owner-profile-section__title">Логин</h4>
+                  <h4 className="owner-profile-section__title">{t('ownerProfileLogin')}</h4>
                   <input
                     type="text"
                     className="owner-profile-section__value-input"
                     value={ownerProfile.username}
                     onChange={(e) => handleProfileFieldChange('username', e.target.value)}
-                    placeholder="Введите логин"
+                    placeholder={t('ownerProfilePlaceholderLogin')}
                     disabled={!isProfileEditing}
                   />
                 </div>
                 <div className="owner-profile-section">
-                  <h4 className="owner-profile-section__title">Пароль</h4>
+                  <h4 className="owner-profile-section__title">{t('ownerProfilePassword')}</h4>
                   <div style={{ position: 'relative' }}>
                     {isProfileEditing ? (
                       <input
@@ -2281,7 +2291,7 @@ const OwnerDashboard = () => {
                         className="owner-profile-section__value-input"
                         value={ownerProfile.password}
                         onChange={(e) => handleProfileFieldChange('password', e.target.value)}
-                        placeholder="Введите новый пароль"
+                        placeholder={t('ownerProfilePlaceholderPassword')}
                         style={{ paddingRight: '40px' }}
                       />
                     ) : (
@@ -2306,7 +2316,7 @@ const OwnerDashboard = () => {
                           alignItems: 'center',
                           color: '#666'
                         }}
-                        aria-label={showPassword ? 'Скрыть пароль' : 'Показать пароль'}
+                        aria-label={showPassword ? t('ownerProfileHidePassword') : t('ownerProfileShowPassword')}
                       >
                         {showPassword ? (
                           <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
@@ -2323,13 +2333,13 @@ const OwnerDashboard = () => {
                   </div>
                 </div>
                 <div className="owner-profile-section">
-                  <h4 className="owner-profile-section__title">WhatsApp</h4>
+                  <h4 className="owner-profile-section__title">{t('ownerProfileWhatsApp')}</h4>
                   <input
                     type="tel"
                     className="owner-profile-section__value-input"
                     value={ownerProfile.phone}
                     onChange={(e) => handleProfileFieldChange('phone', e.target.value)}
-                    placeholder="Введите номер телефона"
+                    placeholder={t('ownerProfilePlaceholderPhone')}
                     disabled={!isProfileEditing}
                   />
                 </div>
@@ -2349,51 +2359,54 @@ const OwnerDashboard = () => {
           <div className="owner-sidebar-panel owner-sidebar-panel--settings">
             <div className="owner-sidebar-panel__content">
               <div className="owner-sidebar-panel__header">
-                <h3 className="owner-sidebar-panel__title">Настройки</h3>
+                <h3 className="owner-sidebar-panel__title">{t('ownerSettingsTitle')}</h3>
                 <button 
                   type="button" 
                   className="owner-sidebar-panel__close"
                   onClick={() => setIsSettingsPanelOpen(false)}
-                  aria-label="Закрыть настройки"
+                  aria-label={t('ownerSettingsCloseAria')}
                 >
                   <FiX size={20} />
                 </button>
               </div>
               <div className="owner-sidebar-panel__body">
                 <div className="owner-settings-section">
-                  <h4 className="owner-settings-section__title">Смена языка</h4>
+                  <h4 className="owner-settings-section__title">{t('ownerSettingsChangeLanguage')}</h4>
                   <select className="owner-settings-section__select">
-                    <option value="ru">Русский</option>
-                    <option value="en">English</option>
-                    <option value="es">Español</option>
+                    <option value="ru">{t('ownerSettingsLanguageRu')}</option>
+                    <option value="en">{t('ownerSettingsLanguageEn')}</option>
+                    <option value="de">{t('ownerSettingsLanguageDe')}</option>
+                    <option value="es">{t('ownerSettingsLanguageEs')}</option>
+                    <option value="fr">{t('ownerSettingsLanguageFr')}</option>
+                    <option value="sv">{t('ownerSettingsLanguageSv')}</option>
                   </select>
                 </div>
                 <div className="owner-settings-section">
-                  <h4 className="owner-settings-section__title">Смена пароля</h4>
-                  <button className="owner-settings-section__button">Изменить пароль</button>
+                  <h4 className="owner-settings-section__title">{t('ownerSettingsChangePassword')}</h4>
+                  <button className="owner-settings-section__button">{t('ownerSettingsChangePasswordButton')}</button>
                 </div>
                 <div className="owner-settings-section">
-                  <h4 className="owner-settings-section__title">Уведомления</h4>
+                  <h4 className="owner-settings-section__title">{t('ownerSettingsNotifications')}</h4>
                   <div className="owner-settings-section__toggle">
                     <label className="owner-toggle-switch">
                       <input type="checkbox" defaultChecked />
                       <span className="owner-toggle-slider"></span>
                     </label>
-                    <span className="owner-toggle-label">Включить уведомления</span>
+                    <span className="owner-toggle-label">{t('ownerSettingsEnableNotifications')}</span>
                   </div>
                   <div className="owner-settings-section__toggle">
                     <label className="owner-toggle-switch">
                       <input type="checkbox" defaultChecked />
                       <span className="owner-toggle-slider"></span>
                     </label>
-                    <span className="owner-toggle-label">Email уведомления</span>
+                    <span className="owner-toggle-label">{t('ownerSettingsEmailNotifications')}</span>
                   </div>
                   <div className="owner-settings-section__toggle">
                     <label className="owner-toggle-switch">
                       <input type="checkbox" />
                       <span className="owner-toggle-slider"></span>
                     </label>
-                    <span className="owner-toggle-label">SMS уведомления</span>
+                    <span className="owner-toggle-label">{t('ownerSettingsSmsNotifications')}</span>
                   </div>
                 </div>
               </div>

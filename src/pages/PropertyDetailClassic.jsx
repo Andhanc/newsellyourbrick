@@ -2517,7 +2517,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                 return shouldShowBuyNow ? (
                   <>
                     <div className="property-detail-sidebar__current-bid">
-                      <span className="current-bid-label">Минимальная цена продажи:</span>
+                      <span className="current-bid-label">{t('propertyDetailMinSellingPrice')}</span>
                       <span className="current-bid-value">
                         {displayProperty.currency === 'USD' ? '$' : displayProperty.currency === 'EUR' ? '€' : displayProperty.currency === 'BYN' ? 'Br' : ''}
                         {displayProperty.price.toLocaleString('ru-RU')}
@@ -2533,7 +2533,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                         cursor: (displayProperty.is_reserved && displayProperty.reserved_until && new Date(displayProperty.reserved_until) > new Date()) ? 'not-allowed' : 'pointer'
                       }}
                     >
-                      {displayProperty.is_reserved && displayProperty.reserved_until && new Date(displayProperty.reserved_until) > new Date() ? 'Объект забронирован' : 'Купить сейчас'}
+                      {displayProperty.is_reserved && displayProperty.reserved_until && new Date(displayProperty.reserved_until) > new Date() ? t('objectReserved') : t('buyNowSectionTitle')}
                     </button>
                   </>
                 ) : null;
@@ -2549,7 +2549,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                     cursor: (displayProperty.is_reserved && displayProperty.reserved_until && new Date(displayProperty.reserved_until) > new Date()) ? 'not-allowed' : 'pointer'
                   }}
                 >
-                  Перейти к покупке
+                  {t('propertyDetailGoToPurchase')}
                 </button>
               )}
 
@@ -2557,7 +2557,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
               {!isAuctionProperty && displayProperty.price && Number(displayProperty.price) > 0 && (
                 <>
                   <div className="property-detail-sidebar__price-block">
-                    <span className="price-label">{isDebtProperty ? 'Сумма продажи:' : 'Стоимость:'}</span>
+                    <span className="price-label">{isDebtProperty ? t('propertyDetailSaleAmount') : t('propertyDetailPrice')}</span>
                     <span
                       className="price-value"
                       style={isDebtProperty ? { fontSize: '26px', fontWeight: 700 } : undefined}
@@ -2577,8 +2577,8 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                     }}
                   >
                     {displayProperty.is_reserved && displayProperty.reserved_until && new Date(displayProperty.reserved_until) > new Date()
-                      ? 'Объект забронирован'
-                      : (isDebtProperty ? 'Купить' : 'Купить сейчас')}
+                      ? t('objectReserved')
+                      : (isDebtProperty ? t('propertyDetailBuy') : t('buyNowSectionTitle'))}
                   </button>
                 </>
               )}
@@ -2607,15 +2607,18 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                       <div className="property-reservation-block" style={{ minWidth: '250px' }}>
                         <div className="reservation-icon">🔒</div>
                         <div className="reservation-text">
-                          <div className="reservation-title">Ставки приостановлены</div>
+                          <div className="reservation-title">{t('propertyDetailBidsPaused')}</div>
                           <div className="reservation-subtitle">
-                            Резервация до {new Date(displayProperty.reserved_until).toLocaleString('ru-RU', {
-                              year: 'numeric',
-                              month: '2-digit',
-                              day: '2-digit',
-                              hour: '2-digit',
-                              minute: '2-digit'
-                            })} ({Math.ceil((new Date(displayProperty.reserved_until) - new Date()) / (1000 * 60 * 60))} ч)
+                            {t('propertyDetailReservationUntil', {
+                              date: new Date(displayProperty.reserved_until).toLocaleString(undefined, {
+                                year: 'numeric',
+                                month: '2-digit',
+                                day: '2-digit',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              }),
+                              hours: Math.ceil((new Date(displayProperty.reserved_until) - new Date()) / (1000 * 60 * 60))
+                            })}
                           </div>
                         </div>
                       </div>
@@ -2639,17 +2642,17 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                       {/* Старая карточка лидера (уходит вниз) */}
                       {previousLeader && !timerExpired && isLeaderChanging && (
                         <div className="auction-leader-card auction-leader-card--exiting">
-                          <div className="auction-leader-label">Лидер аукциона</div>
+                          <div className="auction-leader-label">{t('propertyDetailAuctionLeader')}</div>
                           <div className="auction-leader-name">
                             {previousLeader.countryFlag && (
                               <span className="auction-leader-country-flag">{previousLeader.countryFlag}</span>
                             )}
                             <span className="auction-leader-id">
-                              {previousLeader.userIdNumber || previousLeader.userId || previousLeader.id || 'Неизвестно'}
+                              {previousLeader.userIdNumber || previousLeader.userId || previousLeader.id || t('propertyDetailUnknown')}
                             </span>
                           </div>
                           <div className="auction-leader-bid">
-                            Ставка: {displayProperty.currency === 'USD' ? '$' : displayProperty.currency === 'EUR' ? '€' : displayProperty.currency === 'BYN' ? 'Br' : ''}
+                            {t('propertyDetailBid')} {displayProperty.currency === 'USD' ? '$' : displayProperty.currency === 'EUR' ? '€' : displayProperty.currency === 'BYN' ? 'Br' : ''}
                             {previousLeader.bidAmount.toLocaleString('ru-RU')}
                           </div>
                         </div>
@@ -2657,7 +2660,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                       {/* Новая карточка лидера (поднимается вверх) */}
                       {currentLeader && !timerExpired && (
                         <div className={`auction-leader-card ${isLeaderChanging ? 'auction-leader-card--entering' : ''}`}>
-                          <div className="auction-leader-label">Лидер аукциона</div>
+                          <div className="auction-leader-label">{t('propertyDetailAuctionLeader')}</div>
                           <div className="auction-leader-name">
                             {currentLeader.countryFlag && (
                               <span className="auction-leader-country-flag">{currentLeader.countryFlag}</span>
@@ -2667,7 +2670,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                             </span>
                           </div>
                           <div className="auction-leader-bid">
-                            Ставка: {displayProperty.currency === 'USD' ? '$' : displayProperty.currency === 'EUR' ? '€' : displayProperty.currency === 'BYN' ? 'Br' : ''}
+                            {t('propertyDetailBid')} {displayProperty.currency === 'USD' ? '$' : displayProperty.currency === 'EUR' ? '€' : displayProperty.currency === 'BYN' ? 'Br' : ''}
                             {currentLeader.bidAmount.toLocaleString('ru-RU')}
                           </div>
                         </div>
@@ -2675,12 +2678,12 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                       {/* Победитель когда таймер закончился */}
                       {timerExpired && currentLeader && (
                         <div className="auction-winner-card">
-                          <div className="auction-winner-label">🏆 Победитель аукциона</div>
+                          <div className="auction-winner-label">🏆 {t('propertyDetailAuctionWinner')}</div>
                           <div className="auction-winner-name">
                             {currentLeader.userIdNumber || currentLeader.userId || currentLeader.id}
                           </div>
                           <div className="auction-winner-bid">
-                            Выигрышная ставка: {displayProperty.currency === 'USD' ? '$' : displayProperty.currency === 'EUR' ? '€' : displayProperty.currency === 'BYN' ? 'Br' : ''}
+                            {t('propertyDetailWinningBid')} {displayProperty.currency === 'USD' ? '$' : displayProperty.currency === 'EUR' ? '€' : displayProperty.currency === 'BYN' ? 'Br' : ''}
                             {currentLeader.bidAmount.toLocaleString('ru-RU')}
                           </div>
                         </div>
@@ -2692,8 +2695,8 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                         <div className="property-reservation-block" style={{ minWidth: '250px' }}>
                           <div className="reservation-icon">🔒</div>
                           <div className="reservation-text">
-                            <div className="reservation-title">Ставки приостановлены</div>
-                            <div className="reservation-subtitle">Объект забронирован на 72 ч</div>
+                            <div className="reservation-title">{t('propertyDetailBidsPaused')}</div>
+                            <div className="reservation-subtitle">{t('propertyDetailReserved72h')}</div>
                           </div>
                         </div>
                       ) : (
@@ -2703,17 +2706,17 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                       {/* Старая карточка лидера (уходит вниз) */}
                       {previousLeader && !timerExpired && isLeaderChanging && (
                         <div className="auction-leader-card auction-leader-card--exiting">
-                          <div className="auction-leader-label">Лидер аукциона</div>
+                          <div className="auction-leader-label">{t('propertyDetailAuctionLeader')}</div>
                           <div className="auction-leader-name">
                             {previousLeader.countryFlag && (
                               <span className="auction-leader-country-flag">{previousLeader.countryFlag}</span>
                             )}
                             <span className="auction-leader-id">
-                              {previousLeader.userIdNumber || previousLeader.userId || previousLeader.id || 'Неизвестно'}
+                              {previousLeader.userIdNumber || previousLeader.userId || previousLeader.id || t('propertyDetailUnknown')}
                             </span>
                           </div>
                           <div className="auction-leader-bid">
-                            Ставка: {displayProperty.currency === 'USD' ? '$' : displayProperty.currency === 'EUR' ? '€' : displayProperty.currency === 'BYN' ? 'Br' : ''}
+                            {t('propertyDetailBid')} {displayProperty.currency === 'USD' ? '$' : displayProperty.currency === 'EUR' ? '€' : displayProperty.currency === 'BYN' ? 'Br' : ''}
                             {previousLeader.bidAmount.toLocaleString('ru-RU')}
                           </div>
                         </div>
@@ -2721,7 +2724,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                       {/* Новая карточка лидера (поднимается вверх) */}
                       {currentLeader && !timerExpired && (
                         <div className={`auction-leader-card ${isLeaderChanging ? 'auction-leader-card--entering' : ''}`}>
-                          <div className="auction-leader-label">Лидер аукциона</div>
+                          <div className="auction-leader-label">{t('propertyDetailAuctionLeader')}</div>
                           <div className="auction-leader-name">
                             {currentLeader.countryFlag && (
                               <span className="auction-leader-country-flag">{currentLeader.countryFlag}</span>
@@ -2731,7 +2734,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                             </span>
                           </div>
                           <div className="auction-leader-bid">
-                            Ставка: {displayProperty.currency === 'USD' ? '$' : displayProperty.currency === 'EUR' ? '€' : displayProperty.currency === 'BYN' ? 'Br' : ''}
+                            {t('propertyDetailBid')} {displayProperty.currency === 'USD' ? '$' : displayProperty.currency === 'EUR' ? '€' : displayProperty.currency === 'BYN' ? 'Br' : ''}
                             {currentLeader.bidAmount.toLocaleString('ru-RU')}
                           </div>
                         </div>
@@ -2739,12 +2742,12 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                       {/* Победитель когда таймер закончился */}
                       {timerExpired && currentLeader && (
                         <div className="auction-winner-card">
-                          <div className="auction-winner-label">🏆 Победитель аукциона</div>
+                          <div className="auction-winner-label">🏆 {t('propertyDetailAuctionWinner')}</div>
                           <div className="auction-winner-name">
                             {currentLeader.userIdNumber || currentLeader.userId || currentLeader.id}
                           </div>
                           <div className="auction-winner-bid">
-                            Выигрышная ставка: {displayProperty.currency === 'USD' ? '$' : displayProperty.currency === 'EUR' ? '€' : displayProperty.currency === 'BYN' ? 'Br' : ''}
+                            {t('propertyDetailWinningBid')} {displayProperty.currency === 'USD' ? '$' : displayProperty.currency === 'EUR' ? '€' : displayProperty.currency === 'BYN' ? 'Br' : ''}
                             {currentLeader.bidAmount.toLocaleString('ru-RU')}
                           </div>
                         </div>
@@ -2754,7 +2757,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                   {/* Показываем лидера для обычных объектов (без таймера) */}
                   {!isAuctionProperty && currentLeader && (
                     <div className="auction-leader-card">
-                      <div className="auction-leader-label">Текущий лидер</div>
+                      <div className="auction-leader-label">{t('propertyDetailCurrentLeader')}</div>
                       <div className="auction-leader-name">
                         {currentLeader.countryFlag && (
                           <span className="auction-leader-country-flag">{currentLeader.countryFlag}</span>
@@ -2764,7 +2767,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                         </span>
                       </div>
                       <div className="auction-leader-bid">
-                        Ставка: {displayProperty.currency === 'USD' ? '$' : displayProperty.currency === 'EUR' ? '€' : displayProperty.currency === 'BYN' ? 'Br' : ''}
+                        {t('propertyDetailBid')} {displayProperty.currency === 'USD' ? '$' : displayProperty.currency === 'EUR' ? '€' : displayProperty.currency === 'BYN' ? 'Br' : ''}
                         {currentLeader.bidAmount.toLocaleString('ru-RU')}
                       </div>
                     </div>
@@ -2781,10 +2784,10 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                     <div className="property-detail-sidebar__current-bid">
                       <span className="current-bid-label">
                         {currentBid !== null && currentBid !== (isAuctionProperty ? displayProperty.auction_starting_price : displayProperty.price)
-                          ? 'Текущая максимальная ставка:'
+                          ? t('propertyDetailCurrentMaxBid')
                           : isAuctionProperty 
-                            ? 'Стартовая сумма ставки:'
-                            : 'Цена объекта:'}
+                            ? t('propertyDetailStartingBidLabel')
+                            : t('propertyDetailObjectPrice')}
                       </span>
                       <div className={`current-bid-value-wrapper ${priceAnimation ? 'current-bid-value-wrapper--animated' : ''}`}>
                         <span className="current-bid-value">
@@ -2817,7 +2820,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                         fontSize: '14px'
                       }}>
                         <FiLock size={16} />
-                        <span>Ставки временно недоступны. Объект забронирован.</span>
+                        <span>{t('propertyDetailBidsUnavailableReserved')}</span>
                       </div>
                     )}
                     <div className="bidding-section__quick-buttons">
@@ -2855,7 +2858,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                       <input
                         type="text"
                         className="bidding-section__input"
-                        placeholder={isUserLeader ? 'Вы лидируете в аукционе' : (displayProperty.is_reserved && displayProperty.reserved_until && new Date(displayProperty.reserved_until) > new Date()) ? 'Объект забронирован' : 'Введите сумму ставки'}
+                        placeholder={isUserLeader ? t('propertyDetailYouAreLeading') : (displayProperty.is_reserved && displayProperty.reserved_until && new Date(displayProperty.reserved_until) > new Date()) ? t('objectReserved') : t('propertyDetailEnterBidAmount')}
                         value={bidAmount}
                         onChange={handleBidAmountChange}
                         disabled={isSubmittingBid || isUserLeader || (displayProperty.is_reserved && displayProperty.reserved_until && new Date(displayProperty.reserved_until) > new Date())}
@@ -2876,7 +2879,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                         cursor: (displayProperty.is_reserved && displayProperty.reserved_until && new Date(displayProperty.reserved_until) > new Date()) ? 'not-allowed' : 'pointer'
                       }}
                     >
-                      {isSubmittingBid ? 'Отправка...' : isUserLeader ? 'Вы выигрываете' : (displayProperty.is_reserved && displayProperty.reserved_until && new Date(displayProperty.reserved_until) > new Date()) ? 'Объект забронирован' : 'Сделать ставку'}
+                      {isSubmittingBid ? t('propertyDetailSubmitting') : isUserLeader ? t('propertyDetailYouAreWinning') : (displayProperty.is_reserved && displayProperty.reserved_until && new Date(displayProperty.reserved_until) > new Date()) ? t('objectReserved') : t('placeBid')}
                     </button>
                   </div>
                   )}
@@ -2887,7 +2890,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                     const maxBidAmount = Math.max(...recentBids.map(b => b.bid_amount))
                     return (
                       <div className="property-detail-sidebar__recent-bids">
-                        <div className="recent-bids__title">Последние ставки</div>
+                        <div className="recent-bids__title">{t('propertyDetailRecentBids')}</div>
                         <div className="recent-bids__list">
                           {recentBids.map((bid, index) => {
                             const isHighest = bid.bid_amount === maxBidAmount
@@ -2896,10 +2899,10 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                                 <div className="recent-bid-item__user">
                                   <FiUser size={14} />
                                   <span className="recent-bid-item__user-name">
-                                    {bid.user_id_number || bid.user_id || 'Неизвестно'}
+                                    {bid.user_id_number || bid.user_id || t('propertyDetailUnknown')}
                                   </span>
                                   {isHighest && (
-                                    <span className="recent-bid-item__badge">Лидер</span>
+                                    <span className="recent-bid-item__badge">{t('propertyDetailLeader')}</span>
                                   )}
                                 </div>
                                 <div className="recent-bid-item__info">
@@ -2930,7 +2933,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                     className="property-detail-sidebar__history-btn"
                     onClick={() => setIsBidHistoryOpen(true)}
                   >
-                    История ставок
+                    {t('propertyDetailBidHistory')}
                   </button>
                 </div>
               ) : null}

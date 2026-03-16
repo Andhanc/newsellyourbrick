@@ -1,57 +1,11 @@
 'use client';
 
 import React, { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Card, CardContent } from '@/components/ui/card';
 import { ChartContainer, ChartTooltip } from '@/components/ui/line-charts-5';
 import { TrendingDown, TrendingUp } from 'lucide-react';
 import { CartesianGrid, ComposedChart, Line, XAxis, YAxis } from 'recharts';
-
-// Chart configuration - яркие цвета для темной темы
-const chartConfig = {
-  income: {
-    label: 'Доходы',
-    color: '#f59e0b', // amber-500 / orange - яркий оранжевый
-  },
-  expenses: {
-    label: 'Расходы',
-    color: '#a855f7', // purple-500 - яркий фиолетовый
-  },
-};
-
-// Custom Tooltip - оптимизирован для темной темы
-const CustomTooltip = ({ active, payload, label }) => {
-  if (active && payload && payload.length) {
-    return (
-      <div 
-        className="rounded-lg border border-white/10 bg-[#0a0e27] backdrop-blur-xl p-3 shadow-xl min-w-[150px]"
-        style={{
-          background: 'rgba(10, 14, 39, 0.95)',
-          border: '1px solid rgba(255, 255, 255, 0.1)',
-          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5)',
-        }}
-      >
-        <div className="text-xs font-medium text-white/90 tracking-wide mb-2.5">{label}</div>
-        <div className="space-y-2">
-          {payload.map((entry, index) => {
-            const config = chartConfig[entry.dataKey];
-            return (
-              <div key={index} className="flex items-center gap-2 text-xs">
-                <div className="flex items-center gap-1.5">
-                  <div className="w-1 h-3 rounded-full" style={{ backgroundColor: entry.color }}></div>
-                  <span className="text-white/70">{config?.label}:</span>
-                </div>
-                <span className="font-semibold text-white">
-                  {entry.value.toLocaleString('ru-RU')} €
-                </span>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    );
-  }
-  return null;
-};
 
 const ChartLabel = ({ label, color }) => {
   return (
@@ -69,14 +23,53 @@ const ChartLabel = ({ label, color }) => {
 };
 
 export default function IncomeExpensesChart({ yearlyData, formatCurrency }) {
-  // Transform data for the chart
+  const { t } = useTranslation();
+  const chartConfig = useMemo(() => ({
+    income: { label: t('calcChartIncome'), color: '#f59e0b' },
+    expenses: { label: t('calcChartExpenses'), color: '#a855f7' },
+  }), [t]);
+
+  const CustomTooltip = ({ active, payload, label }) => {
+    if (active && payload && payload.length) {
+      return (
+        <div
+          className="rounded-lg border border-white/10 bg-[#0a0e27] backdrop-blur-xl p-3 shadow-xl min-w-[150px]"
+          style={{
+            background: 'rgba(10, 14, 39, 0.95)',
+            border: '1px solid rgba(255, 255, 255, 0.1)',
+            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5)',
+          }}
+        >
+          <div className="text-xs font-medium text-white/90 tracking-wide mb-2.5">{label}</div>
+          <div className="space-y-2">
+            {payload.map((entry, index) => {
+              const config = chartConfig[entry.dataKey];
+              return (
+                <div key={index} className="flex items-center gap-2 text-xs">
+                  <div className="flex items-center gap-1.5">
+                    <div className="w-1 h-3 rounded-full" style={{ backgroundColor: entry.color }}></div>
+                    <span className="text-white/70">{config?.label}:</span>
+                  </div>
+                  <span className="font-semibold text-white">
+                    {formatCurrency ? formatCurrency(entry.value) : `${entry.value.toLocaleString('ru-RU')} €`}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      );
+    }
+    return null;
+  };
+
   const chartData = useMemo(() => {
     return yearlyData.map((item, index) => ({
-      period: `Год ${index + 1}`,
+      period: `${t('calcYearLabel')} ${index + 1}`,
       income: item.rentalIncome,
       expenses: item.totalExpenses,
     }));
-  }, [yearlyData]);
+  }, [yearlyData, t]);
 
   // Calculate totals and percentage changes
   const totalIncome = useMemo(() => {
@@ -208,10 +201,10 @@ export default function IncomeExpensesChart({ yearlyData, formatCurrency }) {
                     background: 'rgba(168, 85, 247, 0.15)',
                     border: '1px solid rgba(168, 85, 247, 0.3)',
                   }}
-                  title="Расходы растут так же, как доход (операционные % от дохода ± ипотека)"
+                  title={t('calcExpensesSameAsIncomeTitle')}
                 >
                   <span className="text-sm font-semibold" style={{ color: '#c084fc' }}>
-                    {expensesShareOfIncome}% от дохода
+                    {t('calcExpensesShareOfIncome', { value: expensesShareOfIncome })}
                   </span>
                 </div>
               ) : (
@@ -356,7 +349,7 @@ export default function IncomeExpensesChart({ yearlyData, formatCurrency }) {
                 letterSpacing: '0.02em',
               }}
             >
-              Нет данных
+              {t('calcNoData')}
             </div>
           )}
         </div>

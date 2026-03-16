@@ -1,5 +1,6 @@
 import { FiX, FiClock, FiDollarSign, FiUser } from 'react-icons/fi'
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import CountdownTimer from './CountdownTimer'
 import { getApiBaseUrl, getApiBaseUrlSync } from '../utils/apiConfig'
 import './BiddingHistoryModal.css'
@@ -8,6 +9,7 @@ import './BiddingHistoryModal.css'
 let API_BASE_URL = getApiBaseUrlSync()
 
 const BiddingHistoryModal = ({ isOpen, onClose, property, refreshTrigger }) => {
+  const { t } = useTranslation()
   const [bids, setBids] = useState([])
   const [isLoading, setIsLoading] = useState(false)
   const [isInitialLoad, setIsInitialLoad] = useState(true)
@@ -145,15 +147,15 @@ const BiddingHistoryModal = ({ isOpen, onClose, property, refreshTrigger }) => {
         <button 
           className="bidding-history-modal__close" 
           onClick={onClose}
-          aria-label="Закрыть"
+          aria-label={t('closeAria')}
         >
           <FiX size={24} />
         </button>
 
         <div className="bidding-history-modal__content">
           <div className="bidding-history-modal__header">
-            <h2 className="bidding-history-modal__title">История ставок</h2>
-            <p className="bidding-history-modal__subtitle">{property?.title || 'Объект недвижимости'}</p>
+            <h2 className="bidding-history-modal__title">{t('bidHistoryTitle')}</h2>
+            <p className="bidding-history-modal__subtitle">{property?.title || t('bidHistoryPropertyDefault')}</p>
           </div>
 
           {hasPeriod && (
@@ -162,7 +164,7 @@ const BiddingHistoryModal = ({ isOpen, onClose, property, refreshTrigger }) => {
                 <FiClock size={18} />
               </div>
               <div>
-                <div className="bidding-history-period__label">Период аукциона</div>
+                <div className="bidding-history-period__label">{t('bidHistoryAuctionPeriod')}</div>
                 <div className="bidding-history-period__value">
                   {formatDate(auctionStartDate)}
                   {auctionStartDate && auctionEndDate ? ' — ' : ''}
@@ -183,7 +185,7 @@ const BiddingHistoryModal = ({ isOpen, onClose, property, refreshTrigger }) => {
               <FiDollarSign size={20} />
             </div>
             <div className="bidding-history-start-price__info">
-              <div className="bidding-history-start-price__label">Стартовая ставка</div>
+              <div className="bidding-history-start-price__label">{t('bidHistoryStartingBid')}</div>
               <div className="bidding-history-start-price__value">
                 {startingPriceRaw != null ? formatPrice(startingPriceRaw) : '—'}
               </div>
@@ -199,7 +201,7 @@ const BiddingHistoryModal = ({ isOpen, onClose, property, refreshTrigger }) => {
                   <FiDollarSign size={20} />
                 </div>
                 <div className="bidding-history-current-bid__info">
-                  <div className="bidding-history-current-bid__label">Текущая максимальная ставка</div>
+                  <div className="bidding-history-current-bid__label">{t('bidHistoryCurrentMaxBid')}</div>
                   <div className="bidding-history-current-bid__value">
                     {formatPrice(maxBid)}
                   </div>
@@ -210,16 +212,16 @@ const BiddingHistoryModal = ({ isOpen, onClose, property, refreshTrigger }) => {
 
           {isLoading && isInitialLoad ? (
             <div className="bidding-history-loading">
-              Загрузка истории ставок...
+              {t('bidHistoryLoading')}
             </div>
           ) : bids.length === 0 ? (
             <p className="bidding-history-placeholder">
-              Пока нет ставок на этот объект.
+              {t('bidHistoryNoBids')}
             </p>
           ) : (
             <div className="bidding-history-list">
               <div className="bidding-history-list__header">
-                <h3 className="bidding-history-list__title">Все ставки ({bids.length})</h3>
+                <h3 className="bidding-history-list__title">{t('bidHistoryAllBids', { count: bids.length })}</h3>
               </div>
               <div className="bids-list">
                 {bids.map((bid, index) => {
@@ -231,10 +233,10 @@ const BiddingHistoryModal = ({ isOpen, onClose, property, refreshTrigger }) => {
                           <div className="bid-item__user">
                             <FiUser size={16} />
                             <span className="bid-item__user-name">
-                              {bid.user_id_number || bid.user_id || 'Неизвестно'}
+                              {bid.user_id_number || bid.user_id || t('propertyDetailUnknown')}
                             </span>
                             {isHighest && (
-                              <span className="bid-item__badge">Лидер</span>
+                              <span className="bid-item__badge">{t('propertyDetailLeader')}</span>
                             )}
                           </div>
                           <div className="bid-item__amount">
