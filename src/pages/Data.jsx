@@ -313,6 +313,7 @@ const Data = () => {
   const [verificationStatus, setVerificationStatus] = useState(null)
   const [showPassword, setShowPassword] = useState(false)
   const [showPasswordView, setShowPasswordView] = useState(false)
+  const [dataSavedSuccessfully, setDataSavedSuccessfully] = useState(false)
 
   // Вспомогательная функция для форматирования номера телефона с плюсом
   const formatPhoneWithPlus = (phone) => {
@@ -644,6 +645,11 @@ const Data = () => {
     return verificationStatus?.hasDocuments || false
   }
 
+  // Показывать стеклянный оверлей «Данные заполнены и сохранены», когда данные полные и не в режиме редактирования
+  const showDataSavedOverlay = !isEditing && (
+    (verificationStatus && isBasicInfoComplete() && isPassportDataComplete()) || dataSavedSuccessfully
+  )
+
   // Проверяем, нужно ли показывать индикатор для "Данные"
   const shouldShowDataIndicator = () => {
     // Если verificationStatus еще не загружен, не показываем
@@ -684,6 +690,7 @@ const Data = () => {
 
   const handleEdit = () => {
     editSnapshotRef.current = { ...userData }
+    setDataSavedSuccessfully(false)
     setIsEditing(true)
   }
 
@@ -976,6 +983,7 @@ const Data = () => {
         
         editSnapshotRef.current = null
         setIsEditing(false)
+        setDataSavedSuccessfully(true)
         // Перезагружаем статус верификации после сохранения
         loadVerificationStatus()
         // Отправляем событие для обновления уведомления о верификации
@@ -1503,6 +1511,19 @@ const Data = () => {
             {/* Всплывающее уведомление о прогрессе верификации */}
             {userId && <VerificationToast userId={userId} />}
 
+            <div className="data-form-fields-wrapper">
+              {showDataSavedOverlay && (
+                <div className="data-saved-overlay" aria-live="polite">
+                  <p className="data-saved-overlay__text">Данные заполнены и сохранены.</p>
+                  <button
+                    type="button"
+                    className="data-saved-overlay__cta"
+                    onClick={() => navigate('/')}
+                  >
+                    Перейти на аукцион
+                  </button>
+                </div>
+              )}
             <section className="data-section">
               <h2 className="section-title">
                 Основная информация
@@ -1825,6 +1846,8 @@ const Data = () => {
                 </button>
               )}
             </section>
+
+            </div>
 
             <section className="data-section">
               <h2 className="section-title">Подключенные аккаунты</h2>
