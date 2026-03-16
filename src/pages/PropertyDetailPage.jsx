@@ -2,6 +2,8 @@ import { useParams, useLocation, useNavigate } from 'react-router-dom'
 import { useState, useEffect, useRef } from 'react'
 import { properties } from '../data/properties'
 import PropertyDetailClassic from './PropertyDetailClassic'
+import LoginModal from '../components/LoginModal'
+import { isAuthenticated, getUserData } from '../services/authService'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
 
@@ -13,9 +15,11 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
 const PropertyDetailPage = () => {
   const { id } = useParams()
   const location = useLocation()
+  const navigate = useNavigate()
   const [property, setProperty] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
 
   // Получаем объект из state (если передан из MainPage)
   const propertyFromState = location.state?.property
@@ -403,12 +407,27 @@ const PropertyDetailPage = () => {
                            document.referrer.includes('/owner') ||
                            location.state?.fromOwnerDashboard
 
+  const handleLoginModalClose = () => {
+    setIsLoginModalOpen(false)
+    const userData = getUserData()
+    if (!isAuthenticated() || !userData?.isLoggedIn) {
+      navigate('/')
+    }
+  }
+
   // Всегда используем PropertyDetailClassic, передавая флаг аукциона
   return (
-    <PropertyDetailClassic
-      property={{ ...property, isAuction: finalIsAuction }}
-      showDocuments={isOwnerDashboard}
-    />
+    <>
+      <PropertyDetailClassic
+        property={{ ...property, isAuction: finalIsAuction }}
+        showDocuments={isOwnerDashboard}
+        onRequireLogin={() => setIsLoginModalOpen(true)}
+      />
+      <LoginModal
+        isOpen={isLoginModalOpen}
+        onClose={handleLoginModalClose}
+      />
+    </>
   )
 }
 

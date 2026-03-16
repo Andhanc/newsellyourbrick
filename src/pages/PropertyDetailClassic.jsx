@@ -44,7 +44,7 @@ const getCountryFlagByName = (countryName) => {
 
 // Классическая страница объекта.
 // Для аукционных объектов дополнительно отображает таймер и историю ставок.
-function PropertyDetailClassic({ property: initialProperty, onBack, showDocuments = false }) {
+function PropertyDetailClassic({ property: initialProperty, onBack, showDocuments = false, onRequireLogin }) {
   const { t } = useTranslation()
   const { user, isLoaded: userLoaded } = useUser()
   const navigate = useNavigate()
@@ -107,17 +107,20 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
     const userRole = localStorage.getItem('userRole')
     const isAdmin = isAdminLoggedIn && userRole === 'admin'
     
-    // Если пользователь не авторизован и не админ, перенаправляем
+    // Если пользователь не авторизован и не админ — показываем модальное окно входа или редирект
     if (!isAdmin && (!isAuthenticated() || !userData || !userData.isLoggedIn)) {
-      // Показываем сообщение и перенаправляем на главную страницу
-      showNotification('Для просмотра страницы объекта необходимо авторизоваться')
-      if (onBack) {
-        onBack()
+      if (onRequireLogin) {
+        onRequireLogin()
       } else {
-        navigate('/')
+        showNotification('Для просмотра страницы объекта необходимо авторизоваться')
+        if (onBack) {
+          onBack()
+        } else {
+          navigate('/')
+        }
       }
     }
-  }, [navigate, onBack])
+  }, [navigate, onBack, onRequireLogin])
 
   // Отслеживаем размер окна для конфетти
   useEffect(() => {
