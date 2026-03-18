@@ -15,7 +15,9 @@ export function AnimatedMarqueeHero({
     show: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 100, damping: 20 } },
   }
 
-  const duplicatedImages = [...(images || []), ...(images || [])]
+  // Несколько копий ленты, чтобы при прокрутке линия всегда была заполнена и цикл был бесшовным
+  const copies = 4
+  const duplicatedImages = Array.from({ length: copies }, () => (images || [])).flat()
 
   return (
     <section
@@ -76,11 +78,11 @@ export function AnimatedMarqueeHero({
         </motion.p>
       </div>
 
-      <div className="absolute bottom-0 left-0 w-full h-1/3 md:h-2/5 [mask-image:linear-gradient(to_bottom,transparent,black_20%,black_80%,transparent)]">
+      <div className="absolute bottom-0 left-0 w-full h-1/3 md:h-2/5 overflow-x-hidden [mask-image:linear-gradient(to_bottom,transparent,black_20%,black_80%,transparent)]">
         <motion.div
-          className="flex gap-4"
+          className="flex gap-4 w-max"
           animate={{
-            x: ['-100%', '0%'],
+            x: ['0%', `${-100 / copies}%`],
             transition: {
               ease: 'linear',
               duration: 40,
@@ -91,16 +93,29 @@ export function AnimatedMarqueeHero({
           {duplicatedImages.map((src, index) => (
             <div
               key={`${index}-${src}`}
-              className="relative aspect-[3/4] h-48 md:h-64 flex-shrink-0"
+              className="hero-marquee-card relative aspect-[3/4] h-48 md:h-64 flex-shrink-0 overflow-hidden rounded-2xl bg-white shadow-[0_4px_24px_-4px_rgba(0,0,0,0.12),0_0_0_1px_rgba(0,0,0,0.06)] border border-black/[0.06]"
               style={{
                 rotate: `${(index % 2 === 0 ? -2 : 5)}deg`,
               }}
             >
-              <img
-                src={src}
-                alt=""
-                className="w-full h-full object-cover rounded-2xl shadow-md"
-              />
+              <div className="absolute inset-0">
+                <img
+                  src={src}
+                  alt=""
+                  className="w-full h-full object-cover"
+                />
+                <div
+                  className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent pointer-events-none"
+                  aria-hidden
+                />
+              </div>
+              <span className="absolute top-2.5 left-2.5 z-10 px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-white/95 text-teal-600 border border-teal-200/80 shadow-sm">
+                Property
+              </span>
+              <div className="absolute bottom-0 left-0 right-0 z-10 p-3 pt-8 text-left pointer-events-none">
+                <div className="h-2.5 w-3/4 rounded bg-white/40 mb-2" aria-hidden />
+                <div className="h-2 w-1/2 rounded bg-white/30" aria-hidden />
+              </div>
             </div>
           ))}
         </motion.div>

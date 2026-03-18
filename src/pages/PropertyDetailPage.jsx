@@ -1,5 +1,6 @@
 import { useParams, useLocation, useNavigate } from 'react-router-dom'
 import { useState, useEffect, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import { properties } from '../data/properties'
 import PropertyDetailClassic from './PropertyDetailClassic'
 import LoginModal from '../components/LoginModal'
@@ -16,6 +17,7 @@ const PropertyDetailPage = () => {
   const { id } = useParams()
   const location = useLocation()
   const navigate = useNavigate()
+  const { i18n } = useTranslation()
   const [property, setProperty] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -38,7 +40,8 @@ const PropertyDetailPage = () => {
         try {
           setIsLoading(true)
           console.log(`🔍 PropertyDetailPage: Загрузка данных объекта ID=${id}`);
-          const response = await fetch(`${API_BASE_URL}/properties/${id}`)
+          const lang = (i18n.language || 'ru').split('-')[0]
+          const response = await fetch(`${API_BASE_URL}/properties/${id}?lang=${lang}`)
           if (response.ok) {
             const result = await response.json()
             console.log('📥 PropertyDetailPage - Ответ от API:', result)

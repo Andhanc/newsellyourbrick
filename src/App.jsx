@@ -9,6 +9,7 @@ import ClerkAuthHandler from './components/ClerkAuthHandler'
 import ToastContainer from './components/ToastContainer'
 import VisitorHeartbeat from './components/VisitorHeartbeat'
 import { validateSession, getUserData } from './services/authService'
+import { prefetchAuctionList } from './services/auctionListCache'
 import './App.css'
 
 // Ленивая загрузка страниц — чанк грузится только при переходе на маршрут
@@ -222,6 +223,11 @@ function App() {
     
     checkBlockedStatus();
     return () => {};
+  }, [])
+
+  // Prefetch списка аукциона при старте — на /auction объекты покажутся сразу, без "Загрузка объявлений..."
+  useEffect(() => {
+    prefetchAuctionList()
   }, [])
 
   console.log('🔍 App render, isBlocked:', isBlocked);

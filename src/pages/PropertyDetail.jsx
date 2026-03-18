@@ -1,5 +1,6 @@
 import { useParams, useNavigate, Link, useLocation } from 'react-router-dom'
 import { useState, useEffect, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import { properties } from '../data/properties'
 import CountdownTimer from '../components/CountdownTimer'
 import BiddingHistoryModal from '../components/BiddingHistoryModal'
@@ -20,6 +21,7 @@ const PropertyDetail = () => {
   const { id } = useParams()
   const navigate = useNavigate()
   const location = useLocation()
+  const { i18n } = useTranslation()
   const [property, setProperty] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
   const [selectedImage, setSelectedImage] = useState(0)
@@ -67,7 +69,8 @@ const PropertyDetail = () => {
     if (!propertyId) return null
     
     try {
-      const response = await fetch(`${API_BASE_URL}/properties/${propertyId}`)
+      const lang = (i18n.language || 'ru').split('-')[0]
+      const response = await fetch(`${API_BASE_URL}/properties/${propertyId}?lang=${lang}`)
       if (response.ok) {
         const result = await response.json()
         if (result.success && result.data) {

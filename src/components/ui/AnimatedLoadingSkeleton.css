@@ -1,0 +1,115 @@
+// Скелетон загрузки — только сетка на месте карточек (блок с поиском и фильтрами выше)
+
+.skeleton-grid-wrap {
+  width: 100%;
+}
+
+.skeleton-grid-area {
+  position: relative;
+  padding: 0.5rem 0 1rem;
+  min-height: 320px;
+}
+
+/* Сетка в одну колонку с gaps как у .properties-grid */
+.skeleton-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  column-gap: 20px;
+  row-gap: 28px;
+}
+
+@media (max-width: 1023px) {
+  .skeleton-grid {
+    grid-template-columns: repeat(2, 1fr);
+    column-gap: 20px;
+    row-gap: 28px;
+  }
+}
+
+@media (max-width: 639px) {
+  .skeleton-grid {
+    grid-template-columns: 1fr;
+    row-gap: 20px;
+  }
+}
+
+/* Карточки скелетона */
+.skeleton-card {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 0;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+  transition: box-shadow 0.25s ease;
+}
+
+.skeleton-card:hover {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+
+/* Плейсхолдер изображения */
+.skeleton-card__image {
+  position: relative;
+  height: 180px;
+  border-radius: 0;
+  margin-bottom: 0;
+  overflow: hidden;
+}
+
+/* Полоски текста */
+.skeleton-card__line {
+  border-radius: 4px;
+  height: 10px;
+  margin-left: 12px;
+  margin-right: 12px;
+  background: linear-gradient(90deg, #e2e8f0 0%, #cbd5e1 50%, #e2e8f0 100%);
+  background-size: 200% 100%;
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+}
+
+.skeleton-card__line--short {
+  width: calc(100% - 24px);
+  margin-top: 12px;
+  margin-bottom: 8px;
+}
+
+.skeleton-card__line--shorter {
+  width: 55%;
+  margin-bottom: 12px;
+}
+
+@keyframes skeleton-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.75; }
+}
+
+/* Летающая иконка поиска */
+.skeleton-flying-icon {
+  position: absolute;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.skeleton-flying-icon__glow {
+  padding: 8px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(59, 130, 246, 0.15);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 0 24px rgba(59, 130, 246, 0.25);
+}
+
+.skeleton-flying-icon__glow svg {
+  width: 20px;
+  height: 20px;
+  color: #2563eb;
+}
+
+@media (max-width: 768px) {
+  .skeleton-card__image {
+    height: 160px;
+  }
+}

@@ -905,8 +905,8 @@ function MainPage() {
   const [statsScrollProgress, setStatsScrollProgress] = useState(0)
 
   const heroImages = {
-    rent: '/hero-bg.jpeg',
-    buy: '/hero-bg.jpeg'
+    rent: '/hero-main.jpg',
+    buy: '/hero-main.jpg'
   }
   
   const heroImage = heroImages[propertyMode]
@@ -1231,9 +1231,10 @@ function MainPage() {
         { apiType: 'house', stateKey: 'houses' }
       ]
       const loadedProperties = { apartments: [], villas: [], flats: [], houses: [] }
+      const lang = (i18n.language || 'ru').split('-')[0]
       for (const { apiType, stateKey } of types) {
         try {
-          const res = await fetch(`${API_BASE_URL}/properties/approved?type=${apiType}`)
+          const res = await fetch(`${API_BASE_URL}/properties/approved?type=${apiType}&lang=${lang}`)
           if (res.ok) {
             const data = await res.json()
             if (data.success && data.data) loadedProperties[stateKey] = data.data
@@ -1244,7 +1245,7 @@ function MainPage() {
     } catch (error) {
       console.error('❌ Ошибка загрузки одобренных объявлений:', error)
     }
-  }, [])
+  }, [i18n.language])
 
   // Объединяем статические данные с данными из API
   const combinedApartments = useMemo(() => {
@@ -1286,9 +1287,10 @@ function MainPage() {
   const loadHomeProperties = useCallback(async () => {
     try {
       const apiBase = await getApiBaseUrl()
+      const lang = (i18n.language || 'ru').split('-')[0]
       const [approvedRes, auctionsRes] = await Promise.all([
-        fetch(`${apiBase}/properties/approved`),
-        fetch(`${apiBase}/properties/auctions`)
+        fetch(`${apiBase}/properties/approved?lang=${lang}`),
+        fetch(`${apiBase}/properties/auctions?lang=${lang}`)
       ])
       let approved = []
       let auctions = []
@@ -1338,11 +1340,17 @@ function MainPage() {
     } catch (error) {
       console.error('❌ Ошибка загрузки объектов для главной страницы:', error)
     }
-  }, [])
+  }, [i18n.language])
 
   const loadMainPageData = loadHomeProperties
 
   const [mainSectionRef, mainSectionState] = useLazyLoad(loadMainPageData, { rootMargin: '300px' })
+
+  // При смене языка в футере перезагружаем объявления с переводами
+  useEffect(() => {
+    loadHomeProperties()
+    loadApprovedProperties()
+  }, [i18n.language, loadHomeProperties, loadApprovedProperties])
 
   // Разделы для главной страницы (по типу продажи)
   const auctionSection = useMemo(() => {

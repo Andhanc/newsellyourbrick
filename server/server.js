@@ -15,6 +15,7 @@ import { calculatePropertyPrice } from './services/propertyParser.js';
 import { parseBulkImportFile, rowToPropertyData } from './services/bulkImportProperties.js';
 import { Address, beginCell, Cell } from '@ton/core';
 import { getMarketData, getMortgageRates, getRentalYieldByRegion } from './services/investmentDataService.js';
+import { translatePropertyToAllLanguages } from './services/aiPropertyTranslate.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -6458,21 +6459,27 @@ app.get('/api/properties/approved', (req, res) => {
       return formatted;
     });
     
-    // Логируем для отладки (только для первого объекта)
-    if (formattedProperties.length > 0) {
-      console.log('📋 Отформатированные данные (первое объявление):', {
-        id: formattedProperties[0].id,
-        title: formattedProperties[0].title,
-        amenities: formattedProperties[0].amenities,
-        amenities_length: Array.isArray(formattedProperties[0].amenities) ? formattedProperties[0].amenities.length : 'not array',
-        additional_amenities: formattedProperties[0].additional_amenities,
-        additional_amenities_length: formattedProperties[0].additional_amenities ? formattedProperties[0].additional_amenities.length : 0,
-        balcony: formattedProperties[0].balcony,
-        parking: formattedProperties[0].parking,
-        elevator: formattedProperties[0].elevator
-      });
+    // Подстановка переводов по языку (lang из футера) для списка
+    const lang = req.query.lang && String(req.query.lang).trim().toLowerCase();
+    if (lang && ['ru', 'en', 'de', 'es', 'fr', 'sv'].includes(lang) && formattedProperties.length > 0) {
+      try {
+        const db = getDatabase();
+        for (const prop of formattedProperties) {
+          const table = prop.source_table || 'properties_apartments';
+          const tr = db.prepare(
+            'SELECT title, description, additional_amenities FROM property_translations WHERE property_id = ? AND property_table = ? AND lang_code = ?'
+          ).get(prop.id, table, lang);
+          if (tr) {
+            if (tr.title) { prop.title = tr.title; prop.name = tr.title; }
+            if (tr.description) prop.description = tr.description;
+            if (tr.additional_amenities != null) prop.additional_amenities = tr.additional_amenities;
+          }
+        }
+      } catch (e) {
+        console.warn('GET /api/properties/approved - подстановка переводов:', e.message);
+      }
     }
-    
+
     res.json({
       success: true,
       data: formattedProperties
@@ -6834,6 +6841,27 @@ app.get('/api/properties/auctions', (req, res) => {
         parking: formattedProperties[0].parking,
         elevator: formattedProperties[0].elevator
       });
+    }
+
+    // Подстановка переводов по языку (lang из футера) для списка аукционов
+    const lang = req.query.lang && String(req.query.lang).trim().toLowerCase();
+    if (lang && ['ru', 'en', 'de', 'es', 'fr', 'sv'].includes(lang) && formattedProperties.length > 0) {
+      try {
+        const dbForLang = getDatabase();
+        for (const prop of formattedProperties) {
+          const table = prop.source_table || 'properties_apartments';
+          const tr = dbForLang.prepare(
+            'SELECT title, description, additional_amenities FROM property_translations WHERE property_id = ? AND property_table = ? AND lang_code = ?'
+          ).get(prop.id, table, lang);
+          if (tr) {
+            if (tr.title) { prop.title = tr.title; prop.name = tr.title; }
+            if (tr.description) prop.description = tr.description;
+            if (tr.additional_amenities != null) prop.additional_amenities = tr.additional_amenities;
+          }
+        }
+      } catch (e) {
+        console.warn('GET /api/properties/auctions - подстановка переводов:', e.message);
+      }
     }
     
     res.json({
@@ -7340,6 +7368,75 @@ app.get('/api/properties/shares', (req, res) => {
 });
 
 /**
+ * POST /api/properties/:id/translate - Перевести объявление на все языки сайта (MyMemory API) и сохранить в БД
+ */
+app.post('/api/properties/:id/translate', async (req, res) => {
+  const sendError = (status, message) => {
+    try { res.status(status).json({ success: false, error: message }); } catch (_) {}
+  };
+  try {
+    const { id } = req.params;
+    const propertyTable = req.body?.property_table || req.query?.property_table || null;
+    const requestedPropertyType = req.query.property_type || null;
+    const property = propertyQueries.getById(id, requestedPropertyType);
+    if (!property) {
+      return sendError(404, 'Объявление не найдено');
+    }
+    const table = propertyTable || property.source_table || 'properties_apartments';
+    const translations = await translatePropertyToAllLanguages(property).catch((err) => {
+      console.error('POST /api/properties/:id/translate translate error:', err);
+      throw err;
+    });
+    const db = getDatabase();
+    db.prepare('DELETE FROM property_translations WHERE property_id = ? AND property_table = ?').run(id, table);
+    const insertStmt = db.prepare(`
+      INSERT INTO property_translations (property_id, property_table, lang_code, title, description, additional_amenities)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `);
+    for (const [langCode, data] of Object.entries(translations)) {
+      insertStmt.run(id, table, langCode, data.title || '', data.description || '', data.additional_amenities || '');
+    }
+    console.log(`✅ Переводы сохранены для property_id=${id}, table=${table}, языков: ${Object.keys(translations).length}`);
+    return res.json({ success: true, message: 'Перевод готов', translations: Object.keys(translations) });
+  } catch (err) {
+    console.error('POST /api/properties/:id/translate error:', err);
+    return sendError(500, err.message || 'Ошибка перевода');
+  }
+});
+
+/**
+ * GET /api/properties/:id/translations - Получить все сохранённые переводы объявления (для админки)
+ */
+app.get('/api/properties/:id/translations', (req, res) => {
+  const { id } = req.params;
+  const propertyTable = req.query.property_table || null;
+  try {
+    const property = propertyQueries.getById(id);
+    if (!property) {
+      return res.status(404).json({ success: false, error: 'Объявление не найдено' });
+    }
+    const table = propertyTable || property.source_table || 'properties_apartments';
+    const db = getDatabase();
+    const rows = db.prepare(
+      'SELECT lang_code, title, description, additional_amenities, created_at FROM property_translations WHERE property_id = ? AND property_table = ? ORDER BY lang_code'
+    ).all(id, table);
+    const byLang = {};
+    rows.forEach((r) => {
+      byLang[r.lang_code] = {
+        title: r.title,
+        description: r.description,
+        additional_amenities: r.additional_amenities,
+        created_at: r.created_at,
+      };
+    });
+    return res.json({ success: true, data: byLang });
+  } catch (err) {
+    console.error('GET /api/properties/:id/translations error:', err);
+    return res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+/**
  * GET /api/properties/:id - Получить объявление по ID
  * ВАЖНО: Этот маршрут должен быть ПОСЛЕ всех специфичных маршрутов
  */
@@ -7574,6 +7671,24 @@ app.get('/api/properties/:id', (req, res) => {
     formatted.reserved_until = reservationInfo.reservedUntil || null;
     formatted.reserved_by = reservationInfo.reservedBy || null;
     formatted.reservation_time_remaining = reservationInfo.timeRemaining || null;
+
+    // Подстановка перевода по языку (lang из футера сайта)
+    const lang = req.query.lang && String(req.query.lang).trim().toLowerCase();
+    if (lang && ['ru', 'en', 'de', 'es', 'fr', 'sv'].includes(lang)) {
+      try {
+        const table = property.source_table || 'properties_apartments';
+        const tr = getDatabase().prepare(
+          'SELECT title, description, additional_amenities FROM property_translations WHERE property_id = ? AND property_table = ? AND lang_code = ?'
+        ).get(id, table, lang);
+        if (tr) {
+          if (tr.title) formatted.title = tr.title;
+          if (tr.description) formatted.description = tr.description;
+          if (tr.additional_amenities != null) formatted.additional_amenities = tr.additional_amenities;
+        }
+      } catch (e) {
+        console.warn('GET /api/properties/:id - подстановка перевода:', e.message);
+      }
+    }
 
     // Документы по долгу (необходимые документы при продаже долга)
     if (formatted.is_debt === 1 || formatted.sale_type === 'debt' || formatted.has_debt === 1) {

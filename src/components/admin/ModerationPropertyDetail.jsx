@@ -1,13 +1,23 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { FiArrowLeft, FiChevronLeft, FiChevronRight, FiCheck, FiXCircle, FiFileText, FiVideo, FiImage, FiEye, FiX, FiAlertCircle, FiExternalLink } from 'react-icons/fi';
+import { FiArrowLeft, FiChevronLeft, FiChevronRight, FiCheck, FiXCircle, FiFileText, FiVideo, FiImage, FiEye, FiX, FiAlertCircle, FiExternalLink, FiGlobe } from 'react-icons/fi';
 import { IoLocationOutline as IoLocation } from 'react-icons/io5';
 import { MdBed, MdOutlineBathtub } from 'react-icons/md';
 import { BiArea } from 'react-icons/bi';
 import LocationMap from '../LocationMap';
 import './ModerationPropertyDetail.css';
 import { getApiBaseUrlSync } from '../../utils/apiConfig';
+import { showNotification } from '../../utils/toastHelper';
 
 const API_BASE_URL = getApiBaseUrlSync();
+
+const TRANSLATION_LANGUAGES = [
+  { code: 'ru', name: 'Русский' },
+  { code: 'en', name: 'English' },
+  { code: 'de', name: 'Deutsch' },
+  { code: 'es', name: 'Español' },
+  { code: 'fr', name: 'Français' },
+  { code: 'sv', name: 'Svenska' },
+];
 
 // Моковые изображения для недвижимости
 const mockPropertyImages = [
@@ -39,7 +49,53 @@ const ModerationPropertyDetail = ({ property, onBack, onApprove, onReject }) => 
     );
   const [debtSeverity, setDebtSeverity] = useState(property.debt_severity || null);
   const [debtDocuments, setDebtDocuments] = useState(property.debt_documents || []);
-  
+  const [isTranslating, setIsTranslating] = useState(false);
+  const [translationsByLang, setTranslationsByLang] = useState({});
+  const [selectedTranslationLang, setSelectedTranslationLang] = useState('ru');
+
+  const loadTranslations = () => {
+    if (!property?.id) return;
+    const table = property.source_table || 'properties_apartments';
+    fetch(`${API_BASE_URL}/properties/${property.id}/translations?property_table=${encodeURIComponent(table)}`)
+      .then((res) => res.json())
+      .then((data) => {
+        const byLang = (data.success && data.data) ? data.data : {};
+        setTranslationsByLang(byLang);
+        const keys = Object.keys(byLang);
+        if (keys.length > 0) setSelectedTranslationLang(keys[0]);
+      })
+      .catch(() => setTranslationsByLang({}));
+  };
+
+  const handleTranslate = () => {
+    if (!property?.id || isTranslating) return;
+    setIsTranslating(true);
+    const table = property.source_table || 'properties_apartments';
+    fetch(`${API_BASE_URL}/properties/${property.id}/translate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ property_table: table }),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) {
+          loadTranslations();
+          showNotification('Перевод готов', 'success');
+        } else {
+          showNotification(data.error || 'Ошибка перевода', 'error');
+        }
+      })
+      .catch((err) => {
+        showNotification(err.message || 'Ошибка перевода', 'error');
+      })
+      .finally(() => setIsTranslating(false));
+  };
+
+  useEffect(() => {
+    setTranslationsByLang({});
+    if (property?.id) loadTranslations();
+  }, [property?.id]);
+
   // Функция для обработки URL документа
   const processDocumentUrl = (docUrl) => {
     if (!docUrl) return null;
@@ -392,6 +448,14 @@ const ModerationPropertyDetail = ({ property, onBack, onApprove, onReject }) => 
 
   return (
     <div className="moderation-property-detail">
+      {isTranslating && (
+        <div className="moderation-property-detail__translate-overlay" aria-hidden="true">
+          <div className="moderation-property-detail__translate-preloader">
+            <div className="moderation-property-detail__translate-spinner" />
+            <p className="moderation-property-detail__translate-text">ИИ переводит объявление на все языки...</p>
+          </div>
+        </div>
+      )}
       <button className="moderation-property-detail__back" onClick={onBack}>
         <FiArrowLeft size={20} />
         Назад
@@ -860,6 +924,55 @@ const ModerationPropertyDetail = ({ property, onBack, onApprove, onReject }) => 
                   ? new Date(property.submittedDate).toLocaleDateString('ru-RU')
                   : 'Не указано'
             }</p>
+          </div>
+
+          {/* Кнопка перевода через ИИ */}
+          <div className="moderation-property-detail__translate-block">
+            <button
+              type="button"
+              className="moderation-property-detail__btn moderation-property-detail__btn--translate"
+              onClick={handleTranslate}
+              disabled={isTranslating}
+            >
+              <FiGlobe size={18} />
+              {isTranslating ? 'Перевод...' : 'Перевести'}
+            </button>
+            {Object.keys(translationsByLang).length > 0 && (
+              <div className="moderation-property-detail__translations-view">
+                <h3 className="moderation-property-detail__translations-title">Просмотр перевода</h3>
+                <div className="moderation-property-detail__translations-lang-select">
+                  <label htmlFor="translation-lang">Язык:</label>
+                  <select
+                    id="translation-lang"
+                    value={selectedTranslationLang}
+                    onChange={(e) => setSelectedTranslationLang(e.target.value)}
+                    className="moderation-property-detail__translations-select"
+                  >
+                    {TRANSLATION_LANGUAGES.filter((l) => translationsByLang[l.code]).map((l) => (
+                      <option key={l.code} value={l.code}>{l.name}</option>
+                    ))}
+                  </select>
+                </div>
+                {translationsByLang[selectedTranslationLang] && (
+                  <div className="moderation-property-detail__translations-content">
+                    <div className="moderation-property-detail__translations-item">
+                      <strong>Название:</strong>
+                      <p>{translationsByLang[selectedTranslationLang].title || '—'}</p>
+                    </div>
+                    <div className="moderation-property-detail__translations-item">
+                      <strong>Описание:</strong>
+                      <p>{translationsByLang[selectedTranslationLang].description || '—'}</p>
+                    </div>
+                    {(translationsByLang[selectedTranslationLang].additional_amenities != null && translationsByLang[selectedTranslationLang].additional_amenities !== '') && (
+                      <div className="moderation-property-detail__translations-item">
+                        <strong>Доп. удобства:</strong>
+                        <p>{translationsByLang[selectedTranslationLang].additional_amenities}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           <div className="moderation-property-detail__actions">

@@ -42,10 +42,7 @@ const PropertySearchModal = ({ isOpen, onClose }) => {
   }
 
   const handleSearch = () => {
-    // Сохраняем фильтры в sessionStorage для использования на странице результатов
     sessionStorage.setItem('propertySearchFilters', JSON.stringify(filters))
-    
-    // Переходим на страницу результатов
     navigate('/search-results')
     onClose()
   }
@@ -70,7 +67,7 @@ const PropertySearchModal = ({ isOpen, onClose }) => {
       <div className="property-search-modal" onClick={(e) => e.stopPropagation()}>
         <div className="property-search-modal__header">
           <h2 className="property-search-modal__title">{t('propertySearchTitle')}</h2>
-          <button 
+          <button
             className="property-search-modal__close"
             onClick={onClose}
             aria-label={t('closeAria')}
@@ -139,9 +136,7 @@ const PropertySearchModal = ({ isOpen, onClose }) => {
           </div>
 
           <div className="property-search-modal__section">
-            <label className="property-search-modal__label">
-              {t('modalRooms')}
-            </label>
+            <label className="property-search-modal__label">{t('modalRooms')}</label>
             <select
               className="property-search-modal__select"
               value={filters.rooms}
@@ -157,9 +152,7 @@ const PropertySearchModal = ({ isOpen, onClose }) => {
           </div>
 
           <div className="property-search-modal__section">
-            <label className="property-search-modal__label">
-              {t('modalArea')}
-            </label>
+            <label className="property-search-modal__label">{t('modalArea')}</label>
             <div className="property-search-modal__range">
               <input
                 type="number"
@@ -180,9 +173,7 @@ const PropertySearchModal = ({ isOpen, onClose }) => {
           </div>
 
           <div className="property-search-modal__section">
-            <label className="property-search-modal__label">
-              {t('modalAmenities')}
-            </label>
+            <label className="property-search-modal__label">{t('modalAmenities')}</label>
             <div className="property-search-modal__amenities">
               {AMENITY_VALUES.map((amenityValue, i) => (
                 <button
@@ -201,12 +192,14 @@ const PropertySearchModal = ({ isOpen, onClose }) => {
 
         <div className="property-search-modal__footer">
           <button
+            type="button"
             className="property-search-modal__button property-search-modal__button--reset"
             onClick={handleReset}
           >
             {t('modalReset')}
           </button>
           <button
+            type="button"
             className="property-search-modal__button property-search-modal__button--search"
             onClick={handleSearch}
           >

@@ -535,6 +535,19 @@ export function initDatabase() {
         console.warn('⚠️ Не удалось создать таблицу property_debt_documents:', debtDocsError.message);
       }
 
+      // Таблица переводов объявлений (ИИ — на все языки сайта)
+      try {
+        const propTransTable = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='property_translations'").get();
+        if (!propTransTable) {
+          console.log('🔄 Создание таблицы property_translations...');
+          const propTransSql = readFileSync(join(__dirname, 'add_property_translations_table.sql'), 'utf8');
+          db.exec(propTransSql);
+          console.log('✅ Таблица property_translations создана');
+        }
+      } catch (propTransError) {
+        console.warn('⚠️ Не удалось создать таблицу property_translations:', propTransError.message);
+      }
+
       // Создаем таблицу недвижимости, если её нет
       try {
         const propertiesTable = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='properties'").get();

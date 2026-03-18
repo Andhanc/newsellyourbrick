@@ -1,5 +1,5 @@
 .property-list {
-  padding: 60px 0;
+  padding: 0 0 60px;
   background: #f5f5f5;
 }
 
@@ -22,7 +22,8 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin-bottom: 16px;
+  margin-bottom: 24px;
+  margin-top: -24px;
 }
 
 .search-filters-bar {
@@ -31,6 +32,7 @@
   gap: 16px;
   margin-bottom: 30px;
   align-items: center;
+  margin-top: 0;
 }
 
 .filters-and-types-grid {

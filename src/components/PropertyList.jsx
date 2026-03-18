@@ -10,6 +10,8 @@ import { showNotification } from '../utils/toastHelper'
 import PropertyTimer from './PropertyTimer'
 import CircularTimer from './CircularTimer'
 import PropertySearchModal from './PropertySearchModal'
+import AnimatedLoadingSkeleton from './ui/AnimatedLoadingSkeleton'
+import { MarqueeAnimation } from './ui/MarqueeAnimation'
 import './PropertyList.css'
 
 const MOBILE_BREAKPOINT = 768
@@ -78,7 +80,7 @@ const PROPERTY_TYPE_KEYS = {
   'дом': 'propertyTypeHouse'
 }
 
-const PropertyList = ({ auctionProperties = null, onOpenAIChat }) => {
+const PropertyList = ({ auctionProperties = null, onOpenAIChat, loading = false }) => {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const location = useLocation()
@@ -90,6 +92,17 @@ const PropertyList = ({ auctionProperties = null, onOpenAIChat }) => {
   const [saleFilter, setSaleFilter] = useState('all')
   const [tooltip, setTooltip] = useState({ show: false, text: '', x: 0, y: 0 })
   const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth <= MOBILE_BREAKPOINT)
+
+  useEffect(() => {
+    if (!isSearchModalOpen) return
+    const handleClickOutside = (e) => {
+      if (filtersWrapRef.current && !filtersWrapRef.current.contains(e.target)) {
+        setIsSearchModalOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [isSearchModalOpen])
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth <= MOBILE_BREAKPOINT)
@@ -317,7 +330,26 @@ const PropertyList = ({ auctionProperties = null, onOpenAIChat }) => {
       <section className="property-list">
         <div className="property-list-container">
         <div className="property-list-header">
-          <h2 className="property-list-title">{t('activeAuctions')}</h2>
+          <div className="property-list-marquee-double">
+            <div className="marquee-row marquee-row--top">
+              <MarqueeAnimation
+                direction="left"
+                baseVelocity={-3}
+                className="marquee-row__text text-white"
+              >
+                {t('activeAuctions')}
+              </MarqueeAnimation>
+            </div>
+            <div className="marquee-row marquee-row--bottom">
+              <MarqueeAnimation
+                direction="right"
+                baseVelocity={-3}
+                className="marquee-row__text text-white"
+              >
+                {t('activeAuctions')}
+              </MarqueeAnimation>
+            </div>
+          </div>
           {isMobile && isAuctionPage && onOpenAIChat && (
             <button
               type="button"
@@ -380,7 +412,9 @@ const PropertyList = ({ auctionProperties = null, onOpenAIChat }) => {
           </div>
         </div>
 
-        {filteredProperties.length === 0 ? (
+        {loading ? (
+          <AnimatedLoadingSkeleton />
+        ) : filteredProperties.length === 0 ? (
           <div className="no-results">
             <div className="no-results-icon">🔍</div>
             <h3 className="no-results-title">{t('nothingFound')}</h3>
@@ -713,7 +747,7 @@ const PropertyList = ({ auctionProperties = null, onOpenAIChat }) => {
       </div>
 
       {isSearchModalOpen && (
-        <PropertySearchModal 
+        <PropertySearchModal
           isOpen={isSearchModalOpen}
           onClose={() => setIsSearchModalOpen(false)}
         />

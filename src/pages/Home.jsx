@@ -1,6 +1,5 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useLazyLoad } from '../hooks/useLazyLoad'
 import { useUser } from '@clerk/clerk-react'
 import { useNavigate } from 'react-router-dom'
 import { FiX, FiSend } from 'react-icons/fi'
@@ -12,6 +11,7 @@ import DepositButton from '../components/DepositButton'
 import { getUserData, isAuthenticated } from '../services/authService'
 import { syncAssistantLead } from '../services/assistantLeadService'
 import { askPropertyAssistant } from '../services/aiService'
+import { getCachedList, hasCachedList, fetchAuctionList } from '../services/auctionListCache'
 import './Home.css'
 
 import { getApiBaseUrl } from '../utils/apiConfig'
@@ -48,8 +48,8 @@ function formatPropertyForList(prop, isAuction) {
 
 function Home() {
   const { t } = useTranslation()
-  const [auctionProperties, setAuctionProperties] = useState([])
-  const [loading, setLoading] = useState(true)
+  const [auctionProperties, setAuctionProperties] = useState(() => getCachedList())
+  const [loading, setLoading] = useState(() => !hasCachedList())
   const [userDeposit, setUserDeposit] = useState(0)
   const { user, isLoaded: userLoaded } = useUser()
   const userData = getUserData()
@@ -75,50 +75,12 @@ function Home() {
     other: null
   })
 
-  // Загрузка объявлений только когда секция во вьюпорте (без polling)
-  const loadProperties = useCallback(async () => {
+  // Загрузка объявлений: при наличии кэша — только фоновое обновление (без "Загрузка объявлений...")
+  const loadProperties = useCallback(async (backgroundRefresh = false) => {
+    if (!backgroundRefresh) setLoading(true)
     try {
-      const API_BASE_URL = await getApiBaseUrl()
-      setLoading(true)
-      const types = [{ apiType: 'commercial' }, { apiType: 'villa' }, { apiType: 'apartment' }, { apiType: 'house' }]
-      const allAuctionProperties = []
-      const allNonAuctionProperties = []
-      let allTestProperties = []
-      try {
-        const testRes = await fetch(`${API_BASE_URL}/properties/test-timers`)
-        if (testRes.ok) {
-          const data = await testRes.json()
-          if (data.success && data.data) allTestProperties = data.data
-        }
-      } catch (_) {}
-      for (const { apiType } of types) {
-        try {
-          const [auctionRes, approvedRes] = await Promise.all([
-            fetch(`${API_BASE_URL}/properties/auctions?type=${apiType}`),
-            fetch(`${API_BASE_URL}/properties/approved?type=${apiType}`)
-          ])
-          if (auctionRes.ok) {
-            const data = await auctionRes.json()
-            if (data.success && data.data) {
-              const nonTest = data.data.filter(prop => !prop.test_timer_end_date)
-              allAuctionProperties.push(...nonTest)
-            }
-          }
-          if (approvedRes.ok) {
-            const data = await approvedRes.json()
-            if (data.success && data.data) {
-              const nonAuction = data.data.filter(prop => !prop.is_auction || prop.is_auction === 0 || prop.is_auction === false)
-              allNonAuctionProperties.push(...nonAuction)
-            }
-          }
-        } catch (_) {}
-      }
-      const allProperties = [
-        ...allTestProperties.map(p => formatPropertyForList(p, true)),
-        ...allAuctionProperties.map(p => formatPropertyForList(p, true)),
-        ...allNonAuctionProperties.map(p => formatPropertyForList(p, false))
-      ]
-      setAuctionProperties(allProperties)
+      const list = await fetchAuctionList()
+      setAuctionProperties(list)
     } catch (error) {
       console.error('❌ Ошибка загрузки объявлений:', error)
     } finally {
@@ -126,7 +88,12 @@ function Home() {
     }
   }, [])
 
-  const [homeListRef] = useLazyLoad(loadProperties, { rootMargin: '300px' })
+  const homeListRef = useRef(null)
+
+  // Сразу запрашиваем данные при монтировании (кэш уже может быть от prefetch в App)
+  useEffect(() => {
+    loadProperties(hasCachedList())
+  }, [loadProperties])
 
   // Подписка на новые объекты аукциона по SSE — без polling, только push от сервера при одобрении админом
   useEffect(() => {
@@ -560,17 +527,12 @@ function Home() {
       {canShowDeposit() && <DepositButton amount={userDeposit} />}
       <Header />
       <Hero />
-      <div ref={homeListRef}>
-        {loading ? (
-          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
-            <p>{t('loadingListings')}</p>
-          </div>
-        ) : (
-          <PropertyList 
-            auctionProperties={auctionProperties} 
-            onOpenAIChat={toggleChat}
-          />
-        )}
+      <div ref={homeListRef} className="home-list-wrap">
+        <PropertyList
+          auctionProperties={auctionProperties}
+          onOpenAIChat={toggleChat}
+          loading={loading}
+        />
       </div>
       <FAQ />
 
