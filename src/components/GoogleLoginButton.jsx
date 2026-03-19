@@ -5,21 +5,22 @@ import { handleGoogleAuth } from '../services/authService'
  * Компонент-обертка для Google Login
  * Используется только если Google OAuth настроен и GoogleOAuthProvider обернул App
  */
-const GoogleLoginButton = ({ onSuccess, onError, children, disabled, isLoading, className }) => {
-  // Хук всегда вызывается (правила React)
-  // Если GoogleOAuthProvider не обернул App, хук вызовет ошибку, но это нормально
-  // так как этот компонент рендерится только если client_id установлен
+const GoogleLoginButton = ({ onSuccess, onError, onAlreadyRegistered, onNeedRegister, mode = 'register', children, disabled, isLoading, className }) => {
   const googleLogin = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
       try {
-        const result = await handleGoogleAuth(tokenResponse)
+        const result = await handleGoogleAuth(tokenResponse, { mode })
         
         if (result.success) {
           if (onSuccess) {
             onSuccess(result.user)
           }
         } else {
-          if (onError) {
+          if (result.code === 'ALREADY_REGISTERED' && onAlreadyRegistered) {
+            onAlreadyRegistered(result.error)
+          } else if (result.code === 'NEED_REGISTER' && onNeedRegister) {
+            onNeedRegister(result.error)
+          } else if (onError) {
             onError(result.error || 'Ошибка при авторизации через Google')
           }
         }

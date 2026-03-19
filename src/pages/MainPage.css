@@ -609,7 +609,7 @@
 @media (min-width: 960px) {
   .hero-section {
     padding-left: 24px;
-    padding-right: 5vw;
+    padding-right: 24px;
     box-sizing: border-box;
     min-height: 760px;
   }
@@ -621,10 +621,10 @@
     gap: 24px 32px;
     align-items: start;
     width: 100%;
-    max-width: 1280px;
-    margin: 0 auto;
-    padding-left: 16px;
-    padding-right: 0;
+    max-width: none;
+    margin: 0;
+    padding-left: 24px;
+    padding-right: 24px;
     box-sizing: border-box;
   }
 
@@ -632,6 +632,8 @@
     grid-column: 1;
     grid-row: 1;
     min-height: 320px;
+    min-width: 0;
+    overflow-wrap: break-word;
   }
 
   .hero-section .search {
@@ -644,11 +646,11 @@
   .hero-section__cta {
     grid-column: 2;
     grid-row: 1 / -1;
-    align-self: center;
+    align-self: start;
+    justify-self: end;
     max-width: 360px;
     margin: 0;
-    margin-top: 155px;
-    transform: translateX(-180px);
+    margin-top: 24px;
   }
 }
 
@@ -710,12 +712,12 @@
   box-sizing: border-box;
 }
 
-/* Мобильная версия: первый экран с градиентом в стиле бренда */
+/* Мобильная версия: как на Аукционе — тёмный тил, центр, полоска + бренд + заголовок + подзаголовок */
 @media (max-width: 768px) {
   .hero-section {
     position: relative;
     overflow: hidden;
-    background: transparent;
+    background: #004d4d;
     min-height: 380px;
   }
 
@@ -727,7 +729,7 @@
     right: 0;
     height: 100%;
     min-height: 380px;
-    background: linear-gradient(165deg, #0c4a4a 0%, #0d5c5c 25%, #0e6b6b 50%, #0f7d7d 75%, #0a9b9b 100%);
+    background: linear-gradient(180deg, #004d4d 0%, #006666 50%, #0d5c5c 100%);
     z-index: 0;
   }
 
@@ -740,8 +742,7 @@
     height: 100%;
     min-height: 380px;
     background:
-      radial-gradient(ellipse 80% 50% at 50% -20%, rgba(10, 186, 181, 0.25) 0%, transparent 50%),
-      radial-gradient(ellipse 100% 80% at 80% 100%, rgba(0, 0, 0, 0.15) 0%, transparent 45%);
+      radial-gradient(ellipse 80% 50% at 50% -20%, rgba(10, 186, 181, 0.2) 0%, transparent 50%);
     z-index: 1;
     pointer-events: none;
   }
@@ -749,18 +750,40 @@
   .hero-section__content {
     min-height: 340px;
     justify-content: center;
+    align-items: center;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .hero-headline {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 24px 20px 28px;
+    margin: 0 auto;
   }
 
   .hero-headline__accent {
-    background: linear-gradient(90deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.4) 100%);
+    background: rgba(255, 255, 255, 0.9);
+    margin-left: auto;
+    margin-right: auto;
   }
 
   .hero-headline__brand {
     color: #ffffff;
+    letter-spacing: 0.18em;
+  }
+
+  .hero-headline__title {
+    text-align: center;
   }
 
   .hero-headline__subtitle {
     color: rgba(255, 255, 255, 0.95);
+    text-align: center;
+    margin-left: auto;
+    margin-right: auto;
   }
 
   .hero-headline__cta {
@@ -781,6 +804,11 @@
 
   .hero-headline__cta:hover {
     background: #ffffff;
+  }
+
+  /* Отступ снизу у блока CTA (Стать инвестором / Стать продавцом), чтобы не прилипал к следующей секции */
+  .hero-section__cta {
+    margin-bottom: 24px;
   }
 
   /* Прячем фоновые фото и поиск на мобильной */
@@ -3495,32 +3523,32 @@
     z-index: 2;
   }
 
-  /* Новый хедер */
+  /* Новый хедер — прямой дочерний элемент hero-section, стили как на странице Аукцион */
   .new-header {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0;
     background: transparent;
+    padding: 20px 0;
+    display: flex;
+    justify-content: center;
     width: 100%;
-    margin: 40px auto 0;
     position: relative;
-    z-index: 10;
+    z-index: 10; /* выше фона (z-index:1) и оверлея (z-index:2) */
+    box-sizing: border-box;
   }
-  
+
   /* Когда меню открыто, поднимаем хедер выше backdrop */
   .new-header--menu-open {
-    z-index: 10001 !important; /* Выше backdrop (9998) и меню (9999) */
+    z-index: 10001 !important;
   }
 
   .new-header__container {
+    background: #ffffff;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06);
+    border: 1px solid rgba(0, 0, 0, 0.05);
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 8px 0px;
-    background: #f1f5f9;
-    border-radius: 20px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.04);
+    padding: 8px 0;
+    border-radius: 16px;
     width: calc(100% - 120px);
     max-width: 1250px;
     gap: 8px;
@@ -3721,19 +3749,18 @@
 
   .menu-dropdown {
     position: fixed !important;
-    top: calc(40px + 63px + 9px) !important; /* 40px (margin-top хедера) + 63px (высота хедера) + 1px отступ */
+    top: calc(25px + 68px) !important; /* сразу под хедером: padding хедера + высота контейнера */
     left: 50% !important;
     transform: translateX(-50%) !important;
+    width: calc(100% - 120px) !important;
+    max-width: 1250px !important;
     background: #ffffff !important;
-     /* Тонкая граница для визуального разделения */
-    border-radius: 0 0 16px 16px !important; /* Скругляем только нижние углы */
-   
+    border-radius: 0 0 16px 16px !important;
     z-index: 9999 !important;
-    width: calc(100% - 120px) !important; /* Ширина равна ширине хедера */
-    max-width: 1249.5px !important; /* Максимальная ширина равна max-width хедера */
     max-height: calc(100vh - 120px) !important;
     animation: menuSlideDown 0.3s ease-out forwards;
     overflow: hidden !important;
+    box-sizing: border-box;
   }
 
   .menu-dropdown--closing {
@@ -3742,7 +3769,7 @@
   
   /* Когда меню открыто, скругляем только верхние углы хедера */
   .new-header__container--menu-open {
-    border-radius: 20px 20px 0 0 !important;
+    border-radius: 16px 16px 0 0 !important;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1), 0 4px 12px rgba(0, 0, 0, 0.05) !important;
   }
 
@@ -4005,25 +4032,12 @@
     flex-shrink: 0;
   }
 
-  /* Адаптивность модального окна меню */
-  @media (max-width: 1400px) {
-    .menu-dropdown {
-      max-width: 1000px;
-      width: 85%;
-    }
-  }
-
   @media (max-width: 1200px) {
-    .menu-dropdown {
-      max-width: 900px;
-      width: 90%;
+    .menu-dropdown__content {
+      gap: 20px;
+      padding: 16px;
+      max-height: calc(55vh - 64px);
     }
-
-      .menu-dropdown__content {
-        gap: 20px;
-        padding: 16px;
-        max-height: calc(55vh - 64px);
-      }
   }
 
   .new-header__filters {
@@ -4226,7 +4240,7 @@
   /* Фиксируем расположение элементов при очень узких экранах */
   @media (max-width: 1024px) {
     .new-header__container {
-      width: calc(100% - 60px);
+      width: calc(100% - 64px);
       max-width: 100%;
     }
 
@@ -4625,17 +4639,20 @@
 /* Мобильная версия (0–768px) — компактный хедер: как на странице Аукцион по размеру */
 @media (max-width: 768px) {
   .new-header {
+    position: relative;
+    z-index: 10;
     margin: 0;
     width: 100%;
     display: flex;
     justify-content: center;
+    padding: 0;
   }
 
-  /* Ширина как на Аукционе: 92vw и max-width 420px (на Главной родитель с padding, поэтому vw) */
+  /* Как на странице Аукцион, чуть шире */
   .new-header__container {
     display: flex;
-    width: 92vw;
-    max-width: 420px;
+    width: 100%;
+    max-width: 460px;
     margin: 12px auto 0;
     padding: 8px 16px;
     justify-content: space-between;
@@ -4643,7 +4660,8 @@
     gap: 0;
     border-radius: 20px;
     background: #ffffff;
-    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.22);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06);
+    border: 1px solid rgba(0, 0, 0, 0.05);
     box-sizing: border-box;
   }
 
@@ -6514,11 +6532,12 @@
     flex-direction: column;
     justify-content: flex-end;
     text-align: left;
-    padding: 0 0 12px 0;
-    margin: 0 0 0 calc(-56px - 6.5vw);
-    max-width: none;
+    padding: 0 24px 12px 0;
+    margin: 0 0 120px 0;
+    max-width: 100%;
     min-height: 0;
     animation-delay: 0.15s;
+    box-sizing: border-box;
   }
 
   .hero-headline__accent {
@@ -6542,15 +6561,17 @@
     line-height: 1.05;
     color: #ffffff;
     margin: 0 0 20px;
-    max-width: 580px;
+    max-width: min(580px, 100%);
+    min-width: 16ch;
     letter-spacing: -0.03em;
+    overflow-wrap: break-word;
   }
 
   .hero-headline__subtitle {
     font-size: 18px;
     font-weight: 500;
     color: rgba(255, 255, 255, 0.95);
-    max-width: 480px;
+    max-width: min(480px, 100%);
     margin-left: 0;
     margin-right: 0;
   }

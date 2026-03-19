@@ -102,6 +102,36 @@
   text-align: center;
 }
 
+.whatsapp-verification-modal__error--alert {
+  padding: 20px 24px;
+  text-align: left;
+  background: #fffbeb;
+  border-color: #fcd34d;
+  color: #92400e;
+}
+
+.whatsapp-verification-modal__error--alert.whatsapp-verification-modal__error .whatsapp-verification-modal__error-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 700;
+  font-size: 15px;
+  color: #b45309;
+  margin-bottom: 8px;
+}
+
+.whatsapp-verification-modal__error--alert .whatsapp-verification-modal__error-text {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #78350f;
+}
+
+.whatsapp-verification-modal__error--alert .whatsapp-verification-modal__error-head svg {
+  flex-shrink: 0;
+  opacity: 0.9;
+}
+
 .whatsapp-verification-modal__form {
   padding: 0 32px 24px;
   display: flex;

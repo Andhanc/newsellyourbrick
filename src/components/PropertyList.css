@@ -1749,9 +1749,33 @@
 
 /* Более узкие экраны: от 600px до 0px */
 @media (max-width: 600px) {
-  /* На очень узких экранах убираем строку с адресом, чтобы карточка не разъезжалась по высоте */
+  /* Название — без лишнего отступа снизу */
+  .property-title {
+    margin-bottom: 0;
+  }
+
+  /* Местоположение — полный текст, перенос на столько строк, сколько нужно; чуть ближе к названию */
   .property-location {
-    display: none;
+    font-size: 11px;
+    color: #6b7280;
+    margin-top: -8px;
+    margin-bottom: 7px;
+    line-height: 1.25;
+    display: block;
+    white-space: normal;
+    overflow: visible;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+  }
+
+  /* Убираем растягивающий отступ, чтобы данные шли сразу под местоположением */
+  .property-content-bottom {
+    margin-top: 0;
+    padding-top: 2px;
+  }
+
+  .property-card-owner__info {
+    margin-top: 0;
   }
 }
 
@@ -1826,6 +1850,12 @@
     font-size: 10px;
   }
 
+  /* Сохраняем компактные отступы между текстами */
+  .property-content-bottom {
+    margin-top: 0;
+    padding-top: 2px;
+  }
+
   .property-specs,
   .property-specs--auction {
     gap: 4px;
@@ -1880,7 +1910,8 @@
 
   .property-content-bottom {
     gap: 6px;
-    padding-top: 6px;
+    margin-top: 0;
+    padding-top: 2px;
   }
 }
 

@@ -904,7 +904,6 @@ export const verifyWhatsAppCode = async (phone, code, role = 'buyer', mode = 're
         const errorData = await response.json().catch(() => ({}))
         console.error('Ошибка при сохранении в БД:', errorData.error || 'Неизвестная ошибка')
         
-        // Проверяем, заблокирован ли пользователь (403)
         if (response.status === 403 && errorData.is_blocked) {
           return {
             success: false,
@@ -912,8 +911,25 @@ export const verifyWhatsAppCode = async (phone, code, role = 'buyer', mode = 're
             is_blocked: true
           }
         }
+        // Уже зарегистрирован — пытался регистрироваться с существующим номером
+        if (response.status === 409) {
+          return {
+            success: false,
+            error: errorData.error || 'Вы уже зарегистрированы с этим номером. Войдите в аккаунт.',
+            code: 'ALREADY_REGISTERED',
+            is_blocked: false
+          }
+        }
+        // Режим вход, но пользователь не найден — нужно зарегистрироваться
+        if (response.status === 404) {
+          return {
+            success: false,
+            error: errorData.error || 'Пользователь с таким номером не найден. Сначала зарегистрируйтесь через WhatsApp.',
+            code: 'NEED_REGISTER',
+            is_blocked: false
+          }
+        }
         
-        // Не удаляем код, чтобы можно было попробовать снова
         return {
           success: false,
           error: errorData.error || 'Ошибка при сохранении данных',
@@ -983,17 +999,20 @@ export const verifyWhatsAppCode = async (phone, code, role = 'buyer', mode = 're
 /**
  * Обрабатывает авторизацию через Google
  * Может принимать как credential (JWT токен), так и access_token
+ * @param {Object} googleResponse - ответ от Google (credential или access_token + userInfo)
+ * @param {Object} options - { mode: 'login' | 'register' } для проверок на бэкенде
  */
-export const handleGoogleAuth = async (googleResponse) => {
+export const handleGoogleAuth = async (googleResponse, options = {}) => {
+  const mode = options.mode || 'register'
   try {
     // Если это credential (JWT токен из GoogleOneTap)
     if (googleResponse.credential) {
-      return await handleGoogleCredential(googleResponse.credential)
+      return await handleGoogleCredential(googleResponse.credential, mode)
     }
     
     // Если это access_token из useGoogleLogin
     if (googleResponse.access_token) {
-      return await handleGoogleAccessToken(googleResponse.access_token)
+      return await handleGoogleAccessToken(googleResponse.access_token, googleResponse, mode)
     }
     
     throw new Error('Неизвестный формат ответа от Google')
@@ -1008,16 +1027,17 @@ export const handleGoogleAuth = async (googleResponse) => {
 
 /**
  * Обрабатывает JWT credential токен от Google
+ * @param {string} credential - JWT от Google
+ * @param {string} mode - 'login' | 'register'
  */
-const handleGoogleCredential = async (credential) => {
+const handleGoogleCredential = async (credential, mode = 'register') => {
   try {
-    // Попытка отправить на бэкенд
     const response = await fetch(`${API_BASE_URL}/auth/google`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ credential })
+      body: JSON.stringify({ credential, mode })
     })
 
     if (response.ok) {
@@ -1027,6 +1047,26 @@ const handleGoogleCredential = async (credential) => {
         success: true,
         user: data.user
       }
+    }
+
+    const errorData = await response.json().catch(() => ({}))
+    if (response.status === 409) {
+      return {
+        success: false,
+        error: errorData.error || 'Вы уже зарегистрированы. Войдите в аккаунт.',
+        code: 'ALREADY_REGISTERED'
+      }
+    }
+    if (response.status === 404) {
+      return {
+        success: false,
+        error: errorData.error || 'Аккаунт не найден. Сначала зарегистрируйтесь через Google.',
+        code: 'NEED_REGISTER'
+      }
+    }
+    return {
+      success: false,
+      error: errorData.error || 'Ошибка авторизации через Google'
     }
   } catch (error) {
     console.log('Бэкенд недоступен, используем локальную обработку:', error.message)
@@ -1062,8 +1102,11 @@ const handleGoogleCredential = async (credential) => {
 
 /**
  * Обрабатывает access_token от Google OAuth
+ * @param {string} accessToken
+ * @param {Object} fullResponse - полный ответ (если есть userInfo)
+ * @param {string} mode - 'login' | 'register'
  */
-const handleGoogleAccessToken = async (accessToken) => {
+const handleGoogleAccessToken = async (accessToken, fullResponse = {}, mode = 'register') => {
   try {
     // Получаем информацию о пользователе через Google API
     const userInfoResponse = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
@@ -1078,7 +1121,6 @@ const handleGoogleAccessToken = async (accessToken) => {
 
     const userInfo = await userInfoResponse.json()
     
-    // Отправляем на бэкенд для регистрации/входа
     try {
       const response = await fetch(`${API_BASE_URL}/auth/google`, {
         method: 'POST',
@@ -1087,7 +1129,8 @@ const handleGoogleAccessToken = async (accessToken) => {
         },
         body: JSON.stringify({
           access_token: accessToken,
-          userInfo
+          userInfo,
+          mode
         })
       })
 
@@ -1098,6 +1141,26 @@ const handleGoogleAccessToken = async (accessToken) => {
           success: true,
           user: data.user
         }
+      }
+
+      const errorData = await response.json().catch(() => ({}))
+      if (response.status === 409) {
+        return {
+          success: false,
+          error: errorData.error || 'Вы уже зарегистрированы. Войдите в аккаунт.',
+          code: 'ALREADY_REGISTERED'
+        }
+      }
+      if (response.status === 404) {
+        return {
+          success: false,
+          error: errorData.error || 'Аккаунт не найден. Сначала зарегистрируйтесь через Google.',
+          code: 'NEED_REGISTER'
+        }
+      }
+      return {
+        success: false,
+        error: errorData.error || 'Ошибка авторизации через Google'
       }
     } catch (backendError) {
       console.log('Бэкенд недоступен, используем локальные данные:', backendError.message)
@@ -1157,7 +1220,8 @@ export const verifyTelegramAuth = async (telegramData, mode = 'register', role =
     if (!response.ok) {
       return {
         success: false,
-        error: data.error || 'Ошибка авторизации через Telegram'
+        error: data.error || 'Ошибка авторизации через Telegram',
+        code: response.status === 409 ? 'ALREADY_REGISTERED' : response.status === 404 ? 'NEED_REGISTER' : undefined
       }
     }
 

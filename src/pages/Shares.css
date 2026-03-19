@@ -33,7 +33,7 @@
 }
 
 .shares-page .menu-dropdown {
-  top: calc(20px + 63px + 50px) !important;
+  top: calc(20px + 63px + 8px) !important;
 }
 
 @media (max-width: 768px) {

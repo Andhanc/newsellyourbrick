@@ -1948,6 +1948,557 @@ function MainPage() {
         <div className={`hero-section__image hero-section__image--rent ${propertyMode === 'rent' ? 'hero-section__image--active' : ''}`} style={{ backgroundImage: `url(${heroImages.rent})` }}></div>
         <div className={`hero-section__image hero-section__image--buy ${propertyMode === 'buy' ? 'hero-section__image--active' : ''}`} style={{ backgroundImage: `url(${heroImages.buy})` }}></div>
         <div className="hero-section__overlay"></div>
+        {/* Новый хедер для десктопной версии */}
+        <header className={`new-header ${isMenuOpen ? 'new-header--menu-open' : ''}`}>
+        <div className={`new-header__container ${isMenuOpen ? 'new-header__container--menu-open' : ''}`}>
+        <div className="new-header__left">
+        <div className="new-header__location">
+          <span className="new-header__location-icon">
+            <IoLocationOutline size={20} />
+          </span>
+          <div className="new-header__location-info" ref={locationRef}>
+            <span className="new-header__location-label">{t('location')}</span>
+            <button
+              type="button"
+              className="new-header__location-select"
+              onClick={() => setIsLocationOpen((prev) => !prev)}
+              aria-haspopup="listbox"
+              aria-expanded={isLocationOpen}
+            >
+              <span className="new-header__location-value">{selectedLocation}</span>
+              <FiChevronDown
+                size={16}
+                className={`new-header__location-select-icon ${
+                  isLocationOpen ? 'new-header__location-select-icon--open' : ''
+                }`}
+              />
+            </button>
+          {isLocationOpen && (
+            <div className="new-header__location-dropdown">
+              {resortLocations.map((location) => (
+                <button
+                  type="button"
+                  className={`new-header__location-option ${
+                    location === selectedLocation ? 'new-header__location-option--active' : ''
+                  }`}
+                  key={location}
+                  onClick={() => handleLocationSelect(location)}
+                >
+                  {location}
+                </button>
+              ))}
+            </div>
+          )}
+          </div>
+        </div>
+        <div className={`new-header__menu-wrapper ${isMenuOpen ? 'new-header__menu-wrapper--active' : ''}`} ref={menuRef}>
+          <button 
+            className={`new-header__menu-btn ${isMenuOpen ? 'new-header__menu-btn--active' : ''}`}
+            onClick={(e) => {
+              e.stopPropagation() // Останавливаем всплытие события
+              e.preventDefault() // Предотвращаем стандартное поведение
+              if (isMenuOpen) {
+                setIsMenuClosing(true)
+                setTimeout(() => {
+                  setIsMenuOpen(false)
+                  setIsMenuClosing(false)
+                }, 300)
+              } else {
+                setIsMenuOpen(true)
+              }
+            }}
+            aria-label="Меню"
+            aria-expanded={isMenuOpen}
+          >
+            <FiMenu size={20} className="new-header__menu-icon" />
+            <span>{t('menu')}</span>
+          </button>
+        </div>
+        
+        {/* Модальное окно меню рендерится вне menu-wrapper */}
+        {(isMenuOpen || isMenuClosing) && (
+          <>
+            <div 
+              className={`menu-backdrop ${isMenuClosing ? 'menu-backdrop--closing' : ''}`}
+              onClick={(e) => {
+                // Закрываем меню при клике на backdrop
+                // Проверяем, что клик не по кнопке меню или самому меню
+                const menuBtn = menuRef.current?.querySelector('.new-header__menu-btn')
+                const menuDropdown = document.querySelector('.menu-dropdown')
+                
+                if (menuBtn && menuBtn.contains(e.target)) {
+                  // Клик по кнопке меню - не закрываем, кнопка сама переключит состояние
+                  return
+                }
+                
+                if (menuDropdown && menuDropdown.contains(e.target)) {
+                  // Клик по меню - не закрываем
+                  return
+                }
+                
+                // Клик по backdrop - закрываем меню с анимацией
+                setIsMenuClosing(true)
+                setTimeout(() => {
+                  setIsMenuOpen(false)
+                  setIsMenuClosing(false)
+                }, 300)
+              }}
+            />
+            <div 
+              className={`menu-dropdown ${isMenuClosing ? 'menu-dropdown--closing' : ''}`}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="menu-dropdown__content">
+                <button
+                  type="button"
+                  className="menu-dropdown__close-btn"
+                  aria-label="Закрыть меню"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setIsMenuClosing(true)
+                    setTimeout(() => {
+                      setIsMenuOpen(false)
+                      setIsMenuClosing(false)
+                    }, 300)
+                  }}
+                >
+                  <FiX size={22} />
+                </button>
+                <div className="menu-dropdown__columns">
+                  <div className="menu-dropdown__column">
+                    <h3 className="menu-dropdown__column-title">{t('navSiteTitle')}</h3>
+                    <div className="menu-dropdown__column-items">
+                      <button 
+                        className="menu-dropdown__item"
+                        onClick={() => {
+                          navigate('/')
+                          setIsMenuOpen(false)
+                        }}
+                      >
+                        <span>{t('home')}</span>
+                      </button>
+                      <button 
+                        className="menu-dropdown__item"
+                        onClick={() => {
+                          navigate('/auction')
+                          setIsMenuOpen(false)
+                        }}
+                      >
+                        <span>{t('auction')}</span>
+                      </button>
+                      <button 
+                        className="menu-dropdown__item"
+                        onClick={() => {
+                          navigate('/map')
+                          setIsMenuOpen(false)
+                        }}
+                      >
+                        <span>{t('map')}</span>
+                      </button>
+                      <button 
+                        className="menu-dropdown__item"
+                        onClick={() => {
+                          navigate('/debts')
+                          setIsMenuOpen(false)
+                        }}
+                      >
+                        <span>Долги</span>
+                      </button>
+                      <button 
+                        className="menu-dropdown__item"
+                        onClick={() => {
+                          navigate('/favorites')
+                          setIsMenuOpen(false)
+                        }}
+                      >
+                        <span>{t('favorites')}</span>
+                      </button>
+                      <button 
+                        className="menu-dropdown__item"
+                        onClick={() => {
+                          navigate('/shares')
+                          setIsMenuOpen(false)
+                        }}
+                      >
+                        <span>Доли</span>
+                      </button>
+                      <button 
+                        className="menu-dropdown__item"
+                        onClick={() => {
+                          navigate('/chat')
+                          setIsMenuOpen(false)
+                        }}
+                      >
+                        <span>{t('chat')}</span>
+                      </button>
+                      <button 
+                        className="menu-dropdown__item"
+                        onClick={() => {
+                          navigate('/bonuses')
+                          setIsMenuOpen(false)
+                        }}
+                      >
+                        <span>Бонусы</span>
+                      </button>
+                    </div>
+                  </div>
+                  <div className="menu-dropdown__column">
+                    <h3 className="menu-dropdown__column-title">{t('profile')}</h3>
+                    <div className="menu-dropdown__column-items">
+                      {isLoggedIn ? (
+                        <>
+                          <button 
+                            className="menu-dropdown__item"
+                            onClick={() => {
+                              navigate('/profile')
+                              setIsMenuOpen(false)
+                            }}
+                          >
+                            <span>Профиль</span>
+                          </button>
+                          <button 
+                            className="menu-dropdown__item"
+                            onClick={() => {
+                              navigate('/wallet')
+                              setIsMenuOpen(false)
+                            }}
+                          >
+                            <span>Кошелек</span>
+                          </button>
+                          <button 
+                            className="menu-dropdown__item"
+                            onClick={() => {
+                              navigate('/subscriptions')
+                              setIsMenuOpen(false)
+                            }}
+                          >
+                            <span>Подписки</span>
+                          </button>
+                          <button 
+                            className="menu-dropdown__item"
+                            onClick={() => {
+                              navigate('/data')
+                              setIsMenuOpen(false)
+                            }}
+                          >
+                            <span>Данные</span>
+                          </button>
+                        </>
+                      ) : (
+                        <button 
+                          className="menu-dropdown__item"
+                          onClick={() => {
+                            setIsLoginModalOpen(true)
+                            setIsMenuOpen(false)
+                          }}
+                        >
+                          <span>Войти</span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </>
+        )}
+        </div>
+
+          <div className="new-header__filters">
+            <button
+              type="button"
+              className={`new-header__filter-btn new-header__filter-btn--hide-4 ${location.pathname === '/chat' ? 'new-header__filter-btn--active' : ''}`}
+              onClick={() => navigate('/chat')}
+            >
+              <span>{t('chat')}</span>
+            </button>
+            <button
+              type="button"
+              className={`new-header__filter-btn new-header__filter-btn--hide-3 ${location.pathname === '/favorites' ? 'new-header__filter-btn--active' : ''}`}
+              onClick={() => navigate('/favorites')}
+            >
+              <span>{t('favorites')}</span>
+            </button>
+            <button
+              type="button"
+              className={`new-header__filter-btn new-header__filter-btn--hide-2 ${isChatOpen ? 'new-header__filter-btn--active' : ''}`}
+              onClick={toggleChat}
+            >
+              <span>{t('aiAssistant')}</span>
+            </button>
+            <button
+              type="button"
+              className={`new-header__filter-btn new-header__filter-btn--hide-1 ${location.pathname === '/map' ? 'new-header__filter-btn--active' : ''}`}
+              onClick={() => navigate('/map')}
+            >
+              <span>{t('map')}</span>
+            </button>
+          </div>
+
+        <div className="new-header__right" ref={notificationRef}>
+        {isSearchOpen ? (
+          <div className="new-header__search-wrapper" ref={searchWrapperRef}>
+            <div className="new-header__search-field">
+              <FiSearch size={18} className="new-header__search-icon" />
+              <input
+                ref={searchInputRef}
+                type="text"
+                placeholder={t('search')}
+                className="new-header__search-input"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Escape') {
+                    setIsSearchOpen(false)
+                    setSearchQuery('')
+                    setPageSearchResults([])
+                  } else if (e.key === 'Enter' && pageSearchResults.length > 0) {
+                    // Переходим на первую доступную страницу
+                    const firstAccessible = pageSearchResults.find(r => r.canAccess.allowed)
+                    if (firstAccessible) {
+                      handleSearchResultClick(firstAccessible)
+                    } else if (pageSearchResults[0]) {
+                      handleSearchResultClick(pageSearchResults[0])
+                    }
+                  }
+                }}
+              />
+              <button
+                type="button"
+                className="new-header__search-close"
+                onClick={() => {
+                  setIsSearchOpen(false)
+                  setSearchQuery('')
+                  setPageSearchResults([])
+                }}
+                aria-label={t('closeSearch')}
+              >
+                <FiX size={18} />
+              </button>
+            </div>
+            {pageSearchResults.length > 0 && (
+              <div className="new-header__search-results">
+                {pageSearchResults.map((result, index) => (
+                  <button
+                    key={`${result.path}-${index}`}
+                    type="button"
+                    className={`new-header__search-result ${!result.canAccess.allowed ? 'new-header__search-result--disabled' : ''}`}
+                    onClick={() => handleSearchResultClick(result)}
+                    disabled={!result.canAccess.allowed}
+                  >
+                    <span className="new-header__search-result-title">{result.title}</span>
+                    {!result.canAccess.allowed && (
+                      <span className="new-header__search-result-hint">
+                        {result.canAccess.reason === 'auth' ? '🔒 Требуется вход' : '⚠️ Нет доступа'}
+                      </span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
+            {searchQuery.trim() && pageSearchResults.length === 0 && (
+              <div className="new-header__search-results">
+                <div className="new-header__search-result new-header__search-result--no-results">
+                  <span>{t('nothingFound')}</span>
+                </div>
+              </div>
+            )}
+          </div>
+        ) : (
+          <>
+            <button 
+              className="new-header__search-btn"
+              onClick={() => {
+                setIsSearchOpen(true)
+                setSearchQuery('')
+                setPageSearchResults([])
+              }}
+              aria-label="Открыть поиск"
+            >
+              <FiSearch size={20} />
+            </button>
+        <button 
+          type="button"
+          className="new-header__auction-btn"
+          onClick={() => navigate('/auction')}
+        >
+          {t('auction')}
+        </button>
+        <button 
+          className={`new-header__user-btn ${isLoggedIn ? 'new-header__user-btn--avatar' : ''}`}
+          onClick={() => {
+            // Всегда сначала проверяем локальные данные (роль, флаги)
+            const userData = getUserData()
+            const localRole = localStorage.getItem('userRole')
+            const storedRole = userData.role || localRole
+            const isAdminLoggedIn = localStorage.getItem('isAdminLoggedIn') === 'true'
+            const isAdmin = isAdminLoggedIn && storedRole === 'admin'
+            const isOwnerFlag = localStorage.getItem('isOwnerLoggedIn') === 'true'
+            const isOwner =
+              storedRole === 'seller' ||
+              storedRole === 'owner' ||
+              isOwnerFlag
+
+            // Если по локальным данным видно, что это админ — ведем в админ-панель
+            if (isAdmin) {
+              navigate('/admin')
+              return
+            }
+
+            // Продавца ведем в кабинет продавца
+            if (isOwner) {
+              navigate('/owner')
+              return
+            }
+
+            // Дальше обычная логика профиля покупателя
+            if (userLoaded && user) {
+              navigate('/profile')
+            } else if (userData.isLoggedIn) {
+              navigate('/profile')
+            } else {
+              setIsLoginModalOpen(true)
+            }
+          }}
+          aria-label={t('profile')}
+        >
+          {isLoggedIn ? (
+            <div className="new-header__avatar-wrapper">
+              {userPhoto ? (
+                <img loading="lazy" 
+                  src={userPhoto} 
+                  alt="Profile" 
+                  className="new-header__avatar-img"
+                  onError={(e) => {
+                    // Если фото не загрузилось, показываем placeholder
+                    setUserPhoto(null)
+                  }}
+                />
+              ) : (
+                <div className="new-header__avatar-placeholder">
+                  <FiUser size={20} />
+                </div>
+              )}
+            </div>
+          ) : (
+            <FiUser size={20} />
+          )}
+          {isLoggedIn && hasIncompleteProfile && (
+            <span className="new-header__profile-indicator" />
+          )}
+        </button>
+        <button 
+          type="button" 
+          className="new-header__notification-btn"
+          onClick={() => setIsNotificationOpen((prev) => !prev)}
+          aria-expanded={isNotificationOpen}
+        >
+          <FiBell size={20} />
+          <span className="new-header__notification-indicator" />
+        </button>
+        {isNotificationOpen && (
+          <>
+            <div 
+              className="notification-backdrop"
+              onClick={() => setIsNotificationOpen(false)}
+            />
+            <div className="notification-panel">
+              <div className="notification-panel__content">
+              <div className="notification-panel__header">
+<h3 className="notification-panel__title">{t('notifications')}</h3>
+                  <button 
+                    type="button" 
+                    className="notification-panel__close"
+                    onClick={() => setIsNotificationOpen(false)}
+                    aria-label={t('closeNotifications')}
+                >
+                  <FiX size={20} />
+                </button>
+              </div>
+              <div className="notification-panel__list">
+                {notificationsLoading ? (
+<div style={{ padding: '20px', textAlign: 'center' }}>{t('loading')}</div>
+                  ) : notifications.length === 0 ? (
+                  <div style={{ padding: '20px', textAlign: 'center', color: '#6b7280' }}>{t('noNotifications')}</div>
+                ) : (
+                  notifications.map((notification) => {
+                    let notificationClass = 'notification-item--property';
+                    if (notification.type === 'verification_success') {
+                      notificationClass = 'notification-item--success';
+                    } else if (notification.type === 'verification_rejected') {
+                      notificationClass = 'notification-item--error';
+                    } else if (notification.type === 'bid_outbid') {
+                      notificationClass = 'notification-item--warning';
+                    }
+                    
+                    return (
+                    <div 
+                      key={notification.id} 
+                      className={`notification-item ${notificationClass}`}
+                      onClick={() => handleNotificationView(notification.id)}
+                    >
+                      <div className="notification-item__content">
+                        <h4 className="notification-item__title">{notification.title}</h4>
+                        {notification.message && (
+                          <p className="notification-item__message">{notification.message}</p>
+                        )}
+                        {notification.data && notification.data.property_id && (
+                          <div className="notification-item__property">
+                            <div className="notification-item__image">
+                              <img loading="lazy" 
+                                src={recommendedProperties[0]?.image || 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=400&q=80'}
+                                alt={recommendedProperties[0]?.name || 'Property'}
+                                onError={(e) => {
+                                  e.target.src = 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=400&q=80'
+                                }}
+                              />
+                            </div>
+                            <div className="notification-item__info">
+                              <p className="notification-item__property-name">{recommendedProperties[0]?.name || 'Property'}</p>
+                              <p className="notification-item__property-location">{recommendedProperties[0]?.location || 'Location'}</p>
+                              <button 
+                                type="button" 
+                                className="notification-item__button"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  setIsNotificationOpen(false)
+                                  handlePropertyClick('recommended', notification.data.property_id, false)
+                                }}
+                              >
+                                Перейти
+                                <FiArrowRight size={18} />
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                        {!notification.data && (
+                          <button 
+                            type="button" 
+                            className="notification-item__button"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setIsNotificationOpen(false)
+                            }}
+                          >
+                            Закрыть
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+          </div>
+          </>
+        )}
+          </>
+        )}
+        </div>
+        </div>
+      </header>
+
         <div className="hero-section__inner">
         <div className="hero-section__content">
           {/* Старый хедер для мобильной версии */}
@@ -2157,557 +2708,6 @@ function MainPage() {
               </button>
             </div>
           </header>
-
-          {/* Новый хедер для десктопной версии */}
-          <header className={`new-header ${isMenuOpen ? 'new-header--menu-open' : ''}`}>
-        <div className={`new-header__container ${isMenuOpen ? 'new-header__container--menu-open' : ''}`}>
-        <div className="new-header__left">
-          <div className="new-header__location">
-            <span className="new-header__location-icon">
-              <IoLocationOutline size={20} />
-            </span>
-            <div className="new-header__location-info" ref={locationRef}>
-              <span className="new-header__location-label">{t('location')}</span>
-              <button
-                type="button"
-                className="new-header__location-select"
-                onClick={() => setIsLocationOpen((prev) => !prev)}
-                aria-haspopup="listbox"
-                aria-expanded={isLocationOpen}
-              >
-                <span className="new-header__location-value">{selectedLocation}</span>
-                <FiChevronDown
-                  size={16}
-                  className={`new-header__location-select-icon ${
-                    isLocationOpen ? 'new-header__location-select-icon--open' : ''
-                  }`}
-                />
-              </button>
-            {isLocationOpen && (
-              <div className="new-header__location-dropdown">
-                {resortLocations.map((location) => (
-                  <button
-                    type="button"
-                    className={`new-header__location-option ${
-                      location === selectedLocation ? 'new-header__location-option--active' : ''
-                    }`}
-                    key={location}
-                    onClick={() => handleLocationSelect(location)}
-                  >
-                    {location}
-                  </button>
-                ))}
-              </div>
-            )}
-            </div>
-          </div>
-          <div className={`new-header__menu-wrapper ${isMenuOpen ? 'new-header__menu-wrapper--active' : ''}`} ref={menuRef}>
-            <button 
-              className={`new-header__menu-btn ${isMenuOpen ? 'new-header__menu-btn--active' : ''}`}
-              onClick={(e) => {
-                e.stopPropagation() // Останавливаем всплытие события
-                e.preventDefault() // Предотвращаем стандартное поведение
-                if (isMenuOpen) {
-                  setIsMenuClosing(true)
-                  setTimeout(() => {
-                    setIsMenuOpen(false)
-                    setIsMenuClosing(false)
-                  }, 300)
-                } else {
-                  setIsMenuOpen(true)
-                }
-              }}
-              aria-label="Меню"
-              aria-expanded={isMenuOpen}
-            >
-              <FiMenu size={20} className="new-header__menu-icon" />
-              <span>{t('menu')}</span>
-            </button>
-          </div>
-          
-          {/* Модальное окно меню рендерится вне menu-wrapper */}
-          {(isMenuOpen || isMenuClosing) && (
-            <>
-              <div 
-                className={`menu-backdrop ${isMenuClosing ? 'menu-backdrop--closing' : ''}`}
-                onClick={(e) => {
-                  // Закрываем меню при клике на backdrop
-                  // Проверяем, что клик не по кнопке меню или самому меню
-                  const menuBtn = menuRef.current?.querySelector('.new-header__menu-btn')
-                  const menuDropdown = document.querySelector('.menu-dropdown')
-                  
-                  if (menuBtn && menuBtn.contains(e.target)) {
-                    // Клик по кнопке меню - не закрываем, кнопка сама переключит состояние
-                    return
-                  }
-                  
-                  if (menuDropdown && menuDropdown.contains(e.target)) {
-                    // Клик по меню - не закрываем
-                    return
-                  }
-                  
-                  // Клик по backdrop - закрываем меню с анимацией
-                  setIsMenuClosing(true)
-                  setTimeout(() => {
-                    setIsMenuOpen(false)
-                    setIsMenuClosing(false)
-                  }, 300)
-                }}
-              />
-              <div 
-                className={`menu-dropdown ${isMenuClosing ? 'menu-dropdown--closing' : ''}`}
-                onClick={(e) => e.stopPropagation()}
-              >
-                <div className="menu-dropdown__content">
-                  <button
-                    type="button"
-                    className="menu-dropdown__close-btn"
-                    aria-label="Закрыть меню"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      setIsMenuClosing(true)
-                      setTimeout(() => {
-                        setIsMenuOpen(false)
-                        setIsMenuClosing(false)
-                      }, 300)
-                    }}
-                  >
-                    <FiX size={22} />
-                  </button>
-                  <div className="menu-dropdown__columns">
-                    <div className="menu-dropdown__column">
-                      <h3 className="menu-dropdown__column-title">{t('navSiteTitle')}</h3>
-                      <div className="menu-dropdown__column-items">
-                        <button 
-                          className="menu-dropdown__item"
-                          onClick={() => {
-                            navigate('/')
-                            setIsMenuOpen(false)
-                          }}
-                        >
-                          <span>{t('home')}</span>
-                        </button>
-                        <button 
-                          className="menu-dropdown__item"
-                          onClick={() => {
-                            navigate('/auction')
-                            setIsMenuOpen(false)
-                          }}
-                        >
-                          <span>{t('auction')}</span>
-                        </button>
-                        <button 
-                          className="menu-dropdown__item"
-                          onClick={() => {
-                            navigate('/map')
-                            setIsMenuOpen(false)
-                          }}
-                        >
-                          <span>{t('map')}</span>
-                        </button>
-                        <button 
-                          className="menu-dropdown__item"
-                          onClick={() => {
-                            navigate('/debts')
-                            setIsMenuOpen(false)
-                          }}
-                        >
-                          <span>Долги</span>
-                        </button>
-                        <button 
-                          className="menu-dropdown__item"
-                          onClick={() => {
-                            navigate('/favorites')
-                            setIsMenuOpen(false)
-                          }}
-                        >
-                          <span>{t('favorites')}</span>
-                        </button>
-                        <button 
-                          className="menu-dropdown__item"
-                          onClick={() => {
-                            navigate('/shares')
-                            setIsMenuOpen(false)
-                          }}
-                        >
-                          <span>Доли</span>
-                        </button>
-                        <button 
-                          className="menu-dropdown__item"
-                          onClick={() => {
-                            navigate('/chat')
-                            setIsMenuOpen(false)
-                          }}
-                        >
-                          <span>{t('chat')}</span>
-                        </button>
-                        <button 
-                          className="menu-dropdown__item"
-                          onClick={() => {
-                            navigate('/bonuses')
-                            setIsMenuOpen(false)
-                          }}
-                        >
-                          <span>Бонусы</span>
-                        </button>
-                      </div>
-                    </div>
-                    <div className="menu-dropdown__column">
-                      <h3 className="menu-dropdown__column-title">{t('profile')}</h3>
-                      <div className="menu-dropdown__column-items">
-                        {isLoggedIn ? (
-                          <>
-                            <button 
-                              className="menu-dropdown__item"
-                              onClick={() => {
-                                navigate('/profile')
-                                setIsMenuOpen(false)
-                              }}
-                            >
-                              <span>Профиль</span>
-                            </button>
-                            <button 
-                              className="menu-dropdown__item"
-                              onClick={() => {
-                                navigate('/wallet')
-                                setIsMenuOpen(false)
-                              }}
-                            >
-                              <span>Кошелек</span>
-                            </button>
-                            <button 
-                              className="menu-dropdown__item"
-                              onClick={() => {
-                                navigate('/subscriptions')
-                                setIsMenuOpen(false)
-                              }}
-                            >
-                              <span>Подписки</span>
-                            </button>
-                            <button 
-                              className="menu-dropdown__item"
-                              onClick={() => {
-                                navigate('/data')
-                                setIsMenuOpen(false)
-                              }}
-                            >
-                              <span>Данные</span>
-                            </button>
-                          </>
-                        ) : (
-                          <button 
-                            className="menu-dropdown__item"
-                            onClick={() => {
-                              setIsLoginModalOpen(true)
-                              setIsMenuOpen(false)
-                            }}
-                          >
-                            <span>Войти</span>
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </>
-          )}
-        </div>
-
-            <div className="new-header__filters">
-              <button
-                type="button"
-                className={`new-header__filter-btn new-header__filter-btn--hide-4 ${location.pathname === '/chat' ? 'new-header__filter-btn--active' : ''}`}
-                onClick={() => navigate('/chat')}
-              >
-                <span>{t('chat')}</span>
-              </button>
-              <button
-                type="button"
-                className={`new-header__filter-btn new-header__filter-btn--hide-3 ${location.pathname === '/favorites' ? 'new-header__filter-btn--active' : ''}`}
-                onClick={() => navigate('/favorites')}
-              >
-                <span>{t('favorites')}</span>
-              </button>
-              <button
-                type="button"
-                className={`new-header__filter-btn new-header__filter-btn--hide-2 ${isChatOpen ? 'new-header__filter-btn--active' : ''}`}
-                onClick={toggleChat}
-              >
-                <span>{t('aiAssistant')}</span>
-              </button>
-              <button
-                type="button"
-                className={`new-header__filter-btn new-header__filter-btn--hide-1 ${location.pathname === '/map' ? 'new-header__filter-btn--active' : ''}`}
-                onClick={() => navigate('/map')}
-              >
-                <span>{t('map')}</span>
-              </button>
-            </div>
-
-        <div className="new-header__right" ref={notificationRef}>
-          {isSearchOpen ? (
-            <div className="new-header__search-wrapper" ref={searchWrapperRef}>
-              <div className="new-header__search-field">
-                <FiSearch size={18} className="new-header__search-icon" />
-                <input
-                  ref={searchInputRef}
-                  type="text"
-                  placeholder={t('search')}
-                  className="new-header__search-input"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Escape') {
-                      setIsSearchOpen(false)
-                      setSearchQuery('')
-                      setPageSearchResults([])
-                    } else if (e.key === 'Enter' && pageSearchResults.length > 0) {
-                      // Переходим на первую доступную страницу
-                      const firstAccessible = pageSearchResults.find(r => r.canAccess.allowed)
-                      if (firstAccessible) {
-                        handleSearchResultClick(firstAccessible)
-                      } else if (pageSearchResults[0]) {
-                        handleSearchResultClick(pageSearchResults[0])
-                      }
-                    }
-                  }}
-                />
-                <button
-                  type="button"
-                  className="new-header__search-close"
-                  onClick={() => {
-                    setIsSearchOpen(false)
-                    setSearchQuery('')
-                    setPageSearchResults([])
-                  }}
-                  aria-label={t('closeSearch')}
-                >
-                  <FiX size={18} />
-                </button>
-              </div>
-              {pageSearchResults.length > 0 && (
-                <div className="new-header__search-results">
-                  {pageSearchResults.map((result, index) => (
-                    <button
-                      key={`${result.path}-${index}`}
-                      type="button"
-                      className={`new-header__search-result ${!result.canAccess.allowed ? 'new-header__search-result--disabled' : ''}`}
-                      onClick={() => handleSearchResultClick(result)}
-                      disabled={!result.canAccess.allowed}
-                    >
-                      <span className="new-header__search-result-title">{result.title}</span>
-                      {!result.canAccess.allowed && (
-                        <span className="new-header__search-result-hint">
-                          {result.canAccess.reason === 'auth' ? '🔒 Требуется вход' : '⚠️ Нет доступа'}
-                        </span>
-                      )}
-                    </button>
-                  ))}
-                </div>
-              )}
-              {searchQuery.trim() && pageSearchResults.length === 0 && (
-                <div className="new-header__search-results">
-                  <div className="new-header__search-result new-header__search-result--no-results">
-                    <span>{t('nothingFound')}</span>
-                  </div>
-                </div>
-              )}
-            </div>
-          ) : (
-            <>
-              <button 
-                className="new-header__search-btn"
-                onClick={() => {
-                  setIsSearchOpen(true)
-                  setSearchQuery('')
-                  setPageSearchResults([])
-                }}
-                aria-label="Открыть поиск"
-              >
-                <FiSearch size={20} />
-              </button>
-          <button 
-            type="button"
-            className="new-header__auction-btn"
-            onClick={() => navigate('/auction')}
-          >
-            {t('auction')}
-          </button>
-          <button 
-            className={`new-header__user-btn ${isLoggedIn ? 'new-header__user-btn--avatar' : ''}`}
-            onClick={() => {
-              // Всегда сначала проверяем локальные данные (роль, флаги)
-              const userData = getUserData()
-              const localRole = localStorage.getItem('userRole')
-              const storedRole = userData.role || localRole
-              const isAdminLoggedIn = localStorage.getItem('isAdminLoggedIn') === 'true'
-              const isAdmin = isAdminLoggedIn && storedRole === 'admin'
-              const isOwnerFlag = localStorage.getItem('isOwnerLoggedIn') === 'true'
-              const isOwner =
-                storedRole === 'seller' ||
-                storedRole === 'owner' ||
-                isOwnerFlag
-
-              // Если по локальным данным видно, что это админ — ведем в админ-панель
-              if (isAdmin) {
-                navigate('/admin')
-                return
-              }
-
-              // Продавца ведем в кабинет продавца
-              if (isOwner) {
-                navigate('/owner')
-                return
-              }
-
-              // Дальше обычная логика профиля покупателя
-              if (userLoaded && user) {
-                navigate('/profile')
-              } else if (userData.isLoggedIn) {
-                navigate('/profile')
-              } else {
-                setIsLoginModalOpen(true)
-              }
-            }}
-            aria-label={t('profile')}
-          >
-            {isLoggedIn ? (
-              <div className="new-header__avatar-wrapper">
-                {userPhoto ? (
-                  <img loading="lazy" 
-                    src={userPhoto} 
-                    alt="Profile" 
-                    className="new-header__avatar-img"
-                    onError={(e) => {
-                      // Если фото не загрузилось, показываем placeholder
-                      setUserPhoto(null)
-                    }}
-                  />
-                ) : (
-                  <div className="new-header__avatar-placeholder">
-                    <FiUser size={20} />
-                  </div>
-                )}
-              </div>
-            ) : (
-              <FiUser size={20} />
-            )}
-            {isLoggedIn && hasIncompleteProfile && (
-              <span className="new-header__profile-indicator" />
-            )}
-          </button>
-          <button 
-            type="button" 
-            className="new-header__notification-btn"
-            onClick={() => setIsNotificationOpen((prev) => !prev)}
-            aria-expanded={isNotificationOpen}
-          >
-            <FiBell size={20} />
-            <span className="new-header__notification-indicator" />
-          </button>
-          {isNotificationOpen && (
-            <>
-              <div 
-                className="notification-backdrop"
-                onClick={() => setIsNotificationOpen(false)}
-              />
-              <div className="notification-panel">
-                <div className="notification-panel__content">
-                <div className="notification-panel__header">
-<h3 className="notification-panel__title">{t('notifications')}</h3>
-                    <button 
-                      type="button" 
-                      className="notification-panel__close"
-                      onClick={() => setIsNotificationOpen(false)}
-                      aria-label={t('closeNotifications')}
-                  >
-                    <FiX size={20} />
-                  </button>
-                </div>
-                <div className="notification-panel__list">
-                  {notificationsLoading ? (
-<div style={{ padding: '20px', textAlign: 'center' }}>{t('loading')}</div>
-                    ) : notifications.length === 0 ? (
-                    <div style={{ padding: '20px', textAlign: 'center', color: '#6b7280' }}>{t('noNotifications')}</div>
-                  ) : (
-                    notifications.map((notification) => {
-                      let notificationClass = 'notification-item--property';
-                      if (notification.type === 'verification_success') {
-                        notificationClass = 'notification-item--success';
-                      } else if (notification.type === 'verification_rejected') {
-                        notificationClass = 'notification-item--error';
-                      } else if (notification.type === 'bid_outbid') {
-                        notificationClass = 'notification-item--warning';
-                      }
-                      
-                      return (
-                      <div 
-                        key={notification.id} 
-                        className={`notification-item ${notificationClass}`}
-                        onClick={() => handleNotificationView(notification.id)}
-                      >
-                        <div className="notification-item__content">
-                          <h4 className="notification-item__title">{notification.title}</h4>
-                          {notification.message && (
-                            <p className="notification-item__message">{notification.message}</p>
-                          )}
-                          {notification.data && notification.data.property_id && (
-                            <div className="notification-item__property">
-                              <div className="notification-item__image">
-                                <img loading="lazy" 
-                                  src={recommendedProperties[0]?.image || 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=400&q=80'}
-                                  alt={recommendedProperties[0]?.name || 'Property'}
-                                  onError={(e) => {
-                                    e.target.src = 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=400&q=80'
-                                  }}
-                                />
-                              </div>
-                              <div className="notification-item__info">
-                                <p className="notification-item__property-name">{recommendedProperties[0]?.name || 'Property'}</p>
-                                <p className="notification-item__property-location">{recommendedProperties[0]?.location || 'Location'}</p>
-                                <button 
-                                  type="button" 
-                                  className="notification-item__button"
-                                  onClick={(e) => {
-                                    e.stopPropagation()
-                                    setIsNotificationOpen(false)
-                                    handlePropertyClick('recommended', notification.data.property_id, false)
-                                  }}
-                                >
-                                  Перейти
-                                  <FiArrowRight size={18} />
-                                </button>
-                              </div>
-                            </div>
-                          )}
-                          {!notification.data && (
-                            <button 
-                              type="button" 
-                              className="notification-item__button"
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                setIsNotificationOpen(false)
-                              }}
-                            >
-                              Закрыть
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                      );
-                    })
-                  )}
-                </div>
-              </div>
-            </div>
-            </>
-          )}
-            </>
-          )}
-        </div>
-        </div>
-      </header>
 
           {/* Hero headline — Saleyourbrick */}
           <div className="hero-headline">

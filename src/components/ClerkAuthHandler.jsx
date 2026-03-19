@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth, useUser, useSession } from '@clerk/clerk-react'
 import { saveUserData, getReferrerId, clearReferrerId } from '../services/authService'
+import AuthAlertModal from './AuthAlertModal'
 
 /**
  * Компонент для обработки успешной авторизации через Clerk OAuth
@@ -14,6 +15,8 @@ const ClerkAuthHandler = () => {
   const { user, isLoaded: userLoaded } = useUser()
   const { session } = useSession()
   const [hasProcessed, setHasProcessed] = useState(false)
+  const [oauthError, setOauthError] = useState(null) // { title, message } при таймауте/ошибке OAuth
+  const timeoutTriggeredRef = useRef(false)
 
   useEffect(() => {
     // Ждем загрузки данных
@@ -71,14 +74,15 @@ const ClerkAuthHandler = () => {
       cookies: document.cookie
     })
     
-    // Проверяем, откуда пришли (для диагностики)
-    if (oauthRedirectStarted && !hasOAuthParams && !isSignedIn) {
-      console.error('ClerkAuthHandler: CRITICAL - OAuth redirect started but no Clerk params in URL!')
-      console.error('ClerkAuthHandler: This means Google redirected directly to localhost, bypassing Clerk!')
-      console.error('ClerkAuthHandler: Referrer:', document.referrer)
-      console.error('ClerkAuthHandler: This indicates Redirect URI in Google Cloud Console is WRONG!')
-      console.error('ClerkAuthHandler: Redirect URI should be: https://meet-hound-54.clerk.accounts.dev/v1/oauth_callback')
-      console.error('ClerkAuthHandler: NOT: http://localhost:5173 or any localhost URL!')
+    // Google/Facebook вернули на localhost, минуя Clerk — сразу показываем модалку
+    if (oauthRedirectStarted && !hasOAuthParams && !isSignedIn && !timeoutTriggeredRef.current) {
+      timeoutTriggeredRef.current = true
+      sessionStorage.removeItem(oauthRedirectKey)
+      setOauthError({
+        title: 'Не удалось войти через Google',
+        message: 'Вы ещё не зарегистрированы на нашем сайте. Нажмите «Понятно», затем выберите «Регистрация» и зарегистрируйтесь через Google, email, Telegram или WhatsApp.',
+      })
+      return
     }
 
     // Если пользователь авторизован и есть данные
@@ -336,19 +340,18 @@ const ClerkAuthHandler = () => {
           return
         }
         
-        // Если превысили лимит попыток
+        // Если превысили лимит попыток — показываем модалку пользователю
         if (attempts >= maxAttempts) {
           clearInterval(checkInterval)
+          if (!timeoutTriggeredRef.current) {
+            timeoutTriggeredRef.current = true
+            sessionStorage.removeItem(oauthRedirectKey)
+            setOauthError({
+              title: 'Вход не завершён',
+              message: 'Не удалось войти через соцсеть. Вы можете зарегистрироваться на сайте: нажмите «Понятно», выберите «Регистрация» и войдите через Google, email, Telegram или WhatsApp.',
+            })
+          }
           console.error('ClerkAuthHandler: Timeout waiting for user data after OAuth redirect')
-          console.error('ClerkAuthHandler: Possible issues:')
-          console.error('1. Redirect URIs in Google/Facebook are incorrect')
-          console.error('2. Redirect URIs should point to Clerk domain (e.g., https://YOUR_APP.clerk.accounts.dev/v1/oauth_callback)')
-          console.error('3. Check Clerk Dashboard → Domains to find your Clerk domain')
-          console.error('4. Current URL:', window.location.href)
-          console.error('5. Check if you were redirected to Clerk domain after Google auth')
-          console.error('6. Expected flow: Google → Clerk domain → Your app')
-          console.error('7. If you were NOT redirected to Clerk domain, Redirect URI in Google is wrong')
-          console.error('8. Detailed troubleshooting guide: See TROUBLESHOOTING_OAUTH.md')
         }
       }, 500)
       
@@ -359,7 +362,25 @@ const ClerkAuthHandler = () => {
     }
   }, [isSignedIn, user, userLoaded, authLoaded, session, searchParams, navigate, hasProcessed])
 
-  return null
+  const handleOauthErrorClose = () => {
+    setOauthError(null)
+    timeoutTriggeredRef.current = false
+  }
+
+  return (
+    <>
+      {oauthError && (
+        <AuthAlertModal
+          isOpen
+          onClose={handleOauthErrorClose}
+          variant="error"
+          title={oauthError.title}
+          message={oauthError.message}
+          buttonText="Понятно"
+        />
+      )}
+    </>
+  )
 }
 
 export default ClerkAuthHandler

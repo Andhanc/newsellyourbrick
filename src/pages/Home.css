@@ -36,7 +36,7 @@
 }
 
 .home-page .menu-dropdown {
-  top: calc(20px + 63px + 50px) !important; /* padding-top хедера + высота хедера + отступ */
+  top: calc(20px + 65px + 8px) !important; /* под хедером с небольшим отступом */
 }
 
 @media (max-width: 768px) {

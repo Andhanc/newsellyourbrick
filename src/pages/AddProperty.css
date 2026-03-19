@@ -5147,6 +5147,17 @@
   margin: 0 0 20px 0;
 }
 
+/* Шаг 1: только 7 обязательных документов по долгу */
+.documents-debt-required-step {
+  margin-bottom: 24px;
+}
+
+.documents-debt-required-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
 /* Сетка 2×3 для документов по долгу */
 .documents-debt-grid {
   display: grid;

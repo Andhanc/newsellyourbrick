@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { verifyTelegramAuth } from '../services/authService'
 import { showNotification } from '../utils/toastHelper'
+import AuthAlertModal from '../components/AuthAlertModal'
 
 /**
  * Страница, на которую Telegram редиректит после успешного нажатия "Log in with Telegram".
@@ -11,7 +12,9 @@ import { showNotification } from '../utils/toastHelper'
 export default function TelegramAuthCallback() {
   const navigate = useNavigate()
   const [status, setStatus] = useState('loading') // 'loading' | 'success' | 'error'
+  const [errorVariant, setErrorVariant] = useState('error')
   const [errorMessage, setErrorMessage] = useState('')
+  const [errorTitle, setErrorTitle] = useState('')
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
@@ -20,7 +23,9 @@ export default function TelegramAuthCallback() {
 
     if (!id || !hash) {
       setStatus('error')
-      setErrorMessage('Не получены данные от Telegram. Попробуйте войти снова.')
+      setErrorVariant('error')
+      setErrorTitle('Не удалось войти через Telegram')
+      setErrorMessage('Данные от Telegram не получены. Попробуйте войти снова или выберите другой способ — email, WhatsApp или Google.')
       return
     }
 
@@ -36,7 +41,9 @@ export default function TelegramAuthCallback() {
     })
     if (!telegramData.auth_date) {
       setStatus('error')
-      setErrorMessage('Не получены данные от Telegram. Попробуйте войти снова.')
+      setErrorVariant('error')
+      setErrorTitle('Не удалось войти через Telegram')
+      setErrorMessage('Данные от Telegram не получены. Попробуйте войти снова или выберите другой способ входа.')
       return
     }
 
@@ -62,15 +69,33 @@ export default function TelegramAuthCallback() {
           window.location.href = redirectPath
         } else {
           setStatus('error')
-          setErrorMessage(result.error || 'Ошибка входа через Telegram')
+          if (result.code === 'ALREADY_REGISTERED') {
+            setErrorVariant('already_registered')
+            setErrorTitle('Вы уже зарегистрированы')
+            setErrorMessage('Этот аккаунт Telegram уже привязан к вашему профилю. На главной выберите «Вход» и войдите через Telegram.')
+          } else if (result.code === 'NEED_REGISTER') {
+            setErrorVariant('need_register')
+            setErrorTitle('Вы не зарегистрированы на сайте')
+            setErrorMessage('Сначала зарегистрируйтесь: на главной выберите «Регистрация», затем снова войдите через Telegram.')
+          } else {
+            setErrorVariant('error')
+            setErrorTitle('Не удалось войти через Telegram')
+            setErrorMessage(result.error || 'Попробуйте ещё раз или войдите через email, WhatsApp или другой способ.')
+          }
         }
       })
       .catch((err) => {
         console.error('TelegramAuthCallback error:', err)
         setStatus('error')
-        setErrorMessage(err.message || 'Не удалось войти через Telegram')
+        setErrorVariant('error')
+        setErrorTitle('Не удалось войти через Telegram')
+        setErrorMessage(err.message || 'Попробуйте ещё раз или войдите через email, WhatsApp или Google.')
       })
   }, [navigate])
+
+  const handleAlertClose = () => {
+    navigate('/', { replace: true })
+  }
 
   if (status === 'loading') {
     return (
@@ -90,32 +115,17 @@ export default function TelegramAuthCallback() {
 
   if (status === 'error') {
     return (
-      <div style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        minHeight: '60vh',
-        padding: 24,
-        textAlign: 'center'
-      }}>
-        <p style={{ fontSize: 18, color: '#c33', marginBottom: 16 }}>{errorMessage}</p>
-        <button
-          type="button"
-          onClick={() => navigate('/', { replace: true })}
-          style={{
-            padding: '10px 20px',
-            fontSize: 16,
-            cursor: 'pointer',
-            backgroundColor: '#0ABAB5',
-            color: '#fff',
-            border: 'none',
-            borderRadius: 8
-          }}
-        >
-          На главную
-        </button>
-      </div>
+      <>
+        <AuthAlertModal
+          isOpen
+          onClose={handleAlertClose}
+          variant={errorVariant}
+          title={errorTitle}
+          message={errorMessage}
+          buttonText="На главную"
+        />
+        <div style={{ minHeight: '40vh' }} />
+      </>
     )
   }
 

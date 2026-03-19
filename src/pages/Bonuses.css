@@ -34,7 +34,7 @@
 }
 
 .bonuses-page .menu-dropdown {
-  top: calc(20px + 63px + 50px) !important;
+  top: calc(20px + 63px + 8px) !important;
 }
 
 @media (max-width: 768px) {
@@ -979,10 +979,23 @@
 .bonuses-confetti__piece:nth-child(8) { --n: 8; left: 75%; }
 .bonuses-confetti__piece:nth-child(9) { --n: 9; left: 85%; }
 .bonuses-confetti__piece:nth-child(10) { --n: 10; left: 95%; }
-.bonuses-confetti__piece:nth-child(n+11) {
-  left: calc((var(--n) % 20) * 5%);
-  animation-delay: calc((var(--n) % 15) * 0.06s);
-}
+/* Повтор паттерна для 11+ (в CSS нет modulo, задаём явно) */
+.bonuses-confetti__piece:nth-child(11) { left: 5%; animation-delay: 0.06s; }
+.bonuses-confetti__piece:nth-child(12) { left: 15%; animation-delay: 0.12s; }
+.bonuses-confetti__piece:nth-child(13) { left: 25%; animation-delay: 0.18s; }
+.bonuses-confetti__piece:nth-child(14) { left: 35%; animation-delay: 0.24s; }
+.bonuses-confetti__piece:nth-child(15) { left: 45%; animation-delay: 0.3s; }
+.bonuses-confetti__piece:nth-child(16) { left: 55%; animation-delay: 0.36s; }
+.bonuses-confetti__piece:nth-child(17) { left: 65%; animation-delay: 0.42s; }
+.bonuses-confetti__piece:nth-child(18) { left: 75%; animation-delay: 0.48s; }
+.bonuses-confetti__piece:nth-child(19) { left: 85%; animation-delay: 0.54s; }
+.bonuses-confetti__piece:nth-child(20) { left: 95%; animation-delay: 0.6s; }
+.bonuses-confetti__piece:nth-child(21) { left: 5%; animation-delay: 0.66s; }
+.bonuses-confetti__piece:nth-child(22) { left: 15%; animation-delay: 0.72s; }
+.bonuses-confetti__piece:nth-child(23) { left: 25%; animation-delay: 0.78s; }
+.bonuses-confetti__piece:nth-child(24) { left: 35%; animation-delay: 0.84s; }
+.bonuses-confetti__piece:nth-child(25) { left: 45%; animation-delay: 0.9s; }
+.bonuses-confetti__piece:nth-child(n+26) { left: 55%; animation-delay: 0.06s; }
 
 @keyframes confettiFall {
   0% {

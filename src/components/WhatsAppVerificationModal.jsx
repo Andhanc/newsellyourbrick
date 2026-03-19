@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { FiX, FiCheck } from 'react-icons/fi'
+import { FiX, FiCheck, FiInfo, FiAlertCircle } from 'react-icons/fi'
 import { FaWhatsapp } from 'react-icons/fa'
 import { sendWhatsAppVerificationCode, verifyWhatsAppCode, validatePhoneNumber } from '../services/authService'
 import PhoneInput from './PhoneInput'
@@ -17,6 +17,7 @@ const WhatsAppVerificationModal = ({ isOpen, onClose, onSuccess, phoneNumber, ro
   const [code, setCode] = useState(['', '', '', '', '', ''])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
+  const [errorCode, setErrorCode] = useState(null) // 'ALREADY_REGISTERED' | 'NEED_REGISTER'
   const [step, setStep] = useState('phone') // 'phone' или 'code'
   const [countdown, setCountdown] = useState(0)
   const inputRefs = useRef([])
@@ -42,10 +43,10 @@ const WhatsAppVerificationModal = ({ isOpen, onClose, onSuccess, phoneNumber, ro
   const handlePhoneChange = (e) => {
     const value = e.target.value
     setPhone(value)
-    // Сохраняем номер в цифровом формате (убираем все кроме цифр)
     const digits = value.replace(/\D/g, '')
     setPhoneDigits(digits)
     setError('')
+    setErrorCode(null)
   }
 
   const handleSendCode = async () => {
@@ -184,14 +185,22 @@ const WhatsAppVerificationModal = ({ isOpen, onClose, onSuccess, phoneNumber, ro
       const result = await verifyWhatsAppCode(digitsToVerify, codeString, role, mode)
 
       if (result.success) {
-        // Успешная авторизация
         if (onSuccess) {
           onSuccess(result.user)
         }
         onClose()
       } else {
-        setError(result.error || t('invalidCode') || 'Неверный код. Попробуйте еще раз.')
-        // Очищаем поля ввода
+        let message = result.error || t('invalidCode') || 'Неверный код. Попробуйте еще раз.'
+        if (result.code === 'ALREADY_REGISTERED') {
+          message = result.error || 'Вы уже зарегистрированы с этим номером. Закройте окно и выберите «Вход», чтобы войти.'
+          setErrorCode('ALREADY_REGISTERED')
+        } else if (result.code === 'NEED_REGISTER') {
+          message = result.error || 'Вы не зарегистрированы на сайте. Закройте окно и выберите «Регистрация», затем войдите через WhatsApp.'
+          setErrorCode('NEED_REGISTER')
+        } else {
+          setErrorCode(null)
+        }
+        setError(message)
         setCode(['', '', '', '', '', ''])
         inputRefs.current[0]?.focus()
       }
@@ -239,8 +248,24 @@ const WhatsAppVerificationModal = ({ isOpen, onClose, onSuccess, phoneNumber, ro
         </div>
 
         {error && (
-          <div className="whatsapp-verification-modal__error">
-            {error}
+          <div className={`whatsapp-verification-modal__error ${errorCode ? 'whatsapp-verification-modal__error--alert' : ''}`}>
+            {errorCode === 'ALREADY_REGISTERED' && (
+              <div className="whatsapp-verification-modal__error-head">
+                <FiAlertCircle size={22} aria-hidden />
+                <span>Вы уже зарегистрированы</span>
+              </div>
+            )}
+            {errorCode === 'NEED_REGISTER' && (
+              <div className="whatsapp-verification-modal__error-head">
+                <FiInfo size={22} aria-hidden />
+                <span>Вы не зарегистрированы на сайте</span>
+              </div>
+            )}
+            {errorCode ? (
+              <p className="whatsapp-verification-modal__error-text">{error}</p>
+            ) : (
+              error
+            )}
           </div>
         )}
 
@@ -321,6 +346,7 @@ const WhatsAppVerificationModal = ({ isOpen, onClose, onSuccess, phoneNumber, ro
               setStep('phone')
               setCode(['', '', '', '', '', ''])
               setError('')
+              setErrorCode(null)
             }}
             style={{ display: step === 'code' ? 'block' : 'none' }}
           >

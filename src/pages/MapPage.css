@@ -1,292 +1,472 @@
-.map-page {
+/* Страница карты в стиле скрина: список слева, карта справа */
+
+.map-page-root {
   min-height: 100vh;
+  height: 100vh;
+  width: 100%;
+  overflow: hidden;
+}
+
+.map-page-booking {
   display: flex;
   flex-direction: column;
+  height: 100%;
+  min-height: 100vh;
+  max-height: 100vh;
+  width: 100%;
   margin: 0;
   padding: 0;
+  overflow: hidden;
 }
 
-.map-page__top-bar {
-  padding: 16px 20px 8px;
-  z-index: 10;
+.map-page-main {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
 }
 
-.map-page__back {
+.map-page-list {
+  width: 55%;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border-right: 1px solid #ebebeb;
+  overflow: hidden;
+}
+
+.map-list-header {
+  flex-shrink: 0;
+  padding: 16px 24px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  background: #fff;
+  border-bottom: 1px solid #ebebeb;
+}
+
+.map-list-count {
+  margin: 0;
+  font-size: 15px;
+  color: #222;
+}
+
+.map-list-count strong {
+  font-weight: 700;
+}
+
+.map-list-count--secondary {
+  font-size: 14px;
+  color: #6b7280;
+}
+
+.map-sort-pills {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.map-sort-pill--filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.map-sort-pill {
+  padding: 10px 16px;
+  border: none;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  background: #ebebeb;
+  color: #222;
+  transition: background 0.2s, color 0.2s;
+}
+
+.map-sort-pill:hover {
+  background: #ddd;
+}
+
+.map-sort-pill.active {
+  background: #222;
+  color: #fff;
+}
+
+.map-list-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 0;
+  -webkit-overflow-scrolling: touch;
+}
+
+.map-list-loading,
+.map-list-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 48px 24px;
+  color: #6b7280;
+  text-align: center;
+}
+
+.map-list-loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #e5e7eb;
+  border-top-color: #0abab5;
+  border-radius: 50%;
+  animation: map-spin 0.8s linear infinite;
+}
+
+@keyframes map-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Верхняя панель с кнопкой «Назад» — одна на все экраны */
+.map-page-back-bar {
+  flex-shrink: 0;
+  padding: 12px 20px;
+  background: #fff;
+  border-bottom: 1px solid #ebebeb;
+}
+
+.map-page-back-btn {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 16px;
-  background: #ffffff;
-  border-radius: 999px;
+  padding: 10px 16px;
   border: 1px solid #e5e7eb;
-  font-size: 14px;
-  color: #4b5563;
+  border-radius: 999px;
+  background: #fff;
+  font-size: 15px;
+  font-weight: 500;
+  color: #374151;
   cursor: pointer;
-  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.18);
-  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  transition: border-color 0.2s, color 0.2s, box-shadow 0.2s;
 }
 
-.map-page__back:hover {
+.map-page-back-btn:hover {
   border-color: #0abab5;
   color: #0abab5;
-  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.2);
+  box-shadow: 0 2px 8px rgba(10, 186, 181, 0.2);
 }
 
-.map-container {
+.map-page-back-btn:focus-visible {
+  outline: 2px solid #0abab5;
+  outline-offset: 2px;
+}
+
+/* Карточка объявления (как на скрине) */
+.map-booking-card {
   display: flex;
-  min-height: 100vh;
-  width: 100%;
-  flex: 1;
-  position: relative;
-}
-
-.map-sidebar {
-  width: 50%;
-  background: #fff;
-  border-left: 1px solid #e0e0e0;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  min-height: 100vh;
-  flex-shrink: 0;
-  position: relative;
-  z-index: 100;
-}
-
-.map-filters {
-  padding: 20px;
-  border-bottom: 1px solid #e0e0e0;
-  background: #f9f9f9;
-  flex-shrink: 0;
-}
-
-.filter-section {
-  margin-bottom: 16px;
-}
-
-.filter-section:last-child {
-  margin-bottom: 0;
-}
-
-.filter-label {
-  display: block;
-  font-size: 14px;
-  font-weight: 600;
-  color: #333;
-  margin-bottom: 8px;
-}
-
-.filter-input,
-.filter-select {
-  width: 100%;
-  padding: 10px 12px;
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
-  font-size: 14px;
-  background: #fff;
-  transition: border-color 0.2s;
-}
-
-.filter-input:focus,
-.filter-select:focus {
-  outline: none;
-  border-color: #4A90E2;
-}
-
-.filter-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-}
-
-.filters-button-map {
-  width: auto;
-  padding: 10px 20px;
-  background: #333;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 13px;
-  font-weight: 600;
+  gap: 16px;
+  padding: 20px 24px;
+  border-bottom: 1px solid #ebebeb;
   cursor: pointer;
-  margin-top: 12px;
-  transition: background 0.2s;
-  align-self: flex-start;
+  transition: background 0.15s;
+  align-items: flex-start;
+  text-align: left;
 }
 
-.filters-button-map:hover {
-  background: #4A90E2;
+.map-booking-card:hover {
+  background: #f7f7f7;
 }
 
-.map-results-count {
-  padding: 16px 20px;
-  font-size: 14px;
-  color: #666;
-  border-bottom: 1px solid #e0e0e0;
-  background: #fff;
+.map-booking-card.selected {
+  background: #f0f8ff;
+}
+
+.map-booking-card__media {
   flex-shrink: 0;
 }
 
-.map-properties-list {
-  flex: 1;
-  overflow-y: auto;
-  overflow-x: hidden;
-  padding: 12px;
-  min-height: 0;
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
-}
-
-.map-property-card {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  padding: 12px;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.2s;
-  border: 1px solid #e5e7eb;
-  background: #ffffff;
-  width: 100%;
-  max-width: 100%;
-}
-
-.map-property-card:hover {
-  background: #f9f9f9;
-  border-color: #e0e0e0;
-}
-
-.map-property-card.selected {
-  background: #f0f7ff;
-  border-color: #4A90E2;
-}
-
-.map-property-images {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  width: 100%;
-}
-
-.map-property-main-image {
+.map-booking-card__img-wrap {
   position: relative;
-  width: 100%;
+  width: 280px;
   height: 200px;
-  border-radius: 8px;
+  border-radius: 12px;
   overflow: hidden;
-  flex-shrink: 0;
+  background: #eee;
 }
 
-.map-property-main-image img {
+.map-booking-card__img-wrap img {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
-.map-property-thumbnails {
-  display: flex;
-  gap: 6px;
-  width: 100%;
-}
-
-.map-property-thumbnail {
-  flex: 1;
-  height: 60px;
-  border-radius: 6px;
-  overflow: hidden;
-}
-
-.map-property-thumbnail img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.map-favorite {
+.map-booking-card__fav {
   position: absolute;
-  top: 8px;
-  right: 8px;
-  background: rgba(255, 255, 255, 0.9);
+  top: 12px;
+  left: 12px;
+  width: 28px;
+  height: 28px;
   border: none;
   border-radius: 50%;
-  width: 32px;
-  height: 32px;
+  background: rgba(255, 255, 255, 0.95);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: background 0.2s;
-  z-index: 2;
+  color: #222;
+  transition: color 0.2s, transform 0.2s;
 }
 
-.map-favorite:hover {
-  background: rgba(255, 255, 255, 1);
+.map-booking-card__fav:hover {
+  color: #e00;
+  transform: scale(1.05);
 }
 
-.map-favorite svg {
-  color: #666;
-  transition: color 0.2s;
+.map-booking-card__fav.active {
+  color: #e00;
 }
 
-.map-favorite:hover svg,
-.map-favorite.active svg {
-  color: #ff4444;
-  fill: #ff4444;
+.map-booking-card__fav.active svg {
+  fill: currentColor;
 }
 
-.map-property-info {
-  flex: 1;
+.map-booking-card__dots {
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
   display: flex;
-  flex-direction: column;
   gap: 4px;
 }
 
-.map-property-price {
+.map-booking-card__dots span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.map-booking-card__dots span.active {
+  background: #fff;
+}
+
+.map-booking-card__body {
+  flex: 1;
+  min-width: 0;
+  padding-top: 2px;
+}
+
+.map-booking-card__top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.map-booking-card__superhost {
+  font-size: 12px;
+  font-weight: 600;
+  color: #c13584;
+  margin-right: 4px;
+}
+
+.map-booking-card__type {
+  font-size: 14px;
+  color: #222;
+}
+
+.map-booking-card__info {
+  padding: 0;
+  border: none;
+  background: none;
+  color: #717171;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+}
+
+.map-booking-card__title {
+  margin: 0 0 8px 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #222;
+  line-height: 1.3;
+}
+
+.map-booking-card__meta {
+  margin: 0 0 8px 0;
+  font-size: 14px;
+  color: #222;
+}
+
+.map-booking-card__location {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 10px;
+  font-size: 14px;
+  color: #717171;
+}
+
+.map-booking-card__location-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.map-booking-card__location-icon {
+  flex-shrink: 0;
+  color: #717171;
+}
+
+.map-booking-card__rating {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.map-booking-card__rating-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+  background: #008a05;
+}
+
+.map-booking-card__reviews {
+  font-size: 14px;
+  color: #222;
+}
+
+.map-booking-card__location-score {
+  font-size: 14px;
+  color: #717171;
+}
+
+.map-booking-card__right {
+  flex-shrink: 0;
+  width: 180px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.map-booking-card__price-block {
+  text-align: right;
+}
+
+.map-booking-card__price {
+  margin: 0 0 2px 0;
   font-size: 18px;
   font-weight: 700;
-  color: #333;
+  color: #222;
 }
 
-.map-property-details {
-  font-size: 13px;
-  color: #666;
+.map-booking-card__price span {
+  font-weight: 400;
+  font-size: 16px;
+  color: #222;
 }
 
-.map-property-location {
-  font-size: 13px;
-  color: #999;
-  margin-top: 4px;
+.map-booking-card__total {
+  margin: 0;
+  font-size: 14px;
+  color: #717171;
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
-.map-property-timer {
-  margin-top: 8px;
+.map-booking-card__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: flex-end;
 }
 
-.map-view {
-  flex: 1;
-  position: sticky;
-  top: 0;
+.map-booking-card__badge {
+  font-size: 12px;
+  color: #222;
+  white-space: nowrap;
+}
+
+.map-booking-card__badge.viewing {
+  color: #0066cc;
+}
+
+.map-booking-card__badge.cashback {
+  background: #e00;
+  color: #fff;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-weight: 500;
+}
+
+/* Блок карты справа */
+.map-page-map-wrap {
+  position: relative;
+  width: 45%;
+  flex-shrink: 0;
+  height: 100vh;
+  min-height: 0;
   background: #e8e8e8;
   overflow: hidden;
-  height: 100vh;
-  width: 50%;
-  min-width: 0;
-  align-self: flex-start;
 }
 
-.maplibre-map {
+.map-page-map {
   width: 100%;
   height: 100%;
-  z-index: 1;
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
+  min-height: 300px;
 }
 
-/* Стили для MapLibre GL */
+.map-page-map-wrap--fullscreen {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  min-height: 100%;
+  z-index: 9999;
+}
+
+.map-fullscreen-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 10;
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 50%;
+  background: #fff;
+  font-size: 24px;
+  line-height: 1;
+  color: #222;
+  cursor: pointer;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.map-fullscreen-close:hover {
+  background: #f0f0f0;
+}
+
 .maplibregl-map {
   width: 100% !important;
   height: 100% !important;
@@ -301,482 +481,193 @@
 }
 
 .maplibregl-ctrl-group button {
-  background-color: #fff !important;
+  background: #fff !important;
   color: #333 !important;
   border: none !important;
-  width: 40px !important;
-  height: 40px !important;
-  font-size: 18px !important;
-}
-
-.maplibregl-ctrl-group button:hover {
-  background-color: #f5f5f5 !important;
+  width: 36px !important;
+  height: 36px !important;
 }
 
 .maplibregl-ctrl-attrib {
   display: none !important;
 }
 
-/* Стили для кастомных маркеров */
-.custom-marker {
-  background: transparent !important;
-  border: none !important;
+/* Кнопка «Раскрыть карту» */
+.map-expand-btn {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  background: #fff;
+  border: none;
+  border-radius: 24px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #222;
+  cursor: pointer;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+  z-index: 10;
+  transition: box-shadow 0.2s, background 0.2s;
 }
 
-.marker-content {
-  background: #4A90E2;
-  color: white;
+.map-expand-btn:hover {
+  background: #f7f7f7;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+/* Маркеры цен на карте — белые пилюли */
+.map-price-marker {
   padding: 6px 12px;
-  border-radius: 20px;
-  font-size: 12px;
-  font-weight: 600;
-  white-space: nowrap;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-  cursor: pointer;
-  transition: all 0.2s;
-  text-align: center;
-}
-
-.custom-marker.active .marker-content {
-  background: #ff4444;
-  transform: scale(1.15);
-  box-shadow: 0 4px 12px rgba(255, 68, 68, 0.5);
-  z-index: 1000;
-}
-
-.marker-content:hover {
-  background: #357abd;
-  transform: scale(1.1);
-}
-
-/* Стили для popup MapLibre */
-.maplibregl-popup {
-  max-width: 300px;
-}
-
-.maplibregl-popup-content {
-  padding: 0;
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-}
-
-.maplibregl-popup-close-button {
-  display: none;
-}
-
-.map-popup {
-  display: flex;
-  flex-direction: column;
-}
-
-.map-popup-image {
-  width: 100%;
-  height: 150px;
-  overflow: hidden;
-}
-
-.map-popup-image img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.map-popup-info {
-  padding: 12px;
   background: #fff;
-}
-
-.map-popup-price {
-  font-size: 18px;
-  font-weight: 700;
-  color: #333;
-  margin-bottom: 6px;
-}
-
-.map-popup-title {
-  font-size: 14px;
-  font-weight: 600;
-  color: #333;
-  margin-bottom: 4px;
-  line-height: 1.3;
-}
-
-.map-popup-location {
-  font-size: 12px;
-  color: #666;
-  margin-bottom: 6px;
-  line-height: 1.4;
-}
-
-.map-popup-details {
-  font-size: 12px;
-  color: #999;
-}
-
-.custom-popup .leaflet-popup-tip {
-  background: #fff;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.map-tabs {
-  position: absolute;
-  top: 20px;
-  right: 20px;
-  display: flex;
-  background: #fff;
-  border-radius: 8px;
-  padding: 4px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
-  z-index: 1000;
-  gap: 4px;
-}
-
-.map-controls {
-  position: absolute;
-  top: 20px;
-  left: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  z-index: 1000;
-}
-
-.map-style-control {
-  background: #fff;
-  border-radius: 8px;
-  padding: 12px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.map-style-control label {
-  font-size: 12px;
-  font-weight: 600;
-  color: #666;
-}
-
-.style-select {
-  padding: 8px 12px;
-  border: 1px solid #e0e0e0;
-  border-radius: 6px;
-  font-size: 14px;
-  background: #fff;
-  cursor: pointer;
-  transition: border-color 0.2s;
-}
-
-.style-select:focus {
-  outline: none;
-  border-color: #4A90E2;
-}
-
-.map-3d-toggle {
-  background: #fff;
-  border: none;
-  border-radius: 8px;
-  padding: 12px 20px;
-  font-size: 14px;
-  font-weight: 600;
-  color: #333;
-  cursor: pointer;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
-  transition: all 0.2s;
-}
-
-.map-3d-toggle:hover {
-  background: #f5f5f5;
-}
-
-.map-3d-toggle.active {
-  background: #4A90E2;
-  color: #fff;
-}
-
-.map-3d-toggle.active:hover {
-  background: #357abd;
-}
-
-.map-control-toggle {
-  background: #fff;
-  border: none;
-  border-radius: 8px;
-  padding: 12px 20px;
-  font-size: 14px;
-  font-weight: 600;
-  color: #333;
-  cursor: pointer;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
-  transition: all 0.2s;
-}
-
-.map-control-toggle:hover {
-  background: #f5f5f5;
-}
-
-.map-control-toggle.active {
-  background: #28a745;
-  color: #fff;
-}
-
-.map-control-toggle.active:hover {
-  background: #218838;
-}
-
-.control-mode-controls {
-  position: absolute;
-  bottom: 20px;
-  left: 20px;
-  background: rgba(255, 255, 255, 0.95);
-  border-radius: 12px;
-  padding: 16px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
-  z-index: 1001;
-  max-width: 300px;
-}
-
-.control-instructions {
-  margin-bottom: 16px;
-  font-size: 12px;
-  line-height: 1.6;
-  color: #333;
-}
-
-.control-instructions p {
-  margin: 4px 0;
-}
-
-.control-instructions strong {
-  color: #4A90E2;
+  color: #222;
   font-size: 13px;
-}
-
-.control-buttons {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-}
-
-.control-buttons-row {
-  display: flex;
-  gap: 8px;
-  justify-content: center;
-}
-
-.control-btn {
-  width: 50px;
-  height: 50px;
-  border: none;
-  border-radius: 8px;
-  background: #fff;
-  color: #333;
-  font-size: 20px;
-  font-weight: bold;
-  cursor: pointer;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  transition: all 0.2s;
-  user-select: none;
-  touch-action: none;
-}
-
-.walk-btn:active,
-.walk-btn:focus {
-  background: #4A90E2;
-  color: #fff;
-  transform: scale(0.95);
-  outline: none;
-}
-
-.control-forward {
-  order: 1;
-}
-
-.control-buttons-row {
-  order: 2;
-}
-
-.mapillary-panel {
-  position: absolute;
-  bottom: 20px;
-  right: 20px;
-  background: rgba(255, 255, 255, 0.98);
-  border-radius: 12px;
-  padding: 20px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-  z-index: 1002;
-  max-width: 500px;
-  width: 90%;
-  max-height: 80vh;
-  overflow-y: auto;
-}
-
-.mapillary-close {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  background: #fff;
-  border: none;
-  border-radius: 50%;
-  width: 32px;
-  height: 32px;
-  font-size: 24px;
-  line-height: 1;
-  cursor: pointer;
-  color: #666;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.mapillary-close:hover {
-  background: #f5f5f5;
-  color: #333;
-}
-
-.mapillary-content {
-  margin-top: 10px;
-}
-
-.mapillary-content h3 {
-  margin: 0 0 8px 0;
-  font-size: 18px;
-  color: #333;
-}
-
-.mapillary-content p {
-  margin: 0 0 16px 0;
-  font-size: 14px;
-  color: #666;
-}
-
-.mapillary-content iframe {
-  border-radius: 8px;
-  margin-bottom: 12px;
-}
-
-.mapillary-link {
-  display: inline-block;
-  padding: 10px 20px;
-  background: #4A90E2;
-  color: #fff;
-  text-decoration: none;
-  border-radius: 8px;
-  font-size: 14px;
   font-weight: 600;
-  transition: background 0.2s;
-}
-
-.mapillary-link:hover {
-  background: #357abd;
-}
-
-@media (max-width: 768px) {
-  .control-mode-controls {
-    bottom: 10px;
-    left: 10px;
-    right: 10px;
-    max-width: none;
-  }
-  
-  .control-btn {
-    width: 60px;
-    height: 60px;
-    font-size: 24px;
-  }
-
-  .mapillary-panel {
-    bottom: 10px;
-    right: 10px;
-    left: 10px;
-    width: auto;
-    max-width: none;
-  }
-
-  /* Мобильная версия: даём карте больше «воздуха»,
-     компактные переключатели и вкладки */
-  .map-tabs {
-    top: 10px;
-    left: 10px;
-    right: auto;
-    padding: 2px 4px;
-    border-radius: 999px;
-    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.25);
-  }
-
-  .map-controls {
-    top: auto;
-    bottom: 10px;
-    left: 10px;
-    right: auto;
-    flex-direction: row;
-    gap: 8px;
-  }
-
-  /* Прячем тяжёлую панель выбора стиля карты на мобиле,
-     чтобы она не закрывала саму карту */
-  .map-style-control {
-    display: none;
-  }
-
-  .map-3d-toggle,
-  .map-control-toggle {
-    padding: 8px 12px;
-    font-size: 12px;
-    box-shadow: 0 3px 10px rgba(15, 23, 42, 0.3);
-  }
-}
-
-.map-tab {
-  padding: 10px 20px;
-  border: none;
-  background: transparent;
-  color: #666;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  border-radius: 6px;
-  transition: all 0.2s;
+  border-radius: 999px;
   white-space: nowrap;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(0, 0, 0, 0.08);
 }
 
-.map-tab:hover {
-  background: #f5f5f5;
-  color: #333;
-}
-
-.map-tab.active {
-  background: #333;
-  color: white;
+.map-price-marker.active {
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+  border-color: #222;
+  transform: scale(1.08);
 }
 
 @media (max-width: 1024px) {
-  .map-page {
-    min-height: auto;
-  }
-
-  .map-container {
+  .map-page-booking {
     flex-direction: column;
-    height: auto;
-    min-height: auto;
   }
 
-  .map-sidebar {
+  .map-page-list {
     width: 100%;
-    height: auto;
-    min-height: auto;
+    max-height: 50vh;
   }
 
-  .map-view {
-    height: 40vh;
+  .map-page-map-wrap {
     width: 100%;
-    position: relative;
-    top: auto;
-    min-height: 40vh;
+    min-height: 50vh;
+  }
+
+  .map-booking-card {
+    flex-wrap: wrap;
+  }
+
+  .map-booking-card__img-wrap {
+    width: 100%;
+    max-width: 280px;
+    height: 180px;
+  }
+
+  .map-booking-card__right {
+    width: 100%;
+    align-items: flex-start;
+    flex-direction: row;
+    justify-content: space-between;
   }
 }
 
+/* Мобильная версия как на скрине: верхняя панель, фильтры, карта сверху, список снизу */
+@media (max-width: 768px) {
+  .map-page-root {
+    height: auto;
+    min-height: 100vh;
+    overflow: visible;
+  }
+
+  .map-page-booking {
+    flex-direction: column;
+    min-height: 100vh;
+    height: auto;
+    max-height: none;
+    overflow: visible;
+  }
+
+  .map-page-main {
+    flex-direction: column;
+  }
+
+  .map-page-map-wrap {
+    order: -1;
+    width: 100%;
+    height: 58vh;
+    min-height: 280px;
+    flex-shrink: 0;
+  }
+
+  .map-page-list {
+    order: 0;
+    width: 100%;
+    max-height: none;
+    flex: 1 0 auto;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .map-list-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    padding: 16px;
+    border-bottom: 1px solid #ebebeb;
+  }
+
+  .map-list-count {
+    text-align: center;
+    font-size: 15px;
+  }
+
+  .map-sort-pills {
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .map-list-scroll {
+    flex: none;
+    min-height: 0;
+    overflow-y: visible;
+  }
+
+  .map-booking-card {
+    flex-wrap: wrap;
+    padding: 16px;
+    gap: 12px;
+  }
+
+  .map-booking-card__media {
+    width: 100%;
+  }
+
+  .map-booking-card__img-wrap {
+    width: 100%;
+    max-width: none;
+    height: 220px;
+    border-radius: 12px;
+  }
+
+  .map-booking-card__body {
+    width: 100%;
+  }
+
+  .map-booking-card__right {
+    width: 100%;
+    align-items: flex-start;
+    flex-direction: row;
+    justify-content: space-between;
+    flex-wrap: wrap;
+  }
+
+  .map-booking-card__title {
+    font-size: 16px;
+  }
+
+  .map-expand-btn {
+    top: 12px;
+    padding: 10px 16px;
+    font-size: 13px;
+  }
+}

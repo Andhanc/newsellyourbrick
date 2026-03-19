@@ -910,8 +910,9 @@ app.get('/api/users/role/:role', (req, res) => {
 });
 
 /**
- * POST /api/users - Создать нового пользователя
+ * POST /api/users - Создать нового пользователя (или вернуть существующего при совпадении email/телефона)
  * Поддерживает referrer_id для реферальной программы (Clerk/Google и др.)
+ * Если пользователь с таким email или phone_number уже есть — возвращаем его (200), дубликат не создаём.
  */
 app.post('/api/users', (req, res) => {
   try {
@@ -932,6 +933,26 @@ app.post('/api/users', (req, res) => {
         success: false, 
         error: 'Необходимо указать email или номер телефона' 
       });
+    }
+    
+    // Проверка на существующего пользователя: не создаём дубликаты по email или телефону
+    let existingUser = null;
+    if (userData.email) {
+      const emailLower = String(userData.email).toLowerCase().trim();
+      existingUser = userQueries.getByEmail(emailLower);
+    }
+    if (!existingUser && userData.phone_number) {
+      const phoneDigits = String(userData.phone_number).replace(/\D/g, '');
+      if (phoneDigits) {
+        existingUser = userQueries.getByPhone(phoneDigits);
+      }
+    }
+    if (existingUser) {
+      // Пользователь уже зарегистрирован — возвращаем его данные (вход, а не повторная регистрация)
+      userQueries.update(existingUser.id, { is_online: 1 });
+      const updated = userQueries.getById(existingUser.id);
+      const userWithoutPassword = removePasswordFromUser(updated);
+      return res.json({ success: true, data: userWithoutPassword });
     }
     
     // Если пароль передан, хешируем его перед сохранением
@@ -2025,6 +2046,14 @@ app.post('/api/auth/whatsapp', async (req, res) => {
     let user = userQueries.getByPhone(phone);
     
     if (user) {
+      // Режим регистрации: пользователь уже есть — нельзя регистрироваться повторно
+      if (mode === 'register') {
+        return res.status(409).json({
+          success: false,
+          error: 'Вы уже зарегистрированы с этим номером. Войдите в аккаунт.',
+          code: 'ALREADY_REGISTERED',
+        });
+      }
       // Проверяем, заблокирован ли пользователь
       if (user.is_blocked === 1) {
         return res.status(403).json({ 
@@ -2058,7 +2087,8 @@ app.post('/api/auth/whatsapp', async (req, res) => {
     if (mode === 'login') {
       return res.status(404).json({
         success: false,
-        error: 'Пользователь с таким номером не найден. Сначала зарегистрируйтесь через WhatsApp.'
+        error: 'Пользователь с таким номером не найден. Сначала зарегистрируйтесь через WhatsApp.',
+        code: 'NEED_REGISTER',
       });
     }
     
@@ -3751,10 +3781,11 @@ app.post('/api/users/:id/verify-email', async (req, res) => {
 
 /**
  * POST /api/auth/google - Авторизация через Google
+ * mode: 'login' | 'register' — при login не создаём нового; при register не разрешаем повторную регистрацию
  */
 app.post('/api/auth/google', async (req, res) => {
   try {
-    const { credential, access_token, userInfo } = req.body;
+    const { credential, access_token, userInfo, mode = 'register' } = req.body;
     
     let googleEmail = '';
     let googleName = '';
@@ -3793,6 +3824,15 @@ app.post('/api/auth/google', async (req, res) => {
     let user = userQueries.getByEmail(emailLower);
     
     if (user) {
+      // Режим регистрации: пользователь уже есть — нельзя регистрироваться повторно
+      if (mode === 'register') {
+        return res.status(409).json({ 
+          success: false, 
+          error: 'Вы уже зарегистрированы с этим аккаунтом Google. Войдите в аккаунт.',
+          code: 'ALREADY_REGISTERED'
+        });
+      }
+      
       // Проверяем, заблокирован ли пользователь
       if (user.is_blocked === 1) {
         return res.status(403).json({ 
@@ -3821,8 +3861,17 @@ app.post('/api/auth/google', async (req, res) => {
         }
       });
     } else {
-      // Пользователь не существует - создаем нового
-      const nameParts = googleName.split(' ');
+      // Режим входа: пользователя нет — нужно сначала зарегистрироваться
+      if (mode === 'login') {
+        return res.status(404).json({ 
+          success: false, 
+          error: 'Аккаунт с этим Google не найден. Сначала зарегистрируйтесь через Google.',
+          code: 'NEED_REGISTER'
+        });
+      }
+      
+      // Пользователь не существует - создаем нового (режим register)
+      const nameParts = (googleName || '').split(' ');
       const firstName = nameParts[0] || '';
       const lastName = nameParts.slice(1).join(' ') || '';
       
@@ -3942,6 +3991,14 @@ app.post('/api/auth/telegram', async (req, res) => {
     let user = userQueries.getByTelegramId(telegramId);
 
     if (user) {
+      // Режим регистрации: пользователь уже есть — нельзя регистрироваться повторно
+      if (mode === 'register') {
+        return res.status(409).json({
+          success: false,
+          error: 'Вы уже зарегистрированы с этим аккаунтом Telegram. Войдите в аккаунт.',
+          code: 'ALREADY_REGISTERED',
+        });
+      }
       if (user.is_blocked === 1) {
         return res.status(403).json({
           success: false,
@@ -3970,7 +4027,16 @@ app.post('/api/auth/telegram', async (req, res) => {
       });
     }
 
-    // Пользователя нет: при любом выборе (Войти / Регистрация) создаём аккаунт при первом входе через Telegram
+    // Режим входа: пользователя нет — нужно сначала зарегистрироваться
+    if (mode === 'login') {
+      return res.status(404).json({
+        success: false,
+        error: 'Аккаунт с этим Telegram не найден. Сначала зарегистрируйтесь через Telegram.',
+        code: 'NEED_REGISTER',
+      });
+    }
+
+    // Пользователя нет, режим регистрации: создаём аккаунт
     const fullName = [first_name, last_name].filter(Boolean).join(' ').trim() || username || `Telegram ${telegramId}`;
     const nameParts = fullName.split(' ');
     const firstName = nameParts[0] || '';

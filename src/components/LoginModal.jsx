@@ -10,6 +10,7 @@ import VerificationDocumentsModal from './VerificationDocumentsModal'
 import { registerWithEmail, loginWithEmail, validatePassword } from '../services/authService'
 import { getApiBaseUrl } from '../utils/apiConfig'
 import { showNotification } from '../utils/toastHelper'
+import GoogleLoginButton from './GoogleLoginButton'
 import AnimatedCharacters from './AnimatedCharacters'
 import './LoginModal.css'
 
@@ -320,51 +321,16 @@ const LoginModal = ({ isOpen, onClose }) => {
     }
   }
 
-  const handleGoogleAuth = async () => {
-    try {
-      setIsLoading(true)
-      setError('')
-      
-      console.log('LoginModal: Starting Google auth', { signInLoaded, signUpLoaded, isLogin, userRole })
-      
-      if (isLogin) {
-        if (signInLoaded && signIn) {
-          console.log('LoginModal: Redirecting to Google OAuth via Clerk')
-          // Устанавливаем флаг, что начался OAuth редирект
-          sessionStorage.setItem('clerk_oauth_redirect_started', 'true')
-          // Сохраняем роль для использования после авторизации
-          sessionStorage.setItem('clerk_oauth_user_role', userRole)
-          // Используем redirectUrl и redirectUrlComplete для правильного редиректа
-          await signIn.authenticateWithRedirect({
-            strategy: 'oauth_google',
-            redirectUrl: `${window.location.origin}/profile`,
-            redirectUrlComplete: `${window.location.origin}/profile`,
-          })
-        } else {
-          setError('Система авторизации не готова. Попробуйте обновить страницу.')
-          setIsLoading(false)
-        }
-      } else {
-        if (signUpLoaded && signUp) {
-          console.log('LoginModal: Redirecting to Google OAuth via Clerk')
-          // Устанавливаем флаг, что начался OAuth редирект
-          sessionStorage.setItem('clerk_oauth_redirect_started', 'true')
-          // Сохраняем роль для использования после регистрации
-          sessionStorage.setItem('clerk_oauth_user_role', userRole)
-          await signUp.authenticateWithRedirect({
-            strategy: 'oauth_google',
-            redirectUrl: `${window.location.origin}/profile`,
-            redirectUrlComplete: `${window.location.origin}/profile`,
-          })
-        } else {
-          setError('Система регистрации не готова. Попробуйте обновить страницу.')
-          setIsLoading(false)
-        }
-      }
-    } catch (error) {
-      console.error('LoginModal: Ошибка авторизации через Google:', error)
-      setError(`Не удалось войти через Google: ${error.message || 'Проверьте настройки'}`)
-      setIsLoading(false)
+  const handleGoogleSuccess = (user) => {
+    const role = user?.role || userRole || 'buyer'
+    onClose()
+    showNotification(`Добро пожаловать, ${user?.name || 'Пользователь'}!`)
+    if (role === 'seller' || role === 'owner') {
+      localStorage.setItem('isOwnerLoggedIn', 'true')
+      localStorage.setItem('userRole', role)
+      navigate('/owner')
+    } else {
+      navigate('/profile')
     }
   }
 
@@ -474,11 +440,12 @@ const LoginModal = ({ isOpen, onClose }) => {
   }
   
   const handleVerificationDocumentsComplete = () => {
-    // Документы загружены, закрываем модальное окно и перенаправляем
+    // Документы загружены, закрываем модальное окно и обновляем страницу
     setShowVerificationDocumentsModal(false)
     onClose()
     showNotification('Документы отправлены на верификацию. Вы получите уведомление после проверки.')
-    navigate('/profile')
+    // Полное обновление страницы, чтобы интерфейс отобразил авторизованного покупателя
+    window.location.href = '/profile'
   }
 
   const toggleMode = () => {
@@ -588,23 +555,19 @@ const LoginModal = ({ isOpen, onClose }) => {
             </span>
           </button>
           
-          <button 
-            type="button"
+          <GoogleLoginButton
+            mode={isLogin ? 'login' : 'register'}
             className="login-modal__social-btn login-modal__social-btn--google"
-            onClick={handleGoogleAuth}
-            disabled={isLoading || !signInLoaded || !signUpLoaded}
-            style={{ 
-              opacity: (isLoading || !signInLoaded || !signUpLoaded) ? 0.6 : 1, 
-              cursor: (isLoading || !signInLoaded || !signUpLoaded) ? 'not-allowed' : 'pointer' 
-            }}
+            disabled={isLoading}
+            isLoading={isLoading}
+            onSuccess={handleGoogleSuccess}
+            onNeedRegister={(msg) => setError(msg || 'Вы не зарегистрированы на сайте. Выберите «Регистрация» и зарегистрируйтесь через Google.')}
+            onAlreadyRegistered={(msg) => setError(msg || 'Вы уже зарегистрированы. Выберите «Вход», чтобы войти через Google.')}
+            onError={(msg) => setError(msg || 'Не удалось войти через Google. Попробуйте позже.')}
           >
             <FaGoogle size={20} />
-            <span>
-              {isLoading 
-                ? t('socialConnecting')
-                : (isLogin ? t('loginWithGoogle') : t('registerWithGoogle'))}
-            </span>
-          </button>
+            <span>{isLogin ? t('loginWithGoogle') : t('registerWithGoogle')}</span>
+          </GoogleLoginButton>
           
           <button 
             type="button"

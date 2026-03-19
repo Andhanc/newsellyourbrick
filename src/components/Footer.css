@@ -29,6 +29,11 @@
   flex-wrap: wrap;
 }
 
+/* Мобильное меню (3 колонки) — скрыто на десктопе */
+.footer__menu--mobile {
+  display: none;
+}
+
 .footer__menu-column {
   display: flex;
   flex-direction: column;
@@ -684,20 +689,34 @@ body.admin-panel-active .footer .footer__bottom {
     padding: 0 18px;
   }
 
-  .footer__menu {
+  /* Десктопное меню (5 колонок) — скрываем на мобильной */
+  .footer__menu--desktop {
+    display: none;
+  }
+
+  /* Мобильное меню — 3 колонки */
+  .footer__menu--mobile {
+    display: flex;
     flex-wrap: nowrap;
     gap: 24px;
     justify-content: space-between;
   }
 
-  /* В мобильной версии показываем только первые два блока меню (2x1) */
-  .footer__menu-column {
+  .footer__menu--mobile .footer__menu-column {
     flex: 1 1 0;
     min-width: 0;
   }
 
-  .footer__menu-column:nth-child(n + 3) {
-    display: none;
+  /* В мобильном меню каждая ссылка — с новой строки */
+  .footer__menu--mobile .footer__menu-column .footer__menu-link {
+    display: block;
+  }
+
+  /* Двухстрочные ссылки (калькуляторы) — аккуратный перенос и межстрочный интервал */
+  .footer__menu--mobile .footer__menu-link--two-lines {
+    line-height: 1.35;
+    padding-top: 2px;
+    padding-bottom: 2px;
   }
 
   .footer__bottom-wrapper {

@@ -167,6 +167,8 @@ const AddProperty = () => {
   })
   const [selectedDebtDocCategory, setSelectedDebtDocCategory] = useState(null)
   const [missingRequiredDebtDocs, setMissingRequiredDebtDocs] = useState([])
+  // Для долгов: сначала шаг с 7 обязательными документами, затем — блок с 6 категориями (без этих 7)
+  const [debtDocumentsStep, setDebtDocumentsStep] = useState('required')
 
   // Обязательные документы (логические пункты) и их категории — label через i18n (labelKey)
   const REQUIRED_DEBT_DOCS = [
@@ -3137,6 +3139,7 @@ const AddProperty = () => {
       return
     }
     setCurrentStep('documents')
+    if (formData.isDebtProperty) setDebtDocumentsStep('required')
   }
 
   // Навигация к полю из виджета прогресса: переходим на нужный шаг и подсвечиваем поле
@@ -3155,56 +3158,48 @@ const AddProperty = () => {
     }, 150)
   }
 
-  // Навигация к категории документов из виджета прогресса:
-  // сразу открываем нужную категорию и подсвечиваем только нужный блок
+  // Навигация к обязательному документу из виджета прогресса: показываем шаг с 7 обязательными
   const handleGoToDoc = (categoryKey, docId) => {
     setCurrentStep('documents')
-    setSelectedDebtDocCategory(categoryKey)
+    setDebtDocumentsStep('required')
+    setSelectedDebtDocCategory(null)
     setMissingRequiredDebtDocs([])
 
-    // Находим точное название документа для поиска в DOM (переведённый текст, как в списке)
-    const reqDoc = REQUIRED_DEBT_DOCS.find(d => d.id === docId)
-    const docTitleKey = reqDoc && DEBT_DOC_CATEGORY_DOCS_KEYS[reqDoc.categoryKey]?.[reqDoc.docIndex]
-    const searchText = docTitleKey ? t(docTitleKey) : ''
-
     setTimeout(() => {
-      // Ищем среди document-upload-item тот, чей текст содержит нужный docTitle
-      const allItems = document.querySelectorAll('.documents-debt-details-list .document-upload-item')
-      let target = null
-      if (searchText) {
-        allItems.forEach(el => {
-          if (!target && el.textContent.includes(searchText)) {
-            target = el
-          }
-        })
-      }
-      // Если не нашли по label — берём первый
-      if (!target) target = allItems[0] || null
-
+      const target = document.getElementById(`debt-required-${docId}`)
       if (target) {
         target.scrollIntoView({ behavior: 'smooth', block: 'center' })
         target.classList.add('ap-doc-highlight')
         setTimeout(() => target.classList.remove('ap-doc-highlight'), 2200)
       }
-    }, 200)
+    }, 300)
   }
 
   // Обработчик перехода к цене после загрузки документов
   const handleDocumentsContinue = () => {
-    // Для долгов: проверяем обязательные документы
     if (formData.isDebtProperty) {
-      const missing = REQUIRED_DEBT_DOCS.filter(req => {
-        // Проверяем конкретный слот документа по docIndex
-        return !debtDocumentsByCategory[req.categoryKey]?.[req.docIndex]
-      })
+      const missing = REQUIRED_DEBT_DOCS.filter(req =>
+        !debtDocumentsByCategory[req.categoryKey]?.[req.docIndex]
+      )
 
+      // Шаг 1: только 7 обязательных — проверяем и переходим к шагу с 6 категориями
+      if (debtDocumentsStep === 'required') {
+        if (missing.length > 0) {
+          setMissingRequiredDebtDocs(missing)
+          const missingLabels = missing.map(m => `• ${t(m.labelKey)}`).join('\n')
+          showNotification(
+            `${t('addPropertyDebtUploadRequiredNotification')}:\n${missingLabels}`
+          )
+          return
+        }
+        setDebtDocumentsStep('categories')
+        setMissingRequiredDebtDocs([])
+        return
+      }
+
+      // Шаг 2: блок с 6 категориями — проверяем обязательные ещё раз и идём к цене
       if (missing.length > 0) {
         setMissingRequiredDebtDocs(missing)
-
-        // Переходим к первой категории, где нет документов
-        const firstMissingCategory = missing[0].categoryKey
-        setSelectedDebtDocCategory(firstMissingCategory)
-
         const missingLabels = missing.map(m => `• ${t(m.labelKey)}`).join('\n')
         showNotification(
           `${t('addPropertyDebtUploadRequiredNotification')}:\n${missingLabels}`
@@ -3213,7 +3208,6 @@ const AddProperty = () => {
       }
     }
 
-    // Для обычных объектов и при полном наборе документов по долгу просто идем дальше
     setCurrentStep('price')
   }
 
@@ -3540,7 +3534,12 @@ const AddProperty = () => {
                 } else if (currentStep === 'photos') {
                   setCurrentStep(formData.isDebtProperty ? 'details' : 'amenities')
                 } else if (currentStep === 'documents') {
-                  setCurrentStep('photos')
+                  if (formData.isDebtProperty && debtDocumentsStep === 'categories') {
+                    setDebtDocumentsStep('required')
+                    setSelectedDebtDocCategory(null)
+                  } else {
+                    setCurrentStep('photos')
+                  }
                 } else if (currentStep === 'price') {
                   setCurrentStep('documents')
                 } else if (currentStep === 'form') {
@@ -5707,69 +5706,25 @@ const AddProperty = () => {
 
               {formData.isDebtProperty ? (
                 <>
-                  {/* Шаг 1: выбор категории документов по долгу */}
-                  {!selectedDebtDocCategory && (
-                    <div id="documents-debt-grid" className="documents-debt-grid">
-                      {DEBT_DOC_CATEGORIES.map(({ key, titleKey }) => (
-                        <button
-                          key={key}
-                          id={`doc-category-${key}`}
-                          type="button"
-                          className="documents-debt-grid-item"
-                          onClick={() => setSelectedDebtDocCategory(key)}
-                        >
-                          <h4 className="documents-debt-grid-item-title">{t(titleKey)}</h4>
-                          <div className="documents-debt-grid-upload">
-                            <FiFileText size={28} />
-                            <span className="documents-debt-grid-upload-text">{t('addPropertyDocumentsSelectBtn')}</span>
-                            <span className="documents-debt-grid-upload-hint">{t('addPropertyDocumentsSelectHint')}</span>
-                          </div>
-                          {Object.values(debtDocumentsByCategory[key] || {}).filter(Boolean).length > 0 && (
-                            <ul className="documents-debt-grid-list">
-                              {Object.values(debtDocumentsByCategory[key] || {}).filter(Boolean).map((file, idx) => (
-                                <li key={idx} className="documents-debt-grid-list-item">
-                                  <span title={file.name}>{file.name}</span>
-                                </li>
-                              ))}
-                            </ul>
-                          )}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-
-
-                  {/* Шаг 2: список конкретных документов внутри выбранной категории */}
-                  {selectedDebtDocCategory && (
-                    <div id="debt-doc-details" className="documents-debt-details">
-                      <div className="documents-debt-details-header">
-                        <button
-                          type="button"
-                          className="documents-debt-back-btn"
-                          onClick={() => setSelectedDebtDocCategory(null)}
-                        >
-                          <FiChevronLeft size={16} />
-                          {t('addPropertyDocumentsAllCategories')}
-                        </button>
-                        <h3 className="documents-debt-details-title">
-                          {(() => {
-                            const cat = DEBT_DOC_CATEGORIES.find(c => c.key === selectedDebtDocCategory)
-                            return cat?.titleKey ? t(cat.titleKey) : ''
-                          })()}
-                        </h3>
-                      </div>
-
-                      <div className="documents-debt-details-list">
-                        {(DEBT_DOC_CATEGORY_DOCS_KEYS[selectedDebtDocCategory] || []).map((docKey, index) => {
-                          const uploadedFile = debtDocumentsByCategory[selectedDebtDocCategory]?.[index]
+                  {/* Шаг 1: только 7 обязательных документов */}
+                  {debtDocumentsStep === 'required' && (
+                    <div className="documents-debt-required-step">
+                      <h3 className="documents-section-title">{t('addPropertyDebtProgressRequired')}</h3>
+                      <p className="property-documents-description" style={{ marginTop: 8, marginBottom: 20 }}>
+                        {t('addPropertyDocumentsDescriptionDebt')}
+                      </p>
+                      <div className="documents-debt-required-list">
+                        {REQUIRED_DEBT_DOCS.map((req) => {
+                          const uploadedFile = debtDocumentsByCategory[req.categoryKey]?.[req.docIndex]
+                          const refKey = `${req.categoryKey}_${req.docIndex}`
                           return (
-                            <div key={index} id={index === 0 ? 'debt-doc-upload-btn' : undefined} className="document-upload-item">
+                            <div key={req.id} id={`debt-required-${req.id}`} className="document-upload-item">
                               <div className="document-upload-info">
                                 <div className="document-upload-icon">
                                   <FiFileText size={24} />
                                 </div>
                                 <div className="document-upload-text">
-                                  <h4 className="document-upload-title">{t(docKey)}</h4>
+                                  <h4 className="document-upload-title">{t(req.labelKey)}</h4>
                                   <p className="document-upload-hint">{t('addPropertyDocumentsFormatHint')}</p>
                                 </div>
                               </div>
@@ -5783,9 +5738,9 @@ const AddProperty = () => {
                                       className="document-remove-btn"
                                       onClick={() => {
                                         setDebtDocumentsByCategory(prev => {
-                                          const updated = { ...prev[selectedDebtDocCategory] }
-                                          delete updated[index]
-                                          return { ...prev, [selectedDebtDocCategory]: updated }
+                                          const updated = { ...(prev[req.categoryKey] || {}) }
+                                          delete updated[req.docIndex]
+                                          return { ...prev, [req.categoryKey]: updated }
                                         })
                                       }}
                                     >
@@ -5796,10 +5751,10 @@ const AddProperty = () => {
                                   <button
                                     type="button"
                                     className="document-upload-btn"
-                                    onClick={() => debtDocItemInputRefs.current[`${selectedDebtDocCategory}_${index}`]?.click()}
+                                    onClick={() => debtDocItemInputRefs.current[refKey]?.click()}
                                   >
                                     <FiUpload size={18} />
-                                    {t('addPropertyDocumentsUploadBtn')}
+                                    {t('addPropertyDocumentsSelectBtn')}
                                   </button>
                                 )}
                               </div>
@@ -5808,6 +5763,122 @@ const AddProperty = () => {
                         })}
                       </div>
                     </div>
+                  )}
+
+                  {/* Шаг 2: 6 категорий документов (без 7 обязательных — они уже загружены на шаге 1) */}
+                  {debtDocumentsStep === 'categories' && (
+                    <>
+                      {!selectedDebtDocCategory && (
+                        <div id="documents-debt-grid" className="documents-debt-grid">
+                          {DEBT_DOC_CATEGORIES.map(({ key, titleKey }) => {
+                            const requiredIndices = new Set(
+                              REQUIRED_DEBT_DOCS.filter(r => r.categoryKey === key).map(r => r.docIndex)
+                            )
+                            const uploadedOptional = Object.keys(debtDocumentsByCategory[key] || {}).filter(
+                              i => !requiredIndices.has(Number(i))
+                            ).length
+                            return (
+                              <button
+                                key={key}
+                                id={`doc-category-${key}`}
+                                type="button"
+                                className="documents-debt-grid-item"
+                                onClick={() => setSelectedDebtDocCategory(key)}
+                              >
+                                <h4 className="documents-debt-grid-item-title">{t(titleKey)}</h4>
+                                <div className="documents-debt-grid-upload">
+                                  <FiFileText size={28} />
+                                  <span className="documents-debt-grid-upload-text">{t('addPropertyDocumentsSelectBtn')}</span>
+                                  <span className="documents-debt-grid-upload-hint">{t('addPropertyDocumentsSelectHint')}</span>
+                                </div>
+                                {uploadedOptional > 0 && (
+                                  <ul className="documents-debt-grid-list">
+                                    {Object.entries(debtDocumentsByCategory[key] || {}).filter(([i]) => !requiredIndices.has(Number(i))).map(([_, file]) => (
+                                      <li key={_} className="documents-debt-grid-list-item">
+                                        <span title={file.name}>{file.name}</span>
+                                      </li>
+                                    ))}
+                                  </ul>
+                                )}
+                              </button>
+                            )
+                          })}
+                        </div>
+                      )}
+
+                      {selectedDebtDocCategory && (
+                        <div id="debt-doc-details" className="documents-debt-details">
+                          <div className="documents-debt-details-header">
+                            <button
+                              type="button"
+                              className="documents-debt-back-btn"
+                              onClick={() => setSelectedDebtDocCategory(null)}
+                            >
+                              <FiChevronLeft size={16} />
+                              {t('addPropertyDocumentsAllCategories')}
+                            </button>
+                            <h3 className="documents-debt-details-title">
+                              {DEBT_DOC_CATEGORIES.find(c => c.key === selectedDebtDocCategory)?.titleKey
+                                ? t(DEBT_DOC_CATEGORIES.find(c => c.key === selectedDebtDocCategory).titleKey)
+                                : ''}
+                            </h3>
+                          </div>
+
+                          <div className="documents-debt-details-list">
+                            {(DEBT_DOC_CATEGORY_DOCS_KEYS[selectedDebtDocCategory] || []).map((docKey, index) => {
+                              const isRequired = REQUIRED_DEBT_DOCS.some(
+                                r => r.categoryKey === selectedDebtDocCategory && r.docIndex === index
+                              )
+                              if (isRequired) return null
+                              const uploadedFile = debtDocumentsByCategory[selectedDebtDocCategory]?.[index]
+                              return (
+                                <div key={index} className="document-upload-item">
+                                  <div className="document-upload-info">
+                                    <div className="document-upload-icon">
+                                      <FiFileText size={24} />
+                                    </div>
+                                    <div className="document-upload-text">
+                                      <h4 className="document-upload-title">{t(docKey)}</h4>
+                                      <p className="document-upload-hint">{t('addPropertyDocumentsFormatHint')}</p>
+                                    </div>
+                                  </div>
+                                  <div className="document-upload-action">
+                                    {uploadedFile ? (
+                                      <div className="document-uploaded">
+                                        <FiCheck size={20} />
+                                        <span title={uploadedFile.name}>{uploadedFile.name}</span>
+                                        <button
+                                          type="button"
+                                          className="document-remove-btn"
+                                          onClick={() => {
+                                            setDebtDocumentsByCategory(prev => {
+                                              const updated = { ...prev[selectedDebtDocCategory] }
+                                              delete updated[index]
+                                              return { ...prev, [selectedDebtDocCategory]: updated }
+                                            })
+                                          }}
+                                        >
+                                          <FiX size={16} />
+                                        </button>
+                                      </div>
+                                    ) : (
+                                      <button
+                                        type="button"
+                                        className="document-upload-btn"
+                                        onClick={() => debtDocItemInputRefs.current[`${selectedDebtDocCategory}_${index}`]?.click()}
+                                      >
+                                        <FiUpload size={18} />
+                                        {t('addPropertyDocumentsUploadBtn')}
+                                      </button>
+                                    )}
+                                  </div>
+                                </div>
+                              )
+                            })}
+                          </div>
+                        </div>
+                      )}
+                    </>
                   )}
                 </>
               ) : (
@@ -6049,7 +6120,17 @@ const AddProperty = () => {
                 <button
                   type="button"
                   className="property-documents-back-btn"
-                  onClick={() => setCurrentStep('photos')}
+                  onClick={() => {
+                    if (formData.isDebtProperty && debtDocumentsStep === 'categories') {
+                      if (selectedDebtDocCategory) {
+                        setSelectedDebtDocCategory(null)
+                      } else {
+                        setDebtDocumentsStep('required')
+                      }
+                    } else {
+                      setCurrentStep('photos')
+                    }
+                  }}
                 >
                   <FiChevronLeft size={16} />
                   {t('addPropertyBack')}

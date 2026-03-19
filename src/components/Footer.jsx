@@ -69,17 +69,12 @@ const Footer = () => {
   return (
     <footer className="footer">
       <div className="footer__container">
-        {/* Верхний блок ссылок, как на ЦИАН — по колонкам */}
-        <div className="footer__menu">
+        {/* Верхний блок ссылок — десктоп: 5 колонок */}
+        <div className="footer__menu footer__menu--desktop">
           <div className="footer__menu-column">
             <Link to="/" onClick={scrollToTop} className="footer__menu-link">{t('home')}</Link>
             <Link to="/about" onClick={scrollToTop} className="footer__menu-link">{t('aboutUs')}</Link>
             <Link to="/map" onClick={scrollToTop} className="footer__menu-link">{t('mapLink')}</Link>
-            <Link to="/subscriptions" onClick={scrollToTop} className="footer__menu-link">{t('tariffs')}</Link>
-            <Link to="/bonuses" onClick={scrollToTop} className="footer__menu-link">{t('bonuses')}</Link>
-            <Link to="/shares" onClick={scrollToTop} className="footer__menu-link">{t('shares')}</Link>
-            <Link to="/debts" onClick={scrollToTop} className="footer__menu-link">{t('debtsTitle')}</Link>
-            <Link to="/calculator" onClick={scrollToTop} className="footer__menu-link">💰 {t('calculator')}</Link>
           </div>
           <div className="footer__menu-column">
             <Link to="/auction" onClick={scrollToTop} className="footer__menu-link">{t('auction')}</Link>
@@ -87,7 +82,7 @@ const Footer = () => {
             <Link to="/bonuses" onClick={scrollToTop} className="footer__menu-link">{t('bonuses')}</Link>
           </div>
           <div className="footer__menu-column">
-            <button type="button" className="footer__menu-link">{t('career')}</button>
+            <Link to="/calculator" onClick={scrollToTop} className="footer__menu-link">{t('calculator')}</Link>
             <Link to="/map" onClick={scrollToTop} className="footer__menu-link">{t('mapSearch')}</Link>
             <Link to="/debts" onClick={scrollToTop} className="footer__menu-link">{t('debtsTitle')}</Link>
           </div>
@@ -99,8 +94,21 @@ const Footer = () => {
           <div className="footer__menu-column">
             <Link to="/chat" onClick={scrollToTop} className="footer__menu-link">{t('help')}</Link>
             <Link to="/jeton" onClick={scrollToTop} className="footer__menu-link">Jeton</Link>
-            <button type="button" className="footer__menu-link">{t('superAgents')}</button>
             <button type="button" className="footer__menu-link">{t('mortgage')}</button>
+          </div>
+        </div>
+
+        {/* Мобильная версия: 3 колонки */}
+        <div className="footer__menu footer__menu--mobile">
+          <div className="footer__menu-column">
+            <Link to="/" onClick={scrollToTop} className="footer__menu-link">{t('home')}</Link>
+            <Link to="/auction" onClick={scrollToTop} className="footer__menu-link">{t('auction')}</Link>
+            <Link to="/about" onClick={scrollToTop} className="footer__menu-link">{t('aboutUs')}</Link>
+          </div>
+          <div className="footer__menu-column">
+            <Link to="/bonuses" onClick={scrollToTop} className="footer__menu-link">{t('bonuses')}</Link>
+            <Link to="/shares" onClick={scrollToTop} className="footer__menu-link">{t('shares')}</Link>
+            <Link to="/debts" onClick={scrollToTop} className="footer__menu-link">{t('debtsTitle')}</Link>
           </div>
         </div>
 
