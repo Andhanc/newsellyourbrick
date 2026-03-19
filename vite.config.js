@@ -61,24 +61,18 @@ export default defineConfig(({ mode }) => {
   //   - Сервер (бэкенд): SERVER_PORT (нужно установить 3000 в Railway Variables)
   // ============================================================
   
-  // Порт бэкенда, куда Vite проксирует /api/*
-  // В production Railway задаёт PORT, и твой express-сервер слушает именно PORT (см. server/server.js),
-  // поэтому проксировать на фиксированный 3000 нельзя.
-  const backendPort =
-    (process.env.NODE_ENV === 'production' && process.env.PORT)
-      ? parseInt(process.env.PORT, 10)
-      : (process.env.SERVER_PORT
-        ? parseInt(process.env.SERVER_PORT, 10)
-        : 3000)
+  // Порт бэкенда, куда Vite проксирует /api/* (только в dev).
+  // В production Vite dev-сервер не запускается вовсе, поэтому этот proxy не используется.
+  // В dev Express всегда слушает SERVER_PORT (по умолчанию 3000).
+  const backendPort = parseInt(process.env.SERVER_PORT || '3000', 10)
 
-  // URL API для проксирования
-  // Используем 127.0.0.1 вместо localhost для избежания проблем с IPv6/DNS на Railway
+  // URL API для проксирования (только для локальной разработки)
   const apiUrl = process.env.API_URL || `http://127.0.0.1:${backendPort}`
   
-  // Порт для Vite (фронтенд)
-  // Локально: 5173, на Railway: PORT (устанавливает Railway автоматически)
-  // ВАЖНО: На Railway PORT устанавливается автоматически, используем его
-  const vitePort = process.env.PORT ? parseInt(process.env.PORT) : 5173
+  // Порт для Vite dev-сервера (только для локальной разработки).
+  // В production Vite не запускается — статика раздаётся Express из dist/.
+  // ВАЖНО: Vite НИКОГДА не должен использовать PORT (это порт Express-сервера на Railway).
+  const vitePort = parseInt(process.env.VITE_PORT || '5173', 10)
   
   // Логируем для диагностики
   if (process.env.PORT) {
