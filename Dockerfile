@@ -55,15 +55,9 @@ RUN node scripts/create-env.js || echo "⚠️ Не удалось создат�
 # Переменные окружения теперь доступны через .env.production и process.env
 RUN npm run build
 
-# Открываем порт для Vite
-# ВАЖНО: EXPOSE - это только метаданные (документация), НЕ реальный порт!
-# 
-# Как работают порты:
-# - Локально: Vite на 5173, Сервер на 3000
-# - На Railway: Vite на PORT (Railway установит автоматически, может быть 8080, 3000 или другой)
-# - На Railway: Сервер на SERVER_PORT (нужно установить 3000 в Railway Variables)
-#
-# Реальный порт определяется переменной PORT, которую устанавливает Railway
+# Открываем порт для Express-сервера
+# В production запускается ТОЛЬКО node server/server.js (не Vite dev-сервер!)
+# Railway передаёт PORT=8080 (или другой) в process.env, Express слушает на нём
 EXPOSE 8080
 
 # Отключаем IPv6 для Node.js (избегаем проблем с NO_SOCKET и IPV6_NDISC_BAD_CODE)
