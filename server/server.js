@@ -16,6 +16,7 @@ import { parseBulkImportFile, rowToPropertyData } from './services/bulkImportPro
 import { Address, beginCell, Cell } from '@ton/core';
 import { getMarketData, getMortgageRates, getRentalYieldByRegion } from './services/investmentDataService.js';
 import { translatePropertyToAllLanguages } from './services/aiPropertyTranslate.js';
+import { buildDatabaseSnapshot } from './services/storageSnapshot.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -4767,6 +4768,48 @@ app.get('/api/admin/stats/counts', (req, res) => {
   } catch (error) {
     console.error('Ошибка при получении счётчиков:', error);
     res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * POST /api/admin/storage/mirror-push — снимок SQLite → внешнее хранилище (см. проект «хранилище»).
+ * Переменные окружения на сервере основного сайта: STORAGE_MIRROR_URL, STORAGE_MIRROR_SECRET (тот же секрет на хранилище).
+ */
+app.post('/api/admin/storage/mirror-push', async (req, res) => {
+  const mirrorUrl = (process.env.STORAGE_MIRROR_URL || '').trim().replace(/\/$/, '');
+  const secret = (process.env.STORAGE_MIRROR_SECRET || '').trim();
+  if (!mirrorUrl || !secret) {
+    return res.status(503).json({
+      success: false,
+      error:
+        'Не заданы STORAGE_MIRROR_URL и STORAGE_MIRROR_SECRET на сервере (Railway Variables).',
+    });
+  }
+  try {
+    const snapshot = buildDatabaseSnapshot();
+    const importUrl = `${mirrorUrl}/api/import`;
+    const response = await axios.post(importUrl, snapshot, {
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${secret}`,
+      },
+      timeout: 180000,
+      maxBodyLength: Infinity,
+      maxContentLength: Infinity,
+    });
+    res.json({
+      success: true,
+      tables: snapshot.blocks.length,
+      rowsTotal: snapshot.blocks.reduce((a, b) => a + (b.count || 0), 0),
+      remote: response.data,
+    });
+  } catch (error) {
+    console.error('[storage mirror-push]', error.message);
+    const detail = error.response?.data;
+    res.status(500).json({
+      success: false,
+      error: detail?.error || error.message || 'Ошибка отправки в хранилище',
+    });
   }
 });
 

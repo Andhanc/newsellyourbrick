@@ -17,6 +17,7 @@ import PurchaseRequests from '../components/admin/PurchaseRequests';
 import BonusesSubmissions from '../components/admin/BonusesSubmissions';
 import AccessManagement from '../components/admin/AccessManagement';
 import Testing from '../components/admin/Testing';
+import StorageMirror from '../components/admin/StorageMirror';
 import DebtReasons from '../components/admin/DebtReasons';
 import DebtDocuments from '../components/admin/DebtDocuments';
 import { mockBusinessInfo } from '../data/mockData';
@@ -74,7 +75,8 @@ const AdminPanelPage = () => {
     purchase_requests: 'Запросы на покупку',
     bonuses: 'Бонусные задания',
     testing: 'Тестирование',
-    access_management: 'Доступы'
+    access_management: 'Доступы',
+    storage: 'Хранилище'
   };
 
   // Проверка прав доступа к разделу
@@ -98,7 +100,8 @@ const AdminPanelPage = () => {
       purchase_requests: adminPermissions.can_access_purchase_requests,
       bonuses: adminPermissions.can_access_moderation,
       testing: adminPermissions.can_access_objects,
-      access_management: adminPermissions.can_access_access_management
+      access_management: adminPermissions.can_access_access_management,
+      storage: adminPermissions.can_access_objects
     };
 
     return accessMap[section] || false;
@@ -171,6 +174,8 @@ const AdminPanelPage = () => {
         return <Testing />;
       case 'access_management':
         return <AccessManagement />;
+      case 'storage':
+        return <StorageMirror />;
       default:
         return <Statistics businessInfo={mockBusinessInfo} onShowUsers={() => setShowUsersModal(true)} />;
     }
