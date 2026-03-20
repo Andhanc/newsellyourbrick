@@ -19,7 +19,6 @@ import {
   FiGlobe,
   FiPhone,
   FiMap,
-  FiMenu,
   FiUser,
   FiCheck,
   FiStar,
@@ -27,6 +26,7 @@ import {
   FiShoppingCart,
   FiPieChart,
 } from 'react-icons/fi'
+import { MenuToggleIcon } from '@/components/ui/menu-toggle-icon'
 import {
   FaHome,
   FaHeart,
@@ -2054,7 +2054,7 @@ function MainPage() {
             aria-label="Меню"
             aria-expanded={isMenuOpen}
           >
-            <FiMenu size={20} className="new-header__menu-icon" />
+            <MenuToggleIcon open={isMenuOpen} className="new-header__menu-icon" duration={500} />
             <span>{t('menu')}</span>
           </button>
         </div>

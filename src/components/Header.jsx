@@ -7,7 +7,6 @@ import {
   FiSearch,
   FiChevronDown,
   FiX,
-  FiMenu,
   FiUser,
 } from 'react-icons/fi'
 import { IoLocationOutline } from 'react-icons/io5'
@@ -16,6 +15,7 @@ import LoginModal from './LoginModal'
 import { getUserData, clearUserData } from '../services/authService'
 import { getApiBaseUrl } from '../utils/apiConfig'
 import '../pages/MainPage.css'
+import { MenuToggleIcon } from '@/components/ui/menu-toggle-icon'
 
 const resortLocations = [
   'Costa Adeje, Tenerife',
@@ -494,7 +494,7 @@ const Header = () => {
                 aria-label={t('menu')}
                 aria-expanded={isMenuOpen}
               >
-                <FiMenu size={20} className="new-header__menu-icon" />
+                <MenuToggleIcon open={isMenuOpen} className="new-header__menu-icon" duration={500} />
                 <span>{t('menu')}</span>
               </button>
             </div>

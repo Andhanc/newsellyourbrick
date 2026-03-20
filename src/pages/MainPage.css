@@ -3718,14 +3718,6 @@
     flex-shrink: 0;
   }
   
-  .new-header__menu-icon {
-    transition: transform 0.3s ease;
-  }
-  
-  .new-header__menu-btn--active .new-header__menu-icon {
-    transform: rotate(180deg);
-  }
-
   .menu-backdrop {
     position: fixed !important;
     top: 0 !important;
