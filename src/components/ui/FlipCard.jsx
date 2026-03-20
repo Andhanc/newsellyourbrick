@@ -15,8 +15,12 @@ export default function FlipCard({
   color = '#ff2e88',
   clickToFlip = false,
   ctaText = 'Подробнее',
+  isFlipped: isFlippedProp,
+  onFlipChange,
 }) {
-  const [isFlipped, setIsFlipped] = useState(false)
+  const [internalIsFlipped, setInternalIsFlipped] = useState(false)
+  const isControlled = typeof isFlippedProp === 'boolean'
+  const isFlipped = isControlled ? isFlippedProp : internalIsFlipped
   const accent = color || '#ff2e88'
 
   const cardStyle = {
@@ -28,18 +32,28 @@ export default function FlipCard({
 
   return (
     <div
-      className="flip-card-root"
+      className={`flip-card-root${isFlipped ? ' is-flipped' : ''}${clickToFlip ? ' is-clickable' : ''}`}
       style={{
         height: 'var(--flip-card-height, 380px)',
         width: '100%',
         maxWidth: 'var(--flip-card-max-width, 320px)',
         perspective: '2000px',
         position: 'relative',
-        cursor: clickToFlip ? 'pointer' : 'default'
+        cursor: clickToFlip ? 'pointer' : 'default',
+        transition: 'height 0.35s ease'
       }}
-      onMouseEnter={() => !clickToFlip && setIsFlipped(true)}
-      onMouseLeave={() => !clickToFlip && setIsFlipped(false)}
-      onClick={() => clickToFlip && setIsFlipped(v => !v)}
+      onMouseEnter={() => {
+        if (!clickToFlip && !isControlled) setInternalIsFlipped(true)
+      }}
+      onMouseLeave={() => {
+        if (!clickToFlip && !isControlled) setInternalIsFlipped(false)
+      }}
+      onClick={() => {
+        if (!clickToFlip) return
+        const next = !isFlipped
+        if (!isControlled) setInternalIsFlipped(next)
+        if (onFlipChange) onFlipChange(next)
+      }}
     >
       {/* Обёртка с 3D-трансформацией */}
       <div
@@ -54,6 +68,7 @@ export default function FlipCard({
       >
         {/* ── FRONT ── */}
         <div
+          className="flip-card-face flip-card-face--front"
           style={{
             position: 'absolute', inset: 0,
             borderRadius: '16px',
@@ -67,11 +82,20 @@ export default function FlipCard({
           }}
         >
           {/* Акцентный оверлей */}
-          <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: `radial-gradient(ellipse at 100% 100%, ${accent}0A 0%, transparent 60%)` }} />
+          <div
+            className="flip-card-front-overlay"
+            style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: `radial-gradient(ellipse at 100% 100%, ${accent}0A 0%, transparent 60%)` }}
+          />
 
           {/* Анимированные полоски + иконка */}
-          <div style={{ position: 'absolute', top: 'var(--flip-card-art-top, 32px)', bottom: 'var(--flip-card-art-bottom, 116px)', left: 0, right: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, width: 180, height: 100 }}>
+          <div
+            className="flip-card-front-art"
+            style={{ position: 'absolute', top: 'var(--flip-card-art-top, 32px)', bottom: 'var(--flip-card-art-bottom, 116px)', left: 0, right: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          >
+            <div
+              className="flip-card-front-art-inner"
+              style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, width: 180, height: 100 }}
+            >
               {[...Array(6)].map((_, i) => {
                 const w = 48 + (i * 11) % 42
                 const ml = (i * 9) % 26
@@ -109,19 +133,20 @@ export default function FlipCard({
           )}
 
           {/* Нижний блок: заголовок + молния */}
-          <div style={{ position: 'absolute', left: 0, right: 0, bottom: 'var(--flip-card-footer-bottom, 30px)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginLeft: '10%', marginRight: '10%' }}>
-              <div style={{ minWidth: 0, flex: 1 }}>
-                <h3 style={{ fontSize: 'var(--flip-card-title-size, 15px)', fontWeight: 700, color: '#18181b', lineHeight: 'var(--flip-card-title-line-height, 1.2)', margin: 0 }}>{title}</h3>
-                <p style={{ fontSize: 'var(--flip-card-subtitle-size, 12px)', color: '#71717a', lineHeight: 1.35, margin: '4px 0 0', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{subtitle}</p>
+          <div className="flip-card-front-footer" style={{ position: 'absolute', left: 0, right: 0, bottom: 'var(--flip-card-footer-bottom, 30px)' }}>
+            <div className="flip-card-front-footer-inner" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginLeft: '10%', marginRight: '10%' }}>
+              <div className="flip-card-front-text" style={{ minWidth: 0, flex: 1 }}>
+                <h3 className="flip-card-front-title" style={{ fontSize: 'var(--flip-card-title-size, 15px)', fontWeight: 700, color: '#18181b', lineHeight: 'var(--flip-card-title-line-height, 1.2)', margin: 0 }}>{title}</h3>
+                <p className="flip-card-front-subtitle" style={{ fontSize: 'var(--flip-card-subtitle-size, 12px)', color: '#71717a', lineHeight: 1.35, margin: '4px 0 0', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{subtitle}</p>
               </div>
-              <Zap style={{ flexShrink: 0, width: 16, height: 16, color: accent }} />
+              <Zap className="flip-card-front-zap" style={{ flexShrink: 0, width: 16, height: 16, color: accent }} />
             </div>
           </div>
         </div>
 
         {/* ── BACK ── */}
         <div
+          className="flip-card-face flip-card-face--back"
           style={{
             position: 'absolute', inset: 0,
             borderRadius: '16px',
@@ -138,30 +163,34 @@ export default function FlipCard({
           }}
         >
           {/* Акцентный оверлей */}
-          <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', borderRadius: 16, background: `radial-gradient(ellipse at 100% 100%, ${accent}08 0%, transparent 60%)` }} />
+          <div
+            className="flip-card-back-overlay"
+            style={{ position: 'absolute', inset: 0, pointerEvents: 'none', borderRadius: 16, background: `radial-gradient(ellipse at 100% 100%, ${accent}08 0%, transparent 60%)` }}
+          />
 
           {/* Контент — flex-column, кнопка всегда внизу */}
-          <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', height: '100%', padding: '24px 24px 20px' }}>
+          <div className="flip-card-back-content" style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', height: '100%', padding: '24px 24px 20px' }}>
 
             {/* 1. Иконка + заголовок */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <div style={{ width: 36, height: 36, borderRadius: 10, background: accent, boxShadow: `0 3px 10px ${accent}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <div className="flip-card-back-header" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div className="flip-card-back-icon-wrap" style={{ width: 36, height: 36, borderRadius: 10, background: accent, boxShadow: `0 3px 10px ${accent}40`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                 <Code2 style={{ width: 18, height: 18, color: 'white' }} />
               </div>
-              <h3 style={{ fontSize: 20, fontWeight: 700, color: '#18181b', lineHeight: 1.2, margin: 0 }}>{title}</h3>
+              <h3 className="flip-card-back-title" style={{ fontSize: 20, fontWeight: 700, color: '#18181b', lineHeight: 1.2, margin: 0 }}>{title}</h3>
             </div>
 
             {/* 2. Описание */}
-            <p style={{ margin: '10px 0 0', fontSize: 13, color: '#71717a', lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+            <p className="flip-card-back-description" style={{ margin: '10px 0 0', fontSize: 13, color: '#71717a', lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
               {description}
             </p>
 
             {/* 3. Список — flex-grow чтобы кнопка была внизу */}
-            <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 10, flexGrow: 1 }}>
+            <div className="flip-card-back-features" style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 10, flexGrow: 1 }}>
               {features.map((feature, index) => {
                 const IconComponent = ICON_FEATURES[index % ICON_FEATURES.length]
                 return (
                   <div
+                    className="flip-card-back-feature"
                     key={feature}
                     style={{
                       display: 'flex', alignItems: 'center', gap: 12,
@@ -170,20 +199,21 @@ export default function FlipCard({
                       transition: `opacity 0.5s ease ${index * 100 + 200}ms, transform 0.5s ease ${index * 100 + 200}ms`,
                     }}
                   >
-                    <div style={{ width: 24, height: 24, borderRadius: '50%', background: `${accent}1A`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <div className="flip-card-back-feature-icon" style={{ width: 24, height: 24, borderRadius: '50%', background: `${accent}1A`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                       <IconComponent style={{ width: 13, height: 13, color: accent }} />
                     </div>
-                    <span style={{ fontSize: 14, fontWeight: 500, color: '#3f3f46' }}>{feature}</span>
+                    <span className="flip-card-back-feature-text" style={{ fontSize: 14, fontWeight: 500, color: '#3f3f46' }}>{feature}</span>
                   </div>
                 )
               })}
             </div>
 
             {/* 4. Разделитель + кнопка — прижаты к низу */}
-            <div style={{ marginTop: 16 }}>
+            <div className="flip-card-back-footer" style={{ marginTop: 16 }}>
               <div style={{ height: 1, background: '#e2e8f0', marginBottom: 12 }} />
               <button
                 type="button"
+                className="flip-card-back-cta"
                 style={{
                   width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                   borderRadius: 12, padding: '10px 16px',

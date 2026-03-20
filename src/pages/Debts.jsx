@@ -13,6 +13,7 @@ const Debts = () => {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState('')
+  const [openRiskCard, setOpenRiskCard] = useState(null)
   const [apiDebts, setApiDebts] = useState([])
   const [loadingDebts, setLoadingDebts] = useState(true)
 
@@ -91,6 +92,9 @@ const Debts = () => {
               t('debtsHighRiskFeature4'),
             ]}
             ctaText={t('debtsHighRiskCta')}
+            clickToFlip
+            isFlipped={openRiskCard === 'high'}
+            onFlipChange={(next) => setOpenRiskCard(next ? 'high' : null)}
           />
           <FlipCard
             color="#CA8A04"
@@ -104,6 +108,9 @@ const Debts = () => {
               t('debtsMediumRiskFeature4'),
             ]}
             ctaText={t('debtsMediumRiskCta')}
+            clickToFlip
+            isFlipped={openRiskCard === 'medium'}
+            onFlipChange={(next) => setOpenRiskCard(next ? 'medium' : null)}
           />
           <FlipCard
             color="#16A34A"
@@ -117,6 +124,9 @@ const Debts = () => {
               t('debtsLowRiskFeature4'),
             ]}
             ctaText={t('debtsLowRiskCta')}
+            clickToFlip
+            isFlipped={openRiskCard === 'low'}
+            onFlipChange={(next) => setOpenRiskCard(next ? 'low' : null)}
           />
         </div>
 

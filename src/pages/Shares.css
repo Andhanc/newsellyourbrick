@@ -264,6 +264,155 @@
   }
 }
 
+@media (max-width: 450px) {
+  .shares-flip-cards--debts {
+    flex-direction: column;
+    flex-wrap: nowrap;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 12px;
+  }
+
+  .shares-flip-cards--debts > * {
+    flex: 1 1 auto;
+    width: 100%;
+    max-width: 340px;
+  }
+
+  .shares-flip-cards--debts .flip-card-root {
+    --flip-card-height: 108px;
+    --flip-card-title-size: 10px;
+    --flip-card-subtitle-size: 10px;
+    --flip-card-title-line-height: 1.2;
+  }
+
+  .shares-flip-cards--debts .flip-card-root.is-flipped {
+    --flip-card-height: 380px;
+    z-index: 3;
+  }
+
+  .shares-flip-cards--debts .flip-card-front-art {
+    top: 0 !important;
+    bottom: 0 !important;
+    left: 14px !important;
+    right: auto !important;
+    width: 90px;
+    justify-content: center;
+    pointer-events: none;
+  }
+
+  .shares-flip-cards--debts .flip-card-front-art-inner {
+    width: 76px !important;
+    height: 76px !important;
+  }
+
+  .shares-flip-cards--debts .flip-card-front-art-inner .flip-card-line {
+    height: 7px !important;
+    border-radius: 2px !important;
+  }
+
+  .shares-flip-cards--debts .flip-card-front-art-inner > div:last-child > div {
+    width: 44px !important;
+    height: 44px !important;
+    border-radius: 12px !important;
+  }
+
+  .shares-flip-cards--debts .flip-card-front-art-inner > div:last-child svg {
+    width: 22px !important;
+    height: 22px !important;
+  }
+
+  .shares-flip-cards--debts .flip-card-front-footer {
+    top: 50%;
+    bottom: auto !important;
+    left: 110px !important;
+    right: 12px !important;
+    transform: translateY(-50%);
+  }
+
+  .shares-flip-cards--debts .flip-card-front-footer-inner {
+    margin: 0 !important;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .shares-flip-cards--debts .flip-card-front-subtitle {
+    -webkit-line-clamp: 3 !important;
+    line-clamp: 3;
+  }
+
+  .shares-flip-cards--debts .flip-card-front-zap {
+    margin-top: 2px;
+  }
+
+  .shares-flip-cards--debts .flip-card-face--back {
+    overflow: hidden;
+  }
+
+  .shares-flip-cards--debts .flip-card-back-overlay {
+    background: linear-gradient(120deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 250, 252, 0.88) 100%) !important;
+  }
+
+  .shares-flip-cards--debts .flip-card-back-content {
+    padding: 14px 14px 12px 14px !important;
+    overflow: hidden !important;
+  }
+
+  .shares-flip-cards--debts .flip-card-back-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .shares-flip-cards--debts .flip-card-back-icon-wrap {
+    width: 40px !important;
+    height: 40px !important;
+    border-radius: 12px !important;
+  }
+
+  .shares-flip-cards--debts .flip-card-back-title {
+    font-size: 18px !important;
+    line-height: 1.2 !important;
+  }
+
+  .shares-flip-cards--debts .flip-card-back-description {
+    margin-top: 10px !important;
+    font-size: 13px !important;
+    line-height: 1.45 !important;
+    display: block !important;
+    overflow: visible !important;
+  }
+
+  .shares-flip-cards--debts .flip-card-back-features {
+    margin-top: 10px !important;
+    gap: 8px !important;
+  }
+
+  .shares-flip-cards--debts .flip-card-back-feature {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  .shares-flip-cards--debts .flip-card-back-feature-icon {
+    width: 20px !important;
+    height: 20px !important;
+  }
+
+  .shares-flip-cards--debts .flip-card-back-feature-text {
+    font-size: 13px !important;
+    line-height: 1.35 !important;
+  }
+
+  .shares-flip-cards--debts .flip-card-back-footer {
+    margin-top: 12px !important;
+  }
+
+  .shares-flip-cards--debts .flip-card-back-cta {
+    padding: 9px 12px !important;
+    border-radius: 10px !important;
+  }
+}
+
 /* Search */
 .shares-search-bar {
   position: relative;
