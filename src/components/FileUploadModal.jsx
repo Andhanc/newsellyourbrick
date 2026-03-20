@@ -1,10 +1,12 @@
 import { useState, useRef } from 'react'
 import { FiX, FiUpload, FiFile, FiDownload, FiCheckCircle, FiAlertCircle } from 'react-icons/fi'
 import { useTranslation } from 'react-i18next'
-import Confetti from './Confetti'
+import ExcelImportBucketPreloader from '@/components/ui/ExcelImportBucketPreloader'
+import BulkImportConfetti from './BulkImportConfetti'
 import './FileUploadModal.css'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
+const BULK_IMPORT_PRELOADER_MS = 4000
 
 const FileUploadModal = ({ isOpen, onClose, onSuccess, userId: propsUserId }) => {
   const { t } = useTranslation()
@@ -59,6 +61,8 @@ const FileUploadModal = ({ isOpen, onClose, onSuccess, userId: propsUserId }) =>
     setResult(null)
     setUploadError(null)
 
+    const startedAt = Date.now()
+
     try {
       const formData = new FormData()
       formData.append('file', file)
@@ -73,9 +77,11 @@ const FileUploadModal = ({ isOpen, onClose, onSuccess, userId: propsUserId }) =>
 
       if (!response.ok) {
         setUploadError(data.error || 'Ошибка при загрузке файла')
-        setIsUploading(false)
         return
       }
+
+      const elapsed = Date.now() - startedAt
+      await new Promise((r) => setTimeout(r, Math.max(0, BULK_IMPORT_PRELOADER_MS - elapsed)))
 
       setResult({
         found: data.found ?? 0,
@@ -87,7 +93,7 @@ const FileUploadModal = ({ isOpen, onClose, onSuccess, userId: propsUserId }) =>
       setShowSuccess(true)
       if ((data.loaded ?? 0) > 0) {
         setShowConfetti(true)
-        setTimeout(() => setShowConfetti(false), 5000)
+        setTimeout(() => setShowConfetti(false), 6000)
       }
       if (onSuccess && (data.loaded ?? 0) > 0) {
         onSuccess()
@@ -134,7 +140,7 @@ villa,Вилла у моря,Вилла с бассейном,850000,USD,Исп�
 
   return (
     <>
-      {showConfetti && <Confetti />}
+      {showConfetti && <BulkImportConfetti />}
       <div className="file-upload-modal-overlay" onClick={!isUploading ? handleClose : undefined}>
         <div className="file-upload-modal" onClick={(e) => e.stopPropagation()}>
           <button
@@ -145,6 +151,12 @@ villa,Вилла у моря,Вилла с бассейном,850000,USD,Исп�
           >
             <FiX size={24} />
           </button>
+
+          {isUploading && (
+            <div className="file-upload-modal__preloader" aria-busy="true" aria-live="polite">
+              <ExcelImportBucketPreloader title={t('fileUploadProcessing')} />
+            </div>
+          )}
 
           {!showSuccess ? (
             <div className="file-upload-modal__content">
@@ -220,18 +232,6 @@ villa,Вилла у моря,Вилла с бассейном,850000,USD,Исп�
                 <summary>{t('fileUploadFormatSummary')}</summary>
                 <p>{t('fileUploadFormatDetails')}</p>
               </details>
-
-              {isUploading && (
-                <div className="file-upload-modal__progress">
-                  <p className="progress-text">{t('fileUploadProcessing')}</p>
-                  <div className="progress-bar">
-                    <div
-                      className="progress-bar__fill progress-bar__fill--indeterminate"
-                      style={{ width: '60%' }}
-                    />
-                  </div>
-                </div>
-              )}
 
               <div className="file-upload-modal__actions">
                 <button

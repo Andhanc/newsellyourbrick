@@ -3331,12 +3331,18 @@ function MainPage() {
         <div className="contact-form-container">
           <div className="contact-form-wrapper">
             <div className="contact-form__image-wrapper">
-              <h2 className="contact-form__image-title">{t('haveQuestions')}</h2>
-              <div className="contact-form__image">
-                <img loading="lazy" 
-                  src="https://static.cdn-cian.ru/frontend/valuation-my-home-page-frontend/card_6_1.9222208e0e2f6d4d.svg" 
-                  alt="Contact illustration" 
-                />
+              <div className="contact-form__visual-card" aria-labelledby="contact-visual-title">
+                <h2 id="contact-visual-title" className="contact-form__image-title">
+                  {t('haveQuestions')}
+                </h2>
+                <p className="contact-form__image-subtitle">{t('haveQuestionsSubtitle')}</p>
+                <div className="contact-form__image">
+                  <img
+                    loading="lazy"
+                    src="https://static.cdn-cian.ru/frontend/valuation-my-home-page-frontend/card_6_1.9222208e0e2f6d4d.svg"
+                    alt=""
+                  />
+                </div>
               </div>
             </div>
             <form className="contact-form" onSubmit={handleContactFormSubmit}>
