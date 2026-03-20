@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import './PropertyTimer.css'
 
-const PropertyTimer = ({ endTime, compact = false }) => {
+const PropertyTimer = ({ endTime, compact = false, className = '' }) => {
   const { t } = useTranslation()
   const [timeLeft, setTimeLeft] = useState({
     days: 0,
@@ -58,7 +58,9 @@ const PropertyTimer = ({ endTime, compact = false }) => {
     const hasHours = timeLeft.hours > 0
     
     return (
-      <div className={`property-timer compact ${statusClass} ${isCritical ? 'timer-critical' : ''}`}>
+      <div
+        className={`property-timer compact ${statusClass} ${isCritical ? 'timer-critical' : ''} ${className}`.trim()}
+      >
         <div className="timer-compact-time">
           {hasDays && (
             <>
@@ -81,7 +83,9 @@ const PropertyTimer = ({ endTime, compact = false }) => {
   }
 
   return (
-    <div className={`property-timer property-timer--detail ${statusClass} ${isCritical ? 'timer-critical' : ''}`}>
+    <div
+      className={`property-timer property-timer--detail ${statusClass} ${isCritical ? 'timer-critical' : ''} ${className}`.trim()}
+    >
       <div className="timer-compact-time timer-compact-time--detail">
         {String(timeLeft.days).padStart(2, '0')}{t('timerDay')} {String(timeLeft.hours).padStart(2, '0')}{t('timerHour')} {String(timeLeft.minutes).padStart(2, '0')}{t('timerMin')} {String(timeLeft.seconds).padStart(2, '0')}{t('timerSec')}
       </div>

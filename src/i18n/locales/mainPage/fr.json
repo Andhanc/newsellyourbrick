@@ -73,6 +73,9 @@
   "debtsTitle": "Dettes",
   "fractionalSaleTitle": "Vente en parts",
   "currentBid": "Offre actuelle :",
+  "auctionViewList": "Liste",
+  "auctionViewCard": "Cartes",
+  "auctionAskingPrice": "Prix",
 
   "statsTitle": "Sally Your Brick en chiffres",
   "statLabel1": "Volume total des capitaux investisseurs",

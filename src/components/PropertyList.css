@@ -145,16 +145,25 @@
 }
 
 .filters-button:hover {
-  background: linear-gradient(135deg, rgba(10, 186, 181, 0.95) 0%, rgba(8, 154, 149, 0.95) 100%);
+  background: linear-gradient(135deg, rgba(62, 62, 62, 0.95) 0%, rgba(48, 48, 48, 0.95) 100%);
   backdrop-filter: blur(25px) saturate(200%);
   -webkit-backdrop-filter: blur(25px) saturate(200%);
-  border-color: rgba(255, 255, 255, 0.4);
+  border-color: rgba(255, 255, 255, 0.28);
   color: #fff;
-  transform: translateY(-2px);
-  box-shadow: 
-    0 6px 20px rgba(10, 186, 181, 0.4),
-    inset 0 1px 0 rgba(255, 255, 255, 0.3),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.15);
+  transform: translateY(-1px);
+  box-shadow:
+    0 6px 20px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.22);
+}
+
+.filters-button:active {
+  background: linear-gradient(135deg, rgba(44, 44, 44, 0.98) 0%, rgba(34, 34, 34, 0.98) 100%);
+  transform: translateY(0);
+  box-shadow:
+    0 2px 10px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.25);
 }
 
 .filters-button svg {
@@ -1402,6 +1411,19 @@
     padding: 28px 0;
   }
 
+  /* Аукцион, мобилка: не даём широкому контенту (марquee, сетке) раздувать страницу вбок */
+  .property-list.property-list--auction-mobile-page {
+    overflow-x: clip;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .property-list.property-list--auction-mobile-page .property-list-container {
+    overflow-x: clip;
+    max-width: 100%;
+    min-width: 0;
+  }
+
   .property-list-container {
     padding: 0 16px;
   }
@@ -1445,6 +1467,67 @@
   .filters-and-types-grid .property-types {
     display: contents;
     margin-bottom: 0;
+  }
+
+  /* Аукцион, мобилка: только кнопка «Фильтры», типы — по тапу, без модалки */
+  .search-filters-bar.search-filters-bar--auction-mobile.search-filters-bar--types-collapsed .property-types {
+    display: none !important;
+  }
+
+  .search-filters-bar.search-filters-bar--auction-mobile.search-filters-bar--types-collapsed .filters-button {
+    grid-column: 1 / -1;
+  }
+
+  .search-filters-bar.search-filters-bar--auction-mobile.search-filters-bar--types-expanded .property-types.property-types--auction-mobile {
+    display: contents;
+    margin-bottom: 0;
+  }
+
+  .search-filters-bar.search-filters-bar--auction-mobile.search-filters-bar--types-expanded .property-types.property-types--auction-mobile .type-button {
+    animation: auction-property-type-in 0.42s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  }
+
+  .search-filters-bar.search-filters-bar--auction-mobile.search-filters-bar--types-expanded
+    .property-types.property-types--auction-mobile
+    .type-button:nth-child(1) {
+    animation-delay: 0.02s;
+  }
+  .search-filters-bar.search-filters-bar--auction-mobile.search-filters-bar--types-expanded
+    .property-types.property-types--auction-mobile
+    .type-button:nth-child(2) {
+    animation-delay: 0.06s;
+  }
+  .search-filters-bar.search-filters-bar--auction-mobile.search-filters-bar--types-expanded
+    .property-types.property-types--auction-mobile
+    .type-button:nth-child(3) {
+    animation-delay: 0.1s;
+  }
+  .search-filters-bar.search-filters-bar--auction-mobile.search-filters-bar--types-expanded
+    .property-types.property-types--auction-mobile
+    .type-button:nth-child(4) {
+    animation-delay: 0.14s;
+  }
+  .search-filters-bar.search-filters-bar--auction-mobile.search-filters-bar--types-expanded
+    .property-types.property-types--auction-mobile
+    .type-button:nth-child(5) {
+    animation-delay: 0.18s;
+  }
+
+  @keyframes auction-property-type-in {
+    from {
+      opacity: 0;
+      transform: translateY(10px) scale(0.96);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .search-filters-bar.search-filters-bar--auction-mobile.search-filters-bar--types-expanded .property-types.property-types--auction-mobile .type-button {
+      animation: none;
+    }
   }
 
   .filters-and-types-grid .property-types .type-button:nth-child(4) {

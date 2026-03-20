@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useUser } from '@clerk/clerk-react'
@@ -7,70 +7,16 @@ import { BiArea } from 'react-icons/bi'
 import { properties } from '../data/properties'
 import { isAuthenticated } from '../services/authService'
 import { showNotification } from '../utils/toastHelper'
+import { hasBuyNowOption } from '../utils/hasBuyNowOption'
 import PropertyTimer from './PropertyTimer'
 import CircularTimer from './CircularTimer'
 import PropertySearchModal from './PropertySearchModal'
 import AnimatedLoadingSkeleton from './ui/AnimatedLoadingSkeleton'
+import AuctionMobileLayout from './ui/AuctionMobileLayout'
 import { MarqueeAnimation } from './ui/MarqueeAnimation'
 import './PropertyList.css'
 
 const MOBILE_BREAKPOINT = 768
-
-// Проверка, что у объекта реально есть опция "Купить сейчас"
-const hasBuyNowOption = (property) => {
-  if (!property) return false
-
-  const isAuction =
-    property.isAuction === true ||
-    property.is_auction === 1 ||
-    property.is_auction === true
-
-  const buyNowPrice = property.price ? Number(property.price) : 0
-
-  // Стартовая цена аукциона
-  const startingPriceRaw =
-    property.auction_starting_price ??
-    property.auctionStartingPrice ??
-    property.currentBid ??
-    0
-  const startingPrice = startingPriceRaw ? Number(startingPriceRaw) : 0
-
-  // Время окончания аукциона / тест-таймера
-  const endTimeRaw =
-    property.test_timer_end_date ||
-    property.endTime ||
-    property.auction_end_date ||
-    null
-
-  let timerExpired = false
-  if (endTimeRaw) {
-    const endTs = new Date(endTimeRaw).getTime()
-    if (!Number.isNaN(endTs)) {
-      timerExpired = endTs <= Date.now()
-    }
-  }
-
-  const effectiveCurrentBid = property.currentBid
-    ? Number(property.currentBid)
-    : startingPrice
-
-  // Для аукционных объектов "Купить сейчас" есть только если:
-  // - указана цена buyNowPrice > 0
-  // - она строго больше стартовой цены
-  // - таймер не истёк
-  // - текущая ставка меньше этой цены
-  if (isAuction) {
-    return (
-      buyNowPrice > 0 &&
-      buyNowPrice > startingPrice &&
-      !timerExpired &&
-      effectiveCurrentBid < buyNowPrice
-    )
-  }
-
-  // Фолбэк для неаукционных объектов (на всякий случай)
-  return buyNowPrice > 0
-}
 
 const PROPERTY_TYPE_KEYS = {
   'все': 'propertyTypeAll',
@@ -97,17 +43,23 @@ const PropertyList = ({
   const [saleFilter, setSaleFilter] = useState('all')
   const [tooltip, setTooltip] = useState({ show: false, text: '', x: 0, y: 0 })
   const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth <= MOBILE_BREAKPOINT)
+  const [mobileAuctionTypesOpen, setMobileAuctionTypesOpen] = useState(false)
+  const searchFiltersBarRef = useRef(null)
 
   useEffect(() => {
-    if (!isSearchModalOpen) return
-    const handleClickOutside = (e) => {
-      if (filtersWrapRef.current && !filtersWrapRef.current.contains(e.target)) {
-        setIsSearchModalOpen(false)
+    if (!isMobile || location.pathname !== '/auction' || !mobileAuctionTypesOpen) return
+    const handlePointerDown = (e) => {
+      if (searchFiltersBarRef.current && !searchFiltersBarRef.current.contains(e.target)) {
+        setMobileAuctionTypesOpen(false)
       }
     }
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [isSearchModalOpen])
+    document.addEventListener('mousedown', handlePointerDown)
+    document.addEventListener('touchstart', handlePointerDown, { passive: true })
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown)
+      document.removeEventListener('touchstart', handlePointerDown)
+    }
+  }, [isMobile, location.pathname, mobileAuctionTypesOpen])
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth <= MOBILE_BREAKPOINT)
@@ -285,6 +237,47 @@ const PropertyList = ({
   }, [searchQuery, propertyType])
 
   const isAuctionPage = location.pathname === '/auction'
+  const isAuctionMobileFilters = isMobile && isAuctionPage
+
+  const handleFavoriteToggle = (property, e) => {
+    e.preventDefault()
+    e.stopPropagation()
+
+    const isClerkAuth = user && userLoaded
+    const isOldAuth = isAuthenticated()
+    const isFavorite = favorites.has(property.id)
+
+    if (!isFavorite && !isClerkAuth && !isOldAuth) {
+      showNotification(t('loginToAddFavorites'))
+      return false
+    }
+
+    const wasAdding = !isFavorite
+    const newFavorites = new Set(favorites)
+
+    if (isFavorite) {
+      newFavorites.delete(property.id)
+    } else {
+      newFavorites.add(property.id)
+    }
+    setFavorites(newFavorites)
+
+    const savedFavorites = localStorage.getItem('favoriteProperties')
+    let favoritesMap = new Map()
+    if (savedFavorites) {
+      try {
+        const parsed = JSON.parse(savedFavorites)
+        favoritesMap = new Map(Object.entries(parsed))
+      } catch (err) {
+        console.error('Ошибка:', err)
+      }
+    }
+    favoritesMap.set(`property-${property.id}`, !isFavorite)
+    const obj = Object.fromEntries(favoritesMap)
+    localStorage.setItem('favoriteProperties', JSON.stringify(obj))
+
+    return wasAdding
+  }
 
   return (
     <>
@@ -333,7 +326,9 @@ const PropertyList = ({
         </div>
       )}
       <section
-        className={`property-list${floatWidgetsHiddenByFooter ? ' property-list--footer-near' : ''}`}
+        className={`property-list${floatWidgetsHiddenByFooter ? ' property-list--footer-near' : ''}${
+          isAuctionMobileFilters ? ' property-list--auction-mobile-page' : ''
+        }`}
       >
         <div className="property-list-container">
         <div className="property-list-header">
@@ -373,7 +368,18 @@ const PropertyList = ({
           )}
         </div>
         
-        <div className="search-filters-bar">
+        <div
+          ref={searchFiltersBarRef}
+          className={`search-filters-bar${
+            isAuctionMobileFilters ? ' search-filters-bar--auction-mobile' : ''
+          }${
+            isAuctionMobileFilters
+              ? mobileAuctionTypesOpen
+                ? ' search-filters-bar--types-expanded'
+                : ' search-filters-bar--types-collapsed'
+              : ''
+          }`}
+        >
           <div className="search-box">
             <svg className="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <circle cx="11" cy="11" r="8"/>
@@ -396,19 +402,32 @@ const PropertyList = ({
             )}
           </div>
           <div className="filters-and-types-grid">
-            <button 
+            <button
+              type="button"
               className="filters-button"
-              onClick={() => setIsSearchModalOpen(true)}
+              aria-expanded={isAuctionMobileFilters ? mobileAuctionTypesOpen : undefined}
+              onClick={() => {
+                if (isAuctionMobileFilters) {
+                  setMobileAuctionTypesOpen((o) => !o)
+                } else {
+                  setIsSearchModalOpen(true)
+                }
+              }}
             >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
               </svg>
               {t('filters')}
             </button>
-            <div className="property-types">
+            <div
+              className={`property-types${
+                isAuctionMobileFilters ? ' property-types--auction-mobile' : ''
+              }`}
+            >
               {(['все', 'квартира', 'апартаменты', 'вилла', 'дом']).map((type) => (
                 <button
                   key={type}
+                  type="button"
                   className={`type-button ${propertyType === type ? 'active' : ''}`}
                   onClick={() => setPropertyType(type)}
                 >
@@ -429,6 +448,16 @@ const PropertyList = ({
           </div>
         ) : (
           <>
+            {isMobile && isAuctionPage ? (
+              <div id="properties-grid" className="properties-grid properties-grid--mobile-auction">
+                <AuctionMobileLayout
+                  properties={filteredProperties.slice(0, visibleCount)}
+                  formatPrice={formatPrice}
+                  favorites={favorites}
+                  onFavoriteToggle={handleFavoriteToggle}
+                />
+              </div>
+            ) : (
             <div id="properties-grid" className="properties-grid">
               {filteredProperties.slice(0, visibleCount).map((property) => {
                 const propertyTitle = property.title || property.name || ''
@@ -565,45 +594,7 @@ const PropertyList = ({
                   )}
                   <button 
                     className={`property-favorite ${favorites.has(property.id) ? 'active' : ''}`}
-                    onClick={(e) => {
-                      e.preventDefault()
-                      e.stopPropagation()
-                      
-                      // Проверяем авторизацию через Clerk или старую систему
-                      const isClerkAuth = user && userLoaded
-                      const isOldAuth = isAuthenticated()
-                      const isFavorite = favorites.has(property.id)
-                      
-                      // Разрешаем удаление из избранного без авторизации, но добавление требует авторизации
-                      if (!isFavorite && !isClerkAuth && !isOldAuth) {
-                        showNotification(t('loginToAddFavorites'))
-                        return
-                      }
-                      
-                      const newFavorites = new Set(favorites)
-                      
-                      if (isFavorite) {
-                        newFavorites.delete(property.id)
-                      } else {
-                        newFavorites.add(property.id)
-                      }
-                      setFavorites(newFavorites)
-                      
-                      // Сохраняем в localStorage в формате, совместимом с MainPage
-                      const savedFavorites = localStorage.getItem('favoriteProperties')
-                      let favoritesMap = new Map()
-                      if (savedFavorites) {
-                        try {
-                          const parsed = JSON.parse(savedFavorites)
-                          favoritesMap = new Map(Object.entries(parsed))
-                        } catch (e) {
-                          console.error('Ошибка:', e)
-                        }
-                      }
-                      favoritesMap.set(`property-${property.id}`, !isFavorite)
-                      const obj = Object.fromEntries(favoritesMap)
-                      localStorage.setItem('favoriteProperties', JSON.stringify(obj))
-                    }}
+                    onClick={(e) => handleFavoriteToggle(property, e)}
                   >
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
                       <path 
@@ -738,6 +729,7 @@ const PropertyList = ({
                 )
               })}
             </div>
+            )}
 
             {filteredProperties.length > visibleCount && (
           <div className="load-more-container">

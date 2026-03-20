@@ -73,6 +73,9 @@
   "debtsTitle": "Долги",
   "fractionalSaleTitle": "Долевая продажа",
   "currentBid": "Текущая ставка:",
+  "auctionViewList": "Список",
+  "auctionViewCard": "Карточки",
+  "auctionAskingPrice": "Цена",
 
   "statsTitle": "Цифры Sally Your Brick",
   "statLabel1": "Совокупный объем капитала инвесторов",

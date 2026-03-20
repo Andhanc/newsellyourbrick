@@ -9,6 +9,19 @@
   position: relative;
 }
 
+@media (max-width: 768px) {
+  .home-page.home-page--auction {
+    overflow-x: clip;
+    max-width: 100%;
+  }
+
+  .home-page.home-page--auction .home-list-wrap {
+    overflow-x: clip;
+    max-width: 100%;
+    min-width: 0;
+  }
+}
+
 .home-page .new-header {
   background: #f5f5f5;
   padding: 20px 0;

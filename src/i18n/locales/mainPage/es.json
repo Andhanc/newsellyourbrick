@@ -73,6 +73,9 @@
   "debtsTitle": "Deudas",
   "fractionalSaleTitle": "Venta fraccionada",
   "currentBid": "Puja actual:",
+  "auctionViewList": "Lista",
+  "auctionViewCard": "Tarjetas",
+  "auctionAskingPrice": "Precio",
 
   "statsTitle": "Sally Your Brick en cifras",
   "statLabel1": "Volumen total de capital de inversores",

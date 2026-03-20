@@ -73,6 +73,9 @@
   "debtsTitle": "Skulder",
   "fractionalSaleTitle": "Andelsförsäljning",
   "currentBid": "Aktuellt bud:",
+  "auctionViewList": "Lista",
+  "auctionViewCard": "Kort",
+  "auctionAskingPrice": "Pris",
 
   "statsTitle": "Sally Your Brick i siffror",
   "statLabel1": "Sammanlagt investerarkapital",

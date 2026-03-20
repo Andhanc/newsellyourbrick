@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useUser, useAuth } from '@clerk/clerk-react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { FiX, FiSend } from 'react-icons/fi'
 import Header from '../components/Header'
 import Hero from '../components/Hero'
@@ -56,6 +56,8 @@ function Home() {
   const userData = getUserData()
   const [dbUserId, setDbUserId] = useState(null)
   const navigate = useNavigate()
+  const location = useLocation()
+  const isAuctionRoute = location.pathname === '/auction'
   
   // Состояния для чата AI
   const [isChatOpen, setIsChatOpen] = useState(false)
@@ -565,7 +567,7 @@ function Home() {
   // Каждый пользователь видит только свою переписку
 
   return (
-    <div className="home-page">
+    <div className={isAuctionRoute ? 'home-page home-page--auction' : 'home-page'}>
       <div
         className={`home-auction-floats${floatWidgetsHiddenByFooter ? ' home-auction-floats--footer-near' : ''}`}
         aria-hidden={floatWidgetsHiddenByFooter}

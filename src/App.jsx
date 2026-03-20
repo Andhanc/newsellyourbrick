@@ -202,6 +202,35 @@ function MainPageViewportLock() {
   return null
 }
 
+/** На /auction в мобильной вёрстке убираем горизонтальный скролл у viewport (часто даёт body, а не контент). */
+function AuctionMobileOverflowLock() {
+  const location = useLocation()
+  const CLASS = 'auction-mobile-lock-x'
+
+  useEffect(() => {
+    const apply = () => {
+      const on = location.pathname === '/auction' && window.matchMedia('(max-width: 768px)').matches
+      if (on) {
+        document.documentElement.classList.add(CLASS)
+        document.body.classList.add(CLASS)
+      } else {
+        document.documentElement.classList.remove(CLASS)
+        document.body.classList.remove(CLASS)
+      }
+    }
+    apply()
+    const mq = window.matchMedia('(max-width: 768px)')
+    mq.addEventListener('change', apply)
+    return () => {
+      mq.removeEventListener('change', apply)
+      document.documentElement.classList.remove(CLASS)
+      document.body.classList.remove(CLASS)
+    }
+  }, [location.pathname])
+
+  return null
+}
+
 // Сохраняем реферальный ref из URL (?ref=userId) в localStorage для использования при регистрации
 function ReferralCapture() {
   const location = useLocation()
@@ -334,6 +363,7 @@ function App() {
       <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
       <ScrollToTop />
       <MainPageViewportLock />
+      <AuctionMobileOverflowLock />
       <ReferralCapture />
       <VisitorHeartbeat />
       <SessionValidator onBlockedChange={setIsBlocked} />

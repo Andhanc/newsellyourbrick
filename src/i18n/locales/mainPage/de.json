@@ -73,6 +73,9 @@
   "debtsTitle": "Schulden",
   "fractionalSaleTitle": "Anteilsverkauf",
   "currentBid": "Aktuelles Gebot:",
+  "auctionViewList": "Liste",
+  "auctionViewCard": "Karten",
+  "auctionAskingPrice": "Preis",
 
   "statsTitle": "Sally Your Brick in Zahlen",
   "statLabel1": "Gesamtkapital der Investoren",
