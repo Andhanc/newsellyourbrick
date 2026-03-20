@@ -4,6 +4,18 @@ import { getApiBaseUrl } from '../../utils/apiConfig';
 import './WhatsApp.css';
 
 // Функция для получения названия языка по коду
+const LEAD_TYPE_LABELS = {
+  hot: 'Горячий',
+  warm: 'Тёплый',
+  cold: 'Холодный'
+};
+
+const LEAD_TYPE_CLASS = {
+  hot: 'lead-type--hot',
+  warm: 'lead-type--warm',
+  cold: 'lead-type--cold'
+};
+
 const getLanguageName = (langCode) => {
   const names = {
     'ru': 'Русский',
@@ -549,7 +561,15 @@ const WhatsApp = () => {
                         </div>
                         <div className="user-card-info">
                           <div className="user-card-name">
-                            <h4>{user.firstName} {user.lastName}</h4>
+                            <h4>
+                              {user.firstName} {user.lastName}
+                              <span
+                                className={`lead-type-badge ${LEAD_TYPE_CLASS[user.leadType || 'cold'] || ''}`}
+                                title="Оценка по переписке в WhatsApp"
+                              >
+                                {LEAD_TYPE_LABELS[user.leadType || 'cold'] || user.leadType}
+                              </span>
+                            </h4>
                             {user.verified && (
                               <span className="verified-badge">
                                 <FiCheck />

@@ -4196,6 +4196,36 @@ app.post('/api/whatsapp/users', (req, res) => {
   }
 });
 
+/**
+ * POST /api/whatsapp/users/lead-type — тип лида из WhatsApp-бота (hot/warm/cold).
+ * Обновляет whatsapp_users и карточки «Умный помощник» с тем же номером телефона.
+ */
+app.post('/api/whatsapp/users/lead-type', (req, res) => {
+  try {
+    const { phone_number, lead_type } = req.body || {};
+    const lt = lead_type != null ? String(lead_type).toLowerCase().trim() : '';
+    const allowed = new Set(['hot', 'warm', 'cold']);
+    if (!phone_number || !allowed.has(lt)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Нужны phone_number и lead_type: hot | warm | cold'
+      });
+    }
+    const wa = whatsappUserQueries.updateLeadType(phone_number, lt);
+    const digits = String(phone_number).replace(/\D/g, '');
+    const assistantUpdated = assistantLeadQueries.updateLeadTypeByPhoneDigits(digits, lt);
+    return res.json({
+      success: true,
+      whatsappUpdated: wa.changes || 0,
+      whatsappInserted: !!wa.inserted,
+      assistantLeadsUpdated: assistantUpdated
+    });
+  } catch (error) {
+    console.error('Ошибка POST /api/whatsapp/users/lead-type:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // URL бота для рассылки
 const BOT_URL = process.env.BOT_URL || 'http://localhost:3001';
 
@@ -4476,6 +4506,7 @@ app.get('/api/whatsapp/users', (req, res) => {
       verified: false, // WhatsApp пользователи не верифицированы через документы
       country: user.country || '',
       language: user.language || 'ru',
+      leadType: user.lead_type || 'cold',
       lastMessageAt: user.last_message_at || null,
       messageCount: user.message_count || 0,
       createdAt: user.created_at || null

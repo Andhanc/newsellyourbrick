@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS whatsapp_users (
     language TEXT DEFAULT 'ru', -- Язык пользователя (ru, en, es и т.д.)
     last_message_at DATETIME, -- Время последнего сообщения
     message_count INTEGER DEFAULT 0, -- Количество отправленных сообщений
+    lead_type TEXT DEFAULT 'cold', -- hot | warm | cold (оценка по переписке)
     is_active INTEGER DEFAULT 1, -- 1 для активных, 0 для неактивных
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP

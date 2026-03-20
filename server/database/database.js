@@ -640,6 +640,16 @@ export function initDatabase() {
         console.warn('⚠️ Не удалось создать таблицу WhatsApp пользователей:', whatsappError.message);
       }
 
+      try {
+        const waInfo = db.prepare("PRAGMA table_info(whatsapp_users)").all();
+        if (waInfo && waInfo.length && !waInfo.some((c) => c.name === 'lead_type')) {
+          db.exec("ALTER TABLE whatsapp_users ADD COLUMN lead_type TEXT DEFAULT 'cold'");
+          console.log('✅ Добавлена колонка lead_type в whatsapp_users');
+        }
+      } catch (waLeadErr) {
+        console.warn('⚠️ whatsapp_users lead_type:', waLeadErr.message);
+      }
+
       // Создаем таблицу транзакций, если её нет
       try {
         const transactionsTable = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='transactions'").get();
@@ -2798,6 +2808,34 @@ export const whatsappUserQueries = {
     const db = getDatabase();
     const stmt = db.prepare('DELETE FROM whatsapp_users WHERE phone_number = ?');
     return stmt.run(phoneNumber);
+  },
+
+  /**
+   * Обновить тип лида по номеру WhatsApp (формат 7999...@c.us). Если строки ещё нет — создаёт минимальную запись.
+   */
+  updateLeadType: (phoneNumber, leadType) => {
+    const db = getDatabase();
+    const allowed = new Set(['hot', 'warm', 'cold']);
+    if (!phoneNumber || !allowed.has(leadType)) return { changes: 0, inserted: false };
+    const existing = db.prepare('SELECT id FROM whatsapp_users WHERE phone_number = ?').get(phoneNumber);
+    if (existing) {
+      const stmt = db.prepare(`
+        UPDATE whatsapp_users
+        SET lead_type = ?, updated_at = CURRENT_TIMESTAMP
+        WHERE phone_number = ?
+      `);
+      const r = stmt.run(leadType, phoneNumber);
+      return { changes: r.changes, inserted: false };
+    }
+    const clean = String(phoneNumber).replace(/@c\.us$/i, '').replace(/@g\.us$/i, '');
+    const ins = db.prepare(`
+      INSERT INTO whatsapp_users (
+        phone_number, phone_number_clean, language, lead_type,
+        last_message_at, message_count, is_active
+      ) VALUES (?, ?, 'ru', ?, CURRENT_TIMESTAMP, 0, 1)
+    `);
+    ins.run(phoneNumber, clean || null, leadType);
+    return { changes: 1, inserted: true };
   }
 };
 
@@ -3027,6 +3065,16 @@ function computeLeadType(messages, preferences) {
   return 'cold';
 }
 
+const LEAD_RANK = { hot: 3, warm: 2, cold: 1 };
+
+/** Берём более «тёплый» тип, чтобы синхронизация с сайта не затирала оценку из WhatsApp-бота */
+function mergeLeadTypes(a, b) {
+  const ra = LEAD_RANK[a] || 0;
+  const rb = LEAD_RANK[b] || 0;
+  const best = ra >= rb ? a : b;
+  return LEAD_RANK[best] ? best : (b || a || 'cold');
+}
+
 /**
  * Формирование краткой выжимки по диалогу и предпочтениям
  */
@@ -3057,7 +3105,7 @@ export const assistantLeadQueries = {
     const { sessionId, userId, messages, preferences, email, phone } = data;
     const messagesStr = typeof messages === 'string' ? messages : JSON.stringify(messages || []);
     const preferencesStr = typeof preferences === 'string' ? preferences : JSON.stringify(preferences || {});
-    const leadType = computeLeadType(messages, preferences);
+    const computedType = computeLeadType(messages, preferences);
     const summary = buildSummary(messages, preferences);
 
     const prefs = typeof preferences === 'object' ? preferences : JSON.parse(preferencesStr);
@@ -3065,7 +3113,8 @@ export const assistantLeadQueries = {
     const region = prefs.location || prefs.region || null;
     const propertyType = prefs.propertyType || null;
 
-    const existing = db.prepare('SELECT id FROM assistant_leads WHERE session_id = ?').get(sessionId);
+    const existing = db.prepare('SELECT id, lead_type FROM assistant_leads WHERE session_id = ?').get(sessionId);
+    const leadType = existing ? mergeLeadTypes(existing.lead_type, computedType) : computedType;
     if (existing) {
       const stmt = db.prepare(`
         UPDATE assistant_leads SET
@@ -3097,6 +3146,31 @@ export const assistantLeadQueries = {
     const db = getDatabase();
     const stmt = db.prepare('SELECT * FROM assistant_leads WHERE id = ?');
     return stmt.get(id);
+  },
+
+  /**
+   * Проставить lead_type всем карточкам умного помощника с тем же телефоном (только цифры), что у WhatsApp.
+   */
+  updateLeadTypeByPhoneDigits: (digitsOnly, leadType) => {
+    const db = getDatabase();
+    const allowed = new Set(['hot', 'warm', 'cold']);
+    if (!digitsOnly || !allowed.has(leadType)) return 0;
+    const rows = db.prepare(
+      'SELECT id, phone, lead_type FROM assistant_leads WHERE phone IS NOT NULL AND trim(phone) != \'\''
+    ).all();
+    const norm = (p) => String(p || '').replace(/\D/g, '');
+    const stmt = db.prepare(
+      `UPDATE assistant_leads SET lead_type = ?, updated_at = datetime('now') WHERE id = ?`
+    );
+    let n = 0;
+    for (const row of rows) {
+      if (norm(row.phone) === digitsOnly) {
+        const merged = mergeLeadTypes(row.lead_type, leadType);
+        stmt.run(merged, row.id);
+        n++;
+      }
+    }
+    return n;
   }
 };
 

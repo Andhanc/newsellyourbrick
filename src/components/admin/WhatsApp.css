@@ -703,6 +703,32 @@
   }
 }
 
+/* Тип лида (синхронизация с WhatsApp-ботом) */
+.lead-type-badge {
+  display: inline-block;
+  padding: 0.25rem 0.6rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-left: 0.5rem;
+  vertical-align: middle;
+}
+
+.lead-type-badge.lead-type--hot {
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+.lead-type-badge.lead-type--warm {
+  background: #fffbeb;
+  color: #d97706;
+}
+
+.lead-type-badge.lead-type--cold {
+  background: #f0f9ff;
+  color: #0284c7;
+}
+
 
 
 
