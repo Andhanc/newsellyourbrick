@@ -10,11 +10,9 @@ const GoogleLoginButton = ({ onSuccess, onError, onAlreadyRegistered, onNeedRegi
     onSuccess: async (tokenResponse) => {
       try {
         const result = await handleGoogleAuth(tokenResponse, { mode })
-        
+
         if (result.success) {
-          if (onSuccess) {
-            onSuccess(result.user)
-          }
+          if (onSuccess) onSuccess(result.user)
         } else {
           if (result.code === 'ALREADY_REGISTERED' && onAlreadyRegistered) {
             onAlreadyRegistered(result.error)
@@ -26,19 +24,15 @@ const GoogleLoginButton = ({ onSuccess, onError, onAlreadyRegistered, onNeedRegi
         }
       } catch (error) {
         console.error('Ошибка Google авторизации:', error)
-        if (onError) {
-          onError('Не удалось войти через Google. Попробуйте позже.')
-        }
+        if (onError) onError('Не удалось войти через Google. Попробуйте позже.')
       }
     },
     onError: (error) => {
       console.error('Ошибка Google OAuth:', error)
-      if (onError) {
-        onError('Не удалось авторизоваться через Google')
-      }
+      if (onError) onError('Не удалось авторизоваться через Google')
     },
     flow: 'implicit',
-    scope: 'openid email profile'
+    scope: 'openid email profile',
   })
 
   return (

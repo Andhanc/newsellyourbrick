@@ -106,15 +106,78 @@ const Header = () => {
     }
   }, [])
 
+  // Открываем модальное окно регистрации/входа принудительно (например после OAuth)
+  useEffect(() => {
+    const forceOpen = sessionStorage.getItem('login_modal_force_open')
+    if (forceOpen === 'true') {
+      setIsLoginModalOpen(true)
+      sessionStorage.removeItem('login_modal_force_open')
+    }
+  }, [location.pathname])
+
+  // Дополнительно: ловим кастомное событие от OAuth-обработчиков.
+  // Это важно, если URL не менялся (например, мы уже на '/').
+  useEffect(() => {
+    const onForceOpenLoginModal = () => {
+      const forceOpen = sessionStorage.getItem('login_modal_force_open')
+      if (forceOpen === 'true') {
+        setIsLoginModalOpen(true)
+        sessionStorage.removeItem('login_modal_force_open')
+      }
+    }
+
+    window.addEventListener('forceOpenLoginModal', onForceOpenLoginModal)
+    return () => {
+      window.removeEventListener('forceOpenLoginModal', onForceOpenLoginModal)
+    }
+  }, [])
+
   // Загружаем фотографию пользователя при изменении авторизации
   useEffect(() => {
     const loadUserPhoto = async () => {
       // Проверяем авторизацию через Clerk
       if (userLoaded && user) {
-        // Пользователь авторизован через Clerk
+        // Пользователь авторизован через Clerk, но нам важно понять:
+        // есть ли он в нашей БД (localStorage->userId + реальный запрос в БД).
+        // Иначе после очистки БД/ручных сценариев мы не должны считать пользователя залогиненным.
         const clerkPhoto = user.imageUrl || user.profileImageUrl || null
-        setUserPhoto(clerkPhoto)
-        setIsLoggedIn(true)
+
+        const dbUserId = localStorage.getItem('userId')
+        const hasNumericDbUserId = dbUserId && /^\d+$/.test(String(dbUserId))
+
+        // Если userId в localStorage отсутствует — считаем, что в БД пользователя нет.
+        if (!hasNumericDbUserId) {
+          setUserPhoto(clerkPhoto)
+          setIsLoggedIn(false)
+          return
+        }
+
+        try {
+          const API_BASE_URL = await getApiBaseUrl()
+          const response = await fetch(`${API_BASE_URL}/users/${dbUserId}`)
+
+          // Пользователь отсутствует в БД — сбрасываем localStorage
+          if (response.status === 404) {
+            clearUserData()
+            setIsLoggedIn(false)
+            setUserPhoto(null)
+            return
+          }
+
+          if (response.ok) {
+            setIsLoggedIn(true)
+            setUserPhoto(clerkPhoto)
+            return
+          }
+
+          // Любая другая ошибка — считаем, что пользователь не валиден для нашего приложения
+          setIsLoggedIn(false)
+          setUserPhoto(clerkPhoto)
+        } catch (e) {
+          console.warn('Header: Failed to validate Clerk user in DB', e)
+          setIsLoggedIn(false)
+          setUserPhoto(clerkPhoto)
+        }
       } else {
         // Проверяем старую систему авторизации
         const userData = getUserData()
@@ -777,6 +840,17 @@ const Header = () => {
                 <button 
                   className={`new-header__user-btn ${isLoggedIn ? 'new-header__user-btn--avatar' : ''}`}
                   onClick={() => {
+                    // Если вход через соцсеть завершился без создания пользователя в БД,
+                    // то мы должны открыть регистрацию, а не отправлять на /profile.
+                    const oauthFlowMode = sessionStorage.getItem('clerk_oauth_flow_mode')
+                    const forcedOpen = sessionStorage.getItem('login_modal_force_open') === 'true'
+                    const forcedMode = sessionStorage.getItem('login_modal_mode')
+
+                    if (forcedOpen || forcedMode === 'register' || oauthFlowMode === 'login') {
+                      setIsLoginModalOpen(true)
+                      return
+                    }
+
                     // Всегда сначала пробуем прочитать локальные данные (роль, флаги)
                     const userData = getUserData()
                     const localRole = localStorage.getItem('userRole')
@@ -802,16 +876,26 @@ const Header = () => {
                     }
 
                     // Дальше проверяем авторизацию через Clerk и локальную авторизацию покупателя
-                    if (userLoaded && user) {
-                      // Для пользователей Clerk по умолчанию открываем профиль покупателя
-                      navigate('/profile')
-                    } else if (userData.isLoggedIn) {
-                      // Локально авторизованный покупатель
-                      navigate('/profile')
-                    } else {
-                      // Не авторизован — открываем модалку
+                    const localHasDbUser = userData.isLoggedIn && /^\d+$/.test(String(localStorage.getItem('userId') || ''))
+
+                    // Если есть Clerk-сессия, но в нашей БД нет пользователя — открываем модалку,
+                    // иначе будем снова попадать в сценарии "зарегистрируйся".
+                    if (userLoaded && user && !localHasDbUser) {
+                      if (oauthFlowMode === 'login') {
+                        sessionStorage.setItem('login_modal_mode', 'register')
+                      }
                       setIsLoginModalOpen(true)
+                      return
                     }
+
+                    // Переходим в профиль только если локально есть пользователь в БД (есть numeric userId).
+                    if (userLoaded && user && localHasDbUser) {
+                      navigate('/profile')
+                      return
+                    }
+
+                    // Не авторизован — открываем модалку
+                    setIsLoginModalOpen(true)
                   }}
                   aria-label={t('profile')}
                 >

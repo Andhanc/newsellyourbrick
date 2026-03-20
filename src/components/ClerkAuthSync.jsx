@@ -76,9 +76,11 @@ const ClerkAuthSync = () => {
       }
       
       console.log('ClerkAuthSync: User authenticated, syncing data to localStorage', clerkUserData)
-      
-      // Сохраняем данные в localStorage для совместимости (аналогично WhatsApp)
-      saveUserData(clerkUserData, 'clerk')
+
+      const oauthFlowMode = sessionStorage.getItem('clerk_oauth_flow_mode') || 'register'
+      // В режиме "вход" новый пользователь в БД НЕ создаём и localStorage не засвечиваем.
+      // Это делается в ClerkAuthHandler / LoginModal через отдельный сценарий регистрации.
+      const shouldCreateInDB = oauthFlowMode !== 'login'
       
       // Создаем или обновляем пользователя в БД
       const syncToDatabase = async () => {
@@ -141,6 +143,10 @@ const ClerkAuthSync = () => {
           
           // Если пользователь не найден, создаем его
           if (!dbUserId) {
+            if (!shouldCreateInDB) {
+              return { dbUserId: null }
+            }
+
             const nameParts = userName.split(' ')
             const firstName = nameParts[0] || 'Пользователь'
             const lastName = nameParts.slice(1).join(' ') || ''
@@ -200,9 +206,12 @@ const ClerkAuthSync = () => {
             localStorage.setItem('userId', String(dbUserId))
             console.log('✅ ClerkAuthSync: Данные синхронизированы с БД, ID:', dbUserId)
           }
+
+          return { dbUserId }
         } catch (error) {
           console.error('❌ ClerkAuthSync: Ошибка синхронизации с БД:', error)
           // Продолжаем работу, даже если БД недоступна
+          return { dbUserId: null }
         }
       }
       

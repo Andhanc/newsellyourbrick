@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useUser } from '@clerk/clerk-react'
 import './MainPage.css'
+import mainFon from '../../main fon.png'
 import {
   FiBell,
   FiSearch,
@@ -905,8 +906,8 @@ function MainPage() {
   const [statsScrollProgress, setStatsScrollProgress] = useState(0)
 
   const heroImages = {
-    rent: '/hero-main.jpg',
-    buy: '/hero-main.jpg'
+    rent: mainFon,
+    buy: mainFon
   }
   
   const heroImage = heroImages[propertyMode]
@@ -1944,7 +1945,11 @@ function MainPage() {
 
   return (
     <div className="app">
-      <section className="hero-section">
+      <section
+        className="hero-section"
+        // CSS-переменная для фонового изображения в pseudo-element'ах
+        style={{ ['--hero-bg']: `url(${heroImage})` }}
+      >
         <div className={`hero-section__image hero-section__image--rent ${propertyMode === 'rent' ? 'hero-section__image--active' : ''}`} style={{ backgroundImage: `url(${heroImages.rent})` }}></div>
         <div className={`hero-section__image hero-section__image--buy ${propertyMode === 'buy' ? 'hero-section__image--active' : ''}`} style={{ backgroundImage: `url(${heroImages.buy})` }}></div>
         <div className="hero-section__overlay"></div>
@@ -2787,7 +2792,7 @@ function MainPage() {
           </h2>
           <p className="landing-models__subtitle">{t('landingModelsSubtitle')}</p>
           <div className="landing-models__grid landing-models__grid--folders">
-            {landingFolderData.map((folder) => (
+            {landingFolderData.map((folder, idx) => (
               <AnimatedFolder
                 key={folder.title}
                 title={folder.title}
@@ -2796,6 +2801,7 @@ function MainPage() {
                 linkLabel={folder.linkLabel}
                 linkHref={folder.linkHref}
                 className="landing-models__folder"
+                isTopRow={idx < 2}
               />
             ))}
           </div>

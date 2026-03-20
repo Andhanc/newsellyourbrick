@@ -56,6 +56,7 @@ server/uploads/
 *.jpeg
 *.png
 !6019556644745841501.png
+!main fon.png
 *.gif
 *.pdf
 *.doc
@@ -70,6 +71,10 @@ server/.wwebjs_cache/
 # Database files and folder
 server/database/
 server/database.sqlite
+server/database.sqlite-wal
+server/database.sqlite-shm
+server/database.sqlite-journal
+server/database.sqlite.corrupted
 *.sqlite
 *.sqlite3
 *.db

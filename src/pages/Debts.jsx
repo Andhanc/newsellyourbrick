@@ -78,7 +78,7 @@ const Debts = () => {
       <Header />
       <div className="shares-page__bg" />
       <main ref={debtsSectionRef} className="shares-container">
-        <div className="shares-flip-cards">
+        <div className="shares-flip-cards shares-flip-cards--debts">
           <FlipCard
             color="#DC2626"
             title={t('debtsHighRisk')}

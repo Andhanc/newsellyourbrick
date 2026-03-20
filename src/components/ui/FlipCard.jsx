@@ -28,7 +28,15 @@ export default function FlipCard({
 
   return (
     <div
-      style={{ height: '380px', width: '100%', maxWidth: '320px', perspective: '2000px', position: 'relative', cursor: clickToFlip ? 'pointer' : 'default' }}
+      className="flip-card-root"
+      style={{
+        height: 'var(--flip-card-height, 380px)',
+        width: '100%',
+        maxWidth: 'var(--flip-card-max-width, 320px)',
+        perspective: '2000px',
+        position: 'relative',
+        cursor: clickToFlip ? 'pointer' : 'default'
+      }}
       onMouseEnter={() => !clickToFlip && setIsFlipped(true)}
       onMouseLeave={() => !clickToFlip && setIsFlipped(false)}
       onClick={() => clickToFlip && setIsFlipped(v => !v)}
@@ -62,7 +70,7 @@ export default function FlipCard({
           <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: `radial-gradient(ellipse at 100% 100%, ${accent}0A 0%, transparent 60%)` }} />
 
           {/* Анимированные полоски + иконка */}
-          <div style={{ position: 'absolute', top: 32, bottom: 116, left: 0, right: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ position: 'absolute', top: 'var(--flip-card-art-top, 32px)', bottom: 'var(--flip-card-art-bottom, 116px)', left: 0, right: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, width: 180, height: 100 }}>
               {[...Array(6)].map((_, i) => {
                 const w = 48 + (i * 11) % 42
@@ -101,11 +109,11 @@ export default function FlipCard({
           )}
 
           {/* Нижний блок: заголовок + молния */}
-          <div style={{ position: 'absolute', left: 0, right: 0, bottom: 30 }}>
+          <div style={{ position: 'absolute', left: 0, right: 0, bottom: 'var(--flip-card-footer-bottom, 30px)' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginLeft: '10%', marginRight: '10%' }}>
               <div style={{ minWidth: 0, flex: 1 }}>
-                <h3 style={{ fontSize: 15, fontWeight: 700, color: '#18181b', lineHeight: 1.3, margin: 0 }}>{title}</h3>
-                <p style={{ fontSize: 12, color: '#71717a', lineHeight: 1.4, margin: '4px 0 0', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{subtitle}</p>
+                <h3 style={{ fontSize: 'var(--flip-card-title-size, 15px)', fontWeight: 700, color: '#18181b', lineHeight: 'var(--flip-card-title-line-height, 1.2)', margin: 0 }}>{title}</h3>
+                <p style={{ fontSize: 'var(--flip-card-subtitle-size, 12px)', color: '#71717a', lineHeight: 1.35, margin: '4px 0 0', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{subtitle}</p>
               </div>
               <Zap style={{ flexShrink: 0, width: 16, height: 16, color: accent }} />
             </div>

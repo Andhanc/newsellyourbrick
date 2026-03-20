@@ -149,7 +149,10 @@ export default defineConfig(({ mode }) => {
     },
     server: {
       port: vitePort,
-      host: '0.0.0.0', // Слушаем на всех интерфейсах для Railway
+      // Важно для OAuth (Google/Facebook origin_mismatch):
+      // чтобы случайно не открывали сайт по Network IP (например 192.168.*),
+      // а использовали именно localhost.
+      host: 'localhost',
       strictPort: false, // НЕ строгий порт - если порт занят, попробуем другой
       // ВАЖНО: Railway устанавливает PORT, приложение должно слушать на этом порту
       // Разрешаем все Railway хосты

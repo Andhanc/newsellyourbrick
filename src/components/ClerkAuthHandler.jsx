@@ -15,7 +15,7 @@ const ClerkAuthHandler = () => {
   const { user, isLoaded: userLoaded } = useUser()
   const { session } = useSession()
   const [hasProcessed, setHasProcessed] = useState(false)
-  const [oauthError, setOauthError] = useState(null) // { title, message } при таймауте/ошибке OAuth
+  const [oauthError, setOauthError] = useState(null) // { variant, title, message } при ошибках OAuth
   const timeoutTriggeredRef = useRef(false)
 
   useEffect(() => {
@@ -46,6 +46,8 @@ const ClerkAuthHandler = () => {
     // Проверяем, был ли недавний редирект (проверяем sessionStorage)
     const oauthRedirectKey = 'clerk_oauth_redirect_started'
     const oauthRedirectStarted = sessionStorage.getItem(oauthRedirectKey)
+    const needsRegisterPrompted = sessionStorage.getItem('clerk_oauth_needs_register_prompted') === 'true'
+    const oauthFlowMode = sessionStorage.getItem('clerk_oauth_flow_mode') || 'register'
     
     // Проверяем, были ли мы на Clerk домене (проверяем document.referrer)
     const wasOnClerkDomain = document.referrer.includes('clerk.accounts.dev') || 
@@ -74,17 +76,6 @@ const ClerkAuthHandler = () => {
       cookies: document.cookie
     })
     
-    // Google/Facebook вернули на localhost, минуя Clerk — сразу показываем модалку
-    if (oauthRedirectStarted && !hasOAuthParams && !isSignedIn && !timeoutTriggeredRef.current) {
-      timeoutTriggeredRef.current = true
-      sessionStorage.removeItem(oauthRedirectKey)
-      setOauthError({
-        title: 'Не удалось войти через Google',
-        message: 'Вы ещё не зарегистрированы на нашем сайте. Нажмите «Понятно», затем выберите «Регистрация» и зарегистрируйтесь через Google, email, Telegram или WhatsApp.',
-      })
-      return
-    }
-
     // Если пользователь авторизован и есть данные
     if ((isSignedIn || session) && user && !hasProcessed) {
       // Формируем имя пользователя
@@ -137,16 +128,14 @@ const ClerkAuthHandler = () => {
         role: userRole === 'seller' ? 'seller' : 'buyer' // Используем правильную роль
       }
       
-      console.log('ClerkAuthHandler: User authenticated, saving data', clerkUserData)
-      
-      // Сохраняем данные в localStorage (как в WhatsApp)
-      saveUserData(clerkUserData, 'clerk')
-      
+      console.log('ClerkAuthHandler: User authenticated, syncing with DB', clerkUserData)
+
       // Создаем или обновляем пользователя в БД
       const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
       const syncToDatabase = async () => {
         try {
           let dbUserId = null
+          let shouldOpenRegister = false
           
           // Сначала пытаемся найти пользователя по email
           let foundUser = null
@@ -209,6 +198,13 @@ const ClerkAuthHandler = () => {
           
           // Если пользователь не найден, создаем его
           if (!dbUserId) {
+            if (oauthFlowMode === 'login') {
+              // В режиме "вход" новый пользователь в нашей БД не создаём:
+              // вместо этого открываем регистрацию.
+              shouldOpenRegister = true
+              return { dbUserId: null, shouldOpenRegister }
+            }
+
             const nameParts = userName.split(' ')
             const firstName = nameParts[0] || 'Пользователь'
             const lastName = nameParts.slice(1).join(' ') || ''
@@ -266,47 +262,88 @@ const ClerkAuthHandler = () => {
             localStorage.setItem('userId', String(dbUserId))
             console.log('✅ ClerkAuthHandler: Данные синхронизированы с БД, ID:', dbUserId)
           }
+
+          return { dbUserId, shouldOpenRegister }
         } catch (error) {
           console.error('❌ ClerkAuthHandler: Ошибка синхронизации с БД:', error)
+          return { dbUserId: null, shouldOpenRegister: false }
         }
       }
-      
-      syncToDatabase()
-      
-      setHasProcessed(true)
-      
-      // Очищаем флаг OAuth редиректа
-      if (oauthRedirectStarted) {
-        sessionStorage.removeItem(oauthRedirectKey)
-      }
-      
-      // Очищаем OAuth параметры из URL
-      if (hasOAuthParams) {
-        const cleanUrl = window.location.pathname
-        window.history.replaceState({}, '', cleanUrl)
-        console.log('ClerkAuthHandler: Cleaned OAuth params from URL')
-      }
-      
-      // Редиректим только если это реальный OAuth редирект, а не обычное обновление страницы
-      // Проверяем наличие OAuth параметров или недавний OAuth редирект
-      if (hasOAuthParams || oauthRedirectStarted || wasOnClerkDomain) {
-        // Определяем куда редиректить в зависимости от роли пользователя
-        // Используем роль из clerkUserData, которая уже была сохранена выше
-        const savedUserRole = clerkUserData.role || localStorage.getItem('userRole') || 'buyer'
-        const redirectPath = (savedUserRole === 'seller' || savedUserRole === 'owner') ? '/owner' : '/profile'
-        
-        // Навигация на правильную страницу в зависимости от роли
-        if (window.location.pathname !== redirectPath) {
-          console.log('ClerkAuthHandler: OAuth redirect detected, navigating to', redirectPath, 'for role:', savedUserRole)
-          navigate(redirectPath, { replace: true })
+
+      ;(async () => {
+        const { dbUserId, shouldOpenRegister } = await syncToDatabase()
+
+        if (shouldOpenRegister) {
+          // Чтобы не показывать одно и то же окно после перезагрузок бесконечно.
+          // После первого показа сценария "нужно зарегистрироваться" мы просто открываем форму,
+          // но не спамим уведомлением.
+          sessionStorage.setItem('clerk_oauth_needs_register_prompted', 'true')
+
+          // Сигнал Хедеру/модалке: открыть регистрацию.
+          sessionStorage.setItem('login_modal_force_open', 'true')
+          sessionStorage.setItem('login_modal_mode', 'register')
+          sessionStorage.setItem('login_modal_user_role', userRole === 'seller' ? 'seller' : 'buyer')
+          // Событие поможет открыть модалку даже если URL не менялся (например, мы уже на '/').
+          window.dispatchEvent(new Event('forceOpenLoginModal'))
+
+          if (!needsRegisterPrompted) {
+            setOauthError({
+              variant: 'need_register',
+              title: 'Вы не зарегистрированы на сайте',
+              message: 'Закройте окно и выберите «Регистрация», чтобы завершить оформление через Google или Facebook.',
+            })
+          }
+
+          // Не редиректим на профиль: аккаунт в нашей БД ещё не создан.
+          if (oauthRedirectStarted) {
+            sessionStorage.removeItem(oauthRedirectKey)
+          }
+          if (hasOAuthParams) {
+            const cleanUrl = window.location.pathname
+            window.history.replaceState({}, '', cleanUrl)
+          }
+
+          setHasProcessed(true)
+          navigate('/', { replace: true })
+          return
+        }
+
+        setHasProcessed(true)
+
+        // Очищаем флаг OAuth редиректа
+        if (oauthRedirectStarted) {
+          sessionStorage.removeItem(oauthRedirectKey)
+        }
+        sessionStorage.removeItem('clerk_oauth_flow_mode')
+
+        // Очищаем OAuth параметры из URL
+        if (hasOAuthParams) {
+          const cleanUrl = window.location.pathname
+          window.history.replaceState({}, '', cleanUrl)
+          console.log('ClerkAuthHandler: Cleaned OAuth params from URL')
+        }
+
+        // Редиректим только если это реальный OAuth редирект, а не обычное обновление страницы
+        // Проверяем наличие OAuth параметров или недавний OAuth редирект
+        if (hasOAuthParams || oauthRedirectStarted || wasOnClerkDomain) {
+          // Определяем куда редиректить в зависимости от роли пользователя
+          const savedUserRole = clerkUserData.role || localStorage.getItem('userRole') || 'buyer'
+          const redirectPath = (savedUserRole === 'seller' || savedUserRole === 'owner') ? '/owner' : '/profile'
+
+          // Навигация на правильную страницу в зависимости от роли
+          if (window.location.pathname !== redirectPath) {
+            console.log('ClerkAuthHandler: OAuth redirect detected, navigating to', redirectPath, 'for role:', savedUserRole)
+            navigate(redirectPath, { replace: true })
+          } else {
+            console.log('ClerkAuthHandler: Already on correct page after OAuth, data should update automatically')
+          }
         } else {
-          // Если уже на правильной странице, обновляем данные без перезагрузки
-          console.log('ClerkAuthHandler: Already on correct page after OAuth, data should update automatically')
+          console.log('ClerkAuthHandler: Normal page refresh, no redirect needed. Current path:', window.location.pathname)
         }
-      } else {
-        // Это обычное обновление страницы, не делаем редирект
-        console.log('ClerkAuthHandler: Normal page refresh, no redirect needed. Current path:', window.location.pathname)
-      }
+      })()
+
+      // Прерываем текущий рендер эффекта: дальнейшие действия выполняются в async IIFE.
+      return
     } else if ((!isSignedIn && !session) && (hasOAuthParams || oauthRedirectStarted || wasOnClerkDomain) && !hasProcessed) {
       // Если есть OAuth параметры или был запущен OAuth редирект, но пользователь не авторизован, ждем и проверяем повторно
       console.log('ClerkAuthHandler: OAuth redirect detected but user not signed in yet, waiting...')
@@ -373,7 +410,7 @@ const ClerkAuthHandler = () => {
         <AuthAlertModal
           isOpen
           onClose={handleOauthErrorClose}
-          variant="error"
+          variant={oauthError.variant || 'error'}
           title={oauthError.title}
           message={oauthError.message}
           buttonText="Понятно"

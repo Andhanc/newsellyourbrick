@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useUser, useClerk, useAuth } from '@clerk/clerk-react'
 import { FaPencilAlt } from 'react-icons/fa'
-import { getUserData, saveUserData, logout } from '../services/authService'
+import { getUserData, saveUserData, logout, clearUserData } from '../services/authService'
 import VerificationToast from '../components/VerificationToast'
 import VerificationModal from '../components/VerificationModal'
 import SellerVerificationModal from '../components/SellerVerificationModal'
@@ -491,6 +491,21 @@ const Profile = () => {
           
           // Если пользователь не найден, создаем его
           if (!dbUserId) {
+            const oauthFlowMode = sessionStorage.getItem('clerk_oauth_flow_mode') || 'register'
+            if (oauthFlowMode === 'login') {
+              // В режиме "вход" нового пользователя в БД не создаём:
+              // открываем регистрацию.
+              sessionStorage.setItem('login_modal_force_open', 'true')
+              sessionStorage.setItem('login_modal_mode', 'register')
+
+              const forcedRole = sessionStorage.getItem('clerk_oauth_user_role') || localStorage.getItem('userRole') || 'buyer'
+              sessionStorage.setItem('login_modal_user_role', forcedRole === 'seller' || forcedRole === 'owner' ? 'seller' : 'buyer')
+
+              clearUserData()
+              navigate('/', { replace: true })
+              return
+            }
+
             const nameParts = userName.split(' ')
             const firstName = nameParts[0] || 'Пользователь'
             const lastName = nameParts.slice(1).join(' ') || ''

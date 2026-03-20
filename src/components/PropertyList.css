@@ -1377,12 +1377,14 @@
   }
 
   .property-list-header .ai-button {
-    position: static !important;
-    width: 44px;
-    height: 44px;
-    font-size: 14px;
+    position: fixed !important;
+    right: 18px;
+    bottom: 90px;
+    width: 56px;
+    height: 56px;
+    font-size: 16px;
     margin: 0;
-    flex-shrink: 0;
+    z-index: 50;
   }
 
   .property-list {
@@ -1391,6 +1393,14 @@
 
   .property-list-container {
     padding: 0 16px;
+  }
+
+  /* Полосы «Активные аукционы» делаем во всю ширину */
+  .property-list-header {
+    margin-left: -16px;
+    margin-right: -16px;
+    padding-left: 16px;
+    padding-right: 16px;
   }
 
   .property-card {

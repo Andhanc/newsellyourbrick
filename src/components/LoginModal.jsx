@@ -2,15 +2,14 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { FiX, FiMail, FiLock, FiUser, FiEye, FiEyeOff } from 'react-icons/fi'
 import { FaGoogle, FaWhatsapp, FaFacebook, FaTelegram } from 'react-icons/fa'
-import { useSignIn, useSignUp } from '@clerk/clerk-react'
+import { useSignIn, useSignUp, useAuth, useUser } from '@clerk/clerk-react'
 import { useTranslation } from 'react-i18next'
 import WhatsAppVerificationModal from './WhatsAppVerificationModal'
 import EmailVerificationModal from './EmailVerificationModal'
 import VerificationDocumentsModal from './VerificationDocumentsModal'
-import { registerWithEmail, loginWithEmail, validatePassword } from '../services/authService'
+import { registerWithEmail, loginWithEmail, validatePassword, saveUserData, getReferrerId } from '../services/authService'
 import { getApiBaseUrl } from '../utils/apiConfig'
 import { showNotification } from '../utils/toastHelper'
-import GoogleLoginButton from './GoogleLoginButton'
 import AnimatedCharacters from './AnimatedCharacters'
 import './LoginModal.css'
 
@@ -19,14 +18,22 @@ const LoginModal = ({ isOpen, onClose }) => {
   const navigate = useNavigate()
   const { signIn, isLoaded: signInLoaded } = useSignIn()
   const { signUp, isLoaded: signUpLoaded } = useSignUp()
-  const [isLogin, setIsLogin] = useState(true) // true для входа, false для регистрации
+  const { isSignedIn, isLoaded: authLoaded } = useAuth()
+  const { user, isLoaded: userLoaded } = useUser()
+  const [isLogin, setIsLogin] = useState(() => {
+    // Если открываем модалку принудительно из flow oauth -> нужно выбрать режим
+    const forcedMode = sessionStorage.getItem('login_modal_mode')
+    return forcedMode === 'register' ? false : true
+  }) // true для входа, false для регистрации
   const [formData, setFormData] = useState({
     email: '',
     password: '',
     name: '',
     confirmPassword: ''
   })
-  const [userRole, setUserRole] = useState('buyer') // 'buyer' или 'seller'
+  const [userRole, setUserRole] = useState(() => {
+    return sessionStorage.getItem('login_modal_user_role') || 'buyer' // 'buyer' или 'seller'
+  })
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
   const [showWhatsAppModal, setShowWhatsAppModal] = useState(false)
@@ -71,6 +78,22 @@ const LoginModal = ({ isOpen, onClose }) => {
     if (isOpen && !telegramBotUsername) {
       fetchTelegramConfig()
     }
+  }, [isOpen])
+
+  // Применяем принудительный режим/роль модалки из sessionStorage и чистим флаги.
+  useEffect(() => {
+    if (!isOpen) return
+
+    const forcedMode = sessionStorage.getItem('login_modal_mode')
+    if (forcedMode === 'register') setIsLogin(false)
+
+    const forcedRole = sessionStorage.getItem('login_modal_user_role')
+    if (forcedRole === 'buyer' || forcedRole === 'seller' || forcedRole === 'owner') {
+      setUserRole(forcedRole)
+    }
+
+    sessionStorage.removeItem('login_modal_mode')
+    sessionStorage.removeItem('login_modal_user_role')
   }, [isOpen])
 
   // Сохраняем режим и роль для callback после редиректа из Telegram
@@ -321,16 +344,104 @@ const LoginModal = ({ isOpen, onClose }) => {
     }
   }
 
-  const handleGoogleSuccess = (user) => {
-    const role = user?.role || userRole || 'buyer'
-    onClose()
-    showNotification(`Добро пожаловать, ${user?.name || 'Пользователь'}!`)
-    if (role === 'seller' || role === 'owner') {
-      localStorage.setItem('isOwnerLoggedIn', 'true')
-      localStorage.setItem('userRole', role)
-      navigate('/owner')
-    } else {
-      navigate('/profile')
+  const handleGoogleAuth = async () => {
+    try {
+      setIsLoading(true)
+      setError('')
+
+      // Если Clerk уже авторизован, а в нашей БД пользователя нет —
+      // не вызываем OAuth снова (иначе получишь "You're already signed in"),
+      // а просто создаём пользователя в БД из данных Clerk.
+      const localHasDbUser = /^\d+$/.test(String(localStorage.getItem('userId') || ''))
+      if (authLoaded && isSignedIn && userLoaded && user && !localHasDbUser) {
+        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
+
+        const userName = user.fullName || `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Пользователь'
+        const nameParts = userName.split(' ')
+        const firstName = nameParts[0] || 'Пользователь'
+        const lastName = nameParts.slice(1).join(' ') || ''
+
+        const userEmail = user.primaryEmailAddress?.emailAddress || (user.emailAddresses?.[0]?.emailAddress || null)
+        const userImage = user.imageUrl || user.profileImageUrl || null
+        const userPhone = user.primaryPhoneNumber?.phoneNumber || (user.phoneNumbers?.[0]?.phoneNumber || null)
+
+        const referrerId = getReferrerId()
+        const roleToUse = (userRole === 'seller' || userRole === 'owner') ? 'seller' : 'buyer'
+
+        const response = await fetch(`${API_BASE_URL}/users`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            first_name: firstName,
+            last_name: lastName,
+            email: userEmail || null,
+            phone_number: userPhone ? String(userPhone).replace(/\D/g, '') : null,
+            role: roleToUse,
+            is_verified: 0,
+            is_online: 1,
+            ...(referrerId ? { referrer_id: referrerId } : {})
+          })
+        })
+
+        if (!response.ok) {
+          const data = await response.json().catch(() => ({}))
+          throw new Error(data.error || 'Не удалось создать пользователя в БД')
+        }
+
+        const data = await response.json()
+        if (!data?.success || !data?.data?.id) {
+          throw new Error(data?.error || 'Не удалось создать пользователя в БД')
+        }
+
+        const dbUserId = data.data.id
+        const clerkUserData = {
+          name: userName,
+          email: userEmail || '',
+          picture: userImage,
+          id: String(user.id || ''),
+          phone: userPhone || '',
+          phoneFormatted: userPhone || '',
+          role: roleToUse
+        }
+
+        saveUserData({ ...clerkUserData, id: dbUserId.toString() }, 'clerk')
+        localStorage.setItem('userId', String(dbUserId))
+
+        onClose?.()
+        showNotification('Пользователь создан. Продолжаем регистрацию...')
+        navigate('/profile')
+        setIsLoading(false)
+        return
+      }
+
+      // Фиксируем роль для редиректа после OAuth
+      sessionStorage.setItem('clerk_oauth_redirect_started', 'true')
+      sessionStorage.setItem('clerk_oauth_user_role', userRole)
+      sessionStorage.setItem('clerk_oauth_flow_mode', isLogin ? 'login' : 'register')
+
+      if (isLogin) {
+        if (signInLoaded && signIn) {
+          await signIn.authenticateWithRedirect({
+            strategy: 'oauth_google',
+          })
+        } else {
+          setError('Система авторизации не готова. Попробуйте обновить страницу.')
+          setIsLoading(false)
+        }
+      } else {
+        if (signUpLoaded && signUp) {
+          await signUp.authenticateWithRedirect({
+            strategy: 'oauth_google',
+          })
+        } else {
+          setError('Система регистрации не готова. Попробуйте обновить страницу.')
+          setIsLoading(false)
+        }
+      }
+    } catch (error) {
+      console.error('LoginModal: Ошибка авторизации через Google (Clerk):', error)
+      setError(`Не удалось войти через Google: ${error.message || 'Проверьте настройки'}`)
+      setIsLoading(false)
     }
   }
 
@@ -338,6 +449,71 @@ const LoginModal = ({ isOpen, onClose }) => {
     try {
       setIsLoading(true)
       setError('')
+
+      // Аналогичный fallback для случая, когда Clerk уже авторизован,
+      // а пользователь ещё не создан в нашей БД.
+      const localHasDbUser = /^\d+$/.test(String(localStorage.getItem('userId') || ''))
+      if (authLoaded && isSignedIn && userLoaded && user && !localHasDbUser) {
+        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
+
+        const userName = user.fullName || `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Пользователь'
+        const nameParts = userName.split(' ')
+        const firstName = nameParts[0] || 'Пользователь'
+        const lastName = nameParts.slice(1).join(' ') || ''
+
+        const userEmail = user.primaryEmailAddress?.emailAddress || (user.emailAddresses?.[0]?.emailAddress || null)
+        const userImage = user.imageUrl || user.profileImageUrl || null
+        const userPhone = user.primaryPhoneNumber?.phoneNumber || (user.phoneNumbers?.[0]?.phoneNumber || null)
+
+        const referrerId = getReferrerId()
+        const roleToUse = (userRole === 'seller' || userRole === 'owner') ? 'seller' : 'buyer'
+
+        const response = await fetch(`${API_BASE_URL}/users`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            first_name: firstName,
+            last_name: lastName,
+            email: userEmail || null,
+            phone_number: userPhone ? String(userPhone).replace(/\D/g, '') : null,
+            role: roleToUse,
+            is_verified: 0,
+            is_online: 1,
+            ...(referrerId ? { referrer_id: referrerId } : {})
+          })
+        })
+
+        if (!response.ok) {
+          const data = await response.json().catch(() => ({}))
+          throw new Error(data.error || 'Не удалось создать пользователя в БД')
+        }
+
+        const data = await response.json()
+        if (!data?.success || !data?.data?.id) {
+          throw new Error(data?.error || 'Не удалось создать пользователя в БД')
+        }
+
+        const dbUserId = data.data.id
+
+        const clerkUserData = {
+          name: userName,
+          email: userEmail || '',
+          picture: userImage,
+          id: String(user.id || ''),
+          phone: userPhone || '',
+          phoneFormatted: userPhone || '',
+          role: roleToUse
+        }
+
+        saveUserData({ ...clerkUserData, id: dbUserId.toString() }, 'clerk')
+        localStorage.setItem('userId', String(dbUserId))
+
+        onClose?.()
+        showNotification('Пользователь создан. Продолжаем регистрацию...')
+        navigate('/profile')
+        setIsLoading(false)
+        return
+      }
       
       console.log('LoginModal: Starting Facebook auth', { signInLoaded, signUpLoaded, isLogin, userRole })
       
@@ -348,10 +524,9 @@ const LoginModal = ({ isOpen, onClose }) => {
           sessionStorage.setItem('clerk_oauth_redirect_started', 'true')
           // Сохраняем роль для использования после авторизации
           sessionStorage.setItem('clerk_oauth_user_role', userRole)
+          sessionStorage.setItem('clerk_oauth_flow_mode', 'login')
           await signIn.authenticateWithRedirect({
             strategy: 'oauth_facebook',
-            redirectUrl: `${window.location.origin}/profile`,
-            redirectUrlComplete: `${window.location.origin}/profile`,
           })
         } else {
           setError('Система авторизации не готова. Попробуйте обновить страницу.')
@@ -364,10 +539,9 @@ const LoginModal = ({ isOpen, onClose }) => {
           sessionStorage.setItem('clerk_oauth_redirect_started', 'true')
           // Сохраняем роль для использования после регистрации
           sessionStorage.setItem('clerk_oauth_user_role', userRole)
+          sessionStorage.setItem('clerk_oauth_flow_mode', 'register')
           await signUp.authenticateWithRedirect({
             strategy: 'oauth_facebook',
-            redirectUrl: `${window.location.origin}/profile`,
-            redirectUrlComplete: `${window.location.origin}/profile`,
           })
         } else {
           setError('Система регистрации не готова. Попробуйте обновить страницу.')
@@ -555,19 +729,19 @@ const LoginModal = ({ isOpen, onClose }) => {
             </span>
           </button>
           
-          <GoogleLoginButton
-            mode={isLogin ? 'login' : 'register'}
+          <button
+            type="button"
             className="login-modal__social-btn login-modal__social-btn--google"
-            disabled={isLoading}
-            isLoading={isLoading}
-            onSuccess={handleGoogleSuccess}
-            onNeedRegister={(msg) => setError(msg || 'Вы не зарегистрированы на сайте. Выберите «Регистрация» и зарегистрируйтесь через Google.')}
-            onAlreadyRegistered={(msg) => setError(msg || 'Вы уже зарегистрированы. Выберите «Вход», чтобы войти через Google.')}
-            onError={(msg) => setError(msg || 'Не удалось войти через Google. Попробуйте позже.')}
+            onClick={handleGoogleAuth}
+            disabled={isLoading || !signInLoaded || !signUpLoaded}
+            style={{ 
+              opacity: (isLoading || !signInLoaded || !signUpLoaded) ? 0.6 : 1, 
+              cursor: (isLoading || !signInLoaded || !signUpLoaded) ? 'not-allowed' : 'pointer' 
+            }}
           >
             <FaGoogle size={20} />
             <span>{isLogin ? t('loginWithGoogle') : t('registerWithGoogle')}</span>
-          </GoogleLoginButton>
+          </button>
           
           <button 
             type="button"

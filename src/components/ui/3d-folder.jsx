@@ -20,26 +20,31 @@ const ProjectCard = forwardRef(
   ) => {
     const middleIndex = (totalCount - 1) / 2;
     const factor = totalCount > 1 ? (index - middleIndex) / middleIndex : 0;
+    const compact = typeof window !== 'undefined' ? window.innerWidth <= 420 : false;
     const rotation = factor * 25;
-    const translationX = factor * 85;
-    const translationY = Math.abs(factor) * 12;
+    const translationX = factor * (compact ? 55 : 85);
+    const translationY = Math.abs(factor) * (compact ? 9 : 12);
+    const translateBaseY = compact ? -80 : -100;
+    const cardLeft = compact ? '-28px' : '-40px';
+    const cardTop = compact ? '-44px' : '-56px';
 
     return (
       <div
         ref={ref}
         className={cn(
-          'absolute w-20 h-28 cursor-pointer group/card',
+          'absolute cursor-pointer group/card',
+          compact ? 'w-14 h-20' : 'w-20 h-28',
           isSelected && 'opacity-0'
         )}
         style={{
           transform: isVisible
-            ? `translateY(calc(-100px + ${translationY}px)) translateX(${translationX}px) rotate(${rotation}deg) scale(1)`
+            ? `translateY(calc(${translateBaseY}px + ${translationY}px)) translateX(${translationX}px) rotate(${rotation}deg) scale(1)`
             : 'translateY(0px) translateX(0px) rotate(0deg) scale(0.4)',
           opacity: isSelected ? 0 : isVisible ? 1 : 0,
           transition: `all 700ms cubic-bezier(0.16, 1, 0.3, 1) ${delay}ms`,
           zIndex: 10 + index,
-          left: '-40px',
-          top: '-56px',
+          left: cardLeft,
+          top: cardTop,
         }}
         onClick={(e) => {
           e.stopPropagation();
@@ -62,7 +67,7 @@ const ProjectCard = forwardRef(
             }}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
-          <p className="absolute bottom-1.5 left-1.5 right-1.5 text-[9px] font-black uppercase tracking-tighter text-white truncate drop-shadow-md">
+          <p className="absolute bottom-1.5 left-1.5 right-1.5 text-[7px] font-black uppercase tracking-tighter text-white truncate drop-shadow-md leading-none">
             {title}
           </p>
         </div>
@@ -332,7 +337,7 @@ function ImageLightbox({
           >
             <div className="flex items-center justify-between gap-6">
               <div className="flex-1 min-w-0">
-                <h3 className="text-2xl font-bold text-gray-900 tracking-tight truncate">
+                <h3 className="text-xl sm:text-1xl font-bold text-gray-900 tracking-tight truncate leading-snug">
                   {currentProject?.title}
                 </h3>
                 <div className="flex items-center gap-4 mt-2">
@@ -384,12 +389,33 @@ function ImageLightbox({
   );
 }
 
-function AnimatedFolder({ title, projects, className, gradient, linkLabel, linkHref }) {
+function AnimatedFolder({
+  title,
+  projects,
+  className,
+  gradient,
+  linkLabel,
+  linkHref,
+  isTopRow = false,
+}) {
   const [isHovered, setIsHovered] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(null);
   const [sourceRect, setSourceRect] = useState(null);
   const [hiddenCardId, setHiddenCardId] = useState(null);
   const cardRefs = useRef([]);
+
+  const [viewportWidth, setViewportWidth] = useState(() => {
+    if (typeof window === 'undefined') return 1024
+    return window.innerWidth
+  })
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+
+    const onResize = () => setViewportWidth(window.innerWidth)
+    window.addEventListener('resize', onResize, { passive: true })
+    return () => window.removeEventListener('resize', onResize)
+  }, [])
 
   const previewProjects = projects.slice(0, 5);
 
@@ -420,18 +446,43 @@ function AnimatedFolder({ title, projects, className, gradient, linkLabel, linkH
     gradient ||
     'linear-gradient(135deg, #14b8a6 0%, #0d9488 100%)';
 
+  const isMobile = viewportWidth <= 768
+  const isXs = viewportWidth <= 360
+  const isSm = viewportWidth > 360 && viewportWidth <= 420
+
+  // Размеры карточки "папки" под сетку 2x2 на мобильных
+  const minWidth = isMobile ? (isXs ? 104 : isSm ? 112 : 124) : 280
+  const minHeight = isMobile ? (isXs ? 204 : isSm ? 214 : 224) : 320
+
+  const centerW = isMobile ? (isXs ? 92 : isSm ? 98 : 112) : 200
+  const centerH = isMobile ? (isXs ? 84 : isSm ? 90 : 100) : 160
+
+  const backW = isMobile ? (isXs ? 56 : isSm ? 60 : 68) : 128
+  const backH = isMobile ? (isXs ? 40 : isSm ? 42 : 48) : 96
+
+  const frontYOffset = isMobile ? Math.max(2, Math.round(4 * (backH / 96))) : 4
+
+  const tabH = Math.max(10, Math.round(backH / 6)) // 96/6=16 (как на десктопе)
+  const tabW = Math.max(24, Math.round(backW * 0.375)) // 128*0.375=48 (как на десктопе)
+  const tabOffsetX = backW * 0.125 // 128*0.125=16
+
   return (
     <>
       <div
         className={cn(
-          'relative flex flex-col items-center justify-center p-8 rounded-2xl cursor-pointer bg-white border border-gray-200 transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] hover:shadow-2xl hover:shadow-teal-500/20 hover:border-teal-500/40 group',
+          'relative flex flex-col items-center p-8 rounded-2xl cursor-pointer bg-white border border-gray-200 transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] hover:shadow-2xl hover:shadow-teal-500/20 hover:border-teal-500/40 group',
+          isMobile ? 'justify-start' : 'justify-center',
           className
         )}
         style={{
-          minWidth: '280px',
-          minHeight: '320px',
+          minWidth: `${minWidth}px`,
+          minHeight: `${minHeight}px`,
+          // Tailwind `p-8` (32px) на телефонах слишком много — уменьшаем внутренний отступ
+          padding: isMobile ? (isXs ? '12px' : '13px') : '32px',
           perspective: '1200px',
-          transform: isHovered ? 'scale(1.04) rotate(-1.5deg)' : 'scale(1) rotate(0deg)',
+          transform: isHovered
+            ? `scale(${isMobile ? 1.02 : 1.04}) rotate(-1.5deg)`
+            : 'scale(1) rotate(0deg)',
         }}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
@@ -447,13 +498,19 @@ function AnimatedFolder({ title, projects, className, gradient, linkLabel, linkH
         />
         <div
           className="relative flex items-center justify-center mb-4"
-          style={{ height: '160px', width: '200px' }}
+          style={{
+            height: `${centerH}px`,
+            width: `${centerW}px`,
+            marginBottom: isMobile ? '8px' : undefined,
+          }}
         >
           <div
-            className="absolute w-32 h-24 rounded-lg shadow-md border border-white/10"
+            className="absolute rounded-lg shadow-md border border-white/10"
             style={{
               background: backBg,
               filter: gradient ? 'brightness(0.9)' : 'none',
+              width: `${backW}px`,
+              height: `${backH}px`,
               transformOrigin: 'bottom center',
               transform: isHovered ? 'rotateX(-20deg) scaleY(1.05)' : 'rotateX(0deg) scaleY(1)',
               transition: 'transform 700ms cubic-bezier(0.16, 1, 0.3, 1)',
@@ -461,12 +518,14 @@ function AnimatedFolder({ title, projects, className, gradient, linkLabel, linkH
             }}
           />
           <div
-            className="absolute w-12 h-4 rounded-t-md border-t border-x border-white/10"
+            className="absolute rounded-t-md border-t border-x border-white/10"
             style={{
               background: tabBg,
               filter: gradient ? 'brightness(0.85)' : 'none',
-              top: 'calc(50% - 48px - 12px)',
-              left: 'calc(50% - 64px + 16px)',
+              width: `${tabW}px`,
+              height: `${tabH}px`,
+              top: `calc(50% - ${backH / 2}px - ${tabH / 2}px)`,
+              left: `calc(50% - ${backW / 2}px + ${tabOffsetX}px)`,
               transformOrigin: 'bottom center',
               transform: isHovered
                 ? 'rotateX(-30deg) translateY(-3px)'
@@ -502,10 +561,12 @@ function AnimatedFolder({ title, projects, className, gradient, linkLabel, linkH
             ))}
           </div>
           <div
-            className="absolute w-32 h-24 rounded-lg shadow-lg border border-white/20"
+            className="absolute rounded-lg shadow-lg border border-white/20"
             style={{
               background: frontBg,
-              top: 'calc(50% - 48px + 4px)',
+              width: `${backW}px`,
+              height: `${backH}px`,
+              top: `calc(50% - ${backH / 2}px + ${frontYOffset}px)`,
               transformOrigin: 'bottom center',
               transform: isHovered
                 ? 'rotateX(35deg) translateY(12px)'
@@ -515,9 +576,11 @@ function AnimatedFolder({ title, projects, className, gradient, linkLabel, linkH
             }}
           />
           <div
-            className="absolute w-32 h-24 rounded-lg overflow-hidden pointer-events-none"
+            className="absolute rounded-lg overflow-hidden pointer-events-none"
             style={{
-              top: 'calc(50% - 48px + 4px)',
+              width: `${backW}px`,
+              height: `${backH}px`,
+              top: `calc(50% - ${backH / 2}px + ${frontYOffset}px)`,
               background:
                 'linear-gradient(135deg, rgba(255,255,255,0.4) 0%, transparent 60%)',
               transformOrigin: 'bottom center',
@@ -531,7 +594,10 @@ function AnimatedFolder({ title, projects, className, gradient, linkLabel, linkH
         </div>
         <div className="text-center">
           <h3
-            className="text-lg font-bold text-gray-900 mt-4 transition-all duration-500"
+            className={cn(
+              'font-bold text-gray-900 transition-all duration-500',
+              isMobile ? 'mt-1 text-[13px] leading-tight' : 'mt-4 text-lg'
+            )}
             style={{
               transform: isHovered ? 'translateY(2px)' : 'translateY(0)',
               letterSpacing: isHovered ? '-0.01em' : '0',
@@ -540,7 +606,10 @@ function AnimatedFolder({ title, projects, className, gradient, linkLabel, linkH
             {title}
           </h3>
           <p
-            className="text-sm font-medium text-gray-500 transition-all duration-500"
+            className={cn(
+              'font-medium text-gray-500 transition-all duration-500',
+              isMobile ? 'text-[11px]' : 'text-sm'
+            )}
             style={{ opacity: isHovered ? 0.8 : 1 }}
           >
             {projects.length} {projects.length === 1 ? 'направление' : 'направлений'}
@@ -548,20 +617,36 @@ function AnimatedFolder({ title, projects, className, gradient, linkLabel, linkH
           {linkLabel && linkHref && (
             <a
               href={linkHref}
-              className="mt-2 inline-block text-sm font-semibold text-teal-600 hover:text-teal-700 transition-colors"
+              className={cn(
+                'inline-block font-semibold text-teal-600 hover:text-teal-700 transition-colors',
+                isMobile ? 'mt-1 text-[11px]' : 'mt-2 text-sm'
+              )}
             >
               {linkLabel} →
             </a>
           )}
         </div>
         <div
-          className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-widest text-gray-400 transition-all duration-500"
+          className={cn(
+            'absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-1.5 font-semibold uppercase tracking-widest text-gray-400 transition-all duration-500',
+            isMobile ? 'text-[9px]' : 'text-xs'
+          )}
           style={{
+            // На верхних карточках поднимаем “Нажмите” выше, чтобы убрать пустое место снизу
+            bottom: isMobile
+              ? isTopRow
+                ? isXs
+                  ? '13px'
+                  : '14px'
+                : isXs
+                  ? '9px'
+                  : '10px'
+              : undefined,
             opacity: isHovered ? 0 : 1,
             transform: isHovered ? 'translateY(10px)' : 'translateY(0)',
           }}
         >
-          <span>Наведите</span>
+          <span>{isMobile ? 'Нажмите' : 'Наведите'}</span>
         </div>
       </div>
       <ImageLightbox
