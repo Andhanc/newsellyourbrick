@@ -1385,6 +1385,17 @@
     font-size: 16px;
     margin: 0;
     z-index: 50;
+    transition:
+      opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+      transform 0.45s cubic-bezier(0.33, 1, 0.68, 1);
+  }
+
+  /* Как у кошелька на аукционе: убираем AI у футера на мобилке */
+  .property-list--footer-near .property-list-header .ai-button {
+    opacity: 0 !important;
+    visibility: hidden !important;
+    transform: translate3d(10px, 20px, 0) scale(0.92) !important;
+    pointer-events: none !important;
   }
 
   .property-list {

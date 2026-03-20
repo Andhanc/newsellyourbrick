@@ -67,7 +67,7 @@ const Footer = () => {
   }, [isLanguageDropdownOpen])
 
   return (
-    <footer className="footer">
+    <footer id="site-footer" className="footer">
       <div className="footer__container">
         {/* Верхний блок ссылок — десктоп: 5 колонок */}
         <div className="footer__menu footer__menu--desktop">

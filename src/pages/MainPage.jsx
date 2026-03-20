@@ -431,6 +431,7 @@ function MainPage() {
     message: '',
   })
   const [isChatOpen, setIsChatOpen] = useState(false)
+  const [aiAssistantHiddenByFooter, setAiAssistantHiddenByFooter] = useState(false)
   const [chatMessages, setChatMessages] = useState([])
   const [chatInput, setChatInput] = useState('')
   const [isLoadingAI, setIsLoadingAI] = useState(false)
@@ -1727,6 +1728,44 @@ function MainPage() {
       chatMessagesRef.current.scrollTop = chatMessagesRef.current.scrollHeight
     }
   }, [chatMessages, isChatOpen])
+
+  useEffect(() => {
+    const footer = document.getElementById('site-footer')
+    if (!footer) return
+
+    const mq = window.matchMedia('(max-width: 768px)')
+    let disconnectObserver = null
+
+    const apply = () => {
+      if (disconnectObserver) {
+        disconnectObserver()
+        disconnectObserver = null
+      }
+      if (!mq.matches) {
+        setAiAssistantHiddenByFooter(false)
+        return
+      }
+      const observer = new IntersectionObserver(
+        ([entry]) => {
+          setAiAssistantHiddenByFooter(Boolean(entry?.isIntersecting))
+        },
+        {
+          root: null,
+          rootMargin: '0px 0px -12% 0px',
+          threshold: [0, 0.02, 0.5],
+        }
+      )
+      observer.observe(footer)
+      disconnectObserver = () => observer.disconnect()
+    }
+
+    apply()
+    mq.addEventListener('change', apply)
+    return () => {
+      mq.removeEventListener('change', apply)
+      if (disconnectObserver) disconnectObserver()
+    }
+  }, [])
 
   const languages = [
     { code: 'ru', name: 'Русский', flagClass: 'footer__flag--ru' },
@@ -3647,6 +3686,10 @@ function MainPage() {
         })}
       </nav>
 
+      <div
+        className={`ai-assistant-dock${aiAssistantHiddenByFooter ? ' ai-assistant-dock--footer-near' : ''}`}
+        aria-hidden={aiAssistantHiddenByFooter}
+      >
       <button
         type="button"
         className="ai-button"
@@ -3788,6 +3831,7 @@ function MainPage() {
           </form>
         </div>
       )}
+      </div>
 
       {/* Модальное окно успешной верификации */}
       {showVerificationSuccess && verificationNotification && (

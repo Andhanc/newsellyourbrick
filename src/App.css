@@ -29,3 +29,9 @@
 .app-layout__content::-webkit-scrollbar {
   display: none; 
 }
+
+/* Выбранные маршруты (главная, аукцион, профиль и т.д.): без pinch и двойного тапа для зума */
+html.main-page-no-zoom,
+body.main-page-no-zoom {
+  touch-action: manipulation;
+}

@@ -2352,6 +2352,23 @@
   }
 }
 
+/* Мобилка: FAB и чат плавно уходят, когда в зоне видимости футер */
+@media (max-width: 768px) {
+  .ai-assistant-dock .ai-button,
+  .ai-assistant-dock .chat-widget {
+    transition:
+      opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+      transform 0.45s cubic-bezier(0.33, 1, 0.68, 1);
+  }
+
+  .ai-assistant-dock--footer-near .ai-button,
+  .ai-assistant-dock--footer-near .chat-widget {
+    opacity: 0;
+    transform: translate3d(10px, 20px, 0) scale(0.92);
+    pointer-events: none;
+  }
+}
+
 .chat-widget {
   position: fixed;
   right: 18px;

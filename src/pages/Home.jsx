@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useUser } from '@clerk/clerk-react'
+import { useUser, useAuth } from '@clerk/clerk-react'
 import { useNavigate } from 'react-router-dom'
 import { FiX, FiSend } from 'react-icons/fi'
 import Header from '../components/Header'
@@ -52,12 +52,14 @@ function Home() {
   const [loading, setLoading] = useState(() => !hasCachedList())
   const [userDeposit, setUserDeposit] = useState(0)
   const { user, isLoaded: userLoaded } = useUser()
+  const { isSignedIn, isLoaded: authLoaded } = useAuth()
   const userData = getUserData()
   const [dbUserId, setDbUserId] = useState(null)
   const navigate = useNavigate()
   
   // Состояния для чата AI
   const [isChatOpen, setIsChatOpen] = useState(false)
+  const [floatWidgetsHiddenByFooter, setFloatWidgetsHiddenByFooter] = useState(false)
   const [chatMessages, setChatMessages] = useState([])
   const [chatInput, setChatInput] = useState('')
   const [isLoadingAI, setIsLoadingAI] = useState(false)
@@ -371,14 +373,16 @@ function Home() {
     }
   }
 
-  // Функция для проверки, можно ли показывать депозит (только для авторизованных покупателей)
   const canShowDeposit = () => {
-    // Проверяем, авторизован ли пользователь
-    if (!isAuthenticated() || !userData || !userData.isLoggedIn) {
-      return false
-    }
-    // Показываем депозит только для покупателей (не для продавцов)
-    const userRole = userData.role || 'buyer'
+    const legacyIn = isAuthenticated() && userData?.isLoggedIn
+    const clerkIn = authLoaded && Boolean(isSignedIn)
+    if (!legacyIn && !clerkIn) return false
+
+    const roleRaw = legacyIn
+      ? (userData.role || localStorage.getItem('userRole') || 'buyer')
+      : (localStorage.getItem('userRole') || user?.publicMetadata?.role || 'buyer')
+    const userRole = String(roleRaw || 'buyer').toLowerCase()
+    if (userRole === 'seller' || userRole === 'owner' || userRole === 'admin') return false
     return userRole === 'buyer' || userRole === 'client'
   }
 
@@ -519,25 +523,65 @@ function Home() {
     }
   }, [isChatOpen])
 
+  useEffect(() => {
+    const footer = document.getElementById('site-footer')
+    if (!footer) return
+
+    const mq = window.matchMedia('(max-width: 768px)')
+    let disconnectObserver = null
+
+    const apply = () => {
+      if (disconnectObserver) {
+        disconnectObserver()
+        disconnectObserver = null
+      }
+      if (!mq.matches) {
+        setFloatWidgetsHiddenByFooter(false)
+        return
+      }
+      const observer = new IntersectionObserver(
+        ([entry]) => {
+          setFloatWidgetsHiddenByFooter(Boolean(entry?.isIntersecting))
+        },
+        {
+          root: null,
+          rootMargin: '0px 0px -12% 0px',
+          threshold: [0, 0.02, 0.5],
+        }
+      )
+      observer.observe(footer)
+      disconnectObserver = () => observer.disconnect()
+    }
+
+    apply()
+    mq.addEventListener('change', apply)
+    return () => {
+      mq.removeEventListener('change', apply)
+      if (disconnectObserver) disconnectObserver()
+    }
+  }, [])
+
   // История чата сохраняется в localStorage и не очищается при закрытии страницы
   // Каждый пользователь видит только свою переписку
 
   return (
     <div className="home-page">
-      {canShowDeposit() && <DepositButton amount={userDeposit} />}
-      <Header />
-      <Hero />
-      <div ref={homeListRef} className="home-list-wrap">
-        <PropertyList
-          auctionProperties={auctionProperties}
-          onOpenAIChat={toggleChat}
-          loading={loading}
-        />
-      </div>
-      <FAQ />
+      <div
+        className={`home-auction-floats${floatWidgetsHiddenByFooter ? ' home-auction-floats--footer-near' : ''}`}
+        aria-hidden={floatWidgetsHiddenByFooter}
+      >
+        {canShowDeposit() && <DepositButton amount={userDeposit} />}
+        <button
+          type="button"
+          className="ai-button"
+          onClick={toggleChat}
+          aria-label="AI Assistant"
+          aria-expanded={isChatOpen}
+        >
+          AI
+        </button>
 
-      {/* Модальное окно чата */}
-      {isChatOpen && (
+        {isChatOpen && (
         <div className="chat-widget">
           <div className="chat-widget__header">
             <div className="chat-widget__header-info">
@@ -667,7 +711,20 @@ function Home() {
             </button>
           </form>
         </div>
-      )}
+        )}
+      </div>
+
+      <Header />
+      <Hero />
+      <div ref={homeListRef} className="home-list-wrap">
+        <PropertyList
+          auctionProperties={auctionProperties}
+          onOpenAIChat={toggleChat}
+          loading={loading}
+          floatWidgetsHiddenByFooter={floatWidgetsHiddenByFooter}
+        />
+      </div>
+      <FAQ />
     </div>
   )
 }

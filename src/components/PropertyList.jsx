@@ -80,7 +80,12 @@ const PROPERTY_TYPE_KEYS = {
   'дом': 'propertyTypeHouse'
 }
 
-const PropertyList = ({ auctionProperties = null, onOpenAIChat, loading = false }) => {
+const PropertyList = ({
+  auctionProperties = null,
+  onOpenAIChat,
+  loading = false,
+  floatWidgetsHiddenByFooter = false,
+}) => {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const location = useLocation()
@@ -327,7 +332,9 @@ const PropertyList = ({ auctionProperties = null, onOpenAIChat, loading = false 
           ></div>
         </div>
       )}
-      <section className="property-list">
+      <section
+        className={`property-list${floatWidgetsHiddenByFooter ? ' property-list--footer-near' : ''}`}
+      >
         <div className="property-list-container">
         <div className="property-list-header">
           <div className="property-list-marquee-double">

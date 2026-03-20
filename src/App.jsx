@@ -110,6 +110,98 @@ function ScrollToTop() {
   return null
 }
 
+const VIEWPORT_DEFAULT = 'width=device-width, initial-scale=1.0'
+const VIEWPORT_MAIN_NO_ZOOM =
+  'width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no'
+
+/** Маршруты без масштабирования: главная, аукцион, профиль, кошелёк, бонусы, избранное. */
+const NO_ZOOM_PATHS = new Set([
+  '/',
+  '/auction',
+  '/main',
+  '/profile',
+  '/wallet',
+  '/bonuses',
+  '/favorites',
+])
+
+function isNoZoomPath(pathname) {
+  return NO_ZOOM_PATHS.has(pathname)
+}
+
+/** Запрет pinch/жестов и масштаба Ctrl/⌘+колесо и горячих клавиш на выбранных маршрутах. */
+function MainPageViewportLock() {
+  const location = useLocation()
+  const lockZoom = isNoZoomPath(location.pathname)
+
+  useEffect(() => {
+    const vp = document.querySelector('meta[name="viewport"]')
+    if (!vp) return
+
+    if (lockZoom) {
+      vp.setAttribute('content', VIEWPORT_MAIN_NO_ZOOM)
+      document.documentElement.classList.add('main-page-no-zoom')
+      document.body.classList.add('main-page-no-zoom')
+    } else {
+      vp.setAttribute('content', VIEWPORT_DEFAULT)
+      document.documentElement.classList.remove('main-page-no-zoom')
+      document.body.classList.remove('main-page-no-zoom')
+    }
+
+    return () => {
+      if (!lockZoom) return
+      vp.setAttribute('content', VIEWPORT_DEFAULT)
+      document.documentElement.classList.remove('main-page-no-zoom')
+      document.body.classList.remove('main-page-no-zoom')
+    }
+  }, [lockZoom])
+
+  useEffect(() => {
+    if (!lockZoom) return
+
+    const preventWheelZoom = (e) => {
+      if (e.ctrlKey) e.preventDefault()
+    }
+
+    const preventKeyZoom = (e) => {
+      if (!e.ctrlKey && !e.metaKey) return
+      const { code, key } = e
+      if (
+        code === 'Equal' ||
+        code === 'Minus' ||
+        code === 'Digit0' ||
+        code === 'NumpadAdd' ||
+        code === 'NumpadSubtract' ||
+        code === 'Numpad0' ||
+        key === '+' ||
+        key === '-' ||
+        key === '=' ||
+        key === '0'
+      ) {
+        e.preventDefault()
+      }
+    }
+
+    const preventGesture = (e) => {
+      e.preventDefault()
+    }
+
+    window.addEventListener('wheel', preventWheelZoom, { passive: false })
+    window.addEventListener('keydown', preventKeyZoom, true)
+    document.addEventListener('gesturestart', preventGesture, { passive: false })
+    document.addEventListener('gesturechange', preventGesture, { passive: false })
+
+    return () => {
+      window.removeEventListener('wheel', preventWheelZoom)
+      window.removeEventListener('keydown', preventKeyZoom, true)
+      document.removeEventListener('gesturestart', preventGesture)
+      document.removeEventListener('gesturechange', preventGesture)
+    }
+  }, [lockZoom])
+
+  return null
+}
+
 // Сохраняем реферальный ref из URL (?ref=userId) в localStorage для использования при регистрации
 function ReferralCapture() {
   const location = useLocation()
@@ -241,6 +333,7 @@ function App() {
     <Router>
       <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
       <ScrollToTop />
+      <MainPageViewportLock />
       <ReferralCapture />
       <VisitorHeartbeat />
       <SessionValidator onBlockedChange={setIsBlocked} />
