@@ -522,6 +522,87 @@ export async function extractPassportData(recognizedText) {
 }
 
 /**
+ * Улучшает черновик описания объявления через тот же AI API, что и умный помощник.
+ * @param {string} draftText - Текст черновика от продавца
+ * @param {string} [title] - Название объекта (опционально)
+ * @returns {Promise<string>} Готовое описание без markdown
+ */
+export async function generateListingDescription(draftText, title = '') {
+  const systemPrompt = `Ты — опытный копирайтер объявлений о недвижимости на платформе SellYourBrick (аукционы в Испании и Дубае).
+По черновику продавца напиши улучшенное, продающее описание лота.
+- Сохрани все факты из черновика; не придумывай площадь, цену, адрес и характеристики, которых не было в тексте.
+- Стиль: профессионально, по делу, без воды.
+- Не используй markdown: не ставь **, ##, звёздочки для выделения, нумерованные списки с префиксами.
+- Пиши на том же языке, что и черновик.
+Ответь только текстом описания, без заголовков вроде «Описание:» и без пояснений.`;
+
+  const userParts = []
+  if (title && String(title).trim()) {
+    userParts.push(`Название объекта: ${String(title).trim()}`)
+  }
+  userParts.push(`Черновик описания:\n${draftText}`)
+
+  const messages = [
+    { role: 'system', content: systemPrompt },
+    { role: 'user', content: userParts.join('\n\n') }
+  ]
+
+  const headers = {
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${AI_API_KEY}`
+  }
+
+  const payload = {
+    model: AI_MODEL,
+    messages,
+    temperature: 0.65,
+    max_tokens: 900
+  }
+
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), 45000)
+
+  try {
+    const response = await fetch(AI_API_URL, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(payload),
+      signal: controller.signal
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      console.error(`generateListingDescription API ${response.status}:`, errorText)
+      throw new Error(`AI API Error: ${response.status}`)
+    }
+
+    const data = await response.json()
+    if (!data.choices?.length) {
+      throw new Error('Пустой ответ от AI')
+    }
+
+    let messageContent = data.choices[0].message?.content || ''
+
+    while (messageContent.includes('</think>')) {
+      messageContent = messageContent.split('</think>').pop().trim()
+    }
+    messageContent = messageContent.replace(/<\/?redacted_reasoning>/g, '').trim()
+    messageContent = messageContent.replace(/<\/?think>/g, '').trim()
+
+    const out = stripMarkdown(messageContent).trim()
+    if (!out) {
+      throw new Error('Пустое описание в ответе')
+    }
+    return out
+  } catch (error) {
+    console.error('generateListingDescription:', error)
+    throw error
+  } finally {
+    clearTimeout(timeoutId)
+  }
+}
+
+/**
  * Фильтрует недвижимость по Испании и Дубаю
  * @param {Array} properties - Массив всех объявлений
  * @returns {Array} Отфильтрованные объявления
