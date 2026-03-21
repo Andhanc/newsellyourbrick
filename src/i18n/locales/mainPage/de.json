@@ -182,6 +182,7 @@
   "propertyDetailBidsUnavailableReserved": "Gebote vorübergehend nicht möglich. Objekt reserviert.",
   "propertyDetailYouAreLeading": "Sie führen die Auktion",
   "propertyDetailEnterBidAmount": "Gebotssumme eingeben",
+  "propertyDetailMinBidHint": "Mindestgebot: {{min}} (höchstes Gebot + {{step}})",
   "propertyDetailSubmitting": "Wird gesendet...",
   "propertyDetailYouAreWinning": "Sie führen",
   "propertyDetailRecentBids": "Letzte Gebote",

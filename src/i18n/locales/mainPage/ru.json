@@ -183,6 +183,7 @@
   "propertyDetailBidsUnavailableReserved": "Ставки временно недоступны. Объект забронирован.",
   "propertyDetailYouAreLeading": "Вы лидируете в аукционе",
   "propertyDetailEnterBidAmount": "Введите сумму ставки",
+  "propertyDetailMinBidHint": "Минимальная ставка: {{min}} (текущая максимальная + {{step}})",
   "propertyDetailSubmitting": "Отправка...",
   "propertyDetailYouAreWinning": "Вы выигрываете",
   "propertyDetailRecentBids": "Последние ставки",

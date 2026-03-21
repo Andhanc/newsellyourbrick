@@ -168,6 +168,7 @@
   "propertyDetailBidsUnavailableReserved": "Bids temporarily unavailable. Property is reserved.",
   "propertyDetailYouAreLeading": "You are leading the auction",
   "propertyDetailEnterBidAmount": "Enter bid amount",
+  "propertyDetailMinBidHint": "Minimum bid: {{min}} (current maximum + {{step}})",
   "propertyDetailSubmitting": "Submitting...",
   "propertyDetailYouAreWinning": "You are winning",
   "propertyDetailRecentBids": "Recent bids",

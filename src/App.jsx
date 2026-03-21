@@ -15,8 +15,10 @@ import './App.css'
 // Ленивая загрузка страниц — чанк грузится только при переходе на маршрут
 const Home = lazy(() => import('./pages/Home'))
 const PropertyDetailPage = lazy(() => import('./pages/PropertyDetailPage'))
+const TestDriveBookingPage = lazy(() => import('./pages/TestDriveBookingPage'))
 const MapPage = lazy(() => import('./pages/MapPage'))
 const Profile = lazy(() => import('./pages/Profile'))
+const MyBookingsPage = lazy(() => import('./pages/MyBookingsPage'))
 const Data = lazy(() => import('./pages/Data'))
 const Subscriptions = lazy(() => import('./pages/Subscriptions'))
 const History = lazy(() => import('./pages/History'))
@@ -377,9 +379,11 @@ function App() {
               <Route path="/" element={<MainPage />} />
               <Route path="/auction" element={<Home />} />
               <Route path="/main" element={<Home />} />
+              <Route path="/property/:id/test-drive" element={<TestDriveBookingPage />} />
               <Route path="/property/:id" element={<PropertyDetailPage />} />
               <Route path="/search-results" element={<SearchResults />} />
               <Route path="/map" element={<MapPage />} />
+              <Route path="/profile/bookings" element={<MyBookingsPage />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="/auth/telegram-callback" element={<TelegramAuthCallback />} />
               <Route path="/data" element={<Data />} />

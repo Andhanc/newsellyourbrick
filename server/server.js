@@ -2,7 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import axios from 'axios';
 import { initDatabase, closeDatabase, getDatabase, schemaCache } from './database/database.js';
-import { userQueries, documentQueries, notificationQueries, administratorQueries, debtReasonQueries, debtDocumentQueries, whatsappUserQueries, purchaseRequestQueries, assistantLeadQueries, apartmentQueries, houseQueries, propertyQueries } from './database/database.js';
+import { userQueries, documentQueries, notificationQueries, testDriveBookingQueries, administratorQueries, debtReasonQueries, debtDocumentQueries, whatsappUserQueries, purchaseRequestQueries, assistantLeadQueries, apartmentQueries, houseQueries, propertyQueries } from './database/database.js';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import multer from 'multer';
@@ -17,6 +17,7 @@ import { Address, beginCell, Cell } from '@ton/core';
 import { getMarketData, getMortgageRates, getRentalYieldByRegion } from './services/investmentDataService.js';
 import { translatePropertyToAllLanguages } from './services/aiPropertyTranslate.js';
 import { buildDatabaseSnapshot } from './services/storageSnapshot.js';
+import { getAuctionMinBidStep } from '../src/utils/auctionBidStep.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -7577,6 +7578,394 @@ app.get('/api/properties/:id/translations', (req, res) => {
 });
 
 /**
+ * Тест-драйв: пересечение диапазонов дат (YYYY-MM-DD)
+ */
+function testDriveRangesOverlap(aStart, aEnd, bStart, bEnd) {
+  return !(aEnd < bStart || bEnd < aStart);
+}
+
+/**
+ * GET /api/properties/:id/test-drive/eligibility — депозит, ставка, флаги для UI
+ */
+app.get('/api/properties/:id/test-drive/eligibility', (req, res) => {
+  try {
+    const propertyId = parseInt(req.params.id, 10);
+    const userId = req.query.user_id ? parseInt(req.query.user_id, 10) : null;
+    const propertyTable = req.query.property_table || null;
+    if (!propertyId || Number.isNaN(propertyId)) {
+      return res.status(400).json({ success: false, error: 'Некорректный id объекта' });
+    }
+    const property = propertyQueries.getById(String(propertyId), null);
+    if (!property) {
+      return res.status(404).json({ success: false, error: 'Объект не найден' });
+    }
+    const table = propertyTable || property.source_table || 'properties_apartments';
+    const td =
+      property.test_drive === 1 ||
+      property.test_drive === true ||
+      property.test_drive === '1';
+    if (!td) {
+      return res.json({
+        success: true,
+        data: { test_drive_enabled: false, has_deposit: false, has_bid: false, can_request: false },
+      });
+    }
+    let hasDeposit = false;
+    let hasBid = false;
+    if (userId && !Number.isNaN(userId)) {
+      const user = userQueries.getById(userId);
+      if (user) {
+        const dep = user.deposit_amount != null ? parseFloat(user.deposit_amount) : 0;
+        hasDeposit = dep > 0;
+      }
+      const db = getDatabase();
+      try {
+        const pragma = db.prepare('PRAGMA table_info(bids)').all();
+        const hasPT = pragma.some((c) => c.name === 'property_table');
+        if (hasPT) {
+          const row = db
+            .prepare(
+              `SELECT 1 as x FROM bids WHERE user_id = ? AND property_id = ? AND (property_table = ? OR property_table IS NULL) LIMIT 1`
+            )
+            .get(userId, propertyId, table);
+          hasBid = !!row;
+        } else {
+          const row = db
+            .prepare(`SELECT 1 as x FROM bids WHERE user_id = ? AND property_id = ? LIMIT 1`)
+            .get(userId, propertyId);
+          hasBid = !!row;
+        }
+      } catch (e) {
+        console.warn('test-drive eligibility bids:', e.message);
+      }
+    }
+    return res.json({
+      success: true,
+      data: {
+        test_drive_enabled: true,
+        property_table: table,
+        has_deposit: hasDeposit,
+        has_bid: hasBid,
+        can_request: !!(hasDeposit && hasBid),
+      },
+    });
+  } catch (error) {
+    console.error('GET test-drive/eligibility:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * GET /api/properties/:id/test-drive/bookings — занятые даты (pending + approved)
+ */
+app.get('/api/properties/:id/test-drive/bookings', (req, res) => {
+  try {
+    const propertyId = parseInt(req.params.id, 10);
+    const propertyTable = req.query.property_table || 'properties_apartments';
+    if (!propertyId || Number.isNaN(propertyId)) {
+      return res.status(400).json({ success: false, error: 'Некорректный id объекта' });
+    }
+    testDriveBookingQueries.ensureTable();
+    const rows = testDriveBookingQueries.listActiveForProperty(propertyId, propertyTable);
+    const queryUserIdRaw = req.query.user_id;
+    const queryUserId =
+      queryUserIdRaw != null && String(queryUserIdRaw).trim() !== ''
+        ? parseInt(String(queryUserIdRaw).trim(), 10)
+        : NaN;
+    const hasViewerId = !Number.isNaN(queryUserId);
+
+    const bookedDaySet = new Set();
+    const myBookedDaySet = new Set();
+    for (const row of rows) {
+      const start = new Date(row.start_date + 'T12:00:00');
+      const end = new Date(row.end_date + 'T12:00:00');
+      const cur = new Date(start);
+      const rowUserId =
+        row.user_id != null ? parseInt(String(row.user_id), 10) : NaN;
+      while (cur <= end) {
+        const ymd = cur.toISOString().slice(0, 10);
+        bookedDaySet.add(ymd);
+        if (hasViewerId && !Number.isNaN(rowUserId) && rowUserId === queryUserId) {
+          myBookedDaySet.add(ymd);
+        }
+        cur.setDate(cur.getDate() + 1);
+      }
+    }
+    const booked_dates = [...bookedDaySet].sort();
+    const my_booked_dates = hasViewerId ? [...myBookedDaySet].sort() : [];
+    return res.json({
+      success: true,
+      data: {
+        booked_dates,
+        my_booked_dates,
+        bookings: rows.map((r) => ({
+          id: r.id,
+          user_id: r.user_id,
+          start_date: r.start_date,
+          end_date: r.end_date,
+          status: r.status,
+        })),
+      },
+    });
+  } catch (error) {
+    console.error('GET test-drive/bookings:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * POST /api/properties/:id/test-drive/request — заявка на даты (после выполнения условий)
+ */
+app.post('/api/properties/:id/test-drive/request', (req, res) => {
+  try {
+    const propertyId = parseInt(req.params.id, 10);
+    const { user_id, start_date, end_date, property_table } = req.body || {};
+    const userId = parseInt(user_id, 10);
+    if (!propertyId || Number.isNaN(propertyId) || !userId || Number.isNaN(userId)) {
+      return res.status(400).json({ success: false, error: 'Нужны корректные property id и user_id' });
+    }
+    if (!start_date || !end_date || typeof start_date !== 'string' || typeof end_date !== 'string') {
+      return res.status(400).json({ success: false, error: 'Укажите start_date и end_date (YYYY-MM-DD)' });
+    }
+    const property = propertyQueries.getById(String(propertyId), null);
+    if (!property) {
+      return res.status(404).json({ success: false, error: 'Объект не найден' });
+    }
+    const table = property_table || property.source_table || 'properties_apartments';
+    const td =
+      property.test_drive === 1 ||
+      property.test_drive === true ||
+      property.test_drive === '1';
+    if (!td) {
+      return res.status(400).json({ success: false, error: 'Тест-драйв для этого объекта недоступен' });
+    }
+    const user = userQueries.getById(userId);
+    if (!user) {
+      return res.status(404).json({ success: false, error: 'Пользователь не найден' });
+    }
+    const dep = user.deposit_amount != null ? parseFloat(user.deposit_amount) : 0;
+    if (dep <= 0) {
+      return res.status(400).json({ success: false, error: 'Необходим депозит' });
+    }
+    const db = getDatabase();
+    let hasBid = false;
+    try {
+      const pragma = db.prepare('PRAGMA table_info(bids)').all();
+      const hasPT = pragma.some((c) => c.name === 'property_table');
+      if (hasPT) {
+        const row = db
+          .prepare(
+            `SELECT 1 as x FROM bids WHERE user_id = ? AND property_id = ? AND (property_table = ? OR property_table IS NULL) LIMIT 1`
+          )
+          .get(userId, propertyId, table);
+        hasBid = !!row;
+      } else {
+        const row = db
+          .prepare(`SELECT 1 as x FROM bids WHERE user_id = ? AND property_id = ? LIMIT 1`)
+          .get(userId, propertyId);
+        hasBid = !!row;
+      }
+    } catch (e) {
+      console.warn('test-drive request bids:', e.message);
+    }
+    if (!hasBid) {
+      return res.status(400).json({ success: false, error: 'Необходима ставка по объекту' });
+    }
+    if (testDriveBookingQueries.countPendingForUserProperty(userId, propertyId, table) > 0) {
+      return res.status(400).json({ success: false, error: 'У вас уже есть активная заявка на этот объект' });
+    }
+    const s = new Date(start_date + 'T12:00:00');
+    const e = new Date(end_date + 'T12:00:00');
+    if (Number.isNaN(s.getTime()) || Number.isNaN(e.getTime()) || e < s) {
+      return res.status(400).json({ success: false, error: 'Некорректный диапазон дат' });
+    }
+    const dayCount = Math.round((e - s) / (24 * 60 * 60 * 1000)) + 1;
+    if (dayCount < 2 || dayCount > 5) {
+      return res.status(400).json({ success: false, error: 'Выберите от 2 до 5 дней подряд' });
+    }
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (s < today) {
+      return res.status(400).json({ success: false, error: 'Нельзя выбрать прошедшие даты' });
+    }
+    const existing = testDriveBookingQueries.listActiveForProperty(propertyId, table);
+    for (const ex of existing) {
+      if (testDriveRangesOverlap(start_date, end_date, ex.start_date, ex.end_date)) {
+        return res.status(409).json({ success: false, error: 'Часть выбранных дат уже занята' });
+      }
+    }
+    const insertResult = testDriveBookingQueries.create({
+      property_id: propertyId,
+      property_table: table,
+      user_id: userId,
+      start_date,
+      end_date,
+      status: 'pending',
+    });
+    const bookingId = insertResult.lastInsertRowid;
+    const ownerId = property.user_id;
+    const title = 'Запрос на тест-драйв';
+    const buyerName = [user.first_name, user.last_name].filter(Boolean).join(' ') || user.email || `Пользователь #${userId}`;
+    const propTitle = property.title || `Объект #${propertyId}`;
+    const message = `${buyerName} хочет забронировать тест-драйв объекта «${propTitle}» с ${start_date} по ${end_date}. Подтвердите или отклоните в уведомлениях.`;
+    const notifData = {
+      booking_id: bookingId,
+      property_id: propertyId,
+      property_table: table,
+      buyer_id: userId,
+      start_date,
+      end_date,
+    };
+    const notifRun = notificationQueries.create({
+      user_id: ownerId,
+      type: 'test_drive_request',
+      title,
+      message,
+      data: notifData,
+      is_read: 0,
+      view_count: 0,
+    });
+    const ownerNotificationId = notifRun.lastInsertRowid;
+    if (ownerNotificationId) {
+      testDriveBookingQueries.updateOwnerNotificationId(bookingId, ownerNotificationId);
+    }
+    return res.json({ success: true, data: { booking_id: bookingId, status: 'pending' } });
+  } catch (error) {
+    console.error('POST test-drive/request:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * PUT /api/test-drive-bookings/:bookingId/respond — владелец: подтвердить / отклонить
+ */
+app.put('/api/test-drive-bookings/:bookingId/respond', (req, res) => {
+  try {
+    const bookingId = parseInt(req.params.bookingId, 10);
+    const { user_id, action } = req.body || {};
+    const ownerId = parseInt(user_id, 10);
+    if (!bookingId || Number.isNaN(bookingId) || !ownerId || Number.isNaN(ownerId)) {
+      return res.status(400).json({ success: false, error: 'Нужны bookingId и user_id владельца' });
+    }
+    if (action !== 'approve' && action !== 'reject') {
+      return res.status(400).json({ success: false, error: 'action: approve или reject' });
+    }
+    const booking = testDriveBookingQueries.getById(bookingId);
+    if (!booking) {
+      return res.status(404).json({ success: false, error: 'Заявка не найдена' });
+    }
+    if (booking.status !== 'pending') {
+      return res.status(400).json({ success: false, error: 'Заявка уже обработана' });
+    }
+    const property = propertyQueries.getById(String(booking.property_id), null);
+    if (!property) {
+      return res.status(404).json({ success: false, error: 'Объект не найден' });
+    }
+    const propertyOwnerId = parseInt(String(property.user_id), 10);
+    if (Number.isNaN(propertyOwnerId) || propertyOwnerId !== ownerId) {
+      return res.status(403).json({ success: false, error: 'Только владелец может ответить' });
+    }
+    const buyerUserId = parseInt(String(booking.user_id), 10);
+    if (Number.isNaN(buyerUserId) || buyerUserId <= 0) {
+      return res.status(500).json({ success: false, error: 'Некорректный user_id в заявке' });
+    }
+    const newStatus = action === 'approve' ? 'approved' : 'rejected';
+    testDriveBookingQueries.updateStatus(bookingId, newStatus);
+    const propTitle = property.title || `Объект #${booking.property_id}`;
+    if (action === 'approve') {
+      const ins = notificationQueries.create({
+        user_id: buyerUserId,
+        type: 'test_drive_result',
+        title: 'Тест-драйв подтверждён',
+        message: `Владелец подтвердил тест-драйв объекта «${propTitle}» с ${booking.start_date} по ${booking.end_date}. Заезд: с 15:00 в первый день, выезд до 12:00 в последний день. Детали в карточке объекта.`,
+        data: {
+          booking_id: bookingId,
+          property_id: booking.property_id,
+          property_table: booking.property_table,
+          start_date: booking.start_date,
+          end_date: booking.end_date,
+        },
+        is_read: 0,
+        view_count: 0,
+      });
+      console.log('✅ Уведомление покупателю (тест-драйв подтверждён):', {
+        notificationId: ins?.lastInsertRowid,
+        buyerUserId,
+      });
+    } else {
+      const ins = notificationQueries.create({
+        user_id: buyerUserId,
+        type: 'test_drive_result',
+        title: 'Тест-драйв отклонён',
+        message: `Владелец отклонил заявку на тест-драйв объекта «${propTitle}» с ${booking.start_date} по ${booking.end_date}. Вы можете выбрать другие даты.`,
+        data: {
+          booking_id: bookingId,
+          property_id: booking.property_id,
+          property_table: booking.property_table,
+        },
+        is_read: 0,
+        view_count: 0,
+      });
+      console.log('✅ Уведомление покупателю (тест-драйв отклонён):', {
+        notificationId: ins?.lastInsertRowid,
+        buyerUserId,
+      });
+    }
+    if (booking.owner_notification_id) {
+      try {
+        notificationQueries.delete(booking.owner_notification_id);
+      } catch (e) {
+        console.warn('delete owner notification:', e.message);
+      }
+    }
+    return res.json({ success: true, data: { booking_id: bookingId, status: newStatus } });
+  } catch (error) {
+    console.error('PUT test-drive respond:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+function enrichTestDriveBookingWithPropertyTitle(row) {
+  const db = getDatabase();
+  const table = row.property_table || 'properties_apartments';
+  let title = null;
+  try {
+    if (table === 'properties_houses') {
+      const p = db.prepare('SELECT title FROM properties_houses WHERE id = ?').get(row.property_id);
+      title = p?.title;
+    } else if (table === 'properties_apartments') {
+      const p = db.prepare('SELECT title FROM properties_apartments WHERE id = ?').get(row.property_id);
+      title = p?.title;
+    } else {
+      const p = db.prepare('SELECT title FROM properties WHERE id = ?').get(row.property_id);
+      title = p?.title;
+    }
+  } catch (e) {
+    /* ignore */
+  }
+  return { ...row, property_title: title || `Объект #${row.property_id}` };
+}
+
+/**
+ * GET /api/test-drive-bookings/user/:userId — бронирования тест-драйва пользователя
+ */
+app.get('/api/test-drive-bookings/user/:userId', (req, res) => {
+  try {
+    const userId = parseInt(req.params.userId, 10);
+    if (!userId || Number.isNaN(userId)) {
+      return res.status(400).json({ success: false, error: 'Некорректный userId' });
+    }
+    testDriveBookingQueries.ensureTable();
+    const rows = testDriveBookingQueries.listByUserId(userId);
+    const data = rows.map(enrichTestDriveBookingWithPropertyTitle);
+    return res.json({ success: true, data });
+  } catch (error) {
+    console.error('GET test-drive-bookings/user:', error);
+    return res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
  * GET /api/properties/:id - Получить объявление по ID
  * ВАЖНО: Этот маршрут должен быть ПОСЛЕ всех специфичных маршрутов
  */
@@ -9272,10 +9661,8 @@ app.post('/api/bids', (req, res) => {
       console.warn('⚠️ Не удалось получить максимальную ставку:', bidError);
     }
     
-    // Вычисляем минимальную ставку
-    // Минимальный шаг ставки - самая низкая сумма из кнопок (1000)
-    // ВСЕГДА используем текущую ставку + минимальный шаг, игнорируя auction_minimum_bid
-    const minBidStep = 1000;
+    // Минимальный шаг как на клиенте (getAuctionMinBidStep)
+    const minBidStep = getAuctionMinBidStep(currentMaxBid);
     const minimumBid = currentMaxBid + minBidStep;
     
     console.log(`💰 Ставки: текущая максимальная=${currentMaxBid}, минимальная=${minimumBid}, предложенная=${bidAmountNum}, шаг=${minBidStep}`);
@@ -9433,8 +9820,7 @@ app.post('/api/bids', (req, res) => {
     // Обновляем минимальную ставку для объекта
     // Если ставка больше минимальной - обновляем минимальную на: наша ставка + 5%
     const newMaxBid = bidAmountNum;
-    // Минимальная ставка для следующей ставки = текущая ставка + минимальный шаг (1000)
-    const newMinimumBid = newMaxBid + 1000;
+    const newMinimumBid = newMaxBid + getAuctionMinBidStep(newMaxBid);
     
     // Обновляем auction_minimum_bid в properties (для совместимости, но не используем в проверке)
     try {

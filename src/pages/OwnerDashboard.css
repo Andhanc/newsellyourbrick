@@ -2259,3 +2259,12 @@
   color: #666;
   margin: 0;
 }
+
+/* Панель уведомлений поверх кабинета продавца */
+.owner-dashboard .notification-backdrop {
+  z-index: 9998;
+}
+
+.owner-dashboard .notification-panel {
+  z-index: 9999;
+}

@@ -742,9 +742,18 @@ function MainPage() {
         return
       }
 
-      // Пытаемся найти ID пользователя в БД
-      let dbUserId = userData.id;
-      
+      // Числовой id из БД (ставки, тест-драйв) хранится в userId; parsed.id может быть Clerk — не подставлять его в API уведомлений
+      let dbUserId = null
+      const storedDbId = localStorage.getItem('userId')
+      if (storedDbId && /^\d+$/.test(String(storedDbId).trim())) {
+        dbUserId = String(storedDbId).trim()
+      } else {
+        const rawId = userData.id
+        if (rawId && /^\d+$/.test(String(rawId).trim())) {
+          dbUserId = String(rawId).trim()
+        }
+      }
+
       // Если ID не найден, пробуем найти пользователя по email или phone
       if (!dbUserId && (userData.email || userData.phone)) {
         try {
@@ -779,7 +788,16 @@ function MainPage() {
           console.log('📦 Получены уведомления:', data);
           if (data.success) {
             console.log('✅ Найдено уведомлений:', data.data?.length || 0);
-            const notificationsList = data.data || [];
+            const notificationsList = (data.data || []).map((n) => {
+              if (n.data && typeof n.data === 'string') {
+                try {
+                  return { ...n, data: JSON.parse(n.data) }
+                } catch {
+                  return n
+                }
+              }
+              return n
+            })
             
             // Проверяем, есть ли уведомление о верификации, которое еще не показывали
             const verificationNotif = notificationsList.find(
@@ -792,22 +810,43 @@ function MainPage() {
               setShowVerificationSuccess(true);
             }
             
-            // Проверяем новые уведомления о перебитой ставке
+            // Проверяем новые уведомления о перебитой ставке и тест-драйве.
+            // Первый успешный ответ после монтирования только заполняет previousNotificationIds — без toast,
+            // иначе после F5 одни и те же непрочитанные снова показывались бы как «новые».
             const currentNotificationIds = new Set(notificationsList.map(n => n.id));
-            const newBidOutbidNotifications = notificationsList.filter(
-              n => n.type === 'bid_outbid' && 
-                   !previousNotificationIds.current.has(n.id) &&
-                   n.view_count === 0
-            );
-            
-            if (newBidOutbidNotifications.length > 0) {
-              newBidOutbidNotifications.forEach(notif => {
-                const message = notif.message || notif.title || 'Вашу ставку перебили!';
-                showToast(message, 'warning', 5000);
-                console.log('🔔 Показано toast-уведомление о перебитой ставке:', notif.id);
-              });
+            if (!isFirstNotificationsLoadRef.current) {
+              const newBidOutbidNotifications = notificationsList.filter(
+                n => n.type === 'bid_outbid' && 
+                     !previousNotificationIds.current.has(n.id) &&
+                     n.view_count === 0
+              );
+              
+              if (newBidOutbidNotifications.length > 0) {
+                newBidOutbidNotifications.forEach(notif => {
+                  const message = notif.message || notif.title || 'Вашу ставку перебили!';
+                  showToast(message, 'warning', 5000);
+                  console.log('🔔 Показано toast-уведомление о перебитой ставке:', notif.id);
+                });
+              }
+
+              const newTestDriveResult = notificationsList.filter(
+                (n) =>
+                  n.type === 'test_drive_result' &&
+                  !previousNotificationIds.current.has(n.id) &&
+                  n.view_count === 0
+              )
+              if (newTestDriveResult.length > 0) {
+                newTestDriveResult.forEach((notif) => {
+                  const message =
+                    notif.message || notif.title || 'Обновление по тест-драйву'
+                  showToast(message, notif.title?.includes('отклон') ? 'warning' : 'success', 6000)
+                  console.log('🔔 Toast тест-драйв:', notif.id)
+                })
+              }
+            } else {
+              isFirstNotificationsLoadRef.current = false
             }
-            
+
             // Обновляем множество ID предыдущих уведомлений
             previousNotificationIds.current = currentNotificationIds;
             
@@ -836,9 +875,68 @@ function MainPage() {
       loadNotifications()
       const handleFocus = () => loadNotifications()
       window.addEventListener('focus', handleFocus)
-      return () => window.removeEventListener('focus', handleFocus)
+      const pollId = setInterval(loadNotifications, 45000)
+      return () => {
+        window.removeEventListener('focus', handleFocus)
+        clearInterval(pollId)
+      }
     }
   }, [user, userLoaded, isLoggedIn])
+
+  const respondTestDriveRequest = async (notification, action) => {
+    let payload = notification?.data
+    if (typeof payload === 'string') {
+      try {
+        payload = JSON.parse(payload)
+      } catch {
+        payload = null
+      }
+    }
+    if (!payload?.booking_id) {
+      showToast('Не удалось прочитать заявку. Обновите страницу.', 'error')
+      return
+    }
+    const storedDbId = localStorage.getItem('userId')
+    const dbUserId =
+      storedDbId && /^\d+$/.test(String(storedDbId).trim())
+        ? String(storedDbId).trim()
+        : null
+    if (!dbUserId) {
+      showToast('Не найден ID пользователя. Выйдите и войдите снова.', 'error')
+      return
+    }
+    try {
+      const res = await fetch(
+        `${API_BASE_URL}/test-drive-bookings/${payload.booking_id}/respond`,
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            user_id: parseInt(dbUserId, 10),
+            action,
+          }),
+        }
+      )
+      const json = await res.json().catch(() => ({}))
+      if (!res.ok || !json.success) {
+        showToast(json.error || 'Не удалось выполнить действие', 'error')
+        return
+      }
+      showToast(
+        action === 'approve' ? 'Тест-драйв подтверждён' : 'Заявка отклонена',
+        'success',
+        4000
+      )
+      const r = await fetch(`${API_BASE_URL}/notifications/user/${dbUserId}`)
+      if (r.ok) {
+        const d = await r.json()
+        if (d.success) setNotifications(d.data || [])
+      }
+    } catch (e) {
+      console.error('test-drive respond', e)
+      showToast('Ошибка сети', 'error')
+    }
+  }
 
   // Обработчик просмотра уведомления
   const handleNotificationView = async (notificationId) => {
@@ -883,6 +981,7 @@ function MainPage() {
   const [showVerificationSuccess, setShowVerificationSuccess] = useState(false)
   const [verificationNotification, setVerificationNotification] = useState(null)
   const previousNotificationIds = useRef(new Set())
+  const isFirstNotificationsLoadRef = useRef(true)
   const [activeCategory, setActiveCategory] = useState(null)
   const [isLoading, setIsLoading] = useState(false)
   const [filteredProperties, setFilteredProperties] = useState(null)
@@ -2473,20 +2572,67 @@ function MainPage() {
                       notificationClass = 'notification-item--error';
                     } else if (notification.type === 'bid_outbid') {
                       notificationClass = 'notification-item--warning';
+                    } else if (notification.type === 'test_drive_request') {
+                      notificationClass = 'notification-item--warning';
+                    } else if (notification.type === 'test_drive_result') {
+                      notificationClass = 'notification-item--success';
                     }
                     
                     return (
                     <div 
                       key={notification.id} 
                       className={`notification-item ${notificationClass}`}
-                      onClick={() => handleNotificationView(notification.id)}
+                      onClick={() => {
+                        if (notification.type === 'test_drive_request') return
+                        handleNotificationView(notification.id)
+                      }}
                     >
                       <div className="notification-item__content">
                         <h4 className="notification-item__title">{notification.title}</h4>
                         {notification.message && (
                           <p className="notification-item__message">{notification.message}</p>
                         )}
-                        {notification.data && notification.data.property_id && (
+                        {notification.type === 'test_drive_request' && notification.data?.booking_id ? (
+                          <div
+                            className="notification-item__test-drive-actions"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <button
+                              type="button"
+                              className="notification-item__button notification-item__button--approve"
+                              onClick={() => respondTestDriveRequest(notification, 'approve')}
+                            >
+                              Подтвердить
+                            </button>
+                            <button
+                              type="button"
+                              className="notification-item__button notification-item__button--reject"
+                              onClick={() => respondTestDriveRequest(notification, 'reject')}
+                            >
+                              Отклонить
+                            </button>
+                          </div>
+                        ) : notification.type === 'test_drive_result' && notification.data?.booking_id != null ? (
+                          <div
+                            className="notification-item__test-drive-actions"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <button
+                              type="button"
+                              className="notification-item__button"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                setIsNotificationOpen(false)
+                                handleNotificationView(notification.id)
+                                const bid = notification.data.booking_id
+                                navigate(`/profile/bookings${bid != null ? `?booking=${bid}` : ''}`)
+                              }}
+                            >
+                              Перейти
+                              <FiArrowRight size={18} />
+                            </button>
+                          </div>
+                        ) : notification.data && notification.data.property_id ? (
                           <div className="notification-item__property">
                             <div className="notification-item__image">
                               <img loading="lazy" 
@@ -2514,7 +2660,7 @@ function MainPage() {
                               </button>
                             </div>
                           </div>
-                        )}
+                        ) : null}
                         {!notification.data && (
                           <button 
                             type="button" 
@@ -2630,20 +2776,67 @@ function MainPage() {
                               notificationClass = 'notification-item--error';
                             } else if (notification.type === 'bid_outbid') {
                               notificationClass = 'notification-item--warning';
+                            } else if (notification.type === 'test_drive_request') {
+                              notificationClass = 'notification-item--warning';
+                            } else if (notification.type === 'test_drive_result') {
+                              notificationClass = 'notification-item--success';
                             }
                             
                             return (
                             <div 
                               key={notification.id} 
                               className={`notification-item ${notificationClass}`}
-                              onClick={() => handleNotificationView(notification.id)}
+                              onClick={() => {
+                                if (notification.type === 'test_drive_request') return
+                                handleNotificationView(notification.id)
+                              }}
                             >
                               <div className="notification-item__content">
                                 <h4 className="notification-item__title">{notification.title}</h4>
                                 {notification.message && (
                                   <p className="notification-item__message">{notification.message}</p>
                                 )}
-                                {notification.data && notification.data.property_id && (
+                                {notification.type === 'test_drive_request' && notification.data?.booking_id ? (
+                                  <div
+                                    className="notification-item__test-drive-actions"
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    <button
+                                      type="button"
+                                      className="notification-item__button notification-item__button--approve"
+                                      onClick={() => respondTestDriveRequest(notification, 'approve')}
+                                    >
+                                      Подтвердить
+                                    </button>
+                                    <button
+                                      type="button"
+                                      className="notification-item__button notification-item__button--reject"
+                                      onClick={() => respondTestDriveRequest(notification, 'reject')}
+                                    >
+                                      Отклонить
+                                    </button>
+                                  </div>
+                                ) : notification.type === 'test_drive_result' && notification.data?.booking_id != null ? (
+                                  <div
+                                    className="notification-item__test-drive-actions"
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    <button
+                                      type="button"
+                                      className="notification-item__button"
+                                      onClick={(e) => {
+                                        e.stopPropagation()
+                                        setIsNotificationOpen(false)
+                                        handleNotificationView(notification.id)
+                                        const bid = notification.data.booking_id
+                                        navigate(`/profile/bookings${bid != null ? `?booking=${bid}` : ''}`)
+                                      }}
+                                    >
+                                      {t('goTo')}
+                                      <FiArrowRight size={18} />
+                                    </button>
+                                  </div>
+                                ) : notification.data && notification.data.property_id ? (
                                   <div className="notification-item__property">
                                     <div className="notification-item__image">
                                       <img loading="lazy" 
@@ -2663,7 +2856,7 @@ function MainPage() {
                                         onClick={(e) => {
                                           e.stopPropagation()
                                           setIsNotificationOpen(false)
-                                          navigate(`/property/${notification.data.property_id}`)
+                                          handlePropertyClick('recommended', notification.data.property_id, false)
                                         }}
                                       >
                                         {t('goTo')}
@@ -2671,7 +2864,7 @@ function MainPage() {
                                       </button>
                                     </div>
                                   </div>
-                                )}
+                                ) : null}
                                 {!notification.data && (
                                   <button 
                                     type="button" 

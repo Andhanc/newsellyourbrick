@@ -182,6 +182,7 @@
   "propertyDetailBidsUnavailableReserved": "Pujas temporalmente no disponibles. Inmueble reservado.",
   "propertyDetailYouAreLeading": "Va usted liderando la subasta",
   "propertyDetailEnterBidAmount": "Introduzca el importe de la puja",
+  "propertyDetailMinBidHint": "Puja mínima: {{min}} (máxima actual + {{step}})",
   "propertyDetailSubmitting": "Enviando...",
   "propertyDetailYouAreWinning": "Va usted ganando",
   "propertyDetailRecentBids": "Últimas pujas",

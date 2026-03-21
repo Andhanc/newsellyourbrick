@@ -182,6 +182,7 @@
   "propertyDetailBidsUnavailableReserved": "Bud tillfälligt otillgängliga. Objekt reserverat.",
   "propertyDetailYouAreLeading": "Du leder auktionen",
   "propertyDetailEnterBidAmount": "Ange budbelopp",
+  "propertyDetailMinBidHint": "Minsta bud: {{min}} (nuvarande max + {{step}})",
   "propertyDetailSubmitting": "Skickar...",
   "propertyDetailYouAreWinning": "Du vinner",
   "propertyDetailRecentBids": "Senaste bud",

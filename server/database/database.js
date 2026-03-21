@@ -732,6 +732,45 @@ export function initDatabase() {
         console.warn('⚠️ Не удалось создать/обновить таблицу ставок:', bidsError.message);
       }
 
+      // Таблица бронирований тест-драйва (диапазон дат, статус, уведомление владельца)
+      try {
+        const tdb = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='test_drive_bookings'").get();
+        if (!tdb) {
+          console.log('🔄 Создание таблицы test_drive_bookings...');
+          db.exec(`
+            CREATE TABLE IF NOT EXISTS test_drive_bookings (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              property_id INTEGER NOT NULL,
+              property_table TEXT NOT NULL DEFAULT 'properties_apartments',
+              user_id INTEGER NOT NULL,
+              start_date TEXT NOT NULL,
+              end_date TEXT NOT NULL,
+              status TEXT NOT NULL DEFAULT 'pending',
+              owner_notification_id INTEGER,
+              created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+              FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+            );
+            CREATE INDEX IF NOT EXISTS idx_tdb_property ON test_drive_bookings(property_id, property_table);
+            CREATE INDEX IF NOT EXISTS idx_tdb_user ON test_drive_bookings(user_id);
+            CREATE INDEX IF NOT EXISTS idx_tdb_status ON test_drive_bookings(status);
+          `);
+          console.log('✅ Таблица test_drive_bookings создана');
+        } else {
+          const tdbPragma = db.prepare('PRAGMA table_info(test_drive_bookings)').all();
+          const hasOwnerNotif = tdbPragma.some((col) => col.name === 'owner_notification_id');
+          if (!hasOwnerNotif) {
+            try {
+              db.exec('ALTER TABLE test_drive_bookings ADD COLUMN owner_notification_id INTEGER');
+              console.log('✅ Колонка owner_notification_id добавлена в test_drive_bookings');
+            } catch (e) {
+              console.warn('⚠️ Не удалось добавить owner_notification_id:', e.message);
+            }
+          }
+        }
+      } catch (tdbErr) {
+        console.warn('⚠️ Не удалось создать таблицу test_drive_bookings:', tdbErr.message);
+      }
+
       // Проверяем и добавляем поле auction_minimum_bid в таблицу properties
       try {
         const propertiesTable = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='properties'").get();
@@ -2407,6 +2446,102 @@ export const notificationQueries = {
     const db = getDatabase();
     const stmt = db.prepare('DELETE FROM notifications WHERE user_id = ?');
     return stmt.run(userId);
+  }
+};
+
+/** Бронирования тест-драйва (диапазон дат на объекте) */
+export const testDriveBookingQueries = {
+  ensureTable: () => {
+    const db = getDatabase();
+    const tdb = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='test_drive_bookings'").get();
+    if (!tdb) {
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS test_drive_bookings (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          property_id INTEGER NOT NULL,
+          property_table TEXT NOT NULL DEFAULT 'properties_apartments',
+          user_id INTEGER NOT NULL,
+          start_date TEXT NOT NULL,
+          end_date TEXT NOT NULL,
+          status TEXT NOT NULL DEFAULT 'pending',
+          owner_notification_id INTEGER,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        );
+        CREATE INDEX IF NOT EXISTS idx_tdb_property ON test_drive_bookings(property_id, property_table);
+        CREATE INDEX IF NOT EXISTS idx_tdb_user ON test_drive_bookings(user_id);
+        CREATE INDEX IF NOT EXISTS idx_tdb_status ON test_drive_bookings(status);
+      `);
+    }
+  },
+
+  create: (row) => {
+    const db = getDatabase();
+    testDriveBookingQueries.ensureTable();
+    const stmt = db.prepare(`
+      INSERT INTO test_drive_bookings (property_id, property_table, user_id, start_date, end_date, status, owner_notification_id)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `);
+    return stmt.run(
+      row.property_id,
+      row.property_table,
+      row.user_id,
+      row.start_date,
+      row.end_date,
+      row.status || 'pending',
+      row.owner_notification_id ?? null
+    );
+  },
+
+  updateOwnerNotificationId: (bookingId, notificationId) => {
+    const db = getDatabase();
+    return db.prepare('UPDATE test_drive_bookings SET owner_notification_id = ? WHERE id = ?').run(notificationId, bookingId);
+  },
+
+  getById: (id) => {
+    const db = getDatabase();
+    return db.prepare('SELECT * FROM test_drive_bookings WHERE id = ?').get(id);
+  },
+
+  listByUserId: (userId) => {
+    const db = getDatabase();
+    testDriveBookingQueries.ensureTable();
+    return db
+      .prepare(
+        `SELECT * FROM test_drive_bookings
+         WHERE user_id = ?
+         ORDER BY created_at DESC`
+      )
+      .all(userId);
+  },
+
+  listActiveForProperty: (propertyId, propertyTable) => {
+    const db = getDatabase();
+    testDriveBookingQueries.ensureTable();
+    return db
+      .prepare(
+        `SELECT * FROM test_drive_bookings
+         WHERE property_id = ? AND property_table = ? AND status IN ('pending','approved')
+         ORDER BY start_date ASC`
+      )
+      .all(propertyId, propertyTable);
+  },
+
+  countPendingForUserProperty: (userId, propertyId, propertyTable) => {
+    const db = getDatabase();
+    testDriveBookingQueries.ensureTable();
+    const r = db
+      .prepare(
+        `SELECT COUNT(*) as c FROM test_drive_bookings
+         WHERE user_id = ? AND property_id = ? AND property_table = ? AND status = 'pending'`
+      )
+      .get(userId, propertyId, propertyTable);
+    return r ? r.c : 0;
+  },
+
+  updateStatus: (id, status) => {
+    const db = getDatabase();
+    return db.prepare('UPDATE test_drive_bookings SET status = ? WHERE id = ?').run(status, id);
   }
 };
 

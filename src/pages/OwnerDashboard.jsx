@@ -23,7 +23,9 @@ import {
   FiAlertCircle,
   FiCheck,
   FiTag,
-  FiMenu
+  FiMenu,
+  FiBell,
+  FiArrowRight
 } from 'react-icons/fi'
 import { MdBed, MdOutlineBathtub } from 'react-icons/md'
 import { BiArea } from 'react-icons/bi'
@@ -35,7 +37,9 @@ import BiddingHistoryModal from '../components/BiddingHistoryModal'
 import CountrySelect, { countries as countryList } from '../components/CountrySelect'
 import { getUserData, saveUserData, logout, clearUserData } from '../services/authService'
 import { showNotification } from '../utils/toastHelper'
+import { showToast } from '../components/ToastContainer'
 import '../components/PropertyList.css'
+import './MainPage.css'
 import './OwnerDashboard.css'
 import { useTranslation } from 'react-i18next'
 
@@ -146,6 +150,9 @@ const OwnerDashboard = () => {
   const [verificationStatus, setVerificationStatus] = useState(null)
   const [showVerificationSuccess, setShowVerificationSuccess] = useState(false)
   const [userId, setUserId] = useState(null)
+  const [ownerNotifOpen, setOwnerNotifOpen] = useState(false)
+  const [ownerNotifications, setOwnerNotifications] = useState([])
+  const [ownerNotifLoading, setOwnerNotifLoading] = useState(false)
   const [userDocuments, setUserDocuments] = useState({ passport: null, passportWithFace: null })
   const [uploading, setUploading] = useState({ passport: false, passportWithFace: false })
   const passportInputRef = useRef(null)
@@ -293,6 +300,37 @@ const OwnerDashboard = () => {
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
   }, [ownerProfile.firstName, ownerProfile.lastName])
+
+  useEffect(() => {
+    if (!userId) return
+    const load = async () => {
+      setOwnerNotifLoading(true)
+      try {
+        const r = await fetch(`${API_BASE_URL}/notifications/user/${userId}`)
+        const d = await r.json()
+        if (d.success) {
+          const list = (d.data || []).map((n) => {
+            if (n.data && typeof n.data === 'string') {
+              try {
+                return { ...n, data: JSON.parse(n.data) }
+              } catch {
+                return n
+              }
+            }
+            return n
+          })
+          setOwnerNotifications(list)
+        }
+      } catch (e) {
+        console.warn('owner notifications', e)
+      } finally {
+        setOwnerNotifLoading(false)
+      }
+    }
+    load()
+    const poll = setInterval(load, 60000)
+    return () => clearInterval(poll)
+  }, [userId])
 
   // Загружаем объявления пользователя
   const loadUserProperties = async (userId) => {
@@ -1115,6 +1153,87 @@ const OwnerDashboard = () => {
     URL.revokeObjectURL(url)
   }
 
+  const handleOwnerNotificationView = async (notificationId) => {
+    try {
+      await fetch(`${API_BASE_URL}/notifications/${notificationId}/view`, { method: 'PUT' })
+      if (!userId) return
+      const r = await fetch(`${API_BASE_URL}/notifications/user/${userId}`)
+      const d = await r.json()
+      if (d.success) {
+        const list = (d.data || []).map((n) => {
+          if (n.data && typeof n.data === 'string') {
+            try {
+              return { ...n, data: JSON.parse(n.data) }
+            } catch {
+              return n
+            }
+          }
+          return n
+        })
+        setOwnerNotifications(list)
+      }
+    } catch (e) {
+      console.warn('owner notif view', e)
+    }
+  }
+
+  const respondOwnerTestDrive = async (notification, action) => {
+    let payload = notification?.data
+    if (typeof payload === 'string') {
+      try {
+        payload = JSON.parse(payload)
+      } catch {
+        payload = null
+      }
+    }
+    if (!payload?.booking_id) {
+      showToast('Не удалось прочитать заявку. Обновите страницу.', 'error')
+      return
+    }
+    if (!userId) {
+      showToast('Не найден пользователь', 'error')
+      return
+    }
+    try {
+      const res = await fetch(
+        `${API_BASE_URL}/test-drive-bookings/${payload.booking_id}/respond`,
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ user_id: userId, action }),
+        }
+      )
+      const json = await res.json().catch(() => ({}))
+      if (!res.ok || !json.success) {
+        showToast(json.error || 'Не удалось выполнить действие', 'error')
+        return
+      }
+      showToast(
+        action === 'approve' ? 'Тест-драйв подтверждён' : 'Заявка отклонена',
+        'success',
+        4000
+      )
+      const r = await fetch(`${API_BASE_URL}/notifications/user/${userId}`)
+      const d = await r.json()
+      if (d.success) {
+        const list = (d.data || []).map((n) => {
+          if (n.data && typeof n.data === 'string') {
+            try {
+              return { ...n, data: JSON.parse(n.data) }
+            } catch {
+              return n
+            }
+          }
+          return n
+        })
+        setOwnerNotifications(list)
+      }
+    } catch (e) {
+      console.error('owner test-drive respond', e)
+      showToast('Ошибка сети', 'error')
+    }
+  }
+
   return (
     <div className="owner-dashboard">
       <header className="owner-dashboard__header">
@@ -1141,6 +1260,16 @@ const OwnerDashboard = () => {
                 </button>
                 {isMobileMenuOpen && (
                   <div className="owner-dashboard__mobile-menu">
+                    <button
+                      className="owner-dashboard__mobile-menu-item owner-dashboard__mobile-menu-item--notifications"
+                      onClick={() => {
+                        setOwnerNotifOpen(true)
+                        setIsMobileMenuOpen(false)
+                      }}
+                      aria-label={t('notifications')}
+                    >
+                      <FiBell size={18} />
+                    </button>
                     <button
                       className="owner-dashboard__mobile-menu-item owner-dashboard__mobile-menu-item--profile"
                       onClick={() => {
@@ -1188,6 +1317,18 @@ const OwnerDashboard = () => {
               </div>
             ) : (
               <>
+                <button
+                  type="button"
+                  className="owner-dashboard__icon-btn"
+                  onClick={() => {
+                    setOwnerNotifOpen((open) => !open)
+                    setIsProfilePanelOpen(false)
+                    setIsSettingsPanelOpen(false)
+                  }}
+                  aria-label={t('notifications')}
+                >
+                  <FiBell size={20} />
+                </button>
                 <button 
                   className="owner-dashboard__icon-btn"
                   onClick={() => {
@@ -1245,6 +1386,122 @@ const OwnerDashboard = () => {
           </button>
         </div>
       </header>
+
+      {ownerNotifOpen && (
+        <>
+          <div
+            className="notification-backdrop"
+            onClick={() => setOwnerNotifOpen(false)}
+            role="presentation"
+          />
+          <div className="notification-panel">
+            <div className="notification-panel__content">
+              <div className="notification-panel__header">
+                <h3 className="notification-panel__title">{t('notifications')}</h3>
+                <button
+                  type="button"
+                  className="notification-panel__close"
+                  onClick={() => setOwnerNotifOpen(false)}
+                  aria-label={t('closeNotifications') || 'Закрыть'}
+                >
+                  <FiX size={20} />
+                </button>
+              </div>
+              <div className="notification-panel__list">
+                {ownerNotifLoading ? (
+                  <div style={{ padding: '20px', textAlign: 'center' }}>{t('loading')}</div>
+                ) : ownerNotifications.length === 0 ? (
+                  <div style={{ padding: '20px', textAlign: 'center', color: '#6b7280' }}>
+                    {t('noNotifications')}
+                  </div>
+                ) : (
+                  ownerNotifications.map((notification) => {
+                    let notificationClass = 'notification-item--property'
+                    if (notification.type === 'verification_success') {
+                      notificationClass = 'notification-item--success'
+                    } else if (notification.type === 'verification_rejected') {
+                      notificationClass = 'notification-item--error'
+                    } else if (notification.type === 'bid_outbid') {
+                      notificationClass = 'notification-item--warning'
+                    } else if (notification.type === 'test_drive_request') {
+                      notificationClass = 'notification-item--warning'
+                    } else if (notification.type === 'test_drive_result') {
+                      notificationClass = 'notification-item--success'
+                    }
+                    return (
+                      <div
+                        key={notification.id}
+                        className={`notification-item ${notificationClass}`}
+                        onClick={() => {
+                          if (notification.type === 'test_drive_request') return
+                          handleOwnerNotificationView(notification.id)
+                        }}
+                      >
+                        <div className="notification-item__content">
+                          <h4 className="notification-item__title">{notification.title}</h4>
+                          {notification.message && (
+                            <p className="notification-item__message">{notification.message}</p>
+                          )}
+                          {notification.type === 'test_drive_request' && notification.data?.booking_id ? (
+                            <div
+                              className="notification-item__test-drive-actions"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <button
+                                type="button"
+                                className="notification-item__button notification-item__button--approve"
+                                onClick={() => respondOwnerTestDrive(notification, 'approve')}
+                              >
+                                Подтвердить
+                              </button>
+                              <button
+                                type="button"
+                                className="notification-item__button notification-item__button--reject"
+                                onClick={() => respondOwnerTestDrive(notification, 'reject')}
+                              >
+                                Отклонить
+                              </button>
+                            </div>
+                          ) : notification.data && notification.data.property_id ? (
+                            <div className="notification-item__property">
+                              <div className="notification-item__info">
+                                <button
+                                  type="button"
+                                  className="notification-item__button"
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    setOwnerNotifOpen(false)
+                                    navigate(`/property/${notification.data.property_id}`)
+                                  }}
+                                >
+                                  {t('goTo')}
+                                  <FiArrowRight size={18} />
+                                </button>
+                              </div>
+                            </div>
+                          ) : null}
+                          {!notification.data && (
+                            <button
+                              type="button"
+                              className="notification-item__button"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                setOwnerNotifOpen(false)
+                              }}
+                            >
+                              {t('close')}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    )
+                  })
+                )}
+              </div>
+            </div>
+          </div>
+        </>
+      )}
 
       {/* Уведомление о необходимости заполнить данные */}
       {verificationStatus && !verificationStatus.isReady && (

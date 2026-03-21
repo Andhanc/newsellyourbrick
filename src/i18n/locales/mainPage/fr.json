@@ -182,6 +182,7 @@
   "propertyDetailBidsUnavailableReserved": "Enchères temporairement indisponibles. Bien réservé.",
   "propertyDetailYouAreLeading": "Vous menez les enchères",
   "propertyDetailEnterBidAmount": "Entrez le montant de l'enchère",
+  "propertyDetailMinBidHint": "Enchère minimum : {{min}} (enchère max actuelle + {{step}})",
   "propertyDetailSubmitting": "Envoi...",
   "propertyDetailYouAreWinning": "Vous êtes en tête",
   "propertyDetailRecentBids": "Dernières enchères",

@@ -438,6 +438,29 @@
   transform: translateY(0);
 }
 
+.notification-item__test-drive-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.notification-item__button--approve {
+  background: #059669;
+}
+
+.notification-item__button--approve:hover {
+  background: #047857;
+}
+
+.notification-item__button--reject {
+  background: #6b7280;
+}
+
+.notification-item__button--reject:hover {
+  background: #4b5563;
+}
+
 /* Стили для уведомлений о верификации */
 .notification-item--success {
   background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);

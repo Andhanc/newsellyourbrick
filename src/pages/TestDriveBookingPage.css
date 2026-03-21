@@ -1,0 +1,185 @@
+.test-drive-page {
+  min-height: 100vh;
+  background: linear-gradient(165deg, #f8fafc 0%, #eef2ff 45%, #f8fafc 100%);
+  padding: 24px 16px 48px;
+  font-family: 'Montserrat', system-ui, sans-serif;
+}
+
+.test-drive-page__hero {
+  max-width: 1200px;
+  margin: 0 auto 28px;
+}
+
+.test-drive-page__back {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: none;
+  background: transparent;
+  color: #475569;
+  font-weight: 600;
+  cursor: pointer;
+  margin-bottom: 16px;
+  padding: 8px 0;
+  font-size: 15px;
+}
+
+.test-drive-page__back:hover {
+  color: #1e293b;
+}
+
+.test-drive-page__title {
+  font-size: clamp(1.35rem, 3vw, 1.85rem);
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+  margin-bottom: 10px;
+}
+
+.test-drive-page__subtitle {
+  color: #64748b;
+  font-size: 15px;
+  line-height: 1.5;
+  max-width: 640px;
+}
+
+.test-drive-page__layout {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 32px;
+  align-items: start;
+}
+
+@media (max-width: 960px) {
+  .test-drive-page__layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.test-drive-page__calendar-wrap {
+  position: relative;
+  width: 100%;
+}
+
+.test-drive-page__calendar-panel {
+  width: 100%;
+  max-width: 100%;
+}
+
+.test-drive-page__saving {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.65);
+  border-radius: 16px;
+  font-weight: 600;
+  color: #334155;
+}
+
+.test-drive-page__picked {
+  margin: 0 0 16px;
+  text-align: center;
+  color: #334155;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.test-drive-page__picked strong {
+  color: #0f172a;
+  font-weight: 700;
+}
+
+.test-drive-page__actions {
+  margin-top: 24px;
+  padding: 20px 22px;
+  background: #fff;
+  border-radius: 20px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  box-shadow: 0 12px 40px rgba(15, 23, 42, 0.08);
+}
+
+.test-drive-page__action-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
+  align-items: center;
+}
+
+.test-drive-page__btn {
+  min-height: 48px;
+  padding: 0 24px;
+  border-radius: 14px;
+  font-size: 15px;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+
+.test-drive-page__btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.test-drive-page__btn--primary {
+  border: none;
+  background: linear-gradient(135deg, #0abab5 0%, #0891a8 100%);
+  color: #fff;
+  box-shadow: 0 8px 24px rgba(10, 186, 181, 0.35);
+}
+
+.test-drive-page__btn--primary:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 28px rgba(10, 186, 181, 0.45);
+}
+
+.test-drive-page__btn--ghost {
+  border: 2px solid #cbd5e1;
+  background: #fff;
+  color: #475569;
+}
+
+.test-drive-page__btn--ghost:hover:not(:disabled) {
+  background: #f8fafc;
+  border-color: #94a3b8;
+  color: #1e293b;
+}
+
+.test-drive-page__hints {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.test-drive-hint-card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 16px 18px;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+  border: 1px solid rgba(148, 163, 184, 0.25);
+}
+
+.test-drive-hint-card h3 {
+  font-size: 15px;
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 8px;
+}
+
+.test-drive-hint-card p {
+  font-size: 13px;
+  line-height: 1.55;
+  color: #64748b;
+  margin: 0;
+}
+
+.test-drive-hint-card--accent {
+  border-color: rgba(59, 130, 246, 0.35);
+  background: linear-gradient(135deg, #fff 0%, #eff6ff 100%);
+}
