@@ -1871,6 +1871,19 @@ export const userQueries = {
     
     // Проверяем, есть ли поле user_id_number в таблице
     let pragmaInfo = db.prepare("PRAGMA table_info(users)").all();
+    let hasUsernameColumn = pragmaInfo.some(col => col.name === 'username');
+    if (!hasUsernameColumn) {
+      try {
+        db.exec('ALTER TABLE users ADD COLUMN username TEXT');
+        db.exec('CREATE INDEX IF NOT EXISTS idx_users_username ON users(username)');
+        pragmaInfo = db.prepare('PRAGMA table_info(users)').all();
+        hasUsernameColumn = true;
+        console.log('✅ Поле username добавлено в users (миграция из userQueries.update)');
+      } catch (e) {
+        console.warn('⚠️ Не удалось добавить поле username:', e.message);
+        hasUsernameColumn = false;
+      }
+    }
     const hasUserIdNumber = pragmaInfo.some(col => col.name === 'user_id_number');
     
     // Проверяем поля Telegram — при необходимости добавляем (на случай старой БД без миграции)
@@ -1929,7 +1942,9 @@ export const userQueries = {
     const values = [];
     
     const allowedFields = [
-      'first_name', 'last_name', 'email', 'username', 'password', 'phone_number',
+      'first_name', 'last_name', 'email',
+      ...(hasUsernameColumn ? ['username'] : []),
+      'password', 'phone_number',
       'passport_series', 'passport_number', 'identification_number',
       'address', 'country', 'passport_photo', 'user_photo',
       'is_verified', 'role', 'is_online', 'is_blocked',

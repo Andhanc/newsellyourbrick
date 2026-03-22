@@ -58,7 +58,9 @@ const ClerkAuthHandler = () => {
     // Только явные параметры Clerk — иначе любой `?code=` на сайте давал 10 с ожидания и модалку «Вход не завершён».
     const searchStr = window.location.search
     const hashStr = window.location.hash
-    const hasOAuthParams =
+    /** Явные параметры Clerk (редирект с провайдера). Без «любой подстроки __clerk» — иначе на проде
+     *  ложные срабатывания и модалка «уже есть аккаунт» при F5, если в query/hash остался посторонний фрагмент. */
+    const hasExplicitClerkOAuthParams =
       urlParams.has('__clerk_redirect_url') ||
       urlParams.has('__clerk_handshake') ||
       urlParams.has('__clerk_redirect') ||
@@ -70,7 +72,9 @@ const ClerkAuthHandler = () => {
       hashParams.has('__clerk_handshake') ||
       hashParams.has('__clerk_status') ||
       hashParams.has('__clerk_ticket') ||
-      hashParams.has('__clerk_state') ||
+      hashParams.has('__clerk_state')
+    const hasOAuthParams =
+      hasExplicitClerkOAuthParams ||
       searchStr.includes('__clerk') ||
       hashStr.includes('__clerk')
 
@@ -81,21 +85,26 @@ const ClerkAuthHandler = () => {
     const oauthFlowMode = sessionStorage.getItem('clerk_oauth_flow_mode') || 'register'
     
     // Проверяем, были ли мы на Clerk домене (проверяем document.referrer)
-    const wasOnClerkDomain = document.referrer.includes('clerk.accounts.dev') || 
-                            document.referrer.includes('clerk.com')
+    const wasOnClerkDomain = document.referrer.includes('clerk.accounts.dev') ||
+      document.referrer.includes('clerk.com') ||
+      document.referrer.includes('accounts.clerk.')
 
-    /** Только завершение OAuth-редиректа, а не обычная перезагрузка (F5) с уже активной сессией Clerk */
+    /**
+     * Только реальный возврат OAuth (флаг из LoginModal или явные query/hash от Clerk).
+     * Не используем wasOnClerkDomain и не «любой __clerk» в строке — иначе после входа и F5
+     * снова срабатывает ветка «duplicate register» и сессия сбрасывается.
+     */
     const isOAuthCompletionContext =
-      hasOAuthParams ||
-      oauthRedirectStarted === 'true' ||
-      wasOnClerkDomain
+      oauthRedirectStarted === 'true' || hasExplicitClerkOAuthParams
     
     console.log('ClerkAuthHandler: Checking auth state', {
       isSignedIn,
       hasUser: !!user,
       hasSession: !!session,
       hasOAuthParams,
+      hasExplicitClerkOAuthParams,
       oauthRedirectStarted,
+      isOAuthCompletionContext,
       wasOnClerkDomain,
       searchParams: window.location.search,
       hash: window.location.hash,
