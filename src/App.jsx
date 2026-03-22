@@ -13,6 +13,7 @@ import UserCabinetSseBridge from './components/UserCabinetSseBridge'
 import { validateSession, getUserData } from './services/authService'
 import { prefetchAuctionList } from './services/auctionListCache'
 import './App.css'
+import { GlassFilterDefs } from './components/ui/GlassFilterDefs'
 
 // Ленивая загрузка страниц — чанк грузится только при переходе на маршрут
 const Home = lazy(() => import('./pages/Home'))
@@ -375,6 +376,7 @@ function App() {
       <AdminSessionCleaner />
       <ClerkAuthSync />
       <ClerkAuthHandler />
+      <GlassFilterDefs />
       <div className={`app-layout ${isBlocked ? 'app-layout--blocked' : ''}`}>
         <div className="app-layout__content">
           <Suspense fallback={<PageFallback />}>

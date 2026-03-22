@@ -46,6 +46,26 @@ import { useTranslation } from 'react-i18next'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
 
+/**
+ * Названия языков только на самом языке (как в футере), без t() —
+ * иначе при смене локали подписи в списке переводятся (напр. «Inglés» вместо English).
+ */
+const OWNER_SETTINGS_LANGUAGE_OPTIONS = [
+  { code: 'ru', nativeName: 'Русский' },
+  { code: 'en', nativeName: 'English' },
+  { code: 'de', nativeName: 'Deutsch' },
+  { code: 'es', nativeName: 'Español' },
+  { code: 'fr', nativeName: 'Français' },
+  { code: 'sv', nativeName: 'Svenska' }
+]
+
+const OWNER_I18N_LANGUAGE_CODES = OWNER_SETTINGS_LANGUAGE_OPTIONS.map((o) => o.code)
+
+function getOwnerSettingsLanguageValue(i18nLanguage) {
+  const code = (i18nLanguage || 'ru').split('-')[0]
+  return OWNER_I18N_LANGUAGE_CODES.includes(code) ? code : 'ru'
+}
+
 // Демонстрационные данные объявлений владельца
 const mockOwnerProperties = [
   {
@@ -213,7 +233,9 @@ const OwnerDashboard = () => {
                   firstName: prev.firstName || dbUser.first_name || '',
                   lastName: prev.lastName || dbUser.last_name || '',
                   email: prev.email || dbUser.email || '',
-                  username: prev.username || dbUser.username || '',
+                  username: (dbUser.username != null && String(dbUser.username).trim() !== '')
+                    ? dbUser.username
+                    : (prev.username || ''),
                   phone: prev.phone || dbUser.phone_number || '',
                   country: prev.country || dbUser.country || '',
                   countryFlag: selectedCountry ? selectedCountry.flag : prev.countryFlag || ''
@@ -595,6 +617,25 @@ const OwnerDashboard = () => {
       verificationStatus.isVerified === true ||
       (verificationStatus.isReady && verificationStatus.hasDocuments)
     )
+  }
+
+  // Плашка «Заполните данные для верификации»: скрываем, когда в БД заполнены все поля панели «Профиль»
+  // (имя, фамилия, страна, почта, логин, WhatsApp). Пароль в БД обязателен только при входе по email;
+  // для Clerk / Google / Telegram / WhatsApp пароль в нашей БД может отсутствовать.
+  const shouldHideOwnerVerificationBanner = (status) => {
+    if (!status) return false
+    if (status.isVerified === true) return true
+    if (typeof status.ownerCabinetProfileComplete === 'boolean') {
+      if (!status.ownerCabinetProfileComplete) return false
+      const stored = getUserData()
+      const loginMethod = stored?.loginMethod || ''
+      const passwordOptional = ['clerk', 'google', 'telegram', 'whatsapp'].includes(loginMethod)
+      if (passwordOptional) return true
+      return status.ownerCabinetHasPassword === true
+    }
+    const m = status.missingFields
+    if (!m) return false
+    return !m.firstName && !m.lastName && !m.emailOrPhone && !m.country
   }
 
   // Обработчик кнопки "Пройти верификацию"
@@ -1542,8 +1583,8 @@ const OwnerDashboard = () => {
         </>
       )}
 
-      {/* Уведомление о необходимости заполнить данные */}
-      {verificationStatus && !verificationStatus.isReady && (
+      {/* Уведомление о необходимости заполнить данные — пока не заполнены все поля вкладки «Профиль» */}
+      {verificationStatus && !shouldHideOwnerVerificationBanner(verificationStatus) && (
         <div className="owner-verification-notification">
           <div className="owner-verification-notification__content">
             <div className="owner-verification-notification__icon">
@@ -2639,6 +2680,18 @@ const OwnerDashboard = () => {
                     disabled={!isProfileEditing}
                   />
                 </div>
+                {isProfileEditing && (
+                  <div className="owner-profile-section owner-profile-section--save-below-whatsapp">
+                    <button
+                      type="button"
+                      className="owner-profile-section__button owner-profile-section__button--primary owner-profile-section__button--save-below"
+                      onClick={handleProfileSave}
+                      disabled={isSavingProfile}
+                    >
+                      {isSavingProfile ? t('ownerProfileSaving') : t('ownerProfileSave')}
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -2668,13 +2721,23 @@ const OwnerDashboard = () => {
               <div className="owner-sidebar-panel__body">
                 <div className="owner-settings-section">
                   <h4 className="owner-settings-section__title">{t('ownerSettingsChangeLanguage')}</h4>
-                  <select className="owner-settings-section__select">
-                    <option value="ru">{t('ownerSettingsLanguageRu')}</option>
-                    <option value="en">{t('ownerSettingsLanguageEn')}</option>
-                    <option value="de">{t('ownerSettingsLanguageDe')}</option>
-                    <option value="es">{t('ownerSettingsLanguageEs')}</option>
-                    <option value="fr">{t('ownerSettingsLanguageFr')}</option>
-                    <option value="sv">{t('ownerSettingsLanguageSv')}</option>
+                  <select
+                    className="owner-settings-section__select"
+                    value={getOwnerSettingsLanguageValue(i18n.language)}
+                    onChange={async (e) => {
+                      try {
+                        await i18n.changeLanguage(e.target.value)
+                      } catch (error) {
+                        console.error('Error changing language:', error)
+                      }
+                    }}
+                    aria-label={t('ownerSettingsChangeLanguage')}
+                  >
+                    {OWNER_SETTINGS_LANGUAGE_OPTIONS.map(({ code, nativeName }) => (
+                      <option key={code} value={code}>
+                        {nativeName}
+                      </option>
+                    ))}
                   </select>
                 </div>
                 <div className="owner-settings-section">

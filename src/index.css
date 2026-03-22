@@ -2,6 +2,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&display=swap');
 
 @import "tailwindcss";
+@import './styles/liquid-glass-buttons-global.css';
 
 @theme inline {
   --color-destructive-foreground: oklch(1 0 0);

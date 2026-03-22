@@ -83,6 +83,12 @@ const ClerkAuthHandler = () => {
     // Проверяем, были ли мы на Clerk домене (проверяем document.referrer)
     const wasOnClerkDomain = document.referrer.includes('clerk.accounts.dev') || 
                             document.referrer.includes('clerk.com')
+
+    /** Только завершение OAuth-редиректа, а не обычная перезагрузка (F5) с уже активной сессией Clerk */
+    const isOAuthCompletionContext =
+      hasOAuthParams ||
+      oauthRedirectStarted === 'true' ||
+      wasOnClerkDomain
     
     console.log('ClerkAuthHandler: Checking auth state', {
       isSignedIn,
@@ -308,8 +314,15 @@ const ClerkAuthHandler = () => {
             }
           }
 
-          // Регистрация через Google/Facebook и т.п., но аккаунт в БД уже есть — не логиним, просим «Вход».
-          if (oauthFlowMode === 'register' && foundExistingInDb && dbUserId) {
+          // Регистрация через OAuth, но email уже в БД — модалка «уже есть аккаунт» только при реальном
+          // возврате с провайдера. После успешной регистрации clerk_oauth_flow_mode снимается, а default
+          // 'register' давал ложное срабатывание на каждом F5 (сессия Clerk + пользователь уже в БД).
+          if (
+            oauthFlowMode === 'register' &&
+            foundExistingInDb &&
+            dbUserId &&
+            isOAuthCompletionContext
+          ) {
             return {
               dbUserId,
               shouldOpenRegister: false,
@@ -424,6 +437,11 @@ const ClerkAuthHandler = () => {
         }
 
         setHasProcessed(true)
+        try {
+          sessionStorage.removeItem(PENDING_DUPLICATE_REGISTER_ALERT)
+        } catch {
+          /* ignore */
+        }
 
         // Очищаем флаг OAuth редиректа
         if (oauthRedirectStarted) {

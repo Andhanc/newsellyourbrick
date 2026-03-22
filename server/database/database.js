@@ -102,6 +102,13 @@ function checkAndUpdateSchema(dbInstance) {
         console.log('🔄 Обновление схемы БД: добавляем поля telegram_id, telegram_username, telegram_photo_url...');
         needsUpdate = true;
       }
+
+      // Логин в кабинете продавца (отдельно от telegram_username)
+      const usersUsernameColumn = pragmaInfo.find(col => col.name === 'username');
+      if (!usersUsernameColumn) {
+        console.log('🔄 Обновление схемы БД: добавляем поле username в users...');
+        needsUpdate = true;
+      }
       
       if (needsUpdate) {
         try {
@@ -205,6 +212,16 @@ function checkAndUpdateSchema(dbInstance) {
               console.log('✅ Индекс idx_users_telegram_id создан');
             } catch (e) {
               console.warn('⚠️ Не удалось добавить поля Telegram:', e.message);
+            }
+          }
+
+          if (!usersUsernameColumn) {
+            try {
+              dbInstance.exec('ALTER TABLE users ADD COLUMN username TEXT');
+              console.log('✅ Поле username добавлено в таблицу users');
+              dbInstance.exec('CREATE INDEX IF NOT EXISTS idx_users_username ON users(username)');
+            } catch (e) {
+              console.warn('⚠️ Не удалось добавить поле username:', e.message);
             }
           }
           
@@ -1912,7 +1929,7 @@ export const userQueries = {
     const values = [];
     
     const allowedFields = [
-      'first_name', 'last_name', 'email', 'password', 'phone_number',
+      'first_name', 'last_name', 'email', 'username', 'password', 'phone_number',
       'passport_series', 'passport_number', 'identification_number',
       'address', 'country', 'passport_photo', 'user_photo',
       'is_verified', 'role', 'is_online', 'is_blocked',

@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { useNavigate, useParams, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { 
@@ -10,7 +10,6 @@ import {
   FiDollarSign,
   FiHome,
   FiMapPin,
-  FiGlobe,
   FiLoader,
   FiChevronDown,
   FiLink,
@@ -25,14 +24,22 @@ import {
   FiGift
 } from 'react-icons/fi'
 import { PiBuildingApartment, PiBuildings, PiWarehouse } from 'react-icons/pi'
+
+const ADD_PROPERTY_NAME_PLACEHOLDER_I18N_KEYS = {
+  apartment: 'addPropertyNamePlaceholderApartment',
+  house: 'addPropertyNamePlaceholderHouse',
+  villa: 'addPropertyNamePlaceholderVilla',
+  commercial: 'addPropertyNamePlaceholderCommercial'
+}
+
+function getAddPropertyNamePlaceholderKey(propertyType) {
+  return ADD_PROPERTY_NAME_PLACEHOLDER_I18N_KEYS[propertyType] || ADD_PROPERTY_NAME_PLACEHOLDER_I18N_KEYS.apartment
+}
 import { MdBed, MdOutlineBathtub, MdLightbulb } from 'react-icons/md'
 import { BiArea } from 'react-icons/bi'
 import LocationMap from '../components/LocationMap'
-import PropertyPreviewModal from '../components/PropertyPreviewModal'
-import DateRangePicker from '../components/DateRangePicker'
 import AuctionPeriodPicker from '../components/AuctionPeriodPicker'
 import SellerVerificationModal from '../components/SellerVerificationModal'
-import CardBindingModal from '../components/CardBindingModal'
 import CountrySelect from '../components/CountrySelect'
 import { getUserData } from '../services/authService'
 import { generateListingDescription } from '../services/aiService'
@@ -198,9 +205,7 @@ const AddProperty = () => {
   const [showCarousel, setShowCarousel] = useState(false)
   const [mediaItems, setMediaItems] = useState([]) // Объединенный массив фото и видео
   const [photosMediaIndex, setPhotosMediaIndex] = useState(0) // Индекс для карусели на странице загрузки фотографий
-  const [showPreview, setShowPreview] = useState(false)
   const [showVerificationModal, setShowVerificationModal] = useState(false)
-  const [showCardBindingModal, setShowCardBindingModal] = useState(false)
   const [showListingFeeModal, setShowListingFeeModal] = useState(false)
   const [showPromoInputInFeeModal, setShowPromoInputInFeeModal] = useState(false)
   const [listingFeePromoCode, setListingFeePromoCode] = useState('')
@@ -215,12 +220,9 @@ const AddProperty = () => {
   const [videoLink, setVideoLink] = useState('')
   const [showPhotoLinkModal, setShowPhotoLinkModal] = useState(false)
   const [photoLink, setPhotoLink] = useState('')
-  const [isTranslating, setIsTranslating] = useState(false)
-  const [translations, setTranslations] = useState(null)
-  const [showTranslations, setShowTranslations] = useState(false)
   const [currency, setCurrency] = useState('USD')
   const [showCurrencyDropdown, setShowCurrencyDropdown] = useState(null) // 'price' или 'auction' или null
-  const [currentStep, setCurrentStep] = useState('type-selection') // 'type-selection', 'test-drive-question', 'property-name', 'location', 'details', 'amenities', 'photos', 'documents', 'price', 'form'
+  const [currentStep, setCurrentStep] = useState('type-selection') // wizard steps through 'price' (legacy final form removed)
   const [showHint1, setShowHint1] = useState(true)
   const [showHint2, setShowHint2] = useState(true)
   // Состояния для подсказок на каждом шаге
@@ -611,6 +613,22 @@ const AddProperty = () => {
     return value.toString().replace(/,/g, '')
   }
 
+  /** Если задана цена «Купить сейчас», стартовая ставка не может превышать 20% от неё. */
+  const getAuctionStartingVsBuyNowError = useCallback((buyNowRaw, startingRaw) => {
+    const buyNow = Number(removeCommas(String(buyNowRaw ?? '')))
+    const startingStr = String(startingRaw ?? '')
+    const startingDigits = startingStr.replace(/\D/g, '')
+    if (!buyNow || buyNow <= 0) return null
+    if (!startingDigits) return null
+    const starting = Number(removeCommas(startingStr))
+    if (!Number.isFinite(starting) || starting <= 0) return null
+    const maxAllowed = buyNow * 0.2
+    if (starting > maxAllowed + 1e-9) {
+      return t('addPropertyPriceStartingBidMaxBuyNowPercent')
+    }
+    return null
+  }, [t])
+
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target
     setFormData(prev => ({
@@ -628,24 +646,16 @@ const AddProperty = () => {
       ...prev,
       price: numericValue
     }))
-    
-    // Валидация: Проверяем, что стартовая цена меньше минимальной цены (если обе заполнены)
-    if (numericValue && formData.auctionStartingPrice) {
-      const priceNum = Number(numericValue)
-      // Убираем запятые из стартовой цены перед сравнением
-      const startingPriceNum = Number(removeCommas(String(formData.auctionStartingPrice)))
-      if (startingPriceNum >= priceNum) {
-        setValidationErrors(prev => ({
-          ...prev,
-          auctionStartingPrice: 'Стартовая сумма ставки должна быть меньше минимальной цены продажи'
-        }))
-      } else {
-        setValidationErrors(prev => {
-          const newErrors = { ...prev }
-          delete newErrors.auctionStartingPrice
-          return newErrors
-        })
-      }
+
+    const err = getAuctionStartingVsBuyNowError(numericValue, formData.auctionStartingPrice)
+    if (err) {
+      setValidationErrors(prev => ({ ...prev, auctionStartingPrice: err }))
+    } else {
+      setValidationErrors(prev => {
+        const next = { ...prev }
+        delete next.auctionStartingPrice
+        return next
+      })
     }
   }
 
@@ -658,30 +668,15 @@ const AddProperty = () => {
       ...prev,
       auctionStartingPrice: numericValue
     }))
-    
-    // Валидация: Стартовая сумма ставки должна быть меньше минимальной цены продажи
-    if (numericValue && formData.price) {
-      const startingPriceNum = Number(numericValue)
-      // Убираем запятые из цены перед сравнением
-      const priceNum = Number(removeCommas(String(formData.price)))
-      if (startingPriceNum >= priceNum) {
-        setValidationErrors(prev => ({
-          ...prev,
-          auctionStartingPrice: 'Стартовая сумма ставки должна быть меньше минимальной цены продажи'
-        }))
-      } else {
-        setValidationErrors(prev => {
-          const newErrors = { ...prev }
-          delete newErrors.auctionStartingPrice
-          return newErrors
-        })
-      }
+
+    const err = getAuctionStartingVsBuyNowError(formData.price, numericValue)
+    if (err) {
+      setValidationErrors(prev => ({ ...prev, auctionStartingPrice: err }))
     } else {
-      // Очищаем ошибку, если одно из полей пустое
       setValidationErrors(prev => {
-        const newErrors = { ...prev }
-        delete newErrors.auctionStartingPrice
-        return newErrors
+        const next = { ...prev }
+        delete next.auctionStartingPrice
+        return next
       })
     }
   }
@@ -805,14 +800,6 @@ const AddProperty = () => {
       ...prev,
       [field]: validatedValue
     }))
-  }
-
-  const handlePreview = () => {
-    if (!formData.title || photos.length === 0) {
-      showNotification('Пожалуйста, заполните заголовок и загрузите хотя бы одно фото')
-      return
-    }
-    setShowPreview(true)
   }
 
   const handlePublish = async (options = {}) => {
@@ -983,6 +970,13 @@ const AddProperty = () => {
         const testDriveValue = (formData.testDrive === true || formData.testDrive === 1) ? '1' : '0'
         console.log('🔍 Отправка test_drive на сервер:', { formData_testDrive: formData.testDrive, testDriveValue })
         formDataToSend.append('test_drive', testDriveValue)
+        const publishBuyNowErr = getAuctionStartingVsBuyNowError(formData.price, formData.auctionStartingPrice)
+        if (publishBuyNowErr) {
+          setIsSubmitting(false)
+          setValidationErrors(prev => ({ ...prev, auctionStartingPrice: publishBuyNowErr }))
+          showNotification(publishBuyNowErr)
+          return false
+        }
       }
       if (formData.auctionStartDate) formDataToSend.append('auction_start_date', formData.auctionStartDate)
       if (formData.auctionEndDate) formDataToSend.append('auction_end_date', formData.auctionEndDate)
@@ -1241,7 +1235,9 @@ const AddProperty = () => {
     if (!draft) return
     draftRestoredRef.current = true
     if (draft.formData) setFormData(draft.formData)
-    if (draft.currentStep) setCurrentStep(draft.currentStep)
+    if (draft.currentStep) {
+      setCurrentStep(draft.currentStep === 'form' ? 'price' : draft.currentStep)
+    }
     if (Array.isArray(draft.photos) && draft.photos.length > 0) setPhotos(draft.photos)
     if (Array.isArray(draft.videos)) setVideos(draft.videos)
     if (Array.isArray(draft.bedrooms)) setBedrooms(draft.bedrooms)
@@ -1775,17 +1771,19 @@ const AddProperty = () => {
           }))
           setUploadedDocuments(prev => ({ ...prev, noDebts: true }))
         }
-        // Проверяем валидацию цен после загрузки данных
-        // Очищаем ошибки валидации, если значения корректны
+        // После загрузки: правило 20% от «Купить сейчас» для стартовой ставки
         if (property.price && property.auction_starting_price) {
-          const priceNum = Number(property.price)
-          const startingPriceNum = Number(property.auction_starting_price)
-          if (startingPriceNum < priceNum) {
-            // Значения корректны, очищаем ошибку валидации если она есть
+          const loadErr = getAuctionStartingVsBuyNowError(
+            String(property.price),
+            String(property.auction_starting_price)
+          )
+          if (loadErr) {
+            setValidationErrors(prev => ({ ...prev, auctionStartingPrice: loadErr }))
+          } else {
             setValidationErrors(prev => {
-              const newErrors = { ...prev }
-              delete newErrors.auctionStartingPrice
-              return newErrors
+              const next = { ...prev }
+              delete next.auctionStartingPrice
+              return next
             })
           }
         }
@@ -1978,129 +1976,15 @@ const AddProperty = () => {
     return changes
   }
 
-  const handleSubmit = (e) => {
-    e.preventDefault()
-    // Валидация основных полей
-    if (!formData.title || photos.length === 0) {
-      showNotification('Пожалуйста, заполните заголовок и загрузите хотя бы одно фото')
-      return
-    }
-    // Проверяем документы перед публикацией
-    const requiresNoDebts = !formData.isDebtProperty
-    if (!uploadedDocuments.ownership || (requiresNoDebts && !uploadedDocuments.noDebts)) {
-      showNotification('Пожалуйста, загрузите все необходимые документы')
-      return
-    }
-    // Проверяем, что userId есть
-    if (!userId) {
-      showNotification('Ошибка: пользователь не авторизован. Пожалуйста, войдите в систему.')
-      return
-    }
-    // Открываем модальное окно верификации
-    setShowVerificationModal(true)
-  }
-
   const handleVerificationComplete = async () => {
-    // После завершения верификации сохраняем флаг в localStorage
     localStorage.setItem('verificationSubmitted', 'true')
-    // Закрываем модальное окно верификации
     setShowVerificationModal(false)
-    // Открываем модальное окно привязки карточки
-    setShowCardBindingModal(true)
+    const success = await handlePublish()
+    if (success) {
+      localStorage.removeItem('verificationSubmitted')
+      listingPublishedAfterFeeRef.current = true
+    }
     return true
-  }
-
-  const handleCardBindingComplete = async () => {
-    // После привязки карточки сохраняем флаг в localStorage (для совместимости)
-    localStorage.setItem('cardBound', 'true')
-    // Закрываем модальное окно привязки карточки
-    setShowCardBindingModal(false)
-    
-    // Если объявление уже ушло на сервер после промо/оплаты — не создаём дубликат
-    const verificationData = localStorage.getItem('verificationSubmitted')
-    if (verificationData === 'true') {
-      if (!listingPublishedAfterFeeRef.current) {
-        const success = await handlePublish()
-        if (success) {
-          localStorage.removeItem('verificationSubmitted')
-        }
-      } else {
-        localStorage.removeItem('verificationSubmitted')
-        setShowSuccessModal(true)
-      }
-    }
-    
-    return true
-  }
-
-  const translateText = async (text, targetLang) => {
-    try {
-      // Используем MyMemory API - бесплатный сервис перевода
-      const response = await fetch(
-        `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=ru|${targetLang}`
-      )
-      const data = await response.json()
-      if (data.responseData && data.responseData.translatedText) {
-        return data.responseData.translatedText
-      }
-      return text
-    } catch (error) {
-      console.error(`Ошибка перевода на ${targetLang}:`, error)
-      return text
-    }
-  }
-
-  const handleTranslateAll = async () => {
-    if (!formData.title && !formData.description) {
-      showNotification('Пожалуйста, заполните заголовок или описание перед переводом')
-      return
-    }
-
-    setIsTranslating(true)
-    setShowTranslations(false)
-
-    const textToTranslate = `${formData.title || ''} ${formData.description || ''}`.trim()
-
-    if (!textToTranslate) {
-      showNotification('Нет текста для перевода')
-      setIsTranslating(false)
-      return
-    }
-
-    try {
-      const languages = {
-        es: 'Испанский',
-        it: 'Итальянский',
-        en: 'Английский',
-        de: 'Немецкий'
-      }
-
-      const translationsResult = {
-        ru: {
-          name: 'Русский (оригинал)',
-          text: textToTranslate
-        }
-      }
-
-      // Переводим на каждый язык
-      for (const [code, name] of Object.entries(languages)) {
-        const translated = await translateText(textToTranslate, code)
-        translationsResult[code] = {
-          name,
-          text: translated
-        }
-        // Небольшая задержка между запросами, чтобы не перегружать API
-        await new Promise(resolve => setTimeout(resolve, 300))
-      }
-
-      setTranslations(translationsResult)
-      setShowTranslations(true)
-    } catch (error) {
-      console.error('Ошибка перевода:', error)
-      showNotification('Произошла ошибка при переводе. Попробуйте еще раз.')
-    } finally {
-      setIsTranslating(false)
-    }
   }
 
   const handleRequiredDocumentChange = (type, e) => {
@@ -3343,39 +3227,61 @@ const AddProperty = () => {
         showNotification('Пожалуйста, укажите период проведения аукциона')
         return
       }
-      if (!formData.auctionStartingPrice || formData.auctionStartingPrice <= 0) {
+      const startingNumContinue = Number(removeCommas(String(formData.auctionStartingPrice || '')))
+      if (!formData.auctionStartingPrice || !Number.isFinite(startingNumContinue) || startingNumContinue <= 0) {
         showNotification('Пожалуйста, укажите стартовую цену аукциона')
         return
       }
-      if (formData.price && formData.price > 0) {
-        const startingPriceNum = Number(removeCommas(String(formData.auctionStartingPrice)))
-        const priceNum = Number(removeCommas(String(formData.price)))
-        if (startingPriceNum >= priceNum) {
-          showNotification('Стартовая сумма ставки должна быть меньше цены "Купить сейчас"')
-          return
-        }
+      const buyNowRuleErr = getAuctionStartingVsBuyNowError(formData.price, formData.auctionStartingPrice)
+      if (buyNowRuleErr) {
+        setValidationErrors(prev => ({ ...prev, auctionStartingPrice: buyNowRuleErr }))
+        showNotification(buyNowRuleErr)
+        return
       }
     }
 
-    // Переходим на шаг «Публикация» (форма с фото, документами и кнопкой «Опубликовать»)
-    setCurrentStep('form')
-    // Показываем модальное окно оплаты публикации (29 € или промокод)
+    // Пока модалка оплаты открыта — остаёмся на шаге цены, чтобы фон оставался узнаваемым
+    // Шаг «Публикация» (форма) — только после успешного промокода / оплаты
     setShowListingFeeModal(true)
     setShowPromoInputInFeeModal(false)
     setListingFeePromoCode('')
     setListingFeePromoError(null)
   }
 
-  // После успешной "оплаты" (промокод принят или оплата станет доступна)
-  // Всегда отправляем объявление на модерацию; без привязанной карты дополнительно показываем верификацию + карту (без блокировки сохранения в БД)
+  // После успешной «оплаты» (промокод и т.д.): публикация или окно KYC.
+  // Статус берём из API (is_verified / pending-документы), а не из localStorage cardBound — иначе у Clerk/Google
+  // модалка не открывалась из‑за чужого/устаревшего флага в браузере.
   const handleAfterListingFeeSuccess = async () => {
-    setShowListingFeeModal(false)
-    const cardBound = localStorage.getItem('cardBound') === 'true'
-    const success = await handlePublish({ skipSuccessModal: !cardBound })
-    if (success) {
-      listingPublishedAfterFeeRef.current = true
+    if (!userId) {
+      setShowListingFeeModal(false)
+      showNotification('Ошибка: войдите в аккаунт и обновите страницу.')
+      return
     }
-    if (!cardBound) {
+
+    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
+    let canPublishWithoutSellerKyc = false
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/users/${userId}/verification-status`)
+      const data = await res.json().catch(() => ({}))
+      if (data.success && data.data) {
+        const { isVerified, hasDocuments } = data.data
+        if (isVerified === true || hasDocuments === true) {
+          canPublishWithoutSellerKyc = true
+        }
+      }
+    } catch (e) {
+      console.warn('AddProperty: не удалось загрузить verification-status', e)
+    }
+
+    setShowListingFeeModal(false)
+
+    if (canPublishWithoutSellerKyc) {
+      const success = await handlePublish()
+      if (success) {
+        listingPublishedAfterFeeRef.current = true
+      }
+    } else {
       setShowVerificationModal(true)
     }
   }
@@ -3423,6 +3329,7 @@ const AddProperty = () => {
   // При возврате со страницы бонусов — снова открыть модалку оплаты публикации
   useEffect(() => {
     if (location.state?.openListingFeeModal) {
+      setCurrentStep('price')
       setShowListingFeeModal(true)
       setShowPromoInputInFeeModal(false)
       setListingFeePromoCode('')
@@ -3602,6 +3509,9 @@ const AddProperty = () => {
     );
   };
 
+  /* Пока открыта оплата публикации — под модалкой всегда экран цены (не форма публикации) */
+  const wizardRenderStep = showListingFeeModal ? 'price' : currentStep
+
   return (
     <div className="add-property-page">
       <div className="add-property-container">
@@ -3610,6 +3520,13 @@ const AddProperty = () => {
             <button
               className="back-btn"
               onClick={() => {
+                if (showListingFeeModal) {
+                  setShowListingFeeModal(false)
+                  setShowPromoInputInFeeModal(false)
+                  setListingFeePromoCode('')
+                  setListingFeePromoError(null)
+                  return
+                }
                 if (currentStep === 'test-drive-question') {
                   if (isEditMode) {
                     navigate('/owner')
@@ -3662,7 +3579,7 @@ const AddProperty = () => {
           </div>
         </div>
 
-        {currentStep === 'type-selection' ? (
+        {wizardRenderStep === 'type-selection' ? (
           /* Экран выбора типа недвижимости */
           <div className="property-type-selection-screen">
             <div className="property-type-selection-header">
@@ -3816,7 +3733,7 @@ const AddProperty = () => {
 
      
           </div>
-        ) : currentStep === 'share-type-selection' ? (
+        ) : wizardRenderStep === 'share-type-selection' ? (
           /* Выбор типа объекта для доли (те же 4 типа) */
           <div className="property-type-selection-screen">
             <div className="property-type-selection-header">
@@ -3854,7 +3771,7 @@ const AddProperty = () => {
               </div>
             </div>
           </div>
-        ) : currentStep === 'debt-type-selection' ? (
+        ) : wizardRenderStep === 'debt-type-selection' ? (
           /* Выбор типа объекта для продажи долгов (те же 4 типа) */
           <div className="property-type-selection-screen">
             <div className="property-type-selection-header">
@@ -3892,7 +3809,7 @@ const AddProperty = () => {
               </div>
             </div>
           </div>
-        ) : currentStep === 'test-drive-question' ? (
+        ) : wizardRenderStep === 'test-drive-question' ? (
           /* Экран вопроса о тест-драйве */
           <div className="test-drive-question-screen">
             <div className="test-drive-question-content">
@@ -3925,7 +3842,7 @@ const AddProperty = () => {
 
 
           </div>
-        ) : currentStep === 'property-name' ? (
+        ) : wizardRenderStep === 'property-name' ? (
           /* Экран ввода названия и описания */
           <div className="property-name-screen">
             <div className="property-name-main">
@@ -3942,7 +3859,7 @@ const AddProperty = () => {
                   value={formData.title}
                   onChange={handleInputChange}
                   className="property-name-input"
-                  placeholder={t('addPropertyNamePlaceholderTitle')}
+                  placeholder={t(getAddPropertyNamePlaceholderKey(formData.propertyType))}
                 />
               </div>
 
@@ -4042,7 +3959,7 @@ const AddProperty = () => {
               )}
             </div>
           </div>
-        ) : currentStep === 'location' ? (
+        ) : wizardRenderStep === 'location' ? (
           /* Экран ввода местоположения */
           <div className="property-location-screen">
             <div className="property-location-main">
@@ -4533,7 +4450,7 @@ const AddProperty = () => {
 
      
           </div>
-        ) : currentStep === 'details' ? (
+        ) : wizardRenderStep === 'details' ? (
           /* Экран подробной информации */
           <div className="property-details-screen">
             <div className="property-details-main">
@@ -5154,7 +5071,7 @@ const AddProperty = () => {
               />
             </div>
           </div>
-        ) : currentStep === 'amenities' ? (
+        ) : wizardRenderStep === 'amenities' ? (
           /* Экран удобств / долговых обязательств */
           formData.isDebtProperty ? (
             <div className="property-amenities-screen">
@@ -5540,7 +5457,7 @@ const AddProperty = () => {
               </div>
             </div>
           )
-        ) : currentStep === 'photos' ? (
+        ) : wizardRenderStep === 'photos' ? (
           /* Экран загрузки фотографий */
           <div className="property-photos-screen">
             <div className="property-photos-main">
@@ -5824,7 +5741,7 @@ const AddProperty = () => {
               />
             </div>
           </div>
-        ) : currentStep === 'documents' ? (
+        ) : wizardRenderStep === 'documents' ? (
           /* Экран загрузки документов: для долга — 6 блоков в сетке 2×3 */
           <div className="property-documents-screen">
             <div className="property-documents-main">
@@ -6315,7 +6232,7 @@ const AddProperty = () => {
               />
             </div>
           </div>
-        ) : currentStep === 'price' ? (
+        ) : wizardRenderStep === 'price' ? (
           /* Экран цены:
              - для доли — только общая цена и количество долей
              - для долгов — только фиксированная сумма продажи без аукциона
@@ -6590,6 +6507,9 @@ const AddProperty = () => {
                   <label className="auction-starting-price-label">
                     {t('addPropertyPriceStartingBidLabel')}
                   </label>
+                  {Number(removeCommas(String(formData.price || ''))) > 0 && (
+                    <p className="auction-starting-price-hint">{t('addPropertyPriceBuyNowStartingBidHint')}</p>
+                  )}
                   <div className="bid-step-input-wrapper-large">
                     <div className="currency-selector">
                       <button
@@ -6684,520 +6604,7 @@ const AddProperty = () => {
                 />
               </div>
           </div>
-        ) : (
-          <form
-            className="add-property-form"
-            onSubmit={(e) => {
-              e.preventDefault()
-              handleSubmit(e)
-            }}
-          >
-            {/* Фото/Видео Объекта */}
-            <section className="form-section">
-              <h2 className="section-title">Фото/Видео Объекта</h2>
-              
-              {/* Первая строка - три квадратика для загрузки */}
-              <div className="media-upload-buttons">
-                {photos.length < 10 && (
-                  <div 
-                    className="media-upload-box"
-                    onClick={() => fileInputRef.current?.click()}
-                  >
-                    <FiUpload size={24} />
-                    <p>Добавить фото</p>
-                    <span>{photos.length}/10</span>
-                  </div>
-                )}
-                {videos.length < 3 && (
-                  <>
-                    <div 
-                      className="media-upload-box"
-                      onClick={() => videoInputRef.current?.click()}
-                    >
-                      <FiUpload size={24} />
-                      <p>Загрузить видео</p>
-                      <span className="upload-hint">до 1 минуты</span>
-                      <span>{videos.length}/3</span>
-                    </div>
-                    <div 
-                      className="media-upload-box media-upload-box--link"
-                      onClick={() => setShowVideoLinkModal(true)}
-                    >
-                      <FiLink size={24} />
-                      <p>Добавить ссылку</p>
-                      <span className="upload-hint">YouTube / Google Drive</span>
-                    </div>
-                  </>
-                )}
-              </div>
-              
-              {/* Вторая строка - загруженные медиа */}
-              {(photos.length > 0 || videos.length > 0) && (
-                <div className="media-grid">
-                  {photos.map((photo, index) => (
-                    <div key={photo.id} className="photo-item">
-                      <img src={photo.url} alt={`Фото ${index + 1}`} />
-                      <button
-                        type="button"
-                        className="photo-remove"
-                        onClick={() => handleRemovePhoto(photo.id)}
-                      >
-                        <FiX size={16} />
-                      </button>
-                      <div className="photo-number">{index + 1}</div>
-                    </div>
-                  ))}
-                  {videos.map((video, index) => (
-                    <div key={video.id} className="photo-item">
-                      {video.type === 'youtube' && video.thumbnail ? (
-                        <img 
-                          src={video.thumbnail} 
-                          alt="YouTube видео"
-                          className="video-thumbnail"
-                        />
-                      ) : video.type === 'googledrive' ? (
-                        <div className="video-preview">
-                          <FiVideo size={32} />
-                          <span className="video-type-badge">Google Drive</span>
-                        </div>
-                      ) : (
-                        <video 
-                          src={video.url} 
-                          className="video-preview-element"
-                          muted
-                        />
-                      )}
-                      <button
-                        type="button"
-                        className="photo-remove"
-                        onClick={() => handleRemoveVideo(video.id)}
-                      >
-                        <FiX size={16} />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-              
-              <input
-                ref={fileInputRef}
-                type="file"
-                multiple
-                accept="image/*"
-                onChange={handlePhotoUpload}
-                style={{ display: 'none' }}
-              />
-              
-              <input
-                ref={videoInputRef}
-                type="file"
-                multiple
-                accept="video/*"
-                onChange={handleVideoUpload}
-                style={{ display: 'none' }}
-              />
-              
-              {(photos.length > 0 || videos.length > 0) && (
-                <button
-                  type="button"
-                  className="view-carousel-btn"
-                  onClick={() => {
-                    setCurrentMediaIndex(0)
-                    setShowCarousel(true)
-                  }}
-                >
-                  <FiEye size={16} />
-                  Просмотреть карусель
-                </button>
-              )}
-            </section>
-
-          {/* Заголовок */}
-          <section className="form-section">
-            <h2 className="section-title">Заголовок</h2>
-            <input
-              type="text"
-              name="title"
-              value={formData.title}
-              onChange={handleInputChange}
-              className="form-input"
-              placeholder="Введите заголовок объявления"
-              required
-            />
-          </section>
-
-          {/* Описание */}
-          <section className="form-section">
-            <h2 className="section-title">Описание</h2>
-            <div className="description-wrapper">
-              <textarea
-                name="description"
-                value={formData.description}
-                onChange={handleInputChange}
-                className="form-textarea"
-                placeholder="Опишите объект недвижимости"
-                rows="6"
-                required
-              />
-              <button
-                type="button"
-                className="translate-button"
-                onClick={handleTranslateAll}
-                disabled={isTranslating || (!formData.title && !formData.description)}
-              >
-                {isTranslating ? (
-                  <>
-                    <FiLoader className="spinner" size={16} />
-                    Перевод...
-                  </>
-                ) : (
-                  <>
-                    <FiGlobe size={16} />
-                    Перевести на все языки
-                  </>
-                )}
-              </button>
-            </div>
-
-            {/* Выпадающий список с переводами */}
-            {showTranslations && translations && (
-              <div className="translations-dropdown">
-                <div className="translations-dropdown__header">
-                  <h3 className="translations-dropdown__title">Переводы</h3>
-                  <button
-                    type="button"
-                    className="translations-dropdown__toggle"
-                    onClick={() => setShowTranslations(false)}
-                  >
-                    <FiX size={18} />
-                  </button>
-                </div>
-                <div className="translations-dropdown__content">
-                  {Object.entries(translations).map(([code, translation]) => (
-                    <div key={code} className="translation-item">
-                      <div className="translation-item__header">
-                        <span className="translation-item__language">{translation.name}</span>
-                        <button
-                          type="button"
-                          className="translation-item__copy"
-                          onClick={() => {
-                            navigator.clipboard.writeText(translation.text)
-                            showNotification(`Перевод на ${translation.name} скопирован в буфер обмена`)
-                          }}
-                        >
-                          Копировать
-                        </button>
-                      </div>
-                      <p className="translation-item__text">{translation.text}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </section>
-
-          {/* Цена и Аукцион */}
-          <section className="form-section">
-            <div className="price-auction-wrapper">
-              <div className="price-section">
-                <h2 className="section-title">Минимальная цена продажи</h2>
-                <div className="price-input-wrapper">
-                  <div className="currency-selector">
-                    <button
-                      type="button"
-                      className="currency-button"
-                      onClick={() => setShowCurrencyDropdown(showCurrencyDropdown === 'price' ? null : 'price')}
-                    >
-                      <span className="currency-symbol">{currencies.find(c => c.code === currency)?.symbol || '$'}</span>
-                      <FiChevronDown className="currency-chevron" size={14} />
-                    </button>
-                    {showCurrencyDropdown === 'price' && (
-                      <div className="currency-dropdown">
-                        {currencies.map((curr) => (
-                          <button
-                            key={curr.code}
-                            type="button"
-                            className={`currency-option ${currency === curr.code ? 'active' : ''}`}
-                            onClick={(e) => {
-                              e.preventDefault()
-                              e.stopPropagation()
-                              setCurrency(curr.code)
-                              setShowCurrencyDropdown(null)
-                            }}
-                          >
-                            <span className="currency-option-symbol">{curr.symbol}</span>
-                            <span className="currency-option-name">{curr.name}</span>
-                            <span className="currency-option-code">({curr.code})</span>
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                  <input
-                    type="number"
-                    name="price"
-                    value={formData.price}
-                    onChange={handleInputChange}
-                    className="form-input price-input"
-                    placeholder="0"
-                    min="0"
-                    required
-                  />
-                </div>
-              </div>
-              
-              <div className="auction-section">
-                <h2 className="section-title">Аукцион</h2>
-                <div className="auction-checkbox-wrapper">
-                  <input
-                    type="checkbox"
-                    id="isAuction"
-                    name="isAuction"
-                    checked={formData.isAuction}
-                    onChange={handleInputChange}
-                    className="auction-checkbox"
-                  />
-                  <label htmlFor="isAuction" className="auction-label">
-                    Выставить объект на аукцион
-                  </label>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          {/* Поля аукциона */}
-          {formData.isAuction && (
-            <section className="form-section">
-              <div className="auction-fields">
-                <DateRangePicker
-                  label="Период проведения аукциона"
-                  startDate={formData.auctionStartDate}
-                  endDate={formData.auctionEndDate}
-                  onStartDateChange={(date) => setFormData(prev => ({ ...prev, auctionStartDate: date }))}
-                  onEndDateChange={(date) => setFormData(prev => ({ ...prev, auctionEndDate: date }))}
-                />
-                
-                <div className="bid-step-group">
-                  <label className="bid-step-label">Стартовая цена продажи</label>
-                  <div className="bid-step-input-wrapper">
-                    <div className="currency-selector">
-                      <button
-                        type="button"
-                        className="currency-button"
-                        onClick={() => setShowCurrencyDropdown(showCurrencyDropdown === 'auction' ? null : 'auction')}
-                      >
-                        <span className="currency-symbol">{currencies.find(c => c.code === currency)?.symbol || '$'}</span>
-                        <FiChevronDown className="currency-chevron" size={14} />
-                      </button>
-                      {showCurrencyDropdown === 'auction' && (
-                        <div className="currency-dropdown">
-                          {currencies.map((curr) => (
-                            <button
-                              key={curr.code}
-                              type="button"
-                              className={`currency-option ${currency === curr.code ? 'active' : ''}`}
-                              onClick={() => {
-                                setCurrency(curr.code)
-                                setShowCurrencyDropdown(null)
-                              }}
-                            >
-                              <span className="currency-option-symbol">{curr.symbol}</span>
-                              <span className="currency-option-name">{curr.name}</span>
-                              <span className="currency-option-code">({curr.code})</span>
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                    <input
-                      type="number"
-                      name="auctionStartingPrice"
-                      value={formData.auctionStartingPrice}
-                      onChange={handleInputChange}
-                      className="form-input bid-step-input"
-                      placeholder="0"
-                      min="0"
-                      required={formData.isAuction}
-                    />
-                  </div>
-                </div>
-              </div>
-            </section>
-          )}
-
-          {/* Загрузка документов */}
-          <section className="form-section">
-            <h2 className="section-title">Загрузка документов</h2>
-            
-            <div className="documents-upload-list">
-              {/* Право собственности */}
-              <div className="document-upload-item">
-                <div className="document-upload-header">
-                  <div className="document-upload-info">
-                    <h3 className="document-upload-title">
-                      Право собственности
-                    </h3>
-                    <p className="document-upload-description">
-                      Загрузите документ о праве собственности
-                    </p>
-                  </div>
-                  {uploadedDocuments.ownership && (
-                    <div className="document-upload-check">
-                      <FiCheck size={20} />
-                    </div>
-                  )}
-                </div>
-
-                {!uploadedDocuments.ownership ? (
-                  <label className="document-upload-label">
-                    <input
-                      type="file"
-                      ref={ownershipInputRef}
-                      accept="image/*,.pdf"
-                      onChange={(e) => handleRequiredDocumentChange('ownership', e)}
-                      style={{ display: 'none' }}
-                    />
-                    <FiUpload size={24} />
-                    <span>Загрузить файл</span>
-                  </label>
-                ) : (
-                  <div className="document-upload-file-info">
-                    <FiFile size={20} />
-                    <span className="document-upload-file-name">
-                      {requiredDocuments.ownership?.name || 'Файл загружен'}
-                    </span>
-                    <button
-                      type="button"
-                      className="document-upload-remove"
-                      onClick={() => handleRemoveRequiredDocument('ownership')}
-                    >
-                      Удалить
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              {/* Справка об отсутствии долгов */}
-            {!formData.isDebtProperty && (
-              <div className="document-upload-item">
-                <div className="document-upload-header">
-                  <div className="document-upload-info">
-                    <h3 className="document-upload-title">
-                      Справка об отсутствии долгов
-                    </h3>
-                    <p className="document-upload-description">
-                      Загрузите справку об отсутствии задолженностей
-                    </p>
-                  </div>
-                    {uploadedDocuments.noDebts && (
-                      <div className="document-upload-check">
-                        <FiCheck size={20} />
-                      </div>
-                    )}
-                  </div>
-
-                  {!uploadedDocuments.noDebts ? (
-                    <label className="document-upload-label">
-                      <input
-                        type="file"
-                        ref={noDebtsInputRef}
-                        accept="image/*,.pdf"
-                        onChange={(e) => handleRequiredDocumentChange('noDebts', e)}
-                        style={{ display: 'none' }}
-                      />
-                      <FiUpload size={24} />
-                      <span>Загрузить файл</span>
-                    </label>
-                  ) : (
-                    <div className="document-upload-file-info">
-                      <FiFile size={20} />
-                      <span className="document-upload-file-name">
-                        {requiredDocuments.noDebts?.name || 'Файл загружен'}
-                      </span>
-                      <button
-                        type="button"
-                        className="document-upload-remove"
-                        onClick={() => handleRemoveRequiredDocument('noDebts')}
-                      >
-                        Удалить
-                      </button>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          </section>
-
-          {/* Дополнительные документы */}
-          <section className="form-section">
-            <h2 className="section-title">Дополнительные документы</h2>
-            <div className="photos-upload-area">
-              <div 
-                className="photo-upload-box"
-                onClick={() => documentInputRef.current?.click()}
-              >
-                <FiFileText size={20} />
-                <p>Загрузить документы</p>
-                <span className="upload-hint">PDF или фото</span>
-              </div>
-              
-              <div className="photos-grid">
-                {additionalDocuments.map((doc) => (
-                  <div key={doc.id} className="photo-item">
-                    {doc.type === 'pdf' ? (
-                      <div className="document-preview">
-                        <FiFileText size={32} />
-                        <span className="document-type-badge">PDF</span>
-                      </div>
-                    ) : (
-                      <img src={doc.url} alt={doc.name} />
-                    )}
-                    <button
-                      type="button"
-                      className="photo-remove"
-                      onClick={() => handleRemoveDocument(doc.id)}
-                    >
-                      <FiX size={16} />
-                    </button>
-                    <div className="document-name">{doc.name}</div>
-                  </div>
-                ))}
-              </div>
-              
-              <input
-                ref={documentInputRef}
-                type="file"
-                multiple
-                accept="application/pdf,image/*"
-                onChange={handleDocumentUpload}
-                style={{ display: 'none' }}
-              />
-            </div>
-          </section>
-
-          {/* Кнопки */}
-          <div className="form-actions">
-            <button
-              type="button"
-              className="btn-preview"
-              onClick={handlePreview}
-            >
-              <FiEye size={16} />
-              Предпросмотр
-            </button>
-            <button
-              type="button"
-              className="btn-submit"
-              onClick={(e) => {
-                e.preventDefault()
-                handleSubmit(e)
-              }}
-            >
-              Опубликовать объявление
-            </button>
-          </div>
-          </form>
-        )}
+        ) : null}
       </div>
       {showCarousel && mediaItems.length > 0 && (
         <div className="carousel-overlay" onClick={() => setShowCarousel(false)}>
@@ -7279,18 +6686,6 @@ const AddProperty = () => {
         </div>
       )}
 
-      {/* Модальное окно предпросмотра */}
-      <PropertyPreviewModal
-        isOpen={showPreview}
-        onClose={() => setShowPreview(false)}
-        propertyData={{ 
-          ...formData, 
-          photos: photos.map(p => p.url), 
-          videos: videos,
-          additionalDocuments: additionalDocuments
-        }}
-      />
-
       {/* Модальное окно для добавления ссылки на видео */}
       {showVideoLinkModal && (
         <div className="video-link-modal-overlay" onClick={() => setShowVideoLinkModal(false)}>
@@ -7341,13 +6736,6 @@ const AddProperty = () => {
         onClose={() => setShowVerificationModal(false)}
         userId={userId}
         onComplete={handleVerificationComplete}
-      />
-
-      <CardBindingModal
-        isOpen={showCardBindingModal}
-        onClose={() => setShowCardBindingModal(false)}
-        userId={userId}
-        onComplete={handleCardBindingComplete}
       />
 
       {/* Модальное окно оплаты публикации (29 € / промокод) */}

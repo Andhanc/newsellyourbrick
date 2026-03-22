@@ -836,6 +836,8 @@ app.get('/api/users/:id/verification-status', (req, res) => {
     if (readiness.missingFields.identificationNumber === false) filledFields++;
     
     const progress = Math.round((filledFields / totalFields) * 100);
+
+    const cabinet = computeOwnerCabinetProfileStatus(user);
     
     res.json({
       success: true,
@@ -848,7 +850,9 @@ app.get('/api/users/:id/verification-status', (req, res) => {
         totalFields,
         missingFields: readiness.missingFields,
         isVerified: user.is_verified === 1 || user.is_verified === true,
-        cardBound: user.card_bound === 1 || user.card_bound === true // Добавляем статус привязки карты
+        cardBound: user.card_bound === 1 || user.card_bound === true, // Добавляем статус привязки карты
+        ownerCabinetProfileComplete: cabinet.ownerCabinetProfileComplete,
+        ownerCabinetHasPassword: cabinet.ownerCabinetHasPassword
       }
     });
   } catch (error) {
@@ -1653,6 +1657,22 @@ app.get('/api/documents/user/:userId', (req, res) => {
 });
 
 /**
+ * Поля боковой панели «Профиль» в кабинете продавца (без подписки).
+ * Используется только для скрытия плашки «Заполните данные для верификации».
+ */
+function computeOwnerCabinetProfileStatus(user) {
+  const ownerCabinetProfileComplete =
+    !!(user.first_name && String(user.first_name).trim()) &&
+    !!(user.last_name && String(user.last_name).trim()) &&
+    !!(user.country && String(user.country).trim()) &&
+    !!(user.email && String(user.email).trim()) &&
+    !!(user.phone_number && String(user.phone_number).trim()) &&
+    !!(user.username && String(user.username).trim());
+  const ownerCabinetHasPassword = !!(user.password && String(user.password).trim());
+  return { ownerCabinetProfileComplete, ownerCabinetHasPassword };
+}
+
+/**
  * Проверяет готовность пользователя к модерации
  * Пользователь готов, если:
  * 1. Загружены документы на верификацию
@@ -1704,10 +1724,11 @@ function checkUserReadinessForModeration(user) {
     missingFields.passportSeries = !hasPassportSeries;
     missingFields.passportNumber = !hasPassportNumber;
     missingFields.identificationNumber = !hasIdentificationNumber;
-  } else if (userRole === 'seller') {
-    // Для продавцов достаточно базовых полей + документы
-    // Дополнительные поля (паспорт, адрес) желательны, но не обязательны для отправки на модерацию
-    allFieldsFilled = basicFieldsFilled;
+  } else if (userRole === 'seller' || userRole === 'owner') {
+    // В кабинете продавца в профиле собираются страна и контакты — учитываем страну в готовности полей
+    const hasCountry = user.country && user.country.trim() !== '';
+    allFieldsFilled = basicFieldsFilled && hasCountry;
+    missingFields.country = !hasCountry;
   }
   
   const isReady = hasDocuments && allFieldsFilled;
@@ -5570,6 +5591,18 @@ app.post('/api/properties', upload.fields([
       propertyData.garage = garage ? 1 : 0;
     }
 
+    // Цена «Купить сейчас» + аукцион: стартовая ставка не больше 20% от buy now
+    if (!isShare && !isDebt && normalizedIsAuction === 1) {
+      const bn = propertyData.price
+      const st = propertyData.auction_starting_price
+      if (bn && bn > 0 && st != null && !Number.isNaN(st) && st > 0 && st > bn * 0.2 + 1e-9) {
+        return res.status(400).json({
+          success: false,
+          error: 'Стартовая ставка не может превышать 20% от цены «Купить сейчас».'
+        })
+      }
+    }
+
     // Проверяем обязательные поля
     if (!user_id) {
       return res.status(400).json({ 
@@ -6344,6 +6377,37 @@ app.put('/api/properties/:id', upload.fields([
       
       console.log(`📊 Количество значений для вставки: ${values.length}`);
       console.log(`📊 Ожидается 44 значения`);
+
+      const effectiveBuyNow =
+        price !== undefined && price !== null && price !== '' && parseFloat(price) > 0
+          ? parseFloat(price)
+          : (originalProperty.price != null && parseFloat(originalProperty.price) > 0
+              ? parseFloat(originalProperty.price)
+              : null)
+      const effectiveStarting =
+        auction_starting_price !== undefined &&
+        auction_starting_price !== null &&
+        auction_starting_price !== ''
+          ? parseFloat(auction_starting_price)
+          : (originalProperty.auction_starting_price != null &&
+              !Number.isNaN(parseFloat(originalProperty.auction_starting_price))
+              ? parseFloat(originalProperty.auction_starting_price)
+              : null)
+      if (
+        !isShareEdit &&
+        !isDebtEdit &&
+        normalizedIsAuction === 1 &&
+        effectiveBuyNow &&
+        effectiveStarting != null &&
+        !Number.isNaN(effectiveStarting) &&
+        effectiveStarting > 0 &&
+        effectiveStarting > effectiveBuyNow * 0.2 + 1e-9
+      ) {
+        return res.status(400).json({
+          success: false,
+          error: 'Стартовая ставка не может превышать 20% от цены «Купить сейчас».'
+        })
+      }
       
       const result = stmt.run(...values);
       
