@@ -2,13 +2,14 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { FiX, FiMail, FiLock, FiUser, FiEye, FiEyeOff } from 'react-icons/fi'
 import { FaGoogle, FaWhatsapp, FaFacebook, FaTelegram } from 'react-icons/fa'
-import { useSignIn, useSignUp, useAuth, useUser } from '@clerk/clerk-react'
+import { useSignIn, useAuth, useUser } from '@clerk/clerk-react'
 import { useTranslation } from 'react-i18next'
 import WhatsAppVerificationModal from './WhatsAppVerificationModal'
 import EmailVerificationModal from './EmailVerificationModal'
 import VerificationDocumentsModal from './VerificationDocumentsModal'
 import { registerWithEmail, loginWithEmail, validatePassword, saveUserData, getReferrerId } from '../services/authService'
 import { getApiBaseUrl } from '../utils/apiConfig'
+import { getClerkOAuthReturnUrl } from '../utils/clerkOAuth'
 import { showNotification } from '../utils/toastHelper'
 import AnimatedCharacters from './AnimatedCharacters'
 import './LoginModal.css'
@@ -17,7 +18,6 @@ const LoginModal = ({ isOpen, onClose }) => {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const { signIn, isLoaded: signInLoaded } = useSignIn()
-  const { signUp, isLoaded: signUpLoaded } = useSignUp()
   const { isSignedIn, isLoaded: authLoaded } = useAuth()
   const { user, isLoaded: userLoaded } = useUser()
   const [isLogin, setIsLogin] = useState(() => {
@@ -86,6 +86,7 @@ const LoginModal = ({ isOpen, onClose }) => {
 
     const forcedMode = sessionStorage.getItem('login_modal_mode')
     if (forcedMode === 'register') setIsLogin(false)
+    else if (forcedMode === 'login') setIsLogin(true)
 
     const forcedRole = sessionStorage.getItem('login_modal_user_role')
     if (forcedRole === 'buyer' || forcedRole === 'seller' || forcedRole === 'owner') {
@@ -128,6 +129,12 @@ const LoginModal = ({ isOpen, onClose }) => {
   // Не скрываем LoginModal полностью, чтобы EmailVerificationModal мог рендериться
   // Вместо этого скрываем только содержимое LoginModal
   if (!isOpen) return null
+
+  /** После создания записи в БД из сессии Clerk — кабинет по выбранной роли */
+  const navigateToCabinetAfterClerkDbSync = () => {
+    const path = userRole === 'seller' || userRole === 'owner' ? '/owner' : '/profile'
+    navigate(path)
+  }
 
   const handleInputChange = (e) => {
     const { name, value } = e.target
@@ -409,34 +416,27 @@ const LoginModal = ({ isOpen, onClose }) => {
 
         onClose?.()
         showNotification('Пользователь создан. Продолжаем регистрацию...')
-        navigate('/profile')
+        navigateToCabinetAfterClerkDbSync()
         setIsLoading(false)
         return
       }
 
-      // Фиксируем роль для редиректа после OAuth
+      // signUp.authenticateWithRedirect при OAuth часто не активирует сессию Clerk (isSignedIn остаётся false).
+      // signIn.authenticateWithRedirect тот же провайдер и создаёт нового пользователя при первом входе — используем для обеих вкладок.
+      const clerkRole = (userRole === 'seller' || userRole === 'owner') ? 'seller' : 'buyer'
       sessionStorage.setItem('clerk_oauth_redirect_started', 'true')
-      sessionStorage.setItem('clerk_oauth_user_role', userRole)
+      sessionStorage.setItem('clerk_oauth_user_role', clerkRole)
       sessionStorage.setItem('clerk_oauth_flow_mode', isLogin ? 'login' : 'register')
 
-      if (isLogin) {
-        if (signInLoaded && signIn) {
-          await signIn.authenticateWithRedirect({
-            strategy: 'oauth_google',
-          })
-        } else {
-          setError('Система авторизации не готова. Попробуйте обновить страницу.')
-          setIsLoading(false)
-        }
+      if (signInLoaded && signIn) {
+        const returnUrl = getClerkOAuthReturnUrl()
+        await signIn.authenticateWithRedirect({
+          strategy: 'oauth_google',
+          redirectUrl: returnUrl,
+        })
       } else {
-        if (signUpLoaded && signUp) {
-          await signUp.authenticateWithRedirect({
-            strategy: 'oauth_google',
-          })
-        } else {
-          setError('Система регистрации не готова. Попробуйте обновить страницу.')
-          setIsLoading(false)
-        }
+        setError('Система авторизации не готова. Попробуйте обновить страницу.')
+        setIsLoading(false)
       }
     } catch (error) {
       console.error('LoginModal: Ошибка авторизации через Google (Clerk):', error)
@@ -510,43 +510,27 @@ const LoginModal = ({ isOpen, onClose }) => {
 
         onClose?.()
         showNotification('Пользователь создан. Продолжаем регистрацию...')
-        navigate('/profile')
+        navigateToCabinetAfterClerkDbSync()
         setIsLoading(false)
         return
       }
       
-      console.log('LoginModal: Starting Facebook auth', { signInLoaded, signUpLoaded, isLogin, userRole })
-      
-      if (isLogin) {
-        if (signInLoaded && signIn) {
-          console.log('LoginModal: Redirecting to Facebook OAuth via Clerk')
-          // Устанавливаем флаг, что начался OAuth редирект
-          sessionStorage.setItem('clerk_oauth_redirect_started', 'true')
-          // Сохраняем роль для использования после авторизации
-          sessionStorage.setItem('clerk_oauth_user_role', userRole)
-          sessionStorage.setItem('clerk_oauth_flow_mode', 'login')
-          await signIn.authenticateWithRedirect({
-            strategy: 'oauth_facebook',
-          })
-        } else {
-          setError('Система авторизации не готова. Попробуйте обновить страницу.')
-          setIsLoading(false)
-        }
+      const clerkRole = (userRole === 'seller' || userRole === 'owner') ? 'seller' : 'buyer'
+      sessionStorage.setItem('clerk_oauth_redirect_started', 'true')
+      sessionStorage.setItem('clerk_oauth_user_role', clerkRole)
+      sessionStorage.setItem('clerk_oauth_flow_mode', isLogin ? 'login' : 'register')
+
+      console.log('LoginModal: Facebook OAuth via signIn', { signInLoaded, isLogin, userRole: clerkRole })
+
+      if (signInLoaded && signIn) {
+        const returnUrl = getClerkOAuthReturnUrl()
+        await signIn.authenticateWithRedirect({
+          strategy: 'oauth_facebook',
+          redirectUrl: returnUrl,
+        })
       } else {
-        if (signUpLoaded && signUp) {
-          console.log('LoginModal: Redirecting to Facebook OAuth via Clerk')
-          // Устанавливаем флаг, что начался OAuth редирект
-          sessionStorage.setItem('clerk_oauth_redirect_started', 'true')
-          // Сохраняем роль для использования после регистрации
-          sessionStorage.setItem('clerk_oauth_user_role', userRole)
-          sessionStorage.setItem('clerk_oauth_flow_mode', 'register')
-          await signUp.authenticateWithRedirect({
-            strategy: 'oauth_facebook',
-          })
-        } else {
-          setError('Система регистрации не готова. Попробуйте обновить страницу.')
-          setIsLoading(false)
-        }
+        setError('Система авторизации не готова. Попробуйте обновить страницу.')
+        setIsLoading(false)
       }
     } catch (error) {
       console.error('LoginModal: Ошибка авторизации через Facebook:', error)
@@ -715,10 +699,10 @@ const LoginModal = ({ isOpen, onClose }) => {
             type="button"
             className="login-modal__social-btn login-modal__social-btn--facebook"
             onClick={handleFacebookAuth}
-            disabled={isLoading || !signInLoaded || !signUpLoaded}
+            disabled={isLoading || !signInLoaded}
             style={{ 
-              opacity: (isLoading || !signInLoaded || !signUpLoaded) ? 0.6 : 1, 
-              cursor: (isLoading || !signInLoaded || !signUpLoaded) ? 'not-allowed' : 'pointer' 
+              opacity: (isLoading || !signInLoaded) ? 0.6 : 1, 
+              cursor: (isLoading || !signInLoaded) ? 'not-allowed' : 'pointer' 
             }}
           >
             <FaFacebook size={20} />
@@ -733,10 +717,10 @@ const LoginModal = ({ isOpen, onClose }) => {
             type="button"
             className="login-modal__social-btn login-modal__social-btn--google"
             onClick={handleGoogleAuth}
-            disabled={isLoading || !signInLoaded || !signUpLoaded}
+            disabled={isLoading || !signInLoaded}
             style={{ 
-              opacity: (isLoading || !signInLoaded || !signUpLoaded) ? 0.6 : 1, 
-              cursor: (isLoading || !signInLoaded || !signUpLoaded) ? 'not-allowed' : 'pointer' 
+              opacity: (isLoading || !signInLoaded) ? 0.6 : 1, 
+              cursor: (isLoading || !signInLoaded) ? 'not-allowed' : 'pointer' 
             }}
           >
             <FaGoogle size={20} />

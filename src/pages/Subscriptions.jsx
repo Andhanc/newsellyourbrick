@@ -253,7 +253,7 @@ const Subscriptions = () => {
         <main className="subscriptions-main">
           <h1 className="subscriptions-title">Подписки</h1>
           <div className="subscriptions-cards subscriptions-cards--pricing">
-            <PricingCards onBookCall={handleBookCall} />
+            <PricingCards onBookCall={handleBookCall} mobileTwoColumn />
           </div>
         </main>
       </div>

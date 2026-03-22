@@ -369,25 +369,181 @@
 
 @media (max-width: 768px) {
   .verification-toast {
-    top: 10px;
-    right: 10px;
-    left: 10px;
-    width: calc(100% - 20px);
+    top: 8px;
+    right: 8px;
+    left: 8px;
+    width: calc(100% - 16px);
     max-width: none;
+    border-radius: 12px;
+    border-width: 1px;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.12);
   }
 
   .verification-toast__stats {
     flex-direction: column;
-    gap: 0.75rem;
+    gap: 0.5rem;
+    margin-bottom: 0.875rem;
   }
 
   .verification-toast__header {
-    padding: 1rem;
+    padding: 0.625rem 0.75rem;
+    gap: 0.5rem;
+    align-items: flex-start;
+  }
+
+  .verification-toast__header-left {
+    gap: 0.5rem;
+    align-items: flex-start;
+  }
+
+  .verification-toast__icon-wrapper {
+    width: 36px;
+    height: 36px;
+    border-radius: 9px;
+  }
+
+  .verification-toast__icon {
+    font-size: 18px;
+  }
+
+  .verification-toast__title {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    line-height: 1.25;
+    margin-bottom: 0.125rem;
+  }
+
+  .verification-toast__subtitle {
+    font-size: 0.6875rem;
+    line-height: 1.35;
+  }
+
+  .verification-toast__header-right {
+    gap: 0.25rem;
+    padding-top: 2px;
+  }
+
+  .verification-toast__progress-circle {
+    width: 36px;
+    height: 36px;
+  }
+
+  .verification-toast__progress-percent {
+    font-size: 0.625rem;
+  }
+
+  .verification-toast__toggle,
+  .verification-toast__close {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+  }
+
+  .verification-toast__toggle svg,
+  .verification-toast__close svg {
+    width: 16px;
+    height: 16px;
   }
 
   .verification-toast__content {
-    padding: 0 1rem 1rem 1rem;
-    padding-top: 1rem;
+    padding: 0 0.75rem 0.75rem 0.75rem;
+    padding-top: 0.75rem;
+    margin-top: 0.35rem;
+  }
+
+  .verification-toast__progress-bar-container {
+    height: 6px;
+    margin-bottom: 0.75rem;
+  }
+
+  .verification-toast__stat {
+    font-size: 0.75rem;
+    gap: 0.35rem;
+  }
+
+  .verification-toast__stat-icon {
+    width: 14px;
+    height: 14px;
+  }
+
+  .verification-toast__section {
+    margin-bottom: 0.75rem;
+  }
+
+  .verification-toast__section-title {
+    font-size: 0.75rem;
+    padding: 0.35rem 0.5rem;
+    margin-bottom: 0.5rem;
+    gap: 0.35rem;
+  }
+
+  .verification-toast__section-title svg {
+    width: 13px;
+    height: 13px;
+  }
+
+  .verification-toast__fields-list {
+    gap: 0.35rem;
+  }
+
+  .verification-toast__field-item {
+    padding: 0.5rem 0.6rem;
+    font-size: 0.75rem;
+    gap: 0.5rem;
+  }
+
+  .verification-toast__field-item .verification-toast__field-icon svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .verification-toast__field-chevron {
+    width: 15px;
+    height: 15px;
+  }
+
+  .verification-toast__check-icon {
+    width: 14px;
+    height: 14px;
+  }
+
+  .verification-toast__warning {
+    padding: 0.65rem 0.75rem;
+    font-size: 0.75rem;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+    border-radius: 6px;
+  }
+
+  .verification-toast__warning-icon {
+    width: 16px;
+    height: 16px;
+  }
+
+  /* Тост «всё выполнено» на мобиле */
+  .verification-toast__success-inner {
+    padding: 1rem 0.875rem;
+  }
+
+  .verification-toast__success-icon-wrap {
+    width: 48px;
+    height: 48px;
+    margin-bottom: 0.65rem;
+  }
+
+  .verification-toast__success-icon {
+    width: 26px !important;
+    height: 26px !important;
+  }
+
+  .verification-toast__success-title {
+    font-size: 0.9375rem;
+    margin-bottom: 0.35rem;
+  }
+
+  .verification-toast__success-text {
+    font-size: 0.8125rem;
+    line-height: 1.45;
   }
 }
 

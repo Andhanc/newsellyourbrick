@@ -3808,6 +3808,13 @@
   .new-header__menu-btn svg {
     flex-shrink: 0;
   }
+
+  /* Десктоп: компактная иконка рядом с «Меню», чуть больше базовых 16px для баланса с текстом */
+  .new-header__menu-icon {
+    width: 27px;
+    height: 27px;
+    display: block;
+  }
   
   .menu-backdrop {
     position: fixed !important;

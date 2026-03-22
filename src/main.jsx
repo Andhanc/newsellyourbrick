@@ -103,8 +103,8 @@ async function initApp() {
       <ClerkProvider 
         publishableKey={PUBLISHABLE_KEY} 
         afterSignOutUrl="/"
-        afterSignInUrl="/profile"
-        afterSignUpUrl="/profile"
+        afterSignInUrl="/oauth-bridge"
+        afterSignUpUrl="/oauth-bridge"
       >
         <AppWrapper />
       </ClerkProvider>

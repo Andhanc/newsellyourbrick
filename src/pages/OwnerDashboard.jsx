@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useClerk, useUser } from '@clerk/clerk-react'
 import { 
   FiHome, 
   FiDollarSign, 
@@ -33,7 +34,7 @@ import FileUploadModal from '../components/FileUploadModal'
 import PropertyCalculatorModal from '../components/PropertyCalculatorModal'
 import BiddingHistoryModal from '../components/BiddingHistoryModal'
 import CountrySelect, { countries as countryList } from '../components/CountrySelect'
-import { getUserData, saveUserData, logout, clearUserData } from '../services/authService'
+import { getUserData, saveUserData, logout, clearUserData, CLERK_DB_USER_SYNCED } from '../services/authService'
 import { showNotification } from '../utils/toastHelper'
 import '../components/PropertyList.css'
 import './OwnerDashboard.css'
@@ -111,6 +112,8 @@ const mockOwnerProperties = [
 const OwnerDashboard = () => {
   const { t, i18n } = useTranslation()
   const navigate = useNavigate()
+  const { signOut } = useClerk()
+  const { user: clerkUser } = useUser()
   const [properties, setProperties] = useState([])
   const [activeTab, setActiveTab] = useState('properties') // 'properties' или 'analytics'
   const [showWelcomeModal, setShowWelcomeModal] = useState(false)
@@ -577,6 +580,29 @@ const OwnerDashboard = () => {
     }
   }
 
+  // После OAuth числовой userId приходит асинхронно; без этого объявления и данные не подгружаются до F5.
+  useEffect(() => {
+    const onClerkDbSynced = (e) => {
+      const raw = e.detail?.userId
+      const uid =
+        typeof raw === 'number' && !Number.isNaN(raw)
+          ? raw
+          : parseInt(String(raw || ''), 10)
+      if (!uid || uid <= 0 || Number.isNaN(uid)) return
+      if (localStorage.getItem('isOwnerLoggedIn') !== 'true') return
+
+      localStorage.setItem('userId', String(uid))
+      setUserId(uid)
+      checkVerificationNotification(uid)
+      loadVerificationStatus(uid, false)
+      loadUserDocuments(uid)
+      loadUserProperties(uid)
+      loadInterestCount(uid)
+    }
+    window.addEventListener(CLERK_DB_USER_SYNCED, onClerkDbSynced)
+    return () => window.removeEventListener(CLERK_DB_USER_SYNCED, onClerkDbSynced)
+  }, [])
+
   // Загружаем документ
   const handleDocumentUpload = async (type, file) => {
     if (!userId) {
@@ -820,18 +846,22 @@ const OwnerDashboard = () => {
   const handleLogout = async () => {
     if (window.confirm('Вы уверены, что хотите выйти?')) {
       try {
-        // Используем функцию logout из authService для полной очистки данных
-        // logout() вызывает clearUserData(), который удаляет все пользовательские данные
+        // Иначе сессия Clerk остаётся активной: ClerkAuthSync снова заполнит localStorage и шапка ведёт в /owner
+        if (clerkUser && signOut) {
+          await signOut()
+        }
+      } catch (error) {
+        console.warn('Ошибка при выходе из Clerk:', error)
+      }
+
+      try {
         await logout()
-        // Перенаправляем на главную страницу
         navigate('/')
-        // Небольшая задержка перед перезагрузкой, чтобы данные успели очиститься
         setTimeout(() => {
           window.location.reload()
         }, 100)
       } catch (error) {
         console.error('Ошибка при выходе:', error)
-        // В случае ошибки все равно очищаем данные через clearUserData
         clearUserData()
         localStorage.removeItem('userRole')
         localStorage.removeItem('isLoggedIn')

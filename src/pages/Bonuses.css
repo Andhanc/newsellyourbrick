@@ -1015,11 +1015,34 @@
 
   .bonuses-tabs {
     margin-bottom: 20px;
+    padding: 4px;
+    border-radius: 12px;
+  }
+
+  .bonuses-tabs__track {
+    inset: 4px;
+    border-radius: 10px;
+  }
+
+  .bonuses-tabs__pill {
+    width: calc(50% - 3px);
+    border-radius: 10px;
   }
 
   .bonuses-tabs__btn {
-    padding: 12px 16px;
-    font-size: 14px;
+    padding: 8px 5px;
+    font-size: 11px;
+    gap: 4px;
+    line-height: 1.15;
+    white-space: nowrap;
+    border-radius: 10px;
+    letter-spacing: -0.01em;
+  }
+
+  .bonuses-tabs__icon {
+    width: 14px;
+    height: 14px;
+    min-width: 14px;
   }
 
   .bonuses-header__title {
@@ -1041,5 +1064,19 @@
 
   .bonuses-task__body {
     padding: 0 16px 16px;
+  }
+}
+
+@media (max-width: 360px) {
+  .bonuses-tabs__btn {
+    padding: 7px 3px;
+    font-size: 10px;
+    gap: 3px;
+  }
+
+  .bonuses-tabs__icon {
+    width: 12px;
+    height: 12px;
+    min-width: 12px;
   }
 }

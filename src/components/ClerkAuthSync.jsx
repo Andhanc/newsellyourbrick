@@ -24,6 +24,13 @@ const ClerkAuthSync = () => {
 
     // Если пользователь авторизован и данные загружены
     if (isSignedIn && user && !hasSyncedRef.current) {
+      // Возврат с OAuth: ClerkAuthHandler один раз создаёт запись в БД, сохраняет роль и редиректит.
+      // Параллельный запуск здесь снимал clerk_oauth_user_role и давал гонку (роль «покупатель» у продавца).
+      if (sessionStorage.getItem('clerk_oauth_redirect_started') === 'true') {
+        console.log('ClerkAuthSync: OAuth return in progress — пропускаем, синхронизацию ведёт ClerkAuthHandler')
+        return
+      }
+
       // Формируем имя пользователя
       let userName = 'Пользователь'
       if (user.fullName) {
@@ -156,11 +163,6 @@ const ClerkAuthSync = () => {
             const savedRole = sessionStorage.getItem('clerk_oauth_user_role')
             const userRoleFromMetadata = user.publicMetadata?.role
             const userRole = savedRole || userRoleFromMetadata || 'buyer'
-            
-            // Очищаем сохраненную роль после использования
-            if (savedRole) {
-              sessionStorage.removeItem('clerk_oauth_user_role')
-            }
             
             console.log('ClerkAuthSync: Создание пользователя с ролью:', userRole)
             

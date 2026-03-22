@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'r
 import { useEffect, useState } from 'react'
 import { TonConnectUIProvider } from '@tonconnect/ui-react'
 import MainPage from './pages/MainPage'
+import OAuthBridgePage from './pages/OAuthBridgePage'
 import Footer from './components/Footer'
 import ClerkAuthSync from './components/ClerkAuthSync'
 import ClerkAuthHandler from './components/ClerkAuthHandler'
@@ -381,6 +382,7 @@ function App() {
               <Route path="/search-results" element={<SearchResults />} />
               <Route path="/map" element={<MapPage />} />
               <Route path="/profile" element={<Profile />} />
+              <Route path="/oauth-bridge" element={<OAuthBridgePage />} />
               <Route path="/auth/telegram-callback" element={<TelegramAuthCallback />} />
               <Route path="/data" element={<Data />} />
               <Route path="/subscriptions" element={<Subscriptions />} />

@@ -1,0 +1,48 @@
+import { useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { useAuth, useUser } from '@clerk/clerk-react'
+
+/**
+ * Лёгкая страница возврата после Clerk OAuth (без AuthenticateWithRedirectCallback —
+ * он с forceRedirect открывал лишний экран sign-in на accounts.dev после уже успешного входа).
+ */
+export default function OAuthBridgePage() {
+  const navigate = useNavigate()
+  const { isSignedIn, isLoaded: authLoaded } = useAuth()
+  const { user, isLoaded: userLoaded } = useUser()
+
+  useEffect(() => {
+    if (!authLoaded || !userLoaded || !isSignedIn || !user) return
+    const tick = () => {
+      if (window.location.pathname !== '/oauth-bridge') return
+      const uid = localStorage.getItem('userId')
+      if (!uid || !/^\d+$/.test(String(uid))) return
+      const r = localStorage.getItem('userRole')
+      navigate(r === 'seller' || r === 'owner' ? '/owner' : '/profile', { replace: true })
+    }
+    const id = window.setInterval(tick, 150)
+    tick()
+    return () => window.clearInterval(id)
+  }, [authLoaded, userLoaded, isSignedIn, user, navigate])
+
+  return (
+    <div
+      style={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexDirection: 'column',
+        gap: 12,
+        background: '#f4fbfb',
+        color: '#0f172a',
+        fontFamily: 'system-ui, sans-serif',
+        fontSize: 16
+      }}
+    >
+      <div style={{ width: 32, height: 32, border: '3px solid #0abab5', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+      <span>Завершение входа…</span>
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+    </div>
+  )
+}

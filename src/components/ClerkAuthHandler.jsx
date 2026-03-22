@@ -1,8 +1,17 @@
 import { useEffect, useState, useRef } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
-import { useAuth, useUser, useSession } from '@clerk/clerk-react'
-import { saveUserData, getReferrerId, clearReferrerId } from '../services/authService'
+import { useNavigate, useSearchParams, useLocation } from 'react-router-dom'
+import { useAuth, useUser, useSession, useClerk } from '@clerk/clerk-react'
+import {
+  saveUserData,
+  getReferrerId,
+  clearReferrerId,
+  CLERK_DB_USER_SYNCED,
+  clearUserDataWithoutAdmin,
+} from '../services/authService'
 import AuthAlertModal from './AuthAlertModal'
+
+/** После редиректа на главную состояние модалки может сброситься (Strict Mode / навигация) — поднимаем из sessionStorage. */
+const PENDING_DUPLICATE_REGISTER_ALERT = 'pending_duplicate_register_alert'
 
 /**
  * Компонент для обработки успешной авторизации через Clerk OAuth
@@ -10,13 +19,31 @@ import AuthAlertModal from './AuthAlertModal'
  */
 const ClerkAuthHandler = () => {
   const navigate = useNavigate()
+  const location = useLocation()
   const [searchParams] = useSearchParams()
   const { isSignedIn, isLoaded: authLoaded } = useAuth()
   const { user, isLoaded: userLoaded } = useUser()
   const { session } = useSession()
+  const { signOut } = useClerk()
   const [hasProcessed, setHasProcessed] = useState(false)
   const [oauthError, setOauthError] = useState(null) // { variant, title, message } при ошибках OAuth
   const timeoutTriggeredRef = useRef(false)
+  /** Актуальные значения для setInterval — иначе в колбэке остаются значения первого рендера (всегда false). */
+  const clerkAuthRef = useRef({ isSignedIn, user, session, authLoaded, userLoaded })
+  clerkAuthRef.current = { isSignedIn, user, session, authLoaded, userLoaded }
+
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem(PENDING_DUPLICATE_REGISTER_ALERT)
+      if (!raw) return
+      const payload = JSON.parse(raw)
+      if (payload?.variant === 'already_registered' && (payload.title || payload.message)) {
+        setOauthError((prev) => prev || payload)
+      }
+    } catch {
+      sessionStorage.removeItem(PENDING_DUPLICATE_REGISTER_ALERT)
+    }
+  }, [location.pathname])
 
   useEffect(() => {
     // Ждем загрузки данных
@@ -28,20 +55,24 @@ const ClerkAuthHandler = () => {
     // Проверяем, есть ли параметры OAuth в URL (после редиректа)
     const urlParams = new URLSearchParams(window.location.search)
     const hashParams = new URLSearchParams(window.location.hash.substring(1))
-    const hasOAuthParams = urlParams.has('__clerk_redirect_url') || 
-                          urlParams.has('__clerk_handshake') ||
-                          urlParams.has('__clerk_redirect') ||
-                          urlParams.has('__clerk_redirect_complete') ||
-                          urlParams.has('__clerk_state') ||
-                          hashParams.has('__clerk_redirect_url') ||
-                          hashParams.has('__clerk_handshake') ||
-                          hashParams.has('__clerk_state') ||
-                          window.location.search.includes('__clerk') ||
-                          window.location.search.includes('oauth') ||
-                          window.location.search.includes('code=') ||
-                          window.location.hash.includes('__clerk') ||
-                          window.location.hash.includes('oauth') ||
-                          window.location.hash.includes('code=')
+    // Только явные параметры Clerk — иначе любой `?code=` на сайте давал 10 с ожидания и модалку «Вход не завершён».
+    const searchStr = window.location.search
+    const hashStr = window.location.hash
+    const hasOAuthParams =
+      urlParams.has('__clerk_redirect_url') ||
+      urlParams.has('__clerk_handshake') ||
+      urlParams.has('__clerk_redirect') ||
+      urlParams.has('__clerk_redirect_complete') ||
+      urlParams.has('__clerk_status') ||
+      urlParams.has('__clerk_ticket') ||
+      urlParams.has('__clerk_state') ||
+      hashParams.has('__clerk_redirect_url') ||
+      hashParams.has('__clerk_handshake') ||
+      hashParams.has('__clerk_status') ||
+      hashParams.has('__clerk_ticket') ||
+      hashParams.has('__clerk_state') ||
+      searchStr.includes('__clerk') ||
+      hashStr.includes('__clerk')
 
     // Проверяем, был ли недавний редирект (проверяем sessionStorage)
     const oauthRedirectKey = 'clerk_oauth_redirect_started'
@@ -130,12 +161,22 @@ const ClerkAuthHandler = () => {
       
       console.log('ClerkAuthHandler: User authenticated, syncing with DB', clerkUserData)
 
+      // Ранний переход в кабинет для режима «Регистрация» отключён: иначе при повторной OAuth-регистрации
+      // (аккаунт уже в БД) пользователь успевает увидеть кабинет до проверки. Новые пользователи уходят
+      // на /owner или /profile после sync ниже.
+
       // Создаем или обновляем пользователя в БД
       const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
+      const normalizeDbRole = (r) =>
+        r === 'seller' || r === 'owner' ? 'seller' : 'buyer'
+
       const syncToDatabase = async () => {
         try {
           let dbUserId = null
           let shouldOpenRegister = false
+          let roleFromDatabase = null
+          /** Уже есть запись в нашей БД до попытки POST /users (важно для «Регистрация» + OAuth). */
+          let foundExistingInDb = false
           
           // Сначала пытаемся найти пользователя по email
           let foundUser = null
@@ -146,6 +187,8 @@ const ClerkAuthHandler = () => {
               if (emailData.success && emailData.data) {
                 foundUser = emailData.data
                 dbUserId = foundUser.id
+                foundExistingInDb = true
+                if (foundUser.role) roleFromDatabase = normalizeDbRole(foundUser.role)
                 console.log('✅ ClerkAuthHandler: Пользователь найден в БД по email:', dbUserId)
               }
             }
@@ -161,6 +204,8 @@ const ClerkAuthHandler = () => {
                 if (phoneData.success && phoneData.data) {
                   foundUser = phoneData.data
                   dbUserId = foundUser.id
+                  foundExistingInDb = true
+                  if (foundUser.role) roleFromDatabase = normalizeDbRole(foundUser.role)
                   console.log('✅ ClerkAuthHandler: Пользователь найден в БД по телефону:', dbUserId)
                 }
               }
@@ -202,7 +247,12 @@ const ClerkAuthHandler = () => {
               // В режиме "вход" новый пользователь в нашей БД не создаём:
               // вместо этого открываем регистрацию.
               shouldOpenRegister = true
-              return { dbUserId: null, shouldOpenRegister }
+              return {
+                dbUserId: null,
+                shouldOpenRegister,
+                roleFromDatabase: null,
+                duplicateRegisterOAuth: false,
+              }
             }
 
             const nameParts = userName.split(' ')
@@ -243,6 +293,12 @@ const ClerkAuthHandler = () => {
               const createData = await createResponse.json()
               if (createData.success && createData.data) {
                 dbUserId = createData.data.id
+                const created = createData.data
+                if (created?.role) {
+                  roleFromDatabase = normalizeDbRole(created.role)
+                } else {
+                  roleFromDatabase = normalizeDbRole(userRole === 'seller' || userRole === 'owner' ? 'seller' : 'buyer')
+                }
                 if (referrerId) clearReferrerId()
                 console.log('✅ ClerkAuthHandler: Пользователь создан в БД:', dbUserId)
               }
@@ -251,27 +307,86 @@ const ClerkAuthHandler = () => {
               console.error('❌ ClerkAuthHandler: Ошибка создания пользователя:', errorData)
             }
           }
+
+          // Регистрация через Google/Facebook и т.п., но аккаунт в БД уже есть — не логиним, просим «Вход».
+          if (oauthFlowMode === 'register' && foundExistingInDb && dbUserId) {
+            return {
+              dbUserId,
+              shouldOpenRegister: false,
+              roleFromDatabase,
+              duplicateRegisterOAuth: true,
+            }
+          }
           
-          // Используем ID из БД для обновления localStorage
+          // Используем ID из БД для обновления localStorage (effectiveCabinetRole здесь недоступен — он объявлен ниже по коду)
           if (dbUserId) {
+            const resolvedCabinetRole = roleFromDatabase || clerkUserData.role
             const updatedUserData = {
               ...clerkUserData,
-              id: dbUserId.toString()
+              id: dbUserId.toString(),
+              role: resolvedCabinetRole === 'seller' || resolvedCabinetRole === 'owner' ? 'seller' : 'buyer'
             }
             saveUserData(updatedUserData, 'clerk')
             localStorage.setItem('userId', String(dbUserId))
+            if (typeof window !== 'undefined') {
+              window.dispatchEvent(
+                new CustomEvent(CLERK_DB_USER_SYNCED, { detail: { userId: Number(dbUserId) } })
+              )
+            }
             console.log('✅ ClerkAuthHandler: Данные синхронизированы с БД, ID:', dbUserId)
           }
 
-          return { dbUserId, shouldOpenRegister }
+          return { dbUserId, shouldOpenRegister, roleFromDatabase, duplicateRegisterOAuth: false }
         } catch (error) {
           console.error('❌ ClerkAuthHandler: Ошибка синхронизации с БД:', error)
-          return { dbUserId: null, shouldOpenRegister: false }
+          return { dbUserId: null, shouldOpenRegister: false, roleFromDatabase: null, duplicateRegisterOAuth: false }
         }
       }
 
       ;(async () => {
-        const { dbUserId, shouldOpenRegister } = await syncToDatabase()
+        const { dbUserId, shouldOpenRegister, roleFromDatabase, duplicateRegisterOAuth } =
+          await syncToDatabase()
+
+        const effectiveCabinetRole = roleFromDatabase || clerkUserData.role
+
+        if (duplicateRegisterOAuth) {
+          setHasProcessed(true)
+          try {
+            await signOut()
+          } catch (e) {
+            console.warn('ClerkAuthHandler: signOut после дубля OAuth-регистрации', e)
+          }
+          clearUserDataWithoutAdmin()
+          sessionStorage.removeItem('clerk_oauth_flow_mode')
+          sessionStorage.removeItem('clerk_oauth_user_role')
+          if (oauthRedirectStarted) {
+            sessionStorage.removeItem(oauthRedirectKey)
+          }
+          if (hasOAuthParams) {
+            const cleanPath =
+              window.location.pathname === '/oauth-bridge' ? '/' : window.location.pathname
+            window.history.replaceState({}, '', cleanPath)
+          }
+          sessionStorage.setItem('login_modal_force_open', 'true')
+          sessionStorage.setItem('login_modal_mode', 'login')
+          window.dispatchEvent(new Event('forceOpenLoginModal'))
+          const duplicateAlert = {
+            variant: 'already_registered',
+            title: 'У вас уже есть аккаунт',
+            message:
+              'Этот профиль (тот же email в Google или Facebook) уже зарегистрирован на сайте. Мы открыли для вас форму входа — войдите тем же способом (Google, Facebook и др.) или по email и паролю. Повторная регистрация не нужна.',
+          }
+          try {
+            sessionStorage.setItem(PENDING_DUPLICATE_REGISTER_ALERT, JSON.stringify(duplicateAlert))
+          } catch {
+            /* ignore quota */
+          }
+          setOauthError(duplicateAlert)
+          if (window.location.pathname !== '/') {
+            navigate('/', { replace: true })
+          }
+          return
+        }
 
         if (shouldOpenRegister) {
           // Чтобы не показывать одно и то же окно после перезагрузок бесконечно.
@@ -327,7 +442,7 @@ const ClerkAuthHandler = () => {
         // Проверяем наличие OAuth параметров или недавний OAuth редирект
         if (hasOAuthParams || oauthRedirectStarted || wasOnClerkDomain) {
           // Определяем куда редиректить в зависимости от роли пользователя
-          const savedUserRole = clerkUserData.role || localStorage.getItem('userRole') || 'buyer'
+          const savedUserRole = effectiveCabinetRole || localStorage.getItem('userRole') || 'buyer'
           const redirectPath = (savedUserRole === 'seller' || savedUserRole === 'owner') ? '/owner' : '/profile'
 
           // Навигация на правильную страницу в зависимости от роли
@@ -357,20 +472,21 @@ const ClerkAuthHandler = () => {
       
       // Проверяем каждые 500мс в течение 10 секунд (увеличено время ожидания)
       let attempts = 0
-      const maxAttempts = 20
+      const maxAttempts = 30
       
       const checkInterval = setInterval(() => {
         attempts++
+        const snap = clerkAuthRef.current
         console.log(`ClerkAuthHandler: Checking auth state (attempt ${attempts}/${maxAttempts})`, {
-          isSignedIn,
-          hasUser: !!user,
-          hasSession: !!session,
-          authLoaded,
-          userLoaded
+          isSignedIn: snap.isSignedIn,
+          hasUser: !!snap.user,
+          hasSession: !!snap.session,
+          authLoaded: snap.authLoaded,
+          userLoaded: snap.userLoaded
         })
         
         // Если пользователь появился, обрабатываем
-        if ((isSignedIn || session) && user) {
+        if ((snap.isSignedIn || snap.session) && snap.user) {
           clearInterval(checkInterval)
           console.log('ClerkAuthHandler: User data appeared! Processing...')
           // Данные будут обработаны в следующем рендере
@@ -385,7 +501,7 @@ const ClerkAuthHandler = () => {
             sessionStorage.removeItem(oauthRedirectKey)
             setOauthError({
               title: 'Вход не завершён',
-              message: 'Не удалось войти через соцсеть. Вы можете зарегистрироваться на сайте: нажмите «Понятно», выберите «Регистрация» и войдите через Google, email, Telegram или WhatsApp.',
+              message: 'Не удалось войти через соцсеть. Вы можете зарегистрироваться на сайте: нажмите «Понятно», выберите «Регистрация» и войдите через Google, Facebook, email, Telegram или WhatsApp.',
             })
           }
           console.error('ClerkAuthHandler: Timeout waiting for user data after OAuth redirect')
@@ -397,9 +513,10 @@ const ClerkAuthHandler = () => {
       // Нет OAuth параметров и пользователь не авторизован - это нормально
       console.log('ClerkAuthHandler: No OAuth params, user not signed in - normal state')
     }
-  }, [isSignedIn, user, userLoaded, authLoaded, session, searchParams, navigate, hasProcessed])
+  }, [isSignedIn, user, userLoaded, authLoaded, session, searchParams, navigate, hasProcessed, signOut])
 
   const handleOauthErrorClose = () => {
+    sessionStorage.removeItem(PENDING_DUPLICATE_REGISTER_ALERT)
     setOauthError(null)
     timeoutTriggeredRef.current = false
   }
@@ -413,7 +530,9 @@ const ClerkAuthHandler = () => {
           variant={oauthError.variant || 'error'}
           title={oauthError.title}
           message={oauthError.message}
-          buttonText="Понятно"
+          buttonText={
+            oauthError?.variant === 'already_registered' ? 'Понятно, перейти ко входу' : 'Понятно'
+          }
         />
       )}
     </>

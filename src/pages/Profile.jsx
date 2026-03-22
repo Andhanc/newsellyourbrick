@@ -105,6 +105,32 @@ const Profile = () => {
             name: `${user.first_name || ''} ${user.last_name || ''}`.trim() || prev.name,
             role: user.role || prev.role || 'buyer'
           }))
+
+          const roleNorm = user.role === 'seller' || user.role === 'owner' ? 'seller' : 'buyer'
+          try {
+            const gd = getUserData()
+            if (gd.isLoggedIn) {
+              const displayName =
+                `${user.first_name || ''} ${user.last_name || ''}`.trim() || gd.name || 'Пользователь'
+              saveUserData(
+                {
+                  name: displayName,
+                  email: user.email || gd.email,
+                  id: String(userId),
+                  picture: gd.picture,
+                  role: roleNorm,
+                  phone: user.phone_number || gd.phone || '',
+                  phoneFormatted: gd.phoneFormatted || user.phone_number || ''
+                },
+                gd.loginMethod || 'clerk'
+              )
+            }
+            if (roleNorm === 'seller' && window.location.pathname === '/profile') {
+              navigate('/owner', { replace: true })
+            }
+          } catch (e) {
+            console.warn('⚠️ Profile: не удалось синхронизировать localStorage с ролью из БД', e)
+          }
           
           console.log('✅ Profile: profileData обновлен, userIdNumber:', user.user_id_number || 'отсутствует')
         }
@@ -414,6 +440,14 @@ const Profile = () => {
         userPhone = user.phoneNumbers[0].phoneNumber || ''
       }
       
+      const oauthRoleRaw =
+        sessionStorage.getItem('clerk_oauth_user_role') ||
+        user.publicMetadata?.role ||
+        localStorage.getItem('userRole') ||
+        'buyer'
+      const normalizedClerkRole =
+        oauthRoleRaw === 'seller' || oauthRoleRaw === 'owner' ? 'seller' : 'buyer'
+
       const clerkUserData = {
         name: userName,
         email: userEmail,
@@ -421,11 +455,12 @@ const Profile = () => {
         id: user.id || '',
         phone: userPhone,
         phoneFormatted: userPhone,
+        role: normalizedClerkRole
       }
       
       console.log('Profile: Processed Clerk user data', clerkUserData)
       
-      // Сохраняем данные Clerk в localStorage для совместимости со старой системой
+      // Сохраняем данные Clerk в localStorage для совместимости со старой системой (роль нужна для isOwnerLoggedIn и /owner)
       saveUserData(clerkUserData, 'clerk')
       
       // Находим или создаем пользователя в БД и получаем его ID
@@ -1176,7 +1211,7 @@ const Profile = () => {
                 <div className="section-subtitle">Управляйте своими подписками</div>
               </div>
               <div className="profile-subscriptions-cards">
-                <PricingCards compact onBookCall={(plan) => { /* можно открыть модалку или ссылку */ }} />
+                <PricingCards compact mobileTwoColumn onBookCall={(plan) => { /* можно открыть модалку или ссылку */ }} />
               </div>
             </section>
 

@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { ShoppingCart } from 'lucide-react'
 import './PricingCards.css'
 
-export default function PricingCards({ onBookCall, compact = false }) {
+export default function PricingCards({ onBookCall, compact = false, mobileTwoColumn = false }) {
   const [starterMonthly, setStarterMonthly] = useState(false)
   const [proMonthly, setProMonthly] = useState(false)
 
@@ -50,7 +50,7 @@ export default function PricingCards({ onBookCall, compact = false }) {
   }
 
   return (
-    <div className="pricing-cards">
+    <div className={`pricing-cards${mobileTwoColumn ? ' pricing-cards--mobile-two-col' : ''}`}>
       <div className={`pricing-cards__grid ${compact ? 'pricing-cards__grid--compact' : ''}`}>
         {/* Starter — светлая карточка */}
         <div className="pricing-card--starter">

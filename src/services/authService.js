@@ -200,6 +200,37 @@ export const saveUserData = (userData, loginMethod = 'email') => {
   }
 }
 
+/** После OAuth ClerkAuthHandler диспатчит это событие с числовым userId из БД (кабинет продавца подгружает данные без перезагрузки). */
+export const CLERK_DB_USER_SYNCED = 'app:clerk-db-user-synced'
+
+/**
+ * Ранняя подготовка localStorage до ответа API: сразу открыть кабинет по роли, без числового userId.
+ * Числовой id пишется в saveUserData после sync; затем событие CLERK_DB_USER_SYNCED.
+ */
+export const primeClerkOAuthCabinetNavigation = (userData) => {
+  if (typeof window === 'undefined' || !userData) return
+  const role = userData.role === 'seller' || userData.role === 'owner' ? 'seller' : 'buyer'
+  localStorage.setItem('isLoggedIn', 'true')
+  localStorage.setItem('loginMethod', 'clerk')
+  localStorage.setItem('userRole', role)
+  if (role === 'seller') {
+    localStorage.setItem('isOwnerLoggedIn', 'true')
+  } else {
+    localStorage.removeItem('isOwnerLoggedIn')
+  }
+  localStorage.removeItem('userId')
+  const payload = {
+    name: userData.name || '',
+    email: userData.email || '',
+    picture: userData.picture || '',
+    id: '',
+    role,
+    phone: userData.phone || '',
+    phoneFormatted: userData.phoneFormatted || userData.phone || ''
+  }
+  localStorage.setItem('userData', JSON.stringify(payload))
+}
+
 /**
  * Получает данные пользователя из localStorage
  */

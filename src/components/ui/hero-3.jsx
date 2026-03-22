@@ -78,9 +78,9 @@ export function AnimatedMarqueeHero({
         </motion.p>
       </div>
 
-      <div className="absolute bottom-0 left-0 w-full h-1/3 md:h-2/5 overflow-x-hidden [mask-image:linear-gradient(to_bottom,transparent,black_20%,black_80%,transparent)]">
+      <div className="absolute bottom-0 left-0 w-full h-1/3 md:h-2/5 overflow-hidden [mask-image:linear-gradient(to_bottom,transparent,black_20%,black_80%,transparent)]">
         <motion.div
-          className="flex gap-4 w-max"
+          className="flex w-max gap-4 touch-pan-x"
           animate={{
             x: ['0%', `${-100 / copies}%`],
             transition: {
