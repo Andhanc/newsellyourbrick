@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { FiX, FiHome, FiMapPin, FiDollarSign, FiTrendingUp, FiLoader } from 'react-icons/fi'
-import { MdBed, MdOutlineBathtub } from 'react-icons/md'
+import { FiX, FiHome, FiMapPin, FiDollarSign, FiLoader } from 'react-icons/fi'
+import { MdBed } from 'react-icons/md'
 import { BiArea } from 'react-icons/bi'
 import axios from 'axios'
 import './PropertyCalculatorModal.css'
@@ -9,9 +9,7 @@ const PropertyCalculatorModal = ({ isOpen, onClose }) => {
   const [formData, setFormData] = useState({
     area: '',
     rooms: 'studio',
-    city: 'barcelona',
-    maxPrice: '',
-    minPrice: ''
+    city: 'barcelona'
   })
 
   const [isLoading, setIsLoading] = useState(false)
@@ -50,8 +48,8 @@ const PropertyCalculatorModal = ({ isOpen, onClose }) => {
         rooms: parseInt(formData.rooms),
         city: formData.city,
         propertyType: 'apartment',
-        maxPrice: formData.maxPrice ? parseInt(formData.maxPrice) : null,
-        minPrice: formData.minPrice ? parseInt(formData.minPrice) : null
+        maxPrice: null,
+        minPrice: null
       })
 
       if (response.data.success) {
@@ -91,9 +89,7 @@ const PropertyCalculatorModal = ({ isOpen, onClose }) => {
     setFormData({
       area: '',
       rooms: 'studio',
-      city: 'barcelona',
-      maxPrice: '',
-      minPrice: ''
+      city: 'barcelona'
     })
     setResults(null)
     setError(null)
@@ -128,14 +124,19 @@ const PropertyCalculatorModal = ({ isOpen, onClose }) => {
         </button>
 
         <div className="property-calculator-modal__content">
-          <div className="property-calculator-modal__header">
-            <h2 className="property-calculator-modal__title">
-              <FiDollarSign size={28} />
-              Калькулятор стоимости недвижимости
-            </h2>
-            <p className="property-calculator-modal__subtitle">
-              Введите параметры недвижимости, чтобы получить ориентировочную стоимость и похожие объекты
-            </p>
+          <div className="property-calculator-modal__hero">
+            <div className="property-calculator-modal__hero-icon" aria-hidden>
+              <FiDollarSign size={26} />
+            </div>
+            <div className="property-calculator-modal__header">
+              <p className="property-calculator-modal__eyebrow">Оценка рынка</p>
+              <h2 className="property-calculator-modal__title">
+                Калькулятор стоимости
+              </h2>
+              <p className="property-calculator-modal__subtitle">
+                Укажите площадь, число комнат и город — мы подберём ориентир по цене и похожие объявления
+              </p>
+            </div>
           </div>
 
           {!results ? (
@@ -156,23 +157,23 @@ const PropertyCalculatorModal = ({ isOpen, onClose }) => {
                     </div>
                   )}
 
-                  <div className="property-calculator-form__section">
-                    <h3 className="property-calculator-form__section-title">
-                      <FiHome size={20} />
-                      Основная информация
+                  <div className="property-calculator-form__panel">
+                    <h3 className="property-calculator-form__panel-title">
+                      <FiHome size={18} />
+                      Параметры объекта
                     </h3>
-                    <div className="property-calculator-form__grid">
+                    <div className="property-calculator-form__grid property-calculator-form__grid--top">
                       <div className="property-calculator-form__field">
                         <label className="property-calculator-form__label">
                           <BiArea size={18} />
-                          Площадь (м²) *
+                          Площадь, м²
                         </label>
                         <input
                           type="number"
                           name="area"
                           value={formData.area}
                           onChange={handleInputChange}
-                          placeholder="Например, 80"
+                          placeholder="80"
                           className="property-calculator-form__input"
                           min="1"
                           required
@@ -182,7 +183,7 @@ const PropertyCalculatorModal = ({ isOpen, onClose }) => {
                       <div className="property-calculator-form__field">
                         <label className="property-calculator-form__label">
                           <MdBed size={18} />
-                          Комнат *
+                          Комнат
                         </label>
                         <select 
                           name="rooms" 
@@ -200,93 +201,54 @@ const PropertyCalculatorModal = ({ isOpen, onClose }) => {
                         </select>
                       </div>
                     </div>
-                  </div>
 
-                  <div className="property-calculator-form__section">
-                    <h3 className="property-calculator-form__section-title">
-                      <FiMapPin size={20} />
-                      Местоположение
-                    </h3>
-                    <div className="property-calculator-form__grid">
-                      <div className="property-calculator-form__field">
-                        <label className="property-calculator-form__label">Регион/Город *</label>
-                        <select 
-                          name="city" 
-                          value={formData.city}
-                          onChange={handleInputChange}
-                          className="property-calculator-form__select"
-                          required
-                        >
-                          <optgroup label="Каталония">
-                            <option value="barcelona">Барселона</option>
-                          </optgroup>
-                          <optgroup label="Валенсийское сообщество">
-                            <option value="valencia">Валенсия</option>
-                            <option value="alicante">Аликанте</option>
-                            <option value="castellon">Кастельон</option>
-                            <option value="torrevieja">Торревьеха</option>
-                            <option value="benidorm">Бенидорм</option>
-                            <option value="denia">Дения</option>
-                            <option value="javea">Хавеа</option>
-                            <option value="calpe">Калпе</option>
-                            <option value="altea">Альтеа</option>
-                            <option value="santa-pola">Санта-Пола</option>
-                            <option value="villajoyosa">Виллахойоса</option>
-                            <option value="gandia">Гандия</option>
-                            <option value="oliva">Олива</option>
-                            <option value="piles">Пилес</option>
-                          </optgroup>
-                          <optgroup label="Андалусия">
-                            <option value="malaga">Малага</option>
-                            <option value="marbella">Марбелья</option>
-                            <option value="sevilla">Севилья</option>
-                            <option value="granada">Гранада</option>
-                          </optgroup>
-                          <optgroup label="Мурсия">
-                            <option value="murcia">Мурсия</option>
-                          </optgroup>
-                          <optgroup label="Мадрид">
-                            <option value="madrid">Мадрид</option>
-                          </optgroup>
-                          <optgroup label="Страна Басков">
-                            <option value="bilbao">Бильбао</option>
-                          </optgroup>
-                        </select>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="property-calculator-form__section">
-                    <h3 className="property-calculator-form__section-title">
-                      <FiTrendingUp size={20} />
-                      Дополнительные фильтры (необязательно)
-                    </h3>
-                    <div className="property-calculator-form__grid">
-                      <div className="property-calculator-form__field">
-                        <label className="property-calculator-form__label">Максимальная цена (€)</label>
-                        <input
-                          type="number"
-                          name="maxPrice"
-                          value={formData.maxPrice}
-                          onChange={handleInputChange}
-                          placeholder="Например, 200000"
-                          className="property-calculator-form__input"
-                          min="0"
-                        />
-                      </div>
-
-                      <div className="property-calculator-form__field">
-                        <label className="property-calculator-form__label">Минимальная цена (€)</label>
-                        <input
-                          type="number"
-                          name="minPrice"
-                          value={formData.minPrice}
-                          onChange={handleInputChange}
-                          placeholder="Например, 100000"
-                          className="property-calculator-form__input"
-                          min="0"
-                        />
-                      </div>
+                    <div className="property-calculator-form__field property-calculator-form__field--full">
+                      <label className="property-calculator-form__label">
+                        <FiMapPin size={18} />
+                        Город / регион
+                      </label>
+                      <select 
+                        name="city" 
+                        value={formData.city}
+                        onChange={handleInputChange}
+                        className="property-calculator-form__select"
+                        required
+                      >
+                        <optgroup label="Каталония">
+                          <option value="barcelona">Барселона</option>
+                        </optgroup>
+                        <optgroup label="Валенсийское сообщество">
+                          <option value="valencia">Валенсия</option>
+                          <option value="alicante">Аликанте</option>
+                          <option value="castellon">Кастельон</option>
+                          <option value="torrevieja">Торревьеха</option>
+                          <option value="benidorm">Бенидорм</option>
+                          <option value="denia">Дения</option>
+                          <option value="javea">Хавеа</option>
+                          <option value="calpe">Калпе</option>
+                          <option value="altea">Альтеа</option>
+                          <option value="santa-pola">Санта-Пола</option>
+                          <option value="villajoyosa">Виллахойоса</option>
+                          <option value="gandia">Гандия</option>
+                          <option value="oliva">Олива</option>
+                          <option value="piles">Пилес</option>
+                        </optgroup>
+                        <optgroup label="Андалусия">
+                          <option value="malaga">Малага</option>
+                          <option value="marbella">Марбелья</option>
+                          <option value="sevilla">Севилья</option>
+                          <option value="granada">Гранада</option>
+                        </optgroup>
+                        <optgroup label="Мурсия">
+                          <option value="murcia">Мурсия</option>
+                        </optgroup>
+                        <optgroup label="Мадрид">
+                          <option value="madrid">Мадрид</option>
+                        </optgroup>
+                        <optgroup label="Страна Басков">
+                          <option value="bilbao">Бильбао</option>
+                        </optgroup>
+                      </select>
                     </div>
                   </div>
 

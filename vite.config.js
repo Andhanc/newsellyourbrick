@@ -122,8 +122,19 @@ export default defineConfig(({ mode }) => {
     },
     // Оптимизация для production
     optimizeDeps: {
-      // Предварительно обрабатываем зависимости
-      include: ['react', 'react-dom', 'react-router-dom'],
+      // Предварительно обрабатываем зависимости — шире список снижает «битые» chunk-и после обновлений deps
+      include: [
+        'react',
+        'react-dom',
+        'react-router-dom',
+        'i18next',
+        'react-i18next',
+        'i18next-browser-languagedetector',
+        '@clerk/clerk-react',
+        '@tonconnect/ui-react',
+        'framer-motion',
+        'recharts',
+      ],
       // Исключаем проблемные зависимости из оптимизации
       exclude: [],
       // Принудительно пересобираем зависимости при проблемах

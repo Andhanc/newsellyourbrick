@@ -309,6 +309,56 @@ function isCorruptError(err) {
 }
 
 /**
+ * Таблица переводов + колонка debt_severity (идемпотентно, на случай старых БД)
+ */
+function ensurePropertyAuxSchema(db) {
+  try {
+    const hasPt = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='property_translations'").get();
+    if (!hasPt) {
+      const sqlPath = join(__dirname, 'add_property_translations_table.sql');
+      if (existsSync(sqlPath)) {
+        db.exec(readFileSync(sqlPath, 'utf8'));
+        console.log('✅ Таблица property_translations создана из файла');
+      } else {
+        db.exec(`
+          CREATE TABLE IF NOT EXISTS property_translations (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            property_id INTEGER NOT NULL,
+            property_table TEXT NOT NULL,
+            lang_code TEXT NOT NULL,
+            title TEXT,
+            description TEXT,
+            additional_amenities TEXT,
+            created_at TEXT DEFAULT (datetime('now')),
+            UNIQUE(property_id, property_table, lang_code)
+          );
+          CREATE INDEX IF NOT EXISTS idx_property_translations_lookup
+            ON property_translations(property_id, property_table);
+        `);
+        console.log('✅ Таблица property_translations создана (встроенная схема)');
+      }
+    }
+  } catch (e) {
+    console.warn('⚠️ ensurePropertyAuxSchema property_translations:', e.message);
+  }
+  for (const table of ['properties_apartments', 'properties_houses']) {
+    try {
+      const t = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name=?").get(table);
+      if (!t) continue;
+      const cols = db.prepare(`PRAGMA table_info(${table})`).all().map((c) => c.name);
+      if (!cols.includes('debt_severity')) {
+        db.exec(`ALTER TABLE ${table} ADD COLUMN debt_severity TEXT`);
+        console.log(`✅ Добавлено поле debt_severity в ${table}`);
+      }
+    } catch (e) {
+      if (!String(e.message || '').includes('duplicate column')) {
+        console.warn(`⚠️ debt_severity ${table}:`, e.message);
+      }
+    }
+  }
+}
+
+/**
  * Инициализация базы данных
  */
 export function initDatabase() {
@@ -533,19 +583,6 @@ export function initDatabase() {
         }
       } catch (debtDocsError) {
         console.warn('⚠️ Не удалось создать таблицу property_debt_documents:', debtDocsError.message);
-      }
-
-      // Таблица переводов объявлений (ИИ — на все языки сайта)
-      try {
-        const propTransTable = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='property_translations'").get();
-        if (!propTransTable) {
-          console.log('🔄 Создание таблицы property_translations...');
-          const propTransSql = readFileSync(join(__dirname, 'add_property_translations_table.sql'), 'utf8');
-          db.exec(propTransSql);
-          console.log('✅ Таблица property_translations создана');
-        }
-      } catch (propTransError) {
-        console.warn('⚠️ Не удалось создать таблицу property_translations:', propTransError.message);
       }
 
       // Создаем таблицу недвижимости, если её нет
@@ -1451,6 +1488,8 @@ export function initDatabase() {
       console.warn('⚠️ Кэш схемы:', scError.message);
     }
     
+    ensurePropertyAuxSchema(db);
+
     // Выполняем начальное обслуживание БД
     performMaintenance(db);
     
@@ -3234,6 +3273,28 @@ function buildSummary(messages, preferences) {
   return parts.length ? parts.join(' ') : 'Общение с ботом без выделенных предпочтений.';
 }
 
+function parseAssistantLeadJsonColumn(val, fallback) {
+  if (val == null || val === '') return fallback;
+  if (typeof val === 'object') return val;
+  try {
+    return JSON.parse(val);
+  } catch {
+    return fallback;
+  }
+}
+
+/** Строка из SQLite → безопасные messages/preferences для API (массив / объект). */
+function normalizeAssistantLeadRow(row) {
+  if (!row) return null;
+  const rawMessages = parseAssistantLeadJsonColumn(row.messages, []);
+  const rawPrefs = parseAssistantLeadJsonColumn(row.preferences, {});
+  return {
+    ...row,
+    messages: Array.isArray(rawMessages) ? rawMessages : [],
+    preferences: rawPrefs && typeof rawPrefs === 'object' ? rawPrefs : {}
+  };
+}
+
 export const assistantLeadQueries = {
   upsert: (data) => {
     const db = getDatabase();
@@ -3280,7 +3341,8 @@ export const assistantLeadQueries = {
   getById: (id) => {
     const db = getDatabase();
     const stmt = db.prepare('SELECT * FROM assistant_leads WHERE id = ?');
-    return stmt.get(id);
+    const row = stmt.get(id);
+    return normalizeAssistantLeadRow(row);
   },
 
   /**
@@ -4789,34 +4851,30 @@ export const propertyQueries = {
         console.log(`🔍 getById: поиск в properties_apartments для ID=${id}, запрошенный тип=${propertyType}`);
         const property = apartmentQueries.getById(id);
         if (property) {
-          // КРИТИЧЕСКАЯ ПРОВЕРКА: убеждаемся, что property_type ТОЧНО соответствует запрошенному типу
-          if (property.property_type === propertyType) {
-            property.source_table = 'apartments';
-            console.log(`✅ getById: найден правильный объект в apartments, ID=${id}, type=${property.property_type}`);
+          const pt = property.property_type;
+          // Квартира и commercial хранятся в одной таблице — запрос с типом apartment при объекте commercial (и наоборот) допустим
+          if (pt === 'apartment' || pt === 'commercial') {
+            property.source_table = 'properties_apartments';
+            console.log(`✅ getById: найден объект в apartments, ID=${id}, type=${pt}`);
             return property;
-          } else {
-            console.error(`❌ getById: КРИТИЧЕСКАЯ ОШИБКА! Объект ID=${id} найден в apartments, но property_type=${property.property_type} не соответствует запрошенному типу ${propertyType}!`);
-            console.error(`   Это означает, что объект находится в неправильной таблице или имеет неправильный property_type.`);
-            return null;
           }
-        } else {
-          console.warn(`⚠️ getById: объект ID=${id} не найден в properties_apartments для типа ${propertyType}`);
+          console.error(`❌ getById: объект ID=${id} в apartments имеет неожиданный property_type=${pt}`);
           return null;
         }
+        console.warn(`⚠️ getById: объект ID=${id} не найден в properties_apartments для типа ${propertyType}`);
+        return null;
       } else if (propertyType === 'house' || propertyType === 'villa') {
         console.log(`🔍 getById: поиск в properties_houses для ID=${id}, запрошенный тип=${propertyType}`);
         const property = houseQueries.getById(id);
         if (property) {
-          // КРИТИЧЕСКАЯ ПРОВЕРКА: убеждаемся, что property_type ТОЧНО соответствует запрошенному типу
-          if (property.property_type === propertyType) {
-            property.source_table = 'houses';
-            console.log(`✅ getById: найден правильный объект в houses, ID=${id}, type=${property.property_type}`);
+          const pt = property.property_type;
+          if (pt === 'house' || pt === 'villa') {
+            property.source_table = 'properties_houses';
+            console.log(`✅ getById: найден объект в houses, ID=${id}, type=${pt}`);
             return property;
-          } else {
-            console.error(`❌ getById: КРИТИЧЕСКАЯ ОШИБКА! Объект ID=${id} найден в houses, но property_type=${property.property_type} не соответствует запрошенному типу ${propertyType}!`);
-            console.error(`   Это означает, что объект находится в неправильной таблице или имеет неправильный property_type.`);
-            return null;
           }
+          console.error(`❌ getById: объект ID=${id} в houses имеет неожиданный property_type=${pt}`);
+          return null;
         } else {
           console.warn(`⚠️ getById: объект ID=${id} не найден в properties_houses для типа ${propertyType}`);
           return null;
@@ -4842,16 +4900,16 @@ export const propertyQueries = {
         // Проверяем property_type и выбираем правильную таблицу
         if (propertyInHouses.property_type === 'house' || propertyInHouses.property_type === 'villa') {
           console.log(`✅ getById: используем houses (property_type=${propertyInHouses.property_type})`);
-          propertyInHouses.source_table = 'houses';
+          propertyInHouses.source_table = 'properties_houses';
           return propertyInHouses;
         } else if (propertyInApartments.property_type === 'apartment' || propertyInApartments.property_type === 'commercial') {
           console.log(`✅ getById: используем apartments (property_type=${propertyInApartments.property_type})`);
-          propertyInApartments.source_table = 'apartments';
+          propertyInApartments.source_table = 'properties_apartments';
           return propertyInApartments;
         } else {
           // Если property_type не соответствует ни одной таблице, возвращаем из той, где property_type правильный
           console.warn(`⚠️ getById: property_type не соответствует таблицам. Используем houses по умолчанию.`);
-          propertyInHouses.source_table = 'houses';
+          propertyInHouses.source_table = 'properties_houses';
           return propertyInHouses;
         }
       }
@@ -4859,7 +4917,7 @@ export const propertyQueries = {
       // Если найден только в одной таблице, проверяем соответствие property_type
       if (propertyInHouses) {
         if (propertyInHouses.property_type === 'house' || propertyInHouses.property_type === 'villa') {
-          propertyInHouses.source_table = 'houses';
+          propertyInHouses.source_table = 'properties_houses';
           return propertyInHouses;
         } else {
           console.warn(`⚠️ getById: объект ID=${id} найден в houses, но property_type=${propertyInHouses.property_type} не соответствует! Игнорируем.`);
@@ -4868,7 +4926,7 @@ export const propertyQueries = {
       
       if (propertyInApartments) {
         if (propertyInApartments.property_type === 'apartment' || propertyInApartments.property_type === 'commercial') {
-          propertyInApartments.source_table = 'apartments';
+          propertyInApartments.source_table = 'properties_apartments';
           return propertyInApartments;
         } else {
           console.warn(`⚠️ getById: объект ID=${id} найден в apartments, но property_type=${propertyInApartments.property_type} не соответствует! Игнорируем.`);

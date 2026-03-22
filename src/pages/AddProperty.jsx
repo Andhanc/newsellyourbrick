@@ -207,6 +207,8 @@ const AddProperty = () => {
   const [listingFeePromoError, setListingFeePromoError] = useState(null)
   const [listingFeePromoLoading, setListingFeePromoLoading] = useState(false)
   const [userId, setUserId] = useState(null)
+  /** После успешного промо/«оплаты» объявление уже отправлено — не дублировать POST после привязки карты */
+  const listingPublishedAfterFeeRef = useRef(false)
   const [showSuccessModal, setShowSuccessModal] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showVideoLinkModal, setShowVideoLinkModal] = useState(false)
@@ -247,6 +249,8 @@ const AddProperty = () => {
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [selectedCoordinates, setSelectedCoordinates] = useState(null)
   const [mapCenter, setMapCenter] = useState(null) // Будет установлен при загрузке данных или выборе адреса
+  /** Явный зум карты по шагам: страна → город → улица → дом (null = как в прежней логике) */
+  const [locationMapZoom, setLocationMapZoom] = useState(null)
   const [citySearch, setCitySearch] = useState('')
   const [citySuggestions, setCitySuggestions] = useState([])
   const [showCitySuggestions, setShowCitySuggestions] = useState(false)
@@ -811,7 +815,8 @@ const AddProperty = () => {
     setShowPreview(true)
   }
 
-  const handlePublish = async () => {
+  const handlePublish = async (options = {}) => {
+    const { skipSuccessModal = false } = options
     if (!formData.title || photos.length === 0) {
       showNotification('Пожалуйста, заполните заголовок и загрузите хотя бы одно фото')
       return false
@@ -1190,7 +1195,9 @@ const AddProperty = () => {
         // Показываем модальное окно об успешной отправке и стираем черновик
         setIsSubmitting(false)
         clearDraft()
-        setShowSuccessModal(true)
+        if (!skipSuccessModal) {
+          setShowSuccessModal(true)
+        }
         
         return true
       } else {
@@ -1242,6 +1249,7 @@ const AddProperty = () => {
     if (draft.addressSearch !== undefined) setAddressSearch(draft.addressSearch)
     if (draft.selectedCoordinates) setSelectedCoordinates(draft.selectedCoordinates)
     if (draft.mapCenter) setMapCenter(draft.mapCenter)
+    if (typeof draft.locationMapZoom === 'number') setLocationMapZoom(draft.locationMapZoom)
     if (draft.citySearch !== undefined) setCitySearch(draft.citySearch)
     if (draft.currency) setCurrency(draft.currency)
     if (draft.areaUnit) setAreaUnit(draft.areaUnit)
@@ -1269,6 +1277,7 @@ const AddProperty = () => {
         addressSearch,
         selectedCoordinates,
         mapCenter,
+        locationMapZoom,
         citySearch,
         currency,
         areaUnit,
@@ -1294,6 +1303,7 @@ const AddProperty = () => {
     addressSearch,
     selectedCoordinates,
     mapCenter,
+    locationMapZoom,
     citySearch,
     currency,
     areaUnit,
@@ -2006,13 +2016,17 @@ const AddProperty = () => {
     // Закрываем модальное окно привязки карточки
     setShowCardBindingModal(false)
     
-    // Если верификация уже была пройдена, автоматически отправляем объявление на модерацию
+    // Если объявление уже ушло на сервер после промо/оплаты — не создаём дубликат
     const verificationData = localStorage.getItem('verificationSubmitted')
     if (verificationData === 'true') {
-      const success = await handlePublish()
-      if (success) {
-        // Очищаем только флаг верификации (cardBound остается, чтобы карта считалась привязанной навсегда)
+      if (!listingPublishedAfterFeeRef.current) {
+        const success = await handlePublish()
+        if (success) {
+          localStorage.removeItem('verificationSubmitted')
+        }
+      } else {
         localStorage.removeItem('verificationSubmitted')
+        setShowSuccessModal(true)
       }
     }
     
@@ -2254,6 +2268,22 @@ const AddProperty = () => {
       return
     }
     setCurrentStep('location')
+  }
+
+  /** Первый результат Nominatim (для карты по стране/городу) */
+  const fetchNominatimFirst = async (query) => {
+    if (!query || !String(query).trim()) return null
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(String(query).trim())}&limit=1&accept-language=ru&addressdetails=1`,
+        { headers: { 'User-Agent': 'PropertyListingApp/1.0' } }
+      )
+      if (!response.ok) return null
+      const data = await response.json()
+      return data[0] || null
+    } catch {
+      return null
+    }
   }
 
   // Поиск адреса через Nominatim API с учетом города
@@ -2507,6 +2537,28 @@ const AddProperty = () => {
     }
   }, [formData.country])
 
+  // Карта: при вводе города подстраиваем центр под первый геокод (не только по клику в подсказке)
+  useEffect(() => {
+    if (currentStep !== 'location' || !formData.country) return
+    const cityToken = (citySearch || '').split(',')[0].trim()
+    if (cityToken.length < 2) return
+    // Улица уже вводится/выбрана — не перебиваем точку на карте отложенным геокодом города
+    if (addressSearch && addressSearch.trim().length > 0) return
+
+    const timeoutId = setTimeout(async () => {
+      const item = await fetchNominatimFirst(`${cityToken}, ${formData.country}`)
+      if (!item) return
+      const lat = parseFloat(item.lat)
+      const lng = parseFloat(item.lon)
+      if (isNaN(lat) || isNaN(lng)) return
+      setMapCenter([lat, lng])
+      setSelectedCoordinates([lat, lng])
+      setLocationMapZoom(10)
+    }, 750)
+
+    return () => clearTimeout(timeoutId)
+  }, [citySearch, formData.country, currentStep, addressSearch])
+
   // Обработчик выбора города
   const handleCitySelect = (city) => {
     // Заполняем поле полным адресом из подсказки
@@ -2515,6 +2567,13 @@ const AddProperty = () => {
     // Сохраняем только название города в formData.city
     const cityName = fullAddress.split(',')[0].trim()
     setFormData(prev => ({ ...prev, city: cityName }))
+    const lat = parseFloat(city.lat)
+    const lng = parseFloat(city.lon)
+    if (!isNaN(lat) && !isNaN(lng)) {
+      setMapCenter([lat, lng])
+      setSelectedCoordinates([lat, lng])
+      setLocationMapZoom(11)
+    }
     setShowCitySuggestions(false)
     setIsCitySearching(false) // Сбрасываем состояние загрузки
     // Устанавливаем подсказки, чтобы показать галочку
@@ -2628,6 +2687,7 @@ const AddProperty = () => {
     // Сохраняем координаты для отображения на карте
     setSelectedCoordinates(coords)
     setMapCenter(coords)
+    setLocationMapZoom(15)
     setShowSuggestions(false)
     setIsAddressSearching(false) // Сбрасываем состояние загрузки
     // Устанавливаем подсказки, чтобы показать галочку (храним исходный объект)
@@ -2903,27 +2963,31 @@ const AddProperty = () => {
     const coords = [lat, lng]
 
     const addressParts = suggestion.address || {}
-    const country = addressParts.country || ''
-    const city = addressParts.city || addressParts.town || addressParts.village || ''
-    const houseNumber = addressParts.house_number || formData.apartment || ''
-    
-    // Формируем адрес в правильном формате: страна, город, улица, номер дома
-    const formattedAddress = formatShortAddressWithHouse(suggestion)
+    const country = addressParts.country || formData.country || ''
+    const city = addressParts.city || addressParts.town || addressParts.village || formData.city || ''
+    const houseNumber = String(addressParts.house_number || formData.apartment || '').trim()
 
-    setAddressSearch(formattedAddress)
+    const streetShort =
+      formatShortAddress(suggestion) || addressSearch.split(',')[0].trim()
+    const formattedLocation =
+      formatShortAddressWithHouse(suggestion) ||
+      [country, city, streetShort, houseNumber].filter(Boolean).join(', ')
+
+    setAddressSearch(streetShort)
     setSelectedCoordinates(coords)
     setMapCenter(coords)
+    setLocationMapZoom(17)
     setHouseSuggestions([])
     setShowHouseSuggestions(false)
 
     setFormData(prev => ({
       ...prev,
-      address: formattedAddress,
-      location: formattedAddress, // Используем тот же отформатированный адрес (уже содержит номер дома)
+      address: streetShort,
+      location: formattedLocation,
       coordinates: coords,
-      // Не сохраняем country и city отдельно, так как они уже в location
-      // Не сохраняем houseNumber как apartment, так как номер дома уже включен в formattedAddress
-      apartment: '' // Очищаем apartment, так как номер дома уже в адресе
+      country: country || prev.country,
+      city: city || prev.city,
+      apartment: houseNumber
     }))
   }
 
@@ -3303,16 +3367,15 @@ const AddProperty = () => {
   }
 
   // После успешной "оплаты" (промокод принят или оплата станет доступна)
-  // решаем, запускать ли цепочку верификация + привязка карты, или сразу публиковать
+  // Всегда отправляем объявление на модерацию; без привязанной карты дополнительно показываем верификацию + карту (без блокировки сохранения в БД)
   const handleAfterListingFeeSuccess = async () => {
+    setShowListingFeeModal(false)
     const cardBound = localStorage.getItem('cardBound') === 'true'
-
-    if (cardBound) {
-      // Карта уже привязана (и, по текущей логике, верификация уже проходила) — просто публикуем
-      await handlePublish()
-    } else {
-      // Запускаем прежний поток: верификация продавца -> привязка карты -> публикация
-      setShowListingFeeModal(false)
+    const success = await handlePublish({ skipSuccessModal: !cardBound })
+    if (success) {
+      listingPublishedAfterFeeRef.current = true
+    }
+    if (!cardBound) {
       setShowVerificationModal(true)
     }
   }
@@ -4044,12 +4107,23 @@ const AddProperty = () => {
                     </label>
                     <CountrySelect
                       value={formData.country}
-                      onChange={(countryName) => {
+                      onChange={async (countryName) => {
                         setFormData(prev => ({ ...prev, country: countryName }))
-                        // Обновляем поиск города при изменении страны
                         if (citySearch) {
                           searchCity(citySearch, countryName)
                         }
+                        if (!countryName || !String(countryName).trim()) {
+                          setLocationMapZoom(null)
+                          return
+                        }
+                        const item = await fetchNominatimFirst(countryName)
+                        if (!item) return
+                        const lat = parseFloat(item.lat)
+                        const lng = parseFloat(item.lon)
+                        if (isNaN(lat) || isNaN(lng)) return
+                        setMapCenter([lat, lng])
+                        setSelectedCoordinates([lat, lng])
+                        setLocationMapZoom(6)
                       }}
                       placeholder={t('addPropertyLocationCountryPlaceholder')}
                       className="property-location-country-select"
@@ -4086,6 +4160,7 @@ const AddProperty = () => {
                         setCitySuggestions([])
                         setShowCitySuggestions(false)
                         setIsCitySearching(false)
+                        setLocationMapZoom(null)
                       }
                     }}
                     onFocus={() => {
@@ -4151,6 +4226,7 @@ const AddProperty = () => {
                         setShowHouseSuggestions(false)
                         setSelectedCoordinates(null)
                         setMapCenter(null)
+                        setLocationMapZoom(null)
                         setFormData(prev => ({
                           ...prev,
                           address: '',
@@ -4439,10 +4515,12 @@ const AddProperty = () => {
                 // Маркер показываем только если shouldShowMarker = true (т.е. для редактирования с валидными координатами)
                 const finalMapCoords = hasValidCoords ? mapCoords : (mapCoords && Array.isArray(mapCoords) && mapCoords.length === 2 ? mapCoords : null)
                 
-                // Для нового объекта (не редактирование) не передаем zoom, чтобы использовался дефолтный высокий вид
-                // Для редактирования передаем zoom 15 для детального вида
-                const finalZoom = (hasValidCoords && shouldShowMarker) ? 15 : undefined
-                
+                // Зум: явный по шагам (страна/город/улица/дом) или 15 при точке без своего zoom
+                const finalZoom =
+                  locationMapZoom != null
+                    ? locationMapZoom
+                    : (hasValidCoords && shouldShowMarker ? 15 : undefined)
+
                 return (
                   <LocationMap
                     center={finalMapCoords}

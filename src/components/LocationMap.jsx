@@ -8,6 +8,7 @@ const LocationMap = ({ center, zoom = 10, marker }) => {
   const mapRef = useRef(null)
   const markerRef = useRef(null)
   const lastCenterRef = useRef(null) // Для отслеживания последних координат, чтобы не обновлять карту постоянно
+  const lastZoomAppliedRef = useRef(null)
 
   // Логируем полученные пропсы
   useEffect(() => {
@@ -159,40 +160,52 @@ const LocationMap = ({ center, zoom = 10, marker }) => {
     // MapLibre использует формат [lng, lat]
     const lngLat = [lng, lat]
     
-    // Проверяем, изменились ли координаты по сравнению с последним обновлением
     const centerKey = `${lat.toFixed(4)}-${lng.toFixed(4)}`
     if (lastCenterRef.current === centerKey) {
-      // Координаты не изменились, не обновляем карту
       return
     }
-    
-    // Сохраняем текущие координаты
     lastCenterRef.current = centerKey
-    
-    // Ждем, пока карта полностью загрузится
-    if (!mapRef.current.loaded()) {
-      mapRef.current.once('load', () => {
-        updateMapCenterOnce(lngLat)
-      })
-      return
-    }
-    
-    updateMapCenterOnce(lngLat)
-    
-    function updateMapCenterOnce(lngLat) {
+
+    const applyCenter = () => {
       try {
         console.log('🗺️ LocationMap: обновляем центр карты на', lngLat, 'из координат', center)
-        
-        // Используем setCenter и setZoom отдельно для мгновенного перехода
-        // Это позволяет пользователю свободно перемещаться по карте сразу после перехода
-        // без привязки к координатам
         mapRef.current.setCenter(lngLat)
-        mapRef.current.setZoom(zoom || 15)
       } catch (error) {
         console.warn('⚠️ LocationMap: ошибка при обновлении центра карты', error)
       }
     }
-  }, [center, zoom])
+
+    if (!mapRef.current.loaded()) {
+      mapRef.current.once('load', applyCenter)
+      return
+    }
+    applyCenter()
+  }, [center])
+
+  // Зум задаётся родителем; при undefined не трогаем зум (сохраняем вид по умолчанию или после жеста)
+  useEffect(() => {
+    if (!mapRef.current) return
+    if (zoom === undefined || zoom === null) {
+      lastZoomAppliedRef.current = null
+      return
+    }
+
+    const applyZoom = () => {
+      try {
+        if (lastZoomAppliedRef.current === zoom) return
+        lastZoomAppliedRef.current = zoom
+        mapRef.current.setZoom(zoom)
+      } catch (error) {
+        console.warn('⚠️ LocationMap: ошибка при обновлении зума', error)
+      }
+    }
+
+    if (!mapRef.current.loaded()) {
+      mapRef.current.once('load', applyZoom)
+      return
+    }
+    applyZoom()
+  }, [zoom])
 
   // Обновление маркера
   useEffect(() => {

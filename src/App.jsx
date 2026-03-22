@@ -9,6 +9,7 @@ import ClerkAuthSync from './components/ClerkAuthSync'
 import ClerkAuthHandler from './components/ClerkAuthHandler'
 import ToastContainer from './components/ToastContainer'
 import VisitorHeartbeat from './components/VisitorHeartbeat'
+import UserCabinetSseBridge from './components/UserCabinetSseBridge'
 import { validateSession, getUserData } from './services/authService'
 import { prefetchAuctionList } from './services/auctionListCache'
 import './App.css'
@@ -370,6 +371,7 @@ function App() {
       <ReferralCapture />
       <VisitorHeartbeat />
       <SessionValidator onBlockedChange={setIsBlocked} />
+      <UserCabinetSseBridge />
       <AdminSessionCleaner />
       <ClerkAuthSync />
       <ClerkAuthHandler />

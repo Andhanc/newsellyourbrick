@@ -568,13 +568,22 @@ const OwnerDashboard = () => {
   useEffect(() => {
     const handleStatusUpdate = () => {
       if (userId) {
-        // При событии обновления передаем флаг isStatusUpdate = true
         loadVerificationStatus(userId, true)
+        loadUserDocuments(userId)
       }
     }
     
     window.addEventListener('verification-status-update', handleStatusUpdate)
     return () => window.removeEventListener('verification-status-update', handleStatusUpdate)
+  }, [userId])
+
+  // Push из админки (SSE) — обновить список объявлений без перезагрузки и без polling
+  useEffect(() => {
+    const handlePropertiesPush = () => {
+      if (userId) loadUserProperties(userId)
+    }
+    window.addEventListener('owner-properties-update', handlePropertiesPush)
+    return () => window.removeEventListener('owner-properties-update', handlePropertiesPush)
   }, [userId])
 
   // Проверяем, все ли поля заполнены

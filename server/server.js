@@ -201,6 +201,63 @@ app.get('/api/events/auction-updates', (req, res) => {
   });
 });
 
+/** Подписчики SSE по user_id — push в кабинет продавца/покупателя без polling (одобрение в админке) */
+const userCabinetSSEByUserId = new Map();
+
+function broadcastUserCabinetEvent(userId, payload) {
+  const uid = String(userId);
+  const set = userCabinetSSEByUserId.get(uid);
+  if (!set || set.size === 0) return;
+  const line = `data: ${JSON.stringify(payload)}\n\n`;
+  set.forEach((res) => {
+    try {
+      res.write(line);
+      if (typeof res.flush === 'function') res.flush();
+    } catch (e) {
+      set.delete(res);
+    }
+  });
+}
+
+/**
+ * GET /api/events/user-updates?user_id= — SSE: события для кабинета (верификация, модерация объявлений).
+ * Одно долгоживущее соединение на вкладку; сервер пушит только при действиях админа.
+ */
+app.get('/api/events/user-updates', (req, res) => {
+  const raw = req.query.user_id;
+  if (raw === undefined || raw === null || String(raw).trim() === '' || !/^\d+$/.test(String(raw).trim())) {
+    return res.status(400).json({ success: false, error: 'Нужен корректный user_id' });
+  }
+  const uid = String(parseInt(String(raw).trim(), 10));
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.setHeader('X-Accel-Buffering', 'no');
+  res.flushHeaders();
+  if (!userCabinetSSEByUserId.has(uid)) {
+    userCabinetSSEByUserId.set(uid, new Set());
+  }
+  const set = userCabinetSSEByUserId.get(uid);
+  set.add(res);
+  res.write(': connected\n\n');
+  if (typeof res.flush === 'function') res.flush();
+  const heartbeat = setInterval(() => {
+    if (!set.has(res)) return;
+    try {
+      res.write(': hb\n\n');
+      if (typeof res.flush === 'function') res.flush();
+    } catch (e) {
+      clearInterval(heartbeat);
+      set.delete(res);
+    }
+  }, 25000);
+  req.on('close', () => {
+    clearInterval(heartbeat);
+    set.delete(res);
+    if (set.size === 0) userCabinetSSEByUserId.delete(uid);
+  });
+});
+
 // API endpoint для получения конфигурации клиента (runtime переменные)
 app.get('/api/config', (req, res) => {
   res.json({
@@ -1064,6 +1121,11 @@ app.put('/api/users/:id/approve', async (req, res) => {
     }
 
     const updatedUser = userQueries.getById(id);
+    try {
+      broadcastUserCabinetEvent(id, { type: 'user_verification', action: 'approved' });
+    } catch (e) {
+      console.warn('[SSE] user cabinet broadcast:', e.message);
+    }
     res.json({ 
       success: true, 
       data: updatedUser,
@@ -1120,6 +1182,11 @@ app.put('/api/users/:id/reject', async (req, res) => {
     }
 
     const updatedUser = userQueries.getById(id);
+    try {
+      broadcastUserCabinetEvent(id, { type: 'user_verification', action: 'rejected' });
+    } catch (e) {
+      console.warn('[SSE] user cabinet broadcast:', e.message);
+    }
     res.json({ 
       success: true, 
       data: updatedUser,
@@ -1934,6 +2001,11 @@ app.put('/api/documents/:id/approve', async (req, res) => {
     // Если все документы одобрены, обновляем статус пользователя
     if (allApproved) {
       userQueries.update(document.user_id, { is_verified: 1 });
+      try {
+        broadcastUserCabinetEvent(document.user_id, { type: 'user_verification', action: 'approved' });
+      } catch (e) {
+        console.warn('[SSE] user cabinet broadcast:', e.message);
+      }
     }
     
     // Отправляем уведомление пользователю
@@ -8396,35 +8468,35 @@ app.put('/api/properties/:id/approve', (req, res) => {
       return res.status(404).json({ success: false, error: 'Объявление не найдено' });
     }
     
-    // КРИТИЧЕСКАЯ ПРОВЕРКА: если был передан тип, убеждаемся что он ТОЧНО совпадает
+    // Если передан тип: он должен совпадать с записью, кроме пары apartment/commercial (одна таблица)
     if (requestedPropertyType && property.property_type !== requestedPropertyType) {
-      console.error(`❌ Одобрение: КРИТИЧЕСКАЯ ОШИБКА! Запрошен тип ${requestedPropertyType}, но получен ${property.property_type}`);
-      console.error(`   Source table: ${property.source_table || 'unknown'}`);
-      console.error(`   Это означает, что объект находится в неправильной таблице или имеет неправильный property_type.`);
-      console.error(`   Объект НЕ должен быть одобрен, так как это может привести к публикации неправильного объекта.`);
-      
-      // Дополнительная проверка: возможно, объект находится в неправильной таблице
-      const db = getDatabase();
-      try {
-        // Проверяем, есть ли объект с таким ID в правильной таблице
-        const correctTable = (requestedPropertyType === 'apartment' || requestedPropertyType === 'commercial') 
-          ? 'properties_apartments' 
-          : 'properties_houses';
-        const checkInCorrectTable = db.prepare(`SELECT id, property_type FROM ${correctTable} WHERE id = ?`).get(id);
-        
-        if (checkInCorrectTable) {
-          console.error(`   ⚠️ Объект найден в правильной таблице ${correctTable}, но property_type=${checkInCorrectTable.property_type} не соответствует запрошенному ${requestedPropertyType}`);
-        } else {
-          console.error(`   ⚠️ Объект НЕ найден в правильной таблице ${correctTable}`);
+      const bothApartmentTable =
+        (requestedPropertyType === 'apartment' || requestedPropertyType === 'commercial') &&
+        (property.property_type === 'apartment' || property.property_type === 'commercial');
+      if (!bothApartmentTable) {
+        console.error(`❌ Одобрение: Запрошен тип ${requestedPropertyType}, но получен ${property.property_type}`);
+        console.error(`   Source table: ${property.source_table || 'unknown'}`);
+        const db = getDatabase();
+        try {
+          const correctTable = (requestedPropertyType === 'apartment' || requestedPropertyType === 'commercial')
+            ? 'properties_apartments'
+            : 'properties_houses';
+          const checkInCorrectTable = db.prepare(`SELECT id, property_type FROM ${correctTable} WHERE id = ?`).get(id);
+
+          if (checkInCorrectTable) {
+            console.error(`   ⚠️ Объект в ${correctTable}, property_type=${checkInCorrectTable.property_type}`);
+          } else {
+            console.error(`   ⚠️ Объект НЕ найден в ${correctTable}`);
+          }
+        } catch (e) {
+          console.error(`   Ошибка при проверке таблицы:`, e.message);
         }
-      } catch (e) {
-        console.error(`   Ошибка при проверке правильной таблицы:`, e.message);
+
+        return res.status(400).json({
+          success: false,
+          error: `Несоответствие типов: запрошен ${requestedPropertyType}, но найден ${property.property_type}. Объект не может быть одобрен.`
+        });
       }
-      
-      return res.status(400).json({ 
-        success: false, 
-        error: `Несоответствие типов: запрошен ${requestedPropertyType}, но найден ${property.property_type}. Объект не может быть одобрен.` 
-      });
     }
     
     console.log(`✅ Одобрение объявления ID: ${id}, Тип: ${property.property_type}, Аукцион: ${property.is_auction}, Source: ${property.source_table || 'unknown'}`);
@@ -8879,6 +8951,21 @@ app.put('/api/properties/:id/approve', (req, res) => {
         }
       }
 
+      // Кабинет владельца: список объявлений обновится без перезагрузки
+      try {
+        const ownerId = updatedProperty.user_id ?? property.user_id;
+        if (ownerId) {
+          broadcastUserCabinetEvent(ownerId, {
+            type: 'property_moderation',
+            property_id: parseInt(id, 10),
+            moderation_status: 'approved',
+            property_type: updatedProperty.property_type
+          });
+        }
+      } catch (cabErr) {
+        console.warn('[SSE] user cabinet (property):', cabErr.message);
+      }
+
       // ВАЖНО: Финальная проверка - убеждаемся, что возвращаем правильный объект
       if (requestedPropertyType && updatedProperty.property_type !== requestedPropertyType) {
         console.error(`❌ КРИТИЧЕСКАЯ ОШИБКА перед отправкой ответа! Запрошен тип ${requestedPropertyType}, но updatedProperty имеет тип ${updatedProperty.property_type}`);
@@ -8979,6 +9066,19 @@ app.put('/api/properties/:id/reject', (req, res) => {
       });
     } catch (notifError) {
       console.warn('Не удалось создать уведомление:', notifError);
+    }
+
+    try {
+      const pNew = propertyQueries.getById(id);
+      if (pNew && pNew.user_id) {
+        broadcastUserCabinetEvent(pNew.user_id, {
+          type: 'property_moderation',
+          property_id: parseInt(id, 10),
+          moderation_status: 'rejected'
+        });
+      }
+    } catch (cabErr) {
+      console.warn('[SSE] user cabinet (property reject):', cabErr.message);
     }
 
     res.json({ 
