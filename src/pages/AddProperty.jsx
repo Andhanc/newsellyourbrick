@@ -35,7 +35,9 @@ import SellerVerificationModal from '../components/SellerVerificationModal'
 import CardBindingModal from '../components/CardBindingModal'
 import CountrySelect from '../components/CountrySelect'
 import { getUserData } from '../services/authService'
+import { generateListingDescription } from '../services/aiService'
 import { showNotification } from '../utils/toastHelper'
+import AnimatedGenerateButton from '../components/ui/animated-generate-button-shadcn-tailwind'
 import AddPropertyProgress from '../components/AddPropertyProgress'
 import './AddProperty.css'
 
@@ -263,7 +265,11 @@ const AddProperty = () => {
   const [showChangesModal, setShowChangesModal] = useState(false) // Модальное окно с изменениями
   const [savedLocationData, setSavedLocationData] = useState(null) // Сохраняем данные о местоположении для восстановления
   const [isEditingLocation, setIsEditingLocation] = useState(false) // Флаг для режима редактирования адреса
-  
+  const [isGeneratingDescription, setIsGeneratingDescription] = useState(false)
+  const [showDescriptionCompareModal, setShowDescriptionCompareModal] = useState(false)
+  const [descriptionCompareDraft, setDescriptionCompareDraft] = useState('')
+  const [descriptionCompareAi, setDescriptionCompareAi] = useState('')
+
   const currencies = [
     { code: 'USD', symbol: '$', name: 'Доллар США' },
     { code: 'EUR', symbol: '€', name: 'Евро' },
@@ -2206,6 +2212,41 @@ const AddProperty = () => {
     setCurrentStep('property-name')
   }
 
+  const handleGenerateDescription = async () => {
+    const draft = (formData.description || '').trim()
+    if (!draft) {
+      showNotification(t('addPropertyGenerateDescriptionEmpty'), 'warning', 5000)
+      return
+    }
+    setIsGeneratingDescription(true)
+    try {
+      const text = await generateListingDescription(draft, formData.title?.trim() || '')
+      setDescriptionCompareDraft(draft)
+      setDescriptionCompareAi(text)
+      setShowDescriptionCompareModal(true)
+    } catch (e) {
+      console.error(e)
+      showNotification(t('addPropertyGenerateDescriptionError'), 'error', 5000)
+    } finally {
+      setIsGeneratingDescription(false)
+    }
+  }
+
+  const handleAcceptDescriptionCompare = () => {
+    setFormData((prev) => ({ ...prev, description: descriptionCompareAi }))
+    setShowDescriptionCompareModal(false)
+    setDescriptionCompareDraft('')
+    setDescriptionCompareAi('')
+    showNotification(t('addPropertyGenerateDescriptionSuccess'), 'success', 4000)
+  }
+
+  const handleRejectDescriptionCompare = () => {
+    setShowDescriptionCompareModal(false)
+    setDescriptionCompareDraft('')
+    setDescriptionCompareAi('')
+    showNotification(t('addPropertyDescriptionCompareKeptYours'), 'info', 3500)
+  }
+
   // Обработчик перехода к форме после заполнения названия
   const handlePropertyNameContinue = () => {
     if (!formData.title) {
@@ -3843,8 +3884,11 @@ const AddProperty = () => {
               </div>
 
               <div className="property-name-input-group">
-                <label className="property-name-label">{t('addPropertyNameLabelDescription')}</label>
+                <label className="property-name-label" htmlFor="add-property-description">
+                  {t('addPropertyNameLabelDescription')}
+                </label>
                 <textarea
+                  id="add-property-description"
                   name="description"
                   value={formData.description}
                   onChange={handleInputChange}
@@ -3852,6 +3896,18 @@ const AddProperty = () => {
                   placeholder={t('addPropertyNamePlaceholderDescription')}
                   rows="6"
                 />
+                <div className="property-name-generate-row">
+                  <AnimatedGenerateButton
+                    labelIdle={t('addPropertyGenerateDescriptionButton')}
+                    labelActive={t('addPropertyGeneratingDescription')}
+                    generating={isGeneratingDescription}
+                    highlightHueDeg={210}
+                    onClick={handleGenerateDescription}
+                    disabled={isGeneratingDescription}
+                    ariaLabel={t('addPropertyGenerateDescriptionButton')}
+                    className="property-name-generate-btn-wrap"
+                  />
+                </div>
               </div>
 
               <div className="property-name-actions">
@@ -7330,6 +7386,74 @@ const AddProperty = () => {
                 )}
               </>
             )}
+          </div>
+        </div>
+      )}
+
+      {showDescriptionCompareModal && (
+        <div
+          className="description-compare-modal-overlay"
+          onClick={handleRejectDescriptionCompare}
+          role="presentation"
+        >
+          <div
+            className="description-compare-modal"
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="description-compare-title"
+          >
+            <button
+              type="button"
+              className="description-compare-modal__close"
+              onClick={handleRejectDescriptionCompare}
+              aria-label={t('closeModalAria')}
+            >
+              <FiX size={20} />
+            </button>
+            <h2 id="description-compare-title" className="description-compare-modal__title">
+              {t('addPropertyDescriptionCompareTitle')}
+            </h2>
+            <p className="description-compare-modal__subtitle">
+              {t('addPropertyDescriptionCompareSubtitle')}
+            </p>
+            <div className="description-compare-grid">
+              <div className="description-compare-card description-compare-card--yours">
+                <div className="description-compare-card__head">
+                  <span className="description-compare-card__badge">{t('addPropertyDescriptionCompareYours')}</span>
+                </div>
+                <div className="description-compare-card__body">
+                  {descriptionCompareDraft}
+                </div>
+              </div>
+              <div className="description-compare-card description-compare-card--ai">
+                <div className="description-compare-card__head">
+                  <span className="description-compare-card__badge description-compare-card__badge--ai">
+                    {t('addPropertyDescriptionCompareAi')}
+                  </span>
+                </div>
+                <div className="description-compare-card__body">
+                  {descriptionCompareAi}
+                </div>
+              </div>
+            </div>
+            <div className="description-compare-modal__actions">
+              <button
+                type="button"
+                className="description-compare-btn description-compare-btn--reject"
+                onClick={handleRejectDescriptionCompare}
+              >
+                {t('addPropertyDescriptionReject')}
+              </button>
+              <button
+                type="button"
+                className="description-compare-btn description-compare-btn--accept"
+                onClick={handleAcceptDescriptionCompare}
+              >
+                <FiCheck size={18} strokeWidth={2.5} />
+                {t('addPropertyDescriptionAccept')}
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -32,6 +32,8 @@ import { countries as countryList } from '../components/CountrySelect'
 
 import { getApiBaseUrl, getApiBaseUrlSync } from '../utils/apiConfig'
 import FlipCard from '../components/ui/FlipCard'
+import TestDriveSection from '../components/TestDriveSection'
+import { getAuctionMinBidStep } from '../utils/auctionBidStep'
 
 // Используем синхронную версию для инициализации, затем обновим при загрузке
 let API_BASE_URL = getApiBaseUrlSync()
@@ -833,7 +835,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
             
             // Обновляем userLastBid для отслеживания ставок пользователя
             if (userId) {
-              const userBids = data.data.filter(b => b.user_id === userId)
+              const userBids = data.data.filter(b => Number(b.user_id) === Number(userId))
               if (userBids.length > 0) {
                 const userMaxBid = Math.max(...userBids.map(b => b.bid_amount))
                 // Если пользователь сделал новую ставку (стал лидером), сбрасываем флаг
@@ -1173,7 +1175,14 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
         } else if (isOldAuth) {
           const { getUserData } = await import('../services/authService')
           const userData = getUserData()
-          userId = userData?.id
+          const sid = localStorage.getItem('userId')
+          if (sid && /^\d+$/.test(String(sid).trim())) {
+            userId = parseInt(String(sid).trim(), 10)
+          } else if (userData?.id && /^\d+$/.test(String(userData.id).trim())) {
+            userId = parseInt(String(userData.id).trim(), 10)
+          } else {
+            userId = null
+          }
         }
 
         if (!userId) return
@@ -1301,26 +1310,21 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
 
   // Функция для определения значений кнопок быстрых ставок в зависимости от текущей ставки
   const getQuickBidAmounts = () => {
-    // Используем текущую максимальную ставку
-    const startingPrice = isAuctionProperty 
+    const startingPrice = isAuctionProperty
       ? (displayProperty.auction_starting_price || 0)
       : (displayProperty.price || 0)
     const effectiveCurrentBid = currentBid !== null ? currentBid : (displayProperty.currentBid || startingPrice)
-    
-    // Определяем значения кнопок в зависимости от текущей ставки
+    const step0 = getAuctionMinBidStep(effectiveCurrentBid)
     if (effectiveCurrentBid < 300000) {
-      // До 300,000: 1000, 3000, 5000
-      return [1000, 3000, 5000]
-    } else if (effectiveCurrentBid < 500000) {
-      // До 500,000: 5000, 10000, 15000
-      return [5000, 10000, 15000]
-    } else if (effectiveCurrentBid < 1000000) {
-      // До 1,000,000: 15000, 20000, 25000
-      return [15000, 20000, 25000]
-    } else {
-      // От 1,000,000: 25000, 50000, 100000
-      return [25000, 50000, 100000]
+      return [step0, 3000, 5000]
     }
+    if (effectiveCurrentBid < 500000) {
+      return [step0, 10000, 15000]
+    }
+    if (effectiveCurrentBid < 1000000) {
+      return [step0, 20000, 25000]
+    }
+    return [step0, 50000, 100000]
   }
 
   const handleQuickBid = (amount) => {
@@ -1561,6 +1565,9 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
       
       if (data.success) {
         console.log('✅ Ставка успешно создана на сервере:', data)
+        window.dispatchEvent(
+          new CustomEvent('syb-testdrive-refresh', { detail: { propertyId: displayProperty.id } })
+        )
         setBidAmount('')
         
         // Если это тестовый таймер - сбрасываем его до исходного значения
@@ -1783,7 +1790,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                 
                 // Обновляем userLastBid, если пользователь сделал ставку
                 if (userId) {
-                  const userBids = bidsData.data.filter(b => b.user_id === userId)
+                  const userBids = bidsData.data.filter(b => Number(b.user_id) === Number(userId))
                   if (userBids.length > 0) {
                     const userMaxBid = Math.max(...userBids.map(b => b.bid_amount))
                     setUserLastBid(userMaxBid)
@@ -2394,6 +2401,22 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                   </div>
                 ) : null
               })()}
+
+              {!isDebtProperty &&
+                (property.test_drive === 1 ||
+                  property.test_drive === true ||
+                  property.test_drive === '1') && (
+                  <TestDriveSection
+                    propertyId={displayProperty.id}
+                    propertyTable={
+                      property.source_table ||
+                      displayProperty.source_table ||
+                      'properties_apartments'
+                    }
+                    hasTestDrive
+                    i18nLang={currentLang}
+                  />
+                )}
             </div>
 
             {/* Описание и адрес — отдельный блок под подробной информацией (для мобилки, на десктопе скрыт через CSS) */}
@@ -2826,6 +2849,37 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                         ))
                       })()}
                     </div>
+
+                    {isAuctionProperty &&
+                      !isUserLeader &&
+                      !(displayProperty.is_reserved && displayProperty.reserved_until && new Date(displayProperty.reserved_until) > new Date()) &&
+                      (() => {
+                        const startingPrice = displayProperty.auction_starting_price || 0
+                        const effectiveCurrentBid =
+                          currentBid !== null ? currentBid : (displayProperty.currentBid || startingPrice)
+                        const step = getAuctionMinBidStep(effectiveCurrentBid)
+                        const minBid = effectiveCurrentBid + step
+                        const curSym =
+                          displayProperty.currency === 'USD'
+                            ? '$'
+                            : displayProperty.currency === 'EUR'
+                              ? '€'
+                              : displayProperty.currency === 'BYN'
+                                ? 'Br'
+                                : '$'
+                        const locale = currentLang === 'ru' ? 'ru-RU' : 'en-US'
+                        return (
+                          <p
+                            className="bidding-section__min-hint"
+                            style={{ fontSize: '12px', opacity: 0.88, margin: '6px 0 10px', lineHeight: 1.35 }}
+                          >
+                            {t('propertyDetailMinBidHint', {
+                              min: `${curSym}${minBid.toLocaleString(locale)}`,
+                              step: `${curSym}${step.toLocaleString(locale)}`,
+                            })}
+                          </p>
+                        )
+                      })()}
                     
                     <div className="bidding-section__input-wrapper">
                       <span className="bidding-section__currency">

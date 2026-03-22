@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useUser, useClerk, useAuth } from '@clerk/clerk-react'
 import { FaPencilAlt } from 'react-icons/fa'
 import { getUserData, saveUserData, logout, clearUserData } from '../services/authService'
@@ -14,6 +14,7 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
 
 const Profile = () => {
   const navigate = useNavigate()
+  const { pathname } = useLocation()
   const { user, isLoaded: userLoaded } = useUser()
   const { isSignedIn, isLoaded: authLoaded } = useAuth()
   const { signOut } = useClerk()
@@ -1012,12 +1013,20 @@ const Profile = () => {
             </button>
           </div>
           <nav className="sidebar-nav">
-            <Link to="/profile" className="nav-item active">
+            <Link to="/profile" className={pathname === '/profile' ? 'nav-item active' : 'nav-item'}>
               <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
                 <path d="M10 10C12.7614 10 15 7.76142 15 5C15 2.23858 12.7614 0 10 0C7.23858 0 5 2.23858 5 5C5 7.76142 7.23858 10 10 10Z" fill="currentColor"/>
                 <path d="M10 12C5.58172 12 2 13.7909 2 16V20H18V16C18 13.7909 14.4183 12 10 12Z" fill="currentColor"/>
               </svg>
               <span>Профиль</span>
+            </Link>
+            <Link to="/profile/bookings" className={pathname === '/profile/bookings' ? 'nav-item active' : 'nav-item'}>
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="3" y="4" width="14" height="13" rx="2" stroke="currentColor" strokeWidth="1.5"/>
+                <path d="M3 8H17" stroke="currentColor" strokeWidth="1.5"/>
+                <path d="M7 2V5M13 2V5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+              </svg>
+              <span>Мои бронирования</span>
             </Link>
             <Link to="/data" className="nav-item">
               <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
