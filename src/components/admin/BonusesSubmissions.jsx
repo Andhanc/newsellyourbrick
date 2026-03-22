@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { FiExternalLink, FiCheck, FiX, FiGift } from 'react-icons/fi';
 import { getApiBaseUrl } from '../../utils/apiConfig';
+import { notifyBonusSubmissionsChanged } from '../../utils/bonusSubmissionsSync';
 import { showNotification } from '../../utils/toastHelper';
 import './BonusesSubmissions.css';
 
@@ -45,6 +46,7 @@ const BonusesSubmissions = () => {
       const data = await res.json();
       if (data.success) {
         showNotification('Заявка одобрена');
+        notifyBonusSubmissionsChanged();
         await fetchPending();
       } else {
         showNotification(data.message || 'Ошибка', 'error');
@@ -64,6 +66,7 @@ const BonusesSubmissions = () => {
       const data = await res.json();
       if (data.success) {
         showNotification('Заявка отклонена');
+        notifyBonusSubmissionsChanged();
         await fetchPending();
       } else {
         showNotification(data.message || 'Ошибка', 'error');

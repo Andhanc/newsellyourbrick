@@ -44,6 +44,7 @@ import CountrySelect from '../components/CountrySelect'
 import { getUserData } from '../services/authService'
 import { generateListingDescription } from '../services/aiService'
 import { showNotification } from '../utils/toastHelper'
+import { notifyBonusSubmissionsChanged } from '../utils/bonusSubmissionsSync'
 import AnimatedGenerateButton from '../components/ui/animated-generate-button-shadcn-tailwind'
 import AddPropertyProgress from '../components/AddPropertyProgress'
 import './AddProperty.css'
@@ -3348,6 +3349,7 @@ const AddProperty = () => {
       })
       const data = await res.json()
       if (data.success) {
+        notifyBonusSubmissionsChanged()
         setShowListingFeeModal(false)
         setShowPromoInputInFeeModal(false)
         setListingFeePromoCode('')

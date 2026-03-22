@@ -26,7 +26,7 @@ const snappySpring = {
 export default function AuctionMobileLayout({
   properties,
   formatPrice,
-  favorites,
+  isFavorite,
   onFavoriteToggle,
 }) {
   const { t } = useTranslation()
@@ -81,7 +81,7 @@ export default function AuctionMobileLayout({
                 formatPrice={formatPrice}
                 t={t}
                 navigate={navigate}
-                favorites={favorites}
+                isFavorite={isFavorite}
                 onFavoriteToggle={onFavoriteToggle}
               />
             ))}
@@ -314,7 +314,7 @@ function AuctionMobileItem({
   formatPrice,
   t,
   navigate,
-  favorites,
+  isFavorite,
   onFavoriteToggle,
 }) {
   const reduceMotion = useReducedMotion()
@@ -377,7 +377,7 @@ function AuctionMobileItem({
     goDetail()
   }
 
-  const isFav = favorites.has(property.id)
+  const isFav = typeof isFavorite === 'function' ? isFavorite(property) : false
 
   const metaRow =
     hasTimer && (property.area || property.sqft || property.rooms || property.bathrooms) ? (

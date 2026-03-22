@@ -12,6 +12,8 @@ import VisitorHeartbeat from './components/VisitorHeartbeat'
 import UserCabinetSseBridge from './components/UserCabinetSseBridge'
 import { validateSession, getUserData } from './services/authService'
 import { prefetchAuctionList } from './services/auctionListCache'
+import { PropertyFavoritesProvider } from './context/PropertyFavoritesContext'
+import { runDevBackendHintOnce } from './utils/devBackendHint'
 import './App.css'
 import { GlassFilterDefs } from './components/ui/GlassFilterDefs'
 
@@ -356,6 +358,10 @@ function App() {
     prefetchAuctionList()
   }, [])
 
+  useEffect(() => {
+    runDevBackendHintOnce()
+  }, [])
+
   console.log('🔍 App render, isBlocked:', isBlocked);
 
   const tonManifestUrl = typeof window !== 'undefined'
@@ -365,6 +371,7 @@ function App() {
   return (
     <TonConnectUIProvider manifestUrl={tonManifestUrl}>
     <Router>
+      <PropertyFavoritesProvider>
       <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
       <ScrollToTop />
       <MainPageViewportLock />
@@ -421,6 +428,7 @@ function App() {
         </Suspense>
       )}
       <ToastContainer />
+      </PropertyFavoritesProvider>
     </Router>
     </TonConnectUIProvider>
   )

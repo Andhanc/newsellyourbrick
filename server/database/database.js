@@ -825,6 +825,30 @@ export function initDatabase() {
         console.warn('⚠️ Не удалось создать таблицу test_drive_bookings:', tdbErr.message);
       }
 
+      // Избранные объекты (лайки) пользователя
+      try {
+        const favTable = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='property_favorites'").get();
+        if (!favTable) {
+          console.log('🔄 Создание таблицы property_favorites...');
+          db.exec(`
+            CREATE TABLE IF NOT EXISTS property_favorites (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              user_id INTEGER NOT NULL,
+              property_id INTEGER NOT NULL,
+              property_table TEXT NOT NULL,
+              created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+              UNIQUE(user_id, property_id, property_table),
+              FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+            );
+            CREATE INDEX IF NOT EXISTS idx_property_favorites_user ON property_favorites(user_id);
+            CREATE INDEX IF NOT EXISTS idx_property_favorites_property ON property_favorites(property_id, property_table);
+          `);
+          console.log('✅ Таблица property_favorites создана');
+        }
+      } catch (favErr) {
+        console.warn('⚠️ Не удалось создать таблицу property_favorites:', favErr.message);
+      }
+
       // Проверяем и добавляем поле auction_minimum_bid в таблицу properties
       try {
         const propertiesTable = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='properties'").get();
@@ -1678,6 +1702,55 @@ function generateUniqueUserIdNumber() {
   const timestamp = Date.now().toString().slice(-5);
   return timestamp.padStart(5, '0');
 }
+
+function normalizeFavoritePropertyTable(raw) {
+  if (raw == null || raw === '') return 'properties_apartments';
+  const s = String(raw).toLowerCase();
+  if (s === 'apartments' || s === 'properties_apartments') return 'properties_apartments';
+  if (s === 'houses' || s === 'properties_houses') return 'properties_houses';
+  if (s === 'properties') return 'properties';
+  return 'properties_apartments';
+}
+
+/** Лайки / избранное по объектам недвижимости (user_id + property_id + таблица) */
+export const favoriteQueries = {
+  normalizePropertyTable: normalizeFavoritePropertyTable,
+
+  listForUser: (userId) => {
+    const db = getDatabase();
+    const uid = parseInt(userId, 10);
+    if (!uid) return [];
+    return db
+      .prepare('SELECT property_id, property_table FROM property_favorites WHERE user_id = ? ORDER BY created_at DESC')
+      .all(uid);
+  },
+
+  add: (userId, propertyId, propertyTable) => {
+    const db = getDatabase();
+    const uid = parseInt(userId, 10);
+    const pid = parseInt(propertyId, 10);
+    const tbl = normalizeFavoritePropertyTable(propertyTable);
+    if (!uid || !pid) return { changes: 0 };
+    return db
+      .prepare(
+        'INSERT OR IGNORE INTO property_favorites (user_id, property_id, property_table) VALUES (?, ?, ?)'
+      )
+      .run(uid, pid, tbl);
+  },
+
+  remove: (userId, propertyId, propertyTable) => {
+    const db = getDatabase();
+    const uid = parseInt(userId, 10);
+    const pid = parseInt(propertyId, 10);
+    const tbl = normalizeFavoritePropertyTable(propertyTable);
+    if (!uid || !pid) return { changes: 0 };
+    return db
+      .prepare(
+        'DELETE FROM property_favorites WHERE user_id = ? AND property_id = ? AND property_table = ?'
+      )
+      .run(uid, pid, tbl);
+  },
+};
 
 // Экспортируем функции для работы с пользователями
 export const userQueries = {

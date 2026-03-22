@@ -656,6 +656,73 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
     }
   }, [displayProperty.test_timer_end_date, displayProperty.test_timer_duration]);
 
+  // SSE: новая ставка по объекту — сервер пушит событие, клиент один раз подгружает ставки (без polling)
+  useEffect(() => {
+    if (!displayProperty?.id || !isAuctionProperty) return
+
+    let es = null
+    let reconnectTimer = null
+    let cancelled = false
+
+    const connect = async () => {
+      if (reconnectTimer) {
+        clearTimeout(reconnectTimer)
+        reconnectTimer = null
+      }
+      if (es) {
+        es.close()
+        es = null
+      }
+      if (cancelled) return
+
+      const base = await getApiBaseUrl()
+      API_BASE_URL = base
+      const normalized = base.replace(/\/$/, '')
+      const path = `${normalized}/events/property-bids?property_id=${displayProperty.id}`
+      const url = base.startsWith('http') ? path : `${window.location.origin}${path}`
+
+      es = new EventSource(url)
+
+      es.onopen = () => {
+        if (reconnectTimer) {
+          clearTimeout(reconnectTimer)
+          reconnectTimer = null
+        }
+      }
+
+      es.onmessage = (event) => {
+        try {
+          if (typeof event.data === 'string' && event.data.startsWith(':')) return
+          const data = JSON.parse(event.data)
+          if (data.type === 'bid_placed' && Number(data.property_id) === Number(displayProperty.id)) {
+            window.dispatchEvent(new Event('property-bid-sse'))
+          }
+        } catch (_) {}
+      }
+
+      es.onerror = () => {
+        if (cancelled) return
+        if (es) {
+          es.close()
+          es = null
+        }
+        if (reconnectTimer) return
+        reconnectTimer = setTimeout(() => {
+          reconnectTimer = null
+          connect()
+        }, 4000)
+      }
+    }
+
+    connect()
+
+    return () => {
+      cancelled = true
+      if (reconnectTimer) clearTimeout(reconnectTimer)
+      if (es) es.close()
+    }
+  }, [displayProperty.id, isAuctionProperty])
+
   // Загружаем ставки для всех объектов (аукционных и обычных) и обновляем текущую ставку
   useEffect(() => {
     if (!displayProperty.id) return
@@ -913,8 +980,13 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
 
     loadBids()
     const onFocus = () => loadBids()
+    const onRemoteBid = () => loadBids()
     window.addEventListener('focus', onFocus)
-    return () => window.removeEventListener('focus', onFocus)
+    window.addEventListener('property-bid-sse', onRemoteBid)
+    return () => {
+      window.removeEventListener('focus', onFocus)
+      window.removeEventListener('property-bid-sse', onRemoteBid)
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [displayProperty.id])
 

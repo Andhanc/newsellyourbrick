@@ -2,7 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import axios from 'axios';
 import { initDatabase, closeDatabase, getDatabase, schemaCache } from './database/database.js';
-import { userQueries, documentQueries, notificationQueries, testDriveBookingQueries, administratorQueries, debtReasonQueries, debtDocumentQueries, whatsappUserQueries, purchaseRequestQueries, assistantLeadQueries, apartmentQueries, houseQueries, propertyQueries } from './database/database.js';
+import { userQueries, documentQueries, notificationQueries, testDriveBookingQueries, administratorQueries, debtReasonQueries, debtDocumentQueries, whatsappUserQueries, purchaseRequestQueries, assistantLeadQueries, apartmentQueries, houseQueries, propertyQueries, favoriteQueries } from './database/database.js';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import multer from 'multer';
@@ -255,6 +255,62 @@ app.get('/api/events/user-updates', (req, res) => {
     clearInterval(heartbeat);
     set.delete(res);
     if (set.size === 0) userCabinetSSEByUserId.delete(uid);
+  });
+});
+
+/** Подписчики SSE по property_id — push при новой ставке (страница объекта без polling) */
+const propertyBidSSEByPropertyId = new Map();
+
+function broadcastPropertyBidEvent(propertyId, payload) {
+  const key = String(propertyId);
+  const set = propertyBidSSEByPropertyId.get(key);
+  if (!set || set.size === 0) return;
+  const line = `data: ${JSON.stringify(payload)}\n\n`;
+  set.forEach((res) => {
+    try {
+      res.write(line);
+      if (typeof res.flush === 'function') res.flush();
+    } catch (e) {
+      set.delete(res);
+    }
+  });
+}
+
+/**
+ * GET /api/events/property-bids?property_id= — SSE: обновление ставок на странице объекта при новой ставке.
+ */
+app.get('/api/events/property-bids', (req, res) => {
+  const raw = req.query.property_id;
+  if (raw === undefined || raw === null || String(raw).trim() === '' || !/^\d+$/.test(String(raw).trim())) {
+    return res.status(400).json({ success: false, error: 'Нужен корректный property_id' });
+  }
+  const pid = String(parseInt(String(raw).trim(), 10));
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.setHeader('X-Accel-Buffering', 'no');
+  res.flushHeaders();
+  if (!propertyBidSSEByPropertyId.has(pid)) {
+    propertyBidSSEByPropertyId.set(pid, new Set());
+  }
+  const set = propertyBidSSEByPropertyId.get(pid);
+  set.add(res);
+  res.write(': connected\n\n');
+  if (typeof res.flush === 'function') res.flush();
+  const heartbeat = setInterval(() => {
+    if (!set.has(res)) return;
+    try {
+      res.write(': hb\n\n');
+      if (typeof res.flush === 'function') res.flush();
+    } catch (e) {
+      clearInterval(heartbeat);
+      set.delete(res);
+    }
+  }, 20000);
+  req.on('close', () => {
+    clearInterval(heartbeat);
+    set.delete(res);
+    if (set.size === 0) propertyBidSSEByPropertyId.delete(pid);
   });
 });
 
@@ -793,6 +849,73 @@ app.get('/api/users/:id', (req, res) => {
     const userWithoutPassword = removePasswordFromUser(user);
     res.json({ success: true, data: userWithoutPassword });
   } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * GET /api/users/:userId/favorites — список избранных объектов (property_id + property_table)
+ */
+app.get('/api/users/:userId/favorites', (req, res) => {
+  try {
+    const userId = parseInt(req.params.userId, 10);
+    if (!userId) {
+      return res.status(400).json({ success: false, error: 'Некорректный user id' });
+    }
+    if (!userQueries.getById(userId)) {
+      return res.status(404).json({ success: false, error: 'Пользователь не найден' });
+    }
+    const data = favoriteQueries.listForUser(userId);
+    res.json({ success: true, data });
+  } catch (error) {
+    console.error('GET /api/users/:userId/favorites:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * POST /api/users/:userId/favorites — добавить в избранное
+ * body: { property_id, property_table }
+ */
+app.post('/api/users/:userId/favorites', (req, res) => {
+  try {
+    const userId = parseInt(req.params.userId, 10);
+    if (!userId) {
+      return res.status(400).json({ success: false, error: 'Некорректный user id' });
+    }
+    if (!userQueries.getById(userId)) {
+      return res.status(404).json({ success: false, error: 'Пользователь не найден' });
+    }
+    const { property_id, property_table } = req.body || {};
+    if (property_id == null) {
+      return res.status(400).json({ success: false, error: 'Укажите property_id' });
+    }
+    const result = favoriteQueries.add(userId, property_id, property_table);
+    res.json({ success: true, added: result.changes > 0 });
+  } catch (error) {
+    console.error('POST /api/users/:userId/favorites:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * DELETE /api/users/:userId/favorites — убрать из избранного
+ * body: { property_id, property_table }
+ */
+app.delete('/api/users/:userId/favorites', (req, res) => {
+  try {
+    const userId = parseInt(req.params.userId, 10);
+    if (!userId) {
+      return res.status(400).json({ success: false, error: 'Некорректный user id' });
+    }
+    const { property_id, property_table } = req.body || {};
+    if (property_id == null) {
+      return res.status(400).json({ success: false, error: 'Укажите property_id' });
+    }
+    const result = favoriteQueries.remove(userId, property_id, property_table);
+    res.json({ success: true, removed: result.changes > 0 });
+  } catch (error) {
+    console.error('DELETE /api/users/:userId/favorites:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });
@@ -10033,6 +10156,13 @@ app.post('/api/bids', (req, res) => {
         console.warn('Не удалось добавить поле auction_minimum_bid:', addError.message);
       }
     }
+
+    broadcastPropertyBidEvent(propertyIdNum, {
+      type: 'bid_placed',
+      property_id: propertyIdNum,
+      bid_amount: bidAmountNum,
+      minimum_bid: newMinimumBid,
+    });
     
     res.json({
       success: true,

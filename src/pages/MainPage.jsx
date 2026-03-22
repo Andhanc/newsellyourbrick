@@ -66,6 +66,7 @@ import { getUserData, clearUserData, isAuthenticated } from '../services/authSer
 import { syncAssistantLead } from '../services/assistantLeadService'
 
 import { getApiBaseUrl, getApiBaseUrlSync } from '../utils/apiConfig'
+import { usePropertyFavorites } from '../context/PropertyFavoritesContext'
 
 // Используем синхронную версию для инициализации, затем обновим при загрузке
 let API_BASE_URL = getApiBaseUrlSync()
@@ -373,57 +374,10 @@ function MainPage() {
   const location = useLocation()
   const { t, i18n } = useTranslation()
   const { user, isLoaded: userLoaded } = useUser()
+  const { isFavorite, toggleFavorite } = usePropertyFavorites()
   const [selectedLocation, setSelectedLocation] = useState(resortLocations[0])
   const [isLocationOpen, setIsLocationOpen] = useState(false)
   const [propertyMode, setPropertyMode] = useState('buy') // 'rent' для аренды, 'buy' для покупки
-  const [favoriteProperties, setFavoriteProperties] = useState(() => {
-    // Загружаем из localStorage
-    const savedFavorites = localStorage.getItem('favoriteProperties')
-    let initialFavorites = new Map()
-    
-    if (savedFavorites) {
-      try {
-        const parsed = JSON.parse(savedFavorites)
-        initialFavorites = new Map(Object.entries(parsed))
-      } catch (e) {
-        console.error('Ошибка при загрузке избранного:', e)
-      }
-    }
-    
-    // Инициализируем все свойства, если их еще нет
-    recommendedProperties.forEach((property) => {
-      if (!initialFavorites.has(`recommended-${property.id}`)) {
-        initialFavorites.set(`recommended-${property.id}`, false)
-      }
-    })
-    nearbyProperties.forEach((property) => {
-      if (!initialFavorites.has(`nearby-${property.id}`)) {
-        initialFavorites.set(`nearby-${property.id}`, false)
-      }
-    })
-    apartmentsData.forEach((property) => {
-      if (!initialFavorites.has(`apartment-${property.id}`)) {
-        initialFavorites.set(`apartment-${property.id}`, false)
-      }
-    })
-    villasData.forEach((property) => {
-      if (!initialFavorites.has(`villa-${property.id}`)) {
-        initialFavorites.set(`villa-${property.id}`, false)
-      }
-    })
-    flatsData.forEach((property) => {
-      if (!initialFavorites.has(`flat-${property.id}`)) {
-        initialFavorites.set(`flat-${property.id}`, false)
-      }
-    })
-    townhousesData.forEach((property) => {
-      if (!initialFavorites.has(`townhouse-${property.id}`)) {
-        initialFavorites.set(`townhouse-${property.id}`, false)
-      }
-    })
-    
-    return initialFavorites
-  })
   const [activeNav, setActiveNav] = useState('home')
   const [contactForm, setContactForm] = useState({
     email: '',
@@ -1635,29 +1589,6 @@ function MainPage() {
     setIsLocationOpen(false)
   }
 
-  const toggleFavorite = (category, id) => {
-    // Проверяем авторизацию через Clerk или старую систему
-    const isClerkAuth = user && userLoaded
-    const isOldAuth = isAuthenticated()
-    
-    if (!isClerkAuth && !isOldAuth) {
-      showNotification('Пожалуйста, войдите в систему, чтобы добавлять объявления в избранное')
-      return
-    }
-    
-    const key = `${category}-${id}`
-    setFavoriteProperties((prev) => {
-      const updated = new Map(prev)
-      updated.set(key, !prev.get(key))
-      
-      // Сохраняем в localStorage
-      const obj = Object.fromEntries(updated)
-      localStorage.setItem('favoriteProperties', JSON.stringify(obj))
-      
-      return updated
-    })
-  }
-
   const handleContactFormChange = (e) => {
     const { name, value } = e.target
     setContactForm((prev) => ({
@@ -2031,12 +1962,7 @@ function MainPage() {
 
   const togglePropertyFavorite = () => {
     if (selectedProperty) {
-      const key = `${selectedProperty.category}-${selectedProperty.id}`
-      setFavoriteProperties((prev) => {
-        const updated = new Map(prev)
-        updated.set(key, !prev.get(key))
-        return updated
-      })
+      toggleFavorite(selectedProperty, selectedProperty.category)
     }
   }
 
@@ -3096,12 +3022,12 @@ function MainPage() {
                         <button
                           type="button"
                           className={`property-favorite ${
-                            favoriteProperties.get(`apartment-${apartment.id}`) ? 'active' : ''
+                            isFavorite(apartment, 'apartment') ? 'active' : ''
                           }`}
                           onClick={(e) => {
                             e.preventDefault()
                             e.stopPropagation()
-                            toggleFavorite('apartment', apartment.id)
+                            toggleFavorite(apartment, 'apartment')
                           }}
                         >
                           <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
@@ -3109,7 +3035,7 @@ function MainPage() {
                               d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" 
                               stroke="currentColor" 
                               strokeWidth="2" 
-                              fill={favoriteProperties.get(`apartment-${apartment.id}`) ? "currentColor" : "none"}
+                              fill={isFavorite(apartment, 'apartment') ? "currentColor" : "none"}
                             />
                           </svg>
                         </button>
@@ -3206,12 +3132,12 @@ function MainPage() {
                         <button
                           type="button"
                           className={`property-favorite ${
-                            favoriteProperties.get(`villa-${villa.id}`) ? 'active' : ''
+                            isFavorite(villa, 'villa') ? 'active' : ''
                           }`}
                           onClick={(e) => {
                             e.preventDefault()
                             e.stopPropagation()
-                            toggleFavorite('villa', villa.id)
+                            toggleFavorite(villa, 'villa')
                           }}
                         >
                           <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
@@ -3219,7 +3145,7 @@ function MainPage() {
                               d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" 
                               stroke="currentColor" 
                               strokeWidth="2" 
-                              fill={favoriteProperties.get(`villa-${villa.id}`) ? "currentColor" : "none"}
+                              fill={isFavorite(villa, 'villa') ? "currentColor" : "none"}
                             />
                           </svg>
                         </button>
@@ -3312,12 +3238,12 @@ function MainPage() {
                         <button
                           type="button"
                           className={`property-favorite ${
-                            favoriteProperties.get(`flat-${flat.id}`) ? 'active' : ''
+                            isFavorite(flat, 'flat') ? 'active' : ''
                           }`}
                           onClick={(e) => {
                             e.preventDefault()
                             e.stopPropagation()
-                            toggleFavorite('flat', flat.id)
+                            toggleFavorite(flat, 'flat')
                           }}
                         >
                           <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
@@ -3325,7 +3251,7 @@ function MainPage() {
                               d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" 
                               stroke="currentColor" 
                               strokeWidth="2" 
-                              fill={favoriteProperties.get(`flat-${flat.id}`) ? "currentColor" : "none"}
+                              fill={isFavorite(flat, 'flat') ? "currentColor" : "none"}
                             />
                           </svg>
                         </button>
@@ -3427,12 +3353,12 @@ function MainPage() {
                         <button
                           type="button"
                           className={`property-favorite ${
-                            favoriteProperties.get(`townhouse-${townhouse.id}`) ? 'active' : ''
+                            isFavorite(townhouse, 'townhouse') ? 'active' : ''
                           }`}
                           onClick={(e) => {
                             e.preventDefault()
                             e.stopPropagation()
-                            toggleFavorite('townhouse', townhouse.id)
+                            toggleFavorite(townhouse, 'townhouse')
                           }}
                         >
                           <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
@@ -3440,7 +3366,7 @@ function MainPage() {
                               d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" 
                               stroke="currentColor" 
                               strokeWidth="2" 
-                              fill={favoriteProperties.get(`townhouse-${townhouse.id}`) ? "currentColor" : "none"}
+                              fill={isFavorite(townhouse, 'townhouse') ? "currentColor" : "none"}
                             />
                           </svg>
                         </button>
@@ -3674,12 +3600,12 @@ function MainPage() {
                     <button
                       type="button"
                       className={`property-favorite ${
-                        favoriteProperties.get(`recommended-${property.id}`) ? 'active' : ''
+                        isFavorite(property, 'recommended') ? 'active' : ''
                       }`}
                       onClick={(e) => {
                         e.preventDefault()
                         e.stopPropagation()
-                        toggleFavorite('recommended', property.id)
+                        toggleFavorite(property, 'recommended')
                       }}
                     >
                       <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
@@ -3687,7 +3613,7 @@ function MainPage() {
                           d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" 
                           stroke="currentColor" 
                           strokeWidth="2" 
-                          fill={favoriteProperties.get(`recommended-${property.id}`) ? "currentColor" : "none"}
+                          fill={isFavorite(property, 'recommended') ? "currentColor" : "none"}
                         />
                       </svg>
                     </button>
@@ -3774,12 +3700,12 @@ function MainPage() {
                     <button
                       type="button"
                       className={`property-favorite ${
-                        favoriteProperties.get(`nearby-${property.id}`) ? 'active' : ''
+                        isFavorite(property, 'nearby') ? 'active' : ''
                       }`}
                       onClick={(e) => {
                         e.preventDefault()
                         e.stopPropagation()
-                        toggleFavorite('nearby', property.id)
+                        toggleFavorite(property, 'nearby')
                       }}
                     >
                       <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
@@ -3787,7 +3713,7 @@ function MainPage() {
                           d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" 
                           stroke="currentColor" 
                           strokeWidth="2" 
-                          fill={favoriteProperties.get(`nearby-${property.id}`) ? "currentColor" : "none"}
+                          fill={isFavorite(property, 'nearby') ? "currentColor" : "none"}
                         />
                       </svg>
                     </button>

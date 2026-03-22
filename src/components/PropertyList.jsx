@@ -1,12 +1,11 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { useUser } from '@clerk/clerk-react'
 import { MdBed, MdOutlineBathtub, MdDirectionsCar } from 'react-icons/md'
 import { BiArea } from 'react-icons/bi'
 import { properties } from '../data/properties'
-import { isAuthenticated } from '../services/authService'
-import { showNotification } from '../utils/toastHelper'
+import { usePropertyFavorites } from '../context/PropertyFavoritesContext'
+import { hasDbBackedProperty } from '../utils/propertyFavoriteKey'
 import { hasBuyNowOption } from '../utils/hasBuyNowOption'
 import PropertyTimer from './PropertyTimer'
 import CircularTimer from './CircularTimer'
@@ -35,7 +34,7 @@ const PropertyList = ({
   const { t } = useTranslation()
   const navigate = useNavigate()
   const location = useLocation()
-  const { user, isLoaded: userLoaded } = useUser()
+  const { isFavorite, toggleFavorite } = usePropertyFavorites()
   const [searchQuery, setSearchQuery] = useState('')
   const [showFilters, setShowFilters] = useState(false)
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false)
@@ -106,50 +105,10 @@ const PropertyList = ({
       }, 300) // Небольшая задержка для применения фильтров
     }
   }, [location.search])
-  const [favorites, setFavorites] = useState(() => {
-    // Загружаем из localStorage
-    const savedFavorites = localStorage.getItem('favoriteProperties')
-    if (savedFavorites) {
-      try {
-        const parsed = JSON.parse(savedFavorites)
-        const favoritesMap = new Map(Object.entries(parsed))
-        const favoriteIds = new Set()
-        // Проверяем все свойства из localStorage, не только текущие
-        favoritesMap.forEach((value, key) => {
-          if (value && key.startsWith('property-')) {
-            const id = key.replace('property-', '')
-            favoriteIds.add(id)
-          }
-        })
-        return favoriteIds
-      } catch (e) {
-        console.error('Ошибка при загрузке избранного:', e)
-      }
-    }
-    return new Set()
-  })
-  
-  // Обновляем избранное при изменении auctionProperties
-  useEffect(() => {
-    const savedFavorites = localStorage.getItem('favoriteProperties')
-    if (savedFavorites) {
-      try {
-        const parsed = JSON.parse(savedFavorites)
-        const favoritesMap = new Map(Object.entries(parsed))
-        const favoriteIds = new Set()
-        favoritesMap.forEach((value, key) => {
-          if (value && key.startsWith('property-')) {
-            const id = key.replace('property-', '')
-            favoriteIds.add(id)
-          }
-        })
-        setFavorites(favoriteIds)
-      } catch (e) {
-        console.error('Ошибка при обновлении избранного:', e)
-      }
-    }
-  }, [auctionProperties])
   const [visibleCount, setVisibleCount] = useState(9)
+
+  const isPropertyLiked = (property) =>
+    isFavorite(property, hasDbBackedProperty(property) ? undefined : 'property')
 
   const formatPrice = (price) => {
     if (price >= 1000000) {
@@ -242,41 +201,8 @@ const PropertyList = ({
   const handleFavoriteToggle = (property, e) => {
     e.preventDefault()
     e.stopPropagation()
-
-    const isClerkAuth = user && userLoaded
-    const isOldAuth = isAuthenticated()
-    const isFavorite = favorites.has(property.id)
-
-    if (!isFavorite && !isClerkAuth && !isOldAuth) {
-      showNotification(t('loginToAddFavorites'))
-      return false
-    }
-
-    const wasAdding = !isFavorite
-    const newFavorites = new Set(favorites)
-
-    if (isFavorite) {
-      newFavorites.delete(property.id)
-    } else {
-      newFavorites.add(property.id)
-    }
-    setFavorites(newFavorites)
-
-    const savedFavorites = localStorage.getItem('favoriteProperties')
-    let favoritesMap = new Map()
-    if (savedFavorites) {
-      try {
-        const parsed = JSON.parse(savedFavorites)
-        favoritesMap = new Map(Object.entries(parsed))
-      } catch (err) {
-        console.error('Ошибка:', err)
-      }
-    }
-    favoritesMap.set(`property-${property.id}`, !isFavorite)
-    const obj = Object.fromEntries(favoritesMap)
-    localStorage.setItem('favoriteProperties', JSON.stringify(obj))
-
-    return wasAdding
+    const mockCat = hasDbBackedProperty(property) ? null : 'property'
+    return toggleFavorite(property, mockCat || 'property')
   }
 
   return (
@@ -453,7 +379,7 @@ const PropertyList = ({
                 <AuctionMobileLayout
                   properties={filteredProperties.slice(0, visibleCount)}
                   formatPrice={formatPrice}
-                  favorites={favorites}
+                  isFavorite={isPropertyLiked}
                   onFavoriteToggle={handleFavoriteToggle}
                 />
               </div>
@@ -593,7 +519,7 @@ const PropertyList = ({
                     </div>
                   )}
                   <button 
-                    className={`property-favorite ${favorites.has(property.id) ? 'active' : ''}`}
+                    className={`property-favorite ${isPropertyLiked(property) ? 'active' : ''}`}
                     onClick={(e) => handleFavoriteToggle(property, e)}
                   >
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
@@ -601,7 +527,7 @@ const PropertyList = ({
                         d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" 
                         stroke="currentColor" 
                         strokeWidth="2" 
-                        fill={favorites.has(property.id) ? "currentColor" : "none"}
+                        fill={isPropertyLiked(property) ? "currentColor" : "none"}
                       />
                     </svg>
                   </button>

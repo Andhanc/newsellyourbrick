@@ -7,6 +7,7 @@
   },
   "scripts": {
     "dev": "node node_modules/vite/bin/vite.js",
+    "dev:all": "concurrently --names \"SERVER,VITE\" --prefix-colors \"blue,green\" \"npm run server\" \"npm run dev\"",
     "dev:force": "node node_modules/vite/bin/vite.js --force",
     "clean:vite": "node scripts/clean-vite.mjs",
     "dev:clean": "npm run clean:vite && npm run dev:force",

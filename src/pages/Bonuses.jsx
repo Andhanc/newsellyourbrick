@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate, useSearchParams, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { FiChevronDown, FiCheck, FiGift, FiExternalLink, FiCopy, FiShoppingCart, FiUser, FiArrowLeft, FiUserPlus } from 'react-icons/fi'
@@ -6,6 +6,7 @@ import { FaInstagram, FaTiktok, FaGift, FaStar } from 'react-icons/fa'
 import { MdCardGiftcard } from 'react-icons/md'
 import Header from '../components/Header'
 import { getUserData } from '../services/authService'
+import { subscribeBonusSubmissionsChanged } from '../utils/bonusSubmissionsSync'
 import './Bonuses.css'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
@@ -71,14 +72,10 @@ const Bonuses = () => {
     }
   }, [])
 
-  useEffect(() => {
-    if (userId) loadSubmissions()
-  }, [userId])
-
-  const loadSubmissions = async () => {
+  const loadSubmissions = useCallback(async () => {
     if (!userId) return
     try {
-      const res = await fetch(`${API_BASE_URL}/bonus-submissions/user/${userId}`)
+      const res = await fetch(`${API_BASE_URL}/bonus-submissions/user/${userId}`, { cache: 'no-store' })
       if (res.ok) {
         const data = await res.json()
         if (data.success && data.data) {
@@ -96,7 +93,16 @@ const Bonuses = () => {
     } catch (e) {
       console.error('Load bonus submissions:', e)
     }
-  }
+  }, [userId])
+
+  useEffect(() => {
+    if (userId) loadSubmissions()
+  }, [userId, loadSubmissions])
+
+  useEffect(() => {
+    if (!userId) return
+    return subscribeBonusSubmissionsChanged(loadSubmissions)
+  }, [userId, loadSubmissions])
 
   const handleSubmit = async (taskId) => {
     const link = (linkInputs[taskId] || '').trim()
@@ -124,7 +130,18 @@ const Bonuses = () => {
         }),
       })
       const data = await res.json()
-      if (data.success) {
+      if (data.success && data.data) {
+        const row = data.data
+        setSubmissions((prev) => ({
+          ...prev,
+          [taskId]: {
+            status: row.status,
+            link,
+            promo_code: task.promoCode,
+            id: row.id,
+            used_at: prev[taskId]?.used_at ?? null,
+          },
+        }))
         setLinkInputs((prev) => ({ ...prev, [taskId]: '' }))
         await loadSubmissions()
         setExpandedTask(null)
