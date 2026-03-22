@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { validateLuhn, detectCardType } from '../utils/cardValidation'
+import { validateLuhn, detectCardType, validateCardExpiryRealtime } from '../utils/cardValidation'
 import { showNotification } from '../utils/toastHelper'
 import './CardTopUpModal.css'
 
@@ -9,6 +9,7 @@ const CardTopUpModal = ({ isOpen, onClose, userId, apiBaseUrl, onSuccess }) => {
   const [cardCvv, setCardCvv] = useState('')
   const [cardType, setCardType] = useState(null)
   const [cardError, setCardError] = useState('')
+  const [expiryError, setExpiryError] = useState('')
   const [isCardFlipped, setIsCardFlipped] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -19,6 +20,7 @@ const CardTopUpModal = ({ isOpen, onClose, userId, apiBaseUrl, onSuccess }) => {
       setCardCvv('')
       setCardType(null)
       setCardError('')
+      setExpiryError('')
       setIsCardFlipped(false)
       setIsSubmitting(false)
     }
@@ -27,8 +29,17 @@ const CardTopUpModal = ({ isOpen, onClose, userId, apiBaseUrl, onSuccess }) => {
   useEffect(() => {
     const cleaned = cardNumber.replace(/\D/g, '')
     const hasNumber = cleaned.length >= 13
-    const hasExpiry = cardExpiry.length === 5
-    if (hasNumber && hasExpiry && !isCardFlipped) {
+    const expiryFormatOk =
+      cardExpiry.length === 5 && /^\d{2}\/\d{2}$/.test(cardExpiry)
+    const expiryValid = expiryFormatOk && !validateCardExpiryRealtime(cardExpiry)
+
+    if (isCardFlipped && !expiryValid) {
+      setIsCardFlipped(false)
+      setCardCvv('')
+      return
+    }
+
+    if (hasNumber && expiryValid && !isCardFlipped) {
       const t = setTimeout(() => setIsCardFlipped(true), 300)
       return () => clearTimeout(t)
     }
@@ -42,6 +53,7 @@ const CardTopUpModal = ({ isOpen, onClose, userId, apiBaseUrl, onSuccess }) => {
       validateLuhn(cleaned) &&
       cardExpiry.length === 5 &&
       /^\d{2}\/\d{2}$/.test(cardExpiry) &&
+      !validateCardExpiryRealtime(cardExpiry) &&
       cardCvv.length >= 3 &&
       cardCvv.length <= 4
     )
@@ -72,18 +84,9 @@ const CardTopUpModal = ({ isOpen, onClose, userId, apiBaseUrl, onSuccess }) => {
     if (!canSubmit() || isSubmitting || !userId || !apiBaseUrl) return
 
     const cleaned = cardNumber.replace(/\D/g, '')
-    const [month, year] = cardExpiry.split('/')
-    const expiryMonth = parseInt(month, 10)
-    const expiryYear = parseInt(year, 10)
-    const now = new Date()
-    const currentYear = now.getFullYear() % 100
-    const currentMonth = now.getMonth() + 1
-    if (expiryMonth < 1 || expiryMonth > 12) {
-      setCardError('Месяц должен быть от 01 до 12')
-      return
-    }
-    if (expiryYear < currentYear || (expiryYear === currentYear && expiryMonth < currentMonth)) {
-      setCardError('Срок действия карты истек')
+    const expiryMsg = validateCardExpiryRealtime(cardExpiry)
+    if (expiryMsg) {
+      setCardError(expiryMsg)
       return
     }
     if (detectCardType(cleaned) === 'UNKNOWN') {
@@ -178,12 +181,15 @@ const CardTopUpModal = ({ isOpen, onClose, userId, apiBaseUrl, onSuccess }) => {
                   <div className="card-topup-card__expiry">
                     <input
                       type="text"
-                      className="card-topup-card__input card-topup-card__input--expiry"
+                      inputMode="numeric"
+                      autoComplete="cc-exp"
+                      className={`card-topup-card__input card-topup-card__input--expiry${expiryError ? ' card-topup-card__input--invalid' : ''}`}
                       value={cardExpiry}
                       onChange={e => {
                         let v = e.target.value.replace(/\D/g, '').slice(0, 4)
                         if (v.length >= 2) v = v.slice(0, 2) + '/' + v.slice(2)
                         setCardExpiry(v)
+                        setExpiryError(validateCardExpiryRealtime(v))
                         setCardError('')
                       }}
                       placeholder="MM/YY"
@@ -199,13 +205,15 @@ const CardTopUpModal = ({ isOpen, onClose, userId, apiBaseUrl, onSuccess }) => {
                 <span className="card-topup-card__cvv-label">CVV</span>
                 <input
                   type="text"
+                  inputMode="numeric"
+                  autoComplete="cc-csc"
                   className="card-topup-card__input card-topup-card__input--cvv"
                   value={cardCvv}
                   onChange={e => {
                     setCardCvv(e.target.value.replace(/\D/g, '').slice(0, 4))
                     setCardError('')
                   }}
-                  placeholder="***"
+                  placeholder="•••"
                   maxLength="4"
                 />
               </div>
@@ -213,7 +221,9 @@ const CardTopUpModal = ({ isOpen, onClose, userId, apiBaseUrl, onSuccess }) => {
           </div>
         </div>
 
-        {cardError && <div className="card-topup-modal__error">{cardError}</div>}
+        {(expiryError || cardError) && (
+          <div className="card-topup-modal__error">{expiryError || cardError}</div>
+        )}
 
         <button
           type="button"

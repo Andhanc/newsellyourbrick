@@ -154,7 +154,6 @@ const OwnerDashboard = () => {
     lastName: '',
     email: '',
     username: '',
-    password: '',
     phone: '',
     country: '',
     countryFlag: ''
@@ -166,7 +165,6 @@ const OwnerDashboard = () => {
     () => typeof window !== 'undefined' && window.innerWidth <= 768
   )
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-  const [showPassword, setShowPassword] = useState(false)
   const [isProfileEditing, setIsProfileEditing] = useState(false)
   const [isSavingProfile, setIsSavingProfile] = useState(false)
   const [originalProfile, setOriginalProfile] = useState(null) // Сохраняем исходные данные профиля
@@ -209,7 +207,6 @@ const OwnerDashboard = () => {
           lastName: lastName,
           email: userData.email || '',
           username: userData.username || '',
-          password: '', // Пароль не храним в открытом виде
           phone: userData.phoneFormatted || userData.phone || '',
           country: userData.country || '',
           countryFlag: userData.countryFlag || ''
@@ -620,18 +617,13 @@ const OwnerDashboard = () => {
   }
 
   // Плашка «Заполните данные для верификации»: скрываем, когда в БД заполнены все поля панели «Профиль»
-  // (имя, фамилия, страна, почта, логин, WhatsApp). Пароль в БД обязателен только при входе по email;
-  // для Clerk / Google / Telegram / WhatsApp пароль в нашей БД может отсутствовать.
+  // (имя, фамилия, страна, почта, логин, WhatsApp). Смена пароля в кабинете не предлагается.
   const shouldHideOwnerVerificationBanner = (status) => {
     if (!status) return false
     if (status.isVerified === true) return true
     if (typeof status.ownerCabinetProfileComplete === 'boolean') {
       if (!status.ownerCabinetProfileComplete) return false
-      const stored = getUserData()
-      const loginMethod = stored?.loginMethod || ''
-      const passwordOptional = ['clerk', 'google', 'telegram', 'whatsapp'].includes(loginMethod)
-      if (passwordOptional) return true
-      return status.ownerCabinetHasPassword === true
+      return true
     }
     const m = status.missingFields
     if (!m) return false
@@ -780,12 +772,11 @@ const OwnerDashboard = () => {
   const hasUnsavedChanges = () => {
     if (!isProfileEditing || !originalProfile) return false
     
-    // Исключаем пароль из сравнения, так как он не сохраняется в исходных данных
     const fieldsToCompare = ['firstName', 'lastName', 'email', 'username', 'phone', 'country', 'countryFlag']
-    
+
     return fieldsToCompare.some(field => {
       return ownerProfile[field] !== originalProfile[field]
-    }) || (ownerProfile.password && ownerProfile.password.trim() !== '')
+    })
   }
 
   // Обработчик закрытия панели профиля с проверкой изменений
@@ -803,10 +794,9 @@ const OwnerDashboard = () => {
       
       // Восстанавливаем исходные данные
       if (originalProfile) {
-        setOwnerProfile({ ...originalProfile, password: '' })
+        setOwnerProfile({ ...originalProfile })
       }
       setIsProfileEditing(false)
-      setShowPassword(false)
       setOriginalProfile(null)
     }
     
@@ -832,11 +822,6 @@ const OwnerDashboard = () => {
         username: ownerProfile.username || null,
         phone_number: ownerProfile.phone || null,
         country: ownerProfile.country || null
-      }
-      
-      // Если пароль указан, добавляем его в данные обновления
-      if (ownerProfile.password && ownerProfile.password.trim() !== '') {
-        updateData.password = ownerProfile.password
       }
 
       // Используем числовой ID из БД (из localStorage), а не Clerk ID
@@ -901,8 +886,6 @@ const OwnerDashboard = () => {
         countryFlag: ownerProfile.countryFlag || userData.countryFlag
       }
       
-      // Пароль не сохраняем в localStorage в открытом виде
-
       saveUserData(updatedUserData, userData.loginMethod || 'whatsapp')
       
       // Перезагружаем статус верификации после сохранения
@@ -911,14 +894,8 @@ const OwnerDashboard = () => {
       // Отправляем событие для обновления статуса верификации
       window.dispatchEvent(new Event('verification-status-update'))
       
-      // Обновляем исходные данные после успешного сохранения (до очистки пароля)
-      const savedProfile = { ...ownerProfile, password: '' }
-      setOriginalProfile(savedProfile)
-      
-      // Очищаем пароль после сохранения
-      setOwnerProfile(prev => ({ ...prev, password: '' }))
-      setShowPassword(false)
-      
+      setOriginalProfile({ ...ownerProfile })
+
       // Выходим из режима редактирования после успешного сохранения
       setIsProfileEditing(false)
       
@@ -2502,10 +2479,9 @@ const OwnerDashboard = () => {
                         onClick={() => {
                           // Восстанавливаем исходные данные при отмене
                           if (originalProfile) {
-                            setOwnerProfile({ ...originalProfile, password: '' })
+                            setOwnerProfile({ ...originalProfile })
                           }
                           setIsProfileEditing(false)
-                          setShowPassword(false)
                           setOriginalProfile(null)
                         }}
                         disabled={isSavingProfile}
@@ -2620,56 +2596,6 @@ const OwnerDashboard = () => {
                   />
                 </div>
                 <div className="owner-profile-section">
-                  <h4 className="owner-profile-section__title">{t('ownerProfilePassword')}</h4>
-                  <div style={{ position: 'relative' }}>
-                    {isProfileEditing ? (
-                      <input
-                        type={showPassword ? 'text' : 'password'}
-                        className="owner-profile-section__value-input"
-                        value={ownerProfile.password}
-                        onChange={(e) => handleProfileFieldChange('password', e.target.value)}
-                        placeholder={t('ownerProfilePlaceholderPassword')}
-                        style={{ paddingRight: '40px' }}
-                      />
-                    ) : (
-                      <div className="owner-profile-section__value" style={{ color: '#666' }}>
-                        ••••••••
-                      </div>
-                    )}
-                    {isProfileEditing && (
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        style={{
-                          position: 'absolute',
-                          right: '10px',
-                          top: '50%',
-                          transform: 'translateY(-50%)',
-                          background: 'none',
-                          border: 'none',
-                          cursor: 'pointer',
-                          padding: '4px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          color: '#666'
-                        }}
-                        aria-label={showPassword ? t('ownerProfileHidePassword') : t('ownerProfileShowPassword')}
-                      >
-                        {showPassword ? (
-                          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                            <path d="M2.5 2.5L17.5 17.5M10 3.75C6.25 3.75 3.33 5.83 1.67 8.33C1.25 8.92 1.25 10.08 1.67 10.67C2.5 11.92 3.75 13.33 5 14.17M10 16.25C13.75 16.25 16.67 14.17 18.33 11.67C18.75 11.08 18.75 9.92 18.33 9.33C17.92 8.75 17.25 8 16.67 7.5M12.5 12.5C12.08 12.92 11.42 13.33 10.67 13.33C9.17 13.33 7.92 12.08 7.92 10.58C7.92 9.83 8.33 9.17 8.75 8.75M10 6.67V3.33" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                          </svg>
-                        ) : (
-                          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                            <path d="M10 3.75C6.25 3.75 3.33 5.83 1.67 8.33C1.25 8.92 1.25 10.08 1.67 10.67C3.33 13.17 6.25 15.25 10 15.25C13.75 15.25 16.67 13.17 18.33 10.67C18.75 10.08 18.75 8.92 18.33 8.33C16.67 5.83 13.75 3.75 10 3.75Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                            <circle cx="10" cy="10" r="2.5" stroke="currentColor" strokeWidth="1.5"/>
-                          </svg>
-                        )}
-                      </button>
-                    )}
-                  </div>
-                </div>
-                <div className="owner-profile-section">
                   <h4 className="owner-profile-section__title">{t('ownerProfileWhatsApp')}</h4>
                   <input
                     type="tel"
@@ -2739,10 +2665,6 @@ const OwnerDashboard = () => {
                       </option>
                     ))}
                   </select>
-                </div>
-                <div className="owner-settings-section">
-                  <h4 className="owner-settings-section__title">{t('ownerSettingsChangePassword')}</h4>
-                  <button className="owner-settings-section__button">{t('ownerSettingsChangePasswordButton')}</button>
                 </div>
                 <div className="owner-settings-section">
                   <h4 className="owner-settings-section__title">{t('ownerSettingsNotifications')}</h4>

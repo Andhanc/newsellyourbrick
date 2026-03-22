@@ -201,7 +201,10 @@
   right: 20px;
   display: flex;
   flex-direction: column;
+  align-items: flex-end;
   gap: 4px;
+  /* Отдельный слой композиции — уменьшает глюки «зеркального» текста в полях внутри 3D-flip */
+  transform: translateZ(1px);
 }
 
 .card-topup-card__cvv-label {
@@ -215,6 +218,15 @@
   width: 70px;
   padding: 8px 10px;
   font-size: 16px;
+  direction: ltr;
+  unicode-bidi: isolate;
+  text-align: left;
+  transform: translateZ(1px);
+}
+
+.card-topup-card__input--invalid {
+  border-color: rgba(248, 113, 113, 0.85) !important;
+  box-shadow: 0 0 0 1px rgba(248, 113, 113, 0.4);
 }
 
 .card-topup-modal__error {

@@ -1,9 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
-import { FiEye, FiEyeOff } from 'react-icons/fi'
 import { FaPencilAlt } from 'react-icons/fa'
 import { useUser, useAuth } from '@clerk/clerk-react'
-import { getUserData, logout, sendEmailVerificationCode, verifyEmailForProfileUpdate, validatePassword, saveUserData } from '../services/authService'
+import { getUserData, logout, sendEmailVerificationCode, verifyEmailForProfileUpdate, saveUserData } from '../services/authService'
 import EmailVerificationModal from '../components/EmailVerificationModal'
 import PassportRecognitionModal from '../components/PassportRecognitionModal'
 import CountrySelect, { countries as countryList } from '../components/CountrySelect'
@@ -291,7 +290,6 @@ const Data = () => {
     middleName: '',
     email: '',
     login: '',
-    password: '',
     phone: '',
     country: '',
     countryFlag: '',
@@ -311,8 +309,6 @@ const Data = () => {
   const passportInputRef = useRef(null)
   const editSnapshotRef = useRef(null) // снимок данных при входе в режим редактирования
   const [verificationStatus, setVerificationStatus] = useState(null)
-  const [showPassword, setShowPassword] = useState(false)
-  const [showPasswordView, setShowPasswordView] = useState(false)
   const [dataSavedSuccessfully, setDataSavedSuccessfully] = useState(false)
 
   // Вспомогательная функция для форматирования номера телефона с плюсом
@@ -510,7 +506,6 @@ const Data = () => {
                     middleName: '',
                     email: email,
                     login: savedUserData.login || '',
-                    password: savedUserData.password || '', // Загружаем пароль из localStorage, если есть
                     phone: phoneFormatted,
                     country: dbUser.country || savedUserData.country || '',
                     countryFlag: savedUserData.countryFlag || '',
@@ -554,7 +549,6 @@ const Data = () => {
           middleName: '',
           email: email,
           login: savedUserData.login || '',
-          password: savedUserData.password || '', // Загружаем пароль из localStorage, если есть
           phone: phoneFormattedStorage,
           country: savedUserData.country || '',
           countryFlag: savedUserData.countryFlag || '',
@@ -678,7 +672,6 @@ const Data = () => {
       (userData.lastName || '') !== (s.lastName || '') ||
       (userData.email || '') !== (s.email || '') ||
       (userData.login || '') !== (s.login || '') ||
-      (userData.password || '') !== (s.password || '') ||
       normalizePhone(userData.phone) !== normalizePhone(s.phone) ||
       (userData.country || '') !== (s.country || '') ||
       (userData.address || '') !== (s.address || '') ||
@@ -884,28 +877,11 @@ const Data = () => {
         passport_number: userData.passportNumber || null,
         identification_number: userData.identificationNumber || null
       }
-      
-      // Если пароль заполнен, валидируем и добавляем его в данные для обновления
-      // ВАЖНО: пароль отправляется только если поле заполнено (для изменения существующего пароля)
-      if (userData.password && userData.password.trim() !== '') {
-        // Валидация пароля по требованиям (заглавная буква, спецсимвол, цифра)
-        const passwordValidation = validatePassword(userData.password.trim())
-        if (!passwordValidation.valid) {
-          showNotification(passwordValidation.message)
-          return // Не сохраняем, если пароль не валиден
-        }
-        
-        updateData.password = userData.password.trim() // Пароль будет захеширован на backend
-        console.log('🔐 Пароль будет обновлен при сохранении')
-      } else {
-        // Если пароль пустой, не отправляем его (не меняем существующий пароль)
-        console.log('ℹ️ Пароль не изменен (поле пустое)')
-      }
 
       console.log('📤 Отправка данных на сервер:', {
         userId: savedUserData.id,
         apiUrl: `${API_BASE_URL}/users/${savedUserData.id}`,
-        updateData: { ...updateData, password: updateData.password ? '***скрыт***' : undefined }
+        updateData
       })
 
       // Отправляем данные на backend
@@ -963,19 +939,8 @@ const Data = () => {
         
         // Обновляем originalEmail после успешного сохранения
         setOriginalEmail(result.data?.email || userData.email || originalEmail)
-        
-        // Сохраняем пароль в localStorage, если он был изменен
-        const currentUserData = getUserData()
-        if (userData.password && userData.password.trim() !== '') {
-          const updatedUserDataWithPassword = {
-            ...currentUserData,
-            password: userData.password // Сохраняем пароль локально для показа
-          }
-          localStorage.setItem('userData', JSON.stringify(updatedUserDataWithPassword))
-        }
-        
+
         // Обновляем состояние, включая номер телефона с плюсом
-        // Пароль НЕ очищаем, чтобы можно было его видеть
         setUserData(prev => ({ 
           ...prev, 
           phone: formattedPhone || prev.phone
@@ -1127,8 +1092,7 @@ const Data = () => {
                 address: dbUser.address || prev.address || '',
                 passportSeries: dbUser.passport_series || prev.passportSeries || '',
                 passportNumber: dbUser.passport_number || prev.passportNumber || '',
-                identificationNumber: dbUser.identification_number || prev.identificationNumber || '',
-                password: '' // Очищаем пароль
+                identificationNumber: dbUser.identification_number || prev.identificationNumber || ''
               }
             })
             
@@ -1158,11 +1122,7 @@ const Data = () => {
               passport_number: userData.passportNumber || null,
               identification_number: userData.identificationNumber || null
             }
-            
-            if (userData.password && userData.password.trim() !== '') {
-              updateData.password = userData.password.trim()
-            }
-            
+
             // Обновляем остальные данные на сервере, если они были изменены
             try {
               const updateResponse = await fetch(`${API_BASE_URL}/users/${userId}`, {
@@ -1201,8 +1161,7 @@ const Data = () => {
                       country: updatedDbUser.country || prev.country,
                       passportSeries: updatedDbUser.passport_series || prev.passportSeries,
                       passportNumber: updatedDbUser.passport_number || prev.passportNumber,
-                      identificationNumber: updatedDbUser.identification_number || prev.identificationNumber,
-                      password: '' // Очищаем пароль
+                      identificationNumber: updatedDbUser.identification_number || prev.identificationNumber
                     }
                   })
                   
@@ -1518,7 +1477,7 @@ const Data = () => {
                   <button
                     type="button"
                     className="data-saved-overlay__cta"
-                    onClick={() => navigate('/')}
+                    onClick={() => navigate('/auction')}
                   >
                     Перейти на аукцион
                   </button>
@@ -1586,43 +1545,6 @@ const Data = () => {
                     />
                   ) : (
                     <div className="data-value">{userData.login || 'Не указан'}</div>
-                  )}
-                </div>
-
-                <div className="data-field">
-                  <label>Пароль</label>
-                  {isEditing ? (
-                    <div className="data-input-password-wrapper">
-                      <input
-                        type={showPassword ? "text" : "password"}
-                        value={userData.password}
-                        onChange={(e) => handleChange('password', e.target.value)}
-                        className="data-input data-input--password"
-                        placeholder={userData.password ? "Введите новый пароль или оставьте текущий" : "Введите новый пароль"}
-                      />
-                      <button
-                        type="button"
-                        className="data-input-password-toggle"
-                        onClick={() => setShowPassword(!showPassword)}
-                        title={showPassword ? "Скрыть пароль" : "Показать пароль"}
-                      >
-                        {showPassword ? <FiEyeOff size={18} /> : <FiEye size={18} />}
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="data-value data-value--password">
-                      {showPasswordView && userData.password ? userData.password : '••••••••'}
-                      {userData.password && (
-                        <button
-                          type="button"
-                          className="data-value-password-toggle"
-                          onClick={() => setShowPasswordView(!showPasswordView)}
-                          title={showPasswordView ? "Скрыть пароль" : "Показать пароль"}
-                        >
-                          {showPasswordView ? <FiEyeOff size={16} /> : <FiEye size={16} />}
-                        </button>
-                      )}
-                    </div>
                   )}
                 </div>
 

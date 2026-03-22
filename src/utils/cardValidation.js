@@ -86,5 +86,38 @@ export const maskCardNumber = (cardNumber) => {
   return `**** **** **** ${lastFour}`;
 };
 
+/**
+ * Проверка срока MM/YY по мере ввода (без ожидания сабмита).
+ * @param {string} expiry — значение поля, например "12/25"
+ * @returns {string | null} — текст ошибки или null если ок / ещё неполный ввод
+ */
+export const validateCardExpiryRealtime = (expiry) => {
+  const raw = (expiry || '').replace(/\D/g, '');
+  if (raw.length === 0) return null;
 
+  if (raw.length >= 2) {
+    const mm = parseInt(raw.slice(0, 2), 10);
+    if (Number.isNaN(mm) || mm < 1 || mm > 12) {
+      return 'Месяц от 01 до 12';
+    }
+  }
+
+  if (raw.length >= 4) {
+    const mm = parseInt(raw.slice(0, 2), 10);
+    const yy = parseInt(raw.slice(2, 4), 10);
+    if (Number.isNaN(mm) || mm < 1 || mm > 12) {
+      return 'Месяц от 01 до 12';
+    }
+    if (Number.isNaN(yy)) return 'Укажите год (YY)';
+
+    const now = new Date();
+    const currentYear = now.getFullYear() % 100;
+    const currentMonth = now.getMonth() + 1;
+    if (yy < currentYear || (yy === currentYear && mm < currentMonth)) {
+      return 'Срок действия карты истёк';
+    }
+  }
+
+  return null;
+};
 

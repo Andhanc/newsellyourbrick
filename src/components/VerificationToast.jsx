@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { FiAlertCircle, FiCheck, FiX, FiChevronDown, FiChevronUp, FiChevronRight, FiFile, FiUser, FiMail, FiMapPin, FiCreditCard } from 'react-icons/fi';
 import './VerificationToast.css';
@@ -6,13 +7,19 @@ import './VerificationToast.css';
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 const VERIFICATION_SUCCESS_SHOWN_KEY = 'verification_success_shown';
 
+/** Вне дерева маршрута: футер в App имеет z-index:10 и перекрывал fixed-тост внутри .data-container */
+function verificationToastPortal(node) {
+  if (typeof document === 'undefined' || !document.body) return node;
+  return createPortal(node, document.body);
+}
+
 function VerificationSuccessToast({ onDismiss }) {
   useEffect(() => {
     const t = setTimeout(onDismiss, 10000);
     return () => clearTimeout(t);
   }, [onDismiss]);
 
-  return (
+  return verificationToastPortal(
     <div className="verification-toast verification-toast--success">
       <div className="verification-toast__success-inner">
         <div className="verification-toast__success-icon-wrap">
@@ -170,7 +177,7 @@ const VerificationToast = ({ userId }) => {
     setIsVisible(false);
   };
 
-  return (
+  return verificationToastPortal(
     <div className={`verification-toast ${isExpanded ? 'verification-toast--expanded' : ''}`}>
       <div className="verification-toast__header" onClick={() => setIsExpanded(!isExpanded)}>
         <div className="verification-toast__header-left">
