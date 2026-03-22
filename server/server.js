@@ -5269,6 +5269,28 @@ const debtDocFieldNames = [
   'debt_doc_cat6'
 ];
 
+/**
+ * POST /api/properties/upload-photo — загрузить фото объявления до отправки формы.
+ * Нужен, чтобы не слать десятки МБ base64 в одном поле photos (лимиты прокси на проде).
+ */
+app.post('/api/properties/upload-photo', (req, res) => {
+  upload.single('photo')(req, res, (err) => {
+    if (err) {
+      console.error('POST /api/properties/upload-photo multer:', err);
+      const msg =
+        err.code === 'LIMIT_FILE_SIZE'
+          ? 'Файл слишком большой (макс. 10 МБ)'
+          : err.message || 'Ошибка загрузки файла';
+      return res.status(400).json({ success: false, error: msg });
+    }
+    if (!req.file) {
+      return res.status(400).json({ success: false, error: 'Файл не передан' });
+    }
+    const url = `/uploads/${req.file.filename}`;
+    return res.json({ success: true, data: { url } });
+  });
+});
+
 app.post('/api/properties', upload.fields([
   { name: 'ownership_document', maxCount: 1 },
   { name: 'no_debts_document', maxCount: 1 },

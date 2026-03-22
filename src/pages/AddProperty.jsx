@@ -823,6 +823,47 @@ const AddProperty = () => {
     setIsSubmitting(true)
     try {
       const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
+
+      /** Загружает одно фото на сервер; на проде нельзя слать base64 в поле photos — лимит тела запроса у прокси. */
+      const uploadOneListingPhoto = async (photo) => {
+        const u = photo?.url
+        if (typeof u === 'string' && (u.startsWith('http://') || u.startsWith('https://') || u.startsWith('/uploads/'))) {
+          return u
+        }
+        if (typeof u === 'string' && u.startsWith('uploads/')) {
+          return `/${u}`
+        }
+        let file = photo?.file
+        if (!file && typeof u === 'string' && u.startsWith('data:')) {
+          const blobRes = await fetch(u)
+          const blob = await blobRes.blob()
+          file = new File([blob], 'photo.jpg', { type: blob.type || 'image/jpeg' })
+        }
+        if (!(file instanceof File)) {
+          throw new Error('Не удалось подготовить фото для загрузки. Загрузите изображения ещё раз.')
+        }
+        const fd = new FormData()
+        fd.append('photo', file)
+        const response = await fetch(`${API_BASE_URL}/properties/upload-photo`, { method: 'POST', body: fd })
+        if (!response.ok) {
+          const text = await response.text()
+          throw new Error(text || `Ошибка загрузки фото (${response.status})`)
+        }
+        const data = await response.json()
+        if (!data.success || !data.data?.url) {
+          throw new Error(data.error || 'Сервер не вернул URL фото')
+        }
+        return data.data.url
+      }
+
+      let photoUrlsForSubmit
+      try {
+        photoUrlsForSubmit = await Promise.all(photos.map((p) => uploadOneListingPhoto(p)))
+      } catch (uploadErr) {
+        setIsSubmitting(false)
+        showNotification(uploadErr.message || 'Ошибка загрузки фотографий')
+        return false
+      }
       
       // Загружаем данные пользователя из профиля
       let userProfileData = null
@@ -1082,8 +1123,8 @@ const AddProperty = () => {
         formDataToSend.append('additional_amenities', formData.additionalAmenities)
       }
       
-      // Медиа (JSON)
-      formDataToSend.append('photos', JSON.stringify(photos.map(p => p.url)))
+      // Медиа (JSON) — только URL на сервере, без base64 (иначе POST не проходит лимиты прокси на проде)
+      formDataToSend.append('photos', JSON.stringify(photoUrlsForSubmit))
       formDataToSend.append('videos', JSON.stringify(videos))
       formDataToSend.append('additional_documents', JSON.stringify(additionalDocuments.map(doc => ({
         name: doc.name,
