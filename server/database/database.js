@@ -1494,6 +1494,16 @@ export function initDatabase() {
     } catch (idxError) {
       if (!idxError.message.includes('already exists')) console.warn('⚠️ Индекс notifications(user_id, is_read):', idxError.message);
     }
+
+    // Таблицы новой схемы ОБЯЗАНЫ существовать: раньше они создавались только внутри try миграции documents —
+    // при любой ошибке там блок пропускался, на проде не было properties_apartments / properties_houses.
+    try {
+      ensureApartmentsTable();
+      ensureHousesTable();
+      console.log('✅ Таблицы properties_apartments и properties_houses проверены/созданы при init');
+    } catch (ensurePropErr) {
+      console.error('❌ Критично: не удалось создать таблицы недвижимости при init:', ensurePropErr.message);
+    }
     
     // Кэш наличия таблиц недвижимости (один раз при старте — без PRAGMA/sqlite_master в рантайме)
     try {
@@ -3544,6 +3554,149 @@ function ensureApartmentsTable() {
   }
 }
 
+/**
+ * Создание таблицы properties_houses (аналог ensureApartmentsTable — раньше не вызывалась при INSERT домов).
+ */
+function ensureHousesTable() {
+  const db = getDatabase();
+  try {
+    const result = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='properties_houses'").get();
+    const tableExists = result !== undefined && result !== null;
+
+    if (!tableExists) {
+      console.log('⚠️ Таблица properties_houses не найдена, создаю...');
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS properties_houses (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          user_id INTEGER NOT NULL,
+          property_type TEXT NOT NULL CHECK(property_type IN ('house', 'villa')),
+          title TEXT NOT NULL,
+          description TEXT,
+          price REAL,
+          currency TEXT DEFAULT 'USD',
+          is_auction INTEGER DEFAULT 0,
+          auction_start_date TEXT,
+          auction_end_date TEXT,
+          auction_starting_price REAL,
+          area REAL,
+          living_area REAL,
+          land_area REAL,
+          building_type TEXT,
+          bedrooms INTEGER,
+          bathrooms INTEGER,
+          floors INTEGER,
+          year_built INTEGER,
+          location TEXT,
+          address TEXT,
+          country TEXT,
+          city TEXT,
+          coordinates TEXT,
+          amenities TEXT,
+          renovation TEXT,
+          condition TEXT,
+          heating TEXT,
+          water_supply TEXT,
+          sewerage TEXT,
+          pool INTEGER DEFAULT 0,
+          garden INTEGER DEFAULT 0,
+          garage INTEGER DEFAULT 0,
+          parking INTEGER DEFAULT 0,
+          electricity INTEGER DEFAULT 0,
+          internet INTEGER DEFAULT 0,
+          security INTEGER DEFAULT 0,
+          furniture INTEGER DEFAULT 0,
+          additional_amenities TEXT,
+          photos TEXT,
+          videos TEXT,
+          additional_documents TEXT,
+          ownership_document TEXT,
+          no_debts_document TEXT,
+          test_drive INTEGER DEFAULT 0,
+          test_drive_data TEXT,
+          moderation_status TEXT DEFAULT 'pending',
+          reviewed_by TEXT,
+          reviewed_at TEXT,
+          rejection_reason TEXT,
+          is_shared_ownership INTEGER DEFAULT 0,
+          total_shares INTEGER,
+          shares_sold INTEGER DEFAULT 0,
+          sale_type TEXT,
+          is_debt INTEGER DEFAULT 0,
+          has_debt INTEGER DEFAULT 0,
+          debt_utilities INTEGER DEFAULT 0,
+          debt_mortgage_pledge INTEGER DEFAULT 0,
+          debt_property_taxes INTEGER DEFAULT 0,
+          debt_arrest INTEGER DEFAULT 0,
+          debt_inherited INTEGER DEFAULT 0,
+          debt_third_party INTEGER DEFAULT 0,
+          debt_other TEXT,
+          debt_amount REAL,
+          debt_severity TEXT,
+          reserved_until TEXT,
+          reserved_by INTEGER,
+          purchase_request_id INTEGER,
+          created_at TEXT DEFAULT (datetime('now')),
+          updated_at TEXT DEFAULT (datetime('now')),
+          FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        );
+        CREATE INDEX IF NOT EXISTS idx_houses_user_id ON properties_houses(user_id);
+        CREATE INDEX IF NOT EXISTS idx_houses_moderation_status ON properties_houses(moderation_status);
+        CREATE INDEX IF NOT EXISTS idx_houses_property_type ON properties_houses(property_type);
+        CREATE INDEX IF NOT EXISTS idx_houses_user_status ON properties_houses(user_id, moderation_status);
+        CREATE INDEX IF NOT EXISTS idx_houses_city ON properties_houses(city);
+        CREATE INDEX IF NOT EXISTS idx_houses_country ON properties_houses(country);
+      `);
+      const verifyResult = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='properties_houses'").get();
+      if (verifyResult) {
+        console.log('✅ Таблица properties_houses успешно создана и проверена');
+      } else {
+        throw new Error('Не удалось создать таблицу properties_houses');
+      }
+    }
+
+    const housesPragma = db.prepare('PRAGMA table_info(properties_houses)').all();
+    const existingFields = housesPragma.map((f) => f.name);
+    const requiredFields = {
+      reserved_until: 'TEXT',
+      reserved_by: 'INTEGER',
+      purchase_request_id: 'INTEGER',
+      is_shared_ownership: 'INTEGER DEFAULT 0',
+      total_shares: 'INTEGER',
+      shares_sold: 'INTEGER DEFAULT 0',
+      sale_type: 'TEXT',
+      is_debt: 'INTEGER DEFAULT 0',
+      has_debt: 'INTEGER DEFAULT 0',
+      debt_utilities: 'INTEGER DEFAULT 0',
+      debt_mortgage_pledge: 'INTEGER DEFAULT 0',
+      debt_property_taxes: 'INTEGER DEFAULT 0',
+      debt_arrest: 'INTEGER DEFAULT 0',
+      debt_inherited: 'INTEGER DEFAULT 0',
+      debt_third_party: 'INTEGER DEFAULT 0',
+      debt_other: 'TEXT',
+      debt_amount: 'REAL',
+      debt_severity: 'TEXT'
+    };
+    for (const [fieldName, fieldType] of Object.entries(requiredFields)) {
+      if (!existingFields.includes(fieldName)) {
+        try {
+          db.exec(`ALTER TABLE properties_houses ADD COLUMN ${fieldName} ${fieldType}`);
+          console.log(`✅ Добавлено поле ${fieldName} в properties_houses`);
+          existingFields.push(fieldName);
+        } catch (alterError) {
+          console.warn(`⚠️ Не удалось добавить поле ${fieldName} в properties_houses:`, alterError.message);
+        }
+      }
+    }
+    if (tableExists) {
+      console.log('✅ Таблица properties_houses уже существует');
+    }
+  } catch (tableError) {
+    console.error('❌ Ошибка при проверке/создании таблицы properties_houses:', tableError.message);
+    console.error('❌ Stack:', tableError.stack);
+    throw tableError;
+  }
+}
+
 export const apartmentQueries = {
   /**
    * Создать новое объявление о квартире/апартаменте
@@ -4092,6 +4245,7 @@ export const houseQueries = {
    * Создать новое объявление о доме/вилле
    */
   create: (propertyData) => {
+    ensureHousesTable();
     const db = getDatabase();
     
     // Формируем JSON массив удобств
@@ -4236,6 +4390,7 @@ export const houseQueries = {
    * Получить дом/виллу по ID
    */
   getById: (id) => {
+    ensureHousesTable();
     const db = getDatabase();
     const stmt = db.prepare('SELECT * FROM properties_houses WHERE id = ?');
     const property = stmt.get(id);
