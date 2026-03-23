@@ -89,6 +89,25 @@
   background-attachment: fixed;
 }
 
+/* Админка: не показываем фон и растягиваем контейнер под всю ширину */
+.admin-panel-active .add-property-page::before,
+.admin-panel-active .add-property-page::after {
+  background: none !important;
+  background-image: none !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+.admin-panel-active .add-property-container {
+  max-width: none !important;
+  margin: 0 !important;
+  width: 100% !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08) !important;
+  border-radius: 16px !important;
+  border: 1px solid rgba(0, 0, 0, 0.06) !important;
+  overflow: hidden;
+}
+
 .add-property-container {
   width: 100%;
   max-width: 1400px;

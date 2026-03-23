@@ -10,6 +10,7 @@ import { cn } from '@/lib/utils'
 import PropertyTimer from '../PropertyTimer'
 import CircularTimer from '../CircularTimer'
 import { showNotification } from '@/utils/toastHelper'
+import { ensureCanOpenProperty } from '@/utils/propertyAccessGuard'
 import { hasBuyNowOption } from '@/utils/hasBuyNowOption'
 import '../PropertyList.css'
 import './AuctionMobileLayout.css'
@@ -369,6 +370,7 @@ function AuctionMobileItem({
     : property.price || 0
 
   const goDetail = () => {
+    if (!ensureCanOpenProperty()) return
     navigate(`/property/${property.id}`, { state: { property } })
   }
 

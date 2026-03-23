@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from 'react'
 import maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import './LocationMap.css'
+import { SATELLITE_MAP_STYLE } from '../utils/mapStyles'
 
 const LocationMap = ({ center, zoom = 10, marker }) => {
   const mapContainerRef = useRef(null)
@@ -48,29 +49,9 @@ const LocationMap = ({ center, zoom = 10, marker }) => {
       console.log('🗺️ LocationMap: инициализация с дефолтными координатами (вид над Европой)', initialCenter, 'zoom:', initialZoom)
     }
 
-    // Спутниковая подложка (та же, что на странице карты — Esri, без ключа)
-    const satelliteStyle = {
-      version: 8,
-      sources: {
-        satellite: {
-          type: 'raster',
-          tiles: ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],
-          tileSize: 256,
-          attribution: '© Esri'
-        }
-      },
-      layers: [
-        {
-          id: 'satellite',
-          type: 'raster',
-          source: 'satellite'
-        }
-      ]
-    }
-
     const map = new maplibregl.Map({
       container: mapContainerRef.current,
-      style: satelliteStyle,
+      style: SATELLITE_MAP_STYLE,
       center: initialCenter,
       zoom: initialZoom,
       attributionControl: false

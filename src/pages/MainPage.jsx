@@ -58,6 +58,7 @@ import AnimatedFolder from '../components/ui/3d-folder'
 import { FrostedGlassCard } from '../components/ui/interactive-frosted-glass-card'
 import { showToast } from '../components/ToastContainer'
 import { showNotification } from '../utils/toastHelper'
+import { ensureCanOpenProperty } from '../utils/propertyAccessGuard'
 import LoginModal from '../components/LoginModal'
 import VerificationSuccessNotification from '../components/VerificationSuccessNotification'
 import '../components/PropertyList.css'
@@ -1937,6 +1938,7 @@ function MainPage() {
   }
 
   const handlePropertyClick = (category, propertyId, isClassic = false, hasTimer = false, property = null) => {
+    if (!ensureCanOpenProperty()) return
     // Если объект не передан, пытаемся найти его в массивах
     let propertyToNavigate = property
     

@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { ensureCanOpenProperty } from '../utils/propertyAccessGuard'
 import { useTranslation } from 'react-i18next'
 import { FiSearch } from 'react-icons/fi'
 import Header from '../components/Header'
@@ -170,7 +171,10 @@ const Debts = () => {
               <article
                 key={obj.id}
                 className="share-card"
-                onClick={() => navigate(`/property/${obj.id}`)}
+                onClick={() => {
+                  if (!ensureCanOpenProperty()) return
+                  navigate(`/property/${obj.id}`)
+                }}
               >
                 <div className="share-card__badge">
                   {obj.isAuction ? t('debtsBadgeAuction') : t('debtsBadgeDebt')}
