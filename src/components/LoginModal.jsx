@@ -577,23 +577,18 @@ const LoginModal = ({ isOpen, onClose }) => {
   const handleEmailVerificationSuccess = (user) => {
     // Успешная регистрация через email
     const userRole = user.role || localStorage.getItem('userRole') || 'buyer'
-    
-    // Если это покупатель, показываем модальное окно для загрузки документов
-    if (userRole === 'buyer' && user.id) {
-      setNewUserId(user.id)
-      setShowVerificationDocumentsModal(true)
+
+    // Для email-регистрации после подтверждения кода сразу активируем сессию
+    // и отправляем пользователя в кабинет (как в сценарии продавца).
+    onClose()
+    showNotification(`Добро пожаловать, ${user.name || 'Пользователь'}! Регистрация завершена.`)
+
+    if (userRole === 'seller' || userRole === 'owner') {
+      localStorage.setItem('isOwnerLoggedIn', 'true')
+      localStorage.setItem('userRole', 'seller')
+      navigate('/owner')
     } else {
-      // Для продавца или если нет ID - обычный флоу
-      onClose()
-      showNotification(`Добро пожаловать, ${user.name || 'Пользователь'}! Регистрация завершена.`)
-      
-      if (userRole === 'seller') {
-        localStorage.setItem('isOwnerLoggedIn', 'true')
-        localStorage.setItem('userRole', 'seller')
-        navigate('/owner')
-      } else {
-        navigate('/profile')
-      }
+      navigate('/profile')
     }
   }
   

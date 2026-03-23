@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { MdBed, MdOutlineBathtub } from 'react-icons/md'
 import { BiArea } from 'react-icons/bi'
 import { FiArrowLeft, FiAlertCircle } from 'react-icons/fi'
+import { ensureCanOpenProperty } from '../utils/propertyAccessGuard'
 import { getApiBaseUrl } from '../utils/apiConfig'
 import './SearchResults.css'
 
@@ -347,7 +348,10 @@ const SearchResults = () => {
                 <div
                   key={property.id}
                   className="search-results__card"
-                  onClick={() => navigate(`/property/${property.id}`, { state: { property } })}
+                  onClick={() => {
+                    if (!ensureCanOpenProperty()) return
+                    navigate(`/property/${property.id}`, { state: { property } })
+                  }}
                 >
                   <div className="search-results__card-image">
                     <img src={propertyImage} alt={property.title} />

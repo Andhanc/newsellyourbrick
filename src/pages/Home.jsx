@@ -12,6 +12,7 @@ import { getUserData, isAuthenticated } from '../services/authService'
 import { syncAssistantLead } from '../services/assistantLeadService'
 import { askPropertyAssistant } from '../services/aiService'
 import { getCachedList, hasCachedList, fetchAuctionList } from '../services/auctionListCache'
+import { ensureCanOpenProperty } from '../utils/propertyAccessGuard'
 import './Home.css'
 
 import { getApiBaseUrl } from '../utils/apiConfig'
@@ -634,6 +635,7 @@ function Home() {
                             className="chat-widget__recommendation-link"
                             onClick={(e) => {
                               e.preventDefault()
+                              if (!ensureCanOpenProperty()) return
                               navigate(`/property/${recId}`, { 
                                 state: { property: property }
                               })

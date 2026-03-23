@@ -9,6 +9,7 @@ import { FiHeart, FiMapPin, FiChevronLeft, FiSliders } from 'react-icons/fi'
 import { HiOutlineArrowsExpand } from 'react-icons/hi'
 import { getApiBaseUrl } from '../utils/apiConfig'
 import { SATELLITE_MAP_STYLE } from '../utils/mapStyles'
+import { ensureCanOpenProperty } from '../utils/propertyAccessGuard'
 import './MapPage.css'
 
 const SORT_OPTIONS = [
@@ -502,7 +503,10 @@ const MapPage = () => {
               <article
                 key={property.id}
                 className={`map-booking-card ${isSelected ? 'selected' : ''}`}
-                onClick={() => navigate(`/property/${property.id}`)}
+                onClick={() => {
+                  if (!ensureCanOpenProperty()) return
+                  navigate(`/property/${property.id}`)
+                }}
               >
                 <div className="map-booking-card__media">
                   <div className="map-booking-card__img-wrap">
