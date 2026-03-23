@@ -13,6 +13,7 @@ import PropertySearchModal from './PropertySearchModal'
 import AnimatedLoadingSkeleton from './ui/AnimatedLoadingSkeleton'
 import AuctionMobileLayout from './ui/AuctionMobileLayout'
 import { MarqueeAnimation } from './ui/MarqueeAnimation'
+import { ensureCanOpenProperty } from '../utils/propertyAccessGuard'
 import './PropertyList.css'
 
 const MOBILE_BREAKPOINT = 768
@@ -203,6 +204,13 @@ const PropertyList = ({
     e.stopPropagation()
     const mockCat = hasDbBackedProperty(property) ? null : 'property'
     return toggleFavorite(property, mockCat || 'property')
+  }
+
+  const openProperty = (property) => {
+    if (!ensureCanOpenProperty()) return
+    navigate(`/property/${property.id}`, {
+      state: { property }
+    })
   }
 
   return (
@@ -447,9 +455,7 @@ const PropertyList = ({
                   return
                 }
                 console.log('Navigating to property:', property.id)
-                navigate(`/property/${property.id}`, {
-                  state: { property }
-                })
+                openProperty(property)
               }}
               style={{ cursor: 'pointer' }}
             >
@@ -484,9 +490,7 @@ const PropertyList = ({
                           onClick={(e) => {
                             e.preventDefault()
                             e.stopPropagation()
-                            navigate(`/property/${property.id}`, {
-                              state: { property }
-                            })
+                            openProperty(property)
                           }}
                         >
                           <span>{t('buyNowSectionTitle')}</span>
@@ -508,9 +512,7 @@ const PropertyList = ({
                           onClick={(e) => {
                             e.preventDefault()
                             e.stopPropagation()
-                            navigate(`/property/${property.id}`, {
-                              state: { property }
-                            })
+                            openProperty(property)
                           }}
                         >
                           <span>{t('testDrive')}</span>
@@ -612,9 +614,7 @@ const PropertyList = ({
                         onClick={(e) => {
                           e.preventDefault()
                           e.stopPropagation()
-                          navigate(`/property/${property.id}`, {
-                            state: { property }
-                          })
+                          openProperty(property)
                         }}
                         disabled={isReserved}
                         style={{
@@ -634,9 +634,7 @@ const PropertyList = ({
                               showNotification(t('objectReservedNotification'))
                               return
                             }
-                            navigate(`/property/${property.id}`, {
-                              state: { property }
-                            })
+                            openProperty(property)
                           }}
                           disabled={isReserved}
                           style={{

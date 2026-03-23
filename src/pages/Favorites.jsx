@@ -10,6 +10,7 @@ import './Favorites.css'
 import { usePropertyFavorites, PROPERTY_FAVORITES_CHANGED } from '../context/PropertyFavoritesContext'
 import { favoriteCompositeKey, hasDbBackedProperty } from '../utils/propertyFavoriteKey'
 import { getApiBaseUrl } from '../utils/apiConfig'
+import { ensureCanOpenProperty } from '../utils/propertyAccessGuard'
 
 const recommendedProperties = [
   {
@@ -349,7 +350,14 @@ const Favorites = () => {
               const auction = item.property
               return (
                 <div key={item.key} className="favorite-card">
-                  <Link to={getPropertyRoute(auction)} className="favorite-card-link">
+                  <Link
+                    to={getPropertyRoute(auction)}
+                    className="favorite-card-link"
+                    onClick={(e) => {
+                      if (ensureCanOpenProperty()) return
+                      e.preventDefault()
+                    }}
+                  >
                     <div className="favorite-card-image">
                       <img
                         src={auction.image || auction.images?.[0]}

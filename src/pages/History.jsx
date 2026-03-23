@@ -4,6 +4,7 @@ import { useUser, useClerk } from '@clerk/clerk-react'
 import { getUserData, isAuthenticated, logout } from '../services/authService'
 import VerificationToast from '../components/VerificationToast'
 import WonPropertyCard from '../components/WonPropertyCard'
+import { ensureCanOpenProperty } from '../utils/propertyAccessGuard'
 import './History.css'
 import './Profile.css'
 
@@ -689,17 +690,38 @@ const History = () => {
                           </div>
                         </div>
                         {bid.status === 'active' && (
-                          <Link to={`/property/${bid.id}`} className="card-button">
+                          <Link
+                            to={`/property/${bid.id}`}
+                            className="card-button"
+                            onClick={(e) => {
+                              if (ensureCanOpenProperty()) return
+                              e.preventDefault()
+                            }}
+                          >
                             Продолжить участие
                           </Link>
                         )}
                         {bid.status === 'outbid' && (
-                          <Link to={`/property/${bid.id}`} className="card-button">
+                          <Link
+                            to={`/property/${bid.id}`}
+                            className="card-button"
+                            onClick={(e) => {
+                              if (ensureCanOpenProperty()) return
+                              e.preventDefault()
+                            }}
+                          >
                             Повысить ставку
                           </Link>
                         )}
                         {(bid.status === 'won' || bid.status === 'lost') && (
-                          <Link to={`/property/${bid.id}`} className="card-link">
+                          <Link
+                            to={`/property/${bid.id}`}
+                            className="card-link"
+                            onClick={(e) => {
+                              if (ensureCanOpenProperty()) return
+                              e.preventDefault()
+                            }}
+                          >
                             Посмотреть объект →
                           </Link>
                         )}

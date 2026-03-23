@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { FiChevronDown, FiChevronUp } from 'react-icons/fi'
 import { showNotification } from '../utils/toastHelper'
+import { ensureCanOpenProperty } from '../utils/propertyAccessGuard'
 import './WonPropertyCard.css'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
@@ -222,7 +223,14 @@ const WonPropertyCard = ({ purchase, formatPrice, formatDate, getStatusLabel }) 
             </>
           )}
 
-          <Link to={`/property/${purchase.propertyId}`} className="won-property-card__link">
+          <Link
+            to={`/property/${purchase.propertyId}`}
+            className="won-property-card__link"
+            onClick={(e) => {
+              if (ensureCanOpenProperty()) return
+              e.preventDefault()
+            }}
+          >
             Посмотреть объект →
           </Link>
         </div>

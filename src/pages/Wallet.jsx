@@ -14,6 +14,7 @@ import CardTopUpModal from '../components/CardTopUpModal'
 import SellerVerificationModal from '../components/SellerVerificationModal'
 import { showNotification } from '../utils/toastHelper'
 import { getUsdtJettonWalletAddress, buildUsdtTransferTransaction } from '../utils/tonUsdt'
+import { ensureCanOpenProperty } from '../utils/propertyAccessGuard'
 import './Wallet.css'
 
 // Используем синхронную версию для инициализации, затем обновим при загрузке
@@ -1189,6 +1190,10 @@ const Wallet = () => {
                   </button>
                   <Link 
                     to={`/property/${userBid.property_id}`}
+                    onClick={(e) => {
+                      if (ensureCanOpenProperty()) return
+                      e.preventDefault()
+                    }}
                     style={{
                       display: 'inline-block',
                       padding: '8px 16px',

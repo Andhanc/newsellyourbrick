@@ -521,21 +521,60 @@
 
 /* Маркеры цен на карте — белые пилюли */
 .map-price-marker {
-  padding: 6px 12px;
-  background: #fff;
-  color: #222;
-  font-size: 13px;
-  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 11px 7px 8px;
+  background: rgba(255, 255, 255, 0.98);
+  color: #111827;
+  font-size: 12px;
+  font-weight: 700;
   border-radius: 999px;
   white-space: nowrap;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.32);
+  border: 1px solid rgba(17, 24, 39, 0.15);
+  position: relative;
+  z-index: 30;
+  user-select: none;
+  pointer-events: auto;
 }
 
 .map-price-marker.active {
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
-  border-color: #222;
-  transform: scale(1.08);
+  box-shadow: 0 9px 24px rgba(16, 185, 129, 0.45);
+  border-color: #0f766e;
+  transform: scale(1.07);
+}
+
+.map-price-marker__pin {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #ef4444;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.28);
+  flex-shrink: 0;
+}
+
+.map-price-marker__label {
+  line-height: 1;
+}
+
+.map-booking-card__show-btn {
+  margin-top: 8px;
+  border: 1px solid #0abab5;
+  background: #fff;
+  color: #0f766e;
+  border-radius: 999px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.map-booking-card__show-btn:hover {
+  background: #0abab5;
+  color: #fff;
+  box-shadow: 0 3px 10px rgba(10, 186, 181, 0.25);
 }
 
 @media (max-width: 1024px) {
