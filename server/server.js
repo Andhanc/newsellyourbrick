@@ -7880,7 +7880,9 @@ app.get('/api/properties/:id/test-drive/eligibility', (req, res) => {
     if (!property) {
       return res.status(404).json({ success: false, error: 'Объект не найден' });
     }
-    const table = propertyTable || property.source_table || 'properties_apartments';
+    // Таблица из БД важнее query-параметра: иначе клиентский дефолт properties_apartments
+    // ломает проверку ставки для домов/вилл (bids.property_table = properties_houses).
+    const table = property.source_table || propertyTable || 'properties_apartments';
     const td =
       property.test_drive === 1 ||
       property.test_drive === true ||
@@ -7901,21 +7903,11 @@ app.get('/api/properties/:id/test-drive/eligibility', (req, res) => {
       }
       const db = getDatabase();
       try {
-        const pragma = db.prepare('PRAGMA table_info(bids)').all();
-        const hasPT = pragma.some((c) => c.name === 'property_table');
-        if (hasPT) {
-          const row = db
-            .prepare(
-              `SELECT 1 as x FROM bids WHERE user_id = ? AND property_id = ? AND (property_table = ? OR property_table IS NULL) LIMIT 1`
-            )
-            .get(userId, propertyId, table);
-          hasBid = !!row;
-        } else {
-          const row = db
-            .prepare(`SELECT 1 as x FROM bids WHERE user_id = ? AND property_id = ? LIMIT 1`)
-            .get(userId, propertyId);
-          hasBid = !!row;
-        }
+        // Как и GET /bids/property/:id — любая ставка пользователя по этому property_id (страница объекта однозначна).
+        const row = db
+          .prepare(`SELECT 1 as x FROM bids WHERE user_id = ? AND property_id = ? LIMIT 1`)
+          .get(userId, propertyId);
+        hasBid = !!row;
       } catch (e) {
         console.warn('test-drive eligibility bids:', e.message);
       }
@@ -7942,10 +7934,12 @@ app.get('/api/properties/:id/test-drive/eligibility', (req, res) => {
 app.get('/api/properties/:id/test-drive/bookings', (req, res) => {
   try {
     const propertyId = parseInt(req.params.id, 10);
-    const propertyTable = req.query.property_table || 'properties_apartments';
     if (!propertyId || Number.isNaN(propertyId)) {
       return res.status(400).json({ success: false, error: 'Некорректный id объекта' });
     }
+    const prop = propertyQueries.getById(String(propertyId), null);
+    const propertyTable =
+      prop?.source_table || req.query.property_table || 'properties_apartments';
     testDriveBookingQueries.ensureTable();
     const rows = testDriveBookingQueries.listActiveForProperty(propertyId, propertyTable);
     const queryUserIdRaw = req.query.user_id;
@@ -8012,7 +8006,7 @@ app.post('/api/properties/:id/test-drive/request', (req, res) => {
     if (!property) {
       return res.status(404).json({ success: false, error: 'Объект не найден' });
     }
-    const table = property_table || property.source_table || 'properties_apartments';
+    const table = property.source_table || property_table || 'properties_apartments';
     const td =
       property.test_drive === 1 ||
       property.test_drive === true ||
@@ -8031,21 +8025,10 @@ app.post('/api/properties/:id/test-drive/request', (req, res) => {
     const db = getDatabase();
     let hasBid = false;
     try {
-      const pragma = db.prepare('PRAGMA table_info(bids)').all();
-      const hasPT = pragma.some((c) => c.name === 'property_table');
-      if (hasPT) {
-        const row = db
-          .prepare(
-            `SELECT 1 as x FROM bids WHERE user_id = ? AND property_id = ? AND (property_table = ? OR property_table IS NULL) LIMIT 1`
-          )
-          .get(userId, propertyId, table);
-        hasBid = !!row;
-      } else {
-        const row = db
-          .prepare(`SELECT 1 as x FROM bids WHERE user_id = ? AND property_id = ? LIMIT 1`)
-          .get(userId, propertyId);
-        hasBid = !!row;
-      }
+      const row = db
+        .prepare(`SELECT 1 as x FROM bids WHERE user_id = ? AND property_id = ? LIMIT 1`)
+        .get(userId, propertyId);
+      hasBid = !!row;
     } catch (e) {
       console.warn('test-drive request bids:', e.message);
     }

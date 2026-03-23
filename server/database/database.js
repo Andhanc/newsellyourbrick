@@ -5198,7 +5198,9 @@ export const propertyQueries = {
     } else {
       // Fallback на старую таблицу
       const stmt = db.prepare('SELECT * FROM properties WHERE id = ?');
-      return stmt.get(id);
+      const row = stmt.get(id);
+      if (row) row.source_table = 'properties';
+      return row;
     }
   },
 

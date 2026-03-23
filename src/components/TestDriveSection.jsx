@@ -96,7 +96,11 @@ export default function TestDriveSection({
           ) : (
             <Circle className="property-detail-test-drive__circle" size={18} />
           )}
-          <span>{ru ? 'Внесите депозит' : 'Make a deposit'}</span>
+          <span>
+            {ru
+              ? 'На депозите есть средства (баланс больше нуля)'
+              : 'You have funds on deposit (balance above zero)'}
+          </span>
         </li>
         <li className={eligibility.has_bid ? 'is-done' : ''}>
           {eligibility.has_bid ? (
@@ -104,7 +108,11 @@ export default function TestDriveSection({
           ) : (
             <Circle className="property-detail-test-drive__circle" size={18} />
           )}
-          <span>{ru ? 'Сделайте ставку на объект' : 'Place a bid on this property'}</span>
+          <span>
+            {ru
+              ? 'Сделана ставка именно на этот объект'
+              : 'You placed a bid on this listing'}
+          </span>
         </li>
       </ul>
 

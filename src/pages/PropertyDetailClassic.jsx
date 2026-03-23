@@ -696,6 +696,9 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
           const data = JSON.parse(event.data)
           if (data.type === 'bid_placed' && Number(data.property_id) === Number(displayProperty.id)) {
             window.dispatchEvent(new Event('property-bid-sse'))
+            window.dispatchEvent(
+              new CustomEvent('syb-testdrive-refresh', { detail: { propertyId: displayProperty.id } })
+            )
           }
         } catch (_) {}
       }
@@ -1637,72 +1640,64 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
       
       if (data.success) {
         console.log('✅ Ставка успешно создана на сервере:', data)
+        // Сразу снимаем «Отправка…»: дальше могут быть долгие/зависшие запросы (тест-таймер, профиль).
+        setIsSubmittingBid(false)
+
         window.dispatchEvent(
           new CustomEvent('syb-testdrive-refresh', { detail: { propertyId: displayProperty.id } })
         )
         setBidAmount('')
-        
-        // Если это тестовый таймер - сбрасываем его до исходного значения
-        if (displayProperty.test_timer_end_date && originalTestTimerDuration !== null) {
-          console.log('🔄 Сброс тестового таймера до исходного значения');
+
+        const pid = displayProperty.id
+        const lang = currentLang
+        const timerDuration = originalTestTimerDuration
+        const hasTestTimer = !!(displayProperty.test_timer_end_date && timerDuration !== null)
+
+        void (async () => {
+          if (!hasTestTimer) return
+          console.log('🔄 Сброс тестового таймера до исходного значения (фон)')
           try {
-            // Вычисляем новую дату окончания на основе текущего времени + исходная длительность
-            const now = new Date();
-            const newEndDate = new Date(now.getTime() + originalTestTimerDuration);
-            
-            console.log('🔄 Вычислена новая дата окончания:', {
-              now: now.toISOString(),
-              duration: originalTestTimerDuration,
-              newEndDate: newEndDate.toISOString()
-            });
-            
-            const resetResponse = await fetch(`${API_BASE_URL}/properties/${displayProperty.id}/test-timer`, {
+            const now = new Date()
+            const newEndDate = new Date(now.getTime() + timerDuration)
+            const resetResponse = await fetch(`${API_BASE_URL}/properties/${pid}/test-timer`, {
               method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-              },
+              headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
                 test_timer_end_date: newEndDate.toISOString(),
-                test_timer_duration: originalTestTimerDuration // Сохраняем исходную длительность
-              })
-            });
-            
-            if (resetResponse.ok) {
-              const resetData = await resetResponse.json();
-              if (resetData.success) {
-                console.log('✅ Тестовый таймер сброшен на сервере до исходного значения');
-                setTimerExpired(false);
-                // Обновляем данные объекта с сервера для синхронизации таймера со всеми пользователями
-                try {
-                  const propResponse = await fetch(`${API_BASE_URL}/properties/${displayProperty.id}?lang=${currentLang}`);
-                  if (propResponse.ok) {
-                    const propData = await propResponse.json();
-                    if (propData.success && propData.data) {
-                      const updatedProp = propData.data;
-                      // Обновляем свойство для синхронизации таймера
-                      // Сохраняем test_timer_end_date, если он не null/undefined/пустая строка
-                      setProperty(prev => ({
-                        ...prev,
-                        test_timer_end_date: (updatedProp.test_timer_end_date && updatedProp.test_timer_end_date.trim() !== '') 
-                          ? updatedProp.test_timer_end_date 
-                          : prev.test_timer_end_date, // Сохраняем текущее значение, если сервер вернул пустое
-                        test_timer_duration: updatedProp.test_timer_duration || prev.test_timer_duration
-                      }));
-                      console.log('✅ Данные объекта обновлены с сервера:', updatedProp.test_timer_end_date || 'сохранено предыдущее значение');
-                    }
-                  }
-                } catch (propError) {
-                  console.error('❌ Ошибка при обновлении данных объекта:', propError);
-                }
+                test_timer_duration: timerDuration,
+              }),
+            })
+            if (!resetResponse.ok) {
+              const errorData = await resetResponse.json().catch(() => ({}))
+              console.error('❌ Ошибка при сбросе таймера на сервере:', errorData)
+              return
+            }
+            const resetData = await resetResponse.json()
+            if (!resetData.success) return
+            console.log('✅ Тестовый таймер сброшен на сервере до исходного значения')
+            setTimerExpired(false)
+            try {
+              const propResponse = await fetch(`${API_BASE_URL}/properties/${pid}?lang=${lang}`)
+              if (!propResponse.ok) return
+              const propData = await propResponse.json()
+              if (propData.success && propData.data) {
+                const updatedProp = propData.data
+                setProperty((prev) => ({
+                  ...prev,
+                  test_timer_end_date:
+                    updatedProp.test_timer_end_date && String(updatedProp.test_timer_end_date).trim() !== ''
+                      ? updatedProp.test_timer_end_date
+                      : prev.test_timer_end_date,
+                  test_timer_duration: updatedProp.test_timer_duration || prev.test_timer_duration,
+                }))
               }
-            } else {
-              const errorData = await resetResponse.json().catch(() => ({}));
-              console.error('❌ Ошибка при сбросе таймера на сервере:', errorData);
+            } catch (propError) {
+              console.error('❌ Ошибка при обновлении данных объекта:', propError)
             }
           } catch (resetError) {
-            console.error('❌ Ошибка при сбросе таймера:', resetError);
+            console.error('❌ Ошибка при сбросе таймера:', resetError)
           }
-        }
+        })()
         
         // Сохраняем ставку пользователя для проверки перебития
         setUserLastBid(amount)
@@ -1722,28 +1717,23 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
             setCurrentLeaderId(userIdNum)
             console.log('✅ После создания ставки пользователь временно установлен как лидер:', userIdNum)
             
-            // Получаем данные пользователя для отображения в таймере
-            try {
-              const userResponse = await fetch(`${API_BASE_URL}/users/${userId}`)
-              if (userResponse.ok) {
+            void (async () => {
+              try {
+                const userResponse = await fetch(`${API_BASE_URL}/users/${userId}`)
+                if (!userResponse.ok) return
                 const userData = await userResponse.json()
                 if (userData.success && userData.data) {
-                  const user = userData.data
-                  // Показываем флаг и номер в таймере на 3 секунды
+                  const u = userData.data
                   setTimerBidInfo({
-                    country: user.country || '',
-                    userIdNumber: user.user_id_number || userId
+                    country: u.country || '',
+                    userIdNumber: u.user_id_number || userId,
                   })
-                  
-                  // Скрываем информацию через 3 секунды
-                  setTimeout(() => {
-                    setTimerBidInfo(null)
-                  }, 3000)
+                  setTimeout(() => setTimerBidInfo(null), 3000)
                 }
+              } catch (userError) {
+                console.warn('⚠️ Не удалось получить данные пользователя для таймера:', userError)
               }
-            } catch (userError) {
-              console.warn('⚠️ Не удалось получить данные пользователя для таймера:', userError)
-            }
+            })()
           } else {
             setCurrentLeaderId(userIdNum)
           }
@@ -1753,11 +1743,8 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
         // После успешной ставки пользователь становится лидером
         setPreviousLeaderId(userId)
         
-        // Обновляем текущую ставку сразу после успешной ставки
-        setCurrentBid(prev => {
-          setPrevBid(prev !== null ? prev : amount)
-          return amount
-        })
+        setPrevBid(currentBid !== null ? currentBid : amount)
+        setCurrentBid(amount)
         console.log(`✅ Обновлена текущая ставка на: ${amount}`)
         
         // Перезагружаем данные через небольшую задержку для синхронизации с сервером
