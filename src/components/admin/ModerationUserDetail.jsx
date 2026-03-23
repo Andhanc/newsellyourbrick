@@ -27,10 +27,20 @@ const ModerationUserDetail = ({ user, onBack, onApprove, onReject, onRefresh }) 
   const getDocumentTypeLabel = (type) => {
     const types = {
       'passport': 'Паспорт',
+      'selfie': 'Селфи',
       'passport_with_face': 'Паспорт + лицо',
       'other': 'Другой документ'
     };
     return types[type] || type || 'Документ';
+  };
+
+  const getDocumentOrder = (type) => {
+    const order = {
+      passport: 1,
+      selfie: 2,
+      passport_with_face: 3
+    };
+    return order[type] || 99;
   };
 
   const getDocumentImageUrl = (photoPath) => {
@@ -230,13 +240,20 @@ const ModerationUserDetail = ({ user, onBack, onApprove, onReject, onRefresh }) 
             </h2>
             <div className="moderation-user-detail__documents-photos-grid">
               {user.documents && user.documents.length > 0 ? (
-                user.documents.map((doc) => {
+                [...user.documents]
+                  .filter((doc) => getDocumentImageUrl(doc.document_photo))
+                  .sort((a, b) => {
+                    const byType = getDocumentOrder(a.document_type) - getDocumentOrder(b.document_type);
+                    if (byType !== 0) return byType;
+                    const aDate = new Date(a.created_at || 0).getTime();
+                    const bDate = new Date(b.created_at || 0).getTime();
+                    return aDate - bDate;
+                  })
+                  .map((doc) => {
                   const documentPhoto = getDocumentImageUrl(doc.document_photo);
                   const documentName = getDocumentTypeLabel(doc.document_type);
                   const isPassport = doc.document_type === 'passport';
                   const isPassportWithFace = doc.document_type === 'passport_with_face';
-
-                  if (!documentPhoto) return null;
 
                   return (
                     <div key={doc.id} className="moderation-user-detail__document-item-wrapper">
@@ -256,15 +273,15 @@ const ModerationUserDetail = ({ user, onBack, onApprove, onReject, onRefresh }) 
                         </div>
                       ) : (
                         <div className="moderation-user-detail__document-photo-item">
+                          <div className="moderation-user-detail__document-photo-label">
+                            {documentName}
+                          </div>
                           <div 
                             className="moderation-user-detail__document-photo-image"
                             onClick={() => setSelectedPhoto(documentPhoto)}
                             style={{ cursor: 'pointer' }}
                           >
                             <img src={documentPhoto} alt={documentName} />
-                          </div>
-                          <div className="moderation-user-detail__document-photo-label">
-                            {documentName}
                           </div>
                         </div>
                       )}

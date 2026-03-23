@@ -3181,6 +3181,46 @@ app.put('/api/purchase-requests/:id/status', async (req, res) => {
         // Продолжаем выполнение, даже если уведомления не отправились
       }
     }
+
+    // High-priority уведомления для покупателя по "Купить сейчас"
+    if (request.buyer_id) {
+      try {
+        const propertyIdNum = request.property_id ? parseInt(request.property_id, 10) : null;
+        const safePropertyId = Number.isFinite(propertyIdNum) ? propertyIdNum : null;
+        const propertyTitle = request.property_title || 'Объект недвижимости';
+        const requestIdNum = parseInt(req.params.id, 10);
+
+        if (status === 'processing') {
+          notificationQueries.create({
+            user_id: request.buyer_id,
+            type: 'buy_now_approved',
+            title: 'Покупка одобрена',
+            message: `Ваш запрос на покупку "${propertyTitle}" одобрен. Перейдите к оформлению.`,
+            data: {
+              request_id: Number.isFinite(requestIdNum) ? requestIdNum : null,
+              property_id: safePropertyId
+            },
+            is_read: 0,
+            view_count: 0
+          });
+        } else if (status === 'rejected' || status === 'cancelled') {
+          notificationQueries.create({
+            user_id: request.buyer_id,
+            type: 'buy_now_rejected',
+            title: 'Покупка отклонена',
+            message: `Ваш запрос на покупку "${propertyTitle}" был отклонен.`,
+            data: {
+              request_id: Number.isFinite(requestIdNum) ? requestIdNum : null,
+              property_id: safePropertyId
+            },
+            is_read: 0,
+            view_count: 0
+          });
+        }
+      } catch (buyerNotifError) {
+        console.error('❌ Ошибка создания buyer-уведомления по purchase request:', buyerNotifError);
+      }
+    }
     
     res.json({ success: true, data: updatedRequest, message: 'Статус обновлен' });
   } catch (error) {
@@ -10473,6 +10513,67 @@ app.post('/api/auction-winners', (req, res) => {
       deposit_amount: depositAmount,
       deposit_due_date: depositDueDate.toISOString()
     });
+
+    // High-priority уведомления покупателю: победа, проигрыш, дедлайн оплаты
+    try {
+      const propertyTableSafe = ['properties', 'properties_apartments', 'properties_houses'].includes(property_table)
+        ? property_table
+        : 'properties';
+      const propertyRow = db
+        .prepare(`SELECT id, title FROM ${propertyTableSafe} WHERE id = ?`)
+        .get(property_id);
+      const propertyTitle = propertyRow?.title || 'объект';
+
+      notificationQueries.create({
+        user_id: user_id,
+        type: 'auction_won',
+        title: 'Вы победили в аукционе',
+        message: `Поздравляем! Вы победили в аукционе по объекту "${propertyTitle}".`,
+        data: {
+          property_id: parseInt(property_id, 10),
+          winner_id: result.lastInsertRowid
+        },
+        is_read: 0,
+        view_count: 0
+      });
+
+      notificationQueries.create({
+        user_id: user_id,
+        type: 'payment_deadline',
+        title: 'Срок оплаты депозита',
+        message: `Оплатите депозит до ${depositDueDate.toLocaleString('ru-RU')}, чтобы сохранить право на покупку "${propertyTitle}".`,
+        data: {
+          property_id: parseInt(property_id, 10),
+          winner_id: result.lastInsertRowid,
+          deposit_due_date: depositDueDate.toISOString()
+        },
+        is_read: 0,
+        view_count: 0
+      });
+
+      // Проигравшие: все уникальные участники ставок по объекту, кроме победителя
+      const losingBidders = db.prepare(`
+        SELECT DISTINCT user_id
+        FROM bids
+        WHERE property_id = ? AND user_id IS NOT NULL AND user_id != ?
+      `).all(property_id, user_id);
+
+      for (const bidder of losingBidders) {
+        notificationQueries.create({
+          user_id: bidder.user_id,
+          type: 'auction_lost',
+          title: 'Аукцион завершен',
+          message: `Аукцион по объекту "${propertyTitle}" завершен. Победил другой участник.`,
+          data: {
+            property_id: parseInt(property_id, 10)
+          },
+          is_read: 0,
+          view_count: 0
+        });
+      }
+    } catch (auctionNotifError) {
+      console.error('❌ Ошибка создания high-priority уведомлений по аукциону:', auctionNotifError);
+    }
     
     res.json({
       success: true,

@@ -206,11 +206,13 @@ const Moderation = () => {
       
       let usersList = [];
       
+      let apiLoadedSuccessfully = false;
       if (response.ok) {
         const data = await response.json();
         console.log('📦 Получены данные от API:', data);
         
         if (data.success && data.data) {
+          apiLoadedSuccessfully = true;
           console.log('✅ Найдено документов:', data.data.length);
           
           // Группируем документы по пользователям
@@ -265,94 +267,87 @@ const Moderation = () => {
         console.error('❌ Ошибка загрузки документов: ответ не успешный', response.status, errorText);
       }
       
-      // Загружаем данные из localStorage (обратный порядок - новые сверху)
-      const localStorageVerifications = JSON.parse(localStorage.getItem('pendingVerifications') || '[]');
-      // Переворачиваем массив чтобы новые были сверху
-      const reversedVerifications = [...localStorageVerifications].reverse();
-      reversedVerifications.forEach((verification, index) => {
-        // Сохраняем оригинальный индекс для правильного удаления
-        const originalIndex = localStorageVerifications.length - 1 - index;
-        const userId = verification.userId;
-        const userLocalId = `local_user_${originalIndex}`;
-        const existingUser = usersList.find(u => u.id === userId || u.id === userLocalId);
-        
-        if (existingUser) {
-          // Добавляем документы к существующему пользователю
-          if (verification.passportPhoto) {
-            existingUser.documents.push({
-              id: `local_passport_${originalIndex}`,
-              document_type: 'passport',
-              document_photo: verification.passportPhoto,
-              verification_status: 'pending',
-              created_at: verification.submittedAt
-            });
-          }
-          if (verification.selfiePhoto) {
-            existingUser.documents.push({
-              id: `local_selfie_${originalIndex}`,
-              document_type: 'selfie',
-              document_photo: verification.selfiePhoto,
-              verification_status: 'pending',
-              created_at: verification.submittedAt
-            });
-          }
-          if (verification.selfieWithPassportPhoto) {
-            existingUser.documents.push({
-              id: `local_selfie_passport_${originalIndex}`,
-              document_type: 'passport_with_face',
-              document_photo: verification.selfieWithPassportPhoto,
-              verification_status: 'pending',
-              created_at: verification.submittedAt
-            });
-          }
-          // Добавляем информацию о привязанной карте, если она есть
-          if (verification.cardInfo) {
-            console.log('💳 Добавление данных карты к существующему пользователю:', verification.cardInfo);
-            existingUser.cardInfo = verification.cardInfo;
-          }
-        } else {
-          // Создаем нового пользователя из localStorage
-          // Используем originalIndex для ID, чтобы можно было правильно удалить
+      // Загружаем fallback из localStorage только если API недоступен/пустой.
+      // Иначе появляются дубли вида "local_user_*" + реальный пользователь из БД.
+      if (!apiLoadedSuccessfully || usersList.length === 0) {
+        const localStorageVerifications = JSON.parse(localStorage.getItem('pendingVerifications') || '[]');
+        const reversedVerifications = [...localStorageVerifications].reverse();
+        reversedVerifications.forEach((verification, index) => {
+          const originalIndex = localStorageVerifications.length - 1 - index;
+          const userId = verification.userId;
           const userLocalId = `local_user_${originalIndex}`;
-          const newUser = {
-            id: userLocalId,
-            firstName: 'Не указано',
-            lastName: '',
-            email: 'Не указано',
-            phone: 'Не указано',
-            role: 'seller',
-            documents: [
-              ...(verification.passportPhoto ? [{
+          const existingUser = usersList.find(u => u.id === userId || u.id === userLocalId);
+          
+          if (existingUser) {
+            if (verification.passportPhoto) {
+              existingUser.documents.push({
                 id: `local_passport_${originalIndex}`,
                 document_type: 'passport',
                 document_photo: verification.passportPhoto,
                 verification_status: 'pending',
                 created_at: verification.submittedAt
-              }] : []),
-              ...(verification.selfiePhoto ? [{
+              });
+            }
+            if (verification.selfiePhoto) {
+              existingUser.documents.push({
                 id: `local_selfie_${originalIndex}`,
                 document_type: 'selfie',
                 document_photo: verification.selfiePhoto,
                 verification_status: 'pending',
                 created_at: verification.submittedAt
-              }] : []),
-              ...(verification.selfieWithPassportPhoto ? [{
+              });
+            }
+            if (verification.selfieWithPassportPhoto) {
+              existingUser.documents.push({
                 id: `local_selfie_passport_${originalIndex}`,
                 document_type: 'passport_with_face',
                 document_photo: verification.selfieWithPassportPhoto,
                 verification_status: 'pending',
                 created_at: verification.submittedAt
-              }] : [])
-            ]
-          };
-          // Добавляем информацию о привязанной карте, если она есть
-          if (verification.cardInfo) {
-            console.log('💳 Добавление данных карты к новому пользователю:', verification.cardInfo);
-            newUser.cardInfo = verification.cardInfo;
+              });
+            }
+            if (verification.cardInfo) {
+              existingUser.cardInfo = verification.cardInfo;
+            }
+          } else {
+            const newUser = {
+              id: userLocalId,
+              firstName: 'Не указано',
+              lastName: '',
+              email: 'Не указано',
+              phone: 'Не указано',
+              role: 'seller',
+              documents: [
+                ...(verification.passportPhoto ? [{
+                  id: `local_passport_${originalIndex}`,
+                  document_type: 'passport',
+                  document_photo: verification.passportPhoto,
+                  verification_status: 'pending',
+                  created_at: verification.submittedAt
+                }] : []),
+                ...(verification.selfiePhoto ? [{
+                  id: `local_selfie_${originalIndex}`,
+                  document_type: 'selfie',
+                  document_photo: verification.selfiePhoto,
+                  verification_status: 'pending',
+                  created_at: verification.submittedAt
+                }] : []),
+                ...(verification.selfieWithPassportPhoto ? [{
+                  id: `local_selfie_passport_${originalIndex}`,
+                  document_type: 'passport_with_face',
+                  document_photo: verification.selfieWithPassportPhoto,
+                  verification_status: 'pending',
+                  created_at: verification.submittedAt
+                }] : [])
+              ]
+            };
+            if (verification.cardInfo) {
+              newUser.cardInfo = verification.cardInfo;
+            }
+            usersList.push(newUser);
           }
-          usersList.push(newUser);
-        }
-      });
+        });
+      }
       
       // Фильтруем пользователей - оставляем только тех, у кого есть pending документы
       const usersWithPendingDocs = usersList.filter(user => {

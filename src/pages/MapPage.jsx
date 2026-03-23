@@ -8,6 +8,7 @@ import { useNavigate } from 'react-router-dom'
 import { FiHeart, FiMapPin, FiChevronLeft, FiSliders } from 'react-icons/fi'
 import { HiOutlineArrowsExpand } from 'react-icons/hi'
 import { getApiBaseUrl } from '../utils/apiConfig'
+import { SATELLITE_MAP_STYLE } from '../utils/mapStyles'
 import './MapPage.css'
 
 const SORT_OPTIONS = [
@@ -15,6 +16,16 @@ const SORT_OPTIONS = [
   { id: 'rating', label: 'По рейтингу' },
   { id: 'price', label: 'Сначала дешевле' }
 ]
+
+const MAP_3D_SETTINGS = {
+  pitch: 60,
+  bearing: -20,
+  minZoomForBuildings: 14,
+  zoomBoost: 0.5
+}
+
+const OPENMAPTILES_TILEJSON_URL = 'https://demotiles.maplibre.org/tiles/tiles.json'
+const BUILDING_LAYER_CANDIDATES = ['building', 'building:part', 'buildings']
 
 // Нормализация объекта из API для карты и списка
 function normalizeApiProperty(prop, index) {
@@ -114,6 +125,7 @@ const MapPage = () => {
   const mapRef = useRef(null)
   const mapInstanceRef = useRef(null)
   const markersRef = useRef([])
+  const buildingSourceLayerRef = useRef(undefined)
   const [mapContainerReady, setMapContainerReady] = useState(false)
   const geocodeInFlightRef = useRef(false)
 
@@ -180,6 +192,80 @@ const MapPage = () => {
     return null
   }
 
+  const enable3DView = useCallback((map) => {
+    if (!map) return
+
+    const applyCamera = () => {
+      const currentZoom = map.getZoom()
+      map.easeTo({
+        pitch: MAP_3D_SETTINGS.pitch,
+        bearing: MAP_3D_SETTINGS.bearing,
+        zoom: Math.max(currentZoom, MAP_3D_SETTINGS.minZoomForBuildings + MAP_3D_SETTINGS.zoomBoost),
+        duration: 900
+      })
+    }
+
+    ;(async () => {
+      try {
+        if (!map.getSource('openmaptiles')) {
+          map.addSource('openmaptiles', {
+            type: 'vector',
+            url: OPENMAPTILES_TILEJSON_URL
+          })
+        }
+
+        if (buildingSourceLayerRef.current === undefined) {
+          const tileJson = await fetch(OPENMAPTILES_TILEJSON_URL).then((r) => (r.ok ? r.json() : null)).catch(() => null)
+          const vectorLayerIds = Array.isArray(tileJson?.vector_layers)
+            ? tileJson.vector_layers.map((l) => l?.id).filter(Boolean)
+            : []
+          buildingSourceLayerRef.current =
+            BUILDING_LAYER_CANDIDATES.find((id) => vectorLayerIds.includes(id)) || null
+        }
+
+        const buildingSourceLayer = buildingSourceLayerRef.current
+        if (!buildingSourceLayer) {
+          console.warn('3D слой зданий недоступен: векторный слой building не найден')
+          applyCamera()
+          return
+        }
+
+        if (!map.getLayer('3d-buildings')) {
+          map.addLayer({
+            id: '3d-buildings',
+            source: 'openmaptiles',
+            'source-layer': buildingSourceLayer,
+            type: 'fill-extrusion',
+            minzoom: MAP_3D_SETTINGS.minZoomForBuildings,
+            paint: {
+              'fill-extrusion-color': '#d1d9e6',
+              'fill-extrusion-height': [
+                'coalesce',
+                ['get', 'render_height'],
+                ['get', 'height'],
+                12
+              ],
+              'fill-extrusion-base': [
+                'coalesce',
+                ['get', 'render_min_height'],
+                ['get', 'min_height'],
+                0
+              ],
+              'fill-extrusion-opacity': 0.78
+            }
+          })
+        }
+
+        applyCamera()
+      } catch (error) {
+        console.warn('Не удалось включить 3D-режим карты:', error)
+        try {
+          applyCamera()
+        } catch (_) {}
+      }
+    })()
+  }, [])
+
   // Догружаем координаты для объектов, у которых их нет (по адресу), чтобы на карте были реальные точки.
   useEffect(() => {
     if (!propertiesList.length) return
@@ -218,20 +304,6 @@ const MapPage = () => {
     }
   }, [propertiesList])
 
-  // Стиль карты: OpenStreetMap (надёжно грузится без ключа)
-  const MAP_STYLE = {
-    version: 8,
-    sources: {
-      osm: {
-        type: 'raster',
-        tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
-        tileSize: 256,
-        attribution: '© OpenStreetMap'
-      }
-    },
-    layers: [{ id: 'osm', type: 'raster', source: 'osm' }]
-  }
-
   // Монтируем контейнер карты после первого рендера, чтобы у блока уже были размеры
   useEffect(() => {
     const id = requestAnimationFrame(() => {
@@ -251,12 +323,12 @@ const MapPage = () => {
       try {
         const map = new maplibregl.Map({
           container,
-          style: MAP_STYLE,
+          style: SATELLITE_MAP_STYLE,
           center: [37.6173, 55.7558],
           zoom: 10,
           attributionControl: false
         })
-        map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'bottom-right')
+        map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right')
         mapInstanceRef.current = map
 
         const doResize = () => {
@@ -266,6 +338,7 @@ const MapPage = () => {
           doResize()
           setTimeout(doResize, 300)
           setTimeout(doResize, 800)
+          enable3DView(map)
         })
         // На случай если load уже произошёл или контейнер изначально с размерами
         requestAnimationFrame(() => {
@@ -287,7 +360,7 @@ const MapPage = () => {
         mapInstanceRef.current = null
       }
     }
-  }, [mapContainerReady])
+  }, [mapContainerReady, enable3DView])
 
   useEffect(() => {
     if (!mapInstanceRef.current) return
@@ -364,8 +437,11 @@ const MapPage = () => {
   useEffect(() => {
     if (mapExpanded && mapInstanceRef.current?.resize) {
       mapInstanceRef.current.resize()
+      if (mapInstanceRef.current.loaded()) {
+        enable3DView(mapInstanceRef.current)
+      }
     }
-  }, [mapExpanded])
+  }, [mapExpanded, enable3DView])
 
   return (
     <div className="map-page-root">

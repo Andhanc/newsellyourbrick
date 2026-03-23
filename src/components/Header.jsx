@@ -10,7 +10,6 @@ import {
   FiUser,
 } from 'react-icons/fi'
 import { IoLocationOutline } from 'react-icons/io5'
-import { properties } from '../data/properties'
 import LoginModal from './LoginModal'
 import { getUserData, clearUserData } from '../services/authService'
 import { getApiBaseUrl } from '../utils/apiConfig'
@@ -47,6 +46,8 @@ const Header = () => {
   const [userPhoto, setUserPhoto] = useState(null) // Фотография пользователя
   const [isLoggedIn, setIsLoggedIn] = useState(false) // Статус авторизации
   const [isAIChatOpen, setIsAIChatOpen] = useState(false) // Состояние AI чата для страницы аукцион
+  const [notifications, setNotifications] = useState([])
+  const [notificationsLoading, setNotificationsLoading] = useState(false)
   const locationRef = useRef(null)
   const notificationRef = useRef(null)
   const menuRef = useRef(null)
@@ -423,12 +424,98 @@ const Header = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchQuery, isSearchOpen])
 
-  const firstProperty = properties[0] || {
-    id: 1,
-    title: 'Квартира',
-    location: 'Москва',
-    images: ['https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=400&q=80']
+  const unreadNotificationsCount = notifications.filter((n) => n.view_count === 0).length
+
+  const getNotificationClass = (notification) => {
+    if (notification.type === 'verification_success') return 'notification-item--success'
+    if (notification.type === 'verification_rejected') return 'notification-item--error'
+    if (notification.type === 'bid_outbid') return 'notification-item--warning'
+    if (notification.type === 'buy_now_approved') return 'notification-item--success'
+    if (notification.type === 'buy_now_rejected') return 'notification-item--error'
+    if (notification.type === 'auction_won') return 'notification-item--success'
+    if (notification.type === 'auction_lost') return 'notification-item--warning'
+    if (notification.type === 'payment_deadline') return 'notification-item--warning'
+    if (notification.type === 'test_drive_request') return 'notification-item--warning'
+    if (notification.type === 'test_drive_result') return 'notification-item--success'
+    return 'notification-item--property'
   }
+
+  const handleNotificationView = async (notificationId) => {
+    try {
+      await fetch(`${await getApiBaseUrl()}/notifications/${notificationId}/view`, {
+        method: 'PUT'
+      })
+      setNotifications((prev) =>
+        prev.map((notification) =>
+          notification.id === notificationId
+            ? { ...notification, view_count: Math.max(1, notification.view_count || 0) }
+            : notification
+        )
+      )
+    } catch (error) {
+      console.error('Ошибка при просмотре уведомления:', error)
+    }
+  }
+
+  useEffect(() => {
+    const loadNotifications = async () => {
+      if (!isLoggedIn) {
+        setNotifications([])
+        return
+      }
+
+      const dbUserId = localStorage.getItem('userId')
+      if (!dbUserId || !/^\d+$/.test(String(dbUserId).trim())) {
+        setNotifications([])
+        return
+      }
+
+      setNotificationsLoading(true)
+      try {
+        const apiBaseUrl = await getApiBaseUrl()
+        const response = await fetch(`${apiBaseUrl}/notifications/user/${dbUserId}`)
+        if (!response.ok) {
+          setNotifications([])
+          return
+        }
+        const data = await response.json()
+        if (!data.success) {
+          setNotifications([])
+          return
+        }
+
+        const parsedNotifications = (data.data || []).map((notification) => {
+          if (notification.data && typeof notification.data === 'string') {
+            try {
+              return { ...notification, data: JSON.parse(notification.data) }
+            } catch {
+              return notification
+            }
+          }
+          return notification
+        })
+
+        setNotifications(parsedNotifications)
+      } catch (error) {
+        console.error('Ошибка загрузки уведомлений:', error)
+        setNotifications([])
+      } finally {
+        setNotificationsLoading(false)
+      }
+    }
+
+    loadNotifications()
+    if (!isLoggedIn) return
+
+    const handleFocus = () => loadNotifications()
+    window.addEventListener('focus', handleFocus)
+    const pollId = setInterval(loadNotifications, 45000)
+
+    return () => {
+      window.removeEventListener('focus', handleFocus)
+      clearInterval(pollId)
+    }
+  }, [isLoggedIn])
 
   return (
     <>
@@ -926,7 +1013,7 @@ const Header = () => {
                   aria-expanded={isNotificationOpen}
                 >
                   <FiBell size={20} />
-                  <span className="new-header__notification-indicator" />
+                  {unreadNotificationsCount > 0 && <span className="new-header__notification-indicator" />}
                 </button>
               </>
             )}
@@ -950,37 +1037,69 @@ const Header = () => {
                       </button>
                     </div>
                     <div className="notification-panel__list">
-                      <div className="notification-item notification-item--property">
-                        <div className="notification-item__content">
-                          <h4 className="notification-item__title">{t('foundProperty')}</h4>
-                          <div className="notification-item__property">
-                            <div className="notification-item__image">
-                              <img 
-                                src={firstProperty.images[0]}
-                                alt={firstProperty.title}
-                                onError={(e) => {
-                                  e.target.src = 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=400&q=80'
-                                }}
-                              />
-                            </div>
-                            <div className="notification-item__info">
-                              <p className="notification-item__property-name">{firstProperty.title}</p>
-                              <p className="notification-item__property-location">{firstProperty.location}</p>
-                              <button 
-                                type="button" 
-                                className="notification-item__button"
-                                onClick={() => {
-                                  setIsNotificationOpen(false)
-                                  navigate(`/property/${firstProperty.id}`)
-                                }}
-                              >
-                                {t('goTo') || 'Перейти'}
-                                <FiChevronDown size={18} style={{ transform: 'rotate(-90deg)' }} />
-                              </button>
+                      {notificationsLoading ? (
+                        <div style={{ padding: '20px', textAlign: 'center' }}>{t('loading')}</div>
+                      ) : notifications.length === 0 ? (
+                        <div style={{ padding: '20px', textAlign: 'center', color: '#6b7280' }}>
+                          {t('noNotifications')}
+                        </div>
+                      ) : (
+                        notifications.map((notification) => (
+                          <div
+                            key={notification.id}
+                            className={`notification-item ${getNotificationClass(notification)}`}
+                            onClick={() => {
+                              if (notification.type === 'test_drive_request') return
+                              handleNotificationView(notification.id)
+                            }}
+                          >
+                            <div className="notification-item__content">
+                              <h4 className="notification-item__title">{notification.title}</h4>
+                              {notification.message && (
+                                <p className="notification-item__message">{notification.message}</p>
+                              )}
+                              {notification.data?.property_id && (
+                                <div className="notification-item__property">
+                                  <div className="notification-item__info">
+                                    <button
+                                      type="button"
+                                      className="notification-item__button"
+                                      onClick={(e) => {
+                                        e.stopPropagation()
+                                        setIsNotificationOpen(false)
+                                        handleNotificationView(notification.id)
+                                        navigate(`/property/${notification.data.property_id}`)
+                                      }}
+                                    >
+                                      {t('goTo') || 'Перейти'}
+                                      <FiChevronDown size={18} style={{ transform: 'rotate(-90deg)' }} />
+                                    </button>
+                                  </div>
+                                </div>
+                              )}
+                              {!notification.data?.property_id && notification.type === 'buy_now_approved' && (
+                                <div className="notification-item__property">
+                                  <div className="notification-item__info">
+                                    <button
+                                      type="button"
+                                      className="notification-item__button"
+                                      onClick={(e) => {
+                                        e.stopPropagation()
+                                        setIsNotificationOpen(false)
+                                        handleNotificationView(notification.id)
+                                        navigate('/history')
+                                      }}
+                                    >
+                                      {t('goTo') || 'Перейти'}
+                                      <FiChevronDown size={18} style={{ transform: 'rotate(-90deg)' }} />
+                                    </button>
+                                  </div>
+                                </div>
+                              )}
                             </div>
                           </div>
-                        </div>
-                      </div>
+                        ))
+                      )}
                     </div>
                   </div>
                 </div>
