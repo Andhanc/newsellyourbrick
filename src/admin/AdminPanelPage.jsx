@@ -20,6 +20,7 @@ import Testing from '../components/admin/Testing';
 import StorageMirror from '../components/admin/StorageMirror';
 import DebtReasons from '../components/admin/DebtReasons';
 import DebtDocuments from '../components/admin/DebtDocuments';
+import AdminAddition from '../components/admin/AdminAddition';
 import { mockBusinessInfo } from '../data/mockData';
 import { clearUserData, clearUserDataWithoutAdmin } from '../services/authService';
 import { showNotification } from '../utils/toastHelper';
@@ -67,6 +68,7 @@ const AdminPanelPage = () => {
     moderation: 'Модерация',
     chat: 'Чат',
     smart_assistant: 'Умный помощник',
+    addition: 'Добавление',
     objects: 'Объекты',
     debt_reasons: 'Причина долга',
     debt_documents: 'Необходимые документы',
@@ -92,6 +94,7 @@ const AdminPanelPage = () => {
       moderation: adminPermissions.can_access_moderation,
       chat: adminPermissions.can_access_chat,
       smart_assistant: adminPermissions.can_access_chat,
+      addition: adminPermissions.can_access_objects,
       objects: adminPermissions.can_access_objects,
       debt_reasons: adminPermissions.can_access_objects,
       debt_documents: adminPermissions.can_access_objects,
@@ -156,6 +159,8 @@ const AdminPanelPage = () => {
         return <AdminChat />;
       case 'smart_assistant':
         return <SmartAssistant />;
+      case 'addition':
+        return <AdminAddition onPublishComplete={() => handleSectionChange('statistics')} />;
       case 'objects':
         return <ObjectsList />;
       case 'debt_reasons':

@@ -2,14 +2,21 @@ import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import './AuctionPeriodPicker.css'
 
-const AuctionPeriodPicker = ({ startDate, endDate, onStartDateChange, onEndDateChange, label }) => {
+const AuctionPeriodPicker = ({
+  startDate,
+  endDate,
+  onStartDateChange,
+  onEndDateChange,
+  label,
+  // В админ-режиме можно убрать минимальные ограничения по периоду.
+  minMonths = 3,
+  minDays = 15,
+  disableMinConstraints = false,
+}) => {
   const { t } = useTranslation()
 
   const [endDateValue, setEndDateValue] = useState(endDate || '')
   const [error, setError] = useState('')
-
-  const MIN_MONTHS = 3
-  const MIN_DAYS = 15 // 3.5 месяца = 3 месяца + 15 дней
 
   // Автоматически устанавливаем сегодняшнюю дату как дату начала
   useEffect(() => {
@@ -35,10 +42,9 @@ const AuctionPeriodPicker = ({ startDate, endDate, onStartDateChange, onEndDateC
     const start = startDate ? new Date(startDate) : today
     const minEnd = new Date(start)
     
-    // Добавляем 3 месяца
-    minEnd.setMonth(minEnd.getMonth() + MIN_MONTHS)
-    // Добавляем 15 дней
-    minEnd.setDate(minEnd.getDate() + MIN_DAYS)
+    // Добавляем минимальный период: месяцы + дни
+    minEnd.setMonth(minEnd.getMonth() + Number(minMonths) || 0)
+    minEnd.setDate(minEnd.getDate() + Number(minDays) || 0)
     
     return minEnd.toISOString().split('T')[0]
   }
@@ -49,16 +55,20 @@ const AuctionPeriodPicker = ({ startDate, endDate, onStartDateChange, onEndDateC
       return true
     }
 
+    if (disableMinConstraints) {
+      setError('')
+      return true
+    }
+
     const today = new Date()
     today.setHours(0, 0, 0, 0)
     const start = startDate ? new Date(startDate) : today
     const end = new Date(endDateStr)
     const minEnd = new Date(start)
     
-    // Добавляем 3 месяца
-    minEnd.setMonth(minEnd.getMonth() + MIN_MONTHS)
-    // Добавляем 15 дней
-    minEnd.setDate(minEnd.getDate() + MIN_DAYS)
+    // Добавляем минимальный период: месяцы + дни
+    minEnd.setMonth(minEnd.getMonth() + Number(minMonths) || 0)
+    minEnd.setDate(minEnd.getDate() + Number(minDays) || 0)
     
     if (end < minEnd) {
       const minDateStr = minEnd.toLocaleDateString(undefined, {
@@ -83,7 +93,7 @@ const AuctionPeriodPicker = ({ startDate, endDate, onStartDateChange, onEndDateC
     }
   }
 
-  const minEndDate = calculateMinEndDate()
+  const minEndDate = disableMinConstraints ? undefined : calculateMinEndDate()
 
   return (
     <div className="auction-period-picker">
@@ -97,14 +107,14 @@ const AuctionPeriodPicker = ({ startDate, endDate, onStartDateChange, onEndDateC
             value={endDateValue}
             onChange={handleEndDateChange}
             className={`auction-period-date-input ${error ? 'auction-period-date-input--error' : ''}`}
-            min={minEndDate}
+              min={minEndDate || undefined}
           />
-          {error && (
+          {!disableMinConstraints && error && (
             <div className="auction-period-error">
               {error}
             </div>
           )}
-          {!error && minEndDate && (
+          {!disableMinConstraints && !error && minEndDate && (
             <div className="auction-period-hint">
               {t('addPropertyPriceMinEndDateHint')}{' '}
               {new Date(minEndDate).toLocaleDateString(undefined, {

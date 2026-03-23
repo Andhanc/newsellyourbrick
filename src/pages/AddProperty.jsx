@@ -52,9 +52,9 @@ import './AddProperty.css'
 const DRAFT_KEY = 'addPropertyDraft'
 const DRAFT_SAVE_DEBOUNCE_MS = 600
 
-function loadDraft() {
+function loadDraft(draftKey = DRAFT_KEY) {
   try {
-    const raw = localStorage.getItem(DRAFT_KEY)
+    const raw = localStorage.getItem(draftKey)
     if (!raw) return null
     return JSON.parse(raw)
   } catch {
@@ -62,14 +62,14 @@ function loadDraft() {
   }
 }
 
-function saveDraftPayload(payload) {
+function saveDraftPayload(payload, draftKey = DRAFT_KEY) {
   try {
-    localStorage.setItem(DRAFT_KEY, JSON.stringify(payload))
+    localStorage.setItem(draftKey, JSON.stringify(payload))
   } catch (e) {
     if (e?.name === 'QuotaExceededError') {
       try {
         const withoutMedia = { ...payload, photos: [], videos: [], additionalDocuments: [] }
-        localStorage.setItem(DRAFT_KEY, JSON.stringify(withoutMedia))
+        localStorage.setItem(draftKey, JSON.stringify(withoutMedia))
       } catch {
         // ignore
       }
@@ -77,20 +77,26 @@ function saveDraftPayload(payload) {
   }
 }
 
-function clearDraft() {
+function clearDraft(draftKey = DRAFT_KEY) {
   try {
-    localStorage.removeItem(DRAFT_KEY)
+    localStorage.removeItem(draftKey)
   } catch {
     // ignore
   }
 }
 
-const AddProperty = () => {
+const AddProperty = ({
+  adminOwnerId = null,
+  adminMode = false,
+  onAdminBack = null,
+  onAdminComplete = null
+} = {}) => {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const location = useLocation()
   const { id } = useParams() // ID объекта для редактирования
   const isEditMode = !!id // Режим редактирования
+  const draftKey = adminMode ? 'admin_addPropertyDraft' : DRAFT_KEY
   const fileInputRef = useRef(null)
   const videoInputRef = useRef(null)
   const documentInputRef = useRef(null)
@@ -917,7 +923,7 @@ const AddProperty = () => {
             `Для публикации объекта необходимо заполнить все обязательные поля профиля. Не заполнены следующие поля: ${missingFields.join(', ')}. Пожалуйста, перейдите в профиль и заполните недостающие данные.`
           )
           // Перенаправляем в кабинет продавца, чтобы пользователь мог заполнить профиль
-          navigate('/owner/dashboard')
+          if (!adminMode) navigate('/owner/dashboard')
           return false
         }
       } else {
@@ -947,7 +953,7 @@ const AddProperty = () => {
             showNotification(
               `Для публикации объекта необходимо заполнить все обязательные поля профиля. Не заполнены следующие поля: ${missingFields.join(', ')}. Пожалуйста, перейдите в профиль и заполните недостающие данные.`
             )
-            navigate('/owner/dashboard')
+            if (!adminMode) navigate('/owner/dashboard')
             return false
           }
         }
@@ -1230,7 +1236,11 @@ const AddProperty = () => {
         
         // Показываем модальное окно об успешной отправке и стираем черновик
         setIsSubmitting(false)
-        clearDraft()
+        clearDraft(draftKey)
+        if (adminMode && typeof onAdminComplete === 'function') {
+          onAdminComplete()
+          return true
+        }
         if (!skipSuccessModal) {
           setShowSuccessModal(true)
         }
@@ -1256,11 +1266,16 @@ const AddProperty = () => {
 
   // Получаем userId при монтировании компонента
   useEffect(() => {
+    if (adminMode && adminOwnerId) {
+      setUserId(adminOwnerId)
+      return
+    }
+
     const userData = getUserData()
     if (userData.isLoggedIn && userData.id) {
       setUserId(userData.id)
     }
-  }, [])
+  }, [adminMode, adminOwnerId])
 
   // Загружаем данные объекта при редактировании
   useEffect(() => {
@@ -1273,7 +1288,7 @@ const AddProperty = () => {
   const draftRestoredRef = useRef(false)
   useEffect(() => {
     if (isEditMode || draftRestoredRef.current) return
-    const draft = loadDraft()
+    const draft = loadDraft(draftKey)
     if (!draft) return
     draftRestoredRef.current = true
     if (draft.formData) setFormData(draft.formData)
@@ -1325,7 +1340,7 @@ const AddProperty = () => {
         showHint2,
         additionalDocuments: additionalDocuments.map(d => ({ name: d.name, url: d.url, type: d.type }))
       }
-      saveDraftPayload(payload)
+      saveDraftPayload(payload, draftKey)
     }, DRAFT_SAVE_DEBOUNCE_MS)
     return () => {
       if (saveDraftTimeoutRef.current) clearTimeout(saveDraftTimeoutRef.current)
@@ -2702,6 +2717,18 @@ const AddProperty = () => {
       
       setHouseSuggestions(filteredHouses)
       setShowHouseSuggestions(filteredHouses.length > 0)
+
+      // Сразу обновляем маркер на наиболее релевантный дом, чтобы не требовался
+      // повторный фокус/клик по полю улицы для корректной постановки точки.
+      if (filteredHouses.length > 0) {
+        const normalizedInput = String(houseValue || '').trim().toLowerCase()
+        const exactMatch = filteredHouses.find((item) => {
+          const hn = String(item?.address?.house_number || '').trim().toLowerCase()
+          return hn && normalizedInput && hn === normalizedInput
+        })
+        const bestMatch = exactMatch || filteredHouses[0]
+        applyHouseSelection(bestMatch, { closeSuggestions: false })
+      }
     } catch (error) {
       console.error('Ошибка поиска дома:', error)
       setHouseSuggestions([])
@@ -2882,10 +2909,11 @@ const AddProperty = () => {
     return parts.join(', ')
   }
 
-  // Обработчик выбора дома из подсказок
-  const handleHouseSelect = (suggestion) => {
+  const applyHouseSelection = (suggestion, options = {}) => {
+    const { closeSuggestions = true } = options
     const lat = parseFloat(suggestion.lat)
     const lng = parseFloat(suggestion.lon)
+    if (isNaN(lat) || isNaN(lng)) return
     const coords = [lat, lng]
 
     const addressParts = suggestion.address || {}
@@ -2903,8 +2931,10 @@ const AddProperty = () => {
     setSelectedCoordinates(coords)
     setMapCenter(coords)
     setLocationMapZoom(17)
-    setHouseSuggestions([])
-    setShowHouseSuggestions(false)
+    if (closeSuggestions) {
+      setHouseSuggestions([])
+      setShowHouseSuggestions(false)
+    }
 
     setFormData(prev => ({
       ...prev,
@@ -2915,6 +2945,11 @@ const AddProperty = () => {
       city: city || prev.city,
       apartment: houseNumber
     }))
+  }
+
+  // Обработчик выбора дома из подсказок
+  const handleHouseSelect = (suggestion) => {
+    applyHouseSelection(suggestion, { closeSuggestions: true })
   }
 
   // Компонент для обновления центра карты
@@ -3555,6 +3590,30 @@ const AddProperty = () => {
   /* Пока открыта оплата публикации — под модалкой всегда экран цены (не форма публикации) */
   const wizardRenderStep = showListingFeeModal ? 'price' : currentStep
 
+  // Чтобы при переходе между шагами страница/контейнер начинались сверху,
+  // а не с позиции скролла, на которой пользователь выбрал прошлый пункт.
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        window.scrollTo({ top: 0, left: 0, behavior: 'auto' })
+      } catch {
+        window.scrollTo(0, 0)
+      }
+    }
+
+    // Дополнительно сбрасываем скролл у внутренних областей (если они используются на шагах).
+    try {
+      const scrollables = document.querySelectorAll(
+        '.property-details-content-scrollable, .details-content-scrollable'
+      )
+      scrollables.forEach((el) => {
+        el.scrollTop = 0
+      })
+    } catch {
+      // ignore
+    }
+  }, [wizardRenderStep])
+
   return (
     <div className="add-property-page">
       <div className="add-property-container">
@@ -3570,9 +3629,18 @@ const AddProperty = () => {
                   setListingFeePromoError(null)
                   return
                 }
+
+                // В админке “Назад” на первом шаге возвращает к выбору владельца,
+                // а не редиректит на чужой URL.
+                if (adminMode && currentStep === 'type-selection') {
+                  if (typeof onAdminBack === 'function') onAdminBack()
+                  return
+                }
+
                 if (currentStep === 'test-drive-question') {
                   if (isEditMode) {
-                    navigate('/owner')
+                    if (adminMode && typeof onAdminBack === 'function') onAdminBack()
+                    else navigate('/owner')
                   } else {
                     setCurrentStep('type-selection')
                     setFormData(prev => ({ ...prev, propertyType: '', isShareProperty: false, isDebtProperty: false }))
@@ -3609,7 +3677,8 @@ const AddProperty = () => {
                 } else if (currentStep === 'form') {
                   setCurrentStep('price')
                 } else {
-                  navigate('/owner')
+                  if (adminMode && typeof onAdminBack === 'function') onAdminBack()
+                  else navigate('/owner')
                 }
               }}
             >
@@ -6543,6 +6612,7 @@ const AddProperty = () => {
                     endDate={formData.auctionEndDate}
                     onStartDateChange={(date) => setFormData(prev => ({ ...prev, auctionStartDate: date }))}
                     onEndDateChange={(date) => setFormData(prev => ({ ...prev, auctionEndDate: date }))}
+                    disableMinConstraints={adminMode}
                   />
                 </div>
                 
@@ -6971,7 +7041,7 @@ const AddProperty = () => {
       {showSuccessModal && (
         <div className="success-modal-overlay" onClick={() => {
           setShowSuccessModal(false)
-          navigate('/owner')
+          if (!adminMode) navigate('/owner')
         }}>
           <div className="success-modal" onClick={(e) => e.stopPropagation()}>
             <div className="success-modal__icon">
@@ -6989,7 +7059,7 @@ const AddProperty = () => {
               className="success-modal__button"
               onClick={() => {
                 setShowSuccessModal(false)
-                navigate('/owner')
+                if (!adminMode) navigate('/owner')
               }}
             >
               Понятно
