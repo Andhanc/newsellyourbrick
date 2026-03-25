@@ -3,6 +3,8 @@ import { useState, useEffect } from 'react'
 import { getUserData, logout } from '../services/authService'
 import VerificationToast from '../components/VerificationToast'
 import PricingCards from '../components/ui/PricingCards'
+import { startProSubscriptionCheckout } from '../utils/subscriptionCheckout'
+import { showNotification } from '../utils/toastHelper'
 import './Subscriptions.css'
 import './Profile.css'
 
@@ -81,9 +83,21 @@ const Subscriptions = () => {
     return !isBasicInfoComplete() || !isPassportDataComplete()
   }
 
-  const handleBookCall = (plan) => {
-    const amount = plan === 'pro' ? 9900 : 2900
-    const paymentUrl = `https://checkout.stripe.com/pay?amount=${amount}&currency=usd&description=${encodeURIComponent(plan === 'pro' ? 'Подписка Pro' : 'Подписка Starter')}`
+  const handleBookCall = async (plan) => {
+    if (plan === 'pro') {
+      const userData = getUserData()
+      const uid = userData?.id ?? localStorage.getItem('userId')
+      const result = await startProSubscriptionCheckout({
+        userId: uid,
+        customerEmail: userData?.email,
+      })
+      if (!result.ok) {
+        showNotification(result.error || 'Не удалось открыть оплату', 'error')
+      }
+      return
+    }
+    const amount = 2900
+    const paymentUrl = `https://checkout.stripe.com/pay?amount=${amount}&currency=usd&description=${encodeURIComponent('Подписка Starter')}`
     window.open(paymentUrl, '_blank', 'width=600,height=800')
   }
 

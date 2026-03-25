@@ -1,3 +1,4 @@
+import dotenv from 'dotenv';
 import express from 'express';
 import cors from 'cors';
 import axios from 'axios';
@@ -18,9 +19,11 @@ import { getMarketData, getMortgageRates, getRentalYieldByRegion } from './servi
 import { translatePropertyToAllLanguages } from './services/aiPropertyTranslate.js';
 import { buildDatabaseSnapshot } from './services/storageSnapshot.js';
 import { getAuctionMinBidStep } from '../src/utils/auctionBidStep.js';
+import { registerStripeBillingRoutes } from './stripeBilling.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
+dotenv.config({ path: join(__dirname, '..', '.env') });
 
 const { Client, LocalAuth } = whatsappPkg;
 
@@ -410,6 +413,8 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+registerStripeBillingRoutes(app);
 
 // Папка для загрузки файлов
 const uploadsDir = join(__dirname, 'uploads');

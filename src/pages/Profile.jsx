@@ -7,6 +7,7 @@ import VerificationToast from '../components/VerificationToast'
 import VerificationModal from '../components/VerificationModal'
 import SellerVerificationModal from '../components/SellerVerificationModal'
 import PricingCards from '../components/ui/PricingCards'
+import { startProSubscriptionCheckout } from '../utils/subscriptionCheckout'
 import { showNotification } from '../utils/toastHelper'
 import './Profile.css'
 
@@ -1220,7 +1221,25 @@ const Profile = () => {
                 <div className="section-subtitle">Управляйте своими подписками</div>
               </div>
               <div className="profile-subscriptions-cards">
-                <PricingCards compact mobileTwoColumn onBookCall={(plan) => { /* можно открыть модалку или ссылку */ }} />
+                <PricingCards
+                  compact
+                  mobileTwoColumn
+                  onBookCall={async (plan) => {
+                    if (plan !== 'pro') {
+                      showNotification('Подписка Starter скоро будет доступна', 'info')
+                      return
+                    }
+                    const userData = getUserData()
+                    const uid = userData?.id ?? localStorage.getItem('userId')
+                    const result = await startProSubscriptionCheckout({
+                      userId: uid,
+                      customerEmail: profileData.email || userData?.email,
+                    })
+                    if (!result.ok) {
+                      showNotification(result.error || 'Не удалось открыть оплату', 'error')
+                    }
+                  }}
+                />
               </div>
             </section>
 
