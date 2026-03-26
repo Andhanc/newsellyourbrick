@@ -16,6 +16,100 @@ function stripMarkdown(text) {
 }
 
 /**
+ * Запасная эвристика, если классификатор недоступен или ответил false при явном запросе менеджера.
+ */
+export function heuristicManagerContactIntent(userMessage) {
+  const raw = (userMessage || '').trim();
+  if (raw.length < 5) return false;
+  const t = raw.toLowerCase();
+
+  if (
+    /\b(не\s+нужен|не\s+хочу|не\s+надо|не\s+связывайте|без\s+менеджера|без\s+оператора)\b/i.test(t) &&
+    /\b(менеджер|оператор|консультант|специалист)\b/i.test(t)
+  ) {
+    return false;
+  }
+
+  const patterns = [
+    /связ(ать|и|итесь|ься)\s+(с\s+)?(менеджер|оператор|консультант|специалист|жив(ым|ого|ому)|человек(ом|а|у))/u,
+    /(соедин|переключ)\s+(с\s+)?(менеджер|оператор|консультант)/u,
+    /(менеджер|оператор|консультант|специалист).{0,40}(позвон|перезвон|напиш|связ|свяж)/u,
+    /(позвон|перезвон|напиш|связ).{0,40}(менеджер|оператор|консультант|специалист)/u,
+    /(хочу|нужен|нужна|нужно|можно)\s+(жив(ого|ой|ым)|реальн(ого|ый|ым)|не\s+бот)/u,
+    /(остав(ить|лю)|заявк).{0,30}(звон|менеджер|оператор|связ)/u,
+    /(перезвон|обратн(ый|ого)\s+звонок|call\s*back)/u,
+    /\b(human|live)\s+(agent|operator|person|support)\b/i,
+    /\b(connect|speak|talk)\s+(to|with)\s+(a\s+)?(manager|agent|operator|human|person|representative)\b/i,
+    /\b(call|contact)\s+me.{0,20}(manager|agent|human)\b/i,
+    /(kann|könnte).{0,30}(manager|berater|menschen|anruf)/i,
+    /(quiero|necesito).{0,30}(gerente|manager|humano|persona)/i,
+  ];
+
+  return patterns.some((re) => re.test(t));
+}
+
+/**
+ * Определяет, просит ли пользователь связи с живым менеджером/оператором (любая формулировка).
+ * Сначала короткий запрос к модели; при false или сбое — эвристика.
+ */
+export async function detectManagerContactIntent(userMessage) {
+  const text = (userMessage || '').trim();
+  if (text.length < 4) return false;
+
+  const systemPrompt = `Ты классификатор намерений. Пользователь пишет в чат поддержки недвижимости.
+Ответь ТОЛЬКО JSON без текста вокруг: {"wantsManager":true} или {"wantsManager":false}
+
+wantsManager = true, если человек хочет связаться с менеджером, оператором, живым человеком, консультантом компании; просит перезвонить, оставить заявку на звонок, написать менеджеру, соединить с сотрудником, позвать специалиста, говорить не с ботом.
+wantsManager = false для вопросов о недвижимости, аукционах, ВНЖ, ценах, подборе объектов, приветствий, выбора цели («для себя»), уточнений и общих вопросов без запроса живого менеджера.
+wantsManager = false если пользователь только выбирает способ связи (по телефону, по почте, WhatsApp) как ответ на вопрос бота — это не новый запрос менеджера.`;
+
+  const messages = [
+    { role: 'system', content: systemPrompt },
+    { role: 'user', content: text }
+  ];
+
+  try {
+    const headers = {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${AI_API_KEY}`
+    };
+    const payload = {
+      model: AI_MODEL,
+      messages,
+      temperature: 0.1,
+      max_tokens: 80
+    };
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 20000);
+    const response = await fetch(AI_API_URL, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(payload),
+      signal: controller.signal
+    });
+    clearTimeout(timeoutId);
+    if (!response.ok) return heuristicManagerContactIntent(userMessage);
+
+    const data = await response.json();
+    let messageContent = data.choices?.[0]?.message?.content || '';
+    while (messageContent.includes('</think>')) {
+      messageContent = messageContent.split('</think>').pop().trim();
+    }
+    messageContent = messageContent.replace(/<\/?redacted_reasoning>/g, '').trim();
+    messageContent = messageContent.replace(/<\/?think>/g, '').trim();
+    messageContent = messageContent.replace(/```json\s*/g, '').replace(/```\s*/g, '');
+    const jsonMatch = messageContent.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) return heuristicManagerContactIntent(userMessage);
+    const parsed = JSON.parse(jsonMatch[0]);
+    if (parsed.wantsManager === true) return true;
+    return heuristicManagerContactIntent(userMessage);
+  } catch (e) {
+    console.warn('detectManagerContactIntent:', e?.message || e);
+    return heuristicManagerContactIntent(userMessage);
+  }
+}
+
+/**
  * Отправляет запрос к AI для подбора недвижимости
  * @param {Array} conversationHistory - История сообщений чата
  * @param {Object} userPreferences - Предпочтения пользователя (цель, бюджет, локация и т.д.)

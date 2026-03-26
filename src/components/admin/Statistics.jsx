@@ -17,6 +17,7 @@ import { getApiBaseUrl } from '../../utils/apiConfig';
 import './Statistics.css';
 import StatCard from './StatCard';
 import NearestAuctionsSlider from './NearestAuctionsSlider';
+import PaymentsModal from './PaymentsModal';
 
 ChartJS.register(
   CategoryScale,
@@ -58,6 +59,9 @@ const Statistics = ({ businessInfo, onShowUsers }) => {
   const [isLoadingCategoryStats, setIsLoadingCategoryStats] = useState(true);
   const [onlineCount, setOnlineCount] = useState(null); // количество посетителей онлайн
   const [isLoadingOnlineCount, setIsLoadingOnlineCount] = useState(true);
+  const [stripePaymentsCount, setStripePaymentsCount] = useState(null);
+  const [isLoadingStripePaymentsCount, setIsLoadingStripePaymentsCount] = useState(true);
+  const [paymentsModalOpen, setPaymentsModalOpen] = useState(false);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -245,6 +249,32 @@ const Statistics = ({ businessInfo, onShowUsers }) => {
       clearInterval(interval);
       window.removeEventListener('focus', onFocus);
     };
+  }, []);
+
+  useEffect(() => {
+    const fetchStripePaymentsCount = async () => {
+      try {
+        setIsLoadingStripePaymentsCount(true);
+        const API_BASE_URL = await getApiBaseUrl();
+        const response = await fetch(`${API_BASE_URL}/admin/stripe-payments`);
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success && data.data && typeof data.data.totalCount === 'number') {
+            setStripePaymentsCount(data.data.totalCount);
+          } else {
+            setStripePaymentsCount(0);
+          }
+        } else {
+          setStripePaymentsCount(0);
+        }
+      } catch (e) {
+        console.error('Ошибка загрузки счётчика платежей:', e);
+        setStripePaymentsCount(0);
+      } finally {
+        setIsLoadingStripePaymentsCount(false);
+      }
+    };
+    fetchStripePaymentsCount();
   }, []);
 
   // Загружаем статистику категорий недвижимости (по типу и по разделам)
@@ -819,6 +849,15 @@ const Statistics = ({ businessInfo, onShowUsers }) => {
         iconClass: 'red'
       },
       {
+        title: 'Платежи (Stripe)',
+        value: isLoadingStripePaymentsCount ? '...' : (stripePaymentsCount !== null ? stripePaymentsCount : 0),
+        changePercent: '0',
+        icon: 'fas fa-credit-card',
+        iconClass: 'green',
+        onCardClick: () => setPaymentsModalOpen(true),
+        ariaLabel: 'Открыть список платежей Stripe'
+      },
+      {
         title: 'Оборот',
         value: `$${Math.round((businessInfo.stats.turnover || 2500000) * multiplier).toLocaleString('ru-RU')}`,
         changePercent: '18.9',
@@ -844,7 +883,20 @@ const Statistics = ({ businessInfo, onShowUsers }) => {
         changeType: getChangeType(changeString)
       };
     });
-  }, [businessInfo, multiplier, timeFilter, usersCount, isLoadingUsersCount]);
+  }, [
+    businessInfo,
+    multiplier,
+    timeFilter,
+    usersCount,
+    isLoadingUsersCount,
+    propertiesCount,
+    auctionsCount,
+    isLoadingCounts,
+    onlineCount,
+    isLoadingOnlineCount,
+    stripePaymentsCount,
+    isLoadingStripePaymentsCount,
+  ]);
 
   const timeFilterOptions = [
     { value: 'all', label: 'Все время' },
@@ -967,9 +1019,21 @@ const Statistics = ({ businessInfo, onShowUsers }) => {
       </div>
       <div className="stats-grid">
         {stats.map((stat, index) => (
-          <StatCard key={index} {...stat} />
+          <StatCard
+            key={index}
+            title={stat.title}
+            value={stat.value}
+            change={stat.change}
+            changeType={stat.changeType}
+            icon={stat.icon}
+            iconClass={stat.iconClass}
+            onClick={stat.onCardClick}
+            ariaLabel={stat.ariaLabel}
+          />
         ))}
       </div>
+
+      <PaymentsModal isOpen={paymentsModalOpen} onClose={() => setPaymentsModalOpen(false)} />
 
       {isLoadingAuctions ? (
         <div style={{ padding: '2rem', textAlign: 'center', color: '#6b7280' }}>

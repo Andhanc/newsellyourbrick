@@ -2,7 +2,8 @@ import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useUser, useAuth } from '@clerk/clerk-react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { FiX, FiSend } from 'react-icons/fi'
+import { FiX, FiSend, FiPhone, FiMail } from 'react-icons/fi'
+import { FaWhatsapp } from 'react-icons/fa'
 import Header from '../components/Header'
 import Hero from '../components/Hero'
 import PropertyList from '../components/PropertyList'
@@ -10,7 +11,7 @@ import FAQ from '../components/FAQ'
 import DepositButton from '../components/DepositButton'
 import { getUserData, isAuthenticated } from '../services/authService'
 import { syncAssistantLead } from '../services/assistantLeadService'
-import { askPropertyAssistant } from '../services/aiService'
+import { askPropertyAssistant, detectManagerContactIntent } from '../services/aiService'
 import { getCachedList, hasCachedList, fetchAuctionList } from '../services/auctionListCache'
 import { ensureCanOpenProperty } from '../utils/propertyAccessGuard'
 import './Home.css'
@@ -77,7 +78,10 @@ function Home() {
     propertyType: null, // 'квартира', 'вилла', 'апартаменты', 'дом'
     rooms: null,
     area: null,
-    other: null
+    other: null,
+    managerContactRequested: false,
+    managerContactPendingChoice: false,
+    preferredContact: null
   })
 
   // Загрузка объявлений: при наличии кэша — только фоновое обновление (без "Загрузка объявлений...")
@@ -243,18 +247,30 @@ function Home() {
     setChatInput(e.target.value)
   }
 
-  const handleButtonClick = async (buttonText) => {
-    // Отправляем текст кнопки как сообщение пользователя
+  const handleButtonClick = async (buttonText, meta = null) => {
+    if (meta?.contactPref) {
+      await handleChatSubmit(null, null, { contactPref: meta.contactPref })
+      return
+    }
     await handleChatSubmit(null, buttonText)
   }
 
-  const handleChatSubmit = async (e, buttonText = null) => {
+  const handleChatSubmit = async (e, buttonText = null, options = {}) => {
     if (e) e.preventDefault()
-    
-    const userMessage = buttonText || chatInput.trim()
+
+    const { contactPref } = options || {}
+    let userMessage = buttonText || chatInput.trim()
+    if (contactPref) {
+      const labelMap = {
+        phone: t('managerContactPrefPhone'),
+        email: t('managerContactPrefEmail'),
+        whatsapp: t('managerContactPrefWhatsapp')
+      }
+      userMessage = labelMap[contactPref] || contactPref
+    }
     if (!userMessage) return
 
-    if (!buttonText) {
+    if (!buttonText && !contactPref) {
       setChatInput('')
     }
 
@@ -267,6 +283,31 @@ function Home() {
     }
 
     setChatMessages((prev) => [...prev, userMessageObj])
+
+    if (contactPref) {
+      setUserPreferences((prev) => ({
+        ...prev,
+        preferredContact: contactPref,
+        managerContactRequested: true,
+        managerContactPendingChoice: false
+      }))
+      const thanksText =
+        contactPref === 'phone'
+          ? t('managerContactThanksPhone')
+          : contactPref === 'email'
+            ? t('managerContactThanksEmail')
+            : t('managerContactThanksWhatsapp')
+      const botMessage = {
+        id: Date.now() + 1,
+        text: thanksText,
+        sender: 'bot',
+        timestamp: new Date(),
+        buttons: null,
+        recommendations: null
+      }
+      setChatMessages((prev) => [...prev, botMessage])
+      return
+    }
 
     // Обновляем предпочтения на основе сообщения
     const lowerMessage = userMessage.toLowerCase()
@@ -326,6 +367,71 @@ function Home() {
     const roomsMatch = userMessage.match(/(\d+)\s*(комнат|room|bed)/i)
     if (roomsMatch) {
       setUserPreferences(prev => ({ ...prev, rooms: parseInt(roomsMatch[1]) }))
+    }
+
+    let wantsManager = false
+    try {
+      wantsManager = await detectManagerContactIntent(userMessage)
+    } catch {
+      wantsManager = false
+    }
+
+    if (wantsManager) {
+      const alreadyDone = userPreferences.preferredContact
+      if (alreadyDone) {
+        const methodLabel =
+          alreadyDone === 'phone'
+            ? t('managerContactPrefPhone')
+            : alreadyDone === 'email'
+              ? t('managerContactPrefEmail')
+              : t('managerContactPrefWhatsapp')
+        const botMessage = {
+          id: Date.now() + 1,
+          text: t('managerRequestAlready', { method: methodLabel }),
+          sender: 'bot',
+          timestamp: new Date(),
+          buttons: null,
+          recommendations: null
+        }
+        setChatMessages((prev) => [...prev, botMessage])
+        return
+      }
+      if (userPreferences.managerContactPendingChoice) {
+        const botMessage = {
+          id: Date.now() + 1,
+          text: t('managerContactPickHint'),
+          sender: 'bot',
+          timestamp: new Date(),
+          buttons: [
+            { type: 'contact_pref', value: 'phone', label: t('managerContactPrefPhone') },
+            { type: 'contact_pref', value: 'email', label: t('managerContactPrefEmail') },
+            { type: 'contact_pref', value: 'whatsapp', label: t('managerContactPrefWhatsapp') }
+          ],
+          recommendations: null
+        }
+        setChatMessages((prev) => [...prev, botMessage])
+        return
+      }
+
+      setUserPreferences((prev) => ({
+        ...prev,
+        managerContactRequested: true,
+        managerContactPendingChoice: true
+      }))
+      const botMessage = {
+        id: Date.now() + 1,
+        text: t('managerRequestAck'),
+        sender: 'bot',
+        timestamp: new Date(),
+        buttons: [
+          { type: 'contact_pref', value: 'phone', label: t('managerContactPrefPhone') },
+          { type: 'contact_pref', value: 'email', label: t('managerContactPrefEmail') },
+          { type: 'contact_pref', value: 'whatsapp', label: t('managerContactPrefWhatsapp') }
+        ],
+        recommendations: null
+      }
+      setChatMessages((prev) => [...prev, botMessage])
+      return
     }
 
     setIsLoadingAI(true)
@@ -658,17 +764,47 @@ function Home() {
                   )}
                 </div>
                 {message.buttons && message.buttons.length > 0 && (
-                  <div className="chat-widget__buttons">
-                    {message.buttons.map((button, index) => (
-                      <button
-                        key={index}
-                        className="chat-widget__button"
-                        onClick={() => !isLoadingAI && handleButtonClick(button)}
-                        disabled={isLoadingAI}
-                      >
-                        {button}
-                      </button>
-                    ))}
+                  <div
+                    className={`chat-widget__buttons${
+                      message.buttons.some((b) => typeof b === 'object' && b?.type === 'contact_pref')
+                        ? ' chat-widget__buttons--contact'
+                        : ''
+                    }`}
+                  >
+                    {message.buttons.map((button, index) => {
+                      if (typeof button === 'object' && button?.type === 'contact_pref') {
+                        const IconCmp =
+                          button.value === 'phone'
+                            ? FiPhone
+                            : button.value === 'email'
+                              ? FiMail
+                              : FaWhatsapp
+                        return (
+                          <button
+                            key={index}
+                            type="button"
+                            className="chat-widget__button chat-widget__button--contact"
+                            onClick={() =>
+                              !isLoadingAI && handleButtonClick(null, { contactPref: button.value })
+                            }
+                            disabled={isLoadingAI}
+                          >
+                            <IconCmp size={18} aria-hidden />
+                            <span>{button.label}</span>
+                          </button>
+                        )
+                      }
+                      return (
+                        <button
+                          key={index}
+                          className="chat-widget__button"
+                          onClick={() => !isLoadingAI && handleButtonClick(button)}
+                          disabled={isLoadingAI}
+                        >
+                          {button}
+                        </button>
+                      )
+                    })}
                   </div>
                 )}
                 <div className="chat-widget__message-time">

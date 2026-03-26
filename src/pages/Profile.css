@@ -2083,3 +2083,136 @@
     font-size: 24px;
   }
 }
+
+/* Подписка Stripe — блок в профиле */
+.profile-section--billing {
+  margin-bottom: 8px;
+}
+
+.profile-billing-loading {
+  padding: 1rem;
+  color: #64748b;
+}
+
+.profile-billing {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.profile-billing-plan {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+  padding: 1.25rem 1.5rem;
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(10, 186, 181, 0.12) 0%, rgba(99, 102, 241, 0.1) 100%);
+  border: 1px solid rgba(10, 186, 181, 0.25);
+  box-shadow: 0 4px 24px rgba(15, 23, 42, 0.06);
+}
+
+.profile-billing-plan__badge {
+  flex-shrink: 0;
+  font-weight: 800;
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  padding: 0.4rem 0.75rem;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #0abab5 0%, #6366f1 100%);
+  color: #fff;
+}
+
+.profile-billing-plan__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.profile-billing-plan__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.5rem;
+  align-items: baseline;
+  margin-bottom: 0.35rem;
+}
+
+.profile-billing-plan__row:last-child {
+  margin-bottom: 0;
+}
+
+.profile-billing-label {
+  font-size: 0.8125rem;
+  color: #64748b;
+  min-width: 140px;
+}
+
+.profile-billing-value {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.profile-billing-value--status {
+  color: #059669;
+}
+
+.profile-billing-hint {
+  margin: 0.5rem 0 0;
+  font-size: 0.8125rem;
+  color: #b45309;
+}
+
+.profile-billing-payments__title {
+  margin: 0 0 0.75rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.profile-billing-payments__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.profile-billing-payment {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.85rem 1rem;
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+}
+
+.profile-billing-payment__main {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.profile-billing-payment__amount {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #059669;
+}
+
+.profile-billing-payment__date {
+  font-size: 0.8125rem;
+  color: #64748b;
+}
+
+.profile-billing-payment__reason {
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+.profile-billing-empty {
+  margin: 0;
+  color: #64748b;
+  font-size: 0.9375rem;
+}

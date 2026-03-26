@@ -3,7 +3,7 @@ import express from 'express';
 import cors from 'cors';
 import axios from 'axios';
 import { initDatabase, closeDatabase, getDatabase, schemaCache } from './database/database.js';
-import { userQueries, documentQueries, notificationQueries, testDriveBookingQueries, administratorQueries, debtReasonQueries, debtDocumentQueries, whatsappUserQueries, purchaseRequestQueries, assistantLeadQueries, apartmentQueries, houseQueries, propertyQueries, favoriteQueries } from './database/database.js';
+import { userQueries, documentQueries, notificationQueries, testDriveBookingQueries, administratorQueries, debtReasonQueries, debtDocumentQueries, whatsappUserQueries, purchaseRequestQueries, assistantLeadQueries, apartmentQueries, houseQueries, propertyQueries, favoriteQueries, crmQueries } from './database/database.js';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import multer from 'multer';
@@ -13,13 +13,14 @@ import crypto from 'crypto';
 import qrcode from 'qrcode-terminal';
 import whatsappPkg from 'whatsapp-web.js';
 import { calculatePropertyPrice } from './services/propertyParser.js';
+import { SPAIN_CITIES, DISTRICTS_BY_CITY } from './data/propertyCalculatorLocations.js';
 import { parseBulkImportFile, rowToPropertyData } from './services/bulkImportProperties.js';
 import { Address, beginCell, Cell } from '@ton/core';
 import { getMarketData, getMortgageRates, getRentalYieldByRegion } from './services/investmentDataService.js';
 import { translatePropertyToAllLanguages } from './services/aiPropertyTranslate.js';
 import { buildDatabaseSnapshot } from './services/storageSnapshot.js';
 import { getAuctionMinBidStep } from '../src/utils/auctionBidStep.js';
-import { registerStripeBillingRoutes } from './stripeBilling.js';
+import { registerStripeBillingRoutes, createStripeWebhookHandler } from './stripeBilling.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -411,6 +412,8 @@ app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
+// Stripe webhook требует сырой body для проверки подписи
+app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), createStripeWebhookHandler());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -5351,6 +5354,347 @@ app.delete('/api/admin/administrators/:id', (req, res) => {
 
 /**
  * ============================================
+ * API: CRM (воронка, касания, письма через EmailJS)
+ * ============================================
+ */
+async function sendCrmEmailViaEmailJS(toEmail, subject, messageText) {
+  const emailJsConfig = {
+    serviceId:
+      process.env.REACT_APP_EMAILJS_SERVICE_ID ||
+      process.env.VITE_EMAILJS_SERVICE_ID ||
+      process.env.EMAILJS_SERVICE_ID ||
+      '',
+    templateId:
+      process.env.EMAILJS_CRM_TEMPLATE_ID ||
+      process.env.REACT_APP_EMAILJS_TEMPLATE_ID ||
+      process.env.VITE_EMAILJS_TEMPLATE_ID ||
+      process.env.EMAILJS_TEMPLATE_ID ||
+      '',
+    publicKey:
+      process.env.REACT_APP_EMAILJS_PUBLIC_KEY ||
+      process.env.VITE_EMAILJS_PUBLIC_KEY ||
+      process.env.EMAILJS_PUBLIC_KEY ||
+      '',
+  };
+  if (!emailJsConfig.serviceId || !emailJsConfig.templateId || !emailJsConfig.publicKey) {
+    throw new Error(
+      'EmailJS не настроен: нужны SERVICE_ID, шаблон (EMAILJS_CRM_TEMPLATE_ID или общий TEMPLATE_ID) и PUBLIC_KEY'
+    );
+  }
+  const emailData = {
+    service_id: emailJsConfig.serviceId,
+    template_id: emailJsConfig.templateId,
+    user_id: emailJsConfig.publicKey,
+    template_params: {
+      to_email: toEmail,
+      email: toEmail,
+      subject: subject || 'Sellyourbrick',
+      message: messageText,
+      body: messageText,
+      from_name: 'Sellyourbrick',
+    },
+  };
+  const emailResponse = await axios.post('https://api.emailjs.com/api/v1.0/email/send', emailData, {
+    headers: { 'Content-Type': 'application/json' },
+  });
+  if (emailResponse.status !== 200) {
+    throw new Error(`EmailJS вернул статус ${emailResponse.status}`);
+  }
+}
+
+app.get('/api/admin/crm/board', (req, res) => {
+  try {
+    const board = crmQueries.getBoard();
+    res.json({ success: true, data: board });
+  } catch (error) {
+    console.error('CRM board:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+app.get('/api/admin/crm/user-search', (req, res) => {
+  try {
+    const q = req.query.q || '';
+    const rows = crmQueries.searchUsers(q, 30);
+    res.json({ success: true, data: rows });
+  } catch (error) {
+    console.error('CRM user-search:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+app.get('/api/admin/crm/assistant-leads', (req, res) => {
+  try {
+    const list = assistantLeadQueries.getAll();
+    res.json({ success: true, data: list });
+  } catch (error) {
+    console.error('CRM assistant-leads:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+app.get('/api/admin/crm/leads/:id', (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    const lead = crmQueries.getLeadById(id);
+    if (!lead) {
+      return res.status(404).json({ success: false, error: 'Лид не найден' });
+    }
+    let userSummary = null;
+    if (lead.user_id) {
+      const u = userQueries.getById(lead.user_id);
+      if (u) {
+        const favCount = crmQueries.getFavoriteCountForUser(lead.user_id);
+        userSummary = {
+          id: u.id,
+          first_name: u.first_name,
+          last_name: u.last_name,
+          email: u.email,
+          phone_number: u.phone_number,
+          role: u.role,
+          country: u.country,
+          favorites_count: favCount,
+        };
+      }
+    }
+    const touchCount = crmQueries.countTouchActivities(id);
+    const activityCount = crmQueries.countActivities(id);
+    res.json({
+      success: true,
+      data: { lead, userSummary, touchCount, activityCount },
+    });
+  } catch (error) {
+    console.error('CRM lead get:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+app.post('/api/admin/crm/leads', (req, res) => {
+  try {
+    const body = req.body || {};
+    const newId = crmQueries.createLead(body);
+    const lead = crmQueries.getLeadById(newId);
+    res.status(201).json({ success: true, data: lead });
+  } catch (error) {
+    console.error('CRM lead create:', error);
+    if (String(error.message).includes('UNIQUE')) {
+      return res.status(409).json({ success: false, error: 'Лид с таким пользователем или лидом помощника уже есть' });
+    }
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+app.patch('/api/admin/crm/leads/:id', (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    const existing = crmQueries.getLeadById(id);
+    if (!existing) {
+      return res.status(404).json({ success: false, error: 'Лид не найден' });
+    }
+    crmQueries.updateLead(id, req.body || {});
+    const lead = crmQueries.getLeadById(id);
+    res.json({ success: true, data: lead });
+  } catch (error) {
+    console.error('CRM lead patch:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+app.delete('/api/admin/crm/leads/:id', (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    const existing = crmQueries.getLeadById(id);
+    if (!existing) {
+      return res.status(404).json({ success: false, error: 'Лид не найден' });
+    }
+    crmQueries.deleteLead(id);
+    res.json({ success: true, message: 'Удалено' });
+  } catch (error) {
+    console.error('CRM lead delete:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+app.post('/api/admin/crm/leads/:id/move', (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    const { stageId, index } = req.body || {};
+    const toStage = parseInt(stageId, 10);
+    const toIndex = parseInt(index, 10);
+    if (!Number.isFinite(toStage) || !Number.isFinite(toIndex)) {
+      return res.status(400).json({ success: false, error: 'Нужны stageId и index' });
+    }
+    crmQueries.moveLead(id, toStage, toIndex);
+    const lead = crmQueries.getLeadById(id);
+    res.json({ success: true, data: lead });
+  } catch (error) {
+    console.error('CRM move:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+app.get('/api/admin/crm/leads/:id/activities', (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    const list = crmQueries.listActivities(id);
+    res.json({ success: true, data: list });
+  } catch (error) {
+    console.error('CRM activities:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+app.post('/api/admin/crm/leads/:id/activities', (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    const lead = crmQueries.getLeadById(id);
+    if (!lead) {
+      return res.status(404).json({ success: false, error: 'Лид не найден' });
+    }
+    const { kind, title, body, createdBy } = req.body || {};
+    if (!kind || !String(kind).trim()) {
+      return res.status(400).json({ success: false, error: 'Укажите тип активности (kind)' });
+    }
+    crmQueries.addActivity(id, {
+      kind: String(kind).trim(),
+      title: title != null ? String(title) : null,
+      body: body != null ? String(body) : null,
+      createdBy: createdBy != null ? String(createdBy) : null,
+    });
+    const list = crmQueries.listActivities(id);
+    res.status(201).json({ success: true, data: list[0] || null });
+  } catch (error) {
+    console.error('CRM activity add:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+app.post('/api/admin/crm/leads/:id/email', async (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    const lead = crmQueries.getLeadById(id);
+    if (!lead) {
+      return res.status(404).json({ success: false, error: 'Лид не найден' });
+    }
+    const { subject, body, createdBy } = req.body || {};
+    const toEmail = lead.email && String(lead.email).trim();
+    if (!toEmail) {
+      return res.status(400).json({ success: false, error: 'У лида нет email' });
+    }
+    const subj = subject != null && String(subject).trim() ? String(subject).trim() : 'Сообщение от Sellyourbrick';
+    const text = body != null ? String(body) : '';
+    await sendCrmEmailViaEmailJS(toEmail, subj, text);
+    crmQueries.addActivity(id, {
+      kind: 'email_sent',
+      title: subj,
+      body: text.slice(0, 4000),
+      meta: { to: toEmail },
+      createdBy: createdBy != null ? String(createdBy) : null,
+    });
+    res.json({ success: true, message: 'Письмо отправлено' });
+  } catch (error) {
+    console.error('CRM email:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+app.post('/api/admin/crm/import-user', (req, res) => {
+  try {
+    const { userId } = req.body || {};
+    const uid = parseInt(userId, 10);
+    if (!Number.isFinite(uid)) {
+      return res.status(400).json({ success: false, error: 'Нужен userId' });
+    }
+    const existing = crmQueries.findLeadByUserId(uid);
+    if (existing) {
+      return res.json({ success: true, data: existing, message: 'Уже в воронке' });
+    }
+    const u = userQueries.getById(uid);
+    if (!u) {
+      return res.status(404).json({ success: false, error: 'Пользователь не найден' });
+    }
+    const displayName = [u.first_name, u.last_name].filter(Boolean).join(' ').trim() || u.email || `User #${u.id}`;
+    const interests = [];
+    if (u.country) interests.push(`Страна: ${u.country}`);
+    if (u.role) interests.push(`Роль: ${u.role}`);
+    const newId = crmQueries.createLead({
+      user_id: u.id,
+      display_name: displayName,
+      email: u.email || null,
+      phone: u.phone_number || null,
+      interests,
+      source: 'user_import',
+      temperature: 'warm',
+    });
+    const lead = crmQueries.getLeadById(newId);
+    crmQueries.addActivity(newId, {
+      kind: 'note',
+      title: 'Импорт из пользователей',
+      body: `Добавлен из базы пользователей ID ${u.id}`,
+      createdBy: req.body?.createdBy || null,
+    });
+    res.status(201).json({ success: true, data: lead });
+  } catch (error) {
+    console.error('CRM import user:', error);
+    if (String(error.message).includes('UNIQUE')) {
+      return res.status(409).json({ success: false, error: 'Лид для этого пользователя уже существует' });
+    }
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+app.post('/api/admin/crm/import-assistant', (req, res) => {
+  try {
+    const { assistantLeadId } = req.body || {};
+    const aid = parseInt(assistantLeadId, 10);
+    if (!Number.isFinite(aid)) {
+      return res.status(400).json({ success: false, error: 'Нужен assistantLeadId' });
+    }
+    const existing = crmQueries.findLeadByAssistantId(aid);
+    if (existing) {
+      return res.json({ success: true, data: existing, message: 'Уже в воронке' });
+    }
+    const al = assistantLeadQueries.getById(aid);
+    if (!al) {
+      return res.status(404).json({ success: false, error: 'Лид помощника не найден' });
+    }
+    const displayName =
+      [al.email, al.phone].filter(Boolean).join(' / ') || `Лид чата #${al.id}`;
+    const interests = [];
+    if (al.region) interests.push(`Регион: ${al.region}`);
+    if (al.property_type) interests.push(`Тип: ${al.property_type}`);
+    if (al.country) interests.push(`Страна: ${al.country}`);
+    if (al.summary) interests.push(al.summary.slice(0, 200));
+    const newId = crmQueries.createLead({
+      user_id: al.user_id || null,
+      display_name: displayName,
+      email: al.email || null,
+      phone: al.phone || null,
+      interests,
+      source: 'assistant_import',
+      assistant_lead_id: al.id,
+      temperature: al.lead_type === 'hot' ? 'hot' : al.lead_type === 'warm' ? 'warm' : 'cold',
+      internal_notes: al.summary ? `Сводка помощника: ${al.summary}` : null,
+    });
+    const lead = crmQueries.getLeadById(newId);
+    crmQueries.addActivity(newId, {
+      kind: 'note',
+      title: 'Импорт из умного помощника',
+      body: `assistant_lead id=${al.id}`,
+      createdBy: req.body?.createdBy || null,
+    });
+    res.status(201).json({ success: true, data: lead });
+  } catch (error) {
+    console.error('CRM import assistant:', error);
+    if (String(error.message).includes('UNIQUE')) {
+      return res.status(409).json({ success: false, error: 'Этот лид помощника уже в CRM' });
+    }
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * ============================================
  * API: Причины долга (для объявлений «Долги»)
  * ============================================
  */
@@ -8281,6 +8625,18 @@ app.get('/api/test-drive-bookings/user/:userId', (req, res) => {
 app.get('/api/properties/:id', (req, res) => {
   const { id } = req.params;
   
+  // Специальный маршрут для UI калькулятора (нельзя полагаться на порядок роутов:
+  // GET /api/properties/:id перехватывает calculator-options как "id").
+  if (id === 'calculator-options') {
+    return res.json({
+      success: true,
+      data: {
+        cities: SPAIN_CITIES,
+        districtsByCity: DISTRICTS_BY_CITY
+      }
+    });
+  }
+
   // Игнорируем специальные пути, которые должны обрабатываться другими маршрутами
   if (id === 'test-timers' || id === 'pending' || id === 'approved' || id === 'auctions' || id === 'user' || id === 'shares') {
     console.log('⚠️ GET /api/properties/:id - Игнорируем специальный путь:', id);
@@ -10764,17 +11120,38 @@ app.get('/api/users/health', (req, res) => {
 // ========== РОУТЫ ДЛЯ ПАРСИНГА НЕДВИЖИМОСТИ ==========
 
 /**
+ * GET /api/properties/calculator-options — города и районы для калькулятора цены
+ */
+app.get('/api/properties/calculator-options', (req, res) => {
+  res.json({
+    success: true,
+    data: {
+      cities: SPAIN_CITIES,
+      districtsByCity: DISTRICTS_BY_CITY
+    }
+  });
+});
+
+/**
  * POST /api/properties/calculate-price - Парсинг похожих объектов с испанских сайтов недвижимости
  * Принимает параметры недвижимости и возвращает рекомендуемую цену и похожие объекты
  */
 app.post('/api/properties/calculate-price', async (req, res) => {
-    const { area, rooms, city, propertyType, maxPrice, minPrice } = req.body;
+    const { area, rooms, city, propertyType, district, maxPrice, minPrice } = req.body;
+    const pt = propertyType || 'apartment';
+    const noRoomsType = pt === 'land' || pt === 'commercial';
 
     // Валидация обязательных полей
-    if (!area || (rooms !== 'studio' && !rooms) || !city) {
+    if (!area || !city) {
         return res.status(400).json({
             success: false,
-            error: 'Необходимо указать: площадь (area), количество комнат (rooms) и город (city)'
+            error: 'Необходимо указать площадь (area) и город (city)'
+        });
+    }
+    if (!noRoomsType && rooms !== 'studio' && (rooms === undefined || rooms === null || rooms === '')) {
+        return res.status(400).json({
+            success: false,
+            error: 'Укажите количество комнат или выберите тип «Земля»'
         });
     }
 
@@ -10782,7 +11159,8 @@ app.post('/api/properties/calculate-price', async (req, res) => {
       area,
       rooms,
       city,
-      propertyType: propertyType || 'apartment',
+      district: district || 'all',
+      propertyType: pt,
       maxPrice: maxPrice || 'не указано',
       minPrice: minPrice || 'не указано'
     });
@@ -10790,9 +11168,10 @@ app.post('/api/properties/calculate-price', async (req, res) => {
     try {
       const result = await calculatePropertyPrice({
         area,
-        rooms,
+        rooms: noRoomsType ? null : rooms,
         city,
-        propertyType,
+        propertyType: pt,
+        district: district || 'all',
         maxPrice,
         minPrice
       });
@@ -10812,11 +11191,12 @@ app.post('/api/properties/calculate-price', async (req, res) => {
           similarProperties: [],
           searchParams: {
             area: parseInt(area) || null,
-            rooms: rooms === 'studio' ? 'studio' : (parseInt(rooms) || null),
+            rooms: noRoomsType ? null : (rooms === 'studio' ? 'studio' : (parseInt(rooms) || null)),
             city: (city || '').toLowerCase(),
-            propertyType: propertyType || 'apartment',
+            district: district || 'all',
+            propertyType: pt,
             searchLevel: 'error',
-            source: 'none'
+            sources: []
           },
           note: `Произошла ошибка при поиске объектов. Попробуйте позже или измените параметры поиска.`
         }

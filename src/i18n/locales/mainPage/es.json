@@ -134,6 +134,16 @@
   "chatPurposeRent": "Para alquilar",
   "chatPurposeInvest": "Inversión",
 
+  "managerRequestAck": "Hemos registrado su solicitud de contacto con un gestor. Responderá en un plazo de 24 horas. ¿Cómo prefiere que le contactemos?",
+  "managerContactPrefPhone": "Teléfono",
+  "managerContactPrefEmail": "Correo",
+  "managerContactPrefWhatsapp": "WhatsApp",
+  "managerContactThanksPhone": "Queda registrado: un gestor le llamará por teléfono en un plazo de 24 horas.",
+  "managerContactThanksEmail": "Queda registrado: un gestor le escribirá por correo en un plazo de 24 horas.",
+  "managerContactThanksWhatsapp": "Queda registrado: un gestor le contactará por WhatsApp en un plazo de 24 horas.",
+  "managerRequestAlready": "Su solicitud ya está registrada. Un gestor le contactará por {{method}} en un plazo de 24 horas.",
+  "managerContactPickHint": "Elija cómo desea ser contactado con los botones de abajo.",
+
   "heroFeature1Title": "Conozca el valor de su vivienda",
   "heroFeature1Text": "Evaluamos su propiedad y mostramos cómo cambia su valor, además de crear selecciones según sus preferencias y presupuesto.",
   "heroFeature1Alt": "Valoración inmobiliaria",

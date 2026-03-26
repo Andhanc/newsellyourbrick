@@ -73,7 +73,7 @@ const AdminPanelPage = () => {
     debt_reasons: 'Причина долга',
     debt_documents: 'Необходимые документы',
     whatsapp: 'WhatsApp',
-    clients: 'Клиенты',
+    clients: 'Клиенты и CRM',
     purchase_requests: 'Запросы на покупку',
     bonuses: 'Бонусные задания',
     testing: 'Тестирование',

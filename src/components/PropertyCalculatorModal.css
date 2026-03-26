@@ -499,6 +499,12 @@
   gap: 8px;
 }
 
+.property-calculator-result__source {
+  font-size: 13px;
+  font-weight: 500;
+  color: #64748b;
+}
+
 .property-calculator-result__similar-price {
   font-size: 18px;
   font-weight: 700;

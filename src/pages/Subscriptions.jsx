@@ -1,9 +1,9 @@
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import { getUserData, logout } from '../services/authService'
 import VerificationToast from '../components/VerificationToast'
 import PricingCards from '../components/ui/PricingCards'
-import { startProSubscriptionCheckout } from '../utils/subscriptionCheckout'
+import { startProSubscriptionCheckout, confirmCheckoutSession } from '../utils/subscriptionCheckout'
 import { showNotification } from '../utils/toastHelper'
 import './Subscriptions.css'
 import './Profile.css'
@@ -12,6 +12,7 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
 
 const Subscriptions = () => {
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [userId, setUserId] = useState(null)
   const [verificationStatus, setVerificationStatus] = useState(null)
 
@@ -34,6 +35,34 @@ const Subscriptions = () => {
       loadVerificationStatus()
     }
   }, [userId])
+
+  useEffect(() => {
+    const checkout = searchParams.get('checkout')
+    const sessionId = searchParams.get('session_id')
+    if (checkout !== 'success' || !sessionId || !sessionId.startsWith('cs_')) return
+    let cancelled = false
+    ;(async () => {
+      const r = await confirmCheckoutSession(sessionId)
+      if (cancelled) return
+      if (r.ok) {
+        showNotification('Подписка успешно оформлена!', 'success')
+      } else {
+        showNotification(
+          r.error === 'no_app_user_id'
+            ? 'Не удалось привязать оплату к профилю. Обратитесь в поддержку.'
+            : 'Не удалось подтвердить оплату. Данные появятся после обработки.',
+          'error'
+        )
+      }
+      const next = new URLSearchParams(searchParams)
+      next.delete('checkout')
+      next.delete('session_id')
+      setSearchParams(next, { replace: true })
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [searchParams, setSearchParams])
 
   const loadVerificationStatus = async () => {
     if (!userId) return

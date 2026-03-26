@@ -1,0 +1,669 @@
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { FiMail, FiPlus, FiRefreshCw, FiUserPlus } from 'react-icons/fi';
+import { getApiBaseUrl } from '../../utils/apiConfig';
+import { showNotification } from '../../utils/toastHelper';
+import './CrmBoard.css';
+
+function adminLabel() {
+  try {
+    const p = JSON.parse(localStorage.getItem('adminPermissions') || '{}');
+    return p.username || p.email || 'admin';
+  } catch {
+    return 'admin';
+  }
+}
+
+function dropIndexFromEvent(e, columnEl, draggingId) {
+  const cards = [...columnEl.querySelectorAll('[data-crm-card]')].filter(
+    (el) => parseInt(el.dataset.leadId, 10) !== draggingId
+  );
+  let idx = 0;
+  for (let i = 0; i < cards.length; i++) {
+    const rect = cards[i].getBoundingClientRect();
+    const mid = rect.top + rect.height / 2;
+    if (e.clientY > mid) idx = i + 1;
+    else break;
+  }
+  return idx;
+}
+
+const TEMP_CLASS = {
+  cold: 'crm-board__temp--cold',
+  warm: 'crm-board__temp--warm',
+  hot: 'crm-board__temp--hot',
+};
+
+export default function CrmBoard() {
+  const [board, setBoard] = useState({ stages: [], leadsByStage: {} });
+  const [loading, setLoading] = useState(true);
+  const [dragOverStage, setDragOverStage] = useState(null);
+  const skipCardClickRef = useRef(false);
+
+  const [drawerLeadId, setDrawerLeadId] = useState(null);
+  const [detail, setDetail] = useState(null);
+  const [activities, setActivities] = useState([]);
+  const [detailLoading, setDetailLoading] = useState(false);
+
+  const [showNewModal, setShowNewModal] = useState(false);
+  const [newForm, setNewForm] = useState({
+    display_name: '',
+    email: '',
+    phone: '',
+    temperature: 'warm',
+  });
+
+  const [userQuery, setUserQuery] = useState('');
+  const [userHits, setUserHits] = useState([]);
+  const [assistantLeads, setAssistantLeads] = useState([]);
+
+  const loadBoard = useCallback(async () => {
+    setLoading(true);
+    try {
+      const base = await getApiBaseUrl();
+      const res = await fetch(`${base}/admin/crm/board`);
+      const json = await res.json();
+      if (!json.success) throw new Error(json.error || 'Ошибка загрузки');
+      setBoard(json.data);
+    } catch (err) {
+      console.error(err);
+      showNotification(err.message || 'Не удалось загрузить CRM', 'error');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadBoard();
+  }, [loadBoard]);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const base = await getApiBaseUrl();
+        const res = await fetch(`${base}/admin/crm/assistant-leads`);
+        const json = await res.json();
+        if (json.success) setAssistantLeads(json.data || []);
+      } catch {
+        /* ignore */
+      }
+    })();
+  }, []);
+
+  useEffect(() => {
+    const t = setTimeout(async () => {
+      if (userQuery.trim().length < 2) {
+        setUserHits([]);
+        return;
+      }
+      try {
+        const base = await getApiBaseUrl();
+        const res = await fetch(
+          `${base}/admin/crm/user-search?q=${encodeURIComponent(userQuery.trim())}`
+        );
+        const json = await res.json();
+        if (json.success) setUserHits(json.data || []);
+      } catch {
+        setUserHits([]);
+      }
+    }, 300);
+    return () => clearTimeout(t);
+  }, [userQuery]);
+
+  const openDrawer = async (leadId) => {
+    setDrawerLeadId(leadId);
+    setDetailLoading(true);
+    setDetail(null);
+    setActivities([]);
+    try {
+      const base = await getApiBaseUrl();
+      const [r1, r2] = await Promise.all([
+        fetch(`${base}/admin/crm/leads/${leadId}`),
+        fetch(`${base}/admin/crm/leads/${leadId}/activities`),
+      ]);
+      const j1 = await r1.json();
+      const j2 = await r2.json();
+      if (j1.success) setDetail(j1.data);
+      else throw new Error(j1.error);
+      if (j2.success) setActivities(j2.data || []);
+    } catch (err) {
+      showNotification(err.message || 'Ошибка', 'error');
+      setDrawerLeadId(null);
+    } finally {
+      setDetailLoading(false);
+    }
+  };
+
+  const saveLeadPatch = async (patch) => {
+    if (!drawerLeadId) return;
+    try {
+      const base = await getApiBaseUrl();
+      const res = await fetch(`${base}/admin/crm/leads/${drawerLeadId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(patch),
+      });
+      const json = await res.json();
+      if (!json.success) throw new Error(json.error);
+      setDetail((d) => ({ ...d, lead: json.data }));
+      loadBoard();
+      showNotification('Сохранено', 'success');
+    } catch (err) {
+      showNotification(err.message || 'Ошибка сохранения', 'error');
+    }
+  };
+
+  const addActivity = async (kind, title, body) => {
+    if (!drawerLeadId) return;
+    try {
+      const base = await getApiBaseUrl();
+      const res = await fetch(`${base}/admin/crm/leads/${drawerLeadId}/activities`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          kind,
+          title,
+          body,
+          createdBy: adminLabel(),
+        }),
+      });
+      const json = await res.json();
+      if (!json.success) throw new Error(json.error);
+      const r2 = await fetch(`${base}/admin/crm/leads/${drawerLeadId}/activities`);
+      const j2 = await r2.json();
+      if (j2.success) setActivities(j2.data || []);
+      const r1 = await fetch(`${base}/admin/crm/leads/${drawerLeadId}`);
+      const j1 = await r1.json();
+      if (j1.success) setDetail(j1.data);
+      loadBoard();
+    } catch (err) {
+      showNotification(err.message || 'Ошибка', 'error');
+    }
+  };
+
+  const sendEmail = async (subject, body) => {
+    if (!drawerLeadId) return;
+    try {
+      const base = await getApiBaseUrl();
+      const res = await fetch(`${base}/admin/crm/leads/${drawerLeadId}/email`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          subject,
+          body,
+          createdBy: adminLabel(),
+        }),
+      });
+      const json = await res.json();
+      if (!json.success) throw new Error(json.error);
+      showNotification('Письмо отправлено', 'success');
+      const r2 = await fetch(`${base}/admin/crm/leads/${drawerLeadId}/activities`);
+      const j2 = await r2.json();
+      if (j2.success) setActivities(j2.data || []);
+      const r1 = await fetch(`${base}/admin/crm/leads/${drawerLeadId}`);
+      const j1 = await r1.json();
+      if (j1.success) setDetail(j1.data);
+      loadBoard();
+    } catch (err) {
+      showNotification(err.message || 'Ошибка отправки', 'error');
+    }
+  };
+
+  const handleDrop = async (e, stageId) => {
+    e.preventDefault();
+    setDragOverStage(null);
+    const leadId = parseInt(e.dataTransfer.getData('text/plain'), 10);
+    if (!Number.isFinite(leadId)) return;
+    const idx = dropIndexFromEvent(e, e.currentTarget, leadId);
+    try {
+      const base = await getApiBaseUrl();
+      const res = await fetch(`${base}/admin/crm/leads/${leadId}/move`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ stageId, index: idx }),
+      });
+      const json = await res.json();
+      if (!json.success) throw new Error(json.error);
+      await loadBoard();
+    } catch (err) {
+      showNotification(err.message || 'Не удалось переместить', 'error');
+    }
+  };
+
+  const createLead = async () => {
+    if (!newForm.display_name.trim()) {
+      showNotification('Укажите имя', 'error');
+      return;
+    }
+    try {
+      const base = await getApiBaseUrl();
+      const res = await fetch(`${base}/admin/crm/leads`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          display_name: newForm.display_name.trim(),
+          email: newForm.email.trim() || null,
+          phone: newForm.phone.trim() || null,
+          temperature: newForm.temperature,
+          source: 'manual',
+        }),
+      });
+      const json = await res.json();
+      if (!json.success) throw new Error(json.error);
+      setShowNewModal(false);
+      setNewForm({ display_name: '', email: '', phone: '', temperature: 'warm' });
+      await loadBoard();
+      openDrawer(json.data.id);
+    } catch (err) {
+      showNotification(err.message || 'Ошибка', 'error');
+    }
+  };
+
+  const importUser = async (userId) => {
+    try {
+      const base = await getApiBaseUrl();
+      const res = await fetch(`${base}/admin/crm/import-user`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, createdBy: adminLabel() }),
+      });
+      const json = await res.json();
+      if (!json.success) throw new Error(json.error);
+      setUserHits([]);
+      setUserQuery('');
+      await loadBoard();
+      openDrawer(json.data.id);
+      showNotification(json.message || 'Добавлено', 'success');
+    } catch (err) {
+      showNotification(err.message || 'Ошибка', 'error');
+    }
+  };
+
+  const importAssistant = async (assistantLeadId) => {
+    if (!assistantLeadId) return;
+    try {
+      const base = await getApiBaseUrl();
+      const res = await fetch(`${base}/admin/crm/import-assistant`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ assistantLeadId, createdBy: adminLabel() }),
+      });
+      const json = await res.json();
+      if (!json.success) throw new Error(json.error);
+      await loadBoard();
+      openDrawer(json.data.id);
+      showNotification(json.message || 'Добавлено', 'success');
+    } catch (err) {
+      showNotification(err.message || 'Ошибка', 'error');
+    }
+  };
+
+  const lead = detail?.lead;
+
+  return (
+    <div className="crm-board">
+      <div className="crm-board__toolbar">
+        <div className="crm-board__toolbar-group">
+          <label>Новый лид</label>
+          <button type="button" className="crm-board__btn crm-board__btn--primary" onClick={() => setShowNewModal(true)}>
+            <FiPlus /> Добавить вручную
+          </button>
+        </div>
+        <div className="crm-board__toolbar-group crm-board__search-wrap">
+          <label>Импорт пользователя</label>
+          <input
+            type="search"
+            placeholder="Поиск по email, имени, телефону…"
+            value={userQuery}
+            onChange={(e) => setUserQuery(e.target.value)}
+          />
+          {userHits.length > 0 && (
+            <div className="crm-board__search-results">
+              {userHits.map((u) => (
+                <div
+                  key={u.id}
+                  className="crm-board__search-item"
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => importUser(u.id)}
+                  onKeyDown={(e) => e.key === 'Enter' && importUser(u.id)}
+                >
+                  <strong>
+                    {[u.first_name, u.last_name].filter(Boolean).join(' ') || '—'}
+                  </strong>
+                  <div style={{ fontSize: '0.8rem', color: '#6b7280' }}>
+                    {u.email || 'нет email'} · ID {u.id}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+        <div className="crm-board__toolbar-group">
+          <label>Из умного помощника</label>
+          <select
+            defaultValue=""
+            onChange={(e) => {
+              const v = e.target.value;
+              e.target.value = '';
+              if (v) importAssistant(parseInt(v, 10));
+            }}
+          >
+            <option value="">Выберите лид чата…</option>
+            {assistantLeads.map((a) => (
+              <option key={a.id} value={a.id}>
+                #{a.id} {a.summary ? a.summary.slice(0, 40) : a.email || a.phone || 'без контакта'}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="crm-board__toolbar-group">
+          <label>&nbsp;</label>
+          <button type="button" className="crm-board__btn crm-board__btn--ghost" onClick={loadBoard} disabled={loading}>
+            <FiRefreshCw /> Обновить
+          </button>
+        </div>
+      </div>
+
+      {loading && <div className="crm-board__empty">Загрузка воронки…</div>}
+
+      {!loading && (
+        <div className="crm-board__kanban">
+          {board.stages.map((stage) => {
+            const leads = board.leadsByStage[stage.id] || [];
+            return (
+              <div key={stage.id} className="crm-board__column">
+                <div className="crm-board__column-header">
+                  <span>{stage.label}</span>
+                  <span className="crm-board__column-count">{leads.length}</span>
+                </div>
+                <div
+                  className={`crm-board__column-body ${dragOverStage === stage.id ? 'crm-board__column-body--drag' : ''}`}
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = 'move';
+                    setDragOverStage(stage.id);
+                  }}
+                  onDragLeave={() => setDragOverStage(null)}
+                  onDrop={(e) => handleDrop(e, stage.id)}
+                >
+                  {leads.length === 0 && <div className="crm-board__empty">Перетащите сюда карточку</div>}
+                  {leads.map((L) => (
+                    <div
+                      key={L.id}
+                      className="crm-board__card"
+                      data-crm-card
+                      data-lead-id={L.id}
+                      draggable
+                      onDragStart={(e) => {
+                        e.dataTransfer.setData('text/plain', String(L.id));
+                        e.dataTransfer.effectAllowed = 'move';
+                      }}
+                      onDragEnd={() => {
+                        skipCardClickRef.current = true;
+                        window.setTimeout(() => {
+                          skipCardClickRef.current = false;
+                        }, 200);
+                        setDragOverStage(null);
+                      }}
+                      onClick={() => {
+                        if (skipCardClickRef.current) return;
+                        openDrawer(L.id);
+                      }}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => e.key === 'Enter' && openDrawer(L.id)}
+                    >
+                      <p className="crm-board__card-title">{L.display_name}</p>
+                      {L.email && <p className="crm-board__card-meta">{L.email}</p>}
+                      {L.phone && <p className="crm-board__card-meta">{L.phone}</p>}
+                      <span
+                        className={`crm-board__temp ${TEMP_CLASS[L.temperature] || TEMP_CLASS.warm}`}
+                      >
+                        {L.temperature === 'hot'
+                          ? 'Горячий'
+                          : L.temperature === 'cold'
+                            ? 'Холодный'
+                            : 'Тёплый'}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {showNewModal && (
+        <div
+          className="crm-board__modal-backdrop"
+          role="presentation"
+          onClick={() => setShowNewModal(false)}
+        >
+          <div className="crm-board__modal" role="dialog" onClick={(e) => e.stopPropagation()}>
+            <h4>Новый лид</h4>
+            <div className="crm-board__field">
+              <label>Имя / компания *</label>
+              <input
+                value={newForm.display_name}
+                onChange={(e) => setNewForm((f) => ({ ...f, display_name: e.target.value }))}
+              />
+            </div>
+            <div className="crm-board__field">
+              <label>Email</label>
+              <input
+                type="email"
+                value={newForm.email}
+                onChange={(e) => setNewForm((f) => ({ ...f, email: e.target.value }))}
+              />
+            </div>
+            <div className="crm-board__field">
+              <label>Телефон</label>
+              <input
+                value={newForm.phone}
+                onChange={(e) => setNewForm((f) => ({ ...f, phone: e.target.value }))}
+              />
+            </div>
+            <div className="crm-board__field">
+              <label>Интерес</label>
+              <select
+                value={newForm.temperature}
+                onChange={(e) => setNewForm((f) => ({ ...f, temperature: e.target.value }))}
+              >
+                <option value="cold">Холодный</option>
+                <option value="warm">Тёплый</option>
+                <option value="hot">Горячий</option>
+              </select>
+            </div>
+            <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
+              <button type="button" className="crm-board__btn crm-board__btn--primary" onClick={createLead}>
+                Создать
+              </button>
+              <button type="button" className="crm-board__btn crm-board__btn--ghost" onClick={() => setShowNewModal(false)}>
+                Отмена
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {drawerLeadId && (
+        <div className="crm-board__overlay" role="presentation" onClick={() => setDrawerLeadId(null)}>
+          <div className="crm-board__drawer" role="dialog" onClick={(e) => e.stopPropagation()}>
+            {detailLoading && <p>Загрузка…</p>}
+            {!detailLoading && lead && (
+              <>
+                <div className="crm-board__drawer-head">
+                  <div>
+                    <h3>{lead.display_name}</h3>
+                    <div className="crm-board__stats">
+                      <span>
+                        Касаний (действия): <strong>{detail.activityCount ?? 0}</strong>
+                      </span>
+                      <span>
+                        В «продажах»: <strong>{detail.touchCount ?? 0}</strong>
+                      </span>
+                    </div>
+                  </div>
+                  <button type="button" className="crm-board__drawer-close" onClick={() => setDrawerLeadId(null)}>
+                    ×
+                  </button>
+                </div>
+
+                {detail.userSummary && (
+                  <div className="crm-board__hint">
+                    <FiUserPlus size={14} style={{ verticalAlign: 'middle' }} /> Связан с пользователем #{detail.userSummary.id}:{' '}
+                    {detail.userSummary.favorites_count != null && (
+                      <>избранных объектов: {detail.userSummary.favorites_count}. </>
+                    )}
+                    {detail.userSummary.role}, {detail.userSummary.country || 'страна не указана'}
+                  </div>
+                )}
+
+                <div className="crm-board__field">
+                  <label>Температура</label>
+                  <select
+                    value={lead.temperature || 'warm'}
+                    onChange={(e) => saveLeadPatch({ temperature: e.target.value })}
+                  >
+                    <option value="cold">Холодный</option>
+                    <option value="warm">Тёплый</option>
+                    <option value="hot">Горячий</option>
+                  </select>
+                </div>
+
+                <div className="crm-board__field">
+                  <label>Интересы (теги через запятую)</label>
+                  <input
+                    defaultValue={(lead.interests || []).join(', ')}
+                    key={lead.id + (lead.interests || []).join(',')}
+                    onBlur={(e) => {
+                      const tags = e.target.value
+                        .split(',')
+                        .map((s) => s.trim())
+                        .filter(Boolean);
+                      saveLeadPatch({ interests: tags });
+                    }}
+                  />
+                </div>
+
+                <div className="crm-board__field">
+                  <label>Следующий шаг</label>
+                  <input
+                    defaultValue={lead.next_action || ''}
+                    key={`na-${lead.id}-${lead.next_action}`}
+                    onBlur={(e) => saveLeadPatch({ next_action: e.target.value || null })}
+                  />
+                </div>
+                <div className="crm-board__field">
+                  <label>Дата следующего контакта</label>
+                  <input
+                    type="datetime-local"
+                    defaultValue={
+                      lead.next_action_at
+                        ? String(lead.next_action_at).replace(' ', 'T').slice(0, 16)
+                        : ''
+                    }
+                    key={`nat-${lead.id}`}
+                    onBlur={(e) => saveLeadPatch({ next_action_at: e.target.value || null })}
+                  />
+                </div>
+
+                <div className="crm-board__field">
+                  <label>Внутренние заметки</label>
+                  <textarea
+                    defaultValue={lead.internal_notes || ''}
+                    key={`notes-${lead.id}`}
+                    onBlur={(e) => saveLeadPatch({ internal_notes: e.target.value || null })}
+                  />
+                </div>
+
+                <div className="crm-board__field">
+                  <label>
+                    <FiMail style={{ verticalAlign: 'middle' }} /> Письмо клиенту (EmailJS)
+                  </label>
+                  <input
+                    id="crm-email-subj"
+                    placeholder="Тема"
+                    defaultValue="Персональное предложение Sellyourbrick"
+                  />
+                  <textarea
+                    id="crm-email-body"
+                    style={{ marginTop: '0.5rem' }}
+                    placeholder="Текст письма…"
+                    rows={5}
+                  />
+                  <button
+                    type="button"
+                    className="crm-board__btn crm-board__btn--primary"
+                    style={{ marginTop: '0.5rem' }}
+                    disabled={!lead.email}
+                    onClick={() => {
+                      const subj = document.getElementById('crm-email-subj')?.value || '';
+                      const body = document.getElementById('crm-email-body')?.value || '';
+                      sendEmail(subj, body);
+                    }}
+                  >
+                    Отправить на {lead.email || '—'}
+                  </button>
+                  {!lead.email && (
+                    <p className="crm-board__hint">Укажите email у лида или привяжите пользователя с email.</p>
+                  )}
+                </div>
+
+                <div className="crm-board__field">
+                  <label>Быстрое касание</label>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                    <button
+                      type="button"
+                      className="crm-board__btn crm-board__btn--ghost"
+                      onClick={() => {
+                        const t = window.prompt('Тема звонка / результат');
+                        if (t != null) addActivity('call', t || 'Звонок', '');
+                      }}
+                    >
+                      Звонок
+                    </button>
+                    <button
+                      type="button"
+                      className="crm-board__btn crm-board__btn--ghost"
+                      onClick={() => {
+                        const t = window.prompt('Текст заметки');
+                        if (t != null) addActivity('note', 'Заметка', t);
+                      }}
+                    >
+                      Заметка
+                    </button>
+                    <button
+                      type="button"
+                      className="crm-board__btn crm-board__btn--ghost"
+                      onClick={() => {
+                        const t = window.prompt('WhatsApp / мессенджер');
+                        if (t != null) addActivity('whatsapp', 'Контакт', t);
+                      }}
+                    >
+                      Мессенджер
+                    </button>
+                  </div>
+                </div>
+
+                <h4 style={{ margin: '1.25rem 0 0.5rem', fontSize: '1rem' }}>История</h4>
+                {activities.length === 0 && <p className="crm-board__hint">Пока нет записей</p>}
+                {activities.map((a) => (
+                  <div key={a.id} className="crm-board__activity">
+                    <div className="crm-board__activity-date">
+                      {a.created_at} {a.created_by ? `· ${a.created_by}` : ''}
+                    </div>
+                    <div className="crm-board__activity-kind">{a.kind}</div>
+                    {a.title && <div>{a.title}</div>}
+                    {a.body && <div style={{ whiteSpace: 'pre-wrap' }}>{a.body}</div>}
+                  </div>
+                ))}
+              </>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

@@ -134,6 +134,16 @@
   "chatPurposeRent": "Pour la location",
   "chatPurposeInvest": "Investissement",
 
+  "managerRequestAck": "Votre demande de contact avec un conseiller a bien été enregistrée. Réponse sous 24 h. Comment préférez-vous être contacté ?",
+  "managerContactPrefPhone": "Téléphone",
+  "managerContactPrefEmail": "E-mail",
+  "managerContactPrefWhatsapp": "WhatsApp",
+  "managerContactThanksPhone": "C'est noté : un conseiller vous appellera sous 24 h.",
+  "managerContactThanksEmail": "C'est noté : un conseiller vous écrira par e-mail sous 24 h.",
+  "managerContactThanksWhatsapp": "C'est noté : un conseiller vous contactera sur WhatsApp sous 24 h.",
+  "managerRequestAlready": "Votre demande est déjà enregistrée. Un conseiller vous contactera via {{method}} sous 24 h.",
+  "managerContactPickHint": "Veuillez choisir un moyen de contact avec les boutons ci-dessous.",
+
   "heroFeature1Title": "Découvrez la valeur de votre bien",
   "heroFeature1Text": "Nous évaluons votre bien et montrons l'évolution de sa valeur, et créons des sélections selon vos critères et votre budget.",
   "heroFeature1Alt": "Évaluation immobilière",

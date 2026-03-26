@@ -1,9 +1,59 @@
-import { useState, useEffect } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useState, useEffect, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
+import { FiPhone, FiMail } from 'react-icons/fi'
+import { FaWhatsapp } from 'react-icons/fa'
 import './Chat.css'
-import { askPropertyAssistant } from '../services/aiService'
+import { askPropertyAssistant, detectManagerContactIntent } from '../services/aiService'
 import { getUserData } from '../services/authService'
 import { syncAssistantLead } from '../services/assistantLeadService'
+
+/** Те же эвристики, что на главной: цель, локация, бюджет, тип, комнаты */
+function mergeAssistantPrefsFromText(prev, userMessage) {
+  const next = { ...prev }
+  const lowerMessage = userMessage.toLowerCase()
+
+  if (lowerMessage.includes('для себя') || lowerMessage === 'для себя' || lowerMessage.includes('сам') || lowerMessage.includes('личн')) {
+    next.purpose = 'для себя'
+  } else if (lowerMessage.includes('под сдачу') || lowerMessage === 'под сдачу' || lowerMessage.includes('сдачу') || lowerMessage.includes('аренд')) {
+    next.purpose = 'под сдачу'
+  } else if (lowerMessage.includes('инвестиц') || lowerMessage === 'инвестиции' || lowerMessage.includes('инвест')) {
+    next.purpose = 'инвестиции'
+  }
+
+  if (lowerMessage.includes('испания') || lowerMessage.includes('spain') || lowerMessage.includes('españa') ||
+      lowerMessage.includes('tenerife') || lowerMessage.includes('тенерифе') || lowerMessage.includes('коста') ||
+      lowerMessage.includes('barcelona') || lowerMessage.includes('madrid')) {
+    next.location = 'Испания'
+  } else if (lowerMessage.includes('дубай') || lowerMessage.includes('dubai') || lowerMessage.includes('uae') ||
+             lowerMessage.includes('оаэ') || lowerMessage.includes('emirates')) {
+    next.location = 'Дубай'
+  }
+
+  const budgetMatch = userMessage.match(/(\d+[\s,.]?\d*)\s*(тыс|млн|k|m|€|\$|eur|usd|евро|доллар|рубл|₽|rub)/i)
+  if (budgetMatch) {
+    let budget = parseFloat(budgetMatch[1].replace(/\s/g, '').replace(',', '.'))
+    const unit = budgetMatch[2].toLowerCase()
+    const eurToRubRate = 100
+    if (unit.includes('млн') || unit === 'm') budget *= 1000000
+    else if (unit.includes('тыс') || unit === 'k') budget *= 1000
+    if (unit.includes('рубл') || unit.includes('₽') || unit.includes('rub')) budget /= eurToRubRate
+    next.budget = budget
+  }
+
+  if (lowerMessage.includes('квартир') || lowerMessage.includes('апартамент') || lowerMessage.includes('apartment')) {
+    next.propertyType = 'квартира'
+  } else if (lowerMessage.includes('вилл') || lowerMessage.includes('villa')) {
+    next.propertyType = 'вилла'
+  } else if (lowerMessage.includes('дом') || lowerMessage.includes('таунхаус') || lowerMessage.includes('townhouse') || lowerMessage.includes('house')) {
+    next.propertyType = 'дом'
+  }
+
+  const roomsMatch = userMessage.match(/(\d+)\s*(комнат|room|bed)/i)
+  if (roomsMatch) next.rooms = parseInt(roomsMatch[1], 10)
+
+  return next
+}
 
 // Получаем идентификатор чата, общий с виджетом AI на главной
 function getChatUserId() {
@@ -33,8 +83,22 @@ function getChatUserId() {
   }
 }
 
+const defaultAssistantPreferences = () => ({
+  purpose: null,
+  budget: null,
+  location: null,
+  propertyType: null,
+  rooms: null,
+  area: null,
+  other: null,
+  managerContactRequested: false,
+  managerContactPendingChoice: false,
+  preferredContact: null
+})
+
 const Chat = () => {
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const [chatUserId] = useState(() => getChatUserId())
   const [activeChat, setActiveChat] = useState('tech-support')
   const [notificationsEnabled, setNotificationsEnabled] = useState(false)
@@ -62,17 +126,27 @@ const Chat = () => {
   })
   const [inputMessage, setInputMessage] = useState('')
   const [isLoadingAI, setIsLoadingAI] = useState(false)
+  const [userPreferences, setUserPreferences] = useState(defaultAssistantPreferences)
+  const chatHistoryLoadedRef = useRef(false)
 
-  // Загружаем историю AI-чата из того же ключа, что и виджет умного помощника
+  // Загружаем историю и предпочтения (общие с виджетом на главной)
   useEffect(() => {
     try {
       const historyKey = `aiChatHistory_${chatUserId}`
+      const preferencesKey = `aiChatPreferences_${chatUserId}`
+      const savedPreferences = localStorage.getItem(preferencesKey)
+      if (savedPreferences) {
+        try {
+          setUserPreferences({ ...defaultAssistantPreferences(), ...JSON.parse(savedPreferences) })
+        } catch (_) {}
+      }
       const savedChatHistory = localStorage.getItem(historyKey)
       if (savedChatHistory) {
         const parsed = JSON.parse(savedChatHistory)
         const mapped = parsed.map((msg, index) => {
           const dateObj = msg.timestamp ? new Date(msg.timestamp) : new Date()
           return {
+            ...msg,
             id: msg.id || index + 1,
             text: msg.text || '',
             sender: msg.sender === 'user' ? 'user' : 'bot',
@@ -91,30 +165,33 @@ const Chat = () => {
       }
     } catch (e) {
       console.error('Ошибка загрузки истории AI-чата в Chat.jsx:', e)
+    } finally {
+      chatHistoryLoadedRef.current = true
     }
   }, [chatUserId])
 
-  // Сохраняем историю AI-чата в общий ключ, чтобы виджет и /chat делили одну историю, и синхронизируем с сервером
+  // Сохраняем историю, предпочтения и синхронизируем лид для админки
   useEffect(() => {
+    if (!chatHistoryLoadedRef.current) return
     try {
       const techMessages = messages['tech-support'] || []
       if (!techMessages.length) return
 
       const historyKey = `aiChatHistory_${chatUserId}`
+      const preferencesKey = `aiChatPreferences_${chatUserId}`
       const serializable = techMessages.map(msg => ({
-        id: msg.id,
-        text: msg.text,
-        sender: msg.sender,
-        timestamp: msg.timestamp ? msg.timestamp.toISOString() : new Date().toISOString()
+        ...msg,
+        timestamp: msg.timestamp instanceof Date ? msg.timestamp.toISOString() : msg.timestamp
       }))
 
       localStorage.setItem(historyKey, JSON.stringify(serializable))
+      localStorage.setItem(preferencesKey, JSON.stringify(userPreferences))
       const userData = getUserData()
-      syncAssistantLead(chatUserId, serializable, {}, userData?.isLoggedIn ? userData : null)
+      syncAssistantLead(chatUserId, serializable, userPreferences, userData?.isLoggedIn ? userData : null)
     } catch (e) {
       console.error('Ошибка сохранения истории AI-чата в Chat.jsx:', e)
     }
-  }, [messages, chatUserId])
+  }, [messages, chatUserId, userPreferences])
 
   const chats = [
     {
@@ -138,20 +215,39 @@ const Chat = () => {
     const newState = !notificationsEnabled
     setNotificationsEnabled(newState)
     setShowNotificationModal(true)
-    
+
     setTimeout(() => {
       setShowNotificationModal(false)
     }, 3000)
   }
 
-  const handleSendMessage = async (e) => {
-    e.preventDefault()
-    if (!inputMessage.trim()) return
+  const contactPrefButtons = () => [
+    { type: 'contact_pref', value: 'phone', label: t('managerContactPrefPhone') },
+    { type: 'contact_pref', value: 'email', label: t('managerContactPrefEmail') },
+    { type: 'contact_pref', value: 'whatsapp', label: t('managerContactPrefWhatsapp') }
+  ]
 
+  const handleTechSupportAction = async ({ buttonText = null, contactPref = null, inputText = null } = {}) => {
+    let userMessage = ''
+    if (contactPref) {
+      const labelMap = {
+        phone: t('managerContactPrefPhone'),
+        email: t('managerContactPrefEmail'),
+        whatsapp: t('managerContactPrefWhatsapp')
+      }
+      userMessage = labelMap[contactPref] || contactPref
+    } else if (buttonText != null) {
+      userMessage = String(buttonText).trim()
+    } else if (inputText != null) {
+      userMessage = inputText.trim()
+    }
+    if (!userMessage) return
+
+    const tsPrev = messages['tech-support'] || []
     const now = new Date()
-    const userMessage = {
-      id: messages[activeChat].length + 1,
-      text: inputMessage,
+    const userMessageObj = {
+      id: Date.now(),
+      text: userMessage,
       sender: 'user',
       time: now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }),
       date: 'Сегодня',
@@ -160,61 +256,177 @@ const Chat = () => {
 
     setMessages(prev => ({
       ...prev,
-      [activeChat]: [...prev[activeChat], userMessage]
+      'tech-support': [...(prev['tech-support'] || []), userMessageObj]
     }))
 
-    const previousMessages = messages[activeChat] || []
-    setInputMessage('')
+    if (!buttonText && !contactPref) {
+      setInputMessage('')
+    }
 
-    if (activeChat === 'tech-support') {
-      try {
-        setIsLoadingAI(true)
-        const aiResponse = await askPropertyAssistant(
-          [...previousMessages, userMessage],
-          {
-            purpose: null,
-            budget: null,
-            location: null,
-            propertyType: null,
-            rooms: null,
-            area: null,
-            other: null
-          },
-          []
-        )
-
-        const botMessage = {
-          id: (messages[activeChat]?.length || 0) + 2,
-          text: aiResponse?.text || 'Извините, не удалось получить ответ от AI. Попробуйте ещё раз.',
-          sender: 'bot',
-          time: new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }),
-          date: 'Сегодня',
-          timestamp: new Date()
-        }
-
-        setMessages(prev => ({
-          ...prev,
-          [activeChat]: [...prev[activeChat], botMessage]
-        }))
-      } catch (error) {
-        console.error('Ошибка AI-чата:', error)
-        const errorMessage = {
-          id: (messages[activeChat]?.length || 0) + 2,
-          text: 'Произошла ошибка при обращении к AI. Попробуйте ещё раз позже.',
-          sender: 'bot',
-          time: new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }),
-          date: 'Сегодня',
-          timestamp: new Date()
-        }
-        setMessages(prev => ({
-          ...prev,
-          [activeChat]: [...prev[activeChat], errorMessage]
-        }))
-      } finally {
-        setIsLoadingAI(false)
+    if (contactPref) {
+      setUserPreferences(prev => ({
+        ...prev,
+        preferredContact: contactPref,
+        managerContactRequested: true,
+        managerContactPendingChoice: false
+      }))
+      const thanksText =
+        contactPref === 'phone'
+          ? t('managerContactThanksPhone')
+          : contactPref === 'email'
+            ? t('managerContactThanksEmail')
+            : t('managerContactThanksWhatsapp')
+      const botMessage = {
+        id: Date.now() + 1,
+        text: thanksText,
+        sender: 'bot',
+        time: new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }),
+        date: 'Сегодня',
+        timestamp: new Date(),
+        buttons: null,
+        recommendations: null
       }
-    } else {
-      // Для остальных чатов оставляем простой автоответ
+      setMessages(prev => ({
+        ...prev,
+        'tech-support': [...(prev['tech-support'] || []), botMessage]
+      }))
+      return
+    }
+
+    const mergedPrefs = mergeAssistantPrefsFromText({ ...userPreferences }, userMessage)
+    setUserPreferences(mergedPrefs)
+
+    let wantsManager = false
+    try {
+      wantsManager = await detectManagerContactIntent(userMessage)
+    } catch {
+      wantsManager = false
+    }
+
+    if (wantsManager) {
+      if (mergedPrefs.preferredContact) {
+        const methodLabel =
+          mergedPrefs.preferredContact === 'phone'
+            ? t('managerContactPrefPhone')
+            : mergedPrefs.preferredContact === 'email'
+              ? t('managerContactPrefEmail')
+              : t('managerContactPrefWhatsapp')
+        const botMessage = {
+          id: Date.now() + 1,
+          text: t('managerRequestAlready', { method: methodLabel }),
+          sender: 'bot',
+          time: new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }),
+          date: 'Сегодня',
+          timestamp: new Date(),
+          buttons: null,
+          recommendations: null
+        }
+        setMessages(prev => ({
+          ...prev,
+          'tech-support': [...(prev['tech-support'] || []), botMessage]
+        }))
+        return
+      }
+      if (mergedPrefs.managerContactPendingChoice) {
+        const botMessage = {
+          id: Date.now() + 1,
+          text: t('managerContactPickHint'),
+          sender: 'bot',
+          time: new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }),
+          date: 'Сегодня',
+          timestamp: new Date(),
+          buttons: contactPrefButtons(),
+          recommendations: null
+        }
+        setMessages(prev => ({
+          ...prev,
+          'tech-support': [...(prev['tech-support'] || []), botMessage]
+        }))
+        return
+      }
+
+      setUserPreferences(prev => ({
+        ...prev,
+        managerContactRequested: true,
+        managerContactPendingChoice: true
+      }))
+      const botMessage = {
+        id: Date.now() + 1,
+        text: t('managerRequestAck'),
+        sender: 'bot',
+        time: new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }),
+        date: 'Сегодня',
+        timestamp: new Date(),
+        buttons: contactPrefButtons(),
+        recommendations: null
+      }
+      setMessages(prev => ({
+        ...prev,
+        'tech-support': [...(prev['tech-support'] || []), botMessage]
+      }))
+      return
+    }
+
+    try {
+      setIsLoadingAI(true)
+      const aiResponse = await askPropertyAssistant(
+        [...tsPrev, userMessageObj],
+        mergedPrefs,
+        []
+      )
+
+      const botMessage = {
+        id: Date.now() + 1,
+        text: aiResponse?.text || 'Извините, не удалось получить ответ от AI. Попробуйте ещё раз.',
+        sender: 'bot',
+        time: new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }),
+        date: 'Сегодня',
+        timestamp: new Date(),
+        buttons: aiResponse?.buttons ?? null,
+        recommendations: aiResponse?.recommendations ?? null
+      }
+
+      setMessages(prev => ({
+        ...prev,
+        'tech-support': [...(prev['tech-support'] || []), botMessage]
+      }))
+    } catch (error) {
+      console.error('Ошибка AI-чата:', error)
+      const errorMessage = {
+        id: Date.now() + 1,
+        text: 'Произошла ошибка при обращении к AI. Попробуйте ещё раз позже.',
+        sender: 'bot',
+        time: new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }),
+        date: 'Сегодня',
+        timestamp: new Date()
+      }
+      setMessages(prev => ({
+        ...prev,
+        'tech-support': [...(prev['tech-support'] || []), errorMessage]
+      }))
+    } finally {
+      setIsLoadingAI(false)
+    }
+  }
+
+  const handleSendMessage = async (e) => {
+    e.preventDefault()
+    if (activeChat !== 'tech-support') {
+      if (!inputMessage.trim()) return
+      const now = new Date()
+      const userMessage = {
+        id: messages[activeChat].length + 1,
+        text: inputMessage,
+        sender: 'user',
+        time: now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }),
+        date: 'Сегодня',
+        timestamp: now
+      }
+      setMessages(prev => ({
+        ...prev,
+        [activeChat]: [...prev[activeChat], userMessage]
+      }))
+      setInputMessage('')
       setTimeout(() => {
         const botResponse = {
           id: messages[activeChat].length + 2,
@@ -229,7 +441,11 @@ const Chat = () => {
           [activeChat]: [...prev[activeChat], botResponse]
         }))
       }, 1000)
+      return
     }
+
+    if (!inputMessage.trim() || isLoadingAI) return
+    await handleTechSupportAction({ inputText: inputMessage })
   }
 
   const currentChat = chats.find(chat => chat.id === activeChat)
@@ -248,14 +464,14 @@ const Chat = () => {
               )}
             </svg>
             <p>
-              {notificationsEnabled 
-                ? 'Теперь сообщения будут отображаться в уведомлениях' 
+              {notificationsEnabled
+                ? 'Теперь сообщения будут отображаться в уведомлениях'
                 : 'Уведомления отключены'}
             </p>
           </div>
         </div>
       )}
-      
+
       <div className="chat-container" onClick={(e) => e.stopPropagation()}>
         <div className="chat-sidebar">
           <div className="chat-header">
@@ -267,7 +483,7 @@ const Chat = () => {
             </button>
           </div>
 
-          <button 
+          <button
             className={`notifications-button ${notificationsEnabled ? 'enabled' : ''}`}
             onClick={handleToggleNotifications}
           >
@@ -316,9 +532,10 @@ const Chat = () => {
                     {chat.unread && <div className="unread-dot"></div>}
                   </div>
                   <p className="chat-description">{chat.description}</p>
-                  {currentMessages.length > 0 && (
+                  {activeChat === chat.id && currentMessages.length > 0 && (
                     <p className="chat-preview">
-                      {currentMessages[currentMessages.length - 1].text.substring(0, 40)}...
+                      {String(currentMessages[currentMessages.length - 1].text || '').substring(0, 40)}
+                      ...
                     </p>
                   )}
                 </div>
@@ -362,7 +579,7 @@ const Chat = () => {
                     <p>{currentChat.description}</p>
                   </div>
                 </div>
-                <button className="menu-button">
+                <button type="button" className="menu-button">
                   <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
                     <circle cx="10" cy="4" r="1.5" fill="currentColor"/>
                     <circle cx="10" cy="10" r="1.5" fill="currentColor"/>
@@ -373,9 +590,9 @@ const Chat = () => {
 
               <div className="chat-messages">
                 {currentMessages.map((message, index) => {
-                  const showDate = index === 0 || 
+                  const showDate = index === 0 ||
                     (index > 0 && currentMessages[index - 1].date !== message.date)
-                  
+
                   return (
                     <div key={message.id}>
                       {showDate && (
@@ -384,12 +601,70 @@ const Chat = () => {
                       <div className={`message ${message.sender === 'user' ? 'message-user' : 'message-bot'}`}>
                         <div className="message-content">
                           <p>{message.text}</p>
+                          {message.sender === 'bot' && message.buttons && message.buttons.length > 0 && (
+                            <div
+                              className={`chat-msg-buttons${
+                                message.buttons.some((b) => typeof b === 'object' && b?.type === 'contact_pref')
+                                  ? ' chat-msg-buttons--contact'
+                                  : ''
+                              }`}
+                            >
+                              {message.buttons.map((button, btnIdx) => {
+                                if (typeof button === 'object' && button?.type === 'contact_pref') {
+                                  const IconCmp =
+                                    button.value === 'phone'
+                                      ? FiPhone
+                                      : button.value === 'email'
+                                        ? FiMail
+                                        : FaWhatsapp
+                                  return (
+                                    <button
+                                      key={btnIdx}
+                                      type="button"
+                                      className="chat-msg-button chat-msg-button--contact"
+                                      disabled={activeChat === 'tech-support' && isLoadingAI}
+                                      onClick={() =>
+                                        activeChat === 'tech-support' &&
+                                        !isLoadingAI &&
+                                        handleTechSupportAction({ contactPref: button.value })
+                                      }
+                                    >
+                                      <IconCmp size={18} aria-hidden />
+                                      <span>{button.label}</span>
+                                    </button>
+                                  )
+                                }
+                                return (
+                                  <button
+                                    key={btnIdx}
+                                    type="button"
+                                    className="chat-msg-button"
+                                    disabled={activeChat === 'tech-support' && isLoadingAI}
+                                    onClick={() =>
+                                      activeChat === 'tech-support' &&
+                                      !isLoadingAI &&
+                                      handleTechSupportAction({ buttonText: button })
+                                    }
+                                  >
+                                    {button}
+                                  </button>
+                                )
+                              })}
+                            </div>
+                          )}
                           <span className="message-time">{message.time}</span>
                         </div>
                       </div>
                     </div>
                   )
                 })}
+                {activeChat === 'tech-support' && isLoadingAI && (
+                  <div className="message message-bot">
+                    <div className="message-content chat-msg-loading">
+                      <span>Печатает…</span>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <form className="chat-input-form" onSubmit={handleSendMessage}>
@@ -411,8 +686,9 @@ const Chat = () => {
                   placeholder="Напишите сообщение..."
                   value={inputMessage}
                   onChange={(e) => setInputMessage(e.target.value)}
+                  disabled={activeChat === 'tech-support' && isLoadingAI}
                 />
-                <button type="submit" className="send-button">
+                <button type="submit" className="send-button" disabled={activeChat === 'tech-support' && isLoadingAI}>
                   <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
                     <path d="M2 10L18 2L12 18L10 10L2 10Z" fill="currentColor"/>
                   </svg>
@@ -427,4 +703,3 @@ const Chat = () => {
 }
 
 export default Chat
-

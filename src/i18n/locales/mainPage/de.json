@@ -134,6 +134,16 @@
   "chatPurposeRent": "Zur Vermietung",
   "chatPurposeInvest": "Investition",
 
+  "managerRequestAck": "Ihre Anfrage beim Manager wurde registriert. Antwort innerhalb von 24 Stunden. Wie möchten Sie kontaktiert werden?",
+  "managerContactPrefPhone": "Telefon",
+  "managerContactPrefEmail": "E-Mail",
+  "managerContactPrefWhatsapp": "WhatsApp",
+  "managerContactThanksPhone": "Notiert: Ein Manager meldet sich innerhalb von 24 Stunden telefonisch.",
+  "managerContactThanksEmail": "Notiert: Ein Manager schreibt Ihnen innerhalb von 24 Stunden per E-Mail.",
+  "managerContactThanksWhatsapp": "Notiert: Ein Manager erreicht Sie innerhalb von 24 Stunden per WhatsApp.",
+  "managerRequestAlready": "Ihre Anfrage ist bereits registriert. Ein Manager kontaktiert Sie per {{method}} innerhalb von 24 Stunden.",
+  "managerContactPickHint": "Bitte wählen Sie unten eine Kontaktmöglichkeit.",
+
   "heroFeature1Title": "Erfahren Sie den Wert Ihres Hauses",
   "heroFeature1Text": "Wir bewerten Ihre Immobilie und zeigen, wie sich der Wert verändert – und erstellen passende Objektauswahlen nach Ihren Wünschen und Ihrem Budget.",
   "heroFeature1Alt": "Immobilienbewertung",

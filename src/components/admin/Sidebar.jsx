@@ -18,7 +18,7 @@ const Sidebar = ({ activeSection, onSectionChange, onLogout, adminPermissions })
     { id: 'debt_reasons', icon: FaFileInvoiceDollar, label: 'Причина долга', permission: 'can_access_objects' },
     { id: 'debt_documents', icon: FaFileAlt, label: 'Необходимые документы', permission: 'can_access_objects' },
     { id: 'whatsapp', icon: FaWhatsapp, label: 'WhatsApp', permission: 'can_access_whatsapp' },
-    { id: 'clients', icon: FaAddressBook, label: 'Клиенты', permission: 'can_access_clients' },
+    { id: 'clients', icon: FaAddressBook, label: 'Клиенты / CRM', permission: 'can_access_clients' },
     { id: 'purchase_requests', icon: FaShoppingCart, label: 'Запросы на покупку', permission: 'can_access_purchase_requests' },
     { id: 'bonuses', icon: FaGift, label: 'Бонусные задания', permission: 'can_access_moderation' },
     { id: 'testing', icon: FaFlask, label: 'Тестирование', permission: 'can_access_objects' },

@@ -135,6 +135,16 @@
   "chatPurposeRent": "Под сдачу",
   "chatPurposeInvest": "Инвестиции",
 
+  "managerRequestAck": "Вы оставили заявку. Менеджер ответит в течение 24 часов. Как вам удобнее, чтобы с вами связались?",
+  "managerContactPrefPhone": "По телефону",
+  "managerContactPrefEmail": "По e-mail",
+  "managerContactPrefWhatsapp": "WhatsApp",
+  "managerContactThanksPhone": "Записали: менеджер свяжется с вами по телефону в течение 24 часов.",
+  "managerContactThanksEmail": "Записали: менеджер напишет вам на электронную почту в течение 24 часов.",
+  "managerContactThanksWhatsapp": "Записали: менеджер свяжется с вами в WhatsApp в течение 24 часов.",
+  "managerRequestAlready": "Ваша заявка уже принята. Менеджер свяжется с вами через {{method}} в течение 24 часов.",
+  "managerContactPickHint": "Пожалуйста, выберите способ связи одной из кнопок ниже.",
+
   "heroFeature1Title": "Узнайте цену своего дома",
   "heroFeature1Text": "Оцениваем квартиру и показываем, как её цена меняется – а ещё составляем подборки недвижимости с учётом ваших пожеланий и возможностей",
   "heroFeature1Alt": "Оценка недвижимости",

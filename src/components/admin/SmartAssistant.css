@@ -142,10 +142,32 @@
 
 .smart-assistant-card__top {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 0.5rem;
   margin-bottom: 0.75rem;
+}
+
+.smart-assistant-card__badges {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.smart-assistant-card__manager-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  background: linear-gradient(135deg, #ecfdf5 0%, #a7f3d0 100%);
+  color: #065f46;
+  border: 1px solid #34d399;
+  box-shadow: 0 1px 3px rgba(5, 95, 70, 0.12);
 }
 
 .smart-assistant-card__date {
@@ -185,6 +207,13 @@
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+.smart-assistant-card__contact-pref {
+  font-size: 0.8rem;
+  color: #047857;
+  font-weight: 600;
+  margin: 0 0 0.5rem 0;
 }
 
 .smart-assistant-card__meta {
@@ -298,6 +327,20 @@
   font-weight: 600;
   color: #374151;
   margin: 0 0 0.75rem 0;
+}
+
+.modal-section--manager {
+  padding: 1rem;
+  background: linear-gradient(135deg, #ecfdf5 0%, #f0fdf4 100%);
+  border-radius: 10px;
+  border: 1px solid #a7f3d0;
+}
+
+.modal-manager-hint {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #065f46;
+  line-height: 1.5;
 }
 
 .modal-summary {

@@ -489,6 +489,21 @@
   cursor: not-allowed;
 }
 
+.chat-widget__buttons--contact {
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.chat-widget__button--contact {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1 1 calc(33.333% - 8px);
+  min-width: 120px;
+  justify-content: flex-start;
+}
+
 .chat-widget__recommendations {
   margin-top: 12px;
   padding-top: 12px;

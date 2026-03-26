@@ -729,6 +729,55 @@ export function initDatabase() {
         console.warn('⚠️ Не удалось создать таблицу транзакций:', transactionsError.message);
       }
 
+      // Stripe: подписки и платежи (Pro)
+      try {
+        const st = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='stripe_subscription_state'").get();
+        if (!st) {
+          console.log('🔄 Создание таблиц Stripe (подписки, платежи)...');
+          db.exec(`
+            CREATE TABLE IF NOT EXISTS stripe_subscription_state (
+              user_id INTEGER PRIMARY KEY,
+              stripe_customer_id TEXT,
+              stripe_subscription_id TEXT UNIQUE,
+              plan_key TEXT NOT NULL DEFAULT 'pro',
+              status TEXT NOT NULL,
+              current_period_start TEXT,
+              current_period_end TEXT,
+              cancel_at_period_end INTEGER DEFAULT 0,
+              updated_at TEXT DEFAULT (datetime('now')),
+              FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+            );
+            CREATE INDEX IF NOT EXISTS idx_stripe_sub_state_subscription ON stripe_subscription_state(stripe_subscription_id);
+
+            CREATE TABLE IF NOT EXISTS stripe_payments (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              dedupe_key TEXT NOT NULL UNIQUE,
+              user_id INTEGER NOT NULL,
+              stripe_customer_id TEXT,
+              stripe_subscription_id TEXT,
+              stripe_invoice_id TEXT,
+              stripe_checkout_session_id TEXT,
+              amount_cents INTEGER NOT NULL,
+              currency TEXT NOT NULL DEFAULT 'eur',
+              status TEXT NOT NULL DEFAULT 'paid',
+              plan_key TEXT NOT NULL DEFAULT 'pro',
+              billing_reason TEXT,
+              paid_at TEXT NOT NULL,
+              period_start TEXT,
+              period_end TEXT,
+              customer_email TEXT,
+              created_at TEXT DEFAULT (datetime('now')),
+              FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+            );
+            CREATE INDEX IF NOT EXISTS idx_stripe_payments_user ON stripe_payments(user_id);
+            CREATE INDEX IF NOT EXISTS idx_stripe_payments_paid_at ON stripe_payments(paid_at);
+          `);
+          console.log('✅ Таблицы stripe_subscription_state и stripe_payments созданы');
+        }
+      } catch (stripeTblErr) {
+        console.warn('⚠️ Stripe таблицы:', stripeTblErr.message);
+      }
+
       // Создаем таблицу ставок (bids), если её нет
       try {
         const bidsTable = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='bids'").get();
@@ -1078,6 +1127,8 @@ export function initDatabase() {
               country TEXT,
               region TEXT,
               property_type TEXT,
+              manager_contact_requested INTEGER DEFAULT 0,
+              preferred_contact TEXT,
               created_at TEXT DEFAULT (datetime('now')),
               updated_at TEXT DEFAULT (datetime('now')),
               FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
@@ -1087,9 +1138,91 @@ export function initDatabase() {
             CREATE INDEX IF NOT EXISTS idx_assistant_leads_updated_at ON assistant_leads(updated_at);
           `);
           console.log('✅ Таблица assistant_leads создана');
+        } else {
+          try {
+            const cols = db.prepare("PRAGMA table_info(assistant_leads)").all().map((c) => c.name);
+            if (!cols.includes('manager_contact_requested')) {
+              db.exec('ALTER TABLE assistant_leads ADD COLUMN manager_contact_requested INTEGER DEFAULT 0');
+              console.log('✅ assistant_leads.manager_contact_requested добавлена');
+            }
+            if (!cols.includes('preferred_contact')) {
+              db.exec('ALTER TABLE assistant_leads ADD COLUMN preferred_contact TEXT');
+              console.log('✅ assistant_leads.preferred_contact добавлена');
+            }
+          } catch (migrateAl) {
+            console.warn('⚠️ Миграция assistant_leads:', migrateAl.message);
+          }
         }
       } catch (assistantLeadsError) {
         console.warn('⚠️ Не удалось создать таблицу assistant_leads:', assistantLeadsError.message);
+      }
+
+      // CRM: воронка продаж (канбан, касания, рассылка из админки)
+      try {
+        const crmStagesTable = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='crm_stages'").get();
+        if (!crmStagesTable) {
+          console.log('🔄 Создание таблиц CRM...');
+          db.exec(`
+            CREATE TABLE IF NOT EXISTS crm_stages (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              slug TEXT UNIQUE NOT NULL,
+              label TEXT NOT NULL,
+              sort_order INTEGER NOT NULL DEFAULT 0
+            );
+            CREATE TABLE IF NOT EXISTS crm_leads (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              user_id INTEGER,
+              display_name TEXT NOT NULL,
+              email TEXT,
+              phone TEXT,
+              stage_id INTEGER NOT NULL,
+              sort_order INTEGER NOT NULL DEFAULT 0,
+              temperature TEXT DEFAULT 'warm',
+              interests TEXT,
+              deal_value REAL,
+              currency TEXT DEFAULT 'EUR',
+              next_action TEXT,
+              next_action_at TEXT,
+              internal_notes TEXT,
+              source TEXT,
+              assistant_lead_id INTEGER,
+              created_at TEXT DEFAULT (datetime('now')),
+              updated_at TEXT DEFAULT (datetime('now')),
+              FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
+              FOREIGN KEY (stage_id) REFERENCES crm_stages(id),
+              FOREIGN KEY (assistant_lead_id) REFERENCES assistant_leads(id) ON DELETE SET NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_crm_leads_stage ON crm_leads(stage_id, sort_order);
+            CREATE INDEX IF NOT EXISTS idx_crm_leads_user ON crm_leads(user_id);
+            CREATE UNIQUE INDEX IF NOT EXISTS idx_crm_leads_user_unique ON crm_leads(user_id) WHERE user_id IS NOT NULL;
+            CREATE UNIQUE INDEX IF NOT EXISTS idx_crm_leads_assistant_unique ON crm_leads(assistant_lead_id) WHERE assistant_lead_id IS NOT NULL;
+            CREATE TABLE IF NOT EXISTS crm_activities (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              lead_id INTEGER NOT NULL,
+              kind TEXT NOT NULL,
+              title TEXT,
+              body TEXT,
+              meta TEXT,
+              created_by TEXT,
+              created_at TEXT DEFAULT (datetime('now')),
+              FOREIGN KEY (lead_id) REFERENCES crm_leads(id) ON DELETE CASCADE
+            );
+            CREATE INDEX IF NOT EXISTS idx_crm_activities_lead ON crm_activities(lead_id);
+          `);
+          const ins = db.prepare('INSERT INTO crm_stages (slug, label, sort_order) VALUES (?, ?, ?)');
+          const defaults = [
+            ['new', 'Новый', 0],
+            ['qualified', 'Квалифицирован', 1],
+            ['negotiation', 'Переговоры', 2],
+            ['proposal', 'Предложение', 3],
+            ['closed_won', 'Сделка', 4],
+            ['closed_lost', 'Отказ', 5],
+          ];
+          defaults.forEach((row) => ins.run(...row));
+          console.log('✅ Таблицы CRM созданы');
+        }
+      } catch (crmErr) {
+        console.warn('⚠️ Не удалось создать таблицы CRM:', crmErr.message);
       }
       
       // Создаем таблицы для квартир/апартаментов и домов/вилл
@@ -3342,6 +3475,7 @@ export const purchaseRequestQueries = {
 function computeLeadType(messages, preferences) {
   const msgList = Array.isArray(messages) ? messages : (messages ? JSON.parse(messages || '[]') : []);
   const prefs = typeof preferences === 'object' ? preferences : (preferences ? JSON.parse(preferences || '{}') : {});
+  if (prefs.managerContactRequested || prefs.preferredContact) return 'hot';
   const userMessages = msgList.filter(m => m.sender === 'user').map(m => (m.text || '').toLowerCase()).join(' ');
   const hasBudget = !!(prefs.budget || /бюджет|цена|евро|€|euro|стоимость|сколько стоит/i.test(userMessages));
   const hasContactIntent = /контакт|телефон|позвонить|почта|email|связь|связаться/i.test(userMessages);
@@ -3379,6 +3513,12 @@ function buildSummary(messages, preferences) {
   if (prefs.rooms) parts.push(`Комнат: ${prefs.rooms}`);
   if (prefs.area) parts.push(`Площадь: ${prefs.area}`);
   if (prefs.other) parts.push(`Прочее: ${prefs.other}`);
+  if (prefs.managerContactRequested || prefs.preferredContact) {
+    const method = { phone: 'телефон', email: 'почта', whatsapp: 'WhatsApp' }[prefs.preferredContact];
+    parts.push(method
+      ? `Заявка на связь с менеджером; удобный канал: ${method}.`
+      : 'Заявка на связь с менеджером (способ связи уточняется).');
+  }
 
   const userTexts = msgList.filter(m => m.sender === 'user').map(m => m.text || '');
   if (userTexts.some(t => /цена|бюджет|евро|стоимость/i.test(t))) parts.push('Дошли до обсуждения цены.');
@@ -3423,6 +3563,12 @@ export const assistantLeadQueries = {
     const country = prefs.country || (prefs.location && String(prefs.location).split(/[,;]/)[0]) || null;
     const region = prefs.location || prefs.region || null;
     const propertyType = prefs.propertyType || null;
+    const managerContactRequested =
+      (prefs.managerContactRequested || prefs.preferredContact) ? 1 : 0;
+    const preferredContact =
+      prefs.preferredContact && ['phone', 'email', 'whatsapp'].includes(String(prefs.preferredContact))
+        ? String(prefs.preferredContact)
+        : null;
 
     const existing = db.prepare('SELECT id, lead_type FROM assistant_leads WHERE session_id = ?').get(sessionId);
     const leadType = existing ? mergeLeadTypes(existing.lead_type, computedType) : computedType;
@@ -3431,23 +3577,57 @@ export const assistantLeadQueries = {
         UPDATE assistant_leads SET
           user_id = ?, messages = ?, preferences = ?, summary = ?, lead_type = ?,
           email = COALESCE(?, email), phone = COALESCE(?, phone),
-          country = ?, region = ?, property_type = ?, updated_at = datetime('now')
+          country = ?, region = ?, property_type = ?,
+          manager_contact_requested = ?, preferred_contact = COALESCE(?, preferred_contact),
+          updated_at = datetime('now')
         WHERE session_id = ?
       `);
-      stmt.run(userId || null, messagesStr, preferencesStr, summary, leadType, email || null, phone || null, country, region, propertyType, sessionId);
+      stmt.run(
+        userId || null,
+        messagesStr,
+        preferencesStr,
+        summary,
+        leadType,
+        email || null,
+        phone || null,
+        country,
+        region,
+        propertyType,
+        managerContactRequested,
+        preferredContact,
+        sessionId
+      );
       return { id: existing.id, created: false };
     }
     const result = db.prepare(`
-      INSERT INTO assistant_leads (session_id, user_id, messages, preferences, summary, lead_type, email, phone, country, region, property_type)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(sessionId, userId || null, messagesStr, preferencesStr, summary, leadType, email || null, phone || null, country, region, propertyType);
+      INSERT INTO assistant_leads (
+        session_id, user_id, messages, preferences, summary, lead_type, email, phone, country, region, property_type,
+        manager_contact_requested, preferred_contact
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      sessionId,
+      userId || null,
+      messagesStr,
+      preferencesStr,
+      summary,
+      leadType,
+      email || null,
+      phone || null,
+      country,
+      region,
+      propertyType,
+      managerContactRequested,
+      preferredContact
+    );
     return { id: result.lastInsertRowid, created: true };
   },
 
   getAll: () => {
     const db = getDatabase();
     const stmt = db.prepare(`
-      SELECT id, session_id, user_id, summary, lead_type, email, phone, country, region, property_type, created_at, updated_at
+      SELECT id, session_id, user_id, summary, lead_type, email, phone, country, region, property_type,
+             manager_contact_requested, preferred_contact, created_at, updated_at
       FROM assistant_leads ORDER BY updated_at DESC
     `);
     return stmt.all();
@@ -6227,5 +6407,389 @@ export const propertyQueries = {
   getPendingProperties: function() {
     return this.getPending();
   }
+};
+
+/** Stripe: состояние подписки Pro и история платежей */
+export const stripeSubscriptionQueries = {
+  upsertState(row) {
+    const db = getDatabase();
+    const stmt = db.prepare(`
+      INSERT INTO stripe_subscription_state (
+        user_id, stripe_customer_id, stripe_subscription_id, plan_key, status,
+        current_period_start, current_period_end, cancel_at_period_end, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+      ON CONFLICT(user_id) DO UPDATE SET
+        stripe_customer_id = excluded.stripe_customer_id,
+        stripe_subscription_id = excluded.stripe_subscription_id,
+        plan_key = excluded.plan_key,
+        status = excluded.status,
+        current_period_start = excluded.current_period_start,
+        current_period_end = excluded.current_period_end,
+        cancel_at_period_end = excluded.cancel_at_period_end,
+        updated_at = datetime('now')
+    `);
+    return stmt.run(
+      row.user_id,
+      row.stripe_customer_id || null,
+      row.stripe_subscription_id || null,
+      row.plan_key || 'pro',
+      row.status,
+      row.current_period_start || null,
+      row.current_period_end || null,
+      row.cancel_at_period_end ? 1 : 0
+    );
+  },
+
+  getStateByUserId(userId) {
+    const db = getDatabase();
+    const uid = parseInt(userId, 10);
+    if (!Number.isFinite(uid)) return null;
+    return db.prepare('SELECT * FROM stripe_subscription_state WHERE user_id = ?').get(uid) || null;
+  },
+
+  getUserIdBySubscriptionId(subscriptionId) {
+    if (!subscriptionId) return null;
+    const db = getDatabase();
+    const r = db
+      .prepare('SELECT user_id FROM stripe_subscription_state WHERE stripe_subscription_id = ?')
+      .get(subscriptionId);
+    return r ? r.user_id : null;
+  },
+
+  insertPayment(row) {
+    const db = getDatabase();
+    const stmt = db.prepare(`
+      INSERT OR IGNORE INTO stripe_payments (
+        dedupe_key, user_id, stripe_customer_id, stripe_subscription_id,
+        stripe_invoice_id, stripe_checkout_session_id,
+        amount_cents, currency, status, plan_key, billing_reason,
+        paid_at, period_start, period_end, customer_email
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+    return stmt.run(
+      row.dedupe_key,
+      row.user_id,
+      row.stripe_customer_id || null,
+      row.stripe_subscription_id || null,
+      row.stripe_invoice_id || null,
+      row.stripe_checkout_session_id || null,
+      row.amount_cents,
+      (row.currency || 'eur').toLowerCase(),
+      row.status || 'paid',
+      row.plan_key || 'pro',
+      row.billing_reason || null,
+      row.paid_at,
+      row.period_start || null,
+      row.period_end || null,
+      row.customer_email || null
+    );
+  },
+
+  listPaymentsByUserId(userId, limit = 50) {
+    const db = getDatabase();
+    const uid = parseInt(userId, 10);
+    if (!Number.isFinite(uid)) return [];
+    return db
+      .prepare(
+        `SELECT * FROM stripe_payments WHERE user_id = ? ORDER BY datetime(paid_at) DESC LIMIT ?`
+      )
+      .all(uid, Math.min(limit, 200));
+  },
+
+  countPayments() {
+    const db = getDatabase();
+    const r = db.prepare('SELECT COUNT(*) AS c FROM stripe_payments').get();
+    return r ? r.c : 0;
+  },
+
+  listAllPaymentsWithUsers(limit = 500) {
+    const db = getDatabase();
+    return db
+      .prepare(
+        `SELECT p.*, u.first_name, u.last_name, u.email, u.phone_number
+         FROM stripe_payments p
+         LEFT JOIN users u ON p.user_id = u.id
+         ORDER BY datetime(p.paid_at) DESC
+         LIMIT ?`
+      )
+      .all(Math.min(limit, 2000));
+  },
+};
+
+function parseCrmInterests(raw) {
+  if (!raw) return [];
+  try {
+    const j = JSON.parse(raw);
+    return Array.isArray(j) ? j : [];
+  } catch {
+    return [];
+  }
+}
+
+function normalizeCrmLeadRow(row) {
+  if (!row) return null;
+  return {
+    ...row,
+    interests: parseCrmInterests(row.interests),
+  };
+}
+
+export const crmQueries = {
+  ensureStages() {
+    const db = getDatabase();
+    const n = db.prepare('SELECT COUNT(*) AS c FROM crm_stages').get();
+    if (n && n.c > 0) return;
+    const ins = db.prepare('INSERT INTO crm_stages (slug, label, sort_order) VALUES (?, ?, ?)');
+    const defaults = [
+      ['new', 'Новый', 0],
+      ['qualified', 'Квалифицирован', 1],
+      ['negotiation', 'Переговоры', 2],
+      ['proposal', 'Предложение', 3],
+      ['closed_won', 'Сделка', 4],
+      ['closed_lost', 'Отказ', 5],
+    ];
+    defaults.forEach((row) => ins.run(...row));
+  },
+
+  getStages() {
+    const db = getDatabase();
+    this.ensureStages();
+    return db.prepare('SELECT * FROM crm_stages ORDER BY sort_order ASC, id ASC').all();
+  },
+
+  getBoard() {
+    const db = getDatabase();
+    this.ensureStages();
+    const stages = this.getStages();
+    const leads = db
+      .prepare(
+        `SELECT id, user_id, display_name, email, phone, stage_id, sort_order, temperature, interests,
+                deal_value, currency, next_action, next_action_at, internal_notes, source, assistant_lead_id,
+                created_at, updated_at
+         FROM crm_leads
+         ORDER BY stage_id ASC, sort_order ASC, id ASC`
+      )
+      .all()
+      .map(normalizeCrmLeadRow);
+    const byStage = {};
+    for (const s of stages) {
+      byStage[s.id] = [];
+    }
+    for (const L of leads) {
+      if (!byStage[L.stage_id]) byStage[L.stage_id] = [];
+      byStage[L.stage_id].push(L);
+    }
+    return { stages, leadsByStage: byStage };
+  },
+
+  getLeadById(id) {
+    const db = getDatabase();
+    const row = db.prepare('SELECT * FROM crm_leads WHERE id = ?').get(id);
+    return normalizeCrmLeadRow(row);
+  },
+
+  countActivities(leadId) {
+    const db = getDatabase();
+    const r = db.prepare('SELECT COUNT(*) AS c FROM crm_activities WHERE lead_id = ?').get(leadId);
+    return r ? r.c : 0;
+  },
+
+  countTouchActivities(leadId) {
+    const db = getDatabase();
+    const kinds = ['email_sent', 'call', 'meeting', 'whatsapp'];
+    const placeholders = kinds.map(() => '?').join(',');
+    const r = db
+      .prepare(`SELECT COUNT(*) AS c FROM crm_activities WHERE lead_id = ? AND kind IN (${placeholders})`)
+      .get(leadId, ...kinds);
+    return r ? r.c : 0;
+  },
+
+  getFavoriteCountForUser(userId) {
+    const db = getDatabase();
+    const uid = parseInt(userId, 10);
+    if (!uid) return 0;
+    const r = db.prepare('SELECT COUNT(*) AS c FROM property_favorites WHERE user_id = ?').get(uid);
+    return r ? r.c : 0;
+  },
+
+  searchUsers(q, limit = 25) {
+    const db = getDatabase();
+    const term = `%${String(q || '').trim()}%`;
+    if (term === '%%') return [];
+    return db
+      .prepare(
+        `SELECT id, first_name, last_name, email, phone_number, role, country
+         FROM users
+         WHERE email LIKE ? OR first_name LIKE ? OR last_name LIKE ? OR phone_number LIKE ?
+            OR (ifnull(first_name,'') || ' ' || ifnull(last_name,'')) LIKE ?
+         ORDER BY created_at DESC
+         LIMIT ?`
+      )
+      .all(term, term, term, term, term, Math.min(limit, 100));
+  },
+
+  getStageIdBySlug(slug) {
+    const db = getDatabase();
+    this.ensureStages();
+    const r = db.prepare('SELECT id FROM crm_stages WHERE slug = ?').get(slug);
+    return r ? r.id : null;
+  },
+
+  createLead(data) {
+    const db = getDatabase();
+    this.ensureStages();
+    const stageId =
+      data.stage_id ||
+      this.getStageIdBySlug('new') ||
+      db.prepare('SELECT id FROM crm_stages ORDER BY sort_order ASC LIMIT 1').get().id;
+    const maxRow = db.prepare('SELECT COALESCE(MAX(sort_order), -1) AS m FROM crm_leads WHERE stage_id = ?').get(stageId);
+    const sortOrder = (maxRow ? maxRow.m : -1) + 1;
+    const interestsStr =
+      typeof data.interests === 'string'
+        ? data.interests
+        : JSON.stringify(Array.isArray(data.interests) ? data.interests : []);
+    const stmt = db.prepare(`
+      INSERT INTO crm_leads (
+        user_id, display_name, email, phone, stage_id, sort_order, temperature, interests,
+        deal_value, currency, next_action, next_action_at, internal_notes, source, assistant_lead_id
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+    const result = stmt.run(
+      data.user_id || null,
+      data.display_name || 'Без имени',
+      data.email || null,
+      data.phone || null,
+      stageId,
+      sortOrder,
+      data.temperature || 'warm',
+      interestsStr,
+      data.deal_value != null ? Number(data.deal_value) : null,
+      data.currency || 'EUR',
+      data.next_action || null,
+      data.next_action_at || null,
+      data.internal_notes || null,
+      data.source || 'manual',
+      data.assistant_lead_id || null
+    );
+    return result.lastInsertRowid;
+  },
+
+  updateLead(id, data) {
+    const db = getDatabase();
+    const existing = db.prepare('SELECT * FROM crm_leads WHERE id = ?').get(id);
+    if (!existing) return { changes: 0 };
+    const fields = [];
+    const vals = [];
+    const map = {
+      display_name: (v) => v,
+      email: (v) => v,
+      phone: (v) => v,
+      temperature: (v) => v,
+      deal_value: (v) => (v != null ? Number(v) : null),
+      currency: (v) => v,
+      next_action: (v) => v,
+      next_action_at: (v) => v,
+      internal_notes: (v) => v,
+      interests: (v) =>
+        typeof v === 'string' ? v : JSON.stringify(Array.isArray(v) ? v : []),
+    };
+    for (const key of Object.keys(map)) {
+      if (Object.prototype.hasOwnProperty.call(data, key)) {
+        fields.push(`${key} = ?`);
+        vals.push(map[key](data[key]));
+      }
+    }
+    if (fields.length === 0) return { changes: 0 };
+    fields.push("updated_at = datetime('now')");
+    vals.push(id);
+    const stmt = db.prepare(`UPDATE crm_leads SET ${fields.join(', ')} WHERE id = ?`);
+    return stmt.run(...vals);
+  },
+
+  deleteLead(id) {
+    const db = getDatabase();
+    return db.prepare('DELETE FROM crm_leads WHERE id = ?').run(id);
+  },
+
+  moveLead(leadId, toStageId, toIndex) {
+    const db = getDatabase();
+    const lead = db.prepare('SELECT * FROM crm_leads WHERE id = ?').get(leadId);
+    if (!lead) throw new Error('Лид не найден');
+    const fromStage = lead.stage_id;
+    const run = db.transaction(() => {
+      if (fromStage === toStageId) {
+        const ids = db
+          .prepare('SELECT id FROM crm_leads WHERE stage_id = ? ORDER BY sort_order ASC, id ASC')
+          .all(fromStage)
+          .map((r) => r.id);
+        const filtered = ids.filter((x) => x !== leadId);
+        const idx = Math.max(0, Math.min(toIndex, filtered.length));
+        filtered.splice(idx, 0, leadId);
+        filtered.forEach((lid, i) => {
+          db.prepare('UPDATE crm_leads SET sort_order = ?, updated_at = datetime(\'now\') WHERE id = ?').run(i, lid);
+        });
+        return;
+      }
+      const oldIds = db
+        .prepare('SELECT id FROM crm_leads WHERE stage_id = ? ORDER BY sort_order ASC, id ASC')
+        .all(fromStage)
+        .map((r) => r.id)
+        .filter((x) => x !== leadId);
+      oldIds.forEach((lid, i) => {
+        db.prepare('UPDATE crm_leads SET sort_order = ?, updated_at = datetime(\'now\') WHERE id = ?').run(i, lid);
+      });
+      const newIds = db
+        .prepare('SELECT id FROM crm_leads WHERE stage_id = ? ORDER BY sort_order ASC, id ASC')
+        .all(toStageId)
+        .map((r) => r.id);
+      const idx = Math.max(0, Math.min(toIndex, newIds.length));
+      newIds.splice(idx, 0, leadId);
+      newIds.forEach((lid, i) => {
+        db.prepare('UPDATE crm_leads SET stage_id = ?, sort_order = ?, updated_at = datetime(\'now\') WHERE id = ?').run(
+          toStageId,
+          i,
+          lid
+        );
+      });
+    });
+    run();
+  },
+
+  addActivity(leadId, { kind, title, body, meta, createdBy }) {
+    const db = getDatabase();
+    const metaStr = meta && typeof meta === 'object' ? JSON.stringify(meta) : meta || null;
+    const stmt = db.prepare(`
+      INSERT INTO crm_activities (lead_id, kind, title, body, meta, created_by)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `);
+    const r = stmt.run(leadId, kind, title || null, body || null, metaStr, createdBy || null);
+    db.prepare("UPDATE crm_leads SET updated_at = datetime('now') WHERE id = ?").run(leadId);
+    return r.lastInsertRowid;
+  },
+
+  listActivities(leadId, limit = 200) {
+    const db = getDatabase();
+    return db
+      .prepare(
+        `SELECT * FROM crm_activities WHERE lead_id = ? ORDER BY datetime(created_at) DESC LIMIT ?`
+      )
+      .all(leadId, Math.min(limit, 500));
+  },
+
+  findLeadByUserId(userId) {
+    const db = getDatabase();
+    const uid = parseInt(userId, 10);
+    if (!uid) return null;
+    const row = db.prepare('SELECT * FROM crm_leads WHERE user_id = ?').get(uid);
+    return normalizeCrmLeadRow(row);
+  },
+
+  findLeadByAssistantId(assistantLeadId) {
+    const db = getDatabase();
+    const aid = parseInt(assistantLeadId, 10);
+    if (!aid) return null;
+    const row = db.prepare('SELECT * FROM crm_leads WHERE assistant_lead_id = ?').get(aid);
+    return normalizeCrmLeadRow(row);
+  },
 };
 

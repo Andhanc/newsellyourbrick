@@ -121,6 +121,17 @@
   "chatPurposeSelf": "For myself",
   "chatPurposeRent": "For rental",
   "chatPurposeInvest": "Investment",
+
+  "managerRequestAck": "We've registered your request to speak with a manager. They will respond within 24 hours. How would you like to be contacted?",
+  "managerContactPrefPhone": "Phone",
+  "managerContactPrefEmail": "Email",
+  "managerContactPrefWhatsapp": "WhatsApp",
+  "managerContactThanksPhone": "Noted: a manager will contact you by phone within 24 hours.",
+  "managerContactThanksEmail": "Noted: a manager will email you within 24 hours.",
+  "managerContactThanksWhatsapp": "Noted: a manager will reach you on WhatsApp within 24 hours.",
+  "managerRequestAlready": "Your request is already registered. A manager will contact you via {{method}} within 24 hours.",
+  "managerContactPickHint": "Please choose how you'd like to be contacted using the buttons below.",
+
   "heroFeature1Title": "Find out your home's value",
   "heroFeature1Text": "We evaluate your property and show how its value changes – and create tailored property selections based on your preferences and budget.",
   "heroFeature1Alt": "Property valuation",

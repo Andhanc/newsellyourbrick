@@ -1,9 +1,18 @@
 import React from 'react';
 import './StatCard.css';
 
-const StatCard = ({ title, value, change, changeType, icon, iconClass }) => {
+const StatCard = ({ title, value, change, changeType, icon, iconClass, onClick, ariaLabel }) => {
+  const Comp = onClick ? 'button' : 'div'
+  const extraProps = onClick
+    ? {
+        type: 'button',
+        onClick,
+        'aria-label': ariaLabel || title,
+        className: 'stat-card stat-card--clickable',
+      }
+    : { className: 'stat-card' }
   return (
-    <div className="stat-card">
+    <Comp {...extraProps}>
       <div className={`stat-icon ${iconClass}`}>
         <i className={icon}></i>
       </div>
@@ -17,7 +26,7 @@ const StatCard = ({ title, value, change, changeType, icon, iconClass }) => {
           </div>
         )}
       </div>
-    </div>
+    </Comp>
   );
 };
 

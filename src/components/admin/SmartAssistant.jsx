@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FiMessageCircle, FiUser, FiPhone, FiMail, FiMapPin, FiHome, FiX, FiRefreshCw } from 'react-icons/fi';
+import { FiMessageCircle, FiUser, FiPhone, FiMail, FiMapPin, FiHome, FiX, FiRefreshCw, FiHeadphones } from 'react-icons/fi';
 import { getApiBaseUrl } from '../../utils/apiConfig';
 import './SmartAssistant.css';
 
@@ -13,6 +13,12 @@ const LEAD_TYPE_CLASS = {
   hot: 'lead-type--hot',
   warm: 'lead-type--warm',
   cold: 'lead-type--cold'
+};
+
+const PREFERRED_CONTACT_LABELS = {
+  phone: 'Телефон',
+  email: 'E-mail',
+  whatsapp: 'WhatsApp'
 };
 
 const SmartAssistant = () => {
@@ -64,9 +70,12 @@ const SmartAssistant = () => {
     }
   };
 
-  const filteredLeads = filterType === 'all'
-    ? leads
-    : leads.filter((l) => l.lead_type === filterType);
+  const filteredLeads =
+    filterType === 'all'
+      ? leads
+      : filterType === 'manager'
+        ? leads.filter((l) => Number(l.manager_contact_requested) === 1)
+        : leads.filter((l) => l.lead_type === filterType);
 
   const formatDate = (dateString) => {
     if (!dateString) return '—';
@@ -129,6 +138,12 @@ const SmartAssistant = () => {
           >
             Холодные
           </button>
+          <button
+            className={`filter-btn ${filterType === 'manager' ? 'active' : ''}`}
+            onClick={() => setFilterType('manager')}
+          >
+            Заявка менеджеру
+          </button>
           <button className="refresh-btn" onClick={fetchLeads} disabled={loading} title="Обновить">
             <FiRefreshCw size={18} />
             Обновить
@@ -163,14 +178,27 @@ const SmartAssistant = () => {
               onKeyDown={(e) => e.key === 'Enter' && openDetail(lead.id)}
             >
               <div className="smart-assistant-card__top">
-                <span className={`lead-type-badge ${LEAD_TYPE_CLASS[lead.lead_type] || ''}`}>
-                  {LEAD_TYPE_LABELS[lead.lead_type] || lead.lead_type}
-                </span>
+                <div className="smart-assistant-card__badges">
+                  <span className={`lead-type-badge ${LEAD_TYPE_CLASS[lead.lead_type] || ''}`}>
+                    {LEAD_TYPE_LABELS[lead.lead_type] || lead.lead_type}
+                  </span>
+                  {Number(lead.manager_contact_requested) === 1 && (
+                    <span className="smart-assistant-card__manager-badge" title="Заявка на связь с менеджером">
+                      <FiHeadphones size={14} aria-hidden />
+                      Менеджер
+                    </span>
+                  )}
+                </div>
                 <span className="smart-assistant-card__date">{formatDate(lead.updated_at)}</span>
               </div>
               <p className="smart-assistant-card__summary">
                 {lead.summary || 'Нет выжимки'}
               </p>
+              {lead.preferred_contact && PREFERRED_CONTACT_LABELS[lead.preferred_contact] && (
+                <p className="smart-assistant-card__contact-pref">
+                  Связь: {PREFERRED_CONTACT_LABELS[lead.preferred_contact]}
+                </p>
+              )}
               {(lead.country || lead.region || lead.property_type) && (
                 <div className="smart-assistant-card__meta">
                   {lead.country && <span>{lead.country}</span>}
@@ -195,6 +223,7 @@ const SmartAssistant = () => {
           <span>Горячих: {leads.filter((l) => l.lead_type === 'hot').length}</span>
           <span>Тёплых: {leads.filter((l) => l.lead_type === 'warm').length}</span>
           <span>Холодных: {leads.filter((l) => l.lead_type === 'cold').length}</span>
+          <span>Заявок менеджеру: {leads.filter((l) => Number(l.manager_contact_requested) === 1).length}</span>
         </div>
       )}
 
@@ -228,6 +257,22 @@ const SmartAssistant = () => {
                   </span>
                   <p className="modal-summary">{selectedLead.summary || '—'}</p>
                 </div>
+
+                {Number(selectedLead.manager_contact_requested) === 1 && (
+                  <div className="modal-section modal-section--manager">
+                    <h4>
+                      <FiHeadphones size={18} style={{ verticalAlign: 'middle', marginRight: 8 }} />
+                      Связь с менеджером
+                    </h4>
+                    <p className="modal-manager-hint">
+                      Клиент оставил заявку на связь с менеджером. Ответ в течение 24 часов
+                      {selectedLead.preferred_contact
+                        ? ` · удобный канал: ${PREFERRED_CONTACT_LABELS[selectedLead.preferred_contact] || selectedLead.preferred_contact}`
+                        : ' · способ связи можно уточнить в переписке ниже'}
+                      .
+                    </p>
+                  </div>
+                )}
 
                 <div className="modal-section">
                   <h4>Контакты</h4>

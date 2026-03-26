@@ -134,6 +134,16 @@
   "chatPurposeRent": "För uthyrning",
   "chatPurposeInvest": "Investering",
 
+  "managerRequestAck": "Vi har tagit emot din förfrågan om kontakt med en chef. Svar inom 24 timmar. Hur vill du bli kontaktad?",
+  "managerContactPrefPhone": "Telefon",
+  "managerContactPrefEmail": "E-post",
+  "managerContactPrefWhatsapp": "WhatsApp",
+  "managerContactThanksPhone": "Noterat: en chef kontaktar dig per telefon inom 24 timmar.",
+  "managerContactThanksEmail": "Noterat: en chef mejlar dig inom 24 timmar.",
+  "managerContactThanksWhatsapp": "Noterat: en chef når dig på WhatsApp inom 24 timmar.",
+  "managerRequestAlready": "Din förfrågan är redan registrerad. En chef kontaktar dig via {{method}} inom 24 timmar.",
+  "managerContactPickHint": "Välj hur du vill bli kontaktad med knapparna nedan.",
+
   "heroFeature1Title": "Ta reda på värdet av ditt hem",
   "heroFeature1Text": "Vi värderar din fastighet och visar hur värdet förändras, och skapar urval utifrån dina önskemål och budget.",
   "heroFeature1Alt": "Fastighetsvärdering",

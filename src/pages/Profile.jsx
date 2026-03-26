@@ -48,8 +48,32 @@ const Profile = () => {
   const [isVerificationModalOpen, setIsVerificationModalOpen] = useState(false)
   const [isVerificationFormOpen, setIsVerificationFormOpen] = useState(false)
   const [documentsCompleted, setDocumentsCompleted] = useState(false)
+  const [subscriptionBilling, setSubscriptionBilling] = useState(null)
+  const [subscriptionBillingLoading, setSubscriptionBillingLoading] = useState(false)
   // Используем proxy из vite.config.js или полный URL
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
+
+  useEffect(() => {
+    if (!userId) return
+    let cancelled = false
+    setSubscriptionBillingLoading(true)
+    fetch(`${API_BASE_URL}/users/${userId}/subscription-billing`)
+      .then((r) => r.json())
+      .then((json) => {
+        if (cancelled) return
+        if (json.success && json.data) setSubscriptionBilling(json.data)
+        else setSubscriptionBilling(null)
+      })
+      .catch(() => {
+        if (!cancelled) setSubscriptionBilling(null)
+      })
+      .finally(() => {
+        if (!cancelled) setSubscriptionBillingLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [userId, API_BASE_URL])
   
   // Загрузка данных пользователя из БД
   const loadUserDataFromDB = async (userId) => {
@@ -1215,6 +1239,112 @@ const Profile = () => {
           </div>
 
           <div className="profile-sections">
+            {(subscriptionBillingLoading ||
+              subscriptionBilling?.subscription ||
+              (subscriptionBilling?.payments && subscriptionBilling.payments.length > 0)) && (
+              <section className="profile-section profile-section--billing">
+                <div className="section-header">
+                  <h2 className="section-title">Подписка и оплаты</h2>
+                  <div className="section-subtitle">Статус подписки Pro и история платежей</div>
+                </div>
+                {subscriptionBillingLoading ? (
+                  <div className="profile-billing-loading">Загрузка…</div>
+                ) : (
+                  <div className="profile-billing">
+                    {subscriptionBilling?.subscription && (
+                      <div className="profile-billing-plan">
+                        <div className="profile-billing-plan__badge">Pro</div>
+                        <div className="profile-billing-plan__body">
+                          <div className="profile-billing-plan__row">
+                            <span className="profile-billing-label">Статус</span>
+                            <span className="profile-billing-value profile-billing-value--status">
+                              {(() => {
+                                const st = subscriptionBilling.subscription.status
+                                const map = {
+                                  active: 'Активна',
+                                  canceled: 'Отменена',
+                                  past_due: 'Просрочен платёж',
+                                  trialing: 'Пробный период',
+                                  incomplete: 'Ожидает оплаты',
+                                  incomplete_expired: 'Истекла',
+                                  unpaid: 'Не оплачено',
+                                  paused: 'Приостановлена',
+                                }
+                                return map[st] || st || '—'
+                              })()}
+                            </span>
+                          </div>
+                          {subscriptionBilling.subscription.current_period_end && (
+                            <div className="profile-billing-plan__row">
+                              <span className="profile-billing-label">Текущий период до</span>
+                              <span className="profile-billing-value">
+                                {new Date(subscriptionBilling.subscription.current_period_end).toLocaleString(
+                                  'ru-RU',
+                                  {
+                                    day: '2-digit',
+                                    month: 'long',
+                                    year: 'numeric',
+                                  }
+                                )}
+                              </span>
+                            </div>
+                          )}
+                          {subscriptionBilling.subscription.cancel_at_period_end === 1 && (
+                            <p className="profile-billing-hint">Подписка не продлится после окончания периода.</p>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                    {subscriptionBilling?.payments && subscriptionBilling.payments.length > 0 && (
+                      <div className="profile-billing-payments">
+                        <h3 className="profile-billing-payments__title">Платежи</h3>
+                        <ul className="profile-billing-payments__list">
+                          {subscriptionBilling.payments.map((p) => (
+                            <li key={p.id} className="profile-billing-payment">
+                              <div className="profile-billing-payment__main">
+                                <span className="profile-billing-payment__amount">
+                                  {(() => {
+                                    const cur = (p.currency || 'eur').toUpperCase()
+                                    const amt = (p.amount_cents ?? 0) / 100
+                                    try {
+                                      return new Intl.NumberFormat('ru-RU', {
+                                        style: 'currency',
+                                        currency: cur,
+                                      }).format(amt)
+                                    } catch {
+                                      return `${amt} ${cur}`
+                                    }
+                                  })()}
+                                </span>
+                                <span className="profile-billing-payment__date">
+                                  {p.paid_at
+                                    ? new Date(p.paid_at).toLocaleString('ru-RU', {
+                                        day: '2-digit',
+                                        month: '2-digit',
+                                        year: 'numeric',
+                                        hour: '2-digit',
+                                        minute: '2-digit',
+                                      })
+                                    : '—'}
+                                </span>
+                              </div>
+                              {p.billing_reason && (
+                                <span className="profile-billing-payment__reason">{p.billing_reason}</span>
+                              )}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    {!subscriptionBilling?.subscription &&
+                      (!subscriptionBilling?.payments || subscriptionBilling.payments.length === 0) && (
+                        <p className="profile-billing-empty">Нет данных о подписке.</p>
+                      )}
+                  </div>
+                )}
+              </section>
+            )}
+
             <section className="profile-section">
               <div className="section-header">
                 <h2 className="section-title">Мои подписки</h2>

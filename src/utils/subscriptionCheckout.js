@@ -1,5 +1,17 @@
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api'
 
+/** После возврата с Stripe — синхронизировать сессию в БД */
+export async function confirmCheckoutSession(sessionId) {
+  const res = await fetch(`${API_BASE}/billing/confirm-session`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ session_id: sessionId }),
+  })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) return { ok: false, error: data.error || 'confirm_failed' }
+  return { ok: true }
+}
+
 /**
  * Редирект на Stripe Checkout для подписки Pro.
  * @returns {Promise<{ ok: boolean, error?: string }>}
