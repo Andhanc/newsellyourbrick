@@ -66,6 +66,7 @@
   "folderActiveBidding": "Active Bidding / Auktioner",
   "folderImmediatePurchase": "Omedelbart köp",
   "folderDistressedAssets": "Distressed Assets",
+  "folderDebtsStrategy": "Skulder",
   "folderFractional": "Andelsägande (Medinvestering)",
   "howWeVerify": "Så verifierar vi objekt",
 
@@ -938,6 +939,8 @@
 
   "addPropertyDebtProgressAllUploaded": "Dokument uppladdade!",
   "addPropertyDebtProgressRequired": "Obligatoriska dokument",
+  "addPropertyDebtSaleStepRequiredTitle": "Nödvändiga dokument för försäljning",
+  "addPropertyDebtSaleStepAdditionalTitle": "Ytterligare dokument för försäljning",
   "addPropertyDebtProgressCount": "{{filled}} av {{total}} uppladdade",
   "addPropertyDebtProgressMissing": "Ej uppladdade ({{count}})",
   "addPropertyDebtProgressUploaded": "Uppladdade ({{count}})",

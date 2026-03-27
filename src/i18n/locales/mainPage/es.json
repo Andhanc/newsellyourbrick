@@ -66,6 +66,7 @@
   "folderActiveBidding": "Active Bidding / Subastas",
   "folderImmediatePurchase": "Compra inmediata",
   "folderDistressedAssets": "Distressed Assets",
+  "folderDebtsStrategy": "Deudas",
   "folderFractional": "Propiedad fraccionada (Co-inversión)",
   "howWeVerify": "Cómo verificamos las propiedades",
 
@@ -938,6 +939,8 @@
 
   "addPropertyDebtProgressAllUploaded": "¡Documentos subidos!",
   "addPropertyDebtProgressRequired": "Documentos obligatorios",
+  "addPropertyDebtSaleStepRequiredTitle": "Documentos necesarios para la venta",
+  "addPropertyDebtSaleStepAdditionalTitle": "Documentos adicionales para la venta",
   "addPropertyDebtProgressCount": "{{filled}} de {{total}} subidos",
   "addPropertyDebtProgressMissing": "No subidos ({{count}})",
   "addPropertyDebtProgressUploaded": "Subidos ({{count}})",

@@ -34,6 +34,7 @@ import { getApiBaseUrl, getApiBaseUrlSync } from '../utils/apiConfig'
 import FlipCard from '../components/ui/FlipCard'
 import TestDriveSection from '../components/TestDriveSection'
 import { getAuctionMinBidStep } from '../utils/auctionBidStep'
+import { AlertTriangle, ShieldAlert, ShieldCheck } from 'lucide-react'
 
 // Используем синхронную версию для инициализации, затем обновим при загрузке
 let API_BASE_URL = getApiBaseUrlSync()
@@ -2481,14 +2482,12 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
             {/* Описание и адрес — отдельный блок под подробной информацией (для мобилки, на десктопе скрыт через CSS) */}
             <div className="property-detail-extra-text-mobile">
               {displayProperty.description && (
-                <p className="property-detail-extra-description">
-                  {displayProperty.description}
-                </p>
-              )}
-              {displayProperty.location && (
-                <div className="property-detail-extra-location">
-                  {displayProperty.location}
-                </div>
+                <>
+                  <h3 className="property-detail-extra-text-title">Описание</h3>
+                  <p className="property-detail-extra-description">
+                    {displayProperty.description}
+                  </p>
+                </>
               )}
             </div>
 
@@ -2496,7 +2495,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
             <div className="property-detail-map-mobile">
               <div className="property-detail-sidebar__map">
                 <h2 className="property-detail-sidebar__map-title">
-                  {t('locationTitle') || 'Местоположение'}
+                  {displayProperty.location || t('locationTitle') || 'Местоположение'}
                 </h2>
                 <div className="property-detail-sidebar__map-container">
                   {typeof window !== 'undefined' && (
@@ -2649,6 +2648,72 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                   </p>
                 </div>
               )}
+
+              {/* Блок риска и долговых обязательств — FlipCard */}
+              {isDebtProperty && (() => {
+                const sev = displayProperty.debt_severity
+                const accentColor =
+                  sev === 'red' ? '#DC2626' :
+                  sev === 'yellow' ? '#CA8A04' :
+                  '#16A34A'
+
+                const riskIcon =
+                  sev === 'red' ? AlertTriangle :
+                  sev === 'yellow' ? ShieldAlert :
+                  ShieldCheck
+
+                const riskTitle =
+                  sev === 'red' ? 'Высокий риск' :
+                  sev === 'yellow' ? 'Средний риск' :
+                  'Низкий риск'
+
+                const riskSubtitle =
+                  sev === 'red' ? 'Красный — существенные задолженности' :
+                  sev === 'yellow' ? 'Жёлтый — требуют времени и расходов' :
+                  'Зелёный — технические и процедурные моменты'
+
+                const riskDescription =
+                  sev === 'red'
+                    ? 'Существенные задолженности и/или ограничения. Перед покупкой потребуется глубокая юридическая и финансовая проверка.'
+                    : sev === 'yellow'
+                    ? 'Вопросы, которые могут потребовать времени и дополнительных расходов, но, как правило, решаемы при грамотном сопровождении.'
+                    : 'В основном технические или процедурные вопросы, решаемые стандартными действиями при сделке.'
+
+                const ctaText =
+                  sev === 'red' ? '🔥 Высокий шанс заработать' :
+                  sev === 'yellow' ? '📈 Средний шанс заработать' :
+                  '✅ Стабильный шанс заработать'
+
+                const debtFeatures = [
+                  displayProperty.debt_utilities && 'Долги по коммунальным услугам',
+                  displayProperty.debt_mortgage_pledge && 'Залог у банка',
+                  displayProperty.debt_property_taxes && 'Неоплаченные налоги на имущество',
+                  displayProperty.debt_arrest && 'Арест / ограничения',
+                  displayProperty.debt_inherited && 'Долги наследодателя',
+                  displayProperty.debt_third_party && 'Долги перед третьими лицами',
+                  displayProperty.debt_other && displayProperty.debt_other,
+                  displayProperty.debt_amount
+                    ? `Сумма долга: $${Number(displayProperty.debt_amount).toLocaleString('en-US')}`
+                    : null,
+                ].filter(Boolean)
+
+                if (debtFeatures.length === 0) debtFeatures.push('Долговые обязательства уточняются')
+
+                return (
+                  <div className="property-detail-debt-risk-card">
+                    <FlipCard
+                      color={accentColor}
+                      icon={riskIcon}
+                      title={riskTitle}
+                      subtitle={riskSubtitle}
+                      description={riskDescription}
+                      features={debtFeatures.slice(0, 4)}
+                      ctaText={ctaText}
+                      clickToFlip
+                    />
+                  </div>
+                )
+              })()}
 
               {/* Местоположение */}
               <div className="property-detail-sidebar__location">
@@ -3027,70 +3092,10 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                 </div>
               ) : null}
 
-              {/* Блок риска и долговых обязательств — FlipCard */}
-              {isDebtProperty && (() => {
-                const sev = displayProperty.debt_severity
-                const accentColor =
-                  sev === 'red' ? '#DC2626' :
-                  sev === 'yellow' ? '#CA8A04' :
-                  '#16A34A'
-
-                const riskTitle =
-                  sev === 'red' ? 'Высокий риск' :
-                  sev === 'yellow' ? 'Средний риск' :
-                  'Низкий риск'
-
-                const riskSubtitle =
-                  sev === 'red' ? 'Красный — существенные задолженности' :
-                  sev === 'yellow' ? 'Жёлтый — требуют времени и расходов' :
-                  'Зелёный — технические и процедурные моменты'
-
-                const riskDescription =
-                  sev === 'red'
-                    ? 'Существенные задолженности и/или ограничения. Перед покупкой потребуется глубокая юридическая и финансовая проверка.'
-                    : sev === 'yellow'
-                    ? 'Вопросы, которые могут потребовать времени и дополнительных расходов, но, как правило, решаемы при грамотном сопровождении.'
-                    : 'В основном технические или процедурные вопросы, решаемые стандартными действиями при сделке.'
-
-                const ctaText =
-                  sev === 'red' ? '🔥 Высокий шанс заработать' :
-                  sev === 'yellow' ? '📈 Средний шанс заработать' :
-                  '✅ Стабильный шанс заработать'
-
-                const debtFeatures = [
-                  displayProperty.debt_utilities && 'Долги по коммунальным услугам',
-                  displayProperty.debt_mortgage_pledge && 'Залог у банка',
-                  displayProperty.debt_property_taxes && 'Неоплаченные налоги на имущество',
-                  displayProperty.debt_arrest && 'Арест / ограничения',
-                  displayProperty.debt_inherited && 'Долги наследодателя',
-                  displayProperty.debt_third_party && 'Долги перед третьими лицами',
-                  displayProperty.debt_other && displayProperty.debt_other,
-                  displayProperty.debt_amount
-                    ? `Сумма долга: $${Number(displayProperty.debt_amount).toLocaleString('en-US')}`
-                    : null,
-                ].filter(Boolean)
-
-                if (debtFeatures.length === 0) debtFeatures.push('Долговые обязательства уточняются')
-
-                return (
-                  <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'center' }}>
-                    <FlipCard
-                      color={accentColor}
-                      title={riskTitle}
-                      subtitle={riskSubtitle}
-                      description={riskDescription}
-                      features={debtFeatures.slice(0, 4)}
-                      ctaText={ctaText}
-                      clickToFlip
-                    />
-                  </div>
-                )
-              })()}
-
               {/* Карта */}
               <div className="property-detail-sidebar__map">
                 <h2 className="property-detail-sidebar__map-title">
-                  {t('locationTitle') || 'Местоположение'}
+                  {displayProperty.location || t('locationTitle') || 'Местоположение'}
                 </h2>
                 <div className="property-detail-sidebar__map-container">
                   {typeof window !== 'undefined' && (

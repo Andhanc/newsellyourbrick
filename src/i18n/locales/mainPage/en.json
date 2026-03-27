@@ -60,6 +60,7 @@
   "folderActiveBidding": "Active Bidding / Auctions",
   "folderImmediatePurchase": "Immediate Purchase",
   "folderDistressedAssets": "Distressed Assets",
+  "folderDebtsStrategy": "Debts",
   "folderFractional": "Fractional Ownership (Co-investment)",
   "howWeVerify": "How we verify properties",
   "auctionSectionTitle": "Auction",
@@ -898,6 +899,8 @@
 
   "addPropertyDebtProgressAllUploaded": "Documents uploaded!",
   "addPropertyDebtProgressRequired": "Required documents",
+  "addPropertyDebtSaleStepRequiredTitle": "Required documents for sale",
+  "addPropertyDebtSaleStepAdditionalTitle": "Additional documents for sale",
   "addPropertyDebtProgressCount": "{{filled}} of {{total}} uploaded",
   "addPropertyDebtProgressMissing": "Not uploaded ({{count}})",
   "addPropertyDebtProgressUploaded": "Uploaded ({{count}})",

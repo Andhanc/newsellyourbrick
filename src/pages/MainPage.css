@@ -2423,7 +2423,7 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  z-index: 50;
+  z-index: 12000;
   backdrop-filter: blur(24px);
   box-shadow: 
     0 8px 24px -8px rgba(17, 24, 39, 0.4),
@@ -2466,21 +2466,20 @@
   }
 }
 
-/* Мобилка: FAB и чат плавно уходят, когда в зоне видимости футер */
-@media (max-width: 768px) {
-  .ai-assistant-dock .ai-button,
-  .ai-assistant-dock .chat-widget {
-    transition:
-      opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1),
-      transform 0.45s cubic-bezier(0.33, 1, 0.68, 1);
-  }
+/* FAB и чат плавно уходят, когда в зоне видимости футер (все размеры) */
+.ai-assistant-dock .ai-button,
+.ai-assistant-dock .chat-widget {
+  transition:
+    opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.45s cubic-bezier(0.33, 1, 0.68, 1);
+}
 
-  .ai-assistant-dock--footer-near .ai-button,
-  .ai-assistant-dock--footer-near .chat-widget {
-    opacity: 0;
-    transform: translate3d(10px, 20px, 0) scale(0.92);
-    pointer-events: none;
-  }
+.ai-assistant-dock--footer-near .ai-button,
+.ai-assistant-dock--footer-near .chat-widget {
+  opacity: 0 !important;
+  visibility: hidden !important;
+  transform: translate3d(10px, 20px, 0) scale(0.92) !important;
+  pointer-events: none !important;
 }
 
 .chat-widget {
@@ -4783,10 +4782,7 @@
     display: none !important;
   }
 
-  /* Скрываем кнопку AI на десктопе */
-  .ai-button {
-    display: none !important;
-  }
+  /* Кнопку AI на десктопе НЕ скрываем */
 }
 
 /* Мобильная версия (0–768px) — компактный хедер: как на странице Аукцион по размеру */
@@ -6737,7 +6733,7 @@
 }
 
 .landing-models__container {
-  max-width: 1100px;
+  max-width: 1320px;
   margin: 0 auto;
 }
 
@@ -6767,7 +6763,10 @@
 /* Сетка для 3D-папок: центрирование и отступы */
 .landing-models__grid--folders {
   justify-items: center;
+  justify-content: center;
   gap: 28px;
+  /* чтобы папки всегда вмещались и центрировались */
+  grid-template-columns: repeat(auto-fit, minmax(220px, 320px));
 }
 
 .landing-models__grid--folders .landing-models__folder {
@@ -6788,6 +6787,15 @@
   }
 
   .landing-models__grid--folders .landing-models__folder {
+    max-width: none;
+  }
+
+  /* Когда папок 5: последнюю центрируем на отдельной строке */
+  .landing-models__grid--folders .landing-models__folder:last-child {
+    grid-column: 1 / -1;
+    justify-self: center;
+    /* делаем по ширине как одна “обычная” карточка в 2-колоночной сетке */
+    width: calc((100% - 16px) / 2);
     max-width: none;
   }
 }
@@ -6889,7 +6897,7 @@
   }
 
   .landing-models__grid {
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
     gap: 24px;
   }
 
@@ -6897,6 +6905,41 @@
     padding: 28px;
   }
 }
+
+@media (min-width: 1200px) {
+  .landing-models {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+
+  /* Десктоп: 5 папок в один ряд + “компактный” размер папки */
+  .landing-models__grid--folders {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 22px;
+    justify-items: stretch;
+  }
+
+  /* AnimatedFolder задаёт размеры inline — переопределяем для красивого 5-up */
+  .landing-models__grid--folders .landing-models__folder {
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+    min-width: 240px !important;
+    min-height: 300px !important;
+    padding: 24px !important;
+  }
+
+  .landing-models__grid--folders .landing-models__folder h3 {
+    font-size: 16px !important;
+    line-height: 1.25 !important;
+  }
+
+  .landing-models__grid--folders .landing-models__folder p {
+    font-size: 12px !important;
+  }
+}
+
+/* 1100px+ правило больше не нужно: auto-fit сам подберёт колонки */
 
 /* ========== Landing: Безопасность ========== */
 .landing-security {

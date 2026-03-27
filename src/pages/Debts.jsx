@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { ensureCanOpenProperty } from '../utils/propertyAccessGuard'
 import { useTranslation } from 'react-i18next'
 import { FiSearch } from 'react-icons/fi'
+import { AlertTriangle, ShieldAlert, ShieldCheck } from 'lucide-react'
 import Header from '../components/Header'
 import FlipCard from '../components/ui/FlipCard'
 import { useLazyLoad } from '../hooks/useLazyLoad'
@@ -83,6 +84,7 @@ const Debts = () => {
         <div className="shares-flip-cards shares-flip-cards--debts">
           <FlipCard
             color="#DC2626"
+            icon={AlertTriangle}
             title={t('debtsHighRisk')}
             subtitle={t('debtsHighRiskSubtitle')}
             description={t('debtsHighRiskDescription')}
@@ -99,6 +101,7 @@ const Debts = () => {
           />
           <FlipCard
             color="#CA8A04"
+            icon={ShieldAlert}
             title={t('debtsMediumRisk')}
             subtitle={t('debtsMediumRiskSubtitle')}
             description={t('debtsMediumRiskDescription')}
@@ -115,6 +118,7 @@ const Debts = () => {
           />
           <FlipCard
             color="#16A34A"
+            icon={ShieldCheck}
             title={t('debtsLowRisk')}
             subtitle={t('debtsLowRiskSubtitle')}
             description={t('debtsLowRiskDescription')}

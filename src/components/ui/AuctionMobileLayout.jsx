@@ -474,7 +474,7 @@ function AuctionMobileItem({
                 />
               </div>
             )}
-            {greenOnImage && (
+            {greenOnImage && view !== 'card' && (
               <div className="property-timer-overlay auction-mobile-timer-slot">
                 <PropertyTimer
                   endTime={property.endTime}
@@ -487,6 +487,15 @@ function AuctionMobileItem({
         </div>
 
         <div className="auction-mobile-item__body">
+          {greenOnImage && view === 'card' && (
+            <div className="auction-mobile-body-timer">
+              <PropertyTimer
+                endTime={property.endTime}
+                compact
+                className="property-timer--auction-mobile property-timer--auction-mobile-inline"
+              />
+            </div>
+          )}
           <div className="auction-mobile-head">
             <h3 className="auction-mobile-card-title">{propertyTitle}</h3>
             <button

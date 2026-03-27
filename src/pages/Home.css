@@ -106,7 +106,7 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  z-index: 50;
+  z-index: 12000;
   backdrop-filter: blur(24px);
   box-shadow: 
     0 8px 24px -8px rgba(17, 24, 39, 0.4),
@@ -149,30 +149,22 @@
   }
 }
 
-/* Аукцион: кошелёк + AI + чат плавно уходят, когда в зоне видимости футер */
-@media (max-width: 768px) {
-  .home-auction-floats .deposit-button,
-  .home-auction-floats .ai-button,
-  .home-auction-floats .chat-widget {
-    transition:
-      opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1),
-      transform 0.45s cubic-bezier(0.33, 1, 0.68, 1);
-  }
-
-  .home-auction-floats--footer-near .deposit-button,
-  .home-auction-floats--footer-near .ai-button,
-  .home-auction-floats--footer-near .chat-widget {
-    opacity: 0 !important;
-    visibility: hidden !important;
-    transform: translate3d(10px, 20px, 0) scale(0.92) !important;
-    pointer-events: none !important;
-  }
+/* Аукцион: кошелёк + AI + чат плавно уходят, когда в зоне видимости футер (все размеры) */
+.home-auction-floats .deposit-button,
+.home-auction-floats .ai-button,
+.home-auction-floats .chat-widget {
+  transition:
+    opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.45s cubic-bezier(0.33, 1, 0.68, 1);
 }
 
-@media (min-width: 769px) {
-  .home-page .home-auction-floats .ai-button {
-    display: none !important;
-  }
+.home-auction-floats--footer-near .deposit-button,
+.home-auction-floats--footer-near .ai-button,
+.home-auction-floats--footer-near .chat-widget {
+  opacity: 0 !important;
+  visibility: hidden !important;
+  transform: translate3d(10px, 20px, 0) scale(0.92) !important;
+  pointer-events: none !important;
 }
 
 .chat-widget {

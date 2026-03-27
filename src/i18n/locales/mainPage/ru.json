@@ -44,7 +44,7 @@
   "clearSearch": "Очистить поиск",
   "nothingFound": "Ничего не найдено",
 
-  "heroTitle": "Инвестиционный маркетплейс",
+  "heroTitle": "Инвестиционная платформа недвижимости, маркетплейс",
   "heroSubtitle": "Конвертируйте активы в капитал за короткий срок или инвестируйте в верифицированную доходность",
   "heroCta": "Смотреть возможности",
   "searchPlaceholderLong": "Поиск по названию или адресу...",
@@ -66,6 +66,7 @@
   "folderActiveBidding": "Active Bidding / Аукционы",
   "folderImmediatePurchase": "Immediate Purchase",
   "folderDistressedAssets": "Distressed Assets",
+  "folderDebtsStrategy": "Debts / Долги",
   "folderFractional": "Fractional Ownership (Co-investment)",
   "howWeVerify": "Как мы проверяем объекты",
 
@@ -941,6 +942,8 @@
 
   "addPropertyDebtProgressAllUploaded": "Документы загружены!",
   "addPropertyDebtProgressRequired": "Обязательные документы",
+  "addPropertyDebtSaleStepRequiredTitle": "Необходимые документы для продажи",
+  "addPropertyDebtSaleStepAdditionalTitle": "Дополнительные документы для продажи",
   "addPropertyDebtProgressCount": "{{filled}} из {{total}} загружено",
   "addPropertyDebtProgressMissing": "Не загружено ({{count}})",
   "addPropertyDebtProgressUploaded": "Загружено ({{count}})",

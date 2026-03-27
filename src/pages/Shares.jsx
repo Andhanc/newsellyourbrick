@@ -147,7 +147,8 @@ const Shares = () => {
             </div>
           ) : (
             filtered.map((obj) => {
-              const soldPercent = (obj.totalShares > 0) ? Math.round((obj.sharesSold / obj.totalShares) * 100) : 0
+              const rawSoldPercent = (obj.totalShares > 0) ? Math.round((obj.sharesSold / obj.totalShares) * 100) : 0
+              const soldPercent = Math.max(0, Math.min(rawSoldPercent, 100))
               const isSoldOut = obj.sharesSold >= obj.totalShares
               const total = Math.max(1, Number(obj.totalShares) || 1)
               const sold = Math.min(obj.sharesSold || 0, total)
@@ -168,10 +169,10 @@ const Shares = () => {
                         style={{ height: `${(sold / total) * 100}%` }}
                       />
                     </div>
-                    <span className="share-card__scale-label share-card__scale-label--bottom">0</span>
-                    <span className="share-card__scale-label share-card__scale-label--top">{total}</span>
-                    <span className="share-card__scale-sold" style={{ bottom: `${(sold / total) * 100}%` }}>
-                      {sold}
+                    <span className="share-card__scale-label share-card__scale-label--bottom">0%</span>
+                    <span className="share-card__scale-label share-card__scale-label--top">100%</span>
+                    <span className="share-card__scale-sold" style={{ bottom: `${soldPercent}%` }}>
+                      {soldPercent}%
                     </span>
                   </div>
                   <img

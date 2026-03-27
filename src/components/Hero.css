@@ -65,12 +65,27 @@
   width: 120px;
   height: 120px;
   object-fit: contain;
-  transition: transform 0.3s;
+  transition: transform 0.3s, filter 0.3s;
   background: #fff;
+  filter: saturate(1.05);
+}
+
+/* Тонировка иконок карточек в оттенки тифани с сохранением объёма/градиента */
+.hero-feature-card:nth-child(1) .hero-feature-image img {
+  filter: hue-rotate(-46deg) saturate(1.28) brightness(1.05);
+}
+
+.hero-feature-card:nth-child(2) .hero-feature-image img {
+  filter: hue-rotate(-42deg) saturate(1.32) brightness(1.04);
+}
+
+.hero-feature-card:nth-child(3) .hero-feature-image img {
+  filter: hue-rotate(-50deg) saturate(1.24) brightness(1.06);
 }
 
 .hero-feature-card:hover .hero-feature-image img {
   transform: scale(1.05);
+  filter: hue-rotate(-45deg) saturate(1.36) brightness(1.07);
 }
 
 .hero-feature-content {

@@ -44,6 +44,7 @@ const Bonuses = () => {
   const [copiedTaskId, setCopiedTaskId] = useState(null)
   const [usedMessageTaskId, setUsedMessageTaskId] = useState(null)
   const [bonusMode, setBonusMode] = useState(() => (tabParam === 'seller' ? 'seller' : 'buyer')) // 'buyer' | 'seller'
+  const [isAdminSession, setIsAdminSession] = useState(false)
   const celebratedRef = useRef(false)
 
   const currentTasks = bonusMode === 'seller' ? SELLER_TASKS : BUYER_TASKS
@@ -65,12 +66,28 @@ const Bonuses = () => {
     const userData = getUserData()
     const dbUserId = localStorage.getItem('userId')
     const id = userData?.id || dbUserId
+    const storedRole = localStorage.getItem('userRole')
+    const normalizedRole = userData?.role || storedRole || 'buyer'
+    const adminLoggedIn = localStorage.getItem('isAdminLoggedIn') === 'true'
+    const adminActive = adminLoggedIn && normalizedRole === 'admin'
+
+    setIsAdminSession(adminActive)
+
+    // Для обычных пользователей показываем только их бонусы.
+    // Для админа оставляем текущую логику со свободным переключением вкладок.
+    if (!adminActive) {
+      const roleMode = normalizedRole === 'seller' || normalizedRole === 'owner' ? 'seller' : 'buyer'
+      setBonusMode(roleMode)
+    } else {
+      setBonusMode(tabParam === 'seller' ? 'seller' : 'buyer')
+    }
+
     if (id) {
       setUserId(id)
     } else {
       setUserId('') // не редиректим — показываем страницу с приглашением войти
     }
-  }, [])
+  }, [tabParam])
 
   const loadSubmissions = useCallback(async () => {
     if (!userId) return
@@ -261,35 +278,37 @@ const Bonuses = () => {
 
         {isLoggedIn && (
           <>
-            <div className={`bonuses-tabs ${bonusMode === 'seller' ? 'bonuses-tabs--seller' : ''}`} role="tablist" aria-label={t('bonusesTabsAria')}>
-              <div className="bonuses-tabs__track" aria-hidden>
-                <div className="bonuses-tabs__pill" data-active={bonusMode} />
+            {isAdminSession && (
+              <div className={`bonuses-tabs ${bonusMode === 'seller' ? 'bonuses-tabs--seller' : ''}`} role="tablist" aria-label={t('bonusesTabsAria')}>
+                <div className="bonuses-tabs__track" aria-hidden>
+                  <div className="bonuses-tabs__pill" data-active={bonusMode} />
+                </div>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={bonusMode === 'buyer'}
+                  aria-controls="bonuses-tasks-buyer"
+                  id="tab-buyer"
+                  className={`bonuses-tabs__btn ${bonusMode === 'buyer' ? 'bonuses-tabs__btn--active' : ''}`}
+                  onClick={() => { setBonusMode('buyer'); setExpandedTask(null) }}
+                >
+                  <FiShoppingCart size={20} className="bonuses-tabs__icon" />
+                  {t('bonusesTabBuyer')}
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={bonusMode === 'seller'}
+                  aria-controls="bonuses-tasks-seller"
+                  id="tab-seller"
+                  className={`bonuses-tabs__btn ${bonusMode === 'seller' ? 'bonuses-tabs__btn--active' : ''}`}
+                  onClick={() => { setBonusMode('seller'); setExpandedTask(null) }}
+                >
+                  <FiUser size={20} className="bonuses-tabs__icon" />
+                  {t('bonusesTabSeller')}
+                </button>
               </div>
-              <button
-                type="button"
-                role="tab"
-                aria-selected={bonusMode === 'buyer'}
-                aria-controls="bonuses-tasks-buyer"
-                id="tab-buyer"
-                className={`bonuses-tabs__btn ${bonusMode === 'buyer' ? 'bonuses-tabs__btn--active' : ''}`}
-                onClick={() => { setBonusMode('buyer'); setExpandedTask(null) }}
-              >
-                <FiShoppingCart size={20} className="bonuses-tabs__icon" />
-                {t('bonusesTabBuyer')}
-              </button>
-              <button
-                type="button"
-                role="tab"
-                aria-selected={bonusMode === 'seller'}
-                aria-controls="bonuses-tasks-seller"
-                id="tab-seller"
-                className={`bonuses-tabs__btn ${bonusMode === 'seller' ? 'bonuses-tabs__btn--active' : ''}`}
-                onClick={() => { setBonusMode('seller'); setExpandedTask(null) }}
-              >
-                <FiUser size={20} className="bonuses-tabs__icon" />
-                {t('bonusesTabSeller')}
-              </button>
-            </div>
+            )}
             <div className={`bonuses-tasks bonuses-tasks--${bonusMode}`} id={bonusMode === 'buyer' ? 'bonuses-tasks-buyer' : 'bonuses-tasks-seller'} role="tabpanel" aria-labelledby={bonusMode === 'buyer' ? 'tab-buyer' : 'tab-seller'}>
           {[...currentTasks]
             .sort((a, b) => {

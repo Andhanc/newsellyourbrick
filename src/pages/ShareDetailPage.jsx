@@ -247,9 +247,9 @@ const ShareDetailPage = () => {
                       className="share-detail__pie"
                       style={{
                         background: `conic-gradient(
-                          #6b7280 0% ${pctOthers}%,
+                          #5b6ee1 0% ${pctOthers}%,
                           #0ABAB5 ${pctOthers}% ${pctOthers + pctMyShares}%,
-                          #e5e7eb ${pctOthers + pctMyShares}% 100%
+                          #dff7ff ${pctOthers + pctMyShares}% 100%
                         )`,
                       }}
                     />

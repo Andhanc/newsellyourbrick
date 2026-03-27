@@ -93,6 +93,12 @@ const landingFolderDataBase = [
     { id: 'da3', image: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&q=80&w=800', title: 'Верификация лотов' },
     { id: 'da4', image: 'https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?auto=format&fit=crop&q=80&w=800', title: 'Due Diligence' },
   ] },
+  { titleKey: 'folderDebtsStrategy', gradient: 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)', linkLabelKey: 'goTo', linkHref: '/debts', projects: [
+    { id: 'db1', image: 'https://images.unsplash.com/photo-1450101499163-c8848c66ca85?auto=format&fit=crop&q=80&w=800', title: 'Покупка долга' },
+    { id: 'db2', image: 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?auto=format&fit=crop&q=80&w=800', title: 'Анализ рисков' },
+    { id: 'db3', image: 'https://images.unsplash.com/photo-1554224154-22dec7ec8818?auto=format&fit=crop&q=80&w=800', title: 'Структура сделки' },
+    { id: 'db4', image: 'https://images.unsplash.com/photo-1526304640581-d334cdbbf45e?auto=format&fit=crop&q=80&w=800', title: 'Доходность и сроки' },
+  ] },
   { titleKey: 'folderFractional', gradient: 'linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%)', projects: [
     { id: 'fo1', image: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&q=80&w=800', title: 'Долевое участие' },
     { id: 'fo2', image: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&q=80&w=800', title: 'Премиальные активы' },

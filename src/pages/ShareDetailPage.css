@@ -283,6 +283,10 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  text-align: center;
+  padding: 8px 10px;
+  box-sizing: border-box;
+  overflow: hidden;
   box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.06);
 }
 
@@ -307,6 +311,11 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.06em;
+  line-height: 1.2;
+  max-width: 100%;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
 }
 
 .share-detail__legend {
@@ -334,7 +343,7 @@
 }
 
 .share-detail__legend-item--gray .share-detail__legend-dot {
-  background: #cbd5e1;
+  background: linear-gradient(135deg, #dff7ff, #cfe8ff);
 }
 
 .share-detail__legend-item--teal .share-detail__legend-dot {
@@ -342,7 +351,7 @@
 }
 
 .share-detail__legend-item--dark .share-detail__legend-dot {
-  background: #94a3b8;
+  background: linear-gradient(135deg, #7185f7, #5b6ee1);
 }
 
 /* Блок «Все доли проданы» вместо графика и кнопки покупки */
