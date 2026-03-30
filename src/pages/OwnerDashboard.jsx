@@ -463,6 +463,8 @@ const OwnerDashboard = () => {
               baths: prop.bathrooms || 0,
               sqft: prop.area || 0,
               property_type: prop.property_type || 'apartment',
+              created_by_admin:
+                prop.created_by_admin ?? prop.added_by_admin ?? prop.admin_created ?? prop.is_admin_created ?? null,
               land_area: prop.land_area || null,
               bedrooms: prop.bedrooms || null,
               floors: prop.floors || prop.total_floors || null,
@@ -1010,8 +1012,20 @@ const OwnerDashboard = () => {
     setDeleteReason('')
   }
 
-  const handleEditProperty = (id) => {
-    navigate(`/property/${id}/edit`)
+  const handleEditProperty = (property) => {
+    if (!property?.id) return
+    navigate(`/property/${property.id}/edit`, {
+      state: {
+        property_type: property.property_type,
+        admin_added:
+          property.created_by_admin === true ||
+          property.created_by_admin === 1 ||
+          property.added_by_admin === true ||
+          property.added_by_admin === 1 ||
+          property.admin_created === true ||
+          property.admin_created === 1
+      }
+    })
   }
 
   const handleViewProperty = (id) => {
@@ -1855,7 +1869,7 @@ const OwnerDashboard = () => {
                         </button>
                         <button
                           className="action-btn action-btn--edit"
-                          onClick={() => handleEditProperty(property.id)}
+                          onClick={() => handleEditProperty(property)}
                         >
                           Изменить
                         </button>

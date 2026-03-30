@@ -1354,12 +1354,14 @@ function MainPage() {
     try {
       const apiBase = await getApiBaseUrl()
       const lang = (i18n.language || 'ru').split('-')[0]
-      const [approvedRes, auctionsRes] = await Promise.all([
+      const [approvedRes, auctionsRes, debtsRes] = await Promise.all([
         fetch(`${apiBase}/properties/approved?lang=${lang}`),
-        fetch(`${apiBase}/properties/auctions?lang=${lang}`)
+        fetch(`${apiBase}/properties/auctions?lang=${lang}`),
+        fetch(`${apiBase}/properties/debts`)
       ])
       let approved = []
       let auctions = []
+      let debts = []
       if (approvedRes.ok) {
         const json = await approvedRes.json()
         if (json?.success && Array.isArray(json.data)) approved = json.data
@@ -1368,12 +1370,17 @@ function MainPage() {
         const json = await auctionsRes.json()
         if (json?.success && Array.isArray(json.data)) auctions = json.data
       }
+      if (debtsRes.ok) {
+        const json = await debtsRes.json()
+        if (json?.success && Array.isArray(json.data)) debts = json.data
+      }
       const normalizeProperty = (prop, options = {}) => {
         const { forceAuction = null } = options
         const isAuction = forceAuction !== null ? forceAuction : (prop.isAuction === true || prop.is_auction === 1 || prop.is_auction === true)
         const isShare = prop.is_share === 1 || prop.is_share === true || prop.is_shared_ownership === 1 || prop.is_shared_ownership === true
         const priceNumber = prop.price != null && prop.price !== '' ? Number(prop.price) : 0
         const auctionStartingPrice = prop.auction_starting_price != null && prop.auction_starting_price !== '' ? Number(prop.auction_starting_price) : (prop.auctionStartingPrice != null && prop.auctionStartingPrice !== '' ? Number(prop.auctionStartingPrice) : null)
+        const debtAmount = prop.debt_amount != null && prop.debt_amount !== '' ? Number(prop.debt_amount) : null
         return {
           ...prop,
           isAuction,
@@ -1385,7 +1392,18 @@ function MainPage() {
           price: priceNumber,
           auction_starting_price: auctionStartingPrice,
           currentBid: prop.currentBid || prop.auction_current_bid || prop.auctionCurrentBid || null,
-          endTime: prop.endTime || prop.auction_end_date || prop.auctionEndDate || prop.test_timer_end_date || null,
+          endTime:
+            prop.endTime ||
+            prop.auction_end_time ||
+            prop.auctionEndTime ||
+            prop.auction_end_date ||
+            prop.auctionEndDate ||
+            prop.test_timer_end_date ||
+            null,
+          debt_amount: debtAmount,
+          sale_type: prop.sale_type || undefined,
+          is_debt: prop.is_debt ?? undefined,
+          has_debt: prop.has_debt ?? undefined,
           beds: prop.beds || prop.rooms || prop.bedrooms || 0,
           baths: prop.baths || prop.bathrooms || 0,
           sqft: prop.sqft || prop.area || 0,
@@ -1395,6 +1413,7 @@ function MainPage() {
       const byId = new Map()
       approved.map((p) => normalizeProperty(p)).forEach((p) => { if (p && p.id != null) byId.set(p.id, p) })
       auctions.map((p) => normalizeProperty(p, { forceAuction: true })).forEach((p) => { if (p && p.id != null) byId.set(p.id, p) })
+      debts.map((p) => normalizeProperty(p)).forEach((p) => { if (p && p.id != null) byId.set(p.id, p) })
       setHomeProperties(Array.from(byId.values()))
       const pt = (p) => (p && p.property_type) ? String(p.property_type).toLowerCase() : ''
       setApprovedProperties({
@@ -1424,6 +1443,14 @@ function MainPage() {
     const base = homeProperties.filter((p) => {
       if (!p || !p.isAuction) return false
       if (p.is_shared_ownership === 1 || p.is_shared_ownership === true) return false
+      // На главной в "Аукционы" не показываем долги
+      const isDebt =
+        p.sale_type === 'debt' ||
+        p.is_debt === 1 ||
+        p.is_debt === true ||
+        p.has_debt === 1 ||
+        p.has_debt === true
+      if (isDebt) return false
 
       const price = p.price || 0
       const start = p.auction_starting_price || 0
@@ -1442,6 +1469,14 @@ function MainPage() {
     const base = homeProperties.filter((p) => {
       if (!p || !p.isAuction) return false
       if (p.is_shared_ownership === 1 || p.is_shared_ownership === true) return false
+      // На главной в "Купить сейчас" не показываем долги
+      const isDebt =
+        p.sale_type === 'debt' ||
+        p.is_debt === 1 ||
+        p.is_debt === true ||
+        p.has_debt === 1 ||
+        p.has_debt === true
+      if (isDebt) return false
       const price = p.price || 0
       const start = p.auction_starting_price || 0
       if (!price || !start) return false
@@ -1457,7 +1492,9 @@ function MainPage() {
       p &&
       (p.sale_type === 'debt' ||
        p.is_debt === 1 ||
-       p.has_debt === 1)
+       p.is_debt === true ||
+       p.has_debt === 1 ||
+       p.has_debt === true)
     )
 
     return filterBySearch(base).slice(0, 8)
@@ -3335,17 +3372,14 @@ function MainPage() {
                     <div 
                       className="property-link"
                       onClick={() => {
-                        // hasTimer определяется только по данным объекта, не зависит от индекса
                         const hasTimer = flat.isAuction === true && flat.endTime != null && flat.endTime !== ''
-                        // showTimer используется только для визуального отображения таймера
-                        const showTimer = index % 2 === 1 && hasTimer
-                        handlePropertyClick('flat', flat.id, !showTimer, hasTimer, flat)
+                        handlePropertyClick('debt', flat.id, false, hasTimer, flat)
                       }}
                       style={{ cursor: 'pointer' }}
                     >
                       <div className="property-image-container">
                         <img loading="lazy" 
-                          src={flat.image} 
+                          src={flat.image || 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=800&q=80'} 
                           alt={flat.name}
                           className="property-image"
                         />
@@ -3371,46 +3405,51 @@ function MainPage() {
                         </button>
                       </div>
                       <div className="property-content">
-                        {index % 2 === 1 && flat.isAuction && flat.endTime && (
-                          <PropertyTimer endTime={flat.endTime} compact={true} />
-                        )}
-                        <h3 className="property-title">{flat.name}</h3>
-                        {!(index % 2 === 1 && flat.isAuction && flat.endTime) && flat.description && (
-                          <p className="property-description">{flat.description}</p>
-                        )}
-                        <p className="property-location">{flat.location}</p>
-                        {index % 2 === 1 && flat.isAuction && flat.endTime ? (
-                          flat.currentBid && (
-                            <div className="property-bid-info">
-                              <span className="bid-label">{t('currentBid')}</span>
-                              <span className="bid-value">{formatPrice(flat.currentBid)}</span>
+                        <div className="property-header-fixed">
+                          {flat.isAuction === true && flat.endTime != null && flat.endTime !== '' && (
+                            <PropertyTimer endTime={flat.endTime} compact={true} />
+                          )}
+                          <h3 className="property-title">{flat.name}</h3>
+                          {flat.description && (
+                            <p className="property-description">{flat.description}</p>
+                          )}
+                          <p className="property-location">{flat.location}</p>
+                        </div>
+                        {/* Строка характеристик под блоком заголовка */}
+                        <div className="property-specs">
+                          {flat.beds && (
+                            <div className="spec-item">
+                              <MdBed size={18} />
+                              <span>{flat.beds}</span>
                             </div>
-                          )
-                        ) : (
-                          <>
-                            <div className="property-specs">
-                            {flat.beds && (
-                              <div className="spec-item">
-                                <MdBed size={18} />
-                                <span>{flat.beds}</span>
-                              </div>
-                            )}
-                            {flat.baths && (
-                              <div className="spec-item">
-                                <MdOutlineBathtub size={18} />
-                                <span>{flat.baths}</span>
-                              </div>
-                            )}
-                            {flat.sqft && (
-                              <div className="spec-item">
-                                <BiArea size={18} />
-                                <span>{flat.sqft} {t('squareMeters')}</span>
-                              </div>
-                            )}
+                          )}
+                          {flat.baths && (
+                            <div className="spec-item">
+                              <MdOutlineBathtub size={18} />
+                              <span>{flat.baths}</span>
                             </div>
-                            <div className="property-price">{formatPrice(flat.price)}</div>
-                          </>
-                        )}
+                          )}
+                          {flat.sqft && (
+                            <div className="spec-item">
+                              <BiArea size={18} />
+                              <span>{flat.sqft} {t('squareMeters')}</span>
+                            </div>
+                          )}
+                        </div>
+                        <div className="property-bid-info" style={{ display: 'grid', gap: 6 }}>
+                          {flat.debt_amount != null && flat.debt_amount !== '' && !Number.isNaN(Number(flat.debt_amount)) && (
+                            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10 }}>
+                              <span className="bid-label">{t('debtsDebtAmount')}</span>
+                              <span className="bid-value">{formatPrice(Number(flat.debt_amount))}</span>
+                            </div>
+                          )}
+                          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10 }}>
+                            <span className="bid-label">{t('currentBid')}</span>
+                            <span className="bid-value">
+                              {formatPrice(flat.currentBid != null ? Number(flat.currentBid) : (flat.auction_starting_price || flat.price || 0))}
+                            </span>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>

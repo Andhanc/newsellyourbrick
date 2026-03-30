@@ -11,6 +11,7 @@ const API_BASE_URL = getApiBaseUrlSync();
 
 const ObjectsList = () => {
   const [searchQuery, setSearchQuery] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
   const [priceRange, setPriceRange] = useState('all');
   const [saleTypeFilter, setSaleTypeFilter] = useState('all');
@@ -26,20 +27,59 @@ const ObjectsList = () => {
     return `$${value.toLocaleString('ru-RU')}`;
   };
 
-  // Загрузка реальных объявлений: одобренные обычные и аукционные
+  const getCategory = (property) => {
+    const isShare =
+      property?.is_share === 1 ||
+      property?.is_share === true ||
+      property?.is_shared_ownership === 1 ||
+      property?.is_shared_ownership === true ||
+      property?.is_shared === 1 ||
+      property?.is_shared === true;
+
+    const isDebt =
+      property?.sale_type === 'debt' ||
+      property?.is_debt === 1 ||
+      property?.is_debt === true ||
+      property?.has_debt === 1 ||
+      property?.has_debt === true;
+
+    if (isShare) return 'share';
+    if (isDebt) return 'debt';
+
+    const isAuction = property?.isAuction === true;
+    if (!isAuction) return 'buy_now';
+
+    const price = Number(property?.price || 0);
+    const start = Number(
+      property?.auction_starting_price ??
+        property?.auction_starting_price ??
+        property?.auctionStartingPrice ??
+        0
+    );
+
+    // Если цена "купить сейчас" больше старта — считаем buy_now, иначе чистый аукцион
+    if (start > 0 && price > start) return 'buy_now';
+    if (price > 0 && start === 0) return 'buy_now';
+    return 'auction';
+  };
+
+  // Загрузка всех объектов для админки: одобренные + аукционы + долги
   useEffect(() => {
     const loadProperties = async () => {
       try {
         setLoading(true);
         setError(null);
 
-        const [approvedRes, auctionsRes] = await Promise.all([
-          fetch(`${API_BASE_URL}/properties/approved`),
-          fetch(`${API_BASE_URL}/properties/auctions`)
+        const lang = (localStorage.getItem('i18nextLng') || 'ru').split('-')[0];
+        const [approvedRes, auctionsRes, debtsRes] = await Promise.all([
+          fetch(`${API_BASE_URL}/properties/approved?lang=${lang}`),
+          fetch(`${API_BASE_URL}/properties/auctions?lang=${lang}`),
+          fetch(`${API_BASE_URL}/properties/debts`)
         ]);
 
         let approved = [];
         let auctions = [];
+        let debts = [];
 
         if (approvedRes.ok) {
           const data = await approvedRes.json();
@@ -59,8 +99,60 @@ const ObjectsList = () => {
           console.warn('Ошибка загрузки аукционных объявлений:', auctionsRes.status, auctionsRes.statusText);
         }
 
-        const combined = [...approved, ...auctions];
-        setProperties(combined);
+        if (debtsRes.ok) {
+          const data = await debtsRes.json();
+          if (data?.success && Array.isArray(data.data)) {
+            debts = data.data;
+          }
+        } else {
+          console.warn('Ошибка загрузки объектов с долгами:', debtsRes.status, debtsRes.statusText);
+        }
+
+        const normalizeProperty = (prop, options = {}) => {
+          const { forceAuction = null } = options;
+          const isAuction =
+            forceAuction !== null
+              ? forceAuction
+              : (prop.isAuction === true || prop.is_auction === 1 || prop.is_auction === true);
+          const priceNumber = prop.price != null && prop.price !== '' ? Number(prop.price) : 0;
+          const auctionStartingPrice =
+            prop.auction_starting_price != null && prop.auction_starting_price !== ''
+              ? Number(prop.auction_starting_price)
+              : (prop.auctionStartingPrice != null && prop.auctionStartingPrice !== '' ? Number(prop.auctionStartingPrice) : null);
+          return {
+            ...prop,
+            isAuction,
+            title: prop.title || prop.name || '',
+            name: prop.name || prop.title || '',
+            image:
+              prop.image ||
+              (Array.isArray(prop.images) && prop.images[0]
+                ? (typeof prop.images[0] === 'string' ? prop.images[0] : prop.images[0].url)
+                : null),
+            images: Array.isArray(prop.images) ? prop.images : (prop.image ? [prop.image] : []),
+            price: priceNumber,
+            auction_starting_price: auctionStartingPrice,
+            currentBid: prop.currentBid || prop.auction_current_bid || prop.auctionCurrentBid || null,
+            endTime:
+              prop.endTime ||
+              prop.auction_end_time ||
+              prop.auctionEndTime ||
+              prop.auction_end_date ||
+              prop.auctionEndDate ||
+              prop.test_timer_end_date ||
+              null,
+            beds: prop.beds || prop.rooms || prop.bedrooms || 0,
+            baths: prop.baths || prop.bathrooms || 0,
+            sqft: prop.sqft || prop.area || 0
+          };
+        };
+
+        const byId = new Map();
+        approved.map((p) => normalizeProperty(p)).forEach((p) => { if (p && p.id != null) byId.set(p.id, p); });
+        auctions.map((p) => normalizeProperty(p, { forceAuction: true })).forEach((p) => { if (p && p.id != null) byId.set(p.id, p); });
+        debts.map((p) => normalizeProperty(p)).forEach((p) => { if (p && p.id != null) byId.set(p.id, p); });
+
+        setProperties(Array.from(byId.values()));
       } catch (e) {
         console.error('Ошибка при загрузке объявлений для админ-объектов:', e);
         setError('Не удалось загрузить объявления. Попробуйте обновить страницу.');
@@ -81,6 +173,9 @@ const ObjectsList = () => {
         (property.location || '')
           .toLowerCase()
           .includes(searchQuery.toLowerCase());
+
+      const matchesCategory =
+        categoryFilter === 'all' || getCategory(property) === categoryFilter;
 
       const matchesType = 
         typeFilter === 'all' || 
@@ -103,9 +198,15 @@ const ObjectsList = () => {
         matchesSaleType = property.isAuction === false;
       }
 
-      return matchesSearch && matchesType && matchesPrice && matchesSaleType;
+      return (
+        matchesSearch &&
+        matchesCategory &&
+        matchesType &&
+        matchesPrice &&
+        matchesSaleType
+      );
     });
-  }, [properties, searchQuery, typeFilter, priceRange, saleTypeFilter]);
+  }, [properties, searchQuery, categoryFilter, typeFilter, priceRange, saleTypeFilter]);
 
   const displayedProperties = filteredProperties.slice(0, displayedCount);
   const hasMore = displayedCount < filteredProperties.length;
@@ -144,6 +245,17 @@ const ObjectsList = () => {
         </div>
 
         <div className="objects-list__filter-group">
+          <div className="objects-list__filter">
+            <label>Категория:</label>
+            <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}>
+              <option value="all">Все</option>
+              <option value="auction">Аукцион</option>
+              <option value="buy_now">Купить сейчас</option>
+              <option value="debt">Долги</option>
+              <option value="share">Доли</option>
+            </select>
+          </div>
+
           <div className="objects-list__filter">
             <FiSliders size={18} />
             <label>Тип:</label>

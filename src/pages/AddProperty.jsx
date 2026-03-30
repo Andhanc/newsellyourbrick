@@ -96,6 +96,9 @@ const AddProperty = ({
   const location = useLocation()
   const { id } = useParams() // ID объекта для редактирования
   const isEditMode = !!id // Режим редактирования
+  const propertyTypeFromNavState = location?.state?.property_type || null
+  const adminAddedFromNavState = location?.state?.admin_added === true
+  const [isAdminAddedProperty, setIsAdminAddedProperty] = useState(() => adminMode || adminAddedFromNavState)
   const draftKey = adminMode ? 'admin_addPropertyDraft' : DRAFT_KEY
   const fileInputRef = useRef(null)
   const videoInputRef = useRef(null)
@@ -980,6 +983,11 @@ const AddProperty = ({
       formDataToSend.append('user_id', String(numericUserId))
       formDataToSend.append('property_type', formData.propertyType)
       formDataToSend.append('title', formData.title)
+      if (adminMode) {
+        // Флаг для бэкенда/аналитики: объект создан администратором для продавца.
+        // Если бэкенд не поддерживает — будет просто проигнорировано.
+        formDataToSend.append('created_by_admin', '1')
+      }
       
       // Данные пользователя из профиля (если загружены)
       // НЕ добавляем address и country из профиля, чтобы использовать только адрес объекта недвижимости
@@ -1184,7 +1192,7 @@ const AddProperty = ({
       }
       
       const url = isEditMode && originalPropertyId 
-        ? `${API_BASE_URL}/properties/${originalPropertyId}`
+        ? `${API_BASE_URL}/properties/${originalPropertyId}?property_type=${encodeURIComponent(formData.propertyType || propertyTypeFromNavState || '')}`
         : `${API_BASE_URL}/properties`
       
       const response = await fetch(url, {
@@ -1536,7 +1544,13 @@ const AddProperty = ({
     setIsLoadingProperty(true)
     try {
       const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
-      const response = await fetch(`${API_BASE_URL}/properties/${propertyId}`)
+      // В некоторых случаях бэкенд требует property_type, чтобы однозначно найти запись по id (при пересечении id между таблицами).
+      const propertyTypeHint = propertyTypeFromNavState ? `?property_type=${encodeURIComponent(propertyTypeFromNavState)}` : ''
+      let response = await fetch(`${API_BASE_URL}/properties/${propertyId}${propertyTypeHint}`)
+      if (!response.ok && propertyTypeFromNavState) {
+        // fallback: пробуем без подсказки
+        response = await fetch(`${API_BASE_URL}/properties/${propertyId}`)
+      }
       
       if (!response.ok) {
         throw new Error('Не удалось загрузить данные объекта')
@@ -1545,6 +1559,17 @@ const AddProperty = ({
       const result = await response.json()
       if (result.success && result.data) {
         const property = result.data
+        const adminAddedFlag =
+          property?.created_by_admin === true ||
+          property?.created_by_admin === 1 ||
+          property?.added_by_admin === true ||
+          property?.added_by_admin === 1 ||
+          property?.admin_created === true ||
+          property?.admin_created === 1 ||
+          property?.is_admin_created === true ||
+          property?.is_admin_created === 1 ||
+          adminAddedFromNavState
+        setIsAdminAddedProperty(adminMode || adminAddedFlag)
         setOriginalPropertyId(propertyId)
         // Сохраняем оригинальные данные для сравнения
         setOriginalPropertyData(JSON.parse(JSON.stringify(property)))
@@ -6584,7 +6609,7 @@ const AddProperty = ({
                     endDate={formData.auctionEndDate}
                     onStartDateChange={(date) => setFormData(prev => ({ ...prev, auctionStartDate: date }))}
                     onEndDateChange={(date) => setFormData(prev => ({ ...prev, auctionEndDate: date }))}
-                    disableMinConstraints={adminMode}
+                    disableMinConstraints={adminMode || isAdminAddedProperty}
                   />
                 </div>
                 

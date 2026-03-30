@@ -369,4 +369,22 @@
   }
 }
 
+/* Десктоп: фильтры в одну строку */
+@media (min-width: 769px) {
+  .objects-list__filter-group {
+    flex-wrap: nowrap;
+    align-items: center;
+  }
+
+  .objects-list__filter {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  .objects-list__filter select {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
 

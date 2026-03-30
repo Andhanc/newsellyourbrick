@@ -2422,6 +2422,17 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                           amenities.push(t(featureLabelKeys[featureKey]))
                         }
                       }
+                    } else {
+                      // Fallback: если массив amenities не приходит из API — собираем по булевым полям (как в модерации)
+                      Object.entries(mainAmenityKeys).forEach(([key, labelKey]) => {
+                        if (displayProperty[key] === true) amenities.push(t(labelKey))
+                      })
+                      for (let i = 1; i <= 26; i++) {
+                        const featureKey = `feature${i}`
+                        if (displayProperty[featureKey] === true && featureLabelKeys[featureKey]) {
+                          amenities.push(t(featureLabelKeys[featureKey]))
+                        }
+                      }
                     }
                       if (amenities.length === 0) {
                         return <span className="amenity-item">{t('propertyDetailAmenitiesNone')}</span>

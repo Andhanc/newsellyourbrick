@@ -40,7 +40,17 @@ const Debts = () => {
       const res = await fetch(`${API_BASE}/properties/debts`)
       const json = await (res.ok ? res.json() : { success: false, data: [] })
       if (json.success && Array.isArray(json.data)) {
-        const mapped = json.data.map((p) => {
+        const isDebtRecord = (p) => {
+          if (!p) return false
+          if (p.sale_type === 'debt') return true
+          if (p.is_debt === 1 || p.is_debt === true) return true
+          if (p.has_debt === 1 || p.has_debt === true) return true
+          if (p.debt_amount != null && p.debt_amount !== '' && !Number.isNaN(Number(p.debt_amount))) return true
+          if (typeof p.debt_severity === 'string' && ['red', 'yellow', 'green'].includes(p.debt_severity)) return true
+          return false
+        }
+
+        const mapped = json.data.filter(isDebtRecord).map((p) => {
           const photos = (p.photos && (Array.isArray(p.photos) ? p.photos : typeof p.photos === 'string' ? (() => { try { return JSON.parse(p.photos) } catch (e) { return [] } })() : [])) || []
           const firstPhoto = photos[0]
           const image = typeof firstPhoto === 'string' ? firstPhoto : firstPhoto && firstPhoto.url ? firstPhoto.url : null
