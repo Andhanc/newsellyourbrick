@@ -1355,8 +1355,15 @@ const Profile = () => {
                   compact
                   mobileTwoColumn
                   onBookCall={async (plan) => {
+                    if (plan === 'starter') {
+                      showNotification('Тариф Starter бесплатный — базовые функции уже доступны в аккаунте.', 'info')
+                      return
+                    }
+                    if (plan === 'vip') {
+                      showNotification('Подписка VIP скоро будет доступна', 'info')
+                      return
+                    }
                     if (plan !== 'pro') {
-                      showNotification('Подписка Starter скоро будет доступна', 'info')
                       return
                     }
                     const userData = getUserData()

@@ -778,6 +778,23 @@ export function initDatabase() {
         console.warn('⚠️ Stripe таблицы:', stripeTblErr.message);
       }
 
+      try {
+        db.exec(`
+          CREATE TABLE IF NOT EXISTS stripe_wallet_deposit_credits (
+            dedupe_key TEXT PRIMARY KEY,
+            user_id INTEGER NOT NULL,
+            amount_eur REAL NOT NULL,
+            stripe_invoice_id TEXT,
+            stripe_checkout_session_id TEXT,
+            created_at TEXT DEFAULT (datetime('now')),
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+          );
+          CREATE INDEX IF NOT EXISTS idx_stripe_wallet_deposit_user ON stripe_wallet_deposit_credits(user_id);
+        `);
+      } catch (walletCredErr) {
+        console.warn('⚠️ stripe_wallet_deposit_credits:', walletCredErr.message);
+      }
+
       // Создаем таблицу ставок (bids), если её нет
       try {
         const bidsTable = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='bids'").get();

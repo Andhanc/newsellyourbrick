@@ -125,9 +125,14 @@ const Subscriptions = () => {
       }
       return
     }
-    const amount = 2900
-    const paymentUrl = `https://checkout.stripe.com/pay?amount=${amount}&currency=usd&description=${encodeURIComponent('Подписка Starter')}`
-    window.open(paymentUrl, '_blank', 'width=600,height=800')
+    if (plan === 'starter') {
+      showNotification('Тариф Starter бесплатный — базовые функции уже доступны в аккаунте.', 'info')
+      return
+    }
+    if (plan === 'vip') {
+      showNotification('Подписка VIP скоро будет доступна', 'info')
+      return
+    }
   }
 
   const handleLogout = async () => {

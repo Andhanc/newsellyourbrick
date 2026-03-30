@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { FiMail, FiPlus, FiRefreshCw, FiUserPlus } from 'react-icons/fi';
 import { getApiBaseUrl } from '../../utils/apiConfig';
+import { sendCrmEmailFromBrowser } from '../../utils/crmClientEmail';
 import { showNotification } from '../../utils/toastHelper';
 import './CrmBoard.css';
 
@@ -56,6 +57,9 @@ export default function CrmBoard() {
   const [userHits, setUserHits] = useState([]);
   const [assistantLeads, setAssistantLeads] = useState([]);
 
+  /** Тема и текст письма в карточке лида (контролируемые — то же уходит в EmailJS). */
+  const [emailCompose, setEmailCompose] = useState({ subject: '', body: '' });
+
   const loadBoard = useCallback(async () => {
     setLoading(true);
     try {
@@ -108,6 +112,15 @@ export default function CrmBoard() {
     }, 300);
     return () => clearTimeout(t);
   }, [userQuery]);
+
+  useEffect(() => {
+    const id = detail?.lead?.id;
+    if (!id) return;
+    setEmailCompose({
+      subject: 'Персональное предложение Sellyourbrick',
+      body: '',
+    });
+  }, [detail?.lead?.id]);
 
   const openDrawer = async (leadId) => {
     setDrawerLeadId(leadId);
@@ -180,29 +193,28 @@ export default function CrmBoard() {
     }
   };
 
-  const sendEmail = async (subject, body) => {
+  const sendEmail = async () => {
     if (!drawerLeadId) return;
+    const lead = detail?.lead;
+    const toEmail = lead?.email && String(lead.email).trim();
+    if (!toEmail) {
+      showNotification('У лида нет email', 'error');
+      return;
+    }
+    const subj =
+      emailCompose.subject != null && String(emailCompose.subject).trim()
+        ? String(emailCompose.subject).trim()
+        : 'Сообщение от Sellyourbrick';
+    const text = emailCompose.body != null ? String(emailCompose.body) : '';
     try {
-      const base = await getApiBaseUrl();
-      const res = await fetch(`${base}/admin/crm/leads/${drawerLeadId}/email`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          subject,
-          body,
-          createdBy: adminLabel(),
-        }),
+      await sendCrmEmailFromBrowser({
+        toEmail,
+        subject: subj,
+        messageBody: text,
+        fromName: lead.display_name ? `Sellyourbrick · ${lead.display_name}` : 'Sellyourbrick',
       });
-      const json = await res.json();
-      if (!json.success) throw new Error(json.error);
       showNotification('Письмо отправлено', 'success');
-      const r2 = await fetch(`${base}/admin/crm/leads/${drawerLeadId}/activities`);
-      const j2 = await r2.json();
-      if (j2.success) setActivities(j2.data || []);
-      const r1 = await fetch(`${base}/admin/crm/leads/${drawerLeadId}`);
-      const j1 = await r1.json();
-      if (j1.success) setDetail(j1.data);
-      loadBoard();
+      await addActivity('email_sent', subj, text.slice(0, 4000));
     } catch (err) {
       showNotification(err.message || 'Ошибка отправки', 'error');
     }
@@ -580,29 +592,34 @@ export default function CrmBoard() {
 
                 <div className="crm-board__field">
                   <label>
-                    <FiMail style={{ verticalAlign: 'middle' }} /> Письмо клиенту (EmailJS)
+                    <FiMail style={{ verticalAlign: 'middle' }} /> Письмо клиенту (EmailJS из браузера)
                   </label>
+                  <p className="crm-board__hint" style={{ marginTop: 0 }}>
+                    В .env укажите шаблон CRM, например: <code>VITE_EMAILJS_CRM_TEMPLATE_ID=template_nky2m4i</code>.
+                    В EmailJS в поле «To Email» должно быть{' '}
+                    <code>{'{{to_email}}'}</code> — не личный адрес; иначе письма не приходят на email лида.
+                    Тема: <code>{'{{subject}}'}</code>, тело: <code>{'{{message}}'}</code> или{' '}
+                    <code>{'{{full_message}}'}</code>. Для пресета Contact Us: <code>{'{{name}}'}</code>,{' '}
+                    <code>{'{{time}}'}</code>.
+                  </p>
                   <input
-                    id="crm-email-subj"
-                    placeholder="Тема"
-                    defaultValue="Персональное предложение Sellyourbrick"
+                    placeholder="Тема письма"
+                    value={emailCompose.subject}
+                    onChange={(e) => setEmailCompose((c) => ({ ...c, subject: e.target.value }))}
                   />
                   <textarea
-                    id="crm-email-body"
                     style={{ marginTop: '0.5rem' }}
                     placeholder="Текст письма…"
                     rows={5}
+                    value={emailCompose.body}
+                    onChange={(e) => setEmailCompose((c) => ({ ...c, body: e.target.value }))}
                   />
                   <button
                     type="button"
                     className="crm-board__btn crm-board__btn--primary"
                     style={{ marginTop: '0.5rem' }}
                     disabled={!lead.email}
-                    onClick={() => {
-                      const subj = document.getElementById('crm-email-subj')?.value || '';
-                      const body = document.getElementById('crm-email-body')?.value || '';
-                      sendEmail(subj, body);
-                    }}
+                    onClick={() => sendEmail()}
                   >
                     Отправить на {lead.email || '—'}
                   </button>

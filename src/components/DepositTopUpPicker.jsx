@@ -12,7 +12,8 @@ const TON_ICON_SVG = (
 const DepositTopUpPicker = ({
   isOpen,
   onClose,
-  onSelectCard,
+  onSelectStripe,
+  stripeCheckoutLoading,
   tonWallet,
   tonAddress,
   tonConnectUI,
@@ -46,21 +47,22 @@ const DepositTopUpPicker = ({
         {view === 'choice' && (
           <>
             <h2 className="deposit-picker__title">Способ пополнения</h2>
-            <p className="deposit-picker__subtitle">Выберите способ пополнения депозита на 3000 €</p>
+            <p className="deposit-picker__subtitle">Выберите способ пополнения депозита (продукт Deposit в Stripe)</p>
             <div className="deposit-picker__options">
               <button
                 type="button"
                 className="deposit-picker__option deposit-picker__option--card"
+                disabled={stripeCheckoutLoading}
                 onClick={() => {
-                  onSelectCard()
+                  onSelectStripe?.()
                   handleClose()
                 }}
               >
                 <span className="deposit-picker__option-icon">
                   <FiCreditCard size={32} />
                 </span>
-                <span className="deposit-picker__option-label">Карта</span>
-                <span className="deposit-picker__option-desc">Visa, Mastercard</span>
+                <span className="deposit-picker__option-label">Карта (Stripe)</span>
+                <span className="deposit-picker__option-desc">Безопасная оплата на стороне Stripe</span>
               </button>
               <button
                 type="button"

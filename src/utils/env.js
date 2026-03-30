@@ -3,6 +3,8 @@
  * Поддерживает как REACT_APP_ (Create React App), так и VITE_ (Vite)
  */
 
+import { getApiBaseUrl } from './apiConfig.js'
+
 /**
  * Получает переменную окружения с поддержкой обоих форматов
  * @param {string} key - Имя переменной без префикса (например, 'CLERK_PUBLISHABLE_KEY')
@@ -47,13 +49,6 @@ export const getGoogleClientId = () => {
 }
 
 /**
- * Получает API Base URL
- */
-export const getApiBaseUrl = () => {
-  return getEnv('API_BASE_URL', '/api')
-}
-
-/**
  * Кэш для конфигурации, загруженной через API
  */
 let runtimeConfigCache = null
@@ -77,7 +72,8 @@ export const loadRuntimeConfig = async () => {
   // Загружаем конфигурацию
   configLoadPromise = (async () => {
     try {
-      const apiBaseUrl = getApiBaseUrl()
+      // Тот же базовый URL, что и у остальных запросов (/api → Vite proxy), иначе прямой :3000 даёт CORS в dev.
+      const apiBaseUrl = await getApiBaseUrl()
       const response = await fetch(`${apiBaseUrl}/config`)
       if (response.ok) {
         const data = await response.json()

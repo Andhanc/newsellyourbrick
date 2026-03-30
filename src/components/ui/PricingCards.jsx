@@ -5,6 +5,7 @@ import './PricingCards.css'
 export default function PricingCards({ onBookCall, compact = false, mobileTwoColumn = false }) {
   const [starterMonthly, setStarterMonthly] = useState(false)
   const [proMonthly, setProMonthly] = useState(false)
+  const [vipMonthly, setVipMonthly] = useState(false)
 
   const LightCheckIcon = ({ className = '' }) => (
     <svg
@@ -38,15 +39,20 @@ export default function PricingCards({ onBookCall, compact = false, mobileTwoCol
 
   const starterFeatures = ['Аукцион', 'Покупка объектов', 'ИИ-консультант']
   const proFeatures = ['Starter', 'Аналитика', 'Калькулятор', 'Персональный менеджер']
+  const vipFeatures = ['Всё из Pro', 'Приоритет в аукционах', 'VIP-менеджер', 'Закрытые лоты']
 
   const handleStarterCall = () => {
     if (typeof onBookCall === 'function') onBookCall('starter')
-    else window.open('https://checkout.stripe.com/pay?amount=2900&currency=usd&description=Starter', '_blank')
   }
 
   const handleProCall = () => {
     if (typeof onBookCall === 'function') onBookCall('pro')
     else window.open('https://checkout.stripe.com/pay?amount=9900&currency=usd&description=Pro', '_blank')
+  }
+
+  const handleVipCall = () => {
+    if (typeof onBookCall === 'function') onBookCall('vip')
+    else window.open('https://checkout.stripe.com/pay?amount=19900&currency=usd&description=VIP', '_blank')
   }
 
   return (
@@ -57,19 +63,22 @@ export default function PricingCards({ onBookCall, compact = false, mobileTwoCol
           <div className="pricing-card__header">
             <div className="pricing-card__header-top">
               <div className="pricing-card__header-top-left">
-                <h2 className="pricing-card__title">Starter</h2>
+                <h2 className="pricing-card__title pricing-card__title--struck">Starter</h2>
                 <p className="pricing-card__desc">
                   Быстрый старт
                 </p>
               </div>
-              <span className="pricing-card__badge">Самый простой</span>
+              <span className="pricing-card__badge">Бесплатно</span>
             </div>
-            <div className="pricing-card__price-row">
-              <span className="pricing-card__price">$29</span>
+            <div className="pricing-card__price-row pricing-card__price-row--starter-free">
+              <span className="pricing-card__price pricing-card__price--free">$0</span>
               <span className="pricing-card__price-unit">/мес</span>
+              <span className="pricing-card__price-was" aria-hidden="true">
+                $29
+              </span>
             </div>
             <button type="button" className="pricing-card__cta" onClick={handleStarterCall}>
-              Купить сейчас
+              Начать бесплатно
               <ShoppingCart size={20} strokeWidth={2} />
             </button>
           </div>
@@ -135,6 +144,52 @@ export default function PricingCards({ onBookCall, compact = false, mobileTwoCol
                 data-enabled={proMonthly}
                 onClick={() => setProMonthly(!proMonthly)}
                 aria-pressed={proMonthly}
+                aria-label="Ежемесячный платёж"
+              >
+                <span className="pricing-card__toggle-thumb" />
+              </button>
+              <span className="pricing-card__toggle-label">Ежемесячный платёж</span>
+            </div>
+          </div>
+        </div>
+
+        {/* VIP — премиальная карточка */}
+        <div className="pricing-card--vip">
+          <div className="pricing-card__header">
+            <div className="pricing-card__header-top">
+              <div className="pricing-card__header-top-left">
+                <h2 className="pricing-card__title">VIP</h2>
+                <p className="pricing-card__desc">
+                  Максимум возможностей и приоритет на каждом шаге
+                </p>
+              </div>
+              <span className="pricing-card__badge">Элитный</span>
+            </div>
+            <div className="pricing-card__price-row">
+              <span className="pricing-card__price">$199</span>
+              <span className="pricing-card__price-unit">/мес</span>
+            </div>
+            <button type="button" className="pricing-card__cta" onClick={handleVipCall}>
+              Купить сейчас
+              <ShoppingCart size={20} strokeWidth={2} />
+            </button>
+          </div>
+          <div className="pricing-card__features">
+            <div className="pricing-card__features-grid">
+              {vipFeatures.map((feature) => (
+                <div key={feature} className="pricing-card__feature">
+                  <DarkCheckIcon />
+                  <span>{feature}</span>
+                </div>
+              ))}
+            </div>
+            <div className="pricing-card__toggle-wrap">
+              <button
+                type="button"
+                className="pricing-card__toggle"
+                data-enabled={vipMonthly}
+                onClick={() => setVipMonthly(!vipMonthly)}
+                aria-pressed={vipMonthly}
                 aria-label="Ежемесячный платёж"
               >
                 <span className="pricing-card__toggle-thumb" />

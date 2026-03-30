@@ -327,6 +327,11 @@ app.get('/api/config', (req, res) => {
       googleClientId: process.env.REACT_APP_GOOGLE_CLIENT_ID || process.env.VITE_GOOGLE_CLIENT_ID || '',
       emailjsServiceId: process.env.REACT_APP_EMAILJS_SERVICE_ID || process.env.VITE_EMAILJS_SERVICE_ID || '',
       emailjsTemplateId: process.env.REACT_APP_EMAILJS_TEMPLATE_ID || process.env.VITE_EMAILJS_TEMPLATE_ID || '',
+      emailjsCrmTemplateId:
+        process.env.EMAILJS_CRM_TEMPLATE_ID ||
+        process.env.REACT_APP_EMAILJS_CRM_TEMPLATE_ID ||
+        process.env.VITE_EMAILJS_CRM_TEMPLATE_ID ||
+        '',
       emailjsPublicKey: process.env.REACT_APP_EMAILJS_PUBLIC_KEY || process.env.VITE_EMAILJS_PUBLIC_KEY || '',
       apiBaseUrl: process.env.REACT_APP_API_BASE_URL || process.env.VITE_API_BASE_URL || '/api',
       telegramBotUsername: process.env.VITE_TELEGRAM_BOT_USERNAME || process.env.TELEGRAM_BOT_USERNAME || ''
@@ -5376,6 +5381,7 @@ async function sendCrmEmailViaEmailJS(toEmail, subject, messageText) {
       process.env.EMAILJS_PUBLIC_KEY ||
       '',
   };
+  const privateKey = String(process.env.EMAILJS_PRIVATE_KEY || process.env.EMAILJS_ACCESS_TOKEN || '').trim();
   if (!emailJsConfig.serviceId || !emailJsConfig.templateId || !emailJsConfig.publicKey) {
     throw new Error(
       'EmailJS не настроен: нужны SERVICE_ID, шаблон (EMAILJS_CRM_TEMPLATE_ID или общий TEMPLATE_ID) и PUBLIC_KEY'
@@ -5385,6 +5391,7 @@ async function sendCrmEmailViaEmailJS(toEmail, subject, messageText) {
     service_id: emailJsConfig.serviceId,
     template_id: emailJsConfig.templateId,
     user_id: emailJsConfig.publicKey,
+    ...(privateKey ? { accessToken: privateKey } : {}),
     template_params: {
       to_email: toEmail,
       email: toEmail,
@@ -5394,11 +5401,27 @@ async function sendCrmEmailViaEmailJS(toEmail, subject, messageText) {
       from_name: 'Sellyourbrick',
     },
   };
-  const emailResponse = await axios.post('https://api.emailjs.com/api/v1.0/email/send', emailData, {
-    headers: { 'Content-Type': 'application/json' },
-  });
-  if (emailResponse.status !== 200) {
-    throw new Error(`EmailJS вернул статус ${emailResponse.status}`);
+  try {
+    const emailResponse = await axios.post('https://api.emailjs.com/api/v1.0/email/send', emailData, {
+      headers: { 'Content-Type': 'application/json' },
+    });
+    if (emailResponse.status !== 200) {
+      throw new Error(`EmailJS вернул статус ${emailResponse.status}`);
+    }
+  } catch (err) {
+    const res = err.response;
+    if (!res) throw err;
+    const detail =
+      typeof res.data === 'string' ? res.data : res.data != null ? JSON.stringify(res.data) : '';
+    if (res.status === 403) {
+      throw new Error(
+        'EmailJS отклонил запрос (403). Рассылка из CRM идёт с сервера: в EmailJS (https://dashboard.emailjs.com/admin/account/security) включите «Allow EmailJS API for non-browser applications», либо задайте на сервере EMAILJS_PRIVATE_KEY (Private API key в дашборде EmailJS). ' +
+          (detail ? `Ответ API: ${detail}` : '')
+      );
+    }
+    throw new Error(
+      detail ? `EmailJS ошибка ${res.status}: ${detail}` : err.message || `EmailJS ошибка ${res.status}`
+    );
   }
 }
 
@@ -5569,6 +5592,7 @@ app.post('/api/admin/crm/leads/:id/activities', (req, res) => {
   }
 });
 
+// Отправка с сервера (нужен non-browser API или EMAILJS_PRIVATE_KEY). UI админки шлёт из браузера — см. crmClientEmail.js.
 app.post('/api/admin/crm/leads/:id/email', async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);

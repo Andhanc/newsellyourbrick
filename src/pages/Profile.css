@@ -1428,10 +1428,16 @@
 
 .profile-subscriptions-cards .pricing-cards__grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 24px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
   align-items: stretch;
   max-width: 100%;
+}
+
+@media (max-width: 1100px) {
+  .profile-subscriptions-cards .pricing-cards__grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .profile-subscriptions-cards .pricing-cards__grid > * {
@@ -1442,7 +1448,8 @@
 }
 
 .profile-subscriptions-cards .pricing-card--starter,
-.profile-subscriptions-cards .pricing-card--pro {
+.profile-subscriptions-cards .pricing-card--pro,
+.profile-subscriptions-cards .pricing-card--vip {
   flex: 1;
   display: flex;
   flex-direction: column;
