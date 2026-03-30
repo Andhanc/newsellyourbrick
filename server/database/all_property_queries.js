@@ -36,8 +36,25 @@ export const apartmentQueries = {
         photos, videos, additional_documents,
         ownership_document, no_debts_document,
         test_drive, test_drive_data,
-        moderation_status
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        moderation_status,
+        sale_type, is_debt, has_debt,
+        debt_utilities, debt_mortgage_pledge, debt_property_taxes, debt_arrest, debt_inherited, debt_third_party,
+        debt_other, debt_amount, debt_severity
+      ) VALUES (
+        ?, ?, ?, ?, ?, ?,
+        ?, ?, ?, ?,
+        ?, ?, ?, ?, ?, ?, ?, ?,
+        ?, ?, ?, ?, ?, ?,
+        ?, ?, ?, ?, ?, ?,
+        ?, ?, ?,
+        ?, ?, ?,
+        ?, ?,
+        ?, ?,
+        ?,
+        ?, ?, ?,
+        ?, ?, ?, ?, ?, ?,
+        ?, ?, ?
+      )
     `);
     
     return stmt.run(
@@ -81,7 +98,19 @@ export const apartmentQueries = {
       propertyData.no_debts_document || null,
       propertyData.test_drive ? 1 : 0,
       propertyData.test_drive_data ? JSON.stringify(propertyData.test_drive_data) : null,
-      propertyData.moderation_status || 'pending'
+      propertyData.moderation_status || 'pending',
+      propertyData.sale_type || null,
+      propertyData.is_debt ? 1 : 0,
+      propertyData.has_debt ? 1 : 0,
+      propertyData.debt_utilities ? 1 : 0,
+      propertyData.debt_mortgage_pledge ? 1 : 0,
+      propertyData.debt_property_taxes ? 1 : 0,
+      propertyData.debt_arrest ? 1 : 0,
+      propertyData.debt_inherited ? 1 : 0,
+      propertyData.debt_third_party ? 1 : 0,
+      propertyData.debt_other || null,
+      propertyData.debt_amount != null && propertyData.debt_amount !== '' ? Number(propertyData.debt_amount) : null,
+      propertyData.debt_severity || null
     );
   },
 
@@ -448,8 +477,25 @@ export const houseQueries = {
         photos, videos, additional_documents,
         ownership_document, no_debts_document,
         test_drive, test_drive_data,
-        moderation_status
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        moderation_status,
+        sale_type, is_debt, has_debt,
+        debt_utilities, debt_mortgage_pledge, debt_property_taxes, debt_arrest, debt_inherited, debt_third_party,
+        debt_other, debt_amount, debt_severity
+      ) VALUES (
+        ?, ?, ?, ?, ?, ?,
+        ?, ?, ?, ?,
+        ?, ?, ?, ?, ?, ?, ?, ?,
+        ?, ?, ?, ?, ?,
+        ?, ?, ?, ?, ?, ?,
+        ?,
+        ?, ?, ?,
+        ?, ?,
+        ?, ?,
+        ?,
+        ?, ?, ?,
+        ?, ?, ?, ?, ?, ?,
+        ?, ?, ?
+      )
     `);
     
     // Обрабатываем bedrooms: проверяем на валидность и преобразуем в число
@@ -502,7 +548,19 @@ export const houseQueries = {
       propertyData.no_debts_document || null,
       propertyData.test_drive ? 1 : 0,
       propertyData.test_drive_data ? JSON.stringify(propertyData.test_drive_data) : null,
-      propertyData.moderation_status || 'pending'
+      propertyData.moderation_status || 'pending',
+      propertyData.sale_type || null,
+      propertyData.is_debt ? 1 : 0,
+      propertyData.has_debt ? 1 : 0,
+      propertyData.debt_utilities ? 1 : 0,
+      propertyData.debt_mortgage_pledge ? 1 : 0,
+      propertyData.debt_property_taxes ? 1 : 0,
+      propertyData.debt_arrest ? 1 : 0,
+      propertyData.debt_inherited ? 1 : 0,
+      propertyData.debt_third_party ? 1 : 0,
+      propertyData.debt_other || null,
+      propertyData.debt_amount != null && propertyData.debt_amount !== '' ? Number(propertyData.debt_amount) : null,
+      propertyData.debt_severity || null
     );
   },
 
@@ -825,6 +883,19 @@ export const houseQueries = {
  * Объединяет результаты и возвращает в едином формате
  */
 export const propertyQueries = {
+  /**
+   * True если объект относится к "долгам"
+   */
+  _isDebtProperty: (p) => {
+    if (!p) return false;
+    const saleType = p.sale_type;
+    const isDebt = p.is_debt === 1 || p.is_debt === true;
+    const hasDebt = p.has_debt === 1 || p.has_debt === true;
+    const severity = p.debt_severity;
+    const hasSeverity = severity === 'red' || severity === 'yellow' || severity === 'green';
+    return saleType === 'debt' || isDebt || hasDebt || hasSeverity;
+  },
+
   /**
    * Получить все объекты недвижимости с фильтрами
    */
@@ -1244,7 +1315,12 @@ export const propertyQueries = {
           'apartments' as source_table
         FROM properties_apartments p
         LEFT JOIN users u ON p.user_id = u.id
-        WHERE p.moderation_status = 'approved' AND (p.is_auction = 0 OR p.is_auction IS NULL)
+        WHERE p.moderation_status = 'approved'
+          AND (p.is_auction = 0 OR p.is_auction IS NULL)
+          AND (p.sale_type IS NULL OR p.sale_type != 'debt')
+          AND (p.is_debt = 0 OR p.is_debt IS NULL)
+          AND (p.has_debt = 0 OR p.has_debt IS NULL)
+          AND (p.debt_severity IS NULL OR p.debt_severity NOT IN ('red','yellow','green'))
       `;
       
       let housesQuery = `
@@ -1258,7 +1334,12 @@ export const propertyQueries = {
           'houses' as source_table
         FROM properties_houses p
         LEFT JOIN users u ON p.user_id = u.id
-        WHERE p.moderation_status = 'approved' AND (p.is_auction = 0 OR p.is_auction IS NULL)
+        WHERE p.moderation_status = 'approved'
+          AND (p.is_auction = 0 OR p.is_auction IS NULL)
+          AND (p.sale_type IS NULL OR p.sale_type != 'debt')
+          AND (p.is_debt = 0 OR p.is_debt IS NULL)
+          AND (p.has_debt = 0 OR p.has_debt IS NULL)
+          AND (p.debt_severity IS NULL OR p.debt_severity NOT IN ('red','yellow','green'))
       `;
       
       const params = [];
@@ -1300,6 +1381,10 @@ export const propertyQueries = {
         LEFT JOIN users u ON p.user_id = u.id
         WHERE p.moderation_status = 'approved' 
           AND (p.is_auction = 0 OR p.is_auction IS NULL)
+          AND (p.sale_type IS NULL OR p.sale_type != 'debt')
+          AND (p.is_debt = 0 OR p.is_debt IS NULL)
+          AND (p.has_debt = 0 OR p.has_debt IS NULL)
+          AND (p.debt_severity IS NULL OR p.debt_severity NOT IN ('red','yellow','green'))
       `;
       
       const params = [];
@@ -1346,6 +1431,10 @@ export const propertyQueries = {
           AND p.is_auction = 1
           AND p.auction_end_date IS NOT NULL
           AND p.auction_end_date != ''
+          AND (p.sale_type IS NULL OR p.sale_type != 'debt')
+          AND (p.is_debt = 0 OR p.is_debt IS NULL)
+          AND (p.has_debt = 0 OR p.has_debt IS NULL)
+          AND (p.debt_severity IS NULL OR p.debt_severity NOT IN ('red','yellow','green'))
       `;
       
       let housesQuery = `
@@ -1363,6 +1452,10 @@ export const propertyQueries = {
           AND p.is_auction = 1
           AND p.auction_end_date IS NOT NULL
           AND p.auction_end_date != ''
+          AND (p.sale_type IS NULL OR p.sale_type != 'debt')
+          AND (p.is_debt = 0 OR p.is_debt IS NULL)
+          AND (p.has_debt = 0 OR p.has_debt IS NULL)
+          AND (p.debt_severity IS NULL OR p.debt_severity NOT IN ('red','yellow','green'))
       `;
       
       const params = [];
@@ -1404,6 +1497,10 @@ export const propertyQueries = {
           AND p.is_auction = 1
           AND p.auction_end_date IS NOT NULL
           AND p.auction_end_date != ''
+          AND (p.sale_type IS NULL OR p.sale_type != 'debt')
+          AND (p.is_debt = 0 OR p.is_debt IS NULL)
+          AND (p.has_debt = 0 OR p.has_debt IS NULL)
+          AND (p.debt_severity IS NULL OR p.debt_severity NOT IN ('red','yellow','green'))
       `;
       
       const params = [];
@@ -1416,6 +1513,105 @@ export const propertyQueries = {
       
       return db.prepare(query).all(...params);
     }
+  },
+
+  /**
+   * Получить одобренные объекты-долги (как с аукционом, так и без)
+   */
+  getDebts: (propertyType = null) => {
+    const db = getDatabase();
+
+    let useNewTables = false;
+    try {
+      db.prepare('SELECT 1 FROM properties_apartments LIMIT 1').get();
+      db.prepare('SELECT 1 FROM properties_houses LIMIT 1').get();
+      useNewTables = true;
+    } catch (e) {
+      useNewTables = false;
+    }
+
+    const debtWhere = `
+      p.moderation_status = 'approved'
+      AND (
+        p.sale_type = 'debt'
+        OR p.is_debt = 1
+        OR p.has_debt = 1
+        OR p.debt_severity IN ('red','yellow','green')
+      )
+    `;
+
+    if (useNewTables) {
+      let apartmentsQuery = `
+        SELECT 
+          p.*,
+          u.first_name,
+          u.last_name,
+          u.email,
+          u.phone_number,
+          u.role,
+          'apartments' as source_table
+        FROM properties_apartments p
+        LEFT JOIN users u ON p.user_id = u.id
+        WHERE ${debtWhere}
+      `;
+
+      let housesQuery = `
+        SELECT 
+          p.*,
+          u.first_name,
+          u.last_name,
+          u.email,
+          u.phone_number,
+          u.role,
+          'houses' as source_table
+        FROM properties_houses p
+        LEFT JOIN users u ON p.user_id = u.id
+        WHERE ${debtWhere}
+      `;
+
+      const params = [];
+      if (propertyType) {
+        apartmentsQuery += ' AND p.property_type = ?';
+        housesQuery += ' AND p.property_type = ?';
+        params.push(propertyType);
+      }
+
+      apartmentsQuery += ' ORDER BY p.created_at DESC';
+      housesQuery += ' ORDER BY p.created_at DESC';
+
+      const apartments = db.prepare(apartmentsQuery).all(...params);
+      const houses = db.prepare(housesQuery).all(...params);
+
+      const all = [...apartments, ...houses].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+      return all.map((property) => {
+        if (property.amenities) property.amenities = JSON.parse(property.amenities);
+        if (property.coordinates) property.coordinates = JSON.parse(property.coordinates);
+        if (property.photos) property.photos = JSON.parse(property.photos);
+        if (property.videos) property.videos = JSON.parse(property.videos);
+        if (property.additional_documents) property.additional_documents = JSON.parse(property.additional_documents);
+        if (property.test_drive_data) property.test_drive_data = JSON.parse(property.test_drive_data);
+        return property;
+      });
+    }
+
+    // Fallback на старую таблицу
+    let query = `
+      SELECT p.*, 
+             u.first_name, u.last_name, u.email, u.phone_number
+      FROM properties p
+      LEFT JOIN users u ON p.user_id = u.id
+      WHERE ${debtWhere}
+    `;
+
+    const params = [];
+    if (propertyType) {
+      query += ' AND p.property_type = ?';
+      params.push(propertyType);
+    }
+
+    query += ' ORDER BY p.created_at DESC';
+    return db.prepare(query).all(...params);
   },
 
   /**

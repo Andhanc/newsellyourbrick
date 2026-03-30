@@ -613,14 +613,11 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
 
   const [isFavorite, setIsFavorite] = useState(false)
 
-  // Признак аукционного объекта (объекты с долгами всегда считаем неаукционными)
+  // Признак аукционного объекта (включая объекты с долгами — их UX тоже аукционный)
   const isAuctionProperty =
-    !isDebtProperty &&
-    (
-      displayProperty.isAuction === true ||
-      displayProperty.is_auction === true ||
-      displayProperty.is_auction === 1
-    )
+    displayProperty.isAuction === true ||
+    displayProperty.is_auction === true ||
+    displayProperty.is_auction === 1
 
   const auctionEndTime =
     displayProperty.test_timer_end_date ||
@@ -2552,8 +2549,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
               <h1 className="property-detail-sidebar__title">{propertyInfo}</h1>
 
               {/* Минимальная цена продажи для аукционных объектов */}
-              {/* Для долгов этот блок не показываем вообще */}
-              {!isDebtProperty && (() => {
+              {(() => {
                 const buyNowPrice = displayProperty.price ? Number(displayProperty.price) : 0;
                 const startingPrice = displayProperty.auction_starting_price ? Number(displayProperty.auction_starting_price) : 0;
                 // Получаем текущую максимальную ставку
@@ -2565,7 +2561,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                 // 3. Цена "Купить сейчас" больше стартовой цены аукциона (логическая проверка)
                 // 4. Таймер не истек
                 // 5. Текущая ставка меньше минимальной цены продажи (если ставка >= цены, блок скрывается)
-                const shouldShowBuyNow = isAuctionProperty && !isDebtProperty &&
+                const shouldShowBuyNow = isAuctionProperty &&
                                          buyNowPrice > 0 && 
                                          buyNowPrice > startingPrice && 
                                          !timerExpired &&
@@ -2610,14 +2606,13 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                 </button>
               )}
 
-              {/* Цена для неаукционных объектов (включая объекты с долгами) */}
+              {/* Цена для неаукционных объектов */}
               {!isAuctionProperty && displayProperty.price && Number(displayProperty.price) > 0 && (
                 <>
                   <div className="property-detail-sidebar__price-block">
-                    <span className="price-label">{isDebtProperty ? t('propertyDetailSaleAmount') : t('propertyDetailPrice')}</span>
+                    <span className="price-label">{t('propertyDetailPrice')}</span>
                     <span
                       className="price-value"
-                      style={isDebtProperty ? { fontSize: '26px', fontWeight: 700 } : undefined}
                     >
                       {displayProperty.currency === 'USD' ? '$' : displayProperty.currency === 'EUR' ? '€' : displayProperty.currency === 'BYN' ? 'Br' : ''}
                       {displayProperty.price.toLocaleString('ru-RU')}
@@ -2635,7 +2630,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                   >
                     {displayProperty.is_reserved && displayProperty.reserved_until && new Date(displayProperty.reserved_until) > new Date()
                       ? t('objectReserved')
-                      : (isDebtProperty ? t('propertyDetailBuy') : t('buyNowSectionTitle'))}
+                      : t('buyNowSectionTitle')}
                   </button>
                 </>
               )}
@@ -2721,9 +2716,20 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
               </div>
 
               {/* Блок таймера аукциона, текущей ставки и истории ставок.
-                  Для долгов полностью скрываем этот блок. */}
-              {!isDebtProperty && ((isAuctionProperty && auctionEndTime) || (!isAuctionProperty && displayProperty.price)) ? (
+                  Для долгов тоже показываем, чтобы UX был как у аукциона. */}
+              {isAuctionProperty && auctionEndTime ? (
                 <div className="property-detail-sidebar__auction-block">
+                  {/* Для долгов: показываем сумму долга отдельно */}
+                  {isDebtProperty && displayProperty.debt_amount != null && displayProperty.debt_amount !== '' && !Number.isNaN(Number(displayProperty.debt_amount)) && (
+                    <div className="property-detail-sidebar__current-bid" style={{ marginBottom: 12 }}>
+                      <span className="current-bid-label">{t('debtsDebtAmount')}</span>
+                      <span className="current-bid-value">
+                        {displayProperty.currency === 'USD' ? '$' : displayProperty.currency === 'EUR' ? '€' : displayProperty.currency === 'BYN' ? 'Br' : ''}
+                        {Number(displayProperty.debt_amount).toLocaleString('ru-RU')}
+                      </span>
+                    </div>
+                  )}
+
                   {/* Проверяем резервацию объекта */}
                   {displayProperty.is_reserved && displayProperty.reserved_until && new Date(displayProperty.reserved_until) > new Date() ? (
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '1rem' }}>

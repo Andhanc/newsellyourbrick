@@ -1755,25 +1755,12 @@ const OwnerDashboard = () => {
                         }}
                       />
                       {getStatusBadge(property.status)}
-                      {hasMinSalePrice && (
-                        <div className="owner-min-price-badge">
-                          {getCurrencySymbol()}
-                          {formatPrice(minSalePriceNum)}
-                        </div>
-                      )}
                     </div>
 
                     <div className="property-content property-card-owner__content">
                       <div className="property-card-owner__header">
                         <div className="property-card-owner__title-wrapper">
                           <h3 className="property-card-owner__title">{property.title}</h3>
-                          {/* Показываем статус объекта вместо "Аукционный объект" */}
-                          <div className={`property-status-indicator property-status-indicator--${property.status}`}>
-                            {property.status === 'active' && <span>Активно</span>}
-                            {property.status === 'pending' && <span>На модерации</span>}
-                            {property.status === 'rejected' && <span>Отклонено</span>}
-                            {property.status === 'sold' && <span>Продано</span>}
-                          </div>
                         </div>
                         {/* Показываем цену только если: 
                             1. Объект НЕ на аукционе ИЛИ

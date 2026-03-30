@@ -526,12 +526,29 @@ function AuctionMobileItem({
             </p>
           ) : null}
 
-          <div className="auction-mobile-price-row">
-            <span className="auction-mobile-price-row__label">
-              {hasTimer ? t('currentBid') : t('auctionAskingPrice')}
-            </span>
-            <span className="auction-mobile-price-row__value">{formatPrice(displayPriceValue)}</span>
-          </div>
+          {isDebtProperty && property.debt_amount != null && property.debt_amount !== '' && !Number.isNaN(Number(property.debt_amount)) ? (
+            <>
+              <div className="auction-mobile-price-row auction-mobile-price-row--debt-inline">
+                <span className="auction-mobile-price-row__label">{t('debtsDebtAmount')}</span>
+                <span className="auction-mobile-price-row__value">
+                  {formatPrice(Number(property.debt_amount))}
+                </span>
+              </div>
+              <div className="auction-mobile-price-row auction-mobile-price-row--debt-inline">
+                <span className="auction-mobile-price-row__label">{t('currentBid')}</span>
+                <span className="auction-mobile-price-row__value">
+                  {formatPrice(property.currentBid || property.price || 0)}
+                </span>
+              </div>
+            </>
+          ) : (
+            <div className="auction-mobile-price-row">
+              <span className="auction-mobile-price-row__label">
+                {hasTimer ? t('currentBid') : t('auctionAskingPrice')}
+              </span>
+              <span className="auction-mobile-price-row__value">{formatPrice(displayPriceValue)}</span>
+            </div>
+          )}
 
           {metaRow}
 

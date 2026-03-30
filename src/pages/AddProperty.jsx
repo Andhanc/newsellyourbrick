@@ -1009,7 +1009,7 @@ const AddProperty = ({
         formDataToSend.append('sale_type', 'share')
         if (formData.totalShares) formDataToSend.append('total_shares', String(formData.totalShares))
       } else if (isDebt) {
-        formDataToSend.append('is_auction', '0')
+        formDataToSend.append('is_auction', '1')
         formDataToSend.append('test_drive', '0')
         formDataToSend.append('sale_type', 'debt')
       } else {
@@ -1018,6 +1018,10 @@ const AddProperty = ({
         const testDriveValue = (formData.testDrive === true || formData.testDrive === 1) ? '1' : '0'
         console.log('🔍 Отправка test_drive на сервер:', { formData_testDrive: formData.testDrive, testDriveValue })
         formDataToSend.append('test_drive', testDriveValue)
+      }
+
+      // Правило 20% от «Купить сейчас» для стартовой ставки (в т.ч. для долгов на аукционе)
+      if (!isShare) {
         const publishBuyNowErr = getAuctionStartingVsBuyNowError(formData.price, formData.auctionStartingPrice)
         if (publishBuyNowErr) {
           setIsSubmitting(false)
@@ -1652,7 +1656,7 @@ const AddProperty = ({
           isShareProperty: !!(property.is_shared_ownership === 1 || property.is_shared_ownership === true),
           isDebtProperty: !!(property.is_debt === 1 || property.is_debt === true || property.sale_type === 'debt' || property.has_debt === 1 || property.has_debt === true),
           totalShares: (property.total_shares != null && property.total_shares !== '') ? String(property.total_shares) : '',
-          isAuction: !(property.is_shared_ownership === 1 || property.is_shared_ownership === true || property.is_debt === 1 || property.is_debt === true || property.sale_type === 'debt'),
+          isAuction: (property.is_auction === 1 || property.is_auction === true),
           auctionStartDate: property.auction_start_date || '',
           auctionEndDate: property.auction_end_date || '',
           auctionStartingPrice: property.auction_starting_price ? String(property.auction_starting_price) : '',
@@ -2146,13 +2150,13 @@ const AddProperty = ({
       propertyType: type,
       isShareProperty: false,
       isDebtProperty: true,
-      isAuction: false,
+      isAuction: true,
       testDrive: false,
       bedrooms: isApartmentOrCommercial ? '' : prev.bedrooms,
       rooms: isHouseOrVilla ? '' : prev.rooms
     }))
 
-    // Для долгов: без тест-драйва и аукциона — сразу к названию
+    // Для долгов: без тест-драйва — сразу к названию
     setCurrentStep('property-name')
   }
 
@@ -3292,10 +3296,25 @@ const AddProperty = ({
         return
       }
     } else if (formData.isDebtProperty) {
-      // Для долгов: обязательна фиксированная сумма продажи, без аукциона
-      const priceNum = Number(removeCommas(String(formData.price || '')))
-      if (!formData.price || priceNum <= 0) {
-        showNotification('Укажите сумму продажи долга')
+      // Для долгов: обязательна сумма долга + параметры аукциона; цена «Купить сейчас» опциональна
+      const debtAmountNum = Number(removeCommas(String(formData.debtAmount || '')))
+      if (!formData.debtAmount || !Number.isFinite(debtAmountNum) || debtAmountNum <= 0) {
+        showNotification('Укажите сумму долга')
+        return
+      }
+      if (!formData.auctionStartDate || !formData.auctionEndDate) {
+        showNotification('Пожалуйста, укажите период проведения аукциона')
+        return
+      }
+      const startingNumContinue = Number(removeCommas(String(formData.auctionStartingPrice || '')))
+      if (!formData.auctionStartingPrice || !Number.isFinite(startingNumContinue) || startingNumContinue <= 0) {
+        showNotification('Пожалуйста, укажите стартовую цену аукциона')
+        return
+      }
+      const buyNowRuleErr = getAuctionStartingVsBuyNowError(formData.price, formData.auctionStartingPrice)
+      if (buyNowRuleErr) {
+        setValidationErrors(prev => ({ ...prev, auctionStartingPrice: buyNowRuleErr }))
+        showNotification(buyNowRuleErr)
         return
       }
     } else {
@@ -6488,62 +6507,10 @@ const AddProperty = ({
                     />
                   </div>
                 </div>
-
-                <div className="price-input-section" style={{ marginTop: '24px' }}>
-                  <label className="price-input-label">{t('addPropertyPriceDebtSaleAmountLabel')}</label>
-                  <div className="price-input-wrapper-large">
-                    <div className="currency-selector">
-                      <button
-                        type="button"
-                        className="currency-button"
-                        onClick={() =>
-                          setShowCurrencyDropdown(
-                            showCurrencyDropdown === 'price' ? null : 'price'
-                          )
-                        }
-                      >
-                        <span className="currency-symbol">
-                          {currencies.find(c => c.code === currency)?.symbol || '$'}
-                        </span>
-                        <FiChevronDown className="currency-chevron" size={14} />
-                      </button>
-                      {showCurrencyDropdown === 'price' && (
-                        <div className="currency-dropdown">
-                          {currencies.map(c => (
-                            <button
-                              key={c.code}
-                              type="button"
-                              className={`currency-option ${
-                                c.code === currency ? 'currency-option--active' : ''
-                              }`}
-                              onClick={() => {
-                                setCurrency(c.code)
-                                setShowCurrencyDropdown(null)
-                              }}
-                            >
-                              <span className="currency-option-symbol">{c.symbol}</span>
-                              <span className="currency-option-name">{c.name}</span>
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                    <input
-                      id="price-debt-input"
-                      type="text"
-                      name="price"
-                      value={formData.price ? formatNumberWithCommas(formData.price) : ''}
-                      onChange={handlePriceChange}
-                      className="price-input-large"
-                      placeholder="0"
-                      inputMode="numeric"
-                    />
-                  </div>
-                </div>
                 </>
               )}
 
-              {!formData.isShareProperty && !formData.isDebtProperty && (
+              {!formData.isShareProperty && (
                 <>
               {/* Блок цены "Купить сейчас" */}
               <div className="price-input-section">

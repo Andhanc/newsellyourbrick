@@ -5868,6 +5868,10 @@ export const propertyQueries = {
         LEFT JOIN users u ON p.user_id = u.id
         WHERE p.moderation_status = 'approved' 
           AND (p.is_auction = 0 OR p.is_auction IS NULL OR p.is_auction = '0' OR CAST(p.is_auction AS TEXT) = '0')
+          AND (p.sale_type IS NULL OR p.sale_type != 'debt')
+          AND (p.is_debt IS NULL OR p.is_debt = 0)
+          AND (p.has_debt IS NULL OR p.has_debt = 0)
+          AND (p.debt_severity IS NULL OR p.debt_severity NOT IN ('red','yellow','green'))
       `;
       
       let housesQuery = `
@@ -5883,6 +5887,10 @@ export const propertyQueries = {
         LEFT JOIN users u ON p.user_id = u.id
         WHERE p.moderation_status = 'approved' 
           AND (p.is_auction = 0 OR p.is_auction IS NULL OR p.is_auction = '0' OR CAST(p.is_auction AS TEXT) = '0')
+          AND (p.sale_type IS NULL OR p.sale_type != 'debt')
+          AND (p.is_debt IS NULL OR p.is_debt = 0)
+          AND (p.has_debt IS NULL OR p.has_debt = 0)
+          AND (p.debt_severity IS NULL OR p.debt_severity NOT IN ('red','yellow','green'))
       `;
       
       const params = [];
@@ -6039,6 +6047,10 @@ export const propertyQueries = {
         LEFT JOIN users u ON p.user_id = u.id
         WHERE p.moderation_status = 'approved' 
           AND (p.is_auction = 0 OR p.is_auction IS NULL)
+          AND (p.sale_type IS NULL OR p.sale_type != 'debt')
+          AND (p.is_debt IS NULL OR p.is_debt = 0)
+          AND (p.has_debt IS NULL OR p.has_debt = 0)
+          AND (p.debt_severity IS NULL OR p.debt_severity NOT IN ('red','yellow','green'))
       `;
       
       const params = [];
@@ -6087,6 +6099,7 @@ export const propertyQueries = {
           AND (p.sale_type IS NULL OR p.sale_type != 'debt')
           AND (p.is_debt IS NULL OR p.is_debt = 0)
           AND (p.has_debt IS NULL OR p.has_debt = 0)
+          AND (p.debt_severity IS NULL OR p.debt_severity NOT IN ('red','yellow','green'))
       `;
       
       let housesQuery = `
@@ -6106,6 +6119,7 @@ export const propertyQueries = {
           AND (p.sale_type IS NULL OR p.sale_type != 'debt')
           AND (p.is_debt IS NULL OR p.is_debt = 0)
           AND (p.has_debt IS NULL OR p.has_debt = 0)
+          AND (p.debt_severity IS NULL OR p.debt_severity NOT IN ('red','yellow','green'))
       `;
       
       const params = [];
@@ -6226,6 +6240,10 @@ export const propertyQueries = {
           AND p.is_auction = 1
           AND p.auction_end_date IS NOT NULL
           AND p.auction_end_date != ''
+          AND (p.sale_type IS NULL OR p.sale_type != 'debt')
+          AND (p.is_debt IS NULL OR p.is_debt = 0)
+          AND (p.has_debt IS NULL OR p.has_debt = 0)
+          AND (p.debt_severity IS NULL OR p.debt_severity NOT IN ('red','yellow','green'))
       `;
       
       const params = [];
@@ -6238,6 +6256,122 @@ export const propertyQueries = {
       
       return db.prepare(query).all(...params);
     }
+  },
+
+  /**
+   * Получить одобренные объекты-долги (как с аукционом, так и без).
+   * Долг определяется по sale_type/is_debt/has_debt или debt_severity.
+   */
+  getDebts: (propertyType = null) => {
+    const db = getDatabase();
+    let useNewTables = false;
+    try {
+      db.prepare('SELECT 1 FROM properties_apartments LIMIT 1').get();
+      db.prepare('SELECT 1 FROM properties_houses LIMIT 1').get();
+      useNewTables = true;
+    } catch (e) {
+      useNewTables = false;
+    }
+
+    const debtWhere = `
+      p.moderation_status = 'approved'
+      AND (
+        p.sale_type = 'debt'
+        OR p.is_debt = 1
+        OR p.has_debt = 1
+        OR p.debt_severity IN ('red','yellow','green')
+      )
+    `;
+
+    if (useNewTables) {
+      let apartmentsQuery = `
+        SELECT 
+          p.*,
+          u.first_name,
+          u.last_name,
+          u.email,
+          u.phone_number,
+          u.role,
+          'apartments' as source_table
+        FROM properties_apartments p
+        LEFT JOIN users u ON p.user_id = u.id
+        WHERE ${debtWhere}
+      `;
+
+      let housesQuery = `
+        SELECT 
+          p.*,
+          u.first_name,
+          u.last_name,
+          u.email,
+          u.phone_number,
+          u.role,
+          'houses' as source_table
+        FROM properties_houses p
+        LEFT JOIN users u ON p.user_id = u.id
+        WHERE ${debtWhere}
+      `;
+
+      const params = [];
+      if (propertyType) {
+        apartmentsQuery += ' AND p.property_type = ?';
+        housesQuery += ' AND p.property_type = ?';
+        params.push(propertyType);
+      }
+
+      apartmentsQuery += ' ORDER BY p.created_at DESC';
+      housesQuery += ' ORDER BY p.created_at DESC';
+
+      const apartments = db.prepare(apartmentsQuery).all(...params);
+      const houses = db.prepare(housesQuery).all(...params);
+      const all = [...apartments, ...houses].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+      return all.map((property) => {
+        if (property.amenities && typeof property.amenities === 'string') {
+          try { property.amenities = JSON.parse(property.amenities); } catch { property.amenities = []; }
+        } else if (!property.amenities) {
+          property.amenities = [];
+        }
+        if (property.coordinates && typeof property.coordinates === 'string') {
+          try { property.coordinates = JSON.parse(property.coordinates); } catch { property.coordinates = null; }
+        }
+        if (property.photos && typeof property.photos === 'string') {
+          try { property.photos = JSON.parse(property.photos); } catch { property.photos = []; }
+        } else if (!property.photos) {
+          property.photos = [];
+        }
+        if (property.videos && typeof property.videos === 'string') {
+          try { property.videos = JSON.parse(property.videos); } catch { property.videos = []; }
+        } else if (!property.videos) {
+          property.videos = [];
+        }
+        if (property.additional_documents && typeof property.additional_documents === 'string') {
+          try { property.additional_documents = JSON.parse(property.additional_documents); } catch { property.additional_documents = []; }
+        } else if (!property.additional_documents) {
+          property.additional_documents = [];
+        }
+        if (property.test_drive_data && typeof property.test_drive_data === 'string') {
+          try { property.test_drive_data = JSON.parse(property.test_drive_data); } catch { property.test_drive_data = null; }
+        }
+        return property;
+      });
+    }
+
+    // Fallback на старую таблицу
+    let query = `
+      SELECT p.*, 
+             u.first_name, u.last_name, u.email, u.phone_number
+      FROM properties p
+      LEFT JOIN users u ON p.user_id = u.id
+      WHERE ${debtWhere}
+    `;
+    const params = [];
+    if (propertyType) {
+      query += ' AND p.property_type = ?';
+      params.push(propertyType);
+    }
+    query += ' ORDER BY p.created_at DESC';
+    return db.prepare(query).all(...params);
   },
 
   /**
