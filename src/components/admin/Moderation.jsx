@@ -568,7 +568,7 @@ const Moderation = () => {
     });
   }, [activeTab, searchQuery, pendingProperties, requestTypeFilter]);
 
-  const handleApprove = async (type, id, debtSeverity = null) => {
+  const handleApprove = async (type, id, debtSeverity = null, propertyTypeOverride = null) => {
     try {
       // Проверяем, является ли это элементом из localStorage
       if (typeof id === 'string' && id.startsWith('local_')) {
@@ -774,7 +774,12 @@ const Moderation = () => {
         }
         
         // ВАЖНО: Отправляем property_type для правильного определения таблицы
-        const propertyType = propertyToApprove?.property_type || propertyToApprove?.propertyType;
+        // При совпадениях ID между таблицами (apartments/houses) нельзя полагаться на поиск по списку.
+        // Если тип передан сверху (из выбранной карточки) — используем его.
+        const propertyType =
+          propertyTypeOverride ||
+          propertyToApprove?.property_type ||
+          propertyToApprove?.propertyType;
         const response = await fetch(`${API_BASE_URL}/properties/${id}/approve`, {
           method: 'PUT',
           headers: {
@@ -1081,7 +1086,14 @@ const Moderation = () => {
       <ModerationPropertyDetail
         property={selectedProperty}
         onBack={() => setSelectedProperty(null)}
-        onApprove={(id, severity) => handleApprove('properties', id, severity)}
+        onApprove={(id, severity) =>
+          handleApprove(
+            'properties',
+            id,
+            severity,
+            selectedProperty?.property_type || selectedProperty?.propertyType || null
+          )
+        }
         onReject={(reason) => handleReject('properties', selectedProperty.id, reason)}
       />
     );

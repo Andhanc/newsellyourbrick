@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ensureCanOpenProperty } from '../utils/propertyAccessGuard'
 import { useTranslation } from 'react-i18next'
@@ -7,9 +7,15 @@ import { AlertTriangle, ShieldAlert, ShieldCheck } from 'lucide-react'
 import Header from '../components/Header'
 import FlipCard from '../components/ui/FlipCard'
 import { useLazyLoad } from '../hooks/useLazyLoad'
+import PropertyTimer from '../components/PropertyTimer'
+import CircularTimer from '../components/CircularTimer'
+import AuctionMobileLayout from '../components/ui/AuctionMobileLayout'
+import { hasBuyNowOption } from '../utils/hasBuyNowOption'
 import './Shares.css'
+import '../components/PropertyList.css'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api'
+const MOBILE_BREAKPOINT = 768
 
 const Debts = () => {
   const { t } = useTranslation()
@@ -18,41 +24,83 @@ const Debts = () => {
   const [openRiskCard, setOpenRiskCard] = useState(null)
   const [apiDebts, setApiDebts] = useState([])
   const [loadingDebts, setLoadingDebts] = useState(true)
+  const [isMobile, setIsMobile] = useState(
+    () => typeof window !== 'undefined' && window.innerWidth <= MOBILE_BREAKPOINT,
+  )
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth <= MOBILE_BREAKPOINT)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
 
   const loadDebts = useCallback(async () => {
     try {
-      const res = await fetch(`${API_BASE}/properties/approved`)
+      const res = await fetch(`${API_BASE}/properties/debts`)
       const json = await (res.ok ? res.json() : { success: false, data: [] })
       if (json.success && Array.isArray(json.data)) {
-        const onlyDebts = json.data.filter(
-          (p) =>
-            p &&
-            (p.sale_type === 'debt' ||
-              p.is_debt === 1 ||
-              p.is_debt === true ||
-              p.has_debt === 1 ||
-              p.has_debt === true)
-        )
-        const mapped = onlyDebts.map((p) => {
+        const isDebtRecord = (p) => {
+          if (!p) return false
+          if (p.sale_type === 'debt') return true
+          if (p.is_debt === 1 || p.is_debt === true) return true
+          if (p.has_debt === 1 || p.has_debt === true) return true
+          if (p.debt_amount != null && p.debt_amount !== '' && !Number.isNaN(Number(p.debt_amount))) return true
+          if (typeof p.debt_severity === 'string' && ['red', 'yellow', 'green'].includes(p.debt_severity)) return true
+          return false
+        }
+
+        const mapped = json.data.filter(isDebtRecord).map((p) => {
           const photos = (p.photos && (Array.isArray(p.photos) ? p.photos : typeof p.photos === 'string' ? (() => { try { return JSON.parse(p.photos) } catch (e) { return [] } })() : [])) || []
           const firstPhoto = photos[0]
           const image = typeof firstPhoto === 'string' ? firstPhoto : firstPhoto && firstPhoto.url ? firstPhoto.url : null
           const location = p.location || [p.city, p.country].filter(Boolean).join(', ') || ''
           const priceNumber = p.price != null && p.price !== '' ? Number(p.price) : 0
           const debtAmount = p.debt_amount != null && p.debt_amount !== '' ? Number(p.debt_amount) : null
+          const currentBidRaw =
+            p.currentBid ??
+            p.auction_current_bid ??
+            p.auctionCurrentBid ??
+            p.auction_starting_price ??
+            p.auctionStartingPrice ??
+            null
+          const currentBid = currentBidRaw != null && currentBidRaw !== '' ? Number(currentBidRaw) : null
+
+          const endTime =
+            p.endTime ??
+            p.auction_end_time ??
+            p.auctionEndTime ??
+            p.auction_end_date ??
+            p.auctionEndDate ??
+            null
+
           return {
+            ...p,
             id: p.id,
             title: p.title || p.name || '',
             location,
             image,
-            totalPrice: priceNumber,
+            images: p.images || (image ? [image] : []),
+            price: priceNumber,
             debt_amount: debtAmount,
+            currentBid,
             area: p.area || p.sqft || 0,
             rooms: p.rooms || p.bedrooms || 0,
-            isAuction: p.isAuction === true || p.is_auction === 1 || p.is_auction === true,
+            endTime,
+            isAuction:
+              p.isAuction === true ||
+              p.is_auction === 1 ||
+              p.is_auction === true ||
+              (endTime != null && endTime !== '') ||
+              (p.test_timer_end_date != null && p.test_timer_end_date !== ''),
+            sale_type: p.sale_type || 'debt',
+            is_debt: p.is_debt ?? 1,
+            has_debt: p.has_debt ?? 1,
           }
         })
         setApiDebts(mapped)
+      } else {
+        setApiDebts([])
       }
     } catch (_) {
       setApiDebts([])
@@ -169,56 +217,160 @@ const Debts = () => {
             </div>
           )}
 
-          {!loadingDebts &&
-            filtered.length > 0 &&
-            filtered.map((obj) => (
-              <article
-                key={obj.id}
-                className="share-card"
-                onClick={() => {
-                  if (!ensureCanOpenProperty()) return
-                  navigate(`/property/${obj.id}`)
-                }}
-              >
-                <div className="share-card__badge">
-                  {obj.isAuction ? t('debtsBadgeAuction') : t('debtsBadgeDebt')}
-                </div>
-                <div className="share-card__image-wrap">
-                  <img
-                    src={
-                      obj.image ||
-                      'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=800&q=80'
-                    }
-                    alt={obj.title}
-                    className="share-card__image"
-                  />
-                </div>
-                <div className="share-card__content">
-                  <h2 className="share-card__title">{obj.title}</h2>
-                  <p className="share-card__location">{obj.location}</p>
-                  {obj.area && (
-                    <p className="share-card__specs">
-                      {obj.area} {t('squareMeters')}{obj.rooms ? ` · ${obj.rooms} ${t('roomsShort')}` : ''}
-                    </p>
-                  )}
-                  <div className="share-card__prices">
-                    <div className="share-card__price-total">
-                      {t('debtsTotalPrice')} <strong>{formatPrice(obj.totalPrice)}</strong>
-                    </div>
-                    {obj.debt_amount != null &&
-                      obj.debt_amount !== '' &&
-                      !Number.isNaN(Number(obj.debt_amount)) && (
-                        <div className="share-card__price-total" style={{ marginTop: 4 }}>
-                          {t('debtsDebtAmount')}{' '}
-                          <span className="share-card__price" style={{ fontWeight: 700 }}>
-                            {formatPrice(obj.debt_amount)}
-                          </span>
-                        </div>
-                      )}
+          {!loadingDebts && filtered.length > 0 && (
+            <>
+              {isMobile ? (
+                <div style={{ gridColumn: '1 / -1' }}>
+                  <div className="properties-grid properties-grid--mobile-auction">
+                    <AuctionMobileLayout
+                      properties={filtered}
+                      formatPrice={formatPrice}
+                      isFavorite={() => false}
+                      onFavoriteToggle={() => false}
+                    />
                   </div>
                 </div>
-              </article>
-            ))}
+              ) : (
+                <div style={{ gridColumn: '1 / -1' }}>
+                  <div id="properties-grid" className="properties-grid">
+                    {filtered.map((property) => {
+                      const propertyTitle = property.title || property.name || ''
+                      const propertyImages = property.images || (property.image ? [property.image] : [])
+                      const propertyImage =
+                        propertyImages[0] ||
+                        'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=800&q=80'
+                      const hasTestTimer =
+                        property.test_timer_end_date != null && property.test_timer_end_date !== ''
+                      const hasTimer =
+                        (property.isAuction === true &&
+                          property.endTime != null &&
+                          property.endTime !== '') ||
+                        hasTestTimer
+                      const isReserved = property.is_reserved === true || property.is_reserved === 1
+                      const showBuyNow = hasBuyNowOption(property)
+
+                      const greenTimerBlock =
+                        hasTimer && !isReserved && !hasTestTimer && property.endTime ? (
+                          <div className="property-timer-wrapper">
+                            <PropertyTimer endTime={property.endTime} compact={true} />
+                          </div>
+                        ) : null
+
+                      const redTimerBlock =
+                        hasTimer && !isReserved && hasTestTimer ? (
+                          <div className="property-timer-wrapper">
+                            <CircularTimer
+                              endTime={property.test_timer_end_date}
+                              size={120}
+                              strokeWidth={6}
+                            />
+                          </div>
+                        ) : null
+
+                      const hasDebtAmount =
+                        property.debt_amount != null &&
+                        property.debt_amount !== '' &&
+                        !Number.isNaN(Number(property.debt_amount))
+
+                      return (
+                        <div
+                          key={property.id}
+                          className="property-card"
+                          onClick={(e) => {
+                            if (e.target.closest('button') || e.target.closest('a')) return
+                            if (!ensureCanOpenProperty()) return
+                            navigate(`/property/${property.id}`, { state: { property } })
+                          }}
+                          style={{ cursor: 'pointer' }}
+                        >
+                          <div className="property-link">
+                            <div className="property-image-container">
+                              <img src={propertyImage} alt={propertyTitle} className="property-image" />
+                              {isReserved && (
+                                <div className="property-reserved-overlay">
+                                  <div className="reserved-overlay-icon">🔒</div>
+                                  <div className="reserved-overlay-text">{t('reserved')}</div>
+                                </div>
+                              )}
+                              {!isReserved && showBuyNow && (
+                                <div className="property-badges-center">
+                                  <div className="property-buy-badge">
+                                    <span>{t('buyNowSectionTitle')}</span>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                            <div className="property-content">
+                              {greenTimerBlock}
+                              {redTimerBlock}
+                              <h3 className="property-title">{propertyTitle}</h3>
+                              <p className="property-location">{property.location || ''}</p>
+
+                              <div className="property-content-bottom">
+                                <div className="property-bid-info" style={{ display: 'grid', gap: 6 }}>
+                                  {hasDebtAmount && (
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10 }}>
+                                      <span className="bid-label">{t('debtsDebtAmount')}</span>
+                                      <span className="bid-value">{formatPrice(property.debt_amount)}</span>
+                                    </div>
+                                  )}
+                                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10 }}>
+                                    <span className="bid-label">{t('currentBid')}</span>
+                                    <span className="bid-value">
+                                      {formatPrice(property.currentBid || property.price || 0)}
+                                    </span>
+                                  </div>
+                                </div>
+
+                                <div className="property-actions" onClick={(e) => e.stopPropagation()}>
+                                  <button
+                                    type="button"
+                                    className="btn btn-primary btn-liquid-glass"
+                                    onClick={(e) => {
+                                      e.preventDefault()
+                                      e.stopPropagation()
+                                      if (!ensureCanOpenProperty()) return
+                                      navigate(`/property/${property.id}`, { state: { property } })
+                                    }}
+                                    disabled={isReserved}
+                                    style={{
+                                      opacity: isReserved ? 0.5 : 1,
+                                      cursor: isReserved ? 'not-allowed' : 'pointer',
+                                    }}
+                                  >
+                                    {isReserved ? t('objectReserved') : t('placeBid')}
+                                  </button>
+                                  {showBuyNow && (
+                                    <button
+                                      type="button"
+                                      className="btn btn-buy-now btn-liquid-glass-buy"
+                                      onClick={(e) => {
+                                        e.preventDefault()
+                                        e.stopPropagation()
+                                        if (!ensureCanOpenProperty()) return
+                                        navigate(`/property/${property.id}`, { state: { property } })
+                                      }}
+                                      disabled={isReserved}
+                                      style={{
+                                        opacity: isReserved ? 0.5 : 1,
+                                        cursor: isReserved ? 'not-allowed' : 'pointer',
+                                      }}
+                                    >
+                                      {isReserved ? t('objectReserved') : t('buyNowSectionTitle')}
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+            </>
+          )}
         </div>
       </main>
     </div>

@@ -882,6 +882,11 @@
     font-size: 16px;
   }
 
+  /* В мобильной версии: скрываем статус-бейдж на изображении */
+  .owner-dashboard__properties .property-card-owner__image .status-badge {
+    display: none !important;
+  }
+
   /* Убираем минимальную цену продажи (большую цену под названием) в мобильной версии */
   .property-card-owner__price {
     display: none;

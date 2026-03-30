@@ -969,6 +969,46 @@
   position: relative;
 }
 
+/* Долг: блок риска в сайдбаре должен быть на всю ширину */
+.property-detail-debt-risk-card {
+  width: 100%;
+  max-width: 100%;
+  display: flex;
+  justify-content: stretch;
+}
+
+.property-detail-debt-risk-card .flip-card-root {
+  width: 100%;
+  max-width: 100%;
+  margin-left: 0;
+  margin-right: 0;
+  --flip-card-max-width: none;
+}
+
+/* Десктоп: меняем местами блок риска и блок ставок */
+@media (min-width: 961px) {
+  .property-detail-sidebar__content {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .property-detail-sidebar__auction-block {
+    order: 40;
+  }
+
+  .property-detail-debt-risk-card {
+    order: 50;
+  }
+
+  .property-detail-sidebar__location {
+    order: 60;
+  }
+
+  .property-detail-sidebar__map {
+    order: 70;
+  }
+}
+
 /* Блок бронирования */
 .property-reservation-block {
   display: flex;
@@ -2255,12 +2295,17 @@
     align-items: center;
     justify-content: space-between;
     gap: 8px;
+    min-width: 0;
   }
 
   .property-detail-sidebar__current-bid .current-bid-label {
     flex-shrink: 0;
-    white-space: nowrap;
-    font-size: 15px; /* чуть крупнее подпись "Минимальная цена продажи" */
+    flex: 1 1 auto;
+    min-width: 0;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    line-height: 1.2;
+    font-size: 14px;
   }
 
   .property-detail-sidebar__current-bid .current-bid-value-wrapper,
@@ -2280,6 +2325,11 @@
 }
 
 @media (max-width: 450px) {
+  /* На очень узких экранах подписи цены/ставки ещё компактнее */
+  .property-detail-sidebar__current-bid .current-bid-label {
+    font-size: 13px;
+  }
+
   /* Долг: карточка риска в мобильной версии — горизонтальный прямоугольник, как на странице «Долги» */
   .property-detail-debt-risk-card {
     width: 100%;

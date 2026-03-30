@@ -96,6 +96,9 @@ const AddProperty = ({
   const location = useLocation()
   const { id } = useParams() // ID объекта для редактирования
   const isEditMode = !!id // Режим редактирования
+  const propertyTypeFromNavState = location?.state?.property_type || null
+  const adminAddedFromNavState = location?.state?.admin_added === true
+  const [isAdminAddedProperty, setIsAdminAddedProperty] = useState(() => adminMode || adminAddedFromNavState)
   const draftKey = adminMode ? 'admin_addPropertyDraft' : DRAFT_KEY
   const fileInputRef = useRef(null)
   const videoInputRef = useRef(null)
@@ -980,6 +983,11 @@ const AddProperty = ({
       formDataToSend.append('user_id', String(numericUserId))
       formDataToSend.append('property_type', formData.propertyType)
       formDataToSend.append('title', formData.title)
+      if (adminMode) {
+        // Флаг для бэкенда/аналитики: объект создан администратором для продавца.
+        // Если бэкенд не поддерживает — будет просто проигнорировано.
+        formDataToSend.append('created_by_admin', '1')
+      }
       
       // Данные пользователя из профиля (если загружены)
       // НЕ добавляем address и country из профиля, чтобы использовать только адрес объекта недвижимости
@@ -1009,7 +1017,7 @@ const AddProperty = ({
         formDataToSend.append('sale_type', 'share')
         if (formData.totalShares) formDataToSend.append('total_shares', String(formData.totalShares))
       } else if (isDebt) {
-        formDataToSend.append('is_auction', '0')
+        formDataToSend.append('is_auction', '1')
         formDataToSend.append('test_drive', '0')
         formDataToSend.append('sale_type', 'debt')
       } else {
@@ -1018,6 +1026,10 @@ const AddProperty = ({
         const testDriveValue = (formData.testDrive === true || formData.testDrive === 1) ? '1' : '0'
         console.log('🔍 Отправка test_drive на сервер:', { formData_testDrive: formData.testDrive, testDriveValue })
         formDataToSend.append('test_drive', testDriveValue)
+      }
+
+      // Правило 20% от «Купить сейчас» для стартовой ставки (в т.ч. для долгов на аукционе)
+      if (!isShare) {
         const publishBuyNowErr = getAuctionStartingVsBuyNowError(formData.price, formData.auctionStartingPrice)
         if (publishBuyNowErr) {
           setIsSubmitting(false)
@@ -1180,7 +1192,7 @@ const AddProperty = ({
       }
       
       const url = isEditMode && originalPropertyId 
-        ? `${API_BASE_URL}/properties/${originalPropertyId}`
+        ? `${API_BASE_URL}/properties/${originalPropertyId}?property_type=${encodeURIComponent(formData.propertyType || propertyTypeFromNavState || '')}`
         : `${API_BASE_URL}/properties`
       
       const response = await fetch(url, {
@@ -1532,7 +1544,13 @@ const AddProperty = ({
     setIsLoadingProperty(true)
     try {
       const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
-      const response = await fetch(`${API_BASE_URL}/properties/${propertyId}`)
+      // В некоторых случаях бэкенд требует property_type, чтобы однозначно найти запись по id (при пересечении id между таблицами).
+      const propertyTypeHint = propertyTypeFromNavState ? `?property_type=${encodeURIComponent(propertyTypeFromNavState)}` : ''
+      let response = await fetch(`${API_BASE_URL}/properties/${propertyId}${propertyTypeHint}`)
+      if (!response.ok && propertyTypeFromNavState) {
+        // fallback: пробуем без подсказки
+        response = await fetch(`${API_BASE_URL}/properties/${propertyId}`)
+      }
       
       if (!response.ok) {
         throw new Error('Не удалось загрузить данные объекта')
@@ -1541,6 +1559,17 @@ const AddProperty = ({
       const result = await response.json()
       if (result.success && result.data) {
         const property = result.data
+        const adminAddedFlag =
+          property?.created_by_admin === true ||
+          property?.created_by_admin === 1 ||
+          property?.added_by_admin === true ||
+          property?.added_by_admin === 1 ||
+          property?.admin_created === true ||
+          property?.admin_created === 1 ||
+          property?.is_admin_created === true ||
+          property?.is_admin_created === 1 ||
+          adminAddedFromNavState
+        setIsAdminAddedProperty(adminMode || adminAddedFlag)
         setOriginalPropertyId(propertyId)
         // Сохраняем оригинальные данные для сравнения
         setOriginalPropertyData(JSON.parse(JSON.stringify(property)))
@@ -1652,7 +1681,7 @@ const AddProperty = ({
           isShareProperty: !!(property.is_shared_ownership === 1 || property.is_shared_ownership === true),
           isDebtProperty: !!(property.is_debt === 1 || property.is_debt === true || property.sale_type === 'debt' || property.has_debt === 1 || property.has_debt === true),
           totalShares: (property.total_shares != null && property.total_shares !== '') ? String(property.total_shares) : '',
-          isAuction: !(property.is_shared_ownership === 1 || property.is_shared_ownership === true || property.is_debt === 1 || property.is_debt === true || property.sale_type === 'debt'),
+          isAuction: (property.is_auction === 1 || property.is_auction === true),
           auctionStartDate: property.auction_start_date || '',
           auctionEndDate: property.auction_end_date || '',
           auctionStartingPrice: property.auction_starting_price ? String(property.auction_starting_price) : '',
@@ -2146,13 +2175,13 @@ const AddProperty = ({
       propertyType: type,
       isShareProperty: false,
       isDebtProperty: true,
-      isAuction: false,
+      isAuction: true,
       testDrive: false,
       bedrooms: isApartmentOrCommercial ? '' : prev.bedrooms,
       rooms: isHouseOrVilla ? '' : prev.rooms
     }))
 
-    // Для долгов: без тест-драйва и аукциона — сразу к названию
+    // Для долгов: без тест-драйва — сразу к названию
     setCurrentStep('property-name')
   }
 
@@ -3292,10 +3321,25 @@ const AddProperty = ({
         return
       }
     } else if (formData.isDebtProperty) {
-      // Для долгов: обязательна фиксированная сумма продажи, без аукциона
-      const priceNum = Number(removeCommas(String(formData.price || '')))
-      if (!formData.price || priceNum <= 0) {
-        showNotification('Укажите сумму продажи долга')
+      // Для долгов: обязательна сумма долга + параметры аукциона; цена «Купить сейчас» опциональна
+      const debtAmountNum = Number(removeCommas(String(formData.debtAmount || '')))
+      if (!formData.debtAmount || !Number.isFinite(debtAmountNum) || debtAmountNum <= 0) {
+        showNotification('Укажите сумму долга')
+        return
+      }
+      if (!formData.auctionStartDate || !formData.auctionEndDate) {
+        showNotification('Пожалуйста, укажите период проведения аукциона')
+        return
+      }
+      const startingNumContinue = Number(removeCommas(String(formData.auctionStartingPrice || '')))
+      if (!formData.auctionStartingPrice || !Number.isFinite(startingNumContinue) || startingNumContinue <= 0) {
+        showNotification('Пожалуйста, укажите стартовую цену аукциона')
+        return
+      }
+      const buyNowRuleErr = getAuctionStartingVsBuyNowError(formData.price, formData.auctionStartingPrice)
+      if (buyNowRuleErr) {
+        setValidationErrors(prev => ({ ...prev, auctionStartingPrice: buyNowRuleErr }))
+        showNotification(buyNowRuleErr)
         return
       }
     } else {
@@ -6488,62 +6532,10 @@ const AddProperty = ({
                     />
                   </div>
                 </div>
-
-                <div className="price-input-section" style={{ marginTop: '24px' }}>
-                  <label className="price-input-label">{t('addPropertyPriceDebtSaleAmountLabel')}</label>
-                  <div className="price-input-wrapper-large">
-                    <div className="currency-selector">
-                      <button
-                        type="button"
-                        className="currency-button"
-                        onClick={() =>
-                          setShowCurrencyDropdown(
-                            showCurrencyDropdown === 'price' ? null : 'price'
-                          )
-                        }
-                      >
-                        <span className="currency-symbol">
-                          {currencies.find(c => c.code === currency)?.symbol || '$'}
-                        </span>
-                        <FiChevronDown className="currency-chevron" size={14} />
-                      </button>
-                      {showCurrencyDropdown === 'price' && (
-                        <div className="currency-dropdown">
-                          {currencies.map(c => (
-                            <button
-                              key={c.code}
-                              type="button"
-                              className={`currency-option ${
-                                c.code === currency ? 'currency-option--active' : ''
-                              }`}
-                              onClick={() => {
-                                setCurrency(c.code)
-                                setShowCurrencyDropdown(null)
-                              }}
-                            >
-                              <span className="currency-option-symbol">{c.symbol}</span>
-                              <span className="currency-option-name">{c.name}</span>
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                    <input
-                      id="price-debt-input"
-                      type="text"
-                      name="price"
-                      value={formData.price ? formatNumberWithCommas(formData.price) : ''}
-                      onChange={handlePriceChange}
-                      className="price-input-large"
-                      placeholder="0"
-                      inputMode="numeric"
-                    />
-                  </div>
-                </div>
                 </>
               )}
 
-              {!formData.isShareProperty && !formData.isDebtProperty && (
+              {!formData.isShareProperty && (
                 <>
               {/* Блок цены "Купить сейчас" */}
               <div className="price-input-section">
@@ -6617,7 +6609,7 @@ const AddProperty = ({
                     endDate={formData.auctionEndDate}
                     onStartDateChange={(date) => setFormData(prev => ({ ...prev, auctionStartDate: date }))}
                     onEndDateChange={(date) => setFormData(prev => ({ ...prev, auctionEndDate: date }))}
-                    disableMinConstraints={adminMode}
+                    disableMinConstraints={adminMode || isAdminAddedProperty}
                   />
                 </div>
                 

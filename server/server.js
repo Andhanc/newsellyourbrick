@@ -6149,8 +6149,8 @@ app.post('/api/properties', upload.fields([
       propertyData.garage = garage ? 1 : 0;
     }
 
-    // Цена «Купить сейчас» + аукцион: стартовая ставка не больше 20% от buy now
-    if (!isShare && !isDebt && normalizedIsAuction === 1) {
+    // Цена «Купить сейчас» + аукцион: стартовая ставка не больше 20% от buy now (в т.ч. для долгов на аукционе)
+    if (!isShare && normalizedIsAuction === 1) {
       const bn = propertyData.price
       const st = propertyData.auction_starting_price
       if (bn && bn > 0 && st != null && !Number.isNaN(st) && st > 0 && st > bn * 0.2 + 1e-9) {
@@ -7326,6 +7326,60 @@ app.get('/api/properties/approved', (req, res) => {
 });
 
 /**
+ * GET /api/properties/debts - Получить одобренные объекты-долги (включая аукционные долги)
+ * ВАЖНО: Этот маршрут должен быть ПЕРЕД /api/properties/:id, иначе он будет перехвачен
+ */
+app.get('/api/properties/debts', (req, res) => {
+  try {
+    const { type } = req.query;
+    const properties = propertyQueries.getDebts(type || null);
+
+    // Приводим к формату, который ожидают страницы (как и /approved)
+    const formattedProperties = properties.map((prop) => {
+      const formatted = { ...prop };
+
+      if (formatted.photos && typeof formatted.photos === 'string') {
+        try { formatted.photos = JSON.parse(formatted.photos); } catch { formatted.photos = []; }
+      } else if (!formatted.photos) {
+        formatted.photos = [];
+      }
+
+      if (formatted.videos && typeof formatted.videos === 'string') {
+        try { formatted.videos = JSON.parse(formatted.videos); } catch { formatted.videos = []; }
+      } else if (!formatted.videos) {
+        formatted.videos = [];
+      }
+
+      if (formatted.additional_documents && typeof formatted.additional_documents === 'string') {
+        try { formatted.additional_documents = JSON.parse(formatted.additional_documents); } catch { formatted.additional_documents = []; }
+      } else if (!formatted.additional_documents) {
+        formatted.additional_documents = [];
+      }
+
+      if (formatted.amenities && typeof formatted.amenities === 'string') {
+        try { formatted.amenities = JSON.parse(formatted.amenities); } catch { formatted.amenities = []; }
+      } else if (!formatted.amenities) {
+        formatted.amenities = [];
+      }
+
+      // Обратная совместимость
+      formatted.name = formatted.title;
+      formatted.image = formatted.photos && formatted.photos.length > 0
+        ? formatted.photos[0]
+        : 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=800&q=80';
+      formatted.images = formatted.photos || [];
+
+      return formatted;
+    });
+
+    res.json({ success: true, data: formattedProperties });
+  } catch (error) {
+    console.error('Ошибка при получении объектов-долгов:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
  * Форматирует один объект аукциона в формат API (для SSE broadcast и повторного использования).
  */
 function formatOneAuctionPropertyForApi(prop) {
@@ -7456,6 +7510,10 @@ app.get('/api/properties/auctions', (req, res) => {
           WHERE p.moderation_status = 'approved'
             AND p.test_timer_end_date IS NOT NULL
             AND p.test_timer_end_date != ''
+            AND (p.sale_type IS NULL OR p.sale_type != 'debt')
+            AND (p.is_debt = 0 OR p.is_debt IS NULL)
+            AND (p.has_debt = 0 OR p.has_debt IS NULL)
+            AND (p.debt_severity IS NULL OR p.debt_severity NOT IN ('red','yellow','green'))
         `;
         
         const testTimerParams = [];
@@ -9066,16 +9124,49 @@ app.put('/api/properties/:id/approve', (req, res) => {
     // ВАЖНО: Если property_type передан в запросе, используем его для получения правильного объекта
     // Это предотвращает получение объекта из неправильной таблицы при дубликатах ID
     let property = null;
+    let resolvedByCrossTableLookup = false;
     if (requestedPropertyType) {
       console.log(`🔍 Одобрение: получен property_type=${requestedPropertyType} из запроса, используем для поиска`);
       property = propertyQueries.getById(id, requestedPropertyType);
       if (!property) {
         console.error(`❌ Одобрение: объект ID=${id} не найден с типом ${requestedPropertyType} в правильной таблице!`);
-        // НЕ делаем fallback на поиск без типа - это может вернуть объект из неправильной таблицы
-        return res.status(404).json({ 
-          success: false, 
-          error: `Объявление с ID ${id} и типом ${requestedPropertyType} не найдено в правильной таблице` 
-        });
+        // Безопасный fallback: проверяем обе таблицы и продолжаем ТОЛЬКО если объект найден ровно в одной.
+        // Это покрывает кейс, когда фронт отправил неверный property_type.
+        try {
+          const apartmentCandidate = propertyQueries.getById(id, 'apartment');
+          const houseCandidate = propertyQueries.getById(id, 'house');
+          const found = [apartmentCandidate, houseCandidate].filter(Boolean);
+
+          if (found.length === 1) {
+            resolvedByCrossTableLookup = true;
+            property = found[0];
+            console.warn(
+              `⚠️ Одобрение: property_type из запроса (${requestedPropertyType}) оказался неверным. ` +
+              `Объект найден через cross-table lookup: фактический тип=${property.property_type}, source=${property.source_table || 'unknown'}`
+            );
+          } else if (found.length > 1) {
+            console.error(
+              `❌ Одобрение: обнаружен конфликт ID=${id} — найдено в обеих таблицах. ` +
+              `Нужен корректный property_type в запросе.`
+            );
+            return res.status(409).json({
+              success: false,
+              error: `Конфликт: объявление с ID ${id} найдено в обеих таблицах. Укажите корректный property_type.`
+            });
+          } else {
+            // Нигде не найдено
+            return res.status(404).json({
+              success: false,
+              error: `Объявление с ID ${id} и типом ${requestedPropertyType} не найдено в правильной таблице`
+            });
+          }
+        } catch (fallbackError) {
+          console.error('❌ Одобрение: ошибка cross-table lookup:', fallbackError);
+          return res.status(404).json({
+            success: false,
+            error: `Объявление с ID ${id} и типом ${requestedPropertyType} не найдено в правильной таблице`
+          });
+        }
       }
     } else {
       property = propertyQueries.getById(id);
@@ -9085,8 +9176,10 @@ app.put('/api/properties/:id/approve', (req, res) => {
       return res.status(404).json({ success: false, error: 'Объявление не найдено' });
     }
     
-    // Если передан тип: он должен совпадать с записью, кроме пары apartment/commercial (одна таблица)
-    if (requestedPropertyType && property.property_type !== requestedPropertyType) {
+    // Если передан тип: он должен совпадать с записью, кроме пары apartment/commercial (одна таблица).
+    // Исключение: если мы безопасно разрешили объект cross-table lookup (тип из запроса был неверным),
+    // то не блокируем одобрение (иначе админка "залипнет" на ошибке).
+    if (requestedPropertyType && property.property_type !== requestedPropertyType && !resolvedByCrossTableLookup) {
       const bothApartmentTable =
         (requestedPropertyType === 'apartment' || requestedPropertyType === 'commercial') &&
         (property.property_type === 'apartment' || property.property_type === 'commercial');
@@ -9405,7 +9498,7 @@ app.put('/api/properties/:id/approve', (req, res) => {
       
       // Используем функцию из propertyQueries, которая работает с новыми таблицами
       console.log(`🔄 Вызов updateModerationStatus для ID=${id}, status=approved`);
-      const result = propertyQueries.updateModerationStatus(id, 'approved', reviewed_by, null, debt_severity || null);
+      const result = propertyQueries.updateModerationStatus(id, 'approved', reviewed_by, null);
       
       console.log(`📊 Результат updateModerationStatus:`, {
         changes: result?.changes || 0,
@@ -9441,6 +9534,30 @@ app.put('/api/properties/:id/approve', (req, res) => {
         }
       } else {
         console.log(`✅ Одобрение: статус обновлен, changes=${result.changes}`);
+      }
+
+      // Если передан debt_severity — считаем объект "долгом" и фиксируем признаки долга в БД.
+      // Это нужно, чтобы объект корректно попадал на страницу "Долги" и не попадал в обычные списки/аукционы.
+      if (debt_severity) {
+        try {
+          const db = getDatabase();
+          const tableName =
+            (property.property_type === 'house' || property.property_type === 'villa')
+              ? 'properties_houses'
+              : 'properties_apartments';
+          db.prepare(`
+            UPDATE ${tableName}
+            SET debt_severity = ?,
+                sale_type = 'debt',
+                is_debt = 1,
+                has_debt = 1,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?
+          `).run(debt_severity, id);
+          console.log(`✅ debt: обновлены флаги долга для ID=${id} в ${tableName}, debt_severity=${debt_severity}`);
+        } catch (e) {
+          console.warn('⚠️ debt: не удалось обновить флаги долга:', e.message);
+        }
       }
       
       // ВАЖНО: Получаем обновленное объявление с указанием правильного типа

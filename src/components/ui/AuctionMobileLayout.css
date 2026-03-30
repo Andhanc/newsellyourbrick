@@ -907,6 +907,45 @@
   line-height: 1.12;
 }
 
+/* Долги: делаем label + сумма в одну строку */
+.auction-mobile-price-row--debt-inline {
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 6px;
+  /* уменьшаем левый отступ именно в "долговых" плашках */
+  padding: 7px 9px 7px 5px;
+  border-left-width: 2px;
+}
+
+.auction-mobile-price-row--debt-inline .auction-mobile-price-row__label,
+.auction-mobile-price-row--debt-inline .auction-mobile-price-row__value {
+  white-space: nowrap;
+}
+
+.auction-mobile-price-row--debt-inline .auction-mobile-price-row__label {
+  font-size: 7.5px;
+  letter-spacing: 0.07em;
+  flex: 0 1 auto;
+}
+
+.auction-mobile-price-row--debt-inline .auction-mobile-price-row__value {
+  font-size: 11px;
+  line-height: 1.05;
+  flex: 0 0 auto;
+  margin-left: auto;
+}
+
+@media (max-width: 360px) {
+  .auction-mobile-price-row--debt-inline .auction-mobile-price-row__label {
+    font-size: 7px;
+  }
+
+  .auction-mobile-price-row--debt-inline .auction-mobile-price-row__value {
+    font-size: 11px;
+  }
+}
+
 .auction-mobile-meta {
   display: flex;
   flex-wrap: wrap;
