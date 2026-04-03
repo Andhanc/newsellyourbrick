@@ -2,6 +2,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&display=swap');
 
 @import "tailwindcss";
+@import "tw-animate-css";
 @import './styles/liquid-glass-buttons-global.css';
 
 @theme inline {
@@ -68,5 +69,127 @@ button {
   cursor: pointer;
   border: none;
   font-family: inherit;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Flip countdown / number (used on property detail timer)
+   ──────────────────────────────────────────────────────────────────────────── */
+
+@keyframes flip-top {
+  0%   { transform: rotateX(0deg); }
+  100% { transform: rotateX(-90deg); }
+}
+
+@keyframes flip-bottom {
+  0%   { transform: rotateX(90deg); }
+  100% { transform: rotateX(0deg); }
+}
+
+.flip-countdown-container {
+  display: inline-flex;
+  gap: 3px;
+  align-items: center;
+}
+
+/* ── card unit ── */
+.flip-unit {
+  position: relative;
+  width: var(--flip-card-width, 56px);
+  height: var(--flip-card-height, 72px);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.30);
+  background: var(--flip-card-bg, #111827);
+  flex-shrink: 0;
+}
+
+/* ── each half-panel ── */
+.flip-card {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 50%;
+  overflow: hidden;
+  background: var(--flip-card-bg, #111827);
+}
+
+/*
+  .flip-digit is absolutely positioned with height = 200% of the half-panel
+  (= 100% of the full card). top:0 shows the top half of the digit;
+  top:-100% shifts it up so the bottom half becomes visible.
+  Using top/% on absolutely-positioned child is always relative to parent HEIGHT ✓
+*/
+.flip-digit {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 200%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Plus Jakarta Sans', 'Montserrat', ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  font-weight: 800;
+  font-size: var(--flip-card-font-size, 44px);
+  color: var(--flip-card-text, #ffffff);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  user-select: none;
+}
+
+/* top half: digit positioned from the top → overflow clips the lower half */
+.flip-card__top,
+.flipper__top {
+  top: 0;
+  transform-origin: bottom center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.flip-card__top .flip-digit,
+.flipper__top .flip-digit {
+  top: 0;
+}
+
+/* bottom half: digit shifted up by 100% of panel height → overflow clips the upper half */
+.flip-card__bottom,
+.flipper__bottom {
+  bottom: 0;
+  transform-origin: top center;
+}
+
+.flip-card__bottom .flip-digit,
+.flipper__bottom .flip-digit {
+  top: -100%;
+}
+
+/* ── animated flipper overlay ── */
+.flipper {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  z-index: 2;
+}
+
+.flipper__top,
+.flipper__bottom {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.flipper__bottom {
+  transform: rotateX(90deg);
+}
+
+.flipper.is-flipping {
+  opacity: 1;
+}
+
+/* top folds down in 0.18s, then bottom unfolds with 0.18s delay — total 0.36s */
+.flipper.is-flipping .flipper__top {
+  animation: flip-top 0.18s ease-in forwards;
+}
+
+.flipper.is-flipping .flipper__bottom {
+  animation: flip-bottom 0.18s ease-out 0.18s forwards;
 }
 

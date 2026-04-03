@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import './PropertyTimer.css'
+import { FlipNumber } from '@/components/ui/flip-countdown'
 
 const PropertyTimer = ({ endTime, compact = false, className = '' }) => {
   const { t } = useTranslation()
@@ -82,12 +83,48 @@ const PropertyTimer = ({ endTime, compact = false, className = '' }) => {
     )
   }
 
+  // Digit color based on days remaining
+  let digitColor = '#dc2626' // red (< 60 days)
+  if (days >= 90) digitColor = '#16a34a'      // green
+  else if (days >= 60) digitColor = '#f97316' // orange
+
+  const flipStyle = {
+    '--flip-card-width': '28px',
+    '--flip-card-height': '38px',
+    '--flip-card-font-size': '20px',
+  }
+
+  const labelStyle = { fontSize: 10, fontWeight: 600, color: '#374151', flexShrink: 0 }
+  const groupStyle = { display: 'inline-flex', alignItems: 'center', gap: 3, flexShrink: 0 }
+
   return (
     <div
       className={`property-timer property-timer--detail ${statusClass} ${isCritical ? 'timer-critical' : ''} ${className}`.trim()}
     >
-      <div className="timer-compact-time timer-compact-time--detail">
-        {String(timeLeft.days).padStart(2, '0')}{t('timerDay')} {String(timeLeft.hours).padStart(2, '0')}{t('timerHour')} {String(timeLeft.minutes).padStart(2, '0')}{t('timerMin')} {String(timeLeft.seconds).padStart(2, '0')}{t('timerSec')}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 6,
+          flexWrap: 'nowrap',
+        }}
+      >
+        <div style={groupStyle}>
+          <FlipNumber value={String(timeLeft.days).padStart(2, '0')} padTo={2} style={flipStyle} textColor={digitColor} />
+          <span style={labelStyle}>{t('timerDay')}</span>
+        </div>
+        <div style={groupStyle}>
+          <FlipNumber value={String(timeLeft.hours).padStart(2, '0')} padTo={2} style={flipStyle} textColor={digitColor} />
+          <span style={labelStyle}>{t('timerHour')}</span>
+        </div>
+        <div style={groupStyle}>
+          <FlipNumber value={String(timeLeft.minutes).padStart(2, '0')} padTo={2} style={flipStyle} textColor={digitColor} />
+          <span style={labelStyle}>{t('timerMin')}</span>
+        </div>
+        <div style={groupStyle}>
+          <FlipNumber value={String(timeLeft.seconds).padStart(2, '0')} padTo={2} style={flipStyle} textColor={digitColor} />
+          <span style={labelStyle}>{t('timerSec')}</span>
+        </div>
       </div>
     </div>
   )
