@@ -25,3 +25,14 @@ export function hasDbBackedProperty(property) {
     String(property.source_table).trim() !== ''
   )
 }
+
+function normalizeMockCategoryForCompare(category) {
+  if (category === 'flat' || category === 'apartment') return 'kvaritra'
+  return category
+}
+
+/** Одинаковый тип для сравнения: БД — по таблице; демо — по категории (квартира/flat — одна группа). */
+export function getComparisonGroupKey(property, mockCategory) {
+  if (mockCategory) return `mock:${normalizeMockCategoryForCompare(mockCategory)}`
+  return normalizePropertyTable(property?.source_table)
+}

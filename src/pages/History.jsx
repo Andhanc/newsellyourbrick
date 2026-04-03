@@ -95,9 +95,11 @@ const History = () => {
     if (userId) {
       loadVerificationStatus()
       loadWonProperties()
+      loadReservationPurchases()
       loadBidHistory()
     } else {
       setIsLoadingPurchases(false)
+      setIsLoadingReservations(false)
       setIsLoadingBids(false)
     }
   }, [userId])
@@ -219,8 +221,35 @@ const History = () => {
 
   const [purchaseHistory, setPurchaseHistory] = useState([])
   const [isLoadingPurchases, setIsLoadingPurchases] = useState(true)
+  const [reservationPurchases, setReservationPurchases] = useState([])
+  const [isLoadingReservations, setIsLoadingReservations] = useState(true)
   const [bidHistory, setBidHistory] = useState([])
   const [isLoadingBids, setIsLoadingBids] = useState(true)
+
+  const loadReservationPurchases = async () => {
+    if (!userId) return
+    const numericUserId = typeof userId === 'string' ? parseInt(userId, 10) : userId
+    if (isNaN(numericUserId)) return
+    setIsLoadingReservations(true)
+    try {
+      const response = await fetch(`${API_BASE_URL}/users/${numericUserId}/reservation-purchases`)
+      if (response.ok) {
+        const result = await response.json()
+        if (result.success && Array.isArray(result.data)) {
+          setReservationPurchases(result.data)
+        } else {
+          setReservationPurchases([])
+        }
+      } else {
+        setReservationPurchases([])
+      }
+    } catch (e) {
+      console.error('Ошибка загрузки резервов:', e)
+      setReservationPurchases([])
+    } finally {
+      setIsLoadingReservations(false)
+    }
+  }
 
   // Загружаем ставки пользователя
   const loadBidHistory = async () => {
@@ -637,9 +666,81 @@ const History = () => {
                   ))
                 ) : (
                   <div className="empty-state">
-                    <p>У вас пока нет покупок</p>
+                    <p>У вас пока нет выигранных аукционов</p>
                   </div>
                 )}
+                {isLoadingReservations ? (
+                  <div className="empty-state" style={{ marginTop: 16 }}>
+                    <p>Загрузка резервов…</p>
+                  </div>
+                ) : reservationPurchases.length > 0 ? (
+                  <div className="history-reservations" style={{ marginTop: 24 }}>
+                    <h3 className="section-subtitle" style={{ marginBottom: 12, fontSize: '1.1rem' }}>
+                      Резерв 10% (купить сейчас)
+                    </h3>
+                    {reservationPurchases.map((row) => {
+                      const b = row.billing || {}
+                      const pid = b.property_id
+                      const minSale = b.minimum_sale_price
+                      const paidStripe = (row.amount_cents || 0) / 100
+                      const walletEur = b.wallet_eur_applied || 0
+                      const totalPaid = b.total_paid_toward_price ?? paidStripe + walletEur
+                      const remaining = b.remaining_to_full_purchase ?? (minSale != null ? Math.max(0, minSale - totalPaid) : null)
+                      const cur = (row.currency || 'eur').toUpperCase()
+                      return (
+                        <div key={row.id || row.dedupe_key} className="history-card" style={{ marginBottom: 16 }}>
+                          <div className="card-content">
+                            <div className="card-header">
+                              <h3 className="card-title">Объект #{pid ?? '—'}</h3>
+                              <span className="status-badge status-success">Резерв оплачен</span>
+                            </div>
+                            <div className="card-details">
+                              <div className="detail-item">
+                                <span className="detail-label">Мин. цена продажи:</span>
+                                <span className="detail-value price">
+                                  {minSale != null ? formatPrice(minSale, cur) : '—'}
+                                </span>
+                              </div>
+                              <div className="detail-item">
+                                <span className="detail-label">Оплачено картой:</span>
+                                <span className="detail-value price">
+                                  {formatPrice(paidStripe, cur)}
+                                </span>
+                              </div>
+                              {walletEur > 0 && (
+                                <div className="detail-item">
+                                  <span className="detail-label">С депозита:</span>
+                                  <span className="detail-value price">€{walletEur.toLocaleString('ru-RU')}</span>
+                                </div>
+                              )}
+                              <div className="detail-item">
+                                <span className="detail-label">Всего внесено к цене:</span>
+                                <span className="detail-value price">
+                                  {typeof totalPaid === 'number' ? formatPrice(totalPaid, cur) : '—'}
+                                </span>
+                              </div>
+                              <div className="detail-item">
+                                <span className="detail-label">Осталось до полной цены:</span>
+                                <span className="detail-value price">
+                                  {remaining != null ? formatPrice(remaining, cur) : '—'}
+                                </span>
+                              </div>
+                              <div className="detail-item">
+                                <span className="detail-label">Дата:</span>
+                                <span className="detail-value">{formatDate(row.paid_at)}</span>
+                              </div>
+                            </div>
+                            {pid != null && (
+                              <Link to={`/property/${pid}`} className="card-button">
+                                Открыть объект
+                              </Link>
+                            )}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                ) : null}
               </div>
             </section>
 

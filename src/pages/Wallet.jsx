@@ -11,7 +11,11 @@ import { useTonConnectUI, useTonAddress, useTonWallet } from '@tonconnect/ui-rea
 import DepositTopUpPicker from '../components/DepositTopUpPicker'
 import SellerVerificationModal from '../components/SellerVerificationModal'
 import { showNotification } from '../utils/toastHelper'
-import { startDepositWalletCheckout, confirmWalletDepositSession } from '../utils/subscriptionCheckout'
+import {
+  startDepositWalletCheckout,
+  confirmWalletDepositSession,
+  confirmPropertyReservationSession,
+} from '../utils/subscriptionCheckout'
 import { getUsdtJettonWalletAddress, buildUsdtTransferTransaction } from '../utils/tonUsdt'
 import { ensureCanOpenProperty } from '../utils/propertyAccessGuard'
 import './Wallet.css'
@@ -26,6 +30,7 @@ const Wallet = () => {
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const walletDepositHandledRef = useRef(null)
+  const walletReservationHandledRef = useRef(null)
   const { user, isLoaded: userLoaded } = useUser()
   const userData = getUserData()
   const [dbUserId, setDbUserId] = useState(null)
@@ -424,6 +429,42 @@ const Wallet = () => {
       } finally {
         const next = new URLSearchParams(searchParams)
         next.delete('deposit_checkout')
+        next.delete('session_id')
+        setSearchParams(next, { replace: true })
+      }
+    }
+    run()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dbUserId, searchParams, setSearchParams])
+
+  useEffect(() => {
+    if (!dbUserId) return
+    const rc = searchParams.get('reservation_checkout')
+    const sessionId = searchParams.get('session_id')
+    if (rc !== 'success' || !sessionId || !sessionId.startsWith('cs_')) return
+    if (walletReservationHandledRef.current === sessionId) return
+    walletReservationHandledRef.current = sessionId
+
+    const run = async () => {
+      try {
+        const result = await confirmPropertyReservationSession(sessionId, dbUserId)
+        if (result.ok) {
+          if (result.data?.already) {
+            showNotification('Резерв уже был учтён ранее.')
+          } else {
+            showNotification(
+              'Оплата резерва получена. Объект зарезервирован, менеджер свяжется с вами.'
+            )
+          }
+          await loadUserData(false)
+        } else {
+          showNotification(result.error || 'Не удалось подтвердить резерв', 'error')
+        }
+      } catch (e) {
+        showNotification(e?.message || 'Ошибка сети', 'error')
+      } finally {
+        const next = new URLSearchParams(searchParams)
+        next.delete('reservation_checkout')
         next.delete('session_id')
         setSearchParams(next, { replace: true })
       }
@@ -957,12 +998,14 @@ const Wallet = () => {
           <BuyNowModal
             isOpen={isBuyNowModalOpen}
             onClose={() => setIsBuyNowModalOpen(false)}
+            stripeReturnPath="/wallet"
             property={{
               id: wonProperty.property_id,
               title: wonProperty.title,
               name: wonProperty.title,
               price: wonProperty.bid_amount,
               currency: wonProperty.currency || 'USD',
+              property_type: wonProperty.property_type,
               isAuction: true,
               currentBid: wonProperty.bid_amount
             }}

@@ -1,16 +1,281 @@
 import Stripe from 'stripe';
-import { stripeSubscriptionQueries, getDatabase } from './database/database.js';
+import {
+  stripeSubscriptionQueries,
+  getDatabase,
+  propertyQueries,
+  purchaseRequestQueries,
+  userQueries,
+} from './database/database.js';
 
 /**
  * Stripe Checkout + webhook + синхронизация подписки Pro.
  * STRIPE_SECRET_KEY, STRIPE_PRICE_ID_PRO, FRONTEND_URL;
  * STRIPE_PRICE_ID_DEPOSIT — price_... или prod_... (для prod подставится активная recurring-цена);
  * опционально STRIPE_WEBHOOK_SECRET для POST /api/webhooks/stripe
+ *
+ * Резерв 10% (динамическая сумма): Checkout mode=payment + line_items[].price_data —
+ * отдельный Product/Price в Dashboard под каждую сумму не нужен.
  */
 
 function getStripe() {
   const secret = (process.env.STRIPE_SECRET_KEY || '').trim();
   return secret ? new Stripe(secret) : null;
+}
+
+/** Валюты без дробной части в Stripe (unit_amount = основные единицы). */
+const ZERO_DECIMAL_CURRENCIES = new Set([
+  'bif',
+  'clp',
+  'djf',
+  'gnf',
+  'jpy',
+  'kmf',
+  'krw',
+  'mga',
+  'pyg',
+  'rwf',
+  'ugx',
+  'vnd',
+  'vuv',
+  'xaf',
+  'xof',
+  'xpf',
+]);
+
+function majorToStripeMinor(amountMajor, currency) {
+  const c = String(currency || 'usd').toLowerCase();
+  if (ZERO_DECIMAL_CURRENCIES.has(c)) {
+    return Math.max(1, Math.round(Number(amountMajor) || 0));
+  }
+  return Math.max(1, Math.round((Number(amountMajor) || 0) * 100));
+}
+
+/** Минимальная цена продажи (поле price в БД), не текущая ставка аукциона. */
+function computeMinimumSalePriceMajor(property) {
+  const price = Number(property.price) || 0;
+  return Number.isFinite(price) && price > 0 ? price : 0;
+}
+
+/** Списание 3000 EUR с кошелька депозита при оплате резерва (только с EUR-объявлениями). */
+const WALLET_DEPOSIT_OFFSET_EUR = 3000;
+
+function normalizeStripeCurrency(raw) {
+  const c = String(raw || 'usd')
+    .trim()
+    .toLowerCase();
+  if (!c) return { ok: false, error: 'Пустая валюта объекта' };
+  if (c === 'byn' || c === 'rub') {
+    return {
+      ok: false,
+      error:
+        'Для оплаты через Stripe укажите валюту объекта EUR или USD (BYN/RUB в Stripe не поддерживаются)',
+    };
+  }
+  return { ok: true, currency: c };
+}
+
+function minStripeUnitAmount(currency) {
+  const c = String(currency || '').toLowerCase();
+  return ZERO_DECIMAL_CURRENCIES.has(c) ? 1 : 50;
+}
+
+/**
+ * После успешной оплаты резерва 10%: запрос на покупку (processing) + бронь объекта + запись в stripe_payments.
+ */
+export async function processPropertyReservationPaidSession(stripe, session) {
+  if (!stripe || !session?.id) {
+    return { ok: false, error: 'invalid_session' };
+  }
+  let sess = session;
+  try {
+    sess = await stripe.checkout.sessions.retrieve(session.id, {
+      expand: ['payment_intent'],
+    });
+  } catch (e) {
+    console.error('[Stripe] retrieve checkout session:', e?.message || e);
+    return { ok: false, error: 'retrieve_failed' };
+  }
+
+  if (sess.mode !== 'payment') {
+    return { ok: false, error: 'not_payment_mode' };
+  }
+  if (sess.metadata?.checkout_purpose !== 'property_reservation_deposit') {
+    return { ok: false, error: 'wrong_purpose' };
+  }
+  const piObj =
+    sess.payment_intent && typeof sess.payment_intent === 'object' ? sess.payment_intent : null;
+  const paidOk =
+    sess.payment_status === 'paid' ||
+    sess.payment_status === 'no_payment_required' ||
+    piObj?.status === 'succeeded';
+  if (!paidOk) {
+    return { ok: false, error: 'not_paid' };
+  }
+
+  const userId = parseInt(sess.metadata?.app_user_id || '', 10);
+  const propertyId = parseInt(sess.metadata?.property_id || '', 10);
+  const expectedDepositCents = parseInt(sess.metadata?.deposit_cents || '', 10);
+  if (!Number.isFinite(userId) || !Number.isFinite(propertyId)) {
+    return { ok: false, error: 'bad_metadata' };
+  }
+
+  const db = getDatabase();
+  const existing = db.prepare('SELECT 1 AS x FROM stripe_payments WHERE dedupe_key = ?').get(sess.id);
+  if (existing) {
+    return { ok: true, already: true };
+  }
+
+  if (Number.isFinite(expectedDepositCents) && sess.amount_total != null) {
+    const diff = Math.abs(sess.amount_total - expectedDepositCents);
+    const tol = Math.max(2, Math.round(expectedDepositCents * 0.03));
+    if (diff > tol) {
+      console.warn('[Stripe] property reservation: amount differs from metadata (trusting Stripe paid total)', {
+        amount_total: sess.amount_total,
+        expectedDepositCents,
+        diff,
+      });
+    }
+  }
+
+  const property = propertyQueries.getById(propertyId);
+  if (!property) {
+    return { ok: false, error: 'property_not_found' };
+  }
+
+  const useWallet = sess.metadata?.use_wallet_deposit === '1';
+  const curLower = (sess.currency || property.currency || 'eur').toString().toLowerCase();
+  if (useWallet && curLower !== 'eur') {
+    return { ok: false, error: 'wallet_deposit_only_eur' };
+  }
+
+  const buyer = userQueries.getById(userId);
+  const buyerName = buyer
+    ? `${buyer.first_name || ''} ${buyer.last_name || ''}`.trim().slice(0, 200) ||
+      `Покупатель #${userId}`
+    : `Покупатель #${userId}`;
+  const buyerEmail = buyer?.email || sess.customer_email || null;
+  const buyerPhone = buyer?.phone_number || null;
+
+  const sellerId = property.user_id != null ? property.user_id : null;
+  let sellerName = null;
+  let sellerEmail = null;
+  let sellerPhone = null;
+  if (sellerId) {
+    const seller = userQueries.getById(sellerId);
+    if (seller) {
+      sellerName = `${seller.first_name || ''} ${seller.last_name || ''}`.trim() || null;
+      sellerEmail = seller.email || null;
+      sellerPhone = seller.phone_number || null;
+    }
+  }
+
+  const minSaleMajor = computeMinimumSalePriceMajor(property);
+  if (!(minSaleMajor > 0)) {
+    return { ok: false, error: 'invalid_minimum_price' };
+  }
+  const tenPctMajor = minSaleMajor * 0.1;
+  const walletEurApplied = useWallet ? WALLET_DEPOSIT_OFFSET_EUR : 0;
+
+  const customerId =
+    typeof sess.customer === 'string' ? sess.customer : sess.customer?.id || null;
+
+  try {
+    db.transaction(() => {
+      if (useWallet) {
+        const urow = db.prepare('SELECT deposit_amount FROM users WHERE id = ?').get(userId);
+        const dep = urow != null ? parseFloat(urow.deposit_amount) || 0 : 0;
+        if (dep < WALLET_DEPOSIT_OFFSET_EUR) {
+          throw new Error('insufficient_deposit');
+        }
+        db.prepare(
+          'UPDATE users SET deposit_amount = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?'
+        ).run(dep - WALLET_DEPOSIT_OFFSET_EUR, userId);
+        try {
+          db.prepare(
+            `INSERT INTO transactions (user_id, type, amount, description, created_at) VALUES (?, 'withdraw', ?, ?, CURRENT_TIMESTAMP)`
+          ).run(
+            userId,
+            WALLET_DEPOSIT_OFFSET_EUR,
+            'Резерв 10%: списание 3000 € с депозита'
+          );
+        } catch (txErr) {
+          console.warn('[Stripe] transactions insert (wallet):', txErr?.message || txErr);
+        }
+      }
+
+      const createResult = purchaseRequestQueries.create({
+        buyerId: String(userId),
+        buyerName,
+        buyerEmail,
+        buyerPhone,
+        sellerId,
+        sellerName,
+        sellerEmail,
+        sellerPhone,
+        propertyId,
+        propertyTitle: property.title || `Объект #${propertyId}`,
+        propertyDescription: property.description || null,
+        propertyPrice: minSaleMajor,
+        propertyCurrency: (property.currency || 'USD').toString().toUpperCase(),
+        propertyLocation: property.location || property.address || null,
+        propertyType: property.property_type || null,
+        propertyArea: property.area != null ? String(property.area) : null,
+        requestDate: new Date().toISOString(),
+        status: 'processing',
+      });
+
+      const requestId = createResult?.lastInsertRowid;
+      if (!requestId) {
+        throw new Error('purchase_request_insert_failed');
+      }
+
+      propertyQueries.reserve(propertyId, userId, requestId);
+
+      const stripeCents = sess.amount_total ?? expectedDepositCents;
+      const totalPaidTowardPrice =
+        stripeCents / 100 + (curLower === 'eur' ? walletEurApplied : 0);
+      const remainingToFull = Math.max(0, minSaleMajor - totalPaidTowardPrice);
+
+      const billingPayload = {
+        type: 'property_reservation',
+        minimum_sale_price: minSaleMajor,
+        ten_percent: tenPctMajor,
+        paid_stripe_cents: stripeCents,
+        wallet_eur_applied: walletEurApplied,
+        currency: curLower,
+        purchase_request_id: requestId,
+        property_id: propertyId,
+        total_paid_toward_price: totalPaidTowardPrice,
+        remaining_to_full_purchase: remainingToFull,
+      };
+
+      stripeSubscriptionQueries.insertPayment({
+        dedupe_key: sess.id,
+        user_id: userId,
+        stripe_customer_id: customerId,
+        stripe_subscription_id: null,
+        stripe_invoice_id: null,
+        stripe_checkout_session_id: sess.id,
+        amount_cents: stripeCents,
+        currency: curLower,
+        status: 'paid',
+        plan_key: 'property_reservation',
+        billing_reason: JSON.stringify(billingPayload),
+        paid_at: new Date().toISOString(),
+        period_start: null,
+        period_end: null,
+        customer_email: sess.customer_details?.email || sess.customer_email || buyerEmail,
+      });
+    })();
+    return { ok: true };
+  } catch (e) {
+    console.error('[Stripe] processPropertyReservationPaidSession:', e?.message || e);
+    const msg = e?.message || 'process_failed';
+    if (msg === 'insufficient_deposit') {
+      return { ok: false, error: 'insufficient_deposit' };
+    }
+    return { ok: false, error: msg };
+  }
 }
 
 function isoFromUnix(sec) {
@@ -349,6 +614,11 @@ export function createStripeWebhookHandler() {
       switch (event.type) {
         case 'checkout.session.completed': {
           const session = event.data.object;
+          if (session.mode === 'payment' && session.metadata?.checkout_purpose === 'property_reservation_deposit') {
+            const full = await stripe.checkout.sessions.retrieve(session.id);
+            await processPropertyReservationPaidSession(stripe, full);
+            break;
+          }
           if (session.mode === 'subscription' && session.metadata?.checkout_purpose !== 'wallet_deposit') {
             await syncCheckoutSessionToDatabase(stripe, session.id);
           }
@@ -474,6 +744,203 @@ export function registerStripeBillingRoutes(app) {
     }
   });
 
+  app.post('/api/billing/create-property-reservation-checkout', async (req, res) => {
+    try {
+      if (!stripe) {
+        return res.status(503).json({
+          success: false,
+          error: 'Платежи не настроены: задайте STRIPE_SECRET_KEY в .env',
+        });
+      }
+      const userIdRaw = req.body?.userId;
+      const propertyIdRaw = req.body?.propertyId;
+      const propertyType =
+        req.body?.propertyType != null ? String(req.body.propertyType).trim().slice(0, 32) : null;
+      const customerEmail =
+        typeof req.body?.customerEmail === 'string' ? req.body.customerEmail.trim().slice(0, 320) : '';
+      let returnPath =
+        typeof req.body?.returnPath === 'string' && req.body.returnPath.startsWith('/')
+          ? req.body.returnPath.split('?')[0].slice(0, 200)
+          : null;
+      if (returnPath && returnPath.includes('..')) {
+        returnPath = null;
+      }
+
+      const userId = userIdRaw != null ? parseInt(String(userIdRaw).trim(), 10) : NaN;
+      const propertyId = propertyIdRaw != null ? parseInt(String(propertyIdRaw).trim(), 10) : NaN;
+
+      if (!Number.isFinite(userId) || !Number.isFinite(propertyId)) {
+        return res.status(400).json({
+          success: false,
+          error: 'Укажите числовой userId и propertyId',
+        });
+      }
+
+      const db = getDatabase();
+      const property = propertyQueries.getById(propertyId, propertyType || null);
+      if (!property) {
+        return res.status(404).json({ success: false, error: 'Объявление не найдено' });
+      }
+
+      const resInfo = propertyQueries.isReserved(propertyId);
+      if (resInfo.isReserved && resInfo.reservedBy != null && Number(resInfo.reservedBy) !== userId) {
+        return res.status(409).json({
+          success: false,
+          error: 'Объект уже зарезервирован другим покупателем',
+        });
+      }
+
+      const minSaleMajor = computeMinimumSalePriceMajor(property);
+      if (!(minSaleMajor > 0)) {
+        return res.status(400).json({
+          success: false,
+          error: 'Укажите минимальную цену продажи объекта (поле price)',
+        });
+      }
+
+      const curNorm = normalizeStripeCurrency(property.currency || 'usd');
+      if (!curNorm.ok) {
+        return res.status(400).json({ success: false, error: curNorm.error });
+      }
+      const currency = curNorm.currency;
+
+      const useWalletDeposit =
+        req.body?.useDeposit === true ||
+        req.body?.useDeposit === 'true' ||
+        req.body?.useDeposit === 1 ||
+        req.body?.useDeposit === '1';
+
+      if (useWalletDeposit && currency !== 'eur') {
+        return res.status(400).json({
+          success: false,
+          error: 'Списание с депозита доступно только для объявлений в EUR',
+        });
+      }
+
+      const buyerRow = userQueries.getById(userId);
+      if (useWalletDeposit) {
+        const dep = buyerRow != null ? parseFloat(buyerRow.deposit_amount) || 0 : 0;
+        if (dep < WALLET_DEPOSIT_OFFSET_EUR) {
+          return res.status(400).json({
+            success: false,
+            error: `На депозите недостаточно средств (нужно от ${WALLET_DEPOSIT_OFFSET_EUR} €)`,
+          });
+        }
+      }
+
+      const tenPctMajor = minSaleMajor * 0.1;
+      let cardMajor = tenPctMajor;
+      if (useWalletDeposit) {
+        cardMajor = tenPctMajor - WALLET_DEPOSIT_OFFSET_EUR;
+      }
+      const minUnit = minStripeUnitAmount(currency);
+      const unitAmount = majorToStripeMinor(cardMajor, currency);
+      if (unitAmount < minUnit) {
+        return res.status(400).json({
+          success: false,
+          error: useWalletDeposit
+            ? `После вычета 3000 € с депозита сумма к оплате картой слишком мала. Увеличьте минимальную цену продажи или оплатите без депозита.`
+            : `Сумма резерва слишком мала для Stripe (минимум ${minUnit} в минимальных единицах ${currency.toUpperCase()})`,
+        });
+      }
+
+      const saleMinor = majorToStripeMinor(minSaleMajor, currency);
+      const titleShort = (property.title || `Объект #${propertyId}`).slice(0, 100);
+      const productDesc = useWalletDeposit
+        ? `Резерв 10% от мин. цены; 3000 € с вашего депозита, остальное картой. Объект #${propertyId}`
+        : `Резерв 10% от минимальной цены продажи. Объект #${propertyId}`;
+
+      const basePath = returnPath || `/property/${propertyId}`;
+      const successUrl = `${frontendBase}${basePath}?reservation_checkout=success&session_id={CHECKOUT_SESSION_ID}`;
+      const cancelUrl = `${frontendBase}${basePath}?reservation_checkout=canceled`;
+
+      const session = await stripe.checkout.sessions.create({
+        mode: 'payment',
+        payment_method_types: ['card'],
+        line_items: [
+          {
+            quantity: 1,
+            price_data: {
+              currency,
+              unit_amount: unitAmount,
+              product_data: {
+                name: `Резерв 10% — ${titleShort}`,
+                description: productDesc.slice(0, 500),
+              },
+            },
+          },
+        ],
+        success_url: successUrl,
+        cancel_url: cancelUrl,
+        metadata: {
+          app_user_id: String(userId),
+          property_id: String(propertyId),
+          checkout_purpose: 'property_reservation_deposit',
+          deposit_cents: String(unitAmount),
+          sale_price_cents: String(saleMinor),
+          use_wallet_deposit: useWalletDeposit ? '1' : '0',
+          min_sale_major: String(minSaleMajor),
+          ten_pct_major: String(tenPctMajor),
+        },
+        ...(customerEmail && customerEmail.includes('@') ? { customer_email: customerEmail } : {}),
+      });
+
+      return res.json({ success: true, url: session.url });
+    } catch (err) {
+      console.error('[Stripe] create-property-reservation-checkout:', err?.message || err);
+      return res.status(500).json({
+        success: false,
+        error: err?.message || 'Ошибка Stripe',
+      });
+    }
+  });
+
+  app.post('/api/billing/confirm-property-reservation', async (req, res) => {
+    try {
+      if (!stripe) {
+        return res.status(503).json({ success: false, error: 'Stripe не настроен' });
+      }
+      const sessionId = typeof req.body?.session_id === 'string' ? req.body.session_id.trim() : '';
+      const userIdRaw = req.body?.userId;
+      const userId = userIdRaw != null ? String(userIdRaw).trim() : '';
+      if (!sessionId || !sessionId.startsWith('cs_')) {
+        return res.status(400).json({ success: false, error: 'Нужен session_id (cs_...)' });
+      }
+      if (!userId || !/^\d+$/.test(userId)) {
+        return res.status(400).json({ success: false, error: 'Нужен числовой userId' });
+      }
+      const session = await stripe.checkout.sessions.retrieve(sessionId, {
+        expand: ['payment_intent'],
+      });
+      if (String(session.metadata?.app_user_id || '') !== userId) {
+        return res.status(403).json({ success: false, error: 'user_mismatch' });
+      }
+      let ready = session;
+      let attempts = 0;
+      const sessionPaidLike = (s) => {
+        const pi = s.payment_intent && typeof s.payment_intent === 'object' ? s.payment_intent : null;
+        return (
+          s.payment_status === 'paid' ||
+          s.payment_status === 'no_payment_required' ||
+          pi?.status === 'succeeded'
+        );
+      };
+      while (!sessionPaidLike(ready) && attempts < 15) {
+        await new Promise((r) => setTimeout(r, 400));
+        ready = await stripe.checkout.sessions.retrieve(sessionId, { expand: ['payment_intent'] });
+        attempts += 1;
+      }
+      const result = await processPropertyReservationPaidSession(stripe, ready);
+      if (!result.ok) {
+        return res.status(400).json({ success: false, error: result.error || 'confirm_failed' });
+      }
+      return res.json({ success: true, data: { already: !!result.already } });
+    } catch (err) {
+      console.error('[Stripe] confirm-property-reservation:', err?.message || err);
+      return res.status(500).json({ success: false, error: err?.message || 'Ошибка' });
+    }
+  });
+
   app.post('/api/billing/confirm-wallet-deposit', async (req, res) => {
     try {
       if (!stripe) {
@@ -546,6 +1013,64 @@ export function registerStripeBillingRoutes(app) {
       });
     } catch (err) {
       console.error('[Stripe] subscription-billing:', err?.message || err);
+      return res.status(500).json({ success: false, error: err?.message });
+    }
+  });
+
+  /** Профиль: резервы 10% (мои покупки) */
+  app.get('/api/users/:userId/reservation-purchases', (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId, 10);
+      if (!Number.isFinite(userId)) {
+        return res.status(400).json({ success: false, error: 'Некорректный userId' });
+      }
+      const db = getDatabase();
+      const rows = db
+        .prepare(
+          `SELECT * FROM stripe_payments WHERE user_id = ? AND plan_key = 'property_reservation' ORDER BY datetime(paid_at) DESC LIMIT 100`
+        )
+        .all(userId);
+      const items = rows.map((row) => {
+        let billing = {};
+        try {
+          billing = JSON.parse(row.billing_reason || '{}');
+        } catch {
+          billing = {};
+        }
+        return { ...row, billing };
+      });
+      return res.json({ success: true, data: items });
+    } catch (err) {
+      console.error('[Stripe] reservation-purchases:', err?.message || err);
+      return res.status(500).json({ success: false, error: err?.message });
+    }
+  });
+
+  /** Админка: резервы 10% с данными покупателя */
+  app.get('/api/admin/reservation-purchases', (req, res) => {
+    try {
+      const db = getDatabase();
+      const rows = db
+        .prepare(
+          `SELECT p.*, u.first_name, u.last_name, u.email, u.phone_number
+           FROM stripe_payments p
+           LEFT JOIN users u ON u.id = p.user_id
+           WHERE p.plan_key = 'property_reservation'
+           ORDER BY datetime(p.paid_at) DESC LIMIT 500`
+        )
+        .all();
+      const items = rows.map((row) => {
+        let billing = {};
+        try {
+          billing = JSON.parse(row.billing_reason || '{}');
+        } catch {
+          billing = {};
+        }
+        return { ...row, billing };
+      });
+      return res.json({ success: true, data: items, totalCount: items.length });
+    } catch (err) {
+      console.error('[Stripe] admin reservation-purchases:', err?.message || err);
       return res.status(500).json({ success: false, error: err?.message });
     }
   });

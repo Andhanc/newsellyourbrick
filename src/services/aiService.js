@@ -701,6 +701,156 @@ export async function generateListingDescription(draftText, title = '') {
  * @param {Array} properties - Массив всех объявлений
  * @returns {Array} Отфильтрованные объявления
  */
+function parseCompareAnalysisJson(messageContent) {
+  let text = messageContent || ''
+  while (text.includes('</redacted_thinking>')) {
+    text = text.split('</redacted_thinking>').pop().trim()
+  }
+  text = text.replace(/<\/?redacted_reasoning>/g, '').trim()
+  text = text.replace(/<\/?think>/g, '').trim()
+  text = text.replace(/```json\s*/gi, '').replace(/```\s*/g, '')
+  const jsonMatch = text.match(/\{[\s\S]*\}/)
+  if (!jsonMatch) return null
+  try {
+    return JSON.parse(jsonMatch[0])
+  } catch (_) {
+    return null
+  }
+}
+
+/**
+ * Сравнение двух объектов: инфраструктура и локация (общие знания модели).
+ * @param {object} propertyLeft — сериализованные поля левого объекта
+ * @param {object} propertyRight — сериализованные поля правого
+ * @param {{ signal?: AbortSignal }} [options]
+ * @returns {Promise<{ summary: string, rows: Array<{ aspect: string, left: string, right: string, winner: 'left'|'right'|'tie'|'unknown' }> }>}
+ */
+export async function askPropertyCompareAssistant(propertyLeft, propertyRight, options = {}) {
+  const { signal } = options
+  const payloadJson = JSON.stringify(
+    { object_left: propertyLeft, object_right: propertyRight },
+    null,
+    0
+  )
+
+  const systemPrompt = `Ты консультант по недвижимости SellYourBrick. Пользователь сравнивает ДВА конкретных объекта.
+Тебе переданы структурированные данные object_left и object_right (адрес, локация, характеристики).
+
+Задача:
+1) Кратко (4–8 предложений) дай вывод: для кого какой вариант может подойти лучше, нюансы локации. Пиши простым русским, без markdown (** ## списков с -).
+2) Сформируй таблицу сравнения по ОКРУЖЕНИЮ и инфраструктуре рядом с каждым адресом. Используй общеизвестные факты о районе/городе по указанной локации. Если точных данных нет — пиши честно: «нет данных», «вероятно», «нужно уточнить на карте», не выдумывай конкретные названия клиник, если не уверен.
+
+Обязательно включи строки (можно объединить смежное, но не пропускай темы полностью):
+— Повседневные удобства (магазины, аптеки, кафе рядом): есть/нет, примерно как близко
+— Поликлиники / амбулатории
+— Больницы / экстренная помощь
+— Школы и детсады
+— Транспорт (общественный, до аэропорта если уместно)
+— Парки и зелёные зоны
+— Море / пляж / набережная (если по локации уместно; иначе «не применимо»)
+— Зоны отдыха, набережные, променады
+— Достопримечательности и развлечения рядом
+
+Для КАЖДОЙ строки таблицы укажи winner — кто выгоднее по этому критерию для типичного покупателя жилья:
+- "left" если заметно лучше object_left
+- "right" если заметно лучше object_right  
+- "tie" если примерно равно или оба слабые/оба сильные
+- "unknown" если нельзя сравнить
+
+Ответ ТОЛЬКО один JSON-объект без текста вокруг:
+{
+  "summary": "текст",
+  "rows": [
+    { "aspect": "краткое название строки", "left": "текст по левому объекту", "right": "текст по правому", "winner": "left" }
+  ]
+}
+
+Поле aspect — короткая подпись строки на русском. left/right — содержательное описание (есть/нет, как далеко: пешком, 5–10 мин, несколько км и т.д.).`
+
+  const messages = [
+    { role: 'system', content: systemPrompt },
+    {
+      role: 'user',
+      content: `Сравни два объекта недвижимости по данным ниже и верни JSON как указано.\n\n${payloadJson}`,
+    },
+  ]
+
+  const headers = {
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${AI_API_KEY}`,
+  }
+
+  const payload = {
+    model: AI_MODEL,
+    messages,
+    temperature: 0.45,
+    max_tokens: 3200,
+  }
+
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), 90000)
+  const externalSignal = signal
+  const onExternalAbort = () => controller.abort()
+  if (externalSignal) {
+    if (externalSignal.aborted) controller.abort()
+    else externalSignal.addEventListener('abort', onExternalAbort, { once: true })
+  }
+
+  try {
+    const response = await fetch(AI_API_URL, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(payload),
+      signal: controller.signal,
+    })
+
+    if (!response.ok) {
+      const errText = await response.text().catch(() => '')
+      console.error('askPropertyCompareAssistant API:', response.status, errText)
+      throw new Error(`AI ${response.status}`)
+    }
+
+    const data = await response.json()
+    let messageContent = data.choices?.[0]?.message?.content || ''
+    const parsed = parseCompareAnalysisJson(messageContent)
+
+    if (parsed && typeof parsed.summary === 'string' && Array.isArray(parsed.rows)) {
+      const rows = parsed.rows
+        .filter((r) => r && typeof r.aspect === 'string')
+        .map((r) => {
+          const w = String(r.winner || 'unknown').toLowerCase()
+          const winner =
+            w === 'left' || w === 'right' || w === 'tie' || w === 'unknown' ? w : 'unknown'
+          return {
+            aspect: r.aspect.trim(),
+            left: String(r.left != null ? r.left : '—').trim() || '—',
+            right: String(r.right != null ? r.right : '—').trim() || '—',
+            winner,
+          }
+        })
+      return {
+        summary: stripMarkdown(parsed.summary.trim()),
+        rows,
+      }
+    }
+
+    return {
+      summary: stripMarkdown(
+        messageContent.trim() ||
+          'Не удалось разобрать ответ ИИ. Попробуйте обновить анализ позже.'
+      ),
+      rows: [],
+    }
+  } catch (error) {
+    if (error.name === 'AbortError') throw error
+    console.error('askPropertyCompareAssistant:', error)
+    throw error
+  } finally {
+    clearTimeout(timeoutId)
+    if (externalSignal) externalSignal.removeEventListener('abort', onExternalAbort)
+  }
+}
+
 export function filterPropertiesByLocation(properties) {
   return properties.filter(property => {
     const location = property.location?.toLowerCase() || '';

@@ -29,6 +29,7 @@ const Subscriptions = lazy(() => import('./pages/Subscriptions'))
 const History = lazy(() => import('./pages/History'))
 const Chat = lazy(() => import('./pages/Chat'))
 const Favorites = lazy(() => import('./pages/Favorites'))
+const Compare = lazy(() => import('./pages/Compare'))
 const Bonuses = lazy(() => import('./pages/Bonuses'))
 const Shares = lazy(() => import('./pages/Shares'))
 const Debts = lazy(() => import('./pages/Debts'))
@@ -130,6 +131,7 @@ const NO_ZOOM_PATHS = new Set([
   '/wallet',
   '/bonuses',
   '/favorites',
+  '/compare',
 ])
 
 function isNoZoomPath(pathname) {
@@ -404,6 +406,7 @@ function App() {
               <Route path="/history" element={<History />} />
               <Route path="/chat" element={<Chat />} />
               <Route path="/favorites" element={<Favorites />} />
+              <Route path="/compare" element={<Compare />} />
               <Route path="/wallet" element={<Wallet />} />
               <Route path="/bonuses" element={<Bonuses />} />
               <Route path="/shares" element={<Shares />} />

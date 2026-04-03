@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useUser } from '@clerk/clerk-react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import {
   FiArrowLeft,
   FiShare2,
@@ -34,6 +34,7 @@ import { getApiBaseUrl, getApiBaseUrlSync } from '../utils/apiConfig'
 import FlipCard from '../components/ui/FlipCard'
 import TestDriveSection from '../components/TestDriveSection'
 import { getAuctionMinBidStep } from '../utils/auctionBidStep'
+import { confirmPropertyReservationSession } from '../utils/subscriptionCheckout'
 import { AlertTriangle, ShieldAlert, ShieldCheck } from 'lucide-react'
 
 // Используем синхронную версию для инициализации, затем обновим при загрузке
@@ -52,6 +53,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
   const currentLang = (i18n.language || 'ru').split('-')[0]
   const { user, isLoaded: userLoaded } = useUser()
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
   const userData = getUserData()
   const [property, setProperty] = useState(initialProperty)
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
@@ -91,7 +93,8 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
   const [processedDocuments, setProcessedDocuments] = useState([]) // Обработанные документы
   const [timerBidInfo, setTimerBidInfo] = useState(null) // Информация о ставке для отображения в таймере (флаг и номер)
   const shownLeaderInfoRef = useRef(null) // Ref для отслеживания, какому лидеру уже показывали информацию
-  
+  const reservationCheckoutHandledRef = useRef(null)
+
   // Отслеживаем изменения currentBid и запускаем анимацию при росте
   useEffect(() => {
     if (currentBid !== null && prevBid !== null && currentBid > prevBid) {
@@ -514,7 +517,12 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
     reservation_time_remaining: property.reservation_time_remaining || null,
     debt_severity: property.debt_severity || null,
   }
-  
+
+  const isReservedActive =
+    displayProperty.is_reserved &&
+    displayProperty.reserved_until &&
+    new Date(displayProperty.reserved_until) > new Date()
+
   const isDebtProperty =
     displayProperty.sale_type === 'debt' ||
     displayProperty.is_debt === 1 ||
@@ -528,7 +536,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
     property_reserved_until: property.reserved_until,
     displayProperty_is_reserved: displayProperty.is_reserved,
     displayProperty_reserved_until: displayProperty.reserved_until,
-    shouldShowBanner: displayProperty.is_reserved && displayProperty.reserved_until && new Date(displayProperty.reserved_until) > new Date()
+    shouldShowBanner: isReservedActive
   });
 
   // Убрали лишние логи, которые вызывают бесконечный цикл
@@ -624,6 +632,118 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
     displayProperty.endTime ||
     displayProperty.auction_end_date ||
     null
+
+  // После оплаты резерва в Stripe — подтвердить сессию (если webhook ещё не обработал)
+  useEffect(() => {
+    const checkout = searchParams.get('reservation_checkout')
+    const sessionId = searchParams.get('session_id')
+    if (checkout !== 'success' || !sessionId || !sessionId.startsWith('cs_')) return
+    if (reservationCheckoutHandledRef.current === sessionId) return
+
+    let cancelled = false
+
+    const run = async () => {
+      if (!userLoaded) {
+        return
+      }
+
+      let uid = localStorage.getItem('userId')
+      if (!uid || !/^\d+$/.test(uid)) {
+        const legacy = getUserData()
+        if (legacy?.id != null && /^\d+$/.test(String(legacy.id))) {
+          uid = String(legacy.id)
+          localStorage.setItem('userId', uid)
+        }
+      }
+      if (!uid || !/^\d+$/.test(uid)) {
+        if (user?.primaryEmailAddress?.emailAddress) {
+          try {
+            if (!API_BASE_URL || API_BASE_URL.includes('localhost')) {
+              API_BASE_URL = await getApiBaseUrl()
+            }
+            const r = await fetch(
+              `${API_BASE_URL}/users/email/${encodeURIComponent(user.primaryEmailAddress.emailAddress)}`
+            )
+            if (r.ok) {
+              const j = await r.json()
+              if (j.success && j.data?.id) {
+                uid = String(j.data.id)
+                localStorage.setItem('userId', uid)
+              }
+            }
+          } catch (e) {
+            console.warn('PropertyDetailClassic: reservation confirm user id', e)
+          }
+        }
+      }
+      if (!uid || !/^\d+$/.test(uid)) {
+        showNotification('Войдите в аккаунт, чтобы завершить подтверждение резерва.')
+        const next = new URLSearchParams(searchParams)
+        next.delete('reservation_checkout')
+        next.delete('session_id')
+        setSearchParams(next, { replace: true })
+        return
+      }
+
+      reservationCheckoutHandledRef.current = sessionId
+      try {
+        const result = await confirmPropertyReservationSession(sessionId, uid)
+        if (cancelled) return
+        if (result.ok) {
+          if (result.data?.already) {
+            showNotification('Резерв уже был учтён ранее.')
+          } else {
+            showNotification(
+              'Оплата резерва получена. Объект зарезервирован, менеджер свяжется с вами.'
+            )
+          }
+          try {
+            let base = API_BASE_URL
+            if (!base || base.includes('localhost')) {
+              base = await getApiBaseUrl()
+            }
+            const fromPath =
+              typeof window !== 'undefined'
+                ? window.location.pathname.match(/\/property\/(\d+)/)
+                : null
+            const pid = displayProperty?.id || (fromPath ? parseInt(fromPath[1], 10) : null)
+            if (pid) {
+              const propResponse = await fetch(`${base}/properties/${pid}?lang=${currentLang}`)
+              if (propResponse.ok) {
+                const propData = await propResponse.json()
+                if (propData.success && propData.data) {
+                  setProperty((prev) => ({ ...prev, ...propData.data }))
+                }
+              }
+            }
+          } catch (refetchErr) {
+            console.warn('PropertyDetailClassic: refetch property after reservation', refetchErr)
+          }
+        } else {
+          showNotification(result.error || 'Не удалось подтвердить резерв', 'error')
+          reservationCheckoutHandledRef.current = null
+        }
+      } catch (e) {
+        if (!cancelled) {
+          showNotification(e?.message || 'Ошибка подтверждения', 'error')
+          reservationCheckoutHandledRef.current = null
+        }
+      } finally {
+        if (!cancelled) {
+          const next = new URLSearchParams(searchParams)
+          next.delete('reservation_checkout')
+          next.delete('session_id')
+          setSearchParams(next, { replace: true })
+        }
+      }
+    }
+
+    run()
+    return () => {
+      cancelled = true
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, userLoaded, user?.primaryEmailAddress?.emailAddress])
 
   // Сохраняем исходное значение тестового таймера и его длительность при первой загрузке
   useEffect(() => {
@@ -1356,7 +1476,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
 
   const handleBookNow = () => {
     // Проверяем резервацию перед открытием модального окна
-    if (displayProperty.is_reserved && displayProperty.reserved_until && new Date(displayProperty.reserved_until) > new Date()) {
+    if (isReservedActive) {
       showNotification('Объект временно забронирован. Покупка недоступна.')
       return
     }
@@ -2006,7 +2126,9 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
           {/* Левая колонка - обёртка для галереи и информации */}
           <div className="property-detail-left-column">
             {/* Галерея */}
-            <div className="property-detail-gallery">
+            <div
+              className={`property-detail-gallery${isReservedActive ? ' property-detail-gallery--reserved' : ''}`}
+            >
               <div className="property-detail-gallery__main">
                 {currentMedia && (
                   currentMedia.type === 'video' ? (
@@ -2040,6 +2162,11 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                     />
                   )
                 )}
+                {isReservedActive && (
+                  <div className="property-detail-gallery__reserved-banner" aria-hidden>
+                    <span className="property-detail-gallery__reserved-text">Забронировано</span>
+                  </div>
+                )}
                 {/* Анимация изменения цены поверх изображения */}
                 {priceAnimation && currentBid !== null && (
                   <div className="property-detail-gallery__price-overlay">
@@ -2061,6 +2188,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                       type="button"
                       className="property-detail-gallery__nav property-detail-gallery__nav--prev"
                       onClick={handlePreviousImage}
+                      disabled={isReservedActive}
                       aria-label={t('previousImage') || 'Предыдущее фото'}
                     >
                       <FiChevronLeft size={24} />
@@ -2069,6 +2197,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                       type="button"
                       className="property-detail-gallery__nav property-detail-gallery__nav--next"
                       onClick={handleNextImage}
+                      disabled={isReservedActive}
                       aria-label={t('nextImage') || 'Следующее фото'}
                     >
                       <FiChevronRight size={24} />
@@ -2083,6 +2212,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                     type="button"
                     className="property-detail-gallery__action-btn"
                     onClick={handleShare}
+                    disabled={isReservedActive}
                     aria-label={t('share') || 'Поделиться'}
                   >
                     <FiShare2 size={20} />
@@ -2093,6 +2223,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                       isFavorite ? 'property-detail-gallery__action-btn--active' : ''
                     }`}
                     onClick={handleToggleFavorite}
+                    disabled={isReservedActive}
                     aria-label={t('addToFavorites') || 'В избранное'}
                   >
                     {isFavorite ? <FaHeartSolid size={20} /> : <FiHeart size={20} />}
@@ -2591,13 +2722,13 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                       type="button"
                       className="property-detail-sidebar__buy-now-btn"
                       onClick={handleBookNow}
-                      disabled={displayProperty.is_reserved && displayProperty.reserved_until && new Date(displayProperty.reserved_until) > new Date()}
+                      disabled={isReservedActive}
                       style={{
-                        opacity: (displayProperty.is_reserved && displayProperty.reserved_until && new Date(displayProperty.reserved_until) > new Date()) ? 0.5 : 1,
-                        cursor: (displayProperty.is_reserved && displayProperty.reserved_until && new Date(displayProperty.reserved_until) > new Date()) ? 'not-allowed' : 'pointer'
+                        opacity: (isReservedActive) ? 0.5 : 1,
+                        cursor: (isReservedActive) ? 'not-allowed' : 'pointer'
                       }}
                     >
-                      {displayProperty.is_reserved && displayProperty.reserved_until && new Date(displayProperty.reserved_until) > new Date() ? t('objectReserved') : t('buyNowSectionTitle')}
+                      {isReservedActive ? t('objectReserved') : t('buyNowSectionTitle')}
                     </button>
                   </>
                 ) : null;
@@ -2607,10 +2738,10 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                 <button
                   className="property-detail-sidebar__buy-btn property-detail-sidebar__buy-btn--winner"
                   onClick={handleBookNow}
-                  disabled={displayProperty.is_reserved && displayProperty.reserved_until && new Date(displayProperty.reserved_until) > new Date()}
+                  disabled={isReservedActive}
                   style={{
-                    opacity: (displayProperty.is_reserved && displayProperty.reserved_until && new Date(displayProperty.reserved_until) > new Date()) ? 0.5 : 1,
-                    cursor: (displayProperty.is_reserved && displayProperty.reserved_until && new Date(displayProperty.reserved_until) > new Date()) ? 'not-allowed' : 'pointer'
+                    opacity: (isReservedActive) ? 0.5 : 1,
+                    cursor: (isReservedActive) ? 'not-allowed' : 'pointer'
                   }}
                 >
                   {t('propertyDetailGoToPurchase')}
@@ -2633,13 +2764,13 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                     type="button"
                     className="property-detail-sidebar__buy-now-btn"
                     onClick={handleBookNow}
-                    disabled={displayProperty.is_reserved && displayProperty.reserved_until && new Date(displayProperty.reserved_until) > new Date()}
+                    disabled={isReservedActive}
                     style={{
-                      opacity: (displayProperty.is_reserved && displayProperty.reserved_until && new Date(displayProperty.reserved_until) > new Date()) ? 0.5 : 1,
-                      cursor: (displayProperty.is_reserved && displayProperty.reserved_until && new Date(displayProperty.reserved_until) > new Date()) ? 'not-allowed' : 'pointer'
+                      opacity: (isReservedActive) ? 0.5 : 1,
+                      cursor: (isReservedActive) ? 'not-allowed' : 'pointer'
                     }}
                   >
-                    {displayProperty.is_reserved && displayProperty.reserved_until && new Date(displayProperty.reserved_until) > new Date()
+                    {isReservedActive
                       ? t('objectReserved')
                       : t('buyNowSectionTitle')}
                   </button>
@@ -2742,7 +2873,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                   )}
 
                   {/* Проверяем резервацию объекта */}
-                  {displayProperty.is_reserved && displayProperty.reserved_until && new Date(displayProperty.reserved_until) > new Date() ? (
+                  {isReservedActive ? (
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '1rem' }}>
                       <div className="property-reservation-block" style={{ minWidth: '250px' }}>
                         <div className="reservation-icon">🔒</div>
@@ -2831,7 +2962,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                     </div>
                   ) : (
                     <>
-                      {displayProperty.is_reserved && displayProperty.reserved_until && new Date(displayProperty.reserved_until) > new Date() ? (
+                      {isReservedActive ? (
                         <div className="property-reservation-block" style={{ minWidth: '250px' }}>
                           <div className="reservation-icon">🔒</div>
                           <div className="reservation-text">
@@ -2946,7 +3077,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                   {/* Функционал ставки - скрываем когда таймер истек (только для аукционов) */}
                   {(!isAuctionProperty || !timerExpired) && (
                   <div className="property-detail-sidebar__bidding-section">
-                    {displayProperty.is_reserved && displayProperty.reserved_until && new Date(displayProperty.reserved_until) > new Date() && (
+                    {isReservedActive && (
                       <div style={{
                         background: 'rgba(245, 158, 11, 0.1)',
                         border: '1px solid #f59e0b',
@@ -2979,10 +3110,10 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                             type="button"
                             className="bidding-section__quick-btn"
                             onClick={() => handleQuickBid(amount)}
-                            disabled={isSubmittingBid || isUserLeader || (displayProperty.is_reserved && displayProperty.reserved_until && new Date(displayProperty.reserved_until) > new Date())}
+                            disabled={isSubmittingBid || isUserLeader || (isReservedActive)}
                             style={{
-                              opacity: (displayProperty.is_reserved && displayProperty.reserved_until && new Date(displayProperty.reserved_until) > new Date()) ? 0.5 : 1,
-                              cursor: (displayProperty.is_reserved && displayProperty.reserved_until && new Date(displayProperty.reserved_until) > new Date()) ? 'not-allowed' : 'pointer'
+                              opacity: (isReservedActive) ? 0.5 : 1,
+                              cursor: (isReservedActive) ? 'not-allowed' : 'pointer'
                             }}
                           >
                             {formatAmount(amount)}
@@ -2993,7 +3124,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
 
                     {isAuctionProperty &&
                       !isUserLeader &&
-                      !(displayProperty.is_reserved && displayProperty.reserved_until && new Date(displayProperty.reserved_until) > new Date()) &&
+                      !(isReservedActive) &&
                       (() => {
                         const startingPrice = displayProperty.auction_starting_price || 0
                         const effectiveCurrentBid =
@@ -3029,13 +3160,13 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                       <input
                         type="text"
                         className="bidding-section__input"
-                        placeholder={isUserLeader ? t('propertyDetailYouAreLeading') : (displayProperty.is_reserved && displayProperty.reserved_until && new Date(displayProperty.reserved_until) > new Date()) ? t('objectReserved') : t('propertyDetailEnterBidAmount')}
+                        placeholder={isUserLeader ? t('propertyDetailYouAreLeading') : (isReservedActive) ? t('objectReserved') : t('propertyDetailEnterBidAmount')}
                         value={bidAmount}
                         onChange={handleBidAmountChange}
-                        disabled={isSubmittingBid || isUserLeader || (displayProperty.is_reserved && displayProperty.reserved_until && new Date(displayProperty.reserved_until) > new Date())}
+                        disabled={isSubmittingBid || isUserLeader || (isReservedActive)}
                         style={{
-                          opacity: (displayProperty.is_reserved && displayProperty.reserved_until && new Date(displayProperty.reserved_until) > new Date()) ? 0.5 : 1,
-                          cursor: (displayProperty.is_reserved && displayProperty.reserved_until && new Date(displayProperty.reserved_until) > new Date()) ? 'not-allowed' : 'text'
+                          opacity: (isReservedActive) ? 0.5 : 1,
+                          cursor: (isReservedActive) ? 'not-allowed' : 'text'
                         }}
                       />
                     </div>
@@ -3044,13 +3175,13 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                       type="button"
                       className={`bidding-section__submit-btn ${isUserLeader ? 'bidding-section__submit-btn--winner' : ''}`}
                       onClick={handleBidSubmit}
-                      disabled={isSubmittingBid || !bidAmount || isUserLeader || (displayProperty.is_reserved && displayProperty.reserved_until && new Date(displayProperty.reserved_until) > new Date())}
+                      disabled={isSubmittingBid || !bidAmount || isUserLeader || (isReservedActive)}
                       style={{
-                        opacity: (displayProperty.is_reserved && displayProperty.reserved_until && new Date(displayProperty.reserved_until) > new Date()) ? 0.5 : 1,
-                        cursor: (displayProperty.is_reserved && displayProperty.reserved_until && new Date(displayProperty.reserved_until) > new Date()) ? 'not-allowed' : 'pointer'
+                        opacity: (isReservedActive) ? 0.5 : 1,
+                        cursor: (isReservedActive) ? 'not-allowed' : 'pointer'
                       }}
                     >
-                      {isSubmittingBid ? t('propertyDetailSubmitting') : isUserLeader ? t('propertyDetailYouAreWinning') : (displayProperty.is_reserved && displayProperty.reserved_until && new Date(displayProperty.reserved_until) > new Date()) ? t('objectReserved') : t('placeBid')}
+                      {isSubmittingBid ? t('propertyDetailSubmitting') : isUserLeader ? t('propertyDetailYouAreWinning') : (isReservedActive) ? t('objectReserved') : t('placeBid')}
                     </button>
                   </div>
                   )}
@@ -3215,12 +3346,14 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
       <BuyNowModal
         isOpen={isBuyNowModalOpen}
         onClose={() => setIsBuyNowModalOpen(false)}
+        stripeReturnPath={displayProperty?.id != null ? `/property/${displayProperty.id}` : '/'}
         property={{
           id: displayProperty.id,
           title: propertyInfo,
           name: propertyInfo,
           price: displayProperty.price,
           currency: displayProperty.currency,
+          property_type: displayProperty.property_type,
           isAuction: isAuctionProperty,
           currentBid: currentBid || displayProperty.currentBid || displayProperty.auction_starting_price || displayProperty.price
         }}

@@ -74,3 +74,50 @@ export async function startProSubscriptionCheckout({ userId, customerEmail } = {
   }
   return { ok: false, error: 'Сервер не вернул ссылку на оплату' }
 }
+
+/**
+ * Резерв 10% (Stripe Checkout, сумма считается на сервере по объекту).
+ */
+export async function startPropertyReservationCheckout({
+  userId,
+  propertyId,
+  propertyType,
+  customerEmail,
+  returnPath,
+  useDeposit,
+} = {}) {
+  const res = await fetch(`${API_BASE}/billing/create-property-reservation-checkout`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      userId: userId != null ? String(userId) : undefined,
+      propertyId: propertyId != null ? String(propertyId) : undefined,
+      propertyType: propertyType || undefined,
+      customerEmail: customerEmail || undefined,
+      returnPath: returnPath || undefined,
+      useDeposit: useDeposit === true,
+    }),
+  })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) {
+    return { ok: false, error: data.error || 'Не удалось создать оплату резерва' }
+  }
+  if (data.url) {
+    window.location.href = data.url
+    return { ok: true }
+  }
+  return { ok: false, error: 'Сервер не вернул ссылку на оплату' }
+}
+
+export async function confirmPropertyReservationSession(sessionId, userId) {
+  const res = await fetch(`${API_BASE}/billing/confirm-property-reservation`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ session_id: sessionId, userId: String(userId) }),
+  })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) {
+    return { ok: false, error: data.error || 'confirm_failed' }
+  }
+  return { ok: true, data: data.data }
+}

@@ -1,303 +1,157 @@
-import { useState } from 'react'
-import { FiX, FiCheckCircle, FiFileText, FiCreditCard, FiShield } from 'react-icons/fi'
+import { useState, useEffect } from 'react'
+import { FiX, FiCheckCircle, FiPercent, FiCreditCard, FiPhone } from 'react-icons/fi'
 import { useUser } from '@clerk/clerk-react'
-import { getUserData } from '../services/authService'
+import { getUserData, isAuthenticated } from '../services/authService'
 import { getApiBaseUrl } from '../utils/apiConfig'
-import { getEmailJsConfig } from '../utils/env'
-import emailjs from '@emailjs/browser'
 import { showNotification } from '../utils/toastHelper'
+import { startPropertyReservationCheckout } from '../utils/subscriptionCheckout'
 import './BuyNowModal.css'
 
-const BuyNowModal = ({ isOpen, onClose, property }) => {
+const DEPOSIT_FRACTION = 0.1
+const WALLET_OFFSET_EUR = 3000
+
+const BuyNowModal = ({ isOpen, onClose, property, stripeReturnPath }) => {
   const { user, isLoaded: userLoaded } = useUser()
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [submitError, setSubmitError] = useState(null)
+  const [dbUserId, setDbUserId] = useState(null)
+  const [stripeLoading, setStripeLoading] = useState(false)
+  const [walletBalanceEur, setWalletBalanceEur] = useState(null)
+  const [useWalletDeposit, setUseWalletDeposit] = useState(false)
+
+  useEffect(() => {
+    if (!isOpen) return
+
+    const fetchDbUserId = async () => {
+      const saved = localStorage.getItem('userId')
+      if (saved && /^\d+$/.test(saved)) {
+        setDbUserId(parseInt(saved, 10))
+        return
+      }
+
+      if (!userLoaded) return
+
+      const isClerkAuth = user && userLoaded
+      const isOldAuth = isAuthenticated()
+
+      if (isClerkAuth && user) {
+        try {
+          const API_BASE_URL = await getApiBaseUrl()
+          const userEmail =
+            user.primaryEmailAddress?.emailAddress || user.emailAddresses?.[0]?.emailAddress
+          if (userEmail) {
+            const userResponse = await fetch(
+              `${API_BASE_URL}/users/email/${encodeURIComponent(userEmail)}`
+            )
+            if (userResponse.ok) {
+              const json = await userResponse.json()
+              if (json.success && json.data?.id) {
+                const numericId = json.data.id
+                setDbUserId(numericId)
+                localStorage.setItem('userId', String(numericId))
+              }
+            }
+          }
+        } catch (e) {
+          console.warn('BuyNowModal: не удалось получить userId из БД', e)
+        }
+      } else if (isOldAuth) {
+        const ud = getUserData()
+        const id = ud?.id
+        if (id && /^\d+$/.test(String(id))) {
+          setDbUserId(parseInt(String(id), 10))
+        }
+      }
+    }
+
+    fetchDbUserId()
+  }, [isOpen, userLoaded, user?.id, user?.primaryEmailAddress?.emailAddress])
+
+  useEffect(() => {
+    if (!isOpen || !dbUserId) return
+    let cancelled = false
+    ;(async () => {
+      try {
+        const API_BASE_URL = await getApiBaseUrl()
+        const res = await fetch(`${API_BASE_URL}/users/${dbUserId}/deposit`)
+        if (!res.ok || cancelled) return
+        const json = await res.json()
+        if (json.success && json.data && typeof json.data.depositAmount === 'number') {
+          setWalletBalanceEur(json.data.depositAmount)
+        }
+      } catch {
+        setWalletBalanceEur(null)
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [isOpen, dbUserId])
+
+  useEffect(() => {
+    if (!isOpen) setUseWalletDeposit(false)
+  }, [isOpen])
 
   if (!isOpen) return null
 
   const propertyTitle = property?.title || property?.name || 'Объект недвижимости'
-  const propertyPrice = property?.price || 0
-  const currency = property?.currency || 'USD'
-  const currencySymbol = currency === 'USD' ? '$' : currency === 'EUR' ? '€' : currency === 'BYN' ? 'Br' : ''
+  const currency = (property?.currency || 'USD').toUpperCase()
+  const currencySymbol =
+    currency === 'USD' ? '$' : currency === 'EUR' ? '€' : currency === 'BYN' ? 'Br' : ''
 
-  // Функция отправки email подтверждения
-  const sendPurchaseConfirmationEmail = async (email, buyerName, propertyTitle, price, currencySymbol) => {
-    if (!email) return
+  const minSalePrice = Number(property?.price) || 0
+  const tenPercent = Math.round(minSalePrice * DEPOSIT_FRACTION * 100) / 100
+  const isEur = currency === 'EUR'
+  const canUseWallet =
+    isEur && walletBalanceEur != null && walletBalanceEur >= WALLET_OFFSET_EUR && tenPercent > WALLET_OFFSET_EUR
 
-    const emailJsConfig = getEmailJsConfig()
-    const EMAILJS_SERVICE_ID = emailJsConfig.serviceId || ''
-    const EMAILJS_TEMPLATE_ID = emailJsConfig.templateId || ''
-    const EMAILJS_PUBLIC_KEY = emailJsConfig.publicKey || ''
+  let cardPayDisplay = tenPercent
+  if (useWalletDeposit && canUseWallet) {
+    cardPayDisplay = Math.round(Math.max(0, tenPercent - WALLET_OFFSET_EUR) * 100) / 100
+  }
 
-    if (!EMAILJS_SERVICE_ID || !EMAILJS_TEMPLATE_ID || !EMAILJS_PUBLIC_KEY) {
-      console.warn('EmailJS не настроен для отправки подтверждения')
+  const handleStripeReservation = async () => {
+    if (!property?.id) {
+      showNotification('Не удалось определить объект', 'error')
       return
     }
-
-    try {
-      // Инициализируем EmailJS, если еще не инициализирован
-      if (EMAILJS_PUBLIC_KEY) {
-        emailjs.init(EMAILJS_PUBLIC_KEY)
-      }
-
-      // Формируем такое же сообщение, как в WhatsApp
-      const emailMessage = `🎉 Здравствуйте, ${buyerName || 'Покупатель'}!
-
-Ваш запрос на покупку объекта недвижимости успешно принят!
-
-📋 Детали запроса:
-🏠 Объект: ${propertyTitle}
-💰 Цена: ${currencySymbol}${price.toLocaleString('ru-RU')}
-
-Наш менеджер свяжется с вами в течение 24 часов для уточнения деталей и ответов на ваши вопросы.
-
-С уважением,
-Команда Sellyourbrick`
-
-      const templateParams = {
-        to_email: email,
-        email: email,
-        buyer_name: buyerName || 'Покупатель',
-        property_title: propertyTitle,
-        property_price: `${currencySymbol}${price.toLocaleString('ru-RU')}`,
-        message: emailMessage,
-        from_name: 'Sellyourbrick'
-      }
-
-      await emailjs.send(
-        EMAILJS_SERVICE_ID,
-        EMAILJS_TEMPLATE_ID,
-        templateParams,
-        EMAILJS_PUBLIC_KEY
-      )
-      console.log('✅ Email подтверждения отправлен')
-    } catch (error) {
-      console.error('Ошибка отправки email:', error)
-      throw error
+    if (!dbUserId) {
+      showNotification('Не удалось получить профиль пользователя. Обновите страницу или войдите снова.', 'error')
+      return
     }
-  }
-
-  // Функция отправки WhatsApp подтверждения
-  const sendPurchaseConfirmationWhatsApp = async (phone, buyerName, propertyTitle, price, currencySymbol) => {
-    if (!phone) return
-
-    try {
-      const API_BASE_URL = await getApiBaseUrl()
-      // Форматируем номер телефона (убираем все нецифровые символы)
-      const formattedPhone = phone.replace(/\D/g, '')
-
-      const message = `🎉 Здравствуйте, ${buyerName || 'Покупатель'}!
-
-Ваш запрос на покупку объекта недвижимости успешно принят!
-
-📋 Детали запроса:
-🏠 Объект: ${propertyTitle}
-💰 Цена: ${currencySymbol}${price.toLocaleString('ru-RU')}
-
-Наш менеджер свяжется с вами в течение 24 часов для уточнения деталей и ответов на ваши вопросы.
-
-С уважением,
-Команда Sellyourbrick`
-
-      const response = await fetch(`${API_BASE_URL}/whatsapp/send-message`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          phone: formattedPhone,
-          message: message
-        })
-      })
-
-      if (response.ok) {
-        console.log('✅ WhatsApp сообщение отправлено')
-      } else {
-        const errorData = await response.json().catch(() => ({}))
-        console.warn('Не удалось отправить WhatsApp:', errorData.error || 'Unknown error')
-      }
-    } catch (error) {
-      console.error('Ошибка отправки WhatsApp:', error)
-      throw error
+    if (useWalletDeposit && isEur && !canUseWallet) {
+      showNotification('Недостаточно средств на депозите или сумма резерва слишком мала', 'error')
+      return
     }
-  }
-
-  const handleSubmitRequest = async () => {
-    setIsSubmitting(true)
-    setSubmitError(null)
-
+    setStripeLoading(true)
     try {
-      // Проверяем, что пользователь не является продавцом
-      const userData = getUserData()
-      const userRole = userData?.role || 'buyer'
-      if (userRole === 'seller' || userRole === 'owner') {
-        showNotification('Продавцы не могут покупать объекты')
-        setIsSubmitting(false)
-        return
-      }
-
-      // Получаем данные текущего пользователя
-      let buyerData = {}
-      
-      // Пробуем получить данные из Clerk
-      if (userLoaded && user) {
-        const userName = user.fullName || 
-          `${user.firstName || ''} ${user.lastName || ''}`.trim() || 
-          user.username || 
-          'Пользователь'
-        
-        const userEmail = user.primaryEmailAddress?.emailAddress || 
-          (user.emailAddresses && user.emailAddresses.length > 0 ? user.emailAddresses[0].emailAddress : '')
-        
-        const userPhone = user.primaryPhoneNumber?.phoneNumber || 
-          (user.phoneNumbers && user.phoneNumbers.length > 0 ? user.phoneNumbers[0].phoneNumber : '')
-        
-        buyerData = {
-          name: userName,
-          email: userEmail,
-          phone: userPhone,
-          userId: user.id
-        }
-      } else {
-        // Если Clerk не используется, получаем из старой системы
-        const userData = getUserData()
-        buyerData = {
-          name: userData.name || 'Пользователь',
-          email: userData.email || '',
-          phone: userData.phone || userData.phoneFormatted || '',
-          userId: userData.id || ''
-        }
-      }
-
-      // Получаем данные владельца объекта (пробуем все возможные варианты)
-      const sellerId = property.user_id || property.userId || property.sellerId || null
-      
-      // Имя владельца - пробуем все варианты
-      let sellerName = property.seller || property.sellerName || null
-      if (!sellerName && (property.first_name || property.last_name)) {
-        sellerName = `${property.first_name || ''} ${property.last_name || ''}`.trim() || null
-      }
-      if (!sellerName) {
-        sellerName = null // Будет показано "Владелец не указан" в админке
-      }
-      
-      // Email владельца
-      const sellerEmail = property.sellerEmail || property.email || null
-      
-      // Телефон владельца
-      const sellerPhone = property.sellerPhone || property.phone_number || null
-
-      // Формируем данные запроса со всеми данными об объекте
-      const requestData = {
-        // Данные покупателя
-        buyerName: buyerData.name,
-        buyerEmail: buyerData.email,
-        buyerPhone: buyerData.phone,
-        buyerId: buyerData.userId,
-        
-        // Данные владельца объекта
-        sellerId: sellerId,
-        sellerName: sellerName,
-        sellerEmail: sellerEmail,
-        sellerPhone: sellerPhone,
-        
-        // Данные объекта недвижимости (базовые)
+      const customerEmail =
+        user?.primaryEmailAddress?.emailAddress ||
+        user?.emailAddresses?.[0]?.emailAddress ||
+        getUserData()?.email ||
+        undefined
+      const returnPath =
+        stripeReturnPath || (property?.id != null ? `/property/${property.id}` : '/')
+      const result = await startPropertyReservationCheckout({
+        userId: dbUserId,
         propertyId: property.id,
-        propertyTitle: propertyTitle,
-        propertyDescription: property.description || '',
-        propertyPrice: propertyPrice,
-        propertyCurrency: currency,
-        propertyLocation: property.location || '',
-        propertyType: property.type || property.property_type || '',
-        propertyArea: property.area || property.sqft || '',
-        
-        // Характеристики объекта
-        propertyRooms: property.rooms || property.bedrooms || null,
-        propertyBedrooms: property.bedrooms || property.rooms || null,
-        propertyBathrooms: property.bathrooms || null,
-        propertyFloor: property.floor !== undefined && property.floor !== null ? property.floor : null,
-        propertyTotalFloors: property.total_floors !== undefined && property.total_floors !== null ? property.total_floors : null,
-        propertyYearBuilt: property.year_built !== undefined && property.year_built !== null ? property.year_built : null,
-        propertyLivingArea: property.living_area || property.livingArea || null,
-        propertyLandArea: property.land_area || property.landArea || null,
-        propertyBuildingType: property.building_type || property.buildingType || null,
-        
-        // Дополнительные характеристики
-        propertyRenovation: property.renovation || null,
-        propertyCondition: property.condition || null,
-        propertyHeating: property.heating || null,
-        propertyWaterSupply: property.water_supply || null,
-        propertySewerage: property.sewerage || null,
-        
-        // Удобства (булевы значения)
-        propertyBalcony: property.balcony === true || property.balcony === 1 ? 1 : 0,
-        propertyParking: property.parking === true || property.parking === 1 ? 1 : 0,
-        propertyElevator: property.elevator === true || property.elevator === 1 ? 1 : 0,
-        propertyGarage: property.garage === true || property.garage === 1 ? 1 : 0,
-        propertyPool: property.pool === true || property.pool === 1 ? 1 : 0,
-        propertyGarden: property.garden === true || property.garden === 1 ? 1 : 0,
-        propertyElectricity: property.electricity === true || property.electricity === 1 ? 1 : 0,
-        propertyInternet: property.internet === true || property.internet === 1 ? 1 : 0,
-        propertySecurity: property.security === true || property.security === 1 ? 1 : 0,
-        propertyFurniture: property.furniture === true || property.furniture === 1 ? 1 : 0,
-        
-        // Коммерческая недвижимость
-        propertyCommercialType: property.commercial_type || null,
-        propertyBusinessHours: property.business_hours || null,
-        
-        // Дополнительная информация
-        requestDate: new Date().toISOString(),
-        status: 'pending' // pending, processing, completed, cancelled
-      }
-
-      // Отправляем запрос на сервер
-      const API_BASE_URL = await getApiBaseUrl()
-      const response = await fetch(`${API_BASE_URL}/purchase-requests`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(requestData)
+        propertyType: property?.property_type || property?.propertyType,
+        customerEmail,
+        returnPath,
+        useDeposit: !!(useWalletDeposit && canUseWallet),
       })
-
-      const data = await response.json()
-
-      if (response.ok && data.success) {
-        // Отправляем email пользователю
-        try {
-          await sendPurchaseConfirmationEmail(buyerData.email, buyerData.name, propertyTitle, propertyPrice, currencySymbol)
-        } catch (emailError) {
-          console.warn('Не удалось отправить email:', emailError)
-        }
-
-        // Отправляем WhatsApp сообщение пользователю
-        if (buyerData.phone) {
-          try {
-            await sendPurchaseConfirmationWhatsApp(buyerData.phone, buyerData.name, propertyTitle, propertyPrice, currencySymbol)
-          } catch (whatsappError) {
-            console.warn('Не удалось отправить WhatsApp:', whatsappError)
-          }
-        }
-
-        showNotification('✅ Запрос на покупку успешно отправлен! Наш менеджер свяжется с вами в течение 24 часов. Проверьте вашу почту и WhatsApp.')
-        onClose()
-      } else {
-        throw new Error(data.error || 'Не удалось отправить запрос')
+      if (!result.ok) {
+        showNotification(result.error || 'Не удалось открыть оплату', 'error')
       }
-    } catch (error) {
-      console.error('Ошибка отправки запроса на покупку:', error)
-      setSubmitError('Не удалось отправить запрос. Попробуйте еще раз.')
-      showNotification('❌ Ошибка при отправке запроса. Пожалуйста, попробуйте позже или свяжитесь с нами напрямую.')
     } finally {
-      setIsSubmitting(false)
+      setStripeLoading(false)
     }
   }
 
   return (
     <div className="buy-now-modal-overlay" onClick={onClose}>
       <div className="buy-now-modal" onClick={(e) => e.stopPropagation()}>
-        <button 
-          className="buy-now-modal__close" 
+        <button
+          className="buy-now-modal__close"
+          type="button"
           onClick={onClose}
           aria-label="Закрыть"
         >
@@ -309,30 +163,91 @@ const BuyNowModal = ({ isOpen, onClose, property }) => {
             <div className="buy-now-modal__icon">
               <FiCheckCircle size={48} />
             </div>
-            <h2 className="buy-now-modal__title">Инструкция по покупке</h2>
+            <h2 className="buy-now-modal__title">Купить сейчас</h2>
             <p className="buy-now-modal__subtitle">{propertyTitle}</p>
           </div>
 
+          <div className="buy-now-modal__intro">
+            <p className="buy-now-modal__intro-text">
+              Резерв <strong>10% от минимальной цены продажи</strong>. После оплаты объект
+              резервируется за вами, менеджер свяжется для полной оплаты и оформления сделки.
+            </p>
+          </div>
+
           <div className="buy-now-modal__price-block">
-            <span className="buy-now-modal__price-label">Стоимость:</span>
+            <span className="buy-now-modal__price-label">Минимальная цена продажи</span>
             <span className="buy-now-modal__price-value">
-              {currencySymbol}{propertyPrice.toLocaleString('ru-RU')}
+              {currencySymbol}
+              {minSalePrice.toLocaleString('ru-RU')}
             </span>
           </div>
 
+          <div className="buy-now-modal__wallet-toggle">
+            <div className="buy-now-modal__wallet-toggle-label">
+              <span>Списать 3000 € с депозита</span>
+              {walletBalanceEur != null && (
+                <span className="buy-now-modal__wallet-balance">
+                  Депозит: {walletBalanceEur.toLocaleString('ru-RU', { maximumFractionDigits: 0 })} €
+                </span>
+              )}
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={useWalletDeposit}
+              disabled={!isEur || !canUseWallet}
+              className={`buy-now-modal__switch ${useWalletDeposit ? 'buy-now-modal__switch--on' : ''} ${
+                !isEur || !canUseWallet ? 'buy-now-modal__switch--disabled' : ''
+              }`}
+              onClick={() => {
+                if (!isEur || !canUseWallet) return
+                setUseWalletDeposit((v) => !v)
+              }}
+            >
+              <span className="buy-now-modal__switch-knob" />
+            </button>
+            {!isEur && (
+              <p className="buy-now-modal__wallet-hint">
+                Списание с депозита доступно только для объявлений в EUR.
+              </p>
+            )}
+            {isEur && walletBalanceEur != null && walletBalanceEur < WALLET_OFFSET_EUR && (
+              <p className="buy-now-modal__wallet-hint">На депозите нужно не менее 3000 €.</p>
+            )}
+          </div>
+
+          <div className="buy-now-modal__price-block buy-now-modal__price-block--deposit">
+            <span className="buy-now-modal__price-label">
+              <FiPercent size={16} aria-hidden style={{ verticalAlign: 'middle', marginRight: 6 }} />
+              10% резерв
+            </span>
+            <span className="buy-now-modal__price-value buy-now-modal__price-value--deposit">
+              {currencySymbol}
+              {tenPercent.toLocaleString('ru-RU')}
+            </span>
+            {useWalletDeposit && canUseWallet && (
+              <div className="buy-now-modal__split-pay">
+                <span>−{WALLET_OFFSET_EUR.toLocaleString('ru-RU')} € с депозита</span>
+                <span>
+                  К оплате картой: {currencySymbol}
+                  {cardPayDisplay.toLocaleString('ru-RU')}
+                </span>
+              </div>
+            )}
+          </div>
+
           <div className="buy-now-modal__instructions">
-            <h3 className="buy-now-modal__instructions-title">Как купить объект:</h3>
-            
+            <h3 className="buy-now-modal__instructions-title">Как это работает</h3>
+
             <div className="buy-now-modal__step">
               <div className="buy-now-modal__step-number">1</div>
               <div className="buy-now-modal__step-content">
                 <h4 className="buy-now-modal__step-title">
-                  <FiFileText size={20} />
-                  Подготовка документов
+                  <FiCreditCard size={20} />
+                  Резерв 10%
                 </h4>
                 <p className="buy-now-modal__step-text">
-                  Подготовьте все необходимые документы: паспорт, документы о доходах, 
-                  справки из банка (если требуется кредит).
+                  Считается от минимальной цены продажи (не от текущей ставки аукциона).
                 </p>
               </div>
             </div>
@@ -341,26 +256,11 @@ const BuyNowModal = ({ isOpen, onClose, property }) => {
               <div className="buy-now-modal__step-number">2</div>
               <div className="buy-now-modal__step-content">
                 <h4 className="buy-now-modal__step-title">
-                  <FiCreditCard size={20} />
-                  Оплата
+                  <FiPhone size={20} />
+                  Менеджер
                 </h4>
                 <p className="buy-now-modal__step-text">
-                  После подтверждения заявки вы получите реквизиты для оплаты. 
-                  Оплата может быть произведена банковским переводом или через платежную систему.
-                </p>
-              </div>
-            </div>
-
-            <div className="buy-now-modal__step">
-              <div className="buy-now-modal__step-number">3</div>
-              <div className="buy-now-modal__step-content">
-                <h4 className="buy-now-modal__step-title">
-                  <FiShield size={20} />
-                  Оформление сделки
-                </h4>
-                <p className="buy-now-modal__step-text">
-                  Наш специалист свяжется с вами для согласования деталей сделки, 
-                  оформления договора и передачи документов.
+                  После оплаты резерва с вами свяжется менеджер для полной сделки.
                 </p>
               </div>
             </div>
@@ -368,25 +268,25 @@ const BuyNowModal = ({ isOpen, onClose, property }) => {
 
           <div className="buy-now-modal__contact">
             <p className="buy-now-modal__contact-text">
-              После отправки заявки наш менеджер свяжется с вами в течение 24 часов 
-              для уточнения деталей и ответов на ваши вопросы.
+              Тест Stripe: ключи <code>sk_test_</code>, карта 4242&nbsp;4242&nbsp;4242&nbsp;4242.
             </p>
           </div>
 
-          <div className="buy-now-modal__actions">
-            <button 
-              className="buy-now-modal__button buy-now-modal__button--primary"
-              onClick={handleSubmitRequest}
-              disabled={isSubmitting}
+          <div className="buy-now-modal__actions buy-now-modal__actions--stack">
+            <button
+              type="button"
+              className="buy-now-modal__button buy-now-modal__button--stripe"
+              onClick={handleStripeReservation}
+              disabled={
+                stripeLoading ||
+                !property?.id ||
+                minSalePrice <= 0 ||
+                (useWalletDeposit && isEur && !canUseWallet)
+              }
             >
-              {isSubmitting ? 'Отправка...' : 'Отправить запрос на покупку'}
+              {stripeLoading ? 'Переход к оплате…' : 'Оплатить резерв'}
             </button>
           </div>
-          {submitError && (
-            <div className="buy-now-modal__error">
-              {submitError}
-            </div>
-          )}
         </div>
       </div>
     </div>

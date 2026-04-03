@@ -408,7 +408,10 @@ const PropertyList = ({
                 const hasTestDrive =
                   !isDebtProperty &&
                   (property.test_drive === 1 || property.testDrive === true || property.test_drive === true)
-                const isReserved = property.is_reserved === true || property.is_reserved === 1
+                const reservedUntilDate = property.reserved_until ? new Date(property.reserved_until) : null
+                const isReserved =
+                  (property.is_reserved === true || property.is_reserved === 1) &&
+                  (!reservedUntilDate || reservedUntilDate > new Date())
                 const hasBuyNowPrice = hasBuyNowOption(property)
                 
                 // Проверяем, закончился ли таймер
@@ -469,7 +472,7 @@ const PropertyList = ({
                   {isReserved && (
                     <div className="property-reserved-overlay">
                       <div className="reserved-overlay-icon">🔒</div>
-                      <div className="reserved-overlay-text">{t('reserved')}</div>
+                      <div className="reserved-overlay-text">Забронировано</div>
                     </div>
                   )}
                   {(hasBuyNowPrice || hasTestDrive) && (

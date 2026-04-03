@@ -67,6 +67,31 @@
   border-radius: 999px;
 }
 
+.payments-modal__tabs {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem 0;
+  border-bottom: 1px solid #e5e7eb;
+  background: #fafafa;
+}
+
+.payments-modal__tab {
+  border: none;
+  background: transparent;
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #64748b;
+  cursor: pointer;
+  border-radius: 8px 8px 0 0;
+}
+
+.payments-modal__tab--active {
+  color: #0f172a;
+  background: #fff;
+  box-shadow: 0 -1px 0 #fff;
+}
+
 .payments-modal__close {
   border: none;
   background: #f1f5f9;

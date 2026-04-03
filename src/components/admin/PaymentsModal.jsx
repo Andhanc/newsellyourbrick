@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { FiX, FiCreditCard, FiUser, FiMail, FiCalendar } from 'react-icons/fi';
 import { getApiBaseUrl } from '../../utils/apiConfig';
+import { formatBillingReasonForUi } from '../../utils/formatBillingReason';
 import './PaymentsModal.css';
 
 function formatMoney(cents, currency) {
@@ -30,8 +31,10 @@ function formatDate(iso) {
 }
 
 const PaymentsModal = ({ isOpen, onClose }) => {
+  const [tab, setTab] = useState('all');
   const [rows, setRows] = useState([]);
   const [totalCount, setTotalCount] = useState(0);
+  const [resRows, setResRows] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -43,14 +46,19 @@ const PaymentsModal = ({ isOpen, onClose }) => {
       setError(null);
       try {
         const API_BASE_URL = await getApiBaseUrl();
-        const res = await fetch(`${API_BASE_URL}/admin/stripe-payments`);
-        const json = await res.json();
-        if (!res.ok || !json.success) {
-          throw new Error(json.error || 'Не удалось загрузить');
+        const [allRes, resRes] = await Promise.all([
+          fetch(`${API_BASE_URL}/admin/stripe-payments`),
+          fetch(`${API_BASE_URL}/admin/reservation-purchases`),
+        ]);
+        const allJson = await allRes.json().catch(() => ({}));
+        const resJson = await resRes.json().catch(() => ({}));
+        if (!allRes.ok || !allJson.success) {
+          throw new Error(allJson.error || 'Не удалось загрузить платежи');
         }
         if (!cancelled) {
-          setRows(json.data?.payments || []);
-          setTotalCount(json.data?.totalCount ?? 0);
+          setRows(allJson.data?.payments || []);
+          setTotalCount(allJson.data?.totalCount ?? 0);
+          setResRows(resJson.success && Array.isArray(resJson.data) ? resJson.data : []);
         }
       } catch (e) {
         if (!cancelled) setError(e.message || 'Ошибка загрузки');
@@ -87,13 +95,29 @@ const PaymentsModal = ({ isOpen, onClose }) => {
             <FiX size={22} />
           </button>
         </div>
+        <div className="payments-modal__tabs">
+          <button
+            type="button"
+            className={`payments-modal__tab ${tab === 'all' ? 'payments-modal__tab--active' : ''}`}
+            onClick={() => setTab('all')}
+          >
+            Все платежи
+          </button>
+          <button
+            type="button"
+            className={`payments-modal__tab ${tab === 'reservations' ? 'payments-modal__tab--active' : ''}`}
+            onClick={() => setTab('reservations')}
+          >
+            Резерв 10% ({resRows.length})
+          </button>
+        </div>
         <div className="payments-modal__body">
           {loading && <div className="payments-modal__hint">Загрузка…</div>}
           {error && <div className="payments-modal__error">{error}</div>}
-          {!loading && !error && rows.length === 0 && (
+          {!loading && !error && tab === 'all' && rows.length === 0 && (
             <div className="payments-modal__empty">Пока нет платежей</div>
           )}
-          {!loading && !error && rows.length > 0 && (
+          {!loading && !error && tab === 'all' && rows.length > 0 && (
             <div className="payments-modal__table-wrap">
               <table className="payments-modal__table">
                 <thead>
@@ -130,12 +154,63 @@ const PaymentsModal = ({ isOpen, onClose }) => {
                           {p.email || p.customer_email || '—'}
                         </span>
                       </td>
-                      <td className="payments-modal__cell-muted">{p.billing_reason || '—'}</td>
+                      <td className="payments-modal__cell-muted">
+                        {formatBillingReasonForUi(p.billing_reason) || '—'}
+                      </td>
                       <td className="payments-modal__cell-mono">
                         {p.stripe_invoice_id || p.stripe_checkout_session_id || '—'}
                       </td>
                     </tr>
                   ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+          {!loading && !error && tab === 'reservations' && resRows.length === 0 && (
+            <div className="payments-modal__empty">Нет резервов 10%</div>
+          )}
+          {!loading && !error && tab === 'reservations' && resRows.length > 0 && (
+            <div className="payments-modal__table-wrap">
+              <table className="payments-modal__table">
+                <thead>
+                  <tr>
+                    <th>Дата</th>
+                    <th>Покупатель</th>
+                    <th>Объект</th>
+                    <th>Мин. цена</th>
+                    <th>Карта</th>
+                    <th>Депозит €</th>
+                    <th>Осталось</th>
+                    <th>Session</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {resRows.map((p) => {
+                    const b = p.billing || {};
+                    return (
+                      <tr key={p.id}>
+                        <td>{formatDate(p.paid_at)}</td>
+                        <td>
+                          {getName(p)} <span className="payments-modal__uid">#{p.user_id}</span>
+                          <div className="payments-modal__cell-muted">{p.email || p.customer_email || ''}</div>
+                        </td>
+                        <td>#{b.property_id ?? '—'}</td>
+                        <td>
+                          {b.minimum_sale_price != null
+                            ? formatMoney(Math.round(b.minimum_sale_price * 100), p.currency)
+                            : '—'}
+                        </td>
+                        <td>{formatMoney(p.amount_cents, p.currency)}</td>
+                        <td>{b.wallet_eur_applied ? `€${b.wallet_eur_applied}` : '—'}</td>
+                        <td>
+                          {b.remaining_to_full_purchase != null
+                            ? formatMoney(Math.round(b.remaining_to_full_purchase * 100), p.currency)
+                            : '—'}
+                        </td>
+                        <td className="payments-modal__cell-mono">{p.stripe_checkout_session_id || '—'}</td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

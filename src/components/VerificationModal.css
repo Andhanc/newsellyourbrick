@@ -658,14 +658,40 @@
   overflow: hidden;
 }
 
+.camera-preview__video-stack {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
 .camera-video {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
+/* Размытие вне рамки: нижний слой размыт и слегка увеличен, чтобы не было «светлой каймы» */
+.camera-video--blur-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  filter: blur(11px);
+  transform: scale(1.07);
+  transform-origin: center center;
+}
+
+.camera-video--sharp-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
 .camera-video.mirrored {
   transform: scaleX(-1); /* Зеркальное отражение только для фронтальной камеры */
+}
+
+.camera-video--blur-layer.mirrored {
+  transform: scaleX(-1) scale(1.07);
 }
 
 .camera-face-overlay,
@@ -675,6 +701,7 @@
   left: 0;
   right: 0;
   bottom: 0;
+  z-index: 2;
   display: flex;
   align-items: center;
   justify-content: center;

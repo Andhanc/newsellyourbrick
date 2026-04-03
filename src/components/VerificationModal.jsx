@@ -1,10 +1,24 @@
-import { useState, useRef, useEffect, useCallback } from 'react'
+import { useState, useRef, useEffect, useLayoutEffect, useCallback } from 'react'
 import * as faceapi from 'face-api.js'
 import { showNotification } from '../utils/toastHelper'
 import { saveVerificationPhoto, loadVerificationPhotos, clearVerificationPhotos } from '../utils/verificationStorage'
 import './VerificationModal.css'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
+
+/** Область рамки (овала/прямоугольника) в координатах превью камеры — для clip-path и сохранения снимка */
+function buildClipPathFromRegion(region) {
+  if (!region) return undefined
+  if (region.kind === 'ellipse') {
+    return `ellipse(${region.rx}px ${region.ry}px at ${region.cx}px ${region.cy}px)`
+  }
+  const { x, y, w, h, previewWidth, previewHeight } = region
+  const top = y
+  const right = previewWidth - x - w
+  const bottom = previewHeight - y - h
+  const left = x
+  return `inset(${top}px ${right}px ${bottom}px ${left}px round 12px)`
+}
 
 const VerificationModal = ({ isOpen, onClose, userId, onComplete, required }) => {
   const [currentStep, setCurrentStep] = useState(1)
@@ -709,14 +723,75 @@ const VerificationHintModal = ({ isOpen, onClose, step, data }) => {
 // Компонент камеры
 const Camera = ({ type, onCapture, onClose }) => {
   const videoRef = useRef(null)
+  const blurVideoRef = useRef(null)
+  const previewRef = useRef(null)
+  const shapeGuideRef = useRef(null)
   const canvasRef = useRef(null)
   const streamRef = useRef(null)
   const detectionCanvasRef = useRef(null)
+  const [clipRegion, setClipRegion] = useState(null)
   const [isCapturing, setIsCapturing] = useState(false)
   const [facingMode, setFacingMode] = useState('environment') // 'user' для фронтальной, 'environment' для задней
   const [faceDetected, setFaceDetected] = useState(false)
   const [modelsLoaded, setModelsLoaded] = useState(false)
   const detectionIntervalRef = useRef(null)
+
+  const useFrameBlur = type === 'selfie' || type === 'passport'
+
+  const updateClipRegion = useCallback(() => {
+    if (!useFrameBlur) {
+      setClipRegion(null)
+      return
+    }
+    const preview = previewRef.current
+    const guide = shapeGuideRef.current
+    if (!preview || !guide) {
+      setClipRegion(null)
+      return
+    }
+    const pr = preview.getBoundingClientRect()
+    const gr = guide.getBoundingClientRect()
+    const previewWidth = pr.width
+    const previewHeight = pr.height
+    if (type === 'selfie') {
+      setClipRegion({
+        kind: 'ellipse',
+        cx: gr.left - pr.left + gr.width / 2,
+        cy: gr.top - pr.top + gr.height / 2,
+        rx: gr.width / 2,
+        ry: gr.height / 2,
+        previewWidth,
+        previewHeight,
+      })
+    } else {
+      setClipRegion({
+        kind: 'rect',
+        x: gr.left - pr.left,
+        y: gr.top - pr.top,
+        w: gr.width,
+        h: gr.height,
+        previewWidth,
+        previewHeight,
+      })
+    }
+  }, [type, useFrameBlur])
+
+  useLayoutEffect(() => {
+    updateClipRegion()
+    const preview = previewRef.current
+    if (!preview || !useFrameBlur) return undefined
+
+    const ro = new ResizeObserver(() => updateClipRegion())
+    ro.observe(preview)
+    const guide = shapeGuideRef.current
+    if (guide) ro.observe(guide)
+
+    window.addEventListener('orientationchange', updateClipRegion)
+    return () => {
+      ro.disconnect()
+      window.removeEventListener('orientationchange', updateClipRegion)
+    }
+  }, [updateClipRegion, useFrameBlur])
 
   // Загрузка моделей face-api.js
   useEffect(() => {
@@ -807,9 +882,12 @@ const Camera = ({ type, onCapture, onClose }) => {
       }
 
       const stream = await navigator.mediaDevices.getUserMedia(constraints)
+      streamRef.current = stream
       if (videoRef.current) {
         videoRef.current.srcObject = stream
-        streamRef.current = stream
+      }
+      if (blurVideoRef.current) {
+        blurVideoRef.current.srcObject = stream
       }
     } catch (error) {
       console.error('Ошибка доступа к камере:', error)
@@ -909,6 +987,12 @@ const Camera = ({ type, onCapture, onClose }) => {
       streamRef.current.getTracks().forEach(track => track.stop())
       streamRef.current = null
     }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null
+    }
+    if (blurVideoRef.current) {
+      blurVideoRef.current.srcObject = null
+    }
     setFaceDetected(false)
   }
 
@@ -921,10 +1005,53 @@ const Camera = ({ type, onCapture, onClose }) => {
     const canvas = canvasRef.current
     const context = canvas.getContext('2d')
 
-    canvas.width = video.videoWidth
-    canvas.height = video.videoHeight
+    const w = video.videoWidth
+    const h = video.videoHeight
+    canvas.width = w
+    canvas.height = h
 
-    context.drawImage(video, 0, 0)
+    const preview = previewRef.current
+    const canComposite =
+      useFrameBlur && clipRegion && preview && w > 0 && h > 0
+
+    if (canComposite) {
+      const pr = preview.getBoundingClientRect()
+      const scaleX = w / pr.width
+      const scaleY = h / pr.height
+      const blurPx = Math.max(3, Math.round(10 * ((scaleX + scaleY) / 2)))
+
+      context.filter = `blur(${blurPx}px)`
+      context.drawImage(video, 0, 0, w, h)
+      context.filter = 'none'
+
+      context.save()
+      if (clipRegion.kind === 'ellipse') {
+        const cx = clipRegion.cx * scaleX
+        const cy = clipRegion.cy * scaleY
+        const rx = clipRegion.rx * scaleX
+        const ry = clipRegion.ry * scaleY
+        context.beginPath()
+        context.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2)
+        context.clip()
+      } else {
+        const x = clipRegion.x * scaleX
+        const y = clipRegion.y * scaleY
+        const rw = clipRegion.w * scaleX
+        const rh = clipRegion.h * scaleY
+        const rad = Math.min(12 * scaleX, rw / 2, rh / 2)
+        context.beginPath()
+        if (typeof context.roundRect === 'function') {
+          context.roundRect(x, y, rw, rh, rad)
+        } else {
+          context.rect(x, y, rw, rh)
+        }
+        context.clip()
+      }
+      context.drawImage(video, 0, 0, w, h)
+      context.restore()
+    } else {
+      context.drawImage(video, 0, 0)
+    }
 
     canvas.toBlob((blob) => {
       if (blob) {
@@ -948,20 +1075,45 @@ const Camera = ({ type, onCapture, onClose }) => {
           </svg>
         </button>
 
-        <div className="camera-preview">
-          <video 
-            ref={videoRef}
-            autoPlay
-            playsInline
-            className={`camera-video ${(type === 'selfie' || type === 'selfieWithPassport') ? 'mirrored' : ''}`}
-          />
+        <div className="camera-preview" ref={previewRef}>
+          {useFrameBlur ? (
+            <div className="camera-preview__video-stack">
+              <video
+                ref={blurVideoRef}
+                autoPlay
+                playsInline
+                className={`camera-video camera-video--blur-layer ${(type === 'selfie' || type === 'selfieWithPassport') ? 'mirrored' : ''}`}
+              />
+              <video
+                ref={videoRef}
+                autoPlay
+                playsInline
+                className={`camera-video camera-video--sharp-layer ${(type === 'selfie' || type === 'selfieWithPassport') ? 'mirrored' : ''}`}
+                style={
+                  clipRegion
+                    ? { clipPath: buildClipPathFromRegion(clipRegion), opacity: 1 }
+                    : { opacity: 0 }
+                }
+              />
+            </div>
+          ) : (
+            <video
+              ref={videoRef}
+              autoPlay
+              playsInline
+              className={`camera-video ${(type === 'selfie' || type === 'selfieWithPassport') ? 'mirrored' : ''}`}
+            />
+          )}
           <canvas ref={canvasRef} style={{ display: 'none' }} />
 
           {/* Контур для селфи (только для второго шага) */}
           {type === 'selfie' && (
             <div className="camera-face-overlay">
               <div className="camera-face-guide">
-                <div className={`camera-face-guide__oval ${faceDetected ? 'face-detected' : ''}`}></div>
+                <div
+                  ref={shapeGuideRef}
+                  className={`camera-face-guide__oval ${faceDetected ? 'face-detected' : ''}`}
+                />
                 <div className="camera-face-guide__text">
                   {faceDetected ? '✓ Лицо обнаружено!' : 'Расположите лицо в рамке'}
                 </div>
@@ -981,7 +1133,7 @@ const Camera = ({ type, onCapture, onClose }) => {
           {type === 'passport' && (
             <div className="camera-passport-overlay">
               <div className="camera-passport-guide">
-                <div className="camera-passport-guide__rect"></div>
+                <div ref={shapeGuideRef} className="camera-passport-guide__rect" />
                 <div className="camera-passport-guide__text">
                   Расположите паспорт в рамке
                 </div>

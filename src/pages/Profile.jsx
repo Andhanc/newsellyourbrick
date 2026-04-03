@@ -9,6 +9,7 @@ import SellerVerificationModal from '../components/SellerVerificationModal'
 import PricingCards from '../components/ui/PricingCards'
 import { startProSubscriptionCheckout } from '../utils/subscriptionCheckout'
 import { showNotification } from '../utils/toastHelper'
+import { formatBillingReasonForUi } from '../utils/formatBillingReason'
 import './Profile.css'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
@@ -1089,6 +1090,12 @@ const Profile = () => {
               </svg>
               <span>Понравилось</span>
             </Link>
+            <Link to="/compare" className="nav-item">
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                <path d="M3 4h6v6H3V4zm8 0h6v6h-6V4zM3 12h6v6H3v-6zm8 0h6v6h-6v-6z" fill="currentColor"/>
+              </svg>
+              <span>Сравнение</span>
+            </Link>
           </nav>
 
           <div className="sidebar-footer">
@@ -1299,40 +1306,43 @@ const Profile = () => {
                       <div className="profile-billing-payments">
                         <h3 className="profile-billing-payments__title">Платежи</h3>
                         <ul className="profile-billing-payments__list">
-                          {subscriptionBilling.payments.map((p) => (
-                            <li key={p.id} className="profile-billing-payment">
-                              <div className="profile-billing-payment__main">
-                                <span className="profile-billing-payment__amount">
-                                  {(() => {
-                                    const cur = (p.currency || 'eur').toUpperCase()
-                                    const amt = (p.amount_cents ?? 0) / 100
-                                    try {
-                                      return new Intl.NumberFormat('ru-RU', {
-                                        style: 'currency',
-                                        currency: cur,
-                                      }).format(amt)
-                                    } catch {
-                                      return `${amt} ${cur}`
-                                    }
-                                  })()}
-                                </span>
-                                <span className="profile-billing-payment__date">
-                                  {p.paid_at
-                                    ? new Date(p.paid_at).toLocaleString('ru-RU', {
-                                        day: '2-digit',
-                                        month: '2-digit',
-                                        year: 'numeric',
-                                        hour: '2-digit',
-                                        minute: '2-digit',
-                                      })
-                                    : '—'}
-                                </span>
-                              </div>
-                              {p.billing_reason && (
-                                <span className="profile-billing-payment__reason">{p.billing_reason}</span>
-                              )}
-                            </li>
-                          ))}
+                          {subscriptionBilling.payments.map((p) => {
+                            const reasonLabel = formatBillingReasonForUi(p.billing_reason)
+                            return (
+                              <li key={p.id} className="profile-billing-payment">
+                                <div className="profile-billing-payment__main">
+                                  <span className="profile-billing-payment__amount">
+                                    {(() => {
+                                      const cur = (p.currency || 'eur').toUpperCase()
+                                      const amt = (p.amount_cents ?? 0) / 100
+                                      try {
+                                        return new Intl.NumberFormat('ru-RU', {
+                                          style: 'currency',
+                                          currency: cur,
+                                        }).format(amt)
+                                      } catch {
+                                        return `${amt} ${cur}`
+                                      }
+                                    })()}
+                                  </span>
+                                  <span className="profile-billing-payment__date">
+                                    {p.paid_at
+                                      ? new Date(p.paid_at).toLocaleString('ru-RU', {
+                                          day: '2-digit',
+                                          month: '2-digit',
+                                          year: 'numeric',
+                                          hour: '2-digit',
+                                          minute: '2-digit',
+                                        })
+                                      : '—'}
+                                  </span>
+                                </div>
+                                {reasonLabel && (
+                                  <span className="profile-billing-payment__reason">{reasonLabel}</span>
+                                )}
+                              </li>
+                            )
+                          })}
                         </ul>
                       </div>
                     )}

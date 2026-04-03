@@ -5766,6 +5766,10 @@ export const propertyQueries = {
     });
     
     const sourceTable = property.source_table;
+    const isApartmentsTable =
+      sourceTable === 'apartments' || sourceTable === 'properties_apartments';
+    const isHousesTable = sourceTable === 'houses' || sourceTable === 'properties_houses';
+
     if (!sourceTable) {
       // Если source_table не установлен, определяем по property_type
       console.log(`⚠️ propertyQueries.reserve: source_table не установлен, определяем по property_type`);
@@ -5780,11 +5784,11 @@ export const propertyQueries = {
         throw new Error(`Неизвестный тип объекта: ${property.property_type}`);
       }
     }
-    
-    if (sourceTable === 'apartments') {
+
+    if (isApartmentsTable) {
       console.log(`✅ propertyQueries.reserve: резервируем в apartments`);
       return apartmentQueries.reserve(id, userId, purchaseRequestId);
-    } else if (sourceTable === 'houses') {
+    } else if (isHousesTable) {
       console.log(`✅ propertyQueries.reserve: резервируем в houses`);
       return houseQueries.reserve(id, userId, purchaseRequestId);
     } else {
@@ -5803,9 +5807,12 @@ export const propertyQueries = {
     }
     
     const sourceTable = property.source_table;
-    if (sourceTable === 'apartments') {
+    const isApartmentsTable =
+      sourceTable === 'apartments' || sourceTable === 'properties_apartments';
+    const isHousesTable = sourceTable === 'houses' || sourceTable === 'properties_houses';
+    if (isApartmentsTable) {
       return apartmentQueries.unreserve(id);
-    } else if (sourceTable === 'houses') {
+    } else if (isHousesTable) {
       return houseQueries.unreserve(id);
     } else {
       throw new Error('Неизвестный тип объекта');
@@ -5841,11 +5848,14 @@ export const propertyQueries = {
       }
     }
     
-    if (sourceTable === 'apartments') {
+    const isApartmentsTable =
+      sourceTable === 'apartments' || sourceTable === 'properties_apartments';
+    const isHousesTable = sourceTable === 'houses' || sourceTable === 'properties_houses';
+    if (isApartmentsTable) {
       const result = apartmentQueries.isReserved(id);
       console.log(`🔍 propertyQueries.isReserved: результат из apartments:`, result);
       return result;
-    } else if (sourceTable === 'houses') {
+    } else if (isHousesTable) {
       const result = houseQueries.isReserved(id);
       console.log(`🔍 propertyQueries.isReserved: результат из houses:`, result);
       return result;
