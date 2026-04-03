@@ -69,7 +69,7 @@ const Footer = () => {
   return (
     <footer id="site-footer" className="footer">
       <div className="footer__container">
-        {/* Верхний блок ссылок — десктоп: 5 колонок */}
+        {/* Верхний блок ссылок — десктоп: 5 колонок в одну строку */}
         <div className="footer__menu footer__menu--desktop">
           <div className="footer__menu-column">
             <Link to="/" onClick={scrollToTop} className="footer__menu-link">{t('home')}</Link>
@@ -98,7 +98,7 @@ const Footer = () => {
           </div>
         </div>
 
-        {/* Мобильная версия: 3 колонки */}
+        {/* Мобильная версия: 2 колонки */}
         <div className="footer__menu footer__menu--mobile">
           <div className="footer__menu-column">
             <Link to="/" onClick={scrollToTop} className="footer__menu-link">{t('home')}</Link>

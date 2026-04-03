@@ -192,8 +192,63 @@
 /* Стили для таймера на странице детального просмотра объекта */
 .property-timer--detail {
   border: none !important;
-  padding: 0;
+  padding: 0 2px;
   gap: 0;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-sizing: border-box;
+  position: relative;
+  z-index: 5;
+  overflow: visible;
+}
+
+.property-timer--detail .property-timer-detail-flip-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: nowrap;
+  gap: 2px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.property-timer--detail .property-timer-detail-unit {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.property-timer--detail .property-timer-detail-sep {
+  font-size: 32px;
+  font-weight: 700;
+  color: #9ca3af;
+  line-height: 1;
+  flex-shrink: 0;
+  user-select: none;
+  padding: 0;
+  margin-top: -3px;
+}
+
+.property-timer--detail .flip-unit {
+  --flip-card-bg: #ffffff;
+  border-radius: 15px;
+  border: 1px solid rgba(17, 24, 39, 0.12);
+  box-shadow:
+    0 2px 6px rgba(15, 23, 42, 0.05),
+    0 6px 14px rgba(15, 23, 42, 0.08);
+}
+
+/* Линия «шва» флипа — на светлом фоне видна, на тёмной почти не была заметна */
+.property-timer--detail .flip-card__top,
+.property-timer--detail .flipper__top {
+  border-bottom: 1px solid rgba(17, 24, 39, 0.14);
 }
 
 .property-timer--detail .timer-compact-time--detail {
@@ -243,5 +298,35 @@
   .property-timer-overlay .timer-compact-time {
     width: 100%;
     justify-content: center;
+  }
+
+  /*
+    Детальный flip-таймер на мобиле — чуть меньше десктопа, но заметно крупнее прежнего.
+  */
+  .property-timer--detail .flip-unit {
+    width: 36px !important;
+    height: 52px !important;
+  }
+
+  .property-timer--detail .flip-digit {
+    font-size: 25px !important;
+  }
+
+  .property-timer--detail .flip-countdown-container {
+    gap: 1px;
+  }
+
+  .property-timer--detail .property-timer-detail-flip-row {
+    gap: 2px;
+    padding: 0;
+  }
+
+  .property-timer--detail .property-timer-detail-sep {
+    font-size: 28px;
+    margin-top: -2px;
+  }
+
+  .property-timer--detail {
+    padding: 0 2px;
   }
 }

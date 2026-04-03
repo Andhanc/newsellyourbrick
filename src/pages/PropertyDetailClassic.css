@@ -997,17 +997,58 @@
   width: 100%;
 }
 
-/* Блок аукциона */
+/* Блок аукциона (фон белый — серый только у колонки «цена → ставки → история») */
 .property-detail-sidebar__auction-block {
   margin-top: 24px;
   margin-bottom: 24px;
   padding: 20px;
-  background: #f9fafb;
+  background: #ffffff;
   border-radius: 12px;
   display: flex;
   flex-direction: column;
   gap: 16px;
   position: relative;
+  min-width: 0;
+  /* чтобы flip-таймер и тени не «резались» соседними слоями */
+  overflow: visible;
+  container-type: inline-size;
+  container-name: sidebar-auction;
+}
+
+/* Узкая колонка — слегка уменьшаем, чтобы не вылезало за край */
+@container sidebar-auction (max-width: 360px) {
+  .property-detail-sidebar__auction-block .property-timer--detail .flip-unit {
+    width: 34px !important;
+    height: 50px !important;
+  }
+
+  .property-detail-sidebar__auction-block .property-timer--detail .flip-digit {
+    font-size: 23px !important;
+  }
+
+  .property-detail-sidebar__auction-block .property-timer--detail .property-timer-detail-sep {
+    font-size: 26px !important;
+  }
+
+  .property-detail-sidebar__auction-block .property-timer--detail .property-timer-detail-flip-row {
+    gap: 1px !important;
+  }
+}
+
+.property-detail-sidebar__auction-bid-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px;
+  background: #f9fafb;
+  border-radius: 12px;
+  border: 1px solid rgba(17, 24, 39, 0.06);
+  box-sizing: border-box;
+}
+
+.property-detail-sidebar__auction-block .property-timer--detail {
+  position: relative;
+  z-index: 10;
 }
 
 /* Долг: блок риска в сайдбаре должен быть на всю ширину */

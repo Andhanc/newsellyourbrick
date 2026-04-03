@@ -87,7 +87,7 @@ button {
 
 .flip-countdown-container {
   display: inline-flex;
-  gap: 3px;
+  gap: 2px;
   align-items: center;
 }
 
@@ -101,6 +101,10 @@ button {
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.30);
   background: var(--flip-card-bg, #111827);
   flex-shrink: 0;
+  /* Без perspective rotateX(…) «схлопывается» — флип визуально пропадает */
+  perspective: 520px;
+  transform-style: preserve-3d;
+  -webkit-transform-style: preserve-3d;
 }
 
 /* ── each half-panel ── */
@@ -168,12 +172,16 @@ button {
   pointer-events: none;
   opacity: 0;
   z-index: 2;
+  transform-style: preserve-3d;
+  -webkit-transform-style: preserve-3d;
 }
 
 .flipper__top,
 .flipper__bottom {
   backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
+  transform-style: preserve-3d;
+  -webkit-transform-style: preserve-3d;
 }
 
 .flipper__bottom {

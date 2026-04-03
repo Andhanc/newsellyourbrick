@@ -22,7 +22,8 @@ const FlipUnit = ({
     }
   }, [digit, currentDigit])
 
-  const handleBottomAnimationEnd = () => {
+  const handleBottomAnimationEnd = (e: React.AnimationEvent<HTMLDivElement>) => {
+    if (e.target !== e.currentTarget) return
     setIsFlipping(false)
     setPreviousDigit(digit)
   }

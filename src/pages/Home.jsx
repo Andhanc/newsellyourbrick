@@ -636,38 +636,18 @@ function Home() {
     const footer = document.getElementById('site-footer')
     if (!footer) return
 
-    const mq = window.matchMedia('(max-width: 768px)')
-    let disconnectObserver = null
-
-    const apply = () => {
-      if (disconnectObserver) {
-        disconnectObserver()
-        disconnectObserver = null
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setFloatWidgetsHiddenByFooter(Boolean(entry?.isIntersecting))
+      },
+      {
+        root: null,
+        rootMargin: '0px 0px -12% 0px',
+        threshold: [0, 0.02, 0.5],
       }
-      if (!mq.matches) {
-        setFloatWidgetsHiddenByFooter(false)
-        return
-      }
-      const observer = new IntersectionObserver(
-        ([entry]) => {
-          setFloatWidgetsHiddenByFooter(Boolean(entry?.isIntersecting))
-        },
-        {
-          root: null,
-          rootMargin: '0px 0px -12% 0px',
-          threshold: [0, 0.02, 0.5],
-        }
-      )
-      observer.observe(footer)
-      disconnectObserver = () => observer.disconnect()
-    }
-
-    apply()
-    mq.addEventListener('change', apply)
-    return () => {
-      mq.removeEventListener('change', apply)
-      if (disconnectObserver) disconnectObserver()
-    }
+    )
+    observer.observe(footer)
+    return () => observer.disconnect()
   }, [])
 
   // История чата сохраняется в localStorage и не очищается при закрытии страницы

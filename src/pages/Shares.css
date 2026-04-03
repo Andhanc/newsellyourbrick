@@ -424,9 +424,13 @@
 .shares-search-bar__icon {
   position: absolute;
   left: 20px;
+  top: 50%;
+  transform: translateY(-50%);
   color: #64748b;
   pointer-events: none;
   transition: color 0.2s;
+  display: flex;
+  line-height: 0;
 }
 
 .shares-search-bar__input {
@@ -457,7 +461,9 @@
 
 .shares-search-bar__clear {
   position: absolute;
+  top: 50%;
   right: 16px;
+  transform: translateY(-50%);
   background: rgba(0, 0, 0, 0.06);
   border: none;
   width: 32px;

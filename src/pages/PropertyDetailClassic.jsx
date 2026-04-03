@@ -35,7 +35,7 @@ import FlipCard from '../components/ui/FlipCard'
 import TestDriveSection from '../components/TestDriveSection'
 import { getAuctionMinBidStep } from '../utils/auctionBidStep'
 import { confirmPropertyReservationSession } from '../utils/subscriptionCheckout'
-import { AlertTriangle, ShieldAlert, ShieldCheck } from 'lucide-react'
+import { ShieldQuestionMark, ShieldAlert, ShieldCheck } from 'lucide-react'
 
 // Используем синхронную версию для инициализации, затем обновим при загрузке
 let API_BASE_URL = getApiBaseUrlSync()
@@ -2795,7 +2795,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                   '#16A34A'
 
                 const riskIcon =
-                  sev === 'red' ? AlertTriangle :
+                  sev === 'red' ? ShieldQuestionMark :
                   sev === 'yellow' ? ShieldAlert :
                   ShieldCheck
 
@@ -3044,6 +3044,8 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                     </div>
                   )}
 
+                  {/* Стартовая сумма → форма ставок → последние ставки → история (светло-серый фон) */}
+                  <div className="property-detail-sidebar__auction-bid-stack">
                   {/* Блок с текущей/стартовой ценой.
                       Для аукционных объектов, когда уже есть ставка и показывается карточка лидера,
                       скрываем этот блок, чтобы не дублировать сумму. */}
@@ -3237,6 +3239,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                   >
                     {t('propertyDetailBidHistory')}
                   </button>
+                  </div>
                 </div>
               ) : null}
 

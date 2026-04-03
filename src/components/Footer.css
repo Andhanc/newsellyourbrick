@@ -29,7 +29,7 @@
   flex-wrap: wrap;
 }
 
-/* Мобильное меню (3 колонки) — скрыто на десктопе */
+/* Мобильное меню (2 колонки) — скрыто на десктопе */
 .footer__menu--mobile {
   display: none;
 }
@@ -694,7 +694,7 @@ body.admin-panel-active .footer .footer__bottom {
     display: none;
   }
 
-  /* Мобильное меню — 3 колонки */
+  /* Мобильное меню — 2 колонки */
   .footer__menu--mobile {
     display: flex;
     flex-wrap: nowrap;
@@ -888,7 +888,65 @@ body.admin-panel-active .footer .footer__bottom {
   }
 }
 
+/*
+ * Глобальные дубли .footer_* в MainPage.css и PropertyDetailClassic.css загружаются
+ * после этого файла и перебивают каскад: мобильное меню снова становится видимым
+ * на десктопе, а кнопки сторов — светлыми (#f9fafb). Фиксируем видимость меню
+ * и тёмные кнопки только внутри основного футера (#site-footer).
+ */
+@media (min-width: 768px) {
+  #site-footer.footer .footer__menu.footer__menu--desktop {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    justify-content: center !important;
+    align-items: flex-start !important;
+    grid-template-columns: unset !important;
+  }
 
+  #site-footer.footer .footer__menu.footer__menu--mobile {
+    display: none !important;
+  }
+}
 
+@media (max-width: 767px) {
+  #site-footer.footer .footer__menu.footer__menu--desktop {
+    display: none !important;
+  }
 
+  #site-footer.footer .footer__menu.footer__menu--mobile {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    gap: 24px !important;
+    justify-content: space-between !important;
+  }
+}
+
+#site-footer.footer .footer__store-btn {
+  background: #111827 !important;
+  color: #ffffff !important;
+  border: none !important;
+}
+
+#site-footer.footer .footer__store-btn:hover {
+  background: #000000 !important;
+}
+
+#site-footer.footer .footer__store-btn .footer__store-name,
+#site-footer.footer .footer__store-btn span {
+  color: #ffffff !important;
+}
+
+#site-footer.footer .footer__store-btn .footer__store-icon {
+  background: transparent !important;
+  width: auto !important;
+  height: auto !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  border-radius: 0 !important;
+  color: #ffffff !important;
+}
+
+#site-footer.footer .footer__store-btn .footer__store-icon--whatsapp {
+  color: #25d366 !important;
+}
 

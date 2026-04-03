@@ -88,42 +88,32 @@ const PropertyTimer = ({ endTime, compact = false, className = '' }) => {
   if (days >= 90) digitColor = '#16a34a'      // green
   else if (days >= 60) digitColor = '#f97316' // orange
 
+  /* Крупный flip; узкие экраны поджимаются в CSS (container / mobile) */
   const flipStyle = {
-    '--flip-card-width': '28px',
-    '--flip-card-height': '38px',
-    '--flip-card-font-size': '20px',
+    '--flip-card-width': '40px',
+    '--flip-card-height': '58px',
+    '--flip-card-font-size': '29px',
   }
-
-  const labelStyle = { fontSize: 10, fontWeight: 600, color: '#374151', flexShrink: 0 }
-  const groupStyle = { display: 'inline-flex', alignItems: 'center', gap: 3, flexShrink: 0 }
 
   return (
     <div
       className={`property-timer property-timer--detail ${statusClass} ${isCritical ? 'timer-critical' : ''} ${className}`.trim()}
     >
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 6,
-          flexWrap: 'nowrap',
-        }}
-      >
-        <div style={groupStyle}>
+      <div className="property-timer-detail-flip-row">
+        <div className="property-timer-detail-unit">
           <FlipNumber value={String(timeLeft.days).padStart(2, '0')} padTo={2} style={flipStyle} textColor={digitColor} />
-          <span style={labelStyle}>{t('timerDay')}</span>
         </div>
-        <div style={groupStyle}>
+        <span className="property-timer-detail-sep" aria-hidden="true">:</span>
+        <div className="property-timer-detail-unit">
           <FlipNumber value={String(timeLeft.hours).padStart(2, '0')} padTo={2} style={flipStyle} textColor={digitColor} />
-          <span style={labelStyle}>{t('timerHour')}</span>
         </div>
-        <div style={groupStyle}>
+        <span className="property-timer-detail-sep" aria-hidden="true">:</span>
+        <div className="property-timer-detail-unit">
           <FlipNumber value={String(timeLeft.minutes).padStart(2, '0')} padTo={2} style={flipStyle} textColor={digitColor} />
-          <span style={labelStyle}>{t('timerMin')}</span>
         </div>
-        <div style={groupStyle}>
+        <span className="property-timer-detail-sep" aria-hidden="true">:</span>
+        <div className="property-timer-detail-unit">
           <FlipNumber value={String(timeLeft.seconds).padStart(2, '0')} padTo={2} style={flipStyle} textColor={digitColor} />
-          <span style={labelStyle}>{t('timerSec')}</span>
         </div>
       </div>
     </div>
