@@ -1,12 +1,22 @@
-import { useState, useEffect, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { FiPhone, FiMail } from 'react-icons/fi'
+import { FiPhone, FiMail, FiArrowLeft, FiMessageCircle } from 'react-icons/fi'
 import { FaWhatsapp } from 'react-icons/fa'
+import { FaTelegram } from 'react-icons/fa6'
 import './Chat.css'
 import { askPropertyAssistant, detectManagerContactIntent } from '../services/aiService'
 import { getUserData } from '../services/authService'
 import { syncAssistantLead } from '../services/assistantLeadService'
+import { showNotification } from '../utils/toastHelper'
+import {
+  ensureLiveChatSession,
+  fetchLiveChatMessagesSince,
+  getManagerContactButtons,
+  liveChatStorageKey,
+  normalizeLiveChatRows,
+  sendLiveChatUserMessage,
+} from '../services/liveChatApi'
 
 /** Те же эвристики, что на главной: цель, локация, бюджет, тип, комнаты */
 function mergeAssistantPrefsFromText(prev, userMessage) {
@@ -96,8 +106,11 @@ const defaultAssistantPreferences = () => ({
   preferredContact: null
 })
 
+const MANAGER_QUERY_VALUES = new Set(['1', 'true', 'yes', 'manager'])
+
 const Chat = () => {
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
   const { t } = useTranslation()
   const [chatUserId] = useState(() => getChatUserId())
   const [activeChat, setActiveChat] = useState('tech-support')
@@ -127,6 +140,11 @@ const Chat = () => {
   const [inputMessage, setInputMessage] = useState('')
   const [isLoadingAI, setIsLoadingAI] = useState(false)
   const [userPreferences, setUserPreferences] = useState(defaultAssistantPreferences)
+  const [techSupportMode, setTechSupportMode] = useState('ai')
+  const [managerChatMessages, setManagerChatMessages] = useState([])
+  const [liveChatToken, setLiveChatToken] = useState(null)
+  const managerPollRef = useRef(null)
+  const lastManagerMsgIdRef = useRef(0)
   const chatHistoryLoadedRef = useRef(false)
 
   // Загружаем историю и предпочтения (общие с виджетом на главной)
@@ -193,6 +211,112 @@ const Chat = () => {
     }
   }, [messages, chatUserId, userPreferences])
 
+  const scheduleManagerPoll = useCallback((token) => {
+    if (managerPollRef.current) {
+      clearInterval(managerPollRef.current)
+      managerPollRef.current = null
+    }
+    managerPollRef.current = setInterval(async () => {
+      try {
+        const chunk = await fetchLiveChatMessagesSince(token, lastManagerMsgIdRef.current)
+        if (chunk.length) {
+          lastManagerMsgIdRef.current = Math.max(...chunk.map((r) => r.id))
+          setManagerChatMessages((p) => [...p, ...normalizeLiveChatRows(chunk)])
+        }
+      } catch {
+        /* ignore */
+      }
+    }, 2500)
+  }, [])
+
+  const enterLiveManagerChat = useCallback(async () => {
+    const userData = getUserData()
+    const uid = userData?.isLoggedIn && userData?.id ? Number(userData.id) : null
+    const { token, messages: rows } = await ensureLiveChatSession({
+      assistantSessionId: chatUserId,
+      userId: Number.isFinite(uid) ? uid : null,
+      waitMessage: t('liveChatWaitNotice'),
+    })
+    const list = rows || []
+    lastManagerMsgIdRef.current = list.reduce((m, r) => Math.max(m, r.id), 0)
+    setManagerChatMessages(normalizeLiveChatRows(list))
+    setLiveChatToken(token)
+    setTechSupportMode('manager')
+    localStorage.setItem(`aiChatLiveManagerMode_${chatUserId}`, '1')
+    scheduleManagerPoll(token)
+  }, [chatUserId, t, scheduleManagerPoll])
+
+  const resumeLiveManagerIfNeeded = useCallback(async () => {
+    const modeKey = `aiChatLiveManagerMode_${chatUserId}`
+    if (localStorage.getItem(modeKey) !== '1') return
+    const token = localStorage.getItem(liveChatStorageKey(chatUserId))
+    if (!token) return
+    try {
+      const rows = await fetchLiveChatMessagesSince(token, 0)
+      lastManagerMsgIdRef.current = rows.reduce((m, r) => Math.max(m, r.id), 0)
+      setLiveChatToken(token)
+      setManagerChatMessages(normalizeLiveChatRows(rows))
+      setTechSupportMode('manager')
+      scheduleManagerPoll(token)
+    } catch {
+      localStorage.removeItem(modeKey)
+    }
+  }, [chatUserId, scheduleManagerPoll])
+
+  useEffect(() => {
+    resumeLiveManagerIfNeeded()
+    return () => {
+      if (managerPollRef.current) {
+        clearInterval(managerPollRef.current)
+        managerPollRef.current = null
+      }
+    }
+  }, [resumeLiveManagerIfNeeded])
+
+  // Открытие чата с менеджером по ссылке из хедера: /chat?manager=1
+  useEffect(() => {
+    const raw = searchParams.get('manager')
+    if (raw == null || raw === '') return
+    if (!MANAGER_QUERY_VALUES.has(String(raw).toLowerCase())) return
+
+    let cancelled = false
+    setActiveChat('tech-support')
+    ;(async () => {
+      try {
+        await enterLiveManagerChat()
+        if (!cancelled) setSearchParams({}, { replace: true })
+      } catch (err) {
+        console.error(err)
+        if (!cancelled) showNotification(err?.message || t('liveChatError'))
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [searchParams, enterLiveManagerChat, setSearchParams, t])
+
+  const backToTechSupportAi = useCallback(() => {
+    if (managerPollRef.current) {
+      clearInterval(managerPollRef.current)
+      managerPollRef.current = null
+    }
+    setTechSupportMode('ai')
+    localStorage.setItem(`aiChatLiveManagerMode_${chatUserId}`, '0')
+  }, [chatUserId])
+
+  const managerThreadUi = useMemo(
+    () =>
+      managerChatMessages.map((m) => ({
+        id: m.id,
+        text: m.text,
+        sender: m.sender,
+        time: m.timestamp.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }),
+        date: 'Сегодня',
+        timestamp: m.timestamp,
+      })),
+    [managerChatMessages]
+  )
+
   const chats = [
     {
       id: 'tech-support',
@@ -221,11 +345,7 @@ const Chat = () => {
     }, 3000)
   }
 
-  const contactPrefButtons = () => [
-    { type: 'contact_pref', value: 'phone', label: t('managerContactPrefPhone') },
-    { type: 'contact_pref', value: 'email', label: t('managerContactPrefEmail') },
-    { type: 'contact_pref', value: 'whatsapp', label: t('managerContactPrefWhatsapp') }
-  ]
+  const contactPrefButtons = () => getManagerContactButtons(t)
 
   const handleTechSupportAction = async ({ buttonText = null, contactPref = null, inputText = null } = {}) => {
     let userMessage = ''
@@ -233,7 +353,9 @@ const Chat = () => {
       const labelMap = {
         phone: t('managerContactPrefPhone'),
         email: t('managerContactPrefEmail'),
-        whatsapp: t('managerContactPrefWhatsapp')
+        whatsapp: t('managerContactPrefWhatsapp'),
+        telegram: t('managerContactPrefTelegram'),
+        live_chat: t('managerContactPrefLiveChat'),
       }
       userMessage = labelMap[contactPref] || contactPref
     } else if (buttonText != null) {
@@ -270,6 +392,34 @@ const Chat = () => {
         managerContactRequested: true,
         managerContactPendingChoice: false
       }))
+      if (contactPref === 'live_chat') {
+        try {
+          await enterLiveManagerChat()
+        } catch (err) {
+          console.error(err)
+          showNotification(err?.message || t('liveChatError'))
+        }
+        return
+      }
+      if (contactPref === 'telegram') {
+        const tgUrl = (import.meta.env.VITE_MANAGER_TELEGRAM_URL || '').trim()
+        const botMessage = {
+          id: Date.now() + 1,
+          text: tgUrl ? t('managerContactThanksTelegram') : t('liveChatTelegramNotConfigured'),
+          sender: 'bot',
+          time: new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }),
+          date: 'Сегодня',
+          timestamp: new Date(),
+          buttons: null,
+          recommendations: null
+        }
+        setMessages(prev => ({
+          ...prev,
+          'tech-support': [...(prev['tech-support'] || []), botMessage]
+        }))
+        if (tgUrl) window.open(tgUrl, '_blank', 'noopener,noreferrer')
+        return
+      }
       const thanksText =
         contactPref === 'phone'
           ? t('managerContactThanksPhone')
@@ -305,12 +455,19 @@ const Chat = () => {
 
     if (wantsManager) {
       if (mergedPrefs.preferredContact) {
+        const pc = mergedPrefs.preferredContact
         const methodLabel =
-          mergedPrefs.preferredContact === 'phone'
+          pc === 'phone'
             ? t('managerContactPrefPhone')
-            : mergedPrefs.preferredContact === 'email'
+            : pc === 'email'
               ? t('managerContactPrefEmail')
-              : t('managerContactPrefWhatsapp')
+              : pc === 'whatsapp'
+                ? t('managerContactPrefWhatsapp')
+                : pc === 'telegram'
+                  ? t('managerContactPrefTelegram')
+                  : pc === 'live_chat'
+                    ? t('managerContactPrefLiveChat')
+                    : String(pc || '')
         const botMessage = {
           id: Date.now() + 1,
           text: t('managerRequestAlready', { method: methodLabel }),
@@ -411,6 +568,19 @@ const Chat = () => {
 
   const handleSendMessage = async (e) => {
     e.preventDefault()
+    if (activeChat === 'tech-support' && techSupportMode === 'manager') {
+      if (!inputMessage.trim() || !liveChatToken) return
+      const text = inputMessage.trim()
+      setInputMessage('')
+      try {
+        const row = await sendLiveChatUserMessage(liveChatToken, text)
+        lastManagerMsgIdRef.current = Math.max(lastManagerMsgIdRef.current, row.id)
+        setManagerChatMessages((prev) => [...prev, ...normalizeLiveChatRows([row])])
+      } catch (err) {
+        showNotification(err?.message || t('liveChatError'))
+      }
+      return
+    }
     if (activeChat !== 'tech-support') {
       if (!inputMessage.trim()) return
       const now = new Date()
@@ -449,7 +619,10 @@ const Chat = () => {
   }
 
   const currentChat = chats.find(chat => chat.id === activeChat)
-  const currentMessages = messages[activeChat] || []
+  const currentMessages =
+    activeChat === 'tech-support' && techSupportMode === 'manager'
+      ? managerThreadUi
+      : messages[activeChat] || []
 
   return (
     <div className="chat-overlay" onClick={() => navigate(-1)}>
@@ -549,6 +722,16 @@ const Chat = () => {
             <>
               <div className="chat-main-header">
                 <div className="chat-main-info">
+                  {activeChat === 'tech-support' && techSupportMode === 'manager' && (
+                    <button
+                      type="button"
+                      className="chat-main-back"
+                      onClick={backToTechSupportAi}
+                      aria-label={t('backToAiAssistant')}
+                    >
+                      <FiArrowLeft size={22} />
+                    </button>
+                  )}
                   <div className="chat-main-avatar">
                     {currentChat.avatar === 'ai' ? (
                       <div className="bot-avatar">
@@ -575,8 +758,16 @@ const Chat = () => {
                     )}
                   </div>
                   <div>
-                    <h3>{currentChat.name}</h3>
-                    <p>{currentChat.description}</p>
+                    <h3>
+                      {activeChat === 'tech-support' && techSupportMode === 'manager'
+                        ? t('chatManagerTitle')
+                        : currentChat.name}
+                    </h3>
+                    <p>
+                      {activeChat === 'tech-support' && techSupportMode === 'manager'
+                        ? t('chatManagerOnline')
+                        : currentChat.description}
+                    </p>
                   </div>
                 </div>
                 <button type="button" className="menu-button">
@@ -598,7 +789,17 @@ const Chat = () => {
                       {showDate && (
                         <div className="message-date">{message.date}</div>
                       )}
-                      <div className={`message ${message.sender === 'user' ? 'message-user' : 'message-bot'}`}>
+                      <div
+                        className={`message ${
+                          message.sender === 'user'
+                            ? 'message-user'
+                            : message.sender === 'system'
+                              ? 'message-system'
+                              : message.sender === 'manager'
+                                ? 'message-manager'
+                                : 'message-bot'
+                        }`}
+                      >
                         <div className="message-content">
                           <p>{message.text}</p>
                           {message.sender === 'bot' && message.buttons && message.buttons.length > 0 && (
@@ -616,7 +817,11 @@ const Chat = () => {
                                       ? FiPhone
                                       : button.value === 'email'
                                         ? FiMail
-                                        : FaWhatsapp
+                                        : button.value === 'whatsapp'
+                                          ? FaWhatsapp
+                                          : button.value === 'telegram'
+                                            ? FaTelegram
+                                            : FiMessageCircle
                                   return (
                                     <button
                                       key={btnIdx}
@@ -658,7 +863,7 @@ const Chat = () => {
                     </div>
                   )
                 })}
-                {activeChat === 'tech-support' && isLoadingAI && (
+                {activeChat === 'tech-support' && techSupportMode === 'ai' && isLoadingAI && (
                   <div className="message message-bot">
                     <div className="message-content chat-msg-loading">
                       <span>Печатает…</span>
@@ -686,9 +891,13 @@ const Chat = () => {
                   placeholder="Напишите сообщение..."
                   value={inputMessage}
                   onChange={(e) => setInputMessage(e.target.value)}
-                  disabled={activeChat === 'tech-support' && isLoadingAI}
+                  disabled={activeChat === 'tech-support' && techSupportMode === 'ai' && isLoadingAI}
                 />
-                <button type="submit" className="send-button" disabled={activeChat === 'tech-support' && isLoadingAI}>
+                <button
+                  type="submit"
+                  className="send-button"
+                  disabled={activeChat === 'tech-support' && techSupportMode === 'ai' && isLoadingAI}
+                >
                   <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
                     <path d="M2 10L18 2L12 18L10 10L2 10Z" fill="currentColor"/>
                   </svg>

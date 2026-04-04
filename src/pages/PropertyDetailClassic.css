@@ -1264,6 +1264,64 @@
   display: inline-block;
 }
 
+.property-detail-sidebar__auction-block--ended {
+  opacity: 0.96;
+}
+
+.auction-completed-banner {
+  margin-bottom: 12px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #334155;
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+}
+
+.auction-completed-banner--page {
+  margin-bottom: 0;
+  width: 100%;
+  max-width: 320px;
+  font-size: 14px;
+  line-height: 1.35;
+}
+
+.property-detail-circular-ended-fallback {
+  min-width: 150px;
+  min-height: 150px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  border-radius: 50%;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.25;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #f8fafc;
+  background: linear-gradient(145deg, #64748b 0%, #475569 100%);
+  border: 3px solid #94a3b8;
+  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.2);
+}
+
+.auction-completed-no-bids {
+  margin-top: 12px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 600;
+  color: #475569;
+  background: #f8fafc;
+  border: 1px dashed #cbd5e1;
+}
+
 /* Карточка победителя аукциона */
 .auction-winner-card {
   margin-top: 16px;
@@ -1275,6 +1333,13 @@
   box-shadow: 0 6px 20px rgba(245, 87, 108, 0.4);
   animation: winnerPulse 2s ease-in-out infinite;
   border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.auction-winner-card--settled {
+  animation: none;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.12);
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+  border-color: rgba(255, 255, 255, 0.25);
 }
 
 .auction-winner-label {

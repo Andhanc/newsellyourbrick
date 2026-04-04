@@ -8,6 +8,23 @@ import { isAuthenticated, getUserData } from '../services/authService'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
 
+function normalizePropertyDetailType(prop) {
+  if (!prop) return 'apartment'
+  return prop.property_type || prop.propertyType || 'apartment'
+}
+
+/** Для напоминаний об аукционе и избранного: всегда непустой source_table */
+function resolveSourceTableForDetail(prop) {
+  if (!prop) return 'properties_apartments'
+  const raw =
+    prop.source_table != null && String(prop.source_table).trim() !== ''
+      ? String(prop.source_table).trim()
+      : null
+  if (raw) return raw
+  const pt = normalizePropertyDetailType(prop)
+  return pt === 'house' || pt === 'villa' ? 'properties_houses' : 'properties_apartments'
+}
+
 // Обёртка над страницей объекта:
 // Теперь используем единый «классический» layout PropertyDetailClassic
 // Для аукционных объектов внутри него отображаются:
@@ -31,7 +48,10 @@ const PropertyDetailPage = () => {
     const loadProperty = async () => {
       // Если объект передан из state, используем его один раз как начальные данные
       if (propertyFromState && !initializedFromStateRef.current) {
-        setProperty(propertyFromState)
+        setProperty({
+          ...propertyFromState,
+          source_table: resolveSourceTableForDetail(propertyFromState),
+        })
         initializedFromStateRef.current = true
       }
  
@@ -208,6 +228,8 @@ const PropertyDetailPage = () => {
                 location: prop.location
               })
               
+              const pt = normalizePropertyDetailType(prop)
+
               // Преобразуем данные из базы в формат для компонентов
               const formattedProperty = {
                 id: prop.id,
@@ -229,7 +251,8 @@ const PropertyDetailPage = () => {
                 floor: (prop.floor !== undefined && prop.floor !== null) ? prop.floor : null,
                 total_floors: (prop.total_floors !== undefined && prop.total_floors !== null) ? prop.total_floors : null,
                 year_built: (prop.year_built !== undefined && prop.year_built !== null) ? prop.year_built : null,
-                property_type: prop.property_type || 'apartment',
+                property_type: pt,
+                source_table: resolveSourceTableForDetail(prop),
                 building_type: (prop.building_type !== undefined && prop.building_type !== null && prop.building_type !== '') ? prop.building_type : null,
                 buildingType: (prop.building_type !== undefined && prop.building_type !== null && prop.building_type !== '') ? prop.building_type : null,
                 coordinates: coordinates,
@@ -398,7 +421,10 @@ const PropertyDetailPage = () => {
     (property.test_timer_end_date != null && property.test_timer_end_date !== '') ||
     (property.auction_end_date != null && property.auction_end_date !== '')
 
-  const isAuction = hasAuctionFlag && hasEndTime
+  const hasTestCircularTimer =
+    property.test_timer_end_date != null && property.test_timer_end_date !== ''
+
+  const isAuction = (hasAuctionFlag && hasEndTime) || hasTestCircularTimer
 
   // Если явно запрошен классический (неаукционный) вид через ?classic=1,
   // принудительно отключаем аукционный режим

@@ -15,10 +15,17 @@ const AuctionCardItem = ({ auction, onHistoryClick }) => {
     return types[type] || type;
   };
 
+  const endRaw = auction.end_date || auction.auction_end_date;
+  const auctionHasEnded = endRaw && new Date(endRaw) <= new Date();
+
   return (
-    <div className="auction-card">
+    <div className={`auction-card${auctionHasEnded ? ' auction-card--ended' : ''}`}>
       <div className="nearest-auction-header">
-        <PropertyTimer endTime={auction.end_date} compact />
+        <PropertyTimer
+          endTime={endRaw}
+          compact
+          auctionEndedLabel={auctionHasEnded ? 'Аукцион завершён' : undefined}
+        />
       </div>
       <div className="nearest-auction-content">
         <div className="nearest-auction-image-wrapper">
@@ -58,6 +65,16 @@ const AuctionCardItem = ({ auction, onHistoryClick }) => {
               ).toLocaleString('ru-RU')}
             </div>
           </div>
+          {auctionHasEnded && auction.winner_user_id != null && (
+            <div className="auction-card-winner-line" role="status">
+              Победитель — пользователь ID {auction.winner_user_id}
+            </div>
+          )}
+          {auctionHasEnded && auction.winner_user_id == null && (
+            <div className="auction-card-winner-line auction-card-winner-line--muted" role="status">
+              Победитель будет отображён после фиксации в системе
+            </div>
+          )}
           <button 
             className="history-button"
             onClick={(e) => {

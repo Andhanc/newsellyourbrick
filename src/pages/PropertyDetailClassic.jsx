@@ -22,6 +22,7 @@ import PropertyTimer from '../components/PropertyTimer'
 import CircularTimer from '../components/CircularTimer'
 import BiddingHistoryModal from '../components/BiddingHistoryModal'
 import BuyNowModal from '../components/BuyNowModal'
+import AuctionReminderModal from '../components/AuctionReminderModal'
 import LocationMap from '../components/LocationMap'
 import { showToast } from '../components/ToastContainer'
 import { showNotification } from '../utils/toastHelper'
@@ -34,8 +35,10 @@ import { getApiBaseUrl, getApiBaseUrlSync } from '../utils/apiConfig'
 import FlipCard from '../components/ui/FlipCard'
 import TestDriveSection from '../components/TestDriveSection'
 import { getAuctionMinBidStep } from '../utils/auctionBidStep'
+import { hasDbBackedProperty } from '../utils/propertyFavoriteKey'
+import { hasActiveCircularTestTimer } from '../utils/auctionReminderBounds'
 import { confirmPropertyReservationSession } from '../utils/subscriptionCheckout'
-import { ShieldQuestionMark, ShieldAlert, ShieldCheck } from 'lucide-react'
+import { ShieldQuestionMark, ShieldAlert, ShieldCheck, Bell } from 'lucide-react'
 
 // Используем синхронную версию для инициализации, затем обновим при загрузке
 let API_BASE_URL = getApiBaseUrlSync()
@@ -60,6 +63,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
   const thumbnailScrollRef = useRef(null)
   const [isBidHistoryOpen, setIsBidHistoryOpen] = useState(false)
   const [isBuyNowModalOpen, setIsBuyNowModalOpen] = useState(false)
+  const [auctionReminderOpen, setAuctionReminderOpen] = useState(false)
   const [mapCoordinates, setMapCoordinates] = useState(null)
   const [isGeocoding, setIsGeocoding] = useState(false)
   const [bidAmount, setBidAmount] = useState('')
@@ -83,6 +87,10 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
   const [originalTestTimer, setOriginalTestTimer] = useState(null) // Исходное значение тестового таймера (дата окончания)
   const [originalTestTimerDuration, setOriginalTestTimerDuration] = useState(null) // Исходная длительность таймера в миллисекундах
   const [timerExpired, setTimerExpired] = useState(false) // Флаг окончания таймера
+  /** Запись из auction_winners после окончания аукциона (если есть) */
+  const [auctionWinnerFromDb, setAuctionWinnerFromDb] = useState(undefined)
+  /** Публичный номер игрока (user_id_number) при показе победителя только из auction_winners */
+  const [endedAuctionPlayerPublicId, setEndedAuctionPlayerPublicId] = useState(null)
   const [showConfetti, setShowConfetti] = useState(false) // Флаг показа конфетти для победителя
   const confettiShownRef = useRef(false) // Ref для отслеживания, было ли показано конфетти
   const [windowSize, setWindowSize] = useState({
@@ -92,8 +100,14 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
   const [selectedDocument, setSelectedDocument] = useState(null) // Выбранный документ для просмотра
   const [processedDocuments, setProcessedDocuments] = useState([]) // Обработанные документы
   const [timerBidInfo, setTimerBidInfo] = useState(null) // Информация о ставке для отображения в таймере (флаг и номер)
+  /** Объект хотя бы раз показывался с круговым таймером — не переключаемся на линейный после его окончания */
+  const [hadCircularTimerAuction, setHadCircularTimerAuction] = useState(false)
   const shownLeaderInfoRef = useRef(null) // Ref для отслеживания, какому лидеру уже показывали информацию
   const reservationCheckoutHandledRef = useRef(null)
+  /** После окончания аукциона не даём сбросить timerExpired, если сервер подставил другую дату окончания */
+  const auctionFinishedLatchRef = useRef(false)
+  /** Последняя известная дата кругового таймера (если API убрал test_timer_end_date) */
+  const lastTestTimerEndRef = useRef(null)
 
   // Отслеживаем изменения currentBid и запускаем анимацию при росте
   useEffect(() => {
@@ -621,17 +635,33 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
 
   const [isFavorite, setIsFavorite] = useState(false)
 
-  // Признак аукционного объекта (включая объекты с долгами — их UX тоже аукционный)
+  // Признак аукционного объекта (включая объекты с долгами — их UX тоже аукционный).
+  // Тестовый круговой таймер задаётся без is_auction — всё равно показываем аукционный блок.
   const isAuctionProperty =
     displayProperty.isAuction === true ||
     displayProperty.is_auction === true ||
-    displayProperty.is_auction === 1
+    displayProperty.is_auction === 1 ||
+    hasActiveCircularTestTimer(displayProperty) ||
+    hadCircularTimerAuction
 
   const auctionEndTime =
     displayProperty.test_timer_end_date ||
     displayProperty.endTime ||
     displayProperty.auction_end_date ||
     null
+
+  useEffect(() => {
+    setHadCircularTimerAuction(false)
+    auctionFinishedLatchRef.current = false
+    lastTestTimerEndRef.current = null
+  }, [displayProperty.id])
+
+  useEffect(() => {
+    if (hasActiveCircularTestTimer(displayProperty)) {
+      setHadCircularTimerAuction(true)
+      lastTestTimerEndRef.current = displayProperty.test_timer_end_date
+    }
+  }, [displayProperty.test_timer_end_date])
 
   // После оплаты резерва в Stripe — подтвердить сессию (если webhook ещё не обработал)
   useEffect(() => {
@@ -1155,8 +1185,9 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
       const now = new Date().getTime();
       const end = new Date(auctionEndTime).getTime();
       if (end <= now) {
+        auctionFinishedLatchRef.current = true;
         setTimerExpired(true);
-      } else {
+      } else if (!auctionFinishedLatchRef.current) {
         setTimerExpired(false);
       }
     };
@@ -1165,6 +1196,96 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
     const interval = setInterval(checkTimer, 1000);
     return () => clearInterval(interval);
   }, [auctionEndTime]);
+
+  // Подтягиваем победителя из БД, если аукцион уже завершён (лидер из ставок может отсутствовать в редких случаях)
+  useEffect(() => {
+    if (!displayProperty?.id || !isAuctionProperty || !auctionEndTime) {
+      setAuctionWinnerFromDb(undefined)
+      return
+    }
+    if (new Date(auctionEndTime).getTime() > Date.now()) {
+      setAuctionWinnerFromDb(undefined)
+      return
+    }
+    let cancelled = false
+    ;(async () => {
+      try {
+        const base = await getApiBaseUrl()
+        API_BASE_URL = base
+        const r = await fetch(`${base}/auction-winners/property/${displayProperty.id}`)
+        if (cancelled) return
+        const j = await r.json().catch(() => ({}))
+        if (j.success && j.data) {
+          setAuctionWinnerFromDb(j.data)
+        } else {
+          setAuctionWinnerFromDb(null)
+        }
+      } catch {
+        if (!cancelled) setAuctionWinnerFromDb(null)
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [displayProperty?.id, isAuctionProperty, auctionEndTime])
+
+  useEffect(() => {
+    setEndedAuctionPlayerPublicId(null)
+    if (!timerExpired || !auctionWinnerFromDb?.user_id || currentLeader) {
+      return
+    }
+    let cancelled = false
+    ;(async () => {
+      try {
+        const base = await getApiBaseUrl()
+        API_BASE_URL = base
+        const r = await fetch(`${base}/users/${auctionWinnerFromDb.user_id}`)
+        if (cancelled || !r.ok) return
+        const j = await r.json().catch(() => ({}))
+        if (!j.success || !j.data || cancelled) return
+        const pub = j.data.user_id_number ?? j.data.id
+        if (pub != null && !cancelled) setEndedAuctionPlayerPublicId(pub)
+      } catch (_) {}
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [timerExpired, auctionWinnerFromDb?.user_id, currentLeader])
+
+  const resolvedWinnerUserId =
+    currentLeader?.userIdNumber ??
+    currentLeader?.userId ??
+    currentLeader?.id ??
+    auctionWinnerFromDb?.user_id ??
+    null
+  const resolvedWinningBidRaw =
+    currentLeader?.bidAmount != null ? currentLeader.bidAmount : auctionWinnerFromDb?.winning_bid_amount
+  const resolvedWinningBid =
+    resolvedWinningBidRaw != null && resolvedWinningBidRaw !== '' && !Number.isNaN(Number(resolvedWinningBidRaw))
+      ? Number(resolvedWinningBidRaw)
+      : null
+  const showAuctionCompletedWinner =
+    timerExpired && resolvedWinnerUserId != null && resolvedWinningBid != null
+  const showAuctionCompletedNoBids =
+    timerExpired &&
+    !currentLeader &&
+    auctionWinnerFromDb === null
+
+  const displayEndedAuctionPlayerId =
+    currentLeader?.userIdNumber ??
+    endedAuctionPlayerPublicId ??
+    currentLeader?.userId ??
+    currentLeader?.id ??
+    auctionWinnerFromDb?.user_id ??
+    null
+
+  const showCircularTimerAuctionBlock =
+    hasActiveCircularTestTimer(displayProperty) ||
+    (hadCircularTimerAuction && timerExpired)
+
+  const circularTimerEndTime = hasActiveCircularTestTimer(displayProperty)
+    ? displayProperty.test_timer_end_date
+    : lastTestTimerEndRef.current
 
   // Сохраняем победителя когда таймер закончился
   useEffect(() => {
@@ -1226,43 +1347,13 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
     
     const saveWinner = async () => {
       try {
-        // Получаем userId
-        const isClerkAuth = user && userLoaded;
-        const isOldAuth = isAuthenticated();
-        
-        let userId = null;
-        if (isClerkAuth && user) {
-          const savedUserId = localStorage.getItem('userId');
-          if (savedUserId && /^\d+$/.test(savedUserId)) {
-            userId = parseInt(savedUserId);
-          } else {
-            try {
-              const userEmail = user.primaryEmailAddress?.emailAddress || user.emailAddresses?.[0]?.emailAddress;
-              if (userEmail) {
-                const userResponse = await fetch(`${API_BASE_URL}/users/email/${encodeURIComponent(userEmail)}`);
-                if (userResponse.ok) {
-                  const userData = await userResponse.json();
-                  if (userData.success && userData.data && userData.data.id) {
-                    userId = userData.data.id;
-                    localStorage.setItem('userId', String(userId));
-                  }
-                }
-              }
-            } catch (e) {
-              console.warn('Не удалось получить userId:', e);
-            }
-          }
-        } else if (isOldAuth) {
-          const { getUserData } = await import('../services/authService');
-          const userData = getUserData();
-          userId = userData?.id;
+        const leaderUserIdRaw = currentLeader.userId ?? currentLeader.id
+        const leaderUserId = leaderUserIdRaw != null ? parseInt(leaderUserIdRaw, 10) : NaN
+        if (!Number.isFinite(leaderUserId)) {
+          console.warn('⚠️ Нет корректного user_id лидера для сохранения победителя')
+          return
         }
-        
-        if (!userId) {
-          console.warn('⚠️ Не удалось определить userId для сохранения победителя');
-          return;
-        }
-        
+
         // Определяем таблицу объекта
         // Используем property_type из displayProperty, если доступен
         let propertyTable = 'properties';
@@ -1289,9 +1380,9 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
           }
         }
         
-        // Сохраняем победителя
+        // Сохраняем победителя (user_id — лидер по максимальной ставке, а не текущий зритель)
         const winnerData = {
-          user_id: userId,
+          user_id: leaderUserId,
           property_id: displayProperty.id,
           property_table: propertyTable,
           winning_bid_amount: currentLeader.bidAmount,
@@ -1309,10 +1400,23 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
           body: JSON.stringify(winnerData)
         });
         
+        const pullWinnerRow = async () => {
+          try {
+            const r = await fetch(`${API_BASE_URL}/auction-winners/property/${displayProperty.id}`);
+            if (!r.ok) return;
+            const j = await r.json();
+            if (j.success && j.data) setAuctionWinnerFromDb(j.data);
+            else if (j.success) setAuctionWinnerFromDb(null);
+          } catch (_) {
+            /* ignore */
+          }
+        };
+
         if (response.ok) {
           const result = await response.json();
           if (result.success) {
             console.log('✅ Победитель успешно сохранен:', result.data);
+            await pullWinnerRow();
           } else {
             console.warn('⚠️ Ошибка при сохранении победителя:', result.error);
           }
@@ -1321,6 +1425,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
           // Если победитель уже сохранен (409), это нормально
           if (response.status === 409) {
             console.log('ℹ️ Победитель уже был сохранен ранее');
+            await pullWinnerRow();
           } else {
             console.error('❌ Ошибка при сохранении победителя:', errorData);
           }
@@ -2217,6 +2322,21 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                   >
                     <FiShare2 size={20} />
                   </button>
+                  {isAuctionProperty &&
+                    !hasActiveCircularTestTimer(displayProperty) &&
+                    auctionEndTime &&
+                    !timerExpired &&
+                    !isReservedActive &&
+                    hasDbBackedProperty(displayProperty) && (
+                      <button
+                        type="button"
+                        className="property-detail-gallery__action-btn"
+                        onClick={() => setAuctionReminderOpen(true)}
+                        aria-label={t('auctionReminderButton')}
+                      >
+                        <Bell size={20} strokeWidth={2.25} />
+                      </button>
+                    )}
                   <button
                     type="button"
                     className={`property-detail-gallery__action-btn ${
@@ -2860,7 +2980,9 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
               {/* Блок таймера аукциона, текущей ставки и истории ставок.
                   Для долгов тоже показываем, чтобы UX был как у аукциона. */}
               {isAuctionProperty && auctionEndTime ? (
-                <div className="property-detail-sidebar__auction-block">
+                <div
+                  className={`property-detail-sidebar__auction-block${timerExpired ? ' property-detail-sidebar__auction-block--ended' : ''}`}
+                >
                   {/* Для долгов: показываем сумму долга отдельно */}
                   {isDebtProperty && displayProperty.debt_amount != null && displayProperty.debt_amount !== '' && !Number.isNaN(Number(displayProperty.debt_amount)) && (
                     <div className="property-detail-sidebar__current-bid" style={{ marginBottom: 12 }}>
@@ -2894,23 +3016,46 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                         </div>
                       </div>
                     </div>
-                  ) : (displayProperty.test_timer_end_date && 
-                    (typeof displayProperty.test_timer_end_date === 'string' 
-                      ? displayProperty.test_timer_end_date.trim() !== '' 
-                      : displayProperty.test_timer_end_date !== null && displayProperty.test_timer_end_date !== undefined)) ? (
+                  ) : timerExpired ? (
+                    <div
+                      className="property-detail-auction-ended"
+                      style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '1rem', width: '100%' }}
+                    >
+                      <div className="auction-completed-banner auction-completed-banner--page" role="status">
+                        {t('propertyDetailAuctionCompleted')}
+                      </div>
+                      {showAuctionCompletedWinner && (
+                        <div className="auction-winner-card auction-winner-card--settled" style={{ marginTop: 14, width: '100%', maxWidth: 320 }}>
+                          <div className="auction-winner-label">🏆 {t('propertyDetailAuctionWinner')}</div>
+                          <div className="auction-winner-name">
+                            {t('propertyDetailWinnerUserId', { id: displayEndedAuctionPlayerId ?? resolvedWinnerUserId })}
+                          </div>
+                          <div className="auction-winner-bid">
+                            {t('propertyDetailWinningBid')}{' '}
+                            {displayProperty.currency === 'USD' ? '$' : displayProperty.currency === 'EUR' ? '€' : displayProperty.currency === 'BYN' ? 'Br' : ''}
+                            {resolvedWinningBid.toLocaleString('ru-RU')}
+                          </div>
+                        </div>
+                      )}
+                      {showAuctionCompletedNoBids && (
+                        <div className="auction-completed-no-bids" role="status" style={{ marginTop: 12 }}>
+                          {t('propertyDetailAuctionNoBids')}
+                        </div>
+                      )}
+                    </div>
+                  ) : showCircularTimerAuctionBlock ? (
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '1rem' }}>
-                      {!timerExpired && (
-                        <CircularTimer 
-                          endTime={displayProperty.test_timer_end_date} 
-                          size={150} 
+                      {circularTimerEndTime ? (
+                        <CircularTimer
+                          endTime={circularTimerEndTime}
+                          size={150}
                           strokeWidth={8}
                           originalDuration={displayProperty.test_timer_duration || originalTestTimerDuration}
-                          isUserLeader={isUserLeader}
+                          isUserLeader={isUserLeader && !timerExpired}
                           bidInfo={timerBidInfo}
+                          auctionEndedLabel={t('propertyDetailAuctionCompleted')}
                         />
-                      )}
-                      {/* Отображение лидера под таймером */}
-                      {/* Старая карточка лидера (уходит вниз) */}
+                      ) : null}
                       {previousLeader && !timerExpired && isLeaderChanging && (
                         <div className="auction-leader-card auction-leader-card--exiting">
                           <div className="auction-leader-label">{t('propertyDetailAuctionLeader')}</div>
@@ -2928,7 +3073,6 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                           </div>
                         </div>
                       )}
-                      {/* Новая карточка лидера (поднимается вверх) */}
                       {currentLeader && !timerExpired && (
                         <div className={`auction-leader-card ${isLeaderChanging ? 'auction-leader-card--entering' : ''}`}>
                           <div className="auction-leader-label">{t('propertyDetailAuctionLeader')}</div>
@@ -2942,19 +3086,6 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                           </div>
                           <div className="auction-leader-bid">
                             {t('propertyDetailBid')} {displayProperty.currency === 'USD' ? '$' : displayProperty.currency === 'EUR' ? '€' : displayProperty.currency === 'BYN' ? 'Br' : ''}
-                            {currentLeader.bidAmount.toLocaleString('ru-RU')}
-                          </div>
-                        </div>
-                      )}
-                      {/* Победитель когда таймер закончился */}
-                      {timerExpired && currentLeader && (
-                        <div className="auction-winner-card">
-                          <div className="auction-winner-label">🏆 {t('propertyDetailAuctionWinner')}</div>
-                          <div className="auction-winner-name">
-                            {currentLeader.userIdNumber || currentLeader.userId || currentLeader.id}
-                          </div>
-                          <div className="auction-winner-bid">
-                            {t('propertyDetailWinningBid')} {displayProperty.currency === 'USD' ? '$' : displayProperty.currency === 'EUR' ? '€' : displayProperty.currency === 'BYN' ? 'Br' : ''}
                             {currentLeader.bidAmount.toLocaleString('ru-RU')}
                           </div>
                         </div>
@@ -2962,19 +3093,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                     </div>
                   ) : (
                     <>
-                      {isReservedActive ? (
-                        <div className="property-reservation-block" style={{ minWidth: '250px' }}>
-                          <div className="reservation-icon">🔒</div>
-                          <div className="reservation-text">
-                            <div className="reservation-title">{t('propertyDetailBidsPaused')}</div>
-                            <div className="reservation-subtitle">{t('propertyDetailReserved72h')}</div>
-                          </div>
-                        </div>
-                      ) : (
-                        <PropertyTimer endTime={auctionEndTime} />
-                      )}
-                      {/* Отображение лидера для обычных аукционов */}
-                      {/* Старая карточка лидера (уходит вниз) */}
+                      <PropertyTimer endTime={auctionEndTime} auctionEndedLabel={t('propertyDetailAuctionCompleted')} />
                       {previousLeader && !timerExpired && isLeaderChanging && (
                         <div className="auction-leader-card auction-leader-card--exiting">
                           <div className="auction-leader-label">{t('propertyDetailAuctionLeader')}</div>
@@ -2992,7 +3111,6 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                           </div>
                         </div>
                       )}
-                      {/* Новая карточка лидера (поднимается вверх) */}
                       {currentLeader && !timerExpired && (
                         <div className={`auction-leader-card ${isLeaderChanging ? 'auction-leader-card--entering' : ''}`}>
                           <div className="auction-leader-label">{t('propertyDetailAuctionLeader')}</div>
@@ -3006,19 +3124,6 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                           </div>
                           <div className="auction-leader-bid">
                             {t('propertyDetailBid')} {displayProperty.currency === 'USD' ? '$' : displayProperty.currency === 'EUR' ? '€' : displayProperty.currency === 'BYN' ? 'Br' : ''}
-                            {currentLeader.bidAmount.toLocaleString('ru-RU')}
-                          </div>
-                        </div>
-                      )}
-                      {/* Победитель когда таймер закончился */}
-                      {timerExpired && currentLeader && (
-                        <div className="auction-winner-card">
-                          <div className="auction-winner-label">🏆 {t('propertyDetailAuctionWinner')}</div>
-                          <div className="auction-winner-name">
-                            {currentLeader.userIdNumber || currentLeader.userId || currentLeader.id}
-                          </div>
-                          <div className="auction-winner-bid">
-                            {t('propertyDetailWinningBid')} {displayProperty.currency === 'USD' ? '$' : displayProperty.currency === 'EUR' ? '€' : displayProperty.currency === 'BYN' ? 'Br' : ''}
                             {currentLeader.bidAmount.toLocaleString('ru-RU')}
                           </div>
                         </div>
@@ -3360,6 +3465,12 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
           isAuction: isAuctionProperty,
           currentBid: currentBid || displayProperty.currentBid || displayProperty.auction_starting_price || displayProperty.price
         }}
+      />
+
+      <AuctionReminderModal
+        property={displayProperty}
+        open={auctionReminderOpen}
+        onClose={() => setAuctionReminderOpen(false)}
       />
 
       {/* Модальное окно для просмотра документа */}

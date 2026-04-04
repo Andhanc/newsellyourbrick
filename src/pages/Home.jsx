@@ -2,8 +2,9 @@ import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useUser, useAuth } from '@clerk/clerk-react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { FiX, FiSend, FiPhone, FiMail } from 'react-icons/fi'
+import { FiX, FiSend, FiPhone, FiMail, FiArrowLeft, FiMessageCircle } from 'react-icons/fi'
 import { FaWhatsapp } from 'react-icons/fa'
+import { FaTelegram } from 'react-icons/fa6'
 import Header from '../components/Header'
 import Hero from '../components/Hero'
 import PropertyList from '../components/PropertyList'
@@ -12,11 +13,20 @@ import DepositButton from '../components/DepositButton'
 import { getUserData, isAuthenticated } from '../services/authService'
 import { syncAssistantLead } from '../services/assistantLeadService'
 import { askPropertyAssistant, detectManagerContactIntent } from '../services/aiService'
-import { getCachedList, hasCachedList, fetchAuctionList } from '../services/auctionListCache'
+import { getCachedList, hasCachedList, fetchAuctionList, setCachedList } from '../services/auctionListCache'
 import { ensureCanOpenProperty } from '../utils/propertyAccessGuard'
 import './Home.css'
 
 import { getApiBaseUrl } from '../utils/apiConfig'
+import { showNotification } from '../utils/toastHelper'
+import {
+  ensureLiveChatSession,
+  fetchLiveChatMessagesSince,
+  getManagerContactButtons,
+  liveChatStorageKey,
+  normalizeLiveChatRows,
+  sendLiveChatUserMessage,
+} from '../services/liveChatApi'
 
 function formatPropertyForList(prop, isAuction) {
   return {
@@ -71,6 +81,9 @@ function Home() {
   const slowResponseTimerRef = useRef(null)
   const chatMessagesRef = useRef(null)
   const lastMessageRef = useRef(null)
+  const chatUserIdForLiveRef = useRef('')
+  const managerPollRef = useRef(null)
+  const lastManagerMsgIdRef = useRef(0)
   const [userPreferences, setUserPreferences] = useState({
     purpose: null, // 'для себя', 'под сдачу', 'инвестиции'
     budget: null,
@@ -83,6 +96,9 @@ function Home() {
     managerContactPendingChoice: false,
     preferredContact: null
   })
+  const [chatMode, setChatMode] = useState('ai')
+  const [managerChatMessages, setManagerChatMessages] = useState([])
+  const [liveChatToken, setLiveChatToken] = useState(null)
 
   // Загрузка объявлений: при наличии кэша — только фоновое обновление (без "Загрузка объявлений...")
   const loadProperties = useCallback(async (backgroundRefresh = false) => {
@@ -123,6 +139,42 @@ function Home() {
         try {
           if (event.data.startsWith(':')) return
           const data = JSON.parse(event.data)
+          if (data.type === 'test_timer_update' && data.property) {
+            const patch = data.property
+            const idNum = Number(patch.id)
+            if (!Number.isFinite(idNum)) return
+            const cleared = patch.test_timer_end_date == null || patch.test_timer_end_date === ''
+            setAuctionProperties((prev) => {
+              let found = false
+              const mapped = prev.map((item) => {
+                if (Number(item.id) !== idNum) return item
+                found = true
+                const merged = { ...item }
+                if (cleared) {
+                  merged.test_timer_end_date = null
+                  merged.test_timer_duration = null
+                } else {
+                  merged.test_timer_end_date = patch.test_timer_end_date
+                  merged.test_timer_duration =
+                    patch.test_timer_duration != null ? patch.test_timer_duration : item.test_timer_duration
+                }
+                const hasTT = merged.test_timer_end_date != null && merged.test_timer_end_date !== ''
+                const isAuction =
+                  item.isAuction === true ||
+                  hasTT ||
+                  item.is_auction === true ||
+                  item.is_auction === 1
+                return formatPropertyForList(merged, isAuction)
+              })
+              if (!found && !cleared) {
+                fetchAuctionList().then(setAuctionProperties).catch(() => {})
+              } else {
+                setCachedList(mapped)
+              }
+              return mapped
+            })
+            return
+          }
           if (data.type !== 'new_auction_objects' || !Array.isArray(data.properties) || data.properties.length === 0) return
           const newFormatted = data.properties.map(p => formatPropertyForList(p, true))
           setAuctionProperties((prev) => {
@@ -264,7 +316,9 @@ function Home() {
       const labelMap = {
         phone: t('managerContactPrefPhone'),
         email: t('managerContactPrefEmail'),
-        whatsapp: t('managerContactPrefWhatsapp')
+        whatsapp: t('managerContactPrefWhatsapp'),
+        telegram: t('managerContactPrefTelegram'),
+        live_chat: t('managerContactPrefLiveChat'),
       }
       userMessage = labelMap[contactPref] || contactPref
     }
@@ -291,6 +345,29 @@ function Home() {
         managerContactRequested: true,
         managerContactPendingChoice: false
       }))
+      if (contactPref === 'live_chat') {
+        try {
+          await enterLiveManagerChat()
+        } catch (err) {
+          console.error(err)
+          showNotification(err?.message || t('liveChatError'))
+        }
+        return
+      }
+      if (contactPref === 'telegram') {
+        const tgUrl = (import.meta.env.VITE_MANAGER_TELEGRAM_URL || '').trim()
+        const botMessage = {
+          id: Date.now() + 1,
+          text: tgUrl ? t('managerContactThanksTelegram') : t('liveChatTelegramNotConfigured'),
+          sender: 'bot',
+          timestamp: new Date(),
+          buttons: null,
+          recommendations: null
+        }
+        setChatMessages((prev) => [...prev, botMessage])
+        if (tgUrl) window.open(tgUrl, '_blank', 'noopener,noreferrer')
+        return
+      }
       const thanksText =
         contactPref === 'phone'
           ? t('managerContactThanksPhone')
@@ -384,7 +461,13 @@ function Home() {
             ? t('managerContactPrefPhone')
             : alreadyDone === 'email'
               ? t('managerContactPrefEmail')
-              : t('managerContactPrefWhatsapp')
+              : alreadyDone === 'whatsapp'
+                ? t('managerContactPrefWhatsapp')
+                : alreadyDone === 'telegram'
+                  ? t('managerContactPrefTelegram')
+                  : alreadyDone === 'live_chat'
+                    ? t('managerContactPrefLiveChat')
+                    : String(alreadyDone)
         const botMessage = {
           id: Date.now() + 1,
           text: t('managerRequestAlready', { method: methodLabel }),
@@ -402,11 +485,7 @@ function Home() {
           text: t('managerContactPickHint'),
           sender: 'bot',
           timestamp: new Date(),
-          buttons: [
-            { type: 'contact_pref', value: 'phone', label: t('managerContactPrefPhone') },
-            { type: 'contact_pref', value: 'email', label: t('managerContactPrefEmail') },
-            { type: 'contact_pref', value: 'whatsapp', label: t('managerContactPrefWhatsapp') }
-          ],
+          buttons: getManagerContactButtons(t),
           recommendations: null
         }
         setChatMessages((prev) => [...prev, botMessage])
@@ -423,11 +502,7 @@ function Home() {
         text: t('managerRequestAck'),
         sender: 'bot',
         timestamp: new Date(),
-        buttons: [
-          { type: 'contact_pref', value: 'phone', label: t('managerContactPrefPhone') },
-          { type: 'contact_pref', value: 'email', label: t('managerContactPrefEmail') },
-          { type: 'contact_pref', value: 'whatsapp', label: t('managerContactPrefWhatsapp') }
-        ],
+        buttons: getManagerContactButtons(t),
         recommendations: null
       }
       setChatMessages((prev) => [...prev, botMessage])
@@ -517,6 +592,94 @@ function Home() {
     return sessionId
   }, [isLoggedIn, dbUserId])
 
+  chatUserIdForLiveRef.current = getChatUserId
+
+  const scheduleManagerPoll = useCallback((token) => {
+    if (managerPollRef.current) {
+      clearInterval(managerPollRef.current)
+      managerPollRef.current = null
+    }
+    managerPollRef.current = setInterval(async () => {
+      try {
+        const chunk = await fetchLiveChatMessagesSince(token, lastManagerMsgIdRef.current)
+        if (chunk.length) {
+          lastManagerMsgIdRef.current = Math.max(...chunk.map((r) => r.id))
+          setManagerChatMessages((p) => [...p, ...normalizeLiveChatRows(chunk)])
+        }
+      } catch {
+        /* ignore */
+      }
+    }, 2500)
+  }, [])
+
+  const enterLiveManagerChat = useCallback(async () => {
+    const userData = getUserData()
+    const uid = userData?.isLoggedIn && userData?.id ? Number(userData.id) : null
+    const { token, messages } = await ensureLiveChatSession({
+      assistantSessionId: chatUserIdForLiveRef.current || null,
+      userId: Number.isFinite(uid) ? uid : null,
+      waitMessage: t('liveChatWaitNotice'),
+    })
+    const rows = messages || []
+    lastManagerMsgIdRef.current = rows.reduce((m, r) => Math.max(m, r.id), 0)
+    setManagerChatMessages(normalizeLiveChatRows(rows))
+    setLiveChatToken(token)
+    setChatMode('manager')
+    localStorage.setItem(`aiChatLiveManagerMode_${chatUserIdForLiveRef.current}`, '1')
+    scheduleManagerPoll(token)
+  }, [t, scheduleManagerPoll])
+
+  const resumeLiveManagerIfNeeded = useCallback(async () => {
+    const id = chatUserIdForLiveRef.current
+    const modeKey = `aiChatLiveManagerMode_${id}`
+    if (localStorage.getItem(modeKey) !== '1') return
+    const token = localStorage.getItem(liveChatStorageKey(id))
+    if (!token) return
+    try {
+      const rows = await fetchLiveChatMessagesSince(token, 0)
+      lastManagerMsgIdRef.current = rows.reduce((m, r) => Math.max(m, r.id), 0)
+      setLiveChatToken(token)
+      setManagerChatMessages(normalizeLiveChatRows(rows))
+      setChatMode('manager')
+      scheduleManagerPoll(token)
+    } catch {
+      localStorage.removeItem(modeKey)
+    }
+  }, [scheduleManagerPoll])
+
+  useEffect(() => {
+    resumeLiveManagerIfNeeded()
+    return () => {
+      if (managerPollRef.current) {
+        clearInterval(managerPollRef.current)
+        managerPollRef.current = null
+      }
+    }
+  }, [resumeLiveManagerIfNeeded])
+
+  const backToAiChat = useCallback(() => {
+    if (managerPollRef.current) {
+      clearInterval(managerPollRef.current)
+      managerPollRef.current = null
+    }
+    setChatMode('ai')
+    localStorage.setItem(`aiChatLiveManagerMode_${chatUserIdForLiveRef.current}`, '0')
+  }, [])
+
+  const handleManagerChatSubmit = async (e) => {
+    e.preventDefault()
+    const text = chatInput.trim()
+    if (!text || !liveChatToken) return
+    setChatInput('')
+    try {
+      const row = await sendLiveChatUserMessage(liveChatToken, text)
+      lastManagerMsgIdRef.current = Math.max(lastManagerMsgIdRef.current, row.id)
+      setManagerChatMessages((prev) => [...prev, ...normalizeLiveChatRows([row])])
+    } catch (err) {
+      showNotification(err?.message || t('liveChatError'))
+    }
+  }
+
   // Загружаем историю чата из localStorage при монтировании компонента или изменении пользователя
   const chatHistoryLoadedRef = useRef(false)
   const lastChatUserIdRef = useRef(null)
@@ -600,13 +763,17 @@ function Home() {
   // При ответе бота — скролл к началу ответа; при своём сообщении — вниз
   useEffect(() => {
     if (!chatMessagesRef.current || !isChatOpen) return
+    if (chatMode === 'manager') {
+      chatMessagesRef.current.scrollTop = chatMessagesRef.current.scrollHeight
+      return
+    }
     const last = chatMessages[chatMessages.length - 1]
     if (last?.sender === 'bot' && lastMessageRef.current) {
       lastMessageRef.current.scrollIntoView({ block: 'start', behavior: 'smooth' })
     } else {
       chatMessagesRef.current.scrollTop = chatMessagesRef.current.scrollHeight
     }
-  }, [chatMessages, isChatOpen])
+  }, [chatMessages, managerChatMessages, chatMode, isChatOpen])
 
   // Обновляем window.isChatOpen и отправляем событие для синхронизации с хедером
   useEffect(() => {
@@ -674,11 +841,31 @@ function Home() {
         <div className="chat-widget">
           <div className="chat-widget__header">
             <div className="chat-widget__header-info">
-              <div className="chat-widget__avatar">AI</div>
-              <div className="chat-widget__header-text">
-                <h3 className="chat-widget__title">{t('chatTitle')}</h3>
-                <span className="chat-widget__status">{t('chatOnline')}</span>
-              </div>
+              {chatMode === 'manager' ? (
+                <>
+                  <button
+                    type="button"
+                    className="chat-widget__back"
+                    onClick={backToAiChat}
+                    aria-label={t('backToAiAssistant')}
+                  >
+                    <FiArrowLeft size={20} />
+                  </button>
+                  <div className="chat-widget__avatar chat-widget__avatar--manager">M</div>
+                  <div className="chat-widget__header-text">
+                    <h3 className="chat-widget__title">{t('chatManagerTitle')}</h3>
+                    <span className="chat-widget__status">{t('chatManagerOnline')}</span>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="chat-widget__avatar">AI</div>
+                  <div className="chat-widget__header-text">
+                    <h3 className="chat-widget__title">{t('chatTitle')}</h3>
+                    <span className="chat-widget__status">{t('chatOnline')}</span>
+                  </div>
+                </>
+              )}
             </div>
             <button
               type="button"
@@ -691,7 +878,28 @@ function Home() {
           </div>
 
           <div className="chat-widget__messages" ref={chatMessagesRef}>
-            {chatMessages.map((message, idx) => (
+            {chatMode === 'manager'
+              ? managerChatMessages.map((message) => (
+                  <div
+                    key={message.id}
+                    className={`chat-widget__message ${
+                      message.sender === 'user'
+                        ? 'chat-widget__message--user'
+                        : message.sender === 'manager'
+                          ? 'chat-widget__message--manager'
+                          : 'chat-widget__message--system'
+                    }`}
+                  >
+                    <div className="chat-widget__message-content">{message.text}</div>
+                    <div className="chat-widget__message-time">
+                      {message.timestamp.toLocaleTimeString('ru-RU', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </div>
+                  </div>
+                ))
+              : chatMessages.map((message, idx) => (
               <div
                 key={message.id}
                 ref={idx === chatMessages.length - 1 ? lastMessageRef : null}
@@ -758,7 +966,11 @@ function Home() {
                             ? FiPhone
                             : button.value === 'email'
                               ? FiMail
-                              : FaWhatsapp
+                              : button.value === 'whatsapp'
+                                ? FaWhatsapp
+                                : button.value === 'telegram'
+                                  ? FaTelegram
+                                  : FiMessageCircle
                         return (
                           <button
                             key={index}
@@ -795,7 +1007,7 @@ function Home() {
                 </div>
               </div>
             ))}
-            {isLoadingAI && (
+            {chatMode !== 'manager' && isLoadingAI && (
               <div className="chat-widget__message chat-widget__message--bot">
                 <div className="chat-widget__message-content">
                   <div className="chat-widget__typing">
@@ -811,21 +1023,30 @@ function Home() {
             )}
           </div>
 
-          <form className="chat-widget__input-form" onSubmit={handleChatSubmit}>
+          <form
+            className="chat-widget__input-form"
+            onSubmit={chatMode === 'manager' ? handleManagerChatSubmit : handleChatSubmit}
+          >
             <input
               type="text"
               className="chat-widget__input"
-              placeholder={isLoadingAI ? t('aiThinking') : t('chatPlaceholder')}
+              placeholder={
+                chatMode === 'manager'
+                  ? t('chatPlaceholder')
+                  : isLoadingAI
+                    ? t('aiThinking')
+                    : t('chatPlaceholder')
+              }
               value={chatInput}
               onChange={handleChatInputChange}
-              disabled={isLoadingAI}
+              disabled={chatMode === 'manager' ? false : isLoadingAI}
               autoFocus
             />
             <button
               type="submit"
               className="chat-widget__send"
               aria-label={t('sendMessage')}
-              disabled={isLoadingAI}
+              disabled={chatMode === 'manager' ? false : isLoadingAI}
             >
               <FiSend size={18} />
             </button>

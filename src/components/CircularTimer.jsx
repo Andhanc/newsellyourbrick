@@ -73,19 +73,30 @@ const getCountryFlag = (countryValue) => {
   return '🌍';
 };
 
-const CircularTimer = ({ endTime, size = 120, strokeWidth = 6, originalDuration = null, isUserLeader = false, bidInfo = null }) => {
+const CircularTimer = ({
+  endTime,
+  size = 120,
+  strokeWidth = 6,
+  originalDuration = null,
+  isUserLeader = false,
+  bidInfo = null,
+  auctionEndedLabel = null,
+}) => {
   const [timeLeft, setTimeLeft] = useState({
     days: 0,
     hours: 0,
     minutes: 0,
     seconds: 0
   });
+  const [isExpired, setIsExpired] = useState(false);
 
   useEffect(() => {
     const calculateTimeLeft = () => {
       const now = new Date().getTime();
       const end = new Date(endTime).getTime();
       const difference = end - now;
+
+      setIsExpired(difference <= 0);
 
       if (difference > 0) {
         const days = Math.floor(difference / (1000 * 60 * 60 * 24));
@@ -107,8 +118,8 @@ const CircularTimer = ({ endTime, size = 120, strokeWidth = 6, originalDuration 
     setTimeLeft(update);
 
     const timer = setInterval(() => {
-      const update = calculateTimeLeft();
-      setTimeLeft(update);
+      const next = calculateTimeLeft();
+      setTimeLeft(next);
     }, 1000);
 
     return () => clearInterval(timer);
@@ -176,8 +187,13 @@ const CircularTimer = ({ endTime, size = 120, strokeWidth = 6, originalDuration 
 
   const centerRadius = radius - strokeWidth + 2;
 
+  const showEndedCenter = isExpired && auctionEndedLabel;
+
   return (
-    <div className={`circular-timer ${isLeader ? 'circular-timer--leader' : ''}`} style={{ width: size, height: size }}>
+    <div
+      className={`circular-timer ${isLeader ? 'circular-timer--leader' : ''} ${showEndedCenter ? 'circular-timer--ended' : ''} ${size <= 72 ? 'circular-timer--compact' : ''}`}
+      style={{ width: size, height: size }}
+    >
       <svg className="circular-timer-svg" width={size} height={size} style={{ overflow: 'visible' }}>
         <defs>
           {/* Градиенты для обводки с 3D эффектом (более контрастные для объёма) */}
@@ -254,7 +270,7 @@ const CircularTimer = ({ endTime, size = 120, strokeWidth = 6, originalDuration 
           cx={size / 2}
           cy={size / 2}
           r={radius}
-          stroke={isLeader ? "url(#grayGradient)" : "url(#orangeGradient)"}
+          stroke={showEndedCenter ? 'url(#grayGradient)' : isLeader ? "url(#grayGradient)" : "url(#orangeGradient)"}
           strokeWidth={strokeWidth + 2}
           fill="none"
           opacity="0.4"
@@ -266,7 +282,7 @@ const CircularTimer = ({ endTime, size = 120, strokeWidth = 6, originalDuration 
           cx={size / 2}
           cy={size / 2}
           r={radius}
-          stroke={isLeader ? "url(#grayGradient)" : "url(#orangeGradient)"}
+          stroke={showEndedCenter ? 'url(#grayGradient)' : isLeader ? "url(#grayGradient)" : "url(#orangeGradient)"}
           strokeWidth={strokeWidth + 2}
           fill="none"
           strokeDasharray={circumference}
@@ -284,7 +300,7 @@ const CircularTimer = ({ endTime, size = 120, strokeWidth = 6, originalDuration 
           cx={size / 2}
           cy={size / 2}
           r={radius}
-          stroke={isLeader ? "url(#greenGradient)" : "url(#redGradient)"}
+          stroke={showEndedCenter ? 'url(#grayGradient)' : isLeader ? "url(#greenGradient)" : "url(#redGradient)"}
           strokeWidth={strokeWidth + 4}
           fill="none"
           strokeDasharray={circumference}
@@ -293,7 +309,7 @@ const CircularTimer = ({ endTime, size = 120, strokeWidth = 6, originalDuration 
           transform={`rotate(-90 ${size / 2} ${size / 2})`}
           style={{
             transition: 'stroke-dashoffset 1s cubic-bezier(0.4, 0, 0.2, 1), stroke 0.3s ease',
-            opacity: redProgressValue > 0 ? 1 : 0
+            opacity: showEndedCenter ? 0.35 : redProgressValue > 0 ? 1 : 0
           }}
         />
         
@@ -303,12 +319,14 @@ const CircularTimer = ({ endTime, size = 120, strokeWidth = 6, originalDuration 
           cx={size / 2}
           cy={size / 2}
           r={centerRadius}
-          fill={isLeader ? "url(#centerGreenRadial)" : "url(#centerOrangeRadial)"}
+          fill={showEndedCenter ? '#64748b' : isLeader ? "url(#centerGreenRadial)" : "url(#centerOrangeRadial)"}
         />
         
       </svg>
       <div className="circular-timer-content">
-        {bidInfo ? (
+        {showEndedCenter ? (
+          <div className="circular-timer-time circular-timer-time--ended">{auctionEndedLabel}</div>
+        ) : bidInfo ? (
           <div className="circular-timer-bid-info">
             <div className="circular-timer-flag">
               {(() => {

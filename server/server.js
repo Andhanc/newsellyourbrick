@@ -3,7 +3,7 @@ import express from 'express';
 import cors from 'cors';
 import axios from 'axios';
 import { initDatabase, closeDatabase, getDatabase, schemaCache } from './database/database.js';
-import { userQueries, documentQueries, notificationQueries, testDriveBookingQueries, administratorQueries, debtReasonQueries, debtDocumentQueries, whatsappUserQueries, purchaseRequestQueries, assistantLeadQueries, apartmentQueries, houseQueries, propertyQueries, favoriteQueries, crmQueries } from './database/database.js';
+import { userQueries, documentQueries, notificationQueries, testDriveBookingQueries, administratorQueries, debtReasonQueries, debtDocumentQueries, whatsappUserQueries, purchaseRequestQueries, assistantLeadQueries, liveChatQueries, apartmentQueries, houseQueries, propertyQueries, favoriteQueries, crmQueries, auctionReminderQueries } from './database/database.js';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import multer from 'multer';
@@ -25,6 +25,7 @@ import { registerStripeBillingRoutes, createStripeWebhookHandler } from './strip
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 dotenv.config({ path: join(__dirname, '..', '.env') });
+dotenv.config({ path: join(__dirname, '.env') });
 
 const { Client, LocalAuth } = whatsappPkg;
 
@@ -42,6 +43,17 @@ console.log('[SERVER]    - REACT_APP_EMAILJS_TEMPLATE_ID:', process.env.REACT_AP
 console.log('[SERVER]    - VITE_EMAILJS_TEMPLATE_ID:', process.env.VITE_EMAILJS_TEMPLATE_ID ? '✅ установлен' : '❌ не установлен');
 console.log('[SERVER]    - REACT_APP_EMAILJS_PUBLIC_KEY:', process.env.REACT_APP_EMAILJS_PUBLIC_KEY ? '✅ установлен' : '❌ не установлен');
 console.log('[SERVER]    - VITE_EMAILJS_PUBLIC_KEY:', process.env.VITE_EMAILJS_PUBLIC_KEY ? '✅ установлен' : '❌ не установлен');
+const ejPriv =
+  String(
+    process.env.EMAILJS_PRIVATE_KEY ||
+      process.env.EMAILJS_ACCESS_TOKEN ||
+      process.env.EMAILJS_PRIVATE_API_KEY ||
+      ''
+  ).trim();
+console.log(
+  '[SERVER]    - EMAILJS_PRIVATE_KEY (или ACCESS_TOKEN):',
+  ejPriv ? '✅ установлен (серверная отправка)' : '❌ не установлен → будет 403 без «Allow non-browser API» в EmailJS'
+);
 const emailJsServiceId = process.env.REACT_APP_EMAILJS_SERVICE_ID || process.env.VITE_EMAILJS_SERVICE_ID || '';
 const emailJsTemplateId = process.env.REACT_APP_EMAILJS_TEMPLATE_ID || process.env.VITE_EMAILJS_TEMPLATE_ID || '';
 const emailJsPublicKey = process.env.REACT_APP_EMAILJS_PUBLIC_KEY || process.env.VITE_EMAILJS_PUBLIC_KEY || '';
@@ -175,6 +187,20 @@ function broadcastAuctionNewObjects(properties) {
   });
 }
 
+/** Push в тот же SSE-канал, что и новые лоты: обновление тестового таймера без polling. */
+function broadcastAuctionSseEvent(payload) {
+  if (!payload || auctionSSEClients.size === 0) return;
+  const line = JSON.stringify(payload);
+  auctionSSEClients.forEach((res) => {
+    try {
+      res.write(`data: ${line}\n\n`);
+      if (typeof res.flush === 'function') res.flush();
+    } catch (e) {
+      auctionSSEClients.delete(res);
+    }
+  });
+}
+
 /**
  * GET /api/events/auction-updates - Server-Sent Events для новых объектов на странице аукциона.
  * Клиент подписывается один раз; сервер пушит события только при появлении новых объектов (после одобрения).
@@ -202,6 +228,50 @@ app.get('/api/events/auction-updates', (req, res) => {
   req.on('close', () => {
     clearInterval(heartbeat);
     auctionSSEClients.delete(res);
+  });
+});
+
+/** SSE: админка «Чаты с сайта» — новые сообщения и сессии без polling */
+const liveChatAdminSSEClients = new Set();
+
+function broadcastLiveChatAdminEvent(payload) {
+  if (!payload || liveChatAdminSSEClients.size === 0) return;
+  const line = `data: ${JSON.stringify(payload)}\n\n`;
+  liveChatAdminSSEClients.forEach((res) => {
+    try {
+      res.write(line);
+      if (typeof res.flush === 'function') res.flush();
+    } catch (e) {
+      liveChatAdminSSEClients.delete(res);
+    }
+  });
+}
+
+/**
+ * GET /api/events/live-chat-admin — Server-Sent Events для раздела чатов с посетителями в админке.
+ */
+app.get('/api/events/live-chat-admin', (req, res) => {
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.setHeader('X-Accel-Buffering', 'no');
+  res.flushHeaders();
+  liveChatAdminSSEClients.add(res);
+  res.write(': connected\n\n');
+  if (typeof res.flush === 'function') res.flush();
+  const heartbeat = setInterval(() => {
+    if (!liveChatAdminSSEClients.has(res)) return;
+    try {
+      res.write(': hb\n\n');
+      if (typeof res.flush === 'function') res.flush();
+    } catch (e) {
+      clearInterval(heartbeat);
+      liveChatAdminSSEClients.delete(res);
+    }
+  }, 30000);
+  req.on('close', () => {
+    clearInterval(heartbeat);
+    liveChatAdminSSEClients.delete(res);
   });
 });
 
@@ -692,6 +762,45 @@ const applySendSeenPatch = async () => {
   return false;
 };
 
+/** Внутренняя отправка WhatsApp (напоминания аукциона). */
+async function trySendWhatsAppDigits(rawPhoneDigits, messageText) {
+  const text = String(messageText || '').trim();
+  if (!text) return { ok: false, error: 'empty' };
+  if (!waClientReady) {
+    try {
+      if (waClient && waClient.info && waClient.info.wid) waClientReady = true;
+    } catch (_) {
+      /* ignore */
+    }
+  }
+  if (!waClientReady) return { ok: false, error: 'not_ready' };
+  const digits = String(rawPhoneDigits || '').replace(/\D/g, '');
+  if (!digits) return { ok: false, error: 'bad_phone' };
+  const chatId = `${digits}@c.us`;
+  try {
+    await applySendSeenPatch();
+    await waClient.sendMessage(chatId, text);
+    return { ok: true };
+  } catch (e) {
+    const errMessage = e?.message || '';
+    if (
+      errMessage.includes('markedUnread') ||
+      errMessage.includes('Cannot read properties of undefined')
+    ) {
+      try {
+        await applySendSeenPatch();
+        await waClient.sendMessage(chatId, text);
+        return { ok: true };
+      } catch (e2) {
+        console.error('[auction-reminder] WA retry failed:', e2);
+        return { ok: false, error: e2.message };
+      }
+    }
+    console.error('[auction-reminder] WA:', e);
+    return { ok: false, error: e.message };
+  }
+}
+
 waClient.on('ready', async () => {
   waClientReady = true;
   // Очищаем QR-код после готовности клиента
@@ -929,6 +1038,177 @@ app.delete('/api/users/:userId/favorites', (req, res) => {
     res.json({ success: true, removed: result.changes > 0 });
   } catch (error) {
     console.error('DELETE /api/users/:userId/favorites:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * POST /api/users/:userId/auction-reminders
+ * body: { property_id, property_table, notify_email, notify_whatsapp, scheduled_at (ISO) }
+ */
+app.post('/api/users/:userId/auction-reminders', express.json(), (req, res) => {
+  try {
+    const userId = parseInt(req.params.userId, 10);
+    if (!userId) {
+      return res.status(400).json({ success: false, error: 'Некорректный user id' });
+    }
+    if (!userQueries.getById(userId)) {
+      return res.status(404).json({ success: false, error: 'Пользователь не найден' });
+    }
+    const {
+      property_id: propertyId,
+      property_table: propertyTable,
+      notify_email: notifyEmail,
+      notify_whatsapp: notifyWhatsapp,
+      scheduled_at: scheduledAt,
+    } = req.body || {};
+    if (propertyId == null) {
+      return res.status(400).json({ success: false, error: 'Укажите property_id' });
+    }
+    if (!notifyEmail && !notifyWhatsapp) {
+      return res.status(400).json({ success: false, error: 'Выберите хотя бы один канал: почта или WhatsApp' });
+    }
+    const profile = userQueries.getById(userId);
+    const profileEmail = profile?.email && String(profile.email).trim();
+    const profilePhone = profile?.phone_number && String(profile.phone_number).trim();
+    if (notifyEmail && !profileEmail) {
+      return res.status(400).json({
+        success: false,
+        error:
+          'В профиле не сохранён email — укажите почту в личном кабинете, иначе напоминание на почту отправить некуда.',
+      });
+    }
+    if (notifyWhatsapp && !profilePhone) {
+      return res.status(400).json({
+        success: false,
+        error: 'В профиле не сохранён телефон — укажите номер для WhatsApp.',
+      });
+    }
+    const schedMs = parsePropertyDateMs(scheduledAt);
+    if (schedMs == null) {
+      return res.status(400).json({ success: false, error: 'Некорректная дата напоминания' });
+    }
+    const minMs = Date.now() + 55 * 1000;
+    if (schedMs < minMs) {
+      return res.status(400).json({ success: false, error: 'Время напоминания должно быть в будущем' });
+    }
+    const row = loadPropertyRowForReminder(propertyId, propertyTable);
+    if (!row) {
+      return res.status(404).json({ success: false, error: 'Объект не найден' });
+    }
+    if (propertyRowHasCircularTestTimer(row)) {
+      return res.status(400).json({
+        success: false,
+        error:
+          'Напоминание доступно только в преаукционе (линейный таймер). Во время кругового таймера оно недоступно.',
+      });
+    }
+    const startMs = parsePropertyDateMs(row.auction_start_date);
+    const endMs = parsePropertyDateMs(row.auction_end_date);
+    if (endMs != null && schedMs > endMs) {
+      return res.status(400).json({
+        success: false,
+        error: 'Напоминание не может быть позже окончания аукциона',
+      });
+    }
+    // Пока дата старта в будущем — напоминание только до неё. Если старт уже прошёл, линейный этап идёт до конца — ограничение только по дате окончания выше.
+    if (startMs != null && startMs > Date.now() && schedMs >= startMs) {
+      return res.status(400).json({
+        success: false,
+        error: 'Напоминание должно быть до начала аукциона',
+      });
+    }
+    const nowForStart = Date.now();
+    const auctionStartAtIso =
+      startMs != null && startMs > nowForStart ? new Date(startMs).toISOString() : null;
+    const title =
+      row.title ||
+      row.name ||
+      row.property_title ||
+      `Объект #${propertyId}`;
+    auctionReminderQueries.upsert({
+      userId,
+      propertyId,
+      propertyTable,
+      notifyEmail: Boolean(notifyEmail),
+      notifyWhatsapp: Boolean(notifyWhatsapp),
+      scheduledAtIso: new Date(schedMs).toISOString(),
+      auctionStartAtIso,
+      propertyTitle: title,
+    });
+    const saved = auctionReminderQueries.getForUserProperty(userId, propertyId, propertyTable);
+    const ch = [notifyEmail ? 'email' : null, notifyWhatsapp ? 'whatsapp' : null].filter(Boolean).join('+');
+    console.log(
+      `[auction-reminder] Сохранено напоминание: user_id=${userId} → email=${profileEmail || '—'} phone=${profilePhone ? 'есть' : '—'} | scheduled_at=${saved?.scheduled_at || new Date(schedMs).toISOString()} | объект #${propertyId} (${propertyTable}) «${title}» | каналы: ${ch}`
+    );
+    res.json({ success: true, data: saved });
+  } catch (error) {
+    console.error('POST auction-reminders:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * POST /api/users/:userId/auction-reminders/send-test
+ * Тестовое письмо «как напоминание» — не меняет запись в auction_reminders.
+ * body: { property_id?, property_table? } — для ссылки в письме
+ */
+app.post('/api/users/:userId/auction-reminders/send-test', express.json(), async (req, res) => {
+  try {
+    const userId = parseInt(req.params.userId, 10);
+    if (!userId) {
+      return res.status(400).json({ success: false, error: 'Некорректный user id' });
+    }
+    const user = userQueries.getById(userId);
+    if (!user) {
+      return res.status(404).json({ success: false, error: 'Пользователь не найден' });
+    }
+    const em = user.email && String(user.email).trim();
+    if (!em) {
+      return res.status(400).json({
+        success: false,
+        error: 'В профиле не сохранён email — тестовое письмо отправить некуда.',
+      });
+    }
+    const { property_id: propertyId, property_table: propertyTable } = req.body || {};
+    let title = 'Объект';
+    let link = buildPropertyPublicLink(propertyId != null ? Number(propertyId) : 0);
+    if (propertyId != null && propertyTable) {
+      const row = loadPropertyRowForReminder(propertyId, propertyTable);
+      if (row) {
+        title = row.title || row.name || row.property_title || title;
+        link = buildPropertyPublicLink(propertyId);
+      }
+    }
+    const subject = `[Тест] Напоминание об аукционе — ${title}`;
+    const body = `Это тестовое письмо с сервера Sellyourbrick.\n\nЕсли вы его видите, доставка напоминаний на почту настроена верно.\n\nОбъект: ${title}\nСсылка:\n${link}\n\nС уважением, Sellyourbrick`;
+    await sendCrmEmailViaEmailJS(em, subject, body);
+    console.log(`[auction-reminder] Тестовое письмо отправлено → ${em} (user_id=${userId}) объект «${title}»`);
+    res.json({ success: true });
+  } catch (error) {
+    console.error('POST auction-reminders/send-test:', error.message);
+    res.status(500).json({ success: false, error: error.message || 'Ошибка отправки' });
+  }
+});
+
+/**
+ * GET /api/users/:userId/auction-reminders?property_id=&property_table=
+ */
+app.get('/api/users/:userId/auction-reminders', (req, res) => {
+  try {
+    const userId = parseInt(req.params.userId, 10);
+    if (!userId) {
+      return res.status(400).json({ success: false, error: 'Некорректный user id' });
+    }
+    const pid = req.query.property_id != null ? parseInt(String(req.query.property_id), 10) : 0;
+    const ptable = req.query.property_table;
+    if (!pid || !ptable) {
+      return res.status(400).json({ success: false, error: 'Нужны property_id и property_table' });
+    }
+    const row = auctionReminderQueries.getForUserProperty(userId, pid, ptable);
+    res.json({ success: true, data: row || null });
+  } catch (error) {
+    console.error('GET auction-reminders:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });
@@ -3382,6 +3662,142 @@ app.get('/api/assistant-leads/:id', (req, res) => {
   }
 });
 
+/**
+ * POST /api/live-chat/sessions — создать или вернуть существующую сессию чата с менеджером (по assistant_session_id).
+ */
+app.post('/api/live-chat/sessions', (req, res) => {
+  try {
+    const { assistantSessionId, userId, waitMessage } = req.body || {};
+    const asst = assistantSessionId && String(assistantSessionId).trim();
+    let session = null;
+    let createdNew = false;
+    if (asst) {
+      session = liveChatQueries.findLatestSessionByAssistantId(asst);
+    }
+    if (!session) {
+      const created = liveChatQueries.createSession({
+        userId: userId ? parseInt(userId, 10) : null,
+        assistantSessionId: asst || null,
+        waitMessage
+      });
+      session = liveChatQueries.getSessionById(created.id);
+      createdNew = true;
+    }
+    const messages = liveChatQueries.getMessages(session.id, 0);
+    if (createdNew) {
+      const row = liveChatQueries.getSessionListRowById(session.id);
+      if (row) broadcastLiveChatAdminEvent({ type: 'live_chat_session', session: row });
+      for (const m of messages) {
+        broadcastLiveChatAdminEvent({
+          type: 'live_chat_message',
+          sessionId: session.id,
+          message: m
+        });
+      }
+    }
+    return res.json({
+      success: true,
+      data: {
+        sessionId: session.id,
+        token: session.public_token,
+        messages
+      }
+    });
+  } catch (error) {
+    console.error('❌ POST /api/live-chat/sessions:', error);
+    return res.status(500).json({ success: false, error: error.message || 'Ошибка сервера' });
+  }
+});
+
+/**
+ * GET /api/live-chat/sessions/:token/messages?since=id
+ */
+app.get('/api/live-chat/sessions/:token/messages', (req, res) => {
+  try {
+    const token = req.params.token;
+    const session = liveChatQueries.getSessionByToken(token);
+    if (!session) return res.status(404).json({ success: false, error: 'Сессия не найдена' });
+    const since = parseInt(req.query.since, 10) || 0;
+    const messages = liveChatQueries.getMessages(session.id, since);
+    return res.json({ success: true, data: messages });
+  } catch (error) {
+    console.error('❌ GET live-chat messages:', error);
+    return res.status(500).json({ success: false, error: error.message || 'Ошибка сервера' });
+  }
+});
+
+/**
+ * POST /api/live-chat/sessions/:token/messages — сообщение от посетителя
+ */
+app.post('/api/live-chat/sessions/:token/messages', (req, res) => {
+  try {
+    const token = req.params.token;
+    const session = liveChatQueries.getSessionByToken(token);
+    if (!session) return res.status(404).json({ success: false, error: 'Сессия не найдена' });
+    const text = req.body && req.body.text != null ? String(req.body.text).trim() : '';
+    if (!text) return res.status(400).json({ success: false, error: 'Пустое сообщение' });
+    const msgId = liveChatQueries.addMessage(session.id, 'user', text);
+    if (!msgId) return res.status(400).json({ success: false, error: 'Не удалось сохранить сообщение' });
+    const row = liveChatQueries.getMessageRow(session.id, msgId);
+    broadcastLiveChatAdminEvent({ type: 'live_chat_message', sessionId: session.id, message: row });
+    return res.json({ success: true, data: row });
+  } catch (error) {
+    console.error('❌ POST live-chat user message:', error);
+    return res.status(500).json({ success: false, error: error.message || 'Ошибка сервера' });
+  }
+});
+
+/**
+ * GET /api/admin/live-chat/sessions — список диалогов для админки
+ */
+app.get('/api/admin/live-chat/sessions', (req, res) => {
+  try {
+    const list = liveChatQueries.listSessionsForAdmin();
+    return res.json({ success: true, data: list });
+  } catch (error) {
+    console.error('❌ GET /api/admin/live-chat/sessions:', error);
+    return res.status(500).json({ success: false, error: error.message || 'Ошибка сервера' });
+  }
+});
+
+/**
+ * GET /api/admin/live-chat/sessions/:id/messages
+ */
+app.get('/api/admin/live-chat/sessions/:id/messages', (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) return res.status(400).json({ success: false, error: 'Некорректный id' });
+    const session = liveChatQueries.getSessionById(id);
+    if (!session) return res.status(404).json({ success: false, error: 'Сессия не найдена' });
+    const messages = liveChatQueries.getMessages(id, 0);
+    return res.json({ success: true, data: messages });
+  } catch (error) {
+    console.error('❌ GET admin live-chat messages:', error);
+    return res.status(500).json({ success: false, error: error.message || 'Ошибка сервера' });
+  }
+});
+
+/**
+ * POST /api/admin/live-chat/sessions/:id/messages — ответ менеджера
+ */
+app.post('/api/admin/live-chat/sessions/:id/messages', (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) return res.status(400).json({ success: false, error: 'Некорректный id' });
+    const session = liveChatQueries.getSessionById(id);
+    if (!session) return res.status(404).json({ success: false, error: 'Сессия не найдена' });
+    const text = req.body && req.body.text != null ? String(req.body.text).trim() : '';
+    if (!text) return res.status(400).json({ success: false, error: 'Пустое сообщение' });
+    const msgId = liveChatQueries.addMessage(id, 'manager', text);
+    const row = liveChatQueries.getMessageRow(id, msgId);
+    broadcastLiveChatAdminEvent({ type: 'live_chat_message', sessionId: id, message: row });
+    return res.json({ success: true, data: row });
+  } catch (error) {
+    console.error('❌ POST admin live-chat message:', error);
+    return res.status(500).json({ success: false, error: error.message || 'Ошибка сервера' });
+  }
+});
+
 /** ID задания «Пригласи друга» и промокод за реферала */
 const REFERRAL_TASK_ID = 9;
 const BONUS_REFER_PROMO = 'BONUS-REFER-10';
@@ -5362,6 +5778,8 @@ app.delete('/api/admin/administrators/:id', (req, res) => {
  * API: CRM (воронка, касания, письма через EmailJS)
  * ============================================
  */
+let emailJs403ServerHintLogged = false;
+
 async function sendCrmEmailViaEmailJS(toEmail, subject, messageText) {
   const emailJsConfig = {
     serviceId:
@@ -5381,32 +5799,55 @@ async function sendCrmEmailViaEmailJS(toEmail, subject, messageText) {
       process.env.EMAILJS_PUBLIC_KEY ||
       '',
   };
-  const privateKey = String(process.env.EMAILJS_PRIVATE_KEY || process.env.EMAILJS_ACCESS_TOKEN || '').trim();
+  const privateKey = String(
+    process.env.EMAILJS_PRIVATE_KEY ||
+      process.env.EMAILJS_ACCESS_TOKEN ||
+      process.env.EMAILJS_PRIVATE_API_KEY ||
+      ''
+  ).trim();
   if (!emailJsConfig.serviceId || !emailJsConfig.templateId || !emailJsConfig.publicKey) {
     throw new Error(
       'EmailJS не настроен: нужны SERVICE_ID, шаблон (EMAILJS_CRM_TEMPLATE_ID или общий TEMPLATE_ID) и PUBLIC_KEY'
     );
   }
-  const emailData = {
+  const template_params = {
+    to_email: toEmail,
+    email: toEmail,
+    subject: subject || 'Sellyourbrick',
+    message: messageText,
+    body: messageText,
+    from_name: 'Sellyourbrick',
+  };
+  const basePayload = {
     service_id: emailJsConfig.serviceId,
     template_id: emailJsConfig.templateId,
     user_id: emailJsConfig.publicKey,
-    ...(privateKey ? { accessToken: privateKey } : {}),
-    template_params: {
-      to_email: toEmail,
-      email: toEmail,
-      subject: subject || 'Sellyourbrick',
-      message: messageText,
-      body: messageText,
-      from_name: 'Sellyourbrick',
-    },
+    template_params,
   };
-  try {
-    const emailResponse = await axios.post('https://api.emailjs.com/api/v1.0/email/send', emailData, {
+
+  const postSend = async (payload) => {
+    const emailResponse = await axios.post('https://api.emailjs.com/api/v1.0/email/send', payload, {
       headers: { 'Content-Type': 'application/json' },
     });
     if (emailResponse.status !== 200) {
       throw new Error(`EmailJS вернул статус ${emailResponse.status}`);
+    }
+  };
+
+  try {
+    if (privateKey) {
+      try {
+        await postSend({ ...basePayload, accessToken: privateKey });
+      } catch (firstErr) {
+        const st = firstErr.response?.status;
+        if (st === 403) {
+          await postSend({ ...basePayload, access_token: privateKey });
+        } else {
+          throw firstErr;
+        }
+      }
+    } else {
+      await postSend(basePayload);
     }
   } catch (err) {
     const res = err.response;
@@ -5414,14 +5855,224 @@ async function sendCrmEmailViaEmailJS(toEmail, subject, messageText) {
     const detail =
       typeof res.data === 'string' ? res.data : res.data != null ? JSON.stringify(res.data) : '';
     if (res.status === 403) {
-      throw new Error(
-        'EmailJS отклонил запрос (403). Рассылка из CRM идёт с сервера: в EmailJS (https://dashboard.emailjs.com/admin/account/security) включите «Allow EmailJS API for non-browser applications», либо задайте на сервере EMAILJS_PRIVATE_KEY (Private API key в дашборде EmailJS). ' +
-          (detail ? `Ответ API: ${detail}` : '')
-      );
+      if (!emailJs403ServerHintLogged) {
+        emailJs403ServerHintLogged = true;
+        console.warn(
+          '[EmailJS] 403: запрос с Node заблокирован. Решение A: в корневой .env проекта (или server/.env) добавьте EMAILJS_PRIVATE_KEY=<Private key из https://dashboard.emailjs.com/admin → API keys> и перезапустите сервер. Решение B: Account → Security → включить «Allow EmailJS API for non-browser applications». Подробнее: .env.example'
+        );
+      }
+      const hint = privateKey
+        ? 'Private key задан, но EmailJS всё равно вернул 403 — проверьте ключ в дашборде и лимиты аккаунта.'
+        : 'В .env нет EMAILJS_PRIVATE_KEY — без него серверная отправка отключена политикой EmailJS (или включите non-browser в Security).';
+      throw new Error(`EmailJS 403: ${hint} ${detail ? String(detail).slice(0, 100) : ''}`);
     }
     throw new Error(
       detail ? `EmailJS ошибка ${res.status}: ${detail}` : err.message || `EmailJS ошибка ${res.status}`
     );
+  }
+}
+
+function getFrontendPublicBase() {
+  return String(process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/$/, '');
+}
+
+function buildPropertyPublicLink(propertyId) {
+  return `${getFrontendPublicBase()}/property/${Number(propertyId)}`;
+}
+
+function loadPropertyRowForReminder(propertyId, propertyTable) {
+  const tbl = auctionReminderQueries.normalizePropertyTable(propertyTable);
+  if (tbl === 'properties_houses') return houseQueries.getById(propertyId);
+  if (tbl === 'properties_apartments') return apartmentQueries.getById(propertyId);
+  if (tbl === 'properties') return propertyQueries.getById(propertyId);
+  return apartmentQueries.getById(propertyId);
+}
+
+/** Как на фронте: при непустом test_timer_end_date показывается CircularTimer, напоминание только в преаукционе с линейным таймером. */
+function propertyRowHasCircularTestTimer(row) {
+  if (!row) return false;
+  const v = row.test_timer_end_date;
+  if (v == null || v === '') return false;
+  if (typeof v === 'string') return v.trim() !== '';
+  return true;
+}
+
+function parsePropertyDateMs(v) {
+  if (v == null || v === '') return null;
+  const d = new Date(v);
+  const t = d.getTime();
+  return Number.isNaN(t) ? null : t;
+}
+
+const auctionReminderNoEmailLogged = new Set();
+
+async function processOneAuctionReminderRow(row) {
+  const user = userQueries.getById(row.user_id);
+  if (!user) {
+    auctionReminderQueries.markReminderSent(row.id);
+    return;
+  }
+  const link = buildPropertyPublicLink(row.property_id);
+  const title = row.property_title || 'Объект';
+  const subject = `Напоминание: аукцион — ${title}`;
+  const body = `Здравствуйте!\n\nНапоминание об аукционе по объекту: ${title}.\n\nСсылка на объект:\n${link}\n\nС уважением, Sellyourbrick`;
+
+  const wantEmail = Number(row.notify_email) === 1;
+  const wantWa = Number(row.notify_whatsapp) === 1;
+
+  let emailOk = !wantEmail;
+  let waOk = !wantWa;
+
+  if (wantEmail) {
+    const em = user.email && String(user.email).trim();
+    if (!em) {
+      emailOk = false;
+      if (!auctionReminderNoEmailLogged.has(`r-${row.id}`)) {
+        auctionReminderNoEmailLogged.add(`r-${row.id}`);
+        console.warn(
+          `[auction-reminder] Пользователь user_id=${row.user_id} без email в БД — письмо по расписанию (reminder id=${row.id}) не отправлено. Укажите email в профиле.`
+        );
+      }
+    } else {
+      try {
+        await sendCrmEmailViaEmailJS(em, subject, body);
+        emailOk = true;
+      } catch (e) {
+        console.error('[auction-reminder] EmailJS:', e.message);
+      }
+    }
+  }
+
+  if (wantWa) {
+    const phone = user.phone_number && String(user.phone_number).trim();
+    if (!phone) {
+      waOk = false;
+      if (!auctionReminderNoEmailLogged.has(`wa-r-${row.id}`)) {
+        auctionReminderNoEmailLogged.add(`wa-r-${row.id}`);
+        console.warn(
+          `[auction-reminder] Пользователь user_id=${row.user_id} без телефона в БД — WhatsApp по расписанию (reminder id=${row.id}) не отправлен.`
+        );
+      }
+    } else {
+      const wa = await trySendWhatsAppDigits(user.phone_number, `${subject}\n\n${body}`);
+      waOk = wa.ok;
+      if (!wa.ok) console.warn('[auction-reminder] WhatsApp:', wa.error);
+    }
+  }
+
+  const em = user.email && String(user.email).trim();
+  const phone = user.phone_number && String(user.phone_number).trim();
+  let markSent = false;
+  if (wantEmail && wantWa) {
+    if (em && emailOk && phone && waOk) markSent = true;
+    else if (em && emailOk && !phone) markSent = true;
+    else if (!em && phone && waOk) markSent = true;
+  } else if (wantEmail) {
+    markSent = Boolean(em && emailOk);
+  } else if (wantWa) {
+    markSent = Boolean(phone && waOk);
+  }
+  if (markSent) {
+    auctionReminderQueries.markReminderSent(row.id);
+  }
+}
+
+async function processOneAuctionStartedRow(row) {
+  if (Number(row.notify_email) !== 1) {
+    auctionReminderQueries.markStartedSent(row.id);
+    return;
+  }
+  const user = userQueries.getById(row.user_id);
+  if (!user) {
+    auctionReminderQueries.markStartedSent(row.id);
+    return;
+  }
+  const em = user.email && String(user.email).trim();
+  if (!em) {
+    if (!auctionReminderNoEmailLogged.has(`s-${row.id}`)) {
+      auctionReminderNoEmailLogged.add(`s-${row.id}`);
+      console.warn(
+        `[auction-reminder] Пользователь user_id=${row.user_id} без email — письмо «аукцион начался» (reminder id=${row.id}) не отправлено.`
+      );
+    }
+    return;
+  }
+  const link = buildPropertyPublicLink(row.property_id);
+  const title = row.property_title || 'Объект';
+  const subject = `Аукцион начался: ${title}`;
+  const body = `Здравствуйте!\n\nАукцион по объекту «${title}» уже начался.\n\nОткрыть карточку:\n${link}\n\nSellyourbrick`;
+  try {
+    await sendCrmEmailViaEmailJS(em, subject, body);
+    auctionReminderQueries.markStartedSent(row.id);
+  } catch (e) {
+    console.error('[auction-reminder] start email:', e.message);
+  }
+}
+
+/** Письмо при переходе объекта на круговой тест-таймер (после линейного преаукциона). */
+async function processOneCircularPhaseStartedRow(row) {
+  if (Number(row.notify_email) !== 1) {
+    auctionReminderQueries.markCircularStartedNotified(row.id);
+    return;
+  }
+  const prop = loadPropertyRowForReminder(row.property_id, row.property_table);
+  if (!prop || !propertyRowHasCircularTestTimer(prop)) {
+    return;
+  }
+  const endMs = parsePropertyDateMs(prop.test_timer_end_date);
+  if (endMs != null && endMs <= Date.now()) {
+    auctionReminderQueries.markCircularStartedNotified(row.id);
+    return;
+  }
+  const user = userQueries.getById(row.user_id);
+  if (!user) {
+    auctionReminderQueries.markCircularStartedNotified(row.id);
+    return;
+  }
+  const em = user.email && String(user.email).trim();
+  if (!em) {
+    if (!auctionReminderNoEmailLogged.has(`c-${row.id}`)) {
+      auctionReminderNoEmailLogged.add(`c-${row.id}`);
+      console.warn(
+        `[auction-reminder] Пользователь user_id=${row.user_id} без email — письмо о круговом таймере (reminder id=${row.id}) не отправлено.`
+      );
+    }
+    return;
+  }
+  const link = buildPropertyPublicLink(row.property_id);
+  const title = row.property_title || 'Объект';
+  const subject = `Аукцион — круговой таймер: ${title}`;
+  const body = `Здравствуйте!\n\nПо объекту «${title}» начался этап с круговым таймером аукциона.\n\nОткрыть карточку:\n${link}\n\nSellyourbrick`;
+  try {
+    await sendCrmEmailViaEmailJS(em, subject, body);
+    auctionReminderQueries.markCircularStartedNotified(row.id);
+  } catch (e) {
+    console.error('[auction-reminder] circular phase email:', e.message);
+  }
+}
+
+let auctionReminderTickRunning = false;
+async function tickAuctionReminders() {
+  if (auctionReminderTickRunning) return;
+  auctionReminderTickRunning = true;
+  try {
+    const nowIso = new Date().toISOString();
+    const due = auctionReminderQueries.listDueReminders(nowIso);
+    for (const row of due) {
+      await processOneAuctionReminderRow(row);
+    }
+    const dueStart = auctionReminderQueries.listDueAuctionStarted(nowIso);
+    for (const row of dueStart) {
+      await processOneAuctionStartedRow(row);
+    }
+    const circularPending = auctionReminderQueries.listPendingCircularStartedNotify();
+    for (const row of circularPending) {
+      await processOneCircularPhaseStartedRow(row);
+    }
+  } catch (e) {
+    console.error('[auction-reminder] tick:', e);
+  } finally {
+    auctionReminderTickRunning = false;
   }
 }
 
@@ -8147,6 +8798,18 @@ app.post('/api/properties/:id/test-timer', (req, res) => {
         success: true,
         message: 'Тестовый таймер успешно установлен'
       });
+      broadcastAuctionSseEvent({
+        type: 'test_timer_update',
+        property: {
+          id: Number(id),
+          property_type: property.property_type ?? null,
+          test_timer_end_date,
+          test_timer_duration:
+            test_timer_duration !== undefined && test_timer_duration !== null
+              ? test_timer_duration
+              : null,
+        },
+      });
     } catch (updateError) {
       console.error('❌ Ошибка при обновлении таймера:', updateError);
       throw updateError;
@@ -8210,6 +8873,14 @@ app.delete('/api/properties/:id/test-timer', (req, res) => {
     res.json({
       success: true,
       message: 'Тестовый таймер успешно удален'
+    });
+    broadcastAuctionSseEvent({
+      type: 'test_timer_update',
+      property: {
+        id: Number(id),
+        test_timer_end_date: null,
+        test_timer_duration: null,
+      },
     });
   } catch (error) {
     console.error('Ошибка при удалении тестового таймера:', error);
@@ -11075,6 +11746,32 @@ app.post('/api/auction-winners', (req, res) => {
 });
 
 /**
+ * GET /api/auction-winners/property/:propertyId — победитель по объекту (для карточек и страницы аукциона)
+ */
+app.get('/api/auction-winners/property/:propertyId', (req, res) => {
+  try {
+    const propertyId = parseInt(req.params.propertyId, 10);
+    if (Number.isNaN(propertyId)) {
+      return res.status(400).json({ success: false, error: 'Некорректный property_id' });
+    }
+    const db = getDatabase();
+    const row = db
+      .prepare(
+        `SELECT id, user_id, property_id, property_table, winning_bid_amount, currency, auction_end_date, status, won_at
+         FROM auction_winners
+         WHERE property_id = ?
+         ORDER BY id DESC
+         LIMIT 1`
+      )
+      .get(propertyId);
+    res.json({ success: true, data: row || null });
+  } catch (error) {
+    console.error('❌ Ошибка при получении победителя по объекту:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
  * GET /api/auction-winners/user/:id - Получить выигранные объекты пользователя
  */
 app.get('/api/auction-winners/user/:id', (req, res) => {
@@ -11943,6 +12640,29 @@ const server = app.listen(PORT, '0.0.0.0', () => {
   }
   
   console.log('✅ Событийная система отслеживания объектов без ставок активирована');
+
+  const ejPrivBoot = String(
+    process.env.EMAILJS_PRIVATE_KEY ||
+      process.env.EMAILJS_ACCESS_TOKEN ||
+      process.env.EMAILJS_PRIVATE_API_KEY ||
+      ''
+  ).trim();
+  const ejPubBoot =
+    process.env.EMAILJS_PUBLIC_KEY || process.env.VITE_EMAILJS_PUBLIC_KEY || process.env.REACT_APP_EMAILJS_PUBLIC_KEY;
+  const ejSidBoot =
+    process.env.EMAILJS_SERVICE_ID || process.env.VITE_EMAILJS_SERVICE_ID || process.env.REACT_APP_EMAILJS_SERVICE_ID;
+  if (ejPubBoot && ejSidBoot && !ejPrivBoot) {
+    console.warn(
+      '⚠️ EmailJS: нет EMAILJS_PRIVATE_KEY — если в дашборде не включён «Allow API for non-browser», письма с сервера (CRM, напоминания) дадут 403. См. .env.example.'
+    );
+  }
+
+  setInterval(() => {
+    tickAuctionReminders().catch((e) => console.error('[auction-reminder]', e));
+  }, 60 * 1000);
+  setTimeout(() => {
+    tickAuctionReminders().catch((e) => console.error('[auction-reminder]', e));
+  }, 15 * 1000);
 });
 
 // Обработка ошибок при запуске сервера

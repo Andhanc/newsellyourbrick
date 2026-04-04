@@ -95,6 +95,30 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+.auction-card--ended {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 2px 4px rgba(15, 23, 42, 0.04);
+}
+
+.auction-card-winner-line {
+  margin-top: 8px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #1e293b;
+  background: #e0e7ff;
+  border: 1px solid #c7d2fe;
+}
+
+.auction-card-winner-line--muted {
+  font-weight: 600;
+  color: #64748b;
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
 /* Таймер по центру */
 .nearest-auction-timer-centered {
   display: flex;

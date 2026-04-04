@@ -20,6 +20,10 @@
 .admin-chat__header {
   padding: 1.5rem;
   border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
 }
 
 .admin-chat__title {
@@ -27,6 +31,18 @@
   font-weight: 700;
   color: var(--dark);
   margin: 0;
+}
+
+.admin-chat__live-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #fff;
+  background: linear-gradient(135deg, #10b981, #059669);
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+  flex-shrink: 0;
 }
 
 .admin-chat__search {
@@ -232,6 +248,50 @@
   color: #6b7280;
 }
 
+.admin-chat__client-card {
+  margin: 0 1.5rem 0 1.5rem;
+  padding: 0.875rem 1rem;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.admin-chat__client-card-title {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #64748b;
+  margin-bottom: 0.5rem;
+}
+
+.admin-chat__client-dl {
+  display: grid;
+  grid-template-columns: minmax(100px, 38%) 1fr;
+  gap: 0.35rem 0.75rem;
+  margin: 0;
+  font-size: 0.8125rem;
+}
+
+.admin-chat__client-dl dt {
+  margin: 0;
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+.admin-chat__client-dl dd {
+  margin: 0;
+  color: #1e293b;
+  word-break: break-word;
+}
+
+.admin-chat__client-mono {
+  font-family: ui-monospace, monospace;
+  font-size: 0.75rem;
+}
+
 .admin-chat__messages {
   flex: 1;
   overflow-y: auto;
@@ -285,6 +345,20 @@
   color: var(--dark);
   border: 1px solid #e5e7eb;
   border-bottom-left-radius: 4px;
+}
+
+.admin-chat__message--system {
+  align-self: center;
+  max-width: 90%;
+}
+
+.admin-chat__message--system .admin-chat__message-content {
+  background: #f3f4f6;
+  color: #6b7280;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  text-align: center;
+  font-size: 0.9rem;
 }
 
 .admin-chat__message-text {

@@ -125,6 +125,16 @@
     0 0 0 4px rgba(10, 186, 181, 0.45);
 }
 
+.auction-mobile-item--ended {
+  opacity: 0.95;
+  border-color: rgba(100, 116, 139, 0.4);
+  background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+}
+
+.auction-mobile-item--ended .auction-mobile-image-wrap img {
+  filter: grayscale(0.2);
+}
+
 .auction-mobile-item--list {
   flex-direction: row;
   align-items: stretch;
@@ -1092,3 +1102,4 @@
     padding: 10px 6px !important;
   }
 }
+

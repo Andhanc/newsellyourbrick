@@ -1,4 +1,5 @@
 import Database from 'better-sqlite3';
+import { randomUUID } from 'crypto';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { readFileSync, existsSync, renameSync, unlinkSync } from 'fs';
@@ -1174,6 +1175,40 @@ export function initDatabase() {
         console.warn('⚠️ Не удалось создать таблицу assistant_leads:', assistantLeadsError.message);
       }
 
+      // Онлайн-чат с менеджером (сайт)
+      try {
+        const liveChatTable = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='live_chat_sessions'").get();
+        if (!liveChatTable) {
+          console.log('🔄 Создание таблиц live_chat_sessions / live_chat_messages...');
+          db.exec(`
+            CREATE TABLE IF NOT EXISTS live_chat_sessions (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              public_token TEXT UNIQUE NOT NULL,
+              user_id INTEGER,
+              assistant_session_id TEXT,
+              display_label TEXT,
+              created_at TEXT DEFAULT (datetime('now')),
+              updated_at TEXT DEFAULT (datetime('now')),
+              FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_live_chat_sessions_assistant ON live_chat_sessions(assistant_session_id);
+            CREATE INDEX IF NOT EXISTS idx_live_chat_sessions_updated ON live_chat_sessions(updated_at);
+            CREATE TABLE IF NOT EXISTS live_chat_messages (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              session_id INTEGER NOT NULL,
+              sender_role TEXT NOT NULL,
+              body TEXT NOT NULL,
+              created_at TEXT DEFAULT (datetime('now')),
+              FOREIGN KEY (session_id) REFERENCES live_chat_sessions(id) ON DELETE CASCADE
+            );
+            CREATE INDEX IF NOT EXISTS idx_live_chat_messages_session ON live_chat_messages(session_id, id);
+          `);
+          console.log('✅ Таблицы live_chat созданы');
+        }
+      } catch (liveChatErr) {
+        console.warn('⚠️ live_chat:', liveChatErr.message);
+      }
+
       // CRM: воронка продаж (канбан, касания, рассылка из админки)
       try {
         const crmStagesTable = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='crm_stages'").get();
@@ -1647,6 +1682,46 @@ export function initDatabase() {
       console.warn('⚠️ Не удалось создать таблицу auction_winners:', awError.message);
     }
 
+    // Напоминания об аукционе (email / WhatsApp по расписанию + письмо о старте)
+    try {
+      const arTable = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='auction_reminders'").get();
+      if (!arTable) {
+        console.log('🔄 Создание таблицы auction_reminders...');
+        db.exec(`
+          CREATE TABLE IF NOT EXISTS auction_reminders (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            property_id INTEGER NOT NULL,
+            property_table TEXT NOT NULL,
+            notify_email INTEGER NOT NULL DEFAULT 0,
+            notify_whatsapp INTEGER NOT NULL DEFAULT 0,
+            scheduled_at TEXT NOT NULL,
+            auction_start_at TEXT,
+            reminder_sent_at TEXT,
+            auction_started_sent_at TEXT,
+            property_title TEXT,
+            created_at TEXT DEFAULT (datetime('now')),
+            updated_at TEXT DEFAULT (datetime('now')),
+            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+            UNIQUE(user_id, property_id, property_table)
+          );
+          CREATE INDEX IF NOT EXISTS idx_auction_reminders_scheduled ON auction_reminders(reminder_sent_at, scheduled_at);
+          CREATE INDEX IF NOT EXISTS idx_auction_reminders_started ON auction_reminders(auction_started_sent_at, auction_start_at);
+        `);
+        console.log('✅ Таблица auction_reminders создана');
+      }
+      const arPragma = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='auction_reminders'").get();
+      if (arPragma) {
+        const cols = db.prepare('PRAGMA table_info(auction_reminders)').all();
+        if (!cols.some((c) => c.name === 'circular_started_notified_at')) {
+          db.exec('ALTER TABLE auction_reminders ADD COLUMN circular_started_notified_at TEXT');
+          console.log('✅ auction_reminders: добавлена колонка circular_started_notified_at');
+        }
+      }
+    } catch (arErr) {
+      console.warn('⚠️ auction_reminders:', arErr.message);
+    }
+
     // purchase_requests: колонка property_table для связки с таблицей недвижимости
     try {
       const prTable = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='purchase_requests'").get();
@@ -1899,6 +1974,142 @@ export const favoriteQueries = {
         'DELETE FROM property_favorites WHERE user_id = ? AND property_id = ? AND property_table = ?'
       )
       .run(uid, pid, tbl);
+  },
+};
+
+function normalizeReminderPropertyTable(raw) {
+  return normalizeFavoritePropertyTable(raw);
+}
+
+/** Напоминания пользователю об аукционе */
+export const auctionReminderQueries = {
+  normalizePropertyTable: normalizeReminderPropertyTable,
+
+  upsert: ({
+    userId,
+    propertyId,
+    propertyTable,
+    notifyEmail,
+    notifyWhatsapp,
+    scheduledAtIso,
+    auctionStartAtIso,
+    propertyTitle,
+  }) => {
+    const db = getDatabase();
+    const uid = parseInt(userId, 10);
+    const pid = parseInt(propertyId, 10);
+    const tbl = normalizeReminderPropertyTable(propertyTable);
+    if (!uid || !pid || !scheduledAtIso) return { changes: 0 };
+    const ne = notifyEmail ? 1 : 0;
+    const nw = notifyWhatsapp ? 1 : 0;
+    const title = propertyTitle != null ? String(propertyTitle).slice(0, 500) : '';
+    return db
+      .prepare(
+        `INSERT INTO auction_reminders (
+          user_id, property_id, property_table,
+          notify_email, notify_whatsapp,
+          scheduled_at, auction_start_at,
+          reminder_sent_at, auction_started_sent_at,
+          circular_started_notified_at,
+          property_title, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, NULL, NULL, NULL, ?, datetime('now'))
+        ON CONFLICT(user_id, property_id, property_table) DO UPDATE SET
+          notify_email = excluded.notify_email,
+          notify_whatsapp = excluded.notify_whatsapp,
+          scheduled_at = excluded.scheduled_at,
+          auction_start_at = excluded.auction_start_at,
+          property_title = excluded.property_title,
+          reminder_sent_at = NULL,
+          auction_started_sent_at = NULL,
+          circular_started_notified_at = NULL,
+          updated_at = datetime('now')`
+      )
+      .run(uid, pid, tbl, ne, nw, String(scheduledAtIso), auctionStartAtIso || null, title);
+  },
+
+  getForUserProperty: (userId, propertyId, propertyTable) => {
+    const db = getDatabase();
+    const uid = parseInt(userId, 10);
+    const pid = parseInt(propertyId, 10);
+    const tbl = normalizeReminderPropertyTable(propertyTable);
+    if (!uid || !pid) return null;
+    return db
+      .prepare(
+        'SELECT * FROM auction_reminders WHERE user_id = ? AND property_id = ? AND property_table = ?'
+      )
+      .get(uid, pid, tbl);
+  },
+
+  listDueReminders: (beforeIso) => {
+    const db = getDatabase();
+    const beforeMs = new Date(String(beforeIso)).getTime();
+    if (Number.isNaN(beforeMs)) return [];
+    const rows = db
+      .prepare(
+        `SELECT * FROM auction_reminders
+         WHERE reminder_sent_at IS NULL
+           AND (notify_email = 1 OR notify_whatsapp = 1)`
+      )
+      .all();
+    return rows.filter((r) => {
+      const t = new Date(String(r.scheduled_at)).getTime();
+      return !Number.isNaN(t) && t <= beforeMs;
+    });
+  },
+
+  listDueAuctionStarted: (beforeIso) => {
+    const db = getDatabase();
+    const beforeMs = new Date(String(beforeIso)).getTime();
+    if (Number.isNaN(beforeMs)) return [];
+    const rows = db
+      .prepare(
+        `SELECT * FROM auction_reminders
+         WHERE auction_started_sent_at IS NULL
+           AND notify_email = 1
+           AND auction_start_at IS NOT NULL`
+      )
+      .all();
+    return rows.filter((r) => {
+      const t = new Date(String(r.auction_start_at)).getTime();
+      return !Number.isNaN(t) && t <= beforeMs;
+    });
+  },
+
+  /** Напоминания, для которых ещё не отправляли письмо о переходе на круговой таймер */
+  listPendingCircularStartedNotify: () => {
+    const db = getDatabase();
+    return db
+      .prepare(
+        `SELECT * FROM auction_reminders
+         WHERE circular_started_notified_at IS NULL
+           AND notify_email = 1`
+      )
+      .all();
+  },
+
+  markReminderSent: (id) => {
+    const db = getDatabase();
+    return db
+      .prepare(`UPDATE auction_reminders SET reminder_sent_at = datetime('now'), updated_at = datetime('now') WHERE id = ?`)
+      .run(id);
+  },
+
+  markStartedSent: (id) => {
+    const db = getDatabase();
+    return db
+      .prepare(
+        `UPDATE auction_reminders SET auction_started_sent_at = datetime('now'), updated_at = datetime('now') WHERE id = ?`
+      )
+      .run(id);
+  },
+
+  markCircularStartedNotified: (id) => {
+    const db = getDatabase();
+    return db
+      .prepare(
+        `UPDATE auction_reminders SET circular_started_notified_at = datetime('now'), updated_at = datetime('now') WHERE id = ?`
+      )
+      .run(id);
   },
 };
 
@@ -3583,7 +3794,8 @@ export const assistantLeadQueries = {
     const managerContactRequested =
       (prefs.managerContactRequested || prefs.preferredContact) ? 1 : 0;
     const preferredContact =
-      prefs.preferredContact && ['phone', 'email', 'whatsapp'].includes(String(prefs.preferredContact))
+      prefs.preferredContact &&
+      ['phone', 'email', 'whatsapp', 'telegram', 'live_chat'].includes(String(prefs.preferredContact))
         ? String(prefs.preferredContact)
         : null;
 
@@ -3680,6 +3892,140 @@ export const assistantLeadQueries = {
       }
     }
     return n;
+  }
+};
+
+export const liveChatQueries = {
+  findLatestSessionByAssistantId(assistantSessionId) {
+    if (!assistantSessionId || !String(assistantSessionId).trim()) return null;
+    const db = getDatabase();
+    return db
+      .prepare(
+        `SELECT * FROM live_chat_sessions WHERE assistant_session_id = ? ORDER BY id DESC LIMIT 1`
+      )
+      .get(String(assistantSessionId).trim());
+  },
+
+  createSession({ userId, assistantSessionId, waitMessage }) {
+    const db = getDatabase();
+    const token = randomUUID();
+    const asst = assistantSessionId ? String(assistantSessionId).trim() : null;
+    const label =
+      (asst && String(asst).replace(/^user_/, '').slice(0, 72)) || 'Гость';
+    const result = db
+      .prepare(
+        `INSERT INTO live_chat_sessions (public_token, user_id, assistant_session_id, display_label)
+         VALUES (?, ?, ?, ?)`
+      )
+      .run(token, userId || null, asst, label);
+    const sessionId = result.lastInsertRowid;
+    const body =
+      (waitMessage && String(waitMessage).trim()) || 'Подождите, скоро ответит менеджер.';
+    db.prepare(
+      `INSERT INTO live_chat_messages (session_id, sender_role, body) VALUES (?, 'system', ?)`
+    ).run(sessionId, String(body).slice(0, 2000));
+    db.prepare(`UPDATE live_chat_sessions SET updated_at = datetime('now') WHERE id = ?`).run(sessionId);
+    return { id: sessionId, public_token: token };
+  },
+
+  getSessionByToken(token) {
+    const db = getDatabase();
+    if (!token) return null;
+    return db.prepare(`SELECT * FROM live_chat_sessions WHERE public_token = ?`).get(String(token));
+  },
+
+  getSessionById(id) {
+    const db = getDatabase();
+    const n = parseInt(id, 10);
+    if (isNaN(n)) return null;
+    return db.prepare(`SELECT * FROM live_chat_sessions WHERE id = ?`).get(n);
+  },
+
+  listSessionsForAdmin() {
+    const db = getDatabase();
+    return db
+      .prepare(
+        `SELECT s.id, s.public_token, s.user_id, s.assistant_session_id, s.display_label, s.created_at, s.updated_at,
+           (SELECT body FROM live_chat_messages m WHERE m.session_id = s.id ORDER BY m.id DESC LIMIT 1) AS last_message_preview,
+           u.first_name AS client_first_name,
+           u.last_name AS client_last_name,
+           u.email AS client_email,
+           u.phone_number AS client_phone,
+           al.email AS lead_email,
+           al.phone AS lead_phone,
+           al.summary AS lead_summary
+         FROM live_chat_sessions s
+         LEFT JOIN users u ON s.user_id = u.id
+         LEFT JOIN assistant_leads al ON al.session_id = s.assistant_session_id
+         ORDER BY datetime(s.updated_at) DESC`
+      )
+      .all();
+  },
+
+  /** Одна строка списка админки (те же поля, что в listSessionsForAdmin). */
+  getSessionListRowById(id) {
+    const db = getDatabase();
+    const n = parseInt(id, 10);
+    if (isNaN(n)) return null;
+    return db
+      .prepare(
+        `SELECT s.id, s.public_token, s.user_id, s.assistant_session_id, s.display_label, s.created_at, s.updated_at,
+           (SELECT body FROM live_chat_messages m WHERE m.session_id = s.id ORDER BY m.id DESC LIMIT 1) AS last_message_preview,
+           u.first_name AS client_first_name,
+           u.last_name AS client_last_name,
+           u.email AS client_email,
+           u.phone_number AS client_phone,
+           al.email AS lead_email,
+           al.phone AS lead_phone,
+           al.summary AS lead_summary
+         FROM live_chat_sessions s
+         LEFT JOIN users u ON s.user_id = u.id
+         LEFT JOIN assistant_leads al ON al.session_id = s.assistant_session_id
+         WHERE s.id = ?`
+      )
+      .get(n);
+  },
+
+  getMessages(sessionId, sinceId = 0) {
+    const db = getDatabase();
+    const sid = parseInt(sessionId, 10);
+    const since = parseInt(sinceId, 10) || 0;
+    if (isNaN(sid)) return [];
+    return db
+      .prepare(
+        `SELECT id, sender_role, body, created_at FROM live_chat_messages
+         WHERE session_id = ? AND id > ? ORDER BY id ASC`
+      )
+      .all(sid, since);
+  },
+
+  addMessage(sessionId, senderRole, body) {
+    const db = getDatabase();
+    const sid = parseInt(sessionId, 10);
+    const text = String(body || '').trim();
+    if (isNaN(sid) || !text) return null;
+    const allowed = new Set(['user', 'manager', 'system']);
+    if (!allowed.has(senderRole)) return null;
+    const result = db
+      .prepare(
+        `INSERT INTO live_chat_messages (session_id, sender_role, body) VALUES (?, ?, ?)`
+      )
+      .run(sid, senderRole, text.slice(0, 10000));
+    const msgId = result.lastInsertRowid;
+    db.prepare(`UPDATE live_chat_sessions SET updated_at = datetime('now') WHERE id = ?`).run(sid);
+    return msgId;
+  },
+
+  getMessageRow(sessionId, messageId) {
+    const db = getDatabase();
+    const sid = parseInt(sessionId, 10);
+    const mid = parseInt(messageId, 10);
+    if (isNaN(sid) || isNaN(mid)) return null;
+    return db
+      .prepare(
+        `SELECT id, sender_role, body, created_at FROM live_chat_messages WHERE session_id = ? AND id = ?`
+      )
+      .get(sid, mid);
   }
 };
 

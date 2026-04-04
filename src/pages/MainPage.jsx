@@ -25,6 +25,7 @@ import {
   FiMail,
   FiShoppingCart,
   FiPieChart,
+  FiMessageCircle,
 } from 'react-icons/fi'
 import { MenuToggleIcon } from '@/components/ui/menu-toggle-icon'
 import {
@@ -42,7 +43,7 @@ import {
   FaGem,
   FaWhatsapp,
 } from 'react-icons/fa'
-import { FaXTwitter } from 'react-icons/fa6'
+import { FaXTwitter, FaTelegram } from 'react-icons/fa6'
 import { IoLocationOutline } from 'react-icons/io5'
 import { MdBed, MdOutlineBathtub, MdDirectionsCar } from 'react-icons/md'
 import { BiArea } from 'react-icons/bi'
@@ -66,6 +67,14 @@ import '../components/PropertyList.css'
 import { askPropertyAssistant, detectManagerContactIntent, filterPropertiesByLocation } from '../services/aiService'
 import { getUserData, clearUserData, isAuthenticated } from '../services/authService'
 import { syncAssistantLead } from '../services/assistantLeadService'
+import {
+  ensureLiveChatSession,
+  fetchLiveChatMessagesSince,
+  getManagerContactButtons,
+  liveChatStorageKey,
+  normalizeLiveChatRows,
+  sendLiveChatUserMessage,
+} from '../services/liveChatApi'
 
 import { getApiBaseUrl, getApiBaseUrlSync } from '../utils/apiConfig'
 import { usePropertyFavorites } from '../context/PropertyFavoritesContext'
@@ -413,7 +422,7 @@ function MainPage() {
     other: null,
     managerContactRequested: false,
     managerContactPendingChoice: false,
-    preferredContact: null // 'phone' | 'email' | 'whatsapp'
+    preferredContact: null // 'phone' | 'email' | 'whatsapp' | 'telegram' | 'live_chat'
   })
   
   // Объединяем все данные недвижимости
@@ -450,6 +459,83 @@ function MainPage() {
     }
     return sessionId
   }, [isLoggedIn, user, userLoaded])
+
+  const [chatMode, setChatMode] = useState('ai') // 'ai' | 'manager'
+  const [managerChatMessages, setManagerChatMessages] = useState([])
+  const [liveChatToken, setLiveChatToken] = useState(null)
+  const managerPollRef = useRef(null)
+  const lastManagerMsgIdRef = useRef(0)
+
+  const scheduleManagerPoll = useCallback((token) => {
+    if (managerPollRef.current) {
+      clearInterval(managerPollRef.current)
+      managerPollRef.current = null
+    }
+    managerPollRef.current = setInterval(async () => {
+      try {
+        const chunk = await fetchLiveChatMessagesSince(token, lastManagerMsgIdRef.current)
+        if (chunk.length) {
+          lastManagerMsgIdRef.current = Math.max(...chunk.map((r) => r.id))
+          setManagerChatMessages((p) => [...p, ...normalizeLiveChatRows(chunk)])
+        }
+      } catch {
+        /* ignore */
+      }
+    }, 2500)
+  }, [])
+
+  const enterLiveManagerChat = useCallback(async () => {
+    const userData = getUserData()
+    const uid = userData?.isLoggedIn && userData?.id ? Number(userData.id) : null
+    const { token, messages } = await ensureLiveChatSession({
+      assistantSessionId: getChatUserId,
+      userId: Number.isFinite(uid) ? uid : null,
+      waitMessage: t('liveChatWaitNotice'),
+    })
+    const rows = messages || []
+    lastManagerMsgIdRef.current = rows.reduce((m, r) => Math.max(m, r.id), 0)
+    setManagerChatMessages(normalizeLiveChatRows(rows))
+    setLiveChatToken(token)
+    setChatMode('manager')
+    localStorage.setItem(`aiChatLiveManagerMode_${getChatUserId}`, '1')
+    scheduleManagerPoll(token)
+  }, [getChatUserId, t, scheduleManagerPoll])
+
+  const resumeLiveManagerIfNeeded = useCallback(async () => {
+    const modeKey = `aiChatLiveManagerMode_${getChatUserId}`
+    if (localStorage.getItem(modeKey) !== '1') return
+    const token = localStorage.getItem(liveChatStorageKey(getChatUserId))
+    if (!token) return
+    try {
+      const rows = await fetchLiveChatMessagesSince(token, 0)
+      lastManagerMsgIdRef.current = rows.reduce((m, r) => Math.max(m, r.id), 0)
+      setLiveChatToken(token)
+      setManagerChatMessages(normalizeLiveChatRows(rows))
+      setChatMode('manager')
+      scheduleManagerPoll(token)
+    } catch {
+      localStorage.removeItem(modeKey)
+    }
+  }, [getChatUserId, scheduleManagerPoll])
+
+  useEffect(() => {
+    resumeLiveManagerIfNeeded()
+    return () => {
+      if (managerPollRef.current) {
+        clearInterval(managerPollRef.current)
+        managerPollRef.current = null
+      }
+    }
+  }, [resumeLiveManagerIfNeeded])
+
+  const backToAiChat = useCallback(() => {
+    if (managerPollRef.current) {
+      clearInterval(managerPollRef.current)
+      managerPollRef.current = null
+    }
+    setChatMode('ai')
+    localStorage.setItem(`aiChatLiveManagerMode_${getChatUserId}`, '0')
+  }, [getChatUserId])
 
   // Загружаем историю чата из localStorage при монтировании компонента или изменении пользователя
   const lastChatUserIdRef = useRef(null)
@@ -1033,7 +1119,7 @@ function MainPage() {
       allowedRoles: ['buyer', 'seller', 'owner', 'admin', 'client'] // Доступна всем
     },
     {
-      path: '/chat',
+      path: '/chat?manager=1',
       keywords: ['чат', 'chat', 'сообщения', 'messages', 'переписка'],
       title: 'Чат',
       requiresAuth: false,
@@ -1681,7 +1767,9 @@ function MainPage() {
       const labelMap = {
         phone: t('managerContactPrefPhone'),
         email: t('managerContactPrefEmail'),
-        whatsapp: t('managerContactPrefWhatsapp')
+        whatsapp: t('managerContactPrefWhatsapp'),
+        telegram: t('managerContactPrefTelegram'),
+        live_chat: t('managerContactPrefLiveChat'),
       }
       userMessage = labelMap[contactPref] || contactPref
     }
@@ -1708,6 +1796,29 @@ function MainPage() {
         managerContactRequested: true,
         managerContactPendingChoice: false
       }))
+      if (contactPref === 'live_chat') {
+        try {
+          await enterLiveManagerChat()
+        } catch (err) {
+          console.error(err)
+          showNotification(err?.message || t('liveChatError'))
+        }
+        return
+      }
+      if (contactPref === 'telegram') {
+        const tgUrl = (import.meta.env.VITE_MANAGER_TELEGRAM_URL || '').trim()
+        const botMessage = {
+          id: Date.now() + 1,
+          text: tgUrl ? t('managerContactThanksTelegram') : t('liveChatTelegramNotConfigured'),
+          sender: 'bot',
+          timestamp: new Date(),
+          buttons: null,
+          recommendations: null
+        }
+        setChatMessages((prev) => [...prev, botMessage])
+        if (tgUrl) window.open(tgUrl, '_blank', 'noopener,noreferrer')
+        return
+      }
       const thanksText =
         contactPref === 'phone'
           ? t('managerContactThanksPhone')
@@ -1801,7 +1912,13 @@ function MainPage() {
             ? t('managerContactPrefPhone')
             : alreadyDone === 'email'
               ? t('managerContactPrefEmail')
-              : t('managerContactPrefWhatsapp')
+              : alreadyDone === 'whatsapp'
+                ? t('managerContactPrefWhatsapp')
+                : alreadyDone === 'telegram'
+                  ? t('managerContactPrefTelegram')
+                  : alreadyDone === 'live_chat'
+                    ? t('managerContactPrefLiveChat')
+                    : String(alreadyDone)
         const botMessage = {
           id: Date.now() + 1,
           text: t('managerRequestAlready', { method: methodLabel }),
@@ -1819,11 +1936,7 @@ function MainPage() {
           text: t('managerContactPickHint'),
           sender: 'bot',
           timestamp: new Date(),
-          buttons: [
-            { type: 'contact_pref', value: 'phone', label: t('managerContactPrefPhone') },
-            { type: 'contact_pref', value: 'email', label: t('managerContactPrefEmail') },
-            { type: 'contact_pref', value: 'whatsapp', label: t('managerContactPrefWhatsapp') }
-          ],
+          buttons: getManagerContactButtons(t),
           recommendations: null
         }
         setChatMessages((prev) => [...prev, botMessage])
@@ -1840,11 +1953,7 @@ function MainPage() {
         text: t('managerRequestAck'),
         sender: 'bot',
         timestamp: new Date(),
-        buttons: [
-          { type: 'contact_pref', value: 'phone', label: t('managerContactPrefPhone') },
-          { type: 'contact_pref', value: 'email', label: t('managerContactPrefEmail') },
-          { type: 'contact_pref', value: 'whatsapp', label: t('managerContactPrefWhatsapp') }
-        ],
+        buttons: getManagerContactButtons(t),
         recommendations: null
       }
       setChatMessages((prev) => [...prev, botMessage])
@@ -1899,15 +2008,33 @@ function MainPage() {
     }
   }
 
+  const handleManagerChatSubmit = async (e) => {
+    e.preventDefault()
+    const text = chatInput.trim()
+    if (!text || !liveChatToken) return
+    setChatInput('')
+    try {
+      const row = await sendLiveChatUserMessage(liveChatToken, text)
+      lastManagerMsgIdRef.current = Math.max(lastManagerMsgIdRef.current, row.id)
+      setManagerChatMessages((prev) => [...prev, ...normalizeLiveChatRows([row])])
+    } catch (err) {
+      showNotification(err?.message || t('liveChatError'))
+    }
+  }
+
   useEffect(() => {
     if (!chatMessagesRef.current || !isChatOpen) return
+    if (chatMode === 'manager') {
+      chatMessagesRef.current.scrollTop = chatMessagesRef.current.scrollHeight
+      return
+    }
     const last = chatMessages[chatMessages.length - 1]
     if (last?.sender === 'bot' && lastMessageRef.current) {
       lastMessageRef.current.scrollIntoView({ block: 'start', behavior: 'smooth' })
     } else {
       chatMessagesRef.current.scrollTop = chatMessagesRef.current.scrollHeight
     }
-  }, [chatMessages, isChatOpen])
+  }, [chatMessages, managerChatMessages, chatMode, isChatOpen])
 
   useEffect(() => {
     const footer = document.getElementById('site-footer')
@@ -2345,7 +2472,7 @@ function MainPage() {
                       <button 
                         className="menu-dropdown__item"
                         onClick={() => {
-                          navigate('/chat')
+                          navigate('/chat?manager=1')
                           setIsMenuOpen(false)
                         }}
                       >
@@ -2428,7 +2555,7 @@ function MainPage() {
             <button
               type="button"
               className={`new-header__filter-btn new-header__filter-btn--hide-4 ${location.pathname === '/chat' ? 'new-header__filter-btn--active' : ''}`}
-              onClick={() => navigate('/chat')}
+              onClick={() => navigate('/chat?manager=1')}
             >
               <span>{t('chat')}</span>
             </button>
@@ -3929,12 +4056,13 @@ function MainPage() {
             if (id === 'home') return '/'
             if (id === 'favourite') return '/favorites'
             if (id === 'auction') return '/auction'
-            if (id === 'chat') return '/chat'
+            if (id === 'chat') return '/chat?manager=1'
             if (id === 'profile') return '/profile'
             return '/'
           }
           const route = getRoute(item.id)
-          const isActive = location.pathname === route
+          const routePath = route.split('?')[0]
+          const isActive = location.pathname === routePath
 
           if (isCenter) {
             return (
@@ -3982,11 +4110,31 @@ function MainPage() {
         <div className="chat-widget">
           <div className="chat-widget__header">
             <div className="chat-widget__header-info">
-              <div className="chat-widget__avatar">AI</div>
-              <div className="chat-widget__header-text">
-                <h3 className="chat-widget__title">{t('chatTitle')}</h3>
-                <span className="chat-widget__status">{t('chatOnline')}</span>
-              </div>
+              {chatMode === 'manager' ? (
+                <>
+                  <button
+                    type="button"
+                    className="chat-widget__back"
+                    onClick={backToAiChat}
+                    aria-label={t('backToAiAssistant')}
+                  >
+                    <FiArrowLeft size={20} />
+                  </button>
+                  <div className="chat-widget__avatar chat-widget__avatar--manager">M</div>
+                  <div className="chat-widget__header-text">
+                    <h3 className="chat-widget__title">{t('chatManagerTitle')}</h3>
+                    <span className="chat-widget__status">{t('chatManagerOnline')}</span>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="chat-widget__avatar">AI</div>
+                  <div className="chat-widget__header-text">
+                    <h3 className="chat-widget__title">{t('chatTitle')}</h3>
+                    <span className="chat-widget__status">{t('chatOnline')}</span>
+                  </div>
+                </>
+              )}
             </div>
             <button
               type="button"
@@ -3999,7 +4147,28 @@ function MainPage() {
           </div>
 
           <div className="chat-widget__messages" ref={chatMessagesRef}>
-            {chatMessages.map((message, idx) => (
+            {chatMode === 'manager'
+              ? managerChatMessages.map((message) => (
+                  <div
+                    key={message.id}
+                    className={`chat-widget__message ${
+                      message.sender === 'user'
+                        ? 'chat-widget__message--user'
+                        : message.sender === 'manager'
+                          ? 'chat-widget__message--manager'
+                          : 'chat-widget__message--system'
+                    }`}
+                  >
+                    <div className="chat-widget__message-content">{message.text}</div>
+                    <div className="chat-widget__message-time">
+                      {message.timestamp.toLocaleTimeString('ru-RU', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </div>
+                  </div>
+                ))
+              : chatMessages.map((message, idx) => (
               <div
                 key={message.id}
                 ref={idx === chatMessages.length - 1 ? lastMessageRef : null}
@@ -4065,7 +4234,11 @@ function MainPage() {
                             ? FiPhone
                             : button.value === 'email'
                               ? FiMail
-                              : FaWhatsapp
+                              : button.value === 'whatsapp'
+                                ? FaWhatsapp
+                                : button.value === 'telegram'
+                                  ? FaTelegram
+                                  : FiMessageCircle
                         return (
                           <button
                             key={index}
@@ -4102,7 +4275,7 @@ function MainPage() {
                 </div>
               </div>
             ))}
-            {isLoadingAI && (
+            {chatMode !== 'manager' && isLoadingAI && (
               <div className="chat-widget__message chat-widget__message--bot">
                 <div className="chat-widget__message-content">
                   <div className="chat-widget__typing">
@@ -4118,21 +4291,30 @@ function MainPage() {
             )}
           </div>
 
-          <form className="chat-widget__input-form" onSubmit={handleChatSubmit}>
+          <form
+            className="chat-widget__input-form"
+            onSubmit={chatMode === 'manager' ? handleManagerChatSubmit : handleChatSubmit}
+          >
             <input
               type="text"
               className="chat-widget__input"
-              placeholder={isLoadingAI ? t('aiThinking') : t('chatPlaceholder')}
+              placeholder={
+                chatMode === 'manager'
+                  ? t('chatPlaceholder')
+                  : isLoadingAI
+                    ? t('aiThinking')
+                    : t('chatPlaceholder')
+              }
               value={chatInput}
               onChange={handleChatInputChange}
-              disabled={isLoadingAI}
+              disabled={chatMode === 'manager' ? false : isLoadingAI}
               autoFocus
             />
             <button
               type="submit"
               className="chat-widget__send"
               aria-label={t('sendMessage')}
-              disabled={isLoadingAI}
+              disabled={chatMode === 'manager' ? false : isLoadingAI}
             >
               <FiSend size={18} />
             </button>

@@ -1,0 +1,255 @@
+/* Модалка напоминания об аукционе — явные стили (без shadcn-токенов Tailwind) */
+
+.auction-reminder-modal__overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 12000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.auction-reminder-modal__panel {
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+  max-height: 90vh;
+  overflow-y: auto;
+  border-radius: 16px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  box-shadow:
+    0 25px 50px -12px rgba(0, 0, 0, 0.22),
+    0 0 0 1px rgba(0, 0, 0, 0.04);
+  color: #111827;
+}
+
+.auction-reminder-modal__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 18px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.auction-reminder-modal__header-main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.auction-reminder-modal__icon-wrap {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background: rgba(10, 186, 181, 0.12);
+  color: #0abab5;
+}
+
+.auction-reminder-modal__title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.25;
+  color: #111827;
+}
+
+.auction-reminder-modal__subtitle {
+  margin: 4px 0 0;
+  font-size: 12px;
+  line-height: 1.35;
+  color: #6b7280;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.auction-reminder-modal__close {
+  flex-shrink: 0;
+  padding: 8px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: #6b7280;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.auction-reminder-modal__close:hover {
+  background: #f3f4f6;
+  color: #111827;
+}
+
+.auction-reminder-modal__body {
+  padding: 18px;
+}
+
+.auction-reminder-modal__hint {
+  margin: 0 0 12px;
+  font-size: 14px;
+  line-height: 1.45;
+  color: #6b7280;
+}
+
+.auction-reminder-modal__checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  cursor: pointer;
+  font-size: 14px;
+  color: #374151;
+}
+
+.auction-reminder-modal__checkbox-row input {
+  width: 18px;
+  height: 18px;
+  accent-color: #0abab5;
+  cursor: pointer;
+}
+
+.auction-reminder-modal__btn-primary {
+  margin-top: 16px;
+  width: 100%;
+  padding: 12px 16px;
+  border: none;
+  border-radius: 12px;
+  background: #0abab5;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.2s ease, opacity 0.2s ease;
+}
+
+.auction-reminder-modal__btn-primary:hover:not(:disabled) {
+  background: #089a95;
+}
+
+.auction-reminder-modal__btn-primary:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.auction-reminder-modal__btn-secondary {
+  flex: 1;
+  padding: 12px 14px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #ffffff;
+  color: #374151;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.auction-reminder-modal__btn-secondary:hover {
+  background: #f9fafb;
+}
+
+.auction-reminder-modal__row {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.auction-reminder-modal__row .auction-reminder-modal__btn-primary {
+  margin-top: 0;
+  flex: 1;
+}
+
+.auction-reminder-modal__wheel-wrap {
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+  padding: 8px 4px 12px;
+}
+
+.auction-reminder-modal__delivery {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+}
+
+.auction-reminder-modal__delivery-line {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.auction-reminder-modal__delivery-line + .auction-reminder-modal__delivery-line {
+  margin-top: 6px;
+}
+
+.auction-reminder-modal__delivery-line--compact {
+  margin-bottom: 10px;
+}
+
+.auction-reminder-modal__delivery-line--ok {
+  color: #047857;
+}
+
+.auction-reminder-modal__delivery-line--ok::before {
+  content: '✓ ';
+  font-weight: 700;
+}
+
+.auction-reminder-modal__warn {
+  color: #b45309;
+}
+
+.auction-reminder-modal__warn--muted {
+  color: #6b7280;
+  font-size: 12px;
+}
+
+.auction-reminder-modal__checkbox-row input:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.auction-reminder-modal__btn-test {
+  margin-top: 12px;
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px dashed #0abab5;
+  border-radius: 12px;
+  background: rgba(10, 186, 181, 0.06);
+  color: #0a9a95;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    opacity 0.15s ease;
+}
+
+.auction-reminder-modal__btn-test:hover:not(:disabled) {
+  background: rgba(10, 186, 181, 0.12);
+}
+
+.auction-reminder-modal__btn-test:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+

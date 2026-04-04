@@ -327,6 +327,20 @@
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
 }
 
+.property-card--auction-ended {
+  opacity: 0.94;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.06);
+}
+
+.property-card--auction-ended .property-image {
+  filter: grayscale(0.22);
+}
+
+.btn-liquid-glass--auction-ended {
+  background: linear-gradient(135deg, #64748b 0%, #475569 100%) !important;
+}
+
 .property-link {
   display: flex;
   flex-direction: column;

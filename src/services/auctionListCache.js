@@ -6,6 +6,56 @@
 
 import { getApiBaseUrl } from '../utils/apiConfig'
 
+function pickNonEmptyTimerDate(a, b) {
+  if (a != null && a !== '') return a
+  if (b != null && b !== '') return b
+  return null
+}
+
+/** Один id мог прийти и из test-timers, и из approved — объединяем, чтобы круговой таймер не терялся. */
+function mergeFormattedAuctionListItems(existing, incoming) {
+  const tt = pickNonEmptyTimerDate(existing.test_timer_end_date, incoming.test_timer_end_date)
+  const hasTT = tt != null && tt !== ''
+  const isAuction =
+    existing.isAuction === true ||
+    incoming.isAuction === true ||
+    hasTT ||
+    existing.is_auction === true ||
+    existing.is_auction === 1 ||
+    incoming.is_auction === true ||
+    incoming.is_auction === 1
+
+  const merged = { ...existing, ...incoming }
+  return {
+    ...merged,
+    test_timer_end_date: tt,
+    test_timer_duration: existing.test_timer_duration ?? incoming.test_timer_duration ?? null,
+    isAuction,
+    endTime: isAuction ? tt || existing.endTime || incoming.endTime : existing.endTime || incoming.endTime,
+    currentBid: isAuction
+      ? (incoming.currentBid ??
+          existing.currentBid ??
+          incoming.auction_starting_price ??
+          existing.auction_starting_price ??
+          incoming.price ??
+          existing.price ??
+          0)
+      : incoming.currentBid ?? existing.currentBid,
+  }
+}
+
+function dedupeAuctionListById(items) {
+  const map = new Map()
+  for (const p of items) {
+    if (p?.id == null) continue
+    const n = Number(p.id)
+    const key = Number.isFinite(n) ? n : String(p.id)
+    const prev = map.get(key)
+    map.set(key, prev ? mergeFormattedAuctionListItems(prev, p) : p)
+  }
+  return Array.from(map.values())
+}
+
 function formatPropertyForList(prop, isAuction) {
   return {
     ...prop,
@@ -101,11 +151,11 @@ export async function fetchAuctionList() {
     } catch (_) {}
   }
 
-  const allProperties = [
+  const allProperties = dedupeAuctionListById([
     ...allTestProperties.map(p => formatPropertyForList(p, true)),
     ...allAuctionProperties.map(p => formatPropertyForList(p, true)),
     ...allNonAuctionProperties.map(p => formatPropertyForList(p, false))
-  ]
+  ])
 
   setCachedList(allProperties)
   return allProperties

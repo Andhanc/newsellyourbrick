@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { MdBed, MdOutlineBathtub, MdDirectionsCar } from 'react-icons/md'
@@ -14,6 +14,7 @@ import AnimatedLoadingSkeleton from './ui/AnimatedLoadingSkeleton'
 import AuctionMobileLayout from './ui/AuctionMobileLayout'
 import { MarqueeAnimation } from './ui/MarqueeAnimation'
 import { ensureCanOpenProperty } from '../utils/propertyAccessGuard'
+import { showNotification } from '../utils/toastHelper'
 import './PropertyList.css'
 
 const MOBILE_BREAKPOINT = 768
@@ -121,7 +122,16 @@ const PropertyList = ({
   // Используем переданные аукционные объявления или статические данные
   const propertiesToUse = auctionProperties || properties
 
-  const filteredProperties = propertiesToUse.filter(property => {
+  /** На /auction раз в секунду пересчитываем «таймер истёк» и сортировку (завершённые в конец) */
+  const [auctionNowTick, setAuctionNowTick] = useState(0)
+  useEffect(() => {
+    if (location.pathname !== '/auction') return undefined
+    const id = window.setInterval(() => setAuctionNowTick((n) => n + 1), 1000)
+    return () => clearInterval(id)
+  }, [location.pathname])
+
+  const filteredProperties = useMemo(() => {
+    const list = propertiesToUse.filter((property) => {
     const hasBuyNowPrice = hasBuyNowOption(property)
     const isDebtProperty =
       property.sale_type === 'debt' ||
@@ -191,6 +201,34 @@ const PropertyList = ({
     
     return true
   })
+
+    if (location.pathname !== '/auction') return list
+
+    const auctionTimerEnded = (p) => {
+      const hasTT = p.test_timer_end_date != null && p.test_timer_end_date !== ''
+      if (hasTT && p.test_timer_end_date) {
+        return new Date(p.test_timer_end_date).getTime() <= Date.now()
+      }
+      if (p.endTime) {
+        return new Date(p.endTime).getTime() <= Date.now()
+      }
+      return false
+    }
+
+    return [...list].sort((a, b) => {
+      const ea = auctionTimerEnded(a)
+      const eb = auctionTimerEnded(b)
+      if (ea === eb) return 0
+      return ea ? 1 : -1
+    })
+  }, [
+    propertiesToUse,
+    location.pathname,
+    propertyType,
+    saleFilter,
+    searchQuery,
+    auctionNowTick,
+  ])
 
   useEffect(() => {
     setVisibleCount(9)
@@ -433,17 +471,27 @@ const PropertyList = ({
                 // Зеленый линейный таймер (PropertyTimer)
                 const greenTimerBlock = hasTimer && !isReserved && !hasTestTimer && (
                   <div className="property-timer-wrapper">
-                    <PropertyTimer endTime={property.endTime} compact={true} />
+                    <PropertyTimer
+                      endTime={property.endTime}
+                      compact={true}
+                      auctionEndedLabel={t('propertyDetailAuctionCompleted')}
+                    />
                   </div>
                 );
 
+                const circularSize = isMobile ? 56 : 120
                 // Красный круглый таймер (CircularTimer)
                 const redTimerBlock = hasTimer && !isReserved && hasTestTimer && (
                   <div className="property-timer-wrapper">
                     <CircularTimer 
                       endTime={property.test_timer_end_date} 
-                      size={isMobile ? 56 : 120} 
-                      strokeWidth={isMobile ? 4 : 6} 
+                      size={circularSize} 
+                      strokeWidth={isMobile ? 4 : 6}
+                      auctionEndedLabel={t(
+                        circularSize <= 72
+                          ? 'auctionCircularEndedShort'
+                          : 'propertyDetailAuctionCompleted'
+                      )}
                     />
                   </div>
                 );
@@ -451,7 +499,7 @@ const PropertyList = ({
                 return (
             <div 
               key={property.id} 
-              className="property-card"
+              className={`property-card${isTimerExpired && hasTimer ? ' property-card--auction-ended' : ''}`}
               onClick={(e) => {
                 // Проверяем, что клик не по кнопке или ссылке
                 if (e.target.closest('button') || e.target.closest('a')) {
@@ -613,7 +661,7 @@ const PropertyList = ({
                     )}
                     <div className="property-actions" onClick={(e) => e.stopPropagation()}>
                       <button 
-                        className="btn btn-primary btn-liquid-glass"
+                        className={`btn btn-primary btn-liquid-glass${isTimerExpired && hasTimer ? ' btn-liquid-glass--auction-ended' : ''}`}
                         onClick={(e) => {
                           e.preventDefault()
                           e.stopPropagation()
@@ -625,7 +673,11 @@ const PropertyList = ({
                           cursor: isReserved ? 'not-allowed' : 'pointer'
                         }}
                       >
-                        {isReserved ? t('objectReserved') : t('placeBid')}
+                        {isReserved
+                          ? t('objectReserved')
+                          : isTimerExpired && hasTimer
+                            ? t('auctionCardSeeResult')
+                            : t('placeBid')}
                       </button>
                       {hasBuyNowPrice && (
                         <button 
@@ -637,12 +689,16 @@ const PropertyList = ({
                               showNotification(t('objectReservedNotification'))
                               return
                             }
+                            if (isTimerExpired && hasTimer) {
+                              return
+                            }
                             openProperty(property)
                           }}
-                          disabled={isReserved}
+                          disabled={isReserved || (isTimerExpired && hasTimer)}
                           style={{
-                            opacity: isReserved ? 0.5 : 1,
-                            cursor: isReserved ? 'not-allowed' : 'pointer'
+                            opacity: isReserved || (isTimerExpired && hasTimer) ? 0.45 : 1,
+                            cursor:
+                              isReserved || (isTimerExpired && hasTimer) ? 'not-allowed' : 'pointer'
                           }}
                         >
                           {isReserved ? t('objectReserved') : t('buyNowSectionTitle')}

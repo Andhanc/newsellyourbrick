@@ -438,6 +438,7 @@ function AuctionMobileItem({
           'auction-mobile-item',
           view === 'list' && 'auction-mobile-item--list auction-mobile--list',
           view === 'card' && 'auction-mobile-item--card auction-mobile--card',
+          isTimerExpired && hasTimer && 'auction-mobile-item--ended',
         )}
         onClick={openProperty}
         style={{ cursor: 'pointer' }}
@@ -471,6 +472,7 @@ function AuctionMobileItem({
                   endTime={property.test_timer_end_date}
                   size={view === 'list' ? 46 : 54}
                   strokeWidth={view === 'list' ? 3 : 4}
+                  auctionEndedLabel={t('auctionCircularEndedShort')}
                 />
               </div>
             )}
@@ -480,6 +482,7 @@ function AuctionMobileItem({
                   endTime={property.endTime}
                   compact
                   className="property-timer--auction-mobile"
+                  auctionEndedLabel={t('propertyDetailAuctionCompleted')}
                 />
               </div>
             )}
@@ -493,6 +496,7 @@ function AuctionMobileItem({
                 endTime={property.endTime}
                 compact
                 className="property-timer--auction-mobile property-timer--auction-mobile-inline"
+                auctionEndedLabel={t('propertyDetailAuctionCompleted')}
               />
             </div>
           )}
@@ -561,7 +565,10 @@ function AuctionMobileItem({
           >
             <button
               type="button"
-              className="btn btn-primary btn-liquid-glass"
+              className={cn(
+                'btn btn-primary btn-liquid-glass',
+                isTimerExpired && hasTimer && 'btn-liquid-glass--auction-ended',
+              )}
               onClick={(e) => {
                 e.preventDefault()
                 e.stopPropagation()
@@ -573,7 +580,11 @@ function AuctionMobileItem({
                 cursor: isReserved ? 'not-allowed' : 'pointer',
               }}
             >
-              {isReserved ? t('objectReserved') : t('placeBid')}
+              {isReserved
+                ? t('objectReserved')
+                : isTimerExpired && hasTimer
+                  ? t('auctionCardSeeResult')
+                  : t('placeBid')}
             </button>
             {showBuyNow && (
               <button
@@ -590,8 +601,8 @@ function AuctionMobileItem({
                 }}
                 disabled={isReserved || isTimerExpired}
                 style={{
-                  opacity: isReserved ? 0.5 : 1,
-                  cursor: isReserved ? 'not-allowed' : 'pointer',
+                  opacity: isReserved || isTimerExpired ? 0.45 : 1,
+                  cursor: isReserved || isTimerExpired ? 'not-allowed' : 'pointer',
                 }}
               >
                 {isReserved ? t('objectReserved') : t('buyNowSectionTitle')}

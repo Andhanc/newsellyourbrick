@@ -301,9 +301,9 @@ const Statistics = ({ businessInfo, onShowUsers }) => {
 
   // Загружаем реальные аукционные объявления из API
   useEffect(() => {
-    const fetchAuctions = async () => {
+    const fetchAuctions = async (silent = false) => {
       try {
-        setIsLoadingAuctions(true);
+        if (!silent) setIsLoadingAuctions(true);
         const API_BASE_URL = await getApiBaseUrl();
         
         // Загружаем все типы аукционных объявлений
@@ -335,25 +335,31 @@ const Statistics = ({ businessInfo, onShowUsers }) => {
           auction_starting_price: auction.auction_starting_price || auction.price || 0,
           // Пока используем стартовую цену, актуальную ставку подставим ниже после загрузки истории торгов
           current_bid: auction.currentBid || auction.auction_starting_price || auction.price || 0,
-          end_date: auction.auction_end_date || auction.endTime || null,
+          // Как на карточке объекта (CircularTimer): приоритет у test_timer_end_date, иначе список не считает аукцион завершённым
+          end_date:
+            auction.test_timer_end_date ||
+            auction.endTime ||
+            auction.auction_end_date ||
+            null,
           bedrooms: auction.bedrooms || auction.rooms || auction.beds || 0,
           bathrooms: auction.bathrooms || 0,
           area: auction.area || auction.sqft || 0,
           object_type: auction.property_type || 'apartment',
         }));
 
-        // Для каждой аукционной карточки подтягиваем реальную текущую ставку из истории торгов
+        // Для каждой аукционной карточки подтягиваем ставки и, для уже завершённых, победителя
         const formattedAuctionsWithBids = await Promise.all(
           formattedAuctionsBase.map(async (auction) => {
+            let enriched = { ...auction };
             try {
               const bidsResponse = await fetch(`${API_BASE_URL}/bids/property/${auction.id}`);
               if (bidsResponse.ok) {
                 const bidsData = await bidsResponse.json();
                 if (bidsData.success && Array.isArray(bidsData.data) && bidsData.data.length > 0) {
                   const maxBid = Math.max(...bidsData.data.map(b => Number(b.bid_amount) || 0));
-                  return {
-                    ...auction,
-                    current_bid: maxBid || auction.current_bid || auction.auction_starting_price || auction.starting_price || 0,
+                  enriched = {
+                    ...enriched,
+                    current_bid: maxBid || enriched.current_bid || enriched.auction_starting_price || enriched.starting_price || 0,
                   };
                 }
               }
@@ -361,7 +367,22 @@ const Statistics = ({ businessInfo, onShowUsers }) => {
               console.warn(`⚠️ Не удалось загрузить ставки для аукциона ${auction.id}:`, e);
             }
 
-            return auction;
+            const endDate = enriched.end_date;
+            if (endDate && new Date(endDate) <= new Date()) {
+              try {
+                const winRes = await fetch(`${API_BASE_URL}/auction-winners/property/${auction.id}`);
+                if (winRes.ok) {
+                  const winJson = await winRes.json();
+                  if (winJson.success && winJson.data && winJson.data.user_id != null) {
+                    enriched.winner_user_id = winJson.data.user_id;
+                  }
+                }
+              } catch (_) {
+                /* ignore */
+              }
+            }
+
+            return enriched;
           })
         );
 
@@ -370,11 +391,15 @@ const Statistics = ({ businessInfo, onShowUsers }) => {
       } catch (error) {
         console.error('❌ Ошибка при загрузке аукционных объявлений:', error);
       } finally {
-        setIsLoadingAuctions(false);
+        if (!silent) setIsLoadingAuctions(false);
       }
     };
 
-    fetchAuctions();
+    fetchAuctions(false);
+    const refreshId = setInterval(() => {
+      fetchAuctions(true);
+    }, 45000);
+    return () => clearInterval(refreshId);
   }, []);
 
   const getTimeMultiplier = (period, customStartDate = null, customEndDate = null) => {
@@ -774,20 +799,26 @@ const Statistics = ({ businessInfo, onShowUsers }) => {
 
 
   const activeAuctions = useMemo(() => {
-    // Используем только реальные данные из API, без fallback на моковые данные
     if (!realAuctions || realAuctions.length === 0) return [];
     const now = new Date();
-    return realAuctions
-      .filter(auction => {
-        const endDate = auction.end_date || auction.auction_end_date;
-        return endDate && new Date(endDate) > now;
-      })
-      .sort((a, b) => {
-        const dateA = new Date(a.end_date || a.auction_end_date);
-        const dateB = new Date(b.end_date || b.auction_end_date);
-        return dateA - dateB;
-      })
-      .slice(0, 10); // Берем первые 10 ближайших
+    const withEnd = realAuctions.filter((auction) => {
+      const endDate = auction.end_date || auction.auction_end_date;
+      return Boolean(endDate);
+    });
+    const active = withEnd
+      .filter((auction) => new Date(auction.end_date || auction.auction_end_date) > now)
+      .sort(
+        (a, b) =>
+          new Date(a.end_date || a.auction_end_date) - new Date(b.end_date || b.auction_end_date)
+      );
+    const ended = withEnd
+      .filter((auction) => new Date(auction.end_date || auction.auction_end_date) <= now)
+      .sort(
+        (a, b) =>
+          new Date(b.end_date || b.auction_end_date) - new Date(a.end_date || a.auction_end_date)
+      );
+    // Сначала идущие аукционы, завершённые — в конце списка
+    return [...active, ...ended].slice(0, 20);
   }, [realAuctions]);
 
   const stats = useMemo(() => {
