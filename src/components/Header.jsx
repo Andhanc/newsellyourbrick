@@ -13,6 +13,7 @@ import { IoLocationOutline } from 'react-icons/io5'
 import LoginModal from './LoginModal'
 import { getUserData, clearUserData } from '../services/authService'
 import { getApiBaseUrl } from '../utils/apiConfig'
+import { navigateToWallet } from '../utils/walletNavigation'
 import '../pages/MainPage.css'
 import { MenuToggleIcon } from '@/components/ui/menu-toggle-icon'
 
@@ -80,10 +81,13 @@ const Header = () => {
 
   useEffect(() => {
     if (isMenuOpen) {
-      const originalOverflow = document.body.style.overflow
-      document.body.style.overflow = 'hidden'
+      const main = document.querySelector('.app-layout')
+      const originalOverflow = main ? main.style.overflow : document.body.style.overflow
+      if (main) main.style.overflow = 'hidden'
+      else document.body.style.overflow = 'hidden'
       return () => {
-        document.body.style.overflow = originalOverflow
+        if (main) main.style.overflow = originalOverflow
+        else document.body.style.overflow = originalOverflow
       }
     }
   }, [isMenuOpen])
@@ -408,7 +412,11 @@ const Header = () => {
     }
 
     // Переходим на страницу
-    navigate(page.path)
+    if (page.path === '/wallet') {
+      navigateToWallet(navigate, location.pathname)
+    } else {
+      navigate(page.path)
+    }
     setIsSearchOpen(false)
     setSearchQuery('')
     setSearchResults([])
@@ -725,7 +733,7 @@ const Header = () => {
                               <button 
                                 className="menu-dropdown__item"
                                 onClick={() => {
-                                  navigate('/wallet')
+                                  navigateToWallet(navigate, location.pathname)
                                   setIsMenuOpen(false)
                                 }}
                               >
@@ -975,8 +983,14 @@ const Header = () => {
                       return
                     }
 
-                    // Переходим в профиль только если локально есть пользователь в БД (есть numeric userId).
+                    // Переходим в профиль, если Clerk привязан к записи в нашей БД
                     if (userLoaded && user && localHasDbUser) {
+                      navigate('/profile')
+                      return
+                    }
+
+                    // Локальная сессия (email, Telegram, WhatsApp и т.д.) — как на главной (MainPage), без Clerk
+                    if (userData.isLoggedIn) {
                       navigate('/profile')
                       return
                     }

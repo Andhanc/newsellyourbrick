@@ -144,27 +144,80 @@ export function validatePassword(password) {
   }
 }
 
+/** Числовой id строки users в БД (не Clerk `user_...`) */
+function isDbNumericUserId(value) {
+  if (value == null) return false
+  const s = String(value).trim()
+  return /^\d+$/.test(s)
+}
+
+/** Для API ставок/депозита нужен числовой id; Clerk id храним отдельно, не затирая userId */
+function resolveSessionUserId(parsedId, explicitFromLs = null) {
+  const fromLs =
+    explicitFromLs ??
+    (typeof localStorage !== 'undefined' ? localStorage.getItem('userId') : null)
+  if (isDbNumericUserId(fromLs)) return String(fromLs).trim()
+  if (isDbNumericUserId(parsedId)) return String(parsedId).trim()
+  if (parsedId != null && String(parsedId).trim() !== '') return String(parsedId).trim()
+  return fromLs ? String(fromLs) : ''
+}
+
+/** После синка Clerk с БД — обновить кабинет/депозит без перезагрузки */
+export const CLERK_DB_USER_SYNCED = 'app:clerk-db-user-synced'
+
 /**
  * Сохраняет информацию о пользователе в localStorage
  */
 export const saveUserData = (userData, loginMethod = 'email') => {
   localStorage.setItem('isLoggedIn', 'true')
   localStorage.setItem('loginMethod', loginMethod)
-  
-  // Сохраняем весь объект userData для удобства доступа
-  localStorage.setItem('userData', JSON.stringify(userData))
-  
+
+  const stored = userData && typeof userData === 'object' ? { ...userData } : {}
+  delete stored.login
+
+  const incomingRawId = stored.id != null ? String(stored.id).trim() : ''
+  const prevNumericLs =
+    typeof localStorage !== 'undefined' ? localStorage.getItem('userId') : null
+
+  if (incomingRawId && incomingRawId.startsWith('user_')) {
+    try {
+      localStorage.setItem('clerkUserId', incomingRawId)
+    } catch (_) {
+      /* ignore */
+    }
+  }
+
+  if (incomingRawId && isDbNumericUserId(incomingRawId)) {
+    stored.id = incomingRawId
+  } else if (isDbNumericUserId(prevNumericLs)) {
+    stored.id = String(prevNumericLs).trim()
+  }
+  // иначе оставляем stored.id как есть (например только Clerk до синка с БД)
+
+  localStorage.setItem('userData', JSON.stringify(stored))
+
   // Также сохраняем отдельные поля для обратной совместимости
   if (userData.email) {
     localStorage.setItem('userEmail', userData.email)
   }
-  
+
   if (userData.name) {
     localStorage.setItem('userName', userData.name)
   }
-  
-  if (userData.id) {
-    localStorage.setItem('userId', String(userData.id)) // Преобразуем в строку для совместимости
+
+  if (isDbNumericUserId(stored.id)) {
+    const idStr = String(stored.id).trim()
+    const prevUserId = typeof localStorage !== 'undefined' ? localStorage.getItem('userId') : null
+    localStorage.setItem('userId', idStr)
+    if (typeof window !== 'undefined' && prevUserId !== idStr) {
+      try {
+        window.dispatchEvent(
+          new CustomEvent(CLERK_DB_USER_SYNCED, { detail: { userId: parseInt(idStr, 10) } })
+        )
+      } catch (_) {
+        /* ignore */
+      }
+    }
   }
   
   if (userData.picture) {
@@ -199,9 +252,6 @@ export const saveUserData = (userData, loginMethod = 'email') => {
     localStorage.setItem('userCountryFlag', userData.countryFlag)
   }
 }
-
-/** После OAuth ClerkAuthHandler диспатчит это событие с числовым userId из БД (кабинет продавца подгружает данные без перезагрузки). */
-export const CLERK_DB_USER_SYNCED = 'app:clerk-db-user-synced'
 
 /**
  * Ранняя подготовка localStorage до ответа API: сразу открыть кабинет по роли, без числового userId.
@@ -262,14 +312,15 @@ export const getUserData = () => {
   if (savedUserData) {
     try {
       const parsed = JSON.parse(savedUserData)
+      delete parsed.login
       return {
         isLoggedIn: true,
         loginMethod: localStorage.getItem('loginMethod') || parsed.loginMethod || 'email',
-        ...parsed, // Все поля из сохраненного объекта
+        ...parsed,
         // Переопределяем для совместимости, если они есть в localStorage отдельно
         email: parsed.email || localStorage.getItem('userEmail') || '',
         name: parsed.name || localStorage.getItem('userName') || '',
-        id: parsed.id || localStorage.getItem('userId') || '',
+        id: resolveSessionUserId(parsed.id),
         picture: parsed.picture || localStorage.getItem('userPicture') || '',
         role: parsed.role || localStorage.getItem('userRole') || 'client',
         phone: parsed.phone || localStorage.getItem('userPhone') || '',
@@ -290,7 +341,7 @@ export const getUserData = () => {
     loginMethod: localStorage.getItem('loginMethod') || 'email',
     email: localStorage.getItem('userEmail') || '',
     name: localStorage.getItem('userName') || '',
-    id: localStorage.getItem('userId') || '',
+    id: resolveSessionUserId(null),
     picture: localStorage.getItem('userPicture') || '',
     role: localStorage.getItem('userRole') || 'client',
     phone: localStorage.getItem('userPhone') || '',
@@ -299,6 +350,170 @@ export const getUserData = () => {
     countryCode: localStorage.getItem('userCountryCode') || '',
     countryFlag: localStorage.getItem('userCountryFlag') || ''
   }
+}
+
+/**
+ * Синхронно читает числовой userId из localStorage (без async, без API-запросов).
+ * Используется для ленивой инициализации состояния компонентов.
+ */
+export function getStoredNumericUserId() {
+  if (typeof localStorage === 'undefined') return null
+  try {
+    const raw = localStorage.getItem('userId')
+    if (raw && /^\d+$/.test(String(raw).trim())) {
+      return parseInt(String(raw).trim(), 10)
+    }
+    if (localStorage.getItem('isLoggedIn') !== 'true') return null
+    const saved = localStorage.getItem('userData')
+    if (!saved) return null
+    const parsed = JSON.parse(saved)
+    const pid = parsed?.id
+    if (pid == null) return null
+    const s = String(pid).trim()
+    if (!isDbNumericUserId(s)) return null
+    const n = parseInt(s, 10)
+    // Пишем обратно, чтобы следующие вызовы нашли его сразу
+    localStorage.setItem('userId', String(n))
+    return n
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Синхронно восстанавливает localStorage.userId из JSON userData, если id был только там
+ * (старые сессии email/Telegram/WhatsApp без отдельного ключа userId).
+ */
+export function ensureLocalUserIdFromSession() {
+  if (typeof localStorage === 'undefined') return null
+  try {
+    const rawLs = localStorage.getItem('userId')
+    if (isDbNumericUserId(rawLs)) {
+      return parseInt(String(rawLs).trim(), 10)
+    }
+    if (localStorage.getItem('isLoggedIn') !== 'true') return null
+    const saved = localStorage.getItem('userData')
+    if (!saved) return null
+    const parsed = JSON.parse(saved)
+    const pid = parsed?.id
+    if (!isDbNumericUserId(pid)) return null
+    const n = parseInt(String(pid).trim(), 10)
+    localStorage.setItem('userId', String(n))
+    if (typeof window !== 'undefined') {
+      try {
+        window.dispatchEvent(new CustomEvent(CLERK_DB_USER_SYNCED, { detail: { userId: n } }))
+      } catch (_) {
+        /* ignore */
+      }
+    }
+    return n
+  } catch {
+    return null
+  }
+}
+
+function dispatchNumericUserIdSynced(n) {
+  if (typeof window === 'undefined') return
+  try {
+    window.dispatchEvent(new CustomEvent(CLERK_DB_USER_SYNCED, { detail: { userId: n } }))
+  } catch (_) {
+    /* ignore */
+  }
+}
+
+/**
+ * Числовой id в БД для API (депозит, ставки). Легаси-пользователь не ждёт загрузки Clerk.
+ */
+export async function fetchNumericDbUserIdForApi({ clerkUser = null, clerkUserLoaded = false } = {}) {
+  if (typeof localStorage === 'undefined') return null
+
+  const rawLs = localStorage.getItem('userId')
+  if (isDbNumericUserId(rawLs)) {
+    return parseInt(String(rawLs).trim(), 10)
+  }
+
+  const repaired = ensureLocalUserIdFromSession()
+  if (repaired != null) return repaired
+
+  let API_BASE_URL
+  try {
+    API_BASE_URL = await getApiBaseUrl()
+  } catch {
+    return null
+  }
+
+  const persistId = (rawId) => {
+    const n = typeof rawId === 'number' ? rawId : parseInt(String(rawId), 10)
+    if (Number.isNaN(n) || n <= 0) return null
+    localStorage.setItem('userId', String(n))
+    dispatchNumericUserIdSynced(n)
+    return n
+  }
+
+  if (localStorage.getItem('isLoggedIn') === 'true') {
+    const cur = getUserData()
+    if (isDbNumericUserId(cur?.id)) {
+      return persistId(cur.id)
+    }
+
+    const email = (cur?.email || localStorage.getItem('userEmail') || '').trim().toLowerCase()
+    if (email) {
+      try {
+        const r = await fetch(`${API_BASE_URL}/users/email/${encodeURIComponent(email)}`)
+        if (r.ok) {
+          const j = await r.json()
+          if (j.success && j.data?.id != null) {
+            const got = persistId(j.data.id)
+            if (got != null) return got
+          }
+        }
+      } catch (_) {
+        /* сеть */
+      }
+    }
+
+    const phoneDigits = String(
+      cur?.phoneFormatted || cur?.phone || localStorage.getItem('userPhone') || ''
+    ).replace(/\D/g, '')
+    if (phoneDigits.length >= 8) {
+      try {
+        const r = await fetch(`${API_BASE_URL}/users/phone/${phoneDigits}`)
+        if (r.ok) {
+          const j = await r.json()
+          if (j.success && j.data?.id != null) {
+            const got = persistId(j.data.id)
+            if (got != null) return got
+          }
+        }
+      } catch (_) {
+        /* сеть */
+      }
+    }
+  }
+
+  if (clerkUser && clerkUserLoaded) {
+    const userEmail =
+      clerkUser.primaryEmailAddress?.emailAddress ||
+      (clerkUser.emailAddresses && clerkUser.emailAddresses[0]?.emailAddress)
+    if (userEmail) {
+      try {
+        const r = await fetch(
+          `${API_BASE_URL}/users/email/${encodeURIComponent(String(userEmail).toLowerCase())}`
+        )
+        if (r.ok) {
+          const j = await r.json()
+          if (j.success && j.data?.id != null) {
+            const got = persistId(j.data.id)
+            if (got != null) return got
+          }
+        }
+      } catch (_) {
+        /* сеть */
+      }
+    }
+  }
+
+  return null
 }
 
 /** Реферальная программа: ID пригласителя сохраняется при переходе по ссылке ?ref=userId */

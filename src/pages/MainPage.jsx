@@ -77,6 +77,7 @@ import {
 } from '../services/liveChatApi'
 
 import { getApiBaseUrl, getApiBaseUrlSync } from '../utils/apiConfig'
+import { navigateToWallet } from '../utils/walletNavigation'
 import { usePropertyFavorites } from '../context/PropertyFavoritesContext'
 
 // Используем синхронную версию для инициализации, затем обновим при загрузке
@@ -1327,7 +1328,11 @@ function MainPage() {
     }
 
     // Переходим на страницу
-    navigate(page.path)
+    if (page.path === '/wallet') {
+      navigateToWallet(navigate, location.pathname)
+    } else {
+      navigate(page.path)
+    }
     setIsSearchOpen(false)
     setSearchQuery('')
     setPageSearchResults([])
@@ -1709,10 +1714,13 @@ function MainPage() {
   // Изменяем overflow body когда меню открыто (но не фон, чтобы не было белого экрана)
   useEffect(() => {
     if (isMenuOpen) {
-      const originalOverflow = document.body.style.overflow
-      document.body.style.overflow = 'hidden'
+      const main = document.querySelector('.app-layout')
+      const originalOverflow = main ? main.style.overflow : document.body.style.overflow
+      if (main) main.style.overflow = 'hidden'
+      else document.body.style.overflow = 'hidden'
       return () => {
-        document.body.style.overflow = originalOverflow
+        if (main) main.style.overflow = originalOverflow
+        else document.body.style.overflow = originalOverflow
       }
     }
   }, [isMenuOpen])
@@ -2506,7 +2514,7 @@ function MainPage() {
                           <button 
                             className="menu-dropdown__item"
                             onClick={() => {
-                              navigate('/wallet')
+                              navigateToWallet(navigate, location.pathname)
                               setIsMenuOpen(false)
                             }}
                           >
@@ -3237,7 +3245,6 @@ function MainPage() {
                 linkLabel={folder.linkLabel}
                 linkHref={folder.linkHref}
                 className="landing-models__folder"
-                isTopRow={idx < 2}
               />
             ))}
           </div>

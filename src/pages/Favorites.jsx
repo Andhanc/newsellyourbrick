@@ -1,7 +1,7 @@
 import { useNavigate, Link } from 'react-router-dom'
 import Header from '../components/Header'
 import PropertyTimer from '../components/PropertyTimer'
-import { FiHeart, FiMapPin, FiArrowRight } from 'react-icons/fi'
+import { FiHeart, FiMapPin, FiArrowRight, FiColumns } from 'react-icons/fi'
 import { MdBed, MdOutlineBathtub } from 'react-icons/md'
 import { BiArea } from 'react-icons/bi'
 import './Favorites.css'
@@ -49,8 +49,10 @@ const Favorites = () => {
           <p className="favorites-subtitle">
             Все аукционы, которые вы добавили в избранное
           </p>
-          <Link to="/compare" className="favorites-compare-link">
-            Сравнить два объекта
+          <Link to="/compare" className="favorites-compare-btn">
+            <FiColumns className="favorites-compare-btn__icon" aria-hidden />
+            <span className="favorites-compare-btn__label">Сравнить два объекта</span>
+            <FiArrowRight className="favorites-compare-btn__arrow" aria-hidden />
           </Link>
         </div>
 

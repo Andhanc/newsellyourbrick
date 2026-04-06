@@ -1,31 +1,62 @@
 import { Link, useNavigate } from 'react-router-dom'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useUser, useClerk } from '@clerk/clerk-react'
-import { getUserData, isAuthenticated, logout } from '../services/authService'
+import { getUserData, isAuthenticated, logout, CLERK_DB_USER_SYNCED, getStoredNumericUserId } from '../services/authService'
 import VerificationToast from '../components/VerificationToast'
 import WonPropertyCard from '../components/WonPropertyCard'
+import BuyerCabinetSidebar from '../components/BuyerCabinetSidebar'
 import { ensureCanOpenProperty } from '../utils/propertyAccessGuard'
+import i18n from '../i18n/config'
 import './History.css'
 import './Profile.css'
+import { useChainedAppLayoutScroll } from '../hooks/useChainedAppLayoutScroll'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
 
+function intlLocale() {
+  const code = (i18n.language || 'ru').split('-')[0]
+  const map = { ru: 'ru-RU', en: 'en-US', de: 'de-DE', es: 'es-ES', fr: 'fr-FR', sv: 'sv-SE' }
+  return map[code] || 'en-US'
+}
+
 const History = () => {
   const navigate = useNavigate()
+  const { t, i18n: i18nApi } = useTranslation()
+  const billingLocale = (() => {
+    const code = (i18nApi.language || 'ru').split('-')[0]
+    const map = { ru: 'ru-RU', en: 'en-US', de: 'de-DE', es: 'es-ES', fr: 'fr-FR', sv: 'sv-SE' }
+    return map[code] || 'en-US'
+  })()
   const { user, isLoaded: userLoaded } = useUser()
   const { signOut: clerkSignOut } = useClerk()
-  const [userId, setUserId] = useState(null)
+  const [userId, setUserId] = useState(() => getStoredNumericUserId())
   const [verificationStatus, setVerificationStatus] = useState(null)
+  const buyerCabinetPageRef = useRef(null)
+  const buyerCabinetMainScrollRef = useRef(null)
 
-  // Получаем userId с поддержкой Clerk
+  useChainedAppLayoutScroll(buyerCabinetPageRef, buyerCabinetMainScrollRef, { active: true })
+
+  // Получаем userId с поддержкой Clerk + CLERK_DB_USER_SYNCED
+  useEffect(() => {
+    const applyFromStorage = () => {
+      const raw = localStorage.getItem('userId')
+      if (raw && /^\d+$/.test(raw)) {
+        const n = parseInt(raw, 10)
+        setUserId((prev) => (prev === n ? prev : n))
+      }
+    }
+    applyFromStorage()
+    window.addEventListener(CLERK_DB_USER_SYNCED, applyFromStorage)
+    return () => window.removeEventListener(CLERK_DB_USER_SYNCED, applyFromStorage)
+  }, [])
+
   useEffect(() => {
     const fetchUserId = async () => {
       // Сначала проверяем localStorage
       const storedUserId = localStorage.getItem('userId')
       if (storedUserId && /^\d+$/.test(storedUserId)) {
-        const parsedId = parseInt(storedUserId)
-        console.log('📋 Используем userId из localStorage:', parsedId)
-        setUserId(parsedId)
+        setUserId(parseInt(storedUserId, 10))
         return
       }
 
@@ -33,55 +64,30 @@ const History = () => {
       const isClerkAuth = user && userLoaded
       const isOldAuth = isAuthenticated()
 
-      console.log('📋 Проверка авторизации:', { isClerkAuth, isOldAuth, userLoaded, hasUser: !!user })
-
       if (isClerkAuth && user) {
-        // Для Clerk пользователей получаем ID из БД
         try {
           const userEmail = user.primaryEmailAddress?.emailAddress || user.emailAddresses?.[0]?.emailAddress
-          console.log('📋 Email пользователя Clerk:', userEmail)
-          
           if (userEmail) {
             const userResponse = await fetch(`${API_BASE_URL}/users/email/${encodeURIComponent(userEmail)}`)
-            console.log('📋 Ответ сервера для получения userId:', userResponse.status)
-            
             if (userResponse.ok) {
               const userData = await userResponse.json()
-              console.log('📋 Данные пользователя из БД:', userData)
-              
               if (userData.success && userData.data && userData.data.id) {
                 const numericId = userData.data.id
-                console.log('✅ Найден userId для Clerk пользователя:', numericId)
                 setUserId(numericId)
                 localStorage.setItem('userId', String(numericId))
                 return
-              } else {
-                console.warn('⚠️ userId не найден в ответе сервера:', userData)
               }
-            } else {
-              const errorText = await userResponse.text().catch(() => 'Не удалось прочитать ошибку')
-              console.error('❌ Ошибка при получении userId:', userResponse.status, errorText)
             }
-          } else {
-            console.warn('⚠️ Email не найден у Clerk пользователя')
           }
         } catch (e) {
           console.error('❌ Ошибка при получении userId из БД для Clerk пользователя:', e)
         }
       } else if (isOldAuth) {
-        // Для старой системы авторизации
         const userData = getUserData()
-        if (userData?.id) {
-          const id = userData.id
-          // Проверяем, что ID числовой
-          if (/^\d+$/.test(id.toString())) {
-            console.log('📋 Используем userId из старой системы:', id)
-            setUserId(parseInt(id))
-            localStorage.setItem('userId', String(id))
-          }
+        if (userData?.id && /^\d+$/.test(userData.id.toString())) {
+          setUserId(parseInt(userData.id, 10))
+          localStorage.setItem('userId', String(userData.id))
         }
-      } else {
-        console.log('⚠️ Пользователь не авторизован')
       }
     }
 
@@ -102,7 +108,7 @@ const History = () => {
       setIsLoadingReservations(false)
       setIsLoadingBids(false)
     }
-  }, [userId])
+  }, [userId, i18nApi.language])
 
   // Загружаем выигранные объекты
   const loadWonProperties = async () => {
@@ -135,8 +141,8 @@ const History = () => {
             return {
               id: winner.id,
               propertyId: winner.property_id,
-              propertyTitle: property.title || 'Объект недвижимости',
-              location: property.location || property.address || 'Адрес не указан',
+              propertyTitle: property.title || '',
+              location: property.location || property.address || '',
               purchasePrice: winner.winning_bid_amount,
               purchaseDate: winner.won_at || winner.auction_end_date,
               status: winner.deposit_paid === 1 ? 'deposit_paid' : 'pending_deposit',
@@ -393,11 +399,11 @@ const History = () => {
               return {
                 id: propertyId,
                 propertyId: propertyId,
-                propertyTitle: property.title || 'Объект недвижимости',
-                location: property.location || property.address || 'Адрес не указан',
+                propertyTitle: property.title || '',
+                location: property.location || property.address || '',
                 bidAmount: userMaxBid,
                 bidDate: bidDate.toISOString().split('T')[0],
-                bidTime: bidDate.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }),
+                bidTime: bidDate.toLocaleTimeString(intlLocale(), { hour: '2-digit', minute: '2-digit' }),
                 status: status,
                 currentBid: currentMaxBid,
                 finalPrice: status === 'won' || status === 'lost' ? currentMaxBid : null,
@@ -438,12 +444,12 @@ const History = () => {
     if (price >= 1000000) {
       return `${symbol}${(price / 1000000).toFixed(1)}M`
     }
-    return `${symbol}${price.toLocaleString('ru-RU')}`
+    return `${symbol}${price.toLocaleString(billingLocale)}`
   }
 
   const formatDate = (dateString) => {
     const date = new Date(dateString)
-    return date.toLocaleDateString('ru-RU', {
+    return date.toLocaleDateString(billingLocale, {
       day: 'numeric',
       month: 'long',
       year: 'numeric'
@@ -451,20 +457,9 @@ const History = () => {
   }
 
   const getStatusLabel = (status) => {
-    switch(status) {
-      case 'completed':
-        return 'Завершена'
-      case 'active':
-        return 'Активна'
-      case 'outbid':
-        return 'Перебита'
-      case 'won':
-        return 'Выиграна'
-      case 'lost':
-        return 'Проиграна'
-      default:
-        return status
-    }
+    const key = `buyerHistory_status_${status}`
+    const tr = t(key)
+    return tr !== key ? tr : status
   }
 
   const getStatusClass = (status) => {
@@ -483,6 +478,7 @@ const History = () => {
   }
 
   const handleLogout = async () => {
+    if (!window.confirm(t('buyerCabinet_logoutConfirm'))) return
     try {
       if (user) {
         await clerkSignOut()
@@ -498,161 +494,30 @@ const History = () => {
   }
 
   return (
-    <div className="history-page">
+    <div className="history-page" ref={buyerCabinetPageRef}>
       {/* Всплывающее уведомление о прогрессе верификации */}
       {userId && <VerificationToast userId={userId} />}
       
-      <div className="history-container">
-        <aside className="history-sidebar">
-          <div className="sidebar-header" style={{ marginTop: '24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <button
-              type="button"
-              onClick={() => navigate('/')}
-              className="back-button"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-                padding: '12px 24px',
-                backgroundColor: 'transparent',
-                border: 'none',
-                cursor: 'pointer',
-                color: '#0ABAB5',
-                fontSize: '18px',
-                fontWeight: '600',
-                transition: 'opacity 0.2s'
-              }}
-              onMouseEnter={(e) => e.currentTarget.style.opacity = '0.7'}
-              onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
-            >
-              <svg width="24" height="24" viewBox="0 0 20 20" fill="none">
-                <path d="M12.5 15L7.5 10L12.5 5" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-              <span>Назад</span>
-            </button>
-            <button
-              type="button"
-              className="header-logout-button"
-              onClick={(e) => {
-                e.preventDefault()
-                e.stopPropagation()
-                handleLogout()
-              }}
-            >
-              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                <path d="M7 2H3C2.44772 2 2 2.44772 2 3V15C2 15.5523 2.44772 16 3 16H7M12 13L15 10M15 10L12 7M15 10H6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-              <span>Выйти</span>
-            </button>
-          </div>
-          <nav className="sidebar-nav">
-            <Link to="/profile" className="nav-item">
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                <path d="M10 10C12.7614 10 15 7.76142 15 5C15 2.23858 12.7614 0 10 0C7.23858 0 5 2.23858 5 5C5 7.76142 7.23858 10 10 10Z" fill="currentColor"/>
-                <path d="M10 12C5.58172 12 2 13.7909 2 16V20H18V16C18 13.7909 14.4183 12 10 12Z" fill="currentColor"/>
-              </svg>
-              <span>Профиль</span>
-              {shouldShowProfileIndicator() && (
-                <span className="nav-item-indicator"></span>
-              )}
-            </Link>
-            <Link to="/data" className="nav-item">
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                <rect x="2" y="4" width="16" height="12" rx="2" stroke="currentColor" strokeWidth="1.5"/>
-                <path d="M6 8H14M6 12H12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-              </svg>
-              <span>Данные</span>
-              {shouldShowDataIndicator() && (
-                <span className="nav-item-indicator"></span>
-              )}
-            </Link>
-            <Link to="/subscriptions" className="nav-item">
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                <path d="M10 2L12.5 7.5L19 10L12.5 12.5L10 19L7.5 12.5L1 10L7.5 7.5L10 2Z" fill="currentColor"/>
-              </svg>
-              <span>Подписки</span>
-            </Link>
-            <Link to="/history" className="nav-item active">
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                <rect x="2" y="4" width="16" height="12" rx="2" stroke="currentColor" strokeWidth="1.5"/>
-                <path d="M6 8H14M6 12H10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-              </svg>
-              <span>История</span>
-            </Link>
-            <Link to="/chat" className="nav-item">
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                <path d="M10 2C5.58172 2 2 5.58172 2 10C2 14.4183 5.58172 18 10 18C14.4183 18 18 14.4183 18 10C18 5.58172 14.4183 2 10 2Z" stroke="currentColor" strokeWidth="1.5"/>
-                <path d="M7 8H13M7 12H13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-              </svg>
-              <span>Чат</span>
-            </Link>
-            <a href="#" className="nav-item">
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                <path d="M10 2L12.5 7.5L19 10L12.5 12.5L10 19L7.5 12.5L1 10L7.5 7.5L10 2Z" fill="currentColor"/>
-              </svg>
-              <span>Понравилось</span>
-            </a>
-          </nav>
-          <div className="sidebar-footer">
-            <div className="language-selector">
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.5" />
-                <path
-                  d="M8 1C9.5 3 10.5 5.5 10.5 8C10.5 10.5 9.5 13 8 15M8 1C6.5 3 5.5 5.5 5.5 8C5.5 10.5 6.5 13 8 15M1 8H15"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                />
-              </svg>
-              <span>Русский</span>
-            </div>
-            <a href="#" className="help-link">
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.5" />
-                <path d="M8 5V8M8 11H8.01" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-              </svg>
-              <span>Справка</span>
-            </a>
-            <a href="#" className="help-link">
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" strokeWidth="1.5" />
-                <path d="M6 6H10M6 10H10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-              </svg>
-              <span>Яндекс ID для сайта</span>
-            </a>
-            <div className="copyright">© 2001-2025 Яндекс</div>
-            <button
-              type="button"
-              className="logout-button"
-              onClick={(e) => {
-                e.preventDefault()
-                e.stopPropagation()
-                handleLogout()
-              }}
-            >
-              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                <path
-                  d="M7 2H3C2.44772 2 2 2.44772 2 3V15C2 15.5523 2.44772 16 3 16H7M12 13L15 10M15 10L12 7M15 10H6"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-              <span>Выйти</span>
-            </button>
-          </div>
-        </aside>
+      <div className="history-container buyer-cabinet-layout-container">
+        <BuyerCabinetSidebar
+          asideClassName="history-sidebar"
+          headerSpaceBetween
+          onLogout={handleLogout}
+          showProfileIndicator={shouldShowProfileIndicator()}
+          showDataIndicator={shouldShowDataIndicator()}
+        />
 
-        <main className="history-main">
-          <h1 className="history-title">История</h1>
+        <main className="history-main buyer-cabinet-layout-main">
+          <div className="buyer-cabinet-main-scroll" ref={buyerCabinetMainScrollRef}>
+          <h1 className="history-title">{t('buyerHistory_title')}</h1>
 
           <div className="history-content">
             <section className="history-section">
-              <h2 className="section-title">Мои покупки</h2>
+              <h2 className="section-title">{t('buyerHistory_myPurchases')}</h2>
               <div className="history-list">
                 {isLoadingPurchases ? (
                   <div className="empty-state">
-                    <p>Загрузка...</p>
+                    <p>{t('buyerHistory_loading')}</p>
                   </div>
                 ) : purchaseHistory.length > 0 ? (
                   purchaseHistory.map((purchase) => (
@@ -661,22 +526,21 @@ const History = () => {
                       purchase={purchase}
                       formatPrice={formatPrice}
                       formatDate={formatDate}
-                      getStatusLabel={getStatusLabel}
                     />
                   ))
                 ) : (
                   <div className="empty-state">
-                    <p>У вас пока нет выигранных аукционов</p>
+                    <p>{t('buyerHistory_emptyWins')}</p>
                   </div>
                 )}
                 {isLoadingReservations ? (
                   <div className="empty-state" style={{ marginTop: 16 }}>
-                    <p>Загрузка резервов…</p>
+                    <p>{t('buyerHistory_loadingReserves')}</p>
                   </div>
                 ) : reservationPurchases.length > 0 ? (
                   <div className="history-reservations" style={{ marginTop: 24 }}>
                     <h3 className="section-subtitle" style={{ marginBottom: 12, fontSize: '1.1rem' }}>
-                      Резерв 10% (купить сейчас)
+                      {t('buyerHistory_reserveSection')}
                     </h3>
                     {reservationPurchases.map((row) => {
                       const b = row.billing || {}
@@ -691,48 +555,52 @@ const History = () => {
                         <div key={row.id || row.dedupe_key} className="history-card" style={{ marginBottom: 16 }}>
                           <div className="card-content">
                             <div className="card-header">
-                              <h3 className="card-title">Объект #{pid ?? '—'}</h3>
-                              <span className="status-badge status-success">Резерв оплачен</span>
+                              <h3 className="card-title">
+                                {pid != null
+                                  ? t('buyerHistory_propertyTitle', { id: pid })
+                                  : t('buyerHistory_propertyTitle', { id: '—' })}
+                              </h3>
+                              <span className="status-badge status-success">{t('buyerHistory_reservePaid')}</span>
                             </div>
                             <div className="card-details">
                               <div className="detail-item">
-                                <span className="detail-label">Мин. цена продажи:</span>
+                                <span className="detail-label">{t('buyerHistory_minSale')}</span>
                                 <span className="detail-value price">
                                   {minSale != null ? formatPrice(minSale, cur) : '—'}
                                 </span>
                               </div>
                               <div className="detail-item">
-                                <span className="detail-label">Оплачено картой:</span>
+                                <span className="detail-label">{t('buyerHistory_paidCard')}</span>
                                 <span className="detail-value price">
                                   {formatPrice(paidStripe, cur)}
                                 </span>
                               </div>
                               {walletEur > 0 && (
                                 <div className="detail-item">
-                                  <span className="detail-label">С депозита:</span>
-                                  <span className="detail-value price">€{walletEur.toLocaleString('ru-RU')}</span>
+                                  <span className="detail-label">{t('buyerHistory_fromWallet')}</span>
+                                  <span className="detail-value price">€{walletEur.toLocaleString(billingLocale)}</span>
                                 </div>
                               )}
                               <div className="detail-item">
-                                <span className="detail-label">Всего внесено к цене:</span>
+                                <span className="detail-label">{t('buyerHistory_totalPaid')}</span>
                                 <span className="detail-value price">
                                   {typeof totalPaid === 'number' ? formatPrice(totalPaid, cur) : '—'}
                                 </span>
                               </div>
                               <div className="detail-item">
-                                <span className="detail-label">Осталось до полной цены:</span>
+                                <span className="detail-label">{t('buyerHistory_remaining')}</span>
                                 <span className="detail-value price">
                                   {remaining != null ? formatPrice(remaining, cur) : '—'}
                                 </span>
                               </div>
                               <div className="detail-item">
-                                <span className="detail-label">Дата:</span>
+                                <span className="detail-label">{t('buyerHistory_date')}</span>
                                 <span className="detail-value">{formatDate(row.paid_at)}</span>
                               </div>
                             </div>
                             {pid != null && (
                               <Link to={`/property/${pid}`} className="card-button">
-                                Открыть объект
+                                {t('buyerHistory_openProperty')}
                               </Link>
                             )}
                           </div>
@@ -745,49 +613,53 @@ const History = () => {
             </section>
 
             <section className="history-section">
-              <h2 className="section-title">Ставки на аукционе</h2>
+              <h2 className="section-title">{t('buyerHistory_auctionBids')}</h2>
               <div className="history-list">
                 {isLoadingBids ? (
                   <div className="empty-state">
-                    <p>Загрузка...</p>
+                    <p>{t('buyerHistory_loading')}</p>
                   </div>
                 ) : bidHistory.length > 0 ? (
                   bidHistory.map((bid) => (
                     <div key={bid.id} className="history-card bid-card">
                       <div className="card-content">
                         <div className="card-header">
-                          <h3 className="card-title">{bid.propertyTitle}</h3>
+                          <h3 className="card-title">
+                            {bid.propertyTitle || t('buyerHistory_fallbackProperty')}
+                          </h3>
                           <div className={`status-badge ${getStatusClass(bid.status)}`}>
                             {getStatusLabel(bid.status)}
                           </div>
                         </div>
-                        <p className="card-location">{bid.location}</p>
+                        <p className="card-location">{bid.location || t('buyerHistory_fallbackAddress')}</p>
                         <div className="card-details">
                           <div className="detail-item">
-                            <span className="detail-label">Ваша ставка:</span>
+                            <span className="detail-label">{t('buyerHistory_yourBid')}</span>
                             <span className="detail-value price">{formatPrice(bid.bidAmount)}</span>
                           </div>
                           {bid.status === 'active' && (
                             <div className="detail-item">
-                              <span className="detail-label">Текущая ставка:</span>
+                              <span className="detail-label">{t('buyerHistory_currentBid')}</span>
                               <span className="detail-value price">{formatPrice(bid.currentBid)}</span>
                             </div>
                           )}
                           {(bid.status === 'won' || bid.status === 'lost') && (
                             <div className="detail-item">
-                              <span className="detail-label">Финальная цена:</span>
+                              <span className="detail-label">{t('buyerHistory_finalPrice')}</span>
                               <span className="detail-value price">{formatPrice(bid.finalPrice)}</span>
                             </div>
                           )}
                           {bid.status === 'outbid' && (
                             <div className="detail-item">
-                              <span className="detail-label">Текущая ставка:</span>
+                              <span className="detail-label">{t('buyerHistory_currentBid')}</span>
                               <span className="detail-value price">{formatPrice(bid.currentBid)}</span>
                             </div>
                           )}
                           <div className="detail-item">
-                            <span className="detail-label">Дата ставки:</span>
-                            <span className="detail-value">{formatDate(bid.bidDate)} в {bid.bidTime}</span>
+                            <span className="detail-label">{t('buyerHistory_bidDateLabel')}</span>
+                            <span className="detail-value">
+                              {formatDate(bid.bidDate)} {t('buyerHistory_bidDateAt')} {bid.bidTime}
+                            </span>
                           </div>
                         </div>
                         {bid.status === 'active' && (
@@ -799,7 +671,7 @@ const History = () => {
                               e.preventDefault()
                             }}
                           >
-                            Продолжить участие
+                            {t('buyerHistory_continueBid')}
                           </Link>
                         )}
                         {bid.status === 'outbid' && (
@@ -811,7 +683,7 @@ const History = () => {
                               e.preventDefault()
                             }}
                           >
-                            Повысить ставку
+                            {t('buyerHistory_raiseBid')}
                           </Link>
                         )}
                         {(bid.status === 'won' || bid.status === 'lost') && (
@@ -823,7 +695,7 @@ const History = () => {
                               e.preventDefault()
                             }}
                           >
-                            Посмотреть объект →
+                            {t('buyerHistory_viewProperty')}
                           </Link>
                         )}
                       </div>
@@ -831,11 +703,12 @@ const History = () => {
                   ))
                 ) : (
                   <div className="empty-state">
-                    <p>У вас пока нет ставок</p>
+                    <p>{t('buyerHistory_emptyBids')}</p>
                   </div>
                 )}
               </div>
             </section>
+          </div>
           </div>
         </main>
       </div>

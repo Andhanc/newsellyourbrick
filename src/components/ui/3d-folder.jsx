@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect, useLayoutEffect, useCallback, forwardRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { X, ExternalLink, ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { getMainScrollLeft, getMainScrollTop } from '@/utils/mainScroll';
 
 const PLACEHOLDER_IMAGE = 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&q=80&w=1200';
 
@@ -146,10 +148,15 @@ function ImageLightbox({
       if (e.key === 'ArrowLeft') navigatePrev();
     };
     window.addEventListener('keydown', handleKeyDown);
-    if (isOpen) document.body.style.overflow = 'hidden';
+    const main = typeof document !== 'undefined' ? document.querySelector('.app-layout') : null;
+    if (isOpen) {
+      if (main) main.style.overflow = 'hidden';
+      else document.body.style.overflow = 'hidden';
+    }
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = '';
+      if (main) main.style.overflow = '';
+      else document.body.style.overflow = '';
     };
   }, [isOpen, handleClose, navigateNext, navigatePrev]);
 
@@ -192,12 +199,12 @@ function ImageLightbox({
       sourceRect.left +
       sourceRect.width / 2 -
       (targetX + targetWidth / 2) +
-      window.scrollX;
+      getMainScrollLeft();
     const translateY =
       sourceRect.top +
       sourceRect.height / 2 -
       (targetY + targetHeight / 2) +
-      window.scrollY;
+      getMainScrollTop();
     return {
       transform: `translate(${translateX}px, ${translateY}px) scale(${scale})`,
       opacity: 0.5,
@@ -396,8 +403,8 @@ function AnimatedFolder({
   gradient,
   linkLabel,
   linkHref,
-  isTopRow = false,
 }) {
+  const { t } = useTranslation();
   const [isHovered, setIsHovered] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(null);
   const [sourceRect, setSourceRect] = useState(null);
@@ -452,13 +459,13 @@ function AnimatedFolder({
 
   // Размеры карточки "папки" под сетку 2x2 на мобильных
   const minWidth = isMobile ? (isXs ? 104 : isSm ? 112 : 124) : 280
-  const minHeight = isMobile ? (isXs ? 204 : isSm ? 214 : 224) : 320
+  const minHeight = isMobile ? (isXs ? 204 : isSm ? 214 : 224) : 240
 
-  const centerW = isMobile ? (isXs ? 92 : isSm ? 98 : 112) : 200
-  const centerH = isMobile ? (isXs ? 84 : isSm ? 90 : 100) : 160
+  const centerW = isMobile ? (isXs ? 92 : isSm ? 98 : 112) : 172
+  const centerH = isMobile ? (isXs ? 84 : isSm ? 90 : 100) : 136
 
-  const backW = isMobile ? (isXs ? 56 : isSm ? 60 : 68) : 128
-  const backH = isMobile ? (isXs ? 40 : isSm ? 42 : 48) : 96
+  const backW = isMobile ? (isXs ? 56 : isSm ? 60 : 68) : 110
+  const backH = isMobile ? (isXs ? 40 : isSm ? 42 : 48) : 82
 
   const frontYOffset = isMobile ? Math.max(2, Math.round(4 * (backH / 96))) : 4
 
@@ -471,14 +478,14 @@ function AnimatedFolder({
       <div
         className={cn(
           'relative flex flex-col items-center p-8 rounded-2xl cursor-pointer bg-white border border-gray-200 transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] hover:shadow-2xl hover:shadow-teal-500/20 hover:border-teal-500/40 group',
-          isMobile ? 'justify-start' : 'justify-center',
+          'justify-start',
           className
         )}
         style={{
           minWidth: `${minWidth}px`,
           minHeight: `${minHeight}px`,
           // Tailwind `p-8` (32px) на телефонах слишком много — уменьшаем внутренний отступ
-          padding: isMobile ? (isXs ? '12px' : '13px') : '32px',
+          padding: isMobile ? (isXs ? '12px' : '13px') : '18px 16px 12px',
           perspective: '1200px',
           transform: isHovered
             ? `scale(${isMobile ? 1.02 : 1.04}) rotate(-1.5deg)`
@@ -497,7 +504,7 @@ function AnimatedFolder({
           }}
         />
         <div
-          className="relative flex items-center justify-center mb-4"
+          className="relative flex items-center justify-center mb-1.5"
           style={{
             height: `${centerH}px`,
             width: `${centerW}px`,
@@ -592,11 +599,11 @@ function AnimatedFolder({
             }}
           />
         </div>
-        <div className="text-center">
+        <div className="w-full min-w-0 flex flex-col text-center mt-0">
           <h3
             className={cn(
-              'font-bold text-gray-900 transition-all duration-500',
-              isMobile ? 'mt-1 text-[13px] leading-tight' : 'mt-4 text-lg'
+              'font-bold text-gray-900 transition-all duration-500 break-words hyphens-auto',
+              isMobile ? 'mt-1 text-[13px] leading-tight' : 'mt-0.5 text-[14px] leading-tight'
             )}
             style={{
               transform: isHovered ? 'translateY(2px)' : 'translateY(0)',
@@ -608,45 +615,35 @@ function AnimatedFolder({
           <p
             className={cn(
               'font-medium text-gray-500 transition-all duration-500',
-              isMobile ? 'text-[11px]' : 'text-sm'
+              isMobile ? 'text-[11px] mt-0.5' : 'text-[12px] mt-0.5'
             )}
             style={{ opacity: isHovered ? 0.8 : 1 }}
           >
-            {projects.length} {projects.length === 1 ? 'направление' : 'направлений'}
+            {t('folderDirectionsCount', { count: projects.length })}
           </p>
           {linkLabel && linkHref && (
             <a
               href={linkHref}
               className={cn(
-                'inline-block font-semibold text-teal-600 hover:text-teal-700 transition-colors',
-                isMobile ? 'mt-1 text-[11px]' : 'mt-2 text-sm'
+                'inline-block font-semibold text-teal-600 hover:text-teal-700 transition-colors break-words',
+                isMobile ? 'mt-1 text-[11px]' : 'mt-1 text-sm leading-snug'
               )}
             >
               {linkLabel} →
             </a>
           )}
-        </div>
-        <div
-          className={cn(
-            'absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-1.5 font-semibold uppercase tracking-widest text-gray-400 transition-all duration-500',
-            isMobile ? 'text-[9px]' : 'text-xs'
-          )}
-          style={{
-            // На верхних карточках поднимаем “Нажмите” выше, чтобы убрать пустое место снизу
-            bottom: isMobile
-              ? isTopRow
-                ? isXs
-                  ? '13px'
-                  : '14px'
-                : isXs
-                  ? '9px'
-                  : '10px'
-              : undefined,
-            opacity: isHovered ? 0 : 1,
-            transform: isHovered ? 'translateY(10px)' : 'translateY(0)',
-          }}
-        >
-          <span>{isMobile ? 'Нажмите' : 'Наведите'}</span>
+          <div
+            className={cn(
+              'mt-1 flex justify-center items-center gap-1.5 font-semibold uppercase tracking-wide text-gray-400 transition-all duration-500 shrink-0',
+              isMobile ? 'text-[9px]' : 'text-[10px]'
+            )}
+            style={{
+              opacity: isHovered ? 0 : 1,
+              transform: isHovered ? 'translateY(10px)' : 'translateY(0)',
+            }}
+          >
+            <span>{isMobile ? t('folderPreviewTap') : t('folderPreviewHover')}</span>
+          </div>
         </div>
       </div>
       <ImageLightbox

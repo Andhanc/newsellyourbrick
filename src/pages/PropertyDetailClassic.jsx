@@ -17,7 +17,7 @@ import {
 } from 'react-icons/fi'
 import { FaHeart as FaHeartSolid } from 'react-icons/fa'
 import { IoLocationOutline } from 'react-icons/io5'
-import { isAuthenticated, getUserData } from '../services/authService'
+import { isAuthenticated, getUserData, getStoredNumericUserId } from '../services/authService'
 import PropertyTimer from '../components/PropertyTimer'
 import CircularTimer from '../components/CircularTimer'
 import BiddingHistoryModal from '../components/BiddingHistoryModal'
@@ -29,25 +29,20 @@ import { showNotification } from '../utils/toastHelper'
 import BidOutbidNotification from '../components/BidOutbidNotification'
 import Confetti from 'react-confetti'
 import './PropertyDetailClassic.css'
-import { countries as countryList } from '../components/CountrySelect'
 
 import { getApiBaseUrl, getApiBaseUrlSync } from '../utils/apiConfig'
+import { flagEmojiForStoredCountry } from '../utils/countryFlagFromStored'
 import FlipCard from '../components/ui/FlipCard'
 import TestDriveSection from '../components/TestDriveSection'
 import { getAuctionMinBidStep } from '../utils/auctionBidStep'
 import { hasDbBackedProperty } from '../utils/propertyFavoriteKey'
 import { hasActiveCircularTestTimer } from '../utils/auctionReminderBounds'
+import { roleSkipsAuctionKyc } from '../utils/buyerAuctionKyc'
 import { confirmPropertyReservationSession } from '../utils/subscriptionCheckout'
 import { ShieldQuestionMark, ShieldAlert, ShieldCheck, Bell } from 'lucide-react'
 
 // Используем синхронную версию для инициализации, затем обновим при загрузке
 let API_BASE_URL = getApiBaseUrlSync()
-
-const getCountryFlagByName = (countryName) => {
-  if (!countryName) return ''
-  const country = countryList.find((c) => c.name === countryName)
-  return country?.flag || ''
-}
 
 // Классическая страница объекта.
 // Для аукционных объектов дополнительно отображает таймер и историю ставок.
@@ -634,6 +629,8 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
   const propertyInfo = displayProperty.title || displayProperty.name
 
   const [isFavorite, setIsFavorite] = useState(false)
+  const [auctionUserDeposit, setAuctionUserDeposit] = useState(0)
+  const [auctionKycVerified, setAuctionKycVerified] = useState(null)
 
   // Признак аукционного объекта (включая объекты с долгами — их UX тоже аукционный).
   // Тестовый круговой таймер задаётся без is_auction — всё равно показываем аукционный блок.
@@ -662,6 +659,66 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
       lastTestTimerEndRef.current = displayProperty.test_timer_end_date
     }
   }, [displayProperty.test_timer_end_date])
+
+  useEffect(() => {
+    if (!isAuctionProperty || !displayProperty?.id) {
+      setAuctionUserDeposit(0)
+      setAuctionKycVerified(null)
+      return
+    }
+
+    const refreshAuctionWalletAndKyc = async () => {
+      const uid = getStoredNumericUserId()
+      if (!uid) {
+        setAuctionUserDeposit(0)
+        setAuctionKycVerified(null)
+        return
+      }
+      try {
+        let base = API_BASE_URL
+        if (!base || base.includes('localhost')) {
+          base = await getApiBaseUrl()
+          API_BASE_URL = base
+        }
+        const [depRes, verRes] = await Promise.all([
+          fetch(`${base}/users/${uid}/deposit`),
+          fetch(`${base}/users/${uid}/verification-status`),
+        ])
+        if (depRes.ok) {
+          const dj = await depRes.json()
+          setAuctionUserDeposit(dj.success ? (dj.data?.depositAmount || 0) : 0)
+        } else {
+          setAuctionUserDeposit(0)
+        }
+        if (verRes.ok) {
+          const vj = await verRes.json()
+          setAuctionKycVerified(
+            vj.success && vj.data != null ? Boolean(vj.data.isVerified) : null
+          )
+        } else {
+          setAuctionKycVerified(null)
+        }
+      } catch {
+        setAuctionUserDeposit(0)
+        setAuctionKycVerified(null)
+      }
+    }
+
+    refreshAuctionWalletAndKyc()
+    window.addEventListener('focus', refreshAuctionWalletAndKyc)
+    window.addEventListener('verification-status-update', refreshAuctionWalletAndKyc)
+    return () => {
+      window.removeEventListener('focus', refreshAuctionWalletAndKyc)
+      window.removeEventListener('verification-status-update', refreshAuctionWalletAndKyc)
+    }
+  }, [isAuctionProperty, displayProperty?.id, userLoaded, user?.id])
+
+  const userRoleForAuction = userData?.role || 'buyer'
+  const auctionKycRequired =
+    isAuctionProperty && !roleSkipsAuctionKyc(userRoleForAuction)
+  const kycBidBlocked =
+    auctionKycRequired && auctionUserDeposit > 0 && auctionKycVerified === false
+  const disableAuctionBidFields = isReservedActive || kycBidBlocked
 
   // После оплаты резерва в Stripe — подтвердить сессию (если webhook ещё не обработал)
   useEffect(() => {
@@ -824,6 +881,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
       if (cancelled) return
 
       const base = await getApiBaseUrl()
+      if (cancelled) return // проверяем снова после await — cleanup мог сработать пока ждали
       API_BASE_URL = base
       const normalized = base.replace(/\/$/, '')
       const path = `${normalized}/events/property-bids?property_id=${displayProperty.id}`
@@ -969,7 +1027,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                   if (leaderUserData.success && leaderUserData.data) {
                     const leaderUser = leaderUserData.data
                     const leaderCountry = leaderUser.country || ''
-                    const leaderFlag = getCountryFlagByName(leaderCountry)
+                    const leaderFlag = flagEmojiForStoredCountry(leaderCountry) || ''
 
                     // Дополняем текущего лидера страной и флагом
                     setCurrentLeader((prev) =>
@@ -1652,6 +1710,17 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
       }
     }
 
+    if (isAuctionProperty && !roleSkipsAuctionKyc(userData?.role || 'buyer')) {
+      if (auctionUserDeposit <= 0) {
+        showToast(t('propertyDetailBidDepositRequired'), 'error')
+        return
+      }
+      if (auctionKycVerified === false) {
+        showToast(t('propertyDetailBidVerificationPending'), 'error')
+        return
+      }
+    }
+
     // Используем текущую максимальную ставку (currentBid), которая обновляется динамически
     // Если currentBid еще не загружен, используем значение из displayProperty или стартовую цену
     const startingPrice = isAuctionProperty 
@@ -1716,6 +1785,17 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
       if (reservedUntil && reservedUntil > new Date()) {
         const hoursRemaining = Math.ceil((reservedUntil - new Date()) / (1000 * 60 * 60))
         showToast(`Объект забронирован на ${hoursRemaining} часов. Ставки временно недоступны.`, 'error')
+        return
+      }
+    }
+
+    if (isAuctionProperty && !roleSkipsAuctionKyc(userData?.role || 'buyer')) {
+      if (auctionUserDeposit <= 0) {
+        showToast(t('propertyDetailBidDepositRequired'), 'error')
+        return
+      }
+      if (auctionKycVerified === false) {
+        showToast(t('propertyDetailBidVerificationPending'), 'error')
         return
       }
     }
@@ -1847,7 +1927,9 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
         let errorMessage = `Ошибка сервера: ${response.status}`
         try {
           const errorData = JSON.parse(errorText)
-          if (errorData.error) {
+          if (errorData.code === 'VERIFICATION_PENDING') {
+            errorMessage = t('propertyDetailBidVerificationPending')
+          } else if (errorData.error) {
             errorMessage = errorData.error
           }
         } catch (e) {
@@ -2029,7 +2111,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                       if (leaderUserData.success && leaderUserData.data) {
                         const leaderUser = leaderUserData.data
                         const leaderCountry = leaderUser.country || ''
-                        const leaderFlag = getCountryFlagByName(leaderCountry)
+                        const leaderFlag = flagEmojiForStoredCountry(leaderCountry) || ''
 
                         // Дополняем текущего лидера страной и флагом
                         setCurrentLeader((prev) =>
@@ -2686,10 +2768,16 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                       }
                     }
                       if (amenities.length === 0) {
-                        return <span className="amenity-item">{t('propertyDetailAmenitiesNone')}</span>
+                        return (
+                          <span className="amenity-tag amenity-tag--empty">
+                            {t('propertyDetailAmenitiesNone')}
+                          </span>
+                        )
                       }
                       return amenities.map((amenity, index) => (
-                        <span key={index} className="amenity-item">{amenity}</span>
+                        <span key={index} className="amenity-tag">
+                          {amenity}
+                        </span>
                       ))
                     })()}
                   </div>
@@ -2708,8 +2796,6 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                 const hasAdditionalInfo = additionalInfo !== null && 
                                          additionalInfo !== undefined && 
                                          String(additionalInfo).trim() !== ''
-                
-                // Убрали логи
                 
                 return hasAdditionalInfo ? (
                   <div className="property-detail-info-block">
@@ -3201,6 +3287,11 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                         <span>{t('propertyDetailBidsUnavailableReserved')}</span>
                       </div>
                     )}
+                    {!isReservedActive && kycBidBlocked && (
+                      <div className="auction-verification-pending-banner" role="status">
+                        {t('propertyDetailBidVerificationPending')}
+                      </div>
+                    )}
                     <div className="bidding-section__quick-buttons">
                       {(() => {
                         const quickBidAmounts = getQuickBidAmounts()
@@ -3217,10 +3308,10 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                             type="button"
                             className="bidding-section__quick-btn"
                             onClick={() => handleQuickBid(amount)}
-                            disabled={isSubmittingBid || isUserLeader || (isReservedActive)}
+                            disabled={isSubmittingBid || isUserLeader || disableAuctionBidFields}
                             style={{
-                              opacity: (isReservedActive) ? 0.5 : 1,
-                              cursor: (isReservedActive) ? 'not-allowed' : 'pointer'
+                              opacity: disableAuctionBidFields ? 0.5 : 1,
+                              cursor: disableAuctionBidFields ? 'not-allowed' : 'pointer'
                             }}
                           >
                             {formatAmount(amount)}
@@ -3270,10 +3361,10 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                         placeholder={isUserLeader ? t('propertyDetailYouAreLeading') : (isReservedActive) ? t('objectReserved') : t('propertyDetailEnterBidAmount')}
                         value={bidAmount}
                         onChange={handleBidAmountChange}
-                        disabled={isSubmittingBid || isUserLeader || (isReservedActive)}
+                        disabled={isSubmittingBid || isUserLeader || disableAuctionBidFields}
                         style={{
-                          opacity: (isReservedActive) ? 0.5 : 1,
-                          cursor: (isReservedActive) ? 'not-allowed' : 'text'
+                          opacity: disableAuctionBidFields ? 0.5 : 1,
+                          cursor: disableAuctionBidFields ? 'not-allowed' : 'text'
                         }}
                       />
                     </div>
@@ -3282,10 +3373,10 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                       type="button"
                       className={`bidding-section__submit-btn ${isUserLeader ? 'bidding-section__submit-btn--winner' : ''}`}
                       onClick={handleBidSubmit}
-                      disabled={isSubmittingBid || !bidAmount || isUserLeader || (isReservedActive)}
+                      disabled={isSubmittingBid || !bidAmount || isUserLeader || disableAuctionBidFields}
                       style={{
-                        opacity: (isReservedActive) ? 0.5 : 1,
-                        cursor: (isReservedActive) ? 'not-allowed' : 'pointer'
+                        opacity: disableAuctionBidFields ? 0.5 : 1,
+                        cursor: disableAuctionBidFields ? 'not-allowed' : 'pointer'
                       }}
                     >
                       {isSubmittingBid ? t('propertyDetailSubmitting') : isUserLeader ? t('propertyDetailYouAreWinning') : (isReservedActive) ? t('objectReserved') : t('placeBid')}
@@ -3303,10 +3394,20 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                         <div className="recent-bids__list">
                           {recentBids.map((bid, index) => {
                             const isHighest = bid.bid_amount === maxBidAmount
+                            const countryFlag = flagEmojiForStoredCountry(bid.bidder_country)
                             return (
                               <div key={bid.id || index} className={`recent-bid-item ${isHighest ? 'recent-bid-item--highest' : ''}`}>
                                 <div className="recent-bid-item__user">
                                   <FiUser size={14} />
+                                  {countryFlag && (
+                                    <span
+                                      className="recent-bid-item__country-flag"
+                                      title={bid.bidder_country}
+                                      aria-hidden
+                                    >
+                                      {countryFlag}
+                                    </span>
+                                  )}
                                   <span className="recent-bid-item__user-name">
                                     {bid.user_id_number || bid.user_id || t('propertyDetailUnknown')}
                                   </span>

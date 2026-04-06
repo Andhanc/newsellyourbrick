@@ -6,6 +6,7 @@ import {
   useState,
 } from 'react';
 import { motion } from 'framer-motion';
+import { getMainScrollTop, scrollMainTo, getMainScrollEl } from '@/utils/mainScroll';
 
 /**
  * Scroll-expansion hero: media (video or image) expands on scroll.
@@ -47,7 +48,7 @@ const ScrollExpandMedia = ({
 
   useEffect(() => {
     const handleWheel = (e) => {
-      if (mediaFullyExpanded && e.deltaY < 0 && window.scrollY <= 5) {
+      if (mediaFullyExpanded && e.deltaY < 0 && getMainScrollTop() <= 5) {
         setMediaFullyExpanded(false);
         e.preventDefault();
       } else if (!mediaFullyExpanded) {
@@ -78,7 +79,7 @@ const ScrollExpandMedia = ({
       const touchY = e.touches[0].clientY;
       const deltaY = touchStartY - touchY;
 
-      if (mediaFullyExpanded && deltaY < -20 && window.scrollY <= 5) {
+      if (mediaFullyExpanded && deltaY < -20 && getMainScrollTop() <= 5) {
         setMediaFullyExpanded(false);
         e.preventDefault();
       } else if (!mediaFullyExpanded) {
@@ -108,19 +109,28 @@ const ScrollExpandMedia = ({
 
     const handleScroll = () => {
       if (!mediaFullyExpanded) {
-        window.scrollTo(0, 0);
+        scrollMainTo(0, 0, 'auto');
       }
     };
 
+    const mainScrollEl = getMainScrollEl();
     window.addEventListener('wheel', handleWheel, { passive: false });
-    window.addEventListener('scroll', handleScroll);
+    if (mainScrollEl) {
+      mainScrollEl.addEventListener('scroll', handleScroll, { passive: true });
+    } else {
+      window.addEventListener('scroll', handleScroll, { passive: true });
+    }
     window.addEventListener('touchstart', handleTouchStart, { passive: false });
     window.addEventListener('touchmove', handleTouchMove, { passive: false });
     window.addEventListener('touchend', handleTouchEnd);
 
     return () => {
       window.removeEventListener('wheel', handleWheel);
-      window.removeEventListener('scroll', handleScroll);
+      if (mainScrollEl) {
+        mainScrollEl.removeEventListener('scroll', handleScroll);
+      } else {
+        window.removeEventListener('scroll', handleScroll);
+      }
       window.removeEventListener('touchstart', handleTouchStart);
       window.removeEventListener('touchmove', handleTouchMove);
       window.removeEventListener('touchend', handleTouchEnd);

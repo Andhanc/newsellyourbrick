@@ -68,7 +68,9 @@ const PropertyTimer = ({ endTime, compact = false, className = '', auctionEndedL
 
     const hasDays = timeLeft.days > 0
     const hasHours = timeLeft.hours > 0
-    
+    // Как на странице объекта: если есть дни, часы всегда показываем (в т.ч. 00), не пропускаем сегмент
+    const showHours = hasDays || hasHours
+
     return (
       <div
         className={`property-timer compact ${statusClass} ${isCritical ? 'timer-critical' : ''} ${className}`.trim()}
@@ -80,7 +82,7 @@ const PropertyTimer = ({ endTime, compact = false, className = '', auctionEndedL
               <span className="timer-separator">:</span>
             </>
           )}
-          {hasHours && (
+          {showHours && (
             <>
               <span className="time-unit"><span className="time-value">{String(timeLeft.hours).padStart(2, '0')}</span><span className="time-label">{t('timerHour')}</span></span>
               <span className="timer-separator">:</span>

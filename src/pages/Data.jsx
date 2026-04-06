@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
-import { Link, useNavigate, useLocation } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
+import BuyerCabinetSidebar from '../components/BuyerCabinetSidebar'
 import { FaPencilAlt } from 'react-icons/fa'
 import { useUser, useAuth } from '@clerk/clerk-react'
 import { getUserData, logout, sendEmailVerificationCode, verifyEmailForProfileUpdate, saveUserData } from '../services/authService'
@@ -11,6 +13,7 @@ import { extractPassportData } from '../services/aiService'
 import { showNotification } from '../utils/toastHelper'
 import './Data.css'
 import './Profile.css'
+import { useChainedAppLayoutScroll } from '../hooks/useChainedAppLayoutScroll'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
 
@@ -279,6 +282,7 @@ const getDialCodeForCountryName = (countryName) => {
 const normalizePhoneCode = (phone) => (phone || '').replace(/[^\d]/g, '')
 
 const Data = () => {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const location = useLocation()
   const { user: clerkUser, isLoaded: userLoaded } = useUser()
@@ -289,7 +293,6 @@ const Data = () => {
     lastName: '',
     middleName: '',
     email: '',
-    login: '',
     phone: '',
     country: '',
     countryFlag: '',
@@ -307,9 +310,12 @@ const Data = () => {
   const [showPassportRecognitionModal, setShowPassportRecognitionModal] = useState(false)
   const [extractedPassportData, setExtractedPassportData] = useState(null)
   const passportInputRef = useRef(null)
+  const buyerCabinetPageRef = useRef(null)
+  const buyerCabinetMainScrollRef = useRef(null)
   const editSnapshotRef = useRef(null) // снимок данных при входе в режим редактирования
+
+  useChainedAppLayoutScroll(buyerCabinetPageRef, buyerCabinetMainScrollRef, { active: true })
   const [verificationStatus, setVerificationStatus] = useState(null)
-  const [dataSavedSuccessfully, setDataSavedSuccessfully] = useState(false)
 
   // Вспомогательная функция для форматирования номера телефона с плюсом
   const formatPhoneWithPlus = (phone) => {
@@ -505,7 +511,6 @@ const Data = () => {
                     lastName: lastName,
                     middleName: '',
                     email: email,
-                    login: savedUserData.login || '',
                     phone: phoneFormatted,
                     country: dbUser.country || savedUserData.country || '',
                     countryFlag: savedUserData.countryFlag || '',
@@ -548,7 +553,6 @@ const Data = () => {
           lastName: lastName,
           middleName: '',
           email: email,
-          login: savedUserData.login || '',
           phone: phoneFormattedStorage,
           country: savedUserData.country || '',
           countryFlag: savedUserData.countryFlag || '',
@@ -639,10 +643,8 @@ const Data = () => {
     return verificationStatus?.hasDocuments || false
   }
 
-  // Показывать стеклянный оверлей «Данные заполнены и сохранены», когда данные полные и не в режиме редактирования
-  const showDataSavedOverlay = !isEditing && (
-    (verificationStatus && isBasicInfoComplete() && isPassportDataComplete()) || dataSavedSuccessfully
-  )
+  // Оверлей с переходом на аукцион только при полной готовности к модерации (как GET /verification-status: все поля + документы)
+  const showDataSavedOverlay = !isEditing && Boolean(verificationStatus?.isReady)
 
   // Проверяем, нужно ли показывать индикатор для "Данные"
   const shouldShowDataIndicator = () => {
@@ -671,7 +673,6 @@ const Data = () => {
       (userData.firstName || '') !== (s.firstName || '') ||
       (userData.lastName || '') !== (s.lastName || '') ||
       (userData.email || '') !== (s.email || '') ||
-      (userData.login || '') !== (s.login || '') ||
       normalizePhone(userData.phone) !== normalizePhone(s.phone) ||
       (userData.country || '') !== (s.country || '') ||
       (userData.address || '') !== (s.address || '') ||
@@ -683,7 +684,6 @@ const Data = () => {
 
   const handleEdit = () => {
     editSnapshotRef.current = { ...userData }
-    setDataSavedSuccessfully(false)
     setIsEditing(true)
   }
 
@@ -948,7 +948,6 @@ const Data = () => {
         
         editSnapshotRef.current = null
         setIsEditing(false)
-        setDataSavedSuccessfully(true)
         // Перезагружаем статус верификации после сохранения
         loadVerificationStatus()
         // Отправляем событие для обновления уведомления о верификации
@@ -1231,14 +1230,14 @@ const Data = () => {
   }
 
   const handleDeleteAccount = () => {
-    if (window.confirm('Вы уверены, что хотите удалить аккаунт? Это действие необратимо.')) {
+    if (window.confirm(t('buyerCabinet_deleteAccountConfirm'))) {
       // Здесь можно добавить логику удаления аккаунта
-      showNotification('Аккаунт будет удален')
+      showNotification(t('buyerData_deleteNotify'))
     }
   }
 
   const handleLogout = async () => {
-    if (window.confirm('Вы уверены, что хотите выйти?')) {
+    if (window.confirm(t('buyerCabinet_logoutConfirm'))) {
       await logout()
       navigate('/')
       // Небольшая задержка перед перезагрузкой, чтобы данные успели очиститься
@@ -1311,7 +1310,11 @@ const Data = () => {
       }
     } catch (error) {
       console.error('❌ Ошибка при распознавании паспорта:', error)
-      showNotification('Ошибка при распознавании паспорта: ' + (error.message || 'Неизвестная ошибка'))
+      showNotification(
+        t('buyerData_passportRecognizeError', {
+          detail: error.message || t('buyerData_unknownError'),
+        })
+      )
     } finally {
       setIsRecognizingPassport(false)
     }
@@ -1327,127 +1330,34 @@ const Data = () => {
   }
 
   return (
-    <div className="data-page">
-      <div className="data-container">
-        <aside className="data-sidebar">
-          <div className="sidebar-header" style={{ marginTop: '24px', display: 'flex', alignItems: 'center' }}>
-            <button
-              type="button"
-              onClick={() => navigate('/')}
-              className="back-button"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-                padding: '12px 24px',
-                backgroundColor: 'transparent',
-                border: 'none',
-                cursor: 'pointer',
-                color: '#0ABAB5',
-                fontSize: '18px',
-                fontWeight: '600',
-                transition: 'opacity 0.2s'
-              }}
-              onMouseEnter={(e) => e.currentTarget.style.opacity = '0.7'}
-              onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
-            >
-              <svg width="24" height="24" viewBox="0 0 20 20" fill="none">
-                <path d="M12.5 15L7.5 10L12.5 5" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-              <span>Назад</span>
-            </button>
-            <button 
-              type="button"
-              className="header-logout-button"
-              onClick={(e) => {
-                e.preventDefault()
-                e.stopPropagation()
-                handleLogout()
-              }}
-            >
-              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                <path d="M7 2H3C2.44772 2 2 2.44772 2 3V15C2 15.5523 2.44772 16 3 16H7M12 13L15 10M15 10L12 7M15 10H6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-              <span>Выйти</span>
-            </button>
-          </div>
-          <nav className="sidebar-nav">
-            <Link to="/profile" className="nav-item">
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                <path d="M10 10C12.7614 10 15 7.76142 15 5C15 2.23858 12.7614 0 10 0C7.23858 0 5 2.23858 5 5C5 7.76142 7.23858 10 10 10Z" fill="currentColor"/>
-                <path d="M10 12C5.58172 12 2 13.7909 2 16V20H18V16C18 13.7909 14.4183 12 10 12Z" fill="currentColor"/>
-              </svg>
-              <span>Профиль</span>
-              {shouldShowProfileIndicator() && (
-                <span className="nav-item-indicator"></span>
-              )}
-            </Link>
-            <Link to="/data" className="nav-item active">
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                <rect x="2" y="4" width="16" height="12" rx="2" stroke="currentColor" strokeWidth="1.5"/>
-                <path d="M6 8H14M6 12H12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-              </svg>
-              <span>Данные</span>
-              {shouldShowDataIndicator() && (
-                <span className="nav-item-indicator"></span>
-              )}
-            </Link>
-            <Link to="/subscriptions" className="nav-item">
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                <path d="M10 2L12.5 7.5L19 10L12.5 12.5L10 19L7.5 12.5L1 10L7.5 7.5L10 2Z" fill="currentColor"/>
-              </svg>
-              <span>Подписки</span>
-            </Link>
-            <Link to="/history" className="nav-item">
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                <rect x="2" y="4" width="16" height="12" rx="2" stroke="currentColor" strokeWidth="1.5"/>
-                <path d="M6 8H14M6 12H10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-              </svg>
-              <span>История</span>
-            </Link>
-            <Link to="/chat" className="nav-item">
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                <path d="M10 2C5.58172 2 2 5.58172 2 10C2 14.4183 5.58172 18 10 18C14.4183 18 18 14.4183 18 10C18 5.58172 14.4183 2 10 2Z" stroke="currentColor" strokeWidth="1.5"/>
-                <path d="M7 8H13M7 12H13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-              </svg>
-              <span>Чат</span>
-            </Link>
-            <a href="#" className="nav-item">
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                <path d="M10 2L12.5 7.5L19 10L12.5 12.5L10 19L7.5 12.5L1 10L7.5 7.5L10 2Z" fill="currentColor"/>
-              </svg>
-              <span>Понравилось</span>
-            </a>
-          </nav>
+    <div className="data-page" ref={buyerCabinetPageRef}>
+      <div className="data-container buyer-cabinet-layout-container">
+        <BuyerCabinetSidebar
+          asideClassName="data-sidebar"
+          compact
+          headerSpaceBetween
+          onLogout={handleLogout}
+          showProfileIndicator={shouldShowProfileIndicator()}
+          showDataIndicator={shouldShowDataIndicator()}
+        />
 
-          <button 
-            className="logout-button" 
-            onClick={handleLogout}
-            style={{ marginTop: 'auto', marginBottom: '24px', marginLeft: '16px', marginRight: '16px' }}
-          >
-            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-              <path d="M7 2H3C2.44772 2 2 2.44772 2 3V15C2 15.5523 2.44772 16 3 16H7M12 13L15 10M15 10L12 7M15 10H6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-            <span>Выйти</span>
-          </button>
-        </aside>
-
-        <main className="data-main">
+        <main className="data-main buyer-cabinet-layout-main">
+          <div className="buyer-cabinet-main-scroll" ref={buyerCabinetMainScrollRef}>
           <div className="data-header">
-            <h1>Личные данные</h1>
+            <h1>{t('buyerData_pageTitle')}</h1>
             <div className="data-edit-controls">
                 {!isEditing ? (
-                  <button type="button" className="data-edit-btn" onClick={handleEdit} aria-label="Редактировать">
+                  <button type="button" className="data-edit-btn" onClick={handleEdit} aria-label={t('buyerData_edit')}>
                     <FaPencilAlt size={18} />
-                    <span>Редактировать</span>
+                    <span>{t('buyerData_edit')}</span>
                   </button>
                 ) : (
                   <>
-                    <button type="button" className="data-cancel-btn" onClick={handleCancel} aria-label="Отменить">
+                    <button type="button" className="data-cancel-btn" onClick={handleCancel} aria-label={t('buyerData_cancel')}>
                       <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
                         <path d="M13.5 4.5L4.5 13.5M4.5 4.5L13.5 13.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                       </svg>
-                      <span>Отменить</span>
+                      <span>{t('buyerData_cancel')}</span>
                     </button>
                   </>
                 )}
@@ -1456,12 +1366,12 @@ const Data = () => {
                   className="data-save-btn"
                   onClick={handleSave}
                   disabled={!isEditing || !hasUnsavedChanges}
-                  aria-label="Сохранить"
+                  aria-label={t('buyerData_save')}
                 >
                   <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
                     <path d="M15 4.5L6.75 12.75L3 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>
-                  <span>Сохранить</span>
+                  <span>{t('buyerData_save')}</span>
                 </button>
               </div>
           </div>
@@ -1473,26 +1383,26 @@ const Data = () => {
             <div className="data-form-fields-wrapper">
               {showDataSavedOverlay && (
                 <div className="data-saved-overlay" aria-live="polite">
-                  <p className="data-saved-overlay__text">Данные заполнены и сохранены.</p>
+                  <p className="data-saved-overlay__text">{t('buyerData_savedOverlay')}</p>
                   <button
                     type="button"
                     className="data-saved-overlay__cta"
                     onClick={() => navigate('/auction')}
                   >
-                    Перейти на аукцион
+                    {t('buyerData_goAuction')}
                   </button>
                 </div>
               )}
             <section className="data-section">
               <h2 className="section-title">
-                Основная информация
+                {t('buyerData_sectionMain')}
                 {verificationStatus && !isBasicInfoComplete() && (
                   <span className="section-indicator section-indicator--incomplete"></span>
                 )}
               </h2>
               <div className="data-grid">
                 <div id="data-field-firstName" className="data-field">
-                  <label>Имя</label>
+                  <label>{t('buyerData_labelFirstName')}</label>
                   {isEditing ? (
                     <input
                       type="text"
@@ -1501,12 +1411,12 @@ const Data = () => {
                       className="data-input"
                     />
                   ) : (
-                    <div className="data-value">{userData.firstName || 'Не указано'}</div>
+                    <div className="data-value">{userData.firstName || t('buyerData_notSpecified')}</div>
                   )}
                 </div>
 
                 <div id="data-field-lastName" className="data-field">
-                  <label>Фамилия</label>
+                  <label>{t('buyerData_labelLastName')}</label>
                   {isEditing ? (
                     <input
                       type="text"
@@ -1515,12 +1425,12 @@ const Data = () => {
                       className="data-input"
                     />
                   ) : (
-                    <div className="data-value">{userData.lastName || 'Не указано'}</div>
+                    <div className="data-value">{userData.lastName || t('buyerData_notSpecified')}</div>
                   )}
                 </div>
 
                 <div id="data-field-emailOrPhone" className="data-field">
-                  <label>Email</label>
+                  <label>{t('buyerData_labelEmail')}</label>
                   {isEditing ? (
                     <input
                       type="email"
@@ -1529,27 +1439,12 @@ const Data = () => {
                       className="data-input"
                     />
                   ) : (
-                    <div className="data-value">{userData.email || 'Не указан'}</div>
+                    <div className="data-value">{userData.email || t('buyerData_notSpecified')}</div>
                   )}
                 </div>
 
                 <div className="data-field">
-                  <label>Логин</label>
-                  {isEditing ? (
-                    <input
-                      type="text"
-                      value={userData.login}
-                      onChange={(e) => handleChange('login', e.target.value)}
-                      className="data-input"
-                      placeholder="Введите логин"
-                    />
-                  ) : (
-                    <div className="data-value">{userData.login || 'Не указан'}</div>
-                  )}
-                </div>
-
-                <div className="data-field">
-                  <label>Номер телефона</label>
+                  <label>{t('buyerData_labelPhone')}</label>
                   {isEditing ? (
                     <input
                       type="tel"
@@ -1558,12 +1453,12 @@ const Data = () => {
                       className="data-input"
                     />
                   ) : (
-                    <div className="data-value">{formatPhoneWithPlus(userData.phone) || 'Не указан'}</div>
+                    <div className="data-value">{formatPhoneWithPlus(userData.phone) || t('buyerData_notSpecified')}</div>
                   )}
                 </div>
 
                 <div id="data-field-country" className="data-field">
-                  <label>Страна *</label>
+                  <label>{t('buyerData_labelCountry')}</label>
                   {isEditing ? (
                     <CountrySelect
                       value={userData.country}
@@ -1585,7 +1480,7 @@ const Data = () => {
                           handleChange('phone', `${newDial} `)
                         }
                       }}
-                      placeholder="Выберите страну"
+                      placeholder={t('buyerData_placeholderCountry')}
                       className="data-input"
                     />
                   ) : (
@@ -1598,7 +1493,7 @@ const Data = () => {
                             {userData.country}
                           </>
                         ) : (
-                          'Не указана'
+                          t('buyerData_notSpecified')
                         );
                       })()}
                     </div>
@@ -1606,17 +1501,17 @@ const Data = () => {
                 </div>
 
                 <div id="data-field-address" className="data-field">
-                  <label>Адрес проживания</label>
+                  <label>{t('buyerData_labelAddress')}</label>
                   {isEditing ? (
                     <input
                       type="text"
                       value={userData.address}
                       onChange={(e) => handleChange('address', e.target.value)}
                       className="data-input"
-                      placeholder="Введите адрес"
+                      placeholder={t('buyerData_placeholderAddress')}
                     />
                   ) : (
-                    <div className="data-value">{userData.address || 'Не указан'}</div>
+                    <div className="data-value">{userData.address || t('buyerData_notSpecified')}</div>
                   )}
                 </div>
               </div>
@@ -1625,7 +1520,7 @@ const Data = () => {
             <section className="data-section">
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                 <h2 className="section-title">
-                  Паспортные данные
+                  {t('buyerData_sectionPassport')}
                   {verificationStatus && !isPassportDataComplete() && (
                     <span className="section-indicator section-indicator--incomplete"></span>
                   )}
@@ -1645,7 +1540,7 @@ const Data = () => {
                         borderRadius: '50%',
                         animation: 'spin 1s linear infinite'
                       }}></span>
-                      Распознавание...
+                      {t('buyerData_recognizing')}
                     </>
                   ) : (
                     <>
@@ -1654,7 +1549,7 @@ const Data = () => {
                         <polyline points="17 8 12 3 7 8"></polyline>
                         <line x1="12" y1="3" x2="12" y2="15"></line>
                       </svg>
-                      Распознать с фото паспорта
+                      {t('buyerData_recognizePassport')}
                     </>
                   )}
                 </button>
@@ -1675,7 +1570,7 @@ const Data = () => {
                       borderRadius: '50%',
                       animation: 'spin 1s linear infinite'
                     }}></span>
-                    Распознавание...
+                    {t('buyerData_recognizing')}
                   </>
                 ) : (
                   <>
@@ -1684,7 +1579,7 @@ const Data = () => {
                       <polyline points="17 8 12 3 7 8"></polyline>
                       <line x1="12" y1="3" x2="12" y2="15"></line>
                     </svg>
-                    Распознать с фото паспорта
+                    {t('buyerData_recognizePassport')}
                   </>
                 )}
               </button>
@@ -1704,7 +1599,7 @@ const Data = () => {
               />
               <div className="data-grid">
                 <div id="data-field-passportSeries" className="data-field">
-                  <label>Серия паспорта</label>
+                  <label>{t('buyerData_labelPassportSeries')}</label>
                   {isEditing ? (
                     <input
                       type="text"
@@ -1719,7 +1614,7 @@ const Data = () => {
                 </div>
 
                 <div id="data-field-passportNumber" className="data-field">
-                  <label>Номер паспорта</label>
+                  <label>{t('buyerData_labelPassportNumber')}</label>
                   {isEditing ? (
                     <input
                       type="text"
@@ -1733,7 +1628,7 @@ const Data = () => {
                 </div>
 
                 <div id="data-field-identificationNumber" className="data-field data-field-full">
-                  <label>Идентификационный номер</label>
+                  <label>{t('buyerData_labelIdNumber')}</label>
                   {isEditing ? (
                     <input
                       type="text"
@@ -1753,7 +1648,7 @@ const Data = () => {
                   className="data-save-btn data-save-btn--mobile-passport"
                   onClick={handleSave}
                   disabled={!hasUnsavedChanges}
-                  aria-label="Сохранить паспортные данные"
+                  aria-label={t('buyerData_savePassportAria')}
                 >
                   <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
                     <path
@@ -1764,7 +1659,7 @@ const Data = () => {
                       strokeLinejoin="round"
                     />
                   </svg>
-                  <span>Сохранить</span>
+                  <span>{t('buyerData_save')}</span>
                 </button>
               )}
             </section>
@@ -1772,7 +1667,7 @@ const Data = () => {
             </div>
 
             <section className="data-section">
-              <h2 className="section-title">Подключенные аккаунты</h2>
+              <h2 className="section-title">{t('buyerData_connectedAccounts')}</h2>
               <div className="connected-accounts">
                 <div className="account-item">
                   <div className="account-info">
@@ -1787,7 +1682,7 @@ const Data = () => {
                     <div className="account-details">
                       <div className="account-name">Google</div>
                       <div className="account-status">
-                        {connectedAccounts.google ? 'Подключен' : 'Не подключен'}
+                        {connectedAccounts.google ? t('buyerData_connected') : t('buyerData_notConnected')}
                       </div>
                     </div>
                   </div>
@@ -1796,7 +1691,7 @@ const Data = () => {
                       className="disconnect-button"
                       onClick={() => handleDisconnectAccount('google')}
                     >
-                      Отключить
+                      {t('buyerData_disconnect')}
                     </button>
                   )}
                 </div>
@@ -1806,14 +1701,15 @@ const Data = () => {
             <section className="data-section danger-section">
               <div className="danger-actions">
                 <div className="danger-info">
-                  <h3>Удаление аккаунта</h3>
-                  <p>После удаления аккаунта все ваши данные будут безвозвратно удалены. Это действие нельзя отменить.</p>
+                  <h3>{t('buyerData_deleteTitle')}</h3>
+                  <p>{t('buyerData_deleteText')}</p>
                 </div>
                 <button className="delete-account-button" onClick={handleDeleteAccount}>
-                  Удалить аккаунт
+                  {t('buyerData_deleteBtn')}
                 </button>
               </div>
             </section>
+          </div>
           </div>
         </main>
       </div>

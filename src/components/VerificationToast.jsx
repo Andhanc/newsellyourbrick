@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { FiAlertCircle, FiCheck, FiX, FiChevronDown, FiChevronUp, FiChevronRight, FiFile, FiUser, FiMail, FiMapPin, FiCreditCard } from 'react-icons/fi';
 import './VerificationToast.css';
 
@@ -14,9 +15,10 @@ function verificationToastPortal(node) {
 }
 
 function VerificationSuccessToast({ onDismiss }) {
+  const { t } = useTranslation();
   useEffect(() => {
-    const t = setTimeout(onDismiss, 10000);
-    return () => clearTimeout(t);
+    const timer = setTimeout(onDismiss, 10000);
+    return () => clearTimeout(timer);
   }, [onDismiss]);
 
   return verificationToastPortal(
@@ -25,16 +27,15 @@ function VerificationSuccessToast({ onDismiss }) {
         <div className="verification-toast__success-icon-wrap">
           <FiCheck className="verification-toast__success-icon" size={36} />
         </div>
-        <h4 className="verification-toast__success-title">Всё выполнено</h4>
-        <p className="verification-toast__success-text">
-          Все данные заполнены, подождите 24 часа для одобрения от менеджера.
-        </p>
+        <h4 className="verification-toast__success-title">{t('buyerVerify_successTitle')}</h4>
+        <p className="verification-toast__success-text">{t('buyerVerify_successText')}</p>
       </div>
     </div>
   );
 }
 
 const VerificationToast = ({ userId }) => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [status, setStatus] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -128,15 +129,15 @@ const VerificationToast = ({ userId }) => {
   if (!isVisible) return null;
   if (!status.missingFields || typeof status.missingFields !== 'object') return null;
 
-  const fieldLabels = {
-    firstName: { label: 'Имя', icon: <FiUser size={16} /> },
-    lastName: { label: 'Фамилия', icon: <FiUser size={16} /> },
-    emailOrPhone: { label: 'Email или телефон', icon: <FiMail size={16} /> },
-    country: { label: 'Страна', icon: <FiMapPin size={16} /> },
-    address: { label: 'Адрес', icon: <FiMapPin size={16} /> },
-    passportSeries: { label: 'Серия паспорта', icon: <FiCreditCard size={16} /> },
-    passportNumber: { label: 'Номер паспорта', icon: <FiCreditCard size={16} /> },
-    identificationNumber: { label: 'Идентификационный номер', icon: <FiCreditCard size={16} /> }
+  const fieldDefs = {
+    firstName: { labelKey: 'buyerData_labelFirstName', icon: <FiUser size={16} /> },
+    lastName: { labelKey: 'buyerData_labelLastName', icon: <FiUser size={16} /> },
+    emailOrPhone: { labelKey: 'buyerVerify_field_emailOrPhone', icon: <FiMail size={16} /> },
+    country: { labelKey: 'buyerVerify_field_country', icon: <FiMapPin size={16} /> },
+    address: { labelKey: 'buyerVerify_field_address', icon: <FiMapPin size={16} /> },
+    passportSeries: { labelKey: 'buyerData_labelPassportSeries', icon: <FiCreditCard size={16} /> },
+    passportNumber: { labelKey: 'buyerData_labelPassportNumber', icon: <FiCreditCard size={16} /> },
+    identificationNumber: { labelKey: 'buyerData_labelIdNumber', icon: <FiCreditCard size={16} /> },
   };
 
   const filledFields = [];
@@ -145,12 +146,13 @@ const VerificationToast = ({ userId }) => {
   // Безопасно обрабатываем missingFields
   try {
     Object.entries(status.missingFields || {}).forEach(([field, isMissing]) => {
-      const fieldInfo = fieldLabels[field];
-      if (fieldInfo) {
+      const def = fieldDefs[field];
+      if (def) {
+        const entry = { label: t(def.labelKey), icon: def.icon, field };
         if (isMissing) {
-          missingFields.push({ ...fieldInfo, field });
+          missingFields.push(entry);
         } else {
-          filledFields.push({ ...fieldInfo, field });
+          filledFields.push(entry);
         }
       }
     });
@@ -185,10 +187,8 @@ const VerificationToast = ({ userId }) => {
             <FiAlertCircle className="verification-toast__icon" />
           </div>
           <div className="verification-toast__header-text">
-            <h4 className="verification-toast__title">Регистрация не завершена</h4>
-            <p className="verification-toast__subtitle">
-              Заполните все поля для отправки на модерацию
-            </p>
+            <h4 className="verification-toast__title">{t('buyerVerify_titleIncomplete')}</h4>
+            <p className="verification-toast__subtitle">{t('buyerVerify_subtitle')}</p>
           </div>
         </div>
         
@@ -255,11 +255,13 @@ const VerificationToast = ({ userId }) => {
           <div className="verification-toast__stats">
             <div className="verification-toast__stat">
               <FiUser className="verification-toast__stat-icon" />
-              <span>{filledFieldsCount} из {totalFieldsCount} полей заполнено</span>
+              <span>
+                {t('buyerVerify_statsFields', { filled: filledFieldsCount, total: totalFieldsCount })}
+              </span>
             </div>
             <div className="verification-toast__stat">
               <FiFile className="verification-toast__stat-icon" />
-              <span>Документов: {documentsCount}</span>
+              <span>{t('buyerVerify_documentsCount', { count: documentsCount })}</span>
             </div>
           </div>
 
@@ -267,7 +269,7 @@ const VerificationToast = ({ userId }) => {
             <div className="verification-toast__section">
               <h5 className="verification-toast__section-title verification-toast__section-title--success">
                 <FiCheck size={16} />
-                Заполнено ({filledFields.length})
+                {t('buyerVerify_filledSection', { count: filledFields.length })}
               </h5>
               <ul className="verification-toast__fields-list verification-toast__fields-list--filled">
                 {filledFields.map((field, index) => (
@@ -285,7 +287,7 @@ const VerificationToast = ({ userId }) => {
             <div className="verification-toast__section">
               <h5 className="verification-toast__section-title verification-toast__section-title--warning">
                 <FiX size={16} />
-                Требуется заполнить ({missingFields.length})
+                {t('buyerVerify_missingSection', { count: missingFields.length })}
               </h5>
               <ul className="verification-toast__fields-list verification-toast__fields-list--missing">
                 {missingFields.map((field, index) => (
@@ -309,7 +311,7 @@ const VerificationToast = ({ userId }) => {
           {!hasDocuments && (
             <div className="verification-toast__warning">
               <FiFile className="verification-toast__warning-icon" />
-              <span>Загрузите документы на регистрацию в разделе профиля</span>
+              <span>{t('buyerVerify_uploadDocsHint')}</span>
             </div>
           )}
         </div>

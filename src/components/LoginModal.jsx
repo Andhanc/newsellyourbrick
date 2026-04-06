@@ -871,7 +871,11 @@ const LoginModal = ({ isOpen, onClose }) => {
             </div>
           )}
 
-          <button type="submit" className="login-modal__submit" disabled={isLoading}>
+          <button
+            type="submit"
+            className={`login-modal__submit${isLogin ? ' login-modal__submit--liquid-glass' : ''}`}
+            disabled={isLoading}
+          >
             {isLoading 
               ? (isLogin ? t('loginProcessing') : t('registerProcessing')) 
               : (isLogin ? t('loginButton') : t('registerButton'))}

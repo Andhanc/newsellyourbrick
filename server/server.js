@@ -293,6 +293,50 @@ function broadcastUserCabinetEvent(userId, payload) {
   });
 }
 
+/** In-app уведомление покупателю: верификация одобрена — можно делать ставки на аукционе */
+function notifyBuyerVerificationApproved(userId) {
+  try {
+    const uid = parseInt(String(userId), 10);
+    if (!uid) return;
+    notificationQueries.create({
+      user_id: uid,
+      type: 'verification_success',
+      title: 'Верификация пройдена',
+      message:
+        'Ваши документы одобрены администратором. Теперь вы можете делать ставки на аукционах и пользоваться всеми функциями покупателя.',
+      is_read: 0,
+      view_count: 0,
+    });
+    console.log('✅ Уведомление verification_success для пользователя', uid);
+  } catch (e) {
+    console.warn('⚠️ notifyBuyerVerificationApproved:', e.message);
+  }
+}
+
+/** In-app уведомление: верификация отклонена — нужно загрузить документы снова */
+function notifyBuyerVerificationRejected(userId, rejectionReason) {
+  try {
+    const uid = parseInt(String(userId), 10);
+    if (!uid) return;
+    const reason = rejectionReason && String(rejectionReason).trim() ? String(rejectionReason).trim() : null;
+    const message = reason
+      ? `Документы отклонены. Причина: ${reason}. Загрузите документы заново для повторной проверки.`
+      : 'Документы отклонены. Загрузите документы заново для повторной проверки.';
+    notificationQueries.create({
+      user_id: uid,
+      type: 'verification_rejected',
+      title: 'Верификация отклонена',
+      message,
+      data: { rejection_reason: reason },
+      is_read: 0,
+      view_count: 0,
+    });
+    console.log('✅ Уведомление verification_rejected для пользователя', uid);
+  } catch (e) {
+    console.warn('⚠️ notifyBuyerVerificationRejected:', e.message);
+  }
+}
+
 /**
  * GET /api/events/user-updates?user_id= — SSE: события для кабинета (верификация, модерация объявлений).
  * Одно долгоживущее соединение на вкладку; сервер пушит только при действиях админа.
@@ -1228,6 +1272,22 @@ app.get('/api/users/:id/verification-status', (req, res) => {
     
     // Получаем документы пользователя
     const documents = documentQueries.getByUserId(userId);
+    const rejectedDocuments = documents.filter(doc => doc.verification_status === 'rejected');
+    const rejectionReasonsUnique = [
+      ...new Set(
+        rejectedDocuments
+          .map((d) => (d.rejection_reason && String(d.rejection_reason).trim() ? String(d.rejection_reason).trim() : null))
+          .filter(Boolean)
+      ),
+    ];
+    const rejectionReasonSummary =
+      rejectionReasonsUnique.length > 0 ? rejectionReasonsUnique.join(' ') : null;
+    const roleNormForGate = String(user.role || 'buyer').toLowerCase();
+    const skipRejectionGate = roleNormForGate === 'admin';
+    const needsReverificationAfterRejection =
+      !skipRejectionGate &&
+      rejectedDocuments.length > 0 &&
+      !(user.is_verified === 1 || user.is_verified === true);
     const pendingDocuments = documents.filter(doc => doc.verification_status === 'pending');
     
     // Создаем объект для проверки готовности
@@ -1268,10 +1328,40 @@ app.get('/api/users/:id/verification-status', (req, res) => {
         isVerified: user.is_verified === 1 || user.is_verified === true,
         cardBound: user.card_bound === 1 || user.card_bound === true, // Добавляем статус привязки карты
         ownerCabinetProfileComplete: cabinet.ownerCabinetProfileComplete,
-        ownerCabinetHasPassword: cabinet.ownerCabinetHasPassword
+        ownerCabinetHasPassword: cabinet.ownerCabinetHasPassword,
+        needsReverificationAfterRejection,
+        rejectionReasonSummary,
+        rejectedDocumentsCount: rejectedDocuments.length
       }
     });
   } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * POST /api/users/:id/clear-rejected-documents — удалить все отклонённые документы после полной повторной отправки (3 фото).
+ * Вызывается клиентом после успешной загрузки комплекта в VerificationModal.
+ */
+app.post('/api/users/:id/clear-rejected-documents', (req, res) => {
+  try {
+    const id = parseInt(String(req.params.id), 10);
+    if (!id || id <= 0) {
+      return res.status(400).json({ success: false, error: 'Некорректный id пользователя' });
+    }
+    const user = userQueries.getById(id);
+    if (!user) {
+      return res.status(404).json({ success: false, error: 'Пользователь не найден' });
+    }
+    const result = documentQueries.deleteAllRejectedForUser(id);
+    try {
+      broadcastUserCabinetEvent(id, { type: 'user_verification', action: 'resubmit_cleared' });
+    } catch (e) {
+      console.warn('[SSE] resubmit_cleared:', e.message);
+    }
+    res.json({ success: true, data: { deleted: result.deleted } });
+  } catch (error) {
+    console.error('POST /api/users/:id/clear-rejected-documents:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });
@@ -1501,40 +1591,22 @@ app.put('/api/users/:id/approve', async (req, res) => {
     // Устанавливаем пользователя как верифицированного
     userQueries.update(id, { is_verified: 1 });
 
-    // Создаем уведомление в БД
     try {
-      console.log('📝 Создание уведомления для пользователя:', id);
-      const result = notificationQueries.create({
-        user_id: id,
-        type: 'verification_success',
-        title: 'Поздравляем с успешной верификацией!',
-        message: '🎉 Ваши документы были одобрены. Теперь вы можете полноценно пользоваться сервисом.',
-        is_read: 0,
-        view_count: 0
-      });
-      console.log('✅ Уведомление о верификации создано в БД, ID:', result.lastInsertRowid);
-      
-      // Проверяем, что уведомление действительно создано
+      notifyBuyerVerificationApproved(id);
       const createdNotif = notificationQueries.getByUserId(id);
       console.log('📋 Всего уведомлений у пользователя:', createdNotif ? createdNotif.length : 0);
-      if (createdNotif && createdNotif.length > 0) {
-        console.log('📄 Последнее уведомление:', {
-          id: createdNotif[0].id,
-          type: createdNotif[0].type,
-          title: createdNotif[0].title
-        });
-      }
     } catch (notifError) {
       console.error('❌ Не удалось создать уведомление в БД:', notifError);
-      console.error('   Ошибка:', notifError.message);
-      console.error('   Stack:', notifError.stack);
     }
 
     // Отправляем уведомление через WhatsApp (если доступно)
     if (user.phone_number && waClientReady) {
       try {
         const chatId = `${user.phone_number}@c.us`;
-        await waClient.sendMessage(chatId, '🎉 Поздравляем с успешной верификацией! Теперь вы можете полноценно пользоваться сервисом.');
+        await waClient.sendMessage(
+          chatId,
+          '🎉 Верификация пройдена! Документы одобрены. Теперь вы можете делать ставки на аукционах.'
+        );
       } catch (notifError) {
         console.warn('⚠️ Не удалось отправить уведомление через WhatsApp:', notifError.message);
       }
@@ -1587,6 +1659,13 @@ app.put('/api/users/:id/reject', async (req, res) => {
     pendingDocuments.forEach(doc => {
       documentQueries.updateStatus(doc.id, 'rejected', reviewed_by, rejection_reason || 'Документы не прошли проверку');
     });
+
+    userQueries.update(id, { is_verified: 0 });
+    try {
+      notifyBuyerVerificationRejected(id, rejection_reason || 'Документы не прошли проверку');
+    } catch (notifErr) {
+      console.warn('⚠️ verification_rejected notification:', notifErr.message);
+    }
 
     // Отправляем уведомление пользователю
     if (user.phone_number && waClientReady) {
@@ -2439,6 +2518,11 @@ app.put('/api/documents/:id/approve', async (req, res) => {
     if (allApproved) {
       userQueries.update(document.user_id, { is_verified: 1 });
       try {
+        notifyBuyerVerificationApproved(document.user_id);
+      } catch (e) {
+        console.warn('⚠️ Уведомление о верификации:', e.message);
+      }
+      try {
         broadcastUserCabinetEvent(document.user_id, { type: 'user_verification', action: 'approved' });
       } catch (e) {
         console.warn('[SSE] user cabinet broadcast:', e.message);
@@ -2447,11 +2531,11 @@ app.put('/api/documents/:id/approve', async (req, res) => {
     
     // Отправляем уведомление пользователю
     try {
-      if (user.phone_number && waClientReady) {
+      if (allApproved && user.phone_number && waClientReady) {
         const digits = String(user.phone_number).replace(/\D/g, '');
         const chatId = `${digits}@c.us`;
-        const message = `✅ Поздравляем с успешной верификацией!\n\nВаши документы были проверены и одобрены. Давайте познакомим вас с сервисом.`;
-        
+        const message =
+          '✅ Верификация пройдена!\n\nВсе документы одобрены. Теперь вы можете делать ставки на аукционах.';
         await waClient.sendMessage(chatId, message);
       }
     } catch (notifError) {
@@ -2490,6 +2574,26 @@ app.put('/api/documents/:id/reject', async (req, res) => {
     const user = userQueries.getById(document.user_id);
     if (!user) {
       return res.status(404).json({ success: false, error: 'Пользователь не найден' });
+    }
+
+    try {
+      userQueries.update(document.user_id, { is_verified: 0 });
+    } catch (uvErr) {
+      console.warn('⚠️ is_verified при отклонении документа:', uvErr.message);
+    }
+    try {
+      notifyBuyerVerificationRejected(document.user_id, rejectionReason);
+    } catch (notifErr) {
+      console.warn('⚠️ verification_rejected (документ):', notifErr.message);
+    }
+    try {
+      broadcastUserCabinetEvent(document.user_id, {
+        type: 'user_verification',
+        action: 'rejected',
+        reason: rejectionReason || null,
+      });
+    } catch (cabErr) {
+      console.warn('[SSE] user cabinet (document reject):', cabErr.message);
     }
     
     // Отправляем уведомление пользователю
@@ -4276,25 +4380,26 @@ app.post('/api/auth/email/login', async (req, res) => {
       });
     }
     
-    // Пароль верный, обновляем статус онлайн
+    // Пароль верный, обновляем статус онлайн (update может сгенерировать user_id_number для старых записей)
     userQueries.update(user.id, { is_online: 1 });
-    
-    console.log('✅ Вход успешен:', { id: user.id, email: user.email, role: user.role });
-    
-    // Не возвращаем пароль в ответе (для безопасности)
-    const { password: userPassword, ...userWithoutPassword } = user;
-    
-    res.json({ 
-      success: true, 
+    const refreshedUser = userQueries.getById(user.id) || user;
+
+    console.log('✅ Вход успешен:', { id: refreshedUser.id, email: refreshedUser.email, role: refreshedUser.role });
+
+    res.json({
+      success: true,
       user: {
-        id: user.id,
-        name: `${user.first_name} ${user.last_name}`.trim() || user.email || 'Пользователь',
-        email: user.email,
-        role: user.role,
-        phone: user.phone_number,
-        is_verified: user.is_verified,
-        is_blocked: user.is_blocked === 1
-      }
+        id: refreshedUser.id,
+        name: `${refreshedUser.first_name} ${refreshedUser.last_name}`.trim() || refreshedUser.email || 'Пользователь',
+        email: refreshedUser.email,
+        role: refreshedUser.role,
+        phone: refreshedUser.phone_number,
+        is_verified: refreshedUser.is_verified,
+        is_blocked: refreshedUser.is_blocked === 1,
+        ...(refreshedUser.hasOwnProperty('user_id_number') && refreshedUser.user_id_number
+          ? { user_id_number: refreshedUser.user_id_number }
+          : {}),
+      },
     });
   } catch (error) {
     console.error('❌ Ошибка при входе:', error);
@@ -4710,6 +4815,9 @@ app.post('/api/auth/telegram', async (req, res) => {
           is_blocked: updatedUser.is_blocked === 1,
           telegram_id: updatedUser.telegram_id,
           telegram_username: updatedUser.telegram_username,
+          ...(updatedUser.hasOwnProperty('user_id_number') && updatedUser.user_id_number
+            ? { user_id_number: updatedUser.user_id_number }
+            : {}),
         },
       });
     }
@@ -11127,6 +11235,22 @@ app.post('/api/bids', (req, res) => {
           error: 'Для участия в аукционе необходим депозит. Пожалуйста, пополните депозит.' 
         });
       }
+
+      // Покупатели с депозитом: ставки только после одобрения верификации админом (is_verified)
+      const roleNorm = String(user.role || 'buyer').toLowerCase();
+      const skipKycForBid =
+        roleNorm === 'seller' || roleNorm === 'owner' || roleNorm === 'admin';
+      if (!skipKycForBid) {
+        const isVerified = user.is_verified === 1 || user.is_verified === true;
+        if (!isVerified) {
+          return res.status(403).json({
+            success: false,
+            code: 'VERIFICATION_PENDING',
+            error:
+              'Верификация профиля на рассмотрении у администратора. После одобрения вы сможете делать ставки на аукционе. Следить за статусом можно в уведомлениях и в разделе «Профиль».',
+          });
+        }
+      }
     }
     
     // Разрешаем ставки для всех объектов (как аукционных, так и обычных)
@@ -11402,7 +11526,8 @@ app.get('/api/bids/property/:id', (req, res) => {
         b.property_id,
         b.bid_amount,
         b.created_at,
-        u.user_id_number
+        u.user_id_number,
+        u.country AS bidder_country
       FROM bids b
       LEFT JOIN users u ON b.user_id = u.id
       WHERE b.property_id = ?

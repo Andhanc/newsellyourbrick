@@ -1,6 +1,7 @@
 'use client';
 
 import { useScroll, useTransform, motion } from 'framer-motion';
+import { useLayoutScrollRef } from '@/context/LayoutScrollContext';
 import { useEffect, useRef, useState } from 'react';
 import './Timeline.css';
 
@@ -51,10 +52,12 @@ export const Timeline = ({ data }) => {
     return () => cancelAnimationFrame(id);
   }, [data, height]);
 
-  const { scrollYProgress } = useScroll({
-    target: containerRef,
-    offset: ['start 10%', 'end 50%'],
-  });
+  const layoutScrollRef = useLayoutScrollRef();
+  const { scrollYProgress } = useScroll(
+    layoutScrollRef
+      ? { target: containerRef, container: layoutScrollRef, offset: ['start 10%', 'end 50%'] }
+      : { target: containerRef, offset: ['start 10%', 'end 50%'] }
+  );
 
   const heightTransform = useTransform(scrollYProgress, [0, 1], [0, Math.max(height, 1)]);
   const opacityTransform = useTransform(scrollYProgress, [0, 0.1], [0, 1]);

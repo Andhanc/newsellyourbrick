@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import CountdownTimer from './CountdownTimer'
 import { getApiBaseUrl, getApiBaseUrlSync } from '../utils/apiConfig'
+import { flagEmojiForStoredCountry } from '../utils/countryFlagFromStored'
 import './BiddingHistoryModal.css'
 
 // Используем синхронную версию для инициализации, затем обновим при загрузке
@@ -159,7 +160,7 @@ const BiddingHistoryModal = ({ isOpen, onClose, property, refreshTrigger }) => {
           </div>
 
           {hasPeriod && (
-            <div className="bidding-history-period">
+            <div className="bidding-history-period bidding-history-modal__narrow">
               <div className="bidding-history-period__icon">
                 <FiClock size={18} />
               </div>
@@ -175,12 +176,12 @@ const BiddingHistoryModal = ({ isOpen, onClose, property, refreshTrigger }) => {
           )}
 
           {auctionEndDate && (
-            <div className="bidding-history-timer-wrapper">
+            <div className="bidding-history-timer-wrapper bidding-history-modal__narrow">
               <CountdownTimer endTime={auctionEndDate} />
             </div>
           )}
 
-          <div className="bidding-history-start-price">
+          <div className="bidding-history-start-price bidding-history-modal__narrow">
             <div className="bidding-history-start-price__icon">
               <FiDollarSign size={20} />
             </div>
@@ -196,7 +197,7 @@ const BiddingHistoryModal = ({ isOpen, onClose, property, refreshTrigger }) => {
           {bids.length > 0 && (() => {
             const maxBid = Math.max(...bids.map(b => b.bid_amount))
             return (
-              <div className="bidding-history-current-bid">
+              <div className="bidding-history-current-bid bidding-history-modal__narrow">
                 <div className="bidding-history-current-bid__icon">
                   <FiDollarSign size={20} />
                 </div>
@@ -219,19 +220,29 @@ const BiddingHistoryModal = ({ isOpen, onClose, property, refreshTrigger }) => {
               {t('bidHistoryNoBids')}
             </p>
           ) : (
-            <div className="bidding-history-list">
+            <div className="bidding-history-list bidding-history-modal__narrow">
               <div className="bidding-history-list__header">
                 <h3 className="bidding-history-list__title">{t('bidHistoryAllBids', { count: bids.length })}</h3>
               </div>
               <div className="bids-list">
                 {bids.map((bid, index) => {
                   const isHighest = index === 0 && bid.bid_amount === Math.max(...bids.map(b => b.bid_amount))
+                  const countryFlag = flagEmojiForStoredCountry(bid.bidder_country)
                   return (
                     <div key={bid.id || index} className={`bid-item ${isHighest ? 'bid-item--highest' : ''}`}>
                       <div className="bid-item__info">
                         <div className="bid-item__header">
                           <div className="bid-item__user">
                             <FiUser size={16} />
+                            {countryFlag && (
+                              <span
+                                className="bid-item__country-flag"
+                                title={bid.bidder_country}
+                                aria-hidden
+                              >
+                                {countryFlag}
+                              </span>
+                            )}
                             <span className="bid-item__user-name">
                               {bid.user_id_number || bid.user_id || t('propertyDetailUnknown')}
                             </span>

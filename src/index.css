@@ -28,6 +28,18 @@ html, body {
   margin: 0;
   padding: 0;
   width: 100%;
+  max-width: 100%;
+  height: 100%;
+  /* Прокрутка только внутри .app-layout — убирает вертикальный/горизонтальный overscroll у document */
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+@supports (height: 100dvh) {
+  html, body {
+    height: 100dvh;
+    max-height: 100dvh;
+  }
 }
 
 html {
@@ -49,7 +61,7 @@ body {
   line-height: 1.6;
   scrollbar-width: none; /* Firefox */
   -ms-overflow-style: none; /* IE and Edge */
-  -webkit-overflow-scrolling: touch; /* плавный инерционный скролл на iOS */
+  -webkit-overflow-scrolling: touch; /* плавный инерционный скролл на iOS (на контейнере .app-layout) */
 }
 
 body::-webkit-scrollbar {
@@ -58,6 +70,29 @@ body::-webkit-scrollbar {
 
 #root {
   width: 100%;
+  max-width: 100%;
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Clerk / StrictMode: один внешний узел должен тянуться на всю высоту до .app-root-fill */
+#root > * {
+  flex: 1 1 0;
+  min-height: 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+@supports (height: 100dvh) {
+  #root {
+    height: 100dvh;
+    max-height: 100dvh;
+  }
 }
 
 a {

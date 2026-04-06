@@ -1,6 +1,6 @@
 import { lazy, Suspense } from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { TonConnectUIProvider } from '@tonconnect/ui-react'
 import MainPage from './pages/MainPage'
 import OAuthBridgePage from './pages/OAuthBridgePage'
@@ -10,12 +10,15 @@ import ClerkAuthHandler from './components/ClerkAuthHandler'
 import ToastContainer from './components/ToastContainer'
 import VisitorHeartbeat from './components/VisitorHeartbeat'
 import UserCabinetSseBridge from './components/UserCabinetSseBridge'
-import { validateSession, getUserData } from './services/authService'
+import VerificationRejectedGate from './components/VerificationRejectedGate'
+import { validateSession, getUserData, ensureLocalUserIdFromSession } from './services/authService'
 import { prefetchAuctionList } from './services/auctionListCache'
 import { PropertyFavoritesProvider } from './context/PropertyFavoritesContext'
 import { runDevBackendHintOnce } from './utils/devBackendHint'
 import './App.css'
 import { GlassFilterDefs } from './components/ui/GlassFilterDefs'
+import { LayoutScrollRefContext } from './context/LayoutScrollContext'
+import { scrollMainTo } from './utils/mainScroll'
 
 // Ленивая загрузка страниц — чанк грузится только при переходе на маршрут
 const Home = lazy(() => import('./pages/Home'))
@@ -107,14 +110,18 @@ function ScrollToTop() {
   const location = useLocation()
 
   useEffect(() => {
-    // Прокручиваем страницу вверх при каждом изменении маршрута
-    window.scrollTo({
-      top: 0,
-      left: 0,
-      behavior: 'instant' // Используем 'instant' вместо 'smooth' для мгновенной прокрутки
-    })
+    scrollMainTo(0, 0, 'instant')
   }, [location.pathname])
 
+  return null
+}
+
+/** Подтягивает числовой userId из userData в localStorage при навигации (легаси без Clerk). */
+function NumericUserIdHydration() {
+  const location = useLocation()
+  useEffect(() => {
+    ensureLocalUserIdFromSession()
+  }, [location.pathname])
   return null
 }
 
@@ -267,6 +274,8 @@ function AdminSessionCleaner() {
 }
 
 function App() {
+  const appLayoutRef = useRef(null)
+
   // Инициализируем состояние блокировки из localStorage сразу
   const [isBlocked, setIsBlocked] = useState(() => {
     const isBlockedFlag = localStorage.getItem('isBlocked') === 'true';
@@ -371,22 +380,27 @@ function App() {
     : '/tonconnect-manifest.json'
 
   return (
+    <div className="app-root-fill">
     <TonConnectUIProvider manifestUrl={tonManifestUrl}>
     <Router>
+      <div className="app-shell">
       <PropertyFavoritesProvider>
       <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
       <ScrollToTop />
+      <NumericUserIdHydration />
       <MainPageViewportLock />
       <AuctionMobileOverflowLock />
       <ReferralCapture />
       <VisitorHeartbeat />
       <SessionValidator onBlockedChange={setIsBlocked} />
       <UserCabinetSseBridge />
+      <VerificationRejectedGate blockedUser={isBlocked} />
       <AdminSessionCleaner />
       <ClerkAuthSync />
       <ClerkAuthHandler />
       <GlassFilterDefs />
-      <div className={`app-layout ${isBlocked ? 'app-layout--blocked' : ''}`}>
+      <LayoutScrollRefContext.Provider value={appLayoutRef}>
+      <div ref={appLayoutRef} className={`app-layout ${isBlocked ? 'app-layout--blocked' : ''}`}>
         <div className="app-layout__content">
           <Suspense fallback={<PageFallback />}>
             <Routes>
@@ -425,6 +439,7 @@ function App() {
         </div>
         <Footer />
       </div>
+      </LayoutScrollRefContext.Provider>
       {isBlocked && (
         <Suspense fallback={null}>
           <BlockedUserModal isOpen={true} />
@@ -432,8 +447,10 @@ function App() {
       )}
       <ToastContainer />
       </PropertyFavoritesProvider>
+      </div>
     </Router>
     </TonConnectUIProvider>
+    </div>
   )
 }
 

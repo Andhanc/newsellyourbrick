@@ -10,7 +10,13 @@ import Hero from '../components/Hero'
 import PropertyList from '../components/PropertyList'
 import FAQ from '../components/FAQ'
 import DepositButton from '../components/DepositButton'
-import { getUserData, isAuthenticated } from '../services/authService'
+import {
+  getUserData,
+  isAuthenticated,
+  CLERK_DB_USER_SYNCED,
+  fetchNumericDbUserIdForApi,
+  getStoredNumericUserId,
+} from '../services/authService'
 import { syncAssistantLead } from '../services/assistantLeadService'
 import { askPropertyAssistant, detectManagerContactIntent } from '../services/aiService'
 import { getCachedList, hasCachedList, fetchAuctionList, setCachedList } from '../services/auctionListCache'
@@ -66,7 +72,7 @@ function Home() {
   const { user, isLoaded: userLoaded } = useUser()
   const { isSignedIn, isLoaded: authLoaded } = useAuth()
   const userData = getUserData()
-  const [dbUserId, setDbUserId] = useState(null)
+  const [dbUserId, setDbUserId] = useState(() => getStoredNumericUserId())
   const navigate = useNavigate()
   const location = useLocation()
   const isAuctionRoute = location.pathname === '/auction'
@@ -124,11 +130,11 @@ function Home() {
   useEffect(() => {
     let eventSource = null
     let reconnectTimer = null
-    const baseUrlRef = { current: null }
+    let cancelled = false
 
     const connect = async () => {
       const base = await getApiBaseUrl()
-      baseUrlRef.current = base
+      if (cancelled) return // cleanup уже запущен — не создавать новое соединение
       const url = base.startsWith('http') ? `${base}/events/auction-updates` : `${window.location.origin}${base}/events/auction-updates`
       eventSource = new EventSource(url)
       eventSource.onopen = () => {
@@ -186,6 +192,7 @@ function Home() {
         } catch (_) {}
       }
       eventSource.onerror = () => {
+        if (cancelled) return
         if (eventSource) {
           eventSource.close()
           eventSource = null
@@ -199,65 +206,42 @@ function Home() {
     }
     connect()
     return () => {
+      cancelled = true
       if (reconnectTimer) clearTimeout(reconnectTimer)
       if (eventSource) eventSource.close()
     }
   }, [])
 
-  // Получаем числовой ID из БД для Clerk пользователей
+  // Синхронизация числового userId после Clerk→БД (депозит не должен «обнуляться» из‑за user_xxx в storage)
   useEffect(() => {
-    // Если dbUserId уже установлен, не делаем ничего
-    if (dbUserId) {
-      return
-    }
-    
-    const fetchDbUserId = async () => {
-      // Проверяем localStorage сначала
+    const applyNumericUserIdFromStorage = () => {
       const savedUserId = localStorage.getItem('userId')
       if (savedUserId && /^\d+$/.test(savedUserId)) {
-        setDbUserId(parseInt(savedUserId))
-        return
-      }
-      
-      // Если userLoaded еще не загружен, ждем
-      if (!userLoaded) {
-        return
-      }
-      
-      const isClerkAuth = user && userLoaded
-      const isOldAuth = isAuthenticated()
-      
-      // Для Clerk пользователей получаем ID из БД
-      if (isClerkAuth && user) {
-        try {
-          const API_BASE_URL = await getApiBaseUrl()
-          
-          const userEmail = user.primaryEmailAddress?.emailAddress || user.emailAddresses?.[0]?.emailAddress
-          if (userEmail) {
-            const userResponse = await fetch(`${API_BASE_URL}/users/email/${encodeURIComponent(userEmail)}`)
-            if (userResponse.ok) {
-              const userData = await userResponse.json()
-              if (userData.success && userData.data && userData.data.id) {
-                const numericId = userData.data.id
-                setDbUserId(numericId)
-                localStorage.setItem('userId', String(numericId))
-              }
-            }
-          }
-        } catch (e) {
-          console.warn('Не удалось получить userId из БД:', e)
-        }
-      } else if (isOldAuth) {
-        // Для старой системы авторизации используем ID из getUserData
-        const currentUserData = getUserData()
-        const userId = currentUserData?.id
-        if (userId && /^\d+$/.test(userId.toString())) {
-          setDbUserId(parseInt(userId))
-        }
+        const n = parseInt(savedUserId, 10)
+        setDbUserId((prev) => (prev === n ? prev : n))
       }
     }
-    
-    fetchDbUserId()
+    applyNumericUserIdFromStorage()
+    window.addEventListener(CLERK_DB_USER_SYNCED, applyNumericUserIdFromStorage)
+    return () => window.removeEventListener(CLERK_DB_USER_SYNCED, applyNumericUserIdFromStorage)
+  }, [])
+
+  // Числовой id БД: легаси (email/телефон) не блокируем ожиданием Clerk userLoaded
+  useEffect(() => {
+    let cancelled = false
+    const run = async () => {
+      const id = await fetchNumericDbUserIdForApi({
+        clerkUser: user,
+        clerkUserLoaded: userLoaded,
+      })
+      if (!cancelled && id != null) {
+        setDbUserId((prev) => (prev === id ? prev : id))
+      }
+    }
+    void run()
+    return () => {
+      cancelled = true
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userLoaded, user?.id, user?.primaryEmailAddress?.emailAddress])
 
@@ -265,7 +249,10 @@ function Home() {
   useEffect(() => {
     const loadUserDeposit = async () => {
       if (!dbUserId) {
-        setUserDeposit(0)
+        // Не сбрасываем в 0 если пользователь залогинен — id ещё грузится
+        if (!localStorage.getItem('isLoggedIn') || localStorage.getItem('isLoggedIn') !== 'true') {
+          setUserDeposit(0)
+        }
         return
       }
       

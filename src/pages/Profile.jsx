@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
-import { Link, useNavigate, useLocation } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { useUser, useClerk, useAuth } from '@clerk/clerk-react'
 import { FaPencilAlt } from 'react-icons/fa'
 import { getUserData, saveUserData, logout, clearUserData } from '../services/authService'
@@ -10,13 +11,20 @@ import PricingCards from '../components/ui/PricingCards'
 import { startProSubscriptionCheckout } from '../utils/subscriptionCheckout'
 import { showNotification } from '../utils/toastHelper'
 import { formatBillingReasonForUi } from '../utils/formatBillingReason'
+import BuyerCabinetSidebar from '../components/BuyerCabinetSidebar'
+import { useChainedAppLayoutScroll } from '../hooks/useChainedAppLayoutScroll'
 import './Profile.css'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
 
 const Profile = () => {
   const navigate = useNavigate()
-  const { pathname } = useLocation()
+  const { t, i18n } = useTranslation()
+  const billingLocale = (() => {
+    const code = (i18n.language || 'ru').split('-')[0]
+    const map = { ru: 'ru-RU', en: 'en-US', de: 'de-DE', es: 'es-ES', fr: 'fr-FR', sv: 'sv-SE' }
+    return map[code] || 'en-US'
+  })()
   const { user, isLoaded: userLoaded } = useUser()
   const { isSignedIn, isLoaded: authLoaded } = useAuth()
   const { signOut } = useClerk()
@@ -38,10 +46,16 @@ const Profile = () => {
     userIdNumber: '',
     role: 'buyer'
   })
+  const profilePageRef = useRef(null)
+  const profileMainScrollRef = useRef(null)
   const fileInputRef = useRef(null)
   const passportInputRef = useRef(null)
   const selfieInputRef = useRef(null)
   const passportWithFaceInputRef = useRef(null)
+
+  useChainedAppLayoutScroll(profilePageRef, profileMainScrollRef, {
+    active: !isLoading && userLoaded,
+  })
   const [userId, setUserId] = useState(null)
   const [uploading, setUploading] = useState({ passport: false, selfie: false, passportWithFace: false })
   const [userDocuments, setUserDocuments] = useState({ passport: null, selfie: null, passportWithFace: null })
@@ -138,7 +152,7 @@ const Profile = () => {
             const gd = getUserData()
             if (gd.isLoggedIn) {
               const displayName =
-                `${user.first_name || ''} ${user.last_name || ''}`.trim() || gd.name || 'Пользователь'
+                `${user.first_name || ''} ${user.last_name || ''}`.trim() || gd.name || t('buyerCabinet_userPlaceholder')
               saveUserData(
                 {
                   name: displayName,
@@ -434,7 +448,7 @@ const Profile = () => {
       })
       
       // Формируем имя пользователя
-      let userName = 'Пользователь'
+      let userName = t('buyerCabinet_userPlaceholder')
       if (user.fullName) {
         userName = user.fullName
       } else if (user.firstName || user.lastName) {
@@ -569,7 +583,7 @@ const Profile = () => {
             }
 
             const nameParts = userName.split(' ')
-            const firstName = nameParts[0] || 'Пользователь'
+            const firstName = nameParts[0] || t('buyerCabinet_userPlaceholder')
             const lastName = nameParts.slice(1).join(' ') || ''
             
             // Получаем роль из sessionStorage (сохранена при регистрации через Clerk)
@@ -655,7 +669,7 @@ const Profile = () => {
       findOrCreateUserInDB()
       
       const newProfileData = {
-        name: clerkUserData.name || 'Пользователь',
+        name: clerkUserData.name || t('buyerCabinet_userPlaceholder'),
         phone: clerkUserData.phoneFormatted || clerkUserData.phone || '',
         email: clerkUserData.email || '',
         avatar: clerkUserData.picture || null,
@@ -680,7 +694,7 @@ const Profile = () => {
       
       if (userData.isLoggedIn) {
         setProfileData({
-          name: userData.name || 'Пользователь',
+          name: userData.name || t('buyerCabinet_userPlaceholder'),
           phone: userData.phoneFormatted || userData.phone || '',
           email: userData.email || '',
           avatar: userData.picture || null,
@@ -694,9 +708,29 @@ const Profile = () => {
             let dbUserId = null
             const userEmail = userData.email
             const userPhone = userData.phone || userData.phoneFormatted
+
+            // Числовой ID из сессии (email/Telegram/WhatsApp и т.д.) — не полагаемся только на email/телефон
+            const storedNumericId = userData.id || localStorage.getItem('userId')
+            if (!dbUserId && storedNumericId && /^\d+$/.test(String(storedNumericId))) {
+              const numericSessionId = parseInt(String(storedNumericId), 10)
+              if (numericSessionId > 0) {
+                try {
+                  const meResponse = await fetch(`${API_BASE_URL}/users/${numericSessionId}`)
+                  if (meResponse.ok) {
+                    const meJson = await meResponse.json()
+                    if (meJson.success && meJson.data?.id) {
+                      dbUserId = meJson.data.id
+                      console.log('✅ Пользователь найден по сохранённому ID БД:', dbUserId)
+                    }
+                  }
+                } catch (e) {
+                  console.warn('⚠️ Profile: не удалось загрузить пользователя по сохранённому ID', e)
+                }
+              }
+            }
             
             // Сначала пытаемся найти пользователя по email
-            if (userEmail) {
+            if (!dbUserId && userEmail) {
               const emailResponse = await fetch(`${API_BASE_URL}/users/email/${encodeURIComponent(userEmail.toLowerCase())}`)
               if (emailResponse.ok) {
                 const emailData = await emailResponse.json()
@@ -722,10 +756,10 @@ const Profile = () => {
               }
             }
             
-            // Если пользователь не найден, создаем его
+            // Если пользователь не найден, создаём только при отсутствии валидного ID в сессии
             if (!dbUserId) {
-              const nameParts = (userData.name || 'Пользователь').split(' ')
-              const firstName = nameParts[0] || 'Пользователь'
+              const nameParts = (userData.name || t('buyerCabinet_userPlaceholder')).split(' ')
+              const firstName = nameParts[0] || t('buyerCabinet_userPlaceholder')
               const lastName = nameParts.slice(1).join(' ') || ''
               
               // Используем роль из userData или localStorage
@@ -762,11 +796,13 @@ const Profile = () => {
               }
             }
             
-            // Используем ID из БД
+            // Используем ID из БД и подтягиваем поля профиля (в т.ч. user_id_number — «номер покупателя»)
             if (dbUserId) {
               setUserId(dbUserId)
               localStorage.setItem('userId', String(dbUserId))
+              await loadUserDataFromDB(dbUserId)
               loadUserDocuments(dbUserId)
+              loadVerificationStatus(dbUserId)
             } else {
               console.warn('⚠️ Не удалось получить ID пользователя из БД')
               const fallbackId = userData.id || localStorage.getItem('userId')
@@ -775,7 +811,9 @@ const Profile = () => {
                 const numericFallbackId = typeof fallbackId === 'string' ? parseInt(fallbackId, 10) : Number(fallbackId)
                 if (!isNaN(numericFallbackId) && numericFallbackId > 0) {
                   setUserId(numericFallbackId)
+                  await loadUserDataFromDB(numericFallbackId)
                   loadUserDocuments(numericFallbackId)
+                  loadVerificationStatus(numericFallbackId)
                 }
               }
             }
@@ -787,7 +825,9 @@ const Profile = () => {
               const numericFallbackId = typeof fallbackId === 'string' ? parseInt(fallbackId, 10) : Number(fallbackId)
               if (!isNaN(numericFallbackId) && numericFallbackId > 0) {
                 setUserId(numericFallbackId)
+                await loadUserDataFromDB(numericFallbackId)
                 loadUserDocuments(numericFallbackId)
+                loadVerificationStatus(numericFallbackId)
               }
             }
           }
@@ -903,7 +943,7 @@ const Profile = () => {
   }
 
   const handleLogout = async () => {
-    if (!window.confirm('Вы уверены, что хотите выйти?')) {
+    if (!window.confirm(t('buyerCabinet_logoutConfirm'))) {
       return
     }
 
@@ -956,14 +996,14 @@ const Profile = () => {
     return (
       <div className="profile-page" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: '18px', color: '#666', marginBottom: '16px' }}>Загрузка данных профиля...</div>
+          <div style={{ fontSize: '18px', color: '#666', marginBottom: '16px' }}>{t('buyerCabinet_loadingProfile')}</div>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="profile-page">
+    <div className="profile-page" ref={profilePageRef}>
       {/* Всплывающее уведомление о прогрессе верификации */}
       {userId && <VerificationToast userId={userId} />}
       
@@ -996,149 +1036,14 @@ const Profile = () => {
         </>
       )}
       
-      <div className="profile-container">
-        <aside className="profile-sidebar">
-          <div className="sidebar-header" style={{ marginTop: '24px' }}>
-            <button 
-              onClick={() => navigate('/')} 
-              className="back-button"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-                padding: '12px 24px',
-                backgroundColor: 'transparent',
-                border: 'none',
-                cursor: 'pointer',
-                color: '#0ABAB5',
-                fontSize: '18px',
-                fontWeight: '600',
-                transition: 'opacity 0.2s'
-              }}
-              onMouseEnter={(e) => e.currentTarget.style.opacity = '0.7'}
-              onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
-            >
-              <svg width="24" height="24" viewBox="0 0 20 20" fill="none">
-                <path d="M12.5 15L7.5 10L12.5 5" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-              <span>Назад</span>
-            </button>
-            <button 
-              type="button"
-              className="header-logout-button"
-              onClick={(e) => {
-                e.preventDefault()
-                e.stopPropagation()
-                handleLogout()
-              }}
-            >
-              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                <path d="M7 2H3C2.44772 2 2 2.44772 2 3V15C2 15.5523 2.44772 16 3 16H7M12 13L15 10M15 10L12 7M15 10H6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-              <span>Выйти</span>
-            </button>
-          </div>
-          <nav className="sidebar-nav">
-            <Link to="/profile" className={pathname === '/profile' ? 'nav-item active' : 'nav-item'}>
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                <path d="M10 10C12.7614 10 15 7.76142 15 5C15 2.23858 12.7614 0 10 0C7.23858 0 5 2.23858 5 5C5 7.76142 7.23858 10 10 10Z" fill="currentColor"/>
-                <path d="M10 12C5.58172 12 2 13.7909 2 16V20H18V16C18 13.7909 14.4183 12 10 12Z" fill="currentColor"/>
-              </svg>
-              <span>Профиль</span>
-            </Link>
-            <Link to="/profile/bookings" className={pathname === '/profile/bookings' ? 'nav-item active' : 'nav-item'}>
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <rect x="3" y="4" width="14" height="13" rx="2" stroke="currentColor" strokeWidth="1.5"/>
-                <path d="M3 8H17" stroke="currentColor" strokeWidth="1.5"/>
-                <path d="M7 2V5M13 2V5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-              </svg>
-              <span>Мои бронирования</span>
-            </Link>
-            <Link to="/data" className="nav-item">
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                <rect x="2" y="4" width="16" height="12" rx="2" stroke="currentColor" strokeWidth="1.5"/>
-                <path d="M6 8H14M6 12H12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-              </svg>
-              <span>Данные</span>
-              {shouldShowDataIndicator() && (
-                <span className="nav-item-indicator"></span>
-              )}
-            </Link>
-            <Link to="/subscriptions" className="nav-item">
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                <path d="M10 2L12.5 7.5L19 10L12.5 12.5L10 19L7.5 12.5L1 10L7.5 7.5L10 2Z" fill="currentColor"/>
-              </svg>
-              <span>Подписки</span>
-            </Link>
-            <Link to="/history" className="nav-item">
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                <rect x="2" y="4" width="16" height="12" rx="2" stroke="currentColor" strokeWidth="1.5"/>
-                <path d="M6 8H14M6 12H10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-              </svg>
-              <span>История</span>
-            </Link>
-            <Link to="/chat" className="nav-item">
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                <path d="M10 2C5.58172 2 2 5.58172 2 10C2 14.4183 5.58172 18 10 18C14.4183 18 18 14.4183 18 10C18 5.58172 14.4183 2 10 2Z" stroke="currentColor" strokeWidth="1.5"/>
-                <path d="M7 8H13M7 12H13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-              </svg>
-              <span>Чат</span>
-            </Link>
-            <Link to="/favorites" className="nav-item">
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                <path d="M10 2L12.5 7.5L19 10L12.5 12.5L10 19L7.5 12.5L1 10L7.5 7.5L10 2Z" fill="currentColor"/>
-              </svg>
-              <span>Понравилось</span>
-            </Link>
-            <Link to="/compare" className="nav-item">
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                <path d="M3 4h6v6H3V4zm8 0h6v6h-6V4zM3 12h6v6H3v-6zm8 0h6v6h-6v-6z" fill="currentColor"/>
-              </svg>
-              <span>Сравнение</span>
-            </Link>
-          </nav>
+      <div className="profile-container buyer-cabinet-layout-container">
+        <BuyerCabinetSidebar
+          onLogout={handleLogout}
+          showDataIndicator={shouldShowDataIndicator()}
+        />
 
-          <div className="sidebar-footer">
-            <div className="language-selector">
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.5"/>
-                <path d="M8 1C9.5 3 10.5 5.5 10.5 8C10.5 10.5 9.5 13 8 15M8 1C6.5 3 5.5 5.5 5.5 8C5.5 10.5 6.5 13 8 15M1 8H15" stroke="currentColor" strokeWidth="1.5"/>
-              </svg>
-              <span>Русский</span>
-            </div>
-            <a href="#" className="help-link">
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.5"/>
-                <path d="M8 5V8M8 11H8.01" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-              </svg>
-              <span>Справка</span>
-            </a>
-            <a href="#" className="help-link">
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" strokeWidth="1.5"/>
-                <path d="M6 6H10M6 10H10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-              </svg>
-              <span>Яндекс ID для сайта</span>
-            </a>
-            <div className="copyright">© 2001-2025 Яндекс</div>
-            <button 
-              type="button"
-              className="logout-button" 
-              onClick={(e) => {
-                e.preventDefault()
-                e.stopPropagation()
-                handleLogout()
-              }}
-            >
-              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                <path d="M7 2H3C2.44772 2 2 2.44772 2 3V15C2 15.5523 2.44772 16 3 16H7M12 13L15 10M15 10L12 7M15 10H6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-              <span>Выйти</span>
-            </button>
-          </div>
-        </aside>
-
-        <main className="profile-main">
+        <main className="profile-main buyer-cabinet-layout-main">
+          <div className="buyer-cabinet-main-scroll" ref={profileMainScrollRef}>
           <div className="profile-header">
             <div className="profile-header-top">
               <div className="profile-avatar-wrapper">
@@ -1166,7 +1071,7 @@ const Profile = () => {
                       <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
                         <path d="M12 4V20M4 12H20" stroke="white" strokeWidth="2" strokeLinecap="round"/>
                       </svg>
-                      <span className="avatar-edit-text">Изменить фото</span>
+                      <span className="avatar-edit-text">{t('buyerCabinet_changePhoto')}</span>
                     </div>
                   )}
                   <input
@@ -1180,19 +1085,19 @@ const Profile = () => {
               </div>
               <div className="profile-info">
                 <div className="profile-name">
-                  <h1>{profileData.name || 'Загрузка...'}</h1>
+                  <h1>{profileData.name || t('loading')}</h1>
                   {!isEditing ? (
-                    <button className="edit-button" onClick={handleEdit} aria-label="Редактировать">
+                    <button className="edit-button" onClick={handleEdit} aria-label={t('buyerCabinet_editAria')}>
                       <FaPencilAlt size={18} />
                     </button>
                   ) : (
                     <div className="edit-actions">
-                      <button className="save-button" onClick={handleSave} aria-label="Сохранить">
+                      <button className="save-button" onClick={handleSave} aria-label={t('buyerCabinet_saveAria')}>
                         <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
                           <path d="M15 4.5L6.75 12.75L3 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                         </svg>
                       </button>
-                      <button className="cancel-button" onClick={handleCancel} aria-label="Отменить">
+                      <button className="cancel-button" onClick={handleCancel} aria-label={t('buyerCabinet_cancelAria')}>
                         <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
                           <path d="M13.5 4.5L4.5 13.5M4.5 4.5L13.5 13.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                         </svg>
@@ -1205,14 +1110,14 @@ const Profile = () => {
             <div className="profile-header-left">
               <div className="profile-badges-row">
                 <div className="profile-status-badge profile-badge profile-badge-cell">
-                  <span className="profile-status-label">Ваш статус</span>
+                  <span className="profile-status-label">{t('buyerCabinet_yourStatus')}</span>
                   <span className={`profile-status-value profile-status-value--${profileData.role === 'seller' ? 'seller' : 'buyer'}`}>
-                    {profileData.role === 'seller' ? 'Продавец' : 'Покупатель'}
+                    {profileData.role === 'seller' ? t('buyerCabinet_roleSeller') : t('buyerCabinet_roleBuyer')}
                   </span>
                 </div>
                 {profileData.userIdNumber ? (
                   <div className="profile-badge profile-badge--number profile-badge-cell">
-                    <span className="profile-badge-label">Ваш номер</span>
+                    <span className="profile-badge-label">{t('buyerCabinet_yourNumber')}</span>
                     <span className="profile-badge-value">{profileData.userIdNumber}</span>
                   </div>
                 ) : (
@@ -1251,11 +1156,11 @@ const Profile = () => {
               (subscriptionBilling?.payments && subscriptionBilling.payments.length > 0)) && (
               <section className="profile-section profile-section--billing">
                 <div className="section-header">
-                  <h2 className="section-title">Подписка и оплаты</h2>
-                  <div className="section-subtitle">Статус подписки Pro и история платежей</div>
+                  <h2 className="section-title">{t('buyerCabinet_billingTitle')}</h2>
+                  <div className="section-subtitle">{t('buyerCabinet_billingSubtitle')}</div>
                 </div>
                 {subscriptionBillingLoading ? (
-                  <div className="profile-billing-loading">Загрузка…</div>
+                  <div className="profile-billing-loading">{t('buyerCabinet_billingLoading')}</div>
                 ) : (
                   <div className="profile-billing">
                     {subscriptionBilling?.subscription && (
@@ -1263,19 +1168,19 @@ const Profile = () => {
                         <div className="profile-billing-plan__badge">Pro</div>
                         <div className="profile-billing-plan__body">
                           <div className="profile-billing-plan__row">
-                            <span className="profile-billing-label">Статус</span>
+                            <span className="profile-billing-label">{t('buyerCabinet_billingStatus')}</span>
                             <span className="profile-billing-value profile-billing-value--status">
                               {(() => {
                                 const st = subscriptionBilling.subscription.status
                                 const map = {
-                                  active: 'Активна',
-                                  canceled: 'Отменена',
-                                  past_due: 'Просрочен платёж',
-                                  trialing: 'Пробный период',
-                                  incomplete: 'Ожидает оплаты',
-                                  incomplete_expired: 'Истекла',
-                                  unpaid: 'Не оплачено',
-                                  paused: 'Приостановлена',
+                                  active: t('buyerCabinet_subStatus_active'),
+                                  canceled: t('buyerCabinet_subStatus_canceled'),
+                                  past_due: t('buyerCabinet_subStatus_past_due'),
+                                  trialing: t('buyerCabinet_subStatus_trialing'),
+                                  incomplete: t('buyerCabinet_subStatus_incomplete'),
+                                  incomplete_expired: t('buyerCabinet_subStatus_incomplete_expired'),
+                                  unpaid: t('buyerCabinet_subStatus_unpaid'),
+                                  paused: t('buyerCabinet_subStatus_paused'),
                                 }
                                 return map[st] || st || '—'
                               })()}
@@ -1283,10 +1188,10 @@ const Profile = () => {
                           </div>
                           {subscriptionBilling.subscription.current_period_end && (
                             <div className="profile-billing-plan__row">
-                              <span className="profile-billing-label">Текущий период до</span>
+                              <span className="profile-billing-label">{t('buyerCabinet_periodEnd')}</span>
                               <span className="profile-billing-value">
                                 {new Date(subscriptionBilling.subscription.current_period_end).toLocaleString(
-                                  'ru-RU',
+                                  billingLocale,
                                   {
                                     day: '2-digit',
                                     month: 'long',
@@ -1297,14 +1202,14 @@ const Profile = () => {
                             </div>
                           )}
                           {subscriptionBilling.subscription.cancel_at_period_end === 1 && (
-                            <p className="profile-billing-hint">Подписка не продлится после окончания периода.</p>
+                            <p className="profile-billing-hint">{t('buyerCabinet_cancelPeriodHint')}</p>
                           )}
                         </div>
                       </div>
                     )}
                     {subscriptionBilling?.payments && subscriptionBilling.payments.length > 0 && (
                       <div className="profile-billing-payments">
-                        <h3 className="profile-billing-payments__title">Платежи</h3>
+                        <h3 className="profile-billing-payments__title">{t('buyerCabinet_payments')}</h3>
                         <ul className="profile-billing-payments__list">
                           {subscriptionBilling.payments.map((p) => {
                             const reasonLabel = formatBillingReasonForUi(p.billing_reason)
@@ -1316,7 +1221,7 @@ const Profile = () => {
                                       const cur = (p.currency || 'eur').toUpperCase()
                                       const amt = (p.amount_cents ?? 0) / 100
                                       try {
-                                        return new Intl.NumberFormat('ru-RU', {
+                                        return new Intl.NumberFormat(billingLocale, {
                                           style: 'currency',
                                           currency: cur,
                                         }).format(amt)
@@ -1327,7 +1232,7 @@ const Profile = () => {
                                   </span>
                                   <span className="profile-billing-payment__date">
                                     {p.paid_at
-                                      ? new Date(p.paid_at).toLocaleString('ru-RU', {
+                                      ? new Date(p.paid_at).toLocaleString(billingLocale, {
                                           day: '2-digit',
                                           month: '2-digit',
                                           year: 'numeric',
@@ -1348,7 +1253,7 @@ const Profile = () => {
                     )}
                     {!subscriptionBilling?.subscription &&
                       (!subscriptionBilling?.payments || subscriptionBilling.payments.length === 0) && (
-                        <p className="profile-billing-empty">Нет данных о подписке.</p>
+                        <p className="profile-billing-empty">{t('buyerCabinet_billingEmpty')}</p>
                       )}
                   </div>
                 )}
@@ -1357,8 +1262,8 @@ const Profile = () => {
 
             <section className="profile-section">
               <div className="section-header">
-                <h2 className="section-title">Мои подписки</h2>
-                <div className="section-subtitle">Управляйте своими подписками</div>
+                <h2 className="section-title">{t('buyerCabinet_sectionSubscriptions')}</h2>
+                <div className="section-subtitle">{t('buyerCabinet_sectionSubscriptionsSubtitle')}</div>
               </div>
               <div className="profile-subscriptions-cards">
                 <PricingCards
@@ -1366,11 +1271,11 @@ const Profile = () => {
                   mobileTwoColumn
                   onBookCall={async (plan) => {
                     if (plan === 'starter') {
-                      showNotification('Тариф Starter бесплатный — базовые функции уже доступны в аккаунте.', 'info')
+                      showNotification(t('buyerCabinet_toastStarter'), 'info')
                       return
                     }
                     if (plan === 'vip') {
-                      showNotification('Подписка VIP скоро будет доступна', 'info')
+                      showNotification(t('buyerCabinet_toastVipSoon'), 'info')
                       return
                     }
                     if (plan !== 'pro') {
@@ -1383,13 +1288,14 @@ const Profile = () => {
                       customerEmail: profileData.email || userData?.email,
                     })
                     if (!result.ok) {
-                      showNotification(result.error || 'Не удалось открыть оплату', 'error')
+                      showNotification(result.error || t('buyerCabinet_checkoutError'), 'error')
                     }
                   }}
                 />
               </div>
             </section>
 
+          </div>
           </div>
         </main>
       </div>

@@ -1,11 +1,17 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { ShoppingCart } from 'lucide-react'
 import './PricingCards.css'
 
 export default function PricingCards({ onBookCall, compact = false, mobileTwoColumn = false }) {
+  const { t } = useTranslation()
   const [starterMonthly, setStarterMonthly] = useState(false)
   const [proMonthly, setProMonthly] = useState(false)
   const [vipMonthly, setVipMonthly] = useState(false)
+
+  const starterFeatureKeys = ['buyerPricing_featS0', 'buyerPricing_featS1', 'buyerPricing_featS2']
+  const proFeatureKeys = ['buyerPricing_featP0', 'buyerPricing_featP1', 'buyerPricing_featP2', 'buyerPricing_featP3']
+  const vipFeatureKeys = ['buyerPricing_featV0', 'buyerPricing_featV1', 'buyerPricing_featV2', 'buyerPricing_featV3']
 
   const LightCheckIcon = ({ className = '' }) => (
     <svg
@@ -37,10 +43,6 @@ export default function PricingCards({ onBookCall, compact = false, mobileTwoCol
     </svg>
   )
 
-  const starterFeatures = ['Аукцион', 'Покупка объектов', 'ИИ-консультант']
-  const proFeatures = ['Starter', 'Аналитика', 'Калькулятор', 'Персональный менеджер']
-  const vipFeatures = ['Всё из Pro', 'Приоритет в аукционах', 'VIP-менеджер', 'Закрытые лоты']
-
   const handleStarterCall = () => {
     if (typeof onBookCall === 'function') onBookCall('starter')
   }
@@ -55,39 +57,40 @@ export default function PricingCards({ onBookCall, compact = false, mobileTwoCol
     else window.open('https://checkout.stripe.com/pay?amount=19900&currency=usd&description=VIP', '_blank')
   }
 
+  const perMonth = t('buyerPricing_perMonth')
+  const toggleAria = t('buyerPricing_toggleAria')
+  const toggleLabel = t('buyerPricing_toggleLabel')
+
   return (
     <div className={`pricing-cards${mobileTwoColumn ? ' pricing-cards--mobile-two-col' : ''}`}>
       <div className={`pricing-cards__grid ${compact ? 'pricing-cards__grid--compact' : ''}`}>
-        {/* Starter — светлая карточка */}
         <div className="pricing-card--starter">
           <div className="pricing-card__header">
             <div className="pricing-card__header-top">
               <div className="pricing-card__header-top-left">
                 <h2 className="pricing-card__title pricing-card__title--struck">Starter</h2>
-                <p className="pricing-card__desc">
-                  Быстрый старт
-                </p>
+                <p className="pricing-card__desc">{t('buyerPricing_starterDesc')}</p>
               </div>
-              <span className="pricing-card__badge">Бесплатно</span>
+              <span className="pricing-card__badge">{t('buyerPricing_badgeFree')}</span>
             </div>
             <div className="pricing-card__price-row pricing-card__price-row--starter-free">
               <span className="pricing-card__price pricing-card__price--free">$0</span>
-              <span className="pricing-card__price-unit">/мес</span>
+              <span className="pricing-card__price-unit">{perMonth}</span>
               <span className="pricing-card__price-was" aria-hidden="true">
                 $29
               </span>
             </div>
             <button type="button" className="pricing-card__cta" onClick={handleStarterCall}>
-              Начать бесплатно
+              {t('buyerPricing_startFree')}
               <ShoppingCart size={20} strokeWidth={2} />
             </button>
           </div>
           <div className="pricing-card__features">
             <div className="pricing-card__features-grid">
-              {starterFeatures.map((feature) => (
-                <div key={feature} className="pricing-card__feature">
+              {starterFeatureKeys.map((key) => (
+                <div key={key} className="pricing-card__feature">
                   <LightCheckIcon />
-                  <span>{feature}</span>
+                  <span>{t(key)}</span>
                 </div>
               ))}
             </div>
@@ -98,42 +101,39 @@ export default function PricingCards({ onBookCall, compact = false, mobileTwoCol
                 data-enabled={starterMonthly}
                 onClick={() => setStarterMonthly(!starterMonthly)}
                 aria-pressed={starterMonthly}
-                aria-label="Ежемесячный платёж"
+                aria-label={toggleAria}
               >
                 <span className="pricing-card__toggle-thumb" />
               </button>
-              <span className="pricing-card__toggle-label">Ежемесячный платёж</span>
+              <span className="pricing-card__toggle-label">{toggleLabel}</span>
             </div>
           </div>
         </div>
 
-        {/* Pro — тёмная карточка */}
         <div className="pricing-card--pro">
           <div className="pricing-card__header">
             <div className="pricing-card__header-top">
               <div className="pricing-card__header-top-left">
                 <h2 className="pricing-card__title">Pro</h2>
-                <p className="pricing-card__desc">
-                  Больше возможностей, аналитика и личный менеджер
-                </p>
+                <p className="pricing-card__desc">{t('buyerPricing_proDesc')}</p>
               </div>
-              <span className="pricing-card__badge">Лучшая цена</span>
+              <span className="pricing-card__badge">{t('buyerPricing_badgeBest')}</span>
             </div>
             <div className="pricing-card__price-row">
               <span className="pricing-card__price">$99</span>
-              <span className="pricing-card__price-unit">/мес</span>
+              <span className="pricing-card__price-unit">{perMonth}</span>
             </div>
             <button type="button" className="pricing-card__cta" onClick={handleProCall}>
-              Купить сейчас
+              {t('buyerPricing_buyNow')}
               <ShoppingCart size={20} strokeWidth={2} />
             </button>
           </div>
           <div className="pricing-card__features">
             <div className="pricing-card__features-grid">
-              {proFeatures.map((feature) => (
-                <div key={feature} className="pricing-card__feature">
+              {proFeatureKeys.map((key) => (
+                <div key={key} className="pricing-card__feature">
                   <DarkCheckIcon />
-                  <span>{feature}</span>
+                  <span>{t(key)}</span>
                 </div>
               ))}
             </div>
@@ -144,42 +144,39 @@ export default function PricingCards({ onBookCall, compact = false, mobileTwoCol
                 data-enabled={proMonthly}
                 onClick={() => setProMonthly(!proMonthly)}
                 aria-pressed={proMonthly}
-                aria-label="Ежемесячный платёж"
+                aria-label={toggleAria}
               >
                 <span className="pricing-card__toggle-thumb" />
               </button>
-              <span className="pricing-card__toggle-label">Ежемесячный платёж</span>
+              <span className="pricing-card__toggle-label">{toggleLabel}</span>
             </div>
           </div>
         </div>
 
-        {/* VIP — премиальная карточка */}
         <div className="pricing-card--vip">
           <div className="pricing-card__header">
             <div className="pricing-card__header-top">
               <div className="pricing-card__header-top-left">
                 <h2 className="pricing-card__title">VIP</h2>
-                <p className="pricing-card__desc">
-                  Максимум возможностей и приоритет на каждом шаге
-                </p>
+                <p className="pricing-card__desc">{t('buyerPricing_vipDesc')}</p>
               </div>
-              <span className="pricing-card__badge">Элитный</span>
+              <span className="pricing-card__badge">{t('buyerPricing_badgeElite')}</span>
             </div>
             <div className="pricing-card__price-row">
               <span className="pricing-card__price">$199</span>
-              <span className="pricing-card__price-unit">/мес</span>
+              <span className="pricing-card__price-unit">{perMonth}</span>
             </div>
             <button type="button" className="pricing-card__cta" onClick={handleVipCall}>
-              Купить сейчас
+              {t('buyerPricing_buyNow')}
               <ShoppingCart size={20} strokeWidth={2} />
             </button>
           </div>
           <div className="pricing-card__features">
             <div className="pricing-card__features-grid">
-              {vipFeatures.map((feature) => (
-                <div key={feature} className="pricing-card__feature">
+              {vipFeatureKeys.map((key) => (
+                <div key={key} className="pricing-card__feature">
                   <DarkCheckIcon />
-                  <span>{feature}</span>
+                  <span>{t(key)}</span>
                 </div>
               ))}
             </div>
@@ -190,11 +187,11 @@ export default function PricingCards({ onBookCall, compact = false, mobileTwoCol
                 data-enabled={vipMonthly}
                 onClick={() => setVipMonthly(!vipMonthly)}
                 aria-pressed={vipMonthly}
-                aria-label="Ежемесячный платёж"
+                aria-label={toggleAria}
               >
                 <span className="pricing-card__toggle-thumb" />
               </button>
-              <span className="pricing-card__toggle-label">Ежемесячный платёж</span>
+              <span className="pricing-card__toggle-label">{toggleLabel}</span>
             </div>
           </div>
         </div>

@@ -5,6 +5,7 @@ import { FiChevronDown, FiCheck } from 'react-icons/fi'
 import { FaApple, FaWhatsapp } from 'react-icons/fa'
 import whatsappQR from '../../6019556644745841501.png'
 import './Footer.css'
+import { scrollMainTo } from '../utils/mainScroll'
 
 const Footer = () => {
   const { t, i18n } = useTranslation()
@@ -14,11 +15,7 @@ const Footer = () => {
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
 
   const scrollToTop = () => {
-    window.scrollTo({
-      top: 0,
-      left: 0,
-      behavior: 'instant' // Мгновенная прокрутка при переходе на новую страницу
-    })
+    scrollMainTo(0, 0, 'instant')
   }
 
   const languages = [

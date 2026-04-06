@@ -2855,7 +2855,35 @@ export const documentQueries = {
     const db = getDatabase();
     const stmt = db.prepare('DELETE FROM documents WHERE id = ?');
     return stmt.run(id);
-  }
+  },
+
+  /**
+   * Удалить все отклонённые документы пользователя (после полной повторной отправки трёх фото).
+   */
+  deleteAllRejectedForUser: (userId) => {
+    const db = getDatabase();
+    const uid = typeof userId === 'string' ? parseInt(userId, 10) : userId;
+    if (!uid || Number.isNaN(uid)) return { deleted: 0 };
+    const rows = db
+      .prepare(`SELECT * FROM documents WHERE user_id = ? AND verification_status = 'rejected'`)
+      .all(uid);
+    let deleted = 0;
+    const serverRoot = join(__dirname, '..');
+    for (const doc of rows) {
+      if (doc.document_photo) {
+        const rel = String(doc.document_photo).replace(/^\//, '');
+        const abs = join(serverRoot, rel);
+        try {
+          if (existsSync(abs)) unlinkSync(abs);
+        } catch (e) {
+          console.warn('⚠️ deleteAllRejectedForUser: файл не удалён', abs, e.message);
+        }
+      }
+      const del = db.prepare('DELETE FROM documents WHERE id = ?').run(doc.id);
+      deleted += del.changes || 0;
+    }
+    return { deleted };
+  },
 };
 
 // Экспортируем функции для работы с уведомлениями

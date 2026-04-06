@@ -6840,6 +6840,7 @@
 .landing-models__grid--folders {
   justify-items: center;
   justify-content: center;
+  align-items: start;
   gap: 28px;
   /* чтобы папки всегда вмещались и центрировались */
   grid-template-columns: repeat(auto-fit, minmax(220px, 320px));
@@ -6859,6 +6860,7 @@
 
   .landing-models__grid--folders {
     justify-items: stretch;
+    align-items: start;
     gap: 16px;
   }
 
@@ -6993,6 +6995,7 @@
     grid-template-columns: repeat(5, minmax(0, 1fr));
     gap: 22px;
     justify-items: stretch;
+    align-items: start;
   }
 
   /* AnimatedFolder задаёт размеры inline — переопределяем для красивого 5-up */
@@ -7001,17 +7004,16 @@
     max-width: none;
     min-width: 0;
     min-width: 240px !important;
-    min-height: 300px !important;
-    padding: 24px !important;
+    padding: 18px 16px 11px !important;
   }
 
   .landing-models__grid--folders .landing-models__folder h3 {
-    font-size: 16px !important;
-    line-height: 1.25 !important;
+    font-size: 14px !important;
+    line-height: 1.15 !important;
   }
 
   .landing-models__grid--folders .landing-models__folder p {
-    font-size: 12px !important;
+    font-size: 11px !important;
   }
 }
 

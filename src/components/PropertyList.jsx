@@ -12,7 +12,6 @@ import CircularTimer from './CircularTimer'
 import PropertySearchModal from './PropertySearchModal'
 import AnimatedLoadingSkeleton from './ui/AnimatedLoadingSkeleton'
 import AuctionMobileLayout from './ui/AuctionMobileLayout'
-import { MarqueeAnimation } from './ui/MarqueeAnimation'
 import { ensureCanOpenProperty } from '../utils/propertyAccessGuard'
 import { showNotification } from '../utils/toastHelper'
 import './PropertyList.css'
@@ -303,28 +302,8 @@ const PropertyList = ({
         }`}
       >
         <div className="property-list-container">
-        <div className="property-list-header">
-          <div className="property-list-marquee-double">
-            <div className="marquee-row marquee-row--top">
-              <MarqueeAnimation
-                direction="left"
-                baseVelocity={-3}
-                className="marquee-row__text text-white"
-              >
-                {t('activeAuctions')}
-              </MarqueeAnimation>
-            </div>
-            <div className="marquee-row marquee-row--bottom">
-              <MarqueeAnimation
-                direction="right"
-                baseVelocity={-3}
-                className="marquee-row__text text-white"
-              >
-                {t('activeAuctions')}
-              </MarqueeAnimation>
-            </div>
-          </div>
-          {isMobile && isAuctionPage && onOpenAIChat && (
+        {isMobile && isAuctionPage && onOpenAIChat && (
+          <div className="property-list-header">
             <button
               type="button"
               className="ai-button"
@@ -337,9 +316,9 @@ const PropertyList = ({
             >
               AI
             </button>
-          )}
-        </div>
-        
+          </div>
+        )}
+
         <div
           ref={searchFiltersBarRef}
           className={`search-filters-bar${

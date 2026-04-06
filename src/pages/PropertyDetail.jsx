@@ -7,6 +7,7 @@ import BiddingHistoryModal from '../components/BiddingHistoryModal'
 import DepositButton from '../components/DepositButton'
 import { getUserData, isAuthenticated } from '../services/authService'
 import { showNotification } from '../utils/toastHelper'
+import { roleSkipsAuctionKyc } from '../utils/buyerAuctionKyc'
 import BidOutbidNotification from '../components/BidOutbidNotification'
 import { FiX, FiLayers, FiHome, FiCheck, FiX as FiXIcon, FiLock } from 'react-icons/fi'
 import { IoLocationOutline } from 'react-icons/io5'
@@ -21,7 +22,7 @@ const PropertyDetail = () => {
   const { id } = useParams()
   const navigate = useNavigate()
   const location = useLocation()
-  const { i18n } = useTranslation()
+  const { i18n, t } = useTranslation()
   const [property, setProperty] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
   const [selectedImage, setSelectedImage] = useState(0)
@@ -35,6 +36,7 @@ const PropertyDetail = () => {
   const [bidHistoryRefresh, setBidHistoryRefresh] = useState(0)
   const [outbidNotification, setOutbidNotification] = useState(null)
   const shownNotificationIdsRef = useRef(new Set())
+  const [auctionKycVerified, setAuctionKycVerified] = useState(null)
   const userData = getUserData()
   const userId = userData?.id
 
@@ -362,6 +364,44 @@ const PropertyDetail = () => {
     return () => window.removeEventListener('focus', onFocus)
   }, [userId])
 
+  // Статус одобрения KYC для аукциона (покупатель с депозитом)
+  useEffect(() => {
+    if (!userId) {
+      setAuctionKycVerified(null)
+      return
+    }
+    const needKyc =
+      Boolean(normalizedProperty?.is_auction) &&
+      !roleSkipsAuctionKyc(userData?.role || 'buyer')
+    if (!needKyc) {
+      setAuctionKycVerified(null)
+      return
+    }
+    const loadKyc = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/users/${userId}/verification-status`)
+        if (response.ok) {
+          const data = await response.json()
+          if (data.success && data.data) {
+            setAuctionKycVerified(Boolean(data.data.isVerified))
+            return
+          }
+        }
+        setAuctionKycVerified(null)
+      } catch {
+        setAuctionKycVerified(null)
+      }
+    }
+    loadKyc()
+    const onRefresh = () => loadKyc()
+    window.addEventListener('verification-status-update', onRefresh)
+    window.addEventListener('focus', onRefresh)
+    return () => {
+      window.removeEventListener('verification-status-update', onRefresh)
+      window.removeEventListener('focus', onRefresh)
+    }
+  }, [userId, normalizedProperty?.is_auction, userData?.role])
+
   // Периодическое обновление данных объекта (ставки, текущая ставка)
   useEffect(() => {
     if (!normalizedProperty?.id || !normalizedProperty?.is_auction) return
@@ -595,12 +635,22 @@ const PropertyDetail = () => {
       return
     }
     
-    // Проверяем депозит
-    if (userDeposit <= 0) {
-      setBidError('Для участия в аукционе необходим депозит. Пожалуйста, пополните депозит.')
-      return
+    const roleForBid = userData?.role || 'buyer'
+    if (normalizedProperty?.is_auction && !roleSkipsAuctionKyc(roleForBid)) {
+      if (userDeposit <= 0) {
+        const depMsg = t('propertyDetailBidDepositRequired')
+        setBidError(depMsg)
+        showNotification(depMsg)
+        return
+      }
+      if (auctionKycVerified === false) {
+        const pendingMsg = t('propertyDetailBidVerificationPending')
+        setBidError(pendingMsg)
+        showNotification(pendingMsg)
+        return
+      }
     }
-    
+
     setIsSubmittingBid(true)
     
     const requestData = {
@@ -634,7 +684,19 @@ const PropertyDetail = () => {
       if (!response.ok) {
         const errorText = await response.text()
         console.error('❌ Ошибка HTTP:', response.status, errorText)
-        setBidError(`Ошибка сервера: ${response.status}`)
+        let errMsg = `Ошибка сервера: ${response.status}`
+        try {
+          const errData = JSON.parse(errorText)
+          if (errData.code === 'VERIFICATION_PENDING') {
+            errMsg = t('propertyDetailBidVerificationPending')
+          } else if (errData.error) {
+            errMsg = errData.error
+          }
+        } catch {
+          /* текст ответа не JSON */
+        }
+        setBidError(errMsg)
+        showNotification(errMsg)
         setIsSubmittingBid(false)
         return
       }
@@ -695,6 +757,17 @@ const PropertyDetail = () => {
     }
   }
 
+  const reservedBlocksBid = Boolean(
+    normalizedProperty?.is_reserved &&
+      normalizedProperty?.reserved_until &&
+      new Date(normalizedProperty.reserved_until) > new Date()
+  )
+  const roleForBidUi = userData?.role || 'buyer'
+  const auctionKycRequiredUi =
+    Boolean(normalizedProperty?.is_auction) && !roleSkipsAuctionKyc(roleForBidUi)
+  const kycBidBlocked =
+    auctionKycRequiredUi && userDeposit > 0 && auctionKycVerified === false
+  const disableBidFields = reservedBlocksBid || kycBidBlocked
 
   return (
     <div className="property-detail-page">
@@ -826,6 +899,11 @@ const PropertyDetail = () => {
                     <span>Ставки временно недоступны. Объект забронирован.</span>
                   </div>
                 )}
+                {!reservedBlocksBid && kycBidBlocked && (
+                  <div className="auction-verification-pending-banner" role="status">
+                    {t('propertyDetailBidVerificationPending')}
+                  </div>
+                )}
                 <div className="bid-input-group">
                   <label>Ваша ставка</label>
                   <input
@@ -838,10 +916,10 @@ const PropertyDetail = () => {
                     placeholder={`Минимум ${formatPrice(minimumBid || (normalizedProperty.currentBid + (normalizedProperty.currentBid * 0.05)))}`}
                     min={minimumBid || (normalizedProperty.currentBid + (normalizedProperty.currentBid * 0.05))}
                     step="1000"
-                    disabled={isSubmittingBid || (normalizedProperty.is_reserved && normalizedProperty.reserved_until && new Date(normalizedProperty.reserved_until) > new Date())}
+                    disabled={isSubmittingBid || disableBidFields}
                     style={{
-                      opacity: (normalizedProperty.is_reserved && normalizedProperty.reserved_until && new Date(normalizedProperty.reserved_until) > new Date()) ? 0.5 : 1,
-                      cursor: (normalizedProperty.is_reserved && normalizedProperty.reserved_until && new Date(normalizedProperty.reserved_until) > new Date()) ? 'not-allowed' : 'text'
+                      opacity: disableBidFields ? 0.5 : 1,
+                      cursor: disableBidFields ? 'not-allowed' : 'text',
                     }}
                   />
                   {bidError && (
@@ -853,13 +931,13 @@ const PropertyDetail = () => {
                 <button 
                   type="submit" 
                   className="btn btn-bid glass-button"
-                  disabled={isSubmittingBid || (normalizedProperty.is_reserved && normalizedProperty.reserved_until && new Date(normalizedProperty.reserved_until) > new Date())}
+                  disabled={isSubmittingBid || disableBidFields}
                   style={{
-                    opacity: (normalizedProperty.is_reserved && normalizedProperty.reserved_until && new Date(normalizedProperty.reserved_until) > new Date()) ? 0.5 : 1,
-                    cursor: (normalizedProperty.is_reserved && normalizedProperty.reserved_until && new Date(normalizedProperty.reserved_until) > new Date()) ? 'not-allowed' : 'pointer'
+                    opacity: disableBidFields ? 0.5 : 1,
+                    cursor: disableBidFields ? 'not-allowed' : 'pointer',
                   }}
                 >
-                  {isSubmittingBid ? 'Отправка...' : (normalizedProperty.is_reserved && normalizedProperty.reserved_until && new Date(normalizedProperty.reserved_until) > new Date()) ? 'Объект забронирован' : 'Сделать ставку сейчас'}
+                  {isSubmittingBid ? 'Отправка...' : reservedBlocksBid ? 'Объект забронирован' : 'Сделать ставку сейчас'}
                 </button>
               </form>
 
@@ -1192,6 +1270,11 @@ const PropertyDetail = () => {
                     <span>Ставки временно недоступны. Объект забронирован.</span>
                   </div>
                 )}
+                {!reservedBlocksBid && kycBidBlocked && (
+                  <div className="auction-verification-pending-banner" role="status">
+                    {t('propertyDetailBidVerificationPending')}
+                  </div>
+                )}
                 <div className="bid-input-group">
                   <label>Ваша ставка</label>
                   <input
@@ -1204,10 +1287,10 @@ const PropertyDetail = () => {
                     placeholder={`Минимум ${formatPrice(minimumBid || (normalizedProperty.currentBid + (normalizedProperty.currentBid * 0.05)))}`}
                     min={minimumBid || (normalizedProperty.currentBid + (normalizedProperty.currentBid * 0.05))}
                     step="1000"
-                    disabled={isSubmittingBid || (normalizedProperty.is_reserved && normalizedProperty.reserved_until && new Date(normalizedProperty.reserved_until) > new Date())}
+                    disabled={isSubmittingBid || disableBidFields}
                     style={{
-                      opacity: (normalizedProperty.is_reserved && normalizedProperty.reserved_until && new Date(normalizedProperty.reserved_until) > new Date()) ? 0.5 : 1,
-                      cursor: (normalizedProperty.is_reserved && normalizedProperty.reserved_until && new Date(normalizedProperty.reserved_until) > new Date()) ? 'not-allowed' : 'text'
+                      opacity: disableBidFields ? 0.5 : 1,
+                      cursor: disableBidFields ? 'not-allowed' : 'text',
                     }}
                   />
                   {bidError && (
@@ -1219,13 +1302,13 @@ const PropertyDetail = () => {
                 <button 
                   type="submit" 
                   className="btn btn-bid glass-button"
-                  disabled={isSubmittingBid || (normalizedProperty.is_reserved && normalizedProperty.reserved_until && new Date(normalizedProperty.reserved_until) > new Date())}
+                  disabled={isSubmittingBid || disableBidFields}
                   style={{
-                    opacity: (normalizedProperty.is_reserved && normalizedProperty.reserved_until && new Date(normalizedProperty.reserved_until) > new Date()) ? 0.5 : 1,
-                    cursor: (normalizedProperty.is_reserved && normalizedProperty.reserved_until && new Date(normalizedProperty.reserved_until) > new Date()) ? 'not-allowed' : 'pointer'
+                    opacity: disableBidFields ? 0.5 : 1,
+                    cursor: disableBidFields ? 'not-allowed' : 'pointer',
                   }}
                 >
-                  {isSubmittingBid ? 'Отправка...' : (normalizedProperty.is_reserved && normalizedProperty.reserved_until && new Date(normalizedProperty.reserved_until) > new Date()) ? 'Объект забронирован' : 'Сделать ставку сейчас'}
+                  {isSubmittingBid ? 'Отправка...' : reservedBlocksBid ? 'Объект забронирован' : 'Сделать ставку сейчас'}
                 </button>
               </form>
 

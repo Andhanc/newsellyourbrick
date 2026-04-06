@@ -1,26 +1,31 @@
 import { useEffect, useState, useRef } from 'react'
-import { Link, useNavigate, useSearchParams, useLocation } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { useUser, useClerk } from '@clerk/clerk-react'
 import { getApiBaseUrlSync } from '../utils/apiConfig'
 import { logout } from '../services/authService'
 import { FiArrowRight, FiCalendar } from 'react-icons/fi'
+import BuyerCabinetSidebar from '../components/BuyerCabinetSidebar'
+import { useChainedAppLayoutScroll } from '../hooks/useChainedAppLayoutScroll'
+import i18n from '../i18n/config'
 import './Profile.css'
 import './MyBookingsPage.css'
 
 let API_BASE_URL = getApiBaseUrlSync()
 
-const STATUS_LABEL = {
-  pending: 'Ожидает ответа владельца',
-  approved: 'Подтверждено',
-  rejected: 'Отклонено',
+function billingLocaleFromLang() {
+  const code = (i18n.language || 'ru').split('-')[0]
+  const map = { ru: 'ru-RU', en: 'en-US', de: 'de-DE', es: 'es-ES', fr: 'fr-FR', sv: 'sv-SE' }
+  return map[code] || 'en-US'
 }
 
-function formatDateRangeRu(start, end) {
+function formatDateRange(start, end) {
   try {
+    const loc = billingLocaleFromLang()
     const s = new Date(`${start}T12:00:00`)
     const e = new Date(`${end}T12:00:00`)
     const opts = { day: 'numeric', month: 'long', year: 'numeric' }
-    return `${s.toLocaleDateString('ru-RU', opts)} — ${e.toLocaleDateString('ru-RU', opts)}`
+    return `${s.toLocaleDateString(loc, opts)} — ${e.toLocaleDateString(loc, opts)}`
   } catch {
     return `${start} — ${end}`
   }
@@ -28,7 +33,7 @@ function formatDateRangeRu(start, end) {
 
 export default function MyBookingsPage() {
   const navigate = useNavigate()
-  const { pathname } = useLocation()
+  const { t } = useTranslation()
   const [searchParams] = useSearchParams()
   const highlightBookingId = searchParams.get('booking')
   const { user } = useUser()
@@ -37,6 +42,10 @@ export default function MyBookingsPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const cardRefs = useRef({})
+  const buyerCabinetPageRef = useRef(null)
+  const buyerCabinetMainScrollRef = useRef(null)
+
+  useChainedAppLayoutScroll(buyerCabinetPageRef, buyerCabinetMainScrollRef, { active: true })
 
   useEffect(() => {
     const el = highlightBookingId ? cardRefs.current[highlightBookingId] : null
@@ -52,31 +61,37 @@ export default function MyBookingsPage() {
         API_BASE_URL = await getApiBaseUrl()
         const uid = localStorage.getItem('userId')
         if (!uid || !/^\d+$/.test(uid)) {
-          setError('Войдите в аккаунт, чтобы видеть бронирования.')
+          setError(i18n.t('buyerBookings_loginRequired'))
           setLoading(false)
           return
         }
         const res = await fetch(`${API_BASE_URL}/test-drive-bookings/user/${uid}`)
         const data = await res.json()
         if (!res.ok || !data.success) {
-          setError(data.error || 'Не удалось загрузить бронирования')
+          setError(data.error || i18n.t('buyerBookings_loadFailed'))
           setBookings([])
         } else {
           setBookings(Array.isArray(data.data) ? data.data : [])
           setError(null)
         }
       } catch (e) {
-        setError(e.message || 'Ошибка сети')
+        setError(e.message || i18n.t('buyerBookings_networkError'))
         setBookings([])
       } finally {
         setLoading(false)
       }
     }
     load()
-  }, [user?.id])
+  }, [user?.id, i18n.language])
+
+  const statusLabel = (statusKey) => {
+    const k = `buyerBookings_status_${statusKey}`
+    const tr = t(k)
+    return tr !== k ? tr : statusKey
+  }
 
   const handleLogout = async () => {
-    if (!window.confirm('Вы уверены, что хотите выйти?')) {
+    if (!window.confirm(t('buyerCabinet_logoutConfirm'))) {
       return
     }
     try {
@@ -96,133 +111,25 @@ export default function MyBookingsPage() {
   }
 
   return (
-    <div className="profile-page">
-      <div className="profile-container">
-        <aside className="profile-sidebar">
-          <div className="sidebar-header" style={{ marginTop: '24px' }}>
-            <button
-              type="button"
-              onClick={() => navigate('/')}
-              className="back-button"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-                padding: '12px 24px',
-                backgroundColor: 'transparent',
-                border: 'none',
-                cursor: 'pointer',
-                color: '#0ABAB5',
-                fontSize: '18px',
-                fontWeight: '600',
-                transition: 'opacity 0.2s',
-              }}
-            >
-              <svg width="24" height="24" viewBox="0 0 20 20" fill="none">
-                <path
-                  d="M12.5 15L7.5 10L12.5 5"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-              <span>Назад</span>
-            </button>
-            <button type="button" className="header-logout-button" onClick={handleLogout}>
-              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                <path
-                  d="M7 2H3C2.44772 2 2 2.44772 2 3V15C2 15.5523 2.44772 16 3 16H7M12 13L15 10M15 10L12 7M15 10H6"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-              <span>Выйти</span>
-            </button>
-          </div>
-          <nav className="sidebar-nav">
-            <Link to="/profile" className={pathname === '/profile' ? 'nav-item active' : 'nav-item'}>
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                <path
-                  d="M10 10C12.7614 10 15 7.76142 15 5C15 2.23858 12.7614 0 10 0C7.23858 0 5 2.23858 5 5C5 7.76142 7.23858 10 10 10Z"
-                  fill="currentColor"
-                />
-                <path
-                  d="M10 12C5.58172 12 2 13.7909 2 16V20H18V16C18 13.7909 14.4183 12 10 12Z"
-                  fill="currentColor"
-                />
-              </svg>
-              <span>Профиль</span>
-            </Link>
-            <Link
-              to="/profile/bookings"
-              className={pathname === '/profile/bookings' ? 'nav-item active' : 'nav-item'}
-            >
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                <rect x="3" y="4" width="14" height="13" rx="2" stroke="currentColor" strokeWidth="1.5" />
-                <path d="M3 8H17" stroke="currentColor" strokeWidth="1.5" />
-                <path d="M7 2V5M13 2V5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-              </svg>
-              <span>Мои бронирования</span>
-            </Link>
-            <Link to="/data" className="nav-item">
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                <rect x="2" y="4" width="16" height="12" rx="2" stroke="currentColor" strokeWidth="1.5" />
-                <path d="M6 8H14M6 12H12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-              </svg>
-              <span>Данные</span>
-            </Link>
-            <Link to="/subscriptions" className="nav-item">
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                <path
-                  d="M10 2L12.5 7.5L19 10L12.5 12.5L10 19L7.5 12.5L1 10L7.5 7.5L10 2Z"
-                  fill="currentColor"
-                />
-              </svg>
-              <span>Подписки</span>
-            </Link>
-            <Link to="/history" className="nav-item">
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                <rect x="2" y="4" width="16" height="12" rx="2" stroke="currentColor" strokeWidth="1.5" />
-                <path d="M6 8H14M6 12H10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-              </svg>
-              <span>История</span>
-            </Link>
-            <Link to="/chat" className="nav-item">
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                <path
-                  d="M10 2C5.58172 2 2 5.58172 2 10C2 14.4183 5.58172 18 10 18C14.4183 18 18 14.4183 18 10C18 5.58172 14.4183 2 10 2Z"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                />
-                <path d="M7 8H13M7 12H13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-              </svg>
-              <span>Чат</span>
-            </Link>
-            <Link to="/favorites" className="nav-item">
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                <path
-                  d="M10 2L12.5 7.5L19 10L12.5 12.5L10 19L7.5 12.5L1 10L7.5 7.5L10 2Z"
-                  fill="currentColor"
-                />
-              </svg>
-              <span>Понравилось</span>
-            </Link>
-          </nav>
-        </aside>
+    <div className="profile-page" ref={buyerCabinetPageRef}>
+      <div className="profile-container buyer-cabinet-layout-container">
+        <BuyerCabinetSidebar
+          asideClassName="profile-sidebar"
+          headerSpaceBetween
+          onLogout={handleLogout}
+        />
 
-        <main className="profile-main my-bookings-main">
+        <main className="profile-main my-bookings-main buyer-cabinet-layout-main">
+          <div className="buyer-cabinet-main-scroll" ref={buyerCabinetMainScrollRef}>
           <div className="my-bookings-header">
-            <h1 className="my-bookings-title">Мои бронирования</h1>
-            <p className="my-bookings-subtitle">Тест-драйв объектов: даты и статус заявки</p>
+            <h1 className="my-bookings-title">{t('buyerBookings_title')}</h1>
+            <p className="my-bookings-subtitle">{t('buyerBookings_subtitle')}</p>
           </div>
 
           {loading && (
             <div className="my-bookings-state my-bookings-state--muted">
               <span className="my-bookings-state__loader" aria-hidden />
-              Загрузка…
+              {t('buyerBookings_loading')}
             </div>
           )}
           {!loading && error && (
@@ -233,10 +140,8 @@ export default function MyBookingsPage() {
               <div className="my-bookings-empty__icon" aria-hidden>
                 <FiCalendar size={40} strokeWidth={1.25} />
               </div>
-              <p className="my-bookings-empty__title">Пока нет заявок</p>
-              <p className="my-bookings-empty__text">
-                Заявки на тест-драйв появятся здесь после выбора дат в карточке объекта.
-              </p>
+              <p className="my-bookings-empty__title">{t('buyerBookings_emptyTitle')}</p>
+              <p className="my-bookings-empty__text">{t('buyerBookings_emptyText')}</p>
             </div>
           )}
           {!loading && !error && bookings.length > 0 && (
@@ -245,13 +150,12 @@ export default function MyBookingsPage() {
                 const idKey = String(b.id)
                 const isHi = highlightBookingId === idKey
                 const statusKey = (b.status || 'pending').toLowerCase()
-                const statusLabel = STATUS_LABEL[statusKey] || b.status
-                const cardVariant = ['pending', 'approved', 'rejected'].includes(
-                  statusKey
-                )
+                const label = statusLabel(statusKey)
+                const cardVariant = ['pending', 'approved', 'rejected'].includes(statusKey)
                   ? statusKey
                   : 'pending'
-                const title = b.property_title || `Объект #${b.property_id}`
+                const title =
+                  b.property_title || t('buyerBookings_propertyFallback', { id: b.property_id })
                 const table = b.property_table || 'properties_apartments'
                 return (
                   <li
@@ -264,7 +168,7 @@ export default function MyBookingsPage() {
                     <div className="my-bookings-card__inner">
                       <div className="my-bookings-card__head">
                         <span className={`my-bookings-badge my-bookings-badge--${cardVariant}`}>
-                          {statusLabel}
+                          {label}
                         </span>
                         <h2 className="my-bookings-card__title">{title}</h2>
                       </div>
@@ -273,13 +177,10 @@ export default function MyBookingsPage() {
                           <FiCalendar size={20} strokeWidth={1.75} />
                         </span>
                         <span className="my-bookings-card__dates-text">
-                          {formatDateRangeRu(b.start_date, b.end_date)}
+                          {formatDateRange(b.start_date, b.end_date)}
                         </span>
                       </div>
-                      <p className="my-bookings-card__hint">
-                        Заезд с 15:00 в первый день, выезд до 12:00 в последний (после
-                        подтверждения владельца).
-                      </p>
+                      <p className="my-bookings-card__hint">{t('buyerBookings_hint')}</p>
                       <div className="my-bookings-card__footer">
                         <button
                           type="button"
@@ -290,7 +191,7 @@ export default function MyBookingsPage() {
                             )
                           }
                         >
-                          <span>Календарь и детали</span>
+                          <span>{t('buyerBookings_cta')}</span>
                           <FiArrowRight size={18} aria-hidden />
                         </button>
                       </div>
@@ -300,6 +201,7 @@ export default function MyBookingsPage() {
               })}
             </ul>
           )}
+          </div>
         </main>
       </div>
     </div>

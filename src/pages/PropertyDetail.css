@@ -856,3 +856,15 @@
   }
 }
 
+/* Ожидание верификации для ставок — Tiffany, белый текст */
+.auction-verification-pending-banner {
+  background: linear-gradient(135deg, #0ABAB5 0%, #089a95 100%);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 16px;
+  color: #fff;
+  font-size: 14px;
+  line-height: 1.45;
+}
+

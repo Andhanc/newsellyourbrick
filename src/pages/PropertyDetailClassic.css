@@ -676,13 +676,6 @@
   gap: 8px;
 }
 
-.amenity-item {
-  font-size: 14px;
-  color: #111827;
-  font-weight: 400;
-  line-height: 1.5;
-}
-
 .property-detail-info-item {
   display: flex;
   flex-direction: column;
@@ -792,75 +785,75 @@
   }
 }
 
+/* Чипы удобств: насыщённый Tiffany (#0ABAB5), обводка в тон, блик по фону при hover */
 .amenity-tag {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
   padding: 10px 16px;
-  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
-  border: 1px solid #bae6fd;
+  background: linear-gradient(135deg, #1bbdb7 0%, #0ABAB5 42%, #08928e 100%);
+  border: 1px solid #5eead4;
   border-radius: 8px;
   font-size: 14px;
-  color: #0369a1;
-  font-weight: 600;
-  transition: all 0.2s ease;
-  box-shadow: 0 1px 3px rgba(14, 165, 233, 0.1);
-}
-
-.amenity-tag:hover {
-  background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
-  border-color: #7dd3fc;
-  transform: translateY(-1px);
-  box-shadow: 0 2px 6px rgba(14, 165, 233, 0.15);
-}
-
-.amenity-tag::before {
-  content: '✓';
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 18px;
-  height: 18px;
-  background: #0ea5e9;
   color: #ffffff;
-  border-radius: 50%;
-  font-size: 11px;
-  font-weight: 700;
-  flex-shrink: 0;
+  font-weight: 600;
+  transition: border-color 0.25s ease, transform 0.2s ease, box-shadow 0.25s ease;
+  box-shadow: 0 2px 8px rgba(10, 186, 181, 0.35);
+  max-width: 100%;
+  white-space: normal;
+  text-align: left;
 }
 
-.amenity-tag[style*="opacity"] {
-  background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
-  border-color: #e5e7eb;
-  color: #9ca3af;
-  box-shadow: none;
+.amenity-tag:not(.amenity-tag--empty) {
+  background-image:
+    linear-gradient(
+      105deg,
+      transparent 0%,
+      transparent 38%,
+      rgba(255, 255, 255, 0.5) 50%,
+      transparent 62%,
+      transparent 100%
+    ),
+    linear-gradient(135deg, #1bbdb7 0%, #0ABAB5 42%, #08928e 100%);
+  background-size: 220% 100%, 100% 100%;
+  background-position: -160% 0, 0 0;
+  background-repeat: no-repeat;
+  transition:
+    background-position 0.65s cubic-bezier(0.33, 1, 0.68, 1),
+    border-color 0.25s ease,
+    transform 0.2s ease,
+    box-shadow 0.25s ease;
 }
 
-.amenity-tag[style*="opacity"]::before {
-  background: #d1d5db;
-  content: '—';
-}
-
-.amenity-tag[style*="opacity"]:hover {
-  background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
-  transform: none;
-  box-shadow: none;
+.amenity-tag:not(.amenity-tag--empty):hover {
+  background-image:
+    linear-gradient(
+      105deg,
+      transparent 0%,
+      transparent 38%,
+      rgba(255, 255, 255, 0.65) 50%,
+      transparent 62%,
+      transparent 100%
+    ),
+    linear-gradient(135deg, #26cfc9 0%, #14c9c2 45%, #0a9e99 100%);
+  background-position: 160% 0, 0 0;
+  border-color: #a7f3f0;
+  transform: translateY(-1px);
+  box-shadow:
+    0 2px 12px rgba(10, 186, 181, 0.45),
+    0 0 0 1px rgba(167, 243, 240, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35);
 }
 
 .amenity-tag--empty {
-  background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%) !important;
+  background: #f9fafb !important;
   border-color: #e5e7eb !important;
   color: #9ca3af !important;
   box-shadow: none !important;
-}
-
-.amenity-tag--empty::before {
-  background: #d1d5db !important;
-  content: '—' !important;
+  font-weight: 500 !important;
 }
 
 .amenity-tag--empty:hover {
-  background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%) !important;
+  background: #f3f4f6 !important;
   transform: none !important;
   box-shadow: none !important;
 }
@@ -1333,6 +1326,57 @@
   box-shadow: 0 6px 20px rgba(245, 87, 108, 0.4);
   animation: winnerPulse 2s ease-in-out infinite;
   border: 2px solid rgba(255, 255, 255, 0.3);
+  position: relative;
+  overflow: hidden;
+  transition: box-shadow 0.3s ease, border-color 0.3s ease;
+}
+
+.auction-winner-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+.auction-winner-card::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  transform: translate(-50%, -50%);
+  transition: width 0.5s ease, height 0.5s ease;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.auction-winner-card::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.14), transparent);
+  transform: rotate(45deg);
+  transition: left 0.6s ease;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.auction-winner-card:hover {
+  box-shadow: 0 8px 28px rgba(245, 87, 108, 0.55);
+  border-color: rgba(255, 255, 255, 0.45);
+}
+
+.auction-winner-card:hover::before {
+  width: 320px;
+  height: 320px;
+}
+
+.auction-winner-card:hover::after {
+  left: 100%;
 }
 
 .auction-winner-card--settled {
@@ -1634,6 +1678,12 @@
   font-weight: 600;
   color: #374151;
   font-family: 'Montserrat', sans-serif;
+}
+
+.recent-bid-item__country-flag {
+  font-size: 1.1rem;
+  line-height: 1;
+  flex-shrink: 0;
 }
 
 .recent-bid-item__user-name {
@@ -1939,74 +1989,90 @@
   transition: all 0.1s ease;
 }
 
-/* Кнопка для победителя аукциона */
+/* «Перейти к покупке» (победитель) — тот же glass + Tiffany, что у «Сделать ставку» (.btn-liquid-glass) */
 .property-detail-sidebar__buy-btn {
   padding: 14px 24px;
-  border-radius: 12px;
-  border: none;
-  background: linear-gradient(135deg, #f59e0b 0%, #d97706 50%, #b45309 100%);
+  min-height: 48px;
+  box-sizing: border-box;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: linear-gradient(135deg, rgba(10, 186, 181, 0.85) 0%, rgba(8, 154, 149, 0.85) 100%);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
   color: #ffffff;
-  font-weight: 700;
+  font-weight: 600;
   font-family: 'Montserrat', sans-serif;
-  font-size: 16px;
+  font-size: 15px;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   width: 100%;
   max-width: 100%;
   margin: 16px 0 20px;
   display: block;
-  box-shadow: 0 4px 16px rgba(245, 158, 11, 0.4), 0 2px 8px rgba(0, 0, 0, 0.15);
+  box-shadow:
+    0 4px 16px rgba(10, 186, 181, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.1);
   position: relative;
   overflow: hidden;
-  letter-spacing: 0.5px;
-  text-transform: uppercase;
+  letter-spacing: 0.02em;
 }
 
 .property-detail-sidebar__buy-btn::before {
   content: '';
   position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  transform: translate(-50%, -50%);
+  transition: width 0.5s ease, height 0.5s ease;
+}
+
+.property-detail-sidebar__buy-btn::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  transform: rotate(45deg);
   transition: left 0.6s ease;
+  pointer-events: none;
 }
 
-.property-detail-sidebar__buy-btn:hover {
-  background: linear-gradient(135deg, #d97706 0%, #b45309 50%, #92400e 100%);
-  box-shadow: 0 6px 20px rgba(245, 158, 11, 0.5), 0 4px 12px rgba(0, 0, 0, 0.2);
+.property-detail-sidebar__buy-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, rgba(10, 186, 181, 0.95) 0%, rgba(8, 154, 149, 0.95) 100%);
+  backdrop-filter: blur(25px) saturate(200%);
+  -webkit-backdrop-filter: blur(25px) saturate(200%);
   transform: translateY(-2px);
+  box-shadow:
+    0 6px 20px rgba(10, 186, 181, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.15);
+  border-color: rgba(255, 255, 255, 0.4);
 }
 
-.property-detail-sidebar__buy-btn:hover::before {
+.property-detail-sidebar__buy-btn:hover:not(:disabled)::before {
+  width: 300px;
+  height: 300px;
+}
+
+.property-detail-sidebar__buy-btn:hover:not(:disabled)::after {
   left: 100%;
 }
 
-.property-detail-sidebar__buy-btn:active {
+.property-detail-sidebar__buy-btn:active:not(:disabled) {
   transform: translateY(0);
-  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.4);
-  transition: all 0.1s ease;
 }
 
-.property-detail-sidebar__buy-btn--winner {
-  background: linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%);
-  box-shadow: 0 4px 16px rgba(16, 185, 129, 0.4), 0 2px 8px rgba(0, 0, 0, 0.15);
-  animation: winnerPulse 2s ease-in-out infinite;
-}
-
-.property-detail-sidebar__buy-btn--winner:hover {
-  background: linear-gradient(135deg, #059669 0%, #047857 50%, #065f46 100%);
-  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.5), 0 4px 12px rgba(0, 0, 0, 0.2);
-}
-
-@keyframes winnerPulse {
-  0%, 100% {
-    box-shadow: 0 4px 16px rgba(16, 185, 129, 0.4), 0 2px 8px rgba(0, 0, 0, 0.15);
-  }
-  50% {
-    box-shadow: 0 6px 24px rgba(16, 185, 129, 0.6), 0 4px 12px rgba(0, 0, 0, 0.2);
-  }
+.property-detail-sidebar__buy-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
 }
 
 /* Карта */
@@ -2777,6 +2843,18 @@
   font-size: 13px;
   color: #94a3b8;
   text-align: center;
+}
+
+/* Ожидание верификации для ставок — Tiffany, белый текст */
+.auction-verification-pending-banner {
+  background: linear-gradient(135deg, #0ABAB5 0%, #089a95 100%);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 16px;
+  color: #fff;
+  font-size: 14px;
+  line-height: 1.45;
 }
 
 

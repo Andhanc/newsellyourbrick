@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { FiChevronDown, FiChevronUp } from 'react-icons/fi'
 import { showNotification } from '../utils/toastHelper'
 import { ensureCanOpenProperty } from '../utils/propertyAccessGuard'
@@ -7,7 +8,13 @@ import './WonPropertyCard.css'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
 
-const WonPropertyCard = ({ purchase, formatPrice, formatDate, getStatusLabel }) => {
+const WonPropertyCard = ({ purchase, formatPrice, formatDate }) => {
+  const { t, i18n } = useTranslation()
+  const billingLocale = (() => {
+    const code = (i18n.language || 'ru').split('-')[0]
+    const map = { ru: 'ru-RU', en: 'en-US', de: 'de-DE', es: 'es-ES', fr: 'fr-FR', sv: 'sv-SE' }
+    return map[code] || 'en-US'
+  })()
   const [timeRemaining, setTimeRemaining] = useState(null)
   const [depositExpired, setDepositExpired] = useState(false)
   const [isPayingDeposit, setIsPayingDeposit] = useState(false)
@@ -58,15 +65,15 @@ const WonPropertyCard = ({ purchase, formatPrice, formatDate, getStatusLabel }) 
           // Перезагружаем страницу для обновления данных
           window.location.reload()
         } else {
-          showNotification(result.error || 'Ошибка при оплате депозита')
+          showNotification(result.error || t('buyerWon_payError'))
         }
       } else {
         const errorData = await response.json().catch(() => ({}))
-        showNotification(errorData.error || 'Ошибка при оплате депозита')
+        showNotification(errorData.error || t('buyerWon_payError'))
       }
     } catch (error) {
       console.error('Ошибка при оплате депозита:', error)
-      showNotification('Ошибка сети. Попробуйте позже.')
+      showNotification(t('buyerWon_networkError'))
     } finally {
       setIsPayingDeposit(false)
     }
@@ -81,7 +88,7 @@ const WonPropertyCard = ({ purchase, formatPrice, formatDate, getStatusLabel }) 
     const seconds = Math.floor((ms % (1000 * 60)) / 1000)
 
     if (days > 0) {
-      return `${days}д ${hours}ч ${minutes}м ${seconds}с`
+      return t('buyerWon_timeRemainVerbose', { days, hours, minutes, seconds })
     }
     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
   }
@@ -91,17 +98,20 @@ const WonPropertyCard = ({ purchase, formatPrice, formatDate, getStatusLabel }) 
       <div className="won-property-card__main">
         <div className="won-property-card__image-wrapper">
           <div className="won-property-card__image">
-            <img src={purchase.image} alt={purchase.propertyTitle} />
+            <img
+              src={purchase.image}
+              alt={purchase.propertyTitle || t('buyerHistory_fallbackProperty')}
+            />
             {/* Таймер на фото */}
             {!purchase.depositPaid && purchase.depositDueDate && !depositExpired && timeRemaining && (
               <div className="won-property-card__timer-overlay">
                 <div className="timer-overlay__time">{formatTimeRemaining(timeRemaining)}</div>
-                <div className="timer-overlay__label">Осталось до оплаты</div>
+                <div className="timer-overlay__label">{t('buyerWon_timeLeft')}</div>
               </div>
             )}
             {!purchase.depositPaid && depositExpired && (
               <div className="won-property-card__timer-overlay expired">
-                <div className="timer-overlay__time">Срок истек</div>
+                <div className="timer-overlay__time">{t('buyerWon_expired')}</div>
               </div>
             )}
             <div className={`won-property-card__badge status-badge ${
@@ -109,26 +119,30 @@ const WonPropertyCard = ({ purchase, formatPrice, formatDate, getStatusLabel }) 
               depositExpired ? 'status-failed' : 
               'status-warning'
             }`}>
-              {purchase.depositPaid ? 'Оплачено' : 
-               depositExpired ? 'Истек' : 
-               'Ожидает оплаты'}
+              {purchase.depositPaid ? t('buyerWon_paid') : 
+               depositExpired ? t('buyerWon_expiredShort') : 
+               t('buyerWon_pendingPay')}
             </div>
           </div>
         </div>
         
         <div className="won-property-card__info">
-          <h3 className="won-property-card__title">{purchase.propertyTitle}</h3>
-          <p className="won-property-card__location">{purchase.location}</p>
+          <h3 className="won-property-card__title">
+            {purchase.propertyTitle || t('buyerHistory_fallbackProperty')}
+          </h3>
+          <p className="won-property-card__location">
+            {purchase.location || t('buyerHistory_fallbackAddress')}
+          </p>
           
           <div className="won-property-card__quick-info">
             <div className="quick-info__item">
-              <span className="quick-info__label">Выигрышная ставка:</span>
+              <span className="quick-info__label">{t('buyerWon_winningBid')}</span>
               <span className="quick-info__value price">
                 {formatPrice(purchase.purchasePrice, purchase.currency)}
               </span>
             </div>
             <div className="quick-info__item">
-              <span className="quick-info__label">Депозит:</span>
+              <span className="quick-info__label">{t('buyerWon_deposit')}</span>
               <span className="quick-info__value deposit-amount">
                 {formatPrice(purchase.depositAmount, purchase.currency)}
               </span>
@@ -142,7 +156,7 @@ const WonPropertyCard = ({ purchase, formatPrice, formatDate, getStatusLabel }) 
               onClick={handlePayDeposit}
               disabled={isPayingDeposit}
             >
-              {isPayingDeposit ? 'Обработка...' : `Оплатить депозит`}
+              {isPayingDeposit ? t('buyerWon_processing') : t('buyerWon_payDeposit')}
             </button>
           )}
 
@@ -151,7 +165,7 @@ const WonPropertyCard = ({ purchase, formatPrice, formatDate, getStatusLabel }) 
             className="won-property-card__toggle-button"
             onClick={() => setIsDetailsOpen(!isDetailsOpen)}
           >
-            <span>Детали</span>
+            <span>{t('buyerWon_details')}</span>
             {isDetailsOpen ? <FiChevronUp /> : <FiChevronDown />}
           </button>
         </div>
@@ -162,28 +176,28 @@ const WonPropertyCard = ({ purchase, formatPrice, formatDate, getStatusLabel }) 
         <div className="won-property-card__details-panel">
           <div className="details-panel__section">
             <div className="details-panel__item">
-              <span className="details-panel__label">Дата выигрыша:</span>
+              <span className="details-panel__label">{t('buyerWon_winDate')}</span>
               <span className="details-panel__value">
                 {formatDate(purchase.purchaseDate)}
               </span>
             </div>
             <div className="details-panel__item">
-              <span className="details-panel__label">Выигрышная ставка:</span>
+              <span className="details-panel__label">{t('buyerWon_winningBid')}</span>
               <span className="details-panel__value price">
                 {formatPrice(purchase.purchasePrice, purchase.currency)}
               </span>
             </div>
             <div className="details-panel__item">
-              <span className="details-panel__label">Сумма депозита:</span>
+              <span className="details-panel__label">{t('buyerWon_depositAmount')}</span>
               <span className="details-panel__value deposit-amount">
                 {formatPrice(purchase.depositAmount, purchase.currency)}
               </span>
             </div>
             {!purchase.depositPaid && purchase.depositDueDate && (
               <div className="details-panel__item">
-                <span className="details-panel__label">Срок оплаты:</span>
+                <span className="details-panel__label">{t('buyerWon_paymentDeadline')}</span>
                 <span className="details-panel__value">
-                  {new Date(purchase.depositDueDate).toLocaleString('ru-RU', {
+                  {new Date(purchase.depositDueDate).toLocaleString(billingLocale, {
                     day: '2-digit',
                     month: '2-digit',
                     year: 'numeric',
@@ -202,21 +216,24 @@ const WonPropertyCard = ({ purchase, formatPrice, formatDate, getStatusLabel }) 
                 className="won-property-card__toggle-button"
                 onClick={() => setIsInstructionsOpen(!isInstructionsOpen)}
               >
-                <span>Инструкция по оплате</span>
+                <span>{t('buyerWon_paymentInstructions')}</span>
                 {isInstructionsOpen ? <FiChevronUp /> : <FiChevronDown />}
               </button>
               
               {isInstructionsOpen && (
                 <div className="won-property-card__instructions-panel">
                   <ol className="instructions-panel__list">
-                    <li>Перейдите в раздел "Депозит" в вашем профиле</li>
-                    <li>Пополните депозит на сумму {formatPrice(purchase.depositAmount, purchase.currency)}</li>
-                    <li>Нажмите кнопку "Оплатить депозит" выше</li>
-                    <li>После подтверждения оплаты статус изменится на "Депозит оплачен"</li>
+                    <li>{t('buyerWon_instr1')}</li>
+                    <li>
+                      {t('buyerWon_instr2', {
+                        amount: formatPrice(purchase.depositAmount, purchase.currency),
+                      })}
+                    </li>
+                    <li>{t('buyerWon_instr3')}</li>
+                    <li>{t('buyerWon_instr4')}</li>
                   </ol>
                   <div className="instructions-panel__note">
-                    <strong>Важно:</strong> Депозит необходимо внести в течение 3 дней с момента выигрыша аукциона.
-                    В случае просрочки свяжитесь с поддержкой.
+                    <strong>{t('buyerWon_important')}</strong> {t('buyerWon_depositNote')}
                   </div>
                 </div>
               )}
@@ -231,7 +248,7 @@ const WonPropertyCard = ({ purchase, formatPrice, formatDate, getStatusLabel }) 
               e.preventDefault()
             }}
           >
-            Посмотреть объект →
+            {t('buyerWon_viewProperty')}
           </Link>
         </div>
       )}

@@ -1,0 +1,40 @@
+/**
+ * Общий паттерн кабинета покупателя (десктоп):
+ * правая колона с внутренним скроллом и цепочкой на .app-layout (см. useChainedAppLayoutScroll).
+ */
+
+.buyer-cabinet-main-scroll {
+  display: block;
+  min-height: 0;
+}
+
+@media (min-width: 769px) {
+  .buyer-cabinet-layout-container {
+    align-items: stretch;
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+
+  .buyer-cabinet-layout-main {
+    min-height: 0 !important;
+    max-height: 100vh;
+    max-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .buyer-cabinet-main-scroll {
+    flex: 1;
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior-y: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .buyer-cabinet-main-scroll::-webkit-scrollbar {
+    display: none;
+  }
+}

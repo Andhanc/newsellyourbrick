@@ -45,6 +45,7 @@ import { getUserData } from '../services/authService'
 import { generateListingDescription } from '../services/aiService'
 import { showNotification } from '../utils/toastHelper'
 import { notifyBonusSubmissionsChanged } from '../utils/bonusSubmissionsSync'
+import { scrollMainTo } from '../utils/mainScroll'
 import AnimatedGenerateButton from '../components/ui/animated-generate-button-shadcn-tailwind'
 import AddPropertyProgress from '../components/AddPropertyProgress'
 import './AddProperty.css'
@@ -3639,9 +3640,9 @@ const AddProperty = ({
   useEffect(() => {
     if (typeof window !== 'undefined') {
       try {
-        window.scrollTo({ top: 0, left: 0, behavior: 'auto' })
+        scrollMainTo(0, 0, 'auto')
       } catch {
-        window.scrollTo(0, 0)
+        scrollMainTo(0, 0)
       }
     }
 

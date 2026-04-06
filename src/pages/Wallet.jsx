@@ -1,9 +1,15 @@
-import { useNavigate, Link, useSearchParams } from 'react-router-dom'
+import { useNavigate, Link, useSearchParams, useLocation } from 'react-router-dom'
 import { useState, useEffect, useRef } from 'react'
 import { FaArrowLeft, FaArrowUp, FaArrowDown } from 'react-icons/fa'
 import { FiClock } from 'react-icons/fi'
-import { useUser } from '@clerk/clerk-react'
-import { getUserData, isAuthenticated } from '../services/authService'
+import { useUser, useAuth } from '@clerk/clerk-react'
+import {
+  getUserData,
+  isAuthenticated,
+  CLERK_DB_USER_SYNCED,
+  fetchNumericDbUserIdForApi,
+  getStoredNumericUserId,
+} from '../services/authService'
 import { getApiBaseUrl, getApiBaseUrlSync } from '../utils/apiConfig'
 import UserBidHistoryModal from '../components/UserBidHistoryModal'
 import BuyNowModal from '../components/BuyNowModal'
@@ -18,6 +24,12 @@ import {
 } from '../utils/subscriptionCheckout'
 import { getUsdtJettonWalletAddress, buildUsdtTransferTransaction } from '../utils/tonUsdt'
 import { ensureCanOpenProperty } from '../utils/propertyAccessGuard'
+import {
+  isSafeWalletFromPath,
+  getWalletEntryFrom,
+  clearWalletEntryFrom,
+  setWalletEntryFrom,
+} from '../utils/walletNavigation'
 import './Wallet.css'
 
 // Используем синхронную версию для инициализации, затем обновим при загрузке
@@ -28,12 +40,14 @@ const USDT_PAYMENT_RECIPIENT = 'UQA8j4T1Au4jDjWTfl_PrB4_Whoo15RZhszE9E6gxUvu7OTI
 
 const Wallet = () => {
   const navigate = useNavigate()
+  const location = useLocation()
   const [searchParams, setSearchParams] = useSearchParams()
   const walletDepositHandledRef = useRef(null)
   const walletReservationHandledRef = useRef(null)
   const { user, isLoaded: userLoaded } = useUser()
+  const { isSignedIn, isLoaded: authLoaded } = useAuth()
   const userData = getUserData()
-  const [dbUserId, setDbUserId] = useState(null)
+  const [dbUserId, setDbUserId] = useState(() => getStoredNumericUserId())
   
   // Получаем числовой ID из БД
   const getUserId = () => {
@@ -58,6 +72,14 @@ const Wallet = () => {
   }
   
   const userId = getUserId()
+
+  // Сохраняем «откуда пришли» в sessionStorage — после Stripe location.state теряется
+  useEffect(() => {
+    const from = location.state?.from
+    if (isSafeWalletFromPath(from)) {
+      setWalletEntryFrom(from)
+    }
+  }, [location.state])
 
   const [depositAmount, setDepositAmount] = useState(0)
   const [loading, setLoading] = useState(true)
@@ -129,64 +151,55 @@ const Wallet = () => {
     }
   }
 
-  // Получаем числовой ID из БД для Clerk пользователей
   useEffect(() => {
-    // Если dbUserId уже установлен, не делаем ничего
-    if (dbUserId) {
-      return
-    }
-    
-    const fetchDbUserId = async () => {
-      // Проверяем localStorage сначала
+    const applyNumericUserIdFromStorage = () => {
       const savedUserId = localStorage.getItem('userId')
       if (savedUserId && /^\d+$/.test(savedUserId)) {
-        setDbUserId(parseInt(savedUserId))
-        return
-      }
-      
-      // Если userLoaded еще не загружен, ждем
-      if (!userLoaded) {
-        return
-      }
-      
-      const isClerkAuth = user && userLoaded
-      const isOldAuth = isAuthenticated()
-      
-      // Для Clerk пользователей получаем ID из БД
-      if (isClerkAuth && user) {
-        try {
-          if (!API_BASE_URL || API_BASE_URL.includes('localhost')) {
-            API_BASE_URL = await getApiBaseUrl()
-          }
-          
-          const userEmail = user.primaryEmailAddress?.emailAddress || user.emailAddresses?.[0]?.emailAddress
-          if (userEmail) {
-            const userResponse = await fetch(`${API_BASE_URL}/users/email/${encodeURIComponent(userEmail)}`)
-            if (userResponse.ok) {
-              const userData = await userResponse.json()
-              if (userData.success && userData.data && userData.data.id) {
-                const numericId = userData.data.id
-                setDbUserId(numericId)
-                localStorage.setItem('userId', String(numericId))
-              }
-            }
-          }
-        } catch (e) {
-          console.warn('Не удалось получить userId из БД:', e)
-        }
-      } else if (isOldAuth) {
-        // Для старой системы авторизации используем ID из getUserData
-        const currentUserData = getUserData()
-        const userId = currentUserData?.id
-        if (userId && /^\d+$/.test(userId.toString())) {
-          setDbUserId(parseInt(userId))
-        }
+        const n = parseInt(savedUserId, 10)
+        setDbUserId((prev) => (prev === n ? prev : n))
       }
     }
-    
-    fetchDbUserId()
+    applyNumericUserIdFromStorage()
+    window.addEventListener(CLERK_DB_USER_SYNCED, applyNumericUserIdFromStorage)
+    return () => window.removeEventListener(CLERK_DB_USER_SYNCED, applyNumericUserIdFromStorage)
+  }, [])
+
+  useEffect(() => {
+    let cancelled = false
+    const run = async () => {
+      const id = await fetchNumericDbUserIdForApi({
+        clerkUser: user,
+        clerkUserLoaded: userLoaded,
+      })
+      if (!cancelled && id != null) {
+        setDbUserId((prev) => (prev === id ? prev : id))
+      }
+    }
+    void run()
+    return () => {
+      cancelled = true
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userLoaded, user?.id, user?.primaryEmailAddress?.emailAddress])
+
+  // Не оставляем кошелёк в вечной загрузке, если числовой id не удалось получить
+  useEffect(() => {
+    if (dbUserId) return
+    const timer = window.setTimeout(() => {
+      const raw = localStorage.getItem('userId')
+      const hasNumeric = raw && /^\d+$/.test(raw)
+      if (hasNumeric) return
+      const guest = authLoaded && !isSignedIn && !isAuthenticated()
+      if (guest) {
+        setLoading(false)
+        return
+      }
+      if (userLoaded && authLoaded) {
+        setLoading(false)
+      }
+    }, 4000)
+    return () => window.clearTimeout(timer)
+  }, [dbUserId, userLoaded, authLoaded, isSignedIn])
 
   // Инициализируем API URL при монтировании компонента
   useEffect(() => {
@@ -525,6 +538,22 @@ const Wallet = () => {
     }
   }
 
+  const handleWalletBack = () => {
+    const fromState = location.state?.from
+    const from = isSafeWalletFromPath(fromState) ? fromState : getWalletEntryFrom()
+    if (from) {
+      clearWalletEntryFrom()
+      navigate(from)
+      return
+    }
+    const idx = window.history.state?.idx
+    if (typeof idx === 'number' && idx > 0) {
+      navigate(-1)
+      return
+    }
+    navigate('/')
+  }
+
   const handleBookNow = () => {
     // Проверяем авторизацию
     const isClerkAuth = user && userLoaded
@@ -604,7 +633,7 @@ const Wallet = () => {
       <div className="wallet-container">
         {/* Заголовок */}
         <div className="wallet-header">
-          <button onClick={() => navigate(-1)} className="wallet-back-button">
+          <button type="button" onClick={handleWalletBack} className="wallet-back-button">
             <FaArrowLeft />
             <span>Назад</span>
           </button>

@@ -6,6 +6,7 @@ import { Timeline } from '@/components/ui/timeline';
 import TeamShowcase from '@/components/ui/team-showcase';
 import StartWithUs from '@/components/ui/StartWithUs';
 import Header from '@/components/Header';
+import { scrollMainTo } from '@/utils/mainScroll';
 
 const sampleMediaContent = {
   video: {
@@ -110,7 +111,7 @@ const About = () => {
   const currentMedia = sampleMediaContent.video;
 
   useEffect(() => {
-    window.scrollTo(0, 0);
+    scrollMainTo(0, 0);
     const resetEvent = new Event('resetSection');
     window.dispatchEvent(resetEvent);
   }, []);

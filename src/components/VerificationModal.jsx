@@ -2,9 +2,10 @@ import { useState, useRef, useEffect, useLayoutEffect, useCallback } from 'react
 import * as faceapi from 'face-api.js'
 import { showNotification } from '../utils/toastHelper'
 import { saveVerificationPhoto, loadVerificationPhotos, clearVerificationPhotos } from '../utils/verificationStorage'
+import { getApiBaseUrl } from '../utils/apiConfig'
 import './VerificationModal.css'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
+let API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
 
 /** Область рамки (овала/прямоугольника) в координатах превью камеры — для clip-path и сохранения снимка */
 function buildClipPathFromRegion(region) {
@@ -50,6 +51,22 @@ const VerificationModal = ({ isOpen, onClose, userId, onComplete, required }) =>
       setAnimationClass('slide-in')
     }
   }, [isOpen])
+
+  useEffect(() => {
+    let cancelled = false
+    const sync = async () => {
+      try {
+        const url = await getApiBaseUrl()
+        if (!cancelled && url) API_BASE_URL = url
+      } catch {
+        /* оставляем env */
+      }
+    }
+    sync()
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   // Подгружаем сохранённые локально фотографии из IndexedDB
   useEffect(() => {
@@ -213,6 +230,29 @@ const VerificationModal = ({ isOpen, onClose, userId, onComplete, required }) =>
       const results = await Promise.all(uploadPromises)
 
       if (results.every(r => r.success)) {
+        const numericUserId = typeof userId === 'string' ? parseInt(userId, 10) : Number(userId)
+        if (!Number.isNaN(numericUserId) && numericUserId > 0) {
+          try {
+            let base = API_BASE_URL
+            if (!base || base.includes('localhost')) {
+              base = await getApiBaseUrl()
+              API_BASE_URL = base
+            }
+            const normalized = String(base).replace(/\/$/, '')
+            const clearRes = await fetch(
+              `${normalized}/users/${numericUserId}/clear-rejected-documents`,
+              { method: 'POST', headers: { 'Content-Type': 'application/json' } }
+            )
+            if (!clearRes.ok) {
+              console.warn('⚠️ clear-rejected-documents:', clearRes.status)
+            } else {
+              window.dispatchEvent(new Event('verification-status-update'))
+            }
+          } catch (clearErr) {
+            console.warn('⚠️ clear-rejected-documents:', clearErr)
+          }
+        }
+
         // Получаем информацию о привязанной карте, если она есть
         let cardInfo = null
         const cardBound = localStorage.getItem('cardBound')

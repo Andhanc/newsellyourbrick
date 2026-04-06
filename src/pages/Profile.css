@@ -387,6 +387,8 @@
   flex-direction: column;
 }
 
+/* Внутренний скролл правой колонки кабинета: buyer-cabinet-scroll.css + buyer-cabinet-layout-* */
+
 .profile-header {
   display: flex;
   flex-direction: column;

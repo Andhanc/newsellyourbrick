@@ -13,7 +13,6 @@ import {
   FiLogOut,
   FiUser,
   FiUsers,
-  FiSettings,
   FiBarChart2,
   FiX,
   FiDownload,
@@ -45,26 +44,6 @@ import './OwnerDashboard.css'
 import { useTranslation } from 'react-i18next'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
-
-/**
- * Названия языков только на самом языке (как в футере), без t() —
- * иначе при смене локали подписи в списке переводятся (напр. «Inglés» вместо English).
- */
-const OWNER_SETTINGS_LANGUAGE_OPTIONS = [
-  { code: 'ru', nativeName: 'Русский' },
-  { code: 'en', nativeName: 'English' },
-  { code: 'de', nativeName: 'Deutsch' },
-  { code: 'es', nativeName: 'Español' },
-  { code: 'fr', nativeName: 'Français' },
-  { code: 'sv', nativeName: 'Svenska' }
-]
-
-const OWNER_I18N_LANGUAGE_CODES = OWNER_SETTINGS_LANGUAGE_OPTIONS.map((o) => o.code)
-
-function getOwnerSettingsLanguageValue(i18nLanguage) {
-  const code = (i18nLanguage || 'ru').split('-')[0]
-  return OWNER_I18N_LANGUAGE_CODES.includes(code) ? code : 'ru'
-}
 
 // Демонстрационные данные объявлений владельца
 const mockOwnerProperties = [
@@ -143,7 +122,6 @@ const OwnerDashboard = () => {
   const [showWelcomeModal, setShowWelcomeModal] = useState(false)
   const [showFileUploadModal, setShowFileUploadModal] = useState(false)
   const [isProfilePanelOpen, setIsProfilePanelOpen] = useState(false)
-  const [isSettingsPanelOpen, setIsSettingsPanelOpen] = useState(false)
   const [isSalesExpanded, setIsSalesExpanded] = useState(false)
   const [isCalculatorModalOpen, setIsCalculatorModalOpen] = useState(false)
   const [selectedPropertyForHistory, setSelectedPropertyForHistory] = useState(null)
@@ -1345,23 +1323,11 @@ const OwnerDashboard = () => {
                       className="owner-dashboard__mobile-menu-item owner-dashboard__mobile-menu-item--profile"
                       onClick={() => {
                         setIsProfilePanelOpen(true)
-                        setIsSettingsPanelOpen(false)
                         setIsMobileMenuOpen(false)
                       }}
                       aria-label={t('profile')}
                     >
                       <FiUser size={18} />
-                    </button>
-                    <button
-                      className="owner-dashboard__mobile-menu-item owner-dashboard__mobile-menu-item--settings"
-                      onClick={() => {
-                        setIsSettingsPanelOpen(true)
-                        setIsProfilePanelOpen(false)
-                        setIsMobileMenuOpen(false)
-                      }}
-                      aria-label={t('settingsLabel') || 'Настройки'}
-                    >
-                      <FiSettings size={18} />
                     </button>
                     <button
                       className="owner-dashboard__mobile-menu-item owner-dashboard__mobile-menu-item--add"
@@ -1394,7 +1360,6 @@ const OwnerDashboard = () => {
                   onClick={() => {
                     setOwnerNotifOpen((open) => !open)
                     setIsProfilePanelOpen(false)
-                    setIsSettingsPanelOpen(false)
                   }}
                   aria-label={t('notifications')}
                 >
@@ -1404,21 +1369,10 @@ const OwnerDashboard = () => {
                   className="owner-dashboard__icon-btn"
                   onClick={() => {
                     setIsProfilePanelOpen(true)
-                    setIsSettingsPanelOpen(false)
                   }}
                   aria-label={t('profile')}
                 >
                   <FiUser size={20} />
-                </button>
-                <button 
-                  className="owner-dashboard__icon-btn"
-                  onClick={() => {
-                    setIsSettingsPanelOpen(true)
-                    setIsProfilePanelOpen(false)
-                  }}
-                  aria-label={t('settingsLabel') || 'Настройки'}
-                >
-                  <FiSettings size={20} />
                 </button>
                 <button 
                   className="owner-dashboard__add-btn"
@@ -2619,78 +2573,6 @@ const OwnerDashboard = () => {
                     </button>
                   </div>
                 )}
-              </div>
-            </div>
-          </div>
-        </>
-      )}
-
-      {/* Панель настроек */}
-      {isSettingsPanelOpen && (
-        <>
-          <div 
-            className="owner-sidebar-backdrop"
-            onClick={() => setIsSettingsPanelOpen(false)}
-          />
-          <div className="owner-sidebar-panel owner-sidebar-panel--settings">
-            <div className="owner-sidebar-panel__content">
-              <div className="owner-sidebar-panel__header">
-                <h3 className="owner-sidebar-panel__title">{t('ownerSettingsTitle')}</h3>
-                <button 
-                  type="button" 
-                  className="owner-sidebar-panel__close"
-                  onClick={() => setIsSettingsPanelOpen(false)}
-                  aria-label={t('ownerSettingsCloseAria')}
-                >
-                  <FiX size={20} />
-                </button>
-              </div>
-              <div className="owner-sidebar-panel__body">
-                <div className="owner-settings-section">
-                  <h4 className="owner-settings-section__title">{t('ownerSettingsChangeLanguage')}</h4>
-                  <select
-                    className="owner-settings-section__select"
-                    value={getOwnerSettingsLanguageValue(i18n.language)}
-                    onChange={async (e) => {
-                      try {
-                        await i18n.changeLanguage(e.target.value)
-                      } catch (error) {
-                        console.error('Error changing language:', error)
-                      }
-                    }}
-                    aria-label={t('ownerSettingsChangeLanguage')}
-                  >
-                    {OWNER_SETTINGS_LANGUAGE_OPTIONS.map(({ code, nativeName }) => (
-                      <option key={code} value={code}>
-                        {nativeName}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="owner-settings-section">
-                  <h4 className="owner-settings-section__title">{t('ownerSettingsNotifications')}</h4>
-                  <div className="owner-settings-section__toggle">
-                    <label className="owner-toggle-switch">
-                      <input type="checkbox" defaultChecked />
-                      <span className="owner-toggle-slider"></span>
-                    </label>
-                    <span className="owner-toggle-label">{t('ownerSettingsEnableNotifications')}</span>
-                  </div>
-                  <div className="owner-settings-section__toggle">
-                    <label className="owner-toggle-switch">
-                      <input type="checkbox" defaultChecked />
-                      <span className="owner-toggle-slider"></span>
-                    </label>
-                    <span className="owner-toggle-label">{t('ownerSettingsEmailNotifications')}</span>
-                  </div>
-                  <div className="owner-settings-section__toggle">
-                    <label className="owner-toggle-switch">
-                      <input type="checkbox" />
-                      <span className="owner-toggle-slider"></span>
-                    </label>
-                    <span className="owner-toggle-label">{t('ownerSettingsSmsNotifications')}</span>
-                  </div>
-                </div>
               </div>
             </div>
           </div>

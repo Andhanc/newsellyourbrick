@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { useClerk, useAuth } from '@clerk/clerk-react';
 import { FaTimes } from 'react-icons/fa';
 import { clearUserData } from '../services/authService';
+import { getMainScrollEl, scrollMainTo } from '../utils/mainScroll';
 import './BlockedUserModal.css';
 
 const BlockedUserModal = ({ isOpen }) => {
@@ -11,21 +12,23 @@ const BlockedUserModal = ({ isOpen }) => {
   // Блокируем прокрутку body когда модальное окно открыто
   useEffect(() => {
     if (isOpen) {
-      // Сохраняем текущую позицию прокрутки
-      const scrollY = window.scrollY;
-      // Блокируем прокрутку
-      document.body.style.position = 'fixed';
-      document.body.style.top = `-${scrollY}px`;
-      document.body.style.width = '100%';
-      document.body.style.overflow = 'hidden';
-      
+      const main = getMainScrollEl();
+      const scrollY = main ? main.scrollTop : window.scrollY;
+      const prevOverflow = main ? main.style.overflow : '';
+      if (main) {
+        main.style.overflow = 'hidden';
+      } else {
+        document.body.style.overflow = 'hidden';
+      }
+
       return () => {
-        // Восстанавливаем прокрутку при закрытии
-        document.body.style.position = '';
-        document.body.style.top = '';
-        document.body.style.width = '';
-        document.body.style.overflow = '';
-        window.scrollTo(0, scrollY);
+        if (main) {
+          main.style.overflow = prevOverflow;
+          main.scrollTop = scrollY;
+        } else {
+          document.body.style.overflow = '';
+          scrollMainTo(scrollY, 0, 'auto');
+        }
       };
     }
   }, [isOpen]);

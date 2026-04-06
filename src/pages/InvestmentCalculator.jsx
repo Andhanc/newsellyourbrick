@@ -17,6 +17,7 @@ import Header from '../components/Header';
 import IncomeExpensesChart from '../components/IncomeExpensesChart';
 import BackgroundIcons from '../components/BackgroundIcons';
 import { getApiBaseUrlSync } from '../utils/apiConfig';
+import { scrollMainTo } from '../utils/mainScroll';
 import { ChevronDown, Wallet, Home, TrendingUp, PiggyBank } from 'lucide-react';
 import './InvestmentCalculator.css';
 
@@ -62,7 +63,7 @@ const InvestmentCalculator = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    window.scrollTo(0, 0);
+    scrollMainTo(0, 0)
     fetchMarketData();
   }, []);
 

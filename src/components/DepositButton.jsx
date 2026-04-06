@@ -1,10 +1,12 @@
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
+import { navigateToWallet } from '../utils/walletNavigation'
 import { useState } from 'react'
 import { FaWallet, FaArrowRight } from 'react-icons/fa'
 import './DepositButton.css'
 
 const DepositButton = ({ amount = 0 }) => {
   const navigate = useNavigate()
+  const location = useLocation()
   const [isHovered, setIsHovered] = useState(false)
 
   const formatAmount = (amount) => {
@@ -23,7 +25,7 @@ const DepositButton = ({ amount = 0 }) => {
   return (
     <button 
       className="deposit-button"
-      onClick={() => navigate('/wallet')}
+      onClick={() => navigateToWallet(navigate, location.pathname)}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       aria-label="Открыть депозит"

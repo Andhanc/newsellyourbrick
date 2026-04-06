@@ -2,6 +2,8 @@ import { useEffect, useRef } from 'react'
 import { useLocation } from 'react-router-dom'
 import { getApiBaseUrl } from '../utils/apiConfig'
 import { CLERK_DB_USER_SYNCED } from '../services/authService'
+import { showNotification } from '../utils/toastHelper'
+import i18n from '../i18n/config'
 
 /**
  * Одно SSE-подключение на вкладку для push из админки (без polling):
@@ -37,6 +39,7 @@ export default function UserCabinetSseBridge() {
       if (!loggedIn || !uid || uid <= 0) return
 
       const base = await getApiBaseUrl()
+      if (cancelled) return // проверяем снова после await — cleanup мог сработать пока ждали
       const normalized = base.replace(/\/$/, '')
       const path = `${normalized}/events/user-updates?user_id=${uid}`
       const url = base.startsWith('http') ? path : `${window.location.origin}${path}`
@@ -57,6 +60,9 @@ export default function UserCabinetSseBridge() {
           const data = JSON.parse(event.data)
           if (data.type === 'user_verification') {
             window.dispatchEvent(new Event('verification-status-update'))
+            if (data.action === 'approved') {
+              showNotification(i18n.t('verificationApprovedLiveToast'), 'success', 6000)
+            }
           }
           if (data.type === 'property_moderation') {
             window.dispatchEvent(new CustomEvent('owner-properties-update', { detail: data }))

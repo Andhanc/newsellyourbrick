@@ -1,20 +1,28 @@
-import { Link, useNavigate, useSearchParams } from 'react-router-dom'
-import { useState, useEffect } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
+import { useState, useEffect, useRef } from 'react'
 import { getUserData, logout } from '../services/authService'
 import VerificationToast from '../components/VerificationToast'
 import PricingCards from '../components/ui/PricingCards'
 import { startProSubscriptionCheckout, confirmCheckoutSession } from '../utils/subscriptionCheckout'
 import { showNotification } from '../utils/toastHelper'
+import BuyerCabinetSidebar from '../components/BuyerCabinetSidebar'
 import './Subscriptions.css'
 import './Profile.css'
+import { useChainedAppLayoutScroll } from '../hooks/useChainedAppLayoutScroll'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
 
 const Subscriptions = () => {
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const [searchParams, setSearchParams] = useSearchParams()
   const [userId, setUserId] = useState(null)
   const [verificationStatus, setVerificationStatus] = useState(null)
+  const buyerCabinetPageRef = useRef(null)
+  const buyerCabinetMainScrollRef = useRef(null)
+
+  useChainedAppLayoutScroll(buyerCabinetPageRef, buyerCabinetMainScrollRef, { active: true })
 
   useEffect(() => {
     const userData = getUserData()
@@ -45,12 +53,12 @@ const Subscriptions = () => {
       const r = await confirmCheckoutSession(sessionId)
       if (cancelled) return
       if (r.ok) {
-        showNotification('Подписка успешно оформлена!', 'success')
+        showNotification(t('buyerSubs_checkoutSuccess'), 'success')
       } else {
         showNotification(
           r.error === 'no_app_user_id'
-            ? 'Не удалось привязать оплату к профилю. Обратитесь в поддержку.'
-            : 'Не удалось подтвердить оплату. Данные появятся после обработки.',
+            ? t('buyerSubs_checkoutErrorSupport')
+            : t('buyerSubs_checkoutErrorPending'),
           'error'
         )
       }
@@ -62,7 +70,7 @@ const Subscriptions = () => {
     return () => {
       cancelled = true
     }
-  }, [searchParams, setSearchParams])
+  }, [searchParams, setSearchParams, t])
 
   const loadVerificationStatus = async () => {
     if (!userId) return
@@ -121,22 +129,22 @@ const Subscriptions = () => {
         customerEmail: userData?.email,
       })
       if (!result.ok) {
-        showNotification(result.error || 'Не удалось открыть оплату', 'error')
+        showNotification(result.error || t('buyerCabinet_checkoutError'), 'error')
       }
       return
     }
     if (plan === 'starter') {
-      showNotification('Тариф Starter бесплатный — базовые функции уже доступны в аккаунте.', 'info')
+      showNotification(t('buyerCabinet_toastStarter'), 'info')
       return
     }
     if (plan === 'vip') {
-      showNotification('Подписка VIP скоро будет доступна', 'info')
+      showNotification(t('buyerCabinet_toastVipSoon'), 'info')
       return
     }
   }
 
   const handleLogout = async () => {
-    if (!window.confirm('Вы уверены, что хотите выйти?')) {
+    if (!window.confirm(t('buyerCabinet_logoutConfirm'))) {
       return
     }
 
@@ -153,155 +161,25 @@ const Subscriptions = () => {
   }
 
   return (
-    <div className="subscriptions-page">
+    <div className="subscriptions-page" ref={buyerCabinetPageRef}>
       {/* Всплывающее уведомление о прогрессе верификации */}
       {userId && <VerificationToast userId={userId} />}
       
-      <div className="subscriptions-container">
-        <aside className="subscriptions-sidebar">
-          <div className="sidebar-header" style={{ marginTop: '24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <button
-              type="button"
-              onClick={() => navigate('/')}
-              className="back-button"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-                padding: '12px 24px',
-                backgroundColor: 'transparent',
-                border: 'none',
-                cursor: 'pointer',
-                color: '#0ABAB5',
-                fontSize: '18px',
-                fontWeight: '600',
-                transition: 'opacity 0.2s'
-              }}
-              onMouseEnter={(e) => e.currentTarget.style.opacity = '0.7'}
-              onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
-            >
-              <svg width="24" height="24" viewBox="0 0 20 20" fill="none">
-                <path d="M12.5 15L7.5 10L12.5 5" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-              <span>Назад</span>
-            </button>
-            <button
-              type="button"
-              className="header-logout-button"
-              onClick={(e) => {
-                e.preventDefault()
-                e.stopPropagation()
-                handleLogout()
-              }}
-            >
-              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                <path d="M7 2H3C2.44772 2 2 2.44772 2 3V15C2 15.5523 2.44772 16 3 16H7M12 13L15 10M15 10L12 7M15 10H6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-              <span>Выйти</span>
-            </button>
-          </div>
-          <nav className="sidebar-nav">
-            <Link to="/profile" className="nav-item">
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                <path d="M10 10C12.7614 10 15 7.76142 15 5C15 2.23858 12.7614 0 10 0C7.23858 0 5 2.23858 5 5C5 7.76142 7.23858 10 10 10Z" fill="currentColor"/>
-                <path d="M10 12C5.58172 12 2 13.7909 2 16V20H18V16C18 13.7909 14.4183 12 10 12Z" fill="currentColor"/>
-              </svg>
-              <span>Профиль</span>
-              {shouldShowProfileIndicator() && (
-                <span className="nav-item-indicator"></span>
-              )}
-            </Link>
-            <Link to="/data" className="nav-item">
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                <rect x="2" y="4" width="16" height="12" rx="2" stroke="currentColor" strokeWidth="1.5"/>
-                <path d="M6 8H14M6 12H12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-              </svg>
-              <span>Данные</span>
-              {shouldShowDataIndicator() && (
-                <span className="nav-item-indicator"></span>
-              )}
-            </Link>
-            <Link to="/subscriptions" className="nav-item active">
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                <path d="M10 2L12.5 7.5L19 10L12.5 12.5L10 19L7.5 12.5L1 10L7.5 7.5L10 2Z" fill="currentColor"/>
-              </svg>
-              <span>Подписки</span>
-            </Link>
-            <Link to="/history" className="nav-item">
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                <rect x="2" y="4" width="16" height="12" rx="2" stroke="currentColor" strokeWidth="1.5"/>
-                <path d="M6 8H14M6 12H10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-              </svg>
-              <span>История</span>
-            </Link>
-            <Link to="/chat" className="nav-item">
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                <path d="M10 2C5.58172 2 2 5.58172 2 10C2 14.4183 5.58172 18 10 18C14.4183 18 18 14.4183 18 10C18 5.58172 14.4183 2 10 2Z" stroke="currentColor" strokeWidth="1.5"/>
-                <path d="M7 8H13M7 12H13" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-              </svg>
-              <span>Чат</span>
-            </Link>
-            <a href="#" className="nav-item">
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                <path d="M10 2L12.5 7.5L19 10L12.5 12.5L10 19L7.5 12.5L1 10L7.5 7.5L10 2Z" fill="currentColor"/>
-              </svg>
-              <span>Понравилось</span>
-            </a>
-          </nav>
-          <div className="sidebar-footer">
-            <div className="language-selector">
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.5" />
-                <path
-                  d="M8 1C9.5 3 10.5 5.5 10.5 8C10.5 10.5 9.5 13 8 15M8 1C6.5 3 5.5 5.5 5.5 8C5.5 10.5 6.5 13 8 15M1 8H15"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                />
-              </svg>
-              <span>Русский</span>
-            </div>
-            <a href="#" className="help-link">
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.5" />
-                <path d="M8 5V8M8 11H8.01" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-              </svg>
-              <span>Справка</span>
-            </a>
-            <a href="#" className="help-link">
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <rect x="2" y="2" width="12" height="12" rx="2" stroke="currentColor" strokeWidth="1.5" />
-                <path d="M6 6H10M6 10H10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-              </svg>
-              <span>Яндекс ID для сайта</span>
-            </a>
-            <div className="copyright">© 2001-2025 Яндекс</div>
-            <button
-              type="button"
-              className="logout-button"
-              onClick={(e) => {
-                e.preventDefault()
-                e.stopPropagation()
-                handleLogout()
-              }}
-            >
-              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                <path
-                  d="M7 2H3C2.44772 2 2 2.44772 2 3V15C2 15.5523 2.44772 16 3 16H7M12 13L15 10M15 10L12 7M15 10H6"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-              <span>Выйти</span>
-            </button>
-          </div>
-        </aside>
+      <div className="subscriptions-container buyer-cabinet-layout-container">
+        <BuyerCabinetSidebar
+          asideClassName="subscriptions-sidebar"
+          headerSpaceBetween
+          onLogout={handleLogout}
+          showProfileIndicator={shouldShowProfileIndicator()}
+          showDataIndicator={shouldShowDataIndicator()}
+        />
 
-        <main className="subscriptions-main">
-          <h1 className="subscriptions-title">Подписки</h1>
+        <main className="subscriptions-main buyer-cabinet-layout-main">
+          <div className="buyer-cabinet-main-scroll" ref={buyerCabinetMainScrollRef}>
+          <h1 className="subscriptions-title">{t('buyerCabinet_sectionSubscriptions')}</h1>
           <div className="subscriptions-cards subscriptions-cards--pricing">
             <PricingCards onBookCall={handleBookCall} mobileTwoColumn />
+          </div>
           </div>
         </main>
       </div>
