@@ -1,4 +1,4 @@
-import { getDatabase } from '../database/database.js';
+import { getPrisma } from '../database/prismaClient.js';
 
 const SENSITIVE_KEYS = new Set([
   'password',
@@ -30,22 +30,22 @@ function isSafeTableName(name) {
 }
 
 /**
- * Полный снимок SQLite для зеркалирования во внешнее хранилище.
+ * Полный снимок PostgreSQL (через Prisma) для зеркалирования во внешнее хранилище.
  * Пароли и платёжные поля маскируются.
  */
-export function buildDatabaseSnapshot() {
-  const db = getDatabase();
-  const tables = db
-    .prepare(
-      `SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name`
-    )
-    .all();
-
+export async function buildDatabaseSnapshot() {
+  const prisma = getPrisma();
+  const models = Object.entries(prisma).filter(
+    ([name, value]) =>
+      isSafeTableName(name) &&
+      value &&
+      typeof value.findMany === 'function' &&
+      typeof value.count === 'function'
+  );
   const blocks = [];
-  for (const { name } of tables) {
-    if (!isSafeTableName(name)) continue;
+  for (const [name, model] of models) {
     try {
-      const rows = db.prepare(`SELECT * FROM "${name}"`).all();
+      const rows = await model.findMany();
       blocks.push({
         table: name,
         count: rows.length,
@@ -55,9 +55,9 @@ export function buildDatabaseSnapshot() {
       blocks.push({ table: name, count: 0, rows: [], error: e.message });
     }
   }
-
+  blocks.sort((a, b) => a.table.localeCompare(b.table));
   return {
-    version: 1,
+    version: 2,
     source: 'sellyourbrick',
     exportedAt: new Date().toISOString(),
     blocks,

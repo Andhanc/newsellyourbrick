@@ -68,13 +68,10 @@ server/uploads/
 server/.wwebjs_auth/
 server/.wwebjs_cache/
 
-# Database files and folder
-server/database/
-server/database.sqlite
-server/database.sqlite-wal
-server/database.sqlite-shm
-server/database.sqlite-journal
-server/database.sqlite.corrupted
+# Database (PostgreSQL + Prisma)
+# Локальные SQLite-файлы больше не используются, но паттерны оставлены
+# на случай старых артефактов в окружении разработчика.
 *.sqlite
 *.sqlite3
 *.db
+/generated/prisma

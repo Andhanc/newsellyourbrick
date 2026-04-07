@@ -1,33 +1,17 @@
-import Database from 'better-sqlite3';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
-import { existsSync } from 'fs';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-const DB_PATH = join(__dirname, 'server', 'database.sqlite');
+import { getPrisma, closePrisma } from './server/database/prismaClient.js';
 
 try {
-  if (!existsSync(DB_PATH)) {
-    console.error('❌ База данных не найдена:', DB_PATH);
-    console.error('   Убедитесь, что сервер был запущен хотя бы один раз.');
-    process.exit(1);
-  }
-  
-  const db = new Database(DB_PATH);
-  
+  const prisma = getPrisma();
   console.log('📊 Проверка базы данных...\n');
-  console.log('=' .repeat(60));
-  
-  // Получаем всех пользователей
-  const users = db.prepare('SELECT * FROM users ORDER BY created_at DESC LIMIT 10').all();
-  
+  console.log('='.repeat(60));
+  const users = await prisma.users.findMany({
+    orderBy: { created_at: 'desc' },
+    take: 10,
+  });
   if (users.length === 0) {
     console.log('❌ В базе данных нет пользователей');
   } else {
     console.log(`✅ Найдено пользователей: ${users.length}\n`);
-    
     users.forEach((user, index) => {
       console.log(`\n👤 Пользователь #${index + 1}:`);
       console.log(`   ID: ${user.id}`);
@@ -42,15 +26,11 @@ try {
       console.log(`   Создан: ${new Date(user.created_at).toLocaleString('ru-RU')}`);
     });
   }
-  
   console.log('\n' + '='.repeat(60));
-  
-  db.close();
+  await closePrisma();
 } catch (error) {
   console.error('❌ Ошибка при проверке базы данных:', error.message);
-  if (error.message.includes('no such file')) {
-    console.error('   База данных не найдена. Убедитесь, что сервер был запущен хотя бы один раз.');
-  }
+  await closePrisma();
   process.exit(1);
 }
 

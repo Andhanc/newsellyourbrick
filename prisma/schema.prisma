@@ -1,0 +1,771 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model administrators {
+  id                           Int              @id @default(autoincrement())
+  username                     String           @unique(map: "sqlite_autoindex_administrators_1")
+  password                     String
+  email                        String?
+  full_name                    String?
+  is_super_admin               Int?             @default(0)
+  can_access_statistics        Int?             @default(0)
+  can_access_users             Int?             @default(0)
+  can_access_moderation        Int?             @default(0)
+  can_access_chat              Int?             @default(0)
+  can_access_objects           Int?             @default(0)
+  can_access_access_management Int?             @default(0)
+  created_by                   Int?
+  created_at                   DateTime?        @default(now())
+  updated_at                   DateTime?        @default(now())
+  administrators               administrators?  @relation("administratorsToadministrators", fields: [created_by], references: [id], onUpdate: NoAction)
+  other_administrators         administrators[] @relation("administratorsToadministrators")
+
+  @@index([email], map: "idx_administrators_email")
+  @@index([is_super_admin], map: "idx_administrators_is_super_admin")
+  @@index([username], map: "idx_administrators_username")
+}
+
+model assistant_leads {
+  id                        Int         @id @default(autoincrement())
+  session_id                String      @unique(map: "sqlite_autoindex_assistant_leads_1")
+  user_id                   Int?
+  messages                  String?
+  preferences               String?
+  summary                   String?
+  lead_type                 String?     @default("cold")
+  email                     String?
+  phone                     String?
+  country                   String?
+  region                    String?
+  property_type             String?
+  created_at                String?     @default("datetime('now')")
+  updated_at                String?     @default("datetime('now')")
+  manager_contact_requested Int?        @default(0)
+  preferred_contact         String?
+  users                     users?      @relation(fields: [user_id], references: [id], onUpdate: NoAction)
+  crm_leads                 crm_leads[]
+
+  @@index([updated_at], map: "idx_assistant_leads_updated_at")
+  @@index([lead_type], map: "idx_assistant_leads_lead_type")
+  @@index([session_id], map: "idx_assistant_leads_session_id")
+}
+
+model auction_winners {
+  id                 Int     @id @default(autoincrement())
+  user_id            Int
+  property_id        Int
+  property_table     String
+  winning_bid_amount Float
+  currency           String? @default("USD")
+  auction_end_date   String
+  won_at             String? @default("datetime('now')")
+  deposit_amount     Float
+  deposit_due_date   String
+  deposit_paid       Int?    @default(0)
+  deposit_paid_at    String?
+  status             String? @default("pending_deposit")
+  created_at         String? @default("datetime('now')")
+  updated_at         String? @default("datetime('now')")
+  users              users   @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([deposit_paid], map: "idx_auction_winners_deposit_paid")
+  @@index([status], map: "idx_auction_winners_status")
+  @@index([property_id], map: "idx_auction_winners_property_id")
+  @@index([user_id], map: "idx_auction_winners_user_id")
+}
+
+model bids {
+  id             Int       @id @default(autoincrement())
+  user_id        Int
+  property_id    Int
+  property_table String?
+  bid_amount     Float
+  created_at     DateTime? @default(now())
+  users          users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([property_id, property_table], map: "idx_bids_property_id_table")
+  @@index([user_id, property_id], map: "idx_bids_user_property")
+  @@index([created_at], map: "idx_bids_created_at")
+  @@index([property_id], map: "idx_bids_property_id")
+  @@index([user_id], map: "idx_bids_user_id")
+}
+
+model auction_reminders {
+  id                           Int     @id @default(autoincrement())
+  user_id                      Int
+  property_id                  Int
+  property_table               String
+  notify_email                 Int?    @default(1)
+  notify_whatsapp              Int?    @default(0)
+  scheduled_at                 String
+  auction_start_at             String?
+  reminder_sent_at             String?
+  auction_started_sent_at      String?
+  circular_started_notified_at String?
+  property_title               String?
+  created_at                   String? @default("datetime('now')")
+  updated_at                   String? @default("datetime('now')")
+
+  @@unique([user_id, property_id, property_table], map: "sqlite_autoindex_auction_reminders_1")
+  @@index([reminder_sent_at, scheduled_at], map: "idx_auction_reminders_scheduled")
+  @@index([auction_started_sent_at, auction_start_at], map: "idx_auction_reminders_started")
+}
+
+model bonus_task_submissions {
+  id          Int       @id @default(autoincrement())
+  user_id     Int
+  task_id     Int
+  link        String
+  status      String    @default("pending")
+  promo_code  String?
+  created_at  DateTime? @default(now())
+  reviewed_at DateTime?
+  used_at     DateTime?
+  users       users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([task_id], map: "idx_bonus_submissions_task_id")
+  @@index([status], map: "idx_bonus_submissions_status")
+  @@index([user_id], map: "idx_bonus_submissions_user_id")
+}
+
+model crm_activities {
+  id         Int       @id @default(autoincrement())
+  lead_id    Int
+  kind       String
+  title      String?
+  body       String?
+  meta       String?
+  created_by String?
+  created_at String?   @default("datetime('now')")
+  crm_leads  crm_leads @relation(fields: [lead_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([lead_id], map: "idx_crm_activities_lead")
+}
+
+model crm_leads {
+  id                Int              @id @default(autoincrement())
+  user_id           Int?
+  display_name      String
+  email             String?
+  phone             String?
+  stage_id          Int
+  sort_order        Int              @default(0)
+  temperature       String?          @default("warm")
+  interests         String?
+  deal_value        Float?
+  currency          String?          @default("EUR")
+  next_action       String?
+  next_action_at    String?
+  internal_notes    String?
+  source            String?
+  assistant_lead_id Int?
+  created_at        String?          @default("datetime('now')")
+  updated_at        String?          @default("datetime('now')")
+  crm_activities    crm_activities[]
+  assistant_leads   assistant_leads? @relation(fields: [assistant_lead_id], references: [id], onUpdate: NoAction)
+  crm_stages        crm_stages       @relation(fields: [stage_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  users             users?           @relation(fields: [user_id], references: [id], onUpdate: NoAction)
+
+  @@index([user_id], map: "idx_crm_leads_user")
+  @@index([stage_id, sort_order], map: "idx_crm_leads_stage")
+}
+
+model crm_stages {
+  id         Int         @id @default(autoincrement())
+  slug       String      @unique(map: "sqlite_autoindex_crm_stages_1")
+  label      String
+  sort_order Int         @default(0)
+  crm_leads  crm_leads[]
+}
+
+model debt_reasons {
+  id         Int       @id @default(autoincrement())
+  title_ru   String
+  code       String?   @unique(map: "sqlite_autoindex_debt_reasons_1")
+  sort_order Int?      @default(0)
+  created_at DateTime? @default(now())
+  updated_at DateTime? @default(now())
+
+  @@index([sort_order], map: "idx_debt_reasons_sort")
+}
+
+model documents {
+  id                  Int       @id @default(autoincrement())
+  user_id             Int
+  document_type       String?
+  document_photo      String
+  is_reviewed         Int?      @default(0)
+  verification_status String?   @default("pending")
+  reviewed_by         String?
+  reviewed_at         DateTime?
+  rejection_reason    String?
+  created_at          DateTime? @default(now())
+  users               users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([user_id, verification_status], map: "idx_documents_user_status")
+  @@index([verification_status], map: "idx_documents_verification_status")
+  @@index([user_id], map: "idx_documents_user_id")
+}
+
+model notifications {
+  id         Int       @id @default(autoincrement())
+  user_id    Int
+  type       String
+  title      String
+  message    String?
+  data       String?
+  is_read    Int?      @default(0)
+  view_count Int?      @default(0)
+  created_at DateTime? @default(now())
+  users      users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([user_id, is_read], map: "idx_notifications_user_read")
+  @@index([created_at], map: "idx_notifications_created_at")
+  @@index([is_read], map: "idx_notifications_is_read")
+  @@index([user_id], map: "idx_notifications_user_id")
+}
+
+model properties {
+  id                     Int       @id @default(autoincrement())
+  user_id                Int
+  property_type          String
+  title                  String
+  description            String?
+  price                  Float?
+  currency               String?   @default("USD")
+  is_auction             Int?      @default(0)
+  auction_start_date     String?
+  auction_end_date       String?
+  auction_starting_price Float?
+  area                   Float?
+  rooms                  Int?
+  bedrooms               Int?
+  bathrooms              Int?
+  floor                  Int?
+  total_floors           Int?
+  year_built             Int?
+  location               String?
+  balcony                Int?      @default(0)
+  parking                Int?      @default(0)
+  elevator               Int?      @default(0)
+  land_area              Float?
+  garage                 Int?      @default(0)
+  pool                   Int?      @default(0)
+  garden                 Int?      @default(0)
+  commercial_type        String?
+  business_hours         String?
+  renovation             String?
+  condition              String?
+  heating                String?
+  water_supply           String?
+  sewerage               String?
+  electricity            Int?      @default(0)
+  internet               Int?      @default(0)
+  security               Int?      @default(0)
+  furniture              Int?      @default(0)
+  photos                 String?
+  videos                 String?
+  additional_documents   String?
+  ownership_document     String?
+  no_debts_document      String?
+  test_drive             Int?      @default(0)
+  test_drive_data        String?
+  moderation_status      String?   @default("pending")
+  reviewed_by            String?
+  reviewed_at            DateTime?
+  rejection_reason       String?
+  created_at             DateTime? @default(now())
+  updated_at             DateTime? @default(now())
+  living_area            Float?
+  building_type          String?
+  additional_amenities   String?
+  test_timer_end_date    String?
+  auction_minimum_bid    Float?
+  users                  users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([user_id, moderation_status], map: "idx_properties_user_status")
+  @@index([property_type], map: "idx_properties_property_type")
+  @@index([moderation_status], map: "idx_properties_moderation_status")
+  @@index([user_id], map: "idx_properties_user_id")
+}
+
+model properties_apartments {
+  id                     Int     @id @default(autoincrement())
+  user_id                Int
+  property_type          String
+  title                  String
+  description            String?
+  price                  Float?
+  currency               String? @default("USD")
+  is_auction             Int?    @default(0)
+  auction_start_date     String?
+  auction_end_date       String?
+  auction_starting_price Float?
+  area                   Float?
+  living_area            Float?
+  building_type          String?
+  rooms                  Int?
+  bathrooms              Int?
+  floor                  Int?
+  total_floors           Int?
+  year_built             Int?
+  location               String?
+  address                String?
+  apartment              String?
+  country                String?
+  city                   String?
+  coordinates            String?
+  amenities              String?
+  renovation             String?
+  condition              String?
+  heating                String?
+  water_supply           String?
+  sewerage               String?
+  balcony                Int?    @default(0)
+  parking                Int?    @default(0)
+  elevator               Int?    @default(0)
+  electricity            Int?    @default(0)
+  internet               Int?    @default(0)
+  security               Int?    @default(0)
+  furniture              Int?    @default(0)
+  commercial_type        String?
+  business_hours         String?
+  additional_amenities   String?
+  photos                 String?
+  videos                 String?
+  additional_documents   String?
+  ownership_document     String?
+  no_debts_document      String?
+  test_drive             Int?    @default(0)
+  test_drive_data        String?
+  moderation_status      String? @default("pending")
+  reviewed_by            String?
+  reviewed_at            String?
+  rejection_reason       String?
+  is_shared_ownership    Int?    @default(0)
+  total_shares           Int?
+  shares_sold            Int?    @default(0)
+  reserved_until         String?
+  reserved_by            Int?
+  purchase_request_id    Int?
+  created_at             String? @default("datetime('now')")
+  updated_at             String? @default("datetime('now')")
+  sale_type              String?
+  is_debt                Int?    @default(0)
+  has_debt               Int?    @default(0)
+  debt_utilities         Int?    @default(0)
+  debt_mortgage_pledge   Int?    @default(0)
+  debt_property_taxes    Int?    @default(0)
+  debt_arrest            Int?    @default(0)
+  debt_inherited         Int?    @default(0)
+  debt_third_party       Int?    @default(0)
+  debt_other             String?
+  debt_amount            Float?
+  debt_severity          String?
+  test_timer_end_date    String?
+  test_timer_duration    Int?
+  users                  users   @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([country], map: "idx_apartments_country")
+  @@index([city], map: "idx_apartments_city")
+  @@index([user_id, moderation_status], map: "idx_apartments_user_status")
+  @@index([property_type], map: "idx_apartments_property_type")
+  @@index([moderation_status], map: "idx_apartments_moderation_status")
+  @@index([user_id], map: "idx_apartments_user_id")
+}
+
+model properties_houses {
+  id                     Int     @id @default(autoincrement())
+  user_id                Int
+  property_type          String
+  title                  String
+  description            String?
+  price                  Float?
+  currency               String? @default("USD")
+  is_auction             Int?    @default(0)
+  auction_start_date     String?
+  auction_end_date       String?
+  auction_starting_price Float?
+  area                   Float?
+  living_area            Float?
+  land_area              Float?
+  building_type          String?
+  bedrooms               Int?
+  bathrooms              Int?
+  floors                 Int?
+  year_built             Int?
+  location               String?
+  address                String?
+  country                String?
+  city                   String?
+  coordinates            String?
+  amenities              String?
+  renovation             String?
+  condition              String?
+  heating                String?
+  water_supply           String?
+  sewerage               String?
+  pool                   Int?    @default(0)
+  garden                 Int?    @default(0)
+  garage                 Int?    @default(0)
+  parking                Int?    @default(0)
+  electricity            Int?    @default(0)
+  internet               Int?    @default(0)
+  security               Int?    @default(0)
+  furniture              Int?    @default(0)
+  additional_amenities   String?
+  photos                 String?
+  videos                 String?
+  additional_documents   String?
+  ownership_document     String?
+  no_debts_document      String?
+  test_drive             Int?    @default(0)
+  test_drive_data        String?
+  moderation_status      String? @default("pending")
+  reviewed_by            String?
+  reviewed_at            String?
+  rejection_reason       String?
+  is_shared_ownership    Int?    @default(0)
+  total_shares           Int?
+  shares_sold            Int?    @default(0)
+  sale_type              String?
+  is_debt                Int?    @default(0)
+  has_debt               Int?    @default(0)
+  debt_utilities         Int?    @default(0)
+  debt_mortgage_pledge   Int?    @default(0)
+  debt_property_taxes    Int?    @default(0)
+  debt_arrest            Int?    @default(0)
+  debt_inherited         Int?    @default(0)
+  debt_third_party       Int?    @default(0)
+  debt_other             String?
+  debt_amount            Float?
+  reserved_until         String?
+  reserved_by            Int?
+  purchase_request_id    Int?
+  created_at             String? @default("datetime('now')")
+  updated_at             String? @default("datetime('now')")
+  debt_severity          String?
+  test_timer_end_date    String?
+  test_timer_duration    Int?
+  users                  users   @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([country], map: "idx_houses_country")
+  @@index([city], map: "idx_houses_city")
+  @@index([user_id, moderation_status], map: "idx_houses_user_status")
+  @@index([property_type], map: "idx_houses_property_type")
+  @@index([moderation_status], map: "idx_houses_moderation_status")
+  @@index([user_id], map: "idx_houses_user_id")
+}
+
+model property_debt_documents {
+  id            Int       @id @default(autoincrement())
+  property_id   Int
+  property_type String
+  document_type String
+  file_path     String
+  original_name String?
+  created_at    DateTime? @default(now())
+
+  @@index([property_id, property_type], map: "idx_debt_docs_property")
+}
+
+model property_favorites {
+  id             Int       @id @default(autoincrement())
+  user_id        Int
+  property_id    Int
+  property_table String
+  created_at     DateTime? @default(now())
+  users          users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([user_id, property_id, property_table], map: "sqlite_autoindex_property_favorites_1")
+  @@index([property_id, property_table], map: "idx_property_favorites_property")
+  @@index([user_id], map: "idx_property_favorites_user")
+}
+
+model property_shares {
+  id              Int       @id @default(autoincrement())
+  property_id     Int
+  property_type   String
+  buyer_id        Int
+  shares_count    Int
+  price_per_share Float
+  total_price     Float
+  currency        String?   @default("USD")
+  purchase_date   DateTime? @default(now())
+  status          String?   @default("completed")
+  users           users     @relation(fields: [buyer_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([property_id, property_type, buyer_id], map: "idx_shares_property_buyer")
+  @@index([status], map: "idx_shares_status")
+  @@index([buyer_id], map: "idx_shares_buyer")
+  @@index([property_id, property_type], map: "idx_shares_property")
+}
+
+model property_translations {
+  id                   Int     @id @default(autoincrement())
+  property_id          Int
+  property_table       String
+  lang_code            String
+  title                String?
+  description          String?
+  additional_amenities String?
+  created_at           String? @default("datetime('now')")
+
+  @@unique([property_id, property_table, lang_code], map: "sqlite_autoindex_property_translations_1")
+  @@index([property_id, property_table], map: "idx_property_translations_lookup")
+}
+
+model purchase_requests {
+  id                       Int     @id @default(autoincrement())
+  buyer_id                 String?
+  buyer_name               String
+  buyer_email              String?
+  buyer_phone              String?
+  seller_id                String?
+  seller_name              String?
+  seller_email             String?
+  seller_phone             String?
+  property_id              Int?
+  property_title           String
+  property_description     String?
+  property_price           Float?
+  property_currency        String? @default("USD")
+  property_location        String?
+  property_type            String?
+  property_area            String?
+  property_rooms           Int?
+  property_bedrooms        Int?
+  property_bathrooms       Int?
+  property_floor           Int?
+  property_total_floors    Int?
+  property_year_built      Int?
+  property_living_area     String?
+  property_land_area       String?
+  property_building_type   String?
+  property_renovation      String?
+  property_condition       String?
+  property_heating         String?
+  property_water_supply    String?
+  property_sewerage        String?
+  property_balcony         Int?    @default(0)
+  property_parking         Int?    @default(0)
+  property_elevator        Int?    @default(0)
+  property_garage          Int?    @default(0)
+  property_pool            Int?    @default(0)
+  property_garden          Int?    @default(0)
+  property_electricity     Int?    @default(0)
+  property_internet        Int?    @default(0)
+  property_security        Int?    @default(0)
+  property_furniture       Int?    @default(0)
+  property_commercial_type String?
+  property_business_hours  String?
+  request_date             String
+  status                   String? @default("pending")
+  admin_notes              String?
+  created_at               String? @default("datetime('now')")
+  updated_at               String? @default("datetime('now')")
+  property_table           String?
+
+  @@index([property_id, property_table], map: "idx_purchase_requests_property_id_table")
+  @@index([created_at], map: "idx_purchase_requests_created_at")
+  @@index([status], map: "idx_purchase_requests_status")
+  @@index([property_id], map: "idx_purchase_requests_property_id")
+  @@index([seller_id], map: "idx_purchase_requests_seller_id")
+  @@index([buyer_id], map: "idx_purchase_requests_buyer_id")
+}
+
+model stripe_payments {
+  id                         Int     @id @default(autoincrement())
+  dedupe_key                 String  @unique(map: "sqlite_autoindex_stripe_payments_1")
+  user_id                    Int
+  stripe_customer_id         String?
+  stripe_subscription_id     String?
+  stripe_invoice_id          String?
+  stripe_checkout_session_id String?
+  amount_cents               Int
+  currency                   String  @default("eur")
+  status                     String  @default("paid")
+  plan_key                   String  @default("pro")
+  billing_reason             String?
+  paid_at                    String
+  period_start               String?
+  period_end                 String?
+  customer_email             String?
+  created_at                 String? @default("datetime('now')")
+  users                      users   @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([paid_at], map: "idx_stripe_payments_paid_at")
+  @@index([user_id], map: "idx_stripe_payments_user")
+}
+
+model stripe_subscription_state {
+  user_id                Int     @id @default(autoincrement())
+  stripe_customer_id     String?
+  stripe_subscription_id String? @unique(map: "sqlite_autoindex_stripe_subscription_state_1")
+  plan_key               String  @default("pro")
+  status                 String
+  current_period_start   String?
+  current_period_end     String?
+  cancel_at_period_end   Int?    @default(0)
+  updated_at             String? @default("datetime('now')")
+  users                  users   @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([stripe_subscription_id], map: "idx_stripe_sub_state_subscription")
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model stripe_wallet_deposit_credits {
+  dedupe_key                 String? @id
+  user_id                    Int
+  amount_eur                 Float
+  stripe_invoice_id          String?
+  stripe_checkout_session_id String?
+  created_at                 String? @default("datetime('now')")
+  users                      users   @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([user_id], map: "idx_stripe_wallet_deposit_user")
+  @@ignore
+}
+
+model test_drive_bookings {
+  id                    Int       @id @default(autoincrement())
+  property_id           Int
+  property_table        String    @default("properties_apartments")
+  user_id               Int
+  start_date            String
+  end_date              String
+  status                String    @default("pending")
+  owner_notification_id Int?
+  created_at            DateTime? @default(now())
+  users                 users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([status], map: "idx_tdb_status")
+  @@index([user_id], map: "idx_tdb_user")
+  @@index([property_id, property_table], map: "idx_tdb_property")
+}
+
+model transactions {
+  id          Int       @id @default(autoincrement())
+  user_id     Int
+  type        String
+  amount      Float
+  description String?
+  created_at  DateTime? @default(now())
+  users       users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([created_at], map: "idx_transactions_created_at")
+  @@index([type], map: "idx_transactions_type")
+  @@index([user_id], map: "idx_transactions_user_id")
+}
+
+model users {
+  id                            Int                             @id @default(autoincrement())
+  first_name                    String
+  last_name                     String?
+  email                         String?
+  password                      String?
+  phone_number                  String?                         @unique(map: "sqlite_autoindex_users_1")
+  passport_series               String?
+  passport_number               String?
+  identification_number         String?
+  address                       String?
+  country                       String?
+  passport_photo                String?
+  user_photo                    String?
+  is_verified                   Int?                            @default(0)
+  role                          String?                         @default("buyer")
+  is_online                     Int?                            @default(0)
+  is_blocked                    Int?                            @default(0)
+  created_at                    DateTime?                       @default(now())
+  updated_at                    DateTime?                       @default(now())
+  has_card                      Int?                            @default(0)
+  deposit_amount                Float?                          @default(0)
+  card_number                   String?
+  card_type                     String?
+  card_cvv                      String?
+  user_id_number                String?
+  telegram_id                   String?
+  telegram_username             String?
+  telegram_photo_url            String?
+  username                      String?
+  assistant_leads               assistant_leads[]
+  live_chat_sessions            live_chat_sessions[]
+  auction_winners               auction_winners[]
+  bids                          bids[]
+  bonus_task_submissions        bonus_task_submissions[]
+  crm_leads                     crm_leads[]
+  documents                     documents[]
+  notifications                 notifications[]
+  properties                    properties[]
+  properties_apartments         properties_apartments[]
+  properties_houses             properties_houses[]
+  property_favorites            property_favorites[]
+  property_shares               property_shares[]
+  stripe_payments               stripe_payments[]
+  stripe_subscription_state     stripe_subscription_state?
+  stripe_wallet_deposit_credits stripe_wallet_deposit_credits[] @ignore
+  test_drive_bookings           test_drive_bookings[]
+  transactions                  transactions[]
+
+  @@index([username], map: "idx_users_username")
+  @@index([telegram_id], map: "idx_users_telegram_id")
+  @@index([user_id_number], map: "idx_users_id_number")
+  @@index([has_card], map: "idx_users_has_card")
+  @@index([is_blocked], map: "idx_users_is_blocked")
+  @@index([role], map: "idx_users_role")
+  @@index([phone_number], map: "idx_users_phone")
+  @@index([email], map: "idx_users_email")
+}
+
+model whatsapp_users {
+  id                 Int       @id @default(autoincrement())
+  phone_number       String    @unique(map: "sqlite_autoindex_whatsapp_users_1")
+  phone_number_clean String?
+  first_name         String?
+  last_name          String?
+  country            String?
+  language           String?   @default("ru")
+  last_message_at    DateTime?
+  message_count      Int?      @default(0)
+  is_active          Int?      @default(1)
+  created_at         DateTime? @default(now())
+  updated_at         DateTime? @default(now())
+  lead_type          String?   @default("cold")
+
+  @@index([last_message_at], map: "idx_whatsapp_users_last_message_at")
+  @@index([is_active], map: "idx_whatsapp_users_is_active")
+  @@index([country], map: "idx_whatsapp_users_country")
+  @@index([phone_number_clean], map: "idx_whatsapp_users_phone_clean")
+  @@index([phone_number], map: "idx_whatsapp_users_phone")
+}
+
+model live_chat_sessions {
+  id                    Int                  @id @default(autoincrement())
+  public_token          String               @unique(map: "sqlite_autoindex_live_chat_sessions_1")
+  user_id               Int?
+  assistant_session_id  String?
+  display_label         String?
+  created_at            DateTime?            @default(now())
+  updated_at            DateTime?            @default(now())
+  users                 users?               @relation(fields: [user_id], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  live_chat_messages    live_chat_messages[]
+
+  @@index([assistant_session_id], map: "idx_live_chat_sessions_assistant")
+  @@index([updated_at], map: "idx_live_chat_sessions_updated")
+}
+
+model live_chat_messages {
+  id                 Int     @id @default(autoincrement())
+  session_id         Int
+  sender_role        String
+  body               String
+  created_at         DateTime? @default(now())
+  live_chat_sessions live_chat_sessions @relation(fields: [session_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([session_id, id], map: "idx_live_chat_messages_session")
+}

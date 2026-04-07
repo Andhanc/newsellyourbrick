@@ -2,8 +2,9 @@ import dotenv from 'dotenv';
 import express from 'express';
 import cors from 'cors';
 import axios from 'axios';
-import { initDatabase, closeDatabase, getDatabase, schemaCache } from './database/database.js';
+import { initDatabase, closeDatabase, schemaCache } from './database/database.js';
 import { userQueries, documentQueries, notificationQueries, testDriveBookingQueries, administratorQueries, debtReasonQueries, debtDocumentQueries, whatsappUserQueries, purchaseRequestQueries, assistantLeadQueries, liveChatQueries, apartmentQueries, houseQueries, propertyQueries, favoriteQueries, crmQueries, auctionReminderQueries } from './database/database.js';
+import { getPrisma } from './database/prismaClient.js';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import multer from 'multer';
@@ -120,7 +121,7 @@ function validatePassword(password) {
 // Настройка middleware
 // CORS с поддержкой dev tunnels и других доменов
 // Health check endpoint для Railway
-app.get('/health', (req, res) => {
+app.get('/health', async (req, res) => {
   res.status(200).json({ 
     status: 'ok', 
     timestamp: new Date().toISOString(),
@@ -146,7 +147,7 @@ function pruneOnlineVisitors() {
  * POST /api/visitor-heartbeat - Пинг от посетителя сайта (открытая вкладка)
  * Тело: { sessionId: string } или query sessionId. Обновляет lastSeen для учёта в "Онлайн".
  */
-app.post('/api/visitor-heartbeat', express.json(), (req, res) => {
+app.post('/api/visitor-heartbeat', express.json(), async (req, res) => {
   const sessionId = req.body?.sessionId || req.query?.sessionId || req.headers['x-visitor-id'] || null;
   if (!sessionId || typeof sessionId !== 'string' || sessionId.length > 128) {
     return res.status(400).json({ success: false, error: 'sessionId required' });
@@ -159,7 +160,7 @@ app.post('/api/visitor-heartbeat', express.json(), (req, res) => {
 /**
  * GET /api/admin/online-count - Количество посетителей онлайн (для админки)
  */
-app.get('/api/admin/online-count', (req, res) => {
+app.get('/api/admin/online-count', async (req, res) => {
   try {
     pruneOnlineVisitors();
     const count = onlineVisitors.size;
@@ -205,7 +206,7 @@ function broadcastAuctionSseEvent(payload) {
  * GET /api/events/auction-updates - Server-Sent Events для новых объектов на странице аукциона.
  * Клиент подписывается один раз; сервер пушит события только при появлении новых объектов (после одобрения).
  */
-app.get('/api/events/auction-updates', (req, res) => {
+app.get('/api/events/auction-updates', async (req, res) => {
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
@@ -250,7 +251,7 @@ function broadcastLiveChatAdminEvent(payload) {
 /**
  * GET /api/events/live-chat-admin — Server-Sent Events для раздела чатов с посетителями в админке.
  */
-app.get('/api/events/live-chat-admin', (req, res) => {
+app.get('/api/events/live-chat-admin', async (req, res) => {
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
@@ -294,11 +295,11 @@ function broadcastUserCabinetEvent(userId, payload) {
 }
 
 /** In-app уведомление покупателю: верификация одобрена — можно делать ставки на аукционе */
-function notifyBuyerVerificationApproved(userId) {
+async function notifyBuyerVerificationApproved(userId) {
   try {
     const uid = parseInt(String(userId), 10);
     if (!uid) return;
-    notificationQueries.create({
+    await notificationQueries.create({
       user_id: uid,
       type: 'verification_success',
       title: 'Верификация пройдена',
@@ -314,7 +315,7 @@ function notifyBuyerVerificationApproved(userId) {
 }
 
 /** In-app уведомление: верификация отклонена — нужно загрузить документы снова */
-function notifyBuyerVerificationRejected(userId, rejectionReason) {
+async function notifyBuyerVerificationRejected(userId, rejectionReason) {
   try {
     const uid = parseInt(String(userId), 10);
     if (!uid) return;
@@ -322,7 +323,7 @@ function notifyBuyerVerificationRejected(userId, rejectionReason) {
     const message = reason
       ? `Документы отклонены. Причина: ${reason}. Загрузите документы заново для повторной проверки.`
       : 'Документы отклонены. Загрузите документы заново для повторной проверки.';
-    notificationQueries.create({
+    await notificationQueries.create({
       user_id: uid,
       type: 'verification_rejected',
       title: 'Верификация отклонена',
@@ -341,7 +342,7 @@ function notifyBuyerVerificationRejected(userId, rejectionReason) {
  * GET /api/events/user-updates?user_id= — SSE: события для кабинета (верификация, модерация объявлений).
  * Одно долгоживущее соединение на вкладку; сервер пушит только при действиях админа.
  */
-app.get('/api/events/user-updates', (req, res) => {
+app.get('/api/events/user-updates', async (req, res) => {
   const raw = req.query.user_id;
   if (raw === undefined || raw === null || String(raw).trim() === '' || !/^\d+$/.test(String(raw).trim())) {
     return res.status(400).json({ success: false, error: 'Нужен корректный user_id' });
@@ -397,7 +398,7 @@ function broadcastPropertyBidEvent(propertyId, payload) {
 /**
  * GET /api/events/property-bids?property_id= — SSE: обновление ставок на странице объекта при новой ставке.
  */
-app.get('/api/events/property-bids', (req, res) => {
+app.get('/api/events/property-bids', async (req, res) => {
   const raw = req.query.property_id;
   if (raw === undefined || raw === null || String(raw).trim() === '' || !/^\d+$/.test(String(raw).trim())) {
     return res.status(400).json({ success: false, error: 'Нужен корректный property_id' });
@@ -432,8 +433,17 @@ app.get('/api/events/property-bids', (req, res) => {
   });
 });
 
+app.get('/api/health', (req, res) => {
+  res.json({
+    success: true,
+    status: 'ok',
+    service: 'api',
+    timestamp: new Date().toISOString(),
+  });
+});
+
 // API endpoint для получения конфигурации клиента (runtime переменные)
-app.get('/api/config', (req, res) => {
+app.get('/api/config', async (req, res) => {
   res.json({
     success: true,
     data: {
@@ -632,19 +642,15 @@ app.use('/api/properties', (req, res, next) => {
   next();
 });
 
-// Инициализация базы данных
+// Инициализация базы данных (PostgreSQL через Prisma)
 console.log('💾 Инициализация базы данных...');
 try {
-  initDatabase();
+  await initDatabase();
   console.log('✅ База данных инициализирована успешно');
 } catch (dbError) {
   console.error('❌ КРИТИЧЕСКАЯ ОШИБКА: Не удалось инициализировать базу данных:', dbError);
-  console.error('💡 Проверьте права доступа к файлу базы данных и наличие необходимых директорий.');
-  // Не останавливаем сервер, но логируем ошибку
-  // Сервер может работать даже если БД не инициализирована (для диагностики)
+  console.error('💡 Проверьте DATABASE_URL и доступность PostgreSQL.');
 }
-
-// Таблица auction_winners создаётся в database.js при init — дублирование убрано
 
 // ========== НАСТРОЙКА WHATSAPP WEB КЛИЕНТА ==========
 let waClientReady = false;
@@ -987,11 +993,11 @@ const removePasswordsFromUsers = (users) => {
 /**
  * GET /api/users - Получить всех пользователей
  */
-app.get('/api/users', (req, res) => {
+app.get('/api/users', async (req, res) => {
   try {
     const limit = parseInt(req.query.limit) || 100;
     const offset = parseInt(req.query.offset) || 0;
-    const users = userQueries.getAll(limit, offset);
+    const users = await userQueries.getAll(limit, offset);
     console.log(`📋 Запрос пользователей: limit=${limit}, offset=${offset}, найдено=${users.length}`);
     // Удаляем пароли из всех пользователей перед отправкой
     const usersWithoutPasswords = removePasswordsFromUsers(users);
@@ -1005,9 +1011,9 @@ app.get('/api/users', (req, res) => {
 /**
  * GET /api/users/:id - Получить пользователя по ID
  */
-app.get('/api/users/:id', (req, res) => {
+app.get('/api/users/:id', async (req, res) => {
   try {
-    const user = userQueries.getById(req.params.id);
+    const user = await userQueries.getById(req.params.id);
     if (!user) {
       return res.status(404).json({ success: false, error: 'Пользователь не найден' });
     }
@@ -1022,16 +1028,16 @@ app.get('/api/users/:id', (req, res) => {
 /**
  * GET /api/users/:userId/favorites — список избранных объектов (property_id + property_table)
  */
-app.get('/api/users/:userId/favorites', (req, res) => {
+app.get('/api/users/:userId/favorites', async (req, res) => {
   try {
     const userId = parseInt(req.params.userId, 10);
     if (!userId) {
       return res.status(400).json({ success: false, error: 'Некорректный user id' });
     }
-    if (!userQueries.getById(userId)) {
+    if (!await userQueries.getById(userId)) {
       return res.status(404).json({ success: false, error: 'Пользователь не найден' });
     }
-    const data = favoriteQueries.listForUser(userId);
+    const data = await favoriteQueries.listForUser(userId);
     res.json({ success: true, data });
   } catch (error) {
     console.error('GET /api/users/:userId/favorites:', error);
@@ -1043,20 +1049,20 @@ app.get('/api/users/:userId/favorites', (req, res) => {
  * POST /api/users/:userId/favorites — добавить в избранное
  * body: { property_id, property_table }
  */
-app.post('/api/users/:userId/favorites', (req, res) => {
+app.post('/api/users/:userId/favorites', async (req, res) => {
   try {
     const userId = parseInt(req.params.userId, 10);
     if (!userId) {
       return res.status(400).json({ success: false, error: 'Некорректный user id' });
     }
-    if (!userQueries.getById(userId)) {
+    if (!await userQueries.getById(userId)) {
       return res.status(404).json({ success: false, error: 'Пользователь не найден' });
     }
     const { property_id, property_table } = req.body || {};
     if (property_id == null) {
       return res.status(400).json({ success: false, error: 'Укажите property_id' });
     }
-    const result = favoriteQueries.add(userId, property_id, property_table);
+    const result = await favoriteQueries.add(userId, property_id, property_table);
     res.json({ success: true, added: result.changes > 0 });
   } catch (error) {
     console.error('POST /api/users/:userId/favorites:', error);
@@ -1068,7 +1074,7 @@ app.post('/api/users/:userId/favorites', (req, res) => {
  * DELETE /api/users/:userId/favorites — убрать из избранного
  * body: { property_id, property_table }
  */
-app.delete('/api/users/:userId/favorites', (req, res) => {
+app.delete('/api/users/:userId/favorites', async (req, res) => {
   try {
     const userId = parseInt(req.params.userId, 10);
     if (!userId) {
@@ -1078,7 +1084,7 @@ app.delete('/api/users/:userId/favorites', (req, res) => {
     if (property_id == null) {
       return res.status(400).json({ success: false, error: 'Укажите property_id' });
     }
-    const result = favoriteQueries.remove(userId, property_id, property_table);
+    const result = await favoriteQueries.remove(userId, property_id, property_table);
     res.json({ success: true, removed: result.changes > 0 });
   } catch (error) {
     console.error('DELETE /api/users/:userId/favorites:', error);
@@ -1090,13 +1096,13 @@ app.delete('/api/users/:userId/favorites', (req, res) => {
  * POST /api/users/:userId/auction-reminders
  * body: { property_id, property_table, notify_email, notify_whatsapp, scheduled_at (ISO) }
  */
-app.post('/api/users/:userId/auction-reminders', express.json(), (req, res) => {
+app.post('/api/users/:userId/auction-reminders', express.json(), async (req, res) => {
   try {
     const userId = parseInt(req.params.userId, 10);
     if (!userId) {
       return res.status(400).json({ success: false, error: 'Некорректный user id' });
     }
-    if (!userQueries.getById(userId)) {
+    if (!await userQueries.getById(userId)) {
       return res.status(404).json({ success: false, error: 'Пользователь не найден' });
     }
     const {
@@ -1112,7 +1118,7 @@ app.post('/api/users/:userId/auction-reminders', express.json(), (req, res) => {
     if (!notifyEmail && !notifyWhatsapp) {
       return res.status(400).json({ success: false, error: 'Выберите хотя бы один канал: почта или WhatsApp' });
     }
-    const profile = userQueries.getById(userId);
+    const profile = await userQueries.getById(userId);
     const profileEmail = profile?.email && String(profile.email).trim();
     const profilePhone = profile?.phone_number && String(profile.phone_number).trim();
     if (notifyEmail && !profileEmail) {
@@ -1136,7 +1142,7 @@ app.post('/api/users/:userId/auction-reminders', express.json(), (req, res) => {
     if (schedMs < minMs) {
       return res.status(400).json({ success: false, error: 'Время напоминания должно быть в будущем' });
     }
-    const row = loadPropertyRowForReminder(propertyId, propertyTable);
+    const row = await loadPropertyRowForReminder(propertyId, propertyTable);
     if (!row) {
       return res.status(404).json({ success: false, error: 'Объект не найден' });
     }
@@ -1170,7 +1176,7 @@ app.post('/api/users/:userId/auction-reminders', express.json(), (req, res) => {
       row.name ||
       row.property_title ||
       `Объект #${propertyId}`;
-    auctionReminderQueries.upsert({
+    await auctionReminderQueries.upsert({
       userId,
       propertyId,
       propertyTable,
@@ -1180,7 +1186,7 @@ app.post('/api/users/:userId/auction-reminders', express.json(), (req, res) => {
       auctionStartAtIso,
       propertyTitle: title,
     });
-    const saved = auctionReminderQueries.getForUserProperty(userId, propertyId, propertyTable);
+    const saved = await auctionReminderQueries.getForUserProperty(userId, propertyId, propertyTable);
     const ch = [notifyEmail ? 'email' : null, notifyWhatsapp ? 'whatsapp' : null].filter(Boolean).join('+');
     console.log(
       `[auction-reminder] Сохранено напоминание: user_id=${userId} → email=${profileEmail || '—'} phone=${profilePhone ? 'есть' : '—'} | scheduled_at=${saved?.scheduled_at || new Date(schedMs).toISOString()} | объект #${propertyId} (${propertyTable}) «${title}» | каналы: ${ch}`
@@ -1203,7 +1209,7 @@ app.post('/api/users/:userId/auction-reminders/send-test', express.json(), async
     if (!userId) {
       return res.status(400).json({ success: false, error: 'Некорректный user id' });
     }
-    const user = userQueries.getById(userId);
+    const user = await userQueries.getById(userId);
     if (!user) {
       return res.status(404).json({ success: false, error: 'Пользователь не найден' });
     }
@@ -1218,7 +1224,7 @@ app.post('/api/users/:userId/auction-reminders/send-test', express.json(), async
     let title = 'Объект';
     let link = buildPropertyPublicLink(propertyId != null ? Number(propertyId) : 0);
     if (propertyId != null && propertyTable) {
-      const row = loadPropertyRowForReminder(propertyId, propertyTable);
+      const row = await loadPropertyRowForReminder(propertyId, propertyTable);
       if (row) {
         title = row.title || row.name || row.property_title || title;
         link = buildPropertyPublicLink(propertyId);
@@ -1238,7 +1244,7 @@ app.post('/api/users/:userId/auction-reminders/send-test', express.json(), async
 /**
  * GET /api/users/:userId/auction-reminders?property_id=&property_table=
  */
-app.get('/api/users/:userId/auction-reminders', (req, res) => {
+app.get('/api/users/:userId/auction-reminders', async (req, res) => {
   try {
     const userId = parseInt(req.params.userId, 10);
     if (!userId) {
@@ -1249,7 +1255,7 @@ app.get('/api/users/:userId/auction-reminders', (req, res) => {
     if (!pid || !ptable) {
       return res.status(400).json({ success: false, error: 'Нужны property_id и property_table' });
     }
-    const row = auctionReminderQueries.getForUserProperty(userId, pid, ptable);
+    const row = await auctionReminderQueries.getForUserProperty(userId, pid, ptable);
     res.json({ success: true, data: row || null });
   } catch (error) {
     console.error('GET auction-reminders:', error);
@@ -1261,17 +1267,17 @@ app.get('/api/users/:userId/auction-reminders', (req, res) => {
  * GET /api/users/:id/verification-status - Получить статус готовности к верификации
  * Возвращает информацию о том, какие поля заполнены и что нужно для готовности
  */
-app.get('/api/users/:id/verification-status', (req, res) => {
+app.get('/api/users/:id/verification-status', async (req, res) => {
   try {
     const userId = req.params.id;
-    const user = userQueries.getById(userId);
+    const user = await userQueries.getById(userId);
     
     if (!user) {
       return res.status(404).json({ success: false, error: 'Пользователь не найден' });
     }
     
     // Получаем документы пользователя
-    const documents = documentQueries.getByUserId(userId);
+    const documents = await documentQueries.getByUserId(userId);
     const rejectedDocuments = documents.filter(doc => doc.verification_status === 'rejected');
     const rejectionReasonsUnique = [
       ...new Set(
@@ -1343,17 +1349,17 @@ app.get('/api/users/:id/verification-status', (req, res) => {
  * POST /api/users/:id/clear-rejected-documents — удалить все отклонённые документы после полной повторной отправки (3 фото).
  * Вызывается клиентом после успешной загрузки комплекта в VerificationModal.
  */
-app.post('/api/users/:id/clear-rejected-documents', (req, res) => {
+app.post('/api/users/:id/clear-rejected-documents', async (req, res) => {
   try {
     const id = parseInt(String(req.params.id), 10);
     if (!id || id <= 0) {
       return res.status(400).json({ success: false, error: 'Некорректный id пользователя' });
     }
-    const user = userQueries.getById(id);
+    const user = await userQueries.getById(id);
     if (!user) {
       return res.status(404).json({ success: false, error: 'Пользователь не найден' });
     }
-    const result = documentQueries.deleteAllRejectedForUser(id);
+    const result = await documentQueries.deleteAllRejectedForUser(id);
     try {
       broadcastUserCabinetEvent(id, { type: 'user_verification', action: 'resubmit_cleared' });
     } catch (e) {
@@ -1369,43 +1375,20 @@ app.post('/api/users/:id/clear-rejected-documents', (req, res) => {
 /**
  * PUT /api/users/:id/card-bound - Установить статус привязки карты
  */
-app.put('/api/users/:id/card-bound', (req, res) => {
+app.put('/api/users/:id/card-bound', async (req, res) => {
   try {
     const userId = req.params.id;
     const { cardBound } = req.body;
+    const result = await userQueries.update(userId, { has_card: cardBound ? 1 : 0 });
+    if (!result || result.changes === 0) return res.status(404).json({ success: false, error: 'Пользователь не найден' });
     
-    const db = getDatabase();
-    
-    // Проверяем, существует ли поле card_bound
-    const pragmaInfo = db.prepare("PRAGMA table_info(users)").all();
-    const hasCardBound = pragmaInfo.some(col => col.name === 'card_bound');
-    
-    if (!hasCardBound) {
-      // Если поля нет, добавляем его
-      try {
-        db.prepare("ALTER TABLE users ADD COLUMN card_bound INTEGER DEFAULT 0").run();
-        console.log('✅ Добавлено поле card_bound в таблицу users');
-      } catch (alterError) {
-        // Поле уже существует или другая ошибка
-        console.warn('⚠️ Не удалось добавить поле card_bound:', alterError.message);
-      }
-    }
-    
-    // Обновляем статус привязки карты
-    const stmt = db.prepare('UPDATE users SET card_bound = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?');
-    const result = stmt.run(cardBound ? 1 : 0, userId);
-    
-    if (result.changes === 0) {
-      return res.status(404).json({ success: false, error: 'Пользователь не найден' });
-    }
-    
-    const updatedUser = userQueries.getById(userId);
+    const updatedUser = await userQueries.getById(userId);
     
     res.json({
       success: true,
       data: {
         id: updatedUser.id,
-        cardBound: updatedUser.card_bound === 1 || updatedUser.card_bound === true
+        cardBound: updatedUser.has_card === 1 || updatedUser.has_card === true
       }
     });
   } catch (error) {
@@ -1417,9 +1400,9 @@ app.put('/api/users/:id/card-bound', (req, res) => {
 /**
  * GET /api/users/email/:email - Получить пользователя по email
  */
-app.get('/api/users/email/:email', (req, res) => {
+app.get('/api/users/email/:email', async (req, res) => {
   try {
-    const user = userQueries.getByEmail(req.params.email);
+    const user = await userQueries.getByEmail(req.params.email);
     if (!user) {
       return res.status(404).json({ success: false, error: 'Пользователь не найден' });
     }
@@ -1434,11 +1417,11 @@ app.get('/api/users/email/:email', (req, res) => {
 /**
  * GET /api/users/phone/:phone - Получить пользователя по номеру телефона
  */
-app.get('/api/users/phone/:phone', (req, res) => {
+app.get('/api/users/phone/:phone', async (req, res) => {
   try {
     // Декодируем номер телефона из URL
     const phone = decodeURIComponent(req.params.phone);
-    const user = userQueries.getByPhone(phone);
+    const user = await userQueries.getByPhone(phone);
     if (!user) {
       // 404 - это нормально, пользователь просто не существует (для регистрации)
       return res.status(404).json({ 
@@ -1463,13 +1446,13 @@ app.get('/api/users/phone/:phone', (req, res) => {
 /**
  * GET /api/users/role/:role - Получить пользователей по роли
  */
-app.get('/api/users/role/:role', (req, res) => {
+app.get('/api/users/role/:role', async (req, res) => {
   try {
     const { role } = req.params;
     if (!['buyer', 'seller', 'admin', 'manager'].includes(role)) {
       return res.status(400).json({ success: false, error: 'Недопустимая роль' });
     }
-    const users = userQueries.getByRole(role);
+    const users = await userQueries.getByRole(role);
     // Удаляем пароли из всех пользователей перед отправкой
     const usersWithoutPasswords = removePasswordsFromUsers(users);
     res.json({ success: true, data: usersWithoutPasswords });
@@ -1483,7 +1466,7 @@ app.get('/api/users/role/:role', (req, res) => {
  * Поддерживает referrer_id для реферальной программы (Clerk/Google и др.)
  * Если пользователь с таким email или phone_number уже есть — возвращаем его (200), дубликат не создаём.
  */
-app.post('/api/users', (req, res) => {
+app.post('/api/users', async (req, res) => {
   try {
     const { referrer_id: referrerId, ...rest } = req.body || {};
     const userData = { ...rest };
@@ -1508,18 +1491,18 @@ app.post('/api/users', (req, res) => {
     let existingUser = null;
     if (userData.email) {
       const emailLower = String(userData.email).toLowerCase().trim();
-      existingUser = userQueries.getByEmail(emailLower);
+      existingUser = await userQueries.getByEmail(emailLower);
     }
     if (!existingUser && userData.phone_number) {
       const phoneDigits = String(userData.phone_number).replace(/\D/g, '');
       if (phoneDigits) {
-        existingUser = userQueries.getByPhone(phoneDigits);
+        existingUser = await userQueries.getByPhone(phoneDigits);
       }
     }
     if (existingUser) {
       // Пользователь уже зарегистрирован — возвращаем его данные (вход, а не повторная регистрация)
-      userQueries.update(existingUser.id, { is_online: 1 });
-      const updated = userQueries.getById(existingUser.id);
+      await userQueries.update(existingUser.id, { is_online: 1 });
+      const updated = await userQueries.getById(existingUser.id);
       const userWithoutPassword = removePasswordFromUser(updated);
       return res.json({ success: true, data: userWithoutPassword });
     }
@@ -1532,12 +1515,12 @@ app.post('/api/users', (req, res) => {
         .digest('hex');
     }
     
-    const result = userQueries.create(userData);
-    const newUser = userQueries.getById(result.lastInsertRowid);
+    const result = await userQueries.create(userData);
+    const newUser = await userQueries.getById(result.lastInsertRowid);
     
     if (referrerId) {
       try {
-        grantReferralBonus(getDatabase(), referrerId, newUser.id);
+        await grantReferralBonus(referrerId, newUser.id);
       } catch (refErr) {
         console.warn('⚠️ Реферальный бонус не выдан (POST /api/users):', refErr.message);
       }
@@ -1570,13 +1553,13 @@ app.put('/api/users/:id/approve', async (req, res) => {
       return res.status(400).json({ success: false, error: 'Необходимо указать reviewed_by' });
     }
 
-    const user = userQueries.getById(id);
+    const user = await userQueries.getById(id);
     if (!user) {
       return res.status(404).json({ success: false, error: 'Пользователь не найден' });
     }
 
     // Получаем все pending документы пользователя
-    const userDocuments = documentQueries.getByUserId(id);
+    const userDocuments = await documentQueries.getByUserId(id);
     const pendingDocuments = userDocuments.filter(doc => doc.verification_status === 'pending');
 
     if (pendingDocuments.length === 0) {
@@ -1584,16 +1567,16 @@ app.put('/api/users/:id/approve', async (req, res) => {
     }
 
     // Одобряем все pending документы
-    pendingDocuments.forEach(doc => {
-      documentQueries.updateStatus(doc.id, 'approved', reviewed_by, null);
-    });
+    for (const doc of pendingDocuments) {
+      await documentQueries.updateStatus(doc.id, 'approved', reviewed_by, null);
+    }
 
     // Устанавливаем пользователя как верифицированного
-    userQueries.update(id, { is_verified: 1 });
+    await userQueries.update(id, { is_verified: 1 });
 
     try {
-      notifyBuyerVerificationApproved(id);
-      const createdNotif = notificationQueries.getByUserId(id);
+      await notifyBuyerVerificationApproved(id);
+      const createdNotif = await notificationQueries.getByUserId(id);
       console.log('📋 Всего уведомлений у пользователя:', createdNotif ? createdNotif.length : 0);
     } catch (notifError) {
       console.error('❌ Не удалось создать уведомление в БД:', notifError);
@@ -1612,7 +1595,7 @@ app.put('/api/users/:id/approve', async (req, res) => {
       }
     }
 
-    const updatedUser = userQueries.getById(id);
+    const updatedUser = await userQueries.getById(id);
     try {
       broadcastUserCabinetEvent(id, { type: 'user_verification', action: 'approved' });
     } catch (e) {
@@ -1642,13 +1625,13 @@ app.put('/api/users/:id/reject', async (req, res) => {
       return res.status(400).json({ success: false, error: 'Необходимо указать reviewed_by' });
     }
 
-    const user = userQueries.getById(id);
+    const user = await userQueries.getById(id);
     if (!user) {
       return res.status(404).json({ success: false, error: 'Пользователь не найден' });
     }
 
     // Получаем все pending документы пользователя
-    const userDocuments = documentQueries.getByUserId(id);
+    const userDocuments = await documentQueries.getByUserId(id);
     const pendingDocuments = userDocuments.filter(doc => doc.verification_status === 'pending');
 
     if (pendingDocuments.length === 0) {
@@ -1656,13 +1639,13 @@ app.put('/api/users/:id/reject', async (req, res) => {
     }
 
     // Отклоняем все pending документы
-    pendingDocuments.forEach(doc => {
-      documentQueries.updateStatus(doc.id, 'rejected', reviewed_by, rejection_reason || 'Документы не прошли проверку');
-    });
+    for (const doc of pendingDocuments) {
+      await documentQueries.updateStatus(doc.id, 'rejected', reviewed_by, rejection_reason || 'Документы не прошли проверку');
+    }
 
-    userQueries.update(id, { is_verified: 0 });
+    await userQueries.update(id, { is_verified: 0 });
     try {
-      notifyBuyerVerificationRejected(id, rejection_reason || 'Документы не прошли проверку');
+      await notifyBuyerVerificationRejected(id, rejection_reason || 'Документы не прошли проверку');
     } catch (notifErr) {
       console.warn('⚠️ verification_rejected notification:', notifErr.message);
     }
@@ -1680,7 +1663,7 @@ app.put('/api/users/:id/reject', async (req, res) => {
       }
     }
 
-    const updatedUser = userQueries.getById(id);
+    const updatedUser = await userQueries.getById(id);
     try {
       broadcastUserCabinetEvent(id, { type: 'user_verification', action: 'rejected' });
     } catch (e) {
@@ -1700,17 +1683,17 @@ app.put('/api/users/:id/reject', async (req, res) => {
 /**
  * PUT /api/users/:id/block - Заблокировать пользователя
  */
-app.put('/api/users/:id/block', (req, res) => {
+app.put('/api/users/:id/block', async (req, res) => {
   try {
     const userId = req.params.id;
-    const user = userQueries.getById(userId);
+    const user = await userQueries.getById(userId);
     
     if (!user) {
       return res.status(404).json({ success: false, error: 'Пользователь не найден' });
     }
     
-    userQueries.update(userId, { is_blocked: 1 });
-    const updatedUser = userQueries.getById(userId);
+    await userQueries.update(userId, { is_blocked: 1 });
+    const updatedUser = await userQueries.getById(userId);
     const userWithoutPassword = removePasswordFromUser(updatedUser);
     
     res.json({ 
@@ -1726,17 +1709,17 @@ app.put('/api/users/:id/block', (req, res) => {
 /**
  * PUT /api/users/:id/unblock - Разблокировать пользователя
  */
-app.put('/api/users/:id/unblock', (req, res) => {
+app.put('/api/users/:id/unblock', async (req, res) => {
   try {
     const userId = req.params.id;
-    const user = userQueries.getById(userId);
+    const user = await userQueries.getById(userId);
     
     if (!user) {
       return res.status(404).json({ success: false, error: 'Пользователь не найден' });
     }
     
-    userQueries.update(userId, { is_blocked: 0 });
-    const updatedUser = userQueries.getById(userId);
+    await userQueries.update(userId, { is_blocked: 0 });
+    const updatedUser = await userQueries.getById(userId);
     const userWithoutPassword = removePasswordFromUser(updatedUser);
     
     res.json({ 
@@ -1752,7 +1735,7 @@ app.put('/api/users/:id/unblock', (req, res) => {
 /**
  * PUT /api/users/:id - Обновить данные пользователя
  */
-app.put('/api/users/:id', (req, res) => {
+app.put('/api/users/:id', async (req, res) => {
   try {
     const updateData = { ...req.body };
     const userId = req.params.id;
@@ -1763,7 +1746,7 @@ app.put('/api/users/:id', (req, res) => {
     });
     
     // Получаем текущего пользователя
-    const currentUser = userQueries.getById(userId);
+    const currentUser = await userQueries.getById(userId);
     if (!currentUser) {
       console.error(`❌ Пользователь с ID ${userId} не найден`);
       return res.status(404).json({ success: false, error: 'Пользователь не найден' });
@@ -1774,7 +1757,7 @@ app.put('/api/users/:id', (req, res) => {
       const emailLower = updateData.email.toLowerCase();
       
       // Проверяем, не занят ли email другим пользователем
-      const existingUser = userQueries.getByEmail(emailLower);
+      const existingUser = await userQueries.getByEmail(emailLower);
       if (existingUser && existingUser.id !== parseInt(userId)) {
         return res.status(409).json({ 
           success: false, 
@@ -1846,7 +1829,7 @@ app.put('/api/users/:id', (req, res) => {
       updateData: { ...updateData, password: updateData.password ? '***скрыт***' : undefined }
     });
     
-    const result = userQueries.update(userId, updateData);
+    const result = await userQueries.update(userId, updateData);
     
     if (result.changes === 0) {
       console.warn(`⚠️ Пользователь ${userId} не обновлен (changes = 0)`);
@@ -1855,7 +1838,7 @@ app.put('/api/users/:id', (req, res) => {
     
     console.log(`✅ Пользователь ${userId} успешно обновлен (changes: ${result.changes})`);
     
-    const updatedUser = userQueries.getById(userId);
+    const updatedUser = await userQueries.getById(userId);
     
     // Не возвращаем пароль в ответе (даже захешированный)
     const { password, ...userWithoutPassword } = updatedUser;
@@ -1884,9 +1867,9 @@ app.put('/api/users/:id', (req, res) => {
 /**
  * DELETE /api/users/:id - Удалить пользователя
  */
-app.delete('/api/users/:id', (req, res) => {
+app.delete('/api/users/:id', async (req, res) => {
   try {
-    const result = userQueries.delete(req.params.id);
+    const result = await userQueries.delete(req.params.id);
     if (result.changes === 0) {
       return res.status(404).json({ success: false, error: 'Пользователь не найден' });
     }
@@ -1900,22 +1883,17 @@ app.delete('/api/users/:id', (req, res) => {
  * DELETE /api/users/clear - Очистить БД (удалить всех пользователей)
  * ВНИМАНИЕ: Это опасная операция! Используйте только для разработки/тестирования
  */
-app.delete('/api/users/clear', (req, res) => {
+app.delete('/api/users/clear', async (req, res) => {
   try {
-    const db = getDatabase();
+    const prisma = getPrisma();
+    const result = await prisma.users.deleteMany({});
     
-    // Удаляем всех пользователей
-    const result = db.prepare('DELETE FROM users').run();
-    
-    // Сбрасываем автоинкремент
-    db.exec("DELETE FROM sqlite_sequence WHERE name = 'users'");
-    
-    console.log(`🗑️ Очистка БД: удалено ${result.changes} пользователей`);
+    console.log(`🗑️ Очистка БД: удалено ${result.count} пользователей`);
     
     res.json({ 
       success: true, 
-      message: `База данных очищена. Удалено пользователей: ${result.changes}`,
-      deletedCount: result.changes
+      message: `База данных очищена. Удалено пользователей: ${result.count}`,
+      deletedCount: result.count
     });
   } catch (error) {
     console.error('❌ Ошибка при очистке БД:', error);
@@ -1926,14 +1904,14 @@ app.delete('/api/users/clear', (req, res) => {
 /**
  * POST /api/users/:id/upload-photo - Загрузить фото пользователя
  */
-app.post('/api/users/:id/upload-photo', upload.single('user_photo'), (req, res) => {
+app.post('/api/users/:id/upload-photo', upload.single('user_photo'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ success: false, error: 'Файл не загружен' });
     }
     
     const filePath = `/uploads/${req.file.filename}`;
-    const result = userQueries.update(req.params.id, { user_photo: filePath });
+    const result = await userQueries.update(req.params.id, { user_photo: filePath });
     
     if (result.changes === 0) {
       return res.status(404).json({ success: false, error: 'Пользователь не найден' });
@@ -1948,14 +1926,14 @@ app.post('/api/users/:id/upload-photo', upload.single('user_photo'), (req, res) 
 /**
  * POST /api/users/:id/upload-passport - Загрузить фото паспорта
  */
-app.post('/api/users/:id/upload-passport', upload.single('passport_photo'), (req, res) => {
+app.post('/api/users/:id/upload-passport', upload.single('passport_photo'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ success: false, error: 'Файл не загружен' });
     }
     
     const filePath = `/uploads/${req.file.filename}`;
-    const result = userQueries.update(req.params.id, { passport_photo: filePath });
+    const result = await userQueries.update(req.params.id, { passport_photo: filePath });
     
     if (result.changes === 0) {
       return res.status(404).json({ success: false, error: 'Пользователь не найден' });
@@ -2116,11 +2094,11 @@ app.post('/api/passport/extract', async (req, res) => {
 /**
  * GET /api/documents - Получить все документы
  */
-app.get('/api/documents', (req, res) => {
+app.get('/api/documents', async (req, res) => {
   try {
     const limit = parseInt(req.query.limit) || 100;
     const offset = parseInt(req.query.offset) || 0;
-    const documents = documentQueries.getAll(limit, offset);
+    const documents = await documentQueries.getAll(limit, offset);
     res.json({ success: true, data: documents });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -2130,9 +2108,9 @@ app.get('/api/documents', (req, res) => {
 /**
  * GET /api/documents/unreviewed - Получить непросмотренные документы
  */
-app.get('/api/documents/unreviewed', (req, res) => {
+app.get('/api/documents/unreviewed', async (req, res) => {
   try {
-    const documents = documentQueries.getUnreviewed();
+    const documents = await documentQueries.getUnreviewed();
     res.json({ success: true, data: documents });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -2142,9 +2120,9 @@ app.get('/api/documents/unreviewed', (req, res) => {
 /**
  * GET /api/documents/user/:userId - Получить документы пользователя
  */
-app.get('/api/documents/user/:userId', (req, res) => {
+app.get('/api/documents/user/:userId', async (req, res) => {
   try {
-    const documents = documentQueries.getByUserId(req.params.userId);
+    const documents = await documentQueries.getByUserId(req.params.userId);
     res.json({ success: true, data: documents });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -2252,12 +2230,12 @@ function checkUserReadinessForModeration(user) {
  * ВАЖНО: Этот маршрут должен быть ПЕРЕД /api/documents/:id, иначе "pending" будет интерпретирован как ID
  * Возвращает только пользователей, которые полностью заполнили все поля
  */
-app.get('/api/documents/pending', (req, res) => {
+app.get('/api/documents/pending', async (req, res) => {
   try {
     console.log('📥 Запрос на получение документов на верификацию');
     
     // Получаем все документы на верификацию
-    const documents = documentQueries.getPendingVerification();
+    const documents = await documentQueries.getPendingVerification();
     
     console.log('📄 Найдено документов:', documents.length);
     
@@ -2300,10 +2278,10 @@ app.get('/api/documents/pending', (req, res) => {
     const usersArray = Object.values(userMap);
     const readyDocuments = [];
     
-    usersArray.forEach(user => {
+    for (const user of usersArray) {
       try {
         // Загружаем полные данные пользователя
-        const fullUser = userQueries.getById(user.id);
+        const fullUser = await userQueries.getById(user.id);
         
         if (fullUser) {
           // Обновляем данные пользователя
@@ -2362,7 +2340,7 @@ app.get('/api/documents/pending', (req, res) => {
       } catch (error) {
         console.error(`❌ Ошибка при проверке пользователя ${user.id}:`, error.message);
       }
-    });
+    }
     
     console.log('✅ Отправляем готовых к модерации:', readyDocuments.length);
     
@@ -2376,9 +2354,9 @@ app.get('/api/documents/pending', (req, res) => {
 /**
  * GET /api/documents/:id - Получить документ по ID
  */
-app.get('/api/documents/:id', (req, res) => {
+app.get('/api/documents/:id', async (req, res) => {
   try {
-    const document = documentQueries.getById(req.params.id);
+    const document = await documentQueries.getById(req.params.id);
     if (!document) {
       return res.status(404).json({ success: false, error: 'Документ не найден' });
     }
@@ -2391,7 +2369,7 @@ app.get('/api/documents/:id', (req, res) => {
 /**
  * POST /api/documents - Создать новый документ
  */
-app.post('/api/documents', upload.single('document_photo'), (req, res) => {
+app.post('/api/documents', upload.single('document_photo'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ success: false, error: 'Файл документа не загружен' });
@@ -2415,7 +2393,7 @@ app.post('/api/documents', upload.single('document_photo'), (req, res) => {
     }
     
     // Проверяем, существует ли пользователь с таким ID
-    const user = userQueries.getById(userId);
+    const user = await userQueries.getById(userId);
     if (!user) {
       return res.status(404).json({ success: false, error: `Пользователь с ID ${userId} не найден` });
     }
@@ -2431,8 +2409,8 @@ app.post('/api/documents', upload.single('document_photo'), (req, res) => {
     
     console.log('📄 Создание документа:', documentData);
     
-    const result = documentQueries.create(documentData);
-    const newDocument = documentQueries.getById(result.lastInsertRowid);
+    const result = await documentQueries.create(documentData);
+    const newDocument = await documentQueries.getById(result.lastInsertRowid);
     
     console.log('✅ Документ создан:', {
       id: newDocument.id,
@@ -2464,18 +2442,18 @@ app.post('/api/documents', upload.single('document_photo'), (req, res) => {
 /**
  * PUT /api/documents/:id/review - Отметить документ как просмотренный
  */
-app.put('/api/documents/:id/review', (req, res) => {
+app.put('/api/documents/:id/review', async (req, res) => {
   try {
     if (!req.body.reviewed_by) {
       return res.status(400).json({ success: false, error: 'Необходимо указать reviewed_by (ID админа/менеджера)' });
     }
     
-    const result = documentQueries.markAsReviewed(req.params.id, req.body.reviewed_by);
+    const result = await documentQueries.markAsReviewed(req.params.id, req.body.reviewed_by);
     if (result.changes === 0) {
       return res.status(404).json({ success: false, error: 'Документ не найден' });
     }
     
-    const updatedDocument = documentQueries.getById(req.params.id);
+    const updatedDocument = await documentQueries.getById(req.params.id);
     res.json({ success: true, data: updatedDocument });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -2491,34 +2469,34 @@ app.put('/api/documents/:id/approve', async (req, res) => {
       return res.status(400).json({ success: false, error: 'Необходимо указать reviewed_by (ID админа/менеджера)' });
     }
     
-    const document = documentQueries.getById(req.params.id);
+    const document = await documentQueries.getById(req.params.id);
     if (!document) {
       return res.status(404).json({ success: false, error: 'Документ не найден' });
     }
     
     // Одобряем документ
-    const result = documentQueries.approveDocument(req.params.id, req.body.reviewed_by);
+    const result = await documentQueries.approveDocument(req.params.id, req.body.reviewed_by);
     if (result.changes === 0) {
       return res.status(404).json({ success: false, error: 'Документ не найден' });
     }
     
     // Получаем пользователя
-    const user = userQueries.getById(document.user_id);
+    const user = await userQueries.getById(document.user_id);
     if (!user) {
       return res.status(404).json({ success: false, error: 'Пользователь не найден' });
     }
     
     // Проверяем, все ли документы пользователя одобрены
-    const userDocuments = documentQueries.getByUserId(document.user_id);
+    const userDocuments = await documentQueries.getByUserId(document.user_id);
     const allApproved = userDocuments.every(doc => 
       doc.verification_status === 'approved' || doc.id === parseInt(req.params.id)
     );
     
     // Если все документы одобрены, обновляем статус пользователя
     if (allApproved) {
-      userQueries.update(document.user_id, { is_verified: 1 });
+      await userQueries.update(document.user_id, { is_verified: 1 });
       try {
-        notifyBuyerVerificationApproved(document.user_id);
+        await notifyBuyerVerificationApproved(document.user_id);
       } catch (e) {
         console.warn('⚠️ Уведомление о верификации:', e.message);
       }
@@ -2542,7 +2520,7 @@ app.put('/api/documents/:id/approve', async (req, res) => {
       console.warn('⚠️ Не удалось отправить уведомление через WhatsApp:', notifError.message);
     }
     
-    const updatedDocument = documentQueries.getById(req.params.id);
+    const updatedDocument = await documentQueries.getById(req.params.id);
     res.json({ success: true, data: updatedDocument, message: 'Документ одобрен' });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -2558,31 +2536,31 @@ app.put('/api/documents/:id/reject', async (req, res) => {
       return res.status(400).json({ success: false, error: 'Необходимо указать reviewed_by (ID админа/менеджера)' });
     }
     
-    const document = documentQueries.getById(req.params.id);
+    const document = await documentQueries.getById(req.params.id);
     if (!document) {
       return res.status(404).json({ success: false, error: 'Документ не найден' });
     }
     
     // Отклоняем документ
     const rejectionReason = req.body.rejection_reason || null;
-    const result = documentQueries.rejectDocument(req.params.id, req.body.reviewed_by, rejectionReason);
+    const result = await documentQueries.rejectDocument(req.params.id, req.body.reviewed_by, rejectionReason);
     if (result.changes === 0) {
       return res.status(404).json({ success: false, error: 'Документ не найден' });
     }
     
     // Получаем пользователя
-    const user = userQueries.getById(document.user_id);
+    const user = await userQueries.getById(document.user_id);
     if (!user) {
       return res.status(404).json({ success: false, error: 'Пользователь не найден' });
     }
 
     try {
-      userQueries.update(document.user_id, { is_verified: 0 });
+      await userQueries.update(document.user_id, { is_verified: 0 });
     } catch (uvErr) {
       console.warn('⚠️ is_verified при отклонении документа:', uvErr.message);
     }
     try {
-      notifyBuyerVerificationRejected(document.user_id, rejectionReason);
+      await notifyBuyerVerificationRejected(document.user_id, rejectionReason);
     } catch (notifErr) {
       console.warn('⚠️ verification_rejected (документ):', notifErr.message);
     }
@@ -2609,7 +2587,7 @@ app.put('/api/documents/:id/reject', async (req, res) => {
       console.warn('⚠️ Не удалось отправить уведомление через WhatsApp:', notifError.message);
     }
     
-    const updatedDocument = documentQueries.getById(req.params.id);
+    const updatedDocument = await documentQueries.getById(req.params.id);
     res.json({ success: true, data: updatedDocument, message: 'Документ отклонен' });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -2619,9 +2597,9 @@ app.put('/api/documents/:id/reject', async (req, res) => {
 /**
  * DELETE /api/documents/:id - Удалить документ
  */
-app.delete('/api/documents/:id', (req, res) => {
+app.delete('/api/documents/:id', async (req, res) => {
   try {
-    const document = documentQueries.getById(req.params.id);
+    const document = await documentQueries.getById(req.params.id);
     if (!document) {
       return res.status(404).json({ success: false, error: 'Документ не найден' });
     }
@@ -2634,7 +2612,7 @@ app.delete('/api/documents/:id', (req, res) => {
       }
     }
     
-    const result = documentQueries.delete(req.params.id);
+    const result = await documentQueries.delete(req.params.id);
     res.json({ success: true, message: 'Документ успешно удален' });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -2658,7 +2636,7 @@ app.post('/api/auth/whatsapp', async (req, res) => {
     }
     
     // Проверяем, существует ли пользователь с таким номером
-    let user = userQueries.getByPhone(phone);
+    let user = await userQueries.getByPhone(phone);
     
     if (user) {
       // Режим регистрации: пользователь уже есть — нельзя регистрироваться повторно
@@ -2679,8 +2657,8 @@ app.post('/api/auth/whatsapp', async (req, res) => {
       }
       
       // Пользователь существует - авторизуем и обновляем статус онлайн
-      userQueries.update(user.id, { is_online: 1 });
-      const updatedUser = userQueries.getById(user.id);
+      await userQueries.update(user.id, { is_online: 1 });
+      const updatedUser = await userQueries.getById(user.id);
       return res.json({ 
         success: true, 
         user: {
@@ -2728,12 +2706,12 @@ app.post('/api/auth/whatsapp', async (req, res) => {
       is_online: 1
     };
     
-    const result = userQueries.create(newUser);
-    const createdUser = userQueries.getById(result.lastInsertRowid);
+    const result = await userQueries.create(newUser);
+    const createdUser = await userQueries.getById(result.lastInsertRowid);
 
     if (referrerId) {
       try {
-        grantReferralBonus(getDatabase(), referrerId, createdUser.id);
+        await grantReferralBonus(referrerId, createdUser.id);
       } catch (refErr) {
         console.warn('⚠️ Реферальный бонус (WhatsApp) не выдан:', refErr.message);
       }
@@ -3241,8 +3219,8 @@ app.post('/api/whatsapp/send-message', async (req, res) => {
 
     // Обновляем статистику в базе данных для WhatsApp пользователей
     try {
-      const existingUser = whatsappUserQueries.getByPhone(chatId);
-      whatsappUserQueries.createOrUpdate({
+      const existingUser = await whatsappUserQueries.getByPhone(chatId);
+      await whatsappUserQueries.createOrUpdate({
         phone_number: chatId,
         phone_number_clean: digits,
         country: existingUser?.country || null,
@@ -3301,7 +3279,7 @@ app.post('/api/purchase-requests', async (req, res) => {
     }
 
     // Создаем запрос со всеми данными об объекте
-    const result = purchaseRequestQueries.create({
+    const result = await purchaseRequestQueries.create({
       buyerId: buyerId || null,
       buyerName,
       buyerEmail: buyerEmail || null,
@@ -3348,7 +3326,7 @@ app.post('/api/purchase-requests', async (req, res) => {
       status: status || 'pending'
     });
 
-    const newRequest = purchaseRequestQueries.getById(result.lastInsertRowid);
+    const newRequest = await purchaseRequestQueries.getById(result.lastInsertRowid);
     
     console.log('✅ Создан новый запрос на покупку:', {
       id: newRequest.id,
@@ -3404,7 +3382,7 @@ app.post('/api/purchase-requests', async (req, res) => {
 /**
  * GET /api/purchase-requests - Получить все запросы на покупку
  */
-app.get('/api/purchase-requests', (req, res) => {
+app.get('/api/purchase-requests', async (req, res) => {
   try {
     const limit = parseInt(req.query.limit) || 100;
     const offset = parseInt(req.query.offset) || 0;
@@ -3412,14 +3390,14 @@ app.get('/api/purchase-requests', (req, res) => {
 
     let requests;
     if (status) {
-      requests = purchaseRequestQueries.getByStatus(status, limit, offset);
+      requests = await purchaseRequestQueries.getByStatus(status, limit, offset);
     } else {
-      requests = purchaseRequestQueries.getAll(limit, offset);
+      requests = await purchaseRequestQueries.getAll(limit, offset);
     }
 
     const total = status 
-      ? purchaseRequestQueries.getCountByStatus(status)
-      : purchaseRequestQueries.getCount();
+      ? await purchaseRequestQueries.getCountByStatus(status)
+      : await purchaseRequestQueries.getCount();
 
     res.json({ 
       success: true, 
@@ -3437,9 +3415,9 @@ app.get('/api/purchase-requests', (req, res) => {
 /**
  * GET /api/purchase-requests/:id - Получить запрос по ID
  */
-app.get('/api/purchase-requests/:id', (req, res) => {
+app.get('/api/purchase-requests/:id', async (req, res) => {
   try {
-    const request = purchaseRequestQueries.getById(req.params.id);
+    const request = await purchaseRequestQueries.getById(req.params.id);
     if (!request) {
       return res.status(404).json({ success: false, error: 'Запрос не найден' });
     }
@@ -3452,12 +3430,12 @@ app.get('/api/purchase-requests/:id', (req, res) => {
 /**
  * GET /api/purchase-requests/buyer/:buyerId - Получить запросы покупателя
  */
-app.get('/api/purchase-requests/buyer/:buyerId', (req, res) => {
+app.get('/api/purchase-requests/buyer/:buyerId', async (req, res) => {
   try {
     const limit = parseInt(req.query.limit) || 50;
     const offset = parseInt(req.query.offset) || 0;
     
-    const requests = purchaseRequestQueries.getByBuyerId(req.params.buyerId, limit, offset);
+    const requests = await purchaseRequestQueries.getByBuyerId(req.params.buyerId, limit, offset);
     res.json({ success: true, data: requests });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -3475,7 +3453,7 @@ app.put('/api/purchase-requests/:id/status', async (req, res) => {
       return res.status(400).json({ success: false, error: 'Необходимо указать статус' });
     }
 
-    const request = purchaseRequestQueries.getById(req.params.id);
+    const request = await purchaseRequestQueries.getById(req.params.id);
     if (!request) {
       return res.status(404).json({ success: false, error: 'Запрос не найден' });
     }
@@ -3486,11 +3464,11 @@ app.put('/api/purchase-requests/:id/status', async (req, res) => {
         const buyerId = request.buyer_id || null;
         console.log(`🔍 PUT /api/purchase-requests/:id/status - Резервация объекта ID=${request.property_id}, buyerId=${buyerId}, requestId=${req.params.id}`);
         
-        const reserveResult = propertyQueries.reserve(request.property_id, buyerId, req.params.id);
+        const reserveResult = await propertyQueries.reserve(request.property_id, buyerId, req.params.id);
         console.log(`✅ Объект #${request.property_id} забронирован на 72 часа для запроса #${req.params.id}`, reserveResult);
         
         // Проверяем, что резервация действительно произошла
-        const checkReservation = propertyQueries.isReserved(request.property_id);
+        const checkReservation = await propertyQueries.isReserved(request.property_id);
         console.log(`🔍 Проверка резервации после установки:`, checkReservation);
         
         if (!checkReservation.isReserved) {
@@ -3508,7 +3486,7 @@ app.put('/api/purchase-requests/:id/status', async (req, res) => {
       try {
         console.log(`🔍 PUT /api/purchase-requests/:id/status - Снятие резервации объекта ID=${request.property_id} для запроса #${req.params.id}`);
         
-        propertyQueries.unreserve(request.property_id);
+        await propertyQueries.unreserve(request.property_id);
         console.log(`✅ Резервация объекта #${request.property_id} снята для запроса #${req.params.id}`);
       } catch (unreserveError) {
         console.error('❌ Ошибка при снятии резервации объекта:', unreserveError);
@@ -3516,8 +3494,8 @@ app.put('/api/purchase-requests/:id/status', async (req, res) => {
       }
     }
 
-    purchaseRequestQueries.updateStatus(req.params.id, status, adminNotes);
-    const updatedRequest = purchaseRequestQueries.getById(req.params.id);
+    await purchaseRequestQueries.updateStatus(req.params.id, status, adminNotes);
+    const updatedRequest = await purchaseRequestQueries.getById(req.params.id);
     
     console.log(`✅ Статус запроса #${req.params.id} обновлен: ${status}`);
     
@@ -3588,7 +3566,7 @@ app.put('/api/purchase-requests/:id/status', async (req, res) => {
         const requestIdNum = parseInt(req.params.id, 10);
 
         if (status === 'processing') {
-          notificationQueries.create({
+          await notificationQueries.create({
             user_id: request.buyer_id,
             type: 'buy_now_approved',
             title: 'Покупка одобрена',
@@ -3601,7 +3579,7 @@ app.put('/api/purchase-requests/:id/status', async (req, res) => {
             view_count: 0
           });
         } else if (status === 'rejected' || status === 'cancelled') {
-          notificationQueries.create({
+          await notificationQueries.create({
             user_id: request.buyer_id,
             type: 'buy_now_rejected',
             title: 'Покупка отклонена',
@@ -3629,9 +3607,9 @@ app.put('/api/purchase-requests/:id/status', async (req, res) => {
 /**
  * DELETE /api/purchase-requests/:id - Удалить запрос
  */
-app.delete('/api/purchase-requests/:id', (req, res) => {
+app.delete('/api/purchase-requests/:id', async (req, res) => {
   try {
-    const request = purchaseRequestQueries.getById(req.params.id);
+    const request = await purchaseRequestQueries.getById(req.params.id);
     if (!request) {
       return res.status(404).json({ success: false, error: 'Запрос не найден' });
     }
@@ -3641,7 +3619,7 @@ app.delete('/api/purchase-requests/:id', (req, res) => {
       try {
         console.log(`🔍 DELETE /api/purchase-requests/:id - Снятие резервации объекта ID=${request.property_id} для запроса #${req.params.id}`);
         
-        propertyQueries.unreserve(request.property_id);
+        await propertyQueries.unreserve(request.property_id);
         console.log(`✅ Резервация объекта #${request.property_id} снята при удалении запроса #${req.params.id}`);
       } catch (unreserveError) {
         console.error('❌ Ошибка при снятии резервации объекта:', unreserveError);
@@ -3649,7 +3627,7 @@ app.delete('/api/purchase-requests/:id', (req, res) => {
       }
     }
 
-    purchaseRequestQueries.delete(req.params.id);
+    await purchaseRequestQueries.delete(req.params.id);
     console.log(`✅ Запрос #${req.params.id} удален`);
     
     res.json({ success: true, message: 'Запрос успешно удален' });
@@ -3716,13 +3694,13 @@ app.get('/api/investment/rental-yield', async (req, res) => {
 /**
  * POST /api/assistant-leads - Сохранить/обновить сессию чата с умным помощником
  */
-app.post('/api/assistant-leads', (req, res) => {
+app.post('/api/assistant-leads', async (req, res) => {
   try {
     const { sessionId, userId, messages, preferences, email, phone } = req.body || {};
     if (!sessionId || typeof sessionId !== 'string' || !sessionId.trim()) {
       return res.status(400).json({ success: false, error: 'sessionId обязателен' });
     }
-    const result = assistantLeadQueries.upsert({
+    const result = await assistantLeadQueries.upsert({
       sessionId: sessionId.trim(),
       userId: userId ? parseInt(userId, 10) : null,
       messages: messages || [],
@@ -3740,9 +3718,9 @@ app.post('/api/assistant-leads', (req, res) => {
 /**
  * GET /api/assistant-leads - Список лидов умного помощника (для админки)
  */
-app.get('/api/assistant-leads', (req, res) => {
+app.get('/api/assistant-leads', async (req, res) => {
   try {
-    const list = assistantLeadQueries.getAll();
+    const list = await assistantLeadQueries.getAll();
     return res.json({ success: true, data: list });
   } catch (error) {
     console.error('❌ GET /api/assistant-leads:', error);
@@ -3753,11 +3731,11 @@ app.get('/api/assistant-leads', (req, res) => {
 /**
  * GET /api/assistant-leads/:id - Один лид по ID (карточка клиента)
  */
-app.get('/api/assistant-leads/:id', (req, res) => {
+app.get('/api/assistant-leads/:id', async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
     if (isNaN(id)) return res.status(400).json({ success: false, error: 'Некорректный id' });
-    const lead = assistantLeadQueries.getById(id);
+    const lead = await assistantLeadQueries.getById(id);
     if (!lead) return res.status(404).json({ success: false, error: 'Лид не найден' });
     return res.json({ success: true, data: lead });
   } catch (error) {
@@ -3769,27 +3747,27 @@ app.get('/api/assistant-leads/:id', (req, res) => {
 /**
  * POST /api/live-chat/sessions — создать или вернуть существующую сессию чата с менеджером (по assistant_session_id).
  */
-app.post('/api/live-chat/sessions', (req, res) => {
+app.post('/api/live-chat/sessions', async (req, res) => {
   try {
     const { assistantSessionId, userId, waitMessage } = req.body || {};
     const asst = assistantSessionId && String(assistantSessionId).trim();
     let session = null;
     let createdNew = false;
     if (asst) {
-      session = liveChatQueries.findLatestSessionByAssistantId(asst);
+      session = await liveChatQueries.findLatestSessionByAssistantId(asst);
     }
     if (!session) {
-      const created = liveChatQueries.createSession({
+      const created = await liveChatQueries.createSession({
         userId: userId ? parseInt(userId, 10) : null,
         assistantSessionId: asst || null,
         waitMessage
       });
-      session = liveChatQueries.getSessionById(created.id);
+      session = await liveChatQueries.getSessionById(created.id);
       createdNew = true;
     }
-    const messages = liveChatQueries.getMessages(session.id, 0);
+    const messages = await liveChatQueries.getMessages(session.id, 0);
     if (createdNew) {
-      const row = liveChatQueries.getSessionListRowById(session.id);
+      const row = await liveChatQueries.getSessionListRowById(session.id);
       if (row) broadcastLiveChatAdminEvent({ type: 'live_chat_session', session: row });
       for (const m of messages) {
         broadcastLiveChatAdminEvent({
@@ -3816,13 +3794,13 @@ app.post('/api/live-chat/sessions', (req, res) => {
 /**
  * GET /api/live-chat/sessions/:token/messages?since=id
  */
-app.get('/api/live-chat/sessions/:token/messages', (req, res) => {
+app.get('/api/live-chat/sessions/:token/messages', async (req, res) => {
   try {
     const token = req.params.token;
-    const session = liveChatQueries.getSessionByToken(token);
+    const session = await liveChatQueries.getSessionByToken(token);
     if (!session) return res.status(404).json({ success: false, error: 'Сессия не найдена' });
     const since = parseInt(req.query.since, 10) || 0;
-    const messages = liveChatQueries.getMessages(session.id, since);
+    const messages = await liveChatQueries.getMessages(session.id, since);
     return res.json({ success: true, data: messages });
   } catch (error) {
     console.error('❌ GET live-chat messages:', error);
@@ -3833,16 +3811,16 @@ app.get('/api/live-chat/sessions/:token/messages', (req, res) => {
 /**
  * POST /api/live-chat/sessions/:token/messages — сообщение от посетителя
  */
-app.post('/api/live-chat/sessions/:token/messages', (req, res) => {
+app.post('/api/live-chat/sessions/:token/messages', async (req, res) => {
   try {
     const token = req.params.token;
-    const session = liveChatQueries.getSessionByToken(token);
+    const session = await liveChatQueries.getSessionByToken(token);
     if (!session) return res.status(404).json({ success: false, error: 'Сессия не найдена' });
     const text = req.body && req.body.text != null ? String(req.body.text).trim() : '';
     if (!text) return res.status(400).json({ success: false, error: 'Пустое сообщение' });
-    const msgId = liveChatQueries.addMessage(session.id, 'user', text);
+    const msgId = await liveChatQueries.addMessage(session.id, 'user', text);
     if (!msgId) return res.status(400).json({ success: false, error: 'Не удалось сохранить сообщение' });
-    const row = liveChatQueries.getMessageRow(session.id, msgId);
+    const row = await liveChatQueries.getMessageRow(session.id, msgId);
     broadcastLiveChatAdminEvent({ type: 'live_chat_message', sessionId: session.id, message: row });
     return res.json({ success: true, data: row });
   } catch (error) {
@@ -3854,9 +3832,9 @@ app.post('/api/live-chat/sessions/:token/messages', (req, res) => {
 /**
  * GET /api/admin/live-chat/sessions — список диалогов для админки
  */
-app.get('/api/admin/live-chat/sessions', (req, res) => {
+app.get('/api/admin/live-chat/sessions', async (req, res) => {
   try {
-    const list = liveChatQueries.listSessionsForAdmin();
+    const list = await liveChatQueries.listSessionsForAdmin();
     return res.json({ success: true, data: list });
   } catch (error) {
     console.error('❌ GET /api/admin/live-chat/sessions:', error);
@@ -3867,13 +3845,13 @@ app.get('/api/admin/live-chat/sessions', (req, res) => {
 /**
  * GET /api/admin/live-chat/sessions/:id/messages
  */
-app.get('/api/admin/live-chat/sessions/:id/messages', (req, res) => {
+app.get('/api/admin/live-chat/sessions/:id/messages', async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
     if (isNaN(id)) return res.status(400).json({ success: false, error: 'Некорректный id' });
-    const session = liveChatQueries.getSessionById(id);
+    const session = await liveChatQueries.getSessionById(id);
     if (!session) return res.status(404).json({ success: false, error: 'Сессия не найдена' });
-    const messages = liveChatQueries.getMessages(id, 0);
+    const messages = await liveChatQueries.getMessages(id, 0);
     return res.json({ success: true, data: messages });
   } catch (error) {
     console.error('❌ GET admin live-chat messages:', error);
@@ -3884,16 +3862,16 @@ app.get('/api/admin/live-chat/sessions/:id/messages', (req, res) => {
 /**
  * POST /api/admin/live-chat/sessions/:id/messages — ответ менеджера
  */
-app.post('/api/admin/live-chat/sessions/:id/messages', (req, res) => {
+app.post('/api/admin/live-chat/sessions/:id/messages', async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
     if (isNaN(id)) return res.status(400).json({ success: false, error: 'Некорректный id' });
-    const session = liveChatQueries.getSessionById(id);
+    const session = await liveChatQueries.getSessionById(id);
     if (!session) return res.status(404).json({ success: false, error: 'Сессия не найдена' });
     const text = req.body && req.body.text != null ? String(req.body.text).trim() : '';
     if (!text) return res.status(400).json({ success: false, error: 'Пустое сообщение' });
-    const msgId = liveChatQueries.addMessage(id, 'manager', text);
-    const row = liveChatQueries.getMessageRow(id, msgId);
+    const msgId = await liveChatQueries.addMessage(id, 'manager', text);
+    const row = await liveChatQueries.getMessageRow(id, msgId);
     broadcastLiveChatAdminEvent({ type: 'live_chat_message', sessionId: id, message: row });
     return res.json({ success: true, data: row });
   } catch (error) {
@@ -3908,33 +3886,39 @@ const BONUS_REFER_PROMO = 'BONUS-REFER-10';
 
 /**
  * Выдать бонус «Пригласи друга» пригласителю после регистрации нового пользователя по реферальной ссылке.
- * @param {object} db - экземпляр БД
  * @param {string|number} referrerId - ID пригласителя
  * @param {number} newUserId - ID только что зарегистрированного пользователя
  */
-function grantReferralBonus(db, referrerId, newUserId) {
+async function grantReferralBonus(referrerId, newUserId) {
   if (!referrerId || !newUserId) return;
   const refId = String(referrerId).trim();
   const refNum = parseInt(refId, 10);
   if (!refNum || refNum === parseInt(newUserId, 10)) return;
-  const referrer = userQueries.getById(refNum);
+  const referrer = await userQueries.getById(refNum);
   if (!referrer) return;
-  const existing = db.prepare(`
-    SELECT id FROM bonus_task_submissions WHERE user_id = ? AND task_id = ? AND status = 'approved'
-  `).get(refNum, REFERRAL_TASK_ID);
+  const prisma = getPrisma();
+  const existing = await prisma.bonus_task_submissions.findFirst({
+    where: { user_id: refNum, task_id: REFERRAL_TASK_ID, status: 'approved' },
+    select: { id: true },
+  });
   if (existing) return;
-  db.prepare(`
-    INSERT INTO bonus_task_submissions (user_id, task_id, link, status, promo_code)
-    VALUES (?, ?, 'referral', 'approved', ?)
-  `).run(refNum, REFERRAL_TASK_ID, BONUS_REFER_PROMO);
+  await prisma.bonus_task_submissions.create({
+    data: {
+      user_id: refNum,
+      task_id: REFERRAL_TASK_ID,
+      link: 'referral',
+      status: 'approved',
+      promo_code: BONUS_REFER_PROMO,
+    },
+  });
 }
 
 /**
  * POST /api/bonus-submissions - Отправить заявку на бонусное задание (ссылка на пост/профиль)
  */
-app.post('/api/bonus-submissions', (req, res) => {
+app.post('/api/bonus-submissions', async (req, res) => {
   try {
-    const db = getDatabase();
+    const prisma = getPrisma();
     const { user_id, task_id, link, promo_code } = req.body || {};
     if (!user_id || !task_id || !link || typeof link !== 'string' || !link.trim()) {
       return res.status(400).json({ success: false, message: 'Укажите user_id, task_id и ссылку.' });
@@ -3943,12 +3927,17 @@ app.post('/api/bonus-submissions', (req, res) => {
     if (!/^https?:\/\/.+/i.test(linkTrim)) {
       return res.status(400).json({ success: false, message: 'Некорректная ссылка.' });
     }
-    const stmt = db.prepare(`
-      INSERT INTO bonus_task_submissions (user_id, task_id, link, status, promo_code)
-      VALUES (?, ?, ?, 'pending', ?)
-    `);
-    stmt.run(user_id, task_id, linkTrim, promo_code || null);
-    const id = db.prepare('SELECT last_insert_rowid() as id').get().id;
+    const created = await prisma.bonus_task_submissions.create({
+      data: {
+        user_id: Number(user_id),
+        task_id: Number(task_id),
+        link: linkTrim,
+        status: 'pending',
+        promo_code: promo_code || null,
+      },
+      select: { id: true },
+    });
+    const id = created.id;
     return res.status(201).json({ success: true, data: { id, status: 'pending' } });
   } catch (error) {
     console.error('❌ POST /api/bonus-submissions:', error);
@@ -3959,16 +3948,24 @@ app.post('/api/bonus-submissions', (req, res) => {
 /**
  * GET /api/bonus-submissions/user/:userId - Заявки пользователя по заданиям
  */
-app.get('/api/bonus-submissions/user/:userId', (req, res) => {
+app.get('/api/bonus-submissions/user/:userId', async (req, res) => {
   try {
-    const db = getDatabase();
+    const prisma = getPrisma();
     const userId = req.params.userId;
-    const rows = db.prepare(`
-      SELECT id, user_id, task_id, link, status, promo_code, created_at, used_at
-      FROM bonus_task_submissions
-      WHERE user_id = ?
-      ORDER BY task_id ASC
-    `).all(userId);
+    const rows = await prisma.bonus_task_submissions.findMany({
+      where: { user_id: Number(userId) },
+      select: {
+        id: true,
+        user_id: true,
+        task_id: true,
+        link: true,
+        status: true,
+        promo_code: true,
+        created_at: true,
+        used_at: true,
+      },
+      orderBy: { task_id: 'asc' },
+    });
     return res.json({ success: true, data: rows });
   } catch (error) {
     console.error('❌ GET /api/bonus-submissions/user/:userId:', error);
@@ -3979,15 +3976,22 @@ app.get('/api/bonus-submissions/user/:userId', (req, res) => {
 /**
  * GET /api/bonus-submissions/pending - Список заявок на проверке (для админа)
  */
-app.get('/api/bonus-submissions/pending', (req, res) => {
+app.get('/api/bonus-submissions/pending', async (req, res) => {
   try {
-    const db = getDatabase();
-    const rows = db.prepare(`
-      SELECT id, user_id, task_id, link, status, promo_code, created_at
-      FROM bonus_task_submissions
-      WHERE status = 'pending'
-      ORDER BY created_at ASC
-    `).all();
+    const prisma = getPrisma();
+    const rows = await prisma.bonus_task_submissions.findMany({
+      where: { status: 'pending' },
+      select: {
+        id: true,
+        user_id: true,
+        task_id: true,
+        link: true,
+        status: true,
+        promo_code: true,
+        created_at: true,
+      },
+      orderBy: { created_at: 'asc' },
+    });
     return res.json({ success: true, data: rows });
   } catch (error) {
     console.error('❌ GET /api/bonus-submissions/pending:', error);
@@ -3998,18 +4002,22 @@ app.get('/api/bonus-submissions/pending', (req, res) => {
 /**
  * PUT /api/bonus-submissions/:id/approve - Одобрить заявку (админ)
  */
-app.put('/api/bonus-submissions/:id/approve', (req, res) => {
+app.put('/api/bonus-submissions/:id/approve', async (req, res) => {
   try {
-    const db = getDatabase();
+    const prisma = getPrisma();
     const id = req.params.id;
-    const row = db.prepare('SELECT id, status, promo_code FROM bonus_task_submissions WHERE id = ?').get(id);
+    const row = await prisma.bonus_task_submissions.findUnique({
+      where: { id: Number(id) },
+      select: { id: true, status: true, promo_code: true },
+    });
     if (!row) return res.status(404).json({ success: false, message: 'Заявка не найдена.' });
     if (row.status !== 'pending') {
       return res.status(400).json({ success: false, message: 'Заявка уже обработана.' });
     }
-    db.prepare(`
-      UPDATE bonus_task_submissions SET status = 'approved', reviewed_at = datetime('now') WHERE id = ?
-    `).run(id);
+    await prisma.bonus_task_submissions.update({
+      where: { id: Number(id) },
+      data: { status: 'approved', reviewed_at: new Date().toISOString() },
+    });
     return res.json({ success: true, data: { id, status: 'approved', promo_code: row.promo_code } });
   } catch (error) {
     console.error('❌ PUT /api/bonus-submissions/:id/approve:', error);
@@ -4020,18 +4028,22 @@ app.put('/api/bonus-submissions/:id/approve', (req, res) => {
 /**
  * PUT /api/bonus-submissions/:id/reject - Отклонить заявку (админ)
  */
-app.put('/api/bonus-submissions/:id/reject', (req, res) => {
+app.put('/api/bonus-submissions/:id/reject', async (req, res) => {
   try {
-    const db = getDatabase();
+    const prisma = getPrisma();
     const id = req.params.id;
-    const row = db.prepare('SELECT id, status FROM bonus_task_submissions WHERE id = ?').get(id);
+    const row = await prisma.bonus_task_submissions.findUnique({
+      where: { id: Number(id) },
+      select: { id: true, status: true },
+    });
     if (!row) return res.status(404).json({ success: false, message: 'Заявка не найдена.' });
     if (row.status !== 'pending') {
       return res.status(400).json({ success: false, message: 'Заявка уже обработана.' });
     }
-    db.prepare(`
-      UPDATE bonus_task_submissions SET status = 'rejected', reviewed_at = datetime('now') WHERE id = ?
-    `).run(id);
+    await prisma.bonus_task_submissions.update({
+      where: { id: Number(id) },
+      data: { status: 'rejected', reviewed_at: new Date().toISOString() },
+    });
     return res.json({ success: true, data: { id, status: 'rejected' } });
   } catch (error) {
     console.error('❌ PUT /api/bonus-submissions/:id/reject:', error);
@@ -4048,9 +4060,9 @@ const SELLER_PROMO_TASK_IDS = [5, 6, 7, 8];
  * Проверяет: промокод существует, принадлежит пользователю, задание для продавца (task_id 5-8), ещё не использован.
  * При успехе помечает заявку used_at и возвращает success.
  */
-app.post('/api/bonus-submissions/use-promo', (req, res) => {
+app.post('/api/bonus-submissions/use-promo', async (req, res) => {
   try {
-    const db = getDatabase();
+    const prisma = getPrisma();
     const { user_id, promo_code } = req.body || {};
     if (!user_id || !promo_code || typeof promo_code !== 'string') {
       return res.status(400).json({ success: false, reason: 'invalid', message: 'Укажите user_id и промокод.' });
@@ -4072,11 +4084,14 @@ app.post('/api/bonus-submissions/use-promo', (req, res) => {
       });
     }
 
-    const row = db.prepare(`
-      SELECT id, user_id, task_id, status, promo_code, used_at
-      FROM bonus_task_submissions
-      WHERE user_id = ? AND UPPER(TRIM(promo_code)) = ? AND status = 'approved'
-    `).get(user_id, codeTrim);
+    const row = await prisma.bonus_task_submissions.findFirst({
+      where: {
+        user_id: Number(user_id),
+        status: 'approved',
+        promo_code: { equals: codeTrim, mode: 'insensitive' },
+      },
+      select: { id: true, user_id: true, task_id: true, status: true, promo_code: true, used_at: true },
+    });
 
     if (!row) {
       return res.json({ success: false, reason: 'invalid', message: 'Промокод не найден или не подходит.' });
@@ -4088,7 +4103,10 @@ app.post('/api/bonus-submissions/use-promo', (req, res) => {
       return res.json({ success: false, reason: 'used', message: 'Этот промокод уже был использован.' });
     }
 
-    db.prepare('UPDATE bonus_task_submissions SET used_at = datetime(\'now\') WHERE id = ?').run(row.id);
+    await prisma.bonus_task_submissions.update({
+      where: { id: row.id },
+      data: { used_at: new Date().toISOString() },
+    });
     return res.json({ success: true, data: { submission_id: row.id, promo_code: row.promo_code } });
   } catch (error) {
     console.error('❌ POST /api/bonus-submissions/use-promo:', error);
@@ -4100,19 +4118,19 @@ app.post('/api/bonus-submissions/use-promo', (req, res) => {
  * GET /api/owner/:sellerId/interest-count - Получить количество уникальных пользователей, 
  * которые взаимодействовали с объектами продавца (ставки + запросы на покупку)
  */
-app.get('/api/owner/:sellerId/interest-count', (req, res) => {
+app.get('/api/owner/:sellerId/interest-count', async (req, res) => {
   try {
     const { sellerId } = req.params;
-    const db = getDatabase();
+    const prisma = getPrisma();
     
     // Проверяем, существует ли продавец
-    const seller = userQueries.getById(sellerId);
+    const seller = await userQueries.getById(sellerId);
     if (!seller) {
       return res.status(404).json({ success: false, error: 'Продавец не найден' });
     }
     
     // Получаем все объекты продавца
-    const properties = propertyQueries.getByUserId(sellerId);
+    const properties = await propertyQueries.getByUserId(sellerId);
     if (!properties || properties.length === 0) {
       return res.json({ success: true, data: { uniqueUsersCount: 0 } });
     }
@@ -4122,42 +4140,26 @@ app.get('/api/owner/:sellerId/interest-count', (req, res) => {
     
     // Получаем уникальных пользователей из ставок
     const uniqueBidUsers = new Set();
-    try {
-      const placeholders = propertyIds.map(() => '?').join(',');
-      const bidsQuery = db.prepare(`
-        SELECT DISTINCT user_id 
-        FROM bids 
-        WHERE property_id IN (${placeholders})
-      `);
-      const bids = bidsQuery.all(...propertyIds);
-      bids.forEach(bid => {
-        if (bid.user_id) {
-          uniqueBidUsers.add(bid.user_id);
-        }
-      });
-    } catch (bidsError) {
-      console.warn('⚠️ Ошибка при получении ставок:', bidsError.message);
-      // Продолжаем выполнение, даже если таблица bids не существует
-    }
+    const bids = await prisma.bids.findMany({
+      where: { property_id: { in: propertyIds } },
+      select: { user_id: true },
+      distinct: ['user_id'],
+    });
+    bids.forEach((bid) => {
+      if (bid.user_id) uniqueBidUsers.add(bid.user_id);
+    });
     
     // Получаем уникальных пользователей из запросов на покупку
     const uniquePurchaseRequestUsers = new Set();
-    try {
-      const placeholders = propertyIds.map(() => '?').join(',');
-      const purchaseRequestsQuery = db.prepare(`
-        SELECT DISTINCT buyer_id 
-        FROM purchase_requests 
-        WHERE property_id IN (${placeholders}) AND buyer_id IS NOT NULL
-      `);
-      const purchaseRequests = purchaseRequestsQuery.all(...propertyIds);
-      purchaseRequests.forEach(pr => {
-        if (pr.buyer_id) {
-          uniquePurchaseRequestUsers.add(pr.buyer_id);
-        }
-      });
-    } catch (prError) {
-      console.warn('⚠️ Ошибка при получении запросов на покупку:', prError.message);
-    }
+    const purchaseRequests = await prisma.purchase_requests.findMany({
+      where: { property_id: { in: propertyIds }, buyer_id: { not: null } },
+      select: { buyer_id: true },
+      distinct: ['buyer_id'],
+    });
+    purchaseRequests.forEach((pr) => {
+      const n = parseInt(String(pr.buyer_id), 10);
+      if (Number.isFinite(n)) uniquePurchaseRequestUsers.add(n);
+    });
     
     // Объединяем уникальных пользователей из обеих таблиц
     const allUniqueUsers = new Set([...uniqueBidUsers, ...uniquePurchaseRequestUsers]);
@@ -4215,7 +4217,7 @@ app.post('/api/auth/email/register', async (req, res) => {
     const emailLower = email.toLowerCase();
     
     // Проверяем, существует ли пользователь с таким email
-    const existingUser = userQueries.getByEmail(emailLower);
+    const existingUser = await userQueries.getByEmail(emailLower);
     if (existingUser) {
       return res.status(409).json({ 
         success: false, 
@@ -4249,10 +4251,10 @@ app.post('/api/auth/email/register', async (req, res) => {
     };
     
     console.log('📝 Создание нового пользователя:', { email: emailLower, name, role: newUser.role });
-    const result = userQueries.create(newUser);
+    const result = await userQueries.create(newUser);
     console.log('✅ Пользователь создан, ID:', result.lastInsertRowid);
     
-    const createdUser = userQueries.getById(result.lastInsertRowid);
+    const createdUser = await userQueries.getById(result.lastInsertRowid);
     if (!createdUser) {
       console.error('❌ Ошибка: Пользователь не найден после создания, ID:', result.lastInsertRowid);
       return res.status(500).json({
@@ -4263,7 +4265,7 @@ app.post('/api/auth/email/register', async (req, res) => {
 
     if (referrerId) {
       try {
-        grantReferralBonus(getDatabase(), referrerId, createdUser.id);
+        await grantReferralBonus(referrerId, createdUser.id);
       } catch (refErr) {
         console.warn('⚠️ Реферальный бонус не выдан:', refErr.message);
       }
@@ -4323,7 +4325,7 @@ app.post('/api/auth/email/login', async (req, res) => {
     console.log('🔐 Попытка входа:', { identifier });
     
     // Сначала пробуем найти пользователя по email
-    let user = userQueries.getByEmail(identifier);
+    let user = await userQueries.getByEmail(identifier);
     
     // Если не нашли по email, можно добавить поиск по username в будущем
     // Пока ищем только по email
@@ -4381,8 +4383,8 @@ app.post('/api/auth/email/login', async (req, res) => {
     }
     
     // Пароль верный, обновляем статус онлайн (update может сгенерировать user_id_number для старых записей)
-    userQueries.update(user.id, { is_online: 1 });
-    const refreshedUser = userQueries.getById(user.id) || user;
+    await userQueries.update(user.id, { is_online: 1 });
+    const refreshedUser = await userQueries.getById(user.id) || user;
 
     console.log('✅ Вход успешен:', { id: refreshedUser.id, email: refreshedUser.email, role: refreshedUser.role });
 
@@ -4526,7 +4528,7 @@ app.post('/api/users/:id/verify-email', async (req, res) => {
     }
     
     // Получаем пользователя
-    const user = userQueries.getById(id);
+    const user = await userQueries.getById(id);
     if (!user) {
       return res.status(404).json({ 
         success: false, 
@@ -4538,7 +4540,7 @@ app.post('/api/users/:id/verify-email', async (req, res) => {
     // Пока используем простую проверку через фронтенд
     
     // Проверяем, не занят ли email другим пользователем
-    const existingUser = userQueries.getByEmail(email.toLowerCase());
+    const existingUser = await userQueries.getByEmail(email.toLowerCase());
     if (existingUser && existingUser.id !== parseInt(id)) {
       return res.status(409).json({ 
         success: false, 
@@ -4547,7 +4549,7 @@ app.post('/api/users/:id/verify-email', async (req, res) => {
     }
     
     // Обновляем email. Статус is_verified (верификация документов) не трогаем.
-    const result = userQueries.update(id, { 
+    const result = await userQueries.update(id, { 
       email: email.toLowerCase()
     });
     
@@ -4558,7 +4560,7 @@ app.post('/api/users/:id/verify-email', async (req, res) => {
       });
     }
     
-    const updatedUser = userQueries.getById(id);
+    const updatedUser = await userQueries.getById(id);
     const userWithoutPassword = removePasswordFromUser(updatedUser);
     
     res.json({ 
@@ -4613,7 +4615,7 @@ app.post('/api/auth/google', async (req, res) => {
     const emailLower = googleEmail.toLowerCase();
     
     // Проверяем, существует ли пользователь
-    let user = userQueries.getByEmail(emailLower);
+    let user = await userQueries.getByEmail(emailLower);
     
     if (user) {
       // Режим регистрации: пользователь уже есть — нельзя регистрироваться повторно
@@ -4635,11 +4637,11 @@ app.post('/api/auth/google', async (req, res) => {
       }
       
       // Пользователь существует - обновляем и авторизуем
-      userQueries.update(user.id, { 
+      await userQueries.update(user.id, { 
         is_online: 1,
         user_photo: googlePicture || user.user_photo
       });
-      const updatedUser = userQueries.getById(user.id);
+      const updatedUser = await userQueries.getById(user.id);
       
       res.json({ 
         success: true, 
@@ -4680,8 +4682,8 @@ app.post('/api/auth/google', async (req, res) => {
         is_online: 1
       };
       
-      const result = userQueries.create(newUser);
-      const createdUser = userQueries.getById(result.lastInsertRowid);
+      const result = await userQueries.create(newUser);
+      const createdUser = await userQueries.getById(result.lastInsertRowid);
       
       res.status(201).json({ 
         success: true, 
@@ -4780,7 +4782,7 @@ app.post('/api/auth/telegram', async (req, res) => {
     }
 
     const telegramId = String(id);
-    let user = userQueries.getByTelegramId(telegramId);
+    let user = await userQueries.getByTelegramId(telegramId);
 
     if (user) {
       // Режим регистрации: пользователь уже есть — нельзя регистрироваться повторно
@@ -4798,12 +4800,12 @@ app.post('/api/auth/telegram', async (req, res) => {
           is_blocked: true,
         });
       }
-      userQueries.update(user.id, {
+      await userQueries.update(user.id, {
         is_online: 1,
         telegram_username: username || null,
         telegram_photo_url: photo_url || null,
       });
-      const updatedUser = userQueries.getById(user.id);
+      const updatedUser = await userQueries.getById(user.id);
       return res.json({
         success: true,
         user: {
@@ -4847,18 +4849,18 @@ app.post('/api/auth/telegram', async (req, res) => {
       is_verified: 0,
       is_online: 1,
     };
-    const result = userQueries.create(newUser);
-    const createdUser = userQueries.getById(result.lastInsertRowid);
-    userQueries.update(createdUser.id, {
+    const result = await userQueries.create(newUser);
+    const createdUser = await userQueries.getById(result.lastInsertRowid);
+    await userQueries.update(createdUser.id, {
       telegram_id: telegramId,
       telegram_username: username || null,
       telegram_photo_url: photo_url || null,
     });
-    const finalUser = userQueries.getById(createdUser.id);
+    const finalUser = await userQueries.getById(createdUser.id);
 
     if (referrerId) {
       try {
-        grantReferralBonus(getDatabase(), referrerId, finalUser.id);
+        await grantReferralBonus(referrerId, finalUser.id);
       } catch (refErr) {
         console.warn('⚠️ Реферальный бонус (Telegram) не выдан:', refErr.message);
       }
@@ -4950,7 +4952,7 @@ app.get('/api/auth/whatsapp/user-info', async (req, res) => {
 /**
  * POST /api/whatsapp/users - Создать или обновить WhatsApp пользователя
  */
-app.post('/api/whatsapp/users', (req, res) => {
+app.post('/api/whatsapp/users', async (req, res) => {
   try {
     const { phone_number, phone_number_clean, first_name, last_name, country, language } = req.body;
 
@@ -4964,7 +4966,7 @@ app.post('/api/whatsapp/users', (req, res) => {
     // Логируем сохранение языка для отладки
     console.log(`💾 Сохранение WhatsApp пользователя: ${phone_number} | Язык: ${language || 'ru'}`);
 
-    const result = whatsappUserQueries.createOrUpdate({
+    const result = await whatsappUserQueries.createOrUpdate({
       phone_number,
       phone_number_clean,
       first_name,
@@ -4995,7 +4997,7 @@ app.post('/api/whatsapp/users', (req, res) => {
  * POST /api/whatsapp/users/lead-type — тип лида из WhatsApp-бота (hot/warm/cold).
  * Обновляет whatsapp_users и карточки «Умный помощник» с тем же номером телефона.
  */
-app.post('/api/whatsapp/users/lead-type', (req, res) => {
+app.post('/api/whatsapp/users/lead-type', async (req, res) => {
   try {
     const { phone_number, lead_type } = req.body || {};
     const lt = lead_type != null ? String(lead_type).toLowerCase().trim() : '';
@@ -5006,9 +5008,9 @@ app.post('/api/whatsapp/users/lead-type', (req, res) => {
         error: 'Нужны phone_number и lead_type: hot | warm | cold'
       });
     }
-    const wa = whatsappUserQueries.updateLeadType(phone_number, lt);
+    const wa = await whatsappUserQueries.updateLeadType(phone_number, lt);
     const digits = String(phone_number).replace(/\D/g, '');
-    const assistantUpdated = assistantLeadQueries.updateLeadTypeByPhoneDigits(digits, lt);
+    const assistantUpdated = await assistantLeadQueries.updateLeadTypeByPhoneDigits(digits, lt);
     return res.json({
       success: true,
       whatsappUpdated: wa.changes || 0,
@@ -5212,8 +5214,8 @@ app.post('/api/whatsapp/broadcast', async (req, res) => {
             if (digits) {
               chatId = `${digits}@c.us`;
               // Получаем существующего пользователя, чтобы сохранить его язык
-              const existingUser = whatsappUserQueries.getByPhone(chatId);
-              whatsappUserQueries.createOrUpdate({
+              const existingUser = await whatsappUserQueries.getByPhone(chatId);
+              await whatsappUserQueries.createOrUpdate({
                 phone_number: chatId,
                 phone_number_clean: digits,
                 country: existingUser?.country || null,
@@ -5222,10 +5224,10 @@ app.post('/api/whatsapp/broadcast', async (req, res) => {
             }
           } else {
             // Если chatId уже в правильном формате, просто обновляем статистику без изменения языка
-            const existingUser = whatsappUserQueries.getByPhone(chatId);
+            const existingUser = await whatsappUserQueries.getByPhone(chatId);
             if (existingUser) {
               // Обновляем только last_message_at и message_count, не трогая язык
-              whatsappUserQueries.createOrUpdate({
+              await whatsappUserQueries.createOrUpdate({
                 phone_number: chatId,
                 phone_number_clean: existingUser.phone_number_clean || null,
                 first_name: existingUser.first_name || null,
@@ -5263,7 +5265,7 @@ app.post('/api/whatsapp/broadcast', async (req, res) => {
 /**
  * GET /api/whatsapp/users - Получить всех WhatsApp пользователей
  */
-app.get('/api/whatsapp/users', (req, res) => {
+app.get('/api/whatsapp/users', async (req, res) => {
   try {
     const limit = parseInt(req.query.limit) || 100;
     const offset = parseInt(req.query.offset) || 0;
@@ -5275,9 +5277,9 @@ app.get('/api/whatsapp/users', (req, res) => {
     
     // Если есть поисковый запрос
     if (search) {
-      users = whatsappUserQueries.search(search, limit, offset);
+      users = await whatsappUserQueries.search(search, limit, offset);
     } else {
-      users = whatsappUserQueries.getAll(limit, offset);
+      users = await whatsappUserQueries.getAll(limit, offset);
     }
 
     // Фильтрация по статусу (активные/неактивные)
@@ -5307,7 +5309,7 @@ app.get('/api/whatsapp/users', (req, res) => {
       createdAt: user.created_at || null
     }));
 
-    const totalCount = whatsappUserQueries.getCount();
+    const totalCount = await whatsappUserQueries.getCount();
 
     res.json({
       success: true,
@@ -5330,10 +5332,10 @@ app.get('/api/whatsapp/users', (req, res) => {
 /**
  * GET /api/notifications/user/:userId - Получить все уведомления пользователя
  */
-app.get('/api/notifications/user/:userId', (req, res) => {
+app.get('/api/notifications/user/:userId', async (req, res) => {
   try {
     console.log('📥 Запрос уведомлений для пользователя:', req.params.userId);
-    const notifications = notificationQueries.getByUserId(req.params.userId);
+    const notifications = await notificationQueries.getByUserId(req.params.userId);
     console.log('📋 Найдено уведомлений:', notifications ? notifications.length : 0);
     
     if (!notifications || notifications.length === 0) {
@@ -5372,9 +5374,9 @@ app.get('/api/notifications/user/:userId', (req, res) => {
 /**
  * GET /api/notifications/user/:userId/unread - Получить непрочитанные уведомления
  */
-app.get('/api/notifications/user/:userId/unread', (req, res) => {
+app.get('/api/notifications/user/:userId/unread', async (req, res) => {
   try {
-    const notifications = notificationQueries.getUnreadByUserId(req.params.userId);
+    const notifications = await notificationQueries.getUnreadByUserId(req.params.userId);
     const formattedNotifications = notifications.map(notif => ({
       ...notif,
       data: notif.data ? JSON.parse(notif.data) : null,
@@ -5391,9 +5393,9 @@ app.get('/api/notifications/user/:userId/unread', (req, res) => {
  * PUT /api/notifications/:id/view - Отметить уведомление как просмотренное
  * Увеличивает счетчик просмотров. Если просмотрено 2 раза, удаляет уведомление
  */
-app.put('/api/notifications/:id/view', (req, res) => {
+app.put('/api/notifications/:id/view', async (req, res) => {
   try {
-    notificationQueries.markAsViewed(req.params.id);
+    await notificationQueries.markAsViewed(req.params.id);
     res.json({ success: true, message: 'Уведомление отмечено как просмотренное' });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -5403,7 +5405,7 @@ app.put('/api/notifications/:id/view', (req, res) => {
 /**
  * POST /api/notifications - Создать новое уведомление
  */
-app.post('/api/notifications', (req, res) => {
+app.post('/api/notifications', async (req, res) => {
   try {
     const { user_id, type, title, message, data } = req.body;
     
@@ -5414,7 +5416,7 @@ app.post('/api/notifications', (req, res) => {
       });
     }
     
-    const result = notificationQueries.create({
+    const result = await notificationQueries.create({
       user_id: user_id,
       type: type,
       title: title,
@@ -5438,9 +5440,9 @@ app.post('/api/notifications', (req, res) => {
 /**
  * DELETE /api/notifications/:id - Удалить уведомление
  */
-app.delete('/api/notifications/:id', (req, res) => {
+app.delete('/api/notifications/:id', async (req, res) => {
   try {
-    notificationQueries.delete(req.params.id);
+    await notificationQueries.delete(req.params.id);
     res.json({ success: true, message: 'Уведомление удалено' });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -5474,9 +5476,9 @@ app.post('/api/admin/check-properties-no-bids', async (req, res) => {
 /**
  * GET /api/admin/users/count - Получить количество зарегистрированных пользователей
  */
-app.get('/api/admin/users/count', (req, res) => {
+app.get('/api/admin/users/count', async (req, res) => {
   try {
-    const count = userQueries.getCount();
+    const count = await userQueries.getCount();
     res.json({ success: true, count });
   } catch (error) {
     console.error('Ошибка при получении количества пользователей:', error);
@@ -5487,9 +5489,9 @@ app.get('/api/admin/users/count', (req, res) => {
 /**
  * GET /api/admin/users/country-stats - Получить статистику по национальностям (странам)
  */
-app.get('/api/admin/users/country-stats', (req, res) => {
+app.get('/api/admin/users/country-stats', async (req, res) => {
   try {
-    const stats = userQueries.getCountryStats();
+    const stats = await userQueries.getCountryStats();
     res.json({ success: true, data: stats });
   } catch (error) {
     console.error('Ошибка при получении статистики по странам:', error);
@@ -5500,9 +5502,9 @@ app.get('/api/admin/users/country-stats', (req, res) => {
 /**
  * GET /api/admin/users/role-stats - Получить статистику по ролям (продавцы/покупатели)
  */
-app.get('/api/admin/users/role-stats', (req, res) => {
+app.get('/api/admin/users/role-stats', async (req, res) => {
   try {
-    const stats = userQueries.getRoleStats();
+    const stats = await userQueries.getRoleStats();
     res.json({ success: true, data: stats });
   } catch (error) {
     console.error('Ошибка при получении статистики по ролям:', error);
@@ -5514,7 +5516,7 @@ app.get('/api/admin/users/role-stats', (req, res) => {
  * GET /api/admin/users/registrations-by-day - Регистрации по дням за неделю
  * Query: weekStart=YYYY-MM-DD (понедельник выбранной недели)
  */
-app.get('/api/admin/users/registrations-by-day', (req, res) => {
+app.get('/api/admin/users/registrations-by-day', async (req, res) => {
   try {
     let { weekStart } = req.query;
     if (!weekStart) {
@@ -5529,7 +5531,7 @@ app.get('/api/admin/users/registrations-by-day', (req, res) => {
     const end = new Date(start);
     end.setDate(end.getDate() + 6);
     const weekEnd = end.toISOString().slice(0, 10);
-    const data = userQueries.getRegistrationsByDay(weekStart, weekEnd);
+    const data = await userQueries.getRegistrationsByDay(weekStart, weekEnd);
     res.json({ success: true, data, weekStart, weekEnd });
   } catch (error) {
     console.error('Ошибка при получении регистраций по дням:', error);
@@ -5540,10 +5542,10 @@ app.get('/api/admin/users/registrations-by-day', (req, res) => {
 /**
  * GET /api/admin/properties/category-stats - Статистика по категориям недвижимости (по типу и по разделам)
  */
-app.get('/api/admin/properties/category-stats', (req, res) => {
+app.get('/api/admin/properties/category-stats', async (req, res) => {
   try {
-    const byType = propertyQueries.getCategoryStatsByType();
-    const bySection = propertyQueries.getCategoryStatsBySection();
+    const byType = await propertyQueries.getCategoryStatsByType();
+    const bySection = await propertyQueries.getCategoryStatsBySection();
     res.json({ success: true, byType, bySection });
   } catch (error) {
     console.error('Ошибка при получении статистики категорий:', error);
@@ -5554,10 +5556,10 @@ app.get('/api/admin/properties/category-stats', (req, res) => {
 /**
  * GET /api/admin/stats/counts - Количество выставленных объектов и аукционов (для карточек админки)
  */
-app.get('/api/admin/stats/counts', (req, res) => {
+app.get('/api/admin/stats/counts', async (req, res) => {
   try {
-    const propertiesCount = propertyQueries.getApprovedCount();
-    const auctionsCount = propertyQueries.getAuctionsCount();
+    const propertiesCount = await propertyQueries.getApprovedCount();
+    const auctionsCount = await propertyQueries.getAuctionsCount();
     res.json({ success: true, propertiesCount, auctionsCount });
   } catch (error) {
     console.error('Ошибка при получении счётчиков:', error);
@@ -5566,7 +5568,7 @@ app.get('/api/admin/stats/counts', (req, res) => {
 });
 
 /**
- * POST /api/admin/storage/mirror-push — снимок SQLite → внешнее хранилище (см. проект «хранилище»).
+ * POST /api/admin/storage/mirror-push — снимок PostgreSQL → внешнее хранилище (см. проект «хранилище»).
  * Переменные окружения на сервере основного сайта: STORAGE_MIRROR_URL, STORAGE_MIRROR_SECRET (тот же секрет на хранилище).
  */
 app.post('/api/admin/storage/mirror-push', async (req, res) => {
@@ -5612,7 +5614,7 @@ app.post('/api/admin/storage/mirror-push', async (req, res) => {
 /**
  * POST /api/admin/auth/login - Вход администратора
  */
-app.post('/api/admin/auth/login', (req, res) => {
+app.post('/api/admin/auth/login', async (req, res) => {
   try {
     const { username, password } = req.body;
     
@@ -5628,10 +5630,10 @@ app.post('/api/admin/auth/login', (req, res) => {
     // Проверяем супер-админа (admin, admin)
     if (identifier === 'admin' && password === 'admin') {
       // Создаем или получаем супер-админа
-      let superAdmin = administratorQueries.getByUsername('admin');
+      let superAdmin = await administratorQueries.getByUsername('admin');
       if (!superAdmin) {
         const hashedPassword = crypto.createHash('sha256').update('admin').digest('hex');
-        administratorQueries.create({
+        await administratorQueries.create({
           username: 'admin',
           password: hashedPassword,
           is_super_admin: 1,
@@ -5642,7 +5644,7 @@ app.post('/api/admin/auth/login', (req, res) => {
           can_access_objects: 1,
           can_access_access_management: 1
         });
-        superAdmin = administratorQueries.getByUsername('admin');
+        superAdmin = await administratorQueries.getByUsername('admin');
       }
 
       const { password: _, ...adminWithoutPassword } = superAdmin;
@@ -5653,10 +5655,10 @@ app.post('/api/admin/auth/login', (req, res) => {
     }
 
     // Проверяем администратора сначала по username, затем по email
-    let admin = administratorQueries.getByUsername(identifier);
+    let admin = await administratorQueries.getByUsername(identifier);
     if (!admin) {
       // Если не найден по username, пробуем найти по email
-      admin = administratorQueries.getByEmail(identifier);
+      admin = await administratorQueries.getByEmail(identifier);
     }
     
     if (!admin) {
@@ -5696,9 +5698,9 @@ app.post('/api/admin/auth/login', (req, res) => {
 /**
  * GET /api/admin/administrators - Получить всех администраторов
  */
-app.get('/api/admin/administrators', (req, res) => {
+app.get('/api/admin/administrators', async (req, res) => {
   try {
-    const admins = administratorQueries.getAll();
+    const admins = await administratorQueries.getAll();
     // Убираем пароли из ответа
     const adminsWithoutPasswords = admins.map(admin => {
       const { password, ...adminWithoutPassword } = admin;
@@ -5714,9 +5716,9 @@ app.get('/api/admin/administrators', (req, res) => {
 /**
  * GET /api/admin/administrators/:id - Получить администратора по ID
  */
-app.get('/api/admin/administrators/:id', (req, res) => {
+app.get('/api/admin/administrators/:id', async (req, res) => {
   try {
-    const admin = administratorQueries.getById(req.params.id);
+    const admin = await administratorQueries.getById(req.params.id);
     if (!admin) {
       return res.status(404).json({ success: false, error: 'Администратор не найден' });
     }
@@ -5731,7 +5733,7 @@ app.get('/api/admin/administrators/:id', (req, res) => {
 /**
  * POST /api/admin/administrators - Создать нового администратора
  */
-app.post('/api/admin/administrators', (req, res) => {
+app.post('/api/admin/administrators', async (req, res) => {
   try {
     const { username, password, email, full_name, ...permissions } = req.body;
     
@@ -5743,7 +5745,7 @@ app.post('/api/admin/administrators', (req, res) => {
     }
 
     // Проверяем, не существует ли уже администратор с таким username
-    const existingAdmin = administratorQueries.getByUsername(username);
+    const existingAdmin = await administratorQueries.getByUsername(username);
     if (existingAdmin) {
       return res.status(400).json({ 
         success: false, 
@@ -5773,7 +5775,7 @@ app.post('/api/admin/administrators', (req, res) => {
     // Нормализуем email (lowercase и trim) если он указан
     const normalizedEmail = email ? email.toLowerCase().trim() : null;
 
-    const result = administratorQueries.create({
+    const result = await administratorQueries.create({
       username,
       password: hashedPassword,
       email: normalizedEmail,
@@ -5787,7 +5789,7 @@ app.post('/api/admin/administrators', (req, res) => {
       can_access_access_management: 0 // Только для супер-админа
     });
 
-    const newAdmin = administratorQueries.getById(result.lastInsertRowid);
+    const newAdmin = await administratorQueries.getById(result.lastInsertRowid);
     const { password: _, ...adminWithoutPassword } = newAdmin;
     
     res.json({ 
@@ -5804,12 +5806,12 @@ app.post('/api/admin/administrators', (req, res) => {
 /**
  * PUT /api/admin/administrators/:id - Обновить администратора
  */
-app.put('/api/admin/administrators/:id', (req, res) => {
+app.put('/api/admin/administrators/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const { email, full_name, ...permissions } = req.body;
 
-    const admin = administratorQueries.getById(id);
+    const admin = await administratorQueries.getById(id);
     if (!admin) {
       return res.status(404).json({ success: false, error: 'Администратор не найден' });
     }
@@ -5825,7 +5827,7 @@ app.put('/api/admin/administrators/:id', (req, res) => {
     // Нормализуем email (lowercase и trim) если он указан
     const normalizedEmail = email ? email.toLowerCase().trim() : null;
 
-    administratorQueries.update(id, {
+    await administratorQueries.update(id, {
       email: normalizedEmail,
       full_name: full_name || null,
       can_access_statistics: permissions.can_access_statistics ? 1 : 0,
@@ -5836,7 +5838,7 @@ app.put('/api/admin/administrators/:id', (req, res) => {
       can_access_access_management: 0 // Только для супер-админа
     });
 
-    const updatedAdmin = administratorQueries.getById(id);
+    const updatedAdmin = await administratorQueries.getById(id);
     const { password: _, ...adminWithoutPassword } = updatedAdmin;
     
     res.json({ 
@@ -5853,11 +5855,11 @@ app.put('/api/admin/administrators/:id', (req, res) => {
 /**
  * DELETE /api/admin/administrators/:id - Удалить администратора
  */
-app.delete('/api/admin/administrators/:id', (req, res) => {
+app.delete('/api/admin/administrators/:id', async (req, res) => {
   try {
     const { id } = req.params;
 
-    const admin = administratorQueries.getById(id);
+    const admin = await administratorQueries.getById(id);
     if (!admin) {
       return res.status(404).json({ success: false, error: 'Администратор не найден' });
     }
@@ -5870,7 +5872,7 @@ app.delete('/api/admin/administrators/:id', (req, res) => {
       });
     }
 
-    administratorQueries.delete(id);
+    await administratorQueries.delete(id);
     res.json({ 
       success: true, 
       message: 'Администратор успешно удален' 
@@ -5988,12 +5990,12 @@ function buildPropertyPublicLink(propertyId) {
   return `${getFrontendPublicBase()}/property/${Number(propertyId)}`;
 }
 
-function loadPropertyRowForReminder(propertyId, propertyTable) {
-  const tbl = auctionReminderQueries.normalizePropertyTable(propertyTable);
-  if (tbl === 'properties_houses') return houseQueries.getById(propertyId);
-  if (tbl === 'properties_apartments') return apartmentQueries.getById(propertyId);
-  if (tbl === 'properties') return propertyQueries.getById(propertyId);
-  return apartmentQueries.getById(propertyId);
+async function loadPropertyRowForReminder(propertyId, propertyTable) {
+  const tbl = await auctionReminderQueries.normalizePropertyTable(propertyTable);
+  if (tbl === 'properties_houses') return await houseQueries.getById(propertyId);
+  if (tbl === 'properties_apartments') return await apartmentQueries.getById(propertyId);
+  if (tbl === 'properties') return await propertyQueries.getById(propertyId);
+  return await apartmentQueries.getById(propertyId);
 }
 
 /** Как на фронте: при непустом test_timer_end_date показывается CircularTimer, напоминание только в преаукционе с линейным таймером. */
@@ -6015,9 +6017,9 @@ function parsePropertyDateMs(v) {
 const auctionReminderNoEmailLogged = new Set();
 
 async function processOneAuctionReminderRow(row) {
-  const user = userQueries.getById(row.user_id);
+  const user = await userQueries.getById(row.user_id);
   if (!user) {
-    auctionReminderQueries.markReminderSent(row.id);
+    await auctionReminderQueries.markReminderSent(row.id);
     return;
   }
   const link = buildPropertyPublicLink(row.property_id);
@@ -6081,18 +6083,18 @@ async function processOneAuctionReminderRow(row) {
     markSent = Boolean(phone && waOk);
   }
   if (markSent) {
-    auctionReminderQueries.markReminderSent(row.id);
+    await auctionReminderQueries.markReminderSent(row.id);
   }
 }
 
 async function processOneAuctionStartedRow(row) {
   if (Number(row.notify_email) !== 1) {
-    auctionReminderQueries.markStartedSent(row.id);
+    await auctionReminderQueries.markStartedSent(row.id);
     return;
   }
-  const user = userQueries.getById(row.user_id);
+  const user = await userQueries.getById(row.user_id);
   if (!user) {
-    auctionReminderQueries.markStartedSent(row.id);
+    await auctionReminderQueries.markStartedSent(row.id);
     return;
   }
   const em = user.email && String(user.email).trim();
@@ -6111,7 +6113,7 @@ async function processOneAuctionStartedRow(row) {
   const body = `Здравствуйте!\n\nАукцион по объекту «${title}» уже начался.\n\nОткрыть карточку:\n${link}\n\nSellyourbrick`;
   try {
     await sendCrmEmailViaEmailJS(em, subject, body);
-    auctionReminderQueries.markStartedSent(row.id);
+    await auctionReminderQueries.markStartedSent(row.id);
   } catch (e) {
     console.error('[auction-reminder] start email:', e.message);
   }
@@ -6120,21 +6122,21 @@ async function processOneAuctionStartedRow(row) {
 /** Письмо при переходе объекта на круговой тест-таймер (после линейного преаукциона). */
 async function processOneCircularPhaseStartedRow(row) {
   if (Number(row.notify_email) !== 1) {
-    auctionReminderQueries.markCircularStartedNotified(row.id);
+    await auctionReminderQueries.markCircularStartedNotified(row.id);
     return;
   }
-  const prop = loadPropertyRowForReminder(row.property_id, row.property_table);
+  const prop = await loadPropertyRowForReminder(row.property_id, row.property_table);
   if (!prop || !propertyRowHasCircularTestTimer(prop)) {
     return;
   }
   const endMs = parsePropertyDateMs(prop.test_timer_end_date);
   if (endMs != null && endMs <= Date.now()) {
-    auctionReminderQueries.markCircularStartedNotified(row.id);
+    await auctionReminderQueries.markCircularStartedNotified(row.id);
     return;
   }
-  const user = userQueries.getById(row.user_id);
+  const user = await userQueries.getById(row.user_id);
   if (!user) {
-    auctionReminderQueries.markCircularStartedNotified(row.id);
+    await auctionReminderQueries.markCircularStartedNotified(row.id);
     return;
   }
   const em = user.email && String(user.email).trim();
@@ -6153,7 +6155,7 @@ async function processOneCircularPhaseStartedRow(row) {
   const body = `Здравствуйте!\n\nПо объекту «${title}» начался этап с круговым таймером аукциона.\n\nОткрыть карточку:\n${link}\n\nSellyourbrick`;
   try {
     await sendCrmEmailViaEmailJS(em, subject, body);
-    auctionReminderQueries.markCircularStartedNotified(row.id);
+    await auctionReminderQueries.markCircularStartedNotified(row.id);
   } catch (e) {
     console.error('[auction-reminder] circular phase email:', e.message);
   }
@@ -6165,15 +6167,15 @@ async function tickAuctionReminders() {
   auctionReminderTickRunning = true;
   try {
     const nowIso = new Date().toISOString();
-    const due = auctionReminderQueries.listDueReminders(nowIso);
+    const due = await auctionReminderQueries.listDueReminders(nowIso);
     for (const row of due) {
       await processOneAuctionReminderRow(row);
     }
-    const dueStart = auctionReminderQueries.listDueAuctionStarted(nowIso);
+    const dueStart = await auctionReminderQueries.listDueAuctionStarted(nowIso);
     for (const row of dueStart) {
       await processOneAuctionStartedRow(row);
     }
-    const circularPending = auctionReminderQueries.listPendingCircularStartedNotify();
+    const circularPending = await auctionReminderQueries.listPendingCircularStartedNotify();
     for (const row of circularPending) {
       await processOneCircularPhaseStartedRow(row);
     }
@@ -6184,9 +6186,9 @@ async function tickAuctionReminders() {
   }
 }
 
-app.get('/api/admin/crm/board', (req, res) => {
+app.get('/api/admin/crm/board', async (req, res) => {
   try {
-    const board = crmQueries.getBoard();
+    const board = await crmQueries.getBoard();
     res.json({ success: true, data: board });
   } catch (error) {
     console.error('CRM board:', error);
@@ -6194,10 +6196,10 @@ app.get('/api/admin/crm/board', (req, res) => {
   }
 });
 
-app.get('/api/admin/crm/user-search', (req, res) => {
+app.get('/api/admin/crm/user-search', async (req, res) => {
   try {
     const q = req.query.q || '';
-    const rows = crmQueries.searchUsers(q, 30);
+    const rows = await crmQueries.searchUsers(q, 30);
     res.json({ success: true, data: rows });
   } catch (error) {
     console.error('CRM user-search:', error);
@@ -6205,9 +6207,9 @@ app.get('/api/admin/crm/user-search', (req, res) => {
   }
 });
 
-app.get('/api/admin/crm/assistant-leads', (req, res) => {
+app.get('/api/admin/crm/assistant-leads', async (req, res) => {
   try {
-    const list = assistantLeadQueries.getAll();
+    const list = await assistantLeadQueries.getAll();
     res.json({ success: true, data: list });
   } catch (error) {
     console.error('CRM assistant-leads:', error);
@@ -6215,18 +6217,18 @@ app.get('/api/admin/crm/assistant-leads', (req, res) => {
   }
 });
 
-app.get('/api/admin/crm/leads/:id', (req, res) => {
+app.get('/api/admin/crm/leads/:id', async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
-    const lead = crmQueries.getLeadById(id);
+    const lead = await crmQueries.getLeadById(id);
     if (!lead) {
       return res.status(404).json({ success: false, error: 'Лид не найден' });
     }
     let userSummary = null;
     if (lead.user_id) {
-      const u = userQueries.getById(lead.user_id);
+      const u = await userQueries.getById(lead.user_id);
       if (u) {
-        const favCount = crmQueries.getFavoriteCountForUser(lead.user_id);
+        const favCount = await crmQueries.getFavoriteCountForUser(lead.user_id);
         userSummary = {
           id: u.id,
           first_name: u.first_name,
@@ -6239,8 +6241,8 @@ app.get('/api/admin/crm/leads/:id', (req, res) => {
         };
       }
     }
-    const touchCount = crmQueries.countTouchActivities(id);
-    const activityCount = crmQueries.countActivities(id);
+    const touchCount = await crmQueries.countTouchActivities(id);
+    const activityCount = await crmQueries.countActivities(id);
     res.json({
       success: true,
       data: { lead, userSummary, touchCount, activityCount },
@@ -6251,11 +6253,11 @@ app.get('/api/admin/crm/leads/:id', (req, res) => {
   }
 });
 
-app.post('/api/admin/crm/leads', (req, res) => {
+app.post('/api/admin/crm/leads', async (req, res) => {
   try {
     const body = req.body || {};
-    const newId = crmQueries.createLead(body);
-    const lead = crmQueries.getLeadById(newId);
+    const newId = await crmQueries.createLead(body);
+    const lead = await crmQueries.getLeadById(newId);
     res.status(201).json({ success: true, data: lead });
   } catch (error) {
     console.error('CRM lead create:', error);
@@ -6266,15 +6268,15 @@ app.post('/api/admin/crm/leads', (req, res) => {
   }
 });
 
-app.patch('/api/admin/crm/leads/:id', (req, res) => {
+app.patch('/api/admin/crm/leads/:id', async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
-    const existing = crmQueries.getLeadById(id);
+    const existing = await crmQueries.getLeadById(id);
     if (!existing) {
       return res.status(404).json({ success: false, error: 'Лид не найден' });
     }
-    crmQueries.updateLead(id, req.body || {});
-    const lead = crmQueries.getLeadById(id);
+    await crmQueries.updateLead(id, req.body || {});
+    const lead = await crmQueries.getLeadById(id);
     res.json({ success: true, data: lead });
   } catch (error) {
     console.error('CRM lead patch:', error);
@@ -6282,14 +6284,14 @@ app.patch('/api/admin/crm/leads/:id', (req, res) => {
   }
 });
 
-app.delete('/api/admin/crm/leads/:id', (req, res) => {
+app.delete('/api/admin/crm/leads/:id', async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
-    const existing = crmQueries.getLeadById(id);
+    const existing = await crmQueries.getLeadById(id);
     if (!existing) {
       return res.status(404).json({ success: false, error: 'Лид не найден' });
     }
-    crmQueries.deleteLead(id);
+    await crmQueries.deleteLead(id);
     res.json({ success: true, message: 'Удалено' });
   } catch (error) {
     console.error('CRM lead delete:', error);
@@ -6297,7 +6299,7 @@ app.delete('/api/admin/crm/leads/:id', (req, res) => {
   }
 });
 
-app.post('/api/admin/crm/leads/:id/move', (req, res) => {
+app.post('/api/admin/crm/leads/:id/move', async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
     const { stageId, index } = req.body || {};
@@ -6306,8 +6308,8 @@ app.post('/api/admin/crm/leads/:id/move', (req, res) => {
     if (!Number.isFinite(toStage) || !Number.isFinite(toIndex)) {
       return res.status(400).json({ success: false, error: 'Нужны stageId и index' });
     }
-    crmQueries.moveLead(id, toStage, toIndex);
-    const lead = crmQueries.getLeadById(id);
+    await crmQueries.moveLead(id, toStage, toIndex);
+    const lead = await crmQueries.getLeadById(id);
     res.json({ success: true, data: lead });
   } catch (error) {
     console.error('CRM move:', error);
@@ -6315,10 +6317,10 @@ app.post('/api/admin/crm/leads/:id/move', (req, res) => {
   }
 });
 
-app.get('/api/admin/crm/leads/:id/activities', (req, res) => {
+app.get('/api/admin/crm/leads/:id/activities', async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
-    const list = crmQueries.listActivities(id);
+    const list = await crmQueries.listActivities(id);
     res.json({ success: true, data: list });
   } catch (error) {
     console.error('CRM activities:', error);
@@ -6326,10 +6328,10 @@ app.get('/api/admin/crm/leads/:id/activities', (req, res) => {
   }
 });
 
-app.post('/api/admin/crm/leads/:id/activities', (req, res) => {
+app.post('/api/admin/crm/leads/:id/activities', async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
-    const lead = crmQueries.getLeadById(id);
+    const lead = await crmQueries.getLeadById(id);
     if (!lead) {
       return res.status(404).json({ success: false, error: 'Лид не найден' });
     }
@@ -6337,13 +6339,13 @@ app.post('/api/admin/crm/leads/:id/activities', (req, res) => {
     if (!kind || !String(kind).trim()) {
       return res.status(400).json({ success: false, error: 'Укажите тип активности (kind)' });
     }
-    crmQueries.addActivity(id, {
+    await crmQueries.addActivity(id, {
       kind: String(kind).trim(),
       title: title != null ? String(title) : null,
       body: body != null ? String(body) : null,
       createdBy: createdBy != null ? String(createdBy) : null,
     });
-    const list = crmQueries.listActivities(id);
+    const list = await crmQueries.listActivities(id);
     res.status(201).json({ success: true, data: list[0] || null });
   } catch (error) {
     console.error('CRM activity add:', error);
@@ -6355,7 +6357,7 @@ app.post('/api/admin/crm/leads/:id/activities', (req, res) => {
 app.post('/api/admin/crm/leads/:id/email', async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
-    const lead = crmQueries.getLeadById(id);
+    const lead = await crmQueries.getLeadById(id);
     if (!lead) {
       return res.status(404).json({ success: false, error: 'Лид не найден' });
     }
@@ -6367,7 +6369,7 @@ app.post('/api/admin/crm/leads/:id/email', async (req, res) => {
     const subj = subject != null && String(subject).trim() ? String(subject).trim() : 'Сообщение от Sellyourbrick';
     const text = body != null ? String(body) : '';
     await sendCrmEmailViaEmailJS(toEmail, subj, text);
-    crmQueries.addActivity(id, {
+    await crmQueries.addActivity(id, {
       kind: 'email_sent',
       title: subj,
       body: text.slice(0, 4000),
@@ -6381,18 +6383,18 @@ app.post('/api/admin/crm/leads/:id/email', async (req, res) => {
   }
 });
 
-app.post('/api/admin/crm/import-user', (req, res) => {
+app.post('/api/admin/crm/import-user', async (req, res) => {
   try {
     const { userId } = req.body || {};
     const uid = parseInt(userId, 10);
     if (!Number.isFinite(uid)) {
       return res.status(400).json({ success: false, error: 'Нужен userId' });
     }
-    const existing = crmQueries.findLeadByUserId(uid);
+    const existing = await crmQueries.findLeadByUserId(uid);
     if (existing) {
       return res.json({ success: true, data: existing, message: 'Уже в воронке' });
     }
-    const u = userQueries.getById(uid);
+    const u = await userQueries.getById(uid);
     if (!u) {
       return res.status(404).json({ success: false, error: 'Пользователь не найден' });
     }
@@ -6400,7 +6402,7 @@ app.post('/api/admin/crm/import-user', (req, res) => {
     const interests = [];
     if (u.country) interests.push(`Страна: ${u.country}`);
     if (u.role) interests.push(`Роль: ${u.role}`);
-    const newId = crmQueries.createLead({
+    const newId = await crmQueries.createLead({
       user_id: u.id,
       display_name: displayName,
       email: u.email || null,
@@ -6409,8 +6411,8 @@ app.post('/api/admin/crm/import-user', (req, res) => {
       source: 'user_import',
       temperature: 'warm',
     });
-    const lead = crmQueries.getLeadById(newId);
-    crmQueries.addActivity(newId, {
+    const lead = await crmQueries.getLeadById(newId);
+    await crmQueries.addActivity(newId, {
       kind: 'note',
       title: 'Импорт из пользователей',
       body: `Добавлен из базы пользователей ID ${u.id}`,
@@ -6426,18 +6428,18 @@ app.post('/api/admin/crm/import-user', (req, res) => {
   }
 });
 
-app.post('/api/admin/crm/import-assistant', (req, res) => {
+app.post('/api/admin/crm/import-assistant', async (req, res) => {
   try {
     const { assistantLeadId } = req.body || {};
     const aid = parseInt(assistantLeadId, 10);
     if (!Number.isFinite(aid)) {
       return res.status(400).json({ success: false, error: 'Нужен assistantLeadId' });
     }
-    const existing = crmQueries.findLeadByAssistantId(aid);
+    const existing = await crmQueries.findLeadByAssistantId(aid);
     if (existing) {
       return res.json({ success: true, data: existing, message: 'Уже в воронке' });
     }
-    const al = assistantLeadQueries.getById(aid);
+    const al = await assistantLeadQueries.getById(aid);
     if (!al) {
       return res.status(404).json({ success: false, error: 'Лид помощника не найден' });
     }
@@ -6448,7 +6450,7 @@ app.post('/api/admin/crm/import-assistant', (req, res) => {
     if (al.property_type) interests.push(`Тип: ${al.property_type}`);
     if (al.country) interests.push(`Страна: ${al.country}`);
     if (al.summary) interests.push(al.summary.slice(0, 200));
-    const newId = crmQueries.createLead({
+    const newId = await crmQueries.createLead({
       user_id: al.user_id || null,
       display_name: displayName,
       email: al.email || null,
@@ -6459,8 +6461,8 @@ app.post('/api/admin/crm/import-assistant', (req, res) => {
       temperature: al.lead_type === 'hot' ? 'hot' : al.lead_type === 'warm' ? 'warm' : 'cold',
       internal_notes: al.summary ? `Сводка помощника: ${al.summary}` : null,
     });
-    const lead = crmQueries.getLeadById(newId);
-    crmQueries.addActivity(newId, {
+    const lead = await crmQueries.getLeadById(newId);
+    await crmQueries.addActivity(newId, {
       kind: 'note',
       title: 'Импорт из умного помощника',
       body: `assistant_lead id=${al.id}`,
@@ -6481,9 +6483,9 @@ app.post('/api/admin/crm/import-assistant', (req, res) => {
  * API: Причины долга (для объявлений «Долги»)
  * ============================================
  */
-app.get('/api/admin/debt-reasons', (req, res) => {
+app.get('/api/admin/debt-reasons', async (req, res) => {
   try {
-    const list = debtReasonQueries.getAll();
+    const list = await debtReasonQueries.getAll();
     res.json({ success: true, data: list });
   } catch (error) {
     console.error('Ошибка при получении причин долга:', error);
@@ -6491,18 +6493,18 @@ app.get('/api/admin/debt-reasons', (req, res) => {
   }
 });
 
-app.post('/api/admin/debt-reasons', (req, res) => {
+app.post('/api/admin/debt-reasons', async (req, res) => {
   try {
     const { title_ru, code, sort_order } = req.body || {};
     if (!title_ru || !String(title_ru).trim()) {
       return res.status(400).json({ success: false, error: 'Укажите название причины (title_ru)' });
     }
-    const result = debtReasonQueries.create({
+    const result = await debtReasonQueries.create({
       title_ru: String(title_ru).trim(),
       code: code ? String(code).trim() || null : null,
       sort_order: sort_order != null ? parseInt(sort_order, 10) : 0
     });
-    const item = debtReasonQueries.getById(result.id);
+    const item = await debtReasonQueries.getById(result.id);
     res.status(201).json({ success: true, data: item });
   } catch (error) {
     console.error('Ошибка при создании причины долга:', error);
@@ -6510,20 +6512,20 @@ app.post('/api/admin/debt-reasons', (req, res) => {
   }
 });
 
-app.put('/api/admin/debt-reasons/:id', (req, res) => {
+app.put('/api/admin/debt-reasons/:id', async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
-    const existing = debtReasonQueries.getById(id);
+    const existing = await debtReasonQueries.getById(id);
     if (!existing) {
       return res.status(404).json({ success: false, error: 'Причина долга не найдена' });
     }
     const { title_ru, code, sort_order } = req.body || {};
-    debtReasonQueries.update(id, {
+    await debtReasonQueries.update(id, {
       title_ru: title_ru != null ? String(title_ru).trim() : existing.title_ru,
       code: code !== undefined ? (code ? String(code).trim() || null : null) : existing.code,
       sort_order: sort_order !== undefined ? parseInt(sort_order, 10) : existing.sort_order
     });
-    const item = debtReasonQueries.getById(id);
+    const item = await debtReasonQueries.getById(id);
     res.json({ success: true, data: item });
   } catch (error) {
     console.error('Ошибка при обновлении причины долга:', error);
@@ -6531,14 +6533,14 @@ app.put('/api/admin/debt-reasons/:id', (req, res) => {
   }
 });
 
-app.delete('/api/admin/debt-reasons/:id', (req, res) => {
+app.delete('/api/admin/debt-reasons/:id', async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
-    const existing = debtReasonQueries.getById(id);
+    const existing = await debtReasonQueries.getById(id);
     if (!existing) {
       return res.status(404).json({ success: false, error: 'Причина долга не найдена' });
     }
-    debtReasonQueries.delete(id);
+    await debtReasonQueries.delete(id);
     res.json({ success: true, message: 'Причина долга удалена' });
   } catch (error) {
     console.error('Ошибка при удалении причины долга:', error);
@@ -6568,7 +6570,7 @@ const debtDocFieldNames = [
  * POST /api/properties/upload-photo — загрузить фото объявления до отправки формы.
  * Нужен, чтобы не слать десятки МБ base64 в одном поле photos (лимиты прокси на проде).
  */
-app.post('/api/properties/upload-photo', (req, res) => {
+app.post('/api/properties/upload-photo', async (req, res) => {
   upload.single('photo')(req, res, (err) => {
     if (err) {
       console.error('POST /api/properties/upload-photo multer:', err);
@@ -6590,14 +6592,13 @@ app.post('/api/properties', upload.fields([
   { name: 'ownership_document', maxCount: 1 },
   { name: 'no_debts_document', maxCount: 1 },
   ...debtDocFieldNames.map(name => ({ name, maxCount: 10 }))
-]), (req, res) => {
+]), async (req, res) => {
   try {
     console.log('📥 Получен запрос на создание объявления');
     console.log('📋 Body:', req.body);
     console.log('📁 Files:', req.files);
     
     
-    const db = getDatabase();
     
     const {
       user_id,
@@ -6759,7 +6760,7 @@ app.post('/api/properties', upload.fields([
     // Обновляем данные пользователя из профиля, если они переданы
     // Это нужно для синхронизации данных профиля с данными пользователя при отправке объекта
     try {
-      const user = userQueries.getById(user_id);
+      const user = await userQueries.getById(user_id);
       if (user) {
         // Обновляем данные пользователя, если они были переданы в запросе
         const updateData = {};
@@ -6774,7 +6775,7 @@ app.post('/api/properties', upload.fields([
         if (req.body.identification_number) updateData.identification_number = req.body.identification_number;
         
         if (Object.keys(updateData).length > 0) {
-          userQueries.update(user_id, updateData);
+          await userQueries.update(user_id, updateData);
           console.log('✅ Данные пользователя обновлены при отправке объекта');
         }
       }
@@ -6959,7 +6960,7 @@ app.post('/api/properties', upload.fields([
     try {
       if (property_type === 'apartment' || property_type === 'commercial') {
         console.log('🔍 Создание квартиры/коммерческой недвижимости...');
-        result = apartmentQueries.create(propertyData);
+        result = await apartmentQueries.create(propertyData);
         console.log('✅ Результат создания:', { lastInsertRowid: result.lastInsertRowid, changes: result.changes });
         
         if (!result || !result.lastInsertRowid) {
@@ -6970,7 +6971,7 @@ app.post('/api/properties', upload.fields([
           });
         }
         
-        property = apartmentQueries.getById(result.lastInsertRowid);
+        property = await apartmentQueries.getById(result.lastInsertRowid);
         if (!property) {
           console.error('❌ Ошибка: объект создан, но не найден при получении, ID:', result.lastInsertRowid);
           return res.status(500).json({ 
@@ -6982,7 +6983,7 @@ app.post('/api/properties', upload.fields([
         console.log('📋 Полученный объект:', { id: property.id, title: property.title, property_type: property.property_type });
       } else if (property_type === 'house' || property_type === 'villa') {
         console.log('🔍 Создание дома/виллы...');
-        result = houseQueries.create(propertyData);
+        result = await houseQueries.create(propertyData);
         console.log('✅ Результат создания:', { lastInsertRowid: result.lastInsertRowid, changes: result.changes });
         
         if (!result || !result.lastInsertRowid) {
@@ -6993,7 +6994,7 @@ app.post('/api/properties', upload.fields([
           });
         }
         
-        property = houseQueries.getById(result.lastInsertRowid);
+        property = await houseQueries.getById(result.lastInsertRowid);
         if (!property) {
           console.error('❌ Ошибка: объект создан, но не найден при получении, ID:', result.lastInsertRowid);
           return res.status(500).json({ 
@@ -7016,42 +7017,6 @@ app.post('/api/properties', upload.fields([
       console.error('❌ Сообщение:', createError.message);
       console.error('❌ Stack:', createError.stack);
       
-      // Проверяем, есть ли таблица
-      try {
-        const db = getDatabase();
-        const tableName = (property_type === 'apartment' || property_type === 'commercial') 
-          ? 'properties_apartments' 
-          : 'properties_houses';
-        const tableExists = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name=?").get(tableName);
-        if (!tableExists) {
-          console.error(`❌ Таблица ${tableName} не существует!`);
-          return res.status(500).json({ 
-            success: false, 
-            error: `Таблица ${tableName} не существует. Обратитесь к администратору.` 
-          });
-        }
-        
-        // Проверяем структуру таблицы
-        const columns = db.prepare(`PRAGMA table_info(${tableName})`).all();
-        console.log(`📋 Колонки в таблице ${tableName}:`, columns.map(c => c.name).join(', '));
-        
-        // Проверяем, какие поля отсутствуют в propertyData
-        const requiredColumns = columns.map(c => c.name);
-        const missingFields = requiredColumns.filter(col => {
-          // Пропускаем поля с DEFAULT значениями
-          if (col === 'id' || col === 'created_at' || col === 'updated_at' || col === 'moderation_status') {
-            return false;
-          }
-          // Проверяем, есть ли поле в propertyData
-          return propertyData[col] === undefined && col !== 'id';
-        });
-        if (missingFields.length > 0) {
-          console.warn('⚠️ Поля, которые могут отсутствовать в propertyData:', missingFields);
-        }
-      } catch (checkError) {
-        console.error('❌ Ошибка при проверке таблицы:', checkError);
-      }
-      
       throw createError; // Пробрасываем ошибку дальше
     }
     
@@ -7069,7 +7034,7 @@ app.post('/api/properties', upload.fields([
           for (const file of files) {
             const filePath = `/uploads/${file.filename}`;
             try {
-              debtDocumentQueries.insert(propertyId, propertyType, docType, filePath, file.originalname || null);
+              await debtDocumentQueries.insert(propertyId, propertyType, docType, filePath, file.originalname || null);
             } catch (docErr) {
               console.warn('⚠️ Не удалось сохранить документ долга:', docType, docErr.message);
             }
@@ -7133,9 +7098,12 @@ app.post('/api/properties', upload.fields([
     // Проверяем количество объявлений на модерации
     let pendingCount = 0;
     try {
-      const apartmentsPending = db.prepare('SELECT COUNT(*) as count FROM properties_apartments WHERE moderation_status = ?').get('pending');
-      const housesPending = db.prepare('SELECT COUNT(*) as count FROM properties_houses WHERE moderation_status = ?').get('pending');
-      pendingCount = (apartmentsPending?.count || 0) + (housesPending?.count || 0);
+      const prisma = getPrisma();
+      const [apartmentsPending, housesPending] = await Promise.all([
+        prisma.properties_apartments.count({ where: { moderation_status: 'pending' } }),
+        prisma.properties_houses.count({ where: { moderation_status: 'pending' } }),
+      ]);
+      pendingCount = apartmentsPending + housesPending;
     } catch (e) {
       console.warn('⚠️ Не удалось получить количество объявлений на модерации:', e.message);
     }
@@ -7175,14 +7143,14 @@ app.post('/api/properties', upload.fields([
     console.error('❌ Сообщение:', error.message);
     console.error('❌ Stack:', error.stack);
     
-    // Логируем дополнительные детали для SQLite ошибок
+    // Логируем дополнительные детали для ошибок схемы/таблиц БД
     if (error.message && error.message.includes('no such column')) {
-      console.error('❌ SQLite ошибка: отсутствует колонка в таблице');
+      console.error('❌ Ошибка БД: отсутствует колонка в таблице');
       console.error('❌ Проверьте структуру таблицы properties_apartments или properties_houses');
     }
     
     if (error.message && error.message.includes('no such table')) {
-      console.error('❌ SQLite ошибка: отсутствует таблица');
+      console.error('❌ Ошибка БД: отсутствует таблица');
       console.error('❌ Проверьте, что таблицы properties_apartments и properties_houses созданы');
     }
     
@@ -7207,7 +7175,7 @@ app.post('/api/properties', upload.fields([
 /**
  * POST /api/properties/bulk-import - Массовое добавление объектов из Excel/CSV
  */
-app.post('/api/properties/bulk-import', uploadMemory.single('file'), (req, res) => {
+app.post('/api/properties/bulk-import', uploadMemory.single('file'), async (req, res) => {
   try {
     const user_id = req.body.user_id ? parseInt(req.body.user_id, 10) : null;
     if (!user_id || isNaN(user_id)) {
@@ -7241,9 +7209,9 @@ app.post('/api/properties/bulk-import', uploadMemory.single('file'), (req, res) 
       try {
         const propertyData = rowToPropertyData(row, user_id);
         if (row.property_type === 'apartment' || row.property_type === 'commercial') {
-          apartmentQueries.create(propertyData);
+          await apartmentQueries.create(propertyData);
         } else {
-          houseQueries.create(propertyData);
+          await houseQueries.create(propertyData);
         }
         loaded++;
       } catch (err) {
@@ -7275,9 +7243,9 @@ app.post('/api/properties/bulk-import', uploadMemory.single('file'), (req, res) 
  * PUT /api/properties/:id/delete-request - Отправить запрос на удаление объявления
  * ВАЖНО: Этот маршрут должен быть ПЕРЕД /api/properties/:id, иначе он будет перехвачен
  */
-app.put('/api/properties/:id/delete-request', (req, res) => {
+app.put('/api/properties/:id/delete-request', async (req, res) => {
   try {
-    const db = getDatabase();
+    const prisma = getPrisma();
     const { id } = req.params;
     const { reason } = req.body;
 
@@ -7288,7 +7256,7 @@ app.put('/api/properties/:id/delete-request', (req, res) => {
       });
     }
 
-    const property = db.prepare('SELECT * FROM properties WHERE id = ?').get(id);
+    const property = await prisma.properties.findUnique({ where: { id: Number(id) } });
     if (!property) {
       return res.status(404).json({ 
         success: false, 
@@ -7297,10 +7265,12 @@ app.put('/api/properties/:id/delete-request', (req, res) => {
     }
 
     // Проверяем, не отправлен ли уже запрос на удаление
-    const existingDeleteRequest = db.prepare(`
-      SELECT * FROM properties 
-      WHERE rejection_reason LIKE ? AND moderation_status = 'pending'
-    `).get(`DELETE:${id}:%`);
+    const existingDeleteRequest = await prisma.properties.findFirst({
+      where: {
+        moderation_status: 'pending',
+        rejection_reason: { startsWith: `DELETE:${id}:` },
+      },
+    });
 
     if (existingDeleteRequest) {
       return res.status(400).json({ 
@@ -7311,73 +7281,56 @@ app.put('/api/properties/:id/delete-request', (req, res) => {
 
     // Создаем новую запись с запросом на удаление
     // Используем rejection_reason для хранения ID оригинального объекта и причины: DELETE:propertyId:reason
-    const stmt = db.prepare(`
-      INSERT INTO properties (
-        user_id, property_type, title, description, price, currency,
-        is_auction, auction_start_date, auction_end_date, auction_starting_price,
-        area, rooms, bedrooms, bathrooms, floor, total_floors, year_built, location,
-        balcony, parking, elevator, land_area, garage, pool, garden,
-        commercial_type, business_hours, renovation, condition, heating,
-        water_supply, sewerage, electricity, internet, security, furniture,
-        photos, videos, additional_documents, ownership_document, no_debts_document,
-        test_drive, test_drive_data, moderation_status, rejection_reason
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `);
-
-    // Подготавливаем все значения для вставки (44 значения для 44 колонок)
-    const values = [
-      property.user_id,
-      property.property_type,
-      property.title,
-      property.description,
-      property.price,
-      property.currency,
-      property.is_auction,
-      property.auction_start_date,
-      property.auction_end_date,
-      property.auction_starting_price,
-      property.area,
-      property.rooms,
-      property.bedrooms,
-      property.bathrooms,
-      property.floor,
-      property.total_floors,
-      property.year_built,
-      property.location,
-      property.balcony,
-      property.parking,
-      property.elevator,
-      property.land_area,
-      property.garage,
-      property.pool,
-      property.garden,
-      property.commercial_type,
-      property.business_hours,
-      property.renovation,
-      property.condition,
-      property.heating,
-      property.water_supply,
-      property.sewerage,
-      property.electricity,
-      property.internet,
-      property.security,
-      property.furniture,
-      property.photos,
-      property.videos,
-      property.additional_documents,
-      property.ownership_document,
-      property.no_debts_document,
-      property.test_drive !== undefined && property.test_drive !== null ? property.test_drive : 0,
-      property.test_drive_data,
-      'pending', // Статус модерации для запроса на удаление
-      `DELETE:${id}:${reason.trim()}` // Сохраняем ID оригинального объекта и причину
-    ];
-    
-    console.log(`📊 Количество значений для вставки: ${values.length}`);
-    console.log(`📊 Ожидается 44 значения`);
-
-    const result = stmt.run(...values);
-    const newRequestId = result.lastInsertRowid;
+    const created = await prisma.properties.create({
+      data: {
+        user_id: property.user_id,
+        property_type: property.property_type,
+        title: property.title,
+        description: property.description,
+        price: property.price,
+        currency: property.currency,
+        is_auction: property.is_auction,
+        auction_start_date: property.auction_start_date,
+        auction_end_date: property.auction_end_date,
+        auction_starting_price: property.auction_starting_price,
+        area: property.area,
+        rooms: property.rooms,
+        bedrooms: property.bedrooms,
+        bathrooms: property.bathrooms,
+        floor: property.floor,
+        total_floors: property.total_floors,
+        year_built: property.year_built,
+        location: property.location,
+        balcony: property.balcony,
+        parking: property.parking,
+        elevator: property.elevator,
+        land_area: property.land_area,
+        garage: property.garage,
+        pool: property.pool,
+        garden: property.garden,
+        commercial_type: property.commercial_type,
+        business_hours: property.business_hours,
+        renovation: property.renovation,
+        condition: property.condition,
+        heating: property.heating,
+        water_supply: property.water_supply,
+        sewerage: property.sewerage,
+        electricity: property.electricity,
+        internet: property.internet,
+        security: property.security,
+        furniture: property.furniture,
+        photos: property.photos,
+        videos: property.videos,
+        additional_documents: property.additional_documents,
+        ownership_document: property.ownership_document,
+        no_debts_document: property.no_debts_document,
+        test_drive: property.test_drive ?? 0,
+        test_drive_data: property.test_drive_data,
+        moderation_status: 'pending',
+        rejection_reason: `DELETE:${id}:${reason.trim()}`,
+      },
+    });
+    const newRequestId = created.id;
 
     console.log(`🗑️ Создан запрос на удаление. ID запроса: ${newRequestId}, ID оригинала: ${id}, Причина: ${reason.trim()}`);
 
@@ -7402,19 +7355,18 @@ app.put('/api/properties/:id', upload.fields([
   { name: 'ownership_document', maxCount: 1 },
   { name: 'no_debts_document', maxCount: 1 },
   ...debtDocFieldNames.map(name => ({ name, maxCount: 10 }))
-]), (req, res) => {
+]), async (req, res) => {
   try {
     console.log('📥 Получен запрос на обновление объявления');
     console.log('📋 Body:', req.body);
     console.log('📁 Files:', req.files);
     
-    const db = getDatabase();
     const { id } = req.params;
     const isEdit = req.body.is_edit === '1' || req.body.is_edit === 1;
     const originalPropertyId = req.body.original_property_id || id;
     
     // Проверяем существование оригинального объекта - используем propertyQueries для поиска в правильных таблицах
-    const originalProperty = propertyQueries.getById(originalPropertyId);
+    const originalProperty = await propertyQueries.getById(originalPropertyId);
     if (!originalProperty) {
       return res.status(404).json({ 
         success: false, 
@@ -7585,13 +7537,13 @@ app.put('/api/properties/:id', upload.fields([
     // Документы по долгу: обновляем у оригинального объекта (6 категорий, несколько файлов в каждой)
     if (isDebtEdit && req.files) {
       try {
-        debtDocumentQueries.deleteByProperty(originalPropertyId, originalProperty.property_type);
+        await debtDocumentQueries.deleteByProperty(originalPropertyId, originalProperty.property_type);
         for (const fieldName of debtDocFieldNames) {
           const docType = fieldName.replace('debt_doc_', '');
           const files = req.files[fieldName];
           if (files && Array.isArray(files)) {
             for (const file of files) {
-              debtDocumentQueries.insert(originalPropertyId, originalProperty.property_type, docType, `/uploads/${file.filename}`, file.originalname || null);
+              await debtDocumentQueries.insert(originalPropertyId, originalProperty.property_type, docType, `/uploads/${file.filename}`, file.originalname || null);
             }
           }
         }
@@ -7614,22 +7566,9 @@ app.put('/api/properties/:id', upload.fields([
     
     // Если это редактирование, создаем новую запись с пометкой
     if (isEdit) {
+      const prisma = getPrisma();
       // Создаем новую запись с данными изменений
       // Используем rejection_reason для хранения original_property_id
-      const stmt = db.prepare(`
-        INSERT INTO properties (
-          user_id, property_type, title, description, price, currency,
-          is_auction, auction_start_date, auction_end_date, auction_starting_price,
-          area, living_area, building_type, rooms, bedrooms, bathrooms, floor, total_floors, year_built, location,
-          balcony, parking, elevator, land_area, garage, pool, garden,
-          commercial_type, business_hours, renovation, condition, heating,
-          water_supply, sewerage, electricity, internet, security, furniture,
-          photos, videos, additional_documents, additional_amenities, ownership_document, no_debts_document,
-          test_drive, test_drive_data, moderation_status, rejection_reason
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `);
-      
-      // Подготавливаем все значения для вставки
       const values = [
         user_id || originalProperty.user_id,
         property_type || originalProperty.property_type,
@@ -7692,9 +7631,6 @@ app.put('/api/properties/:id', upload.fields([
         `EDIT:${originalPropertyId}` // Сохраняем ID оригинального объекта в rejection_reason
       ];
       
-      console.log(`📊 Количество значений для вставки: ${values.length}`);
-      console.log(`📊 Ожидается 44 значения`);
-
       const effectiveBuyNow =
         price !== undefined && price !== null && price !== '' && parseFloat(price) > 0
           ? parseFloat(price)
@@ -7726,14 +7662,64 @@ app.put('/api/properties/:id', upload.fields([
         })
       }
       
-      const result = stmt.run(...values);
-      
-      const newPropertyId = result.lastInsertRowid;
+      const created = await prisma.properties.create({
+        data: {
+          user_id: values[0],
+          property_type: values[1],
+          title: values[2],
+          description: values[3],
+          price: values[4],
+          currency: values[5],
+          is_auction: values[6],
+          auction_start_date: values[7],
+          auction_end_date: values[8],
+          auction_starting_price: values[9],
+          area: values[10],
+          living_area: values[11],
+          building_type: values[12],
+          rooms: values[13],
+          bedrooms: values[14],
+          bathrooms: values[15],
+          floor: values[16],
+          total_floors: values[17],
+          year_built: values[18],
+          location: values[19],
+          balcony: values[20],
+          parking: values[21],
+          elevator: values[22],
+          land_area: values[23],
+          garage: values[24],
+          pool: values[25],
+          garden: values[26],
+          commercial_type: values[27],
+          business_hours: values[28],
+          renovation: values[29],
+          condition: values[30],
+          heating: values[31],
+          water_supply: values[32],
+          sewerage: values[33],
+          electricity: values[34],
+          internet: values[35],
+          security: values[36],
+          furniture: values[37],
+          photos: values[38],
+          videos: values[39],
+          additional_documents: values[40],
+          additional_amenities: values[41],
+          ownership_document: values[42],
+          no_debts_document: values[43],
+          test_drive: values[44],
+          test_drive_data: values[45],
+          moderation_status: values[46],
+          rejection_reason: values[47],
+        },
+      });
+      const newPropertyId = created.id;
       
       console.log(`✅ Создана новая запись для редактирования. ID новой записи: ${newPropertyId}, ID оригинала: ${originalPropertyId}`);
       
       // Получаем созданную запись
-      const newProperty = db.prepare('SELECT * FROM properties WHERE id = ?').get(newPropertyId);
+      const newProperty = await prisma.properties.findUnique({ where: { id: Number(newPropertyId) } });
       
       res.json({
         success: true,
@@ -7762,12 +7748,12 @@ app.put('/api/properties/:id', upload.fields([
  * GET /api/properties/pending - Получить все объявления на модерации
  * ВАЖНО: Этот маршрут должен быть ПЕРЕД /api/properties/:id, иначе "pending" будет интерпретироваться как ID
  */
-app.get('/api/properties/pending', (req, res) => {
+app.get('/api/properties/pending', async (req, res) => {
   try {
     console.log('📥 Запрос объявлений на модерации');
     
     // Используем функцию из propertyQueries, которая работает с новыми таблицами
-    const properties = propertyQueries.getPending();
+    const properties = await propertyQueries.getPending();
 
     console.log(`✅ Найдено объявлений на модерации: ${properties.length}`);
     if (properties.length > 0) {
@@ -7878,12 +7864,12 @@ app.get('/api/properties/pending', (req, res) => {
  * GET /api/properties/approved - Получить одобренные объявления без аукциона
  * ВАЖНО: Этот маршрут должен быть ПЕРЕД /api/properties/:id, иначе он будет перехвачен
  */
-app.get('/api/properties/approved', (req, res) => {
+app.get('/api/properties/approved', async (req, res) => {
   try {
     const { type } = req.query; // Опциональный фильтр по типу
     
     // Используем функцию из propertyQueries, которая работает с новыми таблицами
-    const properties = propertyQueries.getApproved(type || null);
+    const properties = await propertyQueries.getApproved(type || null);
     
     console.log(`✅ Получено одобренных объявлений: ${properties.length}, фильтр type=${type || 'null'}`);
     if (properties.length > 0) {
@@ -8057,12 +8043,19 @@ app.get('/api/properties/approved', (req, res) => {
     const lang = req.query.lang && String(req.query.lang).trim().toLowerCase();
     if (lang && ['ru', 'en', 'de', 'es', 'fr', 'sv'].includes(lang) && formattedProperties.length > 0) {
       try {
-        const db = getDatabase();
+        const prisma = getPrisma();
         for (const prop of formattedProperties) {
           const table = prop.source_table || 'properties_apartments';
-          const tr = db.prepare(
-            'SELECT title, description, additional_amenities FROM property_translations WHERE property_id = ? AND property_table = ? AND lang_code = ?'
-          ).get(prop.id, table, lang);
+          const tr = await prisma.property_translations.findUnique({
+            where: {
+              property_id_property_table_lang_code: {
+                property_id: Number(prop.id),
+                property_table: String(table),
+                lang_code: String(lang),
+              },
+            },
+            select: { title: true, description: true, additional_amenities: true },
+          });
           if (tr) {
             if (tr.title) { prop.title = tr.title; prop.name = tr.title; }
             if (tr.description) prop.description = tr.description;
@@ -8088,10 +8081,10 @@ app.get('/api/properties/approved', (req, res) => {
  * GET /api/properties/debts - Получить одобренные объекты-долги (включая аукционные долги)
  * ВАЖНО: Этот маршрут должен быть ПЕРЕД /api/properties/:id, иначе он будет перехвачен
  */
-app.get('/api/properties/debts', (req, res) => {
+app.get('/api/properties/debts', async (req, res) => {
   try {
     const { type } = req.query;
-    const properties = propertyQueries.getDebts(type || null);
+    const properties = await propertyQueries.getDebts(type || null);
 
     // Приводим к формату, который ожидают страницы (как и /approved)
     const formattedProperties = properties.map((prop) => {
@@ -8141,7 +8134,7 @@ app.get('/api/properties/debts', (req, res) => {
 /**
  * Форматирует один объект аукциона в формат API (для SSE broadcast и повторного использования).
  */
-function formatOneAuctionPropertyForApi(prop) {
+async function formatOneAuctionPropertyForApi(prop) {
   const formatted = { ...prop };
   if (formatted.photos && typeof formatted.photos === 'string') {
     try { formatted.photos = JSON.parse(formatted.photos); } catch (e) { formatted.photos = []; }
@@ -8208,7 +8201,7 @@ function formatOneAuctionPropertyForApi(prop) {
     formatted.land_area = formatted.land_area || null;
   }
   try {
-    const reservationInfo = propertyQueries.isReserved(formatted.id);
+    const reservationInfo = await propertyQueries.isReserved(formatted.id);
     formatted.is_reserved = reservationInfo.isReserved || false;
     formatted.reserved_until = reservationInfo.reservedUntil || null;
     formatted.reserved_by = reservationInfo.reservedBy || null;
@@ -8224,12 +8217,12 @@ function formatOneAuctionPropertyForApi(prop) {
  * GET /api/properties/auctions - Получить одобренные объявления с аукционом
  * ВАЖНО: Этот маршрут должен быть ПЕРЕД /api/properties/:id, иначе он будет перехвачен
  */
-app.get('/api/properties/auctions', (req, res) => {
+app.get('/api/properties/auctions', async (req, res) => {
   try {
     const { type } = req.query; // Опциональный фильтр по типу
     
     // Используем функцию из propertyQueries, которая работает с новыми таблицами
-    let properties = propertyQueries.getAuctions(type || null);
+    let properties = await propertyQueries.getAuctions(type || null);
     
     console.log(`✅ Получено аукционных объявлений: ${properties.length}`);
     if (properties.length > 0) {
@@ -8243,65 +8236,54 @@ app.get('/api/properties/auctions', (req, res) => {
       });
     }
     
-    // Также получаем объекты с тестовыми таймерами (если поле существует)
-    const db = getDatabase();
-    let apartmentsWithTestTimer = [];
-    let housesWithTestTimer = [];
-    
-    // Проверяем, существует ли поле test_timer_end_date в таблицах
-    try {
-      const apartmentsPragma = db.prepare("PRAGMA table_info(properties_apartments)").all();
-      const housesPragma = db.prepare("PRAGMA table_info(properties_houses)").all();
-      const hasTestTimerField = apartmentsPragma.some(col => col.name === 'test_timer_end_date') ||
-                                housesPragma.some(col => col.name === 'test_timer_end_date');
-      
-      if (hasTestTimerField) {
-        let testTimerQuery = `
-          SELECT 
-            p.*,
-            u.first_name,
-            u.last_name,
-            u.email,
-            u.phone_number,
-            u.role
-          FROM properties_apartments p
-          LEFT JOIN users u ON p.user_id = u.id
-          WHERE p.moderation_status = 'approved'
-            AND p.test_timer_end_date IS NOT NULL
-            AND p.test_timer_end_date != ''
-            AND (p.sale_type IS NULL OR p.sale_type != 'debt')
-            AND (p.is_debt = 0 OR p.is_debt IS NULL)
-            AND (p.has_debt = 0 OR p.has_debt IS NULL)
-            AND (p.debt_severity IS NULL OR p.debt_severity NOT IN ('red','yellow','green'))
-        `;
-        
-        const testTimerParams = [];
-        if (type) {
-          testTimerQuery += ' AND p.property_type = ?';
-          testTimerParams.push(type);
-        }
-        
-        testTimerQuery += ' ORDER BY p.test_timer_end_date ASC';
-        
-        try {
-          apartmentsWithTestTimer = db.prepare(testTimerQuery).all(...testTimerParams);
-        } catch (e) {
-          console.warn('Ошибка при получении apartments с тестовыми таймерами:', e.message);
-        }
-        
-        try {
-          const housesTestTimerQuery = testTimerQuery.replace('properties_apartments', 'properties_houses');
-          housesWithTestTimer = db.prepare(housesTestTimerQuery).all(...testTimerParams);
-        } catch (e) {
-          console.warn('Ошибка при получении houses с тестовыми таймерами:', e.message);
-        }
-      }
-    } catch (e) {
-      console.warn('Ошибка при проверке поля test_timer_end_date:', e.message);
+    const prisma = getPrisma();
+    const timerWhereBase = {
+      moderation_status: 'approved',
+      test_timer_end_date: { not: null },
+      NOT: { test_timer_end_date: '' },
+      AND: [
+        { OR: [{ sale_type: null }, { sale_type: { not: 'debt' } }] },
+        { OR: [{ is_debt: null }, { is_debt: 0 }] },
+        { OR: [{ has_debt: null }, { has_debt: 0 }] },
+      ],
+    };
+    const timerWhereApartments = { ...timerWhereBase };
+    const timerWhereHouses = { ...timerWhereBase };
+    if (type) {
+      timerWhereApartments.property_type = String(type);
+      timerWhereHouses.property_type = String(type);
     }
+    const [apartmentsWithTestTimer, housesWithTestTimer] = await Promise.all([
+      prisma.properties_apartments.findMany({
+        where: timerWhereApartments,
+        include: { users: true },
+        orderBy: { test_timer_end_date: 'asc' },
+      }),
+      prisma.properties_houses.findMany({
+        where: timerWhereHouses,
+        include: { users: true },
+        orderBy: { test_timer_end_date: 'asc' },
+      }),
+    ]);
     
+    const apartmentsWithUser = apartmentsWithTestTimer.map((p) => ({
+      ...p,
+      first_name: p.users?.first_name || null,
+      last_name: p.users?.last_name || null,
+      email: p.users?.email || null,
+      phone_number: p.users?.phone_number || null,
+      role: p.users?.role || null,
+    }));
+    const housesWithUser = housesWithTestTimer.map((p) => ({
+      ...p,
+      first_name: p.users?.first_name || null,
+      last_name: p.users?.last_name || null,
+      email: p.users?.email || null,
+      phone_number: p.users?.phone_number || null,
+      role: p.users?.role || null,
+    }));
     // Объединяем аукционы и тестовые таймеры
-    const allProperties = [...properties, ...apartmentsWithTestTimer, ...housesWithTestTimer];
+    const allProperties = [...properties, ...apartmentsWithUser, ...housesWithUser];
     
     // Удаляем дубликаты по ID и сортируем
     properties = Array.from(
@@ -8313,7 +8295,7 @@ app.get('/api/properties/auctions', (req, res) => {
     });
     
     // Преобразуем данные в формат для фронтенда (возвращаем ВСЕ поля)
-    const formattedProperties = properties.map(prop => {
+    const formattedProperties = await Promise.all(properties.map(async (prop) => {
       const formatted = { ...prop };
       
       // Парсим JSON поля безопасно
@@ -8466,7 +8448,7 @@ app.get('/api/properties/auctions', (req, res) => {
       
       // Проверяем резервацию объекта
       try {
-        const reservationInfo = propertyQueries.isReserved(formatted.id);
+        const reservationInfo = await propertyQueries.isReserved(formatted.id);
         formatted.is_reserved = reservationInfo.isReserved || false;
         formatted.reserved_until = reservationInfo.reservedUntil || null;
         formatted.reserved_by = reservationInfo.reservedBy || null;
@@ -8478,7 +8460,7 @@ app.get('/api/properties/auctions', (req, res) => {
       }
       
       return formatted;
-    });
+    }));
     
     // Логируем для отладки (только для первого объекта)
     if (formattedProperties.length > 0) {
@@ -8499,12 +8481,19 @@ app.get('/api/properties/auctions', (req, res) => {
     const lang = req.query.lang && String(req.query.lang).trim().toLowerCase();
     if (lang && ['ru', 'en', 'de', 'es', 'fr', 'sv'].includes(lang) && formattedProperties.length > 0) {
       try {
-        const dbForLang = getDatabase();
+        const prisma = getPrisma();
         for (const prop of formattedProperties) {
           const table = prop.source_table || 'properties_apartments';
-          const tr = dbForLang.prepare(
-            'SELECT title, description, additional_amenities FROM property_translations WHERE property_id = ? AND property_table = ? AND lang_code = ?'
-          ).get(prop.id, table, lang);
+          const tr = await prisma.property_translations.findUnique({
+            where: {
+              property_id_property_table_lang_code: {
+                property_id: Number(prop.id),
+                property_table: String(table),
+                lang_code: String(lang),
+              },
+            },
+            select: { title: true, description: true, additional_amenities: true },
+          });
           if (tr) {
             if (tr.title) { prop.title = tr.title; prop.name = tr.title; }
             if (tr.description) prop.description = tr.description;
@@ -8530,107 +8519,44 @@ app.get('/api/properties/auctions', (req, res) => {
  * GET /api/properties/test-timers - Получить все объявления с тестовыми таймерами
  * ВАЖНО: Этот маршрут должен быть ПЕРЕД /api/properties/:id, иначе он будет перехвачен
  */
-app.get('/api/properties/test-timers', (req, res) => {
+app.get('/api/properties/test-timers', async (req, res) => {
   try {
     console.log('📥 GET /api/properties/test-timers - Запрос получен');
-    const db = getDatabase();
-    
-    // Проверяем наличие поля test_timer_end_date во всех возможных таблицах
-    let hasTestTimerFieldApartments = false;
-    let hasTestTimerFieldHouses = false;
-    let hasTestTimerFieldOld = false;
-    
-    try {
-      // Проверяем новую таблицу для квартир/апартаментов
-      try {
-        const apartmentsPragma = db.prepare("PRAGMA table_info(properties_apartments)").all();
-        hasTestTimerFieldApartments = apartmentsPragma.some(col => col.name === 'test_timer_end_date');
-      } catch (e) {
-        console.warn('⚠️ Таблица properties_apartments не существует:', e.message);
-      }
-      
-      // Проверяем таблицу для домов/вилл
-      try {
-        const housesPragma = db.prepare("PRAGMA table_info(properties_houses)").all();
-        hasTestTimerFieldHouses = housesPragma.some(col => col.name === 'test_timer_end_date');
-      } catch (e) {
-        console.warn('⚠️ Таблица properties_houses не существует:', e.message);
-      }
-      
-      // Проверяем старую таблицу properties (fallback)
-      try {
-        const oldPragma = db.prepare("PRAGMA table_info(properties)").all();
-        hasTestTimerFieldOld = oldPragma.some(col => col.name === 'test_timer_end_date');
-      } catch (e) {
-        console.warn('⚠️ Таблица properties не существует:', e.message);
-      }
-    } catch (e) {
-      console.warn('Ошибка при проверке структуры таблиц:', e.message);
-    }
-    
-    let allProperties = [];
-    
-    // Запрос для получения объявлений с тестовыми таймерами из таблицы properties_apartments (квартиры/апартаменты)
-    if (hasTestTimerFieldApartments) {
-      try {
-        const apartmentsQuery = `
-          SELECT p.*, 
-                 u.first_name, u.last_name, u.email, u.phone_number
-          FROM properties_apartments p
-          LEFT JOIN users u ON p.user_id = u.id
-          WHERE p.test_timer_end_date IS NOT NULL
-            AND p.test_timer_end_date != ''
-          ORDER BY p.test_timer_end_date ASC
-        `;
-        const apartments = db.prepare(apartmentsQuery).all();
-        allProperties = allProperties.concat(apartments);
-        console.log(`✅ Найдено ${apartments.length} объявлений с тестовыми таймерами в таблице properties_apartments`);
-      } catch (e) {
-        console.error('Ошибка при загрузке объявлений из properties_apartments:', e);
-      }
-    }
-    
-    // Запрос для получения объявлений с тестовыми таймерами из таблицы properties_houses (дома/виллы)
-    if (hasTestTimerFieldHouses) {
-      try {
-        const housesQuery = `
-          SELECT p.*, 
-                 u.first_name, u.last_name, u.email, u.phone_number
-          FROM properties_houses p
-          LEFT JOIN users u ON p.user_id = u.id
-          WHERE p.test_timer_end_date IS NOT NULL
-            AND p.test_timer_end_date != ''
-          ORDER BY p.test_timer_end_date ASC
-        `;
-        const houses = db.prepare(housesQuery).all();
-        allProperties = allProperties.concat(houses);
-        console.log(`✅ Найдено ${houses.length} объявлений с тестовыми таймерами в таблице properties_houses`);
-      } catch (e) {
-        console.error('Ошибка при загрузке объявлений из properties_houses:', e);
-      }
-    }
-    
-    // Fallback на старую таблицу properties
-    if (hasTestTimerFieldOld) {
-      try {
-        const oldQuery = `
-          SELECT p.*, 
-                 u.first_name, u.last_name, u.email, u.phone_number
-          FROM properties p
-          LEFT JOIN users u ON p.user_id = u.id
-          WHERE p.test_timer_end_date IS NOT NULL
-            AND p.test_timer_end_date != ''
-          ORDER BY p.test_timer_end_date ASC
-        `;
-        const oldProperties = db.prepare(oldQuery).all();
-        allProperties = allProperties.concat(oldProperties);
-        console.log(`✅ Найдено ${oldProperties.length} объявлений с тестовыми таймерами в старой таблице properties`);
-      } catch (e) {
-        console.error('Ошибка при загрузке объявлений из старой таблицы properties:', e);
-      }
-    }
-    
-    const properties = allProperties;
+    const prisma = getPrisma();
+    const [apartmentsRows, housesRows] = await Promise.all([
+      prisma.properties_apartments.findMany({
+        where: {
+          test_timer_end_date: { not: null },
+          NOT: { test_timer_end_date: '' },
+        },
+        include: { users: true },
+        orderBy: { test_timer_end_date: 'asc' },
+      }),
+      prisma.properties_houses.findMany({
+        where: {
+          test_timer_end_date: { not: null },
+          NOT: { test_timer_end_date: '' },
+        },
+        include: { users: true },
+        orderBy: { test_timer_end_date: 'asc' },
+      }),
+    ]);
+    const properties = [
+      ...apartmentsRows.map((p) => ({
+        ...p,
+        first_name: p.users?.first_name || null,
+        last_name: p.users?.last_name || null,
+        email: p.users?.email || null,
+        phone_number: p.users?.phone_number || null,
+      })),
+      ...housesRows.map((p) => ({
+        ...p,
+        first_name: p.users?.first_name || null,
+        last_name: p.users?.last_name || null,
+        email: p.users?.email || null,
+        phone_number: p.users?.phone_number || null,
+      })),
+    ];
     
     // Преобразуем данные в формат для фронтенда
     const formattedProperties = properties.map(prop => {
@@ -8725,7 +8651,7 @@ app.get('/api/properties/test-timers', (req, res) => {
  * ВАЖНО: Этот маршрут должен быть ПЕРЕД /api/properties/:id, иначе он будет перехвачен
  */
 console.log('📝 Регистрирую маршрут: POST /api/properties/:id/test-timer');
-app.post('/api/properties/:id/test-timer', (req, res) => {
+app.post('/api/properties/:id/test-timer', async (req, res) => {
   console.log('🔵🔵🔵 POST /api/properties/:id/test-timer - МАРШРУТ ВЫЗВАН!');
   console.log('🔵 URL:', req.url);
   console.log('🔵 Original URL:', req.originalUrl);
@@ -8740,188 +8666,65 @@ app.post('/api/properties/:id/test-timer', (req, res) => {
   console.log('🔵 Body:', req.body);
   
   try {
-    const db = getDatabase();
     const { id } = req.params;
     const { test_timer_end_date, test_timer_duration } = req.body;
-    
+
     console.log('📥 POST /api/properties/:id/test-timer - Запрос:', { id, test_timer_end_date, test_timer_duration });
-    
+
     if (!test_timer_end_date) {
       return res.status(400).json({ success: false, error: 'Не указана дата окончания таймера' });
     }
-    
-    // Проверяем, существует ли объявление во всех возможных таблицах
-    // Система использует: properties_apartments (квартиры/коммерческая), properties_houses (дома/виллы), и старую properties
-    let property = null;
-    let tableName = null;
-    
-    // Сначала проверяем новые таблицы
-    try {
-      property = db.prepare('SELECT id, property_type FROM properties_apartments WHERE id = ?').get(id);
-      if (property) {
-        tableName = 'properties_apartments';
-        console.log(`✅ Объявление найдено в properties_apartments:`, { id: property.id, property_type: property.property_type });
-      }
-    } catch (e) {
-      console.warn('⚠️ Таблица properties_apartments не существует или ошибка:', e.message);
-    }
-    
+
+    const property = await propertyQueries.getById(id);
     if (!property) {
-      try {
-        property = db.prepare('SELECT id, property_type FROM properties_houses WHERE id = ?').get(id);
-        if (property) {
-          tableName = 'properties_houses';
-          console.log(`✅ Объявление найдено в properties_houses:`, { id: property.id, property_type: property.property_type });
-        }
-      } catch (e) {
-        console.warn('⚠️ Таблица properties_houses не существует или ошибка:', e.message);
-      }
-    }
-    
-    // Fallback на старую таблицу properties
-    if (!property) {
-      try {
-        property = db.prepare('SELECT id FROM properties WHERE id = ?').get(id);
-        if (property) {
-          tableName = 'properties';
-          console.log(`✅ Объявление найдено в старой таблице properties:`, { id: property.id });
-        }
-      } catch (e) {
-        console.warn('⚠️ Таблица properties не существует или ошибка:', e.message);
-      }
-    }
-    
-    if (!property || !tableName) {
-      console.error('❌ Объявление не найдено ни в одной таблице:', id);
       return res.status(404).json({ success: false, error: 'Объявление не найдено' });
     }
-    
-    console.log(`✅ Объявление найдено в таблице: ${tableName}`);
-    
-    // Проверяем и добавляем необходимые поля в нужной таблице
-    let hasTestTimerField = false;
-    let hasTestTimerDurationField = false;
-    
-    try {
-      let pragmaInfo = db.prepare(`PRAGMA table_info(${tableName})`).all();
-      hasTestTimerField = pragmaInfo.some(col => col.name === 'test_timer_end_date');
-      hasTestTimerDurationField = pragmaInfo.some(col => col.name === 'test_timer_duration');
-      
-      if (!hasTestTimerField) {
-        console.log(`🔄 Поле test_timer_end_date отсутствует в ${tableName}, добавляем...`);
-        try {
-          const migrationPath = join(__dirname, 'database', 'add_test_timer_field.sql');
-          console.log('📁 Путь к миграции:', migrationPath);
-          const migrationSql = readFileSync(migrationPath, 'utf8');
-          // Заменяем имя таблицы в миграции, если нужно
-          const adaptedSql = migrationSql.replace(/properties/g, tableName);
-          db.exec(adaptedSql);
-          console.log(`✅ Поле test_timer_end_date добавлено в ${tableName}`);
-          hasTestTimerField = true;
-        } catch (migrationError) {
-          console.error('❌ Ошибка при добавлении поля через миграцию:', migrationError);
-          // Пытаемся добавить напрямую
-          try {
-            db.exec(`ALTER TABLE ${tableName} ADD COLUMN test_timer_end_date TEXT`);
-            console.log(`✅ Поле test_timer_end_date добавлено напрямую в таблицу ${tableName}`);
-            hasTestTimerField = true;
-          } catch (directError) {
-            console.error('❌ Ошибка при прямом добавлении поля:', directError);
-            return res.status(500).json({ 
-              success: false, 
-              error: 'Поле test_timer_end_date не существует и не может быть создано. Ошибка: ' + directError.message 
-            });
-          }
-        }
-      }
-      
-      if (!hasTestTimerDurationField && test_timer_duration !== undefined && test_timer_duration !== null) {
-        console.log(`🔄 Поле test_timer_duration отсутствует в ${tableName}, добавляем...`);
-        try {
-          const migrationPath = join(__dirname, 'database', 'add_test_timer_duration_field.sql');
-          try {
-            console.log('📁 Путь к миграции:', migrationPath);
-            const migrationSql = readFileSync(migrationPath, 'utf8');
-            // Заменяем имя таблицы в миграции, если нужно
-            const adaptedSql = migrationSql.replace(/properties/g, tableName);
-            db.exec(adaptedSql);
-            console.log(`✅ Поле test_timer_duration добавлено в ${tableName}`);
-            hasTestTimerDurationField = true;
-          } catch (fileError) {
-            // Если файл миграции не существует, добавляем напрямую
-            console.log('📁 Файл миграции не найден, добавляем поле напрямую');
-            throw new Error('Migration file not found');
-          }
-        } catch (migrationError) {
-          console.error('❌ Ошибка при добавлении поля через миграцию:', migrationError);
-          // Пытаемся добавить напрямую
-          try {
-            db.exec(`ALTER TABLE ${tableName} ADD COLUMN test_timer_duration INTEGER`);
-            console.log(`✅ Поле test_timer_duration добавлено напрямую в таблицу ${tableName}`);
-            hasTestTimerDurationField = true;
-          } catch (directError) {
-            console.error('❌ Ошибка при прямом добавлении поля test_timer_duration:', directError);
-            // Не критично, продолжаем без этого поля
-            hasTestTimerDurationField = false;
-          }
-        }
-      }
-      
-      // Повторно проверяем структуру после попыток добавления
-      pragmaInfo = db.prepare(`PRAGMA table_info(${tableName})`).all();
-      hasTestTimerField = pragmaInfo.some(col => col.name === 'test_timer_end_date');
-      hasTestTimerDurationField = pragmaInfo.some(col => col.name === 'test_timer_duration');
-      
-    } catch (checkError) {
-      console.error('❌ Ошибка при проверке структуры таблицы:', checkError);
-      return res.status(500).json({ 
-        success: false, 
-        error: 'Ошибка при проверке структуры таблицы: ' + checkError.message 
-      });
-    }
-    
-    // Обновляем тестовый таймер в нужной таблице
-    try {
-      
-      let result;
-      if (test_timer_duration !== undefined && test_timer_duration !== null && hasTestTimerDurationField) {
-        // Обновляем и дату окончания, и длительность (если поле существует)
-        result = db.prepare(`
-          UPDATE ${tableName} 
-          SET test_timer_end_date = ?, test_timer_duration = ?, updated_at = CURRENT_TIMESTAMP
-          WHERE id = ?
-        `).run(test_timer_end_date, test_timer_duration, id);
-        console.log(`✅ Тестовый таймер обновлен с длительностью в таблице ${tableName}:`, { id, duration: test_timer_duration, changes: result.changes });
-      } else {
-        // Обновляем только дату окончания (если поле длительности не существует или не указано)
-        result = db.prepare(`
-          UPDATE ${tableName} 
-          SET test_timer_end_date = ?, updated_at = CURRENT_TIMESTAMP
-          WHERE id = ?
-        `).run(test_timer_end_date, id);
-        console.log(`✅ Тестовый таймер обновлен (без длительности) в таблице ${tableName}:`, { id, changes: result.changes });
-      }
-      
-      res.json({
-        success: true,
-        message: 'Тестовый таймер успешно установлен'
-      });
-      broadcastAuctionSseEvent({
-        type: 'test_timer_update',
-        property: {
-          id: Number(id),
-          property_type: property.property_type ?? null,
-          test_timer_end_date,
+
+    const prisma = getPrisma();
+    const sourceTable =
+      property.source_table ||
+      (property.property_type === 'house' || property.property_type === 'villa'
+        ? 'properties_houses'
+        : 'properties_apartments');
+
+    if (sourceTable === 'properties_houses') {
+      await prisma.properties_houses.update({
+        where: { id: Number(id) },
+        data: {
+          test_timer_end_date: String(test_timer_end_date),
           test_timer_duration:
             test_timer_duration !== undefined && test_timer_duration !== null
-              ? test_timer_duration
+              ? Number(test_timer_duration)
               : null,
+          updated_at: new Date().toISOString(),
         },
       });
-    } catch (updateError) {
-      console.error('❌ Ошибка при обновлении таймера:', updateError);
-      throw updateError;
+    } else {
+      await prisma.properties_apartments.update({
+        where: { id: Number(id) },
+        data: {
+          test_timer_end_date: String(test_timer_end_date),
+          updated_at: new Date().toISOString(),
+        },
+      });
     }
+
+    res.json({
+      success: true,
+      message: 'Тестовый таймер успешно установлен'
+    });
+    broadcastAuctionSseEvent({
+      type: 'test_timer_update',
+      property: {
+        id: Number(id),
+        property_type: property.property_type ?? null,
+        test_timer_end_date,
+        test_timer_duration:
+          test_timer_duration !== undefined && test_timer_duration !== null
+            ? test_timer_duration
+            : null,
+      },
+    });
   } catch (error) {
     console.error('❌ Ошибка при установке тестового таймера:', error);
     res.status(500).json({ 
@@ -8935,49 +8738,37 @@ app.post('/api/properties/:id/test-timer', (req, res) => {
 /**
  * DELETE /api/properties/:id/test-timer - Удалить тестовый таймер для объявления
  */
-app.delete('/api/properties/:id/test-timer', (req, res) => {
+app.delete('/api/properties/:id/test-timer', async (req, res) => {
   try {
-    const db = getDatabase();
     const { id } = req.params;
-    
-    // Проверяем, существует ли объявление в обеих таблицах
-    let property = db.prepare('SELECT id FROM properties WHERE id = ?').get(id);
-    let tableName = 'properties';
-    
-    if (!property) {
-      // Проверяем в таблице домов/вилл
-      property = db.prepare('SELECT id FROM properties_houses WHERE id = ?').get(id);
-      if (property) {
-        tableName = 'properties_houses';
-      }
-    }
-    
+    const property = await propertyQueries.getById(id);
     if (!property) {
       return res.status(404).json({ success: false, error: 'Объявление не найдено' });
     }
-    
-    console.log(`✅ Объявление найдено в таблице: ${tableName} для удаления таймера`);
-    
-    // Удаляем тестовый таймер и его длительность из нужной таблицы
-    const pragmaInfo = db.prepare(`PRAGMA table_info(${tableName})`).all();
-    const hasTestTimerDurationField = pragmaInfo.some(col => col.name === 'test_timer_duration');
-    
-    if (hasTestTimerDurationField) {
-      db.prepare(`
-        UPDATE ${tableName} 
-        SET test_timer_end_date = NULL, test_timer_duration = NULL, updated_at = CURRENT_TIMESTAMP
-        WHERE id = ?
-      `).run(id);
+    const prisma = getPrisma();
+    const sourceTable =
+      property.source_table ||
+      (property.property_type === 'house' || property.property_type === 'villa'
+        ? 'properties_houses'
+        : 'properties_apartments');
+    if (sourceTable === 'properties_houses') {
+      await prisma.properties_houses.update({
+        where: { id: Number(id) },
+        data: {
+          test_timer_end_date: null,
+          test_timer_duration: null,
+          updated_at: new Date().toISOString(),
+        },
+      });
     } else {
-      db.prepare(`
-        UPDATE ${tableName} 
-        SET test_timer_end_date = NULL, updated_at = CURRENT_TIMESTAMP
-        WHERE id = ?
-      `).run(id);
+      await prisma.properties_apartments.update({
+        where: { id: Number(id) },
+        data: {
+          test_timer_end_date: null,
+          updated_at: new Date().toISOString(),
+        },
+      });
     }
-    
-    console.log(`✅ Тестовый таймер удален из таблицы ${tableName} для объявления ${id}`);
-    
     res.json({
       success: true,
       message: 'Тестовый таймер успешно удален'
@@ -9000,11 +8791,11 @@ app.delete('/api/properties/:id/test-timer', (req, res) => {
  * GET /api/properties/shares - Получить одобренные объекты долевой собственности
  * ВАЖНО: Должен быть ПЕРЕД /api/properties/:id
  */
-app.get('/api/properties/shares', (req, res) => {
+app.get('/api/properties/shares', async (req, res) => {
   try {
     const limit = Math.min(parseInt(req.query.limit, 10) || 100, 100);
     const offset = parseInt(req.query.offset, 10) || 0;
-    const properties = propertyQueries.getShares(limit, offset);
+    const properties = await propertyQueries.getShares(limit, offset);
     // Нормализуем для карточек: id, property_type, title, location, image (первое фото), price, total_shares, shares_sold, area, rooms
     const list = properties.map((p) => {
       const photos = (p.photos && (Array.isArray(p.photos) ? p.photos : (typeof p.photos === 'string' ? (() => { try { return JSON.parse(p.photos); } catch (e) { return []; } })() : []))) || [];
@@ -9050,7 +8841,7 @@ app.post('/api/properties/:id/translate', async (req, res) => {
     const { id } = req.params;
     const propertyTable = req.body?.property_table || req.query?.property_table || null;
     const requestedPropertyType = req.query.property_type || null;
-    const property = propertyQueries.getById(id, requestedPropertyType);
+    const property = await propertyQueries.getById(id, requestedPropertyType);
     if (!property) {
       return sendError(404, 'Объявление не найдено');
     }
@@ -9059,14 +8850,22 @@ app.post('/api/properties/:id/translate', async (req, res) => {
       console.error('POST /api/properties/:id/translate translate error:', err);
       throw err;
     });
-    const db = getDatabase();
-    db.prepare('DELETE FROM property_translations WHERE property_id = ? AND property_table = ?').run(id, table);
-    const insertStmt = db.prepare(`
-      INSERT INTO property_translations (property_id, property_table, lang_code, title, description, additional_amenities)
-      VALUES (?, ?, ?, ?, ?, ?)
-    `);
+    const prisma = getPrisma();
+    await prisma.property_translations.deleteMany({
+      where: { property_id: Number(id), property_table: String(table) },
+    });
     for (const [langCode, data] of Object.entries(translations)) {
-      insertStmt.run(id, table, langCode, data.title || '', data.description || '', data.additional_amenities || '');
+      await prisma.property_translations.create({
+        data: {
+          property_id: Number(id),
+          property_table: String(table),
+          lang_code: String(langCode),
+          title: data.title || '',
+          description: data.description || '',
+          additional_amenities: data.additional_amenities || '',
+          created_at: new Date().toISOString(),
+        },
+      });
     }
     console.log(`✅ Переводы сохранены для property_id=${id}, table=${table}, языков: ${Object.keys(translations).length}`);
     return res.json({ success: true, message: 'Перевод готов', translations: Object.keys(translations) });
@@ -9079,19 +8878,20 @@ app.post('/api/properties/:id/translate', async (req, res) => {
 /**
  * GET /api/properties/:id/translations - Получить все сохранённые переводы объявления (для админки)
  */
-app.get('/api/properties/:id/translations', (req, res) => {
+app.get('/api/properties/:id/translations', async (req, res) => {
   const { id } = req.params;
   const propertyTable = req.query.property_table || null;
   try {
-    const property = propertyQueries.getById(id);
+    const property = await propertyQueries.getById(id);
     if (!property) {
       return res.status(404).json({ success: false, error: 'Объявление не найдено' });
     }
     const table = propertyTable || property.source_table || 'properties_apartments';
-    const db = getDatabase();
-    const rows = db.prepare(
-      'SELECT lang_code, title, description, additional_amenities, created_at FROM property_translations WHERE property_id = ? AND property_table = ? ORDER BY lang_code'
-    ).all(id, table);
+    const rows = await getPrisma().property_translations.findMany({
+      where: { property_id: Number(id), property_table: String(table) },
+      select: { lang_code: true, title: true, description: true, additional_amenities: true, created_at: true },
+      orderBy: { lang_code: 'asc' },
+    });
     const byLang = {};
     rows.forEach((r) => {
       byLang[r.lang_code] = {
@@ -9118,7 +8918,7 @@ function testDriveRangesOverlap(aStart, aEnd, bStart, bEnd) {
 /**
  * GET /api/properties/:id/test-drive/eligibility — депозит, ставка, флаги для UI
  */
-app.get('/api/properties/:id/test-drive/eligibility', (req, res) => {
+app.get('/api/properties/:id/test-drive/eligibility', async (req, res) => {
   try {
     const propertyId = parseInt(req.params.id, 10);
     const userId = req.query.user_id ? parseInt(req.query.user_id, 10) : null;
@@ -9126,7 +8926,7 @@ app.get('/api/properties/:id/test-drive/eligibility', (req, res) => {
     if (!propertyId || Number.isNaN(propertyId)) {
       return res.status(400).json({ success: false, error: 'Некорректный id объекта' });
     }
-    const property = propertyQueries.getById(String(propertyId), null);
+    const property = await propertyQueries.getById(String(propertyId), null);
     if (!property) {
       return res.status(404).json({ success: false, error: 'Объект не найден' });
     }
@@ -9146,17 +8946,16 @@ app.get('/api/properties/:id/test-drive/eligibility', (req, res) => {
     let hasDeposit = false;
     let hasBid = false;
     if (userId && !Number.isNaN(userId)) {
-      const user = userQueries.getById(userId);
+      const user = await userQueries.getById(userId);
       if (user) {
         const dep = user.deposit_amount != null ? parseFloat(user.deposit_amount) : 0;
         hasDeposit = dep > 0;
       }
-      const db = getDatabase();
       try {
-        // Как и GET /bids/property/:id — любая ставка пользователя по этому property_id (страница объекта однозначна).
-        const row = db
-          .prepare(`SELECT 1 as x FROM bids WHERE user_id = ? AND property_id = ? LIMIT 1`)
-          .get(userId, propertyId);
+        const row = await getPrisma().bids.findFirst({
+          where: { user_id: Number(userId), property_id: Number(propertyId) },
+          select: { id: true },
+        });
         hasBid = !!row;
       } catch (e) {
         console.warn('test-drive eligibility bids:', e.message);
@@ -9181,17 +8980,17 @@ app.get('/api/properties/:id/test-drive/eligibility', (req, res) => {
 /**
  * GET /api/properties/:id/test-drive/bookings — занятые даты (pending + approved)
  */
-app.get('/api/properties/:id/test-drive/bookings', (req, res) => {
+app.get('/api/properties/:id/test-drive/bookings', async (req, res) => {
   try {
     const propertyId = parseInt(req.params.id, 10);
     if (!propertyId || Number.isNaN(propertyId)) {
       return res.status(400).json({ success: false, error: 'Некорректный id объекта' });
     }
-    const prop = propertyQueries.getById(String(propertyId), null);
+    const prop = await propertyQueries.getById(String(propertyId), null);
     const propertyTable =
       prop?.source_table || req.query.property_table || 'properties_apartments';
-    testDriveBookingQueries.ensureTable();
-    const rows = testDriveBookingQueries.listActiveForProperty(propertyId, propertyTable);
+    await testDriveBookingQueries.ensureTable();
+    const rows = await testDriveBookingQueries.listActiveForProperty(propertyId, propertyTable);
     const queryUserIdRaw = req.query.user_id;
     const queryUserId =
       queryUserIdRaw != null && String(queryUserIdRaw).trim() !== ''
@@ -9241,7 +9040,7 @@ app.get('/api/properties/:id/test-drive/bookings', (req, res) => {
 /**
  * POST /api/properties/:id/test-drive/request — заявка на даты (после выполнения условий)
  */
-app.post('/api/properties/:id/test-drive/request', (req, res) => {
+app.post('/api/properties/:id/test-drive/request', async (req, res) => {
   try {
     const propertyId = parseInt(req.params.id, 10);
     const { user_id, start_date, end_date, property_table } = req.body || {};
@@ -9252,7 +9051,7 @@ app.post('/api/properties/:id/test-drive/request', (req, res) => {
     if (!start_date || !end_date || typeof start_date !== 'string' || typeof end_date !== 'string') {
       return res.status(400).json({ success: false, error: 'Укажите start_date и end_date (YYYY-MM-DD)' });
     }
-    const property = propertyQueries.getById(String(propertyId), null);
+    const property = await propertyQueries.getById(String(propertyId), null);
     if (!property) {
       return res.status(404).json({ success: false, error: 'Объект не найден' });
     }
@@ -9264,7 +9063,7 @@ app.post('/api/properties/:id/test-drive/request', (req, res) => {
     if (!td) {
       return res.status(400).json({ success: false, error: 'Тест-драйв для этого объекта недоступен' });
     }
-    const user = userQueries.getById(userId);
+    const user = await userQueries.getById(userId);
     if (!user) {
       return res.status(404).json({ success: false, error: 'Пользователь не найден' });
     }
@@ -9272,12 +9071,12 @@ app.post('/api/properties/:id/test-drive/request', (req, res) => {
     if (dep <= 0) {
       return res.status(400).json({ success: false, error: 'Необходим депозит' });
     }
-    const db = getDatabase();
     let hasBid = false;
     try {
-      const row = db
-        .prepare(`SELECT 1 as x FROM bids WHERE user_id = ? AND property_id = ? LIMIT 1`)
-        .get(userId, propertyId);
+      const row = await getPrisma().bids.findFirst({
+        where: { user_id: Number(userId), property_id: Number(propertyId) },
+        select: { id: true },
+      });
       hasBid = !!row;
     } catch (e) {
       console.warn('test-drive request bids:', e.message);
@@ -9285,7 +9084,7 @@ app.post('/api/properties/:id/test-drive/request', (req, res) => {
     if (!hasBid) {
       return res.status(400).json({ success: false, error: 'Необходима ставка по объекту' });
     }
-    if (testDriveBookingQueries.countPendingForUserProperty(userId, propertyId, table) > 0) {
+    if (await testDriveBookingQueries.countPendingForUserProperty(userId, propertyId, table) > 0) {
       return res.status(400).json({ success: false, error: 'У вас уже есть активная заявка на этот объект' });
     }
     const s = new Date(start_date + 'T12:00:00');
@@ -9302,13 +9101,13 @@ app.post('/api/properties/:id/test-drive/request', (req, res) => {
     if (s < today) {
       return res.status(400).json({ success: false, error: 'Нельзя выбрать прошедшие даты' });
     }
-    const existing = testDriveBookingQueries.listActiveForProperty(propertyId, table);
+    const existing = await testDriveBookingQueries.listActiveForProperty(propertyId, table);
     for (const ex of existing) {
       if (testDriveRangesOverlap(start_date, end_date, ex.start_date, ex.end_date)) {
         return res.status(409).json({ success: false, error: 'Часть выбранных дат уже занята' });
       }
     }
-    const insertResult = testDriveBookingQueries.create({
+    const insertResult = await testDriveBookingQueries.create({
       property_id: propertyId,
       property_table: table,
       user_id: userId,
@@ -9330,7 +9129,7 @@ app.post('/api/properties/:id/test-drive/request', (req, res) => {
       start_date,
       end_date,
     };
-    const notifRun = notificationQueries.create({
+    const notifRun = await notificationQueries.create({
       user_id: ownerId,
       type: 'test_drive_request',
       title,
@@ -9341,7 +9140,7 @@ app.post('/api/properties/:id/test-drive/request', (req, res) => {
     });
     const ownerNotificationId = notifRun.lastInsertRowid;
     if (ownerNotificationId) {
-      testDriveBookingQueries.updateOwnerNotificationId(bookingId, ownerNotificationId);
+      await testDriveBookingQueries.updateOwnerNotificationId(bookingId, ownerNotificationId);
     }
     return res.json({ success: true, data: { booking_id: bookingId, status: 'pending' } });
   } catch (error) {
@@ -9353,7 +9152,7 @@ app.post('/api/properties/:id/test-drive/request', (req, res) => {
 /**
  * PUT /api/test-drive-bookings/:bookingId/respond — владелец: подтвердить / отклонить
  */
-app.put('/api/test-drive-bookings/:bookingId/respond', (req, res) => {
+app.put('/api/test-drive-bookings/:bookingId/respond', async (req, res) => {
   try {
     const bookingId = parseInt(req.params.bookingId, 10);
     const { user_id, action } = req.body || {};
@@ -9364,14 +9163,14 @@ app.put('/api/test-drive-bookings/:bookingId/respond', (req, res) => {
     if (action !== 'approve' && action !== 'reject') {
       return res.status(400).json({ success: false, error: 'action: approve или reject' });
     }
-    const booking = testDriveBookingQueries.getById(bookingId);
+    const booking = await testDriveBookingQueries.getById(bookingId);
     if (!booking) {
       return res.status(404).json({ success: false, error: 'Заявка не найдена' });
     }
     if (booking.status !== 'pending') {
       return res.status(400).json({ success: false, error: 'Заявка уже обработана' });
     }
-    const property = propertyQueries.getById(String(booking.property_id), null);
+    const property = await propertyQueries.getById(String(booking.property_id), null);
     if (!property) {
       return res.status(404).json({ success: false, error: 'Объект не найден' });
     }
@@ -9384,10 +9183,10 @@ app.put('/api/test-drive-bookings/:bookingId/respond', (req, res) => {
       return res.status(500).json({ success: false, error: 'Некорректный user_id в заявке' });
     }
     const newStatus = action === 'approve' ? 'approved' : 'rejected';
-    testDriveBookingQueries.updateStatus(bookingId, newStatus);
+    await testDriveBookingQueries.updateStatus(bookingId, newStatus);
     const propTitle = property.title || `Объект #${booking.property_id}`;
     if (action === 'approve') {
-      const ins = notificationQueries.create({
+      const ins = await notificationQueries.create({
         user_id: buyerUserId,
         type: 'test_drive_result',
         title: 'Тест-драйв подтверждён',
@@ -9407,7 +9206,7 @@ app.put('/api/test-drive-bookings/:bookingId/respond', (req, res) => {
         buyerUserId,
       });
     } else {
-      const ins = notificationQueries.create({
+      const ins = await notificationQueries.create({
         user_id: buyerUserId,
         type: 'test_drive_result',
         title: 'Тест-драйв отклонён',
@@ -9427,7 +9226,7 @@ app.put('/api/test-drive-bookings/:bookingId/respond', (req, res) => {
     }
     if (booking.owner_notification_id) {
       try {
-        notificationQueries.delete(booking.owner_notification_id);
+        await notificationQueries.delete(booking.owner_notification_id);
       } catch (e) {
         console.warn('delete owner notification:', e.message);
       }
@@ -9439,19 +9238,28 @@ app.put('/api/test-drive-bookings/:bookingId/respond', (req, res) => {
   }
 });
 
-function enrichTestDriveBookingWithPropertyTitle(row) {
-  const db = getDatabase();
+async function enrichTestDriveBookingWithPropertyTitle(row) {
+  const prisma = getPrisma();
   const table = row.property_table || 'properties_apartments';
   let title = null;
   try {
     if (table === 'properties_houses') {
-      const p = db.prepare('SELECT title FROM properties_houses WHERE id = ?').get(row.property_id);
+      const p = await prisma.properties_houses.findUnique({
+        where: { id: Number(row.property_id) },
+        select: { title: true },
+      });
       title = p?.title;
     } else if (table === 'properties_apartments') {
-      const p = db.prepare('SELECT title FROM properties_apartments WHERE id = ?').get(row.property_id);
+      const p = await prisma.properties_apartments.findUnique({
+        where: { id: Number(row.property_id) },
+        select: { title: true },
+      });
       title = p?.title;
     } else {
-      const p = db.prepare('SELECT title FROM properties WHERE id = ?').get(row.property_id);
+      const p = await prisma.properties.findUnique({
+        where: { id: Number(row.property_id) },
+        select: { title: true },
+      });
       title = p?.title;
     }
   } catch (e) {
@@ -9463,15 +9271,15 @@ function enrichTestDriveBookingWithPropertyTitle(row) {
 /**
  * GET /api/test-drive-bookings/user/:userId — бронирования тест-драйва пользователя
  */
-app.get('/api/test-drive-bookings/user/:userId', (req, res) => {
+app.get('/api/test-drive-bookings/user/:userId', async (req, res) => {
   try {
     const userId = parseInt(req.params.userId, 10);
     if (!userId || Number.isNaN(userId)) {
       return res.status(400).json({ success: false, error: 'Некорректный userId' });
     }
-    testDriveBookingQueries.ensureTable();
-    const rows = testDriveBookingQueries.listByUserId(userId);
-    const data = rows.map(enrichTestDriveBookingWithPropertyTitle);
+    await testDriveBookingQueries.ensureTable();
+    const rows = await testDriveBookingQueries.listByUserId(userId);
+    const data = await Promise.all(rows.map(enrichTestDriveBookingWithPropertyTitle));
     return res.json({ success: true, data });
   } catch (error) {
     console.error('GET test-drive-bookings/user:', error);
@@ -9483,7 +9291,7 @@ app.get('/api/test-drive-bookings/user/:userId', (req, res) => {
  * GET /api/properties/:id - Получить объявление по ID
  * ВАЖНО: Этот маршрут должен быть ПОСЛЕ всех специфичных маршрутов
  */
-app.get('/api/properties/:id', (req, res) => {
+app.get('/api/properties/:id', async (req, res) => {
   const { id } = req.params;
   
   // Специальный маршрут для UI калькулятора (нельзя полагаться на порядок роутов:
@@ -9507,7 +9315,7 @@ app.get('/api/properties/:id', (req, res) => {
   try {
     const requestedPropertyType = req.query.property_type || null; // apartment | commercial | house | villa — для однозначного поиска доли
     console.log(`🔍 GET /api/properties/:id - Поиск объекта с ID=${id}, property_type=${requestedPropertyType || 'любой'}`);
-    const property = propertyQueries.getById(id, requestedPropertyType);
+    const property = await propertyQueries.getById(id, requestedPropertyType);
     
     if (!property) {
       console.log(`❌ GET /api/properties/:id - Объект с ID=${id} не найден`);
@@ -9522,7 +9330,7 @@ app.get('/api/properties/:id', (req, res) => {
     });
     
     // Получаем информацию о пользователе
-    const user = userQueries.getById(property.user_id);
+    const user = await userQueries.getById(property.user_id);
     if (user) {
       property.first_name = user.first_name;
       property.last_name = user.last_name;
@@ -9531,17 +9339,7 @@ app.get('/api/properties/:id', (req, res) => {
       property.role = user.role;
     }
     
-    const db = getDatabase();
-    // Проверяем наличие поля test_timer_duration в новых таблицах
-    let hasTestTimerDurationField = false;
-    try {
-      const apartmentsPragma = db.prepare("PRAGMA table_info(properties_apartments)").all();
-      const housesPragma = db.prepare("PRAGMA table_info(properties_houses)").all();
-      hasTestTimerDurationField = apartmentsPragma.some(col => col.name === 'test_timer_duration') ||
-                                   housesPragma.some(col => col.name === 'test_timer_duration');
-    } catch (e) {
-      // Игнорируем ошибку
-    }
+    const hasTestTimerDurationField = typeof property.test_timer_duration !== 'undefined';
 
     // Логируем данные из базы для отладки
     console.log('📥 GET /api/properties/:id - Данные из БД:', {
@@ -9719,7 +9517,7 @@ app.get('/api/properties/:id', (req, res) => {
     
     // Проверяем резервацию объекта
     console.log(`🔍 GET /api/properties/:id - Проверка резервации для объекта ID=${id}`);
-    const reservationInfo = propertyQueries.isReserved(id);
+    const reservationInfo = await propertyQueries.isReserved(id);
     console.log(`🔍 GET /api/properties/:id - Результат проверки резервации:`, reservationInfo);
     
     formatted.is_reserved = reservationInfo.isReserved || false;
@@ -9732,9 +9530,16 @@ app.get('/api/properties/:id', (req, res) => {
     if (lang && ['ru', 'en', 'de', 'es', 'fr', 'sv'].includes(lang)) {
       try {
         const table = property.source_table || 'properties_apartments';
-        const tr = getDatabase().prepare(
-          'SELECT title, description, additional_amenities FROM property_translations WHERE property_id = ? AND property_table = ? AND lang_code = ?'
-        ).get(id, table, lang);
+        const tr = await getPrisma().property_translations.findUnique({
+          where: {
+            property_id_property_table_lang_code: {
+              property_id: Number(id),
+              property_table: String(table),
+              lang_code: String(lang),
+            },
+          },
+          select: { title: true, description: true, additional_amenities: true },
+        });
         if (tr) {
           if (tr.title) formatted.title = tr.title;
           if (tr.description) formatted.description = tr.description;
@@ -9748,7 +9553,7 @@ app.get('/api/properties/:id', (req, res) => {
     // Документы по долгу (необходимые документы при продаже долга)
     if (formatted.is_debt === 1 || formatted.sale_type === 'debt' || formatted.has_debt === 1) {
       try {
-        formatted.debt_documents = debtDocumentQueries.getByProperty(formatted.id, formatted.property_type);
+        formatted.debt_documents = await debtDocumentQueries.getByProperty(formatted.id, formatted.property_type);
       } catch (e) {
         formatted.debt_documents = [];
       }
@@ -9777,21 +9582,19 @@ app.get('/api/properties/:id', (req, res) => {
 /**
  * GET /api/properties/user/:userId - Получить все объявления пользователя
  */
-app.get('/api/properties/user/:userId', (req, res) => {
+app.get('/api/properties/user/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
     console.log('📥 Запрос объявлений пользователя:', userId);
     
-    const db = getDatabase();
-    
     // Получаем информацию о пользователе
-    const user = userQueries.getById(userId);
+    const user = await userQueries.getById(userId);
     if (!user) {
       return res.status(404).json({ success: false, error: 'Пользователь не найден' });
     }
     
     // Используем функцию из propertyQueries, которая работает с новыми таблицами
-    const properties = propertyQueries.getByUserId(userId);
+    const properties = await propertyQueries.getByUserId(userId);
     
     console.log(`✅ Найдено объявлений пользователя: ${properties.length}`);
     if (properties.length > 0) {
@@ -9895,8 +9698,9 @@ app.get('/api/properties/user/:userId', (req, res) => {
 /**
  * PUT /api/properties/:id/approve - Одобрить объявление
  */
-app.put('/api/properties/:id/approve', (req, res) => {
+app.put('/api/properties/:id/approve', async (req, res) => {
   try {
+    const prisma = getPrisma();
     const { id } = req.params;
     const { reviewed_by, property_type: requestedPropertyType, debt_severity } = req.body;
 
@@ -9906,14 +9710,14 @@ app.put('/api/properties/:id/approve', (req, res) => {
     let resolvedByCrossTableLookup = false;
     if (requestedPropertyType) {
       console.log(`🔍 Одобрение: получен property_type=${requestedPropertyType} из запроса, используем для поиска`);
-      property = propertyQueries.getById(id, requestedPropertyType);
+      property = await propertyQueries.getById(id, requestedPropertyType);
       if (!property) {
         console.error(`❌ Одобрение: объект ID=${id} не найден с типом ${requestedPropertyType} в правильной таблице!`);
         // Безопасный fallback: проверяем обе таблицы и продолжаем ТОЛЬКО если объект найден ровно в одной.
         // Это покрывает кейс, когда фронт отправил неверный property_type.
         try {
-          const apartmentCandidate = propertyQueries.getById(id, 'apartment');
-          const houseCandidate = propertyQueries.getById(id, 'house');
+          const apartmentCandidate = await propertyQueries.getById(id, 'apartment');
+          const houseCandidate = await propertyQueries.getById(id, 'house');
           const found = [apartmentCandidate, houseCandidate].filter(Boolean);
 
           if (found.length === 1) {
@@ -9948,7 +9752,7 @@ app.put('/api/properties/:id/approve', (req, res) => {
         }
       }
     } else {
-      property = propertyQueries.getById(id);
+      property = await propertyQueries.getById(id);
     }
     
     if (!property) {
@@ -9965,22 +9769,6 @@ app.put('/api/properties/:id/approve', (req, res) => {
       if (!bothApartmentTable) {
         console.error(`❌ Одобрение: Запрошен тип ${requestedPropertyType}, но получен ${property.property_type}`);
         console.error(`   Source table: ${property.source_table || 'unknown'}`);
-        const db = getDatabase();
-        try {
-          const correctTable = (requestedPropertyType === 'apartment' || requestedPropertyType === 'commercial')
-            ? 'properties_apartments'
-            : 'properties_houses';
-          const checkInCorrectTable = db.prepare(`SELECT id, property_type FROM ${correctTable} WHERE id = ?`).get(id);
-
-          if (checkInCorrectTable) {
-            console.error(`   ⚠️ Объект в ${correctTable}, property_type=${checkInCorrectTable.property_type}`);
-          } else {
-            console.error(`   ⚠️ Объект НЕ найден в ${correctTable}`);
-          }
-        } catch (e) {
-          console.error(`   Ошибка при проверке таблицы:`, e.message);
-        }
-
         return res.status(400).json({
           success: false,
           error: `Несоответствие типов: запрошен ${requestedPropertyType}, но найден ${property.property_type}. Объект не может быть одобрен.`
@@ -10011,7 +9799,7 @@ app.put('/api/properties/:id/approve', (req, res) => {
       }
       
       // Проверяем существование оригинального объекта
-      const originalProperty = db.prepare('SELECT * FROM properties WHERE id = ?').get(originalPropertyId);
+      const originalProperty = await prisma.properties.findUnique({ where: { id: Number(originalPropertyId) } });
       if (!originalProperty) {
         return res.status(404).json({ 
           success: false, 
@@ -10020,16 +9808,16 @@ app.put('/api/properties/:id/approve', (req, res) => {
       }
       
       // Удаляем оригинальное объявление
-      db.prepare('DELETE FROM properties WHERE id = ?').run(originalPropertyId);
+      await prisma.properties.delete({ where: { id: Number(originalPropertyId) } });
       console.log(`✅ Оригинальное объявление ID ${originalPropertyId} удалено`);
       
       // Удаляем запись с запросом на удаление
-      db.prepare('DELETE FROM properties WHERE id = ?').run(id);
+      await prisma.properties.delete({ where: { id: Number(id) } });
       console.log(`🗑️ Запись с запросом на удаление ID ${id} удалена`);
       
       // Создаем уведомление для пользователя
       try {
-        notificationQueries.create({
+        await notificationQueries.create({
           user_id: property.user_id,
           type: 'property_deleted',
           title: 'Объявление удалено',
@@ -10052,7 +9840,7 @@ app.put('/api/properties/:id/approve', (req, res) => {
       console.log(`📝 Это редактирование. ID оригинала: ${originalPropertyId}`);
       
       // Проверяем существование оригинального объекта
-      const originalProperty = db.prepare('SELECT * FROM properties WHERE id = ?').get(originalPropertyId);
+      const originalProperty = await prisma.properties.findUnique({ where: { id: Number(originalPropertyId) } });
       if (!originalProperty) {
         return res.status(404).json({ 
           success: false, 
@@ -10105,116 +9893,79 @@ app.put('/api/properties/:id/approve', (req, res) => {
       
       // Обновляем оригинальный объект данными из изменений
       // Важно: обновляем существующий объект, а не создаем новый, чтобы избежать дубликатов
-      db.prepare(`
-        UPDATE properties 
-        SET 
-          property_type = ?,
-          title = ?,
-          description = ?,
-          price = ?,
-          currency = ?,
-          is_auction = ?,
-          auction_start_date = ?,
-          auction_end_date = ?,
-          auction_starting_price = ?,
-          area = ?,
-          living_area = ?,
-          building_type = ?,
-          rooms = ?,
-          bedrooms = ?,
-          bathrooms = ?,
-          floor = ?,
-          total_floors = ?,
-          year_built = ?,
-          location = ?,
-          balcony = ?,
-          parking = ?,
-          elevator = ?,
-          land_area = ?,
-          garage = ?,
-          pool = ?,
-          garden = ?,
-          commercial_type = ?,
-          business_hours = ?,
-          renovation = ?,
-          condition = ?,
-          heating = ?,
-          water_supply = ?,
-          sewerage = ?,
-          electricity = ?,
-          internet = ?,
-          security = ?,
-          furniture = ?,
-          photos = ?,
-          videos = ?,
-          additional_documents = ?,
-          additional_amenities = ?,
-          ownership_document = ?,
-          no_debts_document = ?,
-          test_drive = ?,
-          test_drive_data = ?,
-          moderation_status = 'approved',
-          rejection_reason = NULL,
-          updated_at = CURRENT_TIMESTAMP
-        WHERE id = ?
-      `).run(
-        property.property_type,
-        property.title,
-        property.description,
-        property.price,
-        property.currency,
-        property.is_auction,
-        finalAuctionStartDate,
-        finalAuctionEndDate,
-        property.auction_starting_price,
-        property.area,
-        property.living_area || null,
-        property.building_type || null,
-        property.rooms,
-        property.bedrooms,
-        property.bathrooms,
-        property.floor,
-        property.total_floors,
-        property.year_built,
-        property.location,
-        property.balcony,
-        property.parking,
-        property.elevator,
-        property.land_area,
-        property.garage,
-        property.pool,
-        property.garden,
-        property.commercial_type,
-        property.business_hours,
-        property.renovation,
-        property.condition,
-        property.heating,
-        property.water_supply,
-        property.sewerage,
-        property.electricity,
-        property.internet,
-        property.security,
-        property.furniture,
-        property.photos,
-        property.videos,
-        property.additional_documents,
-        property.additional_amenities || null,
-        property.ownership_document,
-        property.no_debts_document,
-        property.test_drive !== undefined && property.test_drive !== null ? property.test_drive : 0,
-        property.test_drive_data,
-        originalPropertyId
-      );
+      await prisma.properties.update({
+        where: { id: Number(originalPropertyId) },
+        data: {
+          property_type: property.property_type,
+          title: property.title,
+          description: property.description,
+          price: property.price,
+          currency: property.currency,
+          is_auction: property.is_auction,
+          auction_start_date: finalAuctionStartDate,
+          auction_end_date: finalAuctionEndDate,
+          auction_starting_price: property.auction_starting_price,
+          area: property.area,
+          living_area: property.living_area || null,
+          building_type: property.building_type || null,
+          rooms: property.rooms,
+          bedrooms: property.bedrooms,
+          bathrooms: property.bathrooms,
+          floor: property.floor,
+          total_floors: property.total_floors,
+          year_built: property.year_built,
+          location: property.location,
+          balcony: property.balcony,
+          parking: property.parking,
+          elevator: property.elevator,
+          land_area: property.land_area,
+          garage: property.garage,
+          pool: property.pool,
+          garden: property.garden,
+          commercial_type: property.commercial_type,
+          business_hours: property.business_hours,
+          renovation: property.renovation,
+          condition: property.condition,
+          heating: property.heating,
+          water_supply: property.water_supply,
+          sewerage: property.sewerage,
+          electricity: property.electricity,
+          internet: property.internet,
+          security: property.security,
+          furniture: property.furniture,
+          photos: property.photos,
+          videos: property.videos,
+          additional_documents: property.additional_documents,
+          additional_amenities: property.additional_amenities || null,
+          ownership_document: property.ownership_document,
+          no_debts_document: property.no_debts_document,
+          test_drive: property.test_drive !== undefined && property.test_drive !== null ? property.test_drive : 0,
+          test_drive_data: property.test_drive_data,
+          moderation_status: 'approved',
+          rejection_reason: null,
+          updated_at: new Date().toISOString(),
+        },
+      });
       
       console.log(`✅ Оригинальный объект ID ${originalPropertyId} обновлен данными из изменений`);
       console.log(`   Статус модерации: approved, rejection_reason: очищен`);
       
       // Удаляем запись с изменениями после применения (чтобы избежать дубликатов)
-      db.prepare('DELETE FROM properties WHERE id = ?').run(id);
+      await prisma.properties.delete({ where: { id: Number(id) } });
       console.log(`🗑️ Запись с изменениями ID ${id} удалена (дубликат предотвращен)`);
       
       // Проверяем, что оригинальный объект обновлен корректно
-      const updatedOriginal = db.prepare('SELECT id, title, moderation_status, is_auction, auction_start_date, auction_end_date FROM properties WHERE id = ?').get(originalPropertyId);
+      const updatedOriginal = await prisma.properties.findUnique({
+        where: { id: Number(originalPropertyId) },
+        select: {
+          id: true,
+          title: true,
+          moderation_status: true,
+          is_auction: true,
+          auction_start_date: true,
+          auction_end_date: true,
+        },
+      });
       console.log(`✅ Проверка обновленного объекта:`, {
         id: updatedOriginal.id,
         title: updatedOriginal.title,
@@ -10225,7 +9976,7 @@ app.put('/api/properties/:id/approve', (req, res) => {
       
       // Создаем уведомление для пользователя
       try {
-        notificationQueries.create({
+        await notificationQueries.create({
           user_id: property.user_id,
           type: 'property_approved',
           title: 'Изменения в объекте одобрены',
@@ -10251,33 +10002,9 @@ app.put('/api/properties/:id/approve', (req, res) => {
         source_table: property.source_table || 'unknown'
       });
       
-      // ВАЖНО: Определяем правильную таблицу по property_type перед обновлением
-      // Это предотвращает обновление объекта в неправильной таблице
-      const db = getDatabase();
-      let actualTable = null;
-      
-      // Проверяем, в какой таблице на самом деле находится объект
-      if (property.property_type === 'house' || property.property_type === 'villa') {
-        const checkInHouses = db.prepare('SELECT id FROM properties_houses WHERE id = ?').get(id);
-        if (checkInHouses) {
-          actualTable = 'houses';
-          console.log(`✅ Объект ID=${id} найден в таблице houses (property_type=${property.property_type})`);
-        } else {
-          console.error(`❌ Объект ID=${id} с property_type=${property.property_type} не найден в таблице houses!`);
-        }
-      } else if (property.property_type === 'apartment' || property.property_type === 'commercial') {
-        const checkInApartments = db.prepare('SELECT id FROM properties_apartments WHERE id = ?').get(id);
-        if (checkInApartments) {
-          actualTable = 'apartments';
-          console.log(`✅ Объект ID=${id} найден в таблице apartments (property_type=${property.property_type})`);
-        } else {
-          console.error(`❌ Объект ID=${id} с property_type=${property.property_type} не найден в таблице apartments!`);
-        }
-      }
-      
       // Используем функцию из propertyQueries, которая работает с новыми таблицами
       console.log(`🔄 Вызов updateModerationStatus для ID=${id}, status=approved`);
-      const result = propertyQueries.updateModerationStatus(id, 'approved', reviewed_by, null);
+      const result = await propertyQueries.updateModerationStatus(id, 'approved', reviewed_by, null);
       
       console.log(`📊 Результат updateModerationStatus:`, {
         changes: result?.changes || 0,
@@ -10294,7 +10021,7 @@ app.put('/api/properties/:id/approve', (req, res) => {
         console.warn(`⚠️ Одобрение: объект ID=${id} не был обновлен (changes=0). Проверяем текущий статус...`);
         // Проверяем текущий статус объекта с указанием правильного типа
         const propertyTypeForCheck = requestedPropertyType || property.property_type;
-        const currentProperty = propertyQueries.getById(id, propertyTypeForCheck);
+        const currentProperty = await propertyQueries.getById(id, propertyTypeForCheck);
         if (currentProperty) {
           console.log(`📊 Текущий статус объекта ID=${id}:`, currentProperty.moderation_status);
           if (currentProperty.moderation_status === 'approved') {
@@ -10319,21 +10046,32 @@ app.put('/api/properties/:id/approve', (req, res) => {
       // Это нужно, чтобы объект корректно попадал на страницу "Долги" и не попадал в обычные списки/аукционы.
       if (debt_severity) {
         try {
-          const db = getDatabase();
-          const tableName =
-            (property.property_type === 'house' || property.property_type === 'villa')
-              ? 'properties_houses'
-              : 'properties_apartments';
-          db.prepare(`
-            UPDATE ${tableName}
-            SET debt_severity = ?,
-                sale_type = 'debt',
-                is_debt = 1,
-                has_debt = 1,
-                updated_at = CURRENT_TIMESTAMP
-            WHERE id = ?
-          `).run(debt_severity, id);
-          console.log(`✅ debt: обновлены флаги долга для ID=${id} в ${tableName}, debt_severity=${debt_severity}`);
+          const prisma = getPrisma();
+          const isHouse = property.property_type === 'house' || property.property_type === 'villa';
+          if (isHouse) {
+            await prisma.properties_houses.update({
+              where: { id: Number(id) },
+              data: {
+                debt_severity,
+                sale_type: 'debt',
+                is_debt: 1,
+                has_debt: 1,
+                updated_at: new Date().toISOString(),
+              },
+            });
+          } else {
+            await prisma.properties_apartments.update({
+              where: { id: Number(id) },
+              data: {
+                debt_severity,
+                sale_type: 'debt',
+                is_debt: 1,
+                has_debt: 1,
+                updated_at: new Date().toISOString(),
+              },
+            });
+          }
+          console.log(`✅ debt: обновлены флаги долга для ID=${id}, debt_severity=${debt_severity}`);
         } catch (e) {
           console.warn('⚠️ debt: не удалось обновить флаги долга:', e.message);
         }
@@ -10343,12 +10081,12 @@ app.put('/api/properties/:id/approve', (req, res) => {
       // Используем requestedPropertyType или property.property_type для гарантии получения из правильной таблицы
       const propertyTypeForRetrieval = requestedPropertyType || property.property_type;
       console.log(`🔍 Получение обновленного объекта ID=${id} с типом=${propertyTypeForRetrieval}`);
-      const updatedProperty = propertyQueries.getById(id, propertyTypeForRetrieval);
+      const updatedProperty = await propertyQueries.getById(id, propertyTypeForRetrieval);
       
       // Если не нашли с указанием типа, пробуем без типа (но это не должно происходить)
       if (!updatedProperty) {
         console.warn(`⚠️ Не удалось получить объект с типом, пробуем без типа`);
-        const fallbackProperty = propertyQueries.getById(id);
+        const fallbackProperty = await propertyQueries.getById(id);
         if (fallbackProperty && fallbackProperty.property_type !== propertyTypeForRetrieval) {
           console.error(`❌ КРИТИЧЕСКАЯ ОШИБКА: получен объект с неправильным типом! Запрошен ${propertyTypeForRetrieval}, получен ${fallbackProperty.property_type}`);
           return res.status(500).json({ 
@@ -10384,55 +10122,19 @@ app.put('/api/properties/:id/approve', (req, res) => {
       let listName = '';
       
       if (updatedProperty.is_auction === 1 || updatedProperty.is_auction === '1' || updatedProperty.is_auction === true) {
-        const auctionsCheck = propertyQueries.getAuctions(null);
+        const auctionsCheck = await propertyQueries.getAuctions(null);
         isInList = auctionsCheck.some(p => p.id === parseInt(id));
         listName = 'аукционных';
         console.log(`📋 Проверка публикации (аукцион): объявление ${id} ${isInList ? 'найдено' : 'НЕ найдено'} в списке ${listName} (всего ${listName}: ${auctionsCheck.length})`);
       } else {
-        const approvedCheck = propertyQueries.getApproved(null);
+        const approvedCheck = await propertyQueries.getApproved(null);
         isInList = approvedCheck.some(p => p.id === parseInt(id));
         listName = 'одобренных';
         console.log(`📋 Проверка публикации: объявление ${id} ${isInList ? 'найдено' : 'НЕ найдено'} в списке ${listName} (всего ${listName}: ${approvedCheck.length})`);
       }
       
-      // Если не найдено, проверяем напрямую в БД
       if (!isInList) {
-        try {
-          const db = getDatabase();
-          const tableName = (updatedProperty.property_type === 'house' || updatedProperty.property_type === 'villa') 
-            ? 'properties_houses' 
-            : 'properties_apartments';
-          
-          const directCheck = db.prepare(`
-            SELECT id, property_type, moderation_status, is_auction, auction_end_date
-            FROM ${tableName} 
-            WHERE id = ? AND moderation_status = 'approved'
-          `).get(id);
-          
-          if (directCheck) {
-            console.log(`🔍 Прямая проверка в БД (${tableName}):`, directCheck);
-            console.log(`⚠️ Объект найден в БД, но не попадает в список ${listName}. Возможные причины:`);
-            console.log(`   - is_auction: ${directCheck.is_auction} (тип: ${typeof directCheck.is_auction})`);
-            console.log(`   - auction_end_date: ${directCheck.auction_end_date || 'NULL'}`);
-            if (updatedProperty.is_auction === 1 || updatedProperty.is_auction === '1') {
-              console.log(`   - Для аукционных объектов требуется auction_end_date`);
-            }
-          } else {
-            console.log(`🔍 Прямая проверка в БД (${tableName}): объект не найден со статусом 'approved'`);
-            // Проверяем в другой таблице на всякий случай
-            const otherTable = tableName === 'properties_houses' ? 'properties_apartments' : 'properties_houses';
-            const directCheck2 = db.prepare(`
-              SELECT id, property_type, moderation_status, is_auction 
-              FROM ${otherTable} 
-              WHERE id = ? AND moderation_status = 'approved'
-            `).get(id);
-            if (directCheck2) {
-              console.log(`⚠️ Объект найден в другой таблице ${otherTable}:`, directCheck2);
-            }
-          }
-        } catch (dbError) {
-          console.error('❌ Ошибка при прямой проверке в БД:', dbError.message);
-        }
+        console.warn(`⚠️ Объект ${id} одобрен, но не попал в список ${listName}`);
       }
       console.log('🔍 Одобрение нового объявления - test_drive после одобрения:', {
         test_drive: updatedProperty.test_drive,
@@ -10441,7 +10143,7 @@ app.put('/api/properties/:id/approve', (req, res) => {
 
       // Создаем уведомление для пользователя
       try {
-        notificationQueries.create({
+        await notificationQueries.create({
           user_id: property.user_id,
           type: 'property_approved',
           title: 'Ваш объект прошел верификацию',
@@ -10457,7 +10159,7 @@ app.put('/api/properties/:id/approve', (req, res) => {
       if (isAuction) {
         try {
           console.log(`[SSE] 📤 Аукционный объект ID=${id} одобрен — рассылаем подписчикам страницы аукциона`);
-          const formatted = formatOneAuctionPropertyForApi(updatedProperty);
+          const formatted = await formatOneAuctionPropertyForApi(updatedProperty);
           broadcastAuctionNewObjects([formatted]);
         } catch (broadcastErr) {
           console.warn('Не удалось отправить SSE обновление аукциона:', broadcastErr);
@@ -10512,24 +10214,24 @@ app.put('/api/properties/:id/approve', (req, res) => {
 /**
  * PUT /api/properties/:id/toggle-auction - Переключить статус аукциона (для тестирования)
  */
-app.put('/api/properties/:id/toggle-auction', (req, res) => {
+app.put('/api/properties/:id/toggle-auction', async (req, res) => {
   try {
-    const db = getDatabase();
     const { id } = req.params;
-
-    const property = db.prepare('SELECT * FROM properties WHERE id = ?').get(id);
+    const prisma = getPrisma();
+    const property = await prisma.properties.findUnique({ where: { id: Number(id) } });
     if (!property) {
       return res.status(404).json({ success: false, error: 'Объявление не найдено' });
     }
 
     // Переключаем статус аукциона
     const newAuctionStatus = property.is_auction === 1 ? 0 : 1;
-    db.prepare(`
-      UPDATE properties 
-      SET is_auction = ?,
-          updated_at = CURRENT_TIMESTAMP
-      WHERE id = ?
-    `).run(newAuctionStatus, id);
+    await prisma.properties.update({
+      where: { id: Number(id) },
+      data: {
+        is_auction: newAuctionStatus,
+        updated_at: new Date().toISOString(),
+      },
+    });
 
     console.log(`✅ Статус аукциона изменен для объявления ID ${id}: ${property.is_auction} -> ${newAuctionStatus}`);
 
@@ -10547,30 +10249,24 @@ app.put('/api/properties/:id/toggle-auction', (req, res) => {
 /**
  * PUT /api/properties/:id/reject - Отклонить объявление
  */
-app.put('/api/properties/:id/reject', (req, res) => {
+app.put('/api/properties/:id/reject', async (req, res) => {
   try {
-    const db = getDatabase();
     const { id } = req.params;
     const { reviewed_by, rejection_reason } = req.body;
-
-    const property = db.prepare('SELECT * FROM properties WHERE id = ?').get(id);
+    const property = await propertyQueries.getById(id);
     if (!property) {
       return res.status(404).json({ success: false, error: 'Объявление не найдено' });
     }
-
-    db.prepare(`
-      UPDATE properties 
-      SET moderation_status = 'rejected',
-          reviewed_by = ?,
-          reviewed_at = CURRENT_TIMESTAMP,
-          rejection_reason = ?,
-          updated_at = CURRENT_TIMESTAMP
-      WHERE id = ?
-    `).run(reviewed_by || 'admin', rejection_reason || null, id);
+    await propertyQueries.updateModerationStatus(
+      id,
+      'rejected',
+      reviewed_by || 'admin',
+      rejection_reason || null
+    );
 
     // Создаем уведомление для пользователя
     try {
-      notificationQueries.create({
+      await notificationQueries.create({
         user_id: property.user_id,
         type: 'property_rejected',
         title: 'Объявление отклонено',
@@ -10582,7 +10278,7 @@ app.put('/api/properties/:id/reject', (req, res) => {
     }
 
     try {
-      const pNew = propertyQueries.getById(id);
+      const pNew = await propertyQueries.getById(id);
       if (pNew && pNew.user_id) {
         broadcastUserCabinetEvent(pNew.user_id, {
           type: 'property_moderation',
@@ -10607,18 +10303,16 @@ app.put('/api/properties/:id/reject', (req, res) => {
 /**
  * DELETE /api/properties/:id - Удалить объявление (только для админа)
  */
-app.delete('/api/properties/:id', (req, res) => {
+app.delete('/api/properties/:id', async (req, res) => {
   try {
-    const db = getDatabase();
     const { id } = req.params;
-
-    const property = db.prepare('SELECT * FROM properties WHERE id = ?').get(id);
+    const property = await propertyQueries.getById(id);
     if (!property) {
       return res.status(404).json({ success: false, error: 'Объявление не найдено' });
     }
 
     // Удаляем объявление
-    db.prepare('DELETE FROM properties WHERE id = ?').run(id);
+    await propertyQueries.delete(id);
 
     res.json({ 
       success: true, 
@@ -10636,7 +10330,7 @@ app.delete('/api/properties/:id', (req, res) => {
 /**
  * POST /api/users/:id/card - Сохранить карту пользователя
  */
-app.post('/api/users/:id/card', (req, res) => {
+app.post('/api/users/:id/card', async (req, res) => {
   try {
     const userId = req.params.id;
     const { cardNumber, cardCvv, cardType } = req.body;
@@ -10655,39 +10349,7 @@ app.post('/api/users/:id/card', (req, res) => {
       });
     }
     
-    const db = getDatabase();
-    
-    // Проверяем, существуют ли необходимые поля в таблице users
-    try {
-      const pragmaInfo = db.prepare("PRAGMA table_info(users)").all();
-      const requiredFields = ['has_card', 'card_number', 'card_cvv', 'card_type'];
-      const existingFields = pragmaInfo.map(col => col.name);
-      
-      console.log('🔍 Проверка полей в таблице users:', {
-        existing: existingFields,
-        required: requiredFields
-      });
-      
-      // Добавляем недостающие поля
-      if (!existingFields.includes('has_card')) {
-        db.prepare("ALTER TABLE users ADD COLUMN has_card INTEGER DEFAULT 0").run();
-        console.log('✅ Добавлено поле has_card');
-      }
-      if (!existingFields.includes('card_number')) {
-        db.prepare("ALTER TABLE users ADD COLUMN card_number TEXT").run();
-        console.log('✅ Добавлено поле card_number');
-      }
-      if (!existingFields.includes('card_cvv')) {
-        db.prepare("ALTER TABLE users ADD COLUMN card_cvv TEXT").run();
-        console.log('✅ Добавлено поле card_cvv');
-      }
-      if (!existingFields.includes('card_type')) {
-        db.prepare("ALTER TABLE users ADD COLUMN card_type TEXT").run();
-        console.log('✅ Добавлено поле card_type');
-      }
-    } catch (alterError) {
-      console.warn('⚠️ Ошибка при проверке/добавлении полей:', alterError.message);
-    }
+    const prisma = getPrisma();
     
     // Простое шифрование (в production использовать более безопасный метод)
     const encrypt = (text) => {
@@ -10719,30 +10381,23 @@ app.post('/api/users/:id/card', (req, res) => {
     }
     
     // Проверяем, существует ли пользователь
-    const user = userQueries.getById(userId);
+    const user = await userQueries.getById(userId);
     if (!user) {
       console.warn('❌ Пользователь не найден:', userId);
       return res.status(404).json({ success: false, error: 'Пользователь не найден' });
     }
     
-    const stmt = db.prepare(`
-      UPDATE users 
-      SET has_card = 1, 
-          card_number = ?, 
-          card_cvv = ?, 
-          card_type = ?,
-          updated_at = CURRENT_TIMESTAMP 
-      WHERE id = ?
-    `);
-    
     try {
-      const result = stmt.run(encryptedCardNumber, encryptedCvv, cardType, userId);
-      console.log('✅ Карта сохранена, изменено записей:', result.changes);
-      
-      if (result.changes === 0) {
-        console.warn('⚠️ Не удалось обновить карту пользователя:', userId);
-        return res.status(404).json({ success: false, error: 'Пользователь не найден или данные не обновлены' });
-      }
+      await prisma.users.update({
+        where: { id: Number(userId) },
+        data: {
+          has_card: 1,
+          card_number: encryptedCardNumber,
+          card_cvv: encryptedCvv,
+          card_type: cardType,
+          updated_at: new Date().toISOString(),
+        },
+      });
     } catch (dbError) {
       console.error('❌ Ошибка при обновлении БД:', dbError);
       return res.status(500).json({ 
@@ -10751,7 +10406,7 @@ app.post('/api/users/:id/card', (req, res) => {
       });
     }
     
-    const updatedUser = userQueries.getById(userId);
+    const updatedUser = await userQueries.getById(userId);
     
     res.json({
       success: true,
@@ -10771,27 +10426,13 @@ app.post('/api/users/:id/card', (req, res) => {
 /**
  * GET /api/users/:id/deposit - Получить депозит пользователя
  */
-app.get('/api/users/:id/deposit', (req, res) => {
+app.get('/api/users/:id/deposit', async (req, res) => {
   try {
     const userId = req.params.id;
-    const db = getDatabase();
-    const user = userQueries.getById(userId);
+    const user = await userQueries.getById(userId);
     
     if (!user) {
       return res.status(404).json({ success: false, error: 'Пользователь не найден' });
-    }
-    
-    // Проверяем и добавляем колонку deposit_amount, если её нет
-    try {
-      const pragmaInfo = db.prepare("PRAGMA table_info(users)").all();
-      const depositAmountColumn = pragmaInfo.find(col => col.name === 'deposit_amount');
-      if (!depositAmountColumn) {
-        console.log('🔄 Добавляем колонку deposit_amount в таблицу users...');
-        db.exec("ALTER TABLE users ADD COLUMN deposit_amount REAL DEFAULT 0");
-        console.log('✅ Колонка deposit_amount добавлена');
-      }
-    } catch (colError) {
-      console.warn('⚠️ Ошибка при проверке/добавлении колонки deposit_amount:', colError.message);
     }
     
     res.json({
@@ -10811,25 +10452,12 @@ app.get('/api/users/:id/deposit', (req, res) => {
 /**
  * POST /api/users/:id/deposit/top-up - Пополнить депозит на 3000 евро
  */
-app.post('/api/users/:id/deposit/top-up', (req, res) => {
+app.post('/api/users/:id/deposit/top-up', async (req, res) => {
   try {
     const userId = req.params.id;
-    const db = getDatabase();
+    const prisma = getPrisma();
     
-    // Проверяем и добавляем колонку deposit_amount, если её нет
-    try {
-      const pragmaInfo = db.prepare("PRAGMA table_info(users)").all();
-      const depositAmountColumn = pragmaInfo.find(col => col.name === 'deposit_amount');
-      if (!depositAmountColumn) {
-        console.log('🔄 Добавляем колонку deposit_amount в таблицу users...');
-        db.exec("ALTER TABLE users ADD COLUMN deposit_amount REAL DEFAULT 0");
-        console.log('✅ Колонка deposit_amount добавлена');
-      }
-    } catch (colError) {
-      console.warn('⚠️ Ошибка при проверке/добавлении колонки deposit_amount:', colError.message);
-    }
-    
-    const user = userQueries.getById(userId);
+    const user = await userQueries.getById(userId);
     if (!user) {
       return res.status(404).json({ success: false, error: 'Пользователь не найден' });
     }
@@ -10843,20 +10471,20 @@ app.post('/api/users/:id/deposit/top-up', (req, res) => {
     
     const currentDeposit = (user.deposit_amount !== undefined && user.deposit_amount !== null) ? parseFloat(user.deposit_amount) : 0;
     const newDeposit = currentDeposit + 3000;
-    
-    const stmt = db.prepare('UPDATE users SET deposit_amount = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?');
-    stmt.run(newDeposit, userId);
-    
-    // Создаем запись о транзакции
-    try {
-      db.prepare(`
-        INSERT INTO transactions (user_id, type, amount, description, created_at)
-        VALUES (?, 'deposit', 3000, 'Пополнение депозита', CURRENT_TIMESTAMP)
-      `).run(userId);
-    } catch (e) {
-      // Таблица транзакций может не существовать, это нормально
-      console.warn('Не удалось создать транзакцию:', e.message);
-    }
+    await prisma.$transaction(async (tx) => {
+      await tx.users.update({
+        where: { id: Number(userId) },
+        data: { deposit_amount: newDeposit, updated_at: new Date() },
+      });
+      await tx.transactions.create({
+        data: {
+          user_id: Number(userId),
+          type: 'deposit',
+          amount: 3000,
+          description: 'Пополнение депозита',
+        },
+      });
+    });
     
     res.json({
       success: true,
@@ -10874,10 +10502,11 @@ app.post('/api/users/:id/deposit/top-up', (req, res) => {
 /**
  * POST /api/users/:id/deposit/withdraw - Вывести средства из депозита
  */
-app.post('/api/users/:id/deposit/withdraw', (req, res) => {
+app.post('/api/users/:id/deposit/withdraw', async (req, res) => {
   try {
     const userId = req.params.id;
     const { amount } = req.body;
+    const prisma = getPrisma();
     
     if (!amount || amount <= 0) {
       return res.status(400).json({ 
@@ -10886,24 +10515,10 @@ app.post('/api/users/:id/deposit/withdraw', (req, res) => {
       });
     }
     
-    const db = getDatabase();
-    const user = userQueries.getById(userId);
+    const user = await userQueries.getById(userId);
     
     if (!user) {
       return res.status(404).json({ success: false, error: 'Пользователь не найден' });
-    }
-    
-    // Проверяем и добавляем колонку deposit_amount, если её нет
-    try {
-      const pragmaInfo = db.prepare("PRAGMA table_info(users)").all();
-      const depositAmountColumn = pragmaInfo.find(col => col.name === 'deposit_amount');
-      if (!depositAmountColumn) {
-        console.log('🔄 Добавляем колонку deposit_amount в таблицу users...');
-        db.exec("ALTER TABLE users ADD COLUMN deposit_amount REAL DEFAULT 0");
-        console.log('✅ Колонка deposit_amount добавлена');
-      }
-    } catch (colError) {
-      console.warn('⚠️ Ошибка при проверке/добавлении колонки deposit_amount:', colError.message);
     }
     
     const currentDeposit = (user.deposit_amount !== undefined && user.deposit_amount !== null) ? parseFloat(user.deposit_amount) : 0;
@@ -10915,18 +10530,20 @@ app.post('/api/users/:id/deposit/withdraw', (req, res) => {
     }
     
     const newDeposit = currentDeposit - amount;
-    const stmt = db.prepare('UPDATE users SET deposit_amount = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?');
-    stmt.run(newDeposit, userId);
-    
-    // Создаем запись о транзакции
-    try {
-      db.prepare(`
-        INSERT INTO transactions (user_id, type, amount, description, created_at)
-        VALUES (?, 'withdrawal', ?, 'Вывод средств', CURRENT_TIMESTAMP)
-      `).run(userId, -amount);
-    } catch (e) {
-      console.warn('Не удалось создать транзакцию:', e.message);
-    }
+    await prisma.$transaction(async (tx) => {
+      await tx.users.update({
+        where: { id: Number(userId) },
+        data: { deposit_amount: newDeposit, updated_at: new Date() },
+      });
+      await tx.transactions.create({
+        data: {
+          user_id: Number(userId),
+          type: 'withdrawal',
+          amount: -Number(amount),
+          description: 'Вывод средств',
+        },
+      });
+    });
     
     res.json({
       success: true,
@@ -10944,25 +10561,15 @@ app.post('/api/users/:id/deposit/withdraw', (req, res) => {
 /**
  * GET /api/users/:id/transactions - Получить транзакции пользователя
  */
-app.get('/api/users/:id/transactions', (req, res) => {
+app.get('/api/users/:id/transactions', async (req, res) => {
   try {
     const userId = req.params.id;
-    const db = getDatabase();
-    
-    // Проверяем, существует ли таблица транзакций
-    const tableExists = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='transactions'").get();
-    
-    if (!tableExists) {
-      // Если таблицы нет, возвращаем пустой массив
-      return res.json({ success: true, data: [] });
-    }
-    
-    const transactions = db.prepare(`
-      SELECT * FROM transactions 
-      WHERE user_id = ? 
-      ORDER BY created_at DESC 
-      LIMIT 50
-    `).all(userId);
+    const prisma = getPrisma();
+    const transactions = await prisma.transactions.findMany({
+      where: { user_id: Number(userId) },
+      orderBy: { created_at: 'desc' },
+      take: 50,
+    });
     
     res.json({ success: true, data: transactions });
   } catch (error) {
@@ -10974,38 +10581,26 @@ app.get('/api/users/:id/transactions', (req, res) => {
 /**
  * GET /api/users/:id/analytics - Получить аналитику пользователя
  */
-app.get('/api/users/:id/analytics', (req, res) => {
+app.get('/api/users/:id/analytics', async (req, res) => {
   try {
     const userId = req.params.id;
-    const db = getDatabase();
+    const prisma = getPrisma();
     
-    const user = userQueries.getById(userId);
+    const user = await userQueries.getById(userId);
     if (!user) {
       return res.status(404).json({ success: false, error: 'Пользователь не найден' });
     }
     
-    // Проверяем, существует ли таблица транзакций
-    const tableExists = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='transactions'").get();
-    
-    let totalDeposit = 0;
-    let totalWithdrawal = 0;
-    
-    if (tableExists) {
-      const depositStats = db.prepare(`
-        SELECT COALESCE(SUM(amount), 0) as total 
-        FROM transactions 
-        WHERE user_id = ? AND type = 'deposit'
-      `).get(userId);
-      
-      const withdrawalStats = db.prepare(`
-        SELECT COALESCE(SUM(ABS(amount)), 0) as total 
-        FROM transactions 
-        WHERE user_id = ? AND type = 'withdrawal'
-      `).get(userId);
-      
-      totalDeposit = depositStats?.total || 0;
-      totalWithdrawal = withdrawalStats?.total || 0;
-    }
+    const depositStats = await prisma.transactions.aggregate({
+      where: { user_id: Number(userId), type: 'deposit' },
+      _sum: { amount: true },
+    });
+    const withdrawalStats = await prisma.transactions.aggregate({
+      where: { user_id: Number(userId), type: 'withdrawal' },
+      _sum: { amount: true },
+    });
+    const totalDeposit = Number(depositStats?._sum?.amount || 0);
+    const totalWithdrawal = Math.abs(Number(withdrawalStats?._sum?.amount || 0));
     
     res.json({
       success: true,
@@ -11030,10 +10625,10 @@ app.get('/api/users/:id/analytics', (req, res) => {
  * 3. Проверяем, что ставка не меньше минимальной суммы
  * 4. Если ставка больше текущей - обновляем минимальную ставку (текущая ставка - цена)
  */
-app.post('/api/bids', (req, res) => {
+app.post('/api/bids', async (req, res) => {
   try {
     const { user_id, property_id, bid_amount } = req.body;
-    const db = getDatabase();
+    const prisma = getPrisma();
     
     console.log('📝 Создание ставки - полученные данные:', { 
       user_id, 
@@ -11101,98 +10696,20 @@ app.post('/api/bids', (req, res) => {
     
     console.log('✅ Валидация пройдена:', { userIdNum, propertyIdNum, bidAmountNum });
     
-    // Проверяем и создаем таблицу bids, если её нет
-    // ВАЖНО: Не используем FOREIGN KEY для property_id, так как объекты могут быть в разных таблицах (properties или properties_houses)
-    try {
-      const tableCheck = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='bids'").get();
-      if (!tableCheck) {
-        console.log('⚠️ Таблица bids не существует, создаем...');
-        db.exec(`
-          CREATE TABLE IF NOT EXISTS bids (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id INTEGER NOT NULL,
-            property_id INTEGER NOT NULL,
-            property_table TEXT,
-            bid_amount REAL NOT NULL,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-          );
-          CREATE INDEX IF NOT EXISTS idx_bids_user_id ON bids(user_id);
-          CREATE INDEX IF NOT EXISTS idx_bids_property_id ON bids(property_id);
-          CREATE INDEX IF NOT EXISTS idx_bids_created_at ON bids(created_at);
-          CREATE INDEX IF NOT EXISTS idx_bids_user_property ON bids(user_id, property_id);
-          CREATE INDEX IF NOT EXISTS idx_bids_property_id_table ON bids(property_id, property_table);
-        `);
-        console.log('✅ Таблица bids создана');
-      } else {
-        // Проверяем, есть ли внешний ключ на property_id, и если есть - пытаемся его удалить
-        // Это нужно для существующих таблиц
-        try {
-          const foreignKeys = db.prepare(`
-            SELECT sql FROM sqlite_master 
-            WHERE type='table' AND name='bids'
-          `).get();
-          
-          if (foreignKeys && foreignKeys.sql && foreignKeys.sql.includes('FOREIGN KEY (property_id) REFERENCES properties')) {
-            console.log('⚠️ Обнаружен внешний ключ на property_id, который может вызывать проблемы. Рекомендуется пересоздать таблицу без этого ключа.');
-            // В SQLite нельзя просто удалить внешний ключ, нужно пересоздать таблицу
-            // Но мы не будем делать это автоматически, чтобы не потерять данные
-          }
-        } catch (fkCheckError) {
-          console.warn('⚠️ Не удалось проверить внешние ключи:', fkCheckError.message);
-        }
-      }
-    } catch (tableError) {
-      console.error('❌ Ошибка при проверке/создании таблицы bids:', tableError);
-    }
-    
     // Проверяем, существует ли пользователь
-    const user = userQueries.getById(userIdNum);
+    const user = await userQueries.getById(userIdNum);
     if (!user) {
       console.error(`❌ Пользователь с ID ${userIdNum} не найден в БД`);
       return res.status(404).json({ success: false, error: `Пользователь с ID ${userIdNum} не найден` });
     }
     console.log('✅ Пользователь найден:', { id: user.id, name: `${user.first_name} ${user.last_name}` });
     
-    // Проверяем, существует ли объект недвижимости во всех возможных таблицах
-    // Система использует: properties_apartments (квартиры/коммерческая), properties_houses (дома/виллы), и старую properties
-    let property = null;
     let tableName = null;
-    
-    // Сначала проверяем новые таблицы
-    try {
-      property = db.prepare('SELECT * FROM properties_apartments WHERE id = ?').get(propertyIdNum);
-      if (property) {
-        tableName = 'properties_apartments';
-        console.log(`✅ Объект найден в properties_apartments:`, { id: property.id, title: property.title, property_type: property.property_type });
-      }
-    } catch (e) {
-      console.warn('⚠️ Таблица properties_apartments не существует или ошибка:', e.message);
-    }
-    
-    if (!property) {
-      try {
-        property = db.prepare('SELECT * FROM properties_houses WHERE id = ?').get(propertyIdNum);
-        if (property) {
-          tableName = 'properties_houses';
-          console.log(`✅ Объект найден в properties_houses:`, { id: property.id, title: property.title, property_type: property.property_type });
-        }
-      } catch (e) {
-        console.warn('⚠️ Таблица properties_houses не существует или ошибка:', e.message);
-      }
-    }
-    
-    // Fallback на старую таблицу properties
-    if (!property) {
-      try {
-        property = db.prepare('SELECT * FROM properties WHERE id = ?').get(propertyIdNum);
-        if (property) {
-          tableName = 'properties';
-          console.log(`✅ Объект найден в старой таблице properties:`, { id: property.id, title: property.title });
-        }
-      } catch (e) {
-        console.warn('⚠️ Таблица properties не существует или ошибка:', e.message);
-      }
+    const property = await propertyQueries.getById(propertyIdNum);
+    if (property) {
+      if (property.property_type === 'apartment' || property.property_type === 'commercial') tableName = 'properties_apartments';
+      else if (property.property_type === 'house' || property.property_type === 'villa') tableName = 'properties_houses';
+      else tableName = 'properties';
     }
     
     if (!property || !tableName) {
@@ -11213,19 +10730,6 @@ app.post('/api/bids', (req, res) => {
           success: false, 
           error: 'Для участия в аукционе необходимо указать страну в профиле. Пожалуйста, заполните страну в настройках профиля.' 
         });
-      }
-      
-      // Проверяем и добавляем колонку deposit_amount, если её нет
-      try {
-        const pragmaInfo = db.prepare("PRAGMA table_info(users)").all();
-        const depositAmountColumn = pragmaInfo.find(col => col.name === 'deposit_amount');
-        if (!depositAmountColumn) {
-          console.log('🔄 Добавляем колонку deposit_amount в таблицу users...');
-          db.exec("ALTER TABLE users ADD COLUMN deposit_amount REAL DEFAULT 0");
-          console.log('✅ Колонка deposit_amount добавлена');
-        }
-      } catch (colError) {
-        console.warn('⚠️ Ошибка при проверке/добавлении колонки deposit_amount:', colError.message);
       }
       
       const depositAmount = (user.deposit_amount !== undefined && user.deposit_amount !== null) ? parseFloat(user.deposit_amount) : 0;
@@ -11255,7 +10759,7 @@ app.post('/api/bids', (req, res) => {
     
     // Разрешаем ставки для всех объектов (как аукционных, так и обычных)
     // Проверка отключена: пользователь может делать ставки в нескольких объектах
-    // const existingBids = db.prepare(`
+    // const existingBids = await getPrisma().bids.findFirst({
     //   SELECT property_id FROM bids 
     //   WHERE user_id = ? AND property_id != ?
     //   LIMIT 1
@@ -11276,19 +10780,11 @@ app.post('/api/bids', (req, res) => {
       ? (property.auction_starting_price || property.price || 0)
       : (property.price || 0);
     let currentMaxBid = basePrice;
-    try {
-      const maxBid = db.prepare(`
-        SELECT MAX(bid_amount) as max_bid 
-        FROM bids 
-        WHERE property_id = ?
-      `).get(propertyIdNum);
-      
-      if (maxBid && maxBid.max_bid) {
-        currentMaxBid = maxBid.max_bid;
-      }
-    } catch (bidError) {
-      console.warn('⚠️ Не удалось получить максимальную ставку:', bidError);
-    }
+    const maxBid = await prisma.bids.aggregate({
+      where: { property_id: propertyIdNum },
+      _max: { bid_amount: true },
+    });
+    if (maxBid?._max?.bid_amount) currentMaxBid = maxBid._max.bid_amount;
     
     // Минимальный шаг как на клиенте (getAuctionMinBidStep)
     const minBidStep = getAuctionMinBidStep(currentMaxBid);
@@ -11310,13 +10806,11 @@ app.post('/api/bids', (req, res) => {
     let previousHighestBidder = null;
     try {
       // Находим максимальную ставку среди всех ставок для этого объекта (ДО создания новой ставки)
-      const maxBidResult = db.prepare(`
-        SELECT user_id, bid_amount 
-        FROM bids 
-        WHERE property_id = ?
-        ORDER BY bid_amount DESC, created_at DESC
-        LIMIT 1
-      `).get(propertyIdNum);
+      const maxBidResult = await prisma.bids.findFirst({
+        where: { property_id: propertyIdNum },
+        orderBy: [{ bid_amount: 'desc' }, { created_at: 'desc' }],
+        select: { user_id: true, bid_amount: true },
+      });
       
       console.log(`🔍 Поиск предыдущего лидера для property_id=${propertyIdNum}, userIdNum=${userIdNum}`);
       console.log(`🔍 Результат запроса максимальной ставки:`, maxBidResult);
@@ -11338,46 +10832,16 @@ app.post('/api/bids', (req, res) => {
       console.error('❌ Stack trace:', prevBidError.stack);
     }
     
-    // Создаем ставку
-    // ВАЖНО: Отключаем проверку внешних ключей, так как объекты могут быть в разных таблицах
-    // (properties или properties_houses), а внешний ключ ссылается только на properties
-    try {
-      db.prepare('PRAGMA foreign_keys = OFF').run();
-    } catch (fkError) {
-      console.warn('⚠️ Не удалось отключить проверку внешних ключей:', fkError.message);
-    }
-    
-    let result;
-    let bidId;
-    try {
-      const hasPropertyTableCol = db.prepare("PRAGMA table_info(bids)").all().some(c => c.name === 'property_table');
-      const stmt = hasPropertyTableCol
-        ? db.prepare(`
-            INSERT INTO bids (user_id, property_id, property_table, bid_amount, created_at)
-            VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
-          `)
-        : db.prepare(`
-            INSERT INTO bids (user_id, property_id, bid_amount, created_at)
-            VALUES (?, ?, ?, CURRENT_TIMESTAMP)
-          `);
-      result = hasPropertyTableCol ? stmt.run(userIdNum, propertyIdNum, tableName, bidAmountNum) : stmt.run(userIdNum, propertyIdNum, bidAmountNum);
-      bidId = result.lastInsertRowid;
-    } catch (insertError) {
-      // Включаем обратно проверку внешних ключей
-      try {
-        db.prepare('PRAGMA foreign_keys = ON').run();
-      } catch (fkError2) {
-        console.warn('⚠️ Не удалось включить проверку внешних ключей:', fkError2.message);
-      }
-      throw insertError;
-    }
-    
-    // Включаем обратно проверку внешних ключей
-    try {
-      db.prepare('PRAGMA foreign_keys = ON').run();
-    } catch (fkError) {
-      console.warn('⚠️ Не удалось включить проверку внешних ключей:', fkError.message);
-    }
+    const createdBid = await prisma.bids.create({
+      data: {
+        user_id: userIdNum,
+        property_id: propertyIdNum,
+        property_table: tableName,
+        bid_amount: bidAmountNum,
+      },
+    });
+    const result = { changes: 1, lastInsertRowid: createdBid.id };
+    const bidId = createdBid.id;
     
     console.log(`✅ Ставка создана с ID: ${bidId}, user_id: ${user_id}, property_id: ${property_id}, amount: ${bidAmountNum}`);
     console.log(`📊 Результат INSERT: changes=${result.changes}, lastInsertRowid=${bidId}`);
@@ -11386,7 +10850,7 @@ app.post('/api/bids', (req, res) => {
     cancelPropertyTimer(propertyIdNum);
     
     // Сразу проверяем, что ставка сохранилась
-    const verifyBid = db.prepare('SELECT * FROM bids WHERE id = ?').get(bidId);
+    const verifyBid = await prisma.bids.findUnique({ where: { id: bidId } });
     if (!verifyBid) {
       console.error(`❌ КРИТИЧЕСКАЯ ОШИБКА: Ставка не найдена в БД сразу после создания! ID: ${bidId}`);
       return res.status(500).json({ 
@@ -11424,7 +10888,7 @@ app.post('/api/bids', (req, res) => {
           view_count: 0
         };
         
-        const notifResult = notificationQueries.create(notificationData);
+        const notifResult = await notificationQueries.create(notificationData);
         console.log(`📬 Уведомление отправлено предыдущему ставщику (user_id: ${previousHighestBidder.user_id}) о перебитой ставке. ID уведомления: ${notifResult.lastInsertRowid}`);
         console.log(`📬 Данные уведомления:`, notificationData);
       } catch (notifError) {
@@ -11443,7 +10907,8 @@ app.post('/api/bids', (req, res) => {
     }
     
     // Проверяем общее количество ставок для этого объекта
-    const allBids = db.prepare('SELECT COUNT(*) as count FROM bids WHERE property_id = ?').get(property_id);
+    const allBidsCount = await prisma.bids.count({ where: { property_id: propertyIdNum } });
+    const allBids = { count: allBidsCount };
     console.log(`📊 Всего ставок для объекта ${property_id}: ${allBids.count}`);
     
     // Обновляем минимальную ставку для объекта
@@ -11453,28 +10918,10 @@ app.post('/api/bids', (req, res) => {
     
     // Обновляем auction_minimum_bid в properties (для совместимости, но не используем в проверке)
     try {
-      const updateStmt = db.prepare(`
-        UPDATE properties 
-        SET auction_minimum_bid = ?, updated_at = CURRENT_TIMESTAMP 
-        WHERE id = ?
-      `);
-      const updateResult = updateStmt.run(newMinimumBid, property_id);
-      console.log(`✅ Обновлена минимальная ставка для объекта ${property_id}: ${newMinimumBid} (changes: ${updateResult.changes})`);
+      await propertyQueries.update(propertyIdNum, { auction_minimum_bid: newMinimumBid });
+      console.log(`✅ Обновлена минимальная ставка для объекта ${property_id}: ${newMinimumBid}`);
     } catch (updateError) {
-      // Если поле auction_minimum_bid не существует, пытаемся добавить его
-      console.warn('Не удалось обновить auction_minimum_bid, пытаемся добавить поле:', updateError.message);
-      try {
-        db.exec('ALTER TABLE properties ADD COLUMN auction_minimum_bid REAL');
-        const updateStmt2 = db.prepare(`
-          UPDATE properties 
-          SET auction_minimum_bid = ?, updated_at = CURRENT_TIMESTAMP 
-          WHERE id = ?
-        `);
-        updateStmt2.run(newMinimumBid, property_id);
-        console.log(`✅ Поле auction_minimum_bid добавлено и обновлено для объекта ${property_id}`);
-      } catch (addError) {
-        console.warn('Не удалось добавить поле auction_minimum_bid:', addError.message);
-      }
+      console.warn('Не удалось обновить auction_minimum_bid:', updateError.message);
     }
 
     broadcastPropertyBidEvent(propertyIdNum, {
@@ -11505,38 +10952,31 @@ app.post('/api/bids', (req, res) => {
 /**
  * GET /api/bids/property/:id - Получить историю ставок для объекта
  */
-app.get('/api/bids/property/:id', (req, res) => {
+app.get('/api/bids/property/:id', async (req, res) => {
   try {
     const propertyId = req.params.id;
-    const db = getDatabase();
+    const prisma = getPrisma();
     
     console.log(`📊 Запрос истории ставок для объекта ${propertyId}`);
     
-    // Проверяем, существует ли таблица ставок
-    const tableExists = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='bids'").get();
-    if (!tableExists) {
-      console.log('⚠️ Таблица bids не существует');
-      return res.json({ success: true, data: [] });
-    }
+    const bids = await prisma.bids.findMany({
+      where: { property_id: Number(propertyId) },
+      orderBy: [{ bid_amount: 'desc' }, { created_at: 'desc' }],
+      include: { users: { select: { user_id_number: true, country: true } } },
+    });
+    const mapped = bids.map((b) => ({
+      id: b.id,
+      user_id: b.user_id,
+      property_id: b.property_id,
+      bid_amount: b.bid_amount,
+      created_at: b.created_at,
+      user_id_number: b.users?.user_id_number || null,
+      bidder_country: b.users?.country || null,
+    }));
     
-    const bids = db.prepare(`
-      SELECT 
-        b.id,
-        b.user_id,
-        b.property_id,
-        b.bid_amount,
-        b.created_at,
-        u.user_id_number,
-        u.country AS bidder_country
-      FROM bids b
-      LEFT JOIN users u ON b.user_id = u.id
-      WHERE b.property_id = ?
-      ORDER BY b.bid_amount DESC, b.created_at DESC
-    `).all(propertyId);
+    console.log(`✅ Найдено ${mapped.length} ставок для объекта ${propertyId}`);
     
-    console.log(`✅ Найдено ${bids.length} ставок для объекта ${propertyId}`);
-    
-    res.json({ success: true, data: bids });
+    res.json({ success: true, data: mapped });
   } catch (error) {
     console.error('❌ Ошибка при получении истории ставок:', error);
     res.status(500).json({ success: false, error: error.message });
@@ -11546,18 +10986,19 @@ app.get('/api/bids/property/:id', (req, res) => {
 /**
  * GET /api/bids/user/:id - Получить ставки пользователя (оптимизировано: batch по property_table)
  */
-app.get('/api/bids/user/:id', (req, res) => {
+app.get('/api/bids/user/:id', async (req, res) => {
   try {
     const userId = req.params.id;
-    const db = getDatabase();
+    const prisma = getPrisma();
     
     if (!schemaCache.properties && !schemaCache.properties_apartments && !schemaCache.properties_houses) {
       return res.json({ success: true, data: [] });
     }
     
-    const bids = db.prepare(`
-      SELECT * FROM bids WHERE user_id = ? ORDER BY created_at DESC
-    `).all(userId);
+    const bids = await prisma.bids.findMany({
+      where: { user_id: Number(userId) },
+      orderBy: { created_at: 'desc' },
+    });
     
     if (bids.length === 0) {
       return res.json({ success: true, data: [] });
@@ -11578,7 +11019,7 @@ app.get('/api/bids/user/:id', (req, res) => {
         const ids = unique(byTable.properties_apartments);
         const placeholders = ids.map(() => '?').join(',');
         try {
-          const rows = db.prepare(`SELECT * FROM properties_apartments WHERE id IN (${placeholders})`).all(...ids);
+          const rows = await prisma.properties_apartments.findMany({ where: { id: { in: ids } } });
           for (const p of rows) propertyMap.set(`properties_apartments:${p.id}`, p);
         } catch (_) {}
       }
@@ -11586,7 +11027,7 @@ app.get('/api/bids/user/:id', (req, res) => {
         const ids = unique(byTable.properties_houses);
         const placeholders = ids.map(() => '?').join(',');
         try {
-          const rows = db.prepare(`SELECT * FROM properties_houses WHERE id IN (${placeholders})`).all(...ids);
+          const rows = await prisma.properties_houses.findMany({ where: { id: { in: ids } } });
           for (const p of rows) propertyMap.set(`properties_houses:${p.id}`, p);
         } catch (_) {}
       }
@@ -11594,7 +11035,7 @@ app.get('/api/bids/user/:id', (req, res) => {
         const ids = unique(byTable.properties);
         const placeholders = ids.map(() => '?').join(',');
         try {
-          const rows = db.prepare(`SELECT * FROM properties WHERE id IN (${placeholders})`).all(...ids);
+          const rows = await prisma.properties.findMany({ where: { id: { in: ids } } });
           for (const p of rows) propertyMap.set(`properties:${p.id}`, p);
         } catch (_) {}
       }
@@ -11603,13 +11044,13 @@ app.get('/api/bids/user/:id', (req, res) => {
       for (const pid of allIds) {
         let p = null;
         if (schemaCache.properties_apartments) {
-          try { p = db.prepare('SELECT * FROM properties_apartments WHERE id = ?').get(pid); if (p) { p.source_table = 'properties_apartments'; } } catch (_) {}
+          try { p = await prisma.properties_apartments.findUnique({ where: { id: pid } }); if (p) { p.source_table = 'properties_apartments'; } } catch (_) {}
         }
         if (!p && schemaCache.properties_houses) {
-          try { p = db.prepare('SELECT * FROM properties_houses WHERE id = ?').get(pid); if (p) { p.source_table = 'properties_houses'; } } catch (_) {}
+          try { p = await prisma.properties_houses.findUnique({ where: { id: pid } }); if (p) { p.source_table = 'properties_houses'; } } catch (_) {}
         }
         if (!p && schemaCache.properties) {
-          try { p = db.prepare('SELECT * FROM properties WHERE id = ?').get(pid); if (p) { p.source_table = 'properties'; } } catch (_) {}
+          try { p = await prisma.properties.findUnique({ where: { id: pid } }); if (p) { p.source_table = 'properties'; } } catch (_) {}
         }
         if (p) propertyMap.set(`${p.source_table}:${pid}`, p);
       }
@@ -11669,41 +11110,25 @@ app.get('/api/bids/user/:id', (req, res) => {
 /**
  * GET /api/bids/user/:userId/property/:propertyId - Получить историю ставок пользователя по конкретному объекту
  */
-app.get('/api/bids/user/:userId/property/:propertyId', (req, res) => {
+app.get('/api/bids/user/:userId/property/:propertyId', async (req, res) => {
   try {
     const userId = req.params.userId;
     const propertyId = req.params.propertyId;
-    const db = getDatabase();
+    const prisma = getPrisma();
     
     console.log(`📊 Запрос истории ставок пользователя ${userId} по объекту ${propertyId}`);
     
-    // Проверяем, существует ли таблица ставок
-    const tableExists = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='bids'").get();
-    if (!tableExists) {
-      console.log('⚠️ Таблица bids не существует');
-      return res.json({ success: true, data: [] });
-    }
-    
-    const bids = db.prepare(`
-      SELECT 
-        b.*,
-        p.title,
-        p.location,
-        p.price,
-        p.auction_starting_price,
-        p.auction_minimum_bid,
-        p.photos,
-        p.is_auction,
-        p.auction_end_date
-      FROM bids b
-      LEFT JOIN properties p ON b.property_id = p.id
-      WHERE b.user_id = ? AND b.property_id = ?
-      ORDER BY b.created_at DESC
-    `).all(userId, propertyId);
+    const bids = await prisma.bids.findMany({
+      where: { user_id: Number(userId), property_id: Number(propertyId) },
+      orderBy: { created_at: 'desc' },
+    });
+    const pAny = (await prisma.properties.findUnique({ where: { id: Number(propertyId) } }))
+      || (await prisma.properties_apartments.findUnique({ where: { id: Number(propertyId) } }))
+      || (await prisma.properties_houses.findUnique({ where: { id: Number(propertyId) } }));
     
     // Парсим JSON поля
     const formattedBids = bids.map(bid => {
-      const formatted = { ...bid };
+      const formatted = { ...bid, ...(pAny || {}) };
       if (formatted.photos) {
         try {
           formatted.photos = JSON.parse(formatted.photos);
@@ -11727,17 +11152,17 @@ app.get('/api/bids/user/:userId/property/:propertyId', (req, res) => {
 
 /**
  * ========== РОУТЫ ДЛЯ ВЫИГРАННЫХ ОБЪЕКТОВ НА АУКЦИОНЕ ==========
- * Таблица auction_winners создаётся в database.js при init.
+ * Таблица auction_winners — схема через Prisma (миграции).
  */
 
 /**
  * POST /api/auction-winners - Сохранить победителя аукциона
  * Вызывается когда таймер аукциона закончился
  */
-app.post('/api/auction-winners', (req, res) => {
+app.post('/api/auction-winners', async (req, res) => {
   try {
     const { user_id, property_id, property_table, winning_bid_amount, currency, auction_end_date } = req.body;
-    const db = getDatabase();
+    const prisma = getPrisma();
     
     console.log('🏆 Сохранение победителя аукциона:', { user_id, property_id, property_table, winning_bid_amount });
     
@@ -11750,10 +11175,10 @@ app.post('/api/auction-winners', (req, res) => {
     }
     
     // Проверяем, не был ли уже сохранен победитель для этого объекта
-    const existing = db.prepare(`
-      SELECT id FROM auction_winners 
-      WHERE property_id = ? AND property_table = ?
-    `).get(property_id, property_table);
+    const existing = await prisma.auction_winners.findFirst({
+      where: { property_id: Number(property_id), property_table: String(property_table) },
+      select: { id: true },
+    });
     
     if (existing) {
       console.log('⚠️ Победитель для этого объекта уже сохранен');
@@ -11771,26 +11196,25 @@ app.post('/api/auction-winners', (req, res) => {
     const depositDueDate = new Date(wonDate.getTime() + 3 * 24 * 60 * 60 * 1000);
     
     // Сохраняем победителя
-    const stmt = db.prepare(`
-      INSERT INTO auction_winners (
-        user_id, property_id, property_table, winning_bid_amount, currency,
-        auction_end_date, deposit_amount, deposit_due_date, status
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending_deposit')
-    `);
-    
-    const result = stmt.run(
-      user_id,
-      property_id,
-      property_table,
-      winning_bid_amount,
-      currency || 'USD',
-      auction_end_date,
-      depositAmount,
-      depositDueDate.toISOString()
-    );
+    const createdWinner = await prisma.auction_winners.create({
+      data: {
+        user_id: Number(user_id),
+        property_id: Number(property_id),
+        property_table: String(property_table),
+        winning_bid_amount: Number(winning_bid_amount),
+        currency: currency || 'USD',
+        auction_end_date,
+        deposit_amount: depositAmount,
+        deposit_due_date: depositDueDate.toISOString(),
+        status: 'pending_deposit',
+        won_at: new Date().toISOString(),
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      },
+    });
     
     console.log('✅ Победитель сохранен:', {
-      id: result.lastInsertRowid,
+      id: createdWinner.id,
       deposit_amount: depositAmount,
       deposit_due_date: depositDueDate.toISOString()
     });
@@ -11800,32 +11224,35 @@ app.post('/api/auction-winners', (req, res) => {
       const propertyTableSafe = ['properties', 'properties_apartments', 'properties_houses'].includes(property_table)
         ? property_table
         : 'properties';
-      const propertyRow = db
-        .prepare(`SELECT id, title FROM ${propertyTableSafe} WHERE id = ?`)
-        .get(property_id);
+      const propertyRow =
+        propertyTableSafe === 'properties_apartments'
+          ? await prisma.properties_apartments.findUnique({ where: { id: Number(property_id) }, select: { id: true, title: true } })
+          : propertyTableSafe === 'properties_houses'
+            ? await prisma.properties_houses.findUnique({ where: { id: Number(property_id) }, select: { id: true, title: true } })
+            : await prisma.properties.findUnique({ where: { id: Number(property_id) }, select: { id: true, title: true } });
       const propertyTitle = propertyRow?.title || 'объект';
 
-      notificationQueries.create({
+      await notificationQueries.create({
         user_id: user_id,
         type: 'auction_won',
         title: 'Вы победили в аукционе',
         message: `Поздравляем! Вы победили в аукционе по объекту "${propertyTitle}".`,
         data: {
           property_id: parseInt(property_id, 10),
-          winner_id: result.lastInsertRowid
+          winner_id: createdWinner.id
         },
         is_read: 0,
         view_count: 0
       });
 
-      notificationQueries.create({
+      await notificationQueries.create({
         user_id: user_id,
         type: 'payment_deadline',
         title: 'Срок оплаты депозита',
         message: `Оплатите депозит до ${depositDueDate.toLocaleString('ru-RU')}, чтобы сохранить право на покупку "${propertyTitle}".`,
         data: {
           property_id: parseInt(property_id, 10),
-          winner_id: result.lastInsertRowid,
+          winner_id: createdWinner.id,
           deposit_due_date: depositDueDate.toISOString()
         },
         is_read: 0,
@@ -11833,14 +11260,14 @@ app.post('/api/auction-winners', (req, res) => {
       });
 
       // Проигравшие: все уникальные участники ставок по объекту, кроме победителя
-      const losingBidders = db.prepare(`
-        SELECT DISTINCT user_id
-        FROM bids
-        WHERE property_id = ? AND user_id IS NOT NULL AND user_id != ?
-      `).all(property_id, user_id);
+      const losingBidders = await prisma.bids.findMany({
+        where: { property_id: Number(property_id), user_id: { not: Number(user_id) } },
+        distinct: ['user_id'],
+        select: { user_id: true },
+      });
 
       for (const bidder of losingBidders) {
-        notificationQueries.create({
+        await notificationQueries.create({
           user_id: bidder.user_id,
           type: 'auction_lost',
           title: 'Аукцион завершен',
@@ -11859,7 +11286,7 @@ app.post('/api/auction-winners', (req, res) => {
     res.json({
       success: true,
       data: {
-        id: result.lastInsertRowid,
+        id: createdWinner.id,
         deposit_amount: depositAmount,
         deposit_due_date: depositDueDate.toISOString()
       }
@@ -11873,22 +11300,27 @@ app.post('/api/auction-winners', (req, res) => {
 /**
  * GET /api/auction-winners/property/:propertyId — победитель по объекту (для карточек и страницы аукциона)
  */
-app.get('/api/auction-winners/property/:propertyId', (req, res) => {
+app.get('/api/auction-winners/property/:propertyId', async (req, res) => {
   try {
     const propertyId = parseInt(req.params.propertyId, 10);
     if (Number.isNaN(propertyId)) {
       return res.status(400).json({ success: false, error: 'Некорректный property_id' });
     }
-    const db = getDatabase();
-    const row = db
-      .prepare(
-        `SELECT id, user_id, property_id, property_table, winning_bid_amount, currency, auction_end_date, status, won_at
-         FROM auction_winners
-         WHERE property_id = ?
-         ORDER BY id DESC
-         LIMIT 1`
-      )
-      .get(propertyId);
+    const row = await getPrisma().auction_winners.findFirst({
+      where: { property_id: propertyId },
+      orderBy: { id: 'desc' },
+      select: {
+        id: true,
+        user_id: true,
+        property_id: true,
+        property_table: true,
+        winning_bid_amount: true,
+        currency: true,
+        auction_end_date: true,
+        status: true,
+        won_at: true,
+      },
+    });
     res.json({ success: true, data: row || null });
   } catch (error) {
     console.error('❌ Ошибка при получении победителя по объекту:', error);
@@ -11899,7 +11331,7 @@ app.get('/api/auction-winners/property/:propertyId', (req, res) => {
 /**
  * GET /api/auction-winners/user/:id - Получить выигранные объекты пользователя
  */
-app.get('/api/auction-winners/user/:id', (req, res) => {
+app.get('/api/auction-winners/user/:id', async (req, res) => {
   try {
     const userId = parseInt(req.params.id);
     
@@ -11910,13 +11342,14 @@ app.get('/api/auction-winners/user/:id', (req, res) => {
       });
     }
     
-    const db = getDatabase();
+    const prisma = getPrisma();
     
     console.log(`📊 Запрос выигранных объектов для пользователя ${userId}`);
     
-    const winners = db.prepare(`
-      SELECT * FROM auction_winners WHERE user_id = ? ORDER BY won_at DESC
-    `).all(userId);
+    const winners = await prisma.auction_winners.findMany({
+      where: { user_id: userId },
+      orderBy: { won_at: 'desc' },
+    });
     
     if (winners.length === 0) {
       return res.json({ success: true, data: [] });
@@ -11934,19 +11367,19 @@ app.get('/api/auction-winners/user/:id', (req, res) => {
       if (byTable.properties_apartments.length) {
         const ids = uniq(byTable.properties_apartments);
         const ph = ids.map(() => '?').join(',');
-        const rows = db.prepare(`SELECT * FROM properties_apartments WHERE id IN (${ph})`).all(...ids);
+        const rows = await prisma.properties_apartments.findMany({ where: { id: { in: ids } } });
         for (const p of rows) propertyById.set(`properties_apartments:${p.id}`, p);
       }
       if (byTable.properties_houses.length) {
         const ids = uniq(byTable.properties_houses);
         const ph = ids.map(() => '?').join(',');
-        const rows = db.prepare(`SELECT * FROM properties_houses WHERE id IN (${ph})`).all(...ids);
+        const rows = await prisma.properties_houses.findMany({ where: { id: { in: ids } } });
         for (const p of rows) propertyById.set(`properties_houses:${p.id}`, p);
       }
       if (byTable.properties.length) {
         const ids = uniq(byTable.properties);
         const ph = ids.map(() => '?').join(',');
-        const rows = db.prepare(`SELECT * FROM properties WHERE id IN (${ph})`).all(...ids);
+        const rows = await prisma.properties.findMany({ where: { id: { in: ids } } });
         for (const p of rows) propertyById.set(`properties:${p.id}`, p);
       }
     } catch (e) {
@@ -11976,15 +11409,15 @@ app.get('/api/auction-winners/user/:id', (req, res) => {
 /**
  * POST /api/auction-winners/:id/pay-deposit - Оплатить депозит
  */
-app.post('/api/auction-winners/:id/pay-deposit', (req, res) => {
+app.post('/api/auction-winners/:id/pay-deposit', async (req, res) => {
   try {
     const winnerId = parseInt(req.params.id);
-    const db = getDatabase();
+    const prisma = getPrisma();
     
     console.log(`💳 Оплата депозита для выигранного объекта ${winnerId}`);
     
     // Получаем информацию о выигранном объекте
-    const winner = db.prepare('SELECT * FROM auction_winners WHERE id = ?').get(winnerId);
+    const winner = await prisma.auction_winners.findUnique({ where: { id: winnerId } });
     
     if (!winner) {
       return res.status(404).json({
@@ -12012,16 +11445,15 @@ app.post('/api/auction-winners/:id/pay-deposit', (req, res) => {
     }
     
     // Обновляем статус оплаты
-    const updateStmt = db.prepare(`
-      UPDATE auction_winners
-      SET deposit_paid = 1,
-          deposit_paid_at = datetime('now'),
-          status = 'deposit_paid',
-          updated_at = datetime('now')
-      WHERE id = ?
-    `);
-    
-    updateStmt.run(winnerId);
+    await prisma.auction_winners.update({
+      where: { id: winnerId },
+      data: {
+        deposit_paid: 1,
+        deposit_paid_at: new Date().toISOString(),
+        status: 'deposit_paid',
+        updated_at: new Date().toISOString(),
+      },
+    });
     
     console.log(`✅ Депозит оплачен для выигранного объекта ${winnerId}`);
     
@@ -12076,7 +11508,7 @@ app.use((err, req, res, next) => {
 
 // Запуск сервера
 // Health check endpoint для проверки доступности сервера
-app.get('/api/users/health', (req, res) => {
+app.get('/api/users/health', async (req, res) => {
   res.json({ status: 'ok', message: 'Server is running' })
 })
 
@@ -12085,7 +11517,7 @@ app.get('/api/users/health', (req, res) => {
 /**
  * GET /api/properties/calculator-options — города и районы для калькулятора цены
  */
-app.get('/api/properties/calculator-options', (req, res) => {
+app.get('/api/properties/calculator-options', async (req, res) => {
   res.json({
     success: true,
     data: {
@@ -12242,7 +11674,7 @@ async function sendNoBidsNotification(propertyId, property) {
     }
     
     // Получаем данные владельца
-    const owner = userQueries.getById(property.user_id);
+    const owner = await userQueries.getById(property.user_id);
     if (!owner) {
       console.warn(`⚠️ Владелец с ID ${property.user_id} не найден для объекта ${propertyId}`);
       return;
@@ -12253,7 +11685,7 @@ async function sendNoBidsNotification(propertyId, property) {
     
     // 1. Создаем уведомление в ЛК
     try {
-      notificationQueries.create({
+      await notificationQueries.create({
         user_id: property.user_id,
         type: 'no_bids_45_days', // Тип оставляем как есть для совместимости
         title: 'Рекомендация по снижению цены',
@@ -12349,36 +11781,10 @@ async function sendNoBidsNotification(propertyId, property) {
  * Если за это время не будет ставок, отправит уведомление
  * @param {number} propertyId - ID объекта
  */
-function startPropertyTimer(propertyId) {
+async function startPropertyTimer(propertyId) {
   // Отменяем предыдущий таймер, если он был
   cancelPropertyTimer(propertyId);
-  
-  // Получаем данные объекта
-  const db = getDatabase();
-  let property = null;
-  
-  // Ищем объект во всех таблицах
-  try {
-    property = db.prepare('SELECT * FROM properties_apartments WHERE id = ?').get(propertyId);
-  } catch (e) {
-    // Игнорируем ошибку
-  }
-  
-  if (!property) {
-    try {
-      property = db.prepare('SELECT * FROM properties_houses WHERE id = ?').get(propertyId);
-    } catch (e) {
-      // Игнорируем ошибку
-    }
-  }
-  
-  if (!property) {
-    try {
-      property = db.prepare('SELECT * FROM properties WHERE id = ?').get(propertyId);
-    } catch (e) {
-      // Игнорируем ошибку
-    }
-  }
+  const property = await propertyQueries.getById(propertyId);
   
   if (!property) {
     console.warn(`⚠️ Объект ${propertyId} не найден для запуска таймера`);
@@ -12404,10 +11810,10 @@ function startPropertyTimer(propertyId) {
   
   const timeoutId = setTimeout(async () => {
     // Проверяем, есть ли ставки для этого объекта
-    const db = getDatabase();
-    const bidsCount = db.prepare('SELECT COUNT(*) as count FROM bids WHERE property_id = ?').get(propertyId);
-    
-    if (bidsCount && bidsCount.count > 0) {
+    const bidsCount = await getPrisma().bids.count({
+      where: { property_id: Number(propertyId) },
+    });
+    if (bidsCount > 0) {
       console.log(`✅ Объект ${propertyId} имеет ставки, уведомление не отправляется`);
       propertyTimers.delete(propertyId);
       return;
@@ -12444,7 +11850,7 @@ function cancelPropertyTimer(propertyId) {
 async function checkPropertiesWithoutBids() {
   try {
     console.log('🔍 Начинаю проверку объектов без ставок за 5 минут (тестовый режим)...');
-    const db = getDatabase();
+    const prisma = getPrisma();
     
     // Вычисляем время 5 минут назад (для тестирования)
     const now = new Date();
@@ -12453,47 +11859,17 @@ async function checkPropertiesWithoutBids() {
     
     console.log(`📅 Проверяю объекты, выставленные до ${minutesAgo5.toISOString()}`);
     
-    // Проверяем существование новых таблиц
-    let useNewTables = false;
-    try {
-      db.prepare('SELECT 1 FROM properties_apartments LIMIT 1').get();
-      db.prepare('SELECT 1 FROM properties_houses LIMIT 1').get();
-      useNewTables = true;
-    } catch (e) {
-      useNewTables = false;
-    }
-    
-    let propertiesToCheck = [];
-    
-    if (useNewTables) {
-      // Получаем объекты из обеих таблиц
-      const apartments = db.prepare(`
-        SELECT id, user_id, title, auction_start_date, created_at, 
-               'apartment' as property_type
-        FROM properties_apartments
-        WHERE moderation_status = 'approved'
-          AND (auction_start_date IS NOT NULL OR created_at IS NOT NULL)
-      `).all();
-      
-      const houses = db.prepare(`
-        SELECT id, user_id, title, auction_start_date, created_at,
-               'house' as property_type
-        FROM properties_houses
-        WHERE moderation_status = 'approved'
-          AND (auction_start_date IS NOT NULL OR created_at IS NOT NULL)
-      `).all();
-      
-      propertiesToCheck = [...apartments, ...houses];
-    } else {
-      // Fallback на старую таблицу
-      propertiesToCheck = db.prepare(`
-        SELECT id, user_id, title, auction_start_date, created_at,
-               'property' as property_type
-        FROM properties
-        WHERE moderation_status = 'approved'
-          AND (auction_start_date IS NOT NULL OR created_at IS NOT NULL)
-      `).all();
-    }
+    const [apartments, houses] = await Promise.all([
+      prisma.properties_apartments.findMany({
+        where: { moderation_status: 'approved' },
+        select: { id: true, user_id: true, title: true, auction_start_date: true, created_at: true, property_type: true },
+      }),
+      prisma.properties_houses.findMany({
+        where: { moderation_status: 'approved' },
+        select: { id: true, user_id: true, title: true, auction_start_date: true, created_at: true, property_type: true },
+      }),
+    ]);
+    const propertiesToCheck = [...apartments, ...houses];
     
     console.log(`📊 Найдено объектов для проверки: ${propertiesToCheck.length}`);
     
@@ -12516,18 +11892,20 @@ async function checkPropertiesWithoutBids() {
         }
         
         // Проверяем, есть ли ставки для этого объекта
-        const bidsCount = db.prepare('SELECT COUNT(*) as count FROM bids WHERE property_id = ?').get(property.id);
-        if (bidsCount && bidsCount.count > 0) {
+        const bidsCount = await prisma.bids.count({ where: { property_id: Number(property.id) } });
+        if (bidsCount > 0) {
           continue; // Есть ставки, пропускаем
         }
         
         // Проверяем, не отправляли ли уже уведомление (по типу уведомления в БД)
         // Ищем уведомления с типом 'no_bids_45_days' для этого пользователя и объекта
-        const existingNotifications = db.prepare(`
-          SELECT id, data FROM notifications 
-          WHERE user_id = ? 
-            AND type = 'no_bids_45_days'
-        `).all(property.user_id);
+        const existingNotifications = await prisma.notifications.findMany({
+          where: {
+            user_id: Number(property.user_id),
+            type: 'no_bids_45_days',
+          },
+          select: { id: true, data: true },
+        });
         
         let alreadyNotified = false;
         for (const notif of existingNotifications) {
@@ -12554,7 +11932,7 @@ async function checkPropertiesWithoutBids() {
         }
         
         // Получаем данные владельца
-        const owner = userQueries.getById(property.user_id);
+        const owner = await userQueries.getById(property.user_id);
         if (!owner) {
           console.warn(`⚠️ Владелец с ID ${property.user_id} не найден для объекта ${property.id}`);
           continue;
@@ -12566,7 +11944,7 @@ async function checkPropertiesWithoutBids() {
         
         // 1. Создаем уведомление в ЛК
         try {
-          notificationQueries.create({
+          await notificationQueries.create({
             user_id: property.user_id,
             type: 'no_bids_45_days', // Тип оставляем как есть для совместимости
             title: 'Рекомендация по снижению цены',
@@ -12805,26 +12183,22 @@ server.on('error', (error) => {
 // Обработка ошибок при запуске
 process.on('uncaughtException', (error) => {
   console.error('❌ Необработанная ошибка:', error);
-  closeDatabase();
-  process.exit(1);
+  void closeDatabase().finally(() => process.exit(1));
 });
 
 process.on('unhandledRejection', (reason, promise) => {
   console.error('❌ Необработанное отклонение промиса:', reason);
-  closeDatabase();
-  process.exit(1);
+  void closeDatabase().finally(() => process.exit(1));
 });
 
 process.on('SIGINT', () => {
   console.log('\n🛑 Остановка сервера...');
-  closeDatabase();
-  process.exit(0);
+  void closeDatabase().finally(() => process.exit(0));
 });
 
 process.on('SIGTERM', () => {
   console.log('\n🛑 Остановка сервера...');
-  closeDatabase();
-  process.exit(0);
+  void closeDatabase().finally(() => process.exit(0));
 });
 
 // Обработчик для необработанных маршрутов (для диагностики)

@@ -1,9 +1,7 @@
-# Используем официальный образ Node.js
 FROM node:20-slim
 
-# Устанавливаем системные зависимости для better-sqlite3 и Puppeteer
-# Отключаем IPv6 для избежания проблем с NO_SOCKET и IPV6_NDISC_BAD_CODE на Railway
-RUN apt-get update && apt-get install -y \
+# Системные зависимости для нативных модулей и Puppeteer/WhatsApp Web.
+RUN apt-get update && apt-get install -y --no-install-recommends \
     python3 \
     make \
     g++ \
@@ -30,42 +28,28 @@ RUN apt-get update && apt-get install -y \
     libxau6 \
     libxdmcp6 \
     procps \
-    && rm -rf /var/lib/apt/lists/* \
-    && echo "net.ipv6.conf.all.disable_ipv6 = 1" >> /etc/sysctl.conf \
-    && echo "net.ipv6.conf.default.disable_ipv6 = 1" >> /etc/sysctl.conf
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
 
-# Устанавливаем рабочую директорию
 WORKDIR /app
 
-# Копируем package.json и package-lock.json
+# Сначала зависимости, чтобы использовать layer cache.
 COPY package*.json ./
+RUN npm ci --legacy-peer-deps
 
-# Устанавливаем зависимости
-# Используем npm install вместо npm ci для большей гибкости
-RUN npm install --legacy-peer-deps
-
-# Копируем остальные файлы
+# Затем исходники.
 COPY . .
 
-# Создаем .env.production из переменных окружения Railway перед сборкой
-# Railway автоматически делает переменные окружения доступными через process.env
+# Генерируем env для Vite-сборки (если переменные уже проброшены на этапе build).
 RUN node scripts/create-env.js || echo "⚠️ Не удалось создать .env.production, продолжаем сборку..."
 
-# Собираем проект для продакшена
-# Переменные окружения теперь доступны через .env.production и process.env
+# Собираем фронтенд.
 RUN npm run build
 
-# Открываем порт для Express-сервера
-# В production запускается ТОЛЬКО node server/server.js (не Vite dev-сервер!)
-# Railway передаёт PORT=8080 (или другой) в process.env, Express слушает на нём
+ENV NODE_ENV=production
+ENV NODE_OPTIONS=--dns-result-order=ipv4first
+
 EXPOSE 8080
 
-# Отключаем IPv6 для Node.js (избегаем проблем с NO_SOCKET и IPV6_NDISC_BAD_CODE)
-# Используем переменную окружения для принудительного использования IPv4
-ENV NODE_OPTIONS="--dns-result-order=ipv4first"
-
-# Устанавливаем NODE_ENV для production
-ENV NODE_ENV=production
-
-# Запускаем приложение в production режиме
-CMD ["node", "server/server.js"]
+# Для надёжного деплоя сначала применяем миграции Prisma, затем запускаем сервер.
+CMD ["sh", "-c", "npx prisma migrate deploy && node server/server.js"]

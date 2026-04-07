@@ -1,11 +1,11 @@
 import Stripe from 'stripe';
 import {
   stripeSubscriptionQueries,
-  getDatabase,
   propertyQueries,
   purchaseRequestQueries,
   userQueries,
 } from './database/database.js';
+import { getPrisma } from './database/prismaClient.js';
 
 /**
  * Stripe Checkout + webhook + синхронизация подписки Pro.
@@ -119,8 +119,7 @@ export async function processPropertyReservationPaidSession(stripe, session) {
     return { ok: false, error: 'bad_metadata' };
   }
 
-  const db = getDatabase();
-  const existing = db.prepare('SELECT 1 AS x FROM stripe_payments WHERE dedupe_key = ?').get(sess.id);
+  const existing = await stripeSubscriptionQueries.hasPaymentByDedupeKey(sess.id);
   if (existing) {
     return { ok: true, already: true };
   }
@@ -137,7 +136,7 @@ export async function processPropertyReservationPaidSession(stripe, session) {
     }
   }
 
-  const property = propertyQueries.getById(propertyId);
+  const property = await propertyQueries.getById(propertyId);
   if (!property) {
     return { ok: false, error: 'property_not_found' };
   }
@@ -148,7 +147,7 @@ export async function processPropertyReservationPaidSession(stripe, session) {
     return { ok: false, error: 'wallet_deposit_only_eur' };
   }
 
-  const buyer = userQueries.getById(userId);
+  const buyer = await userQueries.getById(userId);
   const buyerName = buyer
     ? `${buyer.first_name || ''} ${buyer.last_name || ''}`.trim().slice(0, 200) ||
       `Покупатель #${userId}`
@@ -161,7 +160,7 @@ export async function processPropertyReservationPaidSession(stripe, session) {
   let sellerEmail = null;
   let sellerPhone = null;
   if (sellerId) {
-    const seller = userQueries.getById(sellerId);
+    const seller = await userQueries.getById(sellerId);
     if (seller) {
       sellerName = `${seller.first_name || ''} ${seller.last_name || ''}`.trim() || null;
       sellerEmail = seller.email || null;
@@ -179,31 +178,18 @@ export async function processPropertyReservationPaidSession(stripe, session) {
   const customerId =
     typeof sess.customer === 'string' ? sess.customer : sess.customer?.id || null;
 
+  let createdRequestId;
   try {
-    db.transaction(() => {
-      if (useWallet) {
-        const urow = db.prepare('SELECT deposit_amount FROM users WHERE id = ?').get(userId);
-        const dep = urow != null ? parseFloat(urow.deposit_amount) || 0 : 0;
-        if (dep < WALLET_DEPOSIT_OFFSET_EUR) {
-          throw new Error('insufficient_deposit');
-        }
-        db.prepare(
-          'UPDATE users SET deposit_amount = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?'
-        ).run(dep - WALLET_DEPOSIT_OFFSET_EUR, userId);
-        try {
-          db.prepare(
-            `INSERT INTO transactions (user_id, type, amount, description, created_at) VALUES (?, 'withdraw', ?, ?, CURRENT_TIMESTAMP)`
-          ).run(
-            userId,
-            WALLET_DEPOSIT_OFFSET_EUR,
-            'Резерв 10%: списание 3000 € с депозита'
-          );
-        } catch (txErr) {
-          console.warn('[Stripe] transactions insert (wallet):', txErr?.message || txErr);
-        }
-      }
+    if (useWallet) {
+      await withdrawDepositWithLog(
+        userId,
+        WALLET_DEPOSIT_OFFSET_EUR,
+        'Резерв 10%: списание 3000 € с депозита'
+      );
+    }
 
-      const createResult = purchaseRequestQueries.create({
+    try {
+      const createResult = await purchaseRequestQueries.create({
         buyerId: String(userId),
         buyerName,
         buyerEmail,
@@ -224,49 +210,68 @@ export async function processPropertyReservationPaidSession(stripe, session) {
         status: 'processing',
       });
 
-      const requestId = createResult?.lastInsertRowid;
-      if (!requestId) {
+      createdRequestId = createResult?.lastInsertRowid;
+      if (!createdRequestId) {
         throw new Error('purchase_request_insert_failed');
       }
+    } catch (createErr) {
+      if (useWallet) {
+        try {
+          const prisma = getPrisma();
+          const u = await userQueries.getById(userId);
+          const dep = u?.deposit_amount != null ? parseFloat(String(u.deposit_amount)) || 0 : 0;
+          await prisma.users.update({
+            where: { id: Number(userId) },
+            data: { deposit_amount: dep + WALLET_DEPOSIT_OFFSET_EUR, updated_at: new Date() },
+          });
+        } catch (rollbackErr) {
+          console.error(
+            '[Stripe] wallet rollback after failed purchase_request:',
+            rollbackErr?.message || rollbackErr
+          );
+        }
+      }
+      throw createErr;
+    }
 
-      propertyQueries.reserve(propertyId, userId, requestId);
+    const stripeCents = sess.amount_total ?? expectedDepositCents;
+    const totalPaidTowardPrice =
+      stripeCents / 100 + (curLower === 'eur' ? walletEurApplied : 0);
+    const remainingToFull = Math.max(0, minSaleMajor - totalPaidTowardPrice);
 
-      const stripeCents = sess.amount_total ?? expectedDepositCents;
-      const totalPaidTowardPrice =
-        stripeCents / 100 + (curLower === 'eur' ? walletEurApplied : 0);
-      const remainingToFull = Math.max(0, minSaleMajor - totalPaidTowardPrice);
+    const billingPayload = {
+      type: 'property_reservation',
+      minimum_sale_price: minSaleMajor,
+      ten_percent: tenPctMajor,
+      paid_stripe_cents: stripeCents,
+      wallet_eur_applied: walletEurApplied,
+      currency: curLower,
+      purchase_request_id: createdRequestId,
+      property_id: propertyId,
+      total_paid_toward_price: totalPaidTowardPrice,
+      remaining_to_full_purchase: remainingToFull,
+    };
 
-      const billingPayload = {
-        type: 'property_reservation',
-        minimum_sale_price: minSaleMajor,
-        ten_percent: tenPctMajor,
-        paid_stripe_cents: stripeCents,
-        wallet_eur_applied: walletEurApplied,
-        currency: curLower,
-        purchase_request_id: requestId,
-        property_id: propertyId,
-        total_paid_toward_price: totalPaidTowardPrice,
-        remaining_to_full_purchase: remainingToFull,
-      };
+    await stripeSubscriptionQueries.insertPayment({
+      dedupe_key: sess.id,
+      user_id: userId,
+      stripe_customer_id: customerId,
+      stripe_subscription_id: null,
+      stripe_invoice_id: null,
+      stripe_checkout_session_id: sess.id,
+      amount_cents: stripeCents,
+      currency: curLower,
+      status: 'paid',
+      plan_key: 'property_reservation',
+      billing_reason: JSON.stringify(billingPayload),
+      paid_at: new Date().toISOString(),
+      period_start: null,
+      period_end: null,
+      customer_email: sess.customer_details?.email || sess.customer_email || buyerEmail,
+    });
 
-      stripeSubscriptionQueries.insertPayment({
-        dedupe_key: sess.id,
-        user_id: userId,
-        stripe_customer_id: customerId,
-        stripe_subscription_id: null,
-        stripe_invoice_id: null,
-        stripe_checkout_session_id: sess.id,
-        amount_cents: stripeCents,
-        currency: curLower,
-        status: 'paid',
-        plan_key: 'property_reservation',
-        billing_reason: JSON.stringify(billingPayload),
-        paid_at: new Date().toISOString(),
-        period_start: null,
-        period_end: null,
-        customer_email: sess.customer_details?.email || sess.customer_email || buyerEmail,
-      });
-    })();
+    await propertyQueries.reserve(propertyId, userId, createdRequestId);
+
     return { ok: true };
   } catch (e) {
     console.error('[Stripe] processPropertyReservationPaidSession:', e?.message || e);
@@ -296,24 +301,34 @@ async function resolveDepositLinePriceId(stripe, configured) {
   return raw;
 }
 
-function ensureWalletDepositCreditsTable(db) {
-  db.exec(`
-    CREATE TABLE IF NOT EXISTS stripe_wallet_deposit_credits (
-      dedupe_key TEXT PRIMARY KEY,
-      user_id INTEGER NOT NULL,
-      amount_eur REAL NOT NULL,
-      stripe_invoice_id TEXT,
-      stripe_checkout_session_id TEXT,
-      created_at TEXT DEFAULT (datetime('now'))
-    );
-    CREATE INDEX IF NOT EXISTS idx_stripe_wallet_deposit_user ON stripe_wallet_deposit_credits(user_id);
-  `);
+async function withdrawDepositWithLog(userId, amountEur, description) {
+  const prisma = getPrisma();
+  return prisma.$transaction(async (tx) => {
+    const u = await tx.users.findUnique({
+      where: { id: Number(userId) },
+      select: { id: true, deposit_amount: true },
+    });
+    const dep = u?.deposit_amount != null ? parseFloat(String(u.deposit_amount)) || 0 : 0;
+    if (dep < amountEur) throw new Error('insufficient_deposit');
+    await tx.users.update({
+      where: { id: Number(userId) },
+      data: { deposit_amount: dep - amountEur, updated_at: new Date() },
+    });
+    try {
+      await tx.transactions.create({
+        data: { user_id: Number(userId), type: 'withdraw', amount: amountEur, description },
+      });
+    } catch (txErr) {
+      console.warn('[Stripe] transactions insert (wallet):', txErr?.message || txErr);
+    }
+    return { ok: true };
+  });
 }
 
 /**
  * Идемпотентное зачисление депозита по оплаченному инвойсу подписки Deposit (metadata checkout_purpose=wallet_deposit).
  */
-export function creditWalletDepositFromPaidInvoice(invoice, subscription) {
+export async function creditWalletDepositFromPaidInvoice(invoice, subscription) {
   if (invoice.status !== 'paid' || !invoice.amount_paid) {
     return { ok: false, error: 'not_paid' };
   }
@@ -324,9 +339,6 @@ export function creditWalletDepositFromPaidInvoice(invoice, subscription) {
   if (!Number.isFinite(userId)) {
     return { ok: false, error: 'no_app_user_id' };
   }
-
-  const db = getDatabase();
-  ensureWalletDepositCreditsTable(db);
 
   const dedupeKey = invoice.id;
   const amountEur = invoice.amount_paid / 100;
@@ -339,58 +351,55 @@ export function creditWalletDepositFromPaidInvoice(invoice, subscription) {
     : new Date().toISOString();
 
   try {
-    const run = db.transaction(() => {
-      const ins = db.prepare(`
-        INSERT OR IGNORE INTO stripe_wallet_deposit_credits (dedupe_key, user_id, amount_eur, stripe_invoice_id, stripe_checkout_session_id)
-        VALUES (?, ?, ?, ?, ?)
-      `);
-      const r = ins.run(dedupeKey, userId, amountEur, invoice.id, null);
-      const isNewCredit = r.changes > 0;
-
-      if (isNewCredit) {
-        const user = db.prepare('SELECT deposit_amount FROM users WHERE id = ?').get(userId);
-        if (!user) {
-          throw new Error('user_not_found');
-        }
-        const cur = user.deposit_amount != null ? parseFloat(user.deposit_amount) : 0;
-        db.prepare('UPDATE users SET deposit_amount = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?').run(
-          cur + amountEur,
-          userId
-        );
-        try {
-          db.prepare(
-            `INSERT INTO transactions (user_id, type, amount, description, created_at) VALUES (?, 'deposit', ?, ?, CURRENT_TIMESTAMP)`
-          ).run(userId, amountEur, 'Пополнение депозита (Stripe)');
-        } catch (e) {
-          console.warn('[Stripe] transactions insert:', e.message);
-        }
-      }
-
-      stripeSubscriptionQueries.insertPayment({
-        dedupe_key: invoice.id,
-        user_id: userId,
-        stripe_customer_id: customerId,
-        stripe_subscription_id: subscriptionId,
-        stripe_invoice_id: invoice.id,
-        stripe_checkout_session_id: null,
-        amount_cents: invoice.amount_paid,
-        currency: (invoice.currency || 'eur').toLowerCase(),
-        status: 'paid',
-        plan_key: 'deposit',
-        billing_reason: invoice.billing_reason || 'wallet_deposit',
-        paid_at: paidAt,
-        period_start: isoFromUnix(invoice.period_start),
-        period_end: isoFromUnix(invoice.period_end),
-        customer_email: invoice.customer_email || null,
-      });
-
-      if (!isNewCredit) {
-        return { already: true };
-      }
-      return { credited: true, amountEur };
+    const insertRes = await stripeSubscriptionQueries.insertPayment({
+      dedupe_key: invoice.id,
+      user_id: userId,
+      stripe_customer_id: customerId,
+      stripe_subscription_id: subscriptionId,
+      stripe_invoice_id: invoice.id,
+      stripe_checkout_session_id: null,
+      amount_cents: invoice.amount_paid,
+      currency: (invoice.currency || 'eur').toLowerCase(),
+      status: 'paid',
+      plan_key: 'deposit',
+      billing_reason: invoice.billing_reason || 'wallet_deposit',
+      paid_at: paidAt,
+      period_start: isoFromUnix(invoice.period_start),
+      period_end: isoFromUnix(invoice.period_end),
+      customer_email: invoice.customer_email || null,
     });
-    const out = run();
-    return { ok: true, ...out };
+    const isNewCredit = (insertRes?.changes || 0) > 0;
+    if (!isNewCredit) {
+      return { ok: true, already: true };
+    }
+
+    const prisma = getPrisma();
+    await prisma.$transaction(async (tx) => {
+      const user = await tx.users.findUnique({
+        where: { id: Number(userId) },
+        select: { id: true, deposit_amount: true },
+      });
+      if (!user) throw new Error('user_not_found');
+      const cur = user.deposit_amount != null ? parseFloat(String(user.deposit_amount)) : 0;
+      await tx.users.update({
+        where: { id: Number(userId) },
+        data: { deposit_amount: cur + amountEur, updated_at: new Date() },
+      });
+      try {
+        await tx.transactions.create({
+          data: {
+            user_id: Number(userId),
+            type: 'deposit',
+            amount: amountEur,
+            description: 'Пополнение депозита (Stripe)',
+          },
+        });
+      } catch (e) {
+        console.warn('[Stripe] transactions insert:', e.message);
+      }
+    });
+
+    return { ok: true, credited: true, amountEur };
   } catch (e) {
     console.error('[Stripe] creditWalletDeposit:', e?.message || e);
     return { ok: false, error: e.message || 'credit_failed' };
@@ -421,7 +430,7 @@ export async function confirmWalletDepositSession(stripe, sessionId, expectedUse
     return { ok: false, error: 'no_subscription' };
   }
   const sub = await stripe.subscriptions.retrieve(subId);
-  return creditWalletDepositFromPaidInvoice(inv, sub);
+  return await creditWalletDepositFromPaidInvoice(inv, sub);
 }
 
 /**
@@ -463,7 +472,7 @@ export async function syncCheckoutSessionToDatabase(stripe, sessionId) {
     invoiceId = invList.data.find((i) => i.status === 'paid')?.id || invList.data[0]?.id || null;
   }
 
-  stripeSubscriptionQueries.upsertState({
+  await stripeSubscriptionQueries.upsertState({
     user_id: uid,
     stripe_customer_id: customerId,
     stripe_subscription_id: subscriptionId,
@@ -479,7 +488,7 @@ export async function syncCheckoutSessionToDatabase(stripe, sessionId) {
   const dedupeKey = invoiceId || `cs_${session.id}`;
   const paidAt = session.status === 'complete' ? new Date().toISOString() : new Date().toISOString();
 
-  stripeSubscriptionQueries.insertPayment({
+  await stripeSubscriptionQueries.insertPayment({
     dedupe_key: dedupeKey,
     user_id: uid,
     stripe_customer_id: customerId,
@@ -509,7 +518,7 @@ async function persistInvoicePaid(stripe, invoice) {
 
   const sub = await stripe.subscriptions.retrieve(subscriptionId);
   if (sub.metadata?.checkout_purpose === 'wallet_deposit') {
-    const r = creditWalletDepositFromPaidInvoice(invoice, sub);
+    const r = await creditWalletDepositFromPaidInvoice(invoice, sub);
     if (r.ok && r.credited) {
       console.log(
         `[Stripe] Депозит зачислён (invoice.paid): user ${sub.metadata?.app_user_id}, +${r.amountEur} EUR`
@@ -518,7 +527,7 @@ async function persistInvoicePaid(stripe, invoice) {
     return;
   }
 
-  let userId = stripeSubscriptionQueries.getUserIdBySubscriptionId(subscriptionId);
+  let userId = await stripeSubscriptionQueries.getUserIdBySubscriptionId(subscriptionId);
   const customerId = typeof invoice.customer === 'string' ? invoice.customer : invoice.customer?.id;
 
   if (!userId) {
@@ -527,7 +536,7 @@ async function persistInvoicePaid(stripe, invoice) {
       console.warn('[Stripe] invoice.paid: не найден user_id для', subscriptionId);
       return;
     }
-    stripeSubscriptionQueries.upsertState({
+    await stripeSubscriptionQueries.upsertState({
       user_id: userId,
       stripe_customer_id: customerId,
       stripe_subscription_id: subscriptionId,
@@ -539,7 +548,7 @@ async function persistInvoicePaid(stripe, invoice) {
     });
   }
 
-  stripeSubscriptionQueries.insertPayment({
+  await stripeSubscriptionQueries.insertPayment({
     dedupe_key: invoiceId,
     user_id: userId,
     stripe_customer_id: customerId,
@@ -565,7 +574,7 @@ async function handleSubscriptionUpdated(subscription) {
     return;
   }
   const subId = subscription.id;
-  let userId = stripeSubscriptionQueries.getUserIdBySubscriptionId(subId);
+  let userId = await stripeSubscriptionQueries.getUserIdBySubscriptionId(subId);
   if (!userId) {
     userId = parseInt(subscription.metadata?.app_user_id || '', 10);
   }
@@ -574,7 +583,7 @@ async function handleSubscriptionUpdated(subscription) {
   const customerId =
     typeof subscription.customer === 'string' ? subscription.customer : subscription.customer?.id;
 
-  stripeSubscriptionQueries.upsertState({
+  await stripeSubscriptionQueries.upsertState({
     user_id: userId,
     stripe_customer_id: customerId,
     stripe_subscription_id: subId,
@@ -776,13 +785,12 @@ export function registerStripeBillingRoutes(app) {
         });
       }
 
-      const db = getDatabase();
-      const property = propertyQueries.getById(propertyId, propertyType || null);
+      const property = await propertyQueries.getById(propertyId, propertyType || null);
       if (!property) {
         return res.status(404).json({ success: false, error: 'Объявление не найдено' });
       }
 
-      const resInfo = propertyQueries.isReserved(propertyId);
+      const resInfo = await propertyQueries.isReserved(propertyId);
       if (resInfo.isReserved && resInfo.reservedBy != null && Number(resInfo.reservedBy) !== userId) {
         return res.status(409).json({
           success: false,
@@ -817,7 +825,7 @@ export function registerStripeBillingRoutes(app) {
         });
       }
 
-      const buyerRow = userQueries.getById(userId);
+      const buyerRow = await userQueries.getById(userId);
       if (useWalletDeposit) {
         const dep = buyerRow != null ? parseFloat(buyerRow.deposit_amount) || 0 : 0;
         if (dep < WALLET_DEPOSIT_OFFSET_EUR) {
@@ -996,14 +1004,14 @@ export function registerStripeBillingRoutes(app) {
   });
 
   /** Профиль: текущая подписка + платежи */
-  app.get('/api/users/:userId/subscription-billing', (req, res) => {
+  app.get('/api/users/:userId/subscription-billing', async (req, res) => {
     try {
       const userId = parseInt(req.params.userId, 10);
       if (!Number.isFinite(userId)) {
         return res.status(400).json({ success: false, error: 'Некорректный userId' });
       }
-      const state = stripeSubscriptionQueries.getStateByUserId(userId);
-      const payments = stripeSubscriptionQueries.listPaymentsByUserId(userId, 50);
+      const state = await stripeSubscriptionQueries.getStateByUserId(userId);
+      const payments = await stripeSubscriptionQueries.listPaymentsByUserId(userId, 50);
       return res.json({
         success: true,
         data: {
@@ -1018,18 +1026,13 @@ export function registerStripeBillingRoutes(app) {
   });
 
   /** Профиль: резервы 10% (мои покупки) */
-  app.get('/api/users/:userId/reservation-purchases', (req, res) => {
+  app.get('/api/users/:userId/reservation-purchases', async (req, res) => {
     try {
       const userId = parseInt(req.params.userId, 10);
       if (!Number.isFinite(userId)) {
         return res.status(400).json({ success: false, error: 'Некорректный userId' });
       }
-      const db = getDatabase();
-      const rows = db
-        .prepare(
-          `SELECT * FROM stripe_payments WHERE user_id = ? AND plan_key = 'property_reservation' ORDER BY datetime(paid_at) DESC LIMIT 100`
-        )
-        .all(userId);
+      const rows = await stripeSubscriptionQueries.listReservationPurchasesByUserId(userId, 100);
       const items = rows.map((row) => {
         let billing = {};
         try {
@@ -1047,18 +1050,9 @@ export function registerStripeBillingRoutes(app) {
   });
 
   /** Админка: резервы 10% с данными покупателя */
-  app.get('/api/admin/reservation-purchases', (req, res) => {
+  app.get('/api/admin/reservation-purchases', async (req, res) => {
     try {
-      const db = getDatabase();
-      const rows = db
-        .prepare(
-          `SELECT p.*, u.first_name, u.last_name, u.email, u.phone_number
-           FROM stripe_payments p
-           LEFT JOIN users u ON u.id = p.user_id
-           WHERE p.plan_key = 'property_reservation'
-           ORDER BY datetime(p.paid_at) DESC LIMIT 500`
-        )
-        .all();
+      const rows = await stripeSubscriptionQueries.listAllReservationPurchasesWithUsers(500);
       const items = rows.map((row) => {
         let billing = {};
         try {
@@ -1076,10 +1070,10 @@ export function registerStripeBillingRoutes(app) {
   });
 
   /** Админка: все платежи */
-  app.get('/api/admin/stripe-payments', (req, res) => {
+  app.get('/api/admin/stripe-payments', async (req, res) => {
     try {
-      const rows = stripeSubscriptionQueries.listAllPaymentsWithUsers(2000);
-      const total = stripeSubscriptionQueries.countPayments();
+      const rows = await stripeSubscriptionQueries.listAllPaymentsWithUsers(2000);
+      const total = await stripeSubscriptionQueries.countPayments();
       return res.json({
         success: true,
         data: {
