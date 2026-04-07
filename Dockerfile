@@ -56,5 +56,5 @@ ENV NODE_OPTIONS=--dns-result-order=ipv4first
 
 EXPOSE 8080
 
-# Для надёжного деплоя сначала применяем миграции Prisma, затем запускаем сервер.
-CMD ["sh", "-c", "npx prisma migrate deploy && node server/server.js"]
+# Единая точка запуска: prestart (prisma generate + retry migrate), затем server.
+CMD ["npm", "start"]
