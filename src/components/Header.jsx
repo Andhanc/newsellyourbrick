@@ -8,35 +8,22 @@ import {
   FiChevronDown,
   FiX,
   FiUser,
+  FiGlobe,
 } from 'react-icons/fi'
-import { IoLocationOutline } from 'react-icons/io5'
 import LoginModal from './LoginModal'
 import { getUserData, clearUserData } from '../services/authService'
 import { getApiBaseUrl } from '../utils/apiConfig'
 import { navigateToWallet } from '../utils/walletNavigation'
 import '../pages/MainPage.css'
 import { MenuToggleIcon } from '@/components/ui/menu-toggle-icon'
-
-const resortLocations = [
-  'Costa Adeje, Tenerife',
-  'Playa de las Américas, Tenerife',
-  'Los Cristianos, Tenerife',
-  'Puerto de la Cruz, Tenerife',
-  'Santa Cruz de Tenerife, Tenerife',
-  'La Laguna, Tenerife',
-  'San Cristóbal de La Laguna, Tenerife',
-  'Golf del Sur, Tenerife',
-  'Callao Salvaje, Tenerife',
-  'El Médano, Tenerife',
-]
+import { UI_LANGUAGES } from '../constants/uiLanguages'
 
 const Header = () => {
   const navigate = useNavigate()
   const location = useLocation()
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const { user, isLoaded: userLoaded } = useUser()
-  const [selectedLocation, setSelectedLocation] = useState(resortLocations[0])
-  const [isLocationOpen, setIsLocationOpen] = useState(false)
+  const [isLanguageOpen, setIsLanguageOpen] = useState(false)
   const [isNotificationOpen, setIsNotificationOpen] = useState(false)
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isMenuClosing, setIsMenuClosing] = useState(false)
@@ -49,7 +36,7 @@ const Header = () => {
   const [isAIChatOpen, setIsAIChatOpen] = useState(false) // Состояние AI чата для страницы аукцион
   const [notifications, setNotifications] = useState([])
   const [notificationsLoading, setNotificationsLoading] = useState(false)
-  const locationRef = useRef(null)
+  const languageDropdownRef = useRef(null)
   const notificationRef = useRef(null)
   const menuRef = useRef(null)
   const searchInputRef = useRef(null)
@@ -57,8 +44,8 @@ const Header = () => {
 
   useEffect(() => {
     function handleClickOutside(event) {
-      if (locationRef.current && !locationRef.current.contains(event.target)) {
-        setIsLocationOpen(false)
+      if (languageDropdownRef.current && !languageDropdownRef.current.contains(event.target)) {
+        setIsLanguageOpen(false)
       }
       if (notificationRef.current && !notificationRef.current.contains(event.target)) {
         setIsNotificationOpen(false)
@@ -255,9 +242,17 @@ const Header = () => {
     }
   }, [user, userLoaded, location.pathname]) // Обновляем при изменении маршрута
 
-  const handleLocationSelect = (location) => {
-    setSelectedLocation(location)
-    setIsLocationOpen(false)
+  const headerLangCode = (i18n.language || 'ru').split('-')[0]
+  const currentHeaderLanguage =
+    UI_LANGUAGES.find((lang) => lang.code === headerLangCode) || UI_LANGUAGES[0]
+
+  const handleHeaderLanguageSelect = async (langCode) => {
+    try {
+      await i18n.changeLanguage(langCode)
+    } catch (e) {
+      console.error('Header: language change failed', e)
+    }
+    setIsLanguageOpen(false)
   }
 
   // Определение страниц для поиска
@@ -533,37 +528,38 @@ const Header = () => {
           <div className="new-header__left">
             <div className="new-header__location">
               <span className="new-header__location-icon">
-                <IoLocationOutline size={20} />
+                <FiGlobe size={20} aria-hidden />
               </span>
-              <div className="new-header__location-info" ref={locationRef}>
-                <span className="new-header__location-label">{t('location')}</span>
+              <div className="new-header__location-info" ref={languageDropdownRef}>
+                <span className="new-header__location-label">{t('headerLanguage')}</span>
                 <button
                   type="button"
                   className="new-header__location-select"
-                  onClick={() => setIsLocationOpen((prev) => !prev)}
+                  onClick={() => setIsLanguageOpen((prev) => !prev)}
                   aria-haspopup="listbox"
-                  aria-expanded={isLocationOpen}
+                  aria-expanded={isLanguageOpen}
+                  aria-label={t('selectLanguageAria')}
                 >
-                  <span className="new-header__location-value">{selectedLocation}</span>
+                  <span className="new-header__location-value">{currentHeaderLanguage.name}</span>
                   <FiChevronDown
                     size={16}
                     className={`new-header__location-select-icon ${
-                      isLocationOpen ? 'new-header__location-select-icon--open' : ''
+                      isLanguageOpen ? 'new-header__location-select-icon--open' : ''
                     }`}
                   />
                 </button>
-                {isLocationOpen && (
+                {isLanguageOpen && (
                   <div className="new-header__location-dropdown">
-                    {resortLocations.map((location) => (
+                    {UI_LANGUAGES.map((lang) => (
                       <button
                         type="button"
                         className={`new-header__location-option ${
-                          location === selectedLocation ? 'new-header__location-option--active' : ''
+                          lang.code === headerLangCode ? 'new-header__location-option--active' : ''
                         }`}
-                        key={location}
-                        onClick={() => handleLocationSelect(location)}
+                        key={lang.code}
+                        onClick={() => handleHeaderLanguageSelect(lang.code)}
                       >
-                        {location}
+                        {lang.name}
                       </button>
                     ))}
                   </div>

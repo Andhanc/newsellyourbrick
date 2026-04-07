@@ -2,7 +2,7 @@
 .footer {
   background: #ffffff;
   color: #6b7280;
-  padding: 40px 0 5px;
+  padding: 40px 0 56px;
   margin-top: 40px;
   font-family: 'Montserrat', sans-serif;
   border-top: 1px solid #e5e7eb;
@@ -17,6 +17,60 @@
   padding: 0 30px;
   box-sizing: border-box;
   width: 100%;
+}
+
+/* Одна полоса: слева бренд + навигация + QR, справа сторы и язык */
+.footer__upper {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 32px 80px;
+  padding-top: 8px;
+  border-top: 1px solid #e5e7eb;
+  margin-top: 4px;
+}
+
+.footer__upper-left {
+  flex: 1 1 auto;
+  min-width: min(100%, 240px);
+}
+
+.footer__upper-left .footer__brand {
+  margin-bottom: 16px;
+}
+
+.footer__nav-qr {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 24px 28px;
+}
+
+.footer__menus-inner {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.footer__nav-qr .footer__menu {
+  margin-bottom: 0;
+}
+
+.footer__upper-left .footer__menu.footer__menu--desktop {
+  justify-content: flex-start;
+}
+
+.footer__upper-right {
+  flex: 0 0 auto;
+  margin-left: auto;
+  padding-left: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.footer__upper-right .footer__store-buttons {
+  justify-content: flex-end;
 }
 
 /* Верхнее меню */
@@ -192,13 +246,13 @@ body.admin-panel-active .footer .footer__brand-text {
   text-decoration: underline;
 }
 
-/* QR-код WhatsApp */
+/* QR-код WhatsApp (рядом с навигацией) */
 .footer__whatsapp-qr {
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  margin-left: 20px;
+  margin-left: 0;
 }
 
 
@@ -445,7 +499,7 @@ body.admin-panel-active .footer .footer__brand-text {
 
 /* Компактный футер для админ-панели */
 body.admin-panel-active .footer {
-  padding: 24px 0 5px;
+  padding: 24px 0 40px;
   margin-top: 20px;
 }
 
@@ -506,7 +560,8 @@ body.admin-panel-active .footer .footer__bottom-wrapper {
   width: 100%;
 }
 
-body.admin-panel-active .footer .footer__bottom {
+body.admin-panel-active .footer .footer__bottom,
+body.admin-panel-active .footer .footer__upper {
   gap: 8px;
   flex-wrap: wrap;
   justify-content: flex-start;
@@ -662,7 +717,8 @@ body.admin-panel-active .footer .footer__store-buttons {
   flex-wrap: wrap;
 }
 
-body.admin-panel-active .footer .footer__bottom {
+body.admin-panel-active .footer .footer__bottom,
+body.admin-panel-active .footer .footer__upper {
   align-items: center;
 }
 
@@ -687,6 +743,40 @@ body.admin-panel-active .footer .footer__bottom {
 @media (max-width: 767px) {
   .footer__container {
     padding: 0 18px;
+  }
+
+  .footer__upper {
+    flex-direction: column;
+    align-items: center;
+    gap: 36px;
+  }
+
+  .footer__upper-left {
+    width: 100%;
+    align-items: center;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .footer__nav-qr {
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+  }
+
+  .footer__menus-inner {
+    width: 100%;
+  }
+
+  .footer__upper-right {
+    margin-left: 0;
+    padding-left: 0;
+    width: 100%;
+    justify-content: center;
+  }
+
+  .footer__upper-right .footer__store-buttons {
+    justify-content: center;
   }
 
   /* Десктопное меню (5 колонок) — скрываем на мобильной */
@@ -833,7 +923,7 @@ body.admin-panel-active .footer .footer__bottom {
   
   /* Компактный футер в админ-панели на мобильных */
   body.admin-panel-active .footer {
-    padding: 20px 0 5px;
+    padding: 20px 0 32px;
   }
   
   body.admin-panel-active .footer .footer__container {
@@ -865,7 +955,8 @@ body.admin-panel-active .footer .footer__bottom {
   }
 
   /* Убираем большие смещения влево, чтобы футер не выходил за экран */
-  body.admin-panel-active .footer .footer__bottom {
+  body.admin-panel-active .footer .footer__bottom,
+  body.admin-panel-active .footer .footer__upper {
     margin-left: 0;
   }
 
@@ -948,5 +1039,64 @@ body.admin-panel-active .footer .footer__bottom {
 
 #site-footer.footer .footer__store-btn .footer__store-icon--whatsapp {
   color: #25d366 !important;
+}
+
+.footer-store-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  box-sizing: border-box;
+}
+
+.footer-store-modal {
+  position: relative;
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 36px 40px 32px;
+  max-width: 320px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.15);
+  box-sizing: border-box;
+}
+
+.footer-store-modal__close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: #6b7280;
+  padding: 8px;
+  border-radius: 8px;
+  line-height: 0;
+}
+
+.footer-store-modal__close:hover {
+  background: #f3f4f6;
+  color: #111827;
+}
+
+.footer-store-modal__icon {
+  font-size: 56px;
+  width: 56px;
+  height: 56px;
+  margin: 0 auto 16px;
+  color: #9ca3af;
+  display: block;
+}
+
+.footer-store-modal__title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: #111827;
+  font-family: 'Montserrat', sans-serif;
 }
 

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import ScrollExpandMedia from '@/components/ui/scroll-expansion-hero';
 import { Timeline } from '@/components/ui/timeline';
 import TeamShowcase from '@/components/ui/team-showcase';
@@ -92,7 +93,7 @@ const MediaContent = () => {
   const currentMedia = sampleMediaContent.video;
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-4xl mx-auto" id="about-intro">
       <h2 className="text-3xl font-bold mb-6 text-black dark:text-white">
         О нас
       </h2>
@@ -106,15 +107,31 @@ const MediaContent = () => {
   );
 };
 
+const ABOUT_HASH_TO_ID = {
+  '#about-intro': 'about-intro',
+  '#about-for-investors': 'about-for-investors',
+  '#about-team': 'about-team',
+};
+
 const About = () => {
   const mediaType = 'video';
   const currentMedia = sampleMediaContent.video;
+  const location = useLocation();
 
   useEffect(() => {
     scrollMainTo(0, 0);
     const resetEvent = new Event('resetSection');
     window.dispatchEvent(resetEvent);
   }, []);
+
+  useEffect(() => {
+    const id = ABOUT_HASH_TO_ID[location.hash];
+    if (!id) return;
+    const timer = setTimeout(() => {
+      document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 450);
+    return () => clearTimeout(timer);
+  }, [location.pathname, location.hash]);
 
   return (
     <div className="min-h-screen">
@@ -131,10 +148,10 @@ const About = () => {
       >
         <MediaContent />
       </ScrollExpandMedia>
-      <div className="w-full">
+      <div className="w-full" id="about-for-investors">
         <Timeline data={timelineData} />
       </div>
-      <section className="team-section">
+      <section className="team-section" id="about-team">
         <div className="team-section__inner">
           <h2 className="team-section__title">
             Наша команда

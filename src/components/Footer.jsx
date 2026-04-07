@@ -1,31 +1,28 @@
-import { useState, useRef, useEffect } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useState, useEffect, useCallback, useRef } from 'react'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { FiChevronDown, FiCheck } from 'react-icons/fi'
 import { FaApple, FaWhatsapp } from 'react-icons/fa'
+import { MdSentimentDissatisfied } from 'react-icons/md'
+import { FiX, FiChevronDown, FiCheck } from 'react-icons/fi'
 import whatsappQR from '../../6019556644745841501.png'
 import './Footer.css'
 import { scrollMainTo } from '../utils/mainScroll'
+import { navigateToWallet } from '../utils/walletNavigation'
+import { UI_LANGUAGES } from '../constants/uiLanguages'
+
+const WHATSAPP_HREF = 'https://wa.me/447700183959'
 
 const Footer = () => {
   const { t, i18n } = useTranslation()
   const navigate = useNavigate()
-  const [isLanguageDropdownOpen, setIsLanguageDropdownOpen] = useState(false)
+  const location = useLocation()
   const languageDropdownRef = useRef(null)
-  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
+  const [storeComingSoonOpen, setStoreComingSoonOpen] = useState(false)
+  const [isLanguageDropdownOpen, setIsLanguageDropdownOpen] = useState(false)
 
-  const scrollToTop = () => {
-    scrollMainTo(0, 0, 'instant')
-  }
-
-  const languages = [
-    { code: 'ru', name: 'Русский', flagClass: 'footer__flag--ru' },
-    { code: 'en', name: 'English', flagClass: 'footer__flag--gb' },
-    { code: 'de', name: 'Deutsch', flagClass: 'footer__flag--de' },
-    { code: 'es', name: 'Español', flagClass: 'footer__flag--es' },
-    { code: 'fr', name: 'Français', flagClass: 'footer__flag--fr' },
-    { code: 'sv', name: 'Svenska', flagClass: 'footer__flag--sv' },
-  ]
+  const currentLanguage =
+    UI_LANGUAGES.find((lang) => lang.code === (i18n.language || 'ru').split('-')[0]) ||
+    UI_LANGUAGES[0]
 
   const handleLanguageChange = async (langCode) => {
     try {
@@ -36,122 +33,140 @@ const Footer = () => {
     }
   }
 
-  const currentLanguage = languages.find(lang => lang.code === i18n.language) || languages[0]
-
-  const handleDownloadApp = (platform) => {
-    if (platform === 'android') {
-      window.open('https://play.google.com/store/apps', '_blank')
-    } else if (platform === 'ios') {
-      window.open('https://apps.apple.com/', '_blank')
-    }
+  const scrollToTop = () => {
+    scrollMainTo(0, 0, 'instant')
   }
 
-  // Закрытие выпадающего списка при клике вне его
+  const openStoreComingSoon = () => setStoreComingSoonOpen(true)
+  const closeStoreComingSoon = useCallback(() => setStoreComingSoonOpen(false), [])
+
+  useEffect(() => {
+    if (!storeComingSoonOpen) return
+    const onKey = (e) => {
+      if (e.key === 'Escape') closeStoreComingSoon()
+    }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [storeComingSoonOpen, closeStoreComingSoon])
+
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (languageDropdownRef.current && !languageDropdownRef.current.contains(event.target)) {
         setIsLanguageDropdownOpen(false)
       }
     }
-
     if (isLanguageDropdownOpen) {
       document.addEventListener('mousedown', handleClickOutside)
     }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside)
-    }
+    return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [isLanguageDropdownOpen])
+
+  const goWallet = () => {
+    scrollToTop()
+    navigateToWallet(navigate, location.pathname)
+  }
+
+  /** @type {Array<Array<{ to?: string; onClick?: () => void; label: string }>>} */
+  const desktopColumns = [
+    [
+      { to: '/', label: t('home') },
+      { to: '/auction', label: t('auction') },
+      { to: '/auction?filter=buy_now', label: t('buyNowSectionTitle') },
+      { to: '/shares', label: t('shares') },
+    ],
+    [
+      { to: '/debts', label: t('debtsTitle') },
+      { to: '/favorites', label: t('footerLiked') },
+      { to: '/compare', label: t('footerCompareObjects') },
+      { to: '/chat?manager=1', label: t('chat') },
+    ],
+    [
+      { to: '/map', label: t('mapLink') },
+      { to: '/bonuses', label: t('bonuses') },
+      { to: '/calculator', label: t('calculator') },
+      { to: '/about#about-intro', label: t('aboutUs') },
+    ],
+    [
+      { onClick: goWallet, label: t('wallet') },
+      { to: '/profile', label: t('profile') },
+      { to: '/about#about-for-investors', label: t('footerForInvestors') },
+      { to: '/about#about-team', label: t('footerOurTeam') },
+    ],
+    [
+      { to: '/subscriptions#subscriptions-pricing-section', label: t('tariffs') },
+      { to: '/data#data-section-main', label: t('footerPersonalData') },
+      { to: '/data#data-section-documents', label: t('footerDocumentsSection') },
+      { to: '/chat?manager=1', label: t('footerTechSupport') },
+    ],
+  ]
+
+  const allFooterLinks = desktopColumns.flat()
+  const mobileCol1 = allFooterLinks.slice(0, 10)
+  const mobileCol2 = allFooterLinks.slice(10)
+
+  const renderLink = (item, i, keyPrefix) => {
+    const key = `${keyPrefix}-${i}`
+    if (item.onClick) {
+      return (
+        <button
+          key={key}
+          type="button"
+          className="footer__menu-link"
+          onClick={() => {
+            item.onClick()
+          }}
+        >
+          {item.label}
+        </button>
+      )
+    }
+    return (
+      <Link key={key} to={item.to} onClick={scrollToTop} className="footer__menu-link">
+        {item.label}
+      </Link>
+    )
+  }
 
   return (
     <footer id="site-footer" className="footer">
       <div className="footer__container">
-        {/* Верхний блок ссылок — десктоп: 5 колонок в одну строку */}
-        <div className="footer__menu footer__menu--desktop">
-          <div className="footer__menu-column">
-            <Link to="/" onClick={scrollToTop} className="footer__menu-link">{t('home')}</Link>
-            <Link to="/about" onClick={scrollToTop} className="footer__menu-link">{t('aboutUs')}</Link>
-            <Link to="/map" onClick={scrollToTop} className="footer__menu-link">{t('mapLink')}</Link>
-          </div>
-          <div className="footer__menu-column">
-            <Link to="/auction" onClick={scrollToTop} className="footer__menu-link">{t('auction')}</Link>
-            <Link to="/data" onClick={scrollToTop} className="footer__menu-link">{t('legalDocs')}</Link>
-            <Link to="/bonuses" onClick={scrollToTop} className="footer__menu-link">{t('bonuses')}</Link>
-          </div>
-          <div className="footer__menu-column">
-            <Link to="/calculator" onClick={scrollToTop} className="footer__menu-link">{t('calculator')}</Link>
-            <Link to="/map" onClick={scrollToTop} className="footer__menu-link">{t('mapSearch')}</Link>
-            <Link to="/debts" onClick={scrollToTop} className="footer__menu-link">{t('debtsTitle')}</Link>
-          </div>
-          <div className="footer__menu-column">
-            <button type="button" className="footer__menu-link">{t('investors')}</button>
-            <Link to="/subscriptions" onClick={scrollToTop} className="footer__menu-link">{t('tariffs')}</Link>
-            <Link to="/shares" onClick={scrollToTop} className="footer__menu-link">{t('shares')}</Link>
-          </div>
-          <div className="footer__menu-column">
-            <Link to="/chat" onClick={scrollToTop} className="footer__menu-link">{t('help')}</Link>
-            <Link to="/jeton" onClick={scrollToTop} className="footer__menu-link">Jeton</Link>
-            <button type="button" className="footer__menu-link">{t('mortgage')}</button>
-          </div>
-        </div>
-
-        {/* Мобильная версия: 2 колонки */}
-        <div className="footer__menu footer__menu--mobile">
-          <div className="footer__menu-column">
-            <Link to="/" onClick={scrollToTop} className="footer__menu-link">{t('home')}</Link>
-            <Link to="/auction" onClick={scrollToTop} className="footer__menu-link">{t('auction')}</Link>
-            <Link to="/about" onClick={scrollToTop} className="footer__menu-link">{t('aboutUs')}</Link>
-          </div>
-          <div className="footer__menu-column">
-            <Link to="/bonuses" onClick={scrollToTop} className="footer__menu-link">{t('bonuses')}</Link>
-            <Link to="/shares" onClick={scrollToTop} className="footer__menu-link">{t('shares')}</Link>
-            <Link to="/debts" onClick={scrollToTop} className="footer__menu-link">{t('debtsTitle')}</Link>
-          </div>
-        </div>
-
-        {/* Текстовый блок описания сервиса */}
-        <div className="footer__description">
-          <p className="footer__description-text">
-            {t('footerDescription')}{' '}
-            <button type="button" className="footer__description-link">{t('userAgreementLink')}</button>{' '}
-            {t('and')}{' '}
-            <button type="button" className="footer__description-link">{t('privacyPolicyLink')}</button>{' '}
-            Sellyourbrick. {t('payingForServices')}{' '}
-            <button type="button" className="footer__description-link">{t('licenseAgreement')}</button>.
-          </p>
-          <p className="footer__description-text">
-            {t('recommendationTechDescription')}{' '}
-            <button type="button" className="footer__description-link">{t('recommendationTech')}</button>.
-          </p>
-        </div>
-
-        {/* Нижняя полоса с логотипом и кнопками, как на скрине */}
-        <div className="footer__bottom">
-          <div className="footer__brand">
-            <div className="footer__brand-icon">
-              <span className="footer__brand-house" />
+        <div className="footer__upper">
+          <div className="footer__upper-left">
+            <div className="footer__brand">
+              <div className="footer__brand-icon">
+                <span className="footer__brand-house" />
+              </div>
+              <span className="footer__brand-text">Sellyourbrick</span>
             </div>
-            <span className="footer__brand-text">Sellyourbrick</span>
+
+            <div className="footer__nav-qr">
+              <div className="footer__menus-inner">
+                <div className="footer__menu footer__menu--desktop">
+                  {desktopColumns.map((col, ci) => (
+                    <div key={ci} className="footer__menu-column">
+                      {col.map((item, i) => renderLink(item, i, `d${ci}`))}
+                    </div>
+                  ))}
+                </div>
+
+                <div className="footer__menu footer__menu--mobile">
+                  <div className="footer__menu-column">{mobileCol1.map((item, i) => renderLink(item, i, 'm1'))}</div>
+                  <div className="footer__menu-column">{mobileCol2.map((item, i) => renderLink(item, i, 'm2'))}</div>
+                </div>
+              </div>
+
+              <div className="footer__whatsapp-qr">
+                <img src={whatsappQR} alt="WhatsApp QR" className="footer__qr-image" />
+              </div>
+            </div>
           </div>
 
-          <div className="footer__bottom-links">
-            <button type="button" className="footer__bottom-link">{t('mobileVersion')}</button>
-            <button type="button" className="footer__bottom-link">{t('aboutApp')}</button>
-          </div>
-
-          <div className="footer__whatsapp-qr">
-            <img 
-              src={whatsappQR}
-              alt="WhatsApp QR код" 
-              className="footer__qr-image"
-            />
-          </div>
-
-          <div className="footer__store-buttons">
+          <div className="footer__upper-right">
+            <div className="footer__store-buttons">
             <button
               type="button"
               className="footer__store-btn"
-              onClick={() => handleDownloadApp('android')}
+              onClick={openStoreComingSoon}
               aria-label={t('downloadGooglePlay')}
             >
               <div className="footer__store-icon footer__store-icon--google">
@@ -170,7 +185,7 @@ const Footer = () => {
             <button
               type="button"
               className="footer__store-btn"
-              onClick={() => handleDownloadApp('ios')}
+              onClick={openStoreComingSoon}
               aria-label={`${t('downloadIn')} App Store`}
             >
               <div className="footer__store-icon">
@@ -182,10 +197,11 @@ const Footer = () => {
             </button>
 
             <a
-              href="https://wa.me/447700183959"
+              href={WHATSAPP_HREF}
               target="_blank"
               rel="noopener noreferrer"
               className="footer__store-btn"
+              aria-label="WhatsApp"
             >
               <div className="footer__store-icon footer__store-icon--whatsapp">
                 <FaWhatsapp size={18} />
@@ -201,26 +217,29 @@ const Footer = () => {
                 className="footer__language-selector-btn"
                 onClick={() => setIsLanguageDropdownOpen(!isLanguageDropdownOpen)}
                 aria-label={t('selectLanguageAria')}
+                aria-expanded={isLanguageDropdownOpen}
               >
-                <span className={`footer__language-flag ${currentLanguage.flagClass}`}></span>
+                <span className={`footer__language-flag ${currentLanguage.flagClass}`} />
                 <span className="footer__language-name">{currentLanguage.name}</span>
-                <FiChevronDown 
-                  size={16} 
+                <FiChevronDown
+                  size={16}
                   className={`footer__language-chevron ${isLanguageDropdownOpen ? 'footer__language-chevron--open' : ''}`}
                 />
               </button>
               {isLanguageDropdownOpen && (
                 <div className="footer__language-dropdown">
-                  {languages.map((lang) => (
+                  {UI_LANGUAGES.map((lang) => (
                     <button
                       key={lang.code}
                       type="button"
-                      className={`footer__language-option ${i18n.language === lang.code ? 'footer__language-option--active' : ''}`}
+                      className={`footer__language-option ${(i18n.language || 'ru').split('-')[0] === lang.code ? 'footer__language-option--active' : ''}`}
                       onClick={() => handleLanguageChange(lang.code)}
                     >
-                      <span className={`footer__language-flag ${lang.flagClass}`}></span>
+                      <span className={`footer__language-flag ${lang.flagClass}`} />
                       <span className="footer__language-name">{lang.name}</span>
-                      {i18n.language === lang.code && <FiCheck size={16} className="footer__language-check" />}
+                      {(i18n.language || 'ru').split('-')[0] === lang.code && (
+                        <FiCheck size={16} className="footer__language-check" />
+                      )}
                     </button>
                   ))}
                 </div>
@@ -228,10 +247,39 @@ const Footer = () => {
             </div>
           </div>
         </div>
+        </div>
       </div>
+
+      {storeComingSoonOpen && (
+        <div
+          className="footer-store-modal-overlay"
+          role="presentation"
+          onClick={closeStoreComingSoon}
+        >
+          <div
+            className="footer-store-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="footer-store-modal-title"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              className="footer-store-modal__close"
+              onClick={closeStoreComingSoon}
+              aria-label={t('footerCloseModal')}
+            >
+              <FiX size={22} />
+            </button>
+            <MdSentimentDissatisfied className="footer-store-modal__icon" aria-hidden />
+            <p id="footer-store-modal-title" className="footer-store-modal__title">
+              {t('footerComingSoon')}
+            </p>
+          </div>
+        </div>
+      )}
     </footer>
   )
 }
 
 export default Footer
-

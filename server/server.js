@@ -1949,7 +1949,16 @@ app.post('/api/users/:id/upload-passport', upload.single('passport_photo'), asyn
 
 const AI_API_URL = "https://api.intelligence.io.solutions/api/v1/chat/completions";
 const AI_MODEL = "deepseek-ai/DeepSeek-V3.2";
-const AI_API_KEY = "io-v2-eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJvd25lciI6ImE5YzAwNjc4LTFjNzEtNDY5Ny1hY2NiLTliYTU0NTdhMWU4NSIsImV4cCI6NDkyMTI0NDg2NX0.E92VNc-ri_VH1bRLZfJ4seHnvr_hdL0vzgBbRC97WYDaENrvqU-jV1gYxqG128Tvyf8yfEczZ9hfpdKeZ2E0UA";
+const LEGACY_INTELLIGENCE_IO_API_KEY =
+  "io-v2-eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJvd25lciI6ImE5YzAwNjc4LTFjNzEtNDY5Ny1hY2NiLTliYTU0NTdhMWU4NSIsImV4cCI6NDkyMTI0NDg2NX0.E92VNc-ri_VH1bRLZfJ4seHnvr_hdL0vzgBbRC97WYDaENrvqU-jV1gYxqG128Tvyf8yfEczZ9hfpdKeZ2E0UA";
+function getIntelligenceIoApiKeyServer() {
+  const v =
+    process.env.INTELLIGENCE_IO_API_KEY ||
+    process.env.VITE_INTELLIGENCE_IO_API_KEY ||
+    "";
+  const trimmed = String(v).trim();
+  return trimmed || LEGACY_INTELLIGENCE_IO_API_KEY;
+}
 
 /**
  * POST /api/passport/extract - Извлечь данные из распознанного текста паспорта с помощью AI
@@ -2013,7 +2022,7 @@ app.post('/api/passport/extract', async (req, res) => {
 
     const headers = {
       "Content-Type": "application/json",
-      "Authorization": `Bearer ${AI_API_KEY}`
+      "Authorization": `Bearer ${getIntelligenceIoApiKeyServer()}`
     };
 
     const payload = {

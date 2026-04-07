@@ -1,6 +1,14 @@
 const AI_API_URL = "https://api.intelligence.io.solutions/api/v1/chat/completions";
 const AI_MODEL = "deepseek-ai/DeepSeek-V3.2";
-const AI_API_KEY = "io-v2-eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJvd25lciI6ImE5YzAwNjc4LTFjNzEtNDY5Ny1hY2NiLTliYTU0NTdhMWU4NSIsImV4cCI6NDkyMTI0NDg2NX0.E92VNc-ri_VH1bRLZfJ4seHnvr_hdL0vzgBbRC97WYDaENrvqU-jV1gYxqG128Tvyf8yfEczZ9hfpdKeZ2E0UA";
+/** Запасной ключ из репозитория; провайдер может отозвать его — задайте VITE_INTELLIGENCE_IO_API_KEY в .env */
+const LEGACY_INTELLIGENCE_IO_API_KEY =
+  "io-v2-eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJvd25lciI6ImE5YzAwNjc4LTFjNzEtNDY5Ny1hY2NiLTliYTU0NTdhMWU4NSIsImV4cCI6NDkyMTI0NDg2NX0.E92VNc-ri_VH1bRLZfJ4seHnvr_hdL0vzgBbRC97WYDaENrvqU-jV1gYxqG128Tvyf8yfEczZ9hfpdKeZ2E0UA";
+
+function getIntelligenceIoApiKey() {
+  const v = import.meta.env.VITE_INTELLIGENCE_IO_API_KEY;
+  const trimmed = typeof v === "string" ? v.trim() : "";
+  return trimmed || LEGACY_INTELLIGENCE_IO_API_KEY;
+}
 
 /** Убирает markdown из текста ответа для чистого отображения */
 function stripMarkdown(text) {
@@ -71,7 +79,7 @@ wantsManager = false если пользователь только выбира
   try {
     const headers = {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${AI_API_KEY}`
+      Authorization: `Bearer ${getIntelligenceIoApiKey()}`
     };
     const payload = {
       model: AI_MODEL,
@@ -296,7 +304,7 @@ ${JSON.stringify(userPreferences, null, 0)}
 
     const headers = {
       "Content-Type": "application/json",
-      "Authorization": `Bearer ${AI_API_KEY}`
+      "Authorization": `Bearer ${getIntelligenceIoApiKey()}`
     };
 
     const payload = {
@@ -325,7 +333,7 @@ ${JSON.stringify(userPreferences, null, 0)}
       if (response.status === 401) {
         console.error('🔑 Ошибка авторизации: API ключ недействителен или истек');
         return {
-          text: "Ошибка: неверный API ключ. Проверьте настройки AI сервиса.",
+          text: "Ошибка: сервер AI отклонил ключ. Укажите актуальный ключ в переменной VITE_INTELLIGENCE_IO_API_KEY (.env локально, на хостинге — в переменных сборки) и пересоберите фронт.",
           buttons: null,
           needsMoreInfo: false,
           recommendations: null
@@ -546,7 +554,7 @@ export async function extractPassportData(recognizedText) {
   try {
     const headers = {
       "Content-Type": "application/json",
-      "Authorization": `Bearer ${AI_API_KEY}`
+      "Authorization": `Bearer ${getIntelligenceIoApiKey()}`
     };
 
     const payload = {
@@ -643,7 +651,7 @@ export async function generateListingDescription(draftText, title = '') {
 
   const headers = {
     'Content-Type': 'application/json',
-    Authorization: `Bearer ${AI_API_KEY}`
+    Authorization: `Bearer ${getIntelligenceIoApiKey()}`
   }
 
   const payload = {
@@ -777,7 +785,7 @@ export async function askPropertyCompareAssistant(propertyLeft, propertyRight, o
 
   const headers = {
     'Content-Type': 'application/json',
-    Authorization: `Bearer ${AI_API_KEY}`,
+    Authorization: `Bearer ${getIntelligenceIoApiKey()}`,
   }
 
   const payload = {

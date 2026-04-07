@@ -1,4 +1,4 @@
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useNavigate, useSearchParams, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useState, useEffect, useRef } from 'react'
 import { getUserData, logout } from '../services/authService'
@@ -15,6 +15,7 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
 
 const Subscriptions = () => {
   const navigate = useNavigate()
+  const location = useLocation()
   const { t } = useTranslation()
   const [searchParams, setSearchParams] = useSearchParams()
   const [userId, setUserId] = useState(null)
@@ -23,6 +24,14 @@ const Subscriptions = () => {
   const buyerCabinetMainScrollRef = useRef(null)
 
   useChainedAppLayoutScroll(buyerCabinetPageRef, buyerCabinetMainScrollRef, { active: true })
+
+  useEffect(() => {
+    if (location.hash !== '#subscriptions-pricing-section') return
+    const timer = setTimeout(() => {
+      document.getElementById('subscriptions-pricing-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }, 450)
+    return () => clearTimeout(timer)
+  }, [location.pathname, location.hash])
 
   useEffect(() => {
     const userData = getUserData()
@@ -176,7 +185,9 @@ const Subscriptions = () => {
 
         <main className="subscriptions-main buyer-cabinet-layout-main">
           <div className="buyer-cabinet-main-scroll" ref={buyerCabinetMainScrollRef}>
-          <h1 className="subscriptions-title">{t('buyerCabinet_sectionSubscriptions')}</h1>
+          <h1 className="subscriptions-title" id="subscriptions-pricing-section">
+            {t('buyerCabinet_sectionSubscriptions')}
+          </h1>
           <div className="subscriptions-cards subscriptions-cards--pricing">
             <PricingCards onBookCall={handleBookCall} mobileTwoColumn />
           </div>

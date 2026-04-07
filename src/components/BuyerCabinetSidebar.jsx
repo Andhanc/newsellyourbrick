@@ -154,7 +154,7 @@ export default function BuyerCabinetSidebar({
           </svg>
           <span>{t('history')}</span>
         </Link>
-        <Link to="/chat" className={navClass('/chat')}>
+        <Link to="/chat?manager=1" className={navClass('/chat')}>
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden>
             <path
               d="M10 2C5.58172 2 2 5.58172 2 10C2 14.4183 5.58172 18 10 18C14.4183 18 18 14.4183 18 10C18 5.58172 14.4183 2 10 2Z"

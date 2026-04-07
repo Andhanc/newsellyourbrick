@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useUser, useAuth } from '@clerk/clerk-react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { FiX, FiSend, FiPhone, FiMail, FiArrowLeft, FiMessageCircle } from 'react-icons/fi'
+import { FiX, FiSend, FiPhone, FiMail, FiMessageCircle } from 'react-icons/fi'
 import { FaWhatsapp } from 'react-icons/fa'
 import { FaTelegram } from 'react-icons/fa6'
 import Header from '../components/Header'
@@ -24,15 +24,7 @@ import { ensureCanOpenProperty } from '../utils/propertyAccessGuard'
 import './Home.css'
 
 import { getApiBaseUrl } from '../utils/apiConfig'
-import { showNotification } from '../utils/toastHelper'
-import {
-  ensureLiveChatSession,
-  fetchLiveChatMessagesSince,
-  getManagerContactButtons,
-  liveChatStorageKey,
-  normalizeLiveChatRows,
-  sendLiveChatUserMessage,
-} from '../services/liveChatApi'
+import { getManagerContactButtons } from '../services/liveChatApi'
 
 function formatPropertyForList(prop, isAuction) {
   return {
@@ -87,9 +79,6 @@ function Home() {
   const slowResponseTimerRef = useRef(null)
   const chatMessagesRef = useRef(null)
   const lastMessageRef = useRef(null)
-  const chatUserIdForLiveRef = useRef('')
-  const managerPollRef = useRef(null)
-  const lastManagerMsgIdRef = useRef(0)
   const [userPreferences, setUserPreferences] = useState({
     purpose: null, // 'для себя', 'под сдачу', 'инвестиции'
     budget: null,
@@ -102,9 +91,6 @@ function Home() {
     managerContactPendingChoice: false,
     preferredContact: null
   })
-  const [chatMode, setChatMode] = useState('ai')
-  const [managerChatMessages, setManagerChatMessages] = useState([])
-  const [liveChatToken, setLiveChatToken] = useState(null)
 
   // Загрузка объявлений: при наличии кэша — только фоновое обновление (без "Загрузка объявлений...")
   const loadProperties = useCallback(async (backgroundRefresh = false) => {
@@ -333,12 +319,17 @@ function Home() {
         managerContactPendingChoice: false
       }))
       if (contactPref === 'live_chat') {
-        try {
-          await enterLiveManagerChat()
-        } catch (err) {
-          console.error(err)
-          showNotification(err?.message || t('liveChatError'))
+        const botMessage = {
+          id: Date.now() + 1,
+          text: t('liveChatWaitNotice'),
+          sender: 'bot',
+          timestamp: new Date(),
+          buttons: null,
+          recommendations: null,
         }
+        setChatMessages((prev) => [...prev, botMessage])
+        setIsChatOpen(false)
+        navigate('/chat?manager=1')
         return
       }
       if (contactPref === 'telegram') {
@@ -579,94 +570,6 @@ function Home() {
     return sessionId
   }, [isLoggedIn, dbUserId])
 
-  chatUserIdForLiveRef.current = getChatUserId
-
-  const scheduleManagerPoll = useCallback((token) => {
-    if (managerPollRef.current) {
-      clearInterval(managerPollRef.current)
-      managerPollRef.current = null
-    }
-    managerPollRef.current = setInterval(async () => {
-      try {
-        const chunk = await fetchLiveChatMessagesSince(token, lastManagerMsgIdRef.current)
-        if (chunk.length) {
-          lastManagerMsgIdRef.current = Math.max(...chunk.map((r) => r.id))
-          setManagerChatMessages((p) => [...p, ...normalizeLiveChatRows(chunk)])
-        }
-      } catch {
-        /* ignore */
-      }
-    }, 2500)
-  }, [])
-
-  const enterLiveManagerChat = useCallback(async () => {
-    const userData = getUserData()
-    const uid = userData?.isLoggedIn && userData?.id ? Number(userData.id) : null
-    const { token, messages } = await ensureLiveChatSession({
-      assistantSessionId: chatUserIdForLiveRef.current || null,
-      userId: Number.isFinite(uid) ? uid : null,
-      waitMessage: t('liveChatWaitNotice'),
-    })
-    const rows = messages || []
-    lastManagerMsgIdRef.current = rows.reduce((m, r) => Math.max(m, r.id), 0)
-    setManagerChatMessages(normalizeLiveChatRows(rows))
-    setLiveChatToken(token)
-    setChatMode('manager')
-    localStorage.setItem(`aiChatLiveManagerMode_${chatUserIdForLiveRef.current}`, '1')
-    scheduleManagerPoll(token)
-  }, [t, scheduleManagerPoll])
-
-  const resumeLiveManagerIfNeeded = useCallback(async () => {
-    const id = chatUserIdForLiveRef.current
-    const modeKey = `aiChatLiveManagerMode_${id}`
-    if (localStorage.getItem(modeKey) !== '1') return
-    const token = localStorage.getItem(liveChatStorageKey(id))
-    if (!token) return
-    try {
-      const rows = await fetchLiveChatMessagesSince(token, 0)
-      lastManagerMsgIdRef.current = rows.reduce((m, r) => Math.max(m, r.id), 0)
-      setLiveChatToken(token)
-      setManagerChatMessages(normalizeLiveChatRows(rows))
-      setChatMode('manager')
-      scheduleManagerPoll(token)
-    } catch {
-      localStorage.removeItem(modeKey)
-    }
-  }, [scheduleManagerPoll])
-
-  useEffect(() => {
-    resumeLiveManagerIfNeeded()
-    return () => {
-      if (managerPollRef.current) {
-        clearInterval(managerPollRef.current)
-        managerPollRef.current = null
-      }
-    }
-  }, [resumeLiveManagerIfNeeded])
-
-  const backToAiChat = useCallback(() => {
-    if (managerPollRef.current) {
-      clearInterval(managerPollRef.current)
-      managerPollRef.current = null
-    }
-    setChatMode('ai')
-    localStorage.setItem(`aiChatLiveManagerMode_${chatUserIdForLiveRef.current}`, '0')
-  }, [])
-
-  const handleManagerChatSubmit = async (e) => {
-    e.preventDefault()
-    const text = chatInput.trim()
-    if (!text || !liveChatToken) return
-    setChatInput('')
-    try {
-      const row = await sendLiveChatUserMessage(liveChatToken, text)
-      lastManagerMsgIdRef.current = Math.max(lastManagerMsgIdRef.current, row.id)
-      setManagerChatMessages((prev) => [...prev, ...normalizeLiveChatRows([row])])
-    } catch (err) {
-      showNotification(err?.message || t('liveChatError'))
-    }
-  }
-
   // Загружаем историю чата из localStorage при монтировании компонента или изменении пользователя
   const chatHistoryLoadedRef = useRef(false)
   const lastChatUserIdRef = useRef(null)
@@ -750,17 +653,13 @@ function Home() {
   // При ответе бота — скролл к началу ответа; при своём сообщении — вниз
   useEffect(() => {
     if (!chatMessagesRef.current || !isChatOpen) return
-    if (chatMode === 'manager') {
-      chatMessagesRef.current.scrollTop = chatMessagesRef.current.scrollHeight
-      return
-    }
     const last = chatMessages[chatMessages.length - 1]
     if (last?.sender === 'bot' && lastMessageRef.current) {
       lastMessageRef.current.scrollIntoView({ block: 'start', behavior: 'smooth' })
     } else {
       chatMessagesRef.current.scrollTop = chatMessagesRef.current.scrollHeight
     }
-  }, [chatMessages, managerChatMessages, chatMode, isChatOpen])
+  }, [chatMessages, isChatOpen])
 
   // Обновляем window.isChatOpen и отправляем событие для синхронизации с хедером
   useEffect(() => {
@@ -790,18 +689,33 @@ function Home() {
     const footer = document.getElementById('site-footer')
     if (!footer) return
 
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        setFloatWidgetsHiddenByFooter(Boolean(entry?.isIntersecting))
-      },
-      {
-        root: null,
-        rootMargin: '0px 0px -12% 0px',
-        threshold: [0, 0.02, 0.5],
+    const getScrollRoot = () => document.querySelector('.app-layout') || null
+
+    let observer = null
+    const connect = () => {
+      if (observer) {
+        observer.disconnect()
+        observer = null
       }
-    )
-    observer.observe(footer)
-    return () => observer.disconnect()
+      observer = new IntersectionObserver(
+        ([entry]) => {
+          setFloatWidgetsHiddenByFooter(Boolean(entry?.isIntersecting))
+        },
+        {
+          root: getScrollRoot(),
+          rootMargin: '0px 0px -12% 0px',
+          threshold: [0, 0.02, 0.5],
+        }
+      )
+      observer.observe(footer)
+    }
+
+    connect()
+    const raf = requestAnimationFrame(() => connect())
+    return () => {
+      cancelAnimationFrame(raf)
+      if (observer) observer.disconnect()
+    }
   }, [])
 
   // История чата сохраняется в localStorage и не очищается при закрытии страницы
@@ -828,31 +742,11 @@ function Home() {
         <div className="chat-widget">
           <div className="chat-widget__header">
             <div className="chat-widget__header-info">
-              {chatMode === 'manager' ? (
-                <>
-                  <button
-                    type="button"
-                    className="chat-widget__back"
-                    onClick={backToAiChat}
-                    aria-label={t('backToAiAssistant')}
-                  >
-                    <FiArrowLeft size={20} />
-                  </button>
-                  <div className="chat-widget__avatar chat-widget__avatar--manager">M</div>
-                  <div className="chat-widget__header-text">
-                    <h3 className="chat-widget__title">{t('chatManagerTitle')}</h3>
-                    <span className="chat-widget__status">{t('chatManagerOnline')}</span>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div className="chat-widget__avatar">AI</div>
-                  <div className="chat-widget__header-text">
-                    <h3 className="chat-widget__title">{t('chatTitle')}</h3>
-                    <span className="chat-widget__status">{t('chatOnline')}</span>
-                  </div>
-                </>
-              )}
+              <div className="chat-widget__avatar">AI</div>
+              <div className="chat-widget__header-text">
+                <h3 className="chat-widget__title">{t('chatTitle')}</h3>
+                <span className="chat-widget__status">{t('chatOnline')}</span>
+              </div>
             </div>
             <button
               type="button"
@@ -865,28 +759,7 @@ function Home() {
           </div>
 
           <div className="chat-widget__messages" ref={chatMessagesRef}>
-            {chatMode === 'manager'
-              ? managerChatMessages.map((message) => (
-                  <div
-                    key={message.id}
-                    className={`chat-widget__message ${
-                      message.sender === 'user'
-                        ? 'chat-widget__message--user'
-                        : message.sender === 'manager'
-                          ? 'chat-widget__message--manager'
-                          : 'chat-widget__message--system'
-                    }`}
-                  >
-                    <div className="chat-widget__message-content">{message.text}</div>
-                    <div className="chat-widget__message-time">
-                      {message.timestamp.toLocaleTimeString('ru-RU', {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      })}
-                    </div>
-                  </div>
-                ))
-              : chatMessages.map((message, idx) => (
+            {chatMessages.map((message, idx) => (
               <div
                 key={message.id}
                 ref={idx === chatMessages.length - 1 ? lastMessageRef : null}
@@ -994,7 +867,7 @@ function Home() {
                 </div>
               </div>
             ))}
-            {chatMode !== 'manager' && isLoadingAI && (
+            {isLoadingAI && (
               <div className="chat-widget__message chat-widget__message--bot">
                 <div className="chat-widget__message-content">
                   <div className="chat-widget__typing">
@@ -1010,30 +883,23 @@ function Home() {
             )}
           </div>
 
-          <form
-            className="chat-widget__input-form"
-            onSubmit={chatMode === 'manager' ? handleManagerChatSubmit : handleChatSubmit}
-          >
+          <form className="chat-widget__input-form" onSubmit={handleChatSubmit}>
             <input
               type="text"
               className="chat-widget__input"
               placeholder={
-                chatMode === 'manager'
-                  ? t('chatPlaceholder')
-                  : isLoadingAI
-                    ? t('aiThinking')
-                    : t('chatPlaceholder')
+                isLoadingAI ? t('aiThinking') : t('chatPlaceholder')
               }
               value={chatInput}
               onChange={handleChatInputChange}
-              disabled={chatMode === 'manager' ? false : isLoadingAI}
+              disabled={isLoadingAI}
               autoFocus
             />
             <button
               type="submit"
               className="chat-widget__send"
               aria-label={t('sendMessage')}
-              disabled={chatMode === 'manager' ? false : isLoadingAI}
+              disabled={isLoadingAI}
             >
               <FiSend size={18} />
             </button>

@@ -817,3 +817,58 @@
   }
 }
 
+/* Чат с менеджером — тот же визуал, что у виджета умного помощника (Home.css .chat-widget__*) */
+.chat-overlay--smart-manager {
+  justify-content: center;
+  align-items: center;
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+.chat-smart-manager-page {
+  width: 100%;
+  max-width: min(440px, 100%);
+  height: min(620px, calc(100vh - 32px));
+  max-height: calc(100vh - 32px);
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+}
+
+.chat-smart-manager-page .chat-widget--page {
+  position: relative !important;
+  right: auto !important;
+  bottom: auto !important;
+  left: auto !important;
+  top: auto !important;
+  width: 100% !important;
+  height: 100% !important;
+  max-width: none !important;
+  max-height: none !important;
+  z-index: 1001 !important;
+  flex: 1;
+}
+
+.chat-smart-manager-page .chat-widget__message--system {
+  max-width: 100%;
+}
+
+.chat-widget__manager-connect-hint {
+  margin: 10px 0 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: #6b7280;
+}
+
+@media (max-width: 480px) {
+  .chat-smart-manager-page {
+    max-width: 100%;
+    height: calc(100vh - 24px);
+    max-height: calc(100vh - 24px);
+  }
+
+  .chat-overlay--smart-manager {
+    padding: 12px;
+  }
+}
+

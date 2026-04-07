@@ -96,8 +96,8 @@ const PropertyList = ({
       setSaleFilter('all')
     }
     
-    // Прокрутка к блоку объектов при наличии параметров в URL
-    if (location.search.includes('category=')) {
+    // Прокрутка к блоку объектов при фильтре категории или «Купить сейчас»
+    if (location.search.includes('category=') || filter === 'buy_now') {
       setTimeout(() => {
         const element = document.getElementById('properties-grid')
         if (element) {

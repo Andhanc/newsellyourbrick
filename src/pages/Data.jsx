@@ -605,6 +605,17 @@ const Data = () => {
     }
   }, [location.search, location.pathname, navigate])
 
+  const DATA_HASH_IDS = new Set(['data-section-main', 'data-section-documents'])
+
+  useEffect(() => {
+    const raw = location.hash?.replace(/^#/, '') || ''
+    if (!DATA_HASH_IDS.has(raw)) return
+    const timer = setTimeout(() => {
+      document.getElementById(raw)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }, 400)
+    return () => clearTimeout(timer)
+  }, [location.pathname, location.hash])
+
   const loadVerificationStatus = async () => {
     if (!userId) return
     try {
@@ -1393,7 +1404,7 @@ const Data = () => {
                   </button>
                 </div>
               )}
-            <section className="data-section">
+            <section className="data-section" id="data-section-main">
               <h2 className="section-title">
                 {t('buyerData_sectionMain')}
                 {verificationStatus && !isBasicInfoComplete() && (
@@ -1517,7 +1528,7 @@ const Data = () => {
               </div>
             </section>
 
-            <section className="data-section">
+            <section className="data-section" id="data-section-documents">
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                 <h2 className="section-title">
                   {t('buyerData_sectionPassport')}

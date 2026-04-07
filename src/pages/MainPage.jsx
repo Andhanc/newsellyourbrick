@@ -12,7 +12,6 @@ import {
   FiHeart,
   FiChevronDown,
   FiArrowRight,
-  FiArrowLeft,
   FiShare2,
   FiX,
   FiSend,
@@ -44,7 +43,6 @@ import {
   FaWhatsapp,
 } from 'react-icons/fa'
 import { FaXTwitter, FaTelegram } from 'react-icons/fa6'
-import { IoLocationOutline } from 'react-icons/io5'
 import { MdBed, MdOutlineBathtub, MdDirectionsCar } from 'react-icons/md'
 import { BiArea } from 'react-icons/bi'
 import {
@@ -67,18 +65,13 @@ import '../components/PropertyList.css'
 import { askPropertyAssistant, detectManagerContactIntent, filterPropertiesByLocation } from '../services/aiService'
 import { getUserData, clearUserData, isAuthenticated } from '../services/authService'
 import { syncAssistantLead } from '../services/assistantLeadService'
-import {
-  ensureLiveChatSession,
-  fetchLiveChatMessagesSince,
-  getManagerContactButtons,
-  liveChatStorageKey,
-  normalizeLiveChatRows,
-  sendLiveChatUserMessage,
-} from '../services/liveChatApi'
+import { getManagerContactButtons } from '../services/liveChatApi'
 
 import { getApiBaseUrl, getApiBaseUrlSync } from '../utils/apiConfig'
 import { navigateToWallet } from '../utils/walletNavigation'
 import { usePropertyFavorites } from '../context/PropertyFavoritesContext'
+import { useLayoutScrollRef } from '../context/LayoutScrollContext'
+import { UI_LANGUAGES } from '../constants/uiLanguages'
 
 // Используем синхронную версию для инициализации, затем обновим при загрузке
 let API_BASE_URL = getApiBaseUrlSync()
@@ -115,19 +108,6 @@ const landingFolderDataBase = [
     { id: 'fo3', image: 'https://images.unsplash.com/photo-1503387762-592deb58ef4e?auto=format&fit=crop&q=80&w=800', title: 'Co-investment' },
     { id: 'fo4', image: 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&q=80&w=800', title: 'Доли в объектах' },
   ] },
-]
-
-const resortLocations = [
-  'Costa Adeje, Tenerife',
-  'Playa de las Américas, Tenerife',
-  'Los Cristianos, Tenerife',
-  'Puerto de la Cruz, Tenerife',
-  'Santa Cruz de Tenerife, Tenerife',
-  'La Laguna, Tenerife',
-  'San Cristóbal de La Laguna, Tenerife',
-  'Golf del Sur, Tenerife',
-  'Callao Salvaje, Tenerife',
-  'El Médano, Tenerife',
 ]
 
 const recommendedProperties = [
@@ -393,8 +373,7 @@ function MainPage() {
   const { t, i18n } = useTranslation()
   const { user, isLoaded: userLoaded } = useUser()
   const { isFavorite, toggleFavorite } = usePropertyFavorites()
-  const [selectedLocation, setSelectedLocation] = useState(resortLocations[0])
-  const [isLocationOpen, setIsLocationOpen] = useState(false)
+  const [isLanguageOpen, setIsLanguageOpen] = useState(false)
   const [propertyMode, setPropertyMode] = useState('buy') // 'rent' для аренды, 'buy' для покупки
   const [activeNav, setActiveNav] = useState('home')
   const [contactForm, setContactForm] = useState({
@@ -404,6 +383,7 @@ function MainPage() {
   })
   const [isChatOpen, setIsChatOpen] = useState(false)
   const [aiAssistantHiddenByFooter, setAiAssistantHiddenByFooter] = useState(false)
+  const layoutScrollRef = useLayoutScrollRef()
   const [chatMessages, setChatMessages] = useState([])
   const [chatInput, setChatInput] = useState('')
   const [isLoadingAI, setIsLoadingAI] = useState(false)
@@ -460,83 +440,6 @@ function MainPage() {
     }
     return sessionId
   }, [isLoggedIn, user, userLoaded])
-
-  const [chatMode, setChatMode] = useState('ai') // 'ai' | 'manager'
-  const [managerChatMessages, setManagerChatMessages] = useState([])
-  const [liveChatToken, setLiveChatToken] = useState(null)
-  const managerPollRef = useRef(null)
-  const lastManagerMsgIdRef = useRef(0)
-
-  const scheduleManagerPoll = useCallback((token) => {
-    if (managerPollRef.current) {
-      clearInterval(managerPollRef.current)
-      managerPollRef.current = null
-    }
-    managerPollRef.current = setInterval(async () => {
-      try {
-        const chunk = await fetchLiveChatMessagesSince(token, lastManagerMsgIdRef.current)
-        if (chunk.length) {
-          lastManagerMsgIdRef.current = Math.max(...chunk.map((r) => r.id))
-          setManagerChatMessages((p) => [...p, ...normalizeLiveChatRows(chunk)])
-        }
-      } catch {
-        /* ignore */
-      }
-    }, 2500)
-  }, [])
-
-  const enterLiveManagerChat = useCallback(async () => {
-    const userData = getUserData()
-    const uid = userData?.isLoggedIn && userData?.id ? Number(userData.id) : null
-    const { token, messages } = await ensureLiveChatSession({
-      assistantSessionId: getChatUserId,
-      userId: Number.isFinite(uid) ? uid : null,
-      waitMessage: t('liveChatWaitNotice'),
-    })
-    const rows = messages || []
-    lastManagerMsgIdRef.current = rows.reduce((m, r) => Math.max(m, r.id), 0)
-    setManagerChatMessages(normalizeLiveChatRows(rows))
-    setLiveChatToken(token)
-    setChatMode('manager')
-    localStorage.setItem(`aiChatLiveManagerMode_${getChatUserId}`, '1')
-    scheduleManagerPoll(token)
-  }, [getChatUserId, t, scheduleManagerPoll])
-
-  const resumeLiveManagerIfNeeded = useCallback(async () => {
-    const modeKey = `aiChatLiveManagerMode_${getChatUserId}`
-    if (localStorage.getItem(modeKey) !== '1') return
-    const token = localStorage.getItem(liveChatStorageKey(getChatUserId))
-    if (!token) return
-    try {
-      const rows = await fetchLiveChatMessagesSince(token, 0)
-      lastManagerMsgIdRef.current = rows.reduce((m, r) => Math.max(m, r.id), 0)
-      setLiveChatToken(token)
-      setManagerChatMessages(normalizeLiveChatRows(rows))
-      setChatMode('manager')
-      scheduleManagerPoll(token)
-    } catch {
-      localStorage.removeItem(modeKey)
-    }
-  }, [getChatUserId, scheduleManagerPoll])
-
-  useEffect(() => {
-    resumeLiveManagerIfNeeded()
-    return () => {
-      if (managerPollRef.current) {
-        clearInterval(managerPollRef.current)
-        managerPollRef.current = null
-      }
-    }
-  }, [resumeLiveManagerIfNeeded])
-
-  const backToAiChat = useCallback(() => {
-    if (managerPollRef.current) {
-      clearInterval(managerPollRef.current)
-      managerPollRef.current = null
-    }
-    setChatMode('ai')
-    localStorage.setItem(`aiChatLiveManagerMode_${getChatUserId}`, '0')
-  }, [getChatUserId])
 
   // Загружаем историю чата из localStorage при монтировании компонента или изменении пользователя
   const lastChatUserIdRef = useRef(null)
@@ -1041,19 +944,18 @@ function MainPage() {
   const [activeFilter, setActiveFilter] = useState(t('forAll'))
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isMenuClosing, setIsMenuClosing] = useState(false)
-  const [isLanguageDropdownOpen, setIsLanguageDropdownOpen] = useState(false)
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const [pageSearchResults, setPageSearchResults] = useState([])
-  const locationRef = useRef(null)
+  const languageDropdownDesktopRef = useRef(null)
+  const languageDropdownMobileRef = useRef(null)
   const searchInputRef = useRef(null)
   const searchWrapperRef = useRef(null)
   const chatMessagesRef = useRef(null)
   const lastMessageRef = useRef(null)
   const notificationRef = useRef(null)
   const menuRef = useRef(null)
-  const languageDropdownRef = useRef(null)
   const landingStatsRef = useRef(null)
   const [statsScrollProgress, setStatsScrollProgress] = useState(0)
 
@@ -1686,8 +1588,10 @@ function MainPage() {
 
   useEffect(() => {
     function handleClickOutside(event) {
-      if (locationRef.current && !locationRef.current.contains(event.target)) {
-        setIsLocationOpen(false)
+      const inLangDesktop = languageDropdownDesktopRef.current?.contains(event.target)
+      const inLangMobile = languageDropdownMobileRef.current?.contains(event.target)
+      if (!inLangDesktop && !inLangMobile) {
+        setIsLanguageOpen(false)
       }
       if (notificationRef.current && !notificationRef.current.contains(event.target)) {
         setIsNotificationOpen(false)
@@ -1726,9 +1630,17 @@ function MainPage() {
   }, [isMenuOpen])
 
 
-  const handleLocationSelect = (location) => {
-    setSelectedLocation(location)
-    setIsLocationOpen(false)
+  const headerLangCode = (i18n.language || 'ru').split('-')[0]
+  const currentHeaderLanguage =
+    UI_LANGUAGES.find((lang) => lang.code === headerLangCode) || UI_LANGUAGES[0]
+
+  const handleHeaderLanguageSelect = async (langCode) => {
+    try {
+      await i18n.changeLanguage(langCode)
+    } catch (e) {
+      console.error('MainPage: language change failed', e)
+    }
+    setIsLanguageOpen(false)
   }
 
   const handleContactFormChange = (e) => {
@@ -1805,12 +1717,17 @@ function MainPage() {
         managerContactPendingChoice: false
       }))
       if (contactPref === 'live_chat') {
-        try {
-          await enterLiveManagerChat()
-        } catch (err) {
-          console.error(err)
-          showNotification(err?.message || t('liveChatError'))
+        const botMessage = {
+          id: Date.now() + 1,
+          text: t('liveChatWaitNotice'),
+          sender: 'bot',
+          timestamp: new Date(),
+          buttons: null,
+          recommendations: null,
         }
+        setChatMessages((prev) => [...prev, botMessage])
+        setIsChatOpen(false)
+        navigate('/chat?manager=1')
         return
       }
       if (contactPref === 'telegram') {
@@ -2016,92 +1933,52 @@ function MainPage() {
     }
   }
 
-  const handleManagerChatSubmit = async (e) => {
-    e.preventDefault()
-    const text = chatInput.trim()
-    if (!text || !liveChatToken) return
-    setChatInput('')
-    try {
-      const row = await sendLiveChatUserMessage(liveChatToken, text)
-      lastManagerMsgIdRef.current = Math.max(lastManagerMsgIdRef.current, row.id)
-      setManagerChatMessages((prev) => [...prev, ...normalizeLiveChatRows([row])])
-    } catch (err) {
-      showNotification(err?.message || t('liveChatError'))
-    }
-  }
-
   useEffect(() => {
     if (!chatMessagesRef.current || !isChatOpen) return
-    if (chatMode === 'manager') {
-      chatMessagesRef.current.scrollTop = chatMessagesRef.current.scrollHeight
-      return
-    }
     const last = chatMessages[chatMessages.length - 1]
     if (last?.sender === 'bot' && lastMessageRef.current) {
       lastMessageRef.current.scrollIntoView({ block: 'start', behavior: 'smooth' })
     } else {
       chatMessagesRef.current.scrollTop = chatMessagesRef.current.scrollHeight
     }
-  }, [chatMessages, managerChatMessages, chatMode, isChatOpen])
+  }, [chatMessages, isChatOpen])
 
   useEffect(() => {
     const footer = document.getElementById('site-footer')
     if (!footer) return
 
-    const mq = window.matchMedia('(max-width: 768px)')
-    let disconnectObserver = null
+    const getScrollRoot = () =>
+      layoutScrollRef?.current || document.querySelector('.app-layout') || null
 
-    const apply = () => {
-      if (disconnectObserver) {
-        disconnectObserver()
-        disconnectObserver = null
+    let observer = null
+
+    const connect = () => {
+      if (observer) {
+        observer.disconnect()
+        observer = null
       }
-      if (!mq.matches) {
-        setAiAssistantHiddenByFooter(false)
-        return
-      }
-      const observer = new IntersectionObserver(
+      observer = new IntersectionObserver(
         ([entry]) => {
           setAiAssistantHiddenByFooter(Boolean(entry?.isIntersecting))
         },
         {
-          root: null,
+          root: getScrollRoot(),
           rootMargin: '0px 0px -12% 0px',
           threshold: [0, 0.02, 0.5],
         }
       )
       observer.observe(footer)
-      disconnectObserver = () => observer.disconnect()
     }
 
-    apply()
-    mq.addEventListener('change', apply)
+    connect()
+    const raf = requestAnimationFrame(() => connect())
+
     return () => {
-      mq.removeEventListener('change', apply)
-      if (disconnectObserver) disconnectObserver()
+      cancelAnimationFrame(raf)
+      if (observer) observer.disconnect()
     }
-  }, [])
+  }, [layoutScrollRef])
 
-  const languages = [
-    { code: 'ru', name: 'Русский', flagClass: 'footer__flag--ru' },
-    { code: 'en', name: 'English', flagClass: 'footer__flag--gb' },
-    { code: 'de', name: 'Deutsch', flagClass: 'footer__flag--de' },
-    { code: 'es', name: 'Español', flagClass: 'footer__flag--es' },
-    { code: 'fr', name: 'Français', flagClass: 'footer__flag--fr' },
-    { code: 'sv', name: 'Svenska', flagClass: 'footer__flag--sv' },
-  ]
-
-  const handleLanguageChange = async (langCode) => {
-    try {
-      await i18n.changeLanguage(langCode)
-      setIsLanguageDropdownOpen(false)
-    } catch (error) {
-      console.error('Error changing language:', error)
-    }
-  }
-
-  const currentLanguage = languages.find(lang => lang.code === i18n.language) || languages[0]
-  
   // Функции для получения переведенных элементов (обновляются при смене языка)
   const getPropertyTypes = useMemo(() => [
       { label: 'House', displayLabel: t('house'), icon: PiHouseLine, image: '/house.png' },
@@ -2126,23 +2003,6 @@ function MainPage() {
   
   // Автоматический перевод пользовательского контента отключен из-за лимитов API
   // Статический контент переводится через i18next
-
-  // Закрытие выпадающего списка при клике вне его
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (languageDropdownRef.current && !languageDropdownRef.current.contains(event.target)) {
-        setIsLanguageDropdownOpen(false)
-      }
-    }
-
-    if (isLanguageDropdownOpen) {
-      document.addEventListener('mousedown', handleClickOutside)
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside)
-    }
-  }, [isLanguageDropdownOpen])
 
   const handleCategoryClick = (categoryLabel) => {
     if (categoryLabel === 'Map') {
@@ -2309,37 +2169,38 @@ function MainPage() {
         <div className="new-header__left">
         <div className="new-header__location">
           <span className="new-header__location-icon">
-            <IoLocationOutline size={20} />
+            <FiGlobe size={20} aria-hidden />
           </span>
-          <div className="new-header__location-info" ref={locationRef}>
-            <span className="new-header__location-label">{t('location')}</span>
+          <div className="new-header__location-info" ref={languageDropdownDesktopRef}>
+            <span className="new-header__location-label">{t('headerLanguage')}</span>
             <button
               type="button"
               className="new-header__location-select"
-              onClick={() => setIsLocationOpen((prev) => !prev)}
+              onClick={() => setIsLanguageOpen((prev) => !prev)}
               aria-haspopup="listbox"
-              aria-expanded={isLocationOpen}
+              aria-expanded={isLanguageOpen}
+              aria-label={t('selectLanguageAria')}
             >
-              <span className="new-header__location-value">{selectedLocation}</span>
+              <span className="new-header__location-value">{currentHeaderLanguage.name}</span>
               <FiChevronDown
                 size={16}
                 className={`new-header__location-select-icon ${
-                  isLocationOpen ? 'new-header__location-select-icon--open' : ''
+                  isLanguageOpen ? 'new-header__location-select-icon--open' : ''
                 }`}
               />
             </button>
-          {isLocationOpen && (
+          {isLanguageOpen && (
             <div className="new-header__location-dropdown">
-              {resortLocations.map((location) => (
+              {UI_LANGUAGES.map((lang) => (
                 <button
                   type="button"
                   className={`new-header__location-option ${
-                    location === selectedLocation ? 'new-header__location-option--active' : ''
+                    lang.code === headerLangCode ? 'new-header__location-option--active' : ''
                   }`}
-                  key={location}
-                  onClick={() => handleLocationSelect(location)}
+                  key={lang.code}
+                  onClick={() => handleHeaderLanguageSelect(lang.code)}
                 >
-                  {location}
+                  {lang.name}
                 </button>
               ))}
             </div>
@@ -2907,37 +2768,38 @@ function MainPage() {
           <header className="header">
             <div className="header__location">
               <span className="header__location-icon">
-                <IoLocationOutline size={20} />
+                <FiGlobe size={20} aria-hidden />
               </span>
-              <div className="header__location-info" ref={locationRef}>
-                <span className="header__location-label">{t('location')}</span>
+              <div className="header__location-info" ref={languageDropdownMobileRef}>
+                <span className="header__location-label">{t('headerLanguage')}</span>
                 <button
                   type="button"
                   className="header__location-select"
-                  onClick={() => setIsLocationOpen((prev) => !prev)}
+                  onClick={() => setIsLanguageOpen((prev) => !prev)}
                   aria-haspopup="listbox"
-                  aria-expanded={isLocationOpen}
+                  aria-expanded={isLanguageOpen}
+                  aria-label={t('selectLanguageAria')}
                 >
-                  <span className="header__location-value">{selectedLocation}</span>
+                  <span className="header__location-value">{currentHeaderLanguage.name}</span>
                   <FiChevronDown
                     size={16}
                     className={`header__location-select-icon ${
-                      isLocationOpen ? 'header__location-select-icon--open' : ''
+                      isLanguageOpen ? 'header__location-select-icon--open' : ''
                     }`}
                   />
                 </button>
-                {isLocationOpen && (
+                {isLanguageOpen && (
                   <div className="header__location-dropdown">
-                    {resortLocations.map((location) => (
+                    {UI_LANGUAGES.map((lang) => (
                       <button
                         type="button"
                         className={`header__location-option ${
-                          location === selectedLocation ? 'header__location-option--active' : ''
+                          lang.code === headerLangCode ? 'header__location-option--active' : ''
                         }`}
-                        key={location}
-                        onClick={() => handleLocationSelect(location)}
+                        key={lang.code}
+                        onClick={() => handleHeaderLanguageSelect(lang.code)}
                       >
-                        {location}
+                        {lang.name}
                       </button>
                     ))}
                   </div>
@@ -4117,31 +3979,11 @@ function MainPage() {
         <div className="chat-widget">
           <div className="chat-widget__header">
             <div className="chat-widget__header-info">
-              {chatMode === 'manager' ? (
-                <>
-                  <button
-                    type="button"
-                    className="chat-widget__back"
-                    onClick={backToAiChat}
-                    aria-label={t('backToAiAssistant')}
-                  >
-                    <FiArrowLeft size={20} />
-                  </button>
-                  <div className="chat-widget__avatar chat-widget__avatar--manager">M</div>
-                  <div className="chat-widget__header-text">
-                    <h3 className="chat-widget__title">{t('chatManagerTitle')}</h3>
-                    <span className="chat-widget__status">{t('chatManagerOnline')}</span>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div className="chat-widget__avatar">AI</div>
-                  <div className="chat-widget__header-text">
-                    <h3 className="chat-widget__title">{t('chatTitle')}</h3>
-                    <span className="chat-widget__status">{t('chatOnline')}</span>
-                  </div>
-                </>
-              )}
+              <div className="chat-widget__avatar">AI</div>
+              <div className="chat-widget__header-text">
+                <h3 className="chat-widget__title">{t('chatTitle')}</h3>
+                <span className="chat-widget__status">{t('chatOnline')}</span>
+              </div>
             </div>
             <button
               type="button"
@@ -4154,28 +3996,7 @@ function MainPage() {
           </div>
 
           <div className="chat-widget__messages" ref={chatMessagesRef}>
-            {chatMode === 'manager'
-              ? managerChatMessages.map((message) => (
-                  <div
-                    key={message.id}
-                    className={`chat-widget__message ${
-                      message.sender === 'user'
-                        ? 'chat-widget__message--user'
-                        : message.sender === 'manager'
-                          ? 'chat-widget__message--manager'
-                          : 'chat-widget__message--system'
-                    }`}
-                  >
-                    <div className="chat-widget__message-content">{message.text}</div>
-                    <div className="chat-widget__message-time">
-                      {message.timestamp.toLocaleTimeString('ru-RU', {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      })}
-                    </div>
-                  </div>
-                ))
-              : chatMessages.map((message, idx) => (
+            {chatMessages.map((message, idx) => (
               <div
                 key={message.id}
                 ref={idx === chatMessages.length - 1 ? lastMessageRef : null}
@@ -4282,7 +4103,7 @@ function MainPage() {
                 </div>
               </div>
             ))}
-            {chatMode !== 'manager' && isLoadingAI && (
+            {isLoadingAI && (
               <div className="chat-widget__message chat-widget__message--bot">
                 <div className="chat-widget__message-content">
                   <div className="chat-widget__typing">
@@ -4298,30 +4119,23 @@ function MainPage() {
             )}
           </div>
 
-          <form
-            className="chat-widget__input-form"
-            onSubmit={chatMode === 'manager' ? handleManagerChatSubmit : handleChatSubmit}
-          >
+          <form className="chat-widget__input-form" onSubmit={handleChatSubmit}>
             <input
               type="text"
               className="chat-widget__input"
               placeholder={
-                chatMode === 'manager'
-                  ? t('chatPlaceholder')
-                  : isLoadingAI
-                    ? t('aiThinking')
-                    : t('chatPlaceholder')
+                isLoadingAI ? t('aiThinking') : t('chatPlaceholder')
               }
               value={chatInput}
               onChange={handleChatInputChange}
-              disabled={chatMode === 'manager' ? false : isLoadingAI}
+              disabled={isLoadingAI}
               autoFocus
             />
             <button
               type="submit"
               className="chat-widget__send"
               aria-label={t('sendMessage')}
-              disabled={chatMode === 'manager' ? false : isLoadingAI}
+              disabled={isLoadingAI}
             >
               <FiSend size={18} />
             </button>

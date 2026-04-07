@@ -1,10 +1,11 @@
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo, useLayoutEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { FiPhone, FiMail, FiArrowLeft, FiMessageCircle } from 'react-icons/fi'
+import { FiPhone, FiMail, FiArrowLeft, FiMessageCircle, FiX, FiSend } from 'react-icons/fi'
 import { FaWhatsapp } from 'react-icons/fa'
 import { FaTelegram } from 'react-icons/fa6'
 import './Chat.css'
+import '../pages/Home.css'
 import { askPropertyAssistant, detectManagerContactIntent } from '../services/aiService'
 import { getUserData } from '../services/authService'
 import { syncAssistantLead } from '../services/assistantLeadService'
@@ -146,6 +147,7 @@ const Chat = () => {
   const managerPollRef = useRef(null)
   const lastManagerMsgIdRef = useRef(0)
   const chatHistoryLoadedRef = useRef(false)
+  const managerMessagesRef = useRef(null)
 
   // Загружаем историю и предпочтения (общие с виджетом на главной)
   useEffect(() => {
@@ -287,7 +289,12 @@ const Chat = () => {
         if (!cancelled) setSearchParams({}, { replace: true })
       } catch (err) {
         console.error(err)
-        if (!cancelled) showNotification(err?.message || t('liveChatError'))
+        if (!cancelled) {
+          const msg = err?.message || t('liveChatError')
+          showNotification(msg)
+          // Убираем ?manager=1, чтобы не застрять в пустом экране менеджера
+          setSearchParams({}, { replace: true })
+        }
       }
     })()
     return () => {
@@ -618,11 +625,156 @@ const Chat = () => {
     await handleTechSupportAction({ inputText: inputMessage })
   }
 
+  const wantManagerFromUrl = useMemo(() => {
+    const raw = searchParams.get('manager')
+    if (raw == null || raw === '') return false
+    return MANAGER_QUERY_VALUES.has(String(raw).toLowerCase())
+  }, [searchParams])
+
+  /** Пока идёт ensureLiveChatSession, без этого показывался старый двухколоночный чат */
+  const managerUiConnecting = wantManagerFromUrl && techSupportMode === 'ai'
+
+  const handleManagerHeaderBack = useCallback(() => {
+    if (wantManagerFromUrl && techSupportMode === 'ai') {
+      navigate('/chat', { replace: true })
+      return
+    }
+    backToTechSupportAi()
+  }, [wantManagerFromUrl, techSupportMode, navigate, backToTechSupportAi])
+
+  useLayoutEffect(() => {
+    if (wantManagerFromUrl) setActiveChat('tech-support')
+  }, [wantManagerFromUrl])
+
+  useEffect(() => {
+    if (!managerMessagesRef.current) return
+    if (techSupportMode !== 'manager' && !wantManagerFromUrl) return
+    managerMessagesRef.current.scrollTop = managerMessagesRef.current.scrollHeight
+  }, [managerChatMessages, techSupportMode, wantManagerFromUrl, managerUiConnecting])
+
   const currentChat = chats.find(chat => chat.id === activeChat)
   const currentMessages =
     activeChat === 'tech-support' && techSupportMode === 'manager'
       ? managerThreadUi
       : messages[activeChat] || []
+
+  const isManagerSmartView =
+    activeChat === 'tech-support' && (techSupportMode === 'manager' || wantManagerFromUrl)
+
+  if (isManagerSmartView) {
+    return (
+      <div
+        className="chat-overlay chat-overlay--smart-manager"
+        onClick={() => navigate(-1)}
+        role="presentation"
+      >
+        {showNotificationModal && (
+          <div className={`notification-modal ${notificationsEnabled ? 'success' : 'error'}`}>
+            <div className="notification-content">
+              <svg width="48" height="48" viewBox="0 0 48 48" fill="none">
+                {notificationsEnabled ? (
+                  <path d="M24 4C12.9543 4 4 12.9543 4 24C4 35.0457 12.9543 44 24 44C35.0457 44 44 35.0457 44 24C44 12.9543 35.0457 4 24 4ZM20 32L10 22L13 19L20 26L35 11L38 14L20 32Z" fill="currentColor"/>
+                ) : (
+                  <path d="M24 4C12.9543 4 4 12.9543 4 24C4 35.0457 12.9543 44 24 44C35.0457 44 44 35.0457 44 24C44 12.9543 35.0457 4 24 4ZM30 18L28 16L24 20L20 16L18 18L22 22L18 26L20 28L24 24L28 28L30 26L26 22L30 18Z" fill="currentColor"/>
+                )}
+              </svg>
+              <p>
+                {notificationsEnabled
+                  ? 'Теперь сообщения будут отображаться в уведомлениях'
+                  : 'Уведомления отключены'}
+              </p>
+            </div>
+          </div>
+        )}
+
+        <div
+          className="chat-smart-manager-page"
+          onClick={(e) => e.stopPropagation()}
+          role="dialog"
+          aria-label={t('chatManagerTitle')}
+        >
+          <div className="chat-widget chat-widget--page">
+            <div className="chat-widget__header">
+              <div className="chat-widget__header-info">
+                <button
+                  type="button"
+                  className="chat-widget__back"
+                  onClick={handleManagerHeaderBack}
+                  aria-label={t('backToAiAssistant')}
+                >
+                  <FiArrowLeft size={20} />
+                </button>
+                <div className="chat-widget__avatar chat-widget__avatar--manager">M</div>
+                <div className="chat-widget__header-text">
+                  <h3 className="chat-widget__title">{t('chatManagerTitle')}</h3>
+                  <span className="chat-widget__status">{t('chatManagerOnline')}</span>
+                </div>
+              </div>
+              <button
+                type="button"
+                className="chat-widget__close"
+                onClick={() => navigate(-1)}
+                aria-label={t('closeChat')}
+              >
+                <FiX size={20} />
+              </button>
+            </div>
+
+            <div className="chat-widget__messages" ref={managerMessagesRef}>
+              {managerUiConnecting && (
+                <div className="chat-widget__message chat-widget__message--bot">
+                  <div className="chat-widget__message-content">
+                    <div className="chat-widget__typing" aria-hidden>
+                      <span />
+                      <span />
+                      <span />
+                    </div>
+                    <p className="chat-widget__manager-connect-hint">{t('liveChatWaitNotice')}</p>
+                  </div>
+                </div>
+              )}
+              {!managerUiConnecting &&
+                managerThreadUi.map((message) => (
+                  <div
+                    key={message.id}
+                    className={`chat-widget__message ${
+                      message.sender === 'user'
+                        ? 'chat-widget__message--user'
+                        : message.sender === 'manager'
+                          ? 'chat-widget__message--manager'
+                          : 'chat-widget__message--system'
+                    }`}
+                  >
+                    <div className="chat-widget__message-content">{message.text}</div>
+                    <div className="chat-widget__message-time">{message.time}</div>
+                  </div>
+                ))}
+            </div>
+
+            <form className="chat-widget__input-form" onSubmit={handleSendMessage}>
+              <input
+                type="text"
+                className="chat-widget__input"
+                placeholder={t('chatPlaceholder')}
+                value={inputMessage}
+                onChange={(e) => setInputMessage(e.target.value)}
+                autoComplete="off"
+                disabled={managerUiConnecting || !liveChatToken}
+              />
+              <button
+                type="submit"
+                className="chat-widget__send"
+                aria-label={t('sendMessage')}
+                disabled={managerUiConnecting || !liveChatToken}
+              >
+                <FiSend size={18} />
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="chat-overlay" onClick={() => navigate(-1)}>
