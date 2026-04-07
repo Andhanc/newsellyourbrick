@@ -40,6 +40,11 @@ RUN npm ci --legacy-peer-deps
 # Затем исходники.
 COPY . .
 
+# Prisma Client (node_modules/.prisma/client) не попадает в git — генерируем при сборке образа.
+# Prisma 7 читает url из prisma.config.ts; для generate достаточно валидной строки (БД не нужна).
+RUN DATABASE_URL="${DATABASE_URL:-postgresql://dummy:dummy@127.0.0.1:5432/dummy?schema=public}" \
+  npx prisma generate
+
 # Генерируем env для Vite-сборки (если переменные уже проброшены на этапе build).
 RUN node scripts/create-env.js || echo "⚠️ Не удалось создать .env.production, продолжаем сборку..."
 
