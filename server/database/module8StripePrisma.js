@@ -1,5 +1,7 @@
-import { Prisma } from '@prisma/client';
+import prismaPkg from '@prisma/client';
 import { getPrisma } from './prismaClient.js';
+
+const { Prisma } = prismaPkg;
 
 function toPlain(row) {
   if (!row) return null;

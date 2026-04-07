@@ -1,5 +1,8 @@
-import { PrismaClient } from '@prisma/client';
+// @prisma/client — CJS; в ESM именованный импорт падает на Node 20 (Railway).
+import prismaPkg from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
+
+const { PrismaClient } = prismaPkg;
 
 let prisma;
 

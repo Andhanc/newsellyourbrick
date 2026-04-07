@@ -2,8 +2,10 @@
  * Модуль 6: WhatsApp-пользователи, лиды умного помощника, live-chat — PostgreSQL через Prisma.
  */
 import { randomUUID } from 'crypto';
-import { Prisma } from '@prisma/client';
+import prismaPkg from '@prisma/client';
 import { getPrisma } from './prismaClient.js';
+
+const { Prisma } = prismaPkg;
 import {
   computeLeadType,
   buildSummary,
