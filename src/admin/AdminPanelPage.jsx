@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/admin/Sidebar';
 import Header from '../components/admin/Header';
@@ -32,6 +32,7 @@ const AdminPanelPage = () => {
   const [activeSection, setActiveSection] = useState('statistics');
   const [showUsersModal, setShowUsersModal] = useState(false);
   const [adminPermissions, setAdminPermissions] = useState(null);
+  const mainContentRef = useRef(null);
 
   // Проверка авторизации администратора и загрузка прав доступа
   useEffect(() => {
@@ -137,6 +138,18 @@ const AdminPanelPage = () => {
     }
   };
 
+  useEffect(() => {
+    // При смене раздела начинаем новую вкладку с самого верха.
+    if (mainContentRef.current) {
+      mainContentRef.current.scrollTo({ top: 0, behavior: 'auto' });
+    }
+    const appLayout = document.querySelector('.app-layout');
+    if (appLayout) {
+      appLayout.scrollTo({ top: 0, behavior: 'auto' });
+    }
+    window.scrollTo({ top: 0, behavior: 'auto' });
+  }, [activeSection]);
+
   const renderContent = () => {
     // Проверяем права доступа перед рендерингом
     if (!hasAccess(activeSection)) {
@@ -195,7 +208,7 @@ const AdminPanelPage = () => {
         onLogout={handleLogout}
         adminPermissions={adminPermissions}
       />
-      <div className="main-content">
+      <div ref={mainContentRef} className="main-content">
         <Header 
           title={sectionTitles[activeSection] || 'Статистика'} 
           onLogout={handleLogout}

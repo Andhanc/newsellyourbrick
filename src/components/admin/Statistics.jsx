@@ -228,7 +228,9 @@ const Statistics = ({ businessInfo, onShowUsers }) => {
     const fetchOnlineCount = async () => {
       try {
         const API_BASE_URL = await getApiBaseUrl();
-        const response = await fetch(`${API_BASE_URL}/admin/online-count`);
+        const response = await fetch(`${API_BASE_URL}/admin/online-count`, {
+          cache: 'no-store'
+        });
         if (response.ok) {
           const data = await response.json();
           if (data.success && typeof data.count === 'number') {
@@ -242,7 +244,7 @@ const Statistics = ({ businessInfo, onShowUsers }) => {
       }
     };
     fetchOnlineCount();
-    const interval = setInterval(fetchOnlineCount, 60000);
+    const interval = setInterval(fetchOnlineCount, 30000);
     const onFocus = () => fetchOnlineCount();
     window.addEventListener('focus', onFocus);
     return () => {

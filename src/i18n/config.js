@@ -24,7 +24,9 @@ i18n
   .use(initReactI18next)
   .init({
     resources,
-    fallbackLng: 'ru',
+    // Если ключ отсутствует в текущем языке (например в ru),
+    // берем перевод из en вместо показа сырого ключа.
+    fallbackLng: ['ru', 'en'],
     supportedLngs: ['ru', 'en', 'de', 'es', 'fr', 'sv'],
     debug: false,
     interpolation: {

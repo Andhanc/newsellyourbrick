@@ -199,6 +199,7 @@
   "propertyTypeApartment": "Apartment",
   "propertyTypeVilla": "Villa",
   "propertyTypeHouse": "House",
+  "auctionFilterEnded": "Ended",
   "noResultsHint": "Try changing your search or filters",
   "reserved": "Reserved",
   "buyNowTooltip": "You can buy this property right now at a fixed price without participating in the auction.",

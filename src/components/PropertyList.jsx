@@ -18,13 +18,15 @@ import './PropertyList.css'
 
 const MOBILE_BREAKPOINT = 768
 
-const PROPERTY_TYPE_KEYS = {
-  'все': 'propertyTypeAll',
-  'квартира': 'propertyTypeFlat',
-  'апартаменты': 'propertyTypeApartment',
-  'вилла': 'propertyTypeVilla',
-  'дом': 'propertyTypeHouse'
-}
+const PROPERTY_FILTER_ITEMS = [
+  { kind: 'type', value: 'все', labelKey: 'propertyTypeAll' },
+  { kind: 'type', value: 'квартира', labelKey: 'propertyTypeFlat' },
+  { kind: 'type', value: 'апартаменты', labelKey: 'propertyTypeApartment' },
+  { kind: 'type', value: 'вилла', labelKey: 'propertyTypeVilla' },
+  { kind: 'type', value: 'дом', labelKey: 'propertyTypeHouse' },
+  { kind: 'sale', value: 'buy_now', labelKey: 'buyNowSectionTitle' },
+  { kind: 'sale', value: 'ended', labelKey: 'auctionFilterEnded' },
+]
 
 const PropertyList = ({
   auctionProperties = null,
@@ -92,12 +94,14 @@ const PropertyList = ({
       setSaleFilter('auction')
     } else if (filter === 'buy_now') {
       setSaleFilter('buy_now')
+    } else if (filter === 'ended') {
+      setSaleFilter('ended')
     } else {
       setSaleFilter('all')
     }
     
     // Прокрутка к блоку объектов при фильтре категории или «Купить сейчас»
-    if (location.search.includes('category=') || filter === 'buy_now') {
+    if (location.search.includes('category=') || filter === 'buy_now' || filter === 'ended') {
       setTimeout(() => {
         const element = document.getElementById('properties-grid')
         if (element) {
@@ -116,6 +120,14 @@ const PropertyList = ({
       return `$${(price / 1000000).toFixed(1)}M`
     }
     return `$${price.toLocaleString('en-US')}`
+  }
+
+  const isAuctionEnded = (property) => {
+    const endValue = property?.test_timer_end_date || property?.endTime
+    if (!endValue) return false
+    const endTs = new Date(endValue).getTime()
+    if (!Number.isFinite(endTs)) return false
+    return endTs <= Date.now()
   }
 
   // Используем переданные аукционные объявления или статические данные
@@ -188,6 +200,9 @@ const PropertyList = ({
     if (saleFilter === 'buy_now' && !hasBuyNowPrice) {
       return false
     }
+    if (saleFilter === 'ended' && !isAuctionEnded(property)) {
+      return false
+    }
     
     // Фильтрация по поисковому запросу
     if (searchQuery) {
@@ -231,7 +246,7 @@ const PropertyList = ({
 
   useEffect(() => {
     setVisibleCount(9)
-  }, [searchQuery, propertyType])
+  }, [searchQuery, propertyType, saleFilter])
 
   const isAuctionPage = location.pathname === '/auction'
   const isAuctionMobileFilters = isMobile && isAuctionPage
@@ -375,14 +390,30 @@ const PropertyList = ({
                 isAuctionMobileFilters ? ' property-types--auction-mobile' : ''
               }`}
             >
-              {(['все', 'квартира', 'апартаменты', 'вилла', 'дом']).map((type) => (
+              {PROPERTY_FILTER_ITEMS.map((item) => (
                 <button
-                  key={type}
+                  key={`${item.kind}-${item.value}`}
                   type="button"
-                  className={`type-button ${propertyType === type ? 'active' : ''}`}
-                  onClick={() => setPropertyType(type)}
+                  className={`type-button ${
+                    item.kind === 'type'
+                      ? propertyType === item.value
+                        ? 'active'
+                        : ''
+                      : saleFilter === item.value
+                        ? 'active'
+                        : ''
+                  }`}
+                  onClick={() => {
+                    if (item.kind === 'type') {
+                      setPropertyType(item.value)
+                      setSaleFilter('all')
+                    } else {
+                      setSaleFilter(item.value)
+                      setPropertyType('все')
+                    }
+                  }}
                 >
-                  {t(PROPERTY_TYPE_KEYS[type])}
+                  {t(item.labelKey)}
                 </button>
               ))}
             </div>
