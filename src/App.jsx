@@ -8,6 +8,7 @@ import Footer from './components/Footer'
 import ClerkAuthSync from './components/ClerkAuthSync'
 import ClerkAuthHandler from './components/ClerkAuthHandler'
 import ToastContainer from './components/ToastContainer'
+import GlobalVerificationSuccessGate from './components/GlobalVerificationSuccessGate'
 import VisitorHeartbeat from './components/VisitorHeartbeat'
 import UserCabinetSseBridge from './components/UserCabinetSseBridge'
 import VerificationRejectedGate from './components/VerificationRejectedGate'
@@ -394,6 +395,7 @@ function App() {
       <VisitorHeartbeat />
       <SessionValidator onBlockedChange={setIsBlocked} />
       <UserCabinetSseBridge />
+      <GlobalVerificationSuccessGate />
       <VerificationRejectedGate blockedUser={isBlocked} />
       <AdminSessionCleaner />
       <ClerkAuthSync />

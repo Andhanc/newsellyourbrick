@@ -33,6 +33,7 @@ const Header = () => {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
   const [userPhoto, setUserPhoto] = useState(null) // Фотография пользователя
   const [isLoggedIn, setIsLoggedIn] = useState(false) // Статус авторизации
+  const [hasIncompleteProfile, setHasIncompleteProfile] = useState(false)
   const [isAIChatOpen, setIsAIChatOpen] = useState(false) // Состояние AI чата для страницы аукцион
   const [notifications, setNotifications] = useState([])
   const [notificationsLoading, setNotificationsLoading] = useState(false)
@@ -41,6 +42,22 @@ const Header = () => {
   const menuRef = useRef(null)
   const searchInputRef = useRef(null)
   const searchWrapperRef = useRef(null)
+
+  const checkProfileCompleteness = (userData) => {
+    if (!userData || typeof userData !== 'object') return true
+
+    const hasFirstName = Boolean(userData.first_name || userData.firstName || userData.name)
+    const hasLastName = Boolean(userData.last_name || userData.lastName)
+    const hasEmail = Boolean(userData.email)
+    const hasPhone = Boolean(userData.phone || userData.phone_number)
+    const hasAddress = Boolean(userData.address)
+    const hasPassportSeries = Boolean(userData.passport_series)
+    const hasPassportNumber = Boolean(userData.passport_number)
+
+    const missingBasicFields = !hasFirstName || !hasLastName || (!hasEmail && !hasPhone)
+    const missingOptionalFields = !hasAddress || (!hasPassportSeries && !hasPassportNumber)
+    return missingBasicFields || missingOptionalFields
+  }
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -141,6 +158,7 @@ const Header = () => {
         if (!hasNumericDbUserId) {
           setUserPhoto(clerkPhoto)
           setIsLoggedIn(false)
+          setHasIncompleteProfile(false)
           return
         }
 
@@ -153,22 +171,32 @@ const Header = () => {
             clearUserData()
             setIsLoggedIn(false)
             setUserPhoto(null)
+            setHasIncompleteProfile(false)
             return
           }
 
           if (response.ok) {
+            const result = await response.json()
             setIsLoggedIn(true)
             setUserPhoto(clerkPhoto)
+            if (result.success && result.data) {
+              setHasIncompleteProfile(checkProfileCompleteness(result.data))
+            } else {
+              const profileIncomplete = !user.firstName || !user.lastName || (!user.primaryEmailAddress?.emailAddress && !user.primaryPhoneNumber?.phoneNumber)
+              setHasIncompleteProfile(profileIncomplete)
+            }
             return
           }
 
           // Любая другая ошибка — считаем, что пользователь не валиден для нашего приложения
           setIsLoggedIn(false)
           setUserPhoto(clerkPhoto)
+          setHasIncompleteProfile(false)
         } catch (e) {
           console.warn('Header: Failed to validate Clerk user in DB', e)
           setIsLoggedIn(false)
           setUserPhoto(clerkPhoto)
+          setHasIncompleteProfile(false)
         }
       } else {
         // Проверяем старую систему авторизации
@@ -194,6 +222,7 @@ const Header = () => {
                 clearUserData()
                 setIsLoggedIn(false)
                 setUserPhoto(null)
+                setHasIncompleteProfile(false)
                 return
               }
 
@@ -214,16 +243,32 @@ const Header = () => {
                   }
                   localStorage.setItem('userData', JSON.stringify(updatedUserData))
                 }
+                if (result.success && result.data) {
+                  setHasIncompleteProfile(checkProfileCompleteness(result.data))
+                } else {
+                  const profileIncomplete = !userData.name || (!userData.email && !userData.phone)
+                  setHasIncompleteProfile(profileIncomplete)
+                }
+              } else {
+                const profileIncomplete = !userData.name || (!userData.email && !userData.phone)
+                setHasIncompleteProfile(profileIncomplete)
               }
             } catch (error) {
               console.warn('⚠️ Не удалось загрузить фотографию из БД:', error)
+              const profileIncomplete = !userData.name || (!userData.email && !userData.phone)
+              setHasIncompleteProfile(profileIncomplete)
             }
+          }
+          if (!dbUserId || !/^\d+$/.test(dbUserId)) {
+            const profileIncomplete = !userData.name || (!userData.email && !userData.phone)
+            setHasIncompleteProfile(profileIncomplete)
           }
           
           setUserPhoto(photo)
         } else {
           setIsLoggedIn(false)
           setUserPhoto(null)
+          setHasIncompleteProfile(false)
         }
       }
     }
@@ -1014,6 +1059,9 @@ const Header = () => {
                     )
                   ) : (
                     <FiUser size={20} />
+                  )}
+                  {isLoggedIn && hasIncompleteProfile && (
+                    <span className="new-header__profile-indicator" />
                   )}
                 </button>
                 <button 

@@ -32,7 +32,7 @@
 
 .verification-success-notification__content {
   position: relative;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #9ff7f3 0%, #58dfdc 38%, #23cfd3 72%, #12b8c6 100%);
   border-radius: 24px;
   padding: 48px 40px;
   max-width: 500px;
@@ -110,7 +110,7 @@
   width: 120px;
   height: 120px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.2);
+  background: linear-gradient(140deg, rgba(255, 255, 255, 0.42) 0%, rgba(255, 255, 255, 0.18) 100%);
   backdrop-filter: blur(10px);
   display: flex;
   align-items: center;
@@ -260,7 +260,7 @@
   border-radius: 12px;
   font-size: 16px;
   font-weight: 600;
-  color: #667eea;
+  color: #0f8f9f;
   background: white;
   cursor: pointer;
   transition: all 0.3s;

@@ -60,7 +60,6 @@ import { showToast } from '../components/ToastContainer'
 import { showNotification } from '../utils/toastHelper'
 import { ensureCanOpenProperty } from '../utils/propertyAccessGuard'
 import LoginModal from '../components/LoginModal'
-import VerificationSuccessNotification from '../components/VerificationSuccessNotification'
 import '../components/PropertyList.css'
 import { askPropertyAssistant, detectManagerContactIntent, filterPropertiesByLocation } from '../services/aiService'
 import { getUserData, clearUserData, isAuthenticated } from '../services/authService'
@@ -754,17 +753,6 @@ function MainPage() {
               return n
             })
             
-            // Проверяем, есть ли уведомление о верификации, которое еще не показывали
-            const verificationNotif = notificationsList.find(
-              n => n.type === 'verification_success' && n.view_count === 0
-            );
-            
-            if (verificationNotif && !showVerificationSuccess) {
-              console.log('🎉 Найдено уведомление о верификации, показываем модальное окно');
-              setVerificationNotification(verificationNotif);
-              setShowVerificationSuccess(true);
-            }
-            
             // Проверяем новые уведомления о перебитой ставке и тест-драйве.
             // Первый успешный ответ после монтирования только заполняет previousNotificationIds — без toast,
             // иначе после F5 одни и те же непрочитанные снова показывались бы как «новые».
@@ -917,24 +905,12 @@ function MainPage() {
     }
   }
 
-  // Обработчик закрытия уведомления о верификации
-  const handleVerificationClose = async () => {
-    if (verificationNotification) {
-      // Отмечаем уведомление как просмотренное (удаляется после первого просмотра)
-      await handleNotificationView(verificationNotification.id);
-      setShowVerificationSuccess(false);
-      setVerificationNotification(null);
-    }
-  }
-  
   const [selectedProperty, setSelectedProperty] = useState(null)
   const [showMap, setShowMap] = useState(false)
   const [selectedChat, setSelectedChat] = useState(null)
   const [isNotificationOpen, setIsNotificationOpen] = useState(false)
   const [notifications, setNotifications] = useState([])
   const [notificationsLoading, setNotificationsLoading] = useState(false)
-  const [showVerificationSuccess, setShowVerificationSuccess] = useState(false)
-  const [verificationNotification, setVerificationNotification] = useState(null)
   const previousNotificationIds = useRef(new Set())
   const isFirstNotificationsLoadRef = useRef(true)
   const [activeCategory, setActiveCategory] = useState(null)
@@ -4145,13 +4121,6 @@ function MainPage() {
       </div>
 
       {/* Модальное окно успешной верификации */}
-      {showVerificationSuccess && verificationNotification && (
-        <VerificationSuccessNotification
-          notification={verificationNotification}
-          onClose={handleVerificationClose}
-          onView={handleNotificationView}
-        />
-      )}
 
       {/* Модальное окно входа/регистрации */}
       <LoginModal 
