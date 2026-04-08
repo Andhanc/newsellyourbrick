@@ -1,7 +1,11 @@
-import { useState, useEffect } from 'react'
-import { useParams, useNavigate, useLocation } from 'react-router-dom'
+import { useState, useEffect, useCallback } from 'react'
+import { useParams, useNavigate, useLocation, useSearchParams } from 'react-router-dom'
 import { FiPlus, FiArrowLeft } from 'react-icons/fi'
+import { useUser } from '@clerk/clerk-react'
 import Header from '../components/Header'
+import SharePurchaseModal from '../components/SharePurchaseModal'
+import { getUserData, isAuthenticated, getStoredNumericUserId, CLERK_DB_USER_SYNCED } from '../services/authService'
+import { showNotification } from '../utils/toastHelper'
 import './ShareDetailPage.css'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api'
@@ -55,7 +59,9 @@ const ShareDetailPage = () => {
   const { id } = useParams()
   const navigate = useNavigate()
   const location = useLocation()
+  const [searchParams, setSearchParams] = useSearchParams()
   const fromState = location.state?.shareObject
+  const { user, isLoaded: userLoaded } = useUser()
 
   const [shareObject, setShareObject] = useState(() => {
     if (fromState) return fromState
@@ -63,21 +69,85 @@ const ShareDetailPage = () => {
   })
   const [buyCount, setBuyCount] = useState(1)
   const [loadingShare, setLoadingShare] = useState(false)
+  const [purchaseModalOpen, setPurchaseModalOpen] = useState(false)
+  const [userId, setUserId] = useState(() => getStoredNumericUserId())
+  const [mySharesOwned, setMySharesOwned] = useState(0)
 
-  // Загрузка объекта из API по shareId (формат: apartment-123 или house-456)
+  const isDbShare = shareObject && typeof shareObject.id === 'number' && shareObject.property_type
+
   useEffect(() => {
-    if (shareObject || !id) return
+    const apply = () => {
+      const n = getStoredNumericUserId()
+      if (n != null) setUserId(n)
+    }
+    apply()
+    window.addEventListener(CLERK_DB_USER_SYNCED, apply)
+    return () => window.removeEventListener(CLERK_DB_USER_SYNCED, apply)
+  }, [])
+
+  useEffect(() => {
+    const syncUserId = async () => {
+      const stored = getStoredNumericUserId()
+      if (stored != null) {
+        setUserId(stored)
+        return
+      }
+      if (user && userLoaded) {
+        const email = user.primaryEmailAddress?.emailAddress || user.emailAddresses?.[0]?.emailAddress
+        if (email) {
+          try {
+            const userResponse = await fetch(`${API_BASE}/users/email/${encodeURIComponent(email)}`)
+            if (userResponse.ok) {
+              const userData = await userResponse.json()
+              if (userData.success && userData.data?.id) {
+                const numericId = userData.data.id
+                setUserId(numericId)
+                localStorage.setItem('userId', String(numericId))
+              }
+            }
+          } catch {
+            /* ignore */
+          }
+        }
+      } else if (isAuthenticated()) {
+        const userData = getUserData()
+        if (userData?.id && /^\d+$/.test(String(userData.id))) {
+          const n = parseInt(String(userData.id), 10)
+          setUserId(n)
+          localStorage.setItem('userId', String(n))
+        }
+      }
+    }
+    if (userLoaded || isAuthenticated()) syncUserId()
+  }, [user, userLoaded])
+
+  const loadPropertyFromApi = useCallback(() => {
+    if (!id) return Promise.resolve()
     const match = id.match(/^(apartment|commercial|house|villa)-(\d+)$/)
-    if (!match) return
+    if (!match) return Promise.resolve()
     const [, propertyType, propertyId] = match
     setLoadingShare(true)
-    fetch(`${API_BASE}/properties/${propertyId}?property_type=${propertyType}`)
+    return fetch(`${API_BASE}/properties/${propertyId}?property_type=${propertyType}`)
       .then((res) => (res.ok ? res.json() : Promise.reject(new Error('Not found'))))
       .then((json) => {
         const p = json.data || json
-        const photos = (p.photos && (Array.isArray(p.photos) ? p.photos : (typeof p.photos === 'string' ? (() => { try { return JSON.parse(p.photos); } catch (e) { return []; } })() : []))) || []
+        const photos =
+          (p.photos &&
+            (Array.isArray(p.photos)
+              ? p.photos
+              : typeof p.photos === 'string'
+                ? (() => {
+                    try {
+                      return JSON.parse(p.photos)
+                    } catch {
+                      return []
+                    }
+                  })()
+                : [])) ||
+          []
         const firstPhoto = photos[0]
-        const image = typeof firstPhoto === 'string' ? firstPhoto : (firstPhoto && firstPhoto.url) ? firstPhoto.url : null
+        const image =
+          typeof firstPhoto === 'string' ? firstPhoto : firstPhoto && firstPhoto.url ? firstPhoto.url : null
         const totalShares = p.total_shares != null ? Number(p.total_shares) : 20
         const sharesSold = p.shares_sold != null ? Number(p.shares_sold) : 0
         const price = p.price != null ? Number(p.price) : 0
@@ -96,14 +166,100 @@ const ShareDetailPage = () => {
           area: p.area,
           rooms: p.rooms,
           bedrooms: p.bedrooms,
-          ...p
+          property_type: p.property_type,
+          ...p,
         })
       })
       .catch(() => setShareObject(null))
       .finally(() => setLoadingShare(false))
-  }, [id, shareObject])
+  }, [id])
 
-  if (loadingShare) {
+  useEffect(() => {
+    loadPropertyFromApi()
+  }, [loadPropertyFromApi])
+
+  useEffect(() => {
+    if (!isDbShare || userId == null) {
+      setMySharesOwned(0)
+      return
+    }
+    const pid = shareObject.id
+    const pt = shareObject.property_type
+    let cancelled = false
+    fetch(`${API_BASE}/users/${userId}/share-purchases`)
+      .then((r) => r.json())
+      .then((j) => {
+        if (cancelled || !j.success || !Array.isArray(j.data)) return
+        const sum = j.data
+          .filter((row) => row.property_id === pid && row.property_type === pt)
+          .reduce((acc, row) => acc + (Number(row.shares_count) || 0), 0)
+        setMySharesOwned(sum)
+      })
+      .catch(() => {
+        if (!cancelled) setMySharesOwned(0)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [isDbShare, userId, shareObject?.id, shareObject?.property_type])
+
+  const checkoutFlag = searchParams.get('share_checkout')
+  const sessionIdQ = searchParams.get('session_id')
+
+  useEffect(() => {
+    if (checkoutFlag !== 'success' || !sessionIdQ || !sessionIdQ.startsWith('cs_')) return undefined
+    const sessionId = sessionIdQ
+    const uid = localStorage.getItem('userId')
+    if (!uid || !/^\d+$/.test(uid)) {
+      showNotification('Войдите в аккаунт, чтобы завершить покупку')
+      return undefined
+    }
+    const routeMatch = id?.match(/^(apartment|commercial|house|villa)-(\d+)$/)
+    let cancelled = false
+    ;(async () => {
+      try {
+        const res = await fetch(`${API_BASE}/billing/confirm-share-purchase`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ session_id: sessionId, userId: uid }),
+        })
+        const data = await res.json().catch(() => ({}))
+        if (cancelled) return
+        const next = new URLSearchParams(searchParams)
+        next.delete('share_checkout')
+        next.delete('session_id')
+        setSearchParams(next, { replace: true })
+        if (res.ok && data.success) {
+          showNotification('Оплата прошла успешно, доли зачислены')
+          await loadPropertyFromApi()
+          if (routeMatch) {
+            const propertyType = routeMatch[1]
+            const propertyIdNum = parseInt(routeMatch[2], 10)
+            const r2 = await fetch(`${API_BASE}/users/${uid}/share-purchases`)
+            const j2 = await r2.json().catch(() => ({}))
+            if (j2.success && Array.isArray(j2.data)) {
+              const sum = j2.data
+                .filter((row) => row.property_id === propertyIdNum && row.property_type === propertyType)
+                .reduce((acc, row) => acc + (Number(row.shares_count) || 0), 0)
+              setMySharesOwned(sum)
+            }
+          }
+        } else {
+          showNotification(data.error || 'Не удалось подтвердить оплату')
+        }
+      } catch (e) {
+        if (!cancelled) showNotification(e?.message || 'Ошибка подтверждения оплаты')
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [id, loadPropertyFromApi, checkoutFlag, sessionIdQ, searchParams, setSearchParams])
+
+  const userEmail =
+    user?.primaryEmailAddress?.emailAddress || user?.emailAddresses?.[0]?.emailAddress || getUserData()?.email || ''
+
+  if (loadingShare && !shareObject) {
     return (
       <div className="share-detail-page">
         <Header />
@@ -133,12 +289,11 @@ const ShareDetailPage = () => {
 
   const totalShares = shareObject.totalShares || 20
   const sharesSold = shareObject.sharesSold || 0
-  const myShares = shareObject.myShares || 0
+  const myShares = isDbShare ? mySharesOwned : shareObject.myShares || 0
   const availableToBuy = totalShares - sharesSold
-  const othersSold = sharesSold - myShares
+  const othersSold = Math.max(0, sharesSold - myShares)
   const isSoldOut = sharesSold >= totalShares
 
-  // Превью при выборе количества: как будет выглядеть распределение после покупки
   const previewMyShares = myShares + Math.min(buyCount, availableToBuy)
   const previewAvailable = Math.max(0, availableToBuy - buyCount)
   const previewSold = sharesSold + Math.min(buyCount, availableToBuy)
@@ -152,14 +307,19 @@ const ShareDetailPage = () => {
     return `$${Number(n).toLocaleString('en-US')}`
   }
 
-  const handleBuyShares = () => {
-    const count = Math.min(Math.max(1, buyCount), availableToBuy)
-    if (count > availableToBuy) return
-    setShareObject((prev) => ({
-      ...prev,
-      sharesSold: prev.sharesSold + count,
-      myShares: prev.myShares + count,
-    }))
+  const openPurchaseModal = () => {
+    const isClerkAuth = user && userLoaded
+    const isOldAuth = isAuthenticated()
+    if (!isClerkAuth && !isOldAuth) {
+      showNotification('Войдите в систему, чтобы купить долю')
+      return
+    }
+    if (!isDbShare) {
+      showNotification('Это демо-карточка. Оплата доступна для объектов из каталога долей.')
+      return
+    }
+    if (availableToBuy <= 0) return
+    setPurchaseModalOpen(true)
   }
 
   return (
@@ -167,11 +327,7 @@ const ShareDetailPage = () => {
       <Header />
       <div className="share-detail-page__bg" />
       <div className="share-detail-page__container">
-        <button
-          type="button"
-          className="share-detail-page__back"
-          onClick={() => navigate('/shares')}
-        >
+        <button type="button" className="share-detail-page__back" onClick={() => navigate('/shares')}>
           <FiArrowLeft size={20} /> Назад к долевым объектам
         </button>
 
@@ -180,7 +336,6 @@ const ShareDetailPage = () => {
         </div>
 
         <div className="share-detail__layout">
-          {/* Левая колонка — фото и информация об объекте */}
           <div className="share-detail__info">
             <div className="share-detail__hero">
               <div className="share-detail__image-wrap">
@@ -190,9 +345,7 @@ const ShareDetailPage = () => {
             </div>
             <h1 className="share-detail__title">{shareObject.title}</h1>
             <p className="share-detail__location">{shareObject.location}</p>
-            {shareObject.description && (
-              <p className="share-detail__description">{shareObject.description}</p>
-            )}
+            {shareObject.description && <p className="share-detail__description">{shareObject.description}</p>}
             {shareObject.area && (
               <p className="share-detail__specs">
                 {shareObject.area} м² · {shareObject.rooms} комн.
@@ -205,10 +358,17 @@ const ShareDetailPage = () => {
               <div className="share-detail__price-row">
                 Цена за 1 долю: <strong>{formatPrice(shareObject.pricePerShare)}</strong>
               </div>
+              {totalShares > 0 && (
+                <div className="share-detail__price-row">
+                  Куплено долей:{' '}
+                  <strong>
+                    {sharesSold} из {totalShares} ({Math.round((sharesSold / totalShares) * 100)}%)
+                  </strong>
+                </div>
+              )}
             </div>
           </div>
 
-          {/* Правая колонка — график и покупка или блок Sold out */}
           <div className="share-detail__sidebar">
             {isSoldOut ? (
               <div className="share-detail__sold-out-block">
@@ -222,14 +382,8 @@ const ShareDetailPage = () => {
                 <p className="share-detail__sold-out-text">
                   Этот объект полностью выкуплен. Все {totalShares} долей находятся у совладельцев.
                 </p>
-                <p className="share-detail__sold-out-hint">
-                  Следите за новыми объектами — они появляются регулярно.
-                </p>
-                <button
-                  type="button"
-                  className="share-detail__sold-out-btn"
-                  onClick={() => navigate('/shares')}
-                >
+                <p className="share-detail__sold-out-hint">Следите за новыми объектами — они появляются регулярно.</p>
+                <button type="button" className="share-detail__sold-out-btn" onClick={() => navigate('/shares')}>
                   Смотреть другие объекты
                 </button>
               </div>
@@ -254,7 +408,9 @@ const ShareDetailPage = () => {
                       }}
                     />
                     <div className="share-detail__pie-center">
-                      <span className="share-detail__pie-value">{buyCount > 0 && availableToBuy > 0 ? previewSold : sharesSold}</span>
+                      <span className="share-detail__pie-value">
+                        {buyCount > 0 && availableToBuy > 0 ? previewSold : sharesSold}
+                      </span>
                       <span className="share-detail__pie-label">из {totalShares}</span>
                       {buyCount > 0 && availableToBuy > 0 && (
                         <span className="share-detail__pie-sublabel">после покупки</span>
@@ -263,10 +419,12 @@ const ShareDetailPage = () => {
                   </div>
                   <div className="share-detail__legend">
                     <div className="share-detail__legend-item share-detail__legend-item--gray">
-                      <span className="share-detail__legend-dot" /> Можно купить: {buyCount > 0 && availableToBuy > 0 ? previewAvailable : availableToBuy}
+                      <span className="share-detail__legend-dot" /> Можно купить:{' '}
+                      {buyCount > 0 && availableToBuy > 0 ? previewAvailable : availableToBuy}
                     </div>
                     <div className="share-detail__legend-item share-detail__legend-item--teal">
-                      <span className="share-detail__legend-dot" /> Ваши доли: {buyCount > 0 && availableToBuy > 0 ? previewMyShares : myShares}
+                      <span className="share-detail__legend-dot" /> Ваши доли:{' '}
+                      {buyCount > 0 && availableToBuy > 0 ? previewMyShares : myShares}
                     </div>
                     {othersSold > 0 && (
                       <div className="share-detail__legend-item share-detail__legend-item--dark">
@@ -305,7 +463,7 @@ const ShareDetailPage = () => {
                   <button
                     type="button"
                     className="share-detail__buy-btn"
-                    onClick={handleBuyShares}
+                    onClick={openPurchaseModal}
                     disabled={availableToBuy <= 0}
                   >
                     <FiPlus size={22} /> Купить долю{buyCount > 1 ? ` (${buyCount})` : ''}
@@ -316,6 +474,16 @@ const ShareDetailPage = () => {
           </div>
         </div>
       </div>
+
+      <SharePurchaseModal
+        isOpen={purchaseModalOpen}
+        onClose={() => setPurchaseModalOpen(false)}
+        shareObject={shareObject}
+        buyCount={Math.min(Math.max(1, buyCount), availableToBuy)}
+        userId={userId}
+        userEmail={userEmail}
+        returnPath={id ? `/shares/${id}` : undefined}
+      />
     </div>
   )
 }

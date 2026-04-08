@@ -14,6 +14,18 @@ import { useChainedAppLayoutScroll } from '../hooks/useChainedAppLayoutScroll'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
 
+const SHARE_PURCHASE_IMAGE_PLACEHOLDER =
+  'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=800&q=80'
+
+function sharePurchaseImageSrc(raw) {
+  if (!raw || typeof raw !== 'string') return SHARE_PURCHASE_IMAGE_PLACEHOLDER
+  const t = raw.trim()
+  if (t.startsWith('http://') || t.startsWith('https://') || t.startsWith('data:') || t.startsWith('/')) {
+    return t
+  }
+  return `/${t.replace(/^\/+/, '')}`
+}
+
 function intlLocale() {
   const code = (i18n.language || 'ru').split('-')[0]
   const map = { ru: 'ru-RU', en: 'en-US', de: 'de-DE', es: 'es-ES', fr: 'fr-FR', sv: 'sv-SE' }
@@ -102,10 +114,12 @@ const History = () => {
       loadVerificationStatus()
       loadWonProperties()
       loadReservationPurchases()
+      loadSharePurchases()
       loadBidHistory()
     } else {
       setIsLoadingPurchases(false)
       setIsLoadingReservations(false)
+      setIsLoadingSharePurchases(false)
       setIsLoadingBids(false)
     }
   }, [userId, i18nApi.language])
@@ -229,6 +243,8 @@ const History = () => {
   const [isLoadingPurchases, setIsLoadingPurchases] = useState(true)
   const [reservationPurchases, setReservationPurchases] = useState([])
   const [isLoadingReservations, setIsLoadingReservations] = useState(true)
+  const [sharePurchases, setSharePurchases] = useState([])
+  const [isLoadingSharePurchases, setIsLoadingSharePurchases] = useState(true)
   const [bidHistory, setBidHistory] = useState([])
   const [isLoadingBids, setIsLoadingBids] = useState(true)
 
@@ -254,6 +270,31 @@ const History = () => {
       setReservationPurchases([])
     } finally {
       setIsLoadingReservations(false)
+    }
+  }
+
+  const loadSharePurchases = async () => {
+    if (!userId) return
+    const numericUserId = typeof userId === 'string' ? parseInt(userId, 10) : userId
+    if (isNaN(numericUserId)) return
+    setIsLoadingSharePurchases(true)
+    try {
+      const response = await fetch(`${API_BASE_URL}/users/${numericUserId}/share-purchases`)
+      if (response.ok) {
+        const result = await response.json()
+        if (result.success && Array.isArray(result.data)) {
+          setSharePurchases(result.data)
+        } else {
+          setSharePurchases([])
+        }
+      } else {
+        setSharePurchases([])
+      }
+    } catch (e) {
+      console.error('Ошибка загрузки покупок долей:', e)
+      setSharePurchases([])
+    } finally {
+      setIsLoadingSharePurchases(false)
     }
   }
 
@@ -603,6 +644,79 @@ const History = () => {
                                 {t('buyerHistory_openProperty')}
                               </Link>
                             )}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                ) : null}
+                {isLoadingSharePurchases ? (
+                  <div className="empty-state" style={{ marginTop: 16 }}>
+                    <p>{t('buyerHistory_loadingShares')}</p>
+                  </div>
+                ) : sharePurchases.length > 0 ? (
+                  <div className="history-reservations" style={{ marginTop: 24 }}>
+                    <h3 className="section-subtitle" style={{ marginBottom: 12, fontSize: '1.1rem' }}>
+                      {t('buyerHistory_shareSection')}
+                    </h3>
+                    {sharePurchases.map((row) => {
+                      const cur = (row.currency || 'USD').toUpperCase()
+                      const shareTo = `/shares/${row.property_type}-${row.property_id}`
+                      const title =
+                        row.property_title || t('buyerHistory_propertyTitle', { id: row.property_id })
+                      const imgSrc = sharePurchaseImageSrc(row.property_image)
+                      return (
+                        <div
+                          key={row.id}
+                          className="history-card history-share-purchase-card purchase-card"
+                          style={{ marginBottom: 16 }}
+                        >
+                          <div className="card-image history-share-purchase-card__image">
+                            <img
+                              src={imgSrc}
+                              alt={title}
+                              onError={(e) => {
+                                e.currentTarget.onerror = null
+                                e.currentTarget.src = SHARE_PURCHASE_IMAGE_PLACEHOLDER
+                              }}
+                            />
+                            <span className="history-share-purchase-card__badge">{t('buyerHistory_shareBadge')}</span>
+                          </div>
+                          <div className="card-content">
+                            <div className="card-header">
+                              <h3 className="card-title">{title}</h3>
+                              <span className="status-badge status-success">{t('buyerHistory_sharePaid')}</span>
+                            </div>
+                            {(row.property_location || row.property_type) && (
+                              <p className="card-location">
+                                {[row.property_location, row.property_type].filter(Boolean).join(' · ')}
+                              </p>
+                            )}
+                            <div className="card-details">
+                              <div className="detail-item">
+                                <span className="detail-label">{t('buyerHistory_sharesBought')}</span>
+                                <span className="detail-value">{row.shares_count}</span>
+                              </div>
+                              <div className="detail-item">
+                                <span className="detail-label">{t('buyerHistory_pricePerShare')}</span>
+                                <span className="detail-value price">
+                                  {formatPrice(row.price_per_share, cur)}
+                                </span>
+                              </div>
+                              <div className="detail-item">
+                                <span className="detail-label">{t('buyerHistory_totalPaidShares')}</span>
+                                <span className="detail-value price">
+                                  {formatPrice(row.total_price, cur)}
+                                </span>
+                              </div>
+                              <div className="detail-item">
+                                <span className="detail-label">{t('buyerHistory_date')}</span>
+                                <span className="detail-value">{formatDate(row.purchase_date)}</span>
+                              </div>
+                            </div>
+                            <Link to={shareTo} className="card-button">
+                              {t('buyerHistory_shareOpenObject')}
+                            </Link>
                           </div>
                         </div>
                       )

@@ -44,6 +44,19 @@ const UserDetailModal = ({ isOpen, onClose, userId }) => {
         console.warn('Не удалось загрузить документы:', docsError);
       }
 
+      let sharePurchases = [];
+      try {
+        const sharesRes = await fetch(`${API_BASE_URL}/users/${userId}/share-purchases`);
+        if (sharesRes.ok) {
+          const sharesJson = await sharesRes.json();
+          if (sharesJson.success && Array.isArray(sharesJson.data)) {
+            sharePurchases = sharesJson.data;
+          }
+        }
+      } catch (sharesErr) {
+        console.warn('Не удалось загрузить покупки долей:', sharesErr);
+      }
+
       // Формируем URL для фото
       const userData = userResult.data;
       let userPhotoUrl = null;
@@ -108,7 +121,8 @@ const UserDetailModal = ({ isOpen, onClose, userId }) => {
         ...userData,
         user_photo_url: userPhotoUrl,
         passport_photo_url: passportPhotoUrl,
-        cardInfo: cardInfo
+        cardInfo: cardInfo,
+        sharePurchases,
       });
       setDocuments(documentsWithUrls);
     } catch (err) {
@@ -460,6 +474,52 @@ const UserDetailModal = ({ isOpen, onClose, userId }) => {
                 )}
               </div>
             </div>
+
+            {/* Покупки долей */}
+            {user.sharePurchases && user.sharePurchases.length > 0 && (
+              <div className="user-detail-section">
+                <h3 className="section-title">Покупки долей ({user.sharePurchases.length})</h3>
+                <div className="documents-list">
+                  {user.sharePurchases.map((row) => (
+                    <div key={row.id} className="document-item">
+                      <div className="document-info">
+                        <div className="document-header">
+                          <span className="document-type">
+                            {row.property_title || `Объект #${row.property_id}`} ({row.property_type})
+                          </span>
+                          <span className="document-status status-approved">Оплачено</span>
+                        </div>
+                        <div className="document-date">
+                          Долей: {row.shares_count} · за долю: {Number(row.price_per_share).toLocaleString('ru-RU')}{' '}
+                          {row.currency || 'USD'} · всего: {Number(row.total_price).toLocaleString('ru-RU')}{' '}
+                          {row.currency || 'USD'}
+                        </div>
+                        <div className="document-date">
+                          Дата: {formatDate(row.purchase_date)}
+                        </div>
+                        {row.agreement_signature && (
+                          <div className="document-date user-detail-share-sig">
+                            <div>Подпись согласия:</div>
+                            {String(row.agreement_signature).startsWith('data:image') ? (
+                              <img
+                                src={row.agreement_signature}
+                                alt="Подпись"
+                                className="user-detail-share-sig__img"
+                              />
+                            ) : (
+                              <span>{row.agreement_signature}</span>
+                            )}
+                          </div>
+                        )}
+                        {row.policy_version && (
+                          <div className="document-date">Версия политики: {row.policy_version}</div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Документы на верификацию */}
             {documents.length > 0 && (

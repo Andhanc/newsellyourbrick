@@ -488,22 +488,41 @@ model property_favorites {
 }
 
 model property_shares {
-  id              Int       @id @default(autoincrement())
-  property_id     Int
-  property_type   String
-  buyer_id        Int
-  shares_count    Int
-  price_per_share Float
-  total_price     Float
-  currency        String?   @default("USD")
-  purchase_date   DateTime? @default(now())
-  status          String?   @default("completed")
-  users           users     @relation(fields: [buyer_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  id                          Int       @id @default(autoincrement())
+  property_id                 Int
+  property_type               String
+  buyer_id                    Int
+  shares_count                Int
+  price_per_share             Float
+  total_price                 Float
+  currency                    String?   @default("USD")
+  purchase_date               DateTime? @default(now())
+  status                      String?   @default("completed")
+  agreement_signature         String?
+  policy_version              String?   @default("share_policy_test_v1")
+  stripe_checkout_session_id  String?   @unique(map: "property_shares_stripe_session_key")
+  users                       users     @relation(fields: [buyer_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@index([property_id, property_type, buyer_id], map: "idx_shares_property_buyer")
   @@index([status], map: "idx_shares_status")
   @@index([buyer_id], map: "idx_shares_buyer")
   @@index([property_id, property_type], map: "idx_shares_property")
+}
+
+/// Временное хранение нарисованной подписи до завершения Stripe Checkout (metadata не вмещает PNG).
+model share_purchase_signature_intents {
+  id                    String    @id @default(uuid())
+  buyer_id              Int
+  property_id           Int
+  property_type         String
+  shares_count          Int
+  signature_data        String
+  created_at            DateTime  @default(now())
+  consumed_at           DateTime?
+  stripe_session_id     String?   @unique(map: "share_sig_intent_stripe_session_key")
+  users                 users     @relation(fields: [buyer_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([buyer_id, created_at], map: "idx_share_sig_intent_buyer")
 }
 
 model property_translations {
@@ -706,6 +725,7 @@ model users {
   properties_houses             properties_houses[]
   property_favorites            property_favorites[]
   property_shares               property_shares[]
+  share_purchase_signature_intents share_purchase_signature_intents[]
   stripe_payments               stripe_payments[]
   stripe_subscription_state     stripe_subscription_state?
   stripe_wallet_deposit_credits stripe_wallet_deposit_credits[] @ignore

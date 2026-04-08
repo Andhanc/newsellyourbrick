@@ -4,6 +4,7 @@ import {
   propertyQueries,
   purchaseRequestQueries,
   userQueries,
+  sharePurchaseQueries,
 } from './database/database.js';
 import { getPrisma } from './database/prismaClient.js';
 
@@ -54,6 +55,184 @@ function majorToStripeMinor(amountMajor, currency) {
 function computeMinimumSalePriceMajor(property) {
   const price = Number(property.price) || 0;
   return Number.isFinite(price) && price > 0 ? price : 0;
+}
+
+const SHARE_PURCHASE_POLICY_VERSION = 'share_policy_test_v1';
+
+const SIGNATURE_DATA_URL_MAX_CHARS = 750_000;
+
+function validateShareSignatureDataUrl(raw) {
+  if (typeof raw !== 'string' || raw.length < 80) {
+    return { ok: false, error: 'Подпись не передана' };
+  }
+  if (raw.length > SIGNATURE_DATA_URL_MAX_CHARS) {
+    return { ok: false, error: 'Изображение подписи слишком большое' };
+  }
+  const lower = raw.slice(0, 40).toLowerCase();
+  if (
+    !lower.startsWith('data:image/png;base64,') &&
+    !lower.startsWith('data:image/jpeg;base64,') &&
+    !lower.startsWith('data:image/jpg;base64,')
+  ) {
+    return { ok: false, error: 'Подпись должна быть в формате PNG или JPEG (data URL)' };
+  }
+  const comma = raw.indexOf(',');
+  if (comma < 12) return { ok: false, error: 'Некорректный формат подписи' };
+  const b64 = raw.slice(comma + 1).replace(/\s/g, '');
+  if (b64.length < 20) return { ok: false, error: 'Пустая подпись' };
+  return { ok: true };
+}
+
+function isShareSaleProperty(property) {
+  if (!property) return false;
+  const st = property.sale_type != null ? String(property.sale_type).toLowerCase() : '';
+  const iso = property.is_shared_ownership === 1 || property.is_shared_ownership === '1';
+  return iso || st === 'share';
+}
+
+/**
+ * После успешной оплаты долей: запись property_shares + shares_sold (идемпотентно по session.id).
+ */
+export async function processSharePurchasePaidSession(stripe, session) {
+  if (!stripe || !session?.id) {
+    return { ok: false, error: 'invalid_session' };
+  }
+  let sess = session;
+  try {
+    sess = await stripe.checkout.sessions.retrieve(session.id, {
+      expand: ['payment_intent'],
+    });
+  } catch (e) {
+    console.error('[Stripe] share purchase retrieve session:', e?.message || e);
+    return { ok: false, error: 'retrieve_failed' };
+  }
+
+  if (sess.mode !== 'payment') {
+    return { ok: false, error: 'not_payment_mode' };
+  }
+  if (sess.metadata?.checkout_purpose !== 'share_purchase') {
+    return { ok: false, error: 'wrong_purpose' };
+  }
+
+  const piObj =
+    sess.payment_intent && typeof sess.payment_intent === 'object' ? sess.payment_intent : null;
+  const paidOk =
+    sess.payment_status === 'paid' ||
+    sess.payment_status === 'no_payment_required' ||
+    piObj?.status === 'succeeded';
+  if (!paidOk) {
+    return { ok: false, error: 'not_paid' };
+  }
+
+  const userId = parseInt(sess.metadata?.app_user_id || '', 10);
+  const propertyId = parseInt(sess.metadata?.property_id || '', 10);
+  const propertyType = sess.metadata?.property_type != null ? String(sess.metadata.property_type).trim() : '';
+  const sharesCount = parseInt(sess.metadata?.shares_count || '', 10);
+  const expectedCents = parseInt(sess.metadata?.total_cents || '', 10);
+  const signingIntentId =
+    sess.metadata?.signing_intent_id != null ? String(sess.metadata.signing_intent_id).trim() : '';
+  const agreementSignatureLegacy =
+    sess.metadata?.agreement_signature != null ? String(sess.metadata.agreement_signature) : '';
+  const policyVersion =
+    sess.metadata?.policy_version != null ? String(sess.metadata.policy_version) : SHARE_PURCHASE_POLICY_VERSION;
+  const pricePerShareMajor = parseFloat(sess.metadata?.price_per_share_major || '');
+  const totalPriceMajor = parseFloat(sess.metadata?.total_price_major || '');
+
+  if (!Number.isFinite(userId) || !Number.isFinite(propertyId) || !propertyType) {
+    return { ok: false, error: 'bad_metadata' };
+  }
+  if (!Number.isFinite(sharesCount) || sharesCount < 1) {
+    return { ok: false, error: 'bad_shares_count' };
+  }
+  if (!signingIntentId && agreementSignatureLegacy.length < 2) {
+    return { ok: false, error: 'bad_metadata' };
+  }
+
+  const existing = await sharePurchaseQueries.findByStripeSessionId(sess.id);
+  if (existing) {
+    return { ok: true, already: true };
+  }
+
+  if (Number.isFinite(expectedCents) && sess.amount_total != null) {
+    const diff = Math.abs(sess.amount_total - expectedCents);
+    const tol = Math.max(2, Math.round(expectedCents * 0.03));
+    if (diff > tol) {
+      console.warn('[Stripe] share purchase: amount differs from metadata', {
+        amount_total: sess.amount_total,
+        expectedCents,
+        diff,
+      });
+    }
+  }
+
+  const property = await propertyQueries.getById(propertyId, propertyType);
+  if (!property) {
+    return { ok: false, error: 'property_not_found' };
+  }
+  if (!isShareSaleProperty(property)) {
+    return { ok: false, error: 'not_share_property' };
+  }
+
+  const curNorm = normalizeStripeCurrency(property.currency || sess.currency || 'usd');
+  if (!curNorm.ok) {
+    return { ok: false, error: curNorm.error };
+  }
+  const currency = curNorm.currency;
+
+  const totalShares = property.total_shares != null ? Number(property.total_shares) : 0;
+  const sharesSold = property.shares_sold != null ? Number(property.shares_sold) : 0;
+  if (!(totalShares > 0) || sharesSold + sharesCount > totalShares) {
+    return { ok: false, error: 'no_inventory' };
+  }
+
+  const objectPrice = Number(property.price) || 0;
+  const pricePerShareComputed = totalShares > 0 ? objectPrice / totalShares : 0;
+  const totalComputed = pricePerShareComputed * sharesCount;
+
+  if (!(pricePerShareComputed > 0) || !(totalComputed > 0)) {
+    return { ok: false, error: 'invalid_pricing' };
+  }
+
+  const tolMajor = Math.max(0.01, totalComputed * 0.02);
+  if (
+    Number.isFinite(pricePerShareMajor) &&
+    Math.abs(pricePerShareMajor - pricePerShareComputed) > tolMajor
+  ) {
+    console.warn('[Stripe] share purchase: price_per_share metadata mismatch', {
+      pricePerShareMajor,
+      pricePerShareComputed,
+    });
+  }
+  if (Number.isFinite(totalPriceMajor) && Math.abs(totalPriceMajor - totalComputed) > tolMajor) {
+    console.warn('[Stripe] share purchase: total_price metadata mismatch', {
+      totalPriceMajor,
+      totalComputed,
+    });
+  }
+
+  try {
+    await sharePurchaseQueries.completePurchaseFromStripeSession({
+      stripeSessionId: sess.id,
+      signingIntentId: signingIntentId || null,
+      buyerId: userId,
+      propertyId,
+      propertyType,
+      sharesCount,
+      pricePerShare: pricePerShareComputed,
+      totalPrice: totalComputed,
+      currency: currency.toUpperCase(),
+      agreementSignature: signingIntentId ? '' : agreementSignatureLegacy,
+      policyVersion,
+    });
+    return { ok: true };
+  } catch (e) {
+    const msg = e?.message || 'process_failed';
+    console.error('[Stripe] processSharePurchasePaidSession:', msg);
+    if (msg === 'share_inventory_exhausted') {
+      return { ok: false, error: 'share_inventory_exhausted' };
+    }
+    return { ok: false, error: msg };
+  }
 }
 
 /** Списание 3000 EUR с кошелька депозита при оплате резерва (только с EUR-объявлениями). */
@@ -628,6 +807,11 @@ export function createStripeWebhookHandler() {
             await processPropertyReservationPaidSession(stripe, full);
             break;
           }
+          if (session.mode === 'payment' && session.metadata?.checkout_purpose === 'share_purchase') {
+            const full = await stripe.checkout.sessions.retrieve(session.id);
+            await processSharePurchasePaidSession(stripe, full);
+            break;
+          }
           if (session.mode === 'subscription' && session.metadata?.checkout_purpose !== 'wallet_deposit') {
             await syncCheckoutSessionToDatabase(stripe, session.id);
           }
@@ -946,6 +1130,292 @@ export function registerStripeBillingRoutes(app) {
     } catch (err) {
       console.error('[Stripe] confirm-property-reservation:', err?.message || err);
       return res.status(500).json({ success: false, error: err?.message || 'Ошибка' });
+    }
+  });
+
+  app.post('/api/billing/share-purchase-signature-intent', async (req, res) => {
+    try {
+      const userId = req.body?.userId != null ? parseInt(String(req.body.userId).trim(), 10) : NaN;
+      const propertyId = req.body?.propertyId != null ? parseInt(String(req.body.propertyId).trim(), 10) : NaN;
+      const propertyType =
+        req.body?.propertyType != null ? String(req.body.propertyType).trim().slice(0, 32) : '';
+      const sharesCount = req.body?.sharesCount != null ? parseInt(String(req.body.sharesCount).trim(), 10) : NaN;
+      const signatureDataUrl =
+        typeof req.body?.signatureDataUrl === 'string' ? req.body.signatureDataUrl.trim() : '';
+
+      if (!Number.isFinite(userId) || !Number.isFinite(propertyId) || !propertyType) {
+        return res.status(400).json({ success: false, error: 'Укажите userId, propertyId и propertyType' });
+      }
+      if (!Number.isFinite(sharesCount) || sharesCount < 1) {
+        return res.status(400).json({ success: false, error: 'Укажите число долей' });
+      }
+
+      const sigOk = validateShareSignatureDataUrl(signatureDataUrl);
+      if (!sigOk.ok) {
+        return res.status(400).json({ success: false, error: sigOk.error });
+      }
+
+      const property = await propertyQueries.getById(propertyId, propertyType);
+      if (!property) {
+        return res.status(404).json({ success: false, error: 'Объект не найден' });
+      }
+      if (property.moderation_status && property.moderation_status !== 'approved') {
+        return res.status(400).json({ success: false, error: 'Объект недоступен' });
+      }
+      if (!isShareSaleProperty(property)) {
+        return res.status(400).json({ success: false, error: 'Это не долевой объект' });
+      }
+
+      const totalShares = property.total_shares != null ? Number(property.total_shares) : 0;
+      const sharesSold = property.shares_sold != null ? Number(property.shares_sold) : 0;
+      const available = Math.max(0, totalShares - sharesSold);
+      if (available <= 0 || sharesCount > available) {
+        return res.status(400).json({ success: false, error: 'Недостаточно свободных долей' });
+      }
+
+      const row = await sharePurchaseQueries.createSignatureIntent({
+        buyerId: userId,
+        propertyId,
+        propertyType,
+        sharesCount,
+        signatureData: signatureDataUrl,
+      });
+      return res.json({ success: true, signingIntentId: row.id });
+    } catch (err) {
+      if (err?.message === 'invalid_signature_payload') {
+        return res.status(400).json({ success: false, error: 'Некорректные данные подписи' });
+      }
+      console.error('[Stripe] share-purchase-signature-intent:', err?.message || err);
+      return res.status(500).json({ success: false, error: err?.message || 'Ошибка сервера' });
+    }
+  });
+
+  app.post('/api/billing/create-share-purchase-checkout', async (req, res) => {
+    try {
+      if (!stripe) {
+        return res.status(503).json({
+          success: false,
+          error: 'Платежи не настроены: задайте STRIPE_SECRET_KEY в .env',
+        });
+      }
+      const userId = req.body?.userId != null ? parseInt(String(req.body.userId).trim(), 10) : NaN;
+      const propertyId = req.body?.propertyId != null ? parseInt(String(req.body.propertyId).trim(), 10) : NaN;
+      const propertyType =
+        req.body?.propertyType != null ? String(req.body.propertyType).trim().slice(0, 32) : '';
+      const sharesCount = req.body?.sharesCount != null ? parseInt(String(req.body.sharesCount).trim(), 10) : NaN;
+      const signingIntentId =
+        typeof req.body?.signingIntentId === 'string' ? req.body.signingIntentId.trim().slice(0, 48) : '';
+      const customerEmail =
+        typeof req.body?.customerEmail === 'string' ? req.body.customerEmail.trim().slice(0, 320) : '';
+      let returnPath =
+        typeof req.body?.returnPath === 'string' && req.body.returnPath.startsWith('/')
+          ? req.body.returnPath.split('?')[0].slice(0, 200)
+          : null;
+      if (returnPath && returnPath.includes('..')) {
+        returnPath = null;
+      }
+
+      if (!Number.isFinite(userId) || !Number.isFinite(propertyId) || !propertyType) {
+        return res.status(400).json({ success: false, error: 'Укажите userId, propertyId и propertyType' });
+      }
+      if (!Number.isFinite(sharesCount) || sharesCount < 1) {
+        return res.status(400).json({ success: false, error: 'Укажите число долей' });
+      }
+      if (!signingIntentId || !/^[0-9a-f-]{36}$/i.test(signingIntentId)) {
+        return res.status(400).json({
+          success: false,
+          error: 'Сначала сохраните нарисованную подпись (обновите страницу и попробуйте снова)',
+        });
+      }
+
+      const intentReady = await sharePurchaseQueries.assertIntentReadyForCheckout(
+        signingIntentId,
+        userId,
+        propertyId,
+        propertyType,
+        sharesCount
+      );
+      if (!intentReady.ok) {
+        const map = {
+          intent_not_found: 'Подпись не найдена — нарисуйте и подтвердите снова',
+          intent_consumed: 'Эта подпись уже использована',
+          intent_checkout_already_started: 'Оплата уже начата. Завершите в Stripe или начните с новой подписи',
+          intent_user_mismatch: 'Несовпадение пользователя',
+          intent_property_mismatch: 'Объект или тип изменились — подпишите снова',
+          intent_shares_mismatch: 'Количество долей изменилось — подпишите снова',
+          intent_expired: 'Подпись устарела (30 мин) — нарисуйте заново',
+        };
+        return res.status(400).json({
+          success: false,
+          error: map[intentReady.error] || 'Недействительная подпись',
+        });
+      }
+
+      const property = await propertyQueries.getById(propertyId, propertyType);
+      if (!property) {
+        return res.status(404).json({ success: false, error: 'Объект не найден' });
+      }
+      if (property.moderation_status && property.moderation_status !== 'approved') {
+        return res.status(400).json({ success: false, error: 'Объект недоступен для покупки' });
+      }
+      if (!isShareSaleProperty(property)) {
+        return res.status(400).json({ success: false, error: 'Это не долевой объект' });
+      }
+
+      const totalShares = property.total_shares != null ? Number(property.total_shares) : 0;
+      const sharesSold = property.shares_sold != null ? Number(property.shares_sold) : 0;
+      const available = Math.max(0, totalShares - sharesSold);
+      if (available <= 0 || sharesCount > available) {
+        return res.status(400).json({ success: false, error: 'Недостаточно свободных долей' });
+      }
+
+      const curNorm = normalizeStripeCurrency(property.currency || 'usd');
+      if (!curNorm.ok) {
+        return res.status(400).json({ success: false, error: curNorm.error });
+      }
+      const currency = curNorm.currency;
+
+      const objectPrice = Number(property.price) || 0;
+      if (!(objectPrice > 0) || !(totalShares > 0)) {
+        return res.status(400).json({ success: false, error: 'Некорректная цена или число долей объекта' });
+      }
+      const pricePerShare = objectPrice / totalShares;
+      const totalPrice = pricePerShare * sharesCount;
+      const unitAmount = majorToStripeMinor(totalPrice, currency);
+      const minUnit = minStripeUnitAmount(currency);
+      if (unitAmount < minUnit) {
+        return res.status(400).json({
+          success: false,
+          error: `Сумма слишком мала для оплаты картой (минимум Stripe для ${currency.toUpperCase()})`,
+        });
+      }
+
+      const titleShort = (property.title || `Объект #${propertyId}`).slice(0, 80);
+      const basePath = returnPath || `/shares/${propertyType}-${propertyId}`;
+      const successUrl = `${frontendBase}${basePath}?share_checkout=success&session_id={CHECKOUT_SESSION_ID}`;
+      const cancelUrl = `${frontendBase}${basePath}?share_checkout=canceled`;
+
+      const session = await stripe.checkout.sessions.create({
+        mode: 'payment',
+        payment_method_types: ['card'],
+        line_items: [
+          {
+            quantity: 1,
+            price_data: {
+              currency,
+              unit_amount: unitAmount,
+              product_data: {
+                name: `Доли (${sharesCount} шт.) — ${titleShort}`,
+                description: `Покупка долей в долевой недвижимости. Объект #${propertyId}, тип ${propertyType}.`.slice(
+                  0,
+                  500
+                ),
+              },
+            },
+          },
+        ],
+        success_url: successUrl,
+        cancel_url: cancelUrl,
+        metadata: {
+          app_user_id: String(userId),
+          property_id: String(propertyId),
+          property_type: propertyType,
+          shares_count: String(sharesCount),
+          checkout_purpose: 'share_purchase',
+          signing_intent_id: signingIntentId,
+          agreement_signature: '[drawn]',
+          policy_version: SHARE_PURCHASE_POLICY_VERSION,
+          price_per_share_major: String(pricePerShare),
+          total_price_major: String(totalPrice),
+          total_cents: String(unitAmount),
+        },
+        ...(customerEmail && customerEmail.includes('@') ? { customer_email: customerEmail } : {}),
+      });
+
+      const attached = await sharePurchaseQueries.attachStripeSessionToIntent(signingIntentId, session.id);
+      if (!attached) {
+        try {
+          await stripe.checkout.sessions.expire(session.id);
+        } catch (expireErr) {
+          console.warn('[Stripe] share purchase expire orphan session:', expireErr?.message || expireErr);
+        }
+        return res.status(409).json({
+          success: false,
+          error: 'Не удалось привязать подпись к оплате. Нарисуйте подпись ещё раз.',
+        });
+      }
+
+      return res.json({ success: true, url: session.url });
+    } catch (err) {
+      console.error('[Stripe] create-share-purchase-checkout:', err?.message || err);
+      return res.status(500).json({
+        success: false,
+        error: err?.message || 'Ошибка Stripe',
+      });
+    }
+  });
+
+  app.post('/api/billing/confirm-share-purchase', async (req, res) => {
+    try {
+      if (!stripe) {
+        return res.status(503).json({ success: false, error: 'Stripe не настроен' });
+      }
+      const sessionId = typeof req.body?.session_id === 'string' ? req.body.session_id.trim() : '';
+      const userIdRaw = req.body?.userId;
+      const userId = userIdRaw != null ? String(userIdRaw).trim() : '';
+      if (!sessionId || !sessionId.startsWith('cs_')) {
+        return res.status(400).json({ success: false, error: 'Нужен session_id (cs_...)' });
+      }
+      if (!userId || !/^\d+$/.test(userId)) {
+        return res.status(400).json({ success: false, error: 'Нужен числовой userId' });
+      }
+      const session = await stripe.checkout.sessions.retrieve(sessionId, {
+        expand: ['payment_intent'],
+      });
+      if (String(session.metadata?.app_user_id || '') !== userId) {
+        return res.status(403).json({ success: false, error: 'user_mismatch' });
+      }
+      if (session.metadata?.checkout_purpose !== 'share_purchase') {
+        return res.status(400).json({ success: false, error: 'wrong_session_type' });
+      }
+      let ready = session;
+      let attempts = 0;
+      const sessionPaidLike = (s) => {
+        const pi = s.payment_intent && typeof s.payment_intent === 'object' ? s.payment_intent : null;
+        return (
+          s.payment_status === 'paid' ||
+          s.payment_status === 'no_payment_required' ||
+          pi?.status === 'succeeded'
+        );
+      };
+      while (!sessionPaidLike(ready) && attempts < 15) {
+        await new Promise((r) => setTimeout(r, 400));
+        ready = await stripe.checkout.sessions.retrieve(sessionId, { expand: ['payment_intent'] });
+        attempts += 1;
+      }
+      const result = await processSharePurchasePaidSession(stripe, ready);
+      if (!result.ok) {
+        return res.status(400).json({ success: false, error: result.error || 'confirm_failed' });
+      }
+      return res.json({ success: true, data: { already: !!result.already } });
+    } catch (err) {
+      console.error('[Stripe] confirm-share-purchase:', err?.message || err);
+      return res.status(500).json({ success: false, error: err?.message || 'Ошибка' });
+    }
+  });
+
+  /** Профиль / админка: покупки долей пользователя */
+  app.get('/api/users/:userId/share-purchases', async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId, 10);
+      if (!Number.isFinite(userId)) {
+        return res.status(400).json({ success: false, error: 'Некорректный userId' });
+      }
+      const rows = await sharePurchaseQueries.listByBuyerEnriched(userId, 100);
+      return res.json({ success: true, data: rows });
+    } catch (err) {
+      console.error('[Stripe] share-purchases:', err?.message || err);
+      return res.status(500).json({ success: false, error: err?.message });
     }
   });
 
