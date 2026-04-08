@@ -1,10 +1,11 @@
 import { Link, useNavigate } from 'react-router-dom'
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useUser, useClerk } from '@clerk/clerk-react'
 import { getUserData, isAuthenticated, logout, CLERK_DB_USER_SYNCED, getStoredNumericUserId } from '../services/authService'
 import VerificationToast from '../components/VerificationToast'
 import WonPropertyCard from '../components/WonPropertyCard'
+import BuyNowCompletedHistoryCard from '../components/BuyNowCompletedHistoryCard'
 import BuyerCabinetSidebar from '../components/BuyerCabinetSidebar'
 import { ensureCanOpenProperty } from '../utils/propertyAccessGuard'
 import i18n from '../i18n/config'
@@ -30,6 +31,58 @@ function intlLocale() {
   const code = (i18n.language || 'ru').split('-')[0]
   const map = { ru: 'ru-RU', en: 'en-US', de: 'de-DE', es: 'es-ES', fr: 'fr-FR', sv: 'sv-SE' }
   return map[code] || 'en-US'
+}
+
+/** Срок резерва в истории: обратный отсчёт 3 суток с момента оплаты. */
+const RESERVE_HOLD_MS = 3 * 24 * 60 * 60 * 1000
+
+function formatReserveCountdown(msLeft) {
+  if (msLeft <= 0) return '0:00:00'
+  const totalSec = Math.floor(msLeft / 1000)
+  const d = Math.floor(totalSec / 86400)
+  const h = Math.floor((totalSec % 86400) / 3600)
+  const m = Math.floor((totalSec % 3600) / 60)
+  const s = totalSec % 60
+  const pad = (n) => String(n).padStart(2, '0')
+  if (d > 0) return `${d}д ${pad(h)}:${pad(m)}:${pad(s)}`
+  return `${pad(h)}:${pad(m)}:${pad(s)}`
+}
+
+function ReservationReserveCountdown({ paidAt, hide }) {
+  const { t } = useTranslation()
+  const endMs = (() => {
+    if (paidAt == null || paidAt === '') return null
+    const t0 = new Date(paidAt).getTime()
+    if (!Number.isFinite(t0)) return null
+    return t0 + RESERVE_HOLD_MS
+  })()
+
+  const [now, setNow] = useState(() => Date.now())
+  useEffect(() => {
+    if (endMs == null) return undefined
+    const id = setInterval(() => setNow(Date.now()), 1000)
+    return () => clearInterval(id)
+  }, [endMs])
+
+  if (hide) return null
+  if (endMs == null) return null
+
+  const msLeft = endMs - now
+
+  if (msLeft <= 0) {
+    return (
+      <div className="history-reservation-timer history-reservation-timer--expired" role="status">
+        <span className="history-reservation-timer__value">{t('buyerHistory_reserveTimerExpired')}</span>
+      </div>
+    )
+  }
+
+  return (
+    <div className="history-reservation-timer" role="timer" aria-live="polite" aria-atomic="true">
+      <span className="history-reservation-timer__label">{t('buyerHistory_reserveTimerLabel')}</span>
+      <span className="history-reservation-timer__value">{formatReserveCountdown(msLeft)}</span>
+    </div>
+  )
 }
 
 const History = () => {
@@ -114,6 +167,7 @@ const History = () => {
       loadVerificationStatus()
       loadWonProperties()
       loadReservationPurchases()
+      loadCompletedPurchaseRequests()
       loadSharePurchases()
       loadBidHistory()
     } else {
@@ -243,6 +297,8 @@ const History = () => {
   const [isLoadingPurchases, setIsLoadingPurchases] = useState(true)
   const [reservationPurchases, setReservationPurchases] = useState([])
   const [isLoadingReservations, setIsLoadingReservations] = useState(true)
+  /** Запросы на покупку со статусом completed (менеджер нажал «Завершить») — скрываем таймер резерва. */
+  const [completedPurchaseRequestIds, setCompletedPurchaseRequestIds] = useState(() => new Set())
   const [sharePurchases, setSharePurchases] = useState([])
   const [isLoadingSharePurchases, setIsLoadingSharePurchases] = useState(true)
   const [bidHistory, setBidHistory] = useState([])
@@ -270,6 +326,27 @@ const History = () => {
       setReservationPurchases([])
     } finally {
       setIsLoadingReservations(false)
+    }
+  }
+
+  const loadCompletedPurchaseRequests = async () => {
+    if (!userId) return
+    const numericUserId = typeof userId === 'string' ? parseInt(userId, 10) : userId
+    if (isNaN(numericUserId)) return
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/purchase-requests/buyer/${numericUserId}?limit=200`
+      )
+      if (!response.ok) return
+      const result = await response.json()
+      if (!result.success || !Array.isArray(result.data)) return
+      const ids = new Set()
+      for (const row of result.data) {
+        if (row.status === 'completed' && row.id != null) ids.add(Number(row.id))
+      }
+      setCompletedPurchaseRequestIds(ids)
+    } catch (e) {
+      console.warn('История: не удалось загрузить статусы запросов на покупку', e)
     }
   }
 
@@ -518,6 +595,23 @@ const History = () => {
     }
   }
 
+  const { activeReservationPurchases, completedBuyNowReservations } = useMemo(() => {
+    const active = []
+    const completed = []
+    for (const row of reservationPurchases) {
+      const b = row.billing || {}
+      const prId = b.purchase_request_id != null ? Number(b.purchase_request_id) : null
+      const isDone =
+        prId != null && !Number.isNaN(prId) && completedPurchaseRequestIds.has(prId)
+      if (isDone) completed.push(row)
+      else active.push(row)
+    }
+    return {
+      activeReservationPurchases: active,
+      completedBuyNowReservations: completed,
+    }
+  }, [reservationPurchases, completedPurchaseRequestIds])
+
   const handleLogout = async () => {
     if (!window.confirm(t('buyerCabinet_logoutConfirm'))) return
     try {
@@ -560,30 +654,48 @@ const History = () => {
                   <div className="empty-state">
                     <p>{t('buyerHistory_loading')}</p>
                   </div>
-                ) : purchaseHistory.length > 0 ? (
-                  purchaseHistory.map((purchase) => (
-                    <WonPropertyCard
-                      key={purchase.id}
-                      purchase={purchase}
-                      formatPrice={formatPrice}
-                      formatDate={formatDate}
-                    />
-                  ))
                 ) : (
-                  <div className="empty-state">
-                    <p>{t('buyerHistory_emptyWins')}</p>
-                  </div>
+                  <>
+                    {purchaseHistory.map((purchase) => (
+                      <WonPropertyCard
+                        key={purchase.id}
+                        purchase={purchase}
+                        formatPrice={formatPrice}
+                        formatDate={formatDate}
+                      />
+                    ))}
+                    {!isLoadingReservations &&
+                      completedBuyNowReservations.map((row) => (
+                        <BuyNowCompletedHistoryCard
+                          key={row.id || row.dedupe_key}
+                          row={row}
+                          formatPrice={formatPrice}
+                          formatDate={formatDate}
+                          sharePurchaseImageSrc={sharePurchaseImageSrc}
+                          placeholderSrc={SHARE_PURCHASE_IMAGE_PLACEHOLDER}
+                        />
+                      ))}
+                    {isLoadingReservations && purchaseHistory.length === 0 ? (
+                      <div className="empty-state" style={{ marginTop: 16 }}>
+                        <p>{t('buyerHistory_loadingReserves')}</p>
+                      </div>
+                    ) : null}
+                    {!isLoadingPurchases &&
+                      !isLoadingReservations &&
+                      purchaseHistory.length === 0 &&
+                      completedBuyNowReservations.length === 0 && (
+                        <div className="empty-state">
+                          <p>{t('buyerHistory_emptyWins')}</p>
+                        </div>
+                      )}
+                  </>
                 )}
-                {isLoadingReservations ? (
-                  <div className="empty-state" style={{ marginTop: 16 }}>
-                    <p>{t('buyerHistory_loadingReserves')}</p>
-                  </div>
-                ) : reservationPurchases.length > 0 ? (
+                {isLoadingReservations ? null : activeReservationPurchases.length > 0 ? (
                   <div className="history-reservations" style={{ marginTop: 24 }}>
                     <h3 className="section-subtitle" style={{ marginBottom: 12, fontSize: '1.1rem' }}>
                       {t('buyerHistory_reserveSection')}
                     </h3>
-                    {reservationPurchases.map((row) => {
+                    {activeReservationPurchases.map((row) => {
                       const b = row.billing || {}
                       const pid = b.property_id
                       const minSale = b.minimum_sale_price
@@ -592,17 +704,37 @@ const History = () => {
                       const totalPaid = b.total_paid_toward_price ?? paidStripe + walletEur
                       const remaining = b.remaining_to_full_purchase ?? (minSale != null ? Math.max(0, minSale - totalPaid) : null)
                       const cur = (row.currency || 'eur').toUpperCase()
+                      const title =
+                        row.property_title ||
+                        (pid != null
+                          ? t('buyerHistory_propertyTitle', { id: pid })
+                          : t('buyerHistory_propertyTitle', { id: '—' }))
+                      const imgSrc = sharePurchaseImageSrc(row.property_image)
+                      const sig = row.agreement_signature
                       return (
-                        <div key={row.id || row.dedupe_key} className="history-card" style={{ marginBottom: 16 }}>
+                        <div
+                          key={row.id || row.dedupe_key}
+                          className="history-card purchase-card history-reservation-card"
+                          style={{ marginBottom: 16 }}
+                        >
+                          <div className="card-image history-reservation-card__image">
+                            <img
+                              src={imgSrc}
+                              alt={title}
+                              onError={(e) => {
+                                e.currentTarget.onerror = null
+                                e.currentTarget.src = SHARE_PURCHASE_IMAGE_PLACEHOLDER
+                              }}
+                            />
+                          </div>
                           <div className="card-content">
                             <div className="card-header">
-                              <h3 className="card-title">
-                                {pid != null
-                                  ? t('buyerHistory_propertyTitle', { id: pid })
-                                  : t('buyerHistory_propertyTitle', { id: '—' })}
-                              </h3>
-                              <span className="status-badge status-success">{t('buyerHistory_reservePaid')}</span>
+                              <h3 className="card-title">{title}</h3>
+                              <span className="status-badge status-success">
+                                {t('buyerHistory_reservePaid')}
+                              </span>
                             </div>
+                            <ReservationReserveCountdown paidAt={row.paid_at} hide={false} />
                             <div className="card-details">
                               <div className="detail-item">
                                 <span className="detail-label">{t('buyerHistory_minSale')}</span>
@@ -638,7 +770,19 @@ const History = () => {
                                 <span className="detail-label">{t('buyerHistory_date')}</span>
                                 <span className="detail-value">{formatDate(row.paid_at)}</span>
                               </div>
+                              {row.agreement_policy_version && (
+                                <div className="detail-item">
+                                  <span className="detail-label">Политика</span>
+                                  <span className="detail-value">{row.agreement_policy_version}</span>
+                                </div>
+                              )}
                             </div>
+                            {sig && String(sig).startsWith('data:image') && (
+                              <div className="history-reservation-signature">
+                                <span className="detail-label">Подпись согласия</span>
+                                <img src={sig} alt="" className="history-reservation-signature__img" />
+                              </div>
+                            )}
                             {pid != null && (
                               <Link to={`/property/${pid}`} className="card-button">
                                 {t('buyerHistory_openProperty')}

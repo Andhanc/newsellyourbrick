@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useUser } from '@clerk/clerk-react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
@@ -39,6 +39,7 @@ import { hasDbBackedProperty } from '../utils/propertyFavoriteKey'
 import { hasActiveCircularTestTimer } from '../utils/auctionReminderBounds'
 import { roleSkipsAuctionKyc } from '../utils/buyerAuctionKyc'
 import { confirmPropertyReservationSession } from '../utils/subscriptionCheckout'
+import { hasEmailForBuyNowFlow } from '../utils/buyNowEmailGate'
 import { ShieldQuestionMark, ShieldAlert, ShieldCheck, Bell } from 'lucide-react'
 
 // Используем синхронную версию для инициализации, затем обновим при загрузке
@@ -50,6 +51,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
   const { t, i18n } = useTranslation()
   const currentLang = (i18n.language || 'ru').split('-')[0]
   const { user, isLoaded: userLoaded } = useUser()
+  const buyNowEmailOk = useMemo(() => hasEmailForBuyNowFlow(user, userLoaded), [user, userLoaded])
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const userData = getUserData()
@@ -1329,6 +1331,14 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
     !currentLeader &&
     auctionWinnerFromDb === null
 
+  const isBuyNowSaleCompleted =
+    displayProperty?.buy_now_winner_user_id != null &&
+    displayProperty?.buy_now_completed_at != null &&
+    String(displayProperty.buy_now_completed_at ?? '').trim() !== ''
+
+  /** Как у завершённого аукциона: боковой блок «завершено» и те же классы. */
+  const auctionEndedForSidebar = timerExpired || isBuyNowSaleCompleted
+
   const displayEndedAuctionPlayerId =
     currentLeader?.userIdNumber ??
     endedAuctionPlayerPublicId ??
@@ -1338,8 +1348,9 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
     null
 
   const showCircularTimerAuctionBlock =
-    hasActiveCircularTestTimer(displayProperty) ||
-    (hadCircularTimerAuction && timerExpired)
+    !isBuyNowSaleCompleted &&
+    (hasActiveCircularTestTimer(displayProperty) ||
+      (hadCircularTimerAuction && timerExpired))
 
   const circularTimerEndTime = hasActiveCircularTestTimer(displayProperty)
     ? displayProperty.test_timer_end_date
@@ -1657,6 +1668,11 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
     const userRole = userData?.role || 'buyer'
     if (userRole === 'seller' || userRole === 'owner') {
       showNotification('Продавцы не могут покупать объекты')
+      return
+    }
+
+    if (!buyNowEmailOk) {
+      showToast(t('buyNowEmailRequired'), 'warning')
       return
     }
     
@@ -2408,6 +2424,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                     !hasActiveCircularTestTimer(displayProperty) &&
                     auctionEndTime &&
                     !timerExpired &&
+                    !isBuyNowSaleCompleted &&
                     !isReservedActive &&
                     hasDbBackedProperty(displayProperty) && (
                       <button
@@ -2913,6 +2930,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                                          buyNowPrice > 0 && 
                                          buyNowPrice > startingPrice && 
                                          !timerExpired &&
+                                         !isBuyNowSaleCompleted &&
                                          effectiveCurrentBid < buyNowPrice;
                 
                 return shouldShowBuyNow ? (
@@ -2928,10 +2946,11 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                       type="button"
                       className="property-detail-sidebar__buy-now-btn"
                       onClick={handleBookNow}
-                      disabled={isReservedActive}
+                      disabled={isReservedActive || !buyNowEmailOk}
+                      title={!buyNowEmailOk ? t('buyNowEmailRequired') : undefined}
                       style={{
-                        opacity: (isReservedActive) ? 0.5 : 1,
-                        cursor: (isReservedActive) ? 'not-allowed' : 'pointer'
+                        opacity: isReservedActive || !buyNowEmailOk ? 0.5 : 1,
+                        cursor: isReservedActive || !buyNowEmailOk ? 'not-allowed' : 'pointer'
                       }}
                     >
                       {isReservedActive ? t('objectReserved') : t('buyNowSectionTitle')}
@@ -2940,14 +2959,15 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                 ) : null;
               })()}
               {/* Кнопка для победителя аукциона */}
-              {isAuctionProperty && timerExpired && isUserLeader && (
+              {isAuctionProperty && timerExpired && isUserLeader && !isBuyNowSaleCompleted && (
                 <button
                   className="property-detail-sidebar__buy-btn property-detail-sidebar__buy-btn--winner"
                   onClick={handleBookNow}
-                  disabled={isReservedActive}
+                  disabled={isReservedActive || !buyNowEmailOk}
+                  title={!buyNowEmailOk ? t('buyNowEmailRequired') : undefined}
                   style={{
-                    opacity: (isReservedActive) ? 0.5 : 1,
-                    cursor: (isReservedActive) ? 'not-allowed' : 'pointer'
+                    opacity: isReservedActive || !buyNowEmailOk ? 0.5 : 1,
+                    cursor: isReservedActive || !buyNowEmailOk ? 'not-allowed' : 'pointer'
                   }}
                 >
                   {t('propertyDetailGoToPurchase')}
@@ -2970,10 +2990,11 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                     type="button"
                     className="property-detail-sidebar__buy-now-btn"
                     onClick={handleBookNow}
-                    disabled={isReservedActive}
+                    disabled={isReservedActive || !buyNowEmailOk}
+                    title={!buyNowEmailOk ? t('buyNowEmailRequired') : undefined}
                     style={{
-                      opacity: (isReservedActive) ? 0.5 : 1,
-                      cursor: (isReservedActive) ? 'not-allowed' : 'pointer'
+                      opacity: isReservedActive || !buyNowEmailOk ? 0.5 : 1,
+                      cursor: isReservedActive || !buyNowEmailOk ? 'not-allowed' : 'pointer'
                     }}
                   >
                     {isReservedActive
@@ -3067,7 +3088,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                   Для долгов тоже показываем, чтобы UX был как у аукциона. */}
               {isAuctionProperty && auctionEndTime ? (
                 <div
-                  className={`property-detail-sidebar__auction-block${timerExpired ? ' property-detail-sidebar__auction-block--ended' : ''}`}
+                  className={`property-detail-sidebar__auction-block${auctionEndedForSidebar ? ' property-detail-sidebar__auction-block--ended' : ''}`}
                 >
                   {/* Для долгов: показываем сумму долга отдельно */}
                   {isDebtProperty && displayProperty.debt_amount != null && displayProperty.debt_amount !== '' && !Number.isNaN(Number(displayProperty.debt_amount)) && (
@@ -3102,15 +3123,24 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                         </div>
                       </div>
                     </div>
-                  ) : timerExpired ? (
+                  ) : auctionEndedForSidebar ? (
                     <div
                       className="property-detail-auction-ended"
                       style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '1rem', width: '100%' }}
                     >
                       <div className="auction-completed-banner auction-completed-banner--page" role="status">
-                        {t('propertyDetailAuctionCompleted')}
+                        {isBuyNowSaleCompleted
+                          ? t('propertyDetailBuyNowPurchaseCompleted')
+                          : t('propertyDetailAuctionCompleted')}
                       </div>
-                      {showAuctionCompletedWinner && (
+                      {isBuyNowSaleCompleted && displayProperty.buy_now_winner_user_id != null && (
+                        <div className="auction-winner-card auction-winner-card--settled" style={{ marginTop: 14, width: '100%', maxWidth: 320 }}>
+                          <div className="auction-winner-name" style={{ textAlign: 'center' }}>
+                            {t('propertyCardBuyNowWinner', { id: displayProperty.buy_now_winner_user_id })}
+                          </div>
+                        </div>
+                      )}
+                      {!isBuyNowSaleCompleted && showAuctionCompletedWinner && (
                         <div className="auction-winner-card auction-winner-card--settled" style={{ marginTop: 14, width: '100%', maxWidth: 320 }}>
                           <div className="auction-winner-label">🏆 {t('propertyDetailAuctionWinner')}</div>
                           <div className="auction-winner-name">
@@ -3123,7 +3153,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                           </div>
                         </div>
                       )}
-                      {showAuctionCompletedNoBids && (
+                      {!isBuyNowSaleCompleted && showAuctionCompletedNoBids && (
                         <div className="auction-completed-no-bids" role="status" style={{ marginTop: 12 }}>
                           {t('propertyDetailAuctionNoBids')}
                         </div>
@@ -3137,12 +3167,12 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                           size={150}
                           strokeWidth={8}
                           originalDuration={displayProperty.test_timer_duration || originalTestTimerDuration}
-                          isUserLeader={isUserLeader && !timerExpired}
+                          isUserLeader={isUserLeader && !auctionEndedForSidebar}
                           bidInfo={timerBidInfo}
                           auctionEndedLabel={t('propertyDetailAuctionCompleted')}
                         />
                       ) : null}
-                      {previousLeader && !timerExpired && isLeaderChanging && (
+                      {previousLeader && !auctionEndedForSidebar && isLeaderChanging && (
                         <div className="auction-leader-card auction-leader-card--exiting">
                           <div className="auction-leader-label">{t('propertyDetailAuctionLeader')}</div>
                           <div className="auction-leader-name">
@@ -3159,7 +3189,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                           </div>
                         </div>
                       )}
-                      {currentLeader && !timerExpired && (
+                      {currentLeader && !auctionEndedForSidebar && (
                         <div className={`auction-leader-card ${isLeaderChanging ? 'auction-leader-card--entering' : ''}`}>
                           <div className="auction-leader-label">{t('propertyDetailAuctionLeader')}</div>
                           <div className="auction-leader-name">
@@ -3180,7 +3210,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                   ) : (
                     <>
                       <PropertyTimer endTime={auctionEndTime} auctionEndedLabel={t('propertyDetailAuctionCompleted')} />
-                      {previousLeader && !timerExpired && isLeaderChanging && (
+                      {previousLeader && !auctionEndedForSidebar && isLeaderChanging && (
                         <div className="auction-leader-card auction-leader-card--exiting">
                           <div className="auction-leader-label">{t('propertyDetailAuctionLeader')}</div>
                           <div className="auction-leader-name">
@@ -3197,7 +3227,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                           </div>
                         </div>
                       )}
-                      {currentLeader && !timerExpired && (
+                      {currentLeader && !auctionEndedForSidebar && (
                         <div className={`auction-leader-card ${isLeaderChanging ? 'auction-leader-card--entering' : ''}`}>
                           <div className="auction-leader-label">{t('propertyDetailAuctionLeader')}</div>
                           <div className="auction-leader-name">
@@ -3267,8 +3297,8 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                     </div>
                   )}
 
-                  {/* Функционал ставки - скрываем когда таймер истек (только для аукционов) */}
-                  {(!isAuctionProperty || !timerExpired) && (
+                  {/* Функционал ставки - скрываем когда таймер истек или сделка «купить сейчас» завершена */}
+                  {(!isAuctionProperty || !auctionEndedForSidebar) && (
                   <div className="property-detail-sidebar__bidding-section">
                     {isReservedActive && (
                       <div style={{

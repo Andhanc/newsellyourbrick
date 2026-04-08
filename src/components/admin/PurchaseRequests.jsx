@@ -3,8 +3,6 @@ import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { FiSearch, FiShoppingCart, FiCheck, FiX, FiClock, FiFileText, FiExternalLink } from 'react-icons/fi';
 import { getApiBaseUrl } from '../../utils/apiConfig';
-import { getEmailJsConfig } from '../../utils/env';
-import emailjs from '@emailjs/browser';
 import { showNotification } from '../../utils/toastHelper';
 import './PurchaseRequests.css';
 
@@ -21,6 +19,8 @@ const PurchaseRequests = () => {
   const [updatingStatus, setUpdatingStatus] = useState(false);
   const [propertyDetails, setPropertyDetails] = useState(null);
   const [loadingPropertyDetails, setLoadingPropertyDetails] = useState(false);
+  /** Email из заявки или профиля (для кнопок «в обработку» / «завершить») */
+  const [resolvedBuyerEmail, setResolvedBuyerEmail] = useState(null);
 
   // Загружаем запросы на покупку из БД
   useEffect(() => {
@@ -78,78 +78,43 @@ const PurchaseRequests = () => {
     });
   }, [searchQuery, statusFilter, requests]);
 
-  // Функция отправки email покупателю о необходимости первоначального платежа
-  const sendPaymentRequestEmail = async (request) => {
-    if (!request.buyer_email) return;
-
-    const emailJsConfig = getEmailJsConfig();
-    const EMAILJS_SERVICE_ID = emailJsConfig.serviceId || '';
-    const EMAILJS_TEMPLATE_ID = emailJsConfig.templateId || '';
-    const EMAILJS_PUBLIC_KEY = emailJsConfig.publicKey || '';
-
-    if (!EMAILJS_SERVICE_ID || !EMAILJS_TEMPLATE_ID || !EMAILJS_PUBLIC_KEY) {
-      console.warn('EmailJS не настроен для отправки уведомления');
-      return;
-    }
-
-    try {
-      if (EMAILJS_PUBLIC_KEY) {
-        emailjs.init(EMAILJS_PUBLIC_KEY);
+  useEffect(() => {
+    let cancelled = false;
+    async function resolveEmail() {
+      if (!selectedRequest) {
+        setResolvedBuyerEmail(null);
+        return;
       }
-
-      const currencySymbol = request.property_currency === 'USD' ? '$' : 
-                            request.property_currency === 'EUR' ? '€' : 
-                            request.property_currency || '';
-      const propertyPrice = request.property_price ? 
-        `${currencySymbol}${parseFloat(request.property_price).toLocaleString('ru-RU')}` : 
-        'не указана';
-      
-      // Получаем реквизиты для платежа (можно вынести в переменные окружения)
-      const paymentAccount = process.env.REACT_APP_PAYMENT_ACCOUNT_NUMBER || 
-                             process.env.VITE_PAYMENT_ACCOUNT_NUMBER || 
-                             'BY36ALFA30122345678901234567';
-
-      const emailMessage = `Здравствуйте, ${request.buyer_name || 'Покупатель'}!
-
-Мы рассмотрели ваш запрос на покупку объекта недвижимости.
-
-📋 Детали запроса:
-🏠 Объект: ${request.property_title || 'Не указан'}
-💰 Цена: ${propertyPrice}
-📍 Местоположение: ${request.property_location || 'Не указано'}
-
-Для продолжения необходимо совершить первоначальный платеж по следующим реквизитам:
-
-💳 Номер счета: ${paymentAccount}
-
-После получения платежа наш менеджер свяжется с вами для дальнейших действий.
-
-С уважением,
-Команда Sellyourbrick`;
-
-      const templateParams = {
-        to_email: request.buyer_email,
-        email: request.buyer_email,
-        buyer_name: request.buyer_name || 'Покупатель',
-        property_title: request.property_title || 'Не указан',
-        property_price: propertyPrice,
-        property_location: request.property_location || 'Не указано',
-        payment_account: paymentAccount,
-        message: emailMessage,
-        from_name: 'Sellyourbrick'
-      };
-
-      await emailjs.send(
-        EMAILJS_SERVICE_ID,
-        EMAILJS_TEMPLATE_ID,
-        templateParams,
-        EMAILJS_PUBLIC_KEY
-      );
-      console.log('✅ Email уведомление отправлено покупателю');
-    } catch (error) {
-      console.error('Ошибка отправки email:', error);
+      const fromReq = selectedRequest.buyer_email && String(selectedRequest.buyer_email).trim();
+      if (fromReq) {
+        setResolvedBuyerEmail(fromReq);
+        return;
+      }
+      const bid = selectedRequest.buyer_id;
+      if (bid == null) {
+        setResolvedBuyerEmail(null);
+        return;
+      }
+      try {
+        const API_BASE_URL = await getApiBaseUrl();
+        const r = await fetch(`${API_BASE_URL}/users/${bid}`);
+        if (!r.ok || cancelled) return;
+        const j = await r.json();
+        const em =
+          j.success && j.data?.email ? String(j.data.email).trim() : '';
+        if (!cancelled) setResolvedBuyerEmail(em || null);
+      } catch {
+        if (!cancelled) setResolvedBuyerEmail(null);
+      }
     }
-  };
+    resolveEmail();
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedRequest]);
+
+  const hasBuyerEmailForAdmin =
+    !!(resolvedBuyerEmail && String(resolvedBuyerEmail).trim());
 
   const handleStatusUpdate = async (requestId, newStatus) => {
     if (updatingStatus) return;
@@ -171,13 +136,6 @@ const PurchaseRequests = () => {
       if (response.ok) {
         const result = await response.json();
         if (result.success) {
-          const updatedRequest = requests.find(req => req.id === requestId);
-          
-          // Если статус "processing", отправляем email покупателю
-          if (newStatus === 'processing' && updatedRequest) {
-            await sendPaymentRequestEmail(updatedRequest);
-          }
-          
           // Обновляем локальное состояние
           setRequests(requests.map(req => 
             req.id === requestId ? { ...req, status: newStatus, admin_notes: adminNotes || req.admin_notes } : req
@@ -190,8 +148,10 @@ const PurchaseRequests = () => {
           showNotification(`Ошибка: ${result.error || 'Не удалось обновить статус'}`);
         }
       } else {
-        const errorData = await response.json();
-        showNotification(`Ошибка: ${errorData.error || 'Не удалось обновить статус'}`);
+        const errorData = await response.json().catch(() => ({}));
+        showNotification(
+          `Ошибка: ${errorData.error || errorData.message || 'Не удалось обновить статус'}`
+        );
       }
     } catch (error) {
       console.error('Ошибка при обновлении статуса:', error);
@@ -830,11 +790,33 @@ const PurchaseRequests = () => {
             </div>
 
             <div className="purchase-request-modal__actions">
+              {selectedRequest && !hasBuyerEmailForAdmin && (
+                <p
+                  style={{
+                    margin: '0 0 12px',
+                    fontSize: 13,
+                    color: '#b45309',
+                    lineHeight: 1.4,
+                  }}
+                >
+                  У покупателя нет email в заявке и в профиле. Укажите email в профиле пользователя —
+                  без него нельзя отправить письмо при одобрении и завершении сделки.
+                </p>
+              )}
               <div className="modal-actions-group">
                 <button
                   className="modal-action-btn modal-action-btn--processing"
                   onClick={() => handleStatusUpdate(selectedRequest.id, 'processing')}
-                  disabled={updatingStatus || selectedRequest.status === 'processing'}
+                  disabled={
+                    updatingStatus ||
+                    selectedRequest.status === 'processing' ||
+                    !hasBuyerEmailForAdmin
+                  }
+                  title={
+                    !hasBuyerEmailForAdmin
+                      ? 'У покупателя нет email в заявке и в профиле — письмо не отправить'
+                      : undefined
+                  }
                 >
                   <FiFileText />
                   В обработку
@@ -842,7 +824,16 @@ const PurchaseRequests = () => {
                 <button
                   className="modal-action-btn modal-action-btn--completed"
                   onClick={() => handleStatusUpdate(selectedRequest.id, 'completed')}
-                  disabled={updatingStatus || selectedRequest.status === 'completed'}
+                  disabled={
+                    updatingStatus ||
+                    selectedRequest.status === 'completed' ||
+                    !hasBuyerEmailForAdmin
+                  }
+                  title={
+                    !hasBuyerEmailForAdmin
+                      ? 'У покупателя нет email в заявке и в профиле — письмо не отправить'
+                      : undefined
+                  }
                 >
                   <FiCheck />
                   Завершить

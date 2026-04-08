@@ -122,7 +122,13 @@ const PropertyList = ({
     return `$${price.toLocaleString('en-US')}`
   }
 
+  const isBuyNowSaleClosed = (property) =>
+    property?.buy_now_winner_user_id != null &&
+    property?.buy_now_completed_at != null &&
+    String(property.buy_now_completed_at).trim() !== ''
+
   const isAuctionEnded = (property) => {
+    if (isBuyNowSaleClosed(property)) return true
     const endValue = property?.test_timer_end_date || property?.endTime
     if (!endValue) return false
     const endTs = new Date(endValue).getTime()
@@ -219,6 +225,13 @@ const PropertyList = ({
     if (location.pathname !== '/auction') return list
 
     const auctionTimerEnded = (p) => {
+      if (
+        p.buy_now_winner_user_id != null &&
+        p.buy_now_completed_at != null &&
+        String(p.buy_now_completed_at).trim() !== ''
+      ) {
+        return true
+      }
       const hasTT = p.test_timer_end_date != null && p.test_timer_end_date !== ''
       if (hasTT && p.test_timer_end_date) {
         return new Date(p.test_timer_end_date).getTime() <= Date.now()
@@ -464,6 +477,13 @@ const PropertyList = ({
                 
                 // Проверяем, закончился ли таймер
                 const checkTimerExpired = () => {
+                  if (
+                    property.buy_now_winner_user_id != null &&
+                    property.buy_now_completed_at != null &&
+                    String(property.buy_now_completed_at).trim() !== ''
+                  ) {
+                    return true
+                  }
                   if (hasTestTimer && property.test_timer_end_date) {
                     const now = new Date().getTime();
                     const end = new Date(property.test_timer_end_date).getTime();
@@ -477,6 +497,7 @@ const PropertyList = ({
                   return false;
                 };
                 const isTimerExpired = checkTimerExpired();
+                const buyNowWinnerId = property.buy_now_winner_user_id
 
                 // Зеленый линейный таймер (PropertyTimer)
                 const greenTimerBlock = hasTimer && !isReserved && !hasTestTimer && (
@@ -613,7 +634,12 @@ const PropertyList = ({
                     <p className="property-description">{property.description}</p>
                   )}
                   <p className="property-location">{property.location || ''}</p>
-                  
+                  {buyNowWinnerId != null && (
+                    <p className="property-card-buy-now-winner" role="status">
+                      {t('propertyCardBuyNowWinner', { id: buyNowWinnerId })}
+                    </p>
+                  )}
+
                   {/* Обертка для данных, закрепленных снизу */}
                   <div className="property-content-bottom">
                     {/* Основные характеристики для аукционных карточек - в стиле личного кабинета продавца */}

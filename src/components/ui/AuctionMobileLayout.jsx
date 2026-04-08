@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useLayoutEffect, useMemo } from 'react'
+import { useUser } from '@clerk/clerk-react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
@@ -12,6 +13,7 @@ import CircularTimer from '../CircularTimer'
 import { showNotification } from '@/utils/toastHelper'
 import { ensureCanOpenProperty } from '@/utils/propertyAccessGuard'
 import { hasBuyNowOption } from '@/utils/hasBuyNowOption'
+import { hasEmailForBuyNowFlow } from '@/utils/buyNowEmailGate'
 import '../PropertyList.css'
 import './AuctionMobileLayout.css'
 
@@ -318,6 +320,11 @@ function AuctionMobileItem({
   isFavorite,
   onFavoriteToggle,
 }) {
+  const { user, isLoaded: clerkUserLoaded } = useUser()
+  const buyNowEmailOk = useMemo(
+    () => hasEmailForBuyNowFlow(user, clerkUserLoaded),
+    [user, clerkUserLoaded],
+  )
   const reduceMotion = useReducedMotion()
   const favoriteBtnRef = useRef(null)
   const [likeBurst, setLikeBurst] = useState(null)
@@ -350,6 +357,13 @@ function AuctionMobileItem({
   const showBuyNow = hasBuyNowOption(property)
 
   const checkTimerExpired = () => {
+    if (
+      property.buy_now_winner_user_id != null &&
+      property.buy_now_completed_at != null &&
+      String(property.buy_now_completed_at).trim() !== ''
+    ) {
+      return true
+    }
     if (hasTestTimer && property.test_timer_end_date) {
       return new Date(property.test_timer_end_date).getTime() <= Date.now()
     }
@@ -359,6 +373,7 @@ function AuctionMobileItem({
     return false
   }
   const isTimerExpired = checkTimerExpired()
+  const buyNowWinnerId = property.buy_now_winner_user_id
 
   const greenOnImage =
     hasTimer && !isReserved && !hasTestTimer && property.endTime
@@ -530,6 +545,12 @@ function AuctionMobileItem({
             </p>
           ) : null}
 
+          {buyNowWinnerId != null && (
+            <p className="auction-mobile-buy-now-winner" role="status">
+              {t('propertyCardBuyNowWinner', { id: buyNowWinnerId })}
+            </p>
+          )}
+
           {isDebtProperty && property.debt_amount != null && property.debt_amount !== '' && !Number.isNaN(Number(property.debt_amount)) ? (
             <>
               <div className="auction-mobile-price-row auction-mobile-price-row--debt-inline">
@@ -597,12 +618,18 @@ function AuctionMobileItem({
                     showNotification(t('objectReservedNotification'))
                     return
                   }
+                  if (!buyNowEmailOk) {
+                    showNotification(t('buyNowEmailRequired'))
+                    return
+                  }
                   goDetail()
                 }}
-                disabled={isReserved || isTimerExpired}
+                disabled={isReserved || isTimerExpired || !buyNowEmailOk}
+                title={!buyNowEmailOk ? t('buyNowEmailRequired') : undefined}
                 style={{
-                  opacity: isReserved || isTimerExpired ? 0.45 : 1,
-                  cursor: isReserved || isTimerExpired ? 'not-allowed' : 'pointer',
+                  opacity: isReserved || isTimerExpired || !buyNowEmailOk ? 0.45 : 1,
+                  cursor:
+                    isReserved || isTimerExpired || !buyNowEmailOk ? 'not-allowed' : 'pointer',
                 }}
               >
                 {isReserved ? t('objectReserved') : t('buyNowSectionTitle')}

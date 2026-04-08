@@ -1052,6 +1052,51 @@ export const propertyQueries = {
     throw new Error('Неизвестный тип объекта');
   },
 
+  /**
+   * Завершение сделки «Купить сейчас» менеджером: снять бронь, зафиксировать победителя.
+   */
+  markBuyNowSaleComplete: async (id, winnerUserId) => {
+        const property = await propertyQueries.getById(id);
+    if (!property) {
+      throw new Error('Объект не найден');
+    }
+    const winId = Number(winnerUserId);
+    if (!Number.isFinite(winId)) {
+      throw new Error('Некорректный покупатель');
+    }
+    const prisma = getPrisma();
+    const completedAt = new Date().toISOString();
+    const data = {
+      reserved_until: null,
+      reserved_by: null,
+      purchase_request_id: null,
+      buy_now_winner_user_id: winId,
+      buy_now_completed_at: completedAt,
+      updated_at: completedAt,
+    };
+    const nid = Number(id);
+    const sourceTable = property.source_table;
+    const isApartmentsTable = sourceTable === 'apartments' || sourceTable === 'properties_apartments';
+    const isHousesTable = sourceTable === 'houses' || sourceTable === 'properties_houses';
+    if (isApartmentsTable) {
+      await prisma.properties_apartments.update({ where: { id: nid }, data });
+      return { ok: true };
+    }
+    if (isHousesTable) {
+      await prisma.properties_houses.update({ where: { id: nid }, data });
+      return { ok: true };
+    }
+    if (property.property_type === 'apartment' || property.property_type === 'commercial') {
+      await prisma.properties_apartments.update({ where: { id: nid }, data });
+      return { ok: true };
+    }
+    if (property.property_type === 'house' || property.property_type === 'villa') {
+      await prisma.properties_houses.update({ where: { id: nid }, data });
+      return { ok: true };
+    }
+    throw new Error('Неизвестный тип объекта');
+  },
+
   isReserved: async (id) => {
         const property = await propertyQueries.getById(id);
     if (!property) {

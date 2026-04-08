@@ -1,5 +1,5 @@
 import { useNavigate, Link, useSearchParams, useLocation } from 'react-router-dom'
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { FaArrowLeft, FaArrowUp, FaArrowDown } from 'react-icons/fa'
 import { FiClock } from 'react-icons/fi'
 import { useUser, useAuth } from '@clerk/clerk-react'
@@ -24,6 +24,7 @@ import {
 } from '../utils/subscriptionCheckout'
 import { getUsdtJettonWalletAddress, buildUsdtTransferTransaction } from '../utils/tonUsdt'
 import { ensureCanOpenProperty } from '../utils/propertyAccessGuard'
+import { hasEmailForBuyNowFlow } from '../utils/buyNowEmailGate'
 import {
   isSafeWalletFromPath,
   getWalletEntryFrom,
@@ -45,6 +46,7 @@ const Wallet = () => {
   const walletDepositHandledRef = useRef(null)
   const walletReservationHandledRef = useRef(null)
   const { user, isLoaded: userLoaded } = useUser()
+  const buyNowEmailOk = useMemo(() => hasEmailForBuyNowFlow(user, userLoaded), [user, userLoaded])
   const { isSignedIn, isLoaded: authLoaded } = useAuth()
   const userData = getUserData()
   const [dbUserId, setDbUserId] = useState(() => getStoredNumericUserId())
@@ -570,6 +572,13 @@ const Wallet = () => {
       showNotification('Продавцы не могут покупать объекты')
       return
     }
+
+    if (!buyNowEmailOk) {
+      showNotification(
+        'Укажите email в аккаунте или профиле — он нужен для оформления покупки и писем от сервиса.'
+      )
+      return
+    }
     
     setIsBuyNowModalOpen(true)
   }
@@ -784,6 +793,12 @@ const Wallet = () => {
                 <button
                   className="wallet-won-object__buy-btn"
                   onClick={handleBookNow}
+                  disabled={!buyNowEmailOk}
+                  title={!buyNowEmailOk ? 'Укажите email в профиле' : undefined}
+                  style={{
+                    opacity: !buyNowEmailOk ? 0.5 : 1,
+                    cursor: !buyNowEmailOk ? 'not-allowed' : 'pointer',
+                  }}
                 >
                   Перейти к покупке
                 </button>

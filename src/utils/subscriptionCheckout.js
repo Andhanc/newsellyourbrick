@@ -85,6 +85,7 @@ export async function startPropertyReservationCheckout({
   customerEmail,
   returnPath,
   useDeposit,
+  signingIntentId,
 } = {}) {
   const res = await fetch(`${API_BASE}/billing/create-property-reservation-checkout`, {
     method: 'POST',
@@ -96,6 +97,7 @@ export async function startPropertyReservationCheckout({
       customerEmail: customerEmail || undefined,
       returnPath: returnPath || undefined,
       useDeposit: useDeposit === true,
+      signingIntentId: signingIntentId || undefined,
     }),
   })
   const data = await res.json().catch(() => ({}))

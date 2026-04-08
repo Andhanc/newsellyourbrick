@@ -5,6 +5,7 @@ import {
   purchaseRequestQueries,
   userQueries,
   sharePurchaseQueries,
+  reservationSignatureQueries,
 } from './database/database.js';
 import { getPrisma } from './database/prismaClient.js';
 
@@ -58,8 +59,21 @@ function computeMinimumSalePriceMajor(property) {
 }
 
 const SHARE_PURCHASE_POLICY_VERSION = 'share_policy_test_v1';
+const RESERVATION_POLICY_VERSION = 'buy_now_reservation_v1';
 
 const SIGNATURE_DATA_URL_MAX_CHARS = 750_000;
+const AGREEMENT_SIGNATURE_STORE_MAX_CHARS = 900_000;
+
+function firstReservationPropertyPhotoUrl(property) {
+  if (!property) return null;
+  const photos = property.photos;
+  const list = Array.isArray(photos) ? photos : [];
+  const first = list[0];
+  if (first == null) return null;
+  if (typeof first === 'string') return first;
+  if (typeof first === 'object' && first.url) return String(first.url);
+  return null;
+}
 
 function validateShareSignatureDataUrl(raw) {
   if (typeof raw !== 'string' || raw.length < 80) {
@@ -354,6 +368,30 @@ export async function processPropertyReservationPaidSession(stripe, session) {
   const tenPctMajor = minSaleMajor * 0.1;
   const walletEurApplied = useWallet ? WALLET_DEPOSIT_OFFSET_EUR : 0;
 
+  const signingIntentId =
+    sess.metadata?.signing_intent_id != null ? String(sess.metadata.signing_intent_id).trim() : '';
+  if (!signingIntentId || !/^[0-9a-f-]{36}$/i.test(signingIntentId)) {
+    return { ok: false, error: 'missing_signing_intent' };
+  }
+  const propertyTypeForIntent =
+    sess.metadata?.property_type != null
+      ? String(sess.metadata.property_type).trim().slice(0, 32)
+      : String(property.property_type || '').slice(0, 32);
+
+  const sigTake = await reservationSignatureQueries.takeSignatureForPaidSession({
+    intentId: signingIntentId,
+    sessionId: sess.id,
+    buyerId: userId,
+    propertyId,
+    useWallet,
+    propertyType: propertyTypeForIntent,
+  });
+  if (!sigTake.ok) {
+    console.error('[Stripe] reservation signing intent:', sigTake.error);
+    return { ok: false, error: sigTake.error || 'reservation_intent_invalid' };
+  }
+  const agreementSignatureStored = String(sigTake.signature).slice(0, AGREEMENT_SIGNATURE_STORE_MAX_CHARS);
+
   const customerId =
     typeof sess.customer === 'string' ? sess.customer : sess.customer?.id || null;
 
@@ -427,6 +465,8 @@ export async function processPropertyReservationPaidSession(stripe, session) {
       currency: curLower,
       purchase_request_id: createdRequestId,
       property_id: propertyId,
+      property_type: property.property_type || null,
+      policy_version: RESERVATION_POLICY_VERSION,
       total_paid_toward_price: totalPaidTowardPrice,
       remaining_to_full_purchase: remainingToFull,
     };
@@ -443,11 +483,19 @@ export async function processPropertyReservationPaidSession(stripe, session) {
       status: 'paid',
       plan_key: 'property_reservation',
       billing_reason: JSON.stringify(billingPayload),
+      agreement_signature: agreementSignatureStored,
+      agreement_policy_version: RESERVATION_POLICY_VERSION,
       paid_at: new Date().toISOString(),
       period_start: null,
       period_end: null,
       customer_email: sess.customer_details?.email || sess.customer_email || buyerEmail,
     });
+
+    try {
+      await reservationSignatureQueries.consumeIntent(signingIntentId);
+    } catch (consumeErr) {
+      console.warn('[Stripe] reservation consume intent:', consumeErr?.message || consumeErr);
+    }
 
     await propertyQueries.reserve(propertyId, userId, createdRequestId);
 
@@ -937,6 +985,56 @@ export function registerStripeBillingRoutes(app) {
     }
   });
 
+  app.post('/api/billing/property-reservation-signature-intent', async (req, res) => {
+    try {
+      const userId = req.body?.userId != null ? parseInt(String(req.body.userId).trim(), 10) : NaN;
+      const propertyId = req.body?.propertyId != null ? parseInt(String(req.body.propertyId).trim(), 10) : NaN;
+      const propertyTypeRaw =
+        req.body?.propertyType != null ? String(req.body.propertyType).trim().slice(0, 32) : '';
+      const useWalletDeposit =
+        req.body?.useDeposit === true ||
+        req.body?.useDeposit === 'true' ||
+        req.body?.useDeposit === 1 ||
+        req.body?.useDeposit === '1';
+      const signatureDataUrl =
+        typeof req.body?.signatureDataUrl === 'string' ? req.body.signatureDataUrl.trim() : '';
+
+      if (!Number.isFinite(userId) || !Number.isFinite(propertyId)) {
+        return res.status(400).json({ success: false, error: 'Укажите userId и propertyId' });
+      }
+
+      const sigOk = validateShareSignatureDataUrl(signatureDataUrl);
+      if (!sigOk.ok) {
+        return res.status(400).json({ success: false, error: sigOk.error });
+      }
+
+      const property = await propertyQueries.getById(propertyId, propertyTypeRaw || null);
+      if (!property) {
+        return res.status(404).json({ success: false, error: 'Объявление не найдено' });
+      }
+
+      const propertyTypeNorm =
+        property.property_type != null
+          ? String(property.property_type).trim().slice(0, 32)
+          : propertyTypeRaw;
+
+      const row = await reservationSignatureQueries.createIntent({
+        buyerId: userId,
+        propertyId,
+        propertyType: propertyTypeNorm,
+        useWallet: useWalletDeposit,
+        signatureData: signatureDataUrl,
+      });
+      return res.json({ success: true, signingIntentId: row.id });
+    } catch (err) {
+      if (err?.message === 'invalid_signature_payload') {
+        return res.status(400).json({ success: false, error: 'Некорректные данные подписи' });
+      }
+      console.error('[Stripe] property-reservation-signature-intent:', err?.message || err);
+      return res.status(500).json({ success: false, error: err?.message || 'Ошибка сервера' });
+    }
+  });
+
   app.post('/api/billing/create-property-reservation-checkout', async (req, res) => {
     try {
       if (!stripe) {
@@ -1036,6 +1134,47 @@ export function registerStripeBillingRoutes(app) {
         });
       }
 
+      const signingIntentId =
+        typeof req.body?.signingIntentId === 'string' ? req.body.signingIntentId.trim().slice(0, 48) : '';
+      if (!signingIntentId || !/^[0-9a-f-]{36}$/i.test(signingIntentId)) {
+        return res.status(400).json({
+          success: false,
+          error:
+            'Сначала сохраните подпись: откройте PDF, согласитесь с условиями и поставьте подпись в поле ниже.',
+        });
+      }
+
+      const propertyTypeNorm =
+        property.property_type != null
+          ? String(property.property_type).trim().slice(0, 32)
+          : propertyType != null
+            ? String(propertyType).trim().slice(0, 32)
+            : '';
+
+      const intentReady = await reservationSignatureQueries.assertIntentReadyForCheckout(
+        signingIntentId,
+        userId,
+        propertyId,
+        propertyTypeNorm,
+        useWalletDeposit
+      );
+      if (!intentReady.ok) {
+        const map = {
+          intent_not_found: 'Подпись не найдена — нарисуйте и подтвердите снова',
+          intent_consumed: 'Эта подпись уже использована',
+          intent_checkout_already_started: 'Оплата уже начата. Завершите в Stripe или начните с новой подписи',
+          intent_user_mismatch: 'Несовпадение пользователя',
+          intent_property_mismatch: 'Объект изменился — подпишите снова',
+          intent_property_type_mismatch: 'Тип объекта изменился — подпишите снова',
+          intent_wallet_mismatch: 'Изменился способ оплаты (депозит) — подпишите снова',
+          intent_expired: 'Подпись устарела (30 мин) — нарисуйте заново',
+        };
+        return res.status(400).json({
+          success: false,
+          error: map[intentReady.error] || 'Недействительная подпись',
+        });
+      }
+
       const saleMinor = majorToStripeMinor(minSaleMajor, currency);
       const titleShort = (property.title || `Объект #${propertyId}`).slice(0, 100);
       const productDesc = useWalletDeposit
@@ -1067,15 +1206,31 @@ export function registerStripeBillingRoutes(app) {
         metadata: {
           app_user_id: String(userId),
           property_id: String(propertyId),
+          property_type: propertyTypeNorm,
           checkout_purpose: 'property_reservation_deposit',
           deposit_cents: String(unitAmount),
           sale_price_cents: String(saleMinor),
           use_wallet_deposit: useWalletDeposit ? '1' : '0',
           min_sale_major: String(minSaleMajor),
           ten_pct_major: String(tenPctMajor),
+          signing_intent_id: signingIntentId,
+          policy_version: RESERVATION_POLICY_VERSION,
         },
         ...(customerEmail && customerEmail.includes('@') ? { customer_email: customerEmail } : {}),
       });
+
+      const attached = await reservationSignatureQueries.attachStripeSessionToIntent(signingIntentId, session.id);
+      if (!attached) {
+        try {
+          await stripe.checkout.sessions.expire(session.id);
+        } catch (expireErr) {
+          console.warn('[Stripe] property reservation expire orphan session:', expireErr?.message || expireErr);
+        }
+        return res.status(409).json({
+          success: false,
+          error: 'Не удалось привязать подпись к оплате. Нарисуйте подпись ещё раз.',
+        });
+      }
 
       return res.json({ success: true, url: session.url });
     } catch (err) {
@@ -1503,15 +1658,31 @@ export function registerStripeBillingRoutes(app) {
         return res.status(400).json({ success: false, error: 'Некорректный userId' });
       }
       const rows = await stripeSubscriptionQueries.listReservationPurchasesByUserId(userId, 100);
-      const items = rows.map((row) => {
-        let billing = {};
-        try {
-          billing = JSON.parse(row.billing_reason || '{}');
-        } catch {
-          billing = {};
-        }
-        return { ...row, billing };
-      });
+      const items = await Promise.all(
+        rows.map(async (row) => {
+          let billing = {};
+          try {
+            billing = JSON.parse(row.billing_reason || '{}');
+          } catch {
+            billing = {};
+          }
+          const pid = billing.property_id;
+          let property_image = null;
+          let property_title = null;
+          if (pid != null) {
+            try {
+              const p = await propertyQueries.getById(pid, billing.property_type || null);
+              if (p) {
+                property_title = p.title || null;
+                property_image = firstReservationPropertyPhotoUrl(p);
+              }
+            } catch {
+              /* ignore */
+            }
+          }
+          return { ...row, billing, property_image, property_title };
+        })
+      );
       return res.json({ success: true, data: items });
     } catch (err) {
       console.error('[Stripe] reservation-purchases:', err?.message || err);

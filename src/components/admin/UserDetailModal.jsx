@@ -57,6 +57,19 @@ const UserDetailModal = ({ isOpen, onClose, userId }) => {
         console.warn('Не удалось загрузить покупки долей:', sharesErr);
       }
 
+      let reservationPurchases = [];
+      try {
+        const reservRes = await fetch(`${API_BASE_URL}/users/${userId}/reservation-purchases`);
+        if (reservRes.ok) {
+          const reservJson = await reservRes.json();
+          if (reservJson.success && Array.isArray(reservJson.data)) {
+            reservationPurchases = reservJson.data;
+          }
+        }
+      } catch (reservErr) {
+        console.warn('Не удалось загрузить резервы:', reservErr);
+      }
+
       // Формируем URL для фото
       const userData = userResult.data;
       let userPhotoUrl = null;
@@ -123,6 +136,7 @@ const UserDetailModal = ({ isOpen, onClose, userId }) => {
         passport_photo_url: passportPhotoUrl,
         cardInfo: cardInfo,
         sharePurchases,
+        reservationPurchases,
       });
       setDocuments(documentsWithUrls);
     } catch (err) {
@@ -474,6 +488,52 @@ const UserDetailModal = ({ isOpen, onClose, userId }) => {
                 )}
               </div>
             </div>
+
+            {/* Резервы 10% (Купить сейчас) */}
+            {user.reservationPurchases && user.reservationPurchases.length > 0 && (
+              <div className="user-detail-section">
+                <h3 className="section-title">Резервы 10% ({user.reservationPurchases.length})</h3>
+                <div className="documents-list">
+                  {user.reservationPurchases.map((row) => {
+                    const b = row.billing || {};
+                    const pid = b.property_id;
+                    const paidStripe = (row.amount_cents || 0) / 100;
+                    const cur = (row.currency || 'eur').toUpperCase();
+                    return (
+                      <div key={row.id || row.dedupe_key} className="document-item">
+                        <div className="document-info">
+                          <div className="document-header">
+                            <span className="document-type">
+                              Резерв · объект #{pid != null ? pid : '—'} · {paidStripe.toLocaleString('ru-RU')}{' '}
+                              {cur}
+                            </span>
+                            <span className="document-status status-approved">Оплачено</span>
+                          </div>
+                          <div className="document-date">Дата: {formatDate(row.paid_at)}</div>
+                          {row.agreement_policy_version && (
+                            <div className="document-date">Версия политики: {row.agreement_policy_version}</div>
+                          )}
+                          {row.agreement_signature && (
+                            <div className="document-date user-detail-share-sig">
+                              <div>Подпись согласия:</div>
+                              {String(row.agreement_signature).startsWith('data:image') ? (
+                                <img
+                                  src={row.agreement_signature}
+                                  alt="Подпись"
+                                  className="user-detail-share-sig__img"
+                                />
+                              ) : (
+                                <span>{row.agreement_signature}</span>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             {/* Покупки долей */}
             {user.sharePurchases && user.sharePurchases.length > 0 && (

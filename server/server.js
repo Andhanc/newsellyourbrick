@@ -22,6 +22,7 @@ import { translatePropertyToAllLanguages } from './services/aiPropertyTranslate.
 import { buildDatabaseSnapshot } from './services/storageSnapshot.js';
 import { getAuctionMinBidStep } from '../src/utils/auctionBidStep.js';
 import { registerStripeBillingRoutes, createStripeWebhookHandler } from './stripeBilling.js';
+import { sendCrmEmailViaEmailJS, resolveBuyerEmailForPurchaseRequest } from './emailJsCrmSend.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -3467,6 +3468,20 @@ app.put('/api/purchase-requests/:id/status', async (req, res) => {
       return res.status(404).json({ success: false, error: 'Запрос не найден' });
     }
 
+    // Письма (как напоминания по EmailJS) — без email нельзя перевести в «в обработку» или «завершить»
+    let resolvedBuyerEmailForMails = null;
+    if (status === 'processing' || status === 'completed') {
+      resolvedBuyerEmailForMails = await resolveBuyerEmailForPurchaseRequest(request);
+      if (!resolvedBuyerEmailForMails) {
+        return res.status(400).json({
+          success: false,
+          code: 'BUYER_EMAIL_REQUIRED',
+          error:
+            'У покупателя нет email в заявке и в профиле. Укажите email в профиле пользователя или в заявке — без него нельзя отправить письмо.',
+        });
+      }
+    }
+
     // Если статус "processing", резервируем объект на 72 часа
     if (status === 'processing' && request.property_id) {
       try {
@@ -3490,16 +3505,29 @@ app.put('/api/purchase-requests/:id/status', async (req, res) => {
       }
     }
 
-    // Если статус "completed" или "cancelled", снимаем резервацию объекта
-    if ((status === 'completed' || status === 'cancelled') && request.property_id) {
+    // Завершение сделки «Купить сейчас»: фиксируем победителя на объекте; отмена — только снять бронь
+    if (status === 'completed' && request.property_id) {
       try {
-        console.log(`🔍 PUT /api/purchase-requests/:id/status - Снятие резервации объекта ID=${request.property_id} для запроса #${req.params.id}`);
-        
+        const buyerIdNum =
+          request.buyer_id != null ? parseInt(String(request.buyer_id).trim(), 10) : NaN;
+        if (Number.isFinite(buyerIdNum)) {
+          await propertyQueries.markBuyNowSaleComplete(request.property_id, buyerIdNum);
+          console.log(
+            `✅ Сделка завершена: объект #${request.property_id}, покупатель user_id=${buyerIdNum}, запрос #${req.params.id}`
+          );
+        } else {
+          await propertyQueries.unreserve(request.property_id);
+          console.warn(`⚠️ completed без buyer_id — снята только бронь, объект #${request.property_id}`);
+        }
+      } catch (completeErr) {
+        console.error('❌ Ошибка markBuyNowSaleComplete / unreserve:', completeErr);
+      }
+    } else if (status === 'cancelled' && request.property_id) {
+      try {
         await propertyQueries.unreserve(request.property_id);
-        console.log(`✅ Резервация объекта #${request.property_id} снята для запроса #${req.params.id}`);
+        console.log(`✅ Резервация объекта #${request.property_id} снята (отмена запроса #${req.params.id})`);
       } catch (unreserveError) {
         console.error('❌ Ошибка при снятии резервации объекта:', unreserveError);
-        // Продолжаем выполнение, даже если снятие резервации не удалось
       }
     }
 
@@ -3554,11 +3582,16 @@ app.put('/api/purchase-requests/:id/status', async (req, res) => {
           }
         }
 
-        // Отправляем email через EmailJS (нужно будет вызвать на фронтенде или создать отдельный endpoint)
-        // Пока просто логируем
-        if (request.buyer_email) {
-          console.log(`📧 Email должен быть отправлен покупателю: ${request.buyer_email}`);
-          console.log(`📧 Текст сообщения:\n${message}`);
+        if (resolvedBuyerEmailForMails) {
+          try {
+            await sendCrmEmailViaEmailJS(
+              resolvedBuyerEmailForMails,
+              'Поздравляем! Запрос на покупку одобрен — Sellyourbrick',
+              message
+            );
+          } catch (emailJsErr) {
+            console.error('❌ EmailJS (одобрение запроса):', emailJsErr.message);
+          }
         }
       } catch (notificationError) {
         console.error('❌ Ошибка при отправке уведомлений:', notificationError);
@@ -3573,36 +3606,78 @@ app.put('/api/purchase-requests/:id/status', async (req, res) => {
         const safePropertyId = Number.isFinite(propertyIdNum) ? propertyIdNum : null;
         const propertyTitle = request.property_title || 'Объект недвижимости';
         const requestIdNum = parseInt(req.params.id, 10);
+        const buyerIdForNotif = parseInt(String(request.buyer_id).trim(), 10);
 
-        if (status === 'processing') {
-          await notificationQueries.create({
-            user_id: request.buyer_id,
-            type: 'buy_now_approved',
-            title: 'Покупка одобрена',
-            message: `Ваш запрос на покупку "${propertyTitle}" одобрен. Перейдите к оформлению.`,
-            data: {
-              request_id: Number.isFinite(requestIdNum) ? requestIdNum : null,
-              property_id: safePropertyId
-            },
-            is_read: 0,
-            view_count: 0
-          });
-        } else if (status === 'rejected' || status === 'cancelled') {
-          await notificationQueries.create({
-            user_id: request.buyer_id,
-            type: 'buy_now_rejected',
-            title: 'Покупка отклонена',
-            message: `Ваш запрос на покупку "${propertyTitle}" был отклонен.`,
-            data: {
-              request_id: Number.isFinite(requestIdNum) ? requestIdNum : null,
-              property_id: safePropertyId
-            },
-            is_read: 0,
-            view_count: 0
-          });
+        if (Number.isFinite(buyerIdForNotif)) {
+          if (status === 'processing') {
+            await notificationQueries.create({
+              user_id: buyerIdForNotif,
+              type: 'buy_now_approved',
+              title: 'Покупка одобрена',
+              message: `Ваш запрос на покупку "${propertyTitle}" одобрен. Перейдите к оформлению.`,
+              data: {
+                request_id: Number.isFinite(requestIdNum) ? requestIdNum : null,
+                property_id: safePropertyId
+              },
+              is_read: 0,
+              view_count: 0
+            });
+          } else if (status === 'completed') {
+            await notificationQueries.create({
+              user_id: buyerIdForNotif,
+              type: 'buy_now_completed',
+              title: 'Объект ваш!',
+              message: `Вы успешно приобрели объект «${propertyTitle}».`,
+              data: {
+                request_id: Number.isFinite(requestIdNum) ? requestIdNum : null,
+                property_id: safePropertyId
+              },
+              is_read: 0,
+              view_count: 0
+            });
+          } else if (status === 'rejected' || status === 'cancelled') {
+            await notificationQueries.create({
+              user_id: buyerIdForNotif,
+              type: 'buy_now_rejected',
+              title: 'Покупка отклонена',
+              message: `Ваш запрос на покупку "${propertyTitle}" был отклонен.`,
+              data: {
+                request_id: Number.isFinite(requestIdNum) ? requestIdNum : null,
+                property_id: safePropertyId
+              },
+              is_read: 0,
+              view_count: 0
+            });
+          }
         }
       } catch (buyerNotifError) {
         console.error('❌ Ошибка создания buyer-уведомления по purchase request:', buyerNotifError);
+      }
+    }
+
+    if (status === 'completed' && resolvedBuyerEmailForMails) {
+      try {
+        const name = updatedRequest.buyer_name || 'Покупатель';
+        const pTitle = updatedRequest.property_title || 'Объект недвижимости';
+        const pLoc = updatedRequest.property_location || 'Не указано';
+        const congratsBody = `Здравствуйте, ${name}!
+
+Поздравляем с покупкой объекта недвижимости!
+
+🏠 Объект: ${pTitle}
+📍 Местоположение: ${pLoc}
+
+Сделка по запросу #${req.params.id} отмечена как завершена. Спасибо, что выбрали нас.
+
+С уважением,
+Команда Sellyourbrick`;
+        await sendCrmEmailViaEmailJS(
+          resolvedBuyerEmailForMails,
+          `Поздравляем! Объект «${pTitle}» ваш — Sellyourbrick`,
+          congratsBody
+        );
+      } catch (completeMailErr) {
+        console.error('❌ EmailJS (завершение сделки):', completeMailErr.message);
       }
     }
     
@@ -5895,101 +5970,9 @@ app.delete('/api/admin/administrators/:id', async (req, res) => {
 /**
  * ============================================
  * API: CRM (воронка, касания, письма через EmailJS)
+ * Реализация sendCrmEmailViaEmailJS: ./emailJsCrmSend.js
  * ============================================
  */
-let emailJs403ServerHintLogged = false;
-
-async function sendCrmEmailViaEmailJS(toEmail, subject, messageText) {
-  const emailJsConfig = {
-    serviceId:
-      process.env.REACT_APP_EMAILJS_SERVICE_ID ||
-      process.env.VITE_EMAILJS_SERVICE_ID ||
-      process.env.EMAILJS_SERVICE_ID ||
-      '',
-    templateId:
-      process.env.EMAILJS_CRM_TEMPLATE_ID ||
-      process.env.REACT_APP_EMAILJS_TEMPLATE_ID ||
-      process.env.VITE_EMAILJS_TEMPLATE_ID ||
-      process.env.EMAILJS_TEMPLATE_ID ||
-      '',
-    publicKey:
-      process.env.REACT_APP_EMAILJS_PUBLIC_KEY ||
-      process.env.VITE_EMAILJS_PUBLIC_KEY ||
-      process.env.EMAILJS_PUBLIC_KEY ||
-      '',
-  };
-  const privateKey = String(
-    process.env.EMAILJS_PRIVATE_KEY ||
-      process.env.EMAILJS_ACCESS_TOKEN ||
-      process.env.EMAILJS_PRIVATE_API_KEY ||
-      ''
-  ).trim();
-  if (!emailJsConfig.serviceId || !emailJsConfig.templateId || !emailJsConfig.publicKey) {
-    throw new Error(
-      'EmailJS не настроен: нужны SERVICE_ID, шаблон (EMAILJS_CRM_TEMPLATE_ID или общий TEMPLATE_ID) и PUBLIC_KEY'
-    );
-  }
-  const template_params = {
-    to_email: toEmail,
-    email: toEmail,
-    subject: subject || 'Sellyourbrick',
-    message: messageText,
-    body: messageText,
-    from_name: 'Sellyourbrick',
-  };
-  const basePayload = {
-    service_id: emailJsConfig.serviceId,
-    template_id: emailJsConfig.templateId,
-    user_id: emailJsConfig.publicKey,
-    template_params,
-  };
-
-  const postSend = async (payload) => {
-    const emailResponse = await axios.post('https://api.emailjs.com/api/v1.0/email/send', payload, {
-      headers: { 'Content-Type': 'application/json' },
-    });
-    if (emailResponse.status !== 200) {
-      throw new Error(`EmailJS вернул статус ${emailResponse.status}`);
-    }
-  };
-
-  try {
-    if (privateKey) {
-      try {
-        await postSend({ ...basePayload, accessToken: privateKey });
-      } catch (firstErr) {
-        const st = firstErr.response?.status;
-        if (st === 403) {
-          await postSend({ ...basePayload, access_token: privateKey });
-        } else {
-          throw firstErr;
-        }
-      }
-    } else {
-      await postSend(basePayload);
-    }
-  } catch (err) {
-    const res = err.response;
-    if (!res) throw err;
-    const detail =
-      typeof res.data === 'string' ? res.data : res.data != null ? JSON.stringify(res.data) : '';
-    if (res.status === 403) {
-      if (!emailJs403ServerHintLogged) {
-        emailJs403ServerHintLogged = true;
-        console.warn(
-          '[EmailJS] 403: запрос с Node заблокирован. Решение A: в корневой .env проекта (или server/.env) добавьте EMAILJS_PRIVATE_KEY=<Private key из https://dashboard.emailjs.com/admin → API keys> и перезапустите сервер. Решение B: Account → Security → включить «Allow EmailJS API for non-browser applications». Подробнее: .env.example'
-        );
-      }
-      const hint = privateKey
-        ? 'Private key задан, но EmailJS всё равно вернул 403 — проверьте ключ в дашборде и лимиты аккаунта.'
-        : 'В .env нет EMAILJS_PRIVATE_KEY — без него серверная отправка отключена политикой EmailJS (или включите non-browser в Security).';
-      throw new Error(`EmailJS 403: ${hint} ${detail ? String(detail).slice(0, 100) : ''}`);
-    }
-    throw new Error(
-      detail ? `EmailJS ошибка ${res.status}: ${detail}` : err.message || `EmailJS ошибка ${res.status}`
-    );
-  }
-}
 
 function getFrontendPublicBase() {
   return String(process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/$/, '');

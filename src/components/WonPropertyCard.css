@@ -319,6 +319,24 @@
   color: #fff;
 }
 
+/* Завершённая сделка «Купить сейчас» / как карточка с завершённым аукционом (.property-card--auction-ended) */
+.won-property-card--buy-now-completed {
+  opacity: 0.94;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.06);
+}
+
+.won-property-card--buy-now-completed .won-property-card__image img {
+  filter: grayscale(0.22);
+}
+
+.won-property-card__buy-now-summary {
+  margin: 0 0 4px;
+  font-size: 13px;
+  line-height: 1.45;
+  color: #475569;
+}
+
 /* Адаптивность */
 @media (max-width: 768px) {
   .won-property-card__main {

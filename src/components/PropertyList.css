@@ -1018,6 +1018,14 @@
   overflow: hidden;
 }
 
+.property-card-buy-now-winner {
+  font-size: 12px;
+  font-weight: 600;
+  color: #0f766e;
+  margin: 2px 0 10px;
+  line-height: 1.35;
+}
+
 .property-price {
   font-size: 24px;
   font-weight: 700;

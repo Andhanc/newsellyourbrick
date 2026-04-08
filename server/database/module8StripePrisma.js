@@ -84,6 +84,9 @@ export const stripeSubscriptionQueries = {
           status: row.status || 'paid',
           plan_key: row.plan_key || 'pro',
           billing_reason: row.billing_reason || null,
+          agreement_signature: row.agreement_signature != null ? String(row.agreement_signature) : null,
+          agreement_policy_version:
+            row.agreement_policy_version != null ? String(row.agreement_policy_version).slice(0, 128) : null,
           paid_at: row.paid_at,
           period_start: row.period_start || null,
           period_end: row.period_end || null,

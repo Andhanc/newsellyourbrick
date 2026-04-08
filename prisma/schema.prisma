@@ -353,6 +353,9 @@ model properties_apartments {
   reserved_until         String?
   reserved_by            Int?
   purchase_request_id    Int?
+  /// Покупка «Купить сейчас» завершена менеджером — ID покупателя в БД.
+  buy_now_winner_user_id Int?
+  buy_now_completed_at   String?
   created_at             String? @default("datetime('now')")
   updated_at             String? @default("datetime('now')")
   sale_type              String?
@@ -447,6 +450,8 @@ model properties_houses {
   reserved_until         String?
   reserved_by            Int?
   purchase_request_id    Int?
+  buy_now_winner_user_id Int?
+  buy_now_completed_at   String?
   created_at             String? @default("datetime('now')")
   updated_at             String? @default("datetime('now')")
   debt_severity          String?
@@ -523,6 +528,22 @@ model share_purchase_signature_intents {
   users                 users     @relation(fields: [buyer_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@index([buyer_id, created_at], map: "idx_share_sig_intent_buyer")
+}
+
+/// Подпись к резерву 10% («Купить сейчас») до завершения Checkout.
+model property_reservation_signature_intents {
+  id                  String    @id @default(uuid())
+  buyer_id            Int
+  property_id         Int
+  property_type       String
+  use_wallet_snapshot Int
+  signature_data      String
+  created_at          DateTime  @default(now())
+  consumed_at         DateTime?
+  stripe_session_id   String?   @unique(map: "reservation_sig_intent_stripe_session_key")
+  users               users     @relation(fields: [buyer_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([buyer_id, created_at], map: "idx_reservation_sig_intent_buyer")
 }
 
 model property_translations {
@@ -611,6 +632,9 @@ model stripe_payments {
   status                     String  @default("paid")
   plan_key                   String  @default("pro")
   billing_reason             String?
+  /// PNG data URL подписи по договору резерва / долей (дублирует billing JSON для админки).
+  agreement_signature        String?
+  agreement_policy_version   String?
   paid_at                    String
   period_start               String?
   period_end                 String?
@@ -726,6 +750,7 @@ model users {
   property_favorites            property_favorites[]
   property_shares               property_shares[]
   share_purchase_signature_intents share_purchase_signature_intents[]
+  property_reservation_signature_intents property_reservation_signature_intents[]
   stripe_payments               stripe_payments[]
   stripe_subscription_state     stripe_subscription_state?
   stripe_wallet_deposit_credits stripe_wallet_deposit_credits[] @ignore

@@ -326,6 +326,102 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
 }
 
+.history-reservation-card .card-content {
+  min-width: 0;
+}
+
+.history-reservation-card__image {
+  position: relative;
+}
+
+.history-reservation-signature {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #e5e7eb;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.history-reservation-signature .detail-label {
+  font-size: 0.85rem;
+  color: #64748b;
+}
+
+.history-reservation-signature__img {
+  max-width: 220px;
+  max-height: 120px;
+  object-fit: contain;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.history-reservation-timer {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  margin-bottom: 14px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, rgba(10, 186, 181, 0.1) 0%, rgba(8, 154, 149, 0.06) 100%);
+  border: 1px solid rgba(10, 186, 181, 0.28);
+}
+
+.history-reservation-timer__label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #0f766e;
+}
+
+.history-reservation-timer__value {
+  font-family: ui-monospace, 'SF Mono', Menlo, Monaco, monospace;
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #0f172a;
+  font-variant-numeric: tabular-nums;
+}
+
+.history-reservation-timer--expired {
+  background: #f8fafc;
+  border-color: #e2e8f0;
+}
+
+.history-reservation-timer--expired .history-reservation-timer__value {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #64748b;
+  font-family: inherit;
+  letter-spacing: normal;
+}
+
+.history-reservation-card--sold {
+  border-color: rgba(16, 185, 129, 0.45);
+}
+
+.history-reservation-channel {
+  margin: 0 0 8px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #047857;
+}
+
+.history-reservation-pay-summary {
+  margin: 0 0 12px;
+  font-size: 0.85rem;
+  line-height: 1.45;
+  color: #475569;
+}
+
+.status-badge--completed-sale {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: #fff;
+}
+
 .bid-card {
   flex-direction: column;
 }
