@@ -420,6 +420,24 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
   // Используем геокодированные координаты или исходные
   const finalCoordinates = mapCoordinates || coordinates
 
+  // Длительность кругового таймера (мс) — нужна для shouldShowCircularAuctionTimer / getEffectiveAuctionEndTime
+  const normalizedTestTimerDuration = (() => {
+    const v = property.test_timer_duration
+    if (v == null || v === '') return null
+    const n = Number(v)
+    return Number.isFinite(n) ? n : null
+  })()
+
+  const auctionContextForTimers = {
+    ...property,
+    test_timer_end_date: property.test_timer_end_date || null,
+    test_timer_duration: normalizedTestTimerDuration,
+    auction_end_date: property.auction_end_date || null,
+    auction_start_date: property.auction_start_date || null,
+    buy_now_winner_user_id: property.buy_now_winner_user_id ?? null,
+    buy_now_completed_at: property.buy_now_completed_at ?? null,
+  }
+
   // Нормализуем данные под формат детальной страницы (используем данные как есть, как в админке)
   const displayProperty = {
     ...property,
@@ -523,8 +541,8 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
         : (property.test_drive !== undefined ? (property.test_drive === 1 || property.test_drive === true) : false)),
     // Тестовый таймер
     test_timer_end_date: property.test_timer_end_date || null,
-    test_timer_duration: property.test_timer_duration || null, // Исходная длительность таймера в миллисекундах
-    endTime: getEffectiveAuctionEndTime(property),
+    test_timer_duration: normalizedTestTimerDuration,
+    endTime: getEffectiveAuctionEndTime(auctionContextForTimers),
     // Резервация
     is_reserved: property.is_reserved === true || property.is_reserved === 1 || property.is_reserved === 'true' || false,
     reserved_until: property.reserved_until || null,
@@ -644,6 +662,8 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
     displayProperty.isAuction === true ||
     displayProperty.is_auction === true ||
     displayProperty.is_auction === 1 ||
+    displayProperty.is_auction === '1' ||
+    displayProperty.is_auction === 'true' ||
     hasTestTimerDateString(displayProperty) ||
     hadCircularTimerAuction
 

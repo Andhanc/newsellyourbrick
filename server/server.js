@@ -8743,6 +8743,10 @@ app.post('/api/properties/:id/test-timer', async (req, res) => {
         where: { id: Number(id) },
         data: {
           test_timer_end_date: String(test_timer_end_date),
+          test_timer_duration:
+            test_timer_duration !== undefined && test_timer_duration !== null
+              ? Number(test_timer_duration)
+              : null,
           updated_at: new Date().toISOString(),
         },
       });
@@ -8804,6 +8808,7 @@ app.delete('/api/properties/:id/test-timer', async (req, res) => {
         where: { id: Number(id) },
         data: {
           test_timer_end_date: null,
+          test_timer_duration: null,
           updated_at: new Date().toISOString(),
         },
       });

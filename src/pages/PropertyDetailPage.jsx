@@ -231,6 +231,25 @@ const PropertyDetailPage = () => {
               
               const pt = normalizePropertyDetailType(prop)
 
+              /** Поля аукциона/тест-таймера для getEffectiveAuctionEndTime и PropertyDetailClassic (должны совпадать с ответом API). */
+              const testTimerDurationRaw = prop.test_timer_duration
+              const testTimerDuration =
+                testTimerDurationRaw != null && testTimerDurationRaw !== ''
+                  ? Number(testTimerDurationRaw)
+                  : null
+              const testTimerDurationNorm =
+                testTimerDuration != null && Number.isFinite(testTimerDuration) ? testTimerDuration : null
+
+              const auctionContextForEndTime = {
+                ...prop,
+                test_timer_end_date: prop.test_timer_end_date || null,
+                test_timer_duration: testTimerDurationNorm,
+                auction_end_date: prop.auction_end_date || null,
+                auction_start_date: prop.auction_start_date || null,
+                buy_now_winner_user_id: prop.buy_now_winner_user_id ?? null,
+                buy_now_completed_at: prop.buy_now_completed_at ?? null,
+              }
+
               // Преобразуем данные из базы в формат для компонентов
               const formattedProperty = {
                 id: prop.id,
@@ -294,12 +313,19 @@ const PropertyDetailPage = () => {
                   prop.has_debt === 1 ||
                   prop.has_debt === true
                 ) && (prop.test_drive === 1 || prop.test_drive === true || prop.test_drive === '1' || prop.test_drive === 'true'),
-                is_auction: prop.is_auction === 1 || prop.is_auction === true,
+                is_auction:
+                  prop.is_auction === 1 ||
+                  prop.is_auction === true ||
+                  prop.is_auction === '1' ||
+                  prop.is_auction === 'true',
                 auction_start_date: prop.auction_start_date || null,
                 auction_end_date: prop.auction_end_date || null,
                 auction_starting_price: prop.auction_starting_price || null,
-                endTime: getEffectiveAuctionEndTime(prop), // Текущая фаза: преаукцион → auction_end_date, затем круговой → test_timer_end_date
+                endTime: getEffectiveAuctionEndTime(auctionContextForEndTime),
                 test_timer_end_date: prop.test_timer_end_date || null,
+                test_timer_duration: testTimerDurationNorm,
+                buy_now_winner_user_id: prop.buy_now_winner_user_id ?? null,
+                buy_now_completed_at: prop.buy_now_completed_at ?? null,
                 additional_amenities: prop.additional_amenities || null,
                 // Информация о продавце
                 seller: prop.first_name && prop.last_name 

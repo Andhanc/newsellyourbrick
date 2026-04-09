@@ -46,6 +46,9 @@ export function isPreAuctionPhaseActive(property) {
 export function shouldShowCircularAuctionTimer(property) {
   if (isBuyNowPurchaseCompleted(property)) return false
   if (!hasTestTimerDateString(property)) return false
+  // Тестовый режим: если задана исходная длительность кругового таймера,
+  // сразу показываем круговой сценарий даже при активном pre-auction.
+  if (property?.test_timer_duration != null && Number(property.test_timer_duration) > 0) return true
   if (isPreAuctionPhaseActive(property)) return false
   return true
 }
@@ -67,6 +70,10 @@ export function hasActiveCircularTestTimer(property) {
 export function getEffectiveAuctionEndTime(property) {
   if (!property) return null
   if (isBuyNowPurchaseCompleted(property)) return null
+  // Для тестового режима приоритет у кругового таймера.
+  if (property?.test_timer_duration != null && Number(property.test_timer_duration) > 0 && hasTestTimerDateString(property)) {
+    return property.test_timer_end_date ?? null
+  }
   const preEndMs = parseDateMs(property.auction_end_date)
   const now = Date.now()
   if (preEndMs != null && preEndMs > now) {
