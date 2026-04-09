@@ -732,6 +732,19 @@
   color: #999;
 }
 
+.property-card-owner__stat--pending-edit {
+  color: #0ABAB5;
+  font-weight: 500;
+}
+
+.property-card-owner__pending-edit-break {
+  display: none;
+}
+
+.property-card-owner__pending-edit-text-line {
+  display: inline;
+}
+
 .property-card-owner__actions {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -864,6 +877,19 @@
 
   .owner-dashboard__properties .property-card.property-card-owner {
     margin: 0 6px 12px;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+
+  .property-content-bottom {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+  }
+
+  .property-card-owner__content {
+    flex: 1;
   }
 
   /* 2) Скрыть текст "просмотров" и "запросов" (первые два пункта статистики) */
@@ -927,6 +953,28 @@
     margin-top: -5px;
   }
 
+  .property-card-owner__stat--pending-edit {
+    font-size: 12px;
+    line-height: 1.4;
+  }
+
+  .property-card-owner__pending-edit-icon {
+    display: none;
+  }
+
+  .property-card-owner__pending-edit-text {
+    display: inline-block;
+  }
+
+  .property-card-owner__pending-edit-text-line {
+    display: block;
+    white-space: nowrap;
+  }
+
+  .property-card-owner__stat--published-mobile-hidden {
+    display: none;
+  }
+
   /* Блок стартовой суммы ставки — сразу под характеристиками, только в мобильной версии */
   .property-card-owner__starting-price {
     display: flex;
@@ -976,6 +1024,13 @@
     font-size: 12px;
     line-height: 1.2;
     word-break: break-word;
+  }
+
+  .stat-card__label {
+    white-space: nowrap;
+    word-break: normal;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   /* В мобильной версии убираем иконки внутри карточек статистики / быстрого добавления,
@@ -1044,6 +1099,7 @@
   .property-card-owner__actions {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 10px;
+    margin-top: auto;
   }
 
   .action-btn {

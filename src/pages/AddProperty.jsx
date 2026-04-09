@@ -3362,6 +3362,13 @@ const AddProperty = ({
       }
     }
 
+    // Для редактирования повторная оплата публикации не требуется.
+    // Сразу отправляем изменения на модерацию/обновление.
+    if (isEditMode) {
+      await handlePublish()
+      return
+    }
+
     // Пока модалка оплаты открыта — остаёмся на шаге цены, чтобы фон оставался узнаваемым
     // Шаг «Публикация» (форма) — только после успешного промокода / оплаты
     setShowListingFeeModal(true)
@@ -3451,6 +3458,7 @@ const AddProperty = ({
 
   // При возврате со страницы бонусов — снова открыть модалку оплаты публикации
   useEffect(() => {
+    if (isEditMode) return
     if (location.state?.openListingFeeModal) {
       setCurrentStep('price')
       setShowListingFeeModal(true)
@@ -3459,7 +3467,7 @@ const AddProperty = ({
       setListingFeePromoError(null)
       navigate(location.pathname, { replace: true, state: {} })
     }
-  }, [location.state?.openListingFeeModal, location.pathname, navigate])
+  }, [isEditMode, location.state?.openListingFeeModal, location.pathname, navigate])
 
   // Обработчик drag and drop для фотографий
   const [isDragging, setIsDragging] = useState(false)
@@ -6610,7 +6618,7 @@ const AddProperty = ({
                     endDate={formData.auctionEndDate}
                     onStartDateChange={(date) => setFormData(prev => ({ ...prev, auctionStartDate: date }))}
                     onEndDateChange={(date) => setFormData(prev => ({ ...prev, auctionEndDate: date }))}
-                    disableMinConstraints={adminMode || isAdminAddedProperty}
+                    disableMinConstraints={adminMode || isAdminAddedProperty || isEditMode}
                   />
                 </div>
                 

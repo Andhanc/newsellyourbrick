@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import VerificationSuccessNotification from './VerificationSuccessNotification'
 import { getApiBaseUrl } from '../utils/apiConfig'
+import { CLERK_DB_USER_SYNCED } from '../services/authService'
 
 const shownKeyFor = (userId, notificationId) =>
   `verification_success_shown_${userId}_${notificationId}`
@@ -82,10 +83,20 @@ export default function GlobalVerificationSuccessGate() {
     const onFocus = () => {
       loadVerificationNotification()
     }
+    const onVerificationPush = () => {
+      loadVerificationNotification()
+    }
+    const onClerkSynced = () => {
+      loadVerificationNotification()
+    }
     window.addEventListener('focus', onFocus)
+    window.addEventListener('verification-status-update', onVerificationPush)
+    window.addEventListener(CLERK_DB_USER_SYNCED, onClerkSynced)
     const pollId = setInterval(loadVerificationNotification, 45000)
     return () => {
       window.removeEventListener('focus', onFocus)
+      window.removeEventListener('verification-status-update', onVerificationPush)
+      window.removeEventListener(CLERK_DB_USER_SYNCED, onClerkSynced)
       clearInterval(pollId)
     }
   }, [loadVerificationNotification])

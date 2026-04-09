@@ -45,6 +45,31 @@ import { useTranslation } from 'react-i18next'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
 
+const formatDateSafe = (value) => {
+  if (!value) return 'Не указано'
+  const raw = String(value).trim()
+  if (!raw) return 'Не указано'
+
+  // 1) ISO / стандартные форматы
+  let date = new Date(raw)
+
+  // 2) Частый серверный формат: "YYYY-MM-DD HH:mm:ss"
+  if (Number.isNaN(date.getTime()) && /^\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}(:\d{2})?$/.test(raw)) {
+    date = new Date(raw.replace(' ', 'T'))
+  }
+
+  // 3) Формат "DD.MM.YYYY" (и с временем)
+  if (Number.isNaN(date.getTime()) && /^\d{2}\.\d{2}\.\d{4}/.test(raw)) {
+    const [datePart, timePart] = raw.split(' ')
+    const [dd, mm, yyyy] = datePart.split('.')
+    const normalized = `${yyyy}-${mm}-${dd}${timePart ? `T${timePart}` : ''}`
+    date = new Date(normalized)
+  }
+
+  if (Number.isNaN(date.getTime())) return 'Не указано'
+  return date.toLocaleDateString('ru-RU')
+}
+
 // Демонстрационные данные объявлений владельца
 const mockOwnerProperties = [
   {
@@ -446,14 +471,19 @@ const OwnerDashboard = () => {
               land_area: prop.land_area || null,
               bedrooms: prop.bedrooms || null,
               floors: prop.floors || prop.total_floors || null,
-              status: prop.moderation_status === 'approved' ? 'active' : 
+              status: (prop.moderation_status === 'approved' && prop.has_pending_edit) ? 'pending' :
+                     prop.moderation_status === 'approved' ? 'active' : 
                      prop.moderation_status === 'pending' ? 'pending' : 
                      prop.moderation_status === 'rejected' ? 'rejected' : 'pending',
-              moderationStatus: prop.moderation_status, // Сохраняем оригинальный статус
+              moderationStatus: (prop.moderation_status === 'approved' && prop.has_pending_edit)
+                ? 'pending_edit'
+                : prop.moderation_status, // Сохраняем оригинальный статус
               views: 0, // TODO: добавить подсчет просмотров
               inquiries: 0, // TODO: добавить подсчет запросов
-              publishedDate: prop.created_at || new Date().toISOString(),
+              publishedDate: prop.created_at || prop.updated_at || null,
               rejectionReason: prop.rejection_reason || null,
+              hasPendingEdit: Boolean(prop.has_pending_edit),
+              pendingEditRequestedAt: prop.pending_edit_requested_at || null,
               isAuction: prop.is_auction === 1 || prop.is_auction === true || prop.is_auction === '1' || prop.is_auction === 'true',
               photosCount: photosCount,
               // Поля аукциона для отображения стартовой суммы ставки
@@ -1155,7 +1185,7 @@ const OwnerDashboard = () => {
         statusText,
         property.views,
         property.inquiries,
-        new Date(property.publishedDate).toLocaleDateString('ru-RU')
+        formatDateSafe(property.publishedDate)
       ])
     })
     
@@ -1789,8 +1819,12 @@ const OwnerDashboard = () => {
                         <div className="property-card-owner__stat">
                           <span>{property.inquiries} запросов</span>
                         </div>
-                        <div className="property-card-owner__stat">
-                          <span>Опубликовано: {new Date(property.publishedDate).toLocaleDateString('ru-RU')}</span>
+                        <div
+                          className={`property-card-owner__stat ${
+                            property.hasPendingEdit ? 'property-card-owner__stat--published-mobile-hidden' : ''
+                          }`}
+                        >
+                          <span>Опубликовано: {formatDateSafe(property.publishedDate)}</span>
                         </div>
                         {property.rejectionReason && !property.rejectionReason.startsWith('EDIT:') && (
                           <div className="property-card-owner__stat" style={{ color: '#ef4444', fontWeight: 500 }}>
@@ -1798,12 +1832,15 @@ const OwnerDashboard = () => {
                             <span>Причина отклонения: {property.rejectionReason}</span>
                           </div>
                         )}
-                        {property.rejectionReason && property.rejectionReason.startsWith('EDIT:') && (
-                          <div className="property-card-owner__stat" style={{ color: '#0ABAB5', fontWeight: 500 }}>
-                            <FiClock size={14} />
-                            <span>Запрос на редактирование отправлен на модерацию</span>
+                        {(property.rejectionReason && property.rejectionReason.startsWith('EDIT:')) || property.hasPendingEdit ? (
+                          <div className="property-card-owner__stat property-card-owner__stat--pending-edit">
+                            <FiClock size={14} className="property-card-owner__pending-edit-icon" />
+                            <span className="property-card-owner__pending-edit-text">
+                              <span className="property-card-owner__pending-edit-text-line">Изменения отправлены</span>
+                              <span className="property-card-owner__pending-edit-text-line">и ожидают проверки</span>
+                            </span>
                           </div>
-                        )}
+                        ) : null}
                       </div>
 
                       <div className="property-card-owner__actions">

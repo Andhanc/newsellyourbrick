@@ -19,15 +19,14 @@ const AuctionPeriodPicker = ({
   const [error, setError] = useState('')
 
   // Автоматически устанавливаем сегодняшнюю дату как дату начала
+  // только для новых объявлений, когда дата еще не задана.
   useEffect(() => {
+    if (startDate) return
     const today = new Date()
     today.setHours(0, 0, 0, 0)
     const todayStr = today.toISOString().split('T')[0]
-    
-    if (!startDate || startDate !== todayStr) {
-      onStartDateChange(todayStr)
-    }
-  }, [])
+    onStartDateChange(todayStr)
+  }, [startDate, onStartDateChange])
 
   useEffect(() => {
     if (endDate) {

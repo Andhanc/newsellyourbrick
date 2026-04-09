@@ -1181,7 +1181,7 @@ export const propertyQueries = {
 
   getPending: async () => {
         const prisma = getPrisma();
-    const [aptRows, houseRows] = await Promise.all([
+    const [aptRows, houseRows, legacyRows] = await Promise.all([
       prisma.properties_apartments.findMany({
         where: {
           moderation_status: 'pending',
@@ -1198,10 +1198,34 @@ export const propertyQueries = {
         include: { users: true },
         orderBy: { created_at: 'desc' },
       }),
+      prisma.properties.findMany({
+        where: { moderation_status: 'pending' },
+        include: { users: true },
+        orderBy: { created_at: 'desc' },
+      }),
     ]);
     const apartments = mapListWithUserParse(aptRows, 'apt');
     const houses = mapListWithUserParse(houseRows, 'house');
-    const all = [...apartments, ...houses].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    const existingIds = new Set(
+      [...apartments, ...houses]
+        .map((item) => Number(item?.id))
+        .filter((id) => Number.isFinite(id))
+    );
+    const legacy = legacyRows
+      .filter((row) => !existingIds.has(Number(row.id)))
+      .map((row) => {
+        const { users, ...rest } = row;
+        return {
+          ...rest,
+          first_name: users?.first_name ?? null,
+          last_name: users?.last_name ?? null,
+          email: users?.email ?? null,
+          phone_number: users?.phone_number ?? null,
+          role: users?.role ?? null,
+          source_table: row.source_table || 'properties',
+        };
+      });
+    const all = [...apartments, ...houses, ...legacy].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
     return all;
   },
 

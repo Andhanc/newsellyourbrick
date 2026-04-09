@@ -96,6 +96,14 @@ const Subscriptions = () => {
     }
   }
 
+  useEffect(() => {
+    const onPush = () => {
+      if (userId) loadVerificationStatus()
+    }
+    window.addEventListener('verification-status-update', onPush)
+    return () => window.removeEventListener('verification-status-update', onPush)
+  }, [userId])
+
   // Функции для проверки заполненности
   const isDocumentsComplete = () => {
     return verificationStatus?.hasDocuments || false

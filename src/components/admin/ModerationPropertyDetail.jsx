@@ -354,6 +354,12 @@ const ModerationPropertyDetail = ({ property, onBack, onApprove, onReject }) => 
     
     // Сравниваем основные поля
     Object.keys(fieldLabels).forEach(key => {
+      // Важно: при редактировании стартовую дату аукциона не меняем по бизнес-логике,
+      // поэтому не показываем это поле как "изменение" в модалке сравнения.
+      if (requestType === 'edit' && key === 'auction_start_date') {
+        return;
+      }
+
       const oldValue = originalProperty[key];
       const newValue = property[key];
       
@@ -991,7 +997,7 @@ const ModerationPropertyDetail = ({ property, onBack, onApprove, onReject }) => 
                 disabled={!originalProperty || loadingOriginal}
               >
                 <FiEye size={18} />
-                {loadingOriginal ? 'Загрузка...' : 'Посмотреть изменения'}
+                {loadingOriginal ? 'Загрузка...' : 'Изменения'}
               </button>
             )}
             <button
@@ -1022,7 +1028,10 @@ const ModerationPropertyDetail = ({ property, onBack, onApprove, onReject }) => 
               color: mediaType === 'photos' ? 'white' : '#333',
               border: 'none',
               borderRadius: '4px',
-              cursor: 'pointer'
+              cursor: 'pointer',
+              whiteSpace: 'nowrap',
+              display: 'inline-flex',
+              alignItems: 'center'
             }}
           >
             <FiImage size={18} style={{ marginRight: '5px', verticalAlign: 'middle' }} />
@@ -1037,7 +1046,10 @@ const ModerationPropertyDetail = ({ property, onBack, onApprove, onReject }) => 
                 color: mediaType === 'videos' ? 'white' : '#333',
                 border: 'none',
                 borderRadius: '4px',
-                cursor: 'pointer'
+                cursor: 'pointer',
+                whiteSpace: 'nowrap',
+                display: 'inline-flex',
+                alignItems: 'center'
               }}
             >
               <FiVideo size={18} style={{ marginRight: '5px', verticalAlign: 'middle' }} />

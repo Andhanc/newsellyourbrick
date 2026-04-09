@@ -1406,6 +1406,56 @@ function MainPage() {
     loadApprovedProperties()
   }, [i18n.language, loadHomeProperties, loadApprovedProperties])
 
+  // SSE: новые лоты и тест-таймер с админки — без F5 (тот же канал, что на /auction)
+  useEffect(() => {
+    let eventSource = null
+    let reconnectTimer = null
+    let cancelled = false
+
+    const connect = async () => {
+      const base = await getApiBaseUrl()
+      if (cancelled) return
+      const url = base.startsWith('http')
+        ? `${base.replace(/\/$/, '')}/events/auction-updates`
+        : `${window.location.origin}${base.replace(/\/$/, '')}/events/auction-updates`
+      eventSource = new EventSource(url)
+      eventSource.onopen = () => {
+        if (reconnectTimer) {
+          clearTimeout(reconnectTimer)
+          reconnectTimer = null
+        }
+      }
+      eventSource.onmessage = (event) => {
+        try {
+          if (typeof event.data === 'string' && event.data.startsWith(':')) return
+          const data = JSON.parse(event.data)
+          if (data.type === 'test_timer_update' || data.type === 'new_auction_objects') {
+            loadHomeProperties()
+          }
+        } catch (_) {}
+      }
+      eventSource.onerror = () => {
+        if (cancelled) return
+        if (eventSource) {
+          eventSource.close()
+          eventSource = null
+        }
+        if (reconnectTimer) return
+        reconnectTimer = setTimeout(() => {
+          reconnectTimer = null
+          void connect()
+        }, 3000)
+      }
+    }
+
+    void connect()
+    return () => {
+      cancelled = true
+      if (reconnectTimer) clearTimeout(reconnectTimer)
+      if (eventSource) eventSource.close()
+    }
+  }, [loadHomeProperties])
+
   // Разделы для главной страницы (по типу продажи)
   const auctionSection = useMemo(() => {
     // Аукционы без цены "Купить сейчас"; объекты с долями не показываем на аукционе

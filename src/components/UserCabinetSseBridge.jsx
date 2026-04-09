@@ -33,10 +33,10 @@ export default function UserCabinetSseBridge() {
       closeEs()
       if (cancelled) return
 
-      const loggedIn = localStorage.getItem('isLoggedIn') === 'true'
       const raw = localStorage.getItem('userId')
       const uid = raw && /^\d+$/.test(String(raw)) ? parseInt(String(raw), 10) : null
-      if (!loggedIn || !uid || uid <= 0) return
+      // Достаточно числового id из Clerk→БД; isLoggedIn иногда выставляется позже — иначе SSE не поднимался без F5
+      if (!uid || uid <= 0) return
 
       const base = await getApiBaseUrl()
       if (cancelled) return // проверяем снова после await — cleanup мог сработать пока ждали

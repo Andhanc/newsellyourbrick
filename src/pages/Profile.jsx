@@ -343,6 +343,16 @@ const Profile = () => {
     }
   }
 
+  useEffect(() => {
+    if (!userId) return
+    const onPush = () => {
+      loadVerificationStatus(userId)
+      loadUserDocuments(userId)
+    }
+    window.addEventListener('verification-status-update', onPush)
+    return () => window.removeEventListener('verification-status-update', onPush)
+  }, [userId])
+
   // Проверяем заполненность документов
   const isDocumentsComplete = () => {
     // Приоритет userDocuments (более актуальные данные, загружаются при открытии страницы)

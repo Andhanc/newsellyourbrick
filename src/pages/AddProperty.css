@@ -70,6 +70,7 @@
   background: linear-gradient(135deg, #e8e8f5 0%, #f0e0eb 60%, #f8e8f0 100%);
   z-index: 0;
   background-attachment: fixed;
+  pointer-events: none;
 }
 
 .add-property-page::after {
@@ -87,6 +88,7 @@
   background-repeat: no-repeat;
   z-index: 0;
   background-attachment: fixed;
+  pointer-events: none;
 }
 
 /* Админка: не показываем фон и растягиваем контейнер под всю ширину */

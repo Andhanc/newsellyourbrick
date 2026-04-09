@@ -7463,6 +7463,16 @@ app.put('/api/properties/:id', upload.fields([
         normalizedTestDriveEdit = test_drive ? 1 : 0;
       }
     }
+
+    // Для уже идущего аукциона стартовую дату не меняем при редактировании:
+    // аукцион должен продолжаться с исходной точки отсчета.
+    const isOriginalAuction =
+      originalProperty.is_auction === 1 ||
+      originalProperty.is_auction === '1' ||
+      originalProperty.is_auction === true;
+    const lockedAuctionStartDateForEdit = isOriginalAuction
+      ? (originalProperty.auction_start_date || null)
+      : null;
     
     // Парсим JSON поля
     let parsedPhotos = [];
@@ -7556,20 +7566,49 @@ app.put('/api/properties/:id', upload.fields([
       }
     }
     
+    const parseStoredJsonArraySafe = (value) => {
+      if (Array.isArray(value)) return value;
+      if (value === null || value === undefined) return [];
+      if (typeof value !== 'string') return [];
+      const trimmed = value.trim();
+      if (!trimmed) return [];
+      try {
+        const parsed = JSON.parse(trimmed);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch {
+        return [];
+      }
+    };
+
     // Если это редактирование, создаем новую запись с пометкой
     if (isEdit) {
       const prisma = getPrisma();
       // Создаем новую запись с данными изменений
       // Используем rejection_reason для хранения original_property_id
+      const normalizedUserId = (() => {
+        const fromRequest = parseInt(String(user_id ?? '').trim(), 10);
+        if (Number.isFinite(fromRequest) && fromRequest > 0) return fromRequest;
+        const fromOriginal = parseInt(String(originalProperty.user_id ?? '').trim(), 10);
+        if (Number.isFinite(fromOriginal) && fromOriginal > 0) return fromOriginal;
+        return null;
+      })();
+
+      if (!normalizedUserId) {
+        return res.status(400).json({
+          success: false,
+          error: 'Некорректный user_id для редактирования объявления'
+        });
+      }
+
       const values = [
-        user_id || originalProperty.user_id,
+        normalizedUserId,
         property_type || originalProperty.property_type,
         title || originalProperty.title,
         description !== undefined ? description : originalProperty.description,
         price ? parseFloat(price) : originalProperty.price,
         currency || originalProperty.currency,
         normalizedIsAuction,
-        auction_start_date || originalProperty.auction_start_date,
+        lockedAuctionStartDateForEdit ?? (auction_start_date || originalProperty.auction_start_date),
         auction_end_date || originalProperty.auction_end_date,
         auction_starting_price ? parseFloat(auction_starting_price) : originalProperty.auction_starting_price,
         area ? parseFloat(area) : originalProperty.area,
@@ -7611,9 +7650,9 @@ app.put('/api/properties/:id', upload.fields([
         internet === '1' || internet === 1 || (typeof internet === 'boolean' && internet) ? 1 : 0,
         security === '1' || security === 1 || (typeof security === 'boolean' && security) ? 1 : 0,
         furniture === '1' || furniture === 1 || (typeof furniture === 'boolean' && furniture) ? 1 : 0,
-        JSON.stringify(parsedPhotos.length > 0 ? parsedPhotos : (originalProperty.photos ? JSON.parse(originalProperty.photos) : [])),
-        JSON.stringify(parsedVideos.length > 0 ? parsedVideos : (originalProperty.videos ? JSON.parse(originalProperty.videos) : [])),
-        JSON.stringify(parsedAdditionalDocuments.length > 0 ? parsedAdditionalDocuments : (originalProperty.additional_documents ? JSON.parse(originalProperty.additional_documents) : [])),
+        JSON.stringify(parsedPhotos.length > 0 ? parsedPhotos : parseStoredJsonArraySafe(originalProperty.photos)),
+        JSON.stringify(parsedVideos.length > 0 ? parsedVideos : parseStoredJsonArraySafe(originalProperty.videos)),
+        JSON.stringify(parsedAdditionalDocuments.length > 0 ? parsedAdditionalDocuments : parseStoredJsonArraySafe(originalProperty.additional_documents)),
         additional_amenities || originalProperty.additional_amenities,
         ownershipDocumentPath,
         noDebtsDocumentPath,
@@ -9576,6 +9615,7 @@ app.get('/api/properties/:id', async (req, res) => {
  */
 app.get('/api/properties/user/:userId', async (req, res) => {
   try {
+    const prisma = getPrisma();
     const { userId } = req.params;
     console.log('📥 Запрос объявлений пользователя:', userId);
     
@@ -9597,6 +9637,30 @@ app.get('/api/properties/user/:userId', async (req, res) => {
       console.log('⚠️ Объявления не найдены для пользователя:', userId);
     }
 
+    // Ищем pending-запросы на редактирование (legacy поток: таблица properties, rejection_reason=EDIT:<id>)
+    const pendingEditRows = await prisma.properties.findMany({
+      where: {
+        user_id: Number(userId),
+        moderation_status: 'pending',
+        rejection_reason: { startsWith: 'EDIT:' },
+      },
+      select: { id: true, rejection_reason: true, created_at: true },
+      orderBy: { created_at: 'desc' },
+    });
+    const pendingEditByOriginalId = new Map();
+    for (const row of pendingEditRows) {
+      const match = String(row.rejection_reason || '').match(/^EDIT:(\d+)$/);
+      if (!match) continue;
+      const originalId = Number(match[1]);
+      if (!Number.isFinite(originalId)) continue;
+      if (!pendingEditByOriginalId.has(originalId)) {
+        pendingEditByOriginalId.set(originalId, {
+          request_id: row.id,
+          request_created_at: row.created_at,
+        });
+      }
+    }
+
     // Добавляем информацию о пользователе к каждому объекту и парсим JSON поля
     const formattedProperties = properties.map(prop => {
       const formatted = { ...prop };
@@ -9607,6 +9671,10 @@ app.get('/api/properties/user/:userId', async (req, res) => {
       formatted.email = user.email;
       formatted.phone_number = user.phone_number;
       formatted.role = user.role;
+      const pendingEditMeta = pendingEditByOriginalId.get(Number(formatted.id)) || null;
+      formatted.has_pending_edit = !!pendingEditMeta;
+      formatted.pending_edit_request_id = pendingEditMeta?.request_id || null;
+      formatted.pending_edit_requested_at = pendingEditMeta?.request_created_at || null;
       
       // Парсим JSON поля безопасно
       if (formatted.photos && typeof formatted.photos === 'string') {
@@ -9704,6 +9772,13 @@ app.put('/api/properties/:id/approve', async (req, res) => {
       console.log(`🔍 Одобрение: получен property_type=${requestedPropertyType} из запроса, используем для поиска`);
       property = await propertyQueries.getById(id, requestedPropertyType);
       if (!property) {
+        // Fallback для legacy-записей в таблице properties (edit/delete запросы из старого потока)
+        const legacyProperty = await prisma.properties.findUnique({ where: { id: Number(id) } });
+        if (legacyProperty && legacyProperty.property_type === requestedPropertyType) {
+          property = { ...legacyProperty, source_table: 'properties' };
+        }
+      }
+      if (!property) {
         console.error(`❌ Одобрение: объект ID=${id} не найден с типом ${requestedPropertyType} в правильной таблице!`);
         // Безопасный fallback: проверяем обе таблицы и продолжаем ТОЛЬКО если объект найден ровно в одной.
         // Это покрывает кейс, когда фронт отправил неверный property_type.
@@ -9790,8 +9865,8 @@ app.put('/api/properties/:id/approve', async (req, res) => {
         console.log(`🗑️ Это запрос на удаление (старый формат). ID оригинала: ${originalPropertyId}`);
       }
       
-      // Проверяем существование оригинального объекта
-      const originalProperty = await prisma.properties.findUnique({ where: { id: Number(originalPropertyId) } });
+      // Проверяем существование оригинального объекта (в любой актуальной таблице)
+      const originalProperty = await propertyQueries.getById(originalPropertyId);
       if (!originalProperty) {
         return res.status(404).json({ 
           success: false, 
@@ -9800,7 +9875,7 @@ app.put('/api/properties/:id/approve', async (req, res) => {
       }
       
       // Удаляем оригинальное объявление
-      await prisma.properties.delete({ where: { id: Number(originalPropertyId) } });
+      await propertyQueries.delete(originalPropertyId);
       console.log(`✅ Оригинальное объявление ID ${originalPropertyId} удалено`);
       
       // Удаляем запись с запросом на удаление
@@ -9831,8 +9906,8 @@ app.put('/api/properties/:id/approve', async (req, res) => {
       originalPropertyId = property.rejection_reason.replace('EDIT:', '');
       console.log(`📝 Это редактирование. ID оригинала: ${originalPropertyId}`);
       
-      // Проверяем существование оригинального объекта
-      const originalProperty = await prisma.properties.findUnique({ where: { id: Number(originalPropertyId) } });
+      // Проверяем существование оригинального объекта (в любой актуальной таблице)
+      const originalProperty = await propertyQueries.getById(originalPropertyId);
       if (!originalProperty) {
         return res.status(404).json({ 
           success: false, 
@@ -9866,9 +9941,11 @@ app.put('/api/properties/:id/approve', async (req, res) => {
         const endDateChanged = newEndDate && newEndDate !== oldEndDate;
         const datesChanged = startDateChanged || endDateChanged;
         
+        // Стартовую дату при редактировании не меняем: аукцион уже идет и должен продолжаться.
+        finalAuctionStartDate = originalProperty.auction_start_date;
+
         // Если даты не изменились или пустые, используем оригинальные даты (чтобы таймер продолжал работать)
         if (!datesChanged || !newStartDate || !newEndDate) {
-          finalAuctionStartDate = originalProperty.auction_start_date;
           finalAuctionEndDate = originalProperty.auction_end_date;
           console.log(`⏰ Даты аукциона не изменились, сохраняем оригинальные даты для продолжения таймера`);
           console.log(`   Оригинальные: ${oldStartDate} - ${oldEndDate}`);
@@ -9876,6 +9953,7 @@ app.put('/api/properties/:id/approve', async (req, res) => {
           console.log(`⏰ Даты аукциона изменены, используем новые даты`);
           console.log(`   Было: ${oldStartDate} - ${oldEndDate}`);
           console.log(`   Стало: ${newStartDate} - ${newEndDate}`);
+          console.log(`   Стартовая дата зафиксирована и остается: ${oldStartDate}`);
         }
       } else {
         // Если это не аукцион, даты не важны
@@ -9883,61 +9961,93 @@ app.put('/api/properties/:id/approve', async (req, res) => {
         finalAuctionEndDate = null;
       }
       
-      // Обновляем оригинальный объект данными из изменений
-      // Важно: обновляем существующий объект, а не создаем новый, чтобы избежать дубликатов
-      await prisma.properties.update({
-        where: { id: Number(originalPropertyId) },
-        data: {
-          property_type: property.property_type,
-          title: property.title,
-          description: property.description,
-          price: property.price,
-          currency: property.currency,
-          is_auction: property.is_auction,
-          auction_start_date: finalAuctionStartDate,
-          auction_end_date: finalAuctionEndDate,
-          auction_starting_price: property.auction_starting_price,
-          area: property.area,
-          living_area: property.living_area || null,
-          building_type: property.building_type || null,
-          rooms: property.rooms,
-          bedrooms: property.bedrooms,
-          bathrooms: property.bathrooms,
-          floor: property.floor,
-          total_floors: property.total_floors,
-          year_built: property.year_built,
-          location: property.location,
-          balcony: property.balcony,
-          parking: property.parking,
-          elevator: property.elevator,
-          land_area: property.land_area,
-          garage: property.garage,
-          pool: property.pool,
-          garden: property.garden,
-          commercial_type: property.commercial_type,
-          business_hours: property.business_hours,
-          renovation: property.renovation,
-          condition: property.condition,
-          heating: property.heating,
-          water_supply: property.water_supply,
-          sewerage: property.sewerage,
-          electricity: property.electricity,
-          internet: property.internet,
-          security: property.security,
-          furniture: property.furniture,
-          photos: property.photos,
-          videos: property.videos,
-          additional_documents: property.additional_documents,
-          additional_amenities: property.additional_amenities || null,
-          ownership_document: property.ownership_document,
-          no_debts_document: property.no_debts_document,
-          test_drive: property.test_drive !== undefined && property.test_drive !== null ? property.test_drive : 0,
-          test_drive_data: property.test_drive_data,
-          moderation_status: 'approved',
-          rejection_reason: null,
-          updated_at: new Date().toISOString(),
-        },
-      });
+      // Обновляем оригинальный объект данными из изменений в корректной таблице.
+      // ВАЖНО: набор полей должен соответствовать целевой таблице Prisma-модели.
+      const commonUpdateData = {
+        property_type: property.property_type,
+        title: property.title,
+        description: property.description,
+        price: property.price,
+        currency: property.currency,
+        is_auction: property.is_auction,
+        auction_start_date: finalAuctionStartDate,
+        auction_end_date: finalAuctionEndDate,
+        auction_starting_price: property.auction_starting_price,
+        area: property.area,
+        living_area: property.living_area || null,
+        building_type: property.building_type || null,
+        bathrooms: property.bathrooms,
+        year_built: property.year_built,
+        location: property.location,
+        parking: property.parking,
+        renovation: property.renovation,
+        condition: property.condition,
+        heating: property.heating,
+        water_supply: property.water_supply,
+        sewerage: property.sewerage,
+        electricity: property.electricity,
+        internet: property.internet,
+        security: property.security,
+        furniture: property.furniture,
+        photos: property.photos,
+        videos: property.videos,
+        additional_documents: property.additional_documents,
+        additional_amenities: property.additional_amenities || null,
+        ownership_document: property.ownership_document,
+        no_debts_document: property.no_debts_document,
+        test_drive: property.test_drive !== undefined && property.test_drive !== null ? property.test_drive : 0,
+        test_drive_data: property.test_drive_data,
+        moderation_status: 'approved',
+        rejection_reason: null,
+        updated_at: new Date().toISOString(),
+      };
+
+      const apartmentOnlyUpdateData = {
+        rooms: property.rooms,
+        floor: property.floor,
+        total_floors: property.total_floors ?? null,
+        balcony: property.balcony,
+        elevator: property.elevator,
+        commercial_type: property.commercial_type,
+        business_hours: property.business_hours,
+        apartment: property.apartment || null,
+      };
+
+      const houseOnlyUpdateData = {
+        land_area: property.land_area,
+        bedrooms: property.bedrooms,
+        floors: property.total_floors ?? property.floors ?? null,
+        garage: property.garage,
+        pool: property.pool,
+        garden: property.garden,
+      };
+
+      const sourceTable = originalProperty.source_table || '';
+      if (sourceTable === 'properties_houses' || sourceTable === 'houses') {
+        await prisma.properties_houses.update({
+          where: { id: Number(originalPropertyId) },
+          data: {
+            ...commonUpdateData,
+            ...houseOnlyUpdateData,
+          },
+        });
+      } else if (sourceTable === 'properties_apartments' || sourceTable === 'apartments') {
+        await prisma.properties_apartments.update({
+          where: { id: Number(originalPropertyId) },
+          data: {
+            ...commonUpdateData,
+            ...apartmentOnlyUpdateData,
+          },
+        });
+      } else {
+        await prisma.properties.update({
+          where: { id: Number(originalPropertyId) },
+          data: {
+            ...commonUpdateData,
+            total_floors: property.total_floors ?? null,
+          },
+        });
+      }
       
       console.log(`✅ Оригинальный объект ID ${originalPropertyId} обновлен данными из изменений`);
       console.log(`   Статус модерации: approved, rejection_reason: очищен`);
@@ -9947,17 +10057,13 @@ app.put('/api/properties/:id/approve', async (req, res) => {
       console.log(`🗑️ Запись с изменениями ID ${id} удалена (дубликат предотвращен)`);
       
       // Проверяем, что оригинальный объект обновлен корректно
-      const updatedOriginal = await prisma.properties.findUnique({
-        where: { id: Number(originalPropertyId) },
-        select: {
-          id: true,
-          title: true,
-          moderation_status: true,
-          is_auction: true,
-          auction_start_date: true,
-          auction_end_date: true,
-        },
-      });
+      const updatedOriginal = await propertyQueries.getById(originalPropertyId);
+      if (!updatedOriginal) {
+        return res.status(500).json({
+          success: false,
+          error: 'Оригинальное объявление не найдено после применения изменений'
+        });
+      }
       console.log(`✅ Проверка обновленного объекта:`, {
         id: updatedOriginal.id,
         title: updatedOriginal.title,
@@ -9977,6 +10083,37 @@ app.put('/api/properties/:id/approve', async (req, res) => {
         });
       } catch (notifError) {
         console.warn('Не удалось создать уведомление:', notifError);
+      }
+
+      // Кабинет владельца: после одобрения редактирования обновляем карточку без F5
+      try {
+        const ownerId = updatedOriginal?.user_id ?? property.user_id;
+        if (ownerId) {
+          broadcastUserCabinetEvent(ownerId, {
+            type: 'property_moderation',
+            property_id: Number(originalPropertyId),
+            moderation_status: 'approved',
+            property_type: updatedOriginal?.property_type || property.property_type
+          });
+        }
+      } catch (cabErr) {
+        console.warn('[SSE] user cabinet (property edit approve):', cabErr.message);
+      }
+
+      // Для аукционных объектов пинаем канал аукциона, чтобы карточки/списки обновились без F5
+      try {
+        const isApprovedAuction =
+          updatedOriginal?.is_auction === 1 ||
+          updatedOriginal?.is_auction === '1' ||
+          updatedOriginal?.is_auction === true;
+        if (isApprovedAuction) {
+          broadcastAuctionSseEvent({
+            type: 'test_timer_update',
+            property: { id: Number(originalPropertyId) }
+          });
+        }
+      } catch (auctionPushErr) {
+        console.warn('[SSE] auction (property edit approve):', auctionPushErr.message);
       }
       
       res.json({ 
