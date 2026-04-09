@@ -553,6 +553,15 @@
   margin: 0 0 6px;
 }
 
+/* Круглый таймер в режиме «Карточки»: под фото, над заголовком (как зелёная полоса на десктопе) */
+.auction-mobile-body-circular-timer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 0 0 8px;
+  pointer-events: none;
+}
+
 .auction-mobile-item__body .property-timer.property-timer--auction-mobile-inline {
   margin-bottom: 0;
 }
@@ -658,12 +667,19 @@
   color: #fecaca !important;
 }
 
+/* Круглый таймер на фото (только режим «Список»): по центру снизу */
 .auction-mobile-circular-timer {
   position: absolute;
-  top: 6px;
-  left: 6px;
   z-index: 6;
-  filter: drop-shadow(0 3px 10px rgba(0, 0, 0, 0.28));
+  filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.22));
+  pointer-events: none;
+}
+
+.auction-mobile-circular-timer--list-bottom {
+  left: 50%;
+  bottom: 8px;
+  top: auto;
+  transform: translateX(-50%);
 }
 
 .auction-mobile-reserved {

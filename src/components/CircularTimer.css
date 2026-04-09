@@ -71,6 +71,78 @@
   letter-spacing: 1.5px;
 }
 
+/* Маленький круг (карточки, моб. список аукционов): текст и плоский вид — без «шара» и переполнения */
+.circular-timer--compact .circular-timer-content {
+  width: 100%;
+  max-width: calc(100% - 2px);
+  padding: 0 3px;
+  box-sizing: border-box;
+}
+
+.circular-timer--compact .circular-timer-time {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1.05;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+}
+
+.circular-timer--compact .circular-timer-center {
+  fill: #dc2626 !important;
+}
+
+.circular-timer--compact.circular-timer--leader .circular-timer-center {
+  fill: #059669 !important;
+}
+
+.circular-timer--compact.circular-timer--ended .circular-timer-center {
+  fill: #64748b !important;
+}
+
+/* Упрощённые обводки вместо градиентной «3D» окантовки */
+.circular-timer--compact .circular-timer-bg {
+  stroke: rgba(255, 255, 255, 0.35) !important;
+  opacity: 0.45;
+}
+
+.circular-timer--compact .circular-timer-progress {
+  stroke: rgba(255, 255, 255, 0.45) !important;
+}
+
+.circular-timer--compact .circular-timer-red-progress {
+  stroke: #fca5a5 !important;
+}
+
+.circular-timer--compact.circular-timer--leader .circular-timer-red-progress {
+  stroke: #6ee7b7 !important;
+}
+
+.circular-timer--compact.circular-timer--ended .circular-timer-bg,
+.circular-timer--compact.circular-timer--ended .circular-timer-progress,
+.circular-timer--compact.circular-timer--ended .circular-timer-red-progress {
+  stroke: #94a3b8 !important;
+  opacity: 0.55;
+}
+
+.circular-timer--compact .circular-timer-flag {
+  font-size: 18px;
+  line-height: 1;
+}
+
+.circular-timer--compact .circular-timer-user-number {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+.circular-timer--compact .circular-timer-bid-info {
+  gap: 2px;
+}
+
+.circular-timer--compact:hover {
+  transform: none;
+}
+
 .circular-timer--ended .circular-timer-time--ended {
   font-size: 13px;
   font-weight: 800;
@@ -130,9 +202,9 @@
 }
 
 @media (max-width: 768px) {
-  /* В карточках размер задаётся из JS (56px). Здесь только типографика и сохранение круга */
-  .property-card .circular-timer-time,
-  .property-timer-wrapper .circular-timer-time {
+  /* Крупный круг в карточке (редко); компактный задаётся .circular-timer--compact выше */
+  .property-card .circular-timer:not(.circular-timer--compact) .circular-timer-time,
+  .property-timer-wrapper .circular-timer:not(.circular-timer--compact) .circular-timer-time {
     font-size: 11px;
     font-weight: 700;
     letter-spacing: 0;
@@ -141,5 +213,10 @@
   .property-card .circular-timer:hover,
   .property-timer-wrapper .circular-timer:hover {
     transform: scale(1.05) translateY(-1px);
+  }
+
+  .auction-mobile-circular-timer .circular-timer:hover,
+  .circular-timer--compact:hover {
+    transform: none;
   }
 }

@@ -483,22 +483,22 @@ function AuctionMobileItem({
                 )}
               </div>
             )}
-            {redOnImage && (
-              <div className="auction-mobile-circular-timer">
+            {view === 'list' && redOnImage && (
+              <div className="auction-mobile-circular-timer auction-mobile-circular-timer--list-bottom">
                 <CircularTimer
                   endTime={property.test_timer_end_date}
-                  size={view === 'list' ? 46 : 54}
-                  strokeWidth={view === 'list' ? 3 : 4}
+                  size={46}
+                  strokeWidth={3}
                   auctionEndedLabel={t('auctionCircularEndedShort')}
                 />
               </div>
             )}
-            {buyNowEndedSealOnImage && (
-              <div className="auction-mobile-circular-timer">
+            {view === 'list' && buyNowEndedSealOnImage && (
+              <div className="auction-mobile-circular-timer auction-mobile-circular-timer--list-bottom">
                 <CircularTimer
                   endTime={property.buy_now_completed_at}
-                  size={view === 'list' ? 46 : 54}
-                  strokeWidth={view === 'list' ? 3 : 4}
+                  size={46}
+                  strokeWidth={3}
                   auctionEndedLabel={t('auctionCircularEndedShort')}
                 />
               </div>
@@ -524,6 +524,26 @@ function AuctionMobileItem({
                 compact
                 className="property-timer--auction-mobile property-timer--auction-mobile-inline"
                 auctionEndedLabel={t('propertyDetailAuctionCompleted')}
+              />
+            </div>
+          )}
+          {view === 'card' && redOnImage && (
+            <div className="auction-mobile-body-circular-timer">
+              <CircularTimer
+                endTime={property.test_timer_end_date}
+                size={54}
+                strokeWidth={4}
+                auctionEndedLabel={t('auctionCircularEndedShort')}
+              />
+            </div>
+          )}
+          {view === 'card' && buyNowEndedSealOnImage && (
+            <div className="auction-mobile-body-circular-timer">
+              <CircularTimer
+                endTime={property.buy_now_completed_at}
+                size={54}
+                strokeWidth={4}
+                auctionEndedLabel={t('auctionCircularEndedShort')}
               />
             </div>
           )}

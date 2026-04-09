@@ -2,14 +2,23 @@
   width: 280px;
   background: linear-gradient(135deg, var(--dark), var(--dark-light));
   color: white;
-  height: 100vh;
-  padding: 1.5rem 0;
+  /* top+bottom вместо 100vh — корректная высота в iOS Safari (адресная строка / safe area) */
   position: fixed;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  height: auto;
+  max-height: none;
+  padding: 1.5rem 0;
+  padding-top: max(1.5rem, env(safe-area-inset-top));
+  padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
   box-shadow: 4px 0 20px rgba(0, 0, 0, 0.1);
   z-index: 100;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
   flex-direction: column;
+  overflow: hidden;
+  box-sizing: border-box;
 }
 
 .sidebar-header {
@@ -20,6 +29,7 @@
   justify-content: space-between;
   margin-bottom: 0.5rem;
   background: transparent !important;
+  flex-shrink: 0;
 }
 
 .sidebar-header h2 {
@@ -54,8 +64,13 @@
 
 .sidebar-menu {
   padding: 1.5rem 0;
-  flex: 1;
+  flex: 1 1 auto;
+  min-height: 0;
   overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+  touch-action: pan-y;
 }
 
 .menu-item {
