@@ -36,7 +36,11 @@ import FlipCard from '../components/ui/FlipCard'
 import TestDriveSection from '../components/TestDriveSection'
 import { getAuctionMinBidStep } from '../utils/auctionBidStep'
 import { hasDbBackedProperty } from '../utils/propertyFavoriteKey'
-import { hasActiveCircularTestTimer } from '../utils/auctionReminderBounds'
+import {
+  getEffectiveAuctionEndTime,
+  hasTestTimerDateString,
+  shouldShowCircularAuctionTimer,
+} from '../utils/auctionReminderBounds'
 import { roleSkipsAuctionKyc } from '../utils/buyerAuctionKyc'
 import { confirmPropertyReservationSession } from '../utils/subscriptionCheckout'
 import { hasEmailForBuyNowFlow } from '../utils/buyNowEmailGate'
@@ -520,7 +524,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
     // Тестовый таймер
     test_timer_end_date: property.test_timer_end_date || null,
     test_timer_duration: property.test_timer_duration || null, // Исходная длительность таймера в миллисекундах
-    endTime: property.test_timer_end_date || property.endTime || null,
+    endTime: getEffectiveAuctionEndTime(property),
     // Резервация
     is_reserved: property.is_reserved === true || property.is_reserved === 1 || property.is_reserved === 'true' || false,
     reserved_until: property.reserved_until || null,
@@ -640,14 +644,10 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
     displayProperty.isAuction === true ||
     displayProperty.is_auction === true ||
     displayProperty.is_auction === 1 ||
-    hasActiveCircularTestTimer(displayProperty) ||
+    hasTestTimerDateString(displayProperty) ||
     hadCircularTimerAuction
 
-  const auctionEndTime =
-    displayProperty.test_timer_end_date ||
-    displayProperty.endTime ||
-    displayProperty.auction_end_date ||
-    null
+  const auctionEndTime = getEffectiveAuctionEndTime(displayProperty)
 
   useEffect(() => {
     setHadCircularTimerAuction(false)
@@ -656,11 +656,11 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
   }, [displayProperty.id])
 
   useEffect(() => {
-    if (hasActiveCircularTestTimer(displayProperty)) {
+    if (shouldShowCircularAuctionTimer(displayProperty)) {
       setHadCircularTimerAuction(true)
       lastTestTimerEndRef.current = displayProperty.test_timer_end_date
     }
-  }, [displayProperty.test_timer_end_date])
+  }, [displayProperty.test_timer_end_date, displayProperty.auction_end_date])
 
   useEffect(() => {
     if (!isAuctionProperty || !displayProperty?.id) {
@@ -1349,10 +1349,10 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
 
   const showCircularTimerAuctionBlock =
     !isBuyNowSaleCompleted &&
-    (hasActiveCircularTestTimer(displayProperty) ||
+    (shouldShowCircularAuctionTimer(displayProperty) ||
       (hadCircularTimerAuction && timerExpired))
 
-  const circularTimerEndTime = hasActiveCircularTestTimer(displayProperty)
+  const circularTimerEndTime = shouldShowCircularAuctionTimer(displayProperty)
     ? displayProperty.test_timer_end_date
     : lastTestTimerEndRef.current
 
@@ -2421,7 +2421,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                     <FiShare2 size={20} />
                   </button>
                   {isAuctionProperty &&
-                    !hasActiveCircularTestTimer(displayProperty) &&
+                    !shouldShowCircularAuctionTimer(displayProperty) &&
                     auctionEndTime &&
                     !timerExpired &&
                     !isBuyNowSaleCompleted &&

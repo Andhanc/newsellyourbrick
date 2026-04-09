@@ -14,6 +14,14 @@ import AnimatedLoadingSkeleton from './ui/AnimatedLoadingSkeleton'
 import AuctionMobileLayout from './ui/AuctionMobileLayout'
 import { ensureCanOpenProperty } from '../utils/propertyAccessGuard'
 import { showNotification } from '../utils/toastHelper'
+import {
+  getEffectiveAuctionEndTime,
+  hasTestTimerDateString,
+  isBuyNowPurchaseCompleted,
+  isEffectiveAuctionTimerExpired,
+  isAuctionListingEnded,
+  shouldShowCircularAuctionTimer,
+} from '../utils/auctionReminderBounds'
 import './PropertyList.css'
 
 const MOBILE_BREAKPOINT = 768
@@ -122,19 +130,7 @@ const PropertyList = ({
     return `$${price.toLocaleString('en-US')}`
   }
 
-  const isBuyNowSaleClosed = (property) =>
-    property?.buy_now_winner_user_id != null &&
-    property?.buy_now_completed_at != null &&
-    String(property.buy_now_completed_at).trim() !== ''
-
-  const isAuctionEnded = (property) => {
-    if (isBuyNowSaleClosed(property)) return true
-    const endValue = property?.test_timer_end_date || property?.endTime
-    if (!endValue) return false
-    const endTs = new Date(endValue).getTime()
-    if (!Number.isFinite(endTs)) return false
-    return endTs <= Date.now()
-  }
+  const isAuctionEnded = (property) => isAuctionListingEnded(property)
 
   // Используем переданные аукционные объявления или статические данные
   const propertiesToUse = auctionProperties || properties
@@ -224,23 +220,7 @@ const PropertyList = ({
 
     if (location.pathname !== '/auction') return list
 
-    const auctionTimerEnded = (p) => {
-      if (
-        p.buy_now_winner_user_id != null &&
-        p.buy_now_completed_at != null &&
-        String(p.buy_now_completed_at).trim() !== ''
-      ) {
-        return true
-      }
-      const hasTT = p.test_timer_end_date != null && p.test_timer_end_date !== ''
-      if (hasTT && p.test_timer_end_date) {
-        return new Date(p.test_timer_end_date).getTime() <= Date.now()
-      }
-      if (p.endTime) {
-        return new Date(p.endTime).getTime() <= Date.now()
-      }
-      return false
-    }
+    const auctionTimerEnded = (p) => isAuctionListingEnded(p)
 
     return [...list].sort((a, b) => {
       const ea = auctionTimerEnded(a)
@@ -458,8 +438,17 @@ const PropertyList = ({
                 const propertyTitle = property.title || property.name || ''
                 const propertyImages = property.images || (property.image ? [property.image] : [])
                 const propertyImage = propertyImages[0] || 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=800&q=80'
-                const hasTestTimer = property.test_timer_end_date != null && property.test_timer_end_date !== ''
-                const hasTimer = (property.isAuction === true && property.endTime != null && property.endTime !== '') || hasTestTimer
+                const buyNowPurchaseCompleted = isBuyNowPurchaseCompleted(property)
+                const effectiveAuctionEnd = getEffectiveAuctionEndTime(property)
+                const hasTestTimerRaw =
+                  !buyNowPurchaseCompleted && hasTestTimerDateString(property)
+                const showCircularOnCard = shouldShowCircularAuctionTimer(property)
+                const hasTimer =
+                  (property.isAuction === true &&
+                    (buyNowPurchaseCompleted ||
+                      (effectiveAuctionEnd != null &&
+                        String(effectiveAuctionEnd).trim() !== ''))) ||
+                  hasTestTimerRaw
                 const isDebtProperty =
                   property.sale_type === 'debt' ||
                   property.is_debt === 1 ||
@@ -475,35 +464,15 @@ const PropertyList = ({
                   (!reservedUntilDate || reservedUntilDate > new Date())
                 const hasBuyNowPrice = hasBuyNowOption(property)
                 
-                // Проверяем, закончился ли таймер
-                const checkTimerExpired = () => {
-                  if (
-                    property.buy_now_winner_user_id != null &&
-                    property.buy_now_completed_at != null &&
-                    String(property.buy_now_completed_at).trim() !== ''
-                  ) {
-                    return true
-                  }
-                  if (hasTestTimer && property.test_timer_end_date) {
-                    const now = new Date().getTime();
-                    const end = new Date(property.test_timer_end_date).getTime();
-                    return end <= now;
-                  }
-                  if (property.endTime) {
-                    const now = new Date().getTime();
-                    const end = new Date(property.endTime).getTime();
-                    return end <= now;
-                  }
-                  return false;
-                };
-                const isTimerExpired = checkTimerExpired();
+                const isTimerExpired = isEffectiveAuctionTimerExpired(property)
                 const buyNowWinnerId = property.buy_now_winner_user_id
 
-                // Зеленый линейный таймер (PropertyTimer)
-                const greenTimerBlock = hasTimer && !isReserved && !hasTestTimer && (
+                // Зеленый линейный таймер (PropertyTimer) — преаукцион, пока не началась фаза кругового таймера
+                const greenTimerBlock =
+                  hasTimer && !isReserved && !showCircularOnCard && effectiveAuctionEnd && (
                   <div className="property-timer-wrapper">
                     <PropertyTimer
-                      endTime={property.endTime}
+                      endTime={effectiveAuctionEnd}
                       compact={true}
                       auctionEndedLabel={t('propertyDetailAuctionCompleted')}
                     />
@@ -512,7 +481,7 @@ const PropertyList = ({
 
                 const circularSize = isMobile ? 56 : 120
                 // Красный круглый таймер (CircularTimer)
-                const redTimerBlock = hasTimer && !isReserved && hasTestTimer && (
+                const redTimerBlock = hasTimer && !isReserved && showCircularOnCard && (
                   <div className="property-timer-wrapper">
                     <CircularTimer 
                       endTime={property.test_timer_end_date} 
@@ -526,6 +495,27 @@ const PropertyList = ({
                     />
                   </div>
                 );
+
+                /** Тот же вид «аукцион завершён», что после истечения таймера, если сделку закрыли в админке при ещё «живых» датах в БД */
+                const buyNowCompletedEndedSeal =
+                  hasTimer &&
+                  !isReserved &&
+                  buyNowPurchaseCompleted &&
+                  !showCircularOnCard &&
+                  !effectiveAuctionEnd && (
+                    <div className="property-timer-wrapper">
+                      <CircularTimer
+                        endTime={property.buy_now_completed_at}
+                        size={circularSize}
+                        strokeWidth={isMobile ? 4 : 6}
+                        auctionEndedLabel={t(
+                          circularSize <= 72
+                            ? 'auctionCircularEndedShort'
+                            : 'propertyDetailAuctionCompleted'
+                        )}
+                      />
+                    </div>
+                  )
 
                 return (
             <div 
@@ -554,7 +544,7 @@ const PropertyList = ({
                       <div className="reserved-overlay-text">Забронировано</div>
                     </div>
                   )}
-                  {(hasBuyNowPrice || hasTestDrive) && (
+                  {(hasBuyNowPrice || hasTestDrive) && !isAuctionListingEnded(property) && (
                     <div className="property-badges-center">
                       {hasBuyNowPrice && (
                         <div 
@@ -620,6 +610,7 @@ const PropertyList = ({
                   {isMobile ? (
                     <>
                       {greenTimerBlock}
+                      {buyNowCompletedEndedSeal}
                       <h3 className="property-title">{propertyTitle}</h3>
                       {redTimerBlock}
                     </>
@@ -627,6 +618,7 @@ const PropertyList = ({
                     <>
                       {greenTimerBlock}
                       {redTimerBlock}
+                      {buyNowCompletedEndedSeal}
                       <h3 className="property-title">{propertyTitle}</h3>
                     </>
                   )}
@@ -634,7 +626,7 @@ const PropertyList = ({
                     <p className="property-description">{property.description}</p>
                   )}
                   <p className="property-location">{property.location || ''}</p>
-                  {buyNowWinnerId != null && (
+                  {buyNowWinnerId != null && !isAuctionListingEnded(property) && (
                     <p className="property-card-buy-now-winner" role="status">
                       {t('propertyCardBuyNowWinner', { id: buyNowWinnerId })}
                     </p>
@@ -715,7 +707,7 @@ const PropertyList = ({
                             ? t('auctionCardSeeResult')
                             : t('placeBid')}
                       </button>
-                      {hasBuyNowPrice && (
+                      {hasBuyNowPrice && !isAuctionListingEnded(property) && (
                         <button 
                           className="btn btn-buy-now btn-liquid-glass-buy"
                           onClick={(e) => {
@@ -725,16 +717,12 @@ const PropertyList = ({
                               showNotification(t('objectReservedNotification'))
                               return
                             }
-                            if (isTimerExpired && hasTimer) {
-                              return
-                            }
                             openProperty(property)
                           }}
-                          disabled={isReserved || (isTimerExpired && hasTimer)}
+                          disabled={isReserved}
                           style={{
-                            opacity: isReserved || (isTimerExpired && hasTimer) ? 0.45 : 1,
-                            cursor:
-                              isReserved || (isTimerExpired && hasTimer) ? 'not-allowed' : 'pointer'
+                            opacity: isReserved ? 0.45 : 1,
+                            cursor: isReserved ? 'not-allowed' : 'pointer'
                           }}
                         >
                           {isReserved ? t('objectReserved') : t('buyNowSectionTitle')}

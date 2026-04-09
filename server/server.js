@@ -45,6 +45,12 @@ console.log('[SERVER]    - REACT_APP_EMAILJS_TEMPLATE_ID:', process.env.REACT_AP
 console.log('[SERVER]    - VITE_EMAILJS_TEMPLATE_ID:', process.env.VITE_EMAILJS_TEMPLATE_ID ? '✅ установлен' : '❌ не установлен');
 console.log('[SERVER]    - REACT_APP_EMAILJS_PUBLIC_KEY:', process.env.REACT_APP_EMAILJS_PUBLIC_KEY ? '✅ установлен' : '❌ не установлен');
 console.log('[SERVER]    - VITE_EMAILJS_PUBLIC_KEY:', process.env.VITE_EMAILJS_PUBLIC_KEY ? '✅ установлен' : '❌ не установлен');
+console.log(
+  '[SERVER]    - EMAILJS_CRM_TEMPLATE_ID / VITE_EMAILJS_CRM_TEMPLATE_ID:',
+  process.env.EMAILJS_CRM_TEMPLATE_ID || process.env.VITE_EMAILJS_CRM_TEMPLATE_ID
+    ? '✅ установлен (напоминания/CRM с сервера)'
+    : '❌ не установлен → письма с сервера не отправятся (нужен отдельный шаблон, не OTP)'
+);
 const ejPriv =
   String(
     process.env.EMAILJS_PRIVATE_KEY ||
@@ -5990,12 +5996,14 @@ async function loadPropertyRowForReminder(propertyId, propertyTable) {
   return await apartmentQueries.getById(propertyId);
 }
 
-/** Как на фронте: при непустом test_timer_end_date показывается CircularTimer, напоминание только в преаукционе с линейным таймером. */
+/** Согласовано с фронтом (shouldShowCircularAuctionTimer): круговой этап — только после окончания преаукциона (auction_end_date). */
 function propertyRowHasCircularTestTimer(row) {
   if (!row) return false;
   const v = row.test_timer_end_date;
   if (v == null || v === '') return false;
-  if (typeof v === 'string') return v.trim() !== '';
+  if (typeof v === 'string' && v.trim() === '') return false;
+  const preEndMs = parsePropertyDateMs(row.auction_end_date);
+  if (preEndMs != null && preEndMs > Date.now()) return false;
   return true;
 }
 

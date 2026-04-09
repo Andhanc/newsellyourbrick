@@ -1,11 +1,68 @@
 /**
  * Отправка CRM-писем через EmailJS (тот же путь, что напоминания по аукциону).
- * Вынесено в отдельный модуль, чтобы гарантировать доступ из любых роутов.
+ * Официальный @emailjs/nodejs добавляет lib_version и тот же JSON, что браузерный SDK —
+ * сырой axios без этого часто даёт 400 «The parameters are invalid».
  */
-import axios from 'axios';
+import emailjs from '@emailjs/nodejs';
 import { userQueries } from './database/database.js';
 
 let emailJs403ServerHintLogged = false;
+
+function strParam(v) {
+  if (v == null) return '';
+  if (typeof v === 'string') return v;
+  if (typeof v === 'number' || typeof v === 'boolean') return String(v);
+  try {
+    return JSON.stringify(v);
+  } catch {
+    return '';
+  }
+}
+
+/**
+ * Параметры для REST API EmailJS: только строки (иначе часто 400).
+ * Набор имён совпадает с src/utils/crmClientEmail.js — один шаблон для CRM и напоминаний.
+ */
+function buildCrmTemplateParams(toEmail, subject, messageText) {
+  const email = strParam(toEmail).trim();
+  const subj =
+    subject != null && strParam(subject).trim() ? strParam(subject).trim() : 'Sellyourbrick';
+  const text = messageText != null ? strParam(messageText) : '';
+  const sender = 'Sellyourbrick';
+  const messageWithSubject = text ? `${subj}\n\n${text}` : subj;
+  const timeStr = new Date().toLocaleString('ru-RU', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+  return {
+    to_email: email,
+    email,
+    user_email: email,
+    subject: subj,
+    title: subj,
+    email_subject: subj,
+    subject_line: subj,
+    message: text,
+    body: text,
+    text,
+    content: text,
+    html: text,
+    message_html: text,
+    email_body: text,
+    user_message: text,
+    letter: text,
+    crm_subject: subj,
+    crm_body: text,
+    full_message: messageWithSubject,
+    combined: messageWithSubject,
+    from_name: sender,
+    name: sender,
+    time: timeStr,
+  };
+}
 
 export async function sendCrmEmailViaEmailJS(toEmail, subject, messageText) {
   const email = String(toEmail || '').trim();
@@ -13,23 +70,25 @@ export async function sendCrmEmailViaEmailJS(toEmail, subject, messageText) {
     throw new Error('Email получателя пустой');
   }
 
+  const crmTemplateRaw =
+    process.env.EMAILJS_CRM_TEMPLATE_ID || process.env.VITE_EMAILJS_CRM_TEMPLATE_ID || '';
+  const crmTemplateId = String(crmTemplateRaw).trim();
+
   const emailJsConfig = {
-    serviceId:
+    serviceId: String(
       process.env.REACT_APP_EMAILJS_SERVICE_ID ||
-      process.env.VITE_EMAILJS_SERVICE_ID ||
-      process.env.EMAILJS_SERVICE_ID ||
-      '',
-    templateId:
-      process.env.EMAILJS_CRM_TEMPLATE_ID ||
-      process.env.REACT_APP_EMAILJS_TEMPLATE_ID ||
-      process.env.VITE_EMAILJS_TEMPLATE_ID ||
-      process.env.EMAILJS_TEMPLATE_ID ||
-      '',
-    publicKey:
+        process.env.VITE_EMAILJS_SERVICE_ID ||
+        process.env.EMAILJS_SERVICE_ID ||
+        ''
+    ).trim(),
+    /** Только CRM-шаблон: общий шаблон кода подтверждения даёт 400 «parameters are invalid». */
+    templateId: crmTemplateId,
+    publicKey: String(
       process.env.REACT_APP_EMAILJS_PUBLIC_KEY ||
-      process.env.VITE_EMAILJS_PUBLIC_KEY ||
-      process.env.EMAILJS_PUBLIC_KEY ||
-      '',
+        process.env.VITE_EMAILJS_PUBLIC_KEY ||
+        process.env.EMAILJS_PUBLIC_KEY ||
+        ''
+    ).trim(),
   };
   const privateKey = String(
     process.env.EMAILJS_PRIVATE_KEY ||
@@ -40,78 +99,67 @@ export async function sendCrmEmailViaEmailJS(toEmail, subject, messageText) {
 
   if (!emailJsConfig.serviceId || !emailJsConfig.templateId || !emailJsConfig.publicKey) {
     throw new Error(
-      'EmailJS не настроен: нужны SERVICE_ID, шаблон (EMAILJS_CRM_TEMPLATE_ID или общий TEMPLATE_ID) и PUBLIC_KEY'
+      'EmailJS не настроен для сервера: нужны SERVICE_ID, PUBLIC_KEY и отдельный шаблон писем ' +
+        'EMAILJS_CRM_TEMPLATE_ID (или VITE_EMAILJS_CRM_TEMPLATE_ID в корневом .env). ' +
+        'Не используйте шаблон «код подтверждения» — создайте шаблон с {{to_email}}, {{subject}}, {{message}} (или {{full_message}}). См. .env.example.'
     );
   }
 
-  // Дублируем поля под типичные шаблоны EmailJS (как в напоминаниях + запасные имена переменных)
-  const template_params = {
-    to_email: email,
-    email: email,
-    user_email: email,
-    to: email,
-    subject: subject || 'Sellyourbrick',
-    message: messageText,
-    body: messageText,
-    text: messageText,
-    html: messageText,
-    content: messageText,
-    message_html: messageText,
-    from_name: 'Sellyourbrick',
-  };
+  const template_params = buildCrmTemplateParams(email, subject, messageText);
 
-  const basePayload = {
-    service_id: emailJsConfig.serviceId,
-    template_id: emailJsConfig.templateId,
-    user_id: emailJsConfig.publicKey,
-    template_params,
-  };
-
-  const postSend = async (payload) => {
-    const emailResponse = await axios.post('https://api.emailjs.com/api/v1.0/email/send', payload, {
-      headers: { 'Content-Type': 'application/json' },
-    });
-    if (emailResponse.status !== 200) {
-      throw new Error(`EmailJS вернул статус ${emailResponse.status}`);
-    }
-    return emailResponse;
+  const sendOptions = {
+    publicKey: emailJsConfig.publicKey,
+    ...(privateKey ? { privateKey } : {}),
   };
 
   try {
-    if (privateKey) {
-      try {
-        await postSend({ ...basePayload, accessToken: privateKey });
-      } catch (firstErr) {
-        const st = firstErr.response?.status;
-        if (st === 403) {
-          await postSend({ ...basePayload, access_token: privateKey });
-        } else {
-          throw firstErr;
-        }
-      }
-    } else {
-      await postSend(basePayload);
+    const result = await emailjs.send(
+      emailJsConfig.serviceId,
+      emailJsConfig.templateId,
+      template_params,
+      sendOptions
+    );
+    if (result.status !== 200) {
+      throw new Error(`EmailJS вернул статус ${result.status}`);
     }
     console.log(`[EmailJS] Письмо отправлено → ${email} | тема: ${(subject || '').slice(0, 60)}`);
   } catch (err) {
-    const res = err.response;
-    if (!res) throw err;
+    if (typeof err === 'string') {
+      throw new Error(`EmailJS: ${err}`);
+    }
+    const status = typeof err?.status === 'number' ? err.status : null;
     const detail =
-      typeof res.data === 'string' ? res.data : res.data != null ? JSON.stringify(res.data) : '';
-    if (res.status === 403) {
+      typeof err?.text === 'string'
+        ? err.text
+        : err != null && typeof err.message === 'string'
+          ? err.message
+          : String(err);
+    if (!status && !detail) throw err;
+    if (status === 403) {
+      const detailStr = String(detail || '');
+      const nonBrowserBlocked =
+        /non-browser|non browser|browser environments is currently disabled/i.test(detailStr);
       if (!emailJs403ServerHintLogged) {
         emailJs403ServerHintLogged = true;
         console.warn(
-          '[EmailJS] 403: запрос с Node заблокирован. Добавьте EMAILJS_PRIVATE_KEY или включите non-browser API в EmailJS Security.'
+          '[EmailJS] 403: серверные запросы. Откройте https://dashboard.emailjs.com/admin/account/security и включите «Allow EmailJS API for non-browser applications». Private key в .env не отменяет эту настройку.'
         );
       }
-      const hint = privateKey
-        ? 'Private key задан, но EmailJS всё равно вернул 403 — проверьте ключ и лимиты.'
-        : 'В .env нет EMAILJS_PRIVATE_KEY — серверная отправка может быть заблокирована.';
-      throw new Error(`EmailJS 403: ${hint} ${detail ? String(detail).slice(0, 200) : ''}`);
+      const hint403 = nonBrowserBlocked
+        ? 'Включите в EmailJS: Account → Security → «Allow EmailJS API for non-browser applications» (сервер Node считается non-browser).'
+        : privateKey
+          ? 'Проверьте, что EMAILJS_PRIVATE_KEY скопирован из того же аккаунта, что и Public Key; лимиты плана.'
+          : 'Добавьте EMAILJS_PRIVATE_KEY в .env или включите non-browser API в настройках EmailJS (см. выше).';
+      throw new Error(`EmailJS 403: ${hint403} ${detailStr ? detailStr.slice(0, 280) : ''}`);
     }
+    const hint400 =
+      status === 400 && /parameters are invalid/i.test(String(detail))
+        ? ' Проверьте в EmailJS: шаблон с полями {{to_email}}, {{subject}}, {{message}} (не OTP); service_id и template_id из одного аккаунта; почтовый сервис в дашборде подключён.'
+        : '';
     throw new Error(
-      detail ? `EmailJS ошибка ${res.status}: ${detail}` : err.message || `EmailJS ошибка ${res.status}`
+      status != null && detail
+        ? `EmailJS ошибка ${status}: ${detail}${hint400}`
+        : err?.message || `EmailJS: ${detail || 'ошибка отправки'}`
     );
   }
 }

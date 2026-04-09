@@ -25,6 +25,7 @@ import './Home.css'
 
 import { getApiBaseUrl } from '../utils/apiConfig'
 import { getManagerContactButtons } from '../services/liveChatApi'
+import { getEffectiveAuctionEndTime } from '../utils/auctionReminderBounds'
 
 function formatPropertyForList(prop, isAuction) {
   return {
@@ -33,7 +34,7 @@ function formatPropertyForList(prop, isAuction) {
     location: prop.location || '',
     price: prop.price || (isAuction ? prop.auction_starting_price : 0) || 0,
     currentBid: isAuction ? (prop.currentBid || prop.auction_starting_price || prop.price || 0) : null,
-    endTime: isAuction ? (prop.test_timer_end_date || prop.endTime || prop.auction_end_date || null) : null,
+    endTime: isAuction ? getEffectiveAuctionEndTime(prop) : null,
     isAuction,
     test_timer_end_date: prop.test_timer_end_date || null,
     images: prop.images || (prop.image ? [prop.image] : []),

@@ -6,15 +6,97 @@ export function parseDateMs(v) {
 }
 
 /**
+ * Сделка «купить сейчас» завершена (в т.ч. менеджером в запросах на покупку) — аукцион для UI считается закрытым,
+ * даже если auction_end_date / test_timer_end_date ещё в будущем в БД.
+ * @param {Record<string, unknown> | null | undefined} property
+ */
+export function isBuyNowPurchaseCompleted(property) {
+  return (
+    property?.buy_now_winner_user_id != null &&
+    property?.buy_now_completed_at != null &&
+    String(property.buy_now_completed_at).trim() !== ''
+  )
+}
+
+/**
+ * В БД задано поле test_timer_end_date (может быть запланировано заранее на фазу после преаукциона).
+ */
+export function hasTestTimerDateString(property) {
+  const v = property?.test_timer_end_date
+  if (v == null || v === '') return false
+  if (typeof v === 'string') return v.trim() !== ''
+  return true
+}
+
+/**
+ * Идёт преаукцион: дата окончания линейного этапа (auction_end_date) ещё в будущем.
+ * @param {Record<string, unknown> | null | undefined} property
+ */
+export function isPreAuctionPhaseActive(property) {
+  if (isBuyNowPurchaseCompleted(property)) return false
+  const endMs = parseDateMs(property?.auction_end_date)
+  return endMs != null && endMs > Date.now()
+}
+
+/**
+ * Показывать круговой таймер: test_timer задан и преаукцион уже закончился (или auction_end_date не задан).
+ * Если оба срока заданы одновременно, до конца преаукциона остаётся линейный `PropertyTimer`.
+ * @param {Record<string, unknown> | null | undefined} property
+ */
+export function shouldShowCircularAuctionTimer(property) {
+  if (isBuyNowPurchaseCompleted(property)) return false
+  if (!hasTestTimerDateString(property)) return false
+  if (isPreAuctionPhaseActive(property)) return false
+  return true
+}
+
+/**
  * На карточке объекта включён круговой тестовый таймер (`CircularTimer`, поле test_timer_end_date).
  * Напоминание об аукционе доступно только в преаукционе с линейным таймером (`PropertyTimer`), не в этой фазе.
  * @param {Record<string, unknown> | null | undefined} property
  */
 export function hasActiveCircularTestTimer(property) {
-  const v = property?.test_timer_end_date
-  if (v == null || v === '') return false
-  if (typeof v === 'string') return v.trim() !== ''
-  return true
+  return shouldShowCircularAuctionTimer(property)
+}
+
+/**
+ * Единая дата окончания текущей фазы аукциона для отсчёта и PropertyTimer.
+ * Преаукцион: только auction_end_date; после него — test_timer_end_date, иначе fallback.
+ * @param {Record<string, unknown> | null | undefined} property
+ */
+export function getEffectiveAuctionEndTime(property) {
+  if (!property) return null
+  if (isBuyNowPurchaseCompleted(property)) return null
+  const preEndMs = parseDateMs(property.auction_end_date)
+  const now = Date.now()
+  if (preEndMs != null && preEndMs > now) {
+    return property.auction_end_date ?? null
+  }
+  if (hasTestTimerDateString(property)) {
+    return property.test_timer_end_date ?? null
+  }
+  const fallback = property.endTime ?? property.auction_end_date ?? null
+  return fallback != null && fallback !== '' ? fallback : null
+}
+
+/**
+ * Истёк ли таймер текущей фазы (с учётом преаукциона vs кругового этапа).
+ * @param {Record<string, unknown> | null | undefined} property
+ */
+export function isEffectiveAuctionTimerExpired(property) {
+  if (isBuyNowPurchaseCompleted(property)) return true
+  const end = getEffectiveAuctionEndTime(property)
+  if (end == null || end === '') return false
+  const t = new Date(end).getTime()
+  return Number.isFinite(t) && t <= Date.now()
+}
+
+/**
+ * Завершённый аукцион в списках (таймер истёк или сделка «купить сейчас» закрыта).
+ * @param {Record<string, unknown> | null | undefined} property
+ */
+export function isAuctionListingEnded(property) {
+  return isEffectiveAuctionTimerExpired(property)
 }
 
 const STEP_MS = 30 * 60 * 1000

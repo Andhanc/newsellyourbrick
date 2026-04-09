@@ -5,6 +5,7 @@ import { properties } from '../data/properties'
 import PropertyDetailClassic from './PropertyDetailClassic'
 import LoginModal from '../components/LoginModal'
 import { isAuthenticated, getUserData } from '../services/authService'
+import { getEffectiveAuctionEndTime } from '../utils/auctionReminderBounds'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
 
@@ -297,7 +298,7 @@ const PropertyDetailPage = () => {
                 auction_start_date: prop.auction_start_date || null,
                 auction_end_date: prop.auction_end_date || null,
                 auction_starting_price: prop.auction_starting_price || null,
-                endTime: prop.test_timer_end_date || prop.auction_end_date || null, // Для компонента PropertyDetail (приоритет у тестового таймера)
+                endTime: getEffectiveAuctionEndTime(prop), // Текущая фаза: преаукцион → auction_end_date, затем круговой → test_timer_end_date
                 test_timer_end_date: prop.test_timer_end_date || null,
                 additional_amenities: prop.additional_amenities || null,
                 // Информация о продавце

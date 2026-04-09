@@ -4,6 +4,7 @@ import { MOCK_SECTIONS, readLocalFavoriteFlags } from '../data/favoriteMockLists
 import { usePropertyFavorites, PROPERTY_FAVORITES_CHANGED } from '../context/PropertyFavoritesContext'
 import { favoriteCompositeKey } from '../utils/propertyFavoriteKey'
 import { getApiBaseUrl } from '../utils/apiConfig'
+import { getEffectiveAuctionEndTime } from '../utils/auctionReminderBounds'
 
 export function useFavoriteAuctionItems() {
   const { favoriteRows } = usePropertyFavorites()
@@ -54,7 +55,7 @@ export function useFavoriteAuctionItems() {
           price: priceNumber,
           auction_starting_price: auctionStartingPrice,
           currentBid: prop.currentBid || prop.auction_current_bid || prop.auctionCurrentBid || null,
-          endTime: prop.endTime || prop.auction_end_date || prop.auctionEndDate || prop.test_timer_end_date || null,
+          endTime: getEffectiveAuctionEndTime(prop),
           beds: prop.beds || prop.rooms || prop.bedrooms || 0,
           baths: prop.baths || prop.bathrooms || 0,
           sqft: prop.sqft || prop.area || 0,

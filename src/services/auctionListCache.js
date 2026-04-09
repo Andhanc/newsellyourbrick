@@ -5,6 +5,7 @@
  */
 
 import { getApiBaseUrl } from '../utils/apiConfig'
+import { getEffectiveAuctionEndTime } from '../utils/auctionReminderBounds'
 
 function pickNonEmptyTimerDate(a, b) {
   if (a != null && a !== '') return a
@@ -26,12 +27,13 @@ function mergeFormattedAuctionListItems(existing, incoming) {
     incoming.is_auction === 1
 
   const merged = { ...existing, ...incoming }
+  const endTimeForList = isAuction ? getEffectiveAuctionEndTime(merged) : merged.endTime ?? existing.endTime ?? incoming.endTime
   return {
     ...merged,
     test_timer_end_date: tt,
     test_timer_duration: existing.test_timer_duration ?? incoming.test_timer_duration ?? null,
     isAuction,
-    endTime: isAuction ? tt || existing.endTime || incoming.endTime : existing.endTime || incoming.endTime,
+    endTime: endTimeForList,
     currentBid: isAuction
       ? (incoming.currentBid ??
           existing.currentBid ??
@@ -63,7 +65,7 @@ function formatPropertyForList(prop, isAuction) {
     location: prop.location || '',
     price: prop.price || (isAuction ? prop.auction_starting_price : 0) || 0,
     currentBid: isAuction ? (prop.currentBid || prop.auction_starting_price || prop.price || 0) : null,
-    endTime: isAuction ? (prop.test_timer_end_date || prop.endTime || prop.auction_end_date || null) : null,
+    endTime: isAuction ? getEffectiveAuctionEndTime(prop) : null,
     isAuction,
     test_timer_end_date: prop.test_timer_end_date || null,
     images: prop.images || (prop.image ? [prop.image] : []),

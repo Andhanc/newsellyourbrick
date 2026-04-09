@@ -14,6 +14,14 @@ import { showNotification } from '@/utils/toastHelper'
 import { ensureCanOpenProperty } from '@/utils/propertyAccessGuard'
 import { hasBuyNowOption } from '@/utils/hasBuyNowOption'
 import { hasEmailForBuyNowFlow } from '@/utils/buyNowEmailGate'
+import {
+  getEffectiveAuctionEndTime,
+  hasTestTimerDateString,
+  isBuyNowPurchaseCompleted,
+  isEffectiveAuctionTimerExpired,
+  isAuctionListingEnded,
+  shouldShowCircularAuctionTimer,
+} from '@/utils/auctionReminderBounds'
 import '../PropertyList.css'
 import './AuctionMobileLayout.css'
 
@@ -334,13 +342,17 @@ function AuctionMobileItem({
     propertyImages[0] ||
     'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=800&q=80'
 
-  const hasTestTimer =
-    property.test_timer_end_date != null && property.test_timer_end_date !== ''
+  const buyNowPurchaseCompleted = isBuyNowPurchaseCompleted(property)
+  const effectiveAuctionEnd = getEffectiveAuctionEndTime(property)
+  const hasTestTimerRaw =
+    !buyNowPurchaseCompleted && hasTestTimerDateString(property)
+  const showCircularOnCard = shouldShowCircularAuctionTimer(property)
   const hasTimer =
     (property.isAuction === true &&
-      property.endTime != null &&
-      property.endTime !== '') ||
-    hasTestTimer
+      (buyNowPurchaseCompleted ||
+        (effectiveAuctionEnd != null &&
+          String(effectiveAuctionEnd).trim() !== ''))) ||
+    hasTestTimerRaw
 
   const isDebtProperty =
     property.sale_type === 'debt' ||
@@ -356,29 +368,19 @@ function AuctionMobileItem({
   const isReserved = property.is_reserved === true || property.is_reserved === 1
   const showBuyNow = hasBuyNowOption(property)
 
-  const checkTimerExpired = () => {
-    if (
-      property.buy_now_winner_user_id != null &&
-      property.buy_now_completed_at != null &&
-      String(property.buy_now_completed_at).trim() !== ''
-    ) {
-      return true
-    }
-    if (hasTestTimer && property.test_timer_end_date) {
-      return new Date(property.test_timer_end_date).getTime() <= Date.now()
-    }
-    if (property.endTime) {
-      return new Date(property.endTime).getTime() <= Date.now()
-    }
-    return false
-  }
-  const isTimerExpired = checkTimerExpired()
+  const isTimerExpired = isEffectiveAuctionTimerExpired(property)
   const buyNowWinnerId = property.buy_now_winner_user_id
 
   const greenOnImage =
-    hasTimer && !isReserved && !hasTestTimer && property.endTime
+    hasTimer && !isReserved && !showCircularOnCard && effectiveAuctionEnd
   const redOnImage =
-    hasTimer && !isReserved && hasTestTimer && property.test_timer_end_date
+    hasTimer && !isReserved && showCircularOnCard && property.test_timer_end_date
+  const buyNowEndedSealOnImage =
+    hasTimer &&
+    !isReserved &&
+    buyNowPurchaseCompleted &&
+    !showCircularOnCard &&
+    !effectiveAuctionEnd
 
   const displayPriceValue = hasTimer
     ? property.currentBid || property.price || 0
@@ -421,7 +423,7 @@ function AuctionMobileItem({
     ) : null
 
   /** Две кнопки в один ряд и в списке, и в сетке карточек */
-  const dualActionsRow = showBuyNow
+  const dualActionsRow = showBuyNow && !isAuctionListingEnded(property)
 
   const handleFavoriteClick = (e) => {
     e.preventDefault()
@@ -468,7 +470,7 @@ function AuctionMobileItem({
                 <span>{t('reserved')}</span>
               </div>
             )}
-            {!isReserved && (showBuyNow || hasTestDrive) && (
+            {!isReserved && (showBuyNow || hasTestDrive) && !isAuctionListingEnded(property) && (
               <div
                 className="auction-mobile-photo-icons"
                 onClick={(e) => e.stopPropagation()}
@@ -491,10 +493,20 @@ function AuctionMobileItem({
                 />
               </div>
             )}
+            {buyNowEndedSealOnImage && (
+              <div className="auction-mobile-circular-timer">
+                <CircularTimer
+                  endTime={property.buy_now_completed_at}
+                  size={view === 'list' ? 46 : 54}
+                  strokeWidth={view === 'list' ? 3 : 4}
+                  auctionEndedLabel={t('auctionCircularEndedShort')}
+                />
+              </div>
+            )}
             {greenOnImage && view !== 'card' && (
               <div className="property-timer-overlay auction-mobile-timer-slot">
                 <PropertyTimer
-                  endTime={property.endTime}
+                  endTime={effectiveAuctionEnd}
                   compact
                   className="property-timer--auction-mobile"
                   auctionEndedLabel={t('propertyDetailAuctionCompleted')}
@@ -508,7 +520,7 @@ function AuctionMobileItem({
           {greenOnImage && view === 'card' && (
             <div className="auction-mobile-body-timer">
               <PropertyTimer
-                endTime={property.endTime}
+                endTime={effectiveAuctionEnd}
                 compact
                 className="property-timer--auction-mobile property-timer--auction-mobile-inline"
                 auctionEndedLabel={t('propertyDetailAuctionCompleted')}
@@ -545,7 +557,7 @@ function AuctionMobileItem({
             </p>
           ) : null}
 
-          {buyNowWinnerId != null && (
+          {buyNowWinnerId != null && !isAuctionListingEnded(property) && (
             <p className="auction-mobile-buy-now-winner" role="status">
               {t('propertyCardBuyNowWinner', { id: buyNowWinnerId })}
             </p>
