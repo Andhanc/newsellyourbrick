@@ -860,15 +860,28 @@
   color: #6b7280;
 }
 
-@media (max-width: 480px) {
+/* Планшет и мобильный: окно чата с менеджером не на весь экран */
+@media (max-width: 768px) {
   .chat-smart-manager-page {
-    max-width: 100%;
-    height: calc(100vh - 24px);
-    max-height: calc(100vh - 24px);
+    height: min(520px, calc(100vh - 56px));
+    max-height: min(520px, calc(100vh - 56px));
   }
 
   .chat-overlay--smart-manager {
-    padding: 12px;
+    padding: 20px 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .chat-smart-manager-page {
+    max-width: 100%;
+    height: min(420px, 72vh, calc(100vh - 104px));
+    max-height: min(420px, 72vh, calc(100vh - 104px));
+  }
+
+  .chat-overlay--smart-manager {
+    padding: 28px 14px;
+    align-items: center;
   }
 }
 

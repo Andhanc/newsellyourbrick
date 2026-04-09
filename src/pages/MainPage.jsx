@@ -2494,6 +2494,15 @@ function MainPage() {
                       >
                         <span>Бонусы</span>
                       </button>
+                      <button 
+                        className="menu-dropdown__item"
+                        onClick={() => {
+                          navigate('/calculator')
+                          setIsMenuOpen(false)
+                        }}
+                      >
+                        <span>{t('calculator')}</span>
+                      </button>
                     </div>
                   </div>
                   <div className="menu-dropdown__column">

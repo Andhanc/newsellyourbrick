@@ -305,6 +305,7 @@ const Header = () => {
     { path: '/', keywords: ['главная', 'home', 'начало', 'старт'], titleKey: 'home', requiresAuth: false, allowedRoles: ['buyer', 'seller', 'owner', 'admin', 'client'] },
     { path: '/auction', keywords: ['аукцион', 'auction', 'торги', 'продажа', 'недвижимость'], titleKey: 'auction', requiresAuth: false, allowedRoles: ['buyer', 'seller', 'owner', 'admin', 'client'] },
     { path: '/map', keywords: ['карта', 'map', 'карты', 'локация', 'место'], titleKey: 'mapLink', requiresAuth: false, allowedRoles: ['buyer', 'seller', 'owner', 'admin', 'client'] },
+    { path: '/calculator', keywords: ['калькулятор', 'calculator', 'доходность', 'рендита', 'profitability', 'доход', 'инвестиции'], titleKey: 'calculator', requiresAuth: false, allowedRoles: ['buyer', 'seller', 'owner', 'admin', 'client'] },
     { path: '/chat?manager=1', keywords: ['чат', 'chat', 'сообщения', 'messages', 'переписка'], titleKey: 'chat', requiresAuth: false, allowedRoles: ['buyer', 'seller', 'owner', 'admin', 'client'] },
     { path: '/profile', keywords: ['профиль', 'profile', 'аккаунт', 'личный кабинет', 'настройки', 'settings'], titleKey: 'profile', requiresAuth: true, allowedRoles: ['buyer', 'client', 'admin'] },
     { path: '/favorites', keywords: ['избранное', 'favorites', 'избранные', 'закладки', 'bookmarks'], titleKey: 'favorites', requiresAuth: true, allowedRoles: ['buyer', 'client', 'admin'] },
@@ -754,6 +755,15 @@ const Header = () => {
                             }}
                           >
                             <span>{t('bonuses')}</span>
+                          </button>
+                          <button 
+                            className="menu-dropdown__item"
+                            onClick={() => {
+                              navigate('/calculator')
+                              setIsMenuOpen(false)
+                            }}
+                          >
+                            <span>{t('calculator')}</span>
                           </button>
                         </div>
                       </div>

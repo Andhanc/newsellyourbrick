@@ -125,14 +125,6 @@ export default function BuyerCabinetSidebar({
           <span>{t('profile')}</span>
           {showProfileIndicator ? <span className="nav-item-indicator" /> : null}
         </Link>
-        <Link to="/profile/bookings" className={navClass('/profile/bookings')}>
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
-            <rect x="3" y="4" width="14" height="13" rx="2" stroke="currentColor" strokeWidth="1.5" />
-            <path d="M3 8H17" stroke="currentColor" strokeWidth="1.5" />
-            <path d="M7 2V5M13 2V5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-          </svg>
-          <span>{t('buyerCabinet_myBookings')}</span>
-        </Link>
         <Link to="/data" className={navClass('/data')}>
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden>
             <rect x="2" y="4" width="16" height="12" rx="2" stroke="currentColor" strokeWidth="1.5" />
@@ -140,6 +132,14 @@ export default function BuyerCabinetSidebar({
           </svg>
           <span>{t('data')}</span>
           {showDataIndicator ? <span className="nav-item-indicator" /> : null}
+        </Link>
+        <Link to="/profile/bookings" className={navClass('/profile/bookings')}>
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden>
+            <rect x="3" y="4" width="14" height="13" rx="2" stroke="currentColor" strokeWidth="1.5" />
+            <path d="M3 8H17" stroke="currentColor" strokeWidth="1.5" />
+            <path d="M7 2V5M13 2V5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+          </svg>
+          <span>{t('buyerCabinet_myBookings')}</span>
         </Link>
         <Link to="/subscriptions" className={navClass('/subscriptions')}>
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden>

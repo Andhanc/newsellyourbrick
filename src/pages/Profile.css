@@ -1696,8 +1696,21 @@
   }
 
   .profile-name {
-    flex-direction: column;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
     gap: 12px;
+    flex-wrap: nowrap;
+    width: 100%;
+  }
+
+  .profile-name h1 {
+    min-width: 0;
+  }
+
+  .profile-name .edit-button,
+  .profile-name .edit-actions {
+    flex-shrink: 0;
   }
 
   .section-cards {
@@ -1746,6 +1759,57 @@
 
   .profile-name h1 {
     font-size: 28px;
+  }
+
+  /* Строка статус / номер / email: на телефоне — колонка, без обрезки текста */
+  .profile-badges-row {
+    flex-direction: column;
+    flex-wrap: nowrap;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .profile-badge-cell {
+    flex: 0 0 auto;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .profile-status-badge.profile-badge {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  .profile-status-label,
+  .profile-status-value {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .profile-badge--number .profile-badge-label,
+  .profile-badge--number .profile-badge-value {
+    white-space: normal;
+  }
+
+  .profile-badges-row .contact-item.profile-badge {
+    align-items: flex-start;
+  }
+
+  .profile-contacts--inline .contact-item.profile-badge .profile-badge-value,
+  .profile-contacts--inline .contact-item.profile-badge .contact-input {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: unset;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  .profile-badges-row .contact-item.profile-badge .contact-input {
+    min-width: 0;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
   }
 
   .section-title {

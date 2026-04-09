@@ -5,7 +5,7 @@ import { showNotification } from '../utils/toastHelper'
 import maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import { useNavigate } from 'react-router-dom'
-import { FiHeart, FiMapPin, FiChevronLeft, FiSliders } from 'react-icons/fi'
+import { FiHeart, FiMapPin, FiChevronLeft, FiSliders, FiX } from 'react-icons/fi'
 import { HiOutlineArrowsExpand } from 'react-icons/hi'
 import { getApiBaseUrl } from '../utils/apiConfig'
 import { SATELLITE_MAP_STYLE } from '../utils/mapStyles'
@@ -116,12 +116,15 @@ const MapPage = () => {
   const [favorites, setFavorites] = useState(new Set())
   const [imageIndex, setImageIndex] = useState({})
   const mapRef = useRef(null)
+  const mapWrapRef = useRef(null)
   const mapInstanceRef = useRef(null)
   const markersRef = useRef([])
   const [mapContainerReady, setMapContainerReady] = useState(false)
   const [mapReady, setMapReady] = useState(false)
   const geocodeInFlightRef = useRef(false)
   const [mapExpanded, setMapExpanded] = useState(false)
+  /** Подсказка сверху карты после тапа по маркеру / «Показать» */
+  const [mapOpenHintProperty, setMapOpenHintProperty] = useState(null)
 
   const formatPrice = (n) => '$' + new Intl.NumberFormat('en-US').format(Number(n) || 0)
 
@@ -253,31 +256,56 @@ const MapPage = () => {
       if (!coords) return
 
       const lngLat = [coords[1], coords[0]]
-      const isSelected = selectedProperty?.id === property.id
+      const isSelected =
+        selectedProperty != null && String(selectedProperty.id) === String(property.id)
       const priceStr = formatPrice(property.price ?? property.currentBid ?? 0)
+      const thumbSrc =
+        (Array.isArray(property.images) && property.images[0]) ||
+        'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800'
 
-      // Максимально простой DOM-элемент с cssText — не зависит от CSS-классов
       const el = document.createElement('div')
-      el.style.cssText = [
-        'background:' + (isSelected ? '#0abab5' : '#ffffff'),
-        'color:' + (isSelected ? '#ffffff' : '#111827'),
-        'border:2px solid ' + (isSelected ? '#0abab5' : '#ef4444'),
-        'border-radius:999px',
-        'padding:5px 11px',
-        'font:700 12px/1 system-ui,sans-serif',
-        'white-space:nowrap',
-        'cursor:pointer',
-        'box-shadow:0 4px 14px rgba(0,0,0,0.5)',
-        'pointer-events:auto',
-        'user-select:none',
-        'transform:' + (isSelected ? 'scale(1.12)' : 'scale(1)'),
-        'transition:transform 0.15s',
-      ].join(';')
-      el.textContent = priceStr
-      el.addEventListener('click', (e) => {
+      el.className = `map-pin-mini${isSelected ? ' map-pin-mini--active' : ''}`
+      el.setAttribute('role', 'button')
+
+      const imgWrap = document.createElement('div')
+      imgWrap.className = 'map-pin-mini__img-wrap'
+      const img = document.createElement('img')
+      img.className = 'map-pin-mini__img'
+      img.src = thumbSrc
+      img.alt = ''
+      img.decoding = 'async'
+      img.addEventListener('error', () => {
+        img.src = 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800'
+      })
+      imgWrap.appendChild(img)
+      if (isSelected) {
+        imgWrap.classList.add('map-pin-mini__img-wrap--openable')
+      }
+      el.title = 'Показать на карте'
+
+      const priceEl = document.createElement('span')
+      priceEl.className = 'map-pin-mini__price'
+      priceEl.textContent = priceStr
+
+      el.appendChild(imgWrap)
+      el.appendChild(priceEl)
+
+      let lastMarkerActivate = 0
+      const onMarkerActivate = (e) => {
+        if (e.button != null && e.button !== 0) return
+        const now = Date.now()
+        if (now - lastMarkerActivate < 450) return
+        lastMarkerActivate = now
         e.stopPropagation()
         setSelectedProperty(property)
         map.flyTo({ center: lngLat, zoom: 16, duration: 700 })
+        setMapOpenHintProperty(property)
+      }
+      el.addEventListener('click', onMarkerActivate)
+      // MapLibre на маркере вызывает mousedown.preventDefault() — на части Safari/тач «click» не приходит; pointerup для touch/pen
+      el.addEventListener('pointerup', (e) => {
+        if (e.pointerType === 'mouse') return
+        onMarkerActivate(e)
       })
 
       const marker = new maplibregl.Marker({ element: el, anchor: 'center' })
@@ -297,7 +325,24 @@ const MapPage = () => {
 
   // ─── Ресайз при раскрытии карты ─────────────────────────────────────────
   useEffect(() => {
-    if (mapExpanded) setTimeout(() => mapInstanceRef.current?.resize(), 100)
+    if (!mapExpanded) return
+    const t1 = setTimeout(() => mapInstanceRef.current?.resize(), 50)
+    const t2 = setTimeout(() => mapInstanceRef.current?.resize(), 300)
+    const t3 = setTimeout(() => mapInstanceRef.current?.resize(), 600)
+    return () => {
+      clearTimeout(t1)
+      clearTimeout(t2)
+      clearTimeout(t3)
+    }
+  }, [mapExpanded])
+
+  useEffect(() => {
+    if (!mapExpanded) return
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = prev
+    }
   }, [mapExpanded])
 
   // ─── Прочие обработчики ──────────────────────────────────────────────────
@@ -325,7 +370,14 @@ const MapPage = () => {
     // flyTo вызывается здесь; маркеры обновятся через setSelectedProperty → useEffect
     mapInstanceRef.current?.flyTo({ center: [coords[1], coords[0]], zoom: 16, duration: 700 })
     setSelectedProperty(property)
-  }, [])
+    setMapOpenHintProperty(property)
+    const wrap = mapWrapRef.current
+    if (wrap && !mapExpanded) {
+      requestAnimationFrame(() => {
+        wrap.scrollIntoView({ behavior: 'smooth', block: 'start', inline: 'nearest' })
+      })
+    }
+  }, [mapExpanded])
 
   // ─── Рендер ──────────────────────────────────────────────────────────────
   return (
@@ -385,7 +437,7 @@ const MapPage = () => {
                     key={property.id}
                     className={`map-booking-card ${isSelected ? 'selected' : ''}`}
                     onClick={() => {
-                      if (!ensureCanOpenProperty()) return
+                      if (!ensureCanOpenProperty(user && userLoaded)) return
                       navigate(`/property/${property.id}`)
                     }}
                   >
@@ -447,7 +499,10 @@ const MapPage = () => {
             </div>
           </aside>
 
-          <div className={`map-page-map-wrap ${mapExpanded ? 'map-page-map-wrap--fullscreen' : ''}`}>
+          <div
+            ref={mapWrapRef}
+            className={`map-page-map-wrap ${mapExpanded ? 'map-page-map-wrap--fullscreen' : ''}`}
+          >
             {mapContainerReady && (
               <div
                 ref={mapRef}
@@ -460,6 +515,47 @@ const MapPage = () => {
                 <HiOutlineArrowsExpand size={18} />
                 Раскрыть карту
               </button>
+            )}
+            {mapOpenHintProperty && (
+              <div
+                className={`map-open-hint ${mapExpanded ? 'map-open-hint--fullscreen' : ''}`}
+                role="status"
+              >
+                <button
+                  type="button"
+                  className="map-open-hint__dismiss"
+                  onClick={() => setMapOpenHintProperty(null)}
+                  aria-label="Скрыть подсказку"
+                >
+                  <FiX size={18} />
+                </button>
+                <div className="map-open-hint__thumb">
+                  <img
+                    src={
+                      (Array.isArray(mapOpenHintProperty.images) && mapOpenHintProperty.images[0]) ||
+                      'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800'
+                    }
+                    alt=""
+                  />
+                </div>
+                <div className="map-open-hint__main">
+                  <p className="map-open-hint__label">Объект на карте</p>
+                  <p className="map-open-hint__title">{mapOpenHintProperty.title}</p>
+                  <p className="map-open-hint__price">
+                    {formatPrice(mapOpenHintProperty.price ?? mapOpenHintProperty.currentBid ?? 0)}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  className="map-open-hint__cta"
+                  onClick={() => {
+                    if (!ensureCanOpenProperty(user && userLoaded)) return
+                    navigate(`/property/${mapOpenHintProperty.id}`)
+                  }}
+                >
+                  Открыть объект
+                </button>
+              </div>
             )}
             {mapExpanded && (
               <button type="button" className="map-fullscreen-close" onClick={() => setMapExpanded(false)} aria-label="Закрыть карту">
