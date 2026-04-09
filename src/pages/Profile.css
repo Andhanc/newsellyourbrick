@@ -1761,12 +1761,21 @@
     font-size: 28px;
   }
 
+  /* Три блока (роль / ID / email): уже по ширине, по центру */
+  .profile-header-left {
+    align-items: center;
+  }
+
   /* Строка статус / номер / email: на телефоне — колонка, без обрезки текста */
   .profile-badges-row {
     flex-direction: column;
     flex-wrap: nowrap;
-    align-items: stretch;
+    align-items: center;
     gap: 10px;
+    width: 100%;
+    max-width: min(280px, 88vw);
+    margin-left: auto;
+    margin-right: auto;
   }
 
   .profile-badge-cell {
