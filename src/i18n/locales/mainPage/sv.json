@@ -471,6 +471,7 @@
   "sharesSoldOut": "Utsåld",
   "sharesPercentSold": "{{percent}}% såld",
   "sharesRemainingCount": "Kvarvarande andelar: {{remaining}}",
+  "sharesRemainingCompact": "Kvar: {{remaining}}",
   "sharesTotalCost": "Totalvärde:",
   "sharesPerShare": "Per 1 andel:",
   "sharesAllSold": "Alla andelar sålda",

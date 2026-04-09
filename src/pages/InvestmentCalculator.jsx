@@ -426,6 +426,7 @@ const InvestmentCalculator = () => {
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -20 }}
                   transition={{ duration: 0.3 }}
+                  style={{ width: '100%', minWidth: 0 }}
                 >
                   <IncomeExpensesChart 
                     yearlyData={calculations.yearlyData} 
@@ -439,7 +440,7 @@ const InvestmentCalculator = () => {
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -20 }}
                   transition={{ duration: 0.3 }}
-                  style={{ height: '100%' }}
+                  className="chart-wrapper__line-chart"
                 >
                   {hasYearlyData ? (
                     <Line

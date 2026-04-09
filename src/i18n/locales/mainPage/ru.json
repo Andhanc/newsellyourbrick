@@ -471,6 +471,7 @@
   "sharesSoldOut": "Sold out",
   "sharesPercentSold": "{{percent}}% продано",
   "sharesRemainingCount": "Осталось долей: {{remaining}}",
+  "sharesRemainingCompact": "Осталось: {{remaining}}",
   "sharesTotalCost": "Общая стоимость:",
   "sharesPerShare": "За 1 долю:",
   "sharesAllSold": "Все доли проданы",

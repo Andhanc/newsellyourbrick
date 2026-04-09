@@ -113,22 +113,20 @@ export default function IncomeExpensesChart({ yearlyData, formatCurrency }) {
 
   return (
     <Card 
-      className="w-full"
+      className="w-full min-w-0 border-0 bg-transparent shadow-none"
       style={{
-        background: 'rgba(255, 255, 255, 0.03)',
-        backdropFilter: 'blur(20px)',
-        border: '1px solid rgba(255, 255, 255, 0.1)',
-        borderRadius: '24px',
-        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
+        background: 'transparent',
+        border: 'none',
+        boxShadow: 'none',
       }}
     >
 
-      <CardContent className="px-8 md:px-10 pb-6 pt-8">
+      <CardContent className="px-0 pb-0 pt-0 sm:px-2">
         {/* Stats Section */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 mb-6 sm:mb-8">
           {/* Доходы блок */}
           <div 
-            className="flex flex-col gap-3 p-6 rounded-xl"
+            className="flex flex-col gap-2 sm:gap-3 p-4 sm:p-6 rounded-xl min-w-0"
             style={{
               background: 'rgba(255, 255, 255, 0.05)',
               border: '1px solid rgba(255, 255, 255, 0.1)',
@@ -138,9 +136,9 @@ export default function IncomeExpensesChart({ yearlyData, formatCurrency }) {
             <div className="flex items-center gap-2.5">
               <ChartLabel label="Доходы" color={chartConfig.income.color} />
             </div>
-            <div className="flex items-baseline gap-3 flex-wrap">
+            <div className="flex items-baseline gap-2 sm:gap-3 flex-wrap min-w-0">
               <span 
-                className="text-3xl md:text-4xl font-bold text-white"
+                className="text-2xl sm:text-3xl md:text-4xl font-bold text-white break-words [overflow-wrap:anywhere]"
                 style={{
                   textShadow: '0 2px 8px rgba(245, 158, 11, 0.3)',
                 }}
@@ -175,7 +173,7 @@ export default function IncomeExpensesChart({ yearlyData, formatCurrency }) {
 
           {/* Расходы блок: если рост совпадает с доходом — показываем долю от дохода вместо дублирующего % */}
           <div 
-            className="flex flex-col gap-3 p-5 rounded-xl"
+            className="flex flex-col gap-2 sm:gap-3 p-4 sm:p-6 rounded-xl min-w-0"
             style={{
               background: 'rgba(255, 255, 255, 0.05)',
               border: '1px solid rgba(255, 255, 255, 0.1)',
@@ -185,9 +183,9 @@ export default function IncomeExpensesChart({ yearlyData, formatCurrency }) {
             <div className="flex items-center gap-2.5">
               <ChartLabel label="Расходы" color={chartConfig.expenses.color} />
             </div>
-            <div className="flex items-baseline gap-3 flex-wrap">
+            <div className="flex items-baseline gap-2 sm:gap-3 flex-wrap min-w-0">
               <span 
-                className="text-3xl md:text-4xl font-bold text-white"
+                className="text-2xl sm:text-3xl md:text-4xl font-bold text-white break-words [overflow-wrap:anywhere]"
                 style={{
                   textShadow: '0 2px 8px rgba(168, 85, 247, 0.3)',
                 }}
@@ -236,12 +234,12 @@ export default function IncomeExpensesChart({ yearlyData, formatCurrency }) {
           </div>
         </div>
 
-        {/* Chart или заглушка */}
-        <div className="h-[300px] w-full relative">
+        {/* Chart или заглушка: без aspect-video из ChartContainer — иначе Recharts на узком экране получает высоту 0 */}
+        <div className="h-[min(320px,52vh)] sm:h-[300px] w-full min-h-[220px] relative min-w-0">
           {hasData ? (
             <ChartContainer
               config={chartConfig}
-              className="h-full w-full [&_.recharts-curve.recharts-tooltip-cursor]:stroke-initial"
+              className="!aspect-auto h-full w-full min-h-[220px] min-w-0 [&_.recharts-curve.recharts-tooltip-cursor]:stroke-initial"
             >
               <ComposedChart
                 data={chartData}

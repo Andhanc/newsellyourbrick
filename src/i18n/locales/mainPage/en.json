@@ -471,6 +471,7 @@
   "sharesSoldOut": "Sold out",
   "sharesPercentSold": "{{percent}}% sold",
   "sharesRemainingCount": "Shares left: {{remaining}}",
+  "sharesRemainingCompact": "Left: {{remaining}}",
   "sharesTotalCost": "Total value:",
   "sharesPerShare": "Per 1 share:",
   "sharesAllSold": "All shares sold",

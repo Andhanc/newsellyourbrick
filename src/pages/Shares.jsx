@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { FiSearch } from 'react-icons/fi'
@@ -68,6 +68,15 @@ const Shares = () => {
   const [searchQuery, setSearchQuery] = useState('')
   const [apiShares, setApiShares] = useState([])
   const [loadingShares, setLoadingShares] = useState(true)
+  const [compactShareCards, setCompactShareCards] = useState(false)
+
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 768px)')
+    const update = () => setCompactShareCards(mq.matches)
+    update()
+    mq.addEventListener('change', update)
+    return () => mq.removeEventListener('change', update)
+  }, [])
 
   const loadShares = useCallback(async () => {
     try {
@@ -187,7 +196,9 @@ const Shares = () => {
                     aria-hidden
                   >
                     {!isSoldOut && soldPercent > 0 && (
-                      <span className="share-card__sold-percent">{t('sharesRemainingCount', { remaining })}</span>
+                      <span className="share-card__sold-percent">
+                        {t(compactShareCards ? 'sharesRemainingCompact' : 'sharesRemainingCount', { remaining })}
+                      </span>
                     )}
                   </div>
                   {isSoldOut && (

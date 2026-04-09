@@ -471,6 +471,7 @@
   "sharesSoldOut": "Agotado",
   "sharesPercentSold": "{{percent}}% vendido",
   "sharesRemainingCount": "Participaciones restantes: {{remaining}}",
+  "sharesRemainingCompact": "Quedan: {{remaining}}",
   "sharesTotalCost": "Valor total:",
   "sharesPerShare": "Por 1 participación:",
   "sharesAllSold": "Todas las participaciones vendidas",

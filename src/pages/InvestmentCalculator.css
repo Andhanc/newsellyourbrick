@@ -240,6 +240,9 @@
   font-weight: 700;
   color: #ffffff;
   letter-spacing: -0.02em;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  line-height: 1.25;
 }
 
 .summary-card__value--positive {
@@ -313,7 +316,8 @@
     0 0 0 1px rgba(255, 255, 255, 0.03) inset;
   transform: translateZ(0);
   backface-visibility: hidden;
-  contain: layout style;
+  /* contain ломает измерение SVG/canvas у графиков на части мобильных WebKit */
+  min-width: 0;
 }
 
 .chart-header {
@@ -352,15 +356,26 @@
   box-shadow: 0 2px 8px rgba(99, 102, 241, 0.2);
 }
 
+/* Высота по контенту: вкладка «доходы/расходы» выше фиксированного блока (карточки + график) */
 .chart-wrapper {
-  height: 380px;
   position: relative;
   margin-top: 0.5rem;
+  min-height: 260px;
+  width: 100%;
+  min-width: 0;
+}
+
+/* Вкладка Chart.js: явная высота для canvas */
+.chart-wrapper__line-chart {
+  height: 340px;
+  min-height: 260px;
+  position: relative;
+  width: 100%;
 }
 
 .chart-empty-state {
   height: 100%;
-  min-height: 300px;
+  min-height: 240px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -368,6 +383,10 @@
   font-size: 0.95rem;
   font-weight: 500;
   letter-spacing: 0.02em;
+}
+
+.chart-wrapper__line-chart .chart-empty-state {
+  min-height: 0;
 }
 
 /* Секция параметров */
@@ -384,7 +403,7 @@
     inset 0 1px 0 rgba(255, 255, 255, 0.1);
   transform: translateZ(0);
   backface-visibility: hidden;
-  contain: layout style;
+  min-width: 0;
 }
 
 .section-title {
@@ -496,7 +515,7 @@ select.parameter-input option {
     inset 0 1px 0 rgba(255, 255, 255, 0.1);
   transform: translateZ(0);
   backface-visibility: hidden;
-  contain: layout style;
+  min-width: 0;
 }
 
 .expandable-button {
@@ -615,21 +634,61 @@ select.parameter-input option {
 
 @media (max-width: 768px) {
   .calculator-container {
-    padding: 2rem 1rem;
+    padding: 2rem max(1rem, env(safe-area-inset-left)) 2rem max(1rem, env(safe-area-inset-right));
   }
 
   .chart-section,
   .parameters-section,
   .expandable-section {
-    padding: 1.5rem;
+    padding: 1.25rem;
     border-radius: 20px;
   }
 
-  .chart-wrapper {
-    height: 300px;
+  .chart-wrapper__line-chart {
+    height: 280px;
+    min-height: 240px;
+  }
+
+  .chart-header {
+    margin-bottom: 1rem;
+    width: 100%;
+  }
+
+  .chart-tabs {
+    display: flex;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .chart-tab {
+    flex: 1 1 0;
+    min-width: 0;
+    font-size: 0.8rem;
+    padding: 0.5rem 0.45rem;
+    white-space: normal;
+    text-align: center;
+    line-height: 1.25;
+    hyphens: auto;
+    overflow-wrap: break-word;
+    word-break: break-word;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
   .calculator-title {
     font-size: 1.75rem;
+  }
+}
+
+@media (max-width: 420px) {
+  .summary-card {
+    padding: 1rem 1rem;
+    gap: 0.75rem;
+  }
+
+  .summary-card__value {
+    font-size: 1rem;
   }
 }

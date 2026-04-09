@@ -42,20 +42,27 @@
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none; 
   -ms-overflow-style: none; 
+  /* Конец страницы (футер) не прячется за вырезом / home indicator */
+  scroll-padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
 }
 
 .app-layout::-webkit-scrollbar {
   display: none; 
 }
 
+/* Без flex-grow: иначе колонка тянется на высоту вьюпорта и скролл к <footer> сбивается */
 .app-layout__content {
-  flex: 1 0 auto;
+  flex: 0 0 auto;
   width: 100%;
   max-width: 100%;
   min-width: 0;
   overflow-x: hidden;
   scrollbar-width: none; 
   -ms-overflow-style: none; 
+}
+
+.app-layout > footer {
+  flex-shrink: 0;
 }
 
 .app-layout__content::-webkit-scrollbar {

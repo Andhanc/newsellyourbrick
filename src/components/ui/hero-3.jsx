@@ -31,12 +31,12 @@ export function AnimatedMarqueeHero({
           initial="hidden"
           animate="show"
           variants={FADE_IN_ANIMATION_VARIANTS}
-          className="hero-tagline mb-5 inline-flex items-center gap-2 rounded-full border border-[rgba(10,186,181,0.35)] bg-white/90 px-5 py-2.5 text-sm font-semibold text-slate-700 shadow-[0_2px_12px_rgba(10,186,181,0.12),inset_0_1px_0_rgba(255,255,255,0.8)] backdrop-blur-md transition-shadow duration-300 hover:shadow-[0_4px_20px_rgba(10,186,181,0.18),inset_0_1px_0_rgba(255,255,255,0.9)]"
+          className="hero-tagline mb-5 inline-flex items-center gap-2.5 rounded-full border border-[rgba(10,186,181,0.35)] bg-white/90 px-6 py-3 text-sm font-semibold text-slate-700 shadow-[0_2px_12px_rgba(10,186,181,0.12),inset_0_1px_0_rgba(255,255,255,0.8)] backdrop-blur-md transition-shadow duration-300 hover:shadow-[0_4px_20px_rgba(10,186,181,0.18),inset_0_1px_0_rgba(255,255,255,0.9)] sm:gap-3 sm:px-8 sm:py-3.5"
         >
-          <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[linear-gradient(135deg,#0ABAB5_0%,#089a95_100%)] text-white shadow-[0_2px_8px_rgba(10,186,181,0.4)]">
-            <Users className="h-3.5 w-3.5" strokeWidth={2.5} />
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[linear-gradient(135deg,#0ABAB5_0%,#089a95_100%)] text-white shadow-[0_2px_8px_rgba(10,186,181,0.4)]">
+            <Users className="h-4 w-4" strokeWidth={2.5} />
           </span>
-          <span className="tracking-tight">{tagline}</span>
+          <span className="tracking-tight leading-snug">{tagline}</span>
         </motion.div>
 
         <motion.h1
@@ -50,7 +50,7 @@ export function AnimatedMarqueeHero({
               },
             },
           }}
-          className="text-5xl md:text-7xl font-bold tracking-tighter text-gray-900"
+          className="text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-bold tracking-tighter text-gray-900 leading-[1.12] sm:leading-tight"
         >
           {typeof title === 'string' ? (
             title.split(' ').map((word, i) => (
