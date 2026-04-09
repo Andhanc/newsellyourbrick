@@ -74,6 +74,26 @@
   pointer-events: none;
 }
 
+/*
+  Зазор между текстом hero и бегущей строкой на телефоне.
+  Явное правило: глобальный сброс * { padding:0 } и слои Tailwind иначе «съедали» утилиты pb-*.
+*/
+@media (max-width: 767px) {
+  .shares-page .animated-marquee-hero .animated-marquee-hero__copy {
+    padding-bottom: 5.5rem !important;
+  }
+
+  .shares-page .animated-marquee-hero .animated-marquee-hero__title {
+    margin-top: 0.75rem !important;
+  }
+}
+
+@media (min-width: 768px) {
+  .shares-page .animated-marquee-hero .animated-marquee-hero__title {
+    margin-top: 1rem !important;
+  }
+}
+
 .shares-container {
   flex: 1;
   width: 100%;

@@ -22,16 +22,16 @@ export function AnimatedMarqueeHero({
   return (
     <section
       className={cn(
-        'relative w-full min-h-[70vh] overflow-hidden bg-transparent flex flex-col items-center justify-start pt-16 md:pt-24 pb-0 text-center px-4 z-[1]',
+        'animated-marquee-hero relative z-[1] flex w-full min-h-0 flex-col items-center justify-start overflow-hidden bg-transparent px-4 pb-2 pt-12 text-center md:min-h-[70vh] md:pb-0 md:pt-24',
         className
       )}
     >
-      <div className="z-10 flex flex-col items-center">
+      <div className="animated-marquee-hero__copy z-10 flex flex-col items-center">
         <motion.div
           initial="hidden"
           animate="show"
           variants={FADE_IN_ANIMATION_VARIANTS}
-          className="hero-tagline mb-5 inline-flex items-center gap-2.5 rounded-full border border-[rgba(10,186,181,0.35)] bg-white/90 px-6 py-3 text-sm font-semibold text-slate-700 shadow-[0_2px_12px_rgba(10,186,181,0.12),inset_0_1px_0_rgba(255,255,255,0.8)] backdrop-blur-md transition-shadow duration-300 hover:shadow-[0_4px_20px_rgba(10,186,181,0.18),inset_0_1px_0_rgba(255,255,255,0.9)] sm:gap-3 sm:px-8 sm:py-3.5"
+          className="hero-tagline mb-4 inline-flex items-center gap-2.5 rounded-full border border-[rgba(10,186,181,0.35)] bg-white/90 px-6 py-3 text-sm font-semibold text-slate-700 shadow-[0_2px_12px_rgba(10,186,181,0.12),inset_0_1px_0_rgba(255,255,255,0.8)] backdrop-blur-md transition-shadow duration-300 hover:shadow-[0_4px_20px_rgba(10,186,181,0.18),inset_0_1px_0_rgba(255,255,255,0.9)] sm:mb-5 sm:gap-3 sm:px-8 sm:py-3.5"
         >
           <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[linear-gradient(135deg,#0ABAB5_0%,#089a95_100%)] text-white shadow-[0_2px_8px_rgba(10,186,181,0.4)]">
             <Users className="h-4 w-4" strokeWidth={2.5} />
@@ -50,7 +50,7 @@ export function AnimatedMarqueeHero({
               },
             },
           }}
-          className="text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-bold tracking-tighter text-gray-900 leading-[1.12] sm:leading-tight"
+          className="animated-marquee-hero__title text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-bold tracking-tighter text-gray-900 leading-[1.12] sm:leading-tight"
         >
           {typeof title === 'string' ? (
             title.split(' ').map((word, i) => (
@@ -72,15 +72,23 @@ export function AnimatedMarqueeHero({
           animate="show"
           variants={FADE_IN_ANIMATION_VARIANTS}
           transition={{ delay: 0.5 }}
-          className="mt-6 max-w-xl text-lg text-gray-600"
+          className="mt-4 max-w-xl text-base text-gray-600 md:mt-6 md:text-lg"
         >
           {description}
         </motion.p>
       </div>
 
-      <div className="absolute bottom-0 left-0 w-full h-1/3 md:h-2/5 overflow-hidden [mask-image:linear-gradient(to_bottom,transparent,black_20%,black_80%,transparent)]">
+      {/* Мобилка: лента сразу под текстом (без «дыры» от min-height + absolute). Десктоп: внизу секции */}
+      <div
+        className={cn(
+          'pointer-events-none w-full max-w-full overflow-hidden [mask-image:linear-gradient(to_bottom,transparent,black_12%,black_88%,transparent)]',
+          'relative h-[158px] shrink-0',
+          'md:absolute md:bottom-0 md:left-0 md:mt-0 md:h-2/5 md:min-h-[200px]',
+          'md:[mask-image:linear-gradient(to_bottom,transparent,black_20%,black_80%,transparent)]'
+        )}
+      >
         <motion.div
-          className="flex w-max gap-4 touch-pan-x"
+          className="flex w-max gap-3 select-none md:gap-4"
           animate={{
             x: ['0%', `${-100 / copies}%`],
             transition: {
@@ -93,7 +101,7 @@ export function AnimatedMarqueeHero({
           {duplicatedImages.map((src, index) => (
             <div
               key={`${index}-${src}`}
-              className="hero-marquee-card relative aspect-[3/4] h-48 md:h-64 flex-shrink-0 overflow-hidden rounded-2xl bg-white shadow-[0_4px_24px_-4px_rgba(0,0,0,0.12),0_0_0_1px_rgba(0,0,0,0.06)] border border-black/[0.06]"
+              className="hero-marquee-card relative aspect-[3/4] h-36 flex-shrink-0 overflow-hidden rounded-2xl border border-black/[0.06] bg-white shadow-[0_4px_24px_-4px_rgba(0,0,0,0.12),0_0_0_1px_rgba(0,0,0,0.06)] md:h-64"
               style={{
                 rotate: `${(index % 2 === 0 ? -2 : 5)}deg`,
               }}
