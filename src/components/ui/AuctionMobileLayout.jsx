@@ -487,8 +487,8 @@ function AuctionMobileItem({
               <div className="auction-mobile-circular-timer auction-mobile-circular-timer--list-bottom">
                 <CircularTimer
                   endTime={property.test_timer_end_date}
-                  size={46}
-                  strokeWidth={3}
+                  size={54}
+                  strokeWidth={4}
                   auctionEndedLabel={t('auctionCircularEndedShort')}
                 />
               </div>
@@ -497,8 +497,8 @@ function AuctionMobileItem({
               <div className="auction-mobile-circular-timer auction-mobile-circular-timer--list-bottom">
                 <CircularTimer
                   endTime={property.buy_now_completed_at}
-                  size={46}
-                  strokeWidth={3}
+                  size={54}
+                  strokeWidth={4}
                   auctionEndedLabel={t('auctionCircularEndedShort')}
                 />
               </div>
@@ -528,21 +528,21 @@ function AuctionMobileItem({
             </div>
           )}
           {view === 'card' && redOnImage && (
-            <div className="auction-mobile-body-circular-timer">
+            <div className="auction-mobile-body-circular-timer auction-mobile-body-circular-timer--overlap">
               <CircularTimer
                 endTime={property.test_timer_end_date}
-                size={54}
-                strokeWidth={4}
+                size={62}
+                strokeWidth={5}
                 auctionEndedLabel={t('auctionCircularEndedShort')}
               />
             </div>
           )}
           {view === 'card' && buyNowEndedSealOnImage && (
-            <div className="auction-mobile-body-circular-timer">
+            <div className="auction-mobile-body-circular-timer auction-mobile-body-circular-timer--overlap">
               <CircularTimer
                 endTime={property.buy_now_completed_at}
-                size={54}
-                strokeWidth={4}
+                size={62}
+                strokeWidth={5}
                 auctionEndedLabel={t('auctionCircularEndedShort')}
               />
             </div>
