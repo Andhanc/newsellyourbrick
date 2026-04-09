@@ -89,13 +89,13 @@ const landingFolderDataBase = [
     { id: 'ip3', image: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&q=80&w=800', title: 'Без ожидания' },
     { id: 'ip4', image: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&q=80&w=800', title: 'Твёрдая цена' },
   ] },
-  { titleKey: 'folderDistressedAssets', gradient: 'linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%)', linkLabelKey: 'howWeVerify', linkHref: '/about', projects: [
+  { titleKey: 'folderDistressedAssets', gradient: 'linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%)', linkHref: '/about', projects: [
     { id: 'da1', image: 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&q=80&w=800', title: 'Арбитраж активов' },
     { id: 'da2', image: 'https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?auto=format&fit=crop&q=80&w=800', title: 'Специальные ситуации' },
     { id: 'da3', image: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&q=80&w=800', title: 'Верификация лотов' },
     { id: 'da4', image: 'https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?auto=format&fit=crop&q=80&w=800', title: 'Due Diligence' },
   ] },
-  { titleKey: 'folderDebtsStrategy', gradient: 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)', linkLabelKey: 'goTo', linkHref: '/debts', projects: [
+  { titleKey: 'folderDebtsStrategy', gradient: 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)', linkHref: '/debts', projects: [
     { id: 'db1', image: 'https://images.unsplash.com/photo-1450101499163-c8848c66ca85?auto=format&fit=crop&q=80&w=800', title: 'Покупка долга' },
     { id: 'db2', image: 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?auto=format&fit=crop&q=80&w=800', title: 'Анализ рисков' },
     { id: 'db3', image: 'https://images.unsplash.com/photo-1554224154-22dec7ec8818?auto=format&fit=crop&q=80&w=800', title: 'Структура сделки' },
@@ -392,6 +392,12 @@ function MainPage() {
   const [userPhoto, setUserPhoto] = useState(null) // Фотография пользователя
   const [isLoggedIn, setIsLoggedIn] = useState(false) // Статус авторизации
   const [hasIncompleteProfile, setHasIncompleteProfile] = useState(false) // Есть незаполненные поля профиля
+  const [isNotificationOpen, setIsNotificationOpen] = useState(false)
+  const [notifications, setNotifications] = useState([])
+  const [notificationsLoading, setNotificationsLoading] = useState(false)
+  const [notificationProperties, setNotificationProperties] = useState({})
+  const previousNotificationIds = useRef(new Set())
+  const isFirstNotificationsLoadRef = useRef(true)
   const [userPreferences, setUserPreferences] = useState({
     purpose: null, // 'для себя', 'под сдачу', 'инвестиции'
     budget: null,
@@ -826,6 +832,117 @@ function MainPage() {
     }
   }, [user, userLoaded, isLoggedIn])
 
+  useEffect(() => {
+    const propertyIds = Array.from(
+      new Set(
+        notifications
+          .map((n) => {
+            const payload =
+              typeof n?.data === 'string'
+                ? (() => {
+                    try {
+                      return JSON.parse(n.data)
+                    } catch {
+                      return null
+                    }
+                  })()
+                : n?.data
+            const id = payload?.property_id
+            return id != null ? Number(id) : null
+          })
+          .filter((id) => Number.isFinite(id) && !notificationProperties[id])
+      )
+    )
+
+    if (propertyIds.length === 0) return
+
+    let cancelled = false
+    const lang = i18n.language || 'ru'
+
+    const loadNotificationProperties = async () => {
+      const results = await Promise.all(
+        propertyIds.map(async (propertyId) => {
+          try {
+            const response = await fetch(`${API_BASE_URL}/properties/${propertyId}?lang=${lang}`)
+            if (!response.ok) return null
+
+            const json = await response.json().catch(() => null)
+            const data = json?.data
+            if (!data || !data.id) return null
+
+            const firstPhoto = Array.isArray(data.photos) ? data.photos[0] : null
+            return [
+              Number(propertyId),
+              {
+                id: Number(data.id),
+                name: data.title || data.name || null,
+                location: data.location || data.address || null,
+                image: firstPhoto || null,
+              },
+            ]
+          } catch {
+            return null
+          }
+        })
+      )
+
+      if (cancelled) return
+
+      const updates = results.filter(Boolean)
+      if (updates.length === 0) return
+
+      setNotificationProperties((prev) => {
+        const next = { ...prev }
+        updates.forEach(([id, value]) => {
+          next[id] = value
+        })
+        return next
+      })
+    }
+
+    loadNotificationProperties()
+    return () => {
+      cancelled = true
+    }
+  }, [notifications, i18n.language, notificationProperties])
+
+  const getNotificationPropertyMeta = (notification) => {
+    let payload = notification?.data
+    if (typeof payload === 'string') {
+      try {
+        payload = JSON.parse(payload)
+      } catch {
+        payload = null
+      }
+    }
+
+    const propertyId = payload?.property_id != null ? Number(payload.property_id) : null
+    const cached = propertyId != null ? notificationProperties[propertyId] : null
+
+    return {
+      id: propertyId,
+      name:
+        cached?.name ||
+        payload?.property_title ||
+        payload?.property_name ||
+        notification?.property_title ||
+        t('listingDefault'),
+      location:
+        cached?.location ||
+        payload?.property_location ||
+        payload?.location ||
+        payload?.address ||
+        notification?.property_location ||
+        '',
+      image:
+        cached?.image ||
+        payload?.property_image ||
+        payload?.image ||
+        payload?.photo ||
+        'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=400&q=80',
+    }
+  }
+
   const respondTestDriveRequest = async (notification, action) => {
     let payload = notification?.data
     if (typeof payload === 'string') {
@@ -908,11 +1025,6 @@ function MainPage() {
   const [selectedProperty, setSelectedProperty] = useState(null)
   const [showMap, setShowMap] = useState(false)
   const [selectedChat, setSelectedChat] = useState(null)
-  const [isNotificationOpen, setIsNotificationOpen] = useState(false)
-  const [notifications, setNotifications] = useState([])
-  const [notificationsLoading, setNotificationsLoading] = useState(false)
-  const previousNotificationIds = useRef(new Set())
-  const isFirstNotificationsLoadRef = useRef(true)
   const [activeCategory, setActiveCategory] = useState(null)
   const [isLoading, setIsLoading] = useState(false)
   const [filteredProperties, setFilteredProperties] = useState(null)
@@ -2677,6 +2789,7 @@ function MainPage() {
                       notificationClass = 'notification-item--success';
                     }
                     
+                    const propertyMeta = getNotificationPropertyMeta(notification)
                     return (
                     <div 
                       key={notification.id} 
@@ -2731,27 +2844,27 @@ function MainPage() {
                               <FiArrowRight size={18} />
                             </button>
                           </div>
-                        ) : notification.data && notification.data.property_id ? (
+                        ) : propertyMeta.id != null ? (
                           <div className="notification-item__property">
                             <div className="notification-item__image">
                               <img loading="lazy" 
-                                src={recommendedProperties[0]?.image || 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=400&q=80'}
-                                alt={recommendedProperties[0]?.name || 'Property'}
+                                src={propertyMeta.image}
+                                alt={propertyMeta.name || 'Property'}
                                 onError={(e) => {
                                   e.target.src = 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=400&q=80'
                                 }}
                               />
                             </div>
                             <div className="notification-item__info">
-                              <p className="notification-item__property-name">{recommendedProperties[0]?.name || 'Property'}</p>
-                              <p className="notification-item__property-location">{recommendedProperties[0]?.location || 'Location'}</p>
+                              <p className="notification-item__property-name">{propertyMeta.name}</p>
+                              <p className="notification-item__property-location">{propertyMeta.location || ' '}</p>
                               <button 
                                 type="button" 
                                 className="notification-item__button"
                                 onClick={(e) => {
                                   e.stopPropagation()
                                   setIsNotificationOpen(false)
-                                  handlePropertyClick('recommended', notification.data.property_id, false)
+                                  handlePropertyClick('recommended', propertyMeta.id, false)
                                 }}
                               >
                                 Перейти
@@ -2882,6 +2995,7 @@ function MainPage() {
                               notificationClass = 'notification-item--success';
                             }
                             
+                            const propertyMeta = getNotificationPropertyMeta(notification)
                             return (
                             <div 
                               key={notification.id} 
@@ -2936,27 +3050,27 @@ function MainPage() {
                                       <FiArrowRight size={18} />
                                     </button>
                                   </div>
-                                ) : notification.data && notification.data.property_id ? (
+                                ) : propertyMeta.id != null ? (
                                   <div className="notification-item__property">
                                     <div className="notification-item__image">
                                       <img loading="lazy" 
-                                        src={recommendedProperties[0]?.image || 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=400&q=80'}
-                                        alt={recommendedProperties[0]?.name || 'Property'}
+                                        src={propertyMeta.image}
+                                        alt={propertyMeta.name || 'Property'}
                                         onError={(e) => {
                                           e.target.src = 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=400&q=80'
                                         }}
                                       />
                                     </div>
                                     <div className="notification-item__info">
-                                      <p className="notification-item__property-name">{recommendedProperties[0]?.name || 'Property'}</p>
-                                      <p className="notification-item__property-location">{recommendedProperties[0]?.location || 'Location'}</p>
+                                      <p className="notification-item__property-name">{propertyMeta.name}</p>
+                                      <p className="notification-item__property-location">{propertyMeta.location || ' '}</p>
                                       <button 
                                         type="button" 
                                         className="notification-item__button"
                                         onClick={(e) => {
                                           e.stopPropagation()
                                           setIsNotificationOpen(false)
-                                          handlePropertyClick('recommended', notification.data.property_id, false)
+                                          handlePropertyClick('recommended', propertyMeta.id, false)
                                         }}
                                       >
                                         {t('goTo')}

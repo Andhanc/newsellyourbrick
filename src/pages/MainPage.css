@@ -254,7 +254,8 @@
 
 .notification-panel {
   position: fixed;
-  top: 0;
+  top: 12px;
+  bottom: 12px;
   left: 0;
   right: 0;
   width: 100%;
@@ -262,6 +263,7 @@
   animation: notificationSlideDown 0.3s ease-out;
   padding: 0 18px;
   box-sizing: border-box;
+  overflow: hidden;
 }
 
 @keyframes notificationSlideDown {
@@ -285,10 +287,10 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
-  /* Даем странице управлять вертикальной прокруткой,
-     чтобы не появлялся второй большой скролл внутри окна */
-  max-height: none;
-  overflow-y: visible;
+  /* Ограничиваем высоту модалки в пределах экрана;
+     список уведомлений прокручивается внутри .notification-panel__list */
+  max-height: calc(100dvh - 24px);
+  overflow: hidden;
 }
 
 .notification-panel__header {
@@ -332,6 +334,10 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 4px;
 }
 
 .notification-item {
@@ -4543,6 +4549,7 @@
     outline: none !important;
     min-width: 0;
     box-shadow: none !important;
+    appearance: none;
     -webkit-appearance: none;
     padding: 4px 0;
     line-height: 1.35;
@@ -4662,30 +4669,67 @@
 
   @media (max-width: 768px) {
     .new-header__search-field {
-      width: 94%;
-      padding: 8px 14px;
-      border-radius: 9999px;
-      gap: 8px;
+      width: 100%;
+      min-height: 56px;
+      padding: 8px 16px;
+      border-radius: 12px; /* как в десктопе */
+      gap: 10px;
+      border: 1px solid rgba(10, 186, 181, 0.32); /* постоянная легкая обводка */
+      box-shadow: 0 1px 6px rgba(10, 186, 181, 0.08);
     }
 
-    .new-header__search-input {
-      font-size: 16px;
-      border: none !important;
-      background: transparent;
-      outline: none !important;
-      box-shadow: none !important;
-      -webkit-appearance: none;
-      padding: 6px 0;
+    .new-header__search-field:focus-within {
+      border-color: rgba(10, 186, 181, 0.42);
+      box-shadow: 0 1px 8px rgba(10, 186, 181, 0.12);
+    }
+
+    .new-header__search-field input.new-header__search-input {
+      all: unset;
+      flex: 1;
+      min-width: 0;
+      font-size: 15px;
+      font-weight: 400;
+      color: #111827;
       line-height: 1.35;
-    }
-
-    .new-header__search-input:focus-visible {
+      padding: 4px 0;
+      caret-color: #111827;
+      background: transparent;
+      border: 0 !important;
       outline: none !important;
       box-shadow: none !important;
+      appearance: none;
+      -webkit-appearance: none;
+    }
+
+    .new-header__search-field input.new-header__search-input::placeholder {
+      color: #999;
+    }
+
+    .new-header__search-field input.new-header__search-input:focus,
+    .new-header__search-field input.new-header__search-input:focus-visible,
+    .new-header__search-field input.new-header__search-input:active {
+      border: 0 !important;
+      outline: none !important;
+      box-shadow: none !important;
+      outline-color: transparent !important;
     }
 
     .new-header__search-wrapper {
       width: 100%;
+      max-width: 100%;
+    }
+
+    .new-header__search-icon {
+      width: 20px;
+      height: 20px;
+      align-self: center;
+      margin: 0;
+      transform: none;
+    }
+
+    .new-header__search-close {
+      width: 28px;
+      height: 28px;
     }
 
     .new-header__search-results {
@@ -5013,15 +5057,20 @@
     justify-content: center;
   }
 
-  /* Иконка профиля: больше, без заднего фона */
+  /* Профиль на мобилке: как на десктопе (аватар/фото в круге) */
   .new-header__user-btn {
     background: transparent !important;
     box-shadow: none !important;
   }
 
   .new-header__user-btn--avatar {
-    width: 36px !important;
-    height: 36px !important;
+    width: 40px !important;
+    height: 40px !important;
+    min-width: 40px !important;
+    min-height: 40px !important;
+    max-width: 40px !important;
+    max-height: 40px !important;
+    aspect-ratio: 1 / 1;
     padding: 0 !important;
     border-radius: 50% !important;
     overflow: hidden !important;
@@ -5030,10 +5079,10 @@
   }
 
   .new-header__avatar-img {
-    width: 36px !important;
-    height: 36px !important;
-    max-width: 36px !important;
-    max-height: 36px !important;
+    width: 100% !important;
+    height: 100% !important;
+    max-width: 100% !important;
+    max-height: 100% !important;
     object-fit: cover;
     border-radius: 50%;
     display: block;
@@ -5041,10 +5090,19 @@
   }
 
   .new-header__avatar-placeholder {
-    width: 36px;
-    height: 36px;
-    background: transparent !important;
-    color: #111827;
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    min-height: 40px;
+    max-width: 40px;
+    max-height: 40px;
+    aspect-ratio: 1 / 1;
+    background: linear-gradient(135deg, #0ABAB5 0%, #089a95 100%) !important;
+    color: #ffffff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
   .new-header__user-btn svg {

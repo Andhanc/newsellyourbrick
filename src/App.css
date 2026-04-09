@@ -62,6 +62,35 @@
   display: none; 
 }
 
+/* Маршрут калькулятора: единый скролл только на .app-layout */
+.app-layout.app-layout--calculator-single-scroll {
+  overflow-y: auto !important;
+}
+
+.app-layout.app-layout--calculator-single-scroll .app-layout__content,
+.app-layout.app-layout--calculator-single-scroll .investment-calculator-page,
+.app-layout.app-layout--calculator-single-scroll .calculator-container {
+  overflow: visible !important;
+  max-height: none !important;
+  height: auto !important;
+}
+
+/* Маршрут добавления/редактирования объекта: единый скролл только на .app-layout */
+.app-layout.app-layout--add-property-single-scroll {
+  overflow-y: auto !important;
+}
+
+.app-layout.app-layout--add-property-single-scroll .app-layout__content,
+.app-layout.app-layout--add-property-single-scroll .add-property-page,
+.app-layout.app-layout--add-property-single-scroll .add-property-container,
+.app-layout.app-layout--add-property-single-scroll .add-property-form,
+.app-layout.app-layout--add-property-single-scroll .property-price-screen,
+.app-layout.app-layout--add-property-single-scroll .property-price-main {
+  overflow: visible !important;
+  max-height: none !important;
+  height: auto !important;
+}
+
 /* Выбранные маршруты (главная, аукцион, профиль и т.д.): без pinch и двойного тапа для зума */
 html.main-page-no-zoom,
 body.main-page-no-zoom {

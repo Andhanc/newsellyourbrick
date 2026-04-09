@@ -3,9 +3,22 @@
   background: linear-gradient(160deg, #0a0e27 0%, #12162e 35%, #1a1f3a 70%, #0f1429 100%);
   padding-bottom: 4rem;
   position: relative;
-  overflow-x: clip;
-  overflow-y: visible;
-  overscroll-behavior-y: auto;
+  /* Принудительно отключаем локальный скролл у контейнера страницы. */
+  overflow: visible !important;
+  overscroll-behavior: auto;
+}
+
+/* На странице калькулятора не создаем локальные вертикальные скроллы —
+   прокрутка должна идти только через глобальный контейнер приложения. */
+.investment-calculator-page,
+.calculator-container,
+.chart-section,
+.parameters-section,
+.expandable-section,
+.expandable-content {
+  overflow: visible;
+  max-height: none;
+  height: auto;
 }
 
 .investment-calculator-page::before {

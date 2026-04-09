@@ -3469,6 +3469,18 @@ const AddProperty = ({
     }
   }, [isEditMode, location.state?.openListingFeeModal, location.pathname, navigate])
 
+  // Единый скролл для страницы добавления объекта:
+  // прокрутка должна идти через глобальный .app-layout, без локального скролла блока формы.
+  useEffect(() => {
+    const appLayoutEl = document.querySelector('.app-layout')
+    if (!appLayoutEl) return undefined
+
+    appLayoutEl.classList.add('app-layout--add-property-single-scroll')
+    return () => {
+      appLayoutEl.classList.remove('app-layout--add-property-single-scroll')
+    }
+  }, [])
+
   // Обработчик drag and drop для фотографий
   const [isDragging, setIsDragging] = useState(false)
 

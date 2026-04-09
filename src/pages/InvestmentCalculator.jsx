@@ -67,6 +67,17 @@ const InvestmentCalculator = () => {
     fetchMarketData();
   }, []);
 
+  // На странице калькулятора должен работать только один глобальный скролл (.app-layout).
+  useEffect(() => {
+    const appLayoutEl = document.querySelector('.app-layout');
+    if (!appLayoutEl) return undefined;
+
+    appLayoutEl.classList.add('app-layout--calculator-single-scroll');
+    return () => {
+      appLayoutEl.classList.remove('app-layout--calculator-single-scroll');
+    };
+  }, []);
+
   const fetchMarketData = async () => {
     try {
       setIsLoading(true);

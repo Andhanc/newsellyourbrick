@@ -152,6 +152,7 @@ const Shares = () => {
               const isSoldOut = obj.sharesSold >= obj.totalShares
               const total = Math.max(1, Number(obj.totalShares) || 1)
               const sold = Math.min(obj.sharesSold || 0, total)
+              const remaining = Math.max(total - sold, 0)
               return (
               <article
                 key={obj.id}
@@ -186,7 +187,7 @@ const Shares = () => {
                     aria-hidden
                   >
                     {!isSoldOut && soldPercent > 0 && (
-                      <span className="share-card__sold-percent">{t('sharesPercentSold', { percent: soldPercent })}</span>
+                      <span className="share-card__sold-percent">{t('sharesRemainingCount', { remaining })}</span>
                     )}
                   </div>
                   {isSoldOut && (
@@ -211,7 +212,7 @@ const Shares = () => {
                   </div>
                   <div className="share-card__footer">
                     <span className="share-card__sold">
-                      {isSoldOut ? t('sharesAllSold') : t('sharesSoldCount', { sold: obj.sharesSold, total: obj.totalShares })}
+                      {isSoldOut ? t('sharesAllSold') : t('sharesSoldCount', { sold, total })}
                     </span>
                   </div>
                 </div>
