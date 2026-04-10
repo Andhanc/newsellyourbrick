@@ -80,7 +80,7 @@
 }
 
 .circular-timer--compact .circular-timer-time {
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 700;
   letter-spacing: 0;
   line-height: 1.05;
@@ -99,30 +99,8 @@
   fill: #64748b !important;
 }
 
-/* Упрощённые обводки вместо градиентной «3D» окантовки */
-.circular-timer--compact .circular-timer-bg {
-  stroke: rgba(255, 255, 255, 0.35) !important;
-  opacity: 0.45;
-}
-
-.circular-timer--compact .circular-timer-progress {
-  stroke: rgba(255, 255, 255, 0.45) !important;
-}
-
-.circular-timer--compact .circular-timer-red-progress {
-  stroke: #fca5a5 !important;
-}
-
-.circular-timer--compact.circular-timer--leader .circular-timer-red-progress {
-  stroke: #6ee7b7 !important;
-}
-
-.circular-timer--compact.circular-timer--ended .circular-timer-bg,
-.circular-timer--compact.circular-timer--ended .circular-timer-progress,
-.circular-timer--compact.circular-timer--ended .circular-timer-red-progress {
-  stroke: #94a3b8 !important;
-  opacity: 0.55;
-}
+/* Для compact не переопределяем stroke колец:
+   используется тот же SVG-стиль/прогресс, что и на странице объекта. */
 
 .circular-timer--compact .circular-timer-flag {
   font-size: 18px;
@@ -156,8 +134,13 @@
 }
 
 .circular-timer--compact .circular-timer-time--ended {
-  font-size: 8px;
-  line-height: 1.1;
+  font-size: 7px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0;
+  max-width: 84%;
+  white-space: nowrap;
+  transform: translateX(-2px);
 }
 
 .circular-timer--ended:hover {

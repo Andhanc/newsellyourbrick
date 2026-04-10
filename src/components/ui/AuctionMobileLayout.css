@@ -522,12 +522,12 @@
 }
 
 .auction-mobile-image-wrap .property-timer.property-timer--auction-mobile .time-value {
-  font-size: 10px !important;
+  font-size: 13px !important;
   font-weight: 800;
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.03em;
   line-height: 1 !important;
-  color: #f8fafc !important;
+  color: #16a34a !important;
 }
 
 .auction-mobile-image-wrap .property-timer.property-timer--auction-mobile .time-label {
@@ -632,13 +632,13 @@
 
 /* Акцент цифр по фазам аукциона (на тёмном фоне — светлые оттенки) */
 .auction-mobile-image-wrap .property-timer.timer-long:not(.timer-critical) .time-value {
-  color: #bbf7d0 !important;
+  color: #16a34a !important;
 }
 .auction-mobile-image-wrap .property-timer.timer-medium:not(.timer-critical) .time-value {
-  color: #fde68a !important;
+  color: #ca8a04 !important;
 }
 .auction-mobile-image-wrap .property-timer.timer-short:not(.timer-critical) .time-value {
-  color: #fecaca !important;
+  color: #dc2626 !important;
 }
 
 .auction-mobile-item__body .property-timer.property-timer--auction-mobile-inline.timer-long:not(.timer-critical) .time-value {

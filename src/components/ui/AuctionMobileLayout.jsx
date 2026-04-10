@@ -367,6 +367,14 @@ function AuctionMobileItem({
       property.test_drive === true)
   const isReserved = property.is_reserved === true || property.is_reserved === 1
   const showBuyNow = hasBuyNowOption(property)
+  const testTimerDurationMs =
+    property.test_timer_duration != null && property.test_timer_duration !== ''
+      ? Number(property.test_timer_duration)
+      : null
+  const normalizedTestTimerDuration =
+    testTimerDurationMs != null && Number.isFinite(testTimerDurationMs) && testTimerDurationMs > 0
+      ? testTimerDurationMs
+      : null
 
   const isTimerExpired = isEffectiveAuctionTimerExpired(property)
   const buyNowWinnerId = property.buy_now_winner_user_id
@@ -489,6 +497,8 @@ function AuctionMobileItem({
                   endTime={property.test_timer_end_date}
                   size={54}
                   strokeWidth={4}
+                  originalDuration={normalizedTestTimerDuration}
+                  progressKey={`auction-mobile:${property.id}`}
                   auctionEndedLabel={t('auctionCircularEndedShort')}
                 />
               </div>
@@ -533,6 +543,8 @@ function AuctionMobileItem({
                 endTime={property.test_timer_end_date}
                 size={62}
                 strokeWidth={5}
+                originalDuration={normalizedTestTimerDuration}
+                progressKey={`auction-mobile:${property.id}`}
                 auctionEndedLabel={t('auctionCircularEndedShort')}
               />
             </div>

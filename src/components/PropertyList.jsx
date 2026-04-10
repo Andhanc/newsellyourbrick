@@ -463,6 +463,14 @@ const PropertyList = ({
                   (property.is_reserved === true || property.is_reserved === 1) &&
                   (!reservedUntilDate || reservedUntilDate > new Date())
                 const hasBuyNowPrice = hasBuyNowOption(property)
+                const testTimerDurationMs =
+                  property.test_timer_duration != null && property.test_timer_duration !== ''
+                    ? Number(property.test_timer_duration)
+                    : null
+                const normalizedTestTimerDuration =
+                  testTimerDurationMs != null && Number.isFinite(testTimerDurationMs) && testTimerDurationMs > 0
+                    ? testTimerDurationMs
+                    : null
                 
                 const isTimerExpired = isEffectiveAuctionTimerExpired(property)
                 const buyNowWinnerId = property.buy_now_winner_user_id
@@ -487,6 +495,8 @@ const PropertyList = ({
                       endTime={property.test_timer_end_date} 
                       size={circularSize} 
                       strokeWidth={isMobile ? 4 : 6}
+                      originalDuration={normalizedTestTimerDuration}
+                      progressKey={`property-list:${property.id}`}
                       auctionEndedLabel={t(
                         circularSize <= 72
                           ? 'auctionCircularEndedShort'
