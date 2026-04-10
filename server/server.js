@@ -11086,11 +11086,65 @@ app.post('/api/bids', async (req, res) => {
       console.warn('Не удалось обновить auction_minimum_bid:', updateError.message);
     }
 
+    /** Тестовый круговой таймер: продлеваем на сервере сразу после ставки (как в POST /test-timer),
+     * чтобы все клиенты получили новое время через SSE без задержки и гонки «ставка → отдельный POST». */
+    let extendedTestTimer = null;
+    try {
+      const ttDur = property.test_timer_duration != null ? Number(property.test_timer_duration) : NaN;
+      const hasTestTimerRow =
+        property.test_timer_end_date &&
+        String(property.test_timer_end_date).trim() !== '' &&
+        Number.isFinite(ttDur) &&
+        ttDur > 0 &&
+        (tableName === 'properties_apartments' || tableName === 'properties_houses');
+      const isAuctionForTimer =
+        property.is_auction === 1 ||
+        property.is_auction === true ||
+        property.is_auction === '1';
+      if (isAuctionForTimer && hasTestTimerRow) {
+        const newEndDate = new Date(Date.now() + ttDur);
+        const iso = newEndDate.toISOString();
+        const updatedAt = new Date().toISOString();
+        if (tableName === 'properties_apartments') {
+          await prisma.properties_apartments.update({
+            where: { id: propertyIdNum },
+            data: {
+              test_timer_end_date: iso,
+              test_timer_duration: ttDur,
+              updated_at: updatedAt,
+            },
+          });
+        } else {
+          await prisma.properties_houses.update({
+            where: { id: propertyIdNum },
+            data: {
+              test_timer_end_date: iso,
+              test_timer_duration: ttDur,
+              updated_at: updatedAt,
+            },
+          });
+        }
+        extendedTestTimer = { test_timer_end_date: iso, test_timer_duration: ttDur };
+        broadcastAuctionSseEvent({
+          type: 'test_timer_update',
+          property: {
+            id: propertyIdNum,
+            property_type: property.property_type ?? null,
+            test_timer_end_date: iso,
+            test_timer_duration: ttDur,
+          },
+        });
+      }
+    } catch (timerExtErr) {
+      console.warn('⚠️ Продление тестового таймера после ставки не выполнено:', timerExtErr.message);
+    }
+
     broadcastPropertyBidEvent(propertyIdNum, {
       type: 'bid_placed',
       property_id: propertyIdNum,
       bid_amount: bidAmountNum,
       minimum_bid: newMinimumBid,
+      ...(extendedTestTimer || {}),
     });
     
     res.json({
@@ -11098,7 +11152,8 @@ app.post('/api/bids', async (req, res) => {
       data: {
         bid_id: result.lastInsertRowid,
         bid_amount: parseFloat(bid_amount),
-        minimum_bid: newMinimumBid
+        minimum_bid: newMinimumBid,
+        ...(extendedTestTimer ? extendedTestTimer : {}),
       }
     });
   } catch (error) {

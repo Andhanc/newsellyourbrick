@@ -939,6 +939,15 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
           if (typeof event.data === 'string' && event.data.startsWith(':')) return
           const data = JSON.parse(event.data)
           if (data.type === 'bid_placed' && Number(data.property_id) === Number(displayProperty.id)) {
+            if (data.test_timer_end_date) {
+              setProperty((prev) => ({
+                ...prev,
+                test_timer_end_date: data.test_timer_end_date,
+                test_timer_duration:
+                  data.test_timer_duration != null ? data.test_timer_duration : prev.test_timer_duration,
+              }))
+              setTimerExpired(false)
+            }
             window.dispatchEvent(new Event('property-bid-sse'))
             window.dispatchEvent(
               new CustomEvent('syb-testdrive-refresh', { detail: { propertyId: displayProperty.id } })
@@ -967,6 +976,70 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
       cancelled = true
       if (reconnectTimer) clearTimeout(reconnectTimer)
       if (es) es.close()
+    }
+  }, [displayProperty.id, isAuctionProperty])
+
+  // Тот же канал, что на главной /auction: админка и сервер пушат test_timer_update — подтягиваем без опроса.
+  useEffect(() => {
+    if (!displayProperty?.id || !isAuctionProperty) return
+
+    let eventSource = null
+    let reconnectTimer = null
+    let cancelled = false
+
+    const connect = async () => {
+      const base = await getApiBaseUrl()
+      if (cancelled) return
+      const url = base.startsWith('http')
+        ? `${base.replace(/\/$/, '')}/events/auction-updates`
+        : `${window.location.origin}${base.replace(/\/$/, '')}/events/auction-updates`
+      eventSource = new EventSource(url)
+      eventSource.onopen = () => {
+        if (reconnectTimer) {
+          clearTimeout(reconnectTimer)
+          reconnectTimer = null
+        }
+      }
+      eventSource.onmessage = (event) => {
+        try {
+          if (typeof event.data === 'string' && event.data.startsWith(':')) return
+          const data = JSON.parse(event.data)
+          if (data.type !== 'test_timer_update' || !data.property) return
+          const patch = data.property
+          if (Number(patch.id) !== Number(displayProperty.id)) return
+          const cleared = patch.test_timer_end_date == null || patch.test_timer_end_date === ''
+          setProperty((prev) => ({
+            ...prev,
+            test_timer_end_date: cleared ? null : patch.test_timer_end_date,
+            test_timer_duration:
+              patch.test_timer_duration != null
+                ? patch.test_timer_duration
+                : cleared
+                  ? null
+                  : prev.test_timer_duration,
+          }))
+          if (!cleared) setTimerExpired(false)
+        } catch (_) {}
+      }
+      eventSource.onerror = () => {
+        if (cancelled) return
+        if (eventSource) {
+          eventSource.close()
+          eventSource = null
+        }
+        if (reconnectTimer) return
+        reconnectTimer = setTimeout(() => {
+          reconnectTimer = null
+          void connect()
+        }, 3000)
+      }
+    }
+
+    void connect()
+    return () => {
+      cancelled = true
+      if (reconnectTimer) clearTimeout(reconnectTimer)
+      if (eventSource) eventSource.close()
     }
   }, [displayProperty.id, isAuctionProperty])
 
@@ -2012,51 +2085,59 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
         const timerDuration = originalTestTimerDuration
         const hasTestTimer = !!(displayProperty.test_timer_end_date && timerDuration !== null)
 
-        void (async () => {
-          if (!hasTestTimer) return
-          console.log('🔄 Сброс тестового таймера до исходного значения (фон)')
-          try {
-            const now = new Date()
-            const newEndDate = new Date(now.getTime() + timerDuration)
-            const resetResponse = await fetch(`${API_BASE_URL}/properties/${pid}/test-timer`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                test_timer_end_date: newEndDate.toISOString(),
-                test_timer_duration: timerDuration,
-              }),
-            })
-            if (!resetResponse.ok) {
-              const errorData = await resetResponse.json().catch(() => ({}))
-              console.error('❌ Ошибка при сбросе таймера на сервере:', errorData)
-              return
-            }
-            const resetData = await resetResponse.json()
-            if (!resetData.success) return
-            console.log('✅ Тестовый таймер сброшен на сервере до исходного значения')
-            setTimerExpired(false)
+        // Сервер продлевает тестовый таймер в POST /api/bids и возвращает новые даты — без второго запроса и без задержки у других пользователей.
+        if (data.data?.test_timer_end_date) {
+          setProperty((prev) => ({
+            ...prev,
+            test_timer_end_date: data.data.test_timer_end_date,
+            test_timer_duration:
+              data.data.test_timer_duration != null ? data.data.test_timer_duration : prev.test_timer_duration,
+          }))
+          setTimerExpired(false)
+        } else if (hasTestTimer) {
+          void (async () => {
             try {
-              const propResponse = await fetch(`${API_BASE_URL}/properties/${pid}?lang=${lang}`)
-              if (!propResponse.ok) return
-              const propData = await propResponse.json()
-              if (propData.success && propData.data) {
-                const updatedProp = propData.data
-                setProperty((prev) => ({
-                  ...prev,
-                  test_timer_end_date:
-                    updatedProp.test_timer_end_date && String(updatedProp.test_timer_end_date).trim() !== ''
-                      ? updatedProp.test_timer_end_date
-                      : prev.test_timer_end_date,
-                  test_timer_duration: updatedProp.test_timer_duration || prev.test_timer_duration,
-                }))
+              const now = new Date()
+              const newEndDate = new Date(now.getTime() + timerDuration)
+              const resetResponse = await fetch(`${API_BASE_URL}/properties/${pid}/test-timer`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  test_timer_end_date: newEndDate.toISOString(),
+                  test_timer_duration: timerDuration,
+                }),
+              })
+              if (!resetResponse.ok) {
+                const errorData = await resetResponse.json().catch(() => ({}))
+                console.error('❌ Ошибка при сбросе таймера на сервере:', errorData)
+                return
               }
-            } catch (propError) {
-              console.error('❌ Ошибка при обновлении данных объекта:', propError)
+              const resetData = await resetResponse.json()
+              if (!resetData.success) return
+              setTimerExpired(false)
+              try {
+                const propResponse = await fetch(`${API_BASE_URL}/properties/${pid}?lang=${lang}`)
+                if (!propResponse.ok) return
+                const propData = await propResponse.json()
+                if (propData.success && propData.data) {
+                  const updatedProp = propData.data
+                  setProperty((prev) => ({
+                    ...prev,
+                    test_timer_end_date:
+                      updatedProp.test_timer_end_date && String(updatedProp.test_timer_end_date).trim() !== ''
+                        ? updatedProp.test_timer_end_date
+                        : prev.test_timer_end_date,
+                    test_timer_duration: updatedProp.test_timer_duration || prev.test_timer_duration,
+                  }))
+                }
+              } catch (propError) {
+                console.error('❌ Ошибка при обновлении данных объекта:', propError)
+              }
+            } catch (resetError) {
+              console.error('❌ Ошибка при сбросе таймера:', resetError)
             }
-          } catch (resetError) {
-            console.error('❌ Ошибка при сбросе таймера:', resetError)
-          }
-        })()
+          })()
+        }
         
         // Сохраняем ставку пользователя для проверки перебития
         setUserLastBid(amount)
