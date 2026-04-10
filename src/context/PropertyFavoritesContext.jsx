@@ -9,6 +9,7 @@ import {
 import { useUser } from '@clerk/clerk-react'
 import { isAuthenticated } from '../services/authService'
 import { getApiBaseUrl } from '../utils/apiConfig'
+import { fetchUserFavorites, invalidateUserFavoritesCache } from '../utils/favoritesApi'
 import {
   favoriteCompositeKey,
   hasDbBackedProperty,
@@ -89,17 +90,16 @@ export function PropertyFavoritesProvider({ children }) {
     setLoading(true)
     try {
       const base = await getApiBaseUrl()
-      const res = await fetch(`${base}/users/${uid}/favorites`)
-      const json = await res.json()
-      if (json.success && Array.isArray(json.data)) {
+      const rows = await fetchUserFavorites(base, uid, { ttlMs: 20000 })
+      if (Array.isArray(rows)) {
         const next = new Set()
-        json.data.forEach((row) => {
+        rows.forEach((row) => {
           if (row.property_id != null && row.property_table != null) {
             next.add(favoriteCompositeKey(row.property_id, row.property_table))
           }
         })
         setDbKeys(next)
-        setFavoriteRows(json.data)
+        setFavoriteRows(rows)
       }
     } catch (e) {
       console.warn('loadDbFavorites:', e)
@@ -166,6 +166,7 @@ export function PropertyFavoritesProvider({ children }) {
 
         try {
           const base = await getApiBaseUrl()
+          invalidateUserFavoritesCache(base, uid)
           const body = JSON.stringify({
             property_id: property.id,
             property_table: normalizePropertyTable(property.source_table),
@@ -177,6 +178,7 @@ export function PropertyFavoritesProvider({ children }) {
           })
           const json = await res.json().catch(() => ({}))
           if (!res.ok || json.success === false) {
+            invalidateUserFavoritesCache(base, uid)
             setDbKeys((prev) => {
               const next = new Set(prev)
               if (wasLiked) next.add(key)
@@ -187,6 +189,8 @@ export function PropertyFavoritesProvider({ children }) {
             return false
           }
         } catch (e) {
+          const base = await getApiBaseUrl().catch(() => '/api')
+          invalidateUserFavoritesCache(base, uid)
           setDbKeys((prev) => {
             const next = new Set(prev)
             if (wasLiked) next.add(key)

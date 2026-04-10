@@ -38,6 +38,8 @@ import CountrySelect, { countries as countryList } from '../components/CountrySe
 import { getUserData, saveUserData, logout, clearUserData, CLERK_DB_USER_SYNCED } from '../services/authService'
 import { showNotification } from '../utils/toastHelper'
 import { showToast } from '../components/ToastContainer'
+import { fetchVerificationStatus } from '../utils/verificationStatusApi'
+import { fetchUserById } from '../utils/usersApi'
 import '../components/PropertyList.css'
 import './MainPage.css'
 import './OwnerDashboard.css'
@@ -219,24 +221,19 @@ const OwnerDashboard = () => {
           const dbUserId = localStorage.getItem('userId')
           if (!dbUserId || !/^\d+$/.test(dbUserId)) return
           try {
-            const response = await fetch(`${API_BASE_URL}/users/${dbUserId}`)
-            if (response.ok) {
-              const result = await response.json()
-              if (result.success && result.data) {
-                const dbUser = result.data
-                // Находим флаг страны
-                const selectedCountry = countryList.find(c => c.name === dbUser.country)
-                setOwnerProfile(prev => ({
-                  ...prev,
-                  firstName: prev.firstName || dbUser.first_name || '',
-                  lastName: prev.lastName || dbUser.last_name || '',
-                  email: prev.email || dbUser.email || '',
-                  phone: prev.phone || dbUser.phone_number || '',
-                  country: prev.country || dbUser.country || '',
-                  countryFlag: selectedCountry ? selectedCountry.flag : prev.countryFlag || ''
-                }))
-              }
-            }
+            const dbUser = await fetchUserById(API_BASE_URL, dbUserId)
+            if (!dbUser) return
+            // Находим флаг страны
+            const selectedCountry = countryList.find(c => c.name === dbUser.country)
+            setOwnerProfile(prev => ({
+              ...prev,
+              firstName: prev.firstName || dbUser.first_name || '',
+              lastName: prev.lastName || dbUser.last_name || '',
+              email: prev.email || dbUser.email || '',
+              phone: prev.phone || dbUser.phone_number || '',
+              country: prev.country || dbUser.country || '',
+              countryFlag: selectedCountry ? selectedCountry.flag : prev.countryFlag || ''
+            }))
           } catch (error) {
             console.warn('⚠️ Не удалось загрузить данные владельца из БД:', error)
           }
@@ -558,31 +555,30 @@ const OwnerDashboard = () => {
   const loadVerificationStatus = async (userId, isStatusUpdate = false) => {
     if (!userId) return
     try {
-      const response = await fetch(`${API_BASE_URL}/users/${userId}/verification-status`)
-      if (response.ok) {
-        const result = await response.json()
-        if (result.success && result.data) {
-          const status = result.data
-          const wasVerified = previousVerificationStatus.current
-          const isNowVerified = status.isVerified
-          
-          setVerificationStatus(status)
-          
-          // Показываем уведомление только если:
-          // 1. Статус изменился с неверифицированного на верифицированный (при событии обновления)
-          // 2. Это означает, что администратор только что одобрил пользователя
-          if (isStatusUpdate && isNowVerified && !wasVerified) {
-            setShowVerificationSuccess(true)
-            // Автоматически скрываем уведомление через 5 секунд
-            setTimeout(() => {
-              setShowVerificationSuccess(false)
-            }, 5000)
-          }
-          
-          // Обновляем предыдущий статус
-          previousVerificationStatus.current = isNowVerified
-        }
+      const status = await fetchVerificationStatus(API_BASE_URL, userId, {
+        ttlMs: 20000,
+        force: isStatusUpdate,
+      })
+      if (!status) return
+
+      const wasVerified = previousVerificationStatus.current
+      const isNowVerified = status.isVerified
+
+      setVerificationStatus(status)
+
+      // Показываем уведомление только если:
+      // 1. Статус изменился с неверифицированного на верифицированный (при событии обновления)
+      // 2. Это означает, что администратор только что одобрил пользователя
+      if (isStatusUpdate && isNowVerified && !wasVerified) {
+        setShowVerificationSuccess(true)
+        // Автоматически скрываем уведомление через 5 секунд
+        setTimeout(() => {
+          setShowVerificationSuccess(false)
+        }, 5000)
       }
+
+      // Обновляем предыдущий статус
+      previousVerificationStatus.current = isNowVerified
     } catch (error) {
       console.error('Ошибка загрузки статуса верификации:', error)
     }
@@ -1044,11 +1040,8 @@ const OwnerDashboard = () => {
     }
 
     try {
-      const response = await fetch(`${API_BASE_URL}/users/${effectiveUserId}`)
-      if (response.ok) {
-        const result = await response.json()
-        if (result.success && result.data) {
-          const userData = result.data
+      const userData = await fetchUserById(API_BASE_URL, effectiveUserId)
+      if (userData) {
           const fields = []
           
           if (!userData.first_name || userData.first_name.trim() === '') {
@@ -1074,7 +1067,6 @@ const OwnerDashboard = () => {
           }
           
           return true
-        }
       }
     } catch (error) {
       console.error('Ошибка при проверке полей профиля:', error)

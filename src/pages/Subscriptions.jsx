@@ -6,6 +6,7 @@ import VerificationToast from '../components/VerificationToast'
 import PricingCards from '../components/ui/PricingCards'
 import { startProSubscriptionCheckout, confirmCheckoutSession } from '../utils/subscriptionCheckout'
 import { showNotification } from '../utils/toastHelper'
+import { fetchVerificationStatus } from '../utils/verificationStatusApi'
 import BuyerCabinetSidebar from '../components/BuyerCabinetSidebar'
 import './Subscriptions.css'
 import './Profile.css'
@@ -81,16 +82,11 @@ const Subscriptions = () => {
     }
   }, [searchParams, setSearchParams, t])
 
-  const loadVerificationStatus = async () => {
+  const loadVerificationStatus = async (force = false) => {
     if (!userId) return
     try {
-      const response = await fetch(`${API_BASE_URL}/users/${userId}/verification-status`)
-      if (response.ok) {
-        const result = await response.json()
-        if (result.success && result.data) {
-          setVerificationStatus(result.data)
-        }
-      }
+      const status = await fetchVerificationStatus(API_BASE_URL, userId, { ttlMs: 20000, force })
+      if (status) setVerificationStatus(status)
     } catch (error) {
       console.error('Ошибка загрузки статуса верификации:', error)
     }
@@ -98,7 +94,7 @@ const Subscriptions = () => {
 
   useEffect(() => {
     const onPush = () => {
-      if (userId) loadVerificationStatus()
+      if (userId) loadVerificationStatus(true)
     }
     window.addEventListener('verification-status-update', onPush)
     return () => window.removeEventListener('verification-status-update', onPush)

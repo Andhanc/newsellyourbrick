@@ -24,6 +24,7 @@ import { ensureCanOpenProperty } from '../utils/propertyAccessGuard'
 import './Home.css'
 
 import { getApiBaseUrl } from '../utils/apiConfig'
+import { fetchUserDeposit } from '../utils/depositApi'
 import { getManagerContactButtons } from '../services/liveChatApi'
 import { getEffectiveAuctionEndTime } from '../utils/auctionReminderBounds'
 
@@ -245,12 +246,9 @@ function Home() {
       
       try {
         const API_BASE_URL = await getApiBaseUrl()
-        const response = await fetch(`${API_BASE_URL}/users/${dbUserId}/deposit`)
-        if (response.ok) {
-          const data = await response.json()
-          if (data.success) {
-            setUserDeposit(data.data.depositAmount || 0)
-          }
+        const deposit = await fetchUserDeposit(API_BASE_URL, dbUserId, { ttlMs: 15000 })
+        if (deposit && typeof deposit.depositAmount === 'number') {
+          setUserDeposit(deposit.depositAmount || 0)
         }
       } catch (error) {
         console.error('Ошибка загрузки депозита:', error)

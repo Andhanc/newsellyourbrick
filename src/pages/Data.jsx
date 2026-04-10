@@ -11,6 +11,7 @@ import CountrySelect, { countries as countryList } from '../components/CountrySe
 import VerificationToast from '../components/VerificationToast'
 import { extractPassportData } from '../services/aiService'
 import { showNotification } from '../utils/toastHelper'
+import { fetchVerificationStatus } from '../utils/verificationStatusApi'
 import './Data.css'
 import './Profile.css'
 import { useChainedAppLayoutScroll } from '../hooks/useChainedAppLayoutScroll'
@@ -616,16 +617,11 @@ const Data = () => {
     return () => clearTimeout(timer)
   }, [location.pathname, location.hash])
 
-  const loadVerificationStatus = async () => {
+  const loadVerificationStatus = async (force = false) => {
     if (!userId) return
     try {
-      const response = await fetch(`${API_BASE_URL}/users/${userId}/verification-status`)
-      if (response.ok) {
-        const result = await response.json()
-        if (result.success && result.data) {
-          setVerificationStatus(result.data)
-        }
-      }
+      const status = await fetchVerificationStatus(API_BASE_URL, userId, { ttlMs: 20000, force })
+      if (status) setVerificationStatus(status)
     } catch (error) {
       console.error('Ошибка загрузки статуса верификации:', error)
     }
@@ -633,7 +629,7 @@ const Data = () => {
 
   useEffect(() => {
     const onPush = () => {
-      if (userId) loadVerificationStatus()
+      if (userId) loadVerificationStatus(true)
     }
     window.addEventListener('verification-status-update', onPush)
     return () => window.removeEventListener('verification-status-update', onPush)

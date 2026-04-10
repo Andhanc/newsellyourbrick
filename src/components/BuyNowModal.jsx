@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { useUser } from '@clerk/clerk-react'
 import { getUserData, isAuthenticated } from '../services/authService'
 import { getApiBaseUrl } from '../utils/apiConfig'
+import { fetchUserDeposit } from '../utils/depositApi'
 import { showNotification } from '../utils/toastHelper'
 import { startPropertyReservationCheckout } from '../utils/subscriptionCheckout'
 import { hasEmailForBuyNowFlow } from '../utils/buyNowEmailGate'
@@ -89,11 +90,10 @@ const BuyNowModal = ({
     ;(async () => {
       try {
         const API_BASE_URL = await getApiBaseUrl()
-        const res = await fetch(`${API_BASE_URL}/users/${dbUserId}/deposit`)
-        if (!res.ok || cancelled) return
-        const json = await res.json()
-        if (json.success && json.data && typeof json.data.depositAmount === 'number') {
-          setWalletBalanceEur(json.data.depositAmount)
+        const deposit = await fetchUserDeposit(API_BASE_URL, dbUserId, { ttlMs: 15000 })
+        if (cancelled || !deposit) return
+        if (typeof deposit.depositAmount === 'number') {
+          setWalletBalanceEur(deposit.depositAmount)
         }
       } catch {
         setWalletBalanceEur(null)

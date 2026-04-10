@@ -10,6 +10,8 @@ import PricingCards from '../components/ui/PricingCards'
 import { startProSubscriptionCheckout } from '../utils/subscriptionCheckout'
 import { showNotification } from '../utils/toastHelper'
 import { formatBillingReasonForUi } from '../utils/formatBillingReason'
+import { fetchVerificationStatus } from '../utils/verificationStatusApi'
+import { fetchUserById } from '../utils/usersApi'
 import BuyerCabinetSidebar from '../components/BuyerCabinetSidebar'
 import { useChainedAppLayoutScroll } from '../hooks/useChainedAppLayoutScroll'
 import './Profile.css'
@@ -92,11 +94,8 @@ const Profile = () => {
     if (!userId) return
     
     try {
-      const response = await fetch(`${API_BASE_URL}/users/${userId}`)
-      if (response.ok) {
-        const data = await response.json()
-        if (data.success && data.data) {
-          const user = data.data
+      const user = await fetchUserById(API_BASE_URL, userId)
+      if (user) {
           console.log('📥 Profile: Загружены данные пользователя из БД:', {
             id: user.id,
             user_id_number: user.user_id_number,
@@ -171,7 +170,6 @@ const Profile = () => {
           }
           
           console.log('✅ Profile: profileData обновлен, userIdNumber:', user.user_id_number || 'отсутствует')
-        }
       }
     } catch (error) {
       console.error('Ошибка загрузки данных пользователя:', error)
@@ -325,16 +323,11 @@ const Profile = () => {
   }
 
   // Загружаем статус верификации
-  const loadVerificationStatus = async (userId) => {
+  const loadVerificationStatus = async (userId, force = false) => {
     if (!userId) return
     try {
-      const response = await fetch(`${API_BASE_URL}/users/${userId}/verification-status`)
-      if (response.ok) {
-        const result = await response.json()
-        if (result.success && result.data) {
-          setVerificationStatus(result.data)
-        }
-      }
+      const status = await fetchVerificationStatus(API_BASE_URL, userId, { ttlMs: 20000, force })
+      if (status) setVerificationStatus(status)
     } catch (error) {
       console.error('Ошибка загрузки статуса верификации:', error)
     }
@@ -343,7 +336,7 @@ const Profile = () => {
   useEffect(() => {
     if (!userId) return
     const onPush = () => {
-      loadVerificationStatus(userId)
+      loadVerificationStatus(userId, true)
       loadUserDocuments(userId)
     }
     window.addEventListener('verification-status-update', onPush)

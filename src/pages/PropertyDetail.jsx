@@ -8,6 +8,7 @@ import DepositButton from '../components/DepositButton'
 import { getUserData, isAuthenticated } from '../services/authService'
 import { showNotification } from '../utils/toastHelper'
 import { roleSkipsAuctionKyc } from '../utils/buyerAuctionKyc'
+import { fetchUserDeposit } from '../utils/depositApi'
 import BidOutbidNotification from '../components/BidOutbidNotification'
 import { FiX, FiLayers, FiHome, FiCheck, FiX as FiXIcon, FiLock } from 'react-icons/fi'
 import { IoLocationOutline } from 'react-icons/io5'
@@ -301,12 +302,9 @@ const PropertyDetail = () => {
     }
     
     try {
-      const response = await fetch(`${API_BASE_URL}/users/${userId}/deposit`)
-      if (response.ok) {
-        const data = await response.json()
-        if (data.success) {
-          setUserDeposit(data.data.depositAmount || 0)
-        }
+      const deposit = await fetchUserDeposit(API_BASE_URL, userId, { ttlMs: 15000 })
+      if (deposit && typeof deposit.depositAmount === 'number') {
+        setUserDeposit(deposit.depositAmount || 0)
       }
     } catch (error) {
       console.error('Ошибка загрузки депозита:', error)

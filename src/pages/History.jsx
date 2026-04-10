@@ -8,6 +8,7 @@ import WonPropertyCard from '../components/WonPropertyCard'
 import BuyNowCompletedHistoryCard from '../components/BuyNowCompletedHistoryCard'
 import BuyerCabinetSidebar from '../components/BuyerCabinetSidebar'
 import { ensureCanOpenProperty } from '../utils/propertyAccessGuard'
+import { fetchVerificationStatus } from '../utils/verificationStatusApi'
 import i18n from '../i18n/config'
 import './History.css'
 import './Profile.css'
@@ -237,7 +238,7 @@ const History = () => {
     }
   }
 
-  const loadVerificationStatus = async () => {
+  const loadVerificationStatus = async (force = false) => {
     if (!userId) return
     
     // Убеждаемся, что userId - число
@@ -248,13 +249,8 @@ const History = () => {
     }
     
     try {
-      const response = await fetch(`${API_BASE_URL}/users/${numericUserId}/verification-status`)
-      if (response.ok) {
-        const result = await response.json()
-        if (result.success && result.data) {
-          setVerificationStatus(result.data)
-        }
-      }
+      const status = await fetchVerificationStatus(API_BASE_URL, numericUserId, { ttlMs: 20000, force })
+      if (status) setVerificationStatus(status)
     } catch (error) {
       console.error('Ошибка загрузки статуса верификации:', error)
     }
@@ -262,7 +258,7 @@ const History = () => {
 
   useEffect(() => {
     const onPush = () => {
-      if (userId) loadVerificationStatus()
+      if (userId) loadVerificationStatus(true)
     }
     window.addEventListener('verification-status-update', onPush)
     return () => window.removeEventListener('verification-status-update', onPush)
