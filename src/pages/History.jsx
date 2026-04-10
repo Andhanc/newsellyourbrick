@@ -880,7 +880,7 @@ const History = () => {
 
             <section className="history-section">
               <h2 className="section-title">{t('buyerHistory_auctionBids')}</h2>
-              <div className="history-list">
+              <div className="history-list history-list--bids-grid">
                 {isLoadingBids ? (
                   <div className="empty-state">
                     <p>{t('buyerHistory_loading')}</p>

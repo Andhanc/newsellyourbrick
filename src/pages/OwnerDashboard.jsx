@@ -156,7 +156,6 @@ const OwnerDashboard = () => {
     firstName: '',
     lastName: '',
     email: '',
-    username: '',
     phone: '',
     country: '',
     countryFlag: ''
@@ -209,7 +208,6 @@ const OwnerDashboard = () => {
           firstName: firstName,
           lastName: lastName,
           email: userData.email || '',
-          username: userData.username || '',
           phone: userData.phoneFormatted || userData.phone || '',
           country: userData.country || '',
           countryFlag: userData.countryFlag || ''
@@ -233,9 +231,6 @@ const OwnerDashboard = () => {
                   firstName: prev.firstName || dbUser.first_name || '',
                   lastName: prev.lastName || dbUser.last_name || '',
                   email: prev.email || dbUser.email || '',
-                  username: (dbUser.username != null && String(dbUser.username).trim() !== '')
-                    ? dbUser.username
-                    : (prev.username || ''),
                   phone: prev.phone || dbUser.phone_number || '',
                   country: prev.country || dbUser.country || '',
                   countryFlag: selectedCountry ? selectedCountry.flag : prev.countryFlag || ''
@@ -782,7 +777,7 @@ const OwnerDashboard = () => {
   const hasUnsavedChanges = () => {
     if (!isProfileEditing || !originalProfile) return false
     
-    const fieldsToCompare = ['firstName', 'lastName', 'email', 'username', 'phone', 'country', 'countryFlag']
+    const fieldsToCompare = ['firstName', 'lastName', 'email', 'phone', 'country', 'countryFlag']
 
     return fieldsToCompare.some(field => {
       return ownerProfile[field] !== originalProfile[field]
@@ -829,7 +824,6 @@ const OwnerDashboard = () => {
         first_name: ownerProfile.firstName || null,
         last_name: ownerProfile.lastName || null,
         email: ownerProfile.email || null,
-        username: ownerProfile.username || null,
         phone_number: ownerProfile.phone || null,
         country: ownerProfile.country || null
       }
@@ -889,7 +883,6 @@ const OwnerDashboard = () => {
         firstName: ownerProfile.firstName || userData.firstName,
         lastName: ownerProfile.lastName || userData.lastName,
         email: ownerProfile.email || userData.email,
-        username: ownerProfile.username || userData.username,
         phone: ownerProfile.phone || userData.phone,
         phoneFormatted: ownerProfile.phone || userData.phoneFormatted,
         country: ownerProfile.country || userData.country,
@@ -2573,17 +2566,6 @@ const OwnerDashboard = () => {
                     value={ownerProfile.email}
                     onChange={(e) => handleProfileFieldChange('email', e.target.value)}
                     placeholder={t('ownerProfilePlaceholderEmail')}
-                    disabled={!isProfileEditing}
-                  />
-                </div>
-                <div className="owner-profile-section">
-                  <h4 className="owner-profile-section__title">{t('ownerProfileLogin')}</h4>
-                  <input
-                    type="text"
-                    className="owner-profile-section__value-input"
-                    value={ownerProfile.username}
-                    onChange={(e) => handleProfileFieldChange('username', e.target.value)}
-                    placeholder={t('ownerProfilePlaceholderLogin')}
                     disabled={!isProfileEditing}
                   />
                 </div>

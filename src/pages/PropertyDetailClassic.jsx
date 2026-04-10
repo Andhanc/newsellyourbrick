@@ -2887,7 +2887,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                 
                 return hasAdditionalInfo ? (
                   <div className="property-detail-info-block">
-                    <h3 className="property-detail-info-block__title">Дополнительные удобства</h3>
+                    <h3 className="property-detail-info-block__title">{t('propertyDetailAdditionalAmenitiesTitle')}</h3>
                     <div className="property-detail-info-block__content property-detail-info-block__content--text">
                       <p>{String(additionalInfo)}</p>
                     </div>

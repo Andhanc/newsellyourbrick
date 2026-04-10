@@ -2,7 +2,6 @@ import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useUser, useClerk, useAuth } from '@clerk/clerk-react'
-import { FaPencilAlt } from 'react-icons/fa'
 import { getUserData, saveUserData, logout, clearUserData } from '../services/authService'
 import VerificationToast from '../components/VerificationToast'
 import VerificationModal from '../components/VerificationModal'
@@ -28,7 +27,6 @@ const Profile = () => {
   const { user, isLoaded: userLoaded } = useUser()
   const { isSignedIn, isLoaded: authLoaded } = useAuth()
   const { signOut } = useClerk()
-  const [isEditing, setIsEditing] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [profileData, setProfileData] = useState({
     name: '',
@@ -48,7 +46,6 @@ const Profile = () => {
   })
   const profilePageRef = useRef(null)
   const profileMainScrollRef = useRef(null)
-  const fileInputRef = useRef(null)
   const passportInputRef = useRef(null)
   const selfieInputRef = useRef(null)
   const passportWithFaceInputRef = useRef(null)
@@ -857,110 +854,19 @@ const Profile = () => {
     console.log('Profile: profileData changed', profileData)
   }, [profileData])
 
-  const handleEdit = () => {
-    setIsEditing(true)
-  }
-
-  const handleCancel = () => {
-    setIsEditing(false)
-  }
-
-  const handleSave = async () => {
-    try {
-      // Если пользователь авторизован через Clerk, обновляем данные в Clerk
-      if (user) {
-        // Обновляем данные пользователя в Clerk
-        await user.update({
-          firstName: profileData.firstName || profileData.name.split(' ')[0] || profileData.name,
-          lastName: profileData.lastName || profileData.name.split(' ').slice(1).join(' ') || '',
-        })
-        
-        // Обновляем email если изменился
-        if (profileData.email && profileData.email !== user.primaryEmailAddress?.emailAddress) {
-          // Email обновляется через отдельный метод в Clerk
-          // Здесь можно добавить логику обновления email
-        }
-      }
-      
-      // Сохраняем данные в БД, если есть userId
-      if (userId) {
-        try {
-          const response = await fetch(`${API_BASE_URL}/users/${userId}`, {
-            method: 'PUT',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              first_name: profileData.firstName || profileData.name.split(' ')[0] || profileData.name,
-              last_name: profileData.lastName || profileData.name.split(' ').slice(1).join(' ') || '',
-              email: profileData.email || null,
-              phone_number: profileData.phone ? profileData.phone.replace(/\D/g, '') : null,
-              country: profileData.country || null,
-              address: profileData.address || null,
-              passport_series: profileData.passportSeries || null,
-              passport_number: profileData.passportNumber || null,
-              identification_number: profileData.identificationNumber || null
-            })
-          })
-          
-          if (response.ok) {
-            const data = await response.json()
-            if (data.success) {
-              console.log('✅ Данные пользователя обновлены в БД')
-            }
-          } else {
-            console.error('❌ Ошибка обновления данных в БД:', await response.text())
-          }
-        } catch (dbError) {
-          console.error('❌ Ошибка при сохранении в БД:', dbError)
-        }
-      }
-      
-      // Сохраняем данные в localStorage для совместимости
-      const userData = getUserData()
-      const updatedUserData = {
-        ...userData,
-        email: profileData.email,
-        phoneFormatted: profileData.phone,
-        picture: profileData.avatar,
-        country: profileData.country,
-        countryFlag: profileData.countryFlag
-      }
-      saveUserData(updatedUserData, userData.loginMethod || 'clerk')
-      setIsEditing(false)
-    } catch (error) {
-      console.error('Ошибка при сохранении данных:', error)
-      // В случае ошибки все равно сохраняем в localStorage
-      const userData = getUserData()
-      const updatedUserData = {
-        ...userData,
-        email: profileData.email,
-        phoneFormatted: profileData.phone,
-        picture: profileData.avatar,
-        country: profileData.country,
-        countryFlag: profileData.countryFlag
-      }
-      saveUserData(updatedUserData, userData.loginMethod || 'clerk')
-      setIsEditing(false)
-    }
-  }
-
-  const handleChange = (field, value) => {
-    setProfileData(prev => ({
-      ...prev,
-      [field]: value
-    }))
-  }
-
   const handleLogout = async () => {
     if (!window.confirm(t('buyerCabinet_logoutConfirm'))) {
       return
     }
 
+    sessionStorage.setItem('clerk_logout_in_progress', 'true')
+
     try {
       // 1. Если пользователь авторизован через Clerk — выходим из Clerk
       if (user && signOut) {
-        await signOut()
+        await signOut({
+          redirectUrl: `${window.location.origin}/`
+        })
       }
     } catch (error) {
       console.warn('⚠️ Ошибка при выходе из Clerk:', error)
@@ -972,33 +878,12 @@ const Profile = () => {
       await logout()
     } catch (error) {
       console.warn('⚠️ Ошибка при локальном выходе:', error)
+    } finally {
+      sessionStorage.removeItem('clerk_logout_in_progress')
     }
 
     // 3. Перенаправляем на главную и перезагружаем приложение
-    navigate('/')
-    setTimeout(() => {
-      window.location.reload()
-    }, 50)
-  }
-
-  const handleAvatarClick = () => {
-    if (isEditing && fileInputRef.current) {
-      fileInputRef.current.click()
-    }
-  }
-
-  const handleAvatarChange = (e) => {
-    const file = e.target.files[0]
-    if (file) {
-      const reader = new FileReader()
-      reader.onloadend = () => {
-        setProfileData(prev => ({
-          ...prev,
-          avatar: reader.result
-        }))
-      }
-      reader.readAsDataURL(file)
-    }
+    window.location.assign('/')
   }
 
   // Показываем индикатор загрузки, пока данные не загружены
@@ -1058,8 +943,7 @@ const Profile = () => {
             <div className="profile-header-top">
               <div className="profile-avatar-wrapper">
                 <div 
-                  className={`profile-avatar ${isEditing ? 'editable' : ''}`}
-                  onClick={handleAvatarClick}
+                  className="profile-avatar"
                 >
                   {profileData.avatar ? (
                     <img src={profileData.avatar} alt="Avatar" className="avatar-image" />
@@ -1076,44 +960,11 @@ const Profile = () => {
                       <path d="M30 90 Q30 75 60 75 Q90 75 90 90 L90 100 L30 100 Z" fill="white" opacity="0.9"/>
                     </svg>
                   )}
-                  {isEditing && (
-                    <div className="avatar-edit-overlay">
-                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                        <path d="M12 4V20M4 12H20" stroke="white" strokeWidth="2" strokeLinecap="round"/>
-                      </svg>
-                      <span className="avatar-edit-text">{t('buyerCabinet_changePhoto')}</span>
-                    </div>
-                  )}
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    onChange={handleAvatarChange}
-                    style={{ display: 'none' }}
-                  />
                 </div>
               </div>
               <div className="profile-info">
                 <div className="profile-name">
                   <h1>{profileData.name || t('loading')}</h1>
-                  {!isEditing ? (
-                    <button className="edit-button" onClick={handleEdit} aria-label={t('buyerCabinet_editAria')}>
-                      <FaPencilAlt size={18} />
-                    </button>
-                  ) : (
-                    <div className="edit-actions">
-                      <button className="save-button" onClick={handleSave} aria-label={t('buyerCabinet_saveAria')}>
-                        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                          <path d="M15 4.5L6.75 12.75L3 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                        </svg>
-                      </button>
-                      <button className="cancel-button" onClick={handleCancel} aria-label={t('buyerCabinet_cancelAria')}>
-                        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                          <path d="M13.5 4.5L4.5 13.5M4.5 4.5L13.5 13.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                        </svg>
-                      </button>
-                    </div>
-                  )}
                 </div>
               </div>
             </div>
@@ -1127,35 +978,12 @@ const Profile = () => {
                 </div>
                 {profileData.userIdNumber ? (
                   <div className="profile-badge profile-badge--number profile-badge-cell">
-                    <span className="profile-badge-label">{t('buyerCabinet_yourNumber')}</span>
+                    <span className="profile-badge-label">Ваш ID</span>
                     <span className="profile-badge-value">{profileData.userIdNumber}</span>
                   </div>
                 ) : (
                   <div className="profile-badge profile-badge-cell profile-badge--placeholder" aria-hidden />
                 )}
-                <div className="profile-contacts profile-contacts--inline profile-badge-cell">
-                  {profileData.email ? (
-                    <div className="contact-item profile-badge profile-badge--email">
-                      <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                        <rect x="2" y="4" width="14" height="10" rx="2" stroke="currentColor" strokeWidth="1.5"/>
-                        <path d="M2 6L9 10L16 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-                      </svg>
-                      {isEditing ? (
-                        <input
-                          type="email"
-                          className="contact-input"
-                          value={profileData.email}
-                          onChange={(e) => handleChange('email', e.target.value)}
-                          placeholder="email@example.com"
-                        />
-                      ) : (
-                        <span className="profile-badge-value">{profileData.email}</span>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="profile-badge profile-badge--email profile-badge--placeholder" aria-hidden />
-                  )}
-                </div>
               </div>
             </div>
           </div>

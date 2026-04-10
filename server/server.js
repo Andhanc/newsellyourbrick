@@ -2155,8 +2155,7 @@ function computeOwnerCabinetProfileStatus(user) {
     !!(user.last_name && String(user.last_name).trim()) &&
     !!(user.country && String(user.country).trim()) &&
     !!(user.email && String(user.email).trim()) &&
-    !!(user.phone_number && String(user.phone_number).trim()) &&
-    !!(user.username && String(user.username).trim());
+    !!(user.phone_number && String(user.phone_number).trim());
   const ownerCabinetHasPassword = !!(user.password && String(user.password).trim());
   return { ownerCabinetProfileComplete, ownerCabinetHasPassword };
 }
@@ -8093,12 +8092,13 @@ app.get('/api/properties/approved', async (req, res) => {
                 lang_code: String(lang),
               },
             },
-            select: { title: true, description: true, additional_amenities: true },
+            select: { title: true, description: true, additional_amenities: true, location: true },
           });
           if (tr) {
             if (tr.title) { prop.title = tr.title; prop.name = tr.title; }
             if (tr.description) prop.description = tr.description;
             if (tr.additional_amenities != null) prop.additional_amenities = tr.additional_amenities;
+            if (tr.location != null) prop.location = tr.location;
           }
         }
       } catch (e) {
@@ -8531,12 +8531,13 @@ app.get('/api/properties/auctions', async (req, res) => {
                 lang_code: String(lang),
               },
             },
-            select: { title: true, description: true, additional_amenities: true },
+            select: { title: true, description: true, additional_amenities: true, location: true },
           });
           if (tr) {
             if (tr.title) { prop.title = tr.title; prop.name = tr.title; }
             if (tr.description) prop.description = tr.description;
             if (tr.additional_amenities != null) prop.additional_amenities = tr.additional_amenities;
+            if (tr.location != null) prop.location = tr.location;
           }
         }
       } catch (e) {
@@ -8907,6 +8908,7 @@ app.post('/api/properties/:id/translate', async (req, res) => {
           title: data.title || '',
           description: data.description || '',
           additional_amenities: data.additional_amenities || '',
+          location: data.location || '',
           created_at: new Date().toISOString(),
         },
       });
@@ -8933,7 +8935,7 @@ app.get('/api/properties/:id/translations', async (req, res) => {
     const table = propertyTable || property.source_table || 'properties_apartments';
     const rows = await getPrisma().property_translations.findMany({
       where: { property_id: Number(id), property_table: String(table) },
-      select: { lang_code: true, title: true, description: true, additional_amenities: true, created_at: true },
+      select: { lang_code: true, title: true, description: true, additional_amenities: true, location: true, created_at: true },
       orderBy: { lang_code: 'asc' },
     });
     const byLang = {};
@@ -8942,6 +8944,7 @@ app.get('/api/properties/:id/translations', async (req, res) => {
         title: r.title,
         description: r.description,
         additional_amenities: r.additional_amenities,
+        location: r.location,
         created_at: r.created_at,
       };
     });
@@ -9582,12 +9585,13 @@ app.get('/api/properties/:id', async (req, res) => {
               lang_code: String(lang),
             },
           },
-          select: { title: true, description: true, additional_amenities: true },
+          select: { title: true, description: true, additional_amenities: true, location: true },
         });
         if (tr) {
           if (tr.title) formatted.title = tr.title;
           if (tr.description) formatted.description = tr.description;
           if (tr.additional_amenities != null) formatted.additional_amenities = tr.additional_amenities;
+          if (tr.location != null) formatted.location = tr.location;
         }
       } catch (e) {
         console.warn('GET /api/properties/:id - подстановка перевода:', e.message);
@@ -11058,9 +11062,25 @@ app.post('/api/bids', async (req, res) => {
     const newMaxBid = bidAmountNum;
     const newMinimumBid = newMaxBid + getAuctionMinBidStep(newMaxBid);
     
-    // Обновляем auction_minimum_bid в properties (для совместимости, но не используем в проверке)
+    // Обновляем только auction_minimum_bid, не трогая остальные поля объекта.
+    // Важно: propertyQueries.update ожидает полный payload и может обнулить данные при частичном апдейте.
     try {
-      await propertyQueries.update(propertyIdNum, { auction_minimum_bid: newMinimumBid });
+      if (tableName === 'properties_apartments') {
+        await prisma.properties_apartments.update({
+          where: { id: propertyIdNum },
+          data: { auction_minimum_bid: newMinimumBid, updated_at: new Date().toISOString() },
+        });
+      } else if (tableName === 'properties_houses') {
+        await prisma.properties_houses.update({
+          where: { id: propertyIdNum },
+          data: { auction_minimum_bid: newMinimumBid, updated_at: new Date().toISOString() },
+        });
+      } else {
+        await prisma.properties.update({
+          where: { id: propertyIdNum },
+          data: { auction_minimum_bid: newMinimumBid, updated_at: new Date().toISOString() },
+        });
+      }
       console.log(`✅ Обновлена минимальная ставка для объекта ${property_id}: ${newMinimumBid}`);
     } catch (updateError) {
       console.warn('Не удалось обновить auction_minimum_bid:', updateError.message);
