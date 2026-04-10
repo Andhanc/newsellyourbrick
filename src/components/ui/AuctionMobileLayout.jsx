@@ -22,6 +22,7 @@ import {
   isAuctionListingEnded,
   shouldShowCircularAuctionTimer,
 } from '@/utils/auctionReminderBounds'
+import { getPropertyCardImage } from '@/utils/propertyImage'
 import '../PropertyList.css'
 import './AuctionMobileLayout.css'
 
@@ -337,10 +338,10 @@ function AuctionMobileItem({
   const favoriteBtnRef = useRef(null)
   const [likeBurst, setLikeBurst] = useState(null)
   const propertyTitle = property.title || property.name || ''
-  const propertyImages = property.images || (property.image ? [property.image] : [])
-  const propertyImage =
-    propertyImages[0] ||
+  const propertyImage = getPropertyCardImage(
+    property,
     'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=800&q=80'
+  )
 
   const buyNowPurchaseCompleted = isBuyNowPurchaseCompleted(property)
   const effectiveAuctionEnd = getEffectiveAuctionEndTime(property)
