@@ -226,27 +226,24 @@ const Header = () => {
               }
 
               if (result.ok && result.user?.user_photo) {
-                  // Если user_photo начинается с /uploads, добавляем базовый URL
-                  const photoPath = result.user.user_photo
-                  const baseUrl = API_BASE_URL.replace('/api', '')
-                  photo = photoPath.startsWith('http') 
-                    ? photoPath 
-                    : `${baseUrl}${photoPath}`
-                  
-                  // Обновляем localStorage с фотографией
-                  const updatedUserData = {
-                    ...userData,
-                    picture: photo
-                  }
-                  localStorage.setItem('userData', JSON.stringify(updatedUserData))
+                // Если user_photo начинается с /uploads, добавляем базовый URL
+                const photoPath = result.user.user_photo
+                const baseUrl = API_BASE_URL.replace('/api', '')
+                photo = photoPath.startsWith('http')
+                  ? photoPath
+                  : `${baseUrl}${photoPath}`
+
+                // Обновляем localStorage с фотографией
+                const updatedUserData = {
+                  ...userData,
+                  picture: photo
                 }
-                if (result.ok && result.user) {
-                  setHasIncompleteProfile(checkProfileCompleteness(result.user))
-                } else {
-                  const profileIncomplete = !userData.name || (!userData.email && !userData.phone)
-                  setHasIncompleteProfile(profileIncomplete)
-                }
-              } else if (!result.ok) {
+                localStorage.setItem('userData', JSON.stringify(updatedUserData))
+              }
+
+              if (result.ok && result.user) {
+                setHasIncompleteProfile(checkProfileCompleteness(result.user))
+              } else {
                 const profileIncomplete = !userData.name || (!userData.email && !userData.phone)
                 setHasIncompleteProfile(profileIncomplete)
               }
