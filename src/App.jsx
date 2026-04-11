@@ -18,6 +18,7 @@ import { fetchUserById } from './utils/usersApi'
 import { PropertyFavoritesProvider } from './context/PropertyFavoritesContext'
 import { runDevBackendHintOnce } from './utils/devBackendHint'
 import { installReturningVisitorListeners, markUserHasVisitedSite } from './utils/visitorAuthDefault'
+import { rememberInternalRoutePath } from './utils/propertyNavigation'
 import './App.css'
 import { GlassFilterDefs } from './components/ui/GlassFilterDefs'
 import { LayoutScrollRefContext } from './context/LayoutScrollContext'
@@ -120,6 +121,15 @@ function ScrollToTop() {
     scrollMainTo(0, 0, 'instant')
   }, [location.pathname])
 
+  return null
+}
+
+/** Храним 2 последних внутренних маршрута для корректной кнопки «Назад» на странице объекта после Stripe. */
+function RouteHistoryTracker() {
+  const location = useLocation()
+  useEffect(() => {
+    rememberInternalRoutePath(`${location.pathname}${location.search || ''}`)
+  }, [location.pathname, location.search])
   return null
 }
 
@@ -387,6 +397,7 @@ function App() {
       <div className="app-shell">
       <PropertyFavoritesProvider>
       <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+      <RouteHistoryTracker />
       <ScrollToTop />
       <NumericUserIdHydration />
       <MainPageViewportLock />

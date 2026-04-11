@@ -11,6 +11,8 @@ import { showNotification } from '../utils/toastHelper'
 import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
 import { roleSkipsAuctionKyc } from '../utils/buyerAuctionKyc'
 import { fetchUserDeposit } from '../utils/depositApi'
+import { navigateToWallet } from '../utils/walletNavigation'
+import { getPropertyEntryFrom } from '../utils/propertyNavigation'
 import BidOutbidNotification from '../components/BidOutbidNotification'
 import { FiX, FiLayers, FiHome, FiCheck, FiX as FiXIcon, FiLock } from 'react-icons/fi'
 import { IoLocationOutline } from 'react-icons/io5'
@@ -767,6 +769,14 @@ const PropertyDetail = () => {
   const kycBidBlocked =
     auctionKycRequiredUi && userDeposit > 0 && auctionKycVerified === false
   const disableBidFields = reservedBlocksBid || kycBidBlocked
+  const handleBackClick = () => {
+    const from = getPropertyEntryFrom()
+    if (from) {
+      navigate(from)
+      return
+    }
+    navigate('/auction')
+  }
 
   return (
     <div className="property-detail-page">
@@ -780,7 +790,7 @@ const PropertyDetail = () => {
       {canShowDeposit() && <DepositButton amount={userDeposit} />}
       <div className="property-detail">
         <div className="detail-header">
-          <button onClick={() => navigate(-1)} className="back-button">
+          <button onClick={handleBackClick} className="back-button">
             ← Назад
           </button>
           <div className="detail-nav">
@@ -1363,7 +1373,7 @@ const PropertyDetail = () => {
         onClose={() => setIsDepositRequiredOpen(false)}
         onGoToDeposit={() => {
           setIsDepositRequiredOpen(false)
-          navigate('/wallet')
+          navigateToWallet(navigate, '/auction')
         }}
       />
     </div>

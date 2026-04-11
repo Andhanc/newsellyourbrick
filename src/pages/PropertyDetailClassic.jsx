@@ -38,6 +38,8 @@ import FlipCard from '../components/ui/FlipCard'
 import { Awards } from '@/components/ui/award'
 import TestDriveSection from '../components/TestDriveSection'
 import { getAuctionMinBidStep } from '../utils/auctionBidStep'
+import { navigateToWallet } from '../utils/walletNavigation'
+import { getPropertyEntryFrom } from '../utils/propertyNavigation'
 import { hasDbBackedProperty } from '../utils/propertyFavoriteKey'
 import {
   getEffectiveAuctionEndTime,
@@ -2367,6 +2369,19 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
     return { recipientText, dateLine }
   }, [currentLeader, t, i18n.language])
 
+  const handleBackClick = () => {
+    if (typeof onBack === 'function') {
+      onBack()
+      return
+    }
+    const from = getPropertyEntryFrom()
+    if (from) {
+      navigate(from)
+      return
+    }
+    navigate('/auction')
+  }
+
   return (
     <div className="property-detail-page-new">
       {showConfetti && (
@@ -2449,7 +2464,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
           <button
             type="button"
             className="property-detail-header__back"
-            onClick={onBack || (() => window.history.back())}
+            onClick={handleBackClick}
           >
             <FiArrowLeft size={20} />
             <span>{t('back') || 'Назад'}</span>
@@ -3780,7 +3795,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
         onClose={() => setIsDepositRequiredOpen(false)}
         onGoToDeposit={() => {
           setIsDepositRequiredOpen(false)
-          navigate('/wallet')
+          navigateToWallet(navigate, '/auction')
         }}
       />
 

@@ -563,7 +563,7 @@ const Wallet = () => {
       navigate(-1)
       return
     }
-    navigate('/')
+    navigate('/auction')
   }
 
   const handleBookNow = () => {

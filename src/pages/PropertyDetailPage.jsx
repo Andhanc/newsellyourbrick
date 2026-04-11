@@ -6,6 +6,11 @@ import PropertyDetailClassic from './PropertyDetailClassic'
 import LoginModal from '../components/LoginModal'
 import { isAuthenticated, getUserData } from '../services/authService'
 import { getEffectiveAuctionEndTime } from '../utils/auctionReminderBounds'
+import {
+  getPreviousInternalRoutePath,
+  isSafePropertyEntryPath,
+  setPropertyEntryFrom,
+} from '../utils/propertyNavigation'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
 
@@ -44,6 +49,19 @@ const PropertyDetailPage = () => {
   // Получаем объект из state (если передан из MainPage)
   const propertyFromState = location.state?.property
   const initializedFromStateRef = useRef(false)
+
+  useEffect(() => {
+    const fromState = location.state?.from
+    if (isSafePropertyEntryPath(fromState)) {
+      setPropertyEntryFrom(fromState)
+      return
+    }
+    const currentPath = `${location.pathname}${location.search || ''}`
+    const previousPath = getPreviousInternalRoutePath(currentPath)
+    if (isSafePropertyEntryPath(previousPath)) {
+      setPropertyEntryFrom(previousPath)
+    }
+  }, [location.pathname, location.search, location.state])
   
   useEffect(() => {
     const loadProperty = async () => {
