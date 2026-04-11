@@ -601,15 +601,16 @@ const LoginModal = ({ isOpen, onClose }) => {
     window.location.href = '/profile'
   }
 
-  const toggleMode = () => {
-    setIsLogin(!isLogin)
+  /** Переключение «войти» / «зарегистрироваться» с очисткой формы */
+  const setAuthMode = (nextIsLogin) => {
+    if (nextIsLogin === isLogin) return
+    setIsLogin(nextIsLogin)
     setFormData({
       email: '',
       password: '',
       name: '',
       confirmPassword: ''
     })
-    // При переключении режима сбрасываем роль на покупателя
     setUserRole('buyer')
   }
 
@@ -640,7 +641,7 @@ const LoginModal = ({ isOpen, onClose }) => {
         </button>
 
         <div className="login-modal__header">
-          <h2 className="login-modal__title">
+          <h2 className="login-modal__title" id="login-modal-heading">
             {isLogin ? t('loginTitle') : t('registerTitle')}
           </h2>
           <p className="login-modal__subtitle">
@@ -650,6 +651,42 @@ const LoginModal = ({ isOpen, onClose }) => {
           </p>
         </div>
 
+        <div
+          className="login-modal__mode-switch"
+          role="tablist"
+          aria-label={t('loginModalModeSwitchAria')}
+        >
+          <button
+            type="button"
+            role="tab"
+            id="login-modal-tab-login"
+            aria-selected={isLogin}
+            aria-controls="login-modal-panel"
+            className={`login-modal__mode-tab${isLogin ? ' login-modal__mode-tab--active' : ''}`}
+            onClick={() => setAuthMode(true)}
+            disabled={isLoading}
+          >
+            {t('loginTitle')}
+          </button>
+          <button
+            type="button"
+            role="tab"
+            id="login-modal-tab-register"
+            aria-selected={!isLogin}
+            aria-controls="login-modal-panel"
+            className={`login-modal__mode-tab${!isLogin ? ' login-modal__mode-tab--active' : ''}`}
+            onClick={() => setAuthMode(false)}
+            disabled={isLoading}
+          >
+            {t('registerTitle')}
+          </button>
+        </div>
+
+        <div
+          id="login-modal-panel"
+          role="tabpanel"
+          aria-labelledby={isLogin ? 'login-modal-tab-login' : 'login-modal-tab-register'}
+        >
         {!isLogin && (
           <div className="login-modal__role-section">
             <span className="login-modal__role-label">{t('loginAsLabel')}</span>
@@ -888,11 +925,12 @@ const LoginModal = ({ isOpen, onClose }) => {
           </span>
           <button 
             type="button"
-            className="login-modal__footer-link"
-            onClick={toggleMode}
+            className="login-modal__footer-link login-modal__footer-link--emphasis"
+            onClick={() => setAuthMode(!isLogin)}
           >
             {isLogin ? t('registerButton') : t('loginButton')}
           </button>
+        </div>
         </div>
 
             </div>

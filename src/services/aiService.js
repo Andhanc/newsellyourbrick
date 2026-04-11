@@ -675,6 +675,20 @@ export async function generateListingDescription(draftText, title = '') {
     if (!response.ok) {
       const errorText = await response.text()
       console.error(`generateListingDescription API ${response.status}:`, errorText)
+      let detail = ''
+      try {
+        const j = JSON.parse(errorText)
+        detail = String(j.detail || '')
+      } catch {
+        /* не JSON */
+      }
+      const invalidKey =
+        response.status === 401 ||
+        response.status === 403 ||
+        /invalid\s*api\s*key/i.test(detail)
+      if (invalidKey) {
+        throw new Error('GENERATE_LISTING_INVALID_API_KEY')
+      }
       throw new Error(`AI API Error: ${response.status}`)
     }
 

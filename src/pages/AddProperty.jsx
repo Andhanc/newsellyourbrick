@@ -2211,7 +2211,11 @@ const AddProperty = ({
       setShowDescriptionCompareModal(true)
     } catch (e) {
       console.error(e)
-      showNotification(t('addPropertyGenerateDescriptionError'), 'error', 5000)
+      const msg =
+        e?.message === 'GENERATE_LISTING_INVALID_API_KEY'
+          ? t('addPropertyGenerateDescriptionInvalidApiKey')
+          : t('addPropertyGenerateDescriptionError')
+      showNotification(msg, 'error', e?.message === 'GENERATE_LISTING_INVALID_API_KEY' ? 9000 : 5000)
     } finally {
       setIsGeneratingDescription(false)
     }
