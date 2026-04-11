@@ -1,10 +1,12 @@
 import { useState, useEffect, useRef } from 'react'
 import { FiX, FiExternalLink, FiTrash2 } from 'react-icons/fi'
 import ShareSignaturePad from './ShareSignaturePad'
+import { fetchUserDeposit } from '../utils/depositApi'
 import './SharePurchaseModal.css'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api'
 const POLICY_PDF_URL = '/docs/share-purchase-agreement-test.pdf'
+const WALLET_OFFSET_EUR = 3000
 
 const SharePurchaseModal = ({
   isOpen,
@@ -13,12 +15,15 @@ const SharePurchaseModal = ({
   buyCount,
   userId,
   userEmail,
+  userDeposit,
   returnPath,
 }) => {
   const [pdfOpened, setPdfOpened] = useState(false)
   const [agreed, setAgreed] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState(null)
+  const [walletBalanceEur, setWalletBalanceEur] = useState(null)
+  const [useWalletDeposit, setUseWalletDeposit] = useState(false)
   const signaturePadRef = useRef(null)
 
   useEffect(() => {
@@ -27,13 +32,36 @@ const SharePurchaseModal = ({
       setAgreed(false)
       setSubmitting(false)
       setError(null)
+      setUseWalletDeposit(false)
     }
   }, [isOpen])
+
+  useEffect(() => {
+    if (!isOpen || !userId) return
+    let cancelled = false
+    ;(async () => {
+      const deposit = await fetchUserDeposit(API_BASE, userId, { ttlMs: 15000 })
+      if (cancelled) return
+      const fromApi = Number(deposit?.depositAmount)
+      const fallback = Number(userDeposit)
+      const resolved = Number.isFinite(fromApi) ? fromApi : Number.isFinite(fallback) ? fallback : 0
+      setWalletBalanceEur(resolved)
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [isOpen, userId, userDeposit])
 
   if (!isOpen || !shareObject) return null
 
   const pricePerShare = Number(shareObject.pricePerShare) || 0
   const total = pricePerShare * buyCount
+  const currency = String(shareObject.currency || 'USD').toUpperCase()
+  const isEur = currency === 'EUR'
+  const canUseWallet =
+    isEur && walletBalanceEur != null && walletBalanceEur >= WALLET_OFFSET_EUR && total > WALLET_OFFSET_EUR
+  const walletApplied = useWalletDeposit && canUseWallet ? WALLET_OFFSET_EUR : 0
+  const totalToPay = Math.max(0, total - walletApplied)
   const propertyId = shareObject.id
   const propertyType = shareObject.property_type
 
@@ -67,6 +95,10 @@ const SharePurchaseModal = ({
       setError('Не удалось сохранить подпись')
       return
     }
+    if (useWalletDeposit && !canUseWallet) {
+      setError('Недостаточно депозита для списания 3000 €')
+      return
+    }
 
     setSubmitting(true)
     try {
@@ -97,6 +129,7 @@ const SharePurchaseModal = ({
           propertyType,
           sharesCount: buyCount,
           signingIntentId: intentData.signingIntentId,
+          useDeposit: !!(useWalletDeposit && canUseWallet),
           customerEmail: userEmail || undefined,
           returnPath: returnPath || undefined,
         }),
@@ -150,9 +183,26 @@ const SharePurchaseModal = ({
             </div>
             <div className="share-purchase-modal__row share-purchase-modal__row--total">
               <span>К оплате</span>
-              <strong>{formatPrice(total)}</strong>
+              <strong>{formatPrice(totalToPay)}</strong>
             </div>
           </div>
+
+          {isEur && (
+            <label className="share-purchase-modal__wallet-toggle">
+              <input
+                type="checkbox"
+                checked={useWalletDeposit}
+                onChange={(e) => setUseWalletDeposit(e.target.checked)}
+                disabled={!canUseWallet}
+              />
+              <span>Использовать депозит 3000 € в счет покупки долей</span>
+            </label>
+          )}
+          {isEur && !canUseWallet && (
+            <p className="share-purchase-modal__wallet-hint">
+              Для списания депозита нужно минимум 3000 € на балансе и сумма покупки выше 3000 €.
+            </p>
+          )}
 
           <div className="share-purchase-modal__policy">
             <p className="share-purchase-modal__policy-intro">
@@ -201,7 +251,7 @@ const SharePurchaseModal = ({
               disabled={submitting}
               onClick={handlePay}
             >
-              {submitting ? 'Переход к оплате…' : 'Оплатить в Stripe'}
+              {submitting ? 'Переход к оплате…' : `Оплатить в Stripe (${formatPrice(totalToPay)})`}
             </button>
           )}
         </div>

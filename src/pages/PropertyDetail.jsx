@@ -5,6 +5,7 @@ import { properties } from '../data/properties'
 import CountdownTimer from '../components/CountdownTimer'
 import BiddingHistoryModal from '../components/BiddingHistoryModal'
 import DepositButton from '../components/DepositButton'
+import DepositRequiredModal from '../components/DepositRequiredModal'
 import { getUserData, isAuthenticated } from '../services/authService'
 import { showNotification } from '../utils/toastHelper'
 import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
@@ -37,6 +38,7 @@ const PropertyDetail = () => {
   const [bidError, setBidError] = useState('')
   const [bidHistoryRefresh, setBidHistoryRefresh] = useState(0)
   const [outbidNotification, setOutbidNotification] = useState(null)
+  const [isDepositRequiredOpen, setIsDepositRequiredOpen] = useState(false)
   const shownNotificationIdsRef = useRef(new Set())
   const [auctionKycVerified, setAuctionKycVerified] = useState(null)
   const userData = getUserData()
@@ -636,9 +638,8 @@ const PropertyDetail = () => {
     const roleForBid = userData?.role || 'buyer'
     if (normalizedProperty?.is_auction && !roleSkipsAuctionKyc(roleForBid)) {
       if (userDeposit <= 0) {
-        const depMsg = t('propertyDetailBidDepositRequired')
-        setBidError(depMsg)
-        showNotification(depMsg)
+        setBidError('Необходимо внести депозит для участия в аукционе')
+        setIsDepositRequiredOpen(true)
         return
       }
       if (auctionKycVerified === false) {
@@ -1354,6 +1355,15 @@ const PropertyDetail = () => {
           auction_starting_price: normalizedProperty.auction_starting_price,
           price: normalizedProperty.price,
           currentBid: normalizedProperty.currentBid
+        }}
+      />
+
+      <DepositRequiredModal
+        isOpen={isDepositRequiredOpen}
+        onClose={() => setIsDepositRequiredOpen(false)}
+        onGoToDeposit={() => {
+          setIsDepositRequiredOpen(false)
+          navigate('/wallet')
         }}
       />
     </div>

@@ -143,6 +143,7 @@ export async function processSharePurchasePaidSession(stripe, session) {
   const propertyType = sess.metadata?.property_type != null ? String(sess.metadata.property_type).trim() : '';
   const sharesCount = parseInt(sess.metadata?.shares_count || '', 10);
   const expectedCents = parseInt(sess.metadata?.total_cents || '', 10);
+  const useWalletDeposit = sess.metadata?.use_wallet_deposit === '1';
   const signingIntentId =
     sess.metadata?.signing_intent_id != null ? String(sess.metadata.signing_intent_id).trim() : '';
   const agreementSignatureLegacy =
@@ -192,6 +193,9 @@ export async function processSharePurchasePaidSession(stripe, session) {
     return { ok: false, error: curNorm.error };
   }
   const currency = curNorm.currency;
+  if (useWalletDeposit && currency !== 'eur') {
+    return { ok: false, error: 'wallet_deposit_only_eur' };
+  }
 
   const totalShares = property.total_shares != null ? Number(property.total_shares) : 0;
   const sharesSold = property.shares_sold != null ? Number(property.shares_sold) : 0;
@@ -225,6 +229,14 @@ export async function processSharePurchasePaidSession(stripe, session) {
   }
 
   try {
+    if (useWalletDeposit) {
+      await withdrawDepositWithLog(
+        userId,
+        WALLET_DEPOSIT_OFFSET_EUR,
+        'Покупка долей: списание 3000 € с депозита'
+      );
+    }
+
     await sharePurchaseQueries.completePurchaseFromStripeSession({
       stripeSessionId: sess.id,
       signingIntentId: signingIntentId || null,
@@ -242,8 +254,24 @@ export async function processSharePurchasePaidSession(stripe, session) {
   } catch (e) {
     const msg = e?.message || 'process_failed';
     console.error('[Stripe] processSharePurchasePaidSession:', msg);
+    if (useWalletDeposit && msg !== 'insufficient_deposit') {
+      try {
+        const prisma = getPrisma();
+        const u = await userQueries.getById(userId);
+        const dep = u?.deposit_amount != null ? parseFloat(String(u.deposit_amount)) || 0 : 0;
+        await prisma.users.update({
+          where: { id: Number(userId) },
+          data: { deposit_amount: dep + WALLET_DEPOSIT_OFFSET_EUR, updated_at: new Date() },
+        });
+      } catch (rollbackErr) {
+        console.error('[Stripe] share purchase wallet rollback failed:', rollbackErr?.message || rollbackErr);
+      }
+    }
     if (msg === 'share_inventory_exhausted') {
       return { ok: false, error: 'share_inventory_exhausted' };
+    }
+    if (msg === 'insufficient_deposit') {
+      return { ok: false, error: 'insufficient_deposit' };
     }
     return { ok: false, error: msg };
   }
@@ -1360,6 +1388,7 @@ export function registerStripeBillingRoutes(app) {
       const sharesCount = req.body?.sharesCount != null ? parseInt(String(req.body.sharesCount).trim(), 10) : NaN;
       const signingIntentId =
         typeof req.body?.signingIntentId === 'string' ? req.body.signingIntentId.trim().slice(0, 48) : '';
+      const useWalletDeposit = req.body?.useDeposit === true;
       const customerEmail =
         typeof req.body?.customerEmail === 'string' ? req.body.customerEmail.trim().slice(0, 320) : '';
       let returnPath =
@@ -1429,6 +1458,9 @@ export function registerStripeBillingRoutes(app) {
         return res.status(400).json({ success: false, error: curNorm.error });
       }
       const currency = curNorm.currency;
+      if (useWalletDeposit && currency !== 'eur') {
+        return res.status(400).json({ success: false, error: 'Списание депозита доступно только для объектов в EUR' });
+      }
 
       const objectPrice = Number(property.price) || 0;
       if (!(objectPrice > 0) || !(totalShares > 0)) {
@@ -1436,7 +1468,23 @@ export function registerStripeBillingRoutes(app) {
       }
       const pricePerShare = objectPrice / totalShares;
       const totalPrice = pricePerShare * sharesCount;
-      const unitAmount = majorToStripeMinor(totalPrice, currency);
+      let walletEurApplied = 0;
+      if (useWalletDeposit) {
+        if (totalPrice <= WALLET_DEPOSIT_OFFSET_EUR) {
+          return res.status(400).json({
+            success: false,
+            error: 'Сумма покупки должна быть выше 3000 € для списания депозита',
+          });
+        }
+        const buyer = await userQueries.getById(userId);
+        const depositAmount = buyer?.deposit_amount != null ? parseFloat(String(buyer.deposit_amount)) || 0 : 0;
+        if (depositAmount < WALLET_DEPOSIT_OFFSET_EUR) {
+          return res.status(400).json({ success: false, error: 'Недостаточно депозита для списания 3000 €' });
+        }
+        walletEurApplied = WALLET_DEPOSIT_OFFSET_EUR;
+      }
+      const stripeTotalMajor = Math.max(0, totalPrice - walletEurApplied);
+      const unitAmount = majorToStripeMinor(stripeTotalMajor, currency);
       const minUnit = minStripeUnitAmount(currency);
       if (unitAmount < minUnit) {
         return res.status(400).json({
@@ -1482,6 +1530,9 @@ export function registerStripeBillingRoutes(app) {
           policy_version: SHARE_PURCHASE_POLICY_VERSION,
           price_per_share_major: String(pricePerShare),
           total_price_major: String(totalPrice),
+          stripe_total_major: String(stripeTotalMajor),
+          wallet_eur_applied: String(walletEurApplied),
+          use_wallet_deposit: useWalletDeposit ? '1' : '0',
           total_cents: String(unitAmount),
         },
         ...(customerEmail && customerEmail.includes('@') ? { customer_email: customerEmail } : {}),

@@ -23,6 +23,7 @@ import CircularTimer from '../components/CircularTimer'
 import BiddingHistoryModal from '../components/BiddingHistoryModal'
 import BuyNowModal from '../components/BuyNowModal'
 import AuctionReminderModal from '../components/AuctionReminderModal'
+import DepositRequiredModal from '../components/DepositRequiredModal'
 import LocationMap from '../components/LocationMap'
 import { showToast } from '../components/ToastContainer'
 import { showNotification } from '../utils/toastHelper'
@@ -71,6 +72,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
   const [mapCoordinates, setMapCoordinates] = useState(null)
   const [isGeocoding, setIsGeocoding] = useState(false)
   const [bidAmount, setBidAmount] = useState('')
+  const [isDepositRequiredOpen, setIsDepositRequiredOpen] = useState(false)
   const [isSubmittingBid, setIsSubmittingBid] = useState(false)
   const [currentBid, setCurrentBid] = useState(null)
   const [recentBids, setRecentBids] = useState([])
@@ -1786,6 +1788,13 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
       return
     }
 
+    if (isAuctionProperty && !roleSkipsAuctionKyc(userRole)) {
+      if (auctionUserDeposit <= 0) {
+        setIsDepositRequiredOpen(true)
+        return
+      }
+    }
+
     setBuyNowModalVariant(variant)
     setIsBuyNowModalOpen(true)
   }
@@ -1840,7 +1849,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
 
     if (isAuctionProperty && !roleSkipsAuctionKyc(userData?.role || 'buyer')) {
       if (auctionUserDeposit <= 0) {
-        showToast(t('propertyDetailBidDepositRequired'), 'error')
+        setIsDepositRequiredOpen(true)
         return
       }
       if (auctionKycVerified === false) {
@@ -1919,7 +1928,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
 
     if (isAuctionProperty && !roleSkipsAuctionKyc(userData?.role || 'buyer')) {
       if (auctionUserDeposit <= 0) {
-        showToast(t('propertyDetailBidDepositRequired'), 'error')
+        setIsDepositRequiredOpen(true)
         return
       }
       if (auctionKycVerified === false) {
@@ -3764,6 +3773,15 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
         property={displayProperty}
         open={auctionReminderOpen}
         onClose={() => setAuctionReminderOpen(false)}
+      />
+
+      <DepositRequiredModal
+        isOpen={isDepositRequiredOpen}
+        onClose={() => setIsDepositRequiredOpen(false)}
+        onGoToDeposit={() => {
+          setIsDepositRequiredOpen(false)
+          navigate('/wallet')
+        }}
       />
 
       {/* Модальное окно для просмотра документа */}

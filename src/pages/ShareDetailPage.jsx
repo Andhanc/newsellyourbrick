@@ -4,9 +4,11 @@ import { FiPlus, FiArrowLeft } from 'react-icons/fi'
 import { useUser } from '@clerk/clerk-react'
 import Header from '../components/Header'
 import SharePurchaseModal from '../components/SharePurchaseModal'
+import DepositRequiredModal from '../components/DepositRequiredModal'
 import { getUserData, isAuthenticated, getStoredNumericUserId, CLERK_DB_USER_SYNCED } from '../services/authService'
 import { showNotification } from '../utils/toastHelper'
 import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
+import { fetchUserDeposit } from '../utils/depositApi'
 import './ShareDetailPage.css'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api'
@@ -72,6 +74,8 @@ const ShareDetailPage = () => {
   const [loadingShare, setLoadingShare] = useState(false)
   const [purchaseModalOpen, setPurchaseModalOpen] = useState(false)
   const [userId, setUserId] = useState(() => getStoredNumericUserId())
+  const [userDeposit, setUserDeposit] = useState(0)
+  const [isDepositRequiredOpen, setIsDepositRequiredOpen] = useState(false)
   const [mySharesOwned, setMySharesOwned] = useState(0)
 
   const isDbShare = shareObject && typeof shareObject.id === 'number' && shareObject.property_type
@@ -204,6 +208,23 @@ const ShareDetailPage = () => {
     }
   }, [isDbShare, userId, shareObject?.id, shareObject?.property_type])
 
+  useEffect(() => {
+    if (userId == null) {
+      setUserDeposit(0)
+      return
+    }
+    let cancelled = false
+    ;(async () => {
+      const deposit = await fetchUserDeposit(API_BASE, userId, { ttlMs: 15000 })
+      if (cancelled) return
+      const amount = Number(deposit?.depositAmount) || 0
+      setUserDeposit(amount)
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [userId])
+
   const checkoutFlag = searchParams.get('share_checkout')
   const sessionIdQ = searchParams.get('session_id')
 
@@ -308,7 +329,7 @@ const ShareDetailPage = () => {
     return `$${Number(n).toLocaleString('en-US')}`
   }
 
-  const openPurchaseModal = () => {
+  const openPurchaseModal = async () => {
     const isClerkAuth = user && userLoaded
     const isOldAuth = isAuthenticated()
     if (!isClerkAuth && !isOldAuth) {
@@ -320,6 +341,20 @@ const ShareDetailPage = () => {
       return
     }
     if (availableToBuy <= 0) return
+
+    if (userId == null) {
+      showNotification('Не удалось определить пользователя. Обновите страницу и попробуйте снова.')
+      return
+    }
+
+    const freshDeposit = await fetchUserDeposit(API_BASE, userId, { force: true, ttlMs: 0 })
+    const depositAmount = Number(freshDeposit?.depositAmount) || 0
+    setUserDeposit(depositAmount)
+    if (depositAmount <= 0) {
+      setIsDepositRequiredOpen(true)
+      return
+    }
+
     setPurchaseModalOpen(true)
   }
 
@@ -483,7 +518,17 @@ const ShareDetailPage = () => {
         buyCount={Math.min(Math.max(1, buyCount), availableToBuy)}
         userId={userId}
         userEmail={userEmail}
+        userDeposit={userDeposit}
         returnPath={id ? `/shares/${id}` : undefined}
+      />
+
+      <DepositRequiredModal
+        isOpen={isDepositRequiredOpen}
+        onClose={() => setIsDepositRequiredOpen(false)}
+        onGoToDeposit={() => {
+          setIsDepositRequiredOpen(false)
+          navigate('/wallet')
+        }}
       />
     </div>
   )
