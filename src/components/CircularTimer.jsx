@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import './CircularTimer.css';
 import { countries } from './CountrySelect';
 
@@ -78,10 +78,43 @@ const CircularTimer = ({
   size = 120,
   strokeWidth = 6,
   originalDuration = null,
+  progressKey = null,
   isUserLeader = false,
   bidInfo = null,
   auctionEndedLabel = null,
 }) => {
+  const endTimeMs = (() => {
+    const ms = new Date(endTime).getTime();
+    return Number.isFinite(ms) ? ms : null;
+  })();
+
+  const resolvePersistKey = () => {
+    const safeEndPart = endTimeMs != null ? String(endTimeMs) : String(endTime || 'unknown');
+    const safeScope = progressKey || 'global';
+    return `circular-timer-inferred-duration:${safeScope}:${safeEndPart}`;
+  };
+
+  const readPersistedDuration = () => {
+    if (typeof window === 'undefined') return null;
+    try {
+      const raw = window.localStorage.getItem(resolvePersistKey());
+      if (raw == null) return null;
+      const value = Number(raw);
+      return Number.isFinite(value) && value > 0 ? value : null;
+    } catch (_) {
+      return null;
+    }
+  };
+
+  const writePersistedDuration = (value) => {
+    if (typeof window === 'undefined') return;
+    if (!(Number.isFinite(value) && value > 0)) return;
+    try {
+      window.localStorage.setItem(resolvePersistKey(), String(value));
+    } catch (_) {}
+  };
+
+  const inferredDurationRef = useRef(null);
   const [timeLeft, setTimeLeft] = useState({
     days: 0,
     hours: 0,
@@ -91,6 +124,9 @@ const CircularTimer = ({
   const [isExpired, setIsExpired] = useState(false);
 
   useEffect(() => {
+    // При смене endTime сбрасываем "автодлительность" для карточек
+    inferredDurationRef.current = readPersistedDuration();
+
     const calculateTimeLeft = () => {
       const now = new Date().getTime();
       const end = new Date(endTime).getTime();
@@ -123,7 +159,7 @@ const CircularTimer = ({
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [endTime]);
+  }, [endTime, progressKey]);
   
   // Вычисляем прогресс для оранжевой обводки (основной прогресс)
   const calculateProgress = () => {
@@ -140,30 +176,50 @@ const CircularTimer = ({
     
     if (totalTime <= 0) return 100; // Таймер истек - красная обводка полная
     
-    // Если есть исходная длительность, используем её для расчета прогресса
+    // 1) Приоритет — длительность из БД
     if (originalDuration && originalDuration > 0) {
-      // Вычисляем сколько времени прошло от начала
       const elapsed = originalDuration - totalTime;
-      const progress = Math.max(0, Math.min(100, (elapsed / originalDuration) * 100));
-      return progress;
+      return Math.max(0, Math.min(100, (elapsed / originalDuration) * 100));
     }
-    
-    // Fallback: если исходная длительность неизвестна, используем приблизительную оценку
-    // Предполагаем максимальное время тестового таймера - 2 часа
-    const maxTime = 2 * 60 * 60 * 1000; // 2 часа в миллисекундах
-    
-    // Если текущее оставшееся время больше максимального, считаем что прошло 0%
-    if (totalTime >= maxTime) return 0;
-    
-    // Прогресс = сколько времени прошло от максимального времени
-    const elapsed = maxTime - totalTime;
-    return Math.max(0, Math.min(100, (elapsed / maxTime) * 100));
+
+    // ВАЖНО: подтягиваем сохранённую базу синхронно до первого рендера после перехода.
+    // Иначе первый кадр воспринимается как "старт заново".
+    if (!inferredDurationRef.current) {
+      const persisted = readPersistedDuration();
+      if (persisted && persisted > 0) {
+        inferredDurationRef.current = persisted;
+      }
+    }
+
+    // 2) Фолбэк для карточек: берём первое доступное "оставшееся время" как стартовую длину круга.
+    // Это даёт заметное движение кольца даже если API не прислал test_timer_duration.
+    if (!inferredDurationRef.current && totalTime > 0) {
+      inferredDurationRef.current = totalTime;
+      writePersistedDuration(totalTime);
+    }
+
+    // Если по каким-то причинам текущее оставшееся время стало больше сохранённого,
+    // корректируем базу (например, при продлении таймера тем же endTime в старом кеше).
+    if (inferredDurationRef.current && totalTime > inferredDurationRef.current) {
+      inferredDurationRef.current = totalTime;
+      writePersistedDuration(totalTime);
+    }
+    const inferredDuration = inferredDurationRef.current;
+    if (inferredDuration && inferredDuration > 0) {
+      const elapsed = inferredDuration - totalTime;
+      return Math.max(0, Math.min(100, (elapsed / inferredDuration) * 100));
+    }
+
+    return 0;
   };
   
   const progressValue = calculateProgress();
   const redProgressValue = calculateRedProgress();
 
-  const radius = (size - strokeWidth) / 2;
+  const isCompact = size <= 72;
+  const baseRingWidth = strokeWidth + (isCompact ? 1 : 2);
+  const redRingWidth = strokeWidth + (isCompact ? 2 : 4);
+  const radius = (size - redRingWidth) / 2;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (progressValue / 100) * circumference;
   const redOffset = circumference - (redProgressValue / 100) * circumference;
@@ -185,13 +241,14 @@ const CircularTimer = ({
     }
   };
 
-  const centerRadius = radius - strokeWidth + 2;
+  // Чуть перекрываем внутренний край кольца, чтобы не было светлого просвета между центром и обводкой
+  const centerRadius = radius - (redRingWidth / 2) + (isCompact ? 0.9 : 0.6);
 
   const showEndedCenter = isExpired && auctionEndedLabel;
 
   return (
     <div
-      className={`circular-timer ${isLeader ? 'circular-timer--leader' : ''} ${showEndedCenter ? 'circular-timer--ended' : ''} ${size <= 72 ? 'circular-timer--compact' : ''}`}
+      className={`circular-timer ${isLeader ? 'circular-timer--leader' : ''} ${showEndedCenter ? 'circular-timer--ended' : ''} ${isCompact ? 'circular-timer--compact' : ''}`}
       style={{ width: size, height: size }}
     >
       <svg className="circular-timer-svg" width={size} height={size} style={{ overflow: 'visible' }}>
@@ -271,7 +328,7 @@ const CircularTimer = ({
           cy={size / 2}
           r={radius}
           stroke={showEndedCenter ? 'url(#grayGradient)' : isLeader ? "url(#grayGradient)" : "url(#orangeGradient)"}
-          strokeWidth={strokeWidth + 2}
+          strokeWidth={baseRingWidth}
           fill="none"
           opacity="0.4"
         />
@@ -283,7 +340,7 @@ const CircularTimer = ({
           cy={size / 2}
           r={radius}
           stroke={showEndedCenter ? 'url(#grayGradient)' : isLeader ? "url(#grayGradient)" : "url(#orangeGradient)"}
-          strokeWidth={strokeWidth + 2}
+          strokeWidth={baseRingWidth}
           fill="none"
           strokeDasharray={circumference}
           strokeDashoffset={offset}
@@ -301,7 +358,7 @@ const CircularTimer = ({
           cy={size / 2}
           r={radius}
           stroke={showEndedCenter ? 'url(#grayGradient)' : isLeader ? "url(#greenGradient)" : "url(#redGradient)"}
-          strokeWidth={strokeWidth + 4}
+          strokeWidth={redRingWidth}
           fill="none"
           strokeDasharray={circumference}
           strokeDashoffset={redOffset}

@@ -38,6 +38,8 @@ import CountrySelect, { countries as countryList } from '../components/CountrySe
 import { getUserData, saveUserData, logout, clearUserData, CLERK_DB_USER_SYNCED } from '../services/authService'
 import { showNotification } from '../utils/toastHelper'
 import { showToast } from '../components/ToastContainer'
+import { fetchVerificationStatus } from '../utils/verificationStatusApi'
+import { fetchUserById } from '../utils/usersApi'
 import '../components/PropertyList.css'
 import './MainPage.css'
 import './OwnerDashboard.css'
@@ -156,7 +158,6 @@ const OwnerDashboard = () => {
     firstName: '',
     lastName: '',
     email: '',
-    username: '',
     phone: '',
     country: '',
     countryFlag: ''
@@ -209,7 +210,6 @@ const OwnerDashboard = () => {
           firstName: firstName,
           lastName: lastName,
           email: userData.email || '',
-          username: userData.username || '',
           phone: userData.phoneFormatted || userData.phone || '',
           country: userData.country || '',
           countryFlag: userData.countryFlag || ''
@@ -221,27 +221,19 @@ const OwnerDashboard = () => {
           const dbUserId = localStorage.getItem('userId')
           if (!dbUserId || !/^\d+$/.test(dbUserId)) return
           try {
-            const response = await fetch(`${API_BASE_URL}/users/${dbUserId}`)
-            if (response.ok) {
-              const result = await response.json()
-              if (result.success && result.data) {
-                const dbUser = result.data
-                // Находим флаг страны
-                const selectedCountry = countryList.find(c => c.name === dbUser.country)
-                setOwnerProfile(prev => ({
-                  ...prev,
-                  firstName: prev.firstName || dbUser.first_name || '',
-                  lastName: prev.lastName || dbUser.last_name || '',
-                  email: prev.email || dbUser.email || '',
-                  username: (dbUser.username != null && String(dbUser.username).trim() !== '')
-                    ? dbUser.username
-                    : (prev.username || ''),
-                  phone: prev.phone || dbUser.phone_number || '',
-                  country: prev.country || dbUser.country || '',
-                  countryFlag: selectedCountry ? selectedCountry.flag : prev.countryFlag || ''
-                }))
-              }
-            }
+            const dbUser = await fetchUserById(API_BASE_URL, dbUserId)
+            if (!dbUser) return
+            // Находим флаг страны
+            const selectedCountry = countryList.find(c => c.name === dbUser.country)
+            setOwnerProfile(prev => ({
+              ...prev,
+              firstName: prev.firstName || dbUser.first_name || '',
+              lastName: prev.lastName || dbUser.last_name || '',
+              email: prev.email || dbUser.email || '',
+              phone: prev.phone || dbUser.phone_number || '',
+              country: prev.country || dbUser.country || '',
+              countryFlag: selectedCountry ? selectedCountry.flag : prev.countryFlag || ''
+            }))
           } catch (error) {
             console.warn('⚠️ Не удалось загрузить данные владельца из БД:', error)
           }
@@ -563,31 +555,30 @@ const OwnerDashboard = () => {
   const loadVerificationStatus = async (userId, isStatusUpdate = false) => {
     if (!userId) return
     try {
-      const response = await fetch(`${API_BASE_URL}/users/${userId}/verification-status`)
-      if (response.ok) {
-        const result = await response.json()
-        if (result.success && result.data) {
-          const status = result.data
-          const wasVerified = previousVerificationStatus.current
-          const isNowVerified = status.isVerified
-          
-          setVerificationStatus(status)
-          
-          // Показываем уведомление только если:
-          // 1. Статус изменился с неверифицированного на верифицированный (при событии обновления)
-          // 2. Это означает, что администратор только что одобрил пользователя
-          if (isStatusUpdate && isNowVerified && !wasVerified) {
-            setShowVerificationSuccess(true)
-            // Автоматически скрываем уведомление через 5 секунд
-            setTimeout(() => {
-              setShowVerificationSuccess(false)
-            }, 5000)
-          }
-          
-          // Обновляем предыдущий статус
-          previousVerificationStatus.current = isNowVerified
-        }
+      const status = await fetchVerificationStatus(API_BASE_URL, userId, {
+        ttlMs: 20000,
+        force: isStatusUpdate,
+      })
+      if (!status) return
+
+      const wasVerified = previousVerificationStatus.current
+      const isNowVerified = status.isVerified
+
+      setVerificationStatus(status)
+
+      // Показываем уведомление только если:
+      // 1. Статус изменился с неверифицированного на верифицированный (при событии обновления)
+      // 2. Это означает, что администратор только что одобрил пользователя
+      if (isStatusUpdate && isNowVerified && !wasVerified) {
+        setShowVerificationSuccess(true)
+        // Автоматически скрываем уведомление через 5 секунд
+        setTimeout(() => {
+          setShowVerificationSuccess(false)
+        }, 5000)
       }
+
+      // Обновляем предыдущий статус
+      previousVerificationStatus.current = isNowVerified
     } catch (error) {
       console.error('Ошибка загрузки статуса верификации:', error)
     }
@@ -782,7 +773,7 @@ const OwnerDashboard = () => {
   const hasUnsavedChanges = () => {
     if (!isProfileEditing || !originalProfile) return false
     
-    const fieldsToCompare = ['firstName', 'lastName', 'email', 'username', 'phone', 'country', 'countryFlag']
+    const fieldsToCompare = ['firstName', 'lastName', 'email', 'phone', 'country', 'countryFlag']
 
     return fieldsToCompare.some(field => {
       return ownerProfile[field] !== originalProfile[field]
@@ -829,7 +820,6 @@ const OwnerDashboard = () => {
         first_name: ownerProfile.firstName || null,
         last_name: ownerProfile.lastName || null,
         email: ownerProfile.email || null,
-        username: ownerProfile.username || null,
         phone_number: ownerProfile.phone || null,
         country: ownerProfile.country || null
       }
@@ -889,7 +879,6 @@ const OwnerDashboard = () => {
         firstName: ownerProfile.firstName || userData.firstName,
         lastName: ownerProfile.lastName || userData.lastName,
         email: ownerProfile.email || userData.email,
-        username: ownerProfile.username || userData.username,
         phone: ownerProfile.phone || userData.phone,
         phoneFormatted: ownerProfile.phone || userData.phoneFormatted,
         country: ownerProfile.country || userData.country,
@@ -1051,11 +1040,8 @@ const OwnerDashboard = () => {
     }
 
     try {
-      const response = await fetch(`${API_BASE_URL}/users/${effectiveUserId}`)
-      if (response.ok) {
-        const result = await response.json()
-        if (result.success && result.data) {
-          const userData = result.data
+      const userData = await fetchUserById(API_BASE_URL, effectiveUserId)
+      if (userData) {
           const fields = []
           
           if (!userData.first_name || userData.first_name.trim() === '') {
@@ -1081,7 +1067,6 @@ const OwnerDashboard = () => {
           }
           
           return true
-        }
       }
     } catch (error) {
       console.error('Ошибка при проверке полей профиля:', error)
@@ -2573,17 +2558,6 @@ const OwnerDashboard = () => {
                     value={ownerProfile.email}
                     onChange={(e) => handleProfileFieldChange('email', e.target.value)}
                     placeholder={t('ownerProfilePlaceholderEmail')}
-                    disabled={!isProfileEditing}
-                  />
-                </div>
-                <div className="owner-profile-section">
-                  <h4 className="owner-profile-section__title">{t('ownerProfileLogin')}</h4>
-                  <input
-                    type="text"
-                    className="owner-profile-section__value-input"
-                    value={ownerProfile.username}
-                    onChange={(e) => handleProfileFieldChange('username', e.target.value)}
-                    placeholder={t('ownerProfilePlaceholderLogin')}
                     disabled={!isProfileEditing}
                   />
                 </div>

@@ -24,7 +24,7 @@
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: flex-end;
   gap: 32px 80px;
   padding-top: 8px;
   border-top: 1px solid #e5e7eb;
@@ -34,10 +34,13 @@
 .footer__upper-left {
   flex: 1 1 auto;
   min-width: min(100%, 240px);
+  display: flex;
+  flex-direction: column;
 }
 
 .footer__upper-left .footer__brand {
-  margin-bottom: 16px;
+  margin-top: 16px;
+  margin-bottom: 0;
 }
 
 .footer__nav-qr {
@@ -279,6 +282,31 @@ body.admin-panel-active .footer .footer__brand-text {
   align-items: center;
   gap: 10px;
   flex-shrink: 0;
+}
+
+.footer__brand--inline {
+  margin-right: auto;
+  margin-left: 5%;
+  align-self: center;
+}
+
+.footer__brand--mobile {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .footer__upper-right {
+    flex: 1 0 100%;
+    margin-left: 0;
+    padding-left: 0;
+    justify-content: flex-start;
+  }
+
+  .footer__upper-right .footer__store-buttons {
+    width: 100%;
+    padding-left: 0;
+    box-sizing: border-box;
+  }
 }
 
 .footer__store-btn {
@@ -764,6 +792,18 @@ body.admin-panel-active .footer .footer__upper {
     width: 100%;
   }
 
+  .footer__brand--desktop-inline {
+    display: none;
+  }
+
+  .footer__brand--mobile {
+    display: flex;
+    order: 2;
+    margin: 12px 0 0;
+    align-self: center;
+    justify-content: center;
+  }
+
   .footer__menus-inner {
     width: 100%;
   }
@@ -843,7 +883,7 @@ body.admin-panel-active .footer .footer__upper {
 
   /* Кнопки стора и выбор языка в один ряд */
   .footer__store-buttons {
-    order: 2;
+    order: 3;
     flex-wrap: nowrap;
     width: 100%;
     justify-content: space-between;

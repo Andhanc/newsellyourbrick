@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import VerificationSuccessNotification from './VerificationSuccessNotification'
 import { getApiBaseUrl } from '../utils/apiConfig'
 import { CLERK_DB_USER_SYNCED } from '../services/authService'
+import { fetchUserNotifications } from '../utils/notificationsApi'
 
 const shownKeyFor = (userId, notificationId) =>
   `verification_success_shown_${userId}_${notificationId}`
@@ -26,23 +27,7 @@ export default function GlobalVerificationSuccessGate() {
 
     loadingRef.current = true
     try {
-      const apiBaseUrl = await getApiBaseUrl()
-      const response = await fetch(`${apiBaseUrl}/notifications/user/${dbUserId}`)
-      if (!response.ok) return
-
-      const data = await response.json()
-      if (!data?.success || !Array.isArray(data.data)) return
-
-      const notifications = data.data.map((n) => {
-        if (n.data && typeof n.data === 'string') {
-          try {
-            return { ...n, data: JSON.parse(n.data) }
-          } catch {
-            return n
-          }
-        }
-        return n
-      })
+      const notifications = await fetchUserNotifications(dbUserId, { ttlMs: 15000 })
 
       const verificationNotif = notifications.find(
         (n) => n.type === 'verification_success' && n.view_count === 0
@@ -92,12 +77,10 @@ export default function GlobalVerificationSuccessGate() {
     window.addEventListener('focus', onFocus)
     window.addEventListener('verification-status-update', onVerificationPush)
     window.addEventListener(CLERK_DB_USER_SYNCED, onClerkSynced)
-    const pollId = setInterval(loadVerificationNotification, 45000)
     return () => {
       window.removeEventListener('focus', onFocus)
       window.removeEventListener('verification-status-update', onVerificationPush)
       window.removeEventListener(CLERK_DB_USER_SYNCED, onClerkSynced)
-      clearInterval(pollId)
     }
   }, [loadVerificationNotification])
 

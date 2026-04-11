@@ -132,13 +132,6 @@ const Footer = () => {
       <div className="footer__container">
         <div className="footer__upper">
           <div className="footer__upper-left">
-            <div className="footer__brand">
-              <div className="footer__brand-icon">
-                <span className="footer__brand-house" />
-              </div>
-              <span className="footer__brand-text">Sellyourbrick</span>
-            </div>
-
             <div className="footer__nav-qr">
               <div className="footer__menus-inner">
                 <div className="footer__menu footer__menu--desktop">
@@ -158,11 +151,24 @@ const Footer = () => {
               <div className="footer__whatsapp-qr">
                 <img src={whatsappQR} alt="WhatsApp QR" className="footer__qr-image" />
               </div>
+
+              <div className="footer__brand footer__brand--mobile">
+                <div className="footer__brand-icon">
+                  <span className="footer__brand-house" />
+                </div>
+                <span className="footer__brand-text">Sellyourbrick</span>
+              </div>
             </div>
           </div>
 
           <div className="footer__upper-right">
             <div className="footer__store-buttons">
+            <div className="footer__brand footer__brand--inline footer__brand--desktop-inline">
+              <div className="footer__brand-icon">
+                <span className="footer__brand-house" />
+              </div>
+              <span className="footer__brand-text">Sellyourbrick</span>
+            </div>
             <button
               type="button"
               className="footer__store-btn"

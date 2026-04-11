@@ -22,6 +22,7 @@ import {
   isAuctionListingEnded,
   shouldShowCircularAuctionTimer,
 } from '@/utils/auctionReminderBounds'
+import { getPropertyCardImage } from '@/utils/propertyImage'
 import '../PropertyList.css'
 import './AuctionMobileLayout.css'
 
@@ -337,10 +338,10 @@ function AuctionMobileItem({
   const favoriteBtnRef = useRef(null)
   const [likeBurst, setLikeBurst] = useState(null)
   const propertyTitle = property.title || property.name || ''
-  const propertyImages = property.images || (property.image ? [property.image] : [])
-  const propertyImage =
-    propertyImages[0] ||
+  const propertyImage = getPropertyCardImage(
+    property,
     'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=800&q=80'
+  )
 
   const buyNowPurchaseCompleted = isBuyNowPurchaseCompleted(property)
   const effectiveAuctionEnd = getEffectiveAuctionEndTime(property)
@@ -367,6 +368,14 @@ function AuctionMobileItem({
       property.test_drive === true)
   const isReserved = property.is_reserved === true || property.is_reserved === 1
   const showBuyNow = hasBuyNowOption(property)
+  const testTimerDurationMs =
+    property.test_timer_duration != null && property.test_timer_duration !== ''
+      ? Number(property.test_timer_duration)
+      : null
+  const normalizedTestTimerDuration =
+    testTimerDurationMs != null && Number.isFinite(testTimerDurationMs) && testTimerDurationMs > 0
+      ? testTimerDurationMs
+      : null
 
   const isTimerExpired = isEffectiveAuctionTimerExpired(property)
   const buyNowWinnerId = property.buy_now_winner_user_id
@@ -483,22 +492,24 @@ function AuctionMobileItem({
                 )}
               </div>
             )}
-            {redOnImage && (
-              <div className="auction-mobile-circular-timer">
+            {view === 'list' && redOnImage && (
+              <div className="auction-mobile-circular-timer auction-mobile-circular-timer--list-bottom">
                 <CircularTimer
                   endTime={property.test_timer_end_date}
-                  size={view === 'list' ? 46 : 54}
-                  strokeWidth={view === 'list' ? 3 : 4}
+                  size={54}
+                  strokeWidth={4}
+                  originalDuration={normalizedTestTimerDuration}
+                  progressKey={`auction-mobile:${property.id}`}
                   auctionEndedLabel={t('auctionCircularEndedShort')}
                 />
               </div>
             )}
-            {buyNowEndedSealOnImage && (
-              <div className="auction-mobile-circular-timer">
+            {view === 'list' && buyNowEndedSealOnImage && (
+              <div className="auction-mobile-circular-timer auction-mobile-circular-timer--list-bottom">
                 <CircularTimer
                   endTime={property.buy_now_completed_at}
-                  size={view === 'list' ? 46 : 54}
-                  strokeWidth={view === 'list' ? 3 : 4}
+                  size={54}
+                  strokeWidth={4}
                   auctionEndedLabel={t('auctionCircularEndedShort')}
                 />
               </div>
@@ -524,6 +535,28 @@ function AuctionMobileItem({
                 compact
                 className="property-timer--auction-mobile property-timer--auction-mobile-inline"
                 auctionEndedLabel={t('propertyDetailAuctionCompleted')}
+              />
+            </div>
+          )}
+          {view === 'card' && redOnImage && (
+            <div className="auction-mobile-body-circular-timer auction-mobile-body-circular-timer--overlap">
+              <CircularTimer
+                endTime={property.test_timer_end_date}
+                size={62}
+                strokeWidth={5}
+                originalDuration={normalizedTestTimerDuration}
+                progressKey={`auction-mobile:${property.id}`}
+                auctionEndedLabel={t('auctionCircularEndedShort')}
+              />
+            </div>
+          )}
+          {view === 'card' && buyNowEndedSealOnImage && (
+            <div className="auction-mobile-body-circular-timer auction-mobile-body-circular-timer--overlap">
+              <CircularTimer
+                endTime={property.buy_now_completed_at}
+                size={62}
+                strokeWidth={5}
+                auctionEndedLabel={t('auctionCircularEndedShort')}
               />
             </div>
           )}

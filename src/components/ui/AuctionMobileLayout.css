@@ -522,12 +522,12 @@
 }
 
 .auction-mobile-image-wrap .property-timer.property-timer--auction-mobile .time-value {
-  font-size: 10px !important;
+  font-size: 13px !important;
   font-weight: 800;
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.03em;
   line-height: 1 !important;
-  color: #f8fafc !important;
+  color: #16a34a !important;
 }
 
 .auction-mobile-image-wrap .property-timer.property-timer--auction-mobile .time-label {
@@ -551,6 +551,23 @@
 
 .auction-mobile-body-timer {
   margin: 0 0 6px;
+}
+
+/* Круглый таймер в режиме «Карточки»: под фото, над заголовком (как зелёная полоса на десктопе) */
+.auction-mobile-body-circular-timer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 0 0 8px;
+  pointer-events: none;
+}
+
+/* Чуть крупнее и с заходом на нижний край превью (только сетка «Карточки») */
+.auction-mobile-item--card .auction-mobile-body-circular-timer--overlap {
+  margin-top: -20px;
+  margin-bottom: 4px;
+  position: relative;
+  z-index: 4;
 }
 
 .auction-mobile-item__body .property-timer.property-timer--auction-mobile-inline {
@@ -615,13 +632,13 @@
 
 /* Акцент цифр по фазам аукциона (на тёмном фоне — светлые оттенки) */
 .auction-mobile-image-wrap .property-timer.timer-long:not(.timer-critical) .time-value {
-  color: #bbf7d0 !important;
+  color: #16a34a !important;
 }
 .auction-mobile-image-wrap .property-timer.timer-medium:not(.timer-critical) .time-value {
-  color: #fde68a !important;
+  color: #ca8a04 !important;
 }
 .auction-mobile-image-wrap .property-timer.timer-short:not(.timer-critical) .time-value {
-  color: #fecaca !important;
+  color: #dc2626 !important;
 }
 
 .auction-mobile-item__body .property-timer.property-timer--auction-mobile-inline.timer-long:not(.timer-critical) .time-value {
@@ -658,12 +675,19 @@
   color: #fecaca !important;
 }
 
+/* Круглый таймер на фото (только режим «Список»): по центру снизу */
 .auction-mobile-circular-timer {
   position: absolute;
-  top: 6px;
-  left: 6px;
   z-index: 6;
-  filter: drop-shadow(0 3px 10px rgba(0, 0, 0, 0.28));
+  filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.22));
+  pointer-events: none;
+}
+
+.auction-mobile-circular-timer--list-bottom {
+  left: 50%;
+  bottom: 8px;
+  top: auto;
+  transform: translateX(-50%);
 }
 
 .auction-mobile-reserved {

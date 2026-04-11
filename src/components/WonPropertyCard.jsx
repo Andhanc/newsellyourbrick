@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { FiChevronDown, FiChevronUp } from 'react-icons/fi'
 import { showNotification } from '../utils/toastHelper'
 import { ensureCanOpenProperty } from '../utils/propertyAccessGuard'
+import BuyNowModal from './BuyNowModal'
 import './WonPropertyCard.css'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
@@ -20,6 +21,7 @@ const WonPropertyCard = ({ purchase, formatPrice, formatDate }) => {
   const [isPayingDeposit, setIsPayingDeposit] = useState(false)
   const [isDetailsOpen, setIsDetailsOpen] = useState(false)
   const [isInstructionsOpen, setIsInstructionsOpen] = useState(false)
+  const [isBuyNowModalOpen, setIsBuyNowModalOpen] = useState(false)
 
   // Вычисляем оставшееся время до истечения срока оплаты депозита
   useEffect(() => {
@@ -46,38 +48,28 @@ const WonPropertyCard = ({ purchase, formatPrice, formatDate }) => {
 
   const handlePayDeposit = async () => {
     if (isPayingDeposit) return
-
-    setIsPayingDeposit(true)
     try {
-      const response = await fetch(`${API_BASE_URL}/auction-winners/${purchase.id}/pay-deposit`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      })
-
-      if (response.ok) {
-        const result = await response.json()
-        if (result.success) {
-          // Обновляем статус покупки
-          purchase.depositPaid = true
-          purchase.status = 'deposit_paid'
-          // Перезагружаем страницу для обновления данных
-          window.location.reload()
-        } else {
-          showNotification(result.error || t('buyerWon_payError'))
-        }
-      } else {
-        const errorData = await response.json().catch(() => ({}))
-        showNotification(errorData.error || t('buyerWon_payError'))
-      }
+      setIsPayingDeposit(true)
+      setIsBuyNowModalOpen(true)
     } catch (error) {
-      console.error('Ошибка при оплате депозита:', error)
+      console.error('Ошибка открытия окна оплаты депозита:', error)
       showNotification(t('buyerWon_networkError'))
     } finally {
       setIsPayingDeposit(false)
     }
   }
+
+  const auctionWinningBid =
+    purchase?.purchasePrice ??
+    purchase?.winnerData?.winning_bid_amount ??
+    0
+
+  const minSalePriceForReserve =
+    purchase?.winnerData?.property?.price ??
+    purchase?.minimumSalePrice ??
+    (typeof purchase?.depositAmount === 'number' && purchase.depositAmount > 0
+      ? Math.round((purchase.depositAmount / 0.1) * 100) / 100
+      : 0)
 
   const formatTimeRemaining = (ms) => {
     if (!ms || ms <= 0) return '00:00:00'
@@ -149,25 +141,27 @@ const WonPropertyCard = ({ purchase, formatPrice, formatDate }) => {
             </div>
           </div>
 
-          {/* Кнопка оплаты депозита */}
-          {!purchase.depositPaid && !depositExpired && (
-            <button
-              className="won-property-card__pay-button"
-              onClick={handlePayDeposit}
-              disabled={isPayingDeposit}
-            >
-              {isPayingDeposit ? t('buyerWon_processing') : t('buyerWon_payDeposit')}
-            </button>
-          )}
+          <div className="won-property-card__actions-row">
+            {/* Кнопка оплаты резерва */}
+            {!purchase.depositPaid && !depositExpired && (
+              <button
+                className="won-property-card__pay-button"
+                onClick={handlePayDeposit}
+                disabled={isPayingDeposit}
+              >
+                {isPayingDeposit ? t('buyerWon_processing') : t('buyerWon_payDeposit')}
+              </button>
+            )}
 
-          {/* Кнопка деталей */}
-          <button
-            className="won-property-card__toggle-button"
-            onClick={() => setIsDetailsOpen(!isDetailsOpen)}
-          >
-            <span>{t('buyerWon_details')}</span>
-            {isDetailsOpen ? <FiChevronUp /> : <FiChevronDown />}
-          </button>
+            {/* Кнопка деталей */}
+            <button
+              className="won-property-card__toggle-button"
+              onClick={() => setIsDetailsOpen(!isDetailsOpen)}
+            >
+              <span>{t('buyerWon_details')}</span>
+              {isDetailsOpen ? <FiChevronUp /> : <FiChevronDown />}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -252,6 +246,23 @@ const WonPropertyCard = ({ purchase, formatPrice, formatDate }) => {
           </Link>
         </div>
       )}
+
+      <BuyNowModal
+        isOpen={isBuyNowModalOpen}
+        onClose={() => setIsBuyNowModalOpen(false)}
+        variant="auctionWinner"
+        winningBidAmount={auctionWinningBid}
+        stripeReturnPath="/history"
+        property={{
+          id: purchase.propertyId,
+          title: purchase.propertyTitle,
+          name: purchase.propertyTitle,
+          price: minSalePriceForReserve,
+          currency: purchase.currency || 'USD',
+          property_type: purchase?.winnerData?.property?.property_type || 'apartment',
+          location: purchase.location || '',
+        }}
+      />
     </div>
   )
 }

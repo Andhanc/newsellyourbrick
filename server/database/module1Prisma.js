@@ -109,7 +109,6 @@ export const userQueries = {
       'first_name',
       'last_name',
       'email',
-      'username',
       'password',
       'phone_number',
       'passport_series',

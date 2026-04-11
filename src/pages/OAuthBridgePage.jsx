@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useAuth, useUser } from '@clerk/clerk-react'
+import { useAuth, useUser, AuthenticateWithRedirectCallback } from '@clerk/clerk-react'
 
 /**
  * Лёгкая страница возврата после Clerk OAuth (без AuthenticateWithRedirectCallback —
@@ -10,6 +10,12 @@ export default function OAuthBridgePage() {
   const navigate = useNavigate()
   const { isSignedIn, isLoaded: authLoaded } = useAuth()
   const { user, isLoaded: userLoaded } = useUser()
+  const hasClerkParams =
+    (typeof window !== 'undefined' && window.location.search.includes('__clerk')) ||
+    (typeof window !== 'undefined' && window.location.hash.includes('__clerk'))
+  const oauthStarted =
+    typeof window !== 'undefined' &&
+    sessionStorage.getItem('clerk_oauth_redirect_started') === 'true'
 
   useEffect(() => {
     if (!authLoaded || !userLoaded || !isSignedIn || !user) return
@@ -24,6 +30,12 @@ export default function OAuthBridgePage() {
     tick()
     return () => window.clearInterval(id)
   }, [authLoaded, userLoaded, isSignedIn, user, navigate])
+
+  // Надежно завершаем handshake Clerk после возврата от Google/Facebook.
+  // Без этого у части пользователей callback не устанавливал сессию, и flow зависал в timeout.
+  if ((hasClerkParams || oauthStarted) && (!authLoaded || !isSignedIn)) {
+    return <AuthenticateWithRedirectCallback />
+  }
 
   return (
     <div

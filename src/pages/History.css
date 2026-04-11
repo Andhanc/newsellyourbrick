@@ -264,6 +264,17 @@
   gap: 20px;
 }
 
+.history-list--bids-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+  align-items: stretch;
+}
+
+.history-list--bids-grid .empty-state {
+  grid-column: 1 / -1;
+}
+
 .history-card {
   background: #fff;
   border: 2px solid #e0e0e0;
@@ -670,6 +681,10 @@
 }
 
 @media (max-width: 768px) {
+  .history-list--bids-grid {
+    grid-template-columns: 1fr;
+  }
+
   .history-main {
     padding: 24px 16px;
   }

@@ -1042,12 +1042,14 @@ const Wallet = () => {
           <BuyNowModal
             isOpen={isBuyNowModalOpen}
             onClose={() => setIsBuyNowModalOpen(false)}
+            variant="auctionWinner"
+            winningBidAmount={wonProperty.bid_amount}
             stripeReturnPath="/wallet"
             property={{
               id: wonProperty.property_id,
               title: wonProperty.title,
               name: wonProperty.title,
-              price: wonProperty.bid_amount,
+              price: wonProperty.price ?? wonProperty.bid_amount,
               currency: wonProperty.currency || 'USD',
               property_type: wonProperty.property_type,
               isAuction: true,

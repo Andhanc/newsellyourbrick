@@ -65,8 +65,14 @@ import { askPropertyAssistant, detectManagerContactIntent, filterPropertiesByLoc
 import { getUserData, clearUserData, isAuthenticated } from '../services/authService'
 import { syncAssistantLead } from '../services/assistantLeadService'
 import { getManagerContactButtons } from '../services/liveChatApi'
+import {
+  fetchUserNotifications,
+  invalidateUserNotificationsCache,
+} from '../utils/notificationsApi'
+import { fetchUserById } from '../utils/usersApi'
 
 import { getApiBaseUrl, getApiBaseUrlSync } from '../utils/apiConfig'
+import { normalizePropertyMediaFields } from '../utils/propertyImage'
 import { navigateToWallet } from '../utils/walletNavigation'
 import { usePropertyFavorites } from '../context/PropertyFavoritesContext'
 import { useLayoutScrollRef } from '../context/LayoutScrollContext'
@@ -74,6 +80,9 @@ import { UI_LANGUAGES } from '../constants/uiLanguages'
 
 // Используем синхронную версию для инициализации, затем обновим при загрузке
 let API_BASE_URL = getApiBaseUrlSync()
+
+const LISTING_IMAGE_FALLBACK =
+  'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=800&q=80'
 
 // Базовые данные для 4 блоков 3D-папок (заголовки переводятся в компоненте через useMemo)
 const landingFolderDataBase = [
@@ -578,18 +587,11 @@ function MainPage() {
         const dbUserId = localStorage.getItem('userId')
         if (userData && dbUserId && /^\d+$/.test(dbUserId)) {
           try {
-            const response = await fetch(`${API_BASE_URL}/users/${dbUserId}`)
-            if (response.ok) {
-              const result = await response.json()
-              if (result.success && result.data) {
-                // Проверяем заполненность профиля из БД
-                profileIncomplete = checkProfileCompleteness(result.data)
-                setHasIncompleteProfile(profileIncomplete)
-              } else {
-                // Если данных в БД нет, проверяем базовые поля Clerk
-                profileIncomplete = !user.firstName || !user.lastName || (!user.primaryEmailAddress?.emailAddress && !user.primaryPhoneNumber?.phoneNumber)
-                setHasIncompleteProfile(profileIncomplete)
-              }
+            const dbUser = await fetchUserById(API_BASE_URL, dbUserId)
+            if (dbUser) {
+              // Проверяем заполненность профиля из БД
+              profileIncomplete = checkProfileCompleteness(dbUser)
+              setHasIncompleteProfile(profileIncomplete)
             } else {
               // Если запрос не удался, проверяем базовые поля Clerk
               profileIncomplete = !user.firstName || !user.lastName || (!user.primaryEmailAddress?.emailAddress && !user.primaryPhoneNumber?.phoneNumber)
@@ -621,10 +623,10 @@ function MainPage() {
           const dbUserId = localStorage.getItem('userId')
           if (dbUserId && /^\d+$/.test(dbUserId)) {
             try {
-              const response = await fetch(`${API_BASE_URL}/users/${dbUserId}`)
+              const result = await fetchUserById(API_BASE_URL, dbUserId, { includeMeta: true })
               
               // Если пользователь не найден в БД (404) — сессия устарела, очищаем её
-              if (response.status === 404) {
+              if (result.notFound) {
                 console.warn('⚠️ Локальная сессия устарела: пользователь не найден в БД. Очищаем данные.')
                 clearUserData()
                 setIsLoggedIn(false)
@@ -633,10 +635,8 @@ function MainPage() {
                 return
               }
               
-              if (response.ok) {
-                const result = await response.json()
-                if (result.success && result.data) {
-                  const dbUser = result.data
+              if (result.ok && result.user) {
+                  const dbUser = result.user
                   
                   // Проверяем заполненность профиля
                   profileIncomplete = checkProfileCompleteness(dbUser)
@@ -656,7 +656,6 @@ function MainPage() {
                     }
                     localStorage.setItem('userData', JSON.stringify(updatedUserData))
                   }
-                }
               }
             } catch (error) {
               console.warn('⚠️ Не удалось загрузить данные из БД:', error)
@@ -698,7 +697,6 @@ function MainPage() {
     const loadNotifications = async () => {
       const userData = getUserData()
       if (!userData) {
-        console.log('📭 Нет данных пользователя для загрузки уведомлений');
         return
       }
 
@@ -725,7 +723,6 @@ function MainPage() {
             const userResult = await userResponse.json();
             if (userResult.success && userResult.data) {
               dbUserId = userResult.data.id;
-              console.log('✅ Найден пользователь в БД по email/phone, ID:', dbUserId);
             }
           }
         } catch (error) {
@@ -734,84 +731,50 @@ function MainPage() {
       }
 
       if (!dbUserId) {
-        console.log('📭 Нет ID пользователя в БД для загрузки уведомлений');
         return
       }
-
-      console.log('📥 Загрузка уведомлений для пользователя:', dbUserId);
       setNotificationsLoading(true)
       try {
-        const response = await fetch(`${API_BASE_URL}/notifications/user/${dbUserId}`)
-        console.log('📥 Ответ API уведомлений:', response.status, response.statusText);
-        if (response.ok) {
-          const data = await response.json()
-          console.log('📦 Получены уведомления:', data);
-          if (data.success) {
-            console.log('✅ Найдено уведомлений:', data.data?.length || 0);
-            const notificationsList = (data.data || []).map((n) => {
-              if (n.data && typeof n.data === 'string') {
-                try {
-                  return { ...n, data: JSON.parse(n.data) }
-                } catch {
-                  return n
-                }
-              }
-              return n
+        const notificationsList = await fetchUserNotifications(dbUserId, { ttlMs: 15000 })
+
+        // Проверяем новые уведомления о перебитой ставке и тест-драйве.
+        // Первый успешный ответ после монтирования только заполняет previousNotificationIds — без toast,
+        // иначе после F5 одни и те же непрочитанные снова показывались бы как «новые».
+        const currentNotificationIds = new Set(notificationsList.map((n) => n.id))
+        if (!isFirstNotificationsLoadRef.current) {
+          const newBidOutbidNotifications = notificationsList.filter(
+            (n) =>
+              n.type === 'bid_outbid' &&
+              !previousNotificationIds.current.has(n.id) &&
+              n.view_count === 0
+          )
+
+          if (newBidOutbidNotifications.length > 0) {
+            newBidOutbidNotifications.forEach((notif) => {
+              const message = notif.message || notif.title || 'Вашу ставку перебили!'
+              showToast(message, 'warning', 5000)
             })
-            
-            // Проверяем новые уведомления о перебитой ставке и тест-драйве.
-            // Первый успешный ответ после монтирования только заполняет previousNotificationIds — без toast,
-            // иначе после F5 одни и те же непрочитанные снова показывались бы как «новые».
-            const currentNotificationIds = new Set(notificationsList.map(n => n.id));
-            if (!isFirstNotificationsLoadRef.current) {
-              const newBidOutbidNotifications = notificationsList.filter(
-                n => n.type === 'bid_outbid' && 
-                     !previousNotificationIds.current.has(n.id) &&
-                     n.view_count === 0
-              );
-              
-              if (newBidOutbidNotifications.length > 0) {
-                newBidOutbidNotifications.forEach(notif => {
-                  const message = notif.message || notif.title || 'Вашу ставку перебили!';
-                  showToast(message, 'warning', 5000);
-                  console.log('🔔 Показано toast-уведомление о перебитой ставке:', notif.id);
-                });
-              }
+          }
 
-              const newTestDriveResult = notificationsList.filter(
-                (n) =>
-                  n.type === 'test_drive_result' &&
-                  !previousNotificationIds.current.has(n.id) &&
-                  n.view_count === 0
-              )
-              if (newTestDriveResult.length > 0) {
-                newTestDriveResult.forEach((notif) => {
-                  const message =
-                    notif.message || notif.title || 'Обновление по тест-драйву'
-                  showToast(message, notif.title?.includes('отклон') ? 'warning' : 'success', 6000)
-                  console.log('🔔 Toast тест-драйв:', notif.id)
-                })
-              }
-            } else {
-              isFirstNotificationsLoadRef.current = false
-            }
-
-            // Обновляем множество ID предыдущих уведомлений
-            previousNotificationIds.current = currentNotificationIds;
-            
-            if (notificationsList && notificationsList.length > 0) {
-              console.log('📄 Первое уведомление:', notificationsList[0]);
-            }
-            setNotifications(notificationsList)
-          } else {
-            console.warn('⚠️ API вернул success: false');
-            setNotifications([])
+          const newTestDriveResult = notificationsList.filter(
+            (n) =>
+              n.type === 'test_drive_result' &&
+              !previousNotificationIds.current.has(n.id) &&
+              n.view_count === 0
+          )
+          if (newTestDriveResult.length > 0) {
+            newTestDriveResult.forEach((notif) => {
+              const message = notif.message || notif.title || 'Обновление по тест-драйву'
+              showToast(message, notif.title?.includes('отклон') ? 'warning' : 'success', 6000)
+            })
           }
         } else {
-          const errorText = await response.text()
-          console.error('❌ Ошибка загрузки уведомлений:', response.status, errorText);
-          setNotifications([])
+          isFirstNotificationsLoadRef.current = false
         }
+
+        // Обновляем множество ID предыдущих уведомлений
+        previousNotificationIds.current = currentNotificationIds
+        setNotifications(notificationsList)
       } catch (error) {
         console.error('❌ Ошибка загрузки уведомлений:', error)
         setNotifications([])
@@ -824,7 +787,11 @@ function MainPage() {
       loadNotifications()
       const handleFocus = () => loadNotifications()
       window.addEventListener('focus', handleFocus)
-      const pollId = setInterval(loadNotifications, 45000)
+      const pollId = setInterval(() => {
+        if (document.visibilityState === 'visible') {
+          loadNotifications()
+        }
+      }, 120000)
       return () => {
         window.removeEventListener('focus', handleFocus)
         clearInterval(pollId)
@@ -1001,21 +968,18 @@ function MainPage() {
   // Обработчик просмотра уведомления
   const handleNotificationView = async (notificationId) => {
     try {
-      console.log('👁️ Просмотр уведомления:', notificationId);
       await fetch(`${API_BASE_URL}/notifications/${notificationId}/view`, {
         method: 'PUT'
       })
-      // Обновляем список уведомлений
-      // Используем числовой ID из БД (из localStorage), а не Clerk ID
       const dbUserId = localStorage.getItem('userId')
       if (dbUserId && /^\d+$/.test(dbUserId)) {
-        const response = await fetch(`${API_BASE_URL}/notifications/user/${dbUserId}`)
-        if (response.ok) {
-          const data = await response.json()
-          if (data.success) {
-            setNotifications(data.data || [])
-          }
-        }
+        invalidateUserNotificationsCache(dbUserId)
+      }
+      // Обновляем список уведомлений
+      // Используем числовой ID из БД (из localStorage), а не Clerk ID
+      if (dbUserId && /^\d+$/.test(dbUserId)) {
+        const refreshed = await fetchUserNotifications(dbUserId, { force: true, ttlMs: 0 })
+        setNotifications(refreshed || [])
       }
     } catch (error) {
       console.error('Ошибка при просмотре уведомления:', error)
@@ -1384,7 +1348,16 @@ function MainPage() {
           const res = await fetch(`${API_BASE_URL}/properties/approved?type=${apiType}&lang=${lang}`)
           if (res.ok) {
             const data = await res.json()
-            if (data.success && data.data) loadedProperties[stateKey] = data.data
+            if (data.success && data.data) {
+              loadedProperties[stateKey] = data.data.map((p) => {
+                const { image: ni, images: nims } = normalizePropertyMediaFields(p)
+                return {
+                  ...p,
+                  image: ni || LISTING_IMAGE_FALLBACK,
+                  images: nims.length > 0 ? nims : ni ? [ni] : [],
+                }
+              })
+            }
           }
         } catch (_) {}
       }
@@ -1462,14 +1435,15 @@ function MainPage() {
         const priceNumber = prop.price != null && prop.price !== '' ? Number(prop.price) : 0
         const auctionStartingPrice = prop.auction_starting_price != null && prop.auction_starting_price !== '' ? Number(prop.auction_starting_price) : (prop.auctionStartingPrice != null && prop.auctionStartingPrice !== '' ? Number(prop.auctionStartingPrice) : null)
         const debtAmount = prop.debt_amount != null && prop.debt_amount !== '' ? Number(prop.debt_amount) : null
+        const { image: normalizedImage, images: normalizedImages } = normalizePropertyMediaFields(prop)
         return {
           ...prop,
           isAuction,
           is_share: isShare ? 1 : 0,
           title: prop.title || prop.name || '',
           name: prop.name || prop.title || '',
-          image: prop.image || (Array.isArray(prop.images) && prop.images[0] ? (typeof prop.images[0] === 'string' ? prop.images[0] : prop.images[0].url) : null),
-          images: Array.isArray(prop.images) ? prop.images : (prop.image ? [prop.image] : []),
+          image: normalizedImage || LISTING_IMAGE_FALLBACK,
+          images: normalizedImages.length > 0 ? normalizedImages : normalizedImage ? [normalizedImage] : [],
           price: priceNumber,
           auction_starting_price: auctionStartingPrice,
           currentBid: prop.currentBid || prop.auction_current_bid || prop.auctionCurrentBid || null,
@@ -1791,7 +1765,6 @@ function MainPage() {
 
   const handleContactFormSubmit = (e) => {
     e.preventDefault()
-    console.log('Form submitted:', contactForm)
     setContactForm({
       email: '',
       fullName: '',

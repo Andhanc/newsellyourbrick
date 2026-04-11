@@ -14,6 +14,7 @@ import UserCabinetSseBridge from './components/UserCabinetSseBridge'
 import VerificationRejectedGate from './components/VerificationRejectedGate'
 import { validateSession, getUserData, ensureLocalUserIdFromSession } from './services/authService'
 import { prefetchAuctionList } from './services/auctionListCache'
+import { fetchUserById } from './utils/usersApi'
 import { PropertyFavoritesProvider } from './context/PropertyFavoritesContext'
 import { runDevBackendHintOnce } from './utils/devBackendHint'
 import './App.css'
@@ -280,42 +281,31 @@ function App() {
   // Инициализируем состояние блокировки из localStorage сразу
   const [isBlocked, setIsBlocked] = useState(() => {
     const isBlockedFlag = localStorage.getItem('isBlocked') === 'true';
-    console.log('🔍 Начальное состояние блокировки из localStorage:', isBlockedFlag);
     return isBlockedFlag;
   });
 
   // Проверяем блокировку при загрузке пользователя из localStorage
   useEffect(() => {
-    console.log('🔍 Начинаем проверку блокировки пользователя...');
-    
     const checkBlockedStatus = async () => {
       // Сначала проверяем флаг блокировки в localStorage
       const isBlockedFlag = localStorage.getItem('isBlocked') === 'true';
       const blockedUserId = localStorage.getItem('blockedUserId');
       
-      console.log('🔍 Флаг блокировки в localStorage:', { isBlockedFlag, blockedUserId });
-      
       if (isBlockedFlag && blockedUserId) {
         // Если есть флаг блокировки, сразу показываем модальное окно
-        console.log('🚫 Пользователь заблокирован (найден флаг в localStorage), показываем модальное окно');
         setIsBlocked(true);
         
         // Дополнительно проверяем статус в БД
         try {
           const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
-          const response = await fetch(`${API_BASE_URL}/users/${blockedUserId}`);
-          if (response.ok) {
-            const result = await response.json();
-            if (result.success && result.data && result.data.is_blocked === 1) {
-              console.log('✅ Подтверждено: пользователь заблокирован в БД');
-              setIsBlocked(true);
-            } else {
-              // Если пользователь разблокирован, очищаем флаги
-              console.log('✅ Пользователь разблокирован в БД, очищаем флаги');
-              localStorage.removeItem('isBlocked');
-              localStorage.removeItem('blockedUserId');
-              setIsBlocked(false);
-            }
+          const dbUser = await fetchUserById(API_BASE_URL, blockedUserId);
+          if (dbUser && dbUser.is_blocked === 1) {
+            setIsBlocked(true);
+          } else {
+            // Если пользователь разблокирован, очищаем флаги
+            localStorage.removeItem('isBlocked');
+            localStorage.removeItem('blockedUserId');
+            setIsBlocked(false);
           }
         } catch (error) {
           console.warn('⚠️ Не удалось проверить статус блокировки:', error);
@@ -327,28 +317,22 @@ function App() {
       
       // Если нет флага блокировки, проверяем пользователя по его данным
       const userData = getUserData();
-      console.log('🔍 Данные пользователя:', { isLoggedIn: userData.isLoggedIn, id: userData.id });
-      
       // Используем числовой ID из БД (из localStorage), а не Clerk ID
       const dbUserId = localStorage.getItem('userId')
       if (userData.isLoggedIn && dbUserId && /^\d+$/.test(dbUserId)) {
         try {
           const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
-          const response = await fetch(`${API_BASE_URL}/users/${dbUserId}`);
-          if (response.ok) {
-            const result = await response.json();
-            if (result.success && result.data && result.data.is_blocked === 1) {
-              console.log('🚫 Пользователь заблокирован (найдено в БД), сохраняем флаг');
-              // Сохраняем флаг блокировки
-              localStorage.setItem('isBlocked', 'true');
-              localStorage.setItem('blockedUserId', userData.id.toString());
-              setIsBlocked(true);
-            } else {
-              // Очищаем флаги блокировки, если пользователь не заблокирован
-              localStorage.removeItem('isBlocked');
-              localStorage.removeItem('blockedUserId');
-              setIsBlocked(false);
-            }
+          const dbUser = await fetchUserById(API_BASE_URL, dbUserId);
+            if (dbUser && dbUser.is_blocked === 1) {
+            // Сохраняем флаг блокировки
+            localStorage.setItem('isBlocked', 'true');
+            localStorage.setItem('blockedUserId', userData.id.toString());
+            setIsBlocked(true);
+          } else {
+            // Очищаем флаги блокировки, если пользователь не заблокирован
+            localStorage.removeItem('isBlocked');
+            localStorage.removeItem('blockedUserId');
+            setIsBlocked(false);
           }
         } catch (error) {
           console.warn('⚠️ Не удалось проверить статус блокировки:', error);
@@ -373,8 +357,6 @@ function App() {
   useEffect(() => {
     runDevBackendHintOnce()
   }, [])
-
-  console.log('🔍 App render, isBlocked:', isBlocked);
 
   const tonManifestUrl = typeof window !== 'undefined'
     ? `${window.location.origin}/tonconnect-manifest.json`

@@ -14,6 +14,11 @@ import LoginModal from './LoginModal'
 import { getUserData, clearUserData } from '../services/authService'
 import { getApiBaseUrl } from '../utils/apiConfig'
 import { navigateToWallet } from '../utils/walletNavigation'
+import { fetchUserById } from '../utils/usersApi'
+import {
+  fetchUserNotifications,
+  invalidateUserNotificationsCache,
+} from '../utils/notificationsApi'
 import '../pages/MainPage.css'
 import { MenuToggleIcon } from '@/components/ui/menu-toggle-icon'
 import { UI_LANGUAGES } from '../constants/uiLanguages'
@@ -164,10 +169,10 @@ const Header = () => {
 
         try {
           const API_BASE_URL = await getApiBaseUrl()
-          const response = await fetch(`${API_BASE_URL}/users/${dbUserId}`)
+          const userResult = await fetchUserById(API_BASE_URL, dbUserId, { includeMeta: true })
 
           // Пользователь отсутствует в БД — сбрасываем localStorage
-          if (response.status === 404) {
+          if (userResult.notFound) {
             clearUserData()
             setIsLoggedIn(false)
             setUserPhoto(null)
@@ -175,16 +180,10 @@ const Header = () => {
             return
           }
 
-          if (response.ok) {
-            const result = await response.json()
+          if (userResult.ok) {
             setIsLoggedIn(true)
             setUserPhoto(clerkPhoto)
-            if (result.success && result.data) {
-              setHasIncompleteProfile(checkProfileCompleteness(result.data))
-            } else {
-              const profileIncomplete = !user.firstName || !user.lastName || (!user.primaryEmailAddress?.emailAddress && !user.primaryPhoneNumber?.phoneNumber)
-              setHasIncompleteProfile(profileIncomplete)
-            }
+            setHasIncompleteProfile(checkProfileCompleteness(userResult.user))
             return
           }
 
@@ -213,11 +212,11 @@ const Header = () => {
           if (!photo && dbUserId && /^\d+$/.test(dbUserId)) {
             try {
               const API_BASE_URL = await getApiBaseUrl()
-              const response = await fetch(`${API_BASE_URL}/users/${dbUserId}`)
+              const result = await fetchUserById(API_BASE_URL, dbUserId, { includeMeta: true })
               
               // Если пользователь в БД не найден (например, был удален админом) —
               // принудительно сбрасываем локальную сессию
-              if (response.status === 404) {
+              if (result.notFound) {
                 console.warn('⚠️ Локальная сессия пользователя устарела: пользователь не найден в БД. Очищаем данные.')
                 clearUserData()
                 setIsLoggedIn(false)
@@ -226,29 +225,24 @@ const Header = () => {
                 return
               }
 
-              if (response.ok) {
-                const result = await response.json()
-                if (result.success && result.data && result.data.user_photo) {
-                  // Если user_photo начинается с /uploads, добавляем базовый URL
-                  const photoPath = result.data.user_photo
-                  const baseUrl = API_BASE_URL.replace('/api', '')
-                  photo = photoPath.startsWith('http') 
-                    ? photoPath 
-                    : `${baseUrl}${photoPath}`
-                  
-                  // Обновляем localStorage с фотографией
-                  const updatedUserData = {
-                    ...userData,
-                    picture: photo
-                  }
-                  localStorage.setItem('userData', JSON.stringify(updatedUserData))
+              if (result.ok && result.user?.user_photo) {
+                // Если user_photo начинается с /uploads, добавляем базовый URL
+                const photoPath = result.user.user_photo
+                const baseUrl = API_BASE_URL.replace('/api', '')
+                photo = photoPath.startsWith('http')
+                  ? photoPath
+                  : `${baseUrl}${photoPath}`
+
+                // Обновляем localStorage с фотографией
+                const updatedUserData = {
+                  ...userData,
+                  picture: photo
                 }
-                if (result.success && result.data) {
-                  setHasIncompleteProfile(checkProfileCompleteness(result.data))
-                } else {
-                  const profileIncomplete = !userData.name || (!userData.email && !userData.phone)
-                  setHasIncompleteProfile(profileIncomplete)
-                }
+                localStorage.setItem('userData', JSON.stringify(updatedUserData))
+              }
+
+              if (result.ok && result.user) {
+                setHasIncompleteProfile(checkProfileCompleteness(result.user))
               } else {
                 const profileIncomplete = !userData.name || (!userData.email && !userData.phone)
                 setHasIncompleteProfile(profileIncomplete)
@@ -494,6 +488,10 @@ const Header = () => {
       await fetch(`${await getApiBaseUrl()}/notifications/${notificationId}/view`, {
         method: 'PUT'
       })
+      const dbUserId = localStorage.getItem('userId')
+      if (dbUserId && /^\d+$/.test(String(dbUserId).trim())) {
+        invalidateUserNotificationsCache(dbUserId)
+      }
       setNotifications((prev) =>
         prev.map((notification) =>
           notification.id === notificationId
@@ -521,30 +519,8 @@ const Header = () => {
 
       setNotificationsLoading(true)
       try {
-        const apiBaseUrl = await getApiBaseUrl()
-        const response = await fetch(`${apiBaseUrl}/notifications/user/${dbUserId}`)
-        if (!response.ok) {
-          setNotifications([])
-          return
-        }
-        const data = await response.json()
-        if (!data.success) {
-          setNotifications([])
-          return
-        }
-
-        const parsedNotifications = (data.data || []).map((notification) => {
-          if (notification.data && typeof notification.data === 'string') {
-            try {
-              return { ...notification, data: JSON.parse(notification.data) }
-            } catch {
-              return notification
-            }
-          }
-          return notification
-        })
-
-        setNotifications(parsedNotifications)
+        const parsedNotifications = await fetchUserNotifications(dbUserId, { ttlMs: 15000 })
+        setNotifications(parsedNotifications || [])
       } catch (error) {
         console.error('Ошибка загрузки уведомлений:', error)
         setNotifications([])
@@ -558,7 +534,11 @@ const Header = () => {
 
     const handleFocus = () => loadNotifications()
     window.addEventListener('focus', handleFocus)
-    const pollId = setInterval(loadNotifications, 45000)
+    const pollId = setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        loadNotifications()
+      }
+    }, 120000)
 
     return () => {
       window.removeEventListener('focus', handleFocus)

@@ -33,6 +33,7 @@ import './PropertyDetailClassic.css'
 import { getApiBaseUrl, getApiBaseUrlSync } from '../utils/apiConfig'
 import { flagEmojiForStoredCountry } from '../utils/countryFlagFromStored'
 import FlipCard from '../components/ui/FlipCard'
+import { Awards } from '@/components/ui/award'
 import TestDriveSection from '../components/TestDriveSection'
 import { getAuctionMinBidStep } from '../utils/auctionBidStep'
 import { hasDbBackedProperty } from '../utils/propertyFavoriteKey'
@@ -64,6 +65,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
   const thumbnailScrollRef = useRef(null)
   const [isBidHistoryOpen, setIsBidHistoryOpen] = useState(false)
   const [isBuyNowModalOpen, setIsBuyNowModalOpen] = useState(false)
+  const [buyNowModalVariant, setBuyNowModalVariant] = useState('buyNow')
   const [auctionReminderOpen, setAuctionReminderOpen] = useState(false)
   const [mapCoordinates, setMapCoordinates] = useState(null)
   const [isGeocoding, setIsGeocoding] = useState(false)
@@ -92,7 +94,9 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
   const [auctionWinnerFromDb, setAuctionWinnerFromDb] = useState(undefined)
   /** Публичный номер игрока (user_id_number) при показе победителя только из auction_winners */
   const [endedAuctionPlayerPublicId, setEndedAuctionPlayerPublicId] = useState(null)
-  const [showConfetti, setShowConfetti] = useState(false) // Флаг показа конфетти для победителя
+  const [showConfetti, setShowConfetti] = useState(false) // Слой конфетти (canvas)
+  const [showWinnerModal, setShowWinnerModal] = useState(false) // Модалка победы (отдельно от конфетти)
+  const [confettiRecycle, setConfettiRecycle] = useState(true) // Пока true — конфетти бесконечно; false — падает и исчезает
   const confettiShownRef = useRef(false) // Ref для отслеживания, было ли показано конфетти
   const [windowSize, setWindowSize] = useState({
     width: window.innerWidth,
@@ -159,15 +163,27 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
   // Отслеживаем истечение таймера и показываем конфетти для победителя
   useEffect(() => {
     if (timerExpired && isUserLeader && !confettiShownRef.current) {
-      setShowConfetti(true);
-      confettiShownRef.current = true;
-      // Скрываем конфетти через 7 секунд
+      confettiShownRef.current = true
+      setShowConfetti(true)
+      setShowWinnerModal(true)
+      setConfettiRecycle(true)
+      // Через 10 с убираем только модалку; конфетти с recycle=false допадает вниз, затем onConfettiComplete
       const timer = setTimeout(() => {
-        setShowConfetti(false);
-      }, 7000);
-      return () => clearTimeout(timer);
+        setShowWinnerModal(false)
+        setConfettiRecycle(false)
+      }, 10000)
+      return () => clearTimeout(timer)
     }
   }, [timerExpired, isUserLeader])
+
+  // Если колбэк конфетти не сработал — убираем слой через запасной таймаут
+  useEffect(() => {
+    if (!showConfetti || confettiRecycle) return
+    const fallback = setTimeout(() => {
+      setShowConfetti(false)
+    }, 45000)
+    return () => clearTimeout(fallback)
+  }, [showConfetti, confettiRecycle])
 
 
   // Функция для обработки URL документа
@@ -923,6 +939,15 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
           if (typeof event.data === 'string' && event.data.startsWith(':')) return
           const data = JSON.parse(event.data)
           if (data.type === 'bid_placed' && Number(data.property_id) === Number(displayProperty.id)) {
+            if (data.test_timer_end_date) {
+              setProperty((prev) => ({
+                ...prev,
+                test_timer_end_date: data.test_timer_end_date,
+                test_timer_duration:
+                  data.test_timer_duration != null ? data.test_timer_duration : prev.test_timer_duration,
+              }))
+              setTimerExpired(false)
+            }
             window.dispatchEvent(new Event('property-bid-sse'))
             window.dispatchEvent(
               new CustomEvent('syb-testdrive-refresh', { detail: { propertyId: displayProperty.id } })
@@ -951,6 +976,70 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
       cancelled = true
       if (reconnectTimer) clearTimeout(reconnectTimer)
       if (es) es.close()
+    }
+  }, [displayProperty.id, isAuctionProperty])
+
+  // Тот же канал, что на главной /auction: админка и сервер пушат test_timer_update — подтягиваем без опроса.
+  useEffect(() => {
+    if (!displayProperty?.id || !isAuctionProperty) return
+
+    let eventSource = null
+    let reconnectTimer = null
+    let cancelled = false
+
+    const connect = async () => {
+      const base = await getApiBaseUrl()
+      if (cancelled) return
+      const url = base.startsWith('http')
+        ? `${base.replace(/\/$/, '')}/events/auction-updates`
+        : `${window.location.origin}${base.replace(/\/$/, '')}/events/auction-updates`
+      eventSource = new EventSource(url)
+      eventSource.onopen = () => {
+        if (reconnectTimer) {
+          clearTimeout(reconnectTimer)
+          reconnectTimer = null
+        }
+      }
+      eventSource.onmessage = (event) => {
+        try {
+          if (typeof event.data === 'string' && event.data.startsWith(':')) return
+          const data = JSON.parse(event.data)
+          if (data.type !== 'test_timer_update' || !data.property) return
+          const patch = data.property
+          if (Number(patch.id) !== Number(displayProperty.id)) return
+          const cleared = patch.test_timer_end_date == null || patch.test_timer_end_date === ''
+          setProperty((prev) => ({
+            ...prev,
+            test_timer_end_date: cleared ? null : patch.test_timer_end_date,
+            test_timer_duration:
+              patch.test_timer_duration != null
+                ? patch.test_timer_duration
+                : cleared
+                  ? null
+                  : prev.test_timer_duration,
+          }))
+          if (!cleared) setTimerExpired(false)
+        } catch (_) {}
+      }
+      eventSource.onerror = () => {
+        if (cancelled) return
+        if (eventSource) {
+          eventSource.close()
+          eventSource = null
+        }
+        if (reconnectTimer) return
+        reconnectTimer = setTimeout(() => {
+          reconnectTimer = null
+          void connect()
+        }, 3000)
+      }
+    }
+
+    void connect()
+    return () => {
+      cancelled = true
+      if (reconnectTimer) clearTimeout(reconnectTimer)
+      if (eventSource) eventSource.close()
     }
   }, [displayProperty.id, isAuctionProperty])
 
@@ -1668,22 +1757,22 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
     }
   }
 
-  const handleBookNow = () => {
+  const openBuyNowModal = (variant = 'buyNow') => {
     // Проверяем резервацию перед открытием модального окна
     if (isReservedActive) {
       showNotification('Объект временно забронирован. Покупка недоступна.')
       return
     }
-    
+
     // Проверяем авторизацию
     const isClerkAuth = user && userLoaded
     const isOldAuth = isAuthenticated()
-    
+
     if (!isClerkAuth && !isOldAuth) {
       showToast('Пожалуйста, войдите в систему, чтобы купить объект', 'warning')
       return
     }
-    
+
     // Проверяем, что пользователь не является продавцом
     const userRole = userData?.role || 'buyer'
     if (userRole === 'seller' || userRole === 'owner') {
@@ -1695,10 +1784,12 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
       showToast(t('buyNowEmailRequired'), 'warning')
       return
     }
-    
-    // Открываем модальное окно с инструкциями
+
+    setBuyNowModalVariant(variant)
     setIsBuyNowModalOpen(true)
   }
+
+  const handleBookNow = () => openBuyNowModal('buyNow')
 
   // Функция для определения значений кнопок быстрых ставок в зависимости от текущей ставки
   const getQuickBidAmounts = () => {
@@ -1994,51 +2085,59 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
         const timerDuration = originalTestTimerDuration
         const hasTestTimer = !!(displayProperty.test_timer_end_date && timerDuration !== null)
 
-        void (async () => {
-          if (!hasTestTimer) return
-          console.log('🔄 Сброс тестового таймера до исходного значения (фон)')
-          try {
-            const now = new Date()
-            const newEndDate = new Date(now.getTime() + timerDuration)
-            const resetResponse = await fetch(`${API_BASE_URL}/properties/${pid}/test-timer`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                test_timer_end_date: newEndDate.toISOString(),
-                test_timer_duration: timerDuration,
-              }),
-            })
-            if (!resetResponse.ok) {
-              const errorData = await resetResponse.json().catch(() => ({}))
-              console.error('❌ Ошибка при сбросе таймера на сервере:', errorData)
-              return
-            }
-            const resetData = await resetResponse.json()
-            if (!resetData.success) return
-            console.log('✅ Тестовый таймер сброшен на сервере до исходного значения')
-            setTimerExpired(false)
+        // Сервер продлевает тестовый таймер в POST /api/bids и возвращает новые даты — без второго запроса и без задержки у других пользователей.
+        if (data.data?.test_timer_end_date) {
+          setProperty((prev) => ({
+            ...prev,
+            test_timer_end_date: data.data.test_timer_end_date,
+            test_timer_duration:
+              data.data.test_timer_duration != null ? data.data.test_timer_duration : prev.test_timer_duration,
+          }))
+          setTimerExpired(false)
+        } else if (hasTestTimer) {
+          void (async () => {
             try {
-              const propResponse = await fetch(`${API_BASE_URL}/properties/${pid}?lang=${lang}`)
-              if (!propResponse.ok) return
-              const propData = await propResponse.json()
-              if (propData.success && propData.data) {
-                const updatedProp = propData.data
-                setProperty((prev) => ({
-                  ...prev,
-                  test_timer_end_date:
-                    updatedProp.test_timer_end_date && String(updatedProp.test_timer_end_date).trim() !== ''
-                      ? updatedProp.test_timer_end_date
-                      : prev.test_timer_end_date,
-                  test_timer_duration: updatedProp.test_timer_duration || prev.test_timer_duration,
-                }))
+              const now = new Date()
+              const newEndDate = new Date(now.getTime() + timerDuration)
+              const resetResponse = await fetch(`${API_BASE_URL}/properties/${pid}/test-timer`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  test_timer_end_date: newEndDate.toISOString(),
+                  test_timer_duration: timerDuration,
+                }),
+              })
+              if (!resetResponse.ok) {
+                const errorData = await resetResponse.json().catch(() => ({}))
+                console.error('❌ Ошибка при сбросе таймера на сервере:', errorData)
+                return
               }
-            } catch (propError) {
-              console.error('❌ Ошибка при обновлении данных объекта:', propError)
+              const resetData = await resetResponse.json()
+              if (!resetData.success) return
+              setTimerExpired(false)
+              try {
+                const propResponse = await fetch(`${API_BASE_URL}/properties/${pid}?lang=${lang}`)
+                if (!propResponse.ok) return
+                const propData = await propResponse.json()
+                if (propData.success && propData.data) {
+                  const updatedProp = propData.data
+                  setProperty((prev) => ({
+                    ...prev,
+                    test_timer_end_date:
+                      updatedProp.test_timer_end_date && String(updatedProp.test_timer_end_date).trim() !== ''
+                        ? updatedProp.test_timer_end_date
+                        : prev.test_timer_end_date,
+                    test_timer_duration: updatedProp.test_timer_duration || prev.test_timer_duration,
+                  }))
+                }
+              } catch (propError) {
+                console.error('❌ Ошибка при обновлении данных объекта:', propError)
+              }
+            } catch (resetError) {
+              console.error('❌ Ошибка при сбросе таймера:', resetError)
             }
-          } catch (resetError) {
-            console.error('❌ Ошибка при сбросе таймера:', resetError)
-          }
-        })()
+          })()
+        }
         
         // Сохраняем ставку пользователя для проверки перебития
         setUserLastBid(amount)
@@ -2246,52 +2345,85 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
     }
   }
 
+  const auctionWinCelebrationText = useMemo(() => {
+    const pid = currentLeader?.userIdNumber ?? currentLeader?.userId ?? currentLeader?.id
+    const recipientText =
+      pid != null ? t('propertyDetailWinnerUserId', { id: pid }) : undefined
+    const lang = (i18n.language || 'ru').split('-')[0]
+    const dateLine = new Date().toLocaleDateString(
+      lang === 'ru' ? 'ru-RU' : lang === 'de' ? 'de-DE' : lang === 'sv' ? 'sv-SE' : 'en-US',
+      { day: 'numeric', month: 'long', year: 'numeric' }
+    )
+    return { recipientText, dateLine }
+  }, [currentLeader, t, i18n.language])
+
   return (
     <div className="property-detail-page-new">
       {showConfetti && (
         <>
-          <Confetti
-            width={windowSize.width}
-            height={windowSize.height}
-            recycle={false}
-            numberOfPieces={400}
-            gravity={0.3}
-            wind={0.05}
-            colors={['#10b981', '#f59e0b', '#3b82f6', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316', '#14b8a6', '#fbbf24']}
-            confettiSource={{
-              x: windowSize.width / 2,
-              y: windowSize.height / 2,
-              w: 0,
-              h: 0
-            }}
-            initialVelocityX={15}
-            initialVelocityY={30}
-            tweenDuration={7000}
-          />
-          <div className="winner-celebration">
-            <div className="winner-celebration__balloons">
-              <div className="balloon balloon--1">🎈</div>
-              <div className="balloon balloon--2">🎈</div>
-              <div className="balloon balloon--3">🎈</div>
-              <div className="balloon balloon--4">🎈</div>
-              <div className="balloon balloon--5">🎈</div>
-              <div className="balloon balloon--6">🎈</div>
-            </div>
-            <div className="winner-celebration__emojis">
-              <div className="celebration-emoji celebration-emoji--1">🎉</div>
-              <div className="celebration-emoji celebration-emoji--2">🏆</div>
-              <div className="celebration-emoji celebration-emoji--3">✨</div>
-              <div className="celebration-emoji celebration-emoji--4">🎊</div>
-              <div className="celebration-emoji celebration-emoji--5">🌟</div>
-              <div className="celebration-emoji celebration-emoji--6">💫</div>
-              <div className="celebration-emoji celebration-emoji--7">🎁</div>
-              <div className="celebration-emoji celebration-emoji--8">🥳</div>
-            </div>
-            <div className="winner-celebration__message">
-              <h2 className="winner-celebration__title">Объект Ваш!</h2>
-              <p className="winner-celebration__subtitle">Вы выиграли аукцион! 🎉</p>
-            </div>
+          <div className="winner-celebration-confetti" aria-hidden>
+            <Confetti
+              width={windowSize.width}
+              height={windowSize.height}
+              recycle={confettiRecycle}
+              numberOfPieces={500}
+              gravity={0.1}
+              wind={0.02}
+              colors={['#10b981', '#f59e0b', '#3b82f6', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316', '#14b8a6', '#fbbf24']}
+              confettiSource={{
+                x: 0,
+                y: 0,
+                w: windowSize.width,
+                h: 0,
+              }}
+              initialVelocityX={4}
+              initialVelocityY={6}
+              tweenDuration={10000}
+              onConfettiComplete={() => setShowConfetti(false)}
+            />
           </div>
+          {showWinnerModal && (
+            <div className="winner-celebration">
+              <div className="winner-celebration__panel">
+                <div
+                  className="winner-celebration__message winner-celebration__message--awards"
+                  role="dialog"
+                  aria-modal="true"
+                  aria-label={t('auctionWinModalTitle')}
+                >
+                  <div className="winner-celebration__award-shell">
+                    <Awards
+                      variant="award"
+                      title={t('auctionWinModalTitle')}
+                      subtitle={t('auctionWinModalSubtitle')}
+                      recipient={auctionWinCelebrationText.recipientText}
+                      date={auctionWinCelebrationText.dateLine}
+                    />
+                    <button
+                      type="button"
+                      className="winner-celebration__purchase-btn"
+                      onClick={() => {
+                        setShowWinnerModal(false)
+                        setConfettiRecycle(false)
+                        openBuyNowModal('auctionWinner')
+                      }}
+                      disabled={isReservedActive || !buyNowEmailOk}
+                      title={!buyNowEmailOk ? t('buyNowEmailRequired') : undefined}
+                      style={{
+                        opacity: isReservedActive || !buyNowEmailOk ? 0.5 : 1,
+                        cursor:
+                          isReservedActive || !buyNowEmailOk
+                            ? 'not-allowed'
+                            : 'pointer',
+                      }}
+                    >
+                      {t('auctionWinModalClose')}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </>
       )}
       {outbidNotification && (
@@ -2836,7 +2968,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                 
                 return hasAdditionalInfo ? (
                   <div className="property-detail-info-block">
-                    <h3 className="property-detail-info-block__title">Дополнительные удобства</h3>
+                    <h3 className="property-detail-info-block__title">{t('propertyDetailAdditionalAmenitiesTitle')}</h3>
                     <div className="property-detail-info-block__content property-detail-info-block__content--text">
                       <p>{String(additionalInfo)}</p>
                     </div>
@@ -2982,7 +3114,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
               {isAuctionProperty && timerExpired && isUserLeader && !isBuyNowSaleCompleted && (
                 <button
                   className="property-detail-sidebar__buy-btn property-detail-sidebar__buy-btn--winner"
-                  onClick={handleBookNow}
+                  onClick={() => openBuyNowModal('auctionWinner')}
                   disabled={isReservedActive || !buyNowEmailOk}
                   title={!buyNowEmailOk ? t('buyNowEmailRequired') : undefined}
                   style={{
@@ -3148,11 +3280,6 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                       className="property-detail-auction-ended"
                       style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '1rem', width: '100%' }}
                     >
-                      <div className="auction-completed-banner auction-completed-banner--page" role="status">
-                        {isBuyNowSaleCompleted
-                          ? t('propertyDetailBuyNowPurchaseCompleted')
-                          : t('propertyDetailAuctionCompleted')}
-                      </div>
                       {isBuyNowSaleCompleted && displayProperty.buy_now_winner_user_id != null && (
                         <div className="auction-winner-card auction-winner-card--settled" style={{ marginTop: 14, width: '100%', maxWidth: 320 }}>
                           <div className="auction-winner-name" style={{ textAlign: 'center' }}>
@@ -3604,7 +3731,21 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
       {/* Модальное окно с инструкциями по покупке */}
       <BuyNowModal
         isOpen={isBuyNowModalOpen}
-        onClose={() => setIsBuyNowModalOpen(false)}
+        onClose={() => {
+          setIsBuyNowModalOpen(false)
+          setBuyNowModalVariant('buyNow')
+        }}
+        variant={buyNowModalVariant}
+        winningBidAmount={
+          buyNowModalVariant === 'auctionWinner'
+            ? (currentBid !== null
+                ? currentBid
+                : (displayProperty.currentBid ??
+                  displayProperty.auction_starting_price ??
+                  displayProperty.price ??
+                  0))
+            : undefined
+        }
         stripeReturnPath={displayProperty?.id != null ? `/property/${displayProperty.id}` : '/'}
         property={{
           id: displayProperty.id,

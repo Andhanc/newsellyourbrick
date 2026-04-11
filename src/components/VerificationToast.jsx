@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { FiAlertCircle, FiCheck, FiX, FiChevronDown, FiChevronUp, FiChevronRight, FiFile, FiUser, FiMail, FiMapPin, FiCreditCard } from 'react-icons/fi';
+import { fetchVerificationStatus } from '../utils/verificationStatusApi';
 import './VerificationToast.css';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
@@ -74,18 +75,14 @@ const VerificationToast = ({ userId }) => {
     }
   };
 
-  const loadVerificationStatus = useCallback(async () => {
+  const loadVerificationStatus = useCallback(async (force = false) => {
     if (!userId) return;
     try {
       setLoading(true);
-      const response = await fetch(`${API_BASE_URL}/users/${userId}/verification-status`);
-      if (response.ok) {
-        const result = await response.json();
-        if (result.success && result.data) {
-          const newStatus = result.data;
-          setStatus(newStatus);
-          if (!newStatus.isReady) setIsVisible(true);
-        }
+      const newStatus = await fetchVerificationStatus(API_BASE_URL, userId, { ttlMs: 20000, force });
+      if (newStatus) {
+        setStatus(newStatus);
+        if (!newStatus.isReady) setIsVisible(true);
       }
     } catch (error) {
       console.error('Ошибка загрузки статуса регистрации:', error);
@@ -103,7 +100,7 @@ const VerificationToast = ({ userId }) => {
   // Слушаем событие обновления статуса регистрации
   useEffect(() => {
     const handleStatusUpdate = () => {
-      loadVerificationStatus();
+      loadVerificationStatus(true);
     };
     
     window.addEventListener('verification-status-update', handleStatusUpdate);

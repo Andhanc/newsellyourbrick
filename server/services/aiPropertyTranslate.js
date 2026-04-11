@@ -83,26 +83,29 @@ async function translateWithMyMemory(text, targetLang) {
 
 /**
  * Перевести объявление на все языки сайта.
- * @param {Object} property - { title, description, additional_amenities }
- * @returns {Promise<Object>} - { ru: { title, description, additional_amenities }, en: {...}, ... }
+ * @param {Object} property - { title, description, additional_amenities, location }
+ * @returns {Promise<Object>} - { ru: { title, description, additional_amenities, location }, en: {...}, ... }
  */
 async function translatePropertyToAllLanguages(property) {
   const title = String(property.title || '').trim();
   const description = String(property.description || '').trim();
   const additional_amenities = String(property.additional_amenities || '').trim();
+  const location = String(property.location || '').trim();
 
   const result = {};
 
   for (const { code } of SITE_LANGUAGES) {
-    const [tTitle, tDesc, tAmen] = await Promise.all([
+    const [tTitle, tDesc, tAmen, tLoc] = await Promise.all([
       title ? translateWithMyMemory(title, code) : Promise.resolve(title),
       description ? translateWithMyMemory(description, code) : Promise.resolve(description),
       additional_amenities ? translateWithMyMemory(additional_amenities, code) : Promise.resolve(additional_amenities),
+      location ? translateWithMyMemory(location, code) : Promise.resolve(location),
     ]);
     result[code] = {
       title: tTitle || title,
       description: tDesc || description,
       additional_amenities: tAmen || additional_amenities,
+      location: tLoc || location,
     };
     await delay(REQUEST_DELAY_MS);
   }

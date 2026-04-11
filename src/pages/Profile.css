@@ -516,7 +516,7 @@
   letter-spacing: -1px;
 }
 
-/* Строка из трёх блоков: статус, номер, email — ширина под текст в одну строку */
+/* Строка с блоками статуса и ID */
 .profile-badges-row {
   display: flex;
   flex-wrap: nowrap;
@@ -550,6 +550,25 @@
   flex: 1;
   min-width: 0;
   align-self: stretch;
+}
+
+/* На десктопе делаем карточку ID уже, чем карточку статуса */
+@media (min-width: 769px) {
+  .profile-badges-row {
+    width: auto;
+    max-width: none;
+    justify-content: flex-start;
+  }
+
+  .profile-badges-row > .profile-badge-cell.profile-badge {
+    flex: 0 0 auto;
+    min-width: 0;
+    width: auto;
+  }
+
+  .profile-badge--number {
+    justify-content: flex-start;
+  }
 }
 
 .profile-badge--placeholder {
@@ -609,7 +628,7 @@
 }
 
 .profile-status-label {
-  font-size: 13px;
+  font-size: 14px;
   color: #64748b;
   font-weight: 500;
   white-space: nowrap;
@@ -630,24 +649,29 @@
   color: #0369a1;
 }
 
-/* Блок номера */
+/* Блок ID: в одну строку */
 .profile-badge--number {
-  flex-direction: column;
-  align-items: flex-start;
-  justify-content: center;
-  gap: 4px;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
 }
 
 .profile-badge--number .profile-badge-label {
-  font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  opacity: 0.9;
+  font-size: 14px;
+  text-transform: none;
+  letter-spacing: 0;
+  opacity: 1;
   white-space: nowrap;
 }
 
 .profile-badge--number .profile-badge-value {
   white-space: nowrap;
+  text-align: left;
+}
+
+.profile-badge--number .profile-badge-label {
+  text-align: left;
 }
 
 /* Email в одну строку с остальными */
@@ -1785,15 +1809,15 @@
   }
 
   .profile-status-badge.profile-badge {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 6px;
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
   }
 
   .profile-status-label,
   .profile-status-value {
-    white-space: normal;
-    overflow-wrap: anywhere;
+    white-space: nowrap;
+    overflow-wrap: normal;
   }
 
   .profile-badge--number .profile-badge-label,

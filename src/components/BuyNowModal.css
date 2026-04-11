@@ -76,6 +76,21 @@
   overflow: hidden;
 }
 
+.buy-now-modal__auction-lead {
+  font-size: 0.88rem;
+  color: #475569;
+  margin: 12px 0 0;
+  line-height: 1.45;
+}
+
+.buy-now-modal__sum-footnote {
+  font-size: 0.72rem;
+  color: #64748b;
+  line-height: 1.35;
+  margin-top: 6px;
+  font-weight: 500;
+}
+
 .buy-now-modal__sums {
   display: grid;
   grid-template-columns: 1fr 1fr;

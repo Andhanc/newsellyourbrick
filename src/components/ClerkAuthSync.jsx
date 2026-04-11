@@ -19,6 +19,16 @@ const ClerkAuthSync = () => {
     if (!userLoaded || !authLoaded) {
       return
     }
+    const isLogoutInProgress = sessionStorage.getItem('clerk_logout_in_progress') === 'true'
+
+    // Во время logout не синхронизируем с localStorage,
+    // иначе может происходить повторная авторизация из-за гонки состояний Clerk.
+    if (isLogoutInProgress) {
+      if (!isSignedIn) {
+        sessionStorage.removeItem('clerk_logout_in_progress')
+      }
+      return
+    }
 
     console.log('ClerkAuthSync: Checking sync', { isSignedIn, hasUser: !!user, hasSynced: hasSyncedRef.current })
 

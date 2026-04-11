@@ -22,6 +22,7 @@ import {
   isAuctionListingEnded,
   shouldShowCircularAuctionTimer,
 } from '../utils/auctionReminderBounds'
+import { getPropertyCardImage } from '../utils/propertyImage'
 import './PropertyList.css'
 
 const MOBILE_BREAKPOINT = 768
@@ -436,8 +437,10 @@ const PropertyList = ({
             <div id="properties-grid" className="properties-grid">
               {filteredProperties.slice(0, visibleCount).map((property) => {
                 const propertyTitle = property.title || property.name || ''
-                const propertyImages = property.images || (property.image ? [property.image] : [])
-                const propertyImage = propertyImages[0] || 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=800&q=80'
+                const propertyImage = getPropertyCardImage(
+                  property,
+                  'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=800&q=80'
+                )
                 const buyNowPurchaseCompleted = isBuyNowPurchaseCompleted(property)
                 const effectiveAuctionEnd = getEffectiveAuctionEndTime(property)
                 const hasTestTimerRaw =
@@ -463,6 +466,14 @@ const PropertyList = ({
                   (property.is_reserved === true || property.is_reserved === 1) &&
                   (!reservedUntilDate || reservedUntilDate > new Date())
                 const hasBuyNowPrice = hasBuyNowOption(property)
+                const testTimerDurationMs =
+                  property.test_timer_duration != null && property.test_timer_duration !== ''
+                    ? Number(property.test_timer_duration)
+                    : null
+                const normalizedTestTimerDuration =
+                  testTimerDurationMs != null && Number.isFinite(testTimerDurationMs) && testTimerDurationMs > 0
+                    ? testTimerDurationMs
+                    : null
                 
                 const isTimerExpired = isEffectiveAuctionTimerExpired(property)
                 const buyNowWinnerId = property.buy_now_winner_user_id
@@ -487,6 +498,8 @@ const PropertyList = ({
                       endTime={property.test_timer_end_date} 
                       size={circularSize} 
                       strokeWidth={isMobile ? 4 : 6}
+                      originalDuration={normalizedTestTimerDuration}
+                      progressKey={`property-list:${property.id}`}
                       auctionEndedLabel={t(
                         circularSize <= 72
                           ? 'auctionCircularEndedShort'

@@ -71,6 +71,56 @@
   letter-spacing: 1.5px;
 }
 
+/* Маленький круг (карточки, моб. список аукционов): текст и плоский вид — без «шара» и переполнения */
+.circular-timer--compact .circular-timer-content {
+  width: 100%;
+  max-width: calc(100% - 2px);
+  padding: 0 3px;
+  box-sizing: border-box;
+}
+
+.circular-timer--compact .circular-timer-time {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1.05;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+}
+
+.circular-timer--compact .circular-timer-center {
+  fill: #dc2626 !important;
+}
+
+.circular-timer--compact.circular-timer--leader .circular-timer-center {
+  fill: #059669 !important;
+}
+
+.circular-timer--compact.circular-timer--ended .circular-timer-center {
+  fill: #64748b !important;
+}
+
+/* Для compact не переопределяем stroke колец:
+   используется тот же SVG-стиль/прогресс, что и на странице объекта. */
+
+.circular-timer--compact .circular-timer-flag {
+  font-size: 18px;
+  line-height: 1;
+}
+
+.circular-timer--compact .circular-timer-user-number {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+.circular-timer--compact .circular-timer-bid-info {
+  gap: 2px;
+}
+
+.circular-timer--compact:hover {
+  transform: none;
+}
+
 .circular-timer--ended .circular-timer-time--ended {
   font-size: 13px;
   font-weight: 800;
@@ -84,8 +134,13 @@
 }
 
 .circular-timer--compact .circular-timer-time--ended {
-  font-size: 8px;
-  line-height: 1.1;
+  font-size: 7px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0;
+  max-width: 84%;
+  white-space: nowrap;
+  transform: translateX(-2px);
 }
 
 .circular-timer--ended:hover {
@@ -130,9 +185,9 @@
 }
 
 @media (max-width: 768px) {
-  /* В карточках размер задаётся из JS (56px). Здесь только типографика и сохранение круга */
-  .property-card .circular-timer-time,
-  .property-timer-wrapper .circular-timer-time {
+  /* Крупный круг в карточке (редко); компактный задаётся .circular-timer--compact выше */
+  .property-card .circular-timer:not(.circular-timer--compact) .circular-timer-time,
+  .property-timer-wrapper .circular-timer:not(.circular-timer--compact) .circular-timer-time {
     font-size: 11px;
     font-weight: 700;
     letter-spacing: 0;
@@ -141,5 +196,10 @@
   .property-card .circular-timer:hover,
   .property-timer-wrapper .circular-timer:hover {
     transform: scale(1.05) translateY(-1px);
+  }
+
+  .auction-mobile-circular-timer .circular-timer:hover,
+  .circular-timer--compact:hover {
+    transform: none;
   }
 }

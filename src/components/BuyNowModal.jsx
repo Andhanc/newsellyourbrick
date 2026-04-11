@@ -1,8 +1,10 @@
 import { useState, useEffect, useRef } from 'react'
-import { FiX, FiPercent, FiCreditCard, FiPhone, FiExternalLink, FiTrash2 } from 'react-icons/fi'
+import { FiX, FiPercent, FiCreditCard, FiPhone, FiExternalLink, FiTrash2, FiAward } from 'react-icons/fi'
+import { useTranslation } from 'react-i18next'
 import { useUser } from '@clerk/clerk-react'
 import { getUserData, isAuthenticated } from '../services/authService'
 import { getApiBaseUrl } from '../utils/apiConfig'
+import { fetchUserDeposit } from '../utils/depositApi'
 import { showNotification } from '../utils/toastHelper'
 import { startPropertyReservationCheckout } from '../utils/subscriptionCheckout'
 import { hasEmailForBuyNowFlow } from '../utils/buyNowEmailGate'
@@ -13,7 +15,16 @@ const DEPOSIT_FRACTION = 0.1
 const WALLET_OFFSET_EUR = 3000
 const POLICY_PDF_URL = '/docs/buy-now-reservation-policy-test.pdf'
 
-const BuyNowModal = ({ isOpen, onClose, property, stripeReturnPath }) => {
+const BuyNowModal = ({
+  isOpen,
+  onClose,
+  property,
+  stripeReturnPath,
+  variant = 'buyNow',
+  winningBidAmount,
+}) => {
+  const { t, i18n } = useTranslation()
+  const locale = (i18n.language || 'ru').split('-')[0]
   const { user, isLoaded: userLoaded } = useUser()
   const [dbUserId, setDbUserId] = useState(null)
   const [stripeLoading, setStripeLoading] = useState(false)
@@ -22,6 +33,8 @@ const BuyNowModal = ({ isOpen, onClose, property, stripeReturnPath }) => {
   const [pdfOpened, setPdfOpened] = useState(false)
   const [agreed, setAgreed] = useState(false)
   const signaturePadRef = useRef(null)
+
+  const isAuctionWinner = variant === 'auctionWinner'
 
   useEffect(() => {
     if (!isOpen) return
@@ -77,11 +90,10 @@ const BuyNowModal = ({ isOpen, onClose, property, stripeReturnPath }) => {
     ;(async () => {
       try {
         const API_BASE_URL = await getApiBaseUrl()
-        const res = await fetch(`${API_BASE_URL}/users/${dbUserId}/deposit`)
-        if (!res.ok || cancelled) return
-        const json = await res.json()
-        if (json.success && json.data && typeof json.data.depositAmount === 'number') {
-          setWalletBalanceEur(json.data.depositAmount)
+        const deposit = await fetchUserDeposit(API_BASE_URL, dbUserId, { ttlMs: 15000 })
+        if (cancelled || !deposit) return
+        if (typeof deposit.depositAmount === 'number') {
+          setWalletBalanceEur(deposit.depositAmount)
         }
       } catch {
         setWalletBalanceEur(null)
@@ -109,7 +121,7 @@ const BuyNowModal = ({ isOpen, onClose, property, stripeReturnPath }) => {
 
   if (!isOpen) return null
 
-  const propertyTitle = property?.title || property?.name || 'Объект'
+  const propertyTitle = property?.title || property?.name || t('listingDefault')
   const currency = (property?.currency || 'USD').toUpperCase()
   const currencySymbol =
     currency === 'USD' ? '$' : currency === 'EUR' ? '€' : currency === 'BYN' ? 'Br' : ''
@@ -125,6 +137,13 @@ const BuyNowModal = ({ isOpen, onClose, property, stripeReturnPath }) => {
     cardPayDisplay = Math.round(Math.max(0, tenPercent - WALLET_OFFSET_EUR) * 100) / 100
   }
 
+  const winningBidNum =
+    isAuctionWinner && winningBidAmount != null ? Math.round(Number(winningBidAmount) * 100) / 100 : null
+  const hasValidWinningBid = !isAuctionWinner || (winningBidNum != null && winningBidNum > 0)
+
+  const formatMoney = (n) =>
+    Number(n).toLocaleString(locale === 'ru' ? 'ru-RU' : locale, { maximumFractionDigits: 2 })
+
   const openPdf = () => {
     window.open(POLICY_PDF_URL, '_blank', 'noopener,noreferrer')
     setPdfOpened(true)
@@ -136,35 +155,32 @@ const BuyNowModal = ({ isOpen, onClose, property, stripeReturnPath }) => {
 
   const handleStripeReservation = async () => {
     if (!property?.id) {
-      showNotification('Не удалось определить объект', 'error')
+      showNotification(t('buyNowModalErrorNoProperty'), 'error')
       return
     }
     if (!dbUserId) {
-      showNotification('Войдите в аккаунт или обновите страницу.', 'error')
+      showNotification(t('buyNowModalErrorLogin'), 'error')
       return
     }
     if (!hasEmailForBuyNowFlow(user, userLoaded)) {
-      showNotification(
-        'Укажите email в аккаунте или профиле — он нужен для оформления покупки и писем от сервиса.',
-        'error'
-      )
+      showNotification(t('buyNowModalErrorEmail'), 'error')
       return
     }
     if (!agreed || !pdfOpened) {
-      showNotification('Откройте PDF и отметьте согласие', 'error')
+      showNotification(t('buyNowModalErrorPdfConsent'), 'error')
       return
     }
     if (signaturePadRef.current?.isEmpty()) {
-      showNotification('Поставьте подпись', 'error')
+      showNotification(t('buyNowModalErrorSignature'), 'error')
       return
     }
     const signaturePng = signaturePadRef.current?.toDataURL() || ''
     if (!signaturePng.startsWith('data:image/png')) {
-      showNotification('Не удалось сохранить подпись', 'error')
+      showNotification(t('buyNowModalErrorSignatureSave'), 'error')
       return
     }
     if (useWalletDeposit && isEur && !canUseWallet) {
-      showNotification('Недостаточно средств на депозите', 'error')
+      showNotification(t('buyNowModalErrorDeposit'), 'error')
       return
     }
     setStripeLoading(true)
@@ -184,7 +200,7 @@ const BuyNowModal = ({ isOpen, onClose, property, stripeReturnPath }) => {
       })
       const intentData = await intentRes.json().catch(() => ({}))
       if (!intentRes.ok || !intentData.success || !intentData.signingIntentId) {
-        showNotification(intentData.error || 'Не удалось сохранить подпись', 'error')
+        showNotification(intentData.error || t('buyNowModalErrorSignatureSave'), 'error')
         return
       }
 
@@ -205,57 +221,115 @@ const BuyNowModal = ({ isOpen, onClose, property, stripeReturnPath }) => {
         signingIntentId: intentData.signingIntentId,
       })
       if (!result.ok) {
-        showNotification(result.error || 'Не удалось открыть оплату', 'error')
+        showNotification(result.error || t('buyNowModalErrorCheckout'), 'error')
       }
     } finally {
       setStripeLoading(false)
     }
   }
 
+  const payDisabled =
+    stripeLoading ||
+    !property?.id ||
+    minSalePrice <= 0 ||
+    !agreed ||
+    (useWalletDeposit && isEur && !canUseWallet) ||
+    !hasValidWinningBid
+
   return (
     <div className="buy-now-modal-overlay" onClick={onClose}>
-      <div className="buy-now-modal buy-now-modal--v2" onClick={(e) => e.stopPropagation()}>
-        <button className="buy-now-modal__close" type="button" onClick={onClose} aria-label="Закрыть">
+      <div
+        className={`buy-now-modal buy-now-modal--v2 ${isAuctionWinner ? 'buy-now-modal--auction-winner' : ''}`}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button
+          className="buy-now-modal__close"
+          type="button"
+          onClick={onClose}
+          aria-label={t('buyNowModalCloseAria')}
+        >
           <FiX size={22} />
         </button>
 
         <div className="buy-now-modal__content buy-now-modal__content--v2">
           <header className="buy-now-modal__head">
-            <h2 className="buy-now-modal__title">Купить сейчас</h2>
+            <h2 className="buy-now-modal__title">
+              {isAuctionWinner ? t('auctionWinPaymentModalTitle') : t('buyNowModalTitle')}
+            </h2>
             <p className="buy-now-modal__subtitle">{propertyTitle}</p>
+            {isAuctionWinner && (
+              <p className="buy-now-modal__auction-lead">{t('auctionWinPaymentModalLead')}</p>
+            )}
           </header>
 
           <div className="buy-now-modal__sums">
-            <div className="buy-now-modal__sum-card">
-              <span className="buy-now-modal__sum-label">Мин. цена</span>
-              <span className="buy-now-modal__sum-value">
-                {currencySymbol}
-                {minSalePrice.toLocaleString('ru-RU')}
-              </span>
-            </div>
-            <div className="buy-now-modal__sum-card buy-now-modal__sum-card--accent">
-              <span className="buy-now-modal__sum-label">
-                <FiPercent size={14} aria-hidden /> Резерв 10%
-              </span>
-              <span className="buy-now-modal__sum-value">
-                {currencySymbol}
-                {tenPercent.toLocaleString('ru-RU')}
-              </span>
-              {useWalletDeposit && canUseWallet && (
-                <span className="buy-now-modal__sum-note">
-                  Картой: {currencySymbol}
-                  {cardPayDisplay.toLocaleString('ru-RU')} · −{WALLET_OFFSET_EUR.toLocaleString('ru-RU')} € с депозита
-                </span>
-              )}
-            </div>
+            {isAuctionWinner ? (
+              <>
+                <div className="buy-now-modal__sum-card">
+                  <span className="buy-now-modal__sum-label">{t('auctionWinPaymentModalWinningBidLabel')}</span>
+                  <span className="buy-now-modal__sum-value">
+                    {currencySymbol}
+                    {winningBidNum != null ? formatMoney(winningBidNum) : '—'}
+                  </span>
+                </div>
+                <div className="buy-now-modal__sum-card buy-now-modal__sum-card--accent">
+                  <span className="buy-now-modal__sum-label">
+                    <FiPercent size={14} aria-hidden /> {t('auctionWinPaymentModalReserveLabel')}
+                  </span>
+                  <span className="buy-now-modal__sum-value">
+                    {currencySymbol}
+                    {formatMoney(tenPercent)}
+                  </span>
+                  {useWalletDeposit && canUseWallet && (
+                    <span className="buy-now-modal__sum-note">
+                      {t('buyNowModalCardPayNote', {
+                        card: `${currencySymbol}${formatMoney(cardPayDisplay)}`,
+                        wallet: `${WALLET_OFFSET_EUR.toLocaleString(locale === 'ru' ? 'ru-RU' : locale)} €`,
+                      })}
+                    </span>
+                  )}
+                  <span className="buy-now-modal__sum-footnote">{t('auctionWinPaymentModalReserveHint')}</span>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="buy-now-modal__sum-card">
+                  <span className="buy-now-modal__sum-label">{t('buyNowModalMinPriceLabel')}</span>
+                  <span className="buy-now-modal__sum-value">
+                    {currencySymbol}
+                    {formatMoney(minSalePrice)}
+                  </span>
+                </div>
+                <div className="buy-now-modal__sum-card buy-now-modal__sum-card--accent">
+                  <span className="buy-now-modal__sum-label">
+                    <FiPercent size={14} aria-hidden /> {t('buyNowModalReservePercentLabel')}
+                  </span>
+                  <span className="buy-now-modal__sum-value">
+                    {currencySymbol}
+                    {formatMoney(tenPercent)}
+                  </span>
+                  {useWalletDeposit && canUseWallet && (
+                    <span className="buy-now-modal__sum-note">
+                      {t('buyNowModalCardPayNote', {
+                        card: `${currencySymbol}${formatMoney(cardPayDisplay)}`,
+                        wallet: `${WALLET_OFFSET_EUR.toLocaleString(locale === 'ru' ? 'ru-RU' : locale)} €`,
+                      })}
+                    </span>
+                  )}
+                </div>
+              </>
+            )}
           </div>
 
           <div className="buy-now-modal__wallet-row">
             <div className="buy-now-modal__wallet-row-text">
-              <span className="buy-now-modal__wallet-title">3000 € с депозита</span>
+              <span className="buy-now-modal__wallet-title">{t('buyNowModalWalletTitle')}</span>
               {walletBalanceEur != null && (
                 <span className="buy-now-modal__wallet-meta">
-                  {walletBalanceEur.toLocaleString('ru-RU', { maximumFractionDigits: 0 })} €
+                  {walletBalanceEur.toLocaleString(locale === 'ru' ? 'ru-RU' : locale, {
+                    maximumFractionDigits: 0,
+                  })}{' '}
+                  €
                 </span>
               )}
             </div>
@@ -275,36 +349,59 @@ const BuyNowModal = ({ isOpen, onClose, property, stripeReturnPath }) => {
               <span className="buy-now-modal__switch-knob" />
             </button>
           </div>
-          {!isEur && <p className="buy-now-modal__inline-hint">Только для объявлений в EUR</p>}
+          {!isEur && <p className="buy-now-modal__inline-hint">{t('buyNowModalWalletOnlyEurHint')}</p>}
           {isEur && walletBalanceEur != null && walletBalanceEur < WALLET_OFFSET_EUR && (
-            <p className="buy-now-modal__inline-hint">Нужно ≥ 3000 € на депозите</p>
+            <p className="buy-now-modal__inline-hint">{t('buyNowModalWalletNeedDepositHint')}</p>
           )}
 
           <section className="buy-now-modal__how">
-            <h3 className="buy-now-modal__how-title">Как это работает</h3>
+            <h3 className="buy-now-modal__how-title">
+              {isAuctionWinner ? t('auctionWinPaymentModalHowTitle') : t('buyNowModalHowTitle')}
+            </h3>
             <div className="buy-now-modal__how-grid">
-              <div className="buy-now-modal__how-item">
-                <FiCreditCard className="buy-now-modal__how-icon" aria-hidden />
-                <div>
-                  <strong>Резерв 10%</strong>
-                  <span>От минимальной цены объекта</span>
-                </div>
-              </div>
-              <div className="buy-now-modal__how-item">
-                <FiPhone className="buy-now-modal__how-icon" aria-hidden />
-                <div>
-                  <strong>Менеджер</strong>
-                  <span>Свяжется для оформления сделки</span>
-                </div>
-              </div>
+              {isAuctionWinner ? (
+                <>
+                  <div className="buy-now-modal__how-item">
+                    <FiAward className="buy-now-modal__how-icon" aria-hidden />
+                    <div>
+                      <strong>{t('auctionWinPaymentModalHowStep1Title')}</strong>
+                      <span>{t('auctionWinPaymentModalHowStep1Desc')}</span>
+                    </div>
+                  </div>
+                  <div className="buy-now-modal__how-item">
+                    <FiPhone className="buy-now-modal__how-icon" aria-hidden />
+                    <div>
+                      <strong>{t('auctionWinPaymentModalHowStep2Title')}</strong>
+                      <span>{t('auctionWinPaymentModalHowStep2Desc')}</span>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="buy-now-modal__how-item">
+                    <FiCreditCard className="buy-now-modal__how-icon" aria-hidden />
+                    <div>
+                      <strong>{t('buyNowModalHowReserveTitle')}</strong>
+                      <span>{t('buyNowModalHowReserveDesc')}</span>
+                    </div>
+                  </div>
+                  <div className="buy-now-modal__how-item">
+                    <FiPhone className="buy-now-modal__how-icon" aria-hidden />
+                    <div>
+                      <strong>{t('buyNowModalHowManagerTitle')}</strong>
+                      <span>{t('buyNowModalHowManagerDesc')}</span>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
           </section>
 
           <section className="buy-now-modal__legal">
-            <h3 className="buy-now-modal__legal-title">Согласие</h3>
+            <h3 className="buy-now-modal__legal-title">{t('buyNowModalConsentTitle')}</h3>
             <button type="button" className="buy-now-modal__pdf-btn" onClick={openPdf}>
               <FiExternalLink size={17} />
-              Условия резерва (PDF)
+              {t('buyNowModalPdfTerms')}
             </button>
             <label className={`buy-now-modal__check ${!pdfOpened ? 'buy-now-modal__check--disabled' : ''}`}>
               <input
@@ -313,16 +410,16 @@ const BuyNowModal = ({ isOpen, onClose, property, stripeReturnPath }) => {
                 disabled={!pdfOpened}
                 onChange={(e) => setAgreed(e.target.checked)}
               />
-              <span>Согласен(на) с условиями</span>
+              <span>{t('buyNowModalAgreeCheckbox')}</span>
             </label>
 
             {agreed && (
               <div className="buy-now-modal__signature-block">
                 <div className="buy-now-modal__signature-head">
-                  <span className="buy-now-modal__signature-label">Подпись</span>
+                  <span className="buy-now-modal__signature-label">{t('buyNowModalSignatureLabel')}</span>
                   <button type="button" className="buy-now-modal__clear-sig" onClick={clearSignature}>
                     <FiTrash2 size={15} />
-                    Очистить
+                    {t('buyNowModalClearSignature')}
                   </button>
                 </div>
                 <ShareSignaturePad ref={signaturePadRef} active={agreed && isOpen} />
@@ -335,15 +432,13 @@ const BuyNowModal = ({ isOpen, onClose, property, stripeReturnPath }) => {
               type="button"
               className="buy-now-modal__cta"
               onClick={handleStripeReservation}
-              disabled={
-                stripeLoading ||
-                !property?.id ||
-                minSalePrice <= 0 ||
-                !agreed ||
-                (useWalletDeposit && isEur && !canUseWallet)
-              }
+              disabled={payDisabled}
             >
-              {stripeLoading ? 'Переход…' : 'Оплатить резерв'}
+              {stripeLoading
+                ? t('buyNowModalRedirecting')
+                : isAuctionWinner
+                  ? t('auctionWinPaymentModalPayCta')
+                  : t('buyNowModalPayReserve')}
             </button>
           </div>
         </div>
