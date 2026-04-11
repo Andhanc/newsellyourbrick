@@ -72,6 +72,7 @@ import {
 import { fetchUserById } from '../utils/usersApi'
 
 import { getApiBaseUrl, getApiBaseUrlSync } from '../utils/apiConfig'
+import { normalizePropertyMediaFields } from '../utils/propertyImage'
 import { navigateToWallet } from '../utils/walletNavigation'
 import { usePropertyFavorites } from '../context/PropertyFavoritesContext'
 import { useLayoutScrollRef } from '../context/LayoutScrollContext'
@@ -79,6 +80,9 @@ import { UI_LANGUAGES } from '../constants/uiLanguages'
 
 // Используем синхронную версию для инициализации, затем обновим при загрузке
 let API_BASE_URL = getApiBaseUrlSync()
+
+const LISTING_IMAGE_FALLBACK =
+  'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=800&q=80'
 
 // Базовые данные для 4 блоков 3D-папок (заголовки переводятся в компоненте через useMemo)
 const landingFolderDataBase = [
@@ -1344,7 +1348,16 @@ function MainPage() {
           const res = await fetch(`${API_BASE_URL}/properties/approved?type=${apiType}&lang=${lang}`)
           if (res.ok) {
             const data = await res.json()
-            if (data.success && data.data) loadedProperties[stateKey] = data.data
+            if (data.success && data.data) {
+              loadedProperties[stateKey] = data.data.map((p) => {
+                const { image: ni, images: nims } = normalizePropertyMediaFields(p)
+                return {
+                  ...p,
+                  image: ni || LISTING_IMAGE_FALLBACK,
+                  images: nims.length > 0 ? nims : ni ? [ni] : [],
+                }
+              })
+            }
           }
         } catch (_) {}
       }
@@ -1422,14 +1435,15 @@ function MainPage() {
         const priceNumber = prop.price != null && prop.price !== '' ? Number(prop.price) : 0
         const auctionStartingPrice = prop.auction_starting_price != null && prop.auction_starting_price !== '' ? Number(prop.auction_starting_price) : (prop.auctionStartingPrice != null && prop.auctionStartingPrice !== '' ? Number(prop.auctionStartingPrice) : null)
         const debtAmount = prop.debt_amount != null && prop.debt_amount !== '' ? Number(prop.debt_amount) : null
+        const { image: normalizedImage, images: normalizedImages } = normalizePropertyMediaFields(prop)
         return {
           ...prop,
           isAuction,
           is_share: isShare ? 1 : 0,
           title: prop.title || prop.name || '',
           name: prop.name || prop.title || '',
-          image: prop.image || (Array.isArray(prop.images) && prop.images[0] ? (typeof prop.images[0] === 'string' ? prop.images[0] : prop.images[0].url) : null),
-          images: Array.isArray(prop.images) ? prop.images : (prop.image ? [prop.image] : []),
+          image: normalizedImage || LISTING_IMAGE_FALLBACK,
+          images: normalizedImages.length > 0 ? normalizedImages : normalizedImage ? [normalizedImage] : [],
           price: priceNumber,
           auction_starting_price: auctionStartingPrice,
           currentBid: prop.currentBid || prop.auction_current_bid || prop.auctionCurrentBid || null,
