@@ -26,6 +26,7 @@ import AuctionReminderModal from '../components/AuctionReminderModal'
 import LocationMap from '../components/LocationMap'
 import { showToast } from '../components/ToastContainer'
 import { showNotification } from '../utils/toastHelper'
+import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
 import BidOutbidNotification from '../components/BidOutbidNotification'
 import Confetti from 'react-confetti'
 import './PropertyDetailClassic.css'
@@ -138,7 +139,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
       if (onRequireLogin) {
         onRequireLogin()
       } else {
-        showNotification('Для просмотра страницы объекта необходимо авторизоваться')
+        requestOpenLoginModal({ wizard: true })
         if (onBack) {
           onBack()
         } else {
@@ -802,7 +803,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
         }
       }
       if (!uid || !/^\d+$/.test(uid)) {
-        showNotification('Войдите в аккаунт, чтобы завершить подтверждение резерва.')
+        requestOpenLoginModal({ wizard: true })
         const next = new URLSearchParams(searchParams)
         next.delete('reservation_checkout')
         next.delete('session_id')
@@ -1738,7 +1739,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
     
     // Разрешаем удаление из избранного без авторизации, но добавление требует авторизации
     if (!isFavorite && !isClerkAuth && !isOldAuth) {
-      showToast('Пожалуйста, войдите в систему, чтобы добавлять объявления в избранное', 'warning')
+      requestOpenLoginModal({ wizard: true })
       return
     }
     
@@ -1769,7 +1770,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
     const isOldAuth = isAuthenticated()
 
     if (!isClerkAuth && !isOldAuth) {
-      showToast('Пожалуйста, войдите в систему, чтобы купить объект', 'warning')
+      requestOpenLoginModal({ wizard: true })
       return
     }
 
@@ -1816,7 +1817,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
     const isOldAuth = isAuthenticated()
     
     if (!isClerkAuth && !isOldAuth) {
-      showToast('Пожалуйста, войдите в систему, чтобы сделать ставку', 'warning')
+      requestOpenLoginModal({ wizard: true })
       return
     }
 
@@ -1895,7 +1896,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
     const isOldAuth = isAuthenticated()
     
     if (!isClerkAuth && !isOldAuth) {
-      showToast('Пожалуйста, войдите в систему, чтобы сделать ставку', 'warning')
+      requestOpenLoginModal({ wizard: true })
       return
     }
 
@@ -2017,7 +2018,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
       
       if (!userId) {
         console.error('❌ Не удалось определить user_id')
-        showToast('Не удалось определить пользователя. Пожалуйста, войдите в систему.', 'error')
+        requestOpenLoginModal({ wizard: true })
         setIsSubmittingBid(false)
         return
       }

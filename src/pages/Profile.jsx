@@ -9,6 +9,8 @@ import SellerVerificationModal from '../components/SellerVerificationModal'
 import PricingCards from '../components/ui/PricingCards'
 import { startProSubscriptionCheckout } from '../utils/subscriptionCheckout'
 import { showNotification } from '../utils/toastHelper'
+import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
+import { isSiteUserSignedIn } from '../utils/siteAuthGate'
 import { formatBillingReasonForUi } from '../utils/formatBillingReason'
 import { fetchVerificationStatus } from '../utils/verificationStatusApi'
 import { fetchUserById } from '../utils/usersApi'
@@ -66,6 +68,14 @@ const Profile = () => {
   const [subscriptionBillingLoading, setSubscriptionBillingLoading] = useState(false)
   // Используем proxy из vite.config.js или полный URL
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
+
+  useEffect(() => {
+    if (!userLoaded) return
+    if (!isSiteUserSignedIn(user, userLoaded)) {
+      requestOpenLoginModal({ wizard: true })
+      navigate('/', { replace: true })
+    }
+  }, [user, userLoaded, navigate])
 
   useEffect(() => {
     if (!userId) return
@@ -216,7 +226,7 @@ const Profile = () => {
     }
     
     if (!userId) {
-      showNotification('Ошибка: ID пользователя не найден. Пожалуйста, обновите страницу.')
+      requestOpenLoginModal({ wizard: true })
       console.error('userId не установлен:', userId)
       return
     }

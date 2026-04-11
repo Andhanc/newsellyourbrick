@@ -17,6 +17,7 @@ import { prefetchAuctionList } from './services/auctionListCache'
 import { fetchUserById } from './utils/usersApi'
 import { PropertyFavoritesProvider } from './context/PropertyFavoritesContext'
 import { runDevBackendHintOnce } from './utils/devBackendHint'
+import { installReturningVisitorListeners, markUserHasVisitedSite } from './utils/visitorAuthDefault'
 import './App.css'
 import { GlassFilterDefs } from './components/ui/GlassFilterDefs'
 import { LayoutScrollRefContext } from './context/LayoutScrollContext'
@@ -73,7 +74,11 @@ function SessionValidator({ onBlockedChange }) {
           // Перезагружаем страницу для полного сброса состояния
           window.location.reload()
         } else if (result.valid) {
-          console.log('✅ Сессия валидна, пользователь авторизован')
+          // validateSession для гостя возвращает { valid: true, user: null } — не считаем это «визитом»
+          if (result.user != null) {
+            console.log('✅ Сессия валидна, пользователь авторизован')
+            markUserHasVisitedSite()
+          }
           // Проверяем блокировку
           if (result.is_blocked) {
             console.warn('🚫 Пользователь заблокирован')
@@ -262,6 +267,19 @@ function ReferralCapture() {
   return null
 }
 
+/** Флаг «уже бывал на сайте» — для вкладки Войти/Регистрация в LoginModal (localStorage + pagehide). */
+function ReturningVisitorSiteTracking() {
+  useEffect(() => {
+    try {
+      if (localStorage.getItem('isLoggedIn') === 'true') markUserHasVisitedSite()
+    } catch {
+      /* ignore */
+    }
+    return installReturningVisitorListeners()
+  }, [])
+  return null
+}
+
 // Компонент для очистки сессии администратора при переходе с админ-панели
 function AdminSessionCleaner() {
   const location = useLocation()
@@ -374,6 +392,7 @@ function App() {
       <MainPageViewportLock />
       <AuctionMobileOverflowLock />
       <ReferralCapture />
+      <ReturningVisitorSiteTracking />
       <VisitorHeartbeat />
       <SessionValidator onBlockedChange={setIsBlocked} />
       <UserCabinetSseBridge />

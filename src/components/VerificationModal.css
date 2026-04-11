@@ -737,6 +737,14 @@
   animation: faceDetectedPulse 1.5s infinite;
 }
 
+.camera-face-guide__oval.face-aligning {
+  border-color: #fbbf24;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5),
+              inset 0 0 40px rgba(251, 191, 36, 0.25),
+              0 0 24px rgba(251, 191, 36, 0.55);
+  animation: guidePulse 2s infinite;
+}
+
 .camera-face-guide__oval::before,
 .camera-face-guide__oval::after {
   content: '';

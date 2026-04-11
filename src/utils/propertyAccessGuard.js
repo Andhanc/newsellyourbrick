@@ -1,5 +1,5 @@
 import { isAuthenticated } from '../services/authService'
-import { showNotification } from './toastHelper'
+import { requestOpenLoginModal } from './requestOpenLoginModal'
 
 /**
  * @param {boolean} [clerkSignedIn] — передать true, если пользователь вошёл через Clerk (useUser: user && isLoaded)
@@ -10,13 +10,7 @@ export const ensureCanOpenProperty = (clerkSignedIn) => {
     return true
   }
 
-  showNotification('Для просмотра объекта необходимо зарегистрироваться или войти в аккаунт')
-  try {
-    sessionStorage.setItem('login_modal_force_open', 'true')
-    window.dispatchEvent(new Event('forceOpenLoginModal'))
-  } catch {
-    // ignore
-  }
+  requestOpenLoginModal({ wizard: true })
   return false
 }
 

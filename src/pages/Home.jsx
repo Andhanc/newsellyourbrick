@@ -21,6 +21,8 @@ import { syncAssistantLead } from '../services/assistantLeadService'
 import { askPropertyAssistant, detectManagerContactIntent } from '../services/aiService'
 import { getCachedList, hasCachedList, fetchAuctionList, setCachedList } from '../services/auctionListCache'
 import { ensureCanOpenProperty } from '../utils/propertyAccessGuard'
+import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
+import { isSiteUserSignedIn } from '../utils/siteAuthGate'
 import './Home.css'
 
 import { getApiBaseUrl } from '../utils/apiConfig'
@@ -328,6 +330,10 @@ function Home() {
         }
         setChatMessages((prev) => [...prev, botMessage])
         setIsChatOpen(false)
+        if (!isSiteUserSignedIn(user, userLoaded)) {
+          requestOpenLoginModal({ wizard: true })
+          return
+        }
         navigate('/chat?manager=1')
         return
       }

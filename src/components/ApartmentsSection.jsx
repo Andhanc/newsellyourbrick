@@ -7,6 +7,7 @@ import { FaHeart as FaHeartSolid } from 'react-icons/fa'
 import { MdBed, MdOutlineBathtub } from 'react-icons/md'
 import { BiArea } from 'react-icons/bi'
 import { isAuthenticated } from '../services/authService'
+import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
 import PropertyTimer from './PropertyTimer'
 import './PropertyList.css'
 
@@ -119,7 +120,7 @@ function ApartmentsSection() {
     
     // Разрешаем удаление из избранного без авторизации, но добавление требует авторизации
     if (!isFavorite && !isClerkAuth && !isOldAuth) {
-      alert('Пожалуйста, войдите в систему, чтобы добавлять объявления в избранное')
+      requestOpenLoginModal({ wizard: true })
       return
     }
     

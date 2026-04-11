@@ -24,6 +24,12 @@ export function FrostedGlassCard({
 }) {
   const cardRef = useRef(null);
 
+  const runAction = (e) => {
+    if (!onButtonClick) return;
+    if (e?.target?.closest?.('.frosted-glass-card__btn')) return;
+    onButtonClick();
+  };
+
   useEffect(() => {
     const card = cardRef.current;
     if (!card) return;
@@ -66,6 +72,8 @@ export function FrostedGlassCard({
           'frosted-glass-card',
           'frosted-glass-card--' + variant
         )}
+        role="presentation"
+        onClick={runAction}
       >
         <div className="frosted-glass-card__content">
           <div className="frosted-glass-card__header">
@@ -86,7 +94,10 @@ export function FrostedGlassCard({
               'frosted-glass-card__btn',
               'frosted-glass-card__btn--' + variant
             )}
-            onClick={onButtonClick}
+            onClick={(e) => {
+              e.stopPropagation();
+              onButtonClick?.();
+            }}
           >
             {buttonText}
             <ArrowRight size={18} strokeWidth={2} />

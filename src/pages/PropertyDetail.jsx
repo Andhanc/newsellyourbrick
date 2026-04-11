@@ -7,6 +7,7 @@ import BiddingHistoryModal from '../components/BiddingHistoryModal'
 import DepositButton from '../components/DepositButton'
 import { getUserData, isAuthenticated } from '../services/authService'
 import { showNotification } from '../utils/toastHelper'
+import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
 import { roleSkipsAuctionKyc } from '../utils/buyerAuctionKyc'
 import { fetchUserDeposit } from '../utils/depositApi'
 import BidOutbidNotification from '../components/BidOutbidNotification'
@@ -61,8 +62,7 @@ const PropertyDetail = () => {
     
     // Если пользователь не авторизован и не админ, перенаправляем
     if (!isAdmin && (!isAuthenticated() || !userData || !userData.isLoggedIn)) {
-      // Показываем сообщение и перенаправляем на главную страницу
-      showNotification('Для просмотра страницы объекта необходимо авторизоваться')
+      requestOpenLoginModal({ wizard: true })
       navigate('/')
     }
   }, [navigate])

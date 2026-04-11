@@ -14,6 +14,7 @@ import LoginModal from './LoginModal'
 import { getUserData, clearUserData } from '../services/authService'
 import { getApiBaseUrl } from '../utils/apiConfig'
 import { navigateToWallet } from '../utils/walletNavigation'
+import { isSiteUserSignedIn } from '../utils/siteAuthGate'
 import { fetchUserById } from '../utils/usersApi'
 import {
   fetchUserNotifications,
@@ -36,6 +37,8 @@ const Header = () => {
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState([])
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
+  /** wizard: иконка человечка / «Войти» в меню — сначала роль, потом вход/регистрация */
+  const [loginModalEntry, setLoginModalEntry] = useState('direct')
   const [userPhoto, setUserPhoto] = useState(null) // Фотография пользователя
   const [isLoggedIn, setIsLoggedIn] = useState(false) // Статус авторизации
   const [hasIncompleteProfile, setHasIncompleteProfile] = useState(false)
@@ -124,8 +127,11 @@ const Header = () => {
   useEffect(() => {
     const forceOpen = sessionStorage.getItem('login_modal_force_open')
     if (forceOpen === 'true') {
-      setIsLoginModalOpen(true)
+      const wantWizard = sessionStorage.getItem('login_modal_force_wizard') === 'true'
       sessionStorage.removeItem('login_modal_force_open')
+      sessionStorage.removeItem('login_modal_force_wizard')
+      setLoginModalEntry(wantWizard ? 'wizard' : 'direct')
+      setIsLoginModalOpen(true)
     }
   }, [location.pathname])
 
@@ -134,10 +140,12 @@ const Header = () => {
   useEffect(() => {
     const onForceOpenLoginModal = () => {
       const forceOpen = sessionStorage.getItem('login_modal_force_open')
-      if (forceOpen === 'true') {
-        setIsLoginModalOpen(true)
-        sessionStorage.removeItem('login_modal_force_open')
-      }
+      if (forceOpen !== 'true') return
+      const wantWizard = sessionStorage.getItem('login_modal_force_wizard') === 'true'
+      sessionStorage.removeItem('login_modal_force_open')
+      sessionStorage.removeItem('login_modal_force_wizard')
+      setLoginModalEntry(wantWizard ? 'wizard' : 'direct')
+      setIsLoginModalOpen(true)
     }
 
     window.addEventListener('forceOpenLoginModal', onForceOpenLoginModal)
@@ -298,9 +306,9 @@ const Header = () => {
   const searchablePages = [
     { path: '/', keywords: ['главная', 'home', 'начало', 'старт'], titleKey: 'home', requiresAuth: false, allowedRoles: ['buyer', 'seller', 'owner', 'admin', 'client'] },
     { path: '/auction', keywords: ['аукцион', 'auction', 'торги', 'продажа', 'недвижимость'], titleKey: 'auction', requiresAuth: false, allowedRoles: ['buyer', 'seller', 'owner', 'admin', 'client'] },
-    { path: '/map', keywords: ['карта', 'map', 'карты', 'локация', 'место'], titleKey: 'mapLink', requiresAuth: false, allowedRoles: ['buyer', 'seller', 'owner', 'admin', 'client'] },
+    { path: '/map', keywords: ['карта', 'map', 'карты', 'локация', 'место'], titleKey: 'mapLink', requiresAuth: true, allowedRoles: ['buyer', 'seller', 'owner', 'admin', 'client'] },
     { path: '/calculator', keywords: ['калькулятор', 'calculator', 'доходность', 'рендита', 'profitability', 'доход', 'инвестиции'], titleKey: 'calculator', requiresAuth: false, allowedRoles: ['buyer', 'seller', 'owner', 'admin', 'client'] },
-    { path: '/chat?manager=1', keywords: ['чат', 'chat', 'сообщения', 'messages', 'переписка'], titleKey: 'chat', requiresAuth: false, allowedRoles: ['buyer', 'seller', 'owner', 'admin', 'client'] },
+    { path: '/chat?manager=1', keywords: ['чат', 'chat', 'сообщения', 'messages', 'переписка'], titleKey: 'chat', requiresAuth: true, allowedRoles: ['buyer', 'seller', 'owner', 'admin', 'client'] },
     { path: '/profile', keywords: ['профиль', 'profile', 'аккаунт', 'личный кабинет', 'настройки', 'settings'], titleKey: 'profile', requiresAuth: true, allowedRoles: ['buyer', 'client', 'admin'] },
     { path: '/favorites', keywords: ['избранное', 'favorites', 'избранные', 'закладки', 'bookmarks'], titleKey: 'favorites', requiresAuth: true, allowedRoles: ['buyer', 'client', 'admin'] },
     { path: '/wallet', keywords: ['кошелек', 'wallet', 'баланс', 'balance', 'деньги', 'money', 'платежи', 'payments'], titleKey: 'wallet', requiresAuth: true, allowedRoles: ['buyer', 'client', 'admin'] },
@@ -430,6 +438,28 @@ const Header = () => {
     return { allowed: true }
   }
 
+  const openLoginOrNavigate = (path, closeMenu = false) => {
+    if (!isSiteUserSignedIn(user, userLoaded)) {
+      setLoginModalEntry('wizard')
+      setIsLoginModalOpen(true)
+      if (closeMenu) setIsMenuOpen(false)
+      return
+    }
+    navigate(path)
+    if (closeMenu) setIsMenuOpen(false)
+  }
+
+  const openWalletFromMenu = (closeMenu = false) => {
+    if (!isSiteUserSignedIn(user, userLoaded)) {
+      setLoginModalEntry('wizard')
+      setIsLoginModalOpen(true)
+      if (closeMenu) setIsMenuOpen(false)
+      return
+    }
+    navigateToWallet(navigate, location.pathname)
+    if (closeMenu) setIsMenuOpen(false)
+  }
+
   // Обработка выбора результата поиска
   const handleSearchResultClick = (page) => {
     const access = checkPageAccess(page)
@@ -438,6 +468,7 @@ const Header = () => {
       if (access.reason === 'auth') {
         setIsSearchOpen(false)
         setSearchQuery('')
+        setLoginModalEntry('direct')
         setIsLoginModalOpen(true)
       } else {
         // Показываем сообщение об ошибке доступа
@@ -684,10 +715,7 @@ const Header = () => {
                           </button>
                           <button 
                             className="menu-dropdown__item"
-                            onClick={() => {
-                              navigate('/map')
-                              setIsMenuOpen(false)
-                            }}
+                            onClick={() => openLoginOrNavigate('/map', true)}
                           >
                             <span>{t('mapLink')}</span>
                           </button>
@@ -720,28 +748,19 @@ const Header = () => {
                           </button>
                           <button 
                             className="menu-dropdown__item"
-                            onClick={() => {
-                              navigate('/chat?manager=1')
-                              setIsMenuOpen(false)
-                            }}
+                            onClick={() => openLoginOrNavigate('/chat?manager=1', true)}
                           >
                             <span>{t('chat')}</span>
                           </button>
                           <button 
                             className="menu-dropdown__item"
-                            onClick={() => {
-                              navigate('/bonuses')
-                              setIsMenuOpen(false)
-                            }}
+                            onClick={() => openLoginOrNavigate('/bonuses', true)}
                           >
                             <span>{t('bonuses')}</span>
                           </button>
                           <button 
                             className="menu-dropdown__item"
-                            onClick={() => {
-                              navigate('/calculator')
-                              setIsMenuOpen(false)
-                            }}
+                            onClick={() => openLoginOrNavigate('/calculator', true)}
                           >
                             <span>{t('calculator')}</span>
                           </button>
@@ -754,19 +773,13 @@ const Header = () => {
                             <>
                               <button 
                                 className="menu-dropdown__item"
-                                onClick={() => {
-                                  navigate('/profile')
-                                  setIsMenuOpen(false)
-                                }}
+                                onClick={() => openLoginOrNavigate('/profile', true)}
                               >
                                 <span>{t('profile')}</span>
                               </button>
                               <button 
                                 className="menu-dropdown__item"
-                                onClick={() => {
-                                  navigateToWallet(navigate, location.pathname)
-                                  setIsMenuOpen(false)
-                                }}
+                                onClick={() => openWalletFromMenu(true)}
                               >
                                 <span>{t('wallet')}</span>
                               </button>
@@ -793,6 +806,7 @@ const Header = () => {
                             <button 
                               className="menu-dropdown__item"
                               onClick={() => {
+                                setLoginModalEntry('wizard')
                                 setIsLoginModalOpen(true)
                                 setIsMenuOpen(false)
                               }}
@@ -813,7 +827,7 @@ const Header = () => {
             <button
               type="button"
               className={`new-header__filter-btn ${location.pathname === '/chat' ? 'new-header__filter-btn--active' : ''}`}
-              onClick={() => navigate('/chat?manager=1')}
+              onClick={() => openLoginOrNavigate('/chat?manager=1')}
             >
               <span>{t('chat')}</span>
             </button>
@@ -833,8 +847,7 @@ const Header = () => {
                   // Диспатчим событие для открытия AI чата
                   window.dispatchEvent(new CustomEvent('openAIChat'))
                 } else {
-                  // На других страницах переходим на /chat
-                  navigate('/chat')
+                  openLoginOrNavigate('/chat')
                 }
               }}
             >
@@ -843,7 +856,7 @@ const Header = () => {
             <button
               type="button"
               className={`new-header__filter-btn ${location.pathname === '/map' ? 'new-header__filter-btn--active' : ''}`}
-              onClick={() => navigate('/map')}
+              onClick={() => openLoginOrNavigate('/map')}
             >
               <span>{t('map')}</span>
             </button>
@@ -973,6 +986,9 @@ const Header = () => {
                     const forcedMode = sessionStorage.getItem('login_modal_mode')
 
                     if (forcedOpen || forcedMode === 'register' || oauthFlowMode === 'login') {
+                      const wantWizard = sessionStorage.getItem('login_modal_force_wizard') === 'true'
+                      if (wantWizard) sessionStorage.removeItem('login_modal_force_wizard')
+                      setLoginModalEntry(wantWizard ? 'wizard' : 'direct')
                       setIsLoginModalOpen(true)
                       return
                     }
@@ -1010,6 +1026,7 @@ const Header = () => {
                       if (oauthFlowMode === 'login') {
                         sessionStorage.setItem('login_modal_mode', 'register')
                       }
+                      setLoginModalEntry('direct')
                       setIsLoginModalOpen(true)
                       return
                     }
@@ -1026,7 +1043,8 @@ const Header = () => {
                       return
                     }
 
-                    // Не авторизован — открываем модалку
+                    // Не авторизован — открываем модалку (мастер: роль → вход/регистрация)
+                    setLoginModalEntry('wizard')
                     setIsLoginModalOpen(true)
                   }}
                   aria-label={t('profile')}
@@ -1160,7 +1178,11 @@ const Header = () => {
       {/* Модальное окно входа/регистрации */}
       <LoginModal 
         isOpen={isLoginModalOpen} 
-        onClose={() => setIsLoginModalOpen(false)} 
+        onClose={() => {
+          setIsLoginModalOpen(false)
+          setLoginModalEntry('direct')
+        }}
+        authEntryVariant={loginModalEntry === 'wizard' ? 'header_wizard' : 'default'}
       />
     </>
   )

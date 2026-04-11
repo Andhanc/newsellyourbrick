@@ -217,29 +217,12 @@ const AnimatedCharacters = ({ isTypingPassword, isPasswordVisible, isEmailFocuse
     <div style={{
       width: '100%',
       height: '100%',
-      background: 'linear-gradient(160deg, #dde1ea 0%, #c8cdd9 100%)',
-      borderRadius: '16px 0 0 16px',
       position: 'relative',
       overflow: 'hidden',
       display: 'flex',
       flexDirection: 'column',
       justifyContent: 'flex-end',
     }}>
-      {/* Grid pattern */}
-      <div style={{
-        position: 'absolute', inset: 0,
-        backgroundImage: 'radial-gradient(circle, rgba(0,0,0,0.07) 1px, transparent 1px)',
-        backgroundSize: '20px 20px',
-        pointerEvents: 'none',
-      }} />
-
-      {/* Bottom decorative glow */}
-      <div style={{
-        position: 'absolute', bottom: 0, left: 0, right: 0, height: '40%',
-        background: 'linear-gradient(to top, rgba(200,205,220,0.6) 0%, transparent 100%)',
-        pointerEvents: 'none',
-      }} />
-
       {/* Characters scene — sits at the bottom of the panel */}
       <div style={{
         position: 'relative',

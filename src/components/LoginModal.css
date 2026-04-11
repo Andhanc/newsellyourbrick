@@ -37,11 +37,119 @@
   flex-direction: row;
 }
 
-/* Left panel — animated characters */
+/* Левая колонка: фон на всю ширину/высоту (кнопка «Изменить роль» не на белом от .login-modal) */
 .login-modal__side-panel {
   width: 330px;
   flex-shrink: 0;
   display: flex;
+  flex-direction: column;
+  min-height: 0;
+  position: relative;
+  overflow: hidden;
+  border-radius: 16px 0 0 16px;
+  background: linear-gradient(160deg, #dde1ea 0%, #c8cdd9 100%);
+}
+
+.login-modal__side-panel::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(circle, rgba(0, 0, 0, 0.07) 1px, transparent 1px);
+  background-size: 20px 20px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.login-modal__side-panel::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 40%;
+  background: linear-gradient(to top, rgba(200, 205, 220, 0.6) 0%, transparent 100%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.login-modal__side-panel-characters {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+
+.login-modal__side-panel-characters > * {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+}
+
+/* «Изменить роль» — вторичный контроль, без заливки (сброс фона кнопки в браузере) */
+.login-modal__change-role {
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background: none;
+  background-color: transparent;
+  border-radius: 10px;
+  transition: color 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.login-modal__change-role--side {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-shrink: 0;
+  margin: 18px 18px 12px;
+  padding: 8px 12px;
+  color: rgba(55, 65, 81, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  box-shadow: none;
+}
+
+.login-modal__change-role--side:hover {
+  color: #1f2937;
+  background-color: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.6);
+}
+
+.login-modal__change-role--side:active {
+  background-color: rgba(255, 255, 255, 0.22);
+}
+
+.login-modal--buyer .login-modal__change-role--side {
+  color: rgba(6, 122, 118, 0.92);
+  border-color: rgba(10, 186, 181, 0.28);
+}
+
+.login-modal--buyer .login-modal__change-role--side:hover {
+  color: #055a57;
+  background-color: rgba(10, 186, 181, 0.08);
+  border-color: rgba(10, 186, 181, 0.4);
+}
+
+.login-modal--seller .login-modal__change-role--side {
+  color: rgba(91, 33, 182, 0.92);
+  border-color: rgba(124, 58, 237, 0.28);
+}
+
+.login-modal--seller .login-modal__change-role--side:hover {
+  color: #4c1d95;
+  background-color: rgba(124, 58, 237, 0.08);
+  border-color: rgba(124, 58, 237, 0.4);
+}
+
+/* На мобильных серая колонка скрыта — дублируем кнопку над формой */
+.login-modal__change-role--mobile {
+  display: none;
 }
 
 /* Right panel — form content */
@@ -73,7 +181,7 @@
 
 .login-modal--seller .login-modal__form-panel::before {
   opacity: 1;
-  background: linear-gradient(90deg, #ff6b6b 0%, #ff8e53 100%);
+  background: linear-gradient(90deg, #7c3aed 0%, #a78bfa 100%);
 }
 
 @keyframes slideUp {
@@ -121,7 +229,7 @@
 }
 
 .login-modal--seller .login-modal__header {
-  background: linear-gradient(135deg, rgba(255, 107, 107, 0.03) 0%, rgba(255, 142, 83, 0.03) 100%);
+  background: linear-gradient(135deg, rgba(124, 58, 237, 0.06) 0%, rgba(167, 139, 250, 0.04) 100%);
 }
 
 .login-modal__title {
@@ -139,8 +247,8 @@
 }
 
 .login-modal--seller .login-modal__title {
-  color: #ff6b6b;
-  text-shadow: 0 2px 10px rgba(255, 107, 107, 0.2);
+  color: #6d28d9;
+  text-shadow: 0 2px 10px rgba(124, 58, 237, 0.22);
 }
 
 .login-modal__subtitle {
@@ -150,15 +258,29 @@
   line-height: 1.5;
 }
 
-/* Вкладки «Вход» / «Регистрация» — сразу под заголовком */
+/* Вкладки «Регистрация» / «Вход» — сразу под заголовком */
 .login-modal__mode-switch {
   display: flex;
   gap: 4px;
-  margin: 0 32px 20px;
+  margin: 0 32px 18px;
   padding: 5px;
-  background: #ececec;
+  background: #e4e4e7;
   border-radius: 14px;
   box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+}
+
+/* Регистрация: дорожка в цвет темы; снизу без лишнего отступа — зона роли даёт разрыв */
+.login-modal--buyer .login-modal__mode-switch {
+  margin-bottom: 0;
+  background: rgba(10, 186, 181, 0.12);
+  box-shadow: inset 0 1px 2px rgba(10, 186, 181, 0.08);
+}
+
+.login-modal--seller .login-modal__mode-switch {
+  margin-bottom: 0;
+  background: rgba(124, 58, 237, 0.12);
+  box-shadow: inset 0 1px 2px rgba(91, 33, 182, 0.08);
 }
 
 .login-modal__mode-tab {
@@ -172,6 +294,8 @@
   cursor: pointer;
   color: #555;
   background: transparent;
+  appearance: none;
+  -webkit-appearance: none;
   transition:
     color 0.2s ease,
     background-color 0.2s ease,
@@ -189,49 +313,61 @@
 }
 
 .login-modal__mode-tab--active {
-  background: #fff;
-  color: #000;
-  box-shadow:
-    0 2px 8px rgba(0, 0, 0, 0.08),
-    0 1px 0 rgba(255, 255, 255, 0.9) inset;
+  background: #f1f1f3;
+  color: #111827;
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.07);
 }
 
 .login-modal--buyer .login-modal__mode-tab--active {
   color: #067a76;
+  background: rgba(255, 255, 255, 0.82);
   box-shadow:
-    0 2px 10px rgba(10, 186, 181, 0.25),
-    0 0 0 1px rgba(10, 186, 181, 0.2);
+    0 1px 6px rgba(10, 186, 181, 0.18),
+    0 0 0 1px rgba(10, 186, 181, 0.22);
 }
 
 .login-modal--seller .login-modal__mode-tab--active {
-  color: #c42e2e;
+  color: #5b21b6;
+  background: rgba(255, 255, 255, 0.82);
   box-shadow:
-    0 2px 10px rgba(255, 107, 107, 0.3),
-    0 0 0 1px rgba(255, 107, 107, 0.22);
+    0 1px 6px rgba(124, 58, 237, 0.2),
+    0 0 0 1px rgba(124, 58, 237, 0.24);
 }
 
 /* Режим «Вход»: на корне нет buyer/seller — подсветка активной вкладки в фирменном цвете */
 .login-modal:not(.login-modal--buyer):not(.login-modal--seller) .login-modal__mode-tab--active {
   color: #067a76;
+  background: rgba(255, 255, 255, 0.82);
   box-shadow:
-    0 2px 10px rgba(10, 186, 181, 0.2),
-    0 0 0 1px rgba(10, 186, 181, 0.18);
+    0 1px 6px rgba(10, 186, 181, 0.18),
+    0 0 0 1px rgba(10, 186, 181, 0.2);
 }
 
 .login-modal__role-section {
-  padding: 0 32px 16px;
+  padding: 16px 32px 20px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
   position: relative;
-  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-  animation: fadeInScale 0.4s ease-out;
+  animation: fadeInScale 0.35s ease-out;
+  border-top: 1px solid rgba(0, 0, 0, 0.07);
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.025) 0%, transparent 52px);
+}
+
+.login-modal--buyer .login-modal__role-section {
+  border-top-color: rgba(10, 186, 181, 0.22);
+  background: linear-gradient(180deg, rgba(10, 186, 181, 0.06) 0%, transparent 56px);
+}
+
+.login-modal--seller .login-modal__role-section {
+  border-top-color: rgba(124, 58, 237, 0.22);
+  background: linear-gradient(180deg, rgba(124, 58, 237, 0.07) 0%, transparent 56px);
 }
 
 @keyframes fadeInScale {
   from {
     opacity: 0;
-    transform: scale(0.95);
+    transform: scale(0.98);
   }
   to {
     opacity: 1;
@@ -239,115 +375,79 @@
   }
 }
 
+/* Подпись — не второй «сегмент», а мелкий заголовок секции */
 .login-modal__role-label {
-  font-size: 13px;
-  color: #666;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #888;
   text-align: left;
 }
 
-.login-modal__role-switch {
-  display: flex;
-  gap: 12px;
-  background: #f5f5f5;
-  padding: 4px;
+/* Две карточки вместо второй пилюли */
+.login-modal__role-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.login-modal__role-card {
+  min-height: 56px;
+  padding: 12px 10px;
+  border: 2px solid #e6e6e6;
   border-radius: 12px;
-  position: relative;
-  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-  overflow: hidden;
-}
-
-.login-modal--buyer .login-modal__role-switch {
-  background: linear-gradient(135deg, rgba(10, 186, 181, 0.1) 0%, rgba(37, 211, 102, 0.1) 100%);
-  box-shadow: 0 4px 15px rgba(10, 186, 181, 0.15);
-}
-
-.login-modal--seller .login-modal__role-switch {
-  background: linear-gradient(135deg, rgba(255, 107, 107, 0.1) 0%, rgba(255, 142, 83, 0.1) 100%);
-  box-shadow: 0 4px 15px rgba(255, 107, 107, 0.15);
-}
-
-.login-modal__role-btn {
-  flex: 1;
-  padding: 10px 16px;
-  border: none;
-  background: transparent;
-  color: #666;
+  background: #fff;
   font-size: 14px;
-  font-weight: 500;
-  border-radius: 8px;
+  font-weight: 600;
+  color: #444;
   cursor: pointer;
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   font-family: inherit;
-  position: relative;
-  z-index: 1;
-  transform: scale(1);
-  overflow: hidden;
+  text-align: center;
+  line-height: 1.25;
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease,
+    box-shadow 0.2s ease,
+    color 0.2s ease;
 }
 
-.login-modal__role-btn::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 0;
-  height: 0;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.3);
-  transform: translate(-50%, -50%);
-  transition: width 0.4s, height 0.4s;
-  z-index: -1;
+.login-modal__role-card:hover:not(:disabled) {
+  border-color: #cfcfcf;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
 }
 
-.login-modal__role-btn:hover:not(:disabled)::after {
-  width: 200px;
-  height: 200px;
-}
-
-.login-modal__role-btn:hover:not(:disabled) {
-  transform: scale(1.05);
-  color: #333;
-}
-
-.login-modal__role-btn:hover:not(:disabled) {
-  color: #333;
-  background: rgba(255, 255, 255, 0.6);
-}
-
-.login-modal__role-btn--active {
-  background: #0ABAB5;
-  color: #fff;
-  box-shadow: 0 4px 15px rgba(10, 186, 181, 0.4);
-  transform: scale(1.05);
-}
-
-.login-modal--buyer .login-modal__role-btn--active {
-  background: linear-gradient(135deg, #0ABAB5 0%, #25d366 100%);
-  box-shadow: 0 4px 20px rgba(10, 186, 181, 0.5);
-}
-
-.login-modal--seller .login-modal__role-btn--active {
-  background: linear-gradient(135deg, #ff6b6b 0%, #ff8e53 100%);
-  box-shadow: 0 4px 20px rgba(255, 107, 107, 0.5);
-}
-
-.login-modal__role-btn--active:hover {
-  transform: scale(1.08);
-}
-
-.login-modal--buyer .login-modal__role-btn--active:hover {
-  background: linear-gradient(135deg, #089a95 0%, #20b85a 100%);
-}
-
-.login-modal--seller .login-modal__role-btn--active:hover {
-  background: linear-gradient(135deg, #e55a5a 0%, #e67d4a 100%);
-}
-
-.login-modal__role-btn:disabled {
+.login-modal__role-card:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
+.login-modal--buyer .login-modal__role-card--active {
+  border-color: #0ABAB5;
+  background: rgba(10, 186, 181, 0.08);
+  color: #067a76;
+  box-shadow: 0 2px 14px rgba(10, 186, 181, 0.18);
+}
+
+.login-modal--seller .login-modal__role-card--active {
+  border-color: #7c3aed;
+  background: rgba(124, 58, 237, 0.09);
+  color: #5b21b6;
+  box-shadow: 0 2px 14px rgba(124, 58, 237, 0.22);
+}
+
+.login-modal--buyer .login-modal__role-card--active:hover:not(:disabled) {
+  border-color: #089a95;
+  background: rgba(10, 186, 181, 0.11);
+}
+
+.login-modal--seller .login-modal__role-card--active:hover:not(:disabled) {
+  border-color: #6d28d9;
+  background: rgba(124, 58, 237, 0.12);
+}
+
 .login-modal__social {
+  margin-top: 22px;
   padding: 0 32px 24px;
   display: flex;
   flex-direction: column;
@@ -356,10 +456,12 @@
 
 .login-modal__social-btn {
   display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: center;
-  gap: 12px;
-  padding: 14px 20px;
+  gap: 10px;
+  padding: 14px 16px;
   border: 2px solid #e0e0e0;
   border-radius: 12px;
   background: #fff;
@@ -369,8 +471,27 @@
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
   position: relative;
   overflow: hidden;
+  text-align: center;
+}
+
+/* Иконка + подпись как одна группа по центру; длинные «Зарегистрироваться через…» переносятся */
+.login-modal__social-btn > svg {
+  flex-shrink: 0;
+  flex-grow: 0;
+}
+
+.login-modal__social-btn > span {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: calc(100% - 36px);
+  text-align: center;
+  line-height: 1.35;
+  overflow-wrap: break-word;
+  word-break: normal;
 }
 
 .login-modal__social-btn::before {
@@ -380,8 +501,16 @@
   left: -100%;
   width: 100%;
   height: 100%;
+  z-index: 0;
+  pointer-events: none;
   background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
   transition: left 0.5s;
+}
+
+.login-modal__social-btn > svg,
+.login-modal__social-btn > span {
+  position: relative;
+  z-index: 1;
 }
 
 .login-modal__social-btn:hover::before {
@@ -501,7 +630,7 @@
 }
 
 .login-modal--seller .login-modal__form {
-  background: linear-gradient(180deg, rgba(255, 107, 107, 0.01) 0%, transparent 100%);
+  background: linear-gradient(180deg, rgba(124, 58, 237, 0.02) 0%, transparent 100%);
 }
 
 .login-modal__field {
@@ -543,8 +672,8 @@
 }
 
 .login-modal--seller .login-modal__input:focus {
-  border-color: #ff6b6b;
-  box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
+  border-color: #7c3aed;
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.28);
 }
 
 .login-modal__input::placeholder {
@@ -594,11 +723,11 @@
 }
 
 .login-modal--seller .login-modal__password-toggle:hover {
-  color: #ff6b6b;
+  color: #7c3aed;
 }
 
 .login-modal--seller .login-modal__password-toggle:focus {
-  color: #ff6b6b;
+  color: #7c3aed;
 }
 
 .login-modal__forgot {
@@ -633,6 +762,16 @@
 .login-modal__footer-link:hover {
   color: #067a76;
   text-decoration: underline;
+}
+
+.login-modal--seller .login-modal__forgot-link,
+.login-modal--seller .login-modal__footer-link {
+  color: #7c3aed;
+}
+
+.login-modal--seller .login-modal__forgot-link:hover,
+.login-modal--seller .login-modal__footer-link:hover {
+  color: #5b21b6;
 }
 
 .login-modal__submit {
@@ -684,12 +823,12 @@
 }
 
 .login-modal--seller .login-modal__submit {
-  background: linear-gradient(135deg, #ff6b6b 0%, #e55a5a 100%);
+  background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%);
 }
 
 .login-modal--seller .login-modal__submit:hover {
-  background: linear-gradient(135deg, #e55a5a 0%, #cc4a4a 100%);
-  box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4);
+  background: linear-gradient(135deg, #6d28d9 0%, #4c1d95 100%);
+  box-shadow: 0 6px 20px rgba(124, 58, 237, 0.38);
 }
 
 .login-modal__submit:active {
@@ -788,7 +927,7 @@
 }
 
 .login-modal--seller .login-modal__footer {
-  background: linear-gradient(180deg, transparent 0%, rgba(255, 107, 107, 0.02) 100%);
+  background: linear-gradient(180deg, transparent 0%, rgba(124, 58, 237, 0.03) 100%);
 }
 
 .login-modal__footer-text {
@@ -818,6 +957,179 @@
   .login-modal__side-panel {
     display: none;
   }
+
+  .login-modal__change-role--side {
+    display: none;
+  }
+
+  .login-modal__change-role--mobile {
+    display: flex;
+    width: calc(100% - 48px);
+    max-width: 400px;
+    margin: 12px auto 4px;
+    padding: 10px 14px;
+    color: #5c6570;
+    background: none;
+    background-color: transparent;
+    border: 1px solid #e2e5e9;
+    box-shadow: none;
+  }
+
+  .login-modal__change-role--mobile:hover {
+    color: #374151;
+    background-color: rgba(0, 0, 0, 0.03);
+    border-color: #d1d5db;
+  }
+
+  .login-modal--buyer .login-modal__change-role--mobile {
+    color: rgba(6, 122, 118, 0.9);
+    border-color: rgba(10, 186, 181, 0.22);
+  }
+
+  .login-modal--buyer .login-modal__change-role--mobile:hover {
+    background-color: rgba(10, 186, 181, 0.05);
+    border-color: rgba(10, 186, 181, 0.32);
+  }
+
+  .login-modal--seller .login-modal__change-role--mobile {
+    color: rgba(91, 33, 182, 0.92);
+    border-color: rgba(124, 58, 237, 0.22);
+  }
+
+  .login-modal--seller .login-modal__change-role--mobile:hover {
+    background-color: rgba(124, 58, 237, 0.06);
+    border-color: rgba(124, 58, 237, 0.32);
+  }
+}
+
+/* Мастер из шапки: шаг 1 — роль, шаг 2 — войти / зарегистрироваться */
+.login-modal__wizard {
+  padding: 4px 32px 28px;
+}
+
+.login-modal__step-badge {
+  display: inline-block;
+  margin: 0 auto 10px;
+  padding: 5px 14px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #fff;
+  background: linear-gradient(90deg, #0ABAB5 0%, #089a95 100%);
+  box-shadow: 0 2px 10px rgba(10, 186, 181, 0.35);
+}
+
+.login-modal--seller .login-modal__step-badge {
+  background: linear-gradient(90deg, #7c3aed 0%, #5b21b6 100%);
+  box-shadow: 0 2px 10px rgba(124, 58, 237, 0.35);
+}
+
+.login-modal__header--wizard-step2 {
+  padding-top: 8px;
+}
+
+.login-modal__role-inline {
+  margin: 0 0 10px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #555;
+}
+
+.login-modal--buyer .login-modal__role-inline {
+  color: #067a76;
+}
+
+.login-modal--seller .login-modal__role-inline {
+  color: #5b21b6;
+}
+
+.login-modal__wizard-head {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.login-modal__wizard--role .login-modal__wizard-head {
+  padding-top: 4px;
+}
+
+.login-modal__wizard-tiles {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.login-modal__wizard-tiles--stack {
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+.login-modal__wizard-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 6px;
+  padding: 22px 14px;
+  border-radius: 16px;
+  border: 2px solid #e8e8e8;
+  background: #fafafa;
+  cursor: pointer;
+  font-family: inherit;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.15s ease;
+}
+
+.login-modal__wizard-tile:hover {
+  border-color: #cfcfcf;
+  box-shadow: 0 8px 26px rgba(0, 0, 0, 0.08);
+  transform: translateY(-2px);
+}
+
+.login-modal__wizard-tile--buyer:hover {
+  border-color: rgba(10, 186, 181, 0.55);
+}
+
+.login-modal__wizard-tile--seller:hover {
+  border-color: rgba(124, 58, 237, 0.5);
+}
+
+.login-modal__wizard-tile-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  background: #fff;
+  color: #333;
+  margin-bottom: 2px;
+}
+
+.login-modal__wizard-tile--buyer .login-modal__wizard-tile-icon {
+  color: #0ABAB5;
+  background: rgba(10, 186, 181, 0.12);
+}
+
+.login-modal__wizard-tile--seller .login-modal__wizard-tile-icon {
+  color: #7c3aed;
+  background: rgba(124, 58, 237, 0.14);
+}
+
+.login-modal__wizard-tile-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: #111;
+}
+
+.login-modal__wizard-tile-desc {
+  font-size: 13px;
+  color: #666;
+  line-height: 1.4;
+  max-width: 240px;
 }
 
 @media (max-width: 480px) {
@@ -828,12 +1140,30 @@
     margin: 0 auto;
   }
 
+  .login-modal__wizard {
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+
+  .login-modal__wizard-tiles:not(.login-modal__wizard-tiles--stack) {
+    grid-template-columns: 1fr;
+  }
+
   .login-modal__header {
     padding: 24px 24px 20px;
   }
 
   .login-modal__mode-switch {
     margin: 0 24px 16px;
+  }
+
+  .login-modal--buyer .login-modal__mode-switch,
+  .login-modal--seller .login-modal__mode-switch {
+    margin-bottom: 0;
+  }
+
+  .login-modal__role-section {
+    padding: 14px 24px 18px;
   }
 
   .login-modal__mode-tab {

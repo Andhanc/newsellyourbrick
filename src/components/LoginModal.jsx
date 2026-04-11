@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useLayoutEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { FiX, FiMail, FiLock, FiUser, FiEye, FiEyeOff } from 'react-icons/fi'
+import { FiX, FiMail, FiLock, FiUser, FiEye, FiEyeOff, FiChevronLeft, FiShoppingBag } from 'react-icons/fi'
 import { FaGoogle, FaWhatsapp, FaFacebook, FaTelegram } from 'react-icons/fa'
 import { useSignIn, useAuth, useUser } from '@clerk/clerk-react'
 import { useTranslation } from 'react-i18next'
@@ -11,20 +11,24 @@ import { registerWithEmail, loginWithEmail, validatePassword, saveUserData, getR
 import { getApiBaseUrl } from '../utils/apiConfig'
 import { getClerkOAuthReturnUrl } from '../utils/clerkOAuth'
 import { showNotification } from '../utils/toastHelper'
+import { shouldDefaultLoginModalToLogin } from '../utils/visitorAuthDefault'
 import AnimatedCharacters from './AnimatedCharacters'
 import './LoginModal.css'
 
-const LoginModal = ({ isOpen, onClose }) => {
+/** authEntryVariant: header_wizard — Шаг 1 (роль) → Шаг 2 (вход/регистрация + данные); default — один экран (принудительные OAuth и т.п.) */
+const LoginModal = ({ isOpen, onClose, authEntryVariant = 'header_wizard' }) => {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const { signIn, isLoaded: signInLoaded } = useSignIn()
   const { isSignedIn, isLoaded: authLoaded } = useAuth()
   const { user, isLoaded: userLoaded } = useUser()
   const [isLogin, setIsLogin] = useState(() => {
-    // Если открываем модалку принудительно из flow oauth -> нужно выбрать режим
     const forcedMode = sessionStorage.getItem('login_modal_mode')
-    return forcedMode === 'register' ? false : true
-  }) // true для входа, false для регистрации
+    if (forcedMode === 'register') return false
+    if (forcedMode === 'login') return true
+    // Первый визит в браузере → регистрация; уже бывали / есть след сессии → вход
+    return shouldDefaultLoginModalToLogin()
+  }) // true — вход, false — регистрация
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -47,6 +51,8 @@ const LoginModal = ({ isOpen, onClose }) => {
   const telegramWidgetRef = useRef(null)
   const [telegramBotUsername, setTelegramBotUsername] = useState(() => import.meta.env.VITE_TELEGRAM_BOT_USERNAME || '')
   const [telegramConfigLoaded, setTelegramConfigLoaded] = useState(!!import.meta.env.VITE_TELEGRAM_BOT_USERNAME)
+  /** header_wizard: сначала роль → войти/регистрация → форма (в регистрации без повторного выбора роли) */
+  const [wizardPhase, setWizardPhase] = useState('form')
 
   // На Railway VITE_* нет в сборке — загружаем имя бота с сервера при открытии модалки
   const fetchTelegramConfig = () => {
@@ -80,22 +86,43 @@ const LoginModal = ({ isOpen, onClose }) => {
     }
   }, [isOpen])
 
-  // Применяем принудительный режим/роль модалки из sessionStorage и чистим флаги.
-  useEffect(() => {
-    if (!isOpen) return
+  // При открытии: принудительный режим из sessionStorage, мастер из шапки (до отрисовки — без мигания формы)
+  useLayoutEffect(() => {
+    if (!isOpen) {
+      setWizardPhase('form')
+      return
+    }
 
     const forcedMode = sessionStorage.getItem('login_modal_mode')
-    if (forcedMode === 'register') setIsLogin(false)
-    else if (forcedMode === 'login') setIsLogin(true)
+    if (forcedMode === 'register') {
+      setIsLogin(false)
+    } else if (forcedMode === 'login') {
+      setIsLogin(true)
+    } else if (authEntryVariant === 'header_wizard') {
+      // Мастер из шапки (роль → форма): по умолчанию первая вкладка — «Зарегистрироваться»
+      setIsLogin(false)
+    } else {
+      setIsLogin(shouldDefaultLoginModalToLogin())
+    }
 
     const forcedRole = sessionStorage.getItem('login_modal_user_role')
-    if (forcedRole === 'buyer' || forcedRole === 'seller' || forcedRole === 'owner') {
-      setUserRole(forcedRole)
-    }
+    /** Clerk / Profile и т.д. — сразу форма, без шага выбора роли */
+    const skipWizardSteps =
+      forcedMode === 'login' || forcedMode === 'register'
 
     sessionStorage.removeItem('login_modal_mode')
     sessionStorage.removeItem('login_modal_user_role')
-  }, [isOpen])
+
+    if (authEntryVariant === 'header_wizard' && !skipWizardSteps) {
+      setWizardPhase('role')
+      setUserRole('buyer')
+    } else {
+      setWizardPhase('form')
+      if (forcedRole === 'buyer' || forcedRole === 'seller' || forcedRole === 'owner') {
+        setUserRole(forcedRole)
+      }
+    }
+  }, [isOpen, authEntryVariant])
 
   // Сохраняем режим и роль для callback после редиректа из Telegram
   useEffect(() => {
@@ -129,6 +156,24 @@ const LoginModal = ({ isOpen, onClose }) => {
   // Не скрываем LoginModal полностью, чтобы EmailVerificationModal мог рендериться
   // Вместо этого скрываем только содержимое LoginModal
   if (!isOpen) return null
+
+  const isHeaderWizard = authEntryVariant === 'header_wizard'
+  const showAuthForm = !isHeaderWizard || wizardPhase === 'form'
+  /** Шаг 1 (роль) без цветовой темы buyer/seller; шаг 2 и обычная модалка — как раньше */
+  const tintedByRole =
+    !isLogin && (!isHeaderWizard || wizardPhase === 'form')
+
+  /** В CSS тема продавца — `.login-modal--seller`; `owner` с бэка использует те же стили */
+  const loginModalTintClass = tintedByRole
+    ? userRole === 'seller' || userRole === 'owner'
+      ? 'login-modal--seller'
+      : 'login-modal--buyer'
+    : ''
+
+  const handleBackToRoleStep = () => {
+    setWizardPhase('role')
+    setError('')
+  }
 
   /** После создания записи в БД из сессии Clerk — кабинет по выбранной роли */
   const navigateToCabinetAfterClerkDbSync = () => {
@@ -611,7 +656,11 @@ const LoginModal = ({ isOpen, onClose }) => {
       name: '',
       confirmPassword: ''
     })
-    setUserRole('buyer')
+    const lockRole =
+      authEntryVariant === 'header_wizard' && wizardPhase === 'form'
+    if (!lockRole) {
+      setUserRole('buyer')
+    }
   }
 
   return (
@@ -619,15 +668,31 @@ const LoginModal = ({ isOpen, onClose }) => {
       {/* Скрываем LoginModal когда открыт EmailVerificationModal */}
       {!showEmailVerificationModal && (
         <div className="login-modal-overlay" onClick={onClose}>
-          <div className={`login-modal ${!isLogin ? `login-modal--${userRole}` : ''}`} onClick={(e) => e.stopPropagation()}>
+          <div
+            className={`login-modal${loginModalTintClass ? ` ${loginModalTintClass}` : ''}`}
+            onClick={(e) => e.stopPropagation()}
+          >
 
             {/* Side panel with animated characters (hidden on mobile) */}
             <div className="login-modal__side-panel">
-              <AnimatedCharacters
-                isTypingPassword={isPasswordFocused && formData.password.length > 0}
-                isPasswordVisible={showPassword && formData.password.length > 0}
-                isEmailFocused={isEmailFocused}
-              />
+              {isHeaderWizard && wizardPhase === 'form' && (
+                <button
+                  type="button"
+                  className="login-modal__change-role login-modal__change-role--side"
+                  onClick={handleBackToRoleStep}
+                  aria-label={t('authWizardBackToRoleAria')}
+                >
+                  <FiChevronLeft size={20} aria-hidden />
+                  {t('authWizardBackToRole')}
+                </button>
+              )}
+              <div className="login-modal__side-panel-characters">
+                <AnimatedCharacters
+                  isTypingPassword={isPasswordFocused && formData.password.length > 0}
+                  isPasswordVisible={showPassword && formData.password.length > 0}
+                  isEmailFocused={isEmailFocused}
+                />
+              </div>
             </div>
 
             {/* Main form panel */}
@@ -640,15 +705,88 @@ const LoginModal = ({ isOpen, onClose }) => {
           <FiX size={24} />
         </button>
 
-        <div className="login-modal__header">
-          <h2 className="login-modal__title" id="login-modal-heading">
-            {isLogin ? t('loginTitle') : t('registerTitle')}
-          </h2>
-          <p className="login-modal__subtitle">
-            {isLogin 
-              ? t('loginSubtitle') 
-              : t('registerSubtitle')}
-          </p>
+        {isHeaderWizard && wizardPhase === 'role' && (
+          <div className="login-modal__wizard login-modal__wizard--role">
+            <div className="login-modal__wizard-head">
+              <p className="login-modal__step-badge" aria-hidden>
+                {t('authWizardStep1Badge')}
+              </p>
+              <h2 className="login-modal__title" id="login-modal-wizard-role-title">
+                {t('authWizardStep1Title')}
+              </h2>
+              <p className="login-modal__subtitle">{t('authWizardStep1Subtitle')}</p>
+            </div>
+            <div className="login-modal__wizard-tiles" role="group" aria-labelledby="login-modal-wizard-role-title">
+              <button
+                type="button"
+                className="login-modal__wizard-tile login-modal__wizard-tile--buyer"
+                onClick={() => {
+                  setUserRole('buyer')
+                  setWizardPhase('form')
+                }}
+              >
+                <span className="login-modal__wizard-tile-icon" aria-hidden>
+                  <FiUser size={32} />
+                </span>
+                <span className="login-modal__wizard-tile-title">{t('roleBuyer')}</span>
+                <span className="login-modal__wizard-tile-desc">{t('authWizardRoleBuyerHint')}</span>
+              </button>
+              <button
+                type="button"
+                className="login-modal__wizard-tile login-modal__wizard-tile--seller"
+                onClick={() => {
+                  setUserRole('seller')
+                  setWizardPhase('form')
+                }}
+              >
+                <span className="login-modal__wizard-tile-icon" aria-hidden>
+                  <FiShoppingBag size={32} />
+                </span>
+                <span className="login-modal__wizard-tile-title">{t('roleSeller')}</span>
+                <span className="login-modal__wizard-tile-desc">{t('authWizardRoleSellerHint')}</span>
+              </button>
+            </div>
+          </div>
+        )}
+
+        {showAuthForm && (
+          <>
+        {isHeaderWizard && wizardPhase === 'form' && (
+          <button
+            type="button"
+            className="login-modal__change-role login-modal__change-role--mobile"
+            onClick={handleBackToRoleStep}
+            aria-label={t('authWizardBackToRoleAria')}
+          >
+            <FiChevronLeft size={20} aria-hidden />
+            {t('authWizardBackToRole')}
+          </button>
+        )}
+
+        <div
+          className={`login-modal__header${isHeaderWizard && wizardPhase === 'form' ? ' login-modal__header--wizard-step2' : ''}`}
+        >
+          {isHeaderWizard && wizardPhase === 'form' ? (
+            <>
+              <p className="login-modal__step-badge">{t('authWizardStep2Badge')}</p>
+              <h2 className="login-modal__title" id="login-modal-heading">
+                {t('authWizardStep2Title')}
+              </h2>
+              <p className="login-modal__role-inline">
+                {userRole === 'seller' ? t('roleSeller') : t('roleBuyer')}
+              </p>
+              <p className="login-modal__subtitle">{t('authWizardStep2Subtitle')}</p>
+            </>
+          ) : (
+            <>
+              <h2 className="login-modal__title" id="login-modal-heading">
+                {isLogin ? t('loginTitle') : t('registerTitle')}
+              </h2>
+              <p className="login-modal__subtitle">
+                {isLogin ? t('loginSubtitle') : t('registerSubtitle')}
+              </p>
+            </>
+          )}
         </div>
 
         <div
@@ -656,18 +794,6 @@ const LoginModal = ({ isOpen, onClose }) => {
           role="tablist"
           aria-label={t('loginModalModeSwitchAria')}
         >
-          <button
-            type="button"
-            role="tab"
-            id="login-modal-tab-login"
-            aria-selected={isLogin}
-            aria-controls="login-modal-panel"
-            className={`login-modal__mode-tab${isLogin ? ' login-modal__mode-tab--active' : ''}`}
-            onClick={() => setAuthMode(true)}
-            disabled={isLoading}
-          >
-            {t('loginTitle')}
-          </button>
           <button
             type="button"
             role="tab"
@@ -680,6 +806,18 @@ const LoginModal = ({ isOpen, onClose }) => {
           >
             {t('registerTitle')}
           </button>
+          <button
+            type="button"
+            role="tab"
+            id="login-modal-tab-login"
+            aria-selected={isLogin}
+            aria-controls="login-modal-panel"
+            className={`login-modal__mode-tab${isLogin ? ' login-modal__mode-tab--active' : ''}`}
+            onClick={() => setAuthMode(true)}
+            disabled={isLoading}
+          >
+            {t('loginTitle')}
+          </button>
         </div>
 
         <div
@@ -687,13 +825,21 @@ const LoginModal = ({ isOpen, onClose }) => {
           role="tabpanel"
           aria-labelledby={isLogin ? 'login-modal-tab-login' : 'login-modal-tab-register'}
         >
-        {!isLogin && (
+        {!isLogin && !(isHeaderWizard && wizardPhase === 'form') && (
           <div className="login-modal__role-section">
-            <span className="login-modal__role-label">{t('loginAsLabel')}</span>
-            <div className="login-modal__role-switch">
+            <span className="login-modal__role-label" id="login-modal-role-label">
+              {t('loginAsLabel')}
+            </span>
+            <div
+              className="login-modal__role-grid"
+              role="radiogroup"
+              aria-labelledby="login-modal-role-label"
+            >
               <button
                 type="button"
-                className={`login-modal__role-btn ${userRole === 'buyer' ? 'login-modal__role-btn--active' : ''}`}
+                role="radio"
+                aria-checked={userRole === 'buyer'}
+                className={`login-modal__role-card${userRole === 'buyer' ? ' login-modal__role-card--active' : ''}`}
                 onClick={() => setUserRole('buyer')}
                 disabled={isLoading}
               >
@@ -701,7 +847,9 @@ const LoginModal = ({ isOpen, onClose }) => {
               </button>
               <button
                 type="button"
-                className={`login-modal__role-btn ${userRole === 'seller' ? 'login-modal__role-btn--active' : ''}`}
+                role="radio"
+                aria-checked={userRole === 'seller'}
+                className={`login-modal__role-card${userRole === 'seller' ? ' login-modal__role-card--active' : ''}`}
                 onClick={() => setUserRole('seller')}
                 disabled={isLoading}
               >
@@ -932,6 +1080,8 @@ const LoginModal = ({ isOpen, onClose }) => {
           </button>
         </div>
         </div>
+          </>
+        )}
 
             </div>
           </div>

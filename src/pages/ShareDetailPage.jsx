@@ -6,6 +6,7 @@ import Header from '../components/Header'
 import SharePurchaseModal from '../components/SharePurchaseModal'
 import { getUserData, isAuthenticated, getStoredNumericUserId, CLERK_DB_USER_SYNCED } from '../services/authService'
 import { showNotification } from '../utils/toastHelper'
+import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
 import './ShareDetailPage.css'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api'
@@ -211,7 +212,7 @@ const ShareDetailPage = () => {
     const sessionId = sessionIdQ
     const uid = localStorage.getItem('userId')
     if (!uid || !/^\d+$/.test(uid)) {
-      showNotification('Войдите в аккаунт, чтобы завершить покупку')
+      requestOpenLoginModal({ wizard: true })
       return undefined
     }
     const routeMatch = id?.match(/^(apartment|commercial|house|villa)-(\d+)$/)
@@ -311,7 +312,7 @@ const ShareDetailPage = () => {
     const isClerkAuth = user && userLoaded
     const isOldAuth = isAuthenticated()
     if (!isClerkAuth && !isOldAuth) {
-      showNotification('Войдите в систему, чтобы купить долю')
+      requestOpenLoginModal({ wizard: true })
       return
     }
     if (!isDbShare) {

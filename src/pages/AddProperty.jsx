@@ -44,6 +44,7 @@ import CountrySelect from '../components/CountrySelect'
 import { getUserData } from '../services/authService'
 import { generateListingDescription } from '../services/aiService'
 import { showNotification } from '../utils/toastHelper'
+import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
 import { notifyBonusSubmissionsChanged } from '../utils/bonusSubmissionsSync'
 import { scrollMainTo } from '../utils/mainScroll'
 import AnimatedGenerateButton from '../components/ui/animated-generate-button-shadcn-tailwind'
@@ -827,7 +828,7 @@ const AddProperty = ({
       }
     }
     if (!userId) {
-      showNotification('Ошибка: пользователь не авторизован. Пожалуйста, войдите в систему.')
+      requestOpenLoginModal({ wizard: true })
       return false
     }
 
@@ -969,7 +970,7 @@ const AddProperty = ({
       // Проверяем и преобразуем userId в число
       if (!userId) {
         setIsSubmitting(false)
-        showNotification('Ошибка: ID пользователя не найден. Пожалуйста, обновите страницу.')
+        requestOpenLoginModal({ wizard: true })
         return false
       }
       
@@ -3387,7 +3388,7 @@ const AddProperty = ({
   const handleAfterListingFeeSuccess = async () => {
     if (!userId) {
       setShowListingFeeModal(false)
-      showNotification('Ошибка: войдите в аккаунт и обновите страницу.')
+      requestOpenLoginModal({ wizard: true })
       return
     }
 
@@ -3426,7 +3427,7 @@ const AddProperty = ({
       return
     }
     if (!userId) {
-      setListingFeePromoError('Ошибка: войдите в аккаунт')
+      requestOpenLoginModal({ wizard: true })
       return
     }
     setListingFeePromoError(null)

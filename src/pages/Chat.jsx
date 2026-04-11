@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback, useMemo, useLayoutEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useUser } from '@clerk/clerk-react'
 import { useTranslation } from 'react-i18next'
 import { FiPhone, FiMail, FiArrowLeft, FiMessageCircle, FiX, FiSend } from 'react-icons/fi'
 import { FaWhatsapp } from 'react-icons/fa'
@@ -10,6 +11,8 @@ import { askPropertyAssistant, detectManagerContactIntent } from '../services/ai
 import { getUserData } from '../services/authService'
 import { syncAssistantLead } from '../services/assistantLeadService'
 import { showNotification } from '../utils/toastHelper'
+import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
+import { isSiteUserSignedIn } from '../utils/siteAuthGate'
 import {
   ensureLiveChatSession,
   fetchLiveChatMessagesSince,
@@ -112,7 +115,16 @@ const MANAGER_QUERY_VALUES = new Set(['1', 'true', 'yes', 'manager'])
 const Chat = () => {
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
+  const { user, isLoaded: userLoaded } = useUser()
   const { t } = useTranslation()
+
+  useEffect(() => {
+    if (!userLoaded) return
+    if (!isSiteUserSignedIn(user, userLoaded)) {
+      requestOpenLoginModal({ wizard: true })
+      navigate('/', { replace: true })
+    }
+  }, [user, userLoaded, navigate])
   const [chatUserId] = useState(() => getChatUserId())
   const [activeChat, setActiveChat] = useState('tech-support')
   const [notificationsEnabled, setNotificationsEnabled] = useState(false)

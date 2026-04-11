@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
+import { useUser } from '@clerk/clerk-react'
 import { useTranslation } from 'react-i18next'
 import { FaApple, FaWhatsapp } from 'react-icons/fa'
 import { MdSentimentDissatisfied } from 'react-icons/md'
@@ -8,6 +9,8 @@ import whatsappQR from '../../6019556644745841501.png'
 import './Footer.css'
 import { scrollMainTo } from '../utils/mainScroll'
 import { navigateToWallet } from '../utils/walletNavigation'
+import { isSiteUserSignedIn, routeRequiresSiteLogin } from '../utils/siteAuthGate'
+import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
 import { UI_LANGUAGES } from '../constants/uiLanguages'
 
 const WHATSAPP_HREF = 'https://wa.me/447700183959'
@@ -16,6 +19,7 @@ const Footer = () => {
   const { t, i18n } = useTranslation()
   const navigate = useNavigate()
   const location = useLocation()
+  const { user, isLoaded: userLoaded } = useUser()
   const languageDropdownRef = useRef(null)
   const [storeComingSoonOpen, setStoreComingSoonOpen] = useState(false)
   const [isLanguageDropdownOpen, setIsLanguageDropdownOpen] = useState(false)
@@ -63,7 +67,20 @@ const Footer = () => {
 
   const goWallet = () => {
     scrollToTop()
+    if (!isSiteUserSignedIn(user, userLoaded)) {
+      requestOpenLoginModal({ wizard: true })
+      return
+    }
     navigateToWallet(navigate, location.pathname)
+  }
+
+  const handleFooterProtectedNav = (to) => {
+    scrollToTop()
+    if (routeRequiresSiteLogin(to) && !isSiteUserSignedIn(user, userLoaded)) {
+      requestOpenLoginModal({ wizard: true })
+      return
+    }
+    navigate(to)
   }
 
   /** @type {Array<Array<{ to?: string; onClick?: () => void; label: string }>>} */
@@ -115,6 +132,18 @@ const Footer = () => {
           onClick={() => {
             item.onClick()
           }}
+        >
+          {item.label}
+        </button>
+      )
+    }
+    if (routeRequiresSiteLogin(item.to)) {
+      return (
+        <button
+          key={key}
+          type="button"
+          className="footer__menu-link"
+          onClick={() => handleFooterProtectedNav(item.to)}
         >
           {item.label}
         </button>

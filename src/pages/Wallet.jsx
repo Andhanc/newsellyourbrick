@@ -17,6 +17,7 @@ import { useTonConnectUI, useTonAddress, useTonWallet } from '@tonconnect/ui-rea
 import DepositTopUpPicker from '../components/DepositTopUpPicker'
 import SellerVerificationModal from '../components/SellerVerificationModal'
 import { showNotification } from '../utils/toastHelper'
+import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
 import {
   startDepositWalletCheckout,
   confirmWalletDepositSession,
@@ -24,6 +25,7 @@ import {
 } from '../utils/subscriptionCheckout'
 import { getUsdtJettonWalletAddress, buildUsdtTransferTransaction } from '../utils/tonUsdt'
 import { ensureCanOpenProperty } from '../utils/propertyAccessGuard'
+import { isSiteUserSignedIn } from '../utils/siteAuthGate'
 import { hasEmailForBuyNowFlow } from '../utils/buyNowEmailGate'
 import {
   isSafeWalletFromPath,
@@ -82,6 +84,14 @@ const Wallet = () => {
       setWalletEntryFrom(from)
     }
   }, [location.state])
+
+  useEffect(() => {
+    if (!userLoaded) return
+    if (!isSiteUserSignedIn(user, userLoaded)) {
+      requestOpenLoginModal({ wizard: true })
+      navigate('/', { replace: true })
+    }
+  }, [user, userLoaded, navigate])
 
   const [depositAmount, setDepositAmount] = useState(0)
   const [loading, setLoading] = useState(true)
@@ -490,7 +500,7 @@ const Wallet = () => {
 
   const handleStripeDeposit = async () => {
     if (!dbUserId) {
-      showNotification('Сначала войдите в систему', 'error')
+      requestOpenLoginModal({ wizard: true })
       return
     }
     setStripeCheckoutLoading(true)
@@ -562,7 +572,7 @@ const Wallet = () => {
     const isOldAuth = isAuthenticated()
     
     if (!isClerkAuth && !isOldAuth) {
-      showNotification('Пожалуйста, войдите в систему для продолжения')
+      requestOpenLoginModal({ wizard: true })
       return
     }
     

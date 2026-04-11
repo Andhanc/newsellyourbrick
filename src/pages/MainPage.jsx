@@ -58,8 +58,10 @@ import AnimatedFolder from '../components/ui/3d-folder'
 import { FrostedGlassCard } from '../components/ui/interactive-frosted-glass-card'
 import { showToast } from '../components/ToastContainer'
 import { showNotification } from '../utils/toastHelper'
+import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
 import { ensureCanOpenProperty } from '../utils/propertyAccessGuard'
 import LoginModal from '../components/LoginModal'
+import HeroRolePitchModal from '../components/HeroRolePitchModal'
 import '../components/PropertyList.css'
 import { askPropertyAssistant, detectManagerContactIntent, filterPropertiesByLocation } from '../services/aiService'
 import { getUserData, clearUserData, isAuthenticated } from '../services/authService'
@@ -929,7 +931,7 @@ function MainPage() {
         ? String(storedDbId).trim()
         : null
     if (!dbUserId) {
-      showToast('Не найден ID пользователя. Выйдите и войдите снова.', 'error')
+      requestOpenLoginModal({ wizard: true })
       return
     }
     try {
@@ -997,6 +999,10 @@ function MainPage() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isMenuClosing, setIsMenuClosing] = useState(false)
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
+  /** Вариант входа в LoginModal: с главной hero — default (шаг 2 формы), иначе как в шапке — мастер */
+  const [mainLoginModalAuthEntry, setMainLoginModalAuthEntry] = useState('header_wizard')
+  /** Модалка «стать продавцом» / «стать покупателем» для залогиненных с другой ролью */
+  const [heroRolePitch, setHeroRolePitch] = useState(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [isSearchOpen, setIsSearchOpen] = useState(false)
   const [pageSearchResults, setPageSearchResults] = useState([])
@@ -1070,15 +1076,15 @@ function MainPage() {
       path: '/map',
       keywords: ['карта', 'map', 'карты', 'локация', 'место'],
       title: 'Карта',
-      requiresAuth: false,
-      allowedRoles: ['buyer', 'seller', 'owner', 'admin', 'client'] // Доступна всем
+      requiresAuth: true,
+      allowedRoles: ['buyer', 'seller', 'owner', 'admin', 'client']
     },
     {
       path: '/chat?manager=1',
       keywords: ['чат', 'chat', 'сообщения', 'messages', 'переписка'],
       title: 'Чат',
-      requiresAuth: false,
-      allowedRoles: ['buyer', 'seller', 'owner', 'admin', 'client'] // Доступна всем
+      requiresAuth: true,
+      allowedRoles: ['buyer', 'seller', 'owner', 'admin', 'client']
     },
     {
       path: '/profile',
@@ -1167,6 +1173,75 @@ function MainPage() {
     // Все остальные - покупатели (buyer или client)
     // Если роль явно указана как buyer, возвращаем buyer, иначе client
     return (storedRole === 'buyer' || storedRole === 'client') ? storedRole : 'client'
+  }
+
+  const isMainSiteUserLoggedIn = () =>
+    isLoggedIn || (userLoaded && !!user) || getUserData().isLoggedIn
+
+  const goMapOrChatIfAuthed = (path) => {
+    if (!isMainSiteUserLoggedIn()) {
+      setMainLoginModalAuthEntry('header_wizard')
+      setIsLoginModalOpen(true)
+      return
+    }
+    navigate(path)
+  }
+
+  const goWalletIfAuthed = () => {
+    if (!isMainSiteUserLoggedIn()) {
+      setMainLoginModalAuthEntry('header_wizard')
+      setIsLoginModalOpen(true)
+      return
+    }
+    navigateToWallet(navigate, location.pathname)
+  }
+
+  const openMainPageLoginDirectRegister = (role) => {
+    sessionStorage.setItem('login_modal_mode', 'register')
+    sessionStorage.setItem('login_modal_user_role', role === 'seller' ? 'seller' : 'buyer')
+    setMainLoginModalAuthEntry('default')
+    setIsLoginModalOpen(true)
+  }
+
+  const handleHeroInvestorCardClick = () => {
+    if (!isMainSiteUserLoggedIn()) {
+      openMainPageLoginDirectRegister('buyer')
+      return
+    }
+    const role = getUserRole()
+    if (role === 'seller' || role === 'owner') {
+      setHeroRolePitch('buyer')
+      return
+    }
+    navigate('/profile')
+  }
+
+  const handleHeroSellerCardClick = () => {
+    if (!isMainSiteUserLoggedIn()) {
+      openMainPageLoginDirectRegister('seller')
+      return
+    }
+    const role = getUserRole()
+    if (role === 'seller' || role === 'owner') {
+      navigate('/owner')
+      return
+    }
+    setHeroRolePitch('seller')
+  }
+
+  const handleHeroRolePitchPrimary = () => {
+    const kind = heroRolePitch
+    setHeroRolePitch(null)
+    if (kind === 'seller') {
+      openMainPageLoginDirectRegister('seller')
+    } else if (kind === 'buyer') {
+      openMainPageLoginDirectRegister('buyer')
+    }
+  }
+
+  const closeLoginModalMain = () => {
+    setIsLoginModalOpen(false)
+    setMainLoginModalAuthEntry('header_wizard')
   }
 
   // Функция поиска страниц
@@ -1273,6 +1348,7 @@ function MainPage() {
       if (access.reason === 'auth') {
         setIsSearchOpen(false)
         setSearchQuery('')
+        setMainLoginModalAuthEntry('header_wizard')
         setIsLoginModalOpen(true)
       } else {
         // Показываем сообщение об ошибке доступа
@@ -1838,6 +1914,11 @@ function MainPage() {
         }
         setChatMessages((prev) => [...prev, botMessage])
         setIsChatOpen(false)
+        if (!isMainSiteUserLoggedIn()) {
+          setMainLoginModalAuthEntry('header_wizard')
+          setIsLoginModalOpen(true)
+          return
+        }
         navigate('/chat?manager=1')
         return
       }
@@ -2117,7 +2198,7 @@ function MainPage() {
 
   const handleCategoryClick = (categoryLabel) => {
     if (categoryLabel === 'Map') {
-      navigate('/map')
+      goMapOrChatIfAuthed('/map')
       return
     }
 
@@ -2416,7 +2497,7 @@ function MainPage() {
                       <button 
                         className="menu-dropdown__item"
                         onClick={() => {
-                          navigate('/map')
+                          goMapOrChatIfAuthed('/map')
                           setIsMenuOpen(false)
                         }}
                       >
@@ -2452,7 +2533,7 @@ function MainPage() {
                       <button 
                         className="menu-dropdown__item"
                         onClick={() => {
-                          navigate('/chat?manager=1')
+                          goMapOrChatIfAuthed('/chat?manager=1')
                           setIsMenuOpen(false)
                         }}
                       >
@@ -2461,7 +2542,7 @@ function MainPage() {
                       <button 
                         className="menu-dropdown__item"
                         onClick={() => {
-                          navigate('/bonuses')
+                          goMapOrChatIfAuthed('/bonuses')
                           setIsMenuOpen(false)
                         }}
                       >
@@ -2470,7 +2551,7 @@ function MainPage() {
                       <button 
                         className="menu-dropdown__item"
                         onClick={() => {
-                          navigate('/calculator')
+                          goMapOrChatIfAuthed('/calculator')
                           setIsMenuOpen(false)
                         }}
                       >
@@ -2486,7 +2567,7 @@ function MainPage() {
                           <button 
                             className="menu-dropdown__item"
                             onClick={() => {
-                              navigate('/profile')
+                              goMapOrChatIfAuthed('/profile')
                               setIsMenuOpen(false)
                             }}
                           >
@@ -2495,7 +2576,7 @@ function MainPage() {
                           <button 
                             className="menu-dropdown__item"
                             onClick={() => {
-                              navigateToWallet(navigate, location.pathname)
+                              goWalletIfAuthed()
                               setIsMenuOpen(false)
                             }}
                           >
@@ -2524,6 +2605,7 @@ function MainPage() {
                         <button 
                           className="menu-dropdown__item"
                           onClick={() => {
+                            setMainLoginModalAuthEntry('header_wizard')
                             setIsLoginModalOpen(true)
                             setIsMenuOpen(false)
                           }}
@@ -2544,7 +2626,7 @@ function MainPage() {
             <button
               type="button"
               className={`new-header__filter-btn new-header__filter-btn--hide-4 ${location.pathname === '/chat' ? 'new-header__filter-btn--active' : ''}`}
-              onClick={() => navigate('/chat?manager=1')}
+              onClick={() => goMapOrChatIfAuthed('/chat?manager=1')}
             >
               <span>{t('chat')}</span>
             </button>
@@ -2565,7 +2647,7 @@ function MainPage() {
             <button
               type="button"
               className={`new-header__filter-btn new-header__filter-btn--hide-1 ${location.pathname === '/map' ? 'new-header__filter-btn--active' : ''}`}
-              onClick={() => navigate('/map')}
+              onClick={() => goMapOrChatIfAuthed('/map')}
             >
               <span>{t('map')}</span>
             </button>
@@ -2693,6 +2775,7 @@ function MainPage() {
             } else if (userData.isLoggedIn) {
               navigate('/profile')
             } else {
+              setMainLoginModalAuthEntry('header_wizard')
               setIsLoginModalOpen(true)
             }
           }}
@@ -3109,6 +3192,7 @@ function MainPage() {
                   } else if (userData.isLoggedIn) {
                     navigate('/profile')
                   } else {
+                    setMainLoginModalAuthEntry('header_wizard')
                     setIsLoginModalOpen(true)
                   }
                 }}
@@ -3196,7 +3280,7 @@ function MainPage() {
               variant="investor"
               title={t('becomeInvestor')}
               buttonText={t('startBtn')}
-              onButtonClick={() => navigate('/auction')}
+              onButtonClick={handleHeroInvestorCardClick}
             >
               {t('investorCardText')}
             </FrostedGlassCard>
@@ -3204,7 +3288,7 @@ function MainPage() {
               variant="seller"
               title={t('becomeSeller')}
               buttonText={t('listProperty')}
-              onButtonClick={() => navigate('/owner')}
+              onButtonClick={handleHeroSellerCardClick}
             >
               {t('sellerCardText')}
             </FrostedGlassCard>
@@ -4074,7 +4158,10 @@ function MainPage() {
               type="button"
               className={`bottom-nav__item ${isActive ? 'bottom-nav__item--active' : ''}`}
               key={`${item.id}-${i18n.language}`}
-              onClick={() => navigate(route)}
+              onClick={() => {
+                if (item.id === 'chat') goMapOrChatIfAuthed(route)
+                else navigate(route)
+              }}
               aria-label={item.label}
             >
               <IconComponent size={26} />
@@ -4269,9 +4356,33 @@ function MainPage() {
       {/* Модальное окно успешной верификации */}
 
       {/* Модальное окно входа/регистрации */}
-      <LoginModal 
-        isOpen={isLoginModalOpen} 
-        onClose={() => setIsLoginModalOpen(false)} 
+      <HeroRolePitchModal
+        variant={heroRolePitch}
+        isOpen={heroRolePitch != null}
+        onClose={() => setHeroRolePitch(null)}
+        onPrimary={handleHeroRolePitchPrimary}
+        title={
+          heroRolePitch === 'seller'
+            ? t('heroPitchBecomeSellerTitle')
+            : t('heroPitchBecomeBuyerTitle')
+        }
+        body={
+          heroRolePitch === 'seller'
+            ? t('heroPitchBecomeSellerBody')
+            : t('heroPitchBecomeBuyerBody')
+        }
+        primaryLabel={
+          heroRolePitch === 'seller'
+            ? t('heroPitchBecomeSellerCta')
+            : t('heroPitchBecomeBuyerCta')
+        }
+        closeLabel={t('close')}
+      />
+
+      <LoginModal
+        isOpen={isLoginModalOpen}
+        onClose={closeLoginModalMain}
+        authEntryVariant={mainLoginModalAuthEntry}
       />
     </div>
   )

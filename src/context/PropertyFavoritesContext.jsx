@@ -16,6 +16,7 @@ import {
   normalizePropertyTable,
 } from '../utils/propertyFavoriteKey'
 import { showNotification } from '../utils/toastHelper'
+import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
 
 const PropertyFavoritesContext = createContext(null)
 
@@ -144,7 +145,7 @@ export function PropertyFavoritesProvider({ children }) {
       const isClerkAuth = user && userLoaded
       const isOldAuth = isAuthenticated()
       if (!isClerkAuth && !isOldAuth) {
-        showNotification('Пожалуйста, войдите в систему, чтобы добавлять объявления в избранное')
+        requestOpenLoginModal({ wizard: true })
         return false
       }
 

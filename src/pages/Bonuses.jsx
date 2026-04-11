@@ -1,11 +1,14 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate, useSearchParams, useLocation } from 'react-router-dom'
+import { useUser } from '@clerk/clerk-react'
 import { useTranslation } from 'react-i18next'
 import { FiChevronDown, FiCheck, FiGift, FiExternalLink, FiCopy, FiShoppingCart, FiUser, FiArrowLeft, FiUserPlus } from 'react-icons/fi'
 import { FaInstagram, FaTiktok, FaGift, FaStar } from 'react-icons/fa'
 import { MdCardGiftcard } from 'react-icons/md'
 import Header from '../components/Header'
 import { getUserData } from '../services/authService'
+import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
+import { isSiteUserSignedIn } from '../utils/siteAuthGate'
 import { subscribeBonusSubmissionsChanged } from '../utils/bonusSubmissionsSync'
 import './Bonuses.css'
 
@@ -30,6 +33,7 @@ const Bonuses = () => {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const location = useLocation()
+  const { user, isLoaded: userLoaded } = useUser()
   const [searchParams] = useSearchParams()
   const tabParam = searchParams.get('tab')
   const fromListingFee = location.state?.fromListingFee === true
@@ -46,6 +50,14 @@ const Bonuses = () => {
   const [bonusMode, setBonusMode] = useState(() => (tabParam === 'seller' ? 'seller' : 'buyer')) // 'buyer' | 'seller'
   const [isAdminSession, setIsAdminSession] = useState(false)
   const celebratedRef = useRef(false)
+
+  useEffect(() => {
+    if (!userLoaded) return
+    if (!isSiteUserSignedIn(user, userLoaded)) {
+      requestOpenLoginModal({ wizard: true })
+      navigate('/', { replace: true })
+    }
+  }, [user, userLoaded, navigate])
 
   const currentTasks = bonusMode === 'seller' ? SELLER_TASKS : BUYER_TASKS
 

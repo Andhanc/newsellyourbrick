@@ -2,9 +2,11 @@ import { useEffect, useState } from 'react'
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { FiArrowLeft } from 'react-icons/fi'
+import Header from '../components/Header'
 import { TestDriveRangeCalendar } from '@/components/ui/calendar'
 import { getApiBaseUrlSync } from '../utils/apiConfig'
 import { showToast } from '../components/ToastContainer'
+import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
 import './TestDriveBookingPage.css'
 
 let API_BASE_URL = getApiBaseUrlSync()
@@ -70,7 +72,7 @@ export default function TestDriveBookingPage() {
     const { start: startYmd, end: endYmd } = pendingRange
     const uid = localStorage.getItem('userId')
     if (!uid || !/^\d+$/.test(uid)) {
-      showToast('Войдите в аккаунт', 'warning')
+      requestOpenLoginModal({ wizard: true })
       return
     }
     setSaving(true)
@@ -123,6 +125,7 @@ export default function TestDriveBookingPage() {
 
   return (
     <div className="test-drive-page">
+      <Header />
       <div className="test-drive-page__hero">
         <button
           type="button"

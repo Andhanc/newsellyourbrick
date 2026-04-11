@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from 'react'
 import maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import './LocationMap.css'
-import { SATELLITE_MAP_STYLE } from '../utils/mapStyles'
+import { SATELLITE_MAP_STYLE, SATELLITE_MAP_MAX_ZOOM } from '../utils/mapStyles'
 
 const LocationMap = ({ center, zoom = 10, marker }) => {
   const mapContainerRef = useRef(null)
@@ -53,7 +53,9 @@ const LocationMap = ({ center, zoom = 10, marker }) => {
       container: mapContainerRef.current,
       style: SATELLITE_MAP_STYLE,
       center: initialCenter,
-      zoom: initialZoom,
+      zoom: Math.min(initialZoom, SATELLITE_MAP_MAX_ZOOM),
+      minZoom: 2,
+      maxZoom: SATELLITE_MAP_MAX_ZOOM,
       attributionControl: false
     })
 
@@ -85,13 +87,23 @@ const LocationMap = ({ center, zoom = 10, marker }) => {
       
       // Ждем, пока карта загрузится, перед добавлением маркера
       if (map.loaded()) {
-        markerRef.current = new maplibregl.Marker({ color: '#0ABAB5' })
+        markerRef.current = new maplibregl.Marker({
+          color: '#0ABAB5',
+          pitchAlignment: 'map',
+          rotationAlignment: 'viewport',
+          subpixelPositioning: true
+        })
           .setLngLat(lngLat)
           .addTo(map)
         console.log('✅ LocationMap: маркер создан при инициализации')
       } else {
         map.once('load', () => {
-          markerRef.current = new maplibregl.Marker({ color: '#0ABAB5' })
+          markerRef.current = new maplibregl.Marker({
+            color: '#0ABAB5',
+            pitchAlignment: 'map',
+            rotationAlignment: 'viewport',
+            subpixelPositioning: true
+          })
             .setLngLat(lngLat)
             .addTo(map)
           console.log('✅ LocationMap: маркер создан после загрузки карты')
@@ -173,9 +185,10 @@ const LocationMap = ({ center, zoom = 10, marker }) => {
 
     const applyZoom = () => {
       try {
-        if (lastZoomAppliedRef.current === zoom) return
-        lastZoomAppliedRef.current = zoom
-        mapRef.current.setZoom(zoom)
+        const z = Math.min(Number(zoom), SATELLITE_MAP_MAX_ZOOM)
+        if (lastZoomAppliedRef.current === z) return
+        lastZoomAppliedRef.current = z
+        mapRef.current.setZoom(z)
       } catch (error) {
         console.warn('⚠️ LocationMap: ошибка при обновлении зума', error)
       }
@@ -231,7 +244,12 @@ const LocationMap = ({ center, zoom = 10, marker }) => {
         try {
           if (!markerRef.current) {
             console.log('📍 LocationMap: создаем новый маркер')
-            markerRef.current = new maplibregl.Marker({ color: '#0ABAB5' })
+            markerRef.current = new maplibregl.Marker({
+              color: '#0ABAB5',
+              pitchAlignment: 'map',
+              rotationAlignment: 'viewport',
+              subpixelPositioning: true
+            })
               .setLngLat(lngLat)
               .addTo(mapRef.current)
             console.log('✅ LocationMap: маркер создан и добавлен на карту')

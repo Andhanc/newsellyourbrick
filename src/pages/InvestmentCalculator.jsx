@@ -1,4 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useUser } from '@clerk/clerk-react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Line } from 'react-chartjs-2';
@@ -18,6 +20,8 @@ import IncomeExpensesChart from '../components/IncomeExpensesChart';
 import BackgroundIcons from '../components/BackgroundIcons';
 import { getApiBaseUrlSync } from '../utils/apiConfig';
 import { scrollMainTo } from '../utils/mainScroll';
+import { requestOpenLoginModal } from '../utils/requestOpenLoginModal';
+import { isSiteUserSignedIn } from '../utils/siteAuthGate';
 import { ChevronDown, Wallet, Home, TrendingUp, PiggyBank } from 'lucide-react';
 import './InvestmentCalculator.css';
 
@@ -34,6 +38,9 @@ ChartJS.register(
 
 const InvestmentCalculator = () => {
   const { t, i18n } = useTranslation();
+  const navigate = useNavigate();
+  const { user, isLoaded: userLoaded } = useUser();
+
   const [propertyPrice, setPropertyPrice] = useState('');
   const [renovationCost, setRenovationCost] = useState('');
   const [ownershipPeriod, setOwnershipPeriod] = useState('');
@@ -61,6 +68,14 @@ const InvestmentCalculator = () => {
   const [marketData, setMarketData] = useState(null);
   const [mortgageRates, setMortgageRates] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    if (!userLoaded) return;
+    if (!isSiteUserSignedIn(user, userLoaded)) {
+      requestOpenLoginModal({ wizard: true });
+      navigate('/', { replace: true });
+    }
+  }, [user, userLoaded, navigate]);
 
   useEffect(() => {
     scrollMainTo(0, 0)

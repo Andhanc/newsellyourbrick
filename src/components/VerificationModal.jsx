@@ -21,6 +21,33 @@ function buildClipPathFromRegion(region) {
   return `inset(${top}px ${right}px ${bottom}px ${left}px round 12px)`
 }
 
+/** Овал в координатах кадра видео (для face-api и проверки попадания в рамку на экране) */
+function previewEllipseToVideo(clipRegion, videoW, videoH, previewW, previewH) {
+  if (!clipRegion || clipRegion.kind !== 'ellipse' || !videoW || !previewW) return null
+  const sx = videoW / previewW
+  const sy = videoH / previewH
+  return {
+    cx: clipRegion.cx * sx,
+    cy: clipRegion.cy * sy,
+    rx: clipRegion.rx * sx,
+    ry: clipRegion.ry * sy,
+  }
+}
+
+function pointInEllipse(px, py, cx, cy, rx, ry) {
+  if (rx <= 0 || ry <= 0) return false
+  const dx = (px - cx) / rx
+  const dy = (py - cy) / ry
+  return dx * dx + dy * dy <= 1
+}
+
+const SELFIE_DETECT_INTERVAL_MS = 220
+const SELFIE_STABLE_OK_FRAMES = 6
+const SELFIE_MIN_DETECTION_SCORE = 0.52
+const SELFIE_MIN_FACE_HEIGHT_IN_OVAL = 0.34
+const SELFIE_MAX_FACE_HEIGHT_IN_OVAL = 0.92
+const SELFIE_VIDEO_EDGE_MARGIN = 0.03
+
 const VerificationModal = ({ isOpen, onClose, userId, onComplete, required }) => {
   const [currentStep, setCurrentStep] = useState(1)
   const [photos, setPhotos] = useState({
@@ -769,12 +796,21 @@ const Camera = ({ type, onCapture, onClose }) => {
   const canvasRef = useRef(null)
   const streamRef = useRef(null)
   const detectionCanvasRef = useRef(null)
+  const clipRegionRef = useRef(null)
+  const selfieStableOkRef = useRef(0)
+  const selfieGateRef = useRef({ canShoot: false, hint: '', inOval: false })
   const [clipRegion, setClipRegion] = useState(null)
   const [isCapturing, setIsCapturing] = useState(false)
   const [facingMode, setFacingMode] = useState('environment') // 'user' для фронтальной, 'environment' для задней
-  const [faceDetected, setFaceDetected] = useState(false)
+  /** Подсказка для шага селфи */
+  const [selfieFaceHint, setSelfieFaceHint] = useState('')
+  const [selfieFaceOk, setSelfieFaceOk] = useState(false)
+  /** Лицо в овале по геометрии (ещё без стабильной серии кадров) — подсветка рамки */
+  const [selfieInOvalFrame, setSelfieInOvalFrame] = useState(false)
   const [modelsLoaded, setModelsLoaded] = useState(false)
+  const [modelsLoading, setModelsLoading] = useState(false)
   const detectionIntervalRef = useRef(null)
+  const detectionBusyRef = useRef(false)
 
   const useFrameBlur = type === 'selfie' || type === 'passport'
 
@@ -833,37 +869,49 @@ const Camera = ({ type, onCapture, onClose }) => {
     }
   }, [updateClipRegion, useFrameBlur])
 
+  useEffect(() => {
+    clipRegionRef.current = clipRegion
+  }, [clipRegion])
+
   // Загрузка моделей face-api.js
   useEffect(() => {
     const loadModels = async () => {
       try {
+        setModelsLoading(true)
         // Используем CDN для моделей face-api.js
         const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/'
-        
-        // Пробуем загрузить модели
+
         await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL)
-        
+
         setModelsLoaded(true)
+        setSelfieFaceHint('')
         console.log('✅ Модели face-api.js загружены')
       } catch (error) {
         console.error('❌ Ошибка загрузки моделей face-api.js с CDN:', error)
-        // Пробуем альтернативный URL
         try {
           const ALT_MODEL_URL = 'https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights/'
           await faceapi.nets.tinyFaceDetector.loadFromUri(ALT_MODEL_URL)
           setModelsLoaded(true)
+          setSelfieFaceHint('')
           console.log('✅ Модели face-api.js загружены с альтернативного URL')
         } catch (altError) {
           console.error('❌ Ошибка загрузки моделей с альтернативного URL:', altError)
-          // Проверяем, может модели уже загружены
           if (faceapi.nets.tinyFaceDetector.isLoaded) {
             setModelsLoaded(true)
+            setSelfieFaceHint('')
             console.log('✅ Модели face-api.js уже загружены')
           } else {
             setModelsLoaded(false)
-            console.warn('⚠️ Модели face-api.js не загружены, проверка лица будет недоступна')
+            console.warn('⚠️ Модели face-api.js не загружены')
+            setSelfieFaceHint(
+              'Не удалось загрузить проверку лица. Проверьте интернет и обновите страницу.'
+            )
+            setSelfieFaceOk(false)
+            setSelfieInOvalFrame(false)
           }
         }
+      } finally {
+        setModelsLoading(false)
       }
     }
 
@@ -873,14 +921,24 @@ const Camera = ({ type, onCapture, onClose }) => {
   }, [type])
 
   useEffect(() => {
+    if (type !== 'selfie') return
+    if (modelsLoading) {
+      setSelfieFaceHint('Загрузка проверки лица…')
+      setSelfieFaceOk(false)
+      setSelfieInOvalFrame(false)
+    }
+  }, [type, modelsLoading])
+
+  useEffect(() => {
     startCamera()
     return () => {
       stopCamera()
       if (detectionIntervalRef.current) {
         clearInterval(detectionIntervalRef.current)
+        detectionIntervalRef.current = null
       }
     }
-  }, [facingMode])
+  }, [facingMode, type])
 
   // Запуск проверки лица в реальном времени после загрузки видео
   useEffect(() => {
@@ -889,10 +947,9 @@ const Camera = ({ type, onCapture, onClose }) => {
 
     const handleVideoReady = () => {
       if (type === 'selfie' && modelsLoaded) {
-        // Небольшая задержка для стабилизации видео
         setTimeout(() => {
           startFaceDetection()
-        }, 500)
+        }, 400)
       }
     }
 
@@ -936,86 +993,184 @@ const Camera = ({ type, onCapture, onClose }) => {
     }
   }
 
-  // Функция проверки лица в реальном времени
+  const applySelfieGateUi = (next) => {
+    const prev = selfieGateRef.current
+    if (prev.canShoot !== next.canShoot || prev.hint !== next.hint || prev.inOval !== next.inOval) {
+      selfieGateRef.current = next
+      setSelfieFaceOk(next.canShoot)
+      setSelfieFaceHint(next.hint)
+      setSelfieInOvalFrame(next.inOval)
+    }
+  }
+
+  // Проверка лица для шага «селфи»: овал = clipRegion, координаты как при сохранении кадра; превью зеркальное
   const startFaceDetection = () => {
     if (!videoRef.current || !modelsLoaded || type !== 'selfie') {
       return
     }
 
-    // Останавливаем предыдущую проверку, если она была
+    selfieStableOkRef.current = 0
+
     if (detectionIntervalRef.current) {
       clearInterval(detectionIntervalRef.current)
     }
 
-    // Создаем скрытый canvas для детекции
-    if (!detectionCanvasRef.current) {
-      detectionCanvasRef.current = document.createElement('canvas')
-    }
+    const detectorOpts = new faceapi.TinyFaceDetectorOptions({
+      inputSize: 416,
+      scoreThreshold: SELFIE_MIN_DETECTION_SCORE,
+    })
 
-    const detectFace = async () => {
+    const tick = async () => {
+      if (detectionBusyRef.current) return
       const video = videoRef.current
-      if (!video || video.readyState !== 4) return
+      if (!video || video.readyState !== 4 || type !== 'selfie') return
 
-      const canvas = detectionCanvasRef.current
-      
-      canvas.width = video.videoWidth
-      canvas.height = video.videoHeight
+      const preview = previewRef.current
+      const region = clipRegionRef.current
+      if (!preview || !region || region.kind !== 'ellipse') {
+        applySelfieGateUi({
+          canShoot: false,
+          hint: 'Подождите, готовим рамку…',
+          inOval: false,
+        })
+        return
+      }
 
+      const pr = preview.getBoundingClientRect()
+      const vw = video.videoWidth
+      const vh = video.videoHeight
+      if (!vw || !vh || !pr.width || !pr.height) return
+
+      detectionBusyRef.current = true
       try {
-        // Получаем размеры области круга (овала) для проверки
-        const videoRect = video.getBoundingClientRect()
-        const ovalWidth = 350 // Ширина овала из CSS
-        const ovalHeight = 450 // Высота овала из CSS
-        const ovalCenterX = videoRect.width / 2
-        const ovalCenterY = videoRect.height / 2
+        const ellipse = previewEllipseToVideo(region, vw, vh, pr.width, pr.height)
+        if (!ellipse) {
+          applySelfieGateUi({ canShoot: false, hint: 'Подождите, готовим рамку…', inOval: false })
+          return
+        }
 
-        // Масштабируем координаты овала относительно размера видео
-        const scaleX = video.videoWidth / videoRect.width
-        const scaleY = video.videoHeight / videoRect.height
-        const ovalCenterXScaled = ovalCenterX * scaleX
-        const ovalCenterYScaled = ovalCenterY * scaleY
-        const ovalWidthScaled = ovalWidth * scaleX
-        const ovalHeightScaled = ovalHeight * scaleY
+        const detections = await faceapi.detectAllFaces(video, detectorOpts)
+        const marginX = vw * SELFIE_VIDEO_EDGE_MARGIN
+        const marginY = vh * SELFIE_VIDEO_EDGE_MARGIN
 
-        // Детектируем лица
-        const detections = await faceapi
-          .detectAllFaces(video, new faceapi.TinyFaceDetectorOptions())
-
-        if (detections.length > 0) {
-          // Проверяем, находится ли хотя бы одно лицо в области овала
-          let faceInOval = false
-          
-          for (const detection of detections) {
-            const box = detection.box
-            const faceCenterX = box.x + box.width / 2
-            const faceCenterY = box.y + box.height / 2
-
-            // Проверяем, находится ли центр лица в пределах овала
-            // Формула эллипса: ((x - cx) / a)² + ((y - cy) / b)² <= 1
-            const a = ovalWidthScaled / 2
-            const b = ovalHeightScaled / 2
-            const dx = (faceCenterX - ovalCenterXScaled) / a
-            const dy = (faceCenterY - ovalCenterYScaled) / b
-            const distance = dx * dx + dy * dy
-
-            if (distance <= 1) {
-              faceInOval = true
-              break
+        const pickHint = () => {
+          if (detections.length === 0) {
+            return {
+              canShoot: false,
+              hint: 'Лицо не видно — встаньте перед камерой при хорошем освещении',
+              inOval: false,
+            }
+          }
+          const strong = detections.filter((x) => x.score >= SELFIE_MIN_DETECTION_SCORE)
+          if (strong.length > 1) {
+            return {
+              canShoot: false,
+              hint: 'В кадре должно быть только одно лицо',
+              inOval: false,
+            }
+          }
+          const det = strong[0] || detections[0]
+          if (det.score < SELFIE_MIN_DETECTION_SCORE) {
+            return {
+              canShoot: false,
+              hint: 'Не похоже на лицо — улучшите свет и уберите очки / капюшон',
+              inOval: false,
             }
           }
 
-          setFaceDetected(faceInOval)
-        } else {
-          setFaceDetected(false)
+          const box = det.box
+          const clipped =
+            box.x < marginX ||
+            box.y < marginY ||
+            box.x + box.width > vw - marginX ||
+            box.y + box.height > vh - marginY
+          if (clipped) {
+            return {
+              canShoot: false,
+              hint: 'Лицо обрезано — отодвиньте камеру или наклоните телефон',
+              inOval: false,
+            }
+          }
+
+          const cxRaw = box.x + box.width / 2
+          const cyRaw = box.y + box.height / 2
+          const cx = vw - cxRaw
+          const cy = cyRaw
+
+          const inOval = pointInEllipse(cx, cy, ellipse.cx, ellipse.cy, ellipse.rx, ellipse.ry)
+          const ovalH = ellipse.ry * 2
+          const relH = ovalH > 0 ? box.height / ovalH : 0
+
+          if (relH < SELFIE_MIN_FACE_HEIGHT_IN_OVAL) {
+            return {
+              canShoot: false,
+              hint: inOval
+                ? 'Подойдите ближе — лицо слишком мелкое в овале'
+                : 'Расположите лицо в овале и подойдите ближе',
+              inOval,
+            }
+          }
+          if (relH > SELFIE_MAX_FACE_HEIGHT_IN_OVAL) {
+            return {
+              canShoot: false,
+              hint: 'Отодвиньтесь — лицо не должно выходить за овал',
+              inOval,
+            }
+          }
+
+          if (!inOval) {
+            const left = cx < ellipse.cx - ellipse.rx * 0.12
+            const right = cx > ellipse.cx + ellipse.rx * 0.12
+            const up = cy < ellipse.cy - ellipse.ry * 0.1
+            const down = cy > ellipse.cy + ellipse.ry * 0.1
+            let hint = 'Выровняйте лицо по овалу'
+            if (left) hint = 'Сдвиньте лицо вправо'
+            else if (right) hint = 'Сдвиньте лицо влево'
+            else if (up) hint = 'Опустите лицо ниже'
+            else if (down) hint = 'Поднимите лицо выше'
+            return { canShoot: false, hint, inOval: false }
+          }
+
+          return { canShoot: true, hint: 'Отлично, можно снимать', inOval: true }
         }
+
+        const instant = pickHint()
+        let canShoot = instant.canShoot
+        if (canShoot) {
+          selfieStableOkRef.current += 1
+          if (selfieStableOkRef.current < SELFIE_STABLE_OK_FRAMES) {
+            canShoot = false
+            applySelfieGateUi({
+              canShoot: false,
+              hint: `Удерживайте лицо в овале… (${selfieStableOkRef.current}/${SELFIE_STABLE_OK_FRAMES})`,
+              inOval: true,
+            })
+            return
+          }
+        } else {
+          selfieStableOkRef.current = 0
+        }
+
+        applySelfieGateUi({
+          canShoot,
+          hint: instant.hint,
+          inOval: instant.inOval,
+        })
       } catch (error) {
         console.error('Ошибка детекции лица:', error)
-        setFaceDetected(false)
+        selfieStableOkRef.current = 0
+        applySelfieGateUi({
+          canShoot: false,
+          hint: 'Не удалось проверить кадр — попробуйте ещё раз',
+          inOval: false,
+        })
+      } finally {
+        detectionBusyRef.current = false
       }
     }
 
-    // Запускаем проверку каждые 200мс
-    detectionIntervalRef.current = setInterval(detectFace, 200)
+    detectionIntervalRef.current = window.setInterval(tick, SELFIE_DETECT_INTERVAL_MS)
+    tick()
   }
 
   const stopCamera = () => {
@@ -1033,11 +1188,16 @@ const Camera = ({ type, onCapture, onClose }) => {
     if (blurVideoRef.current) {
       blurVideoRef.current.srcObject = null
     }
-    setFaceDetected(false)
+    selfieStableOkRef.current = 0
+    selfieGateRef.current = { canShoot: false, hint: '', inOval: false }
+    setSelfieFaceOk(false)
+    setSelfieFaceHint('')
+    setSelfieInOvalFrame(false)
   }
 
   const capturePhoto = () => {
     if (!videoRef.current || !canvasRef.current) return
+    if (type === 'selfie' && !selfieFaceOk) return
 
     setIsCapturing(true)
 
@@ -1152,18 +1312,20 @@ const Camera = ({ type, onCapture, onClose }) => {
               <div className="camera-face-guide">
                 <div
                   ref={shapeGuideRef}
-                  className={`camera-face-guide__oval ${faceDetected ? 'face-detected' : ''}`}
+                  className={`camera-face-guide__oval ${
+                    selfieFaceOk ? 'face-detected' : selfieInOvalFrame ? 'face-aligning' : ''
+                  }`}
                 />
-                <div className="camera-face-guide__text">
-                  {faceDetected ? '✓ Лицо обнаружено!' : 'Расположите лицо в рамке'}
+                <div className="camera-face-guide__text" role="status" aria-live="polite">
+                  {selfieFaceHint || 'Расположите лицо в овале'}
                 </div>
               </div>
-              {faceDetected && (
+              {selfieFaceOk && (
                 <div className="camera-face-notification">
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
                     <path d="M20 6L9 17L4 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>
-                  <span>Лицо видно в рамке</span>
+                  <span>Можно нажать затвор</span>
                 </div>
               )}
             </div>
@@ -1191,10 +1353,22 @@ const Camera = ({ type, onCapture, onClose }) => {
               <path d="M3 18H21" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
             </svg>
           </button>
-          <button 
+          <button
+            type="button"
             className="camera-capture"
             onClick={capturePhoto}
-            disabled={isCapturing}
+            disabled={
+              isCapturing ||
+              (type === 'selfie' &&
+                (!modelsLoaded || modelsLoading || !selfieFaceOk))
+            }
+            title={
+              type === 'selfie' && !modelsLoaded
+                ? 'Сначала загрузится проверка лица'
+                : type === 'selfie' && !selfieFaceOk
+                  ? 'Дождитесь зелёной рамки и подсказки «можно снимать»'
+                  : undefined
+            }
           >
             <div className="camera-capture__button"></div>
           </button>

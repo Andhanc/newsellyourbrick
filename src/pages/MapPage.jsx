@@ -1,15 +1,18 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useUser } from '@clerk/clerk-react'
-import { isAuthenticated } from '../services/authService'
 import { showNotification } from '../utils/toastHelper'
 import maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import { useNavigate } from 'react-router-dom'
-import { FiHeart, FiMapPin, FiChevronLeft, FiSliders, FiX } from 'react-icons/fi'
+import { FiHeart, FiMapPin, FiChevronLeft, FiX } from 'react-icons/fi'
 import { HiOutlineArrowsExpand } from 'react-icons/hi'
 import { getApiBaseUrl } from '../utils/apiConfig'
-import { SATELLITE_MAP_STYLE } from '../utils/mapStyles'
+import { SATELLITE_MAP_STYLE, SATELLITE_MAP_MAX_ZOOM } from '../utils/mapStyles'
 import { ensureCanOpenProperty } from '../utils/propertyAccessGuard'
+import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
+import { isSiteUserSignedIn } from '../utils/siteAuthGate'
+import { usePropertyFavorites } from '../context/PropertyFavoritesContext'
+import { hasDbBackedProperty } from '../utils/propertyFavoriteKey'
 import './MapPage.css'
 
 const SORT_OPTIONS = [
@@ -72,6 +75,9 @@ function normalizeApiProperty(prop, index) {
     rooms: prop.rooms ?? prop.beds ?? prop.bedrooms ?? 0,
     floor: prop.floor ?? null,
     coordinates,
+    source_table:
+      prop.source_table ||
+      (isAuction ? 'properties' : 'properties_apartments'),
     _index: index
   }
 }
@@ -109,11 +115,12 @@ async function geocodeAddress(address) {
 const MapPage = () => {
   const navigate = useNavigate()
   const { user, isLoaded: userLoaded } = useUser()
+  const { isFavorite, toggleFavorite: toggleFavoriteGlobal } = usePropertyFavorites()
   const [propertiesList, setPropertiesList] = useState([])
   const [loading, setLoading] = useState(true)
   const [sortBy, setSortBy] = useState('popular')
+  const [showLikedOnly, setShowLikedOnly] = useState(false)
   const [selectedProperty, setSelectedProperty] = useState(null)
-  const [favorites, setFavorites] = useState(new Set())
   const [imageIndex, setImageIndex] = useState({})
   const mapRef = useRef(null)
   const mapWrapRef = useRef(null)
@@ -167,6 +174,14 @@ const MapPage = () => {
 
   useEffect(() => { loadProperties() }, [loadProperties])
 
+  useEffect(() => {
+    if (!userLoaded) return
+    if (!isSiteUserSignedIn(user, userLoaded)) {
+      requestOpenLoginModal({ wizard: true })
+      navigate('/', { replace: true })
+    }
+  }, [user, userLoaded, navigate])
+
   // ─── Геокодирование для объектов без координат ──────────────────────────
   useEffect(() => {
     if (!propertiesList.length || geocodeInFlightRef.current) return
@@ -187,8 +202,12 @@ const MapPage = () => {
     return () => { cancelled = true }
   }, [propertiesList])
 
-  // ─── Сортировка ──────────────────────────────────────────────────────────
-  const sortedProperties = [...propertiesList].sort((a, b) => {
+  // ─── Фильтр «понравившиеся» и сортировка ─────────────────────────────────
+  const filteredProperties = showLikedOnly
+    ? propertiesList.filter((p) => isFavorite(p, null))
+    : propertiesList
+
+  const sortedProperties = [...filteredProperties].sort((a, b) => {
     if (sortBy === 'price') return (a.price || a.currentBid || 0) - (b.price || b.currentBid || 0)
     if (sortBy === 'rating') return ((b.id || 0) % 10) - ((a.id || 0) % 10)
     return 0
@@ -213,8 +232,11 @@ const MapPage = () => {
           style: SATELLITE_MAP_STYLE,
           center: [27.5666, 53.9138],
           zoom: 11,
-          pitch: 45,
-          bearing: -15,
+          minZoom: 2,
+          maxZoom: SATELLITE_MAP_MAX_ZOOM,
+          // 2D: HTML-маркеры без искажений и без «уплывания» относительно тайлов
+          pitch: 0,
+          bearing: -12,
           attributionControl: false
         })
         map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right')
@@ -298,7 +320,7 @@ const MapPage = () => {
         lastMarkerActivate = now
         e.stopPropagation()
         setSelectedProperty(property)
-        map.flyTo({ center: lngLat, zoom: 16, duration: 700 })
+        map.flyTo({ center: lngLat, zoom: Math.min(16, SATELLITE_MAP_MAX_ZOOM), duration: 700 })
         setMapOpenHintProperty(property)
       }
       el.addEventListener('click', onMarkerActivate)
@@ -308,7 +330,11 @@ const MapPage = () => {
         onMarkerActivate(e)
       })
 
-      const marker = new maplibregl.Marker({ element: el, anchor: 'center' })
+      const marker = new maplibregl.Marker({
+        element: el,
+        anchor: 'center',
+        subpixelPositioning: true
+      })
         .setLngLat(lngLat)
         .addTo(map)
 
@@ -319,7 +345,11 @@ const MapPage = () => {
 
     // Позиционируем карту (только если не выбран конкретный объект)
     if (!selectedProperty && hasPoints) {
-      map.fitBounds(bounds, { padding: { top: 80, right: 80, bottom: 80, left: 80 }, maxZoom: 15, duration: 700 })
+      map.fitBounds(bounds, {
+        padding: { top: 80, right: 80, bottom: 80, left: 80 },
+        maxZoom: Math.min(15, SATELLITE_MAP_MAX_ZOOM),
+        duration: 700
+      })
     }
   }, [sortedProperties, selectedProperty, mapReady])
 
@@ -348,17 +378,10 @@ const MapPage = () => {
   // ─── Прочие обработчики ──────────────────────────────────────────────────
   const setCardImageIndex = (id, index) => setImageIndex((prev) => ({ ...prev, [id]: index }))
 
-  const toggleFavorite = (e, property) => {
+  const toggleFavorite = async (e, property) => {
     e.stopPropagation()
-    const isClerkAuth = user && userLoaded
-    const isOldAuth = isAuthenticated()
-    if (!favorites.has(property.id) && !isClerkAuth && !isOldAuth) {
-      showNotification('Войдите в систему, чтобы добавлять объявления в избранное')
-      return
-    }
-    const next = new Set(favorites)
-    if (next.has(property.id)) next.delete(property.id); else next.add(property.id)
-    setFavorites(next)
+    const mockCat = hasDbBackedProperty(property) ? undefined : 'recommended'
+    await toggleFavoriteGlobal(property, mockCat)
   }
 
   const focusOnProperty = useCallback((property) => {
@@ -368,7 +391,11 @@ const MapPage = () => {
       return
     }
     // flyTo вызывается здесь; маркеры обновятся через setSelectedProperty → useEffect
-    mapInstanceRef.current?.flyTo({ center: [coords[1], coords[0]], zoom: 16, duration: 700 })
+    mapInstanceRef.current?.flyTo({
+      center: [coords[1], coords[0]],
+      zoom: Math.min(16, SATELLITE_MAP_MAX_ZOOM),
+      duration: 700
+    })
     setSelectedProperty(property)
     setMapOpenHintProperty(property)
     const wrap = mapWrapRef.current
@@ -397,9 +424,14 @@ const MapPage = () => {
                 {loading ? 'Загрузка…' : <><strong>{sortedProperties.length}</strong> объектов</>}
               </p>
               <div className="map-sort-pills">
-                <button type="button" className="map-sort-pill map-sort-pill--filter">
-                  <FiSliders size={16} />
-                  Фильтры
+                <button
+                  type="button"
+                  className={`map-sort-pill map-sort-pill--liked ${showLikedOnly ? 'active' : ''}`}
+                  onClick={() => setShowLikedOnly((v) => !v)}
+                  aria-pressed={showLikedOnly}
+                >
+                  <FiHeart size={16} aria-hidden />
+                  Понравившиеся
                 </button>
                 {SORT_OPTIONS.map((opt) => (
                   <button
@@ -421,7 +453,13 @@ const MapPage = () => {
                   <p>Загрузка объектов…</p>
                 </div>
               ) : sortedProperties.length === 0 ? (
-                <div className="map-list-empty"><p>Нет объектов для отображения</p></div>
+                <div className="map-list-empty">
+                  <p>
+                    {showLikedOnly
+                      ? 'Пока нет понравившихся объектов на карте. Добавьте сердечком из списка.'
+                      : 'Нет объектов для отображения'}
+                  </p>
+                </div>
               ) : sortedProperties.map((property) => {
                 const images = property.images || []
                 const currentImgIndex = imageIndex[property.id] ?? 0
@@ -446,7 +484,7 @@ const MapPage = () => {
                         <img src={images[currentImgIndex] || images[0]} alt={property.title} />
                         <button
                           type="button"
-                          className={`map-booking-card__fav ${favorites.has(property.id) ? 'active' : ''}`}
+                          className={`map-booking-card__fav ${isFavorite(property, null) ? 'active' : ''}`}
                           onClick={(e) => toggleFavorite(e, property)}
                           aria-label="В избранное"
                         >
@@ -490,6 +528,7 @@ const MapPage = () => {
                         className="map-booking-card__show-btn"
                         onClick={(e) => { e.stopPropagation(); focusOnProperty(property) }}
                       >
+                        <FiMapPin className="map-booking-card__show-btn-icon" size={15} aria-hidden />
                         Показать
                       </button>
                     </div>
@@ -558,8 +597,14 @@ const MapPage = () => {
               </div>
             )}
             {mapExpanded && (
-              <button type="button" className="map-fullscreen-close" onClick={() => setMapExpanded(false)} aria-label="Закрыть карту">
-                ×
+              <button
+                type="button"
+                className="map-fullscreen-back"
+                onClick={() => setMapExpanded(false)}
+                aria-label="Назад, закрыть карту"
+              >
+                <FiX size={20} strokeWidth={2.25} aria-hidden />
+                <span>Назад</span>
               </button>
             )}
           </div>

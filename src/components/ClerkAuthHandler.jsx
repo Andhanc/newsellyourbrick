@@ -389,6 +389,7 @@ const ClerkAuthHandler = () => {
               window.location.pathname === '/oauth-bridge' ? '/' : window.location.pathname
             window.history.replaceState({}, '', cleanPath)
           }
+          sessionStorage.removeItem('login_modal_force_wizard')
           sessionStorage.setItem('login_modal_force_open', 'true')
           sessionStorage.setItem('login_modal_mode', 'login')
           window.dispatchEvent(new Event('forceOpenLoginModal'))
@@ -417,6 +418,7 @@ const ClerkAuthHandler = () => {
           sessionStorage.setItem('clerk_oauth_needs_register_prompted', 'true')
 
           // Сигнал Хедеру/модалке: открыть регистрацию.
+          sessionStorage.removeItem('login_modal_force_wizard')
           sessionStorage.setItem('login_modal_force_open', 'true')
           sessionStorage.setItem('login_modal_mode', 'register')
           sessionStorage.setItem('login_modal_user_role', userRole === 'seller' ? 'seller' : 'buyer')

@@ -6,6 +6,7 @@ import { isAuthenticated } from '../services/authService'
 import { getApiBaseUrl } from '../utils/apiConfig'
 import { hasDbBackedProperty } from '../utils/propertyFavoriteKey'
 import { showNotification } from '../utils/toastHelper'
+import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
 import {
   firstScheduledSlot,
   getAuctionReminderWheelBounds,
@@ -187,7 +188,8 @@ export default function AuctionReminderModal({ property, open, onClose }) {
     const isClerk = clerkUser && clerkLoaded
     const isOld = isAuthenticated()
     if (!isClerk && !isOld) {
-      showNotification(t('auctionReminderNeedLogin'))
+      handleClose()
+      requestOpenLoginModal({ wizard: true })
       return
     }
     if (!hasDbBackedProperty(property)) {

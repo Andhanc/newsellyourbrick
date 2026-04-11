@@ -37,6 +37,7 @@ import BiddingHistoryModal from '../components/BiddingHistoryModal'
 import CountrySelect, { countries as countryList } from '../components/CountrySelect'
 import { getUserData, saveUserData, logout, clearUserData, CLERK_DB_USER_SYNCED } from '../services/authService'
 import { showNotification } from '../utils/toastHelper'
+import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
 import { showToast } from '../components/ToastContainer'
 import { fetchVerificationStatus } from '../utils/verificationStatusApi'
 import { fetchUserById } from '../utils/usersApi'
@@ -687,7 +688,7 @@ const OwnerDashboard = () => {
   // Загружаем документ
   const handleDocumentUpload = async (type, file) => {
     if (!userId) {
-      showNotification('Ошибка: ID пользователя не найден. Пожалуйста, обновите страницу.')
+      requestOpenLoginModal({ wizard: true })
       return
     }
 
@@ -811,7 +812,7 @@ const OwnerDashboard = () => {
       const userData = getUserData()
 
       if (!userData.id) {
-        showNotification('Ошибка: ID пользователя не найден. Пожалуйста, войдите заново.')
+        requestOpenLoginModal({ wizard: true })
         return
       }
 
@@ -827,7 +828,7 @@ const OwnerDashboard = () => {
       // Используем числовой ID из БД (из localStorage), а не Clerk ID
       const dbUserId = localStorage.getItem('userId')
       if (!dbUserId) {
-        showNotification('Ошибка: ID пользователя не найден. Пожалуйста, обновите страницу.')
+        requestOpenLoginModal({ wizard: true })
         console.error('userId не установлен в localStorage')
         return
       }
@@ -1035,7 +1036,7 @@ const OwnerDashboard = () => {
     const effectiveUserId = (dbUserId && /^\d+$/.test(dbUserId)) ? dbUserId : userId
     
     if (!effectiveUserId) {
-      showNotification('Ошибка: пользователь не авторизован. Пожалуйста, войдите в систему.')
+      requestOpenLoginModal({ wizard: true })
       return false
     }
 
