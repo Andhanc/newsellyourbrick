@@ -41,6 +41,7 @@ import { getAuctionMinBidStep } from '../utils/auctionBidStep'
 import { navigateToWallet } from '../utils/walletNavigation'
 import { getPropertyEntryFrom } from '../utils/propertyNavigation'
 import { hasDbBackedProperty } from '../utils/propertyFavoriteKey'
+import { patchCachedAuctionPropertyBid } from '../services/auctionListCache'
 import {
   getEffectiveAuctionEndTime,
   hasTestTimerDateString,
@@ -689,6 +690,16 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
     hadCircularTimerAuction
 
   const auctionEndTime = getEffectiveAuctionEndTime(displayProperty)
+
+  useEffect(() => {
+    if (!isAuctionProperty || !displayProperty?.id || currentBid == null) return
+    patchCachedAuctionPropertyBid(displayProperty.id, currentBid)
+    window.dispatchEvent(
+      new CustomEvent('syb-auction-current-bid-updated', {
+        detail: { propertyId: displayProperty.id, currentBid },
+      })
+    )
+  }, [isAuctionProperty, displayProperty?.id, currentBid])
 
   useEffect(() => {
     setHadCircularTimerAuction(false)

@@ -23,6 +23,7 @@ import {
   shouldShowCircularAuctionTimer,
 } from '../utils/auctionReminderBounds'
 import { getPropertyCardImage } from '../utils/propertyImage'
+import { resolveAuctionCurrentBidValue } from '../services/auctionListCache'
 import './PropertyList.css'
 
 const MOBILE_BREAKPOINT = 768
@@ -676,7 +677,7 @@ const PropertyList = ({
                     {hasTimer ? (
                       <div className="property-bid-info">
                         <span className="bid-label">{t('currentBid')}</span>
-                        <span className="bid-value">{formatPrice(property.currentBid || property.price || 0)}</span>
+                        <span className="bid-value">{formatPrice(resolveAuctionCurrentBidValue(property))}</span>
                       </div>
                     ) : (
                       <>

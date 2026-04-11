@@ -19,7 +19,14 @@ import {
 } from '../services/authService'
 import { syncAssistantLead } from '../services/assistantLeadService'
 import { askPropertyAssistant, detectManagerContactIntent } from '../services/aiService'
-import { getCachedList, hasCachedList, fetchAuctionList, setCachedList } from '../services/auctionListCache'
+import {
+  getCachedList,
+  hasCachedList,
+  fetchAuctionList,
+  setCachedList,
+  resolveAuctionCurrentBidValue,
+  patchCachedAuctionPropertyBid,
+} from '../services/auctionListCache'
 import { ensureCanOpenProperty } from '../utils/propertyAccessGuard'
 import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
 import { isSiteUserSignedIn } from '../utils/siteAuthGate'
@@ -36,7 +43,7 @@ function formatPropertyForList(prop, isAuction) {
     title: prop.title || prop.name || '',
     location: prop.location || '',
     price: prop.price || (isAuction ? prop.auction_starting_price : 0) || 0,
-    currentBid: isAuction ? (prop.currentBid || prop.auction_starting_price || prop.price || 0) : null,
+    currentBid: isAuction ? resolveAuctionCurrentBidValue(prop) : null,
     endTime: isAuction ? getEffectiveAuctionEndTime(prop) : null,
     isAuction,
     test_timer_end_date: prop.test_timer_end_date || null,
@@ -200,6 +207,54 @@ function Home() {
       if (reconnectTimer) clearTimeout(reconnectTimer)
       if (eventSource) eventSource.close()
     }
+  }, [])
+
+  useEffect(() => {
+    const applyBidToState = (propertyId, bid) => {
+      if (!Number.isFinite(propertyId) || !Number.isFinite(bid)) return
+      setAuctionProperties((prev) =>
+        prev.map((item) => {
+          if (Number(item?.id) !== propertyId) return item
+          return {
+            ...item,
+            currentBid: Math.max(resolveAuctionCurrentBidValue(item), bid),
+          }
+        })
+      )
+      patchCachedAuctionPropertyBid(propertyId, bid)
+    }
+
+    const syncActualBidFromApi = async (propertyId) => {
+      try {
+        const apiBase = await getApiBaseUrl()
+        const response = await fetch(`${apiBase}/bids/property/${propertyId}`)
+        if (!response.ok) return
+        const payload = await response.json()
+        const bids = payload?.success && Array.isArray(payload?.data) ? payload.data : []
+        if (bids.length === 0) return
+        const maxBid = Math.max(
+          ...bids
+            .map((b) => Number(b?.bid_amount))
+            .filter((n) => Number.isFinite(n))
+        )
+        if (Number.isFinite(maxBid)) {
+          applyBidToState(propertyId, maxBid)
+        }
+      } catch {
+        // ignore network sync errors
+      }
+    }
+
+    const handleBidSync = (event) => {
+      const propertyId = Number(event?.detail?.propertyId)
+      const bid = Number(event?.detail?.currentBid)
+      if (!Number.isFinite(propertyId)) return
+      if (Number.isFinite(bid)) applyBidToState(propertyId, bid)
+      void syncActualBidFromApi(propertyId)
+    }
+
+    window.addEventListener('syb-auction-current-bid-updated', handleBidSync)
+    return () => window.removeEventListener('syb-auction-current-bid-updated', handleBidSync)
   }, [])
 
   // Синхронизация числового userId после Clerk→БД (депозит не должен «обнуляться» из‑за user_xxx в storage)

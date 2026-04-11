@@ -23,6 +23,7 @@ import {
   shouldShowCircularAuctionTimer,
 } from '@/utils/auctionReminderBounds'
 import { getPropertyCardImage } from '@/utils/propertyImage'
+import { resolveAuctionCurrentBidValue } from '../../services/auctionListCache'
 import '../PropertyList.css'
 import './AuctionMobileLayout.css'
 
@@ -392,7 +393,7 @@ function AuctionMobileItem({
     !effectiveAuctionEnd
 
   const displayPriceValue = hasTimer
-    ? property.currentBid || property.price || 0
+    ? resolveAuctionCurrentBidValue(property)
     : property.price || 0
 
   const goDetail = () => {
@@ -607,7 +608,7 @@ function AuctionMobileItem({
               <div className="auction-mobile-price-row auction-mobile-price-row--debt-inline">
                 <span className="auction-mobile-price-row__label">{t('currentBid')}</span>
                 <span className="auction-mobile-price-row__value">
-                  {formatPrice(property.currentBid || property.price || 0)}
+                  {formatPrice(resolveAuctionCurrentBidValue(property))}
                 </span>
               </div>
             </>
