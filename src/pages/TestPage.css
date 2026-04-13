@@ -1722,6 +1722,52 @@ button.test-hero-icon-tile {
   transform: translateX(2px);
 }
 
+button.test-quick-pill {
+  font: inherit;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+  box-sizing: border-box;
+}
+
+.test-quick-pill--logout {
+  border-color: rgba(248, 113, 113, 0.55);
+  background: linear-gradient(180deg, #fff5f5 0%, #fef2f2 100%);
+}
+
+.test-quick-pill--logout .test-quick-pill__icon {
+  background: rgba(220, 38, 38, 0.12);
+  color: #b91c1c;
+}
+
+.test-quick-pill--logout .test-quick-pill__title {
+  color: #991b1b;
+}
+
+.test-quick-pill--logout .test-quick-pill__sub {
+  color: #b91c1c;
+  opacity: 0.88;
+}
+
+.test-quick-pill--logout .test-quick-pill__arrow {
+  color: #f87171;
+}
+
+.test-quick-pill--logout:hover {
+  border-color: rgba(220, 38, 38, 0.5);
+  background: #fee2e2;
+}
+
+.test-quick-pill--logout:hover .test-quick-pill__icon {
+  background: rgba(220, 38, 38, 0.18);
+  color: #991b1b;
+}
+
+.test-quick-pill--logout:focus-visible {
+  outline: 2px solid rgba(220, 38, 38, 0.45);
+  outline-offset: 2px;
+}
+
 .test-quick-pill__icon {
   width: 40px;
   height: 40px;

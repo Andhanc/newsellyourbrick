@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { useUser } from '@clerk/clerk-react'
+import { useUser, useClerk } from '@clerk/clerk-react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import {
   FiHash,
@@ -14,7 +14,6 @@ import {
   FiMessageCircle,
   FiAlertCircle,
   FiHome,
-  FiPieChart,
   FiFileText,
   FiBookOpen,
   FiArrowRight,
@@ -25,8 +24,9 @@ import {
   FiChevronDown,
   FiChevronUp,
   FiCheck,
+  FiLogOut,
 } from 'react-icons/fi'
-import { getStoredNumericUserId, getUserData } from '../services/authService'
+import { getStoredNumericUserId, getUserData, logout } from '../services/authService'
 import { fetchUserById, invalidateUserByIdCache } from '../utils/usersApi'
 import { showNotification } from '../utils/toastHelper'
 import Confetti from 'react-confetti'
@@ -362,7 +362,7 @@ const MAIN_CARDS = [
 const QUICK_LINKS = [
   { title: 'Долги', subtitle: 'Задолженности', to: '/debts', icon: FiAlertCircle },
   { title: 'Аукцион', subtitle: 'Торги', to: '/auction', icon: FiHome },
-  { title: 'Доли', subtitle: 'Инвестиции', to: '/shares', icon: FiPieChart },
+  { title: 'Выйти', subtitle: 'Выход из аккаунта', icon: FiLogOut, action: 'logout' },
 ]
 
 function historyObjectsWord(n) {
@@ -405,6 +405,7 @@ function TestPage() {
   const navigate = useNavigate()
   const { t } = useTranslation()
   const { user, isLoaded } = useUser()
+  const { signOut } = useClerk()
   const {
     numericUserId,
     publicIdDisplay,
@@ -477,6 +478,28 @@ function TestPage() {
       delete saveTimersRef.current[k]
     })
   }, [])
+
+  const handleQuickLogout = useCallback(async () => {
+    if (!window.confirm(t('buyerCabinet_logoutConfirm'))) {
+      return
+    }
+    sessionStorage.setItem('clerk_logout_in_progress', 'true')
+    try {
+      if (user && signOut) {
+        await signOut({ redirectUrl: `${window.location.origin}/` })
+      }
+    } catch (e) {
+      console.warn('TestPage Clerk signOut:', e)
+    }
+    try {
+      await logout()
+    } catch (e) {
+      console.warn('TestPage logout:', e)
+    } finally {
+      sessionStorage.removeItem('clerk_logout_in_progress')
+    }
+    window.location.assign('/')
+  }, [user, signOut, t])
 
   useEffect(() => {
     dbUserRowRef.current = dbUserRow
@@ -2078,8 +2101,9 @@ function TestPage() {
                     <div className="test-quick-row">
                       {QUICK_LINKS.map((link) => {
                         const Icon = link.icon
-                        return (
-                          <Link key={link.title} to={link.to} className="test-quick-pill">
+                        const isLogout = link.action === 'logout'
+                        const inner = (
+                          <>
                             <span className="test-quick-pill__icon">
                               <Icon size={17} aria-hidden />
                             </span>
@@ -2088,6 +2112,23 @@ function TestPage() {
                               <span className="test-quick-pill__sub">{link.subtitle}</span>
                             </span>
                             <FiArrowRight size={15} className="test-quick-pill__arrow" aria-hidden />
+                          </>
+                        )
+                        if (isLogout) {
+                          return (
+                            <button
+                              key="quick-logout"
+                              type="button"
+                              className="test-quick-pill test-quick-pill--logout"
+                              onClick={handleQuickLogout}
+                            >
+                              {inner}
+                            </button>
+                          )
+                        }
+                        return (
+                          <Link key={link.to} to={link.to} className="test-quick-pill">
+                            {inner}
                           </Link>
                         )
                       })}
