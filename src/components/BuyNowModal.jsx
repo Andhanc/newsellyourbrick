@@ -10,11 +10,10 @@ import { startPropertyReservationCheckout } from '../utils/subscriptionCheckout'
 import { hasEmailForBuyNowFlow } from '../utils/buyNowEmailGate'
 import ShareSignaturePad from './ShareSignaturePad'
 import './BuyNowModal.css'
-import reserveTermsPdf from '../../Document.pdf'
+import { RESERVE_TERMS_PDF_URL as POLICY_PDF_URL } from '../utils/reserveTermsPdfUrl'
 
 const DEPOSIT_FRACTION = 0.1
 const WALLET_OFFSET_EUR = 3000
-const POLICY_PDF_URL = reserveTermsPdf
 
 const BuyNowModal = ({
   isOpen,

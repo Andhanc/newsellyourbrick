@@ -1,18 +1,14 @@
 import { useNavigate, useSearchParams, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useState, useEffect, useRef } from 'react'
-import { getUserData, logout } from '../services/authService'
+import { getUserData } from '../services/authService'
+import { FiArrowLeft } from 'react-icons/fi'
 import VerificationToast from '../components/VerificationToast'
 import PricingCards from '../components/ui/PricingCards'
 import { startProSubscriptionCheckout, confirmCheckoutSession } from '../utils/subscriptionCheckout'
 import { showNotification } from '../utils/toastHelper'
-import { fetchVerificationStatus } from '../utils/verificationStatusApi'
-import BuyerCabinetSidebar from '../components/BuyerCabinetSidebar'
 import './Subscriptions.css'
-import './Profile.css'
 import { useChainedAppLayoutScroll } from '../hooks/useChainedAppLayoutScroll'
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
 
 const Subscriptions = () => {
   const navigate = useNavigate()
@@ -20,7 +16,6 @@ const Subscriptions = () => {
   const { t } = useTranslation()
   const [searchParams, setSearchParams] = useSearchParams()
   const [userId, setUserId] = useState(null)
-  const [verificationStatus, setVerificationStatus] = useState(null)
   const buyerCabinetPageRef = useRef(null)
   const buyerCabinetMainScrollRef = useRef(null)
 
@@ -46,13 +41,6 @@ const Subscriptions = () => {
       }
     }
   }, [])
-
-  // Загружаем статус верификации
-  useEffect(() => {
-    if (userId) {
-      loadVerificationStatus()
-    }
-  }, [userId])
 
   useEffect(() => {
     const checkout = searchParams.get('checkout')
@@ -82,55 +70,8 @@ const Subscriptions = () => {
     }
   }, [searchParams, setSearchParams, t])
 
-  const loadVerificationStatus = async (force = false) => {
-    if (!userId) return
-    try {
-      const status = await fetchVerificationStatus(API_BASE_URL, userId, { ttlMs: 20000, force })
-      if (status) setVerificationStatus(status)
-    } catch (error) {
-      console.error('Ошибка загрузки статуса верификации:', error)
-    }
-  }
-
-  useEffect(() => {
-    const onPush = () => {
-      if (userId) loadVerificationStatus(true)
-    }
-    window.addEventListener('verification-status-update', onPush)
-    return () => window.removeEventListener('verification-status-update', onPush)
-  }, [userId])
-
-  // Функции для проверки заполненности
-  const isDocumentsComplete = () => {
-    return verificationStatus?.hasDocuments || false
-  }
-
-  const isBasicInfoComplete = () => {
-    if (!verificationStatus?.missingFields) return false
-    const { missingFields } = verificationStatus
-    return !missingFields.firstName && 
-           !missingFields.lastName && 
-           !missingFields.emailOrPhone && 
-           !missingFields.country && 
-           !missingFields.address
-  }
-
-  const isPassportDataComplete = () => {
-    if (!verificationStatus?.missingFields) return false
-    const { missingFields } = verificationStatus
-    return !missingFields.passportSeries && 
-           !missingFields.passportNumber && 
-           !missingFields.identificationNumber
-  }
-
-  const shouldShowProfileIndicator = () => {
-    if (!verificationStatus) return false
-    return !isDocumentsComplete()
-  }
-
-  const shouldShowDataIndicator = () => {
-    if (!verificationStatus) return false
-    return !isBasicInfoComplete() || !isPassportDataComplete()
+  const handleBack = () => {
+    navigate(-1)
   }
 
   const handleBookCall = async (plan) => {
@@ -156,47 +97,33 @@ const Subscriptions = () => {
     }
   }
 
-  const handleLogout = async () => {
-    if (!window.confirm(t('buyerCabinet_logoutConfirm'))) {
-      return
-    }
-
-    try {
-      await logout()
-    } catch (error) {
-      console.warn('⚠️ Ошибка при выходе из аккаунта (Subscriptions):', error)
-    }
-
-    navigate('/')
-    setTimeout(() => {
-      window.location.reload()
-    }, 100)
-  }
-
   return (
-    <div className="subscriptions-page" ref={buyerCabinetPageRef}>
-      {/* Всплывающее уведомление о прогрессе верификации */}
+    <div className="subscriptions-page subscriptions-page--focus" ref={buyerCabinetPageRef}>
       {userId && <VerificationToast userId={userId} />}
-      
-      <div className="subscriptions-container buyer-cabinet-layout-container">
-        <BuyerCabinetSidebar
-          asideClassName="subscriptions-sidebar"
-          headerSpaceBetween
-          onLogout={handleLogout}
-          showProfileIndicator={shouldShowProfileIndicator()}
-          showDataIndicator={shouldShowDataIndicator()}
-        />
 
-        <main className="subscriptions-main buyer-cabinet-layout-main">
-          <div className="buyer-cabinet-main-scroll" ref={buyerCabinetMainScrollRef}>
-          <h1 className="subscriptions-title" id="subscriptions-pricing-section">
+      <div className="subscriptions-focus" ref={buyerCabinetMainScrollRef}>
+        <div className="subscriptions-focus__top">
+          <button
+            type="button"
+            className="subscriptions-focus__back"
+            onClick={handleBack}
+            aria-label={t('subscriptions_focus_back')}
+          >
+            <FiArrowLeft size={18} aria-hidden />
+            {t('subscriptions_focus_back')}
+          </button>
+        </div>
+
+        <header className="subscriptions-focus__header">
+          <h1 className="subscriptions-focus__title" id="subscriptions-pricing-section">
             {t('buyerCabinet_sectionSubscriptions')}
           </h1>
-          <div className="subscriptions-cards subscriptions-cards--pricing">
-            <PricingCards onBookCall={handleBookCall} mobileTwoColumn />
-          </div>
-          </div>
-        </main>
+          <p className="subscriptions-focus__lead">{t('buyerCabinet_sectionSubscriptionsSubtitle')}</p>
+        </header>
+
+        <div className="subscriptions-focus__cards">
+          <PricingCards onBookCall={handleBookCall} mobileTwoColumn />
+        </div>
       </div>
     </div>
   )

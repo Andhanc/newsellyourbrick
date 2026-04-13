@@ -3,10 +3,9 @@ import { FiX, FiExternalLink, FiTrash2 } from 'react-icons/fi'
 import ShareSignaturePad from './ShareSignaturePad'
 import { fetchUserDeposit } from '../utils/depositApi'
 import './SharePurchaseModal.css'
-import reserveTermsPdf from '../../Document.pdf'
+import { RESERVE_TERMS_PDF_URL as POLICY_PDF_URL } from '../utils/reserveTermsPdfUrl'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api'
-const POLICY_PDF_URL = reserveTermsPdf
 const WALLET_OFFSET_EUR = 3000
 
 const SharePurchaseModal = ({

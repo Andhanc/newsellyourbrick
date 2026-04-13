@@ -311,7 +311,13 @@ const Header = () => {
     { path: '/chat?manager=1', keywords: ['чат', 'chat', 'сообщения', 'messages', 'переписка'], titleKey: 'chat', requiresAuth: true, allowedRoles: ['buyer', 'seller', 'owner', 'admin', 'client'] },
     { path: '/profile', keywords: ['профиль', 'profile', 'аккаунт', 'личный кабинет', 'настройки', 'settings'], titleKey: 'profile', requiresAuth: true, allowedRoles: ['buyer', 'client', 'admin'] },
     { path: '/favorites', keywords: ['избранное', 'favorites', 'избранные', 'закладки', 'bookmarks'], titleKey: 'favorites', requiresAuth: true, allowedRoles: ['buyer', 'client', 'admin'] },
-    { path: '/wallet', keywords: ['кошелек', 'wallet', 'баланс', 'balance', 'деньги', 'money', 'платежи', 'payments'], titleKey: 'wallet', requiresAuth: true, allowedRoles: ['buyer', 'client', 'admin'] },
+    {
+      path: '/deposit',
+      keywords: ['кошелек', 'wallet', 'депозит', 'deposit', 'баланс', 'balance', 'деньги', 'money', 'платежи', 'payments'],
+      titleKey: 'wallet',
+      requiresAuth: true,
+      allowedRoles: ['buyer', 'client', 'admin'],
+    },
     { path: '/data', keywords: ['данные', 'data', 'информация', 'information', 'персональные данные'], titleKey: 'data', requiresAuth: true, allowedRoles: ['buyer', 'client', 'admin'] },
     { path: '/subscriptions', keywords: ['подписки', 'subscriptions', 'подписка', 'subscription', 'тарифы', 'tariffs'], titleKey: 'subscriptions', requiresAuth: true, allowedRoles: ['buyer', 'client', 'admin'] },
     { path: '/history', keywords: ['история', 'history', 'история покупок', 'покупки', 'purchases'], titleKey: 'history', requiresAuth: true, allowedRoles: ['buyer', 'client', 'admin'] },
@@ -478,7 +484,7 @@ const Header = () => {
     }
 
     // Переходим на страницу
-    if (page.path === '/wallet') {
+    if (page.path === '/deposit' || page.path === '/wallet') {
       navigateToWallet(navigate, location.pathname)
     } else {
       navigate(page.path)

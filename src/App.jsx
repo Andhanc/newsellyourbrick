@@ -29,7 +29,6 @@ const Home = lazy(() => import('./pages/Home'))
 const PropertyDetailPage = lazy(() => import('./pages/PropertyDetailPage'))
 const TestDriveBookingPage = lazy(() => import('./pages/TestDriveBookingPage'))
 const MapPage = lazy(() => import('./pages/MapPage'))
-const Profile = lazy(() => import('./pages/Profile'))
 const MyBookingsPage = lazy(() => import('./pages/MyBookingsPage'))
 const Data = lazy(() => import('./pages/Data'))
 const Subscriptions = lazy(() => import('./pages/Subscriptions'))
@@ -154,6 +153,7 @@ const NO_ZOOM_PATHS = new Set([
   '/main',
   '/profile',
   '/wallet',
+  '/deposit',
   '/bonuses',
   '/favorites',
   '/compare',
@@ -427,7 +427,7 @@ function App() {
               <Route path="/search-results" element={<SearchResults />} />
               <Route path="/map" element={<MapPage />} />
               <Route path="/profile/bookings" element={<MyBookingsPage />} />
-              <Route path="/profile" element={<Profile />} />
+              <Route path="/profile" element={<TestPage />} />
               <Route path="/oauth-bridge" element={<OAuthBridgePage />} />
               <Route path="/auth/telegram-callback" element={<TelegramAuthCallback />} />
               <Route path="/data" element={<Data />} />
@@ -437,6 +437,7 @@ function App() {
               <Route path="/favorites" element={<Favorites />} />
               <Route path="/compare" element={<Compare />} />
               <Route path="/wallet" element={<Wallet />} />
+              <Route path="/deposit" element={<Wallet />} />
               <Route path="/bonuses" element={<Bonuses />} />
               <Route path="/shares" element={<Shares />} />
               <Route path="/debts" element={<Debts />} />

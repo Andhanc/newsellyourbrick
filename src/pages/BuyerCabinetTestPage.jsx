@@ -396,7 +396,7 @@ export default function BuyerCabinetTestPage() {
                     <span className="bwt-action-tile__label">{t('data')}</span>
                   </span>
                 </Link>
-                <Link to="/wallet" className="bwt-action bwt-action--tile" onClick={() => setServicesMenuOpen(false)}>
+                <Link to="/deposit" className="bwt-action bwt-action--tile" onClick={() => setServicesMenuOpen(false)}>
                   <span className="bwt-action-tile">
                     <span className="bwt-action-tile__icon" aria-hidden>
                       <IconNavWallet />

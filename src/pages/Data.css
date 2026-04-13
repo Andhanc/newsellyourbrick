@@ -487,6 +487,111 @@
   transform: translateY(0);
 }
 
+/* Баннер незаполненного профиля — в духе нового кабинета (teal / glass) */
+.data-incomplete-banner {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  margin: 0 0 24px;
+  padding: 16px 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(10, 186, 181, 0.28);
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.95) 0%, rgba(250, 252, 255, 0.9) 100%);
+  box-shadow:
+    0 10px 32px rgba(15, 23, 42, 0.07),
+    inset 0 1px 0 rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.data-incomplete-banner__icon {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  border: 1px solid rgba(10, 186, 181, 0.2);
+  background: rgba(10, 186, 181, 0.12);
+  color: #089a95;
+}
+
+.data-incomplete-banner__body {
+  min-width: 0;
+  flex: 1;
+}
+
+.data-incomplete-banner__title {
+  margin: 0 0 6px;
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #0f172a;
+}
+
+.data-incomplete-banner__lead {
+  margin: 0 0 10px;
+  font-size: 13px;
+  line-height: 1.45;
+  color: #475569;
+}
+
+.data-incomplete-banner__generic {
+  margin: 0 0 12px;
+  font-size: 13px;
+  line-height: 1.45;
+  color: #64748b;
+}
+
+.data-incomplete-banner__list {
+  margin: 0 0 12px;
+  padding-left: 1.15rem;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #334155;
+}
+
+.data-incomplete-banner__list li {
+  margin-bottom: 4px;
+}
+
+.data-incomplete-banner__list li::marker {
+  color: #0abab5;
+}
+
+.data-incomplete-banner__cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 2px;
+  padding: 10px 18px;
+  border: none;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  color: #fff;
+  background: linear-gradient(135deg, #0abab5 0%, #089a95 100%);
+  box-shadow: 0 4px 16px rgba(10, 186, 181, 0.28);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.data-incomplete-banner__cta:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(10, 186, 181, 0.38);
+}
+
+.data-incomplete-banner__cta:active {
+  transform: translateY(0);
+}
+
+@media (max-width: 640px) {
+  .data-incomplete-banner {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
 .data-section {
   background: #fff;
   border: 1px solid #e0e0e0;

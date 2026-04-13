@@ -1101,9 +1101,20 @@ function MainPage() {
       allowedRoles: ['buyer', 'client', 'admin'] // Только для покупателей и админов
     },
     {
-      path: '/wallet',
-      keywords: ['кошелек', 'wallet', 'баланс', 'balance', 'деньги', 'money', 'платежи', 'payments'],
-      title: 'Кошелек',
+      path: '/deposit',
+      keywords: [
+        'кошелек',
+        'wallet',
+        'депозит',
+        'deposit',
+        'баланс',
+        'balance',
+        'деньги',
+        'money',
+        'платежи',
+        'payments',
+      ],
+      title: 'Депозит',
       requiresAuth: true,
       allowedRoles: ['buyer', 'client', 'admin'] // Только для покупателей и админов
     },
@@ -1358,7 +1369,7 @@ function MainPage() {
     }
 
     // Переходим на страницу
-    if (page.path === '/wallet') {
+    if (page.path === '/deposit' || page.path === '/wallet') {
       navigateToWallet(navigate, location.pathname)
     } else {
       navigate(page.path)

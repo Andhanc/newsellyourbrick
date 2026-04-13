@@ -1,8 +1,9 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import BuyerCabinetSidebar from '../components/BuyerCabinetSidebar'
 import { FaPencilAlt } from 'react-icons/fa'
+import { FiAlertCircle } from 'react-icons/fi'
 import { useUser, useAuth } from '@clerk/clerk-react'
 import { getUserData, logout, sendEmailVerificationCode, verifyEmailForProfileUpdate, saveUserData } from '../services/authService'
 import EmailVerificationModal from '../components/EmailVerificationModal'
@@ -667,6 +668,22 @@ const Data = () => {
     if (!verificationStatus) return false
     return !isBasicInfoComplete() || !isPassportDataComplete()
   }
+
+  /** Список подписей незаполненных полей (как на старом профиле), для баннера на странице. */
+  const incompleteDataLabels = useMemo(() => {
+    if (!verificationStatus?.missingFields) return null
+    const mf = verificationStatus.missingFields
+    const labels = []
+    if (mf.firstName) labels.push(t('buyerData_labelFirstName'))
+    if (mf.lastName) labels.push(t('buyerData_labelLastName'))
+    if (mf.emailOrPhone) labels.push(t('buyerData_incompleteBannerContact'))
+    if (mf.country) labels.push(t('buyerData_labelCountry'))
+    if (mf.address) labels.push(t('buyerData_labelAddress'))
+    if (mf.passportSeries) labels.push(t('buyerData_labelPassportSeries'))
+    if (mf.passportNumber) labels.push(t('buyerData_labelPassportNumber'))
+    if (mf.identificationNumber) labels.push(t('buyerData_labelIdNumber'))
+    return labels
+  }, [verificationStatus, t])
 
   // Проверяем, нужно ли показывать индикатор для "Профиль"
   const shouldShowProfileIndicator = () => {
@@ -1392,6 +1409,32 @@ const Data = () => {
           </div>
 
           <div className="data-content">
+            {shouldShowDataIndicator() && (
+              <div className="data-incomplete-banner" role="status" aria-live="polite">
+                <div className="data-incomplete-banner__icon" aria-hidden>
+                  <FiAlertCircle size={22} strokeWidth={2} />
+                </div>
+                <div className="data-incomplete-banner__body">
+                  <p className="data-incomplete-banner__title">{t('buyerData_incompleteBannerTitle')}</p>
+                  <p className="data-incomplete-banner__lead">{t('buyerData_incompleteBannerLead')}</p>
+                  {incompleteDataLabels && incompleteDataLabels.length > 0 ? (
+                    <ul className="data-incomplete-banner__list">
+                      {incompleteDataLabels.map((label, idx) => (
+                        <li key={`${label}-${idx}`}>{label}</li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="data-incomplete-banner__generic">{t('buyerData_incompleteBannerGeneric')}</p>
+                  )}
+                  {!isEditing && (
+                    <button type="button" className="data-incomplete-banner__cta" onClick={handleEdit}>
+                      {t('buyerData_edit')}
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+
             {/* Всплывающее уведомление о прогрессе верификации */}
             {userId && <VerificationToast userId={userId} />}
 

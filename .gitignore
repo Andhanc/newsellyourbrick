@@ -59,6 +59,7 @@ server/uploads/
 !main fon.png
 *.gif
 *.pdf
+!public/documents/reserve-terms.pdf
 *.doc
 *.docx
 

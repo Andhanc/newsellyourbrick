@@ -5,11 +5,12 @@ export function isSafeWalletFromPath(p) {
     typeof p === 'string' &&
     p.startsWith('/') &&
     !p.startsWith('//') &&
-    p !== '/wallet'
+    p !== '/wallet' &&
+    p !== '/deposit'
   )
 }
 
-/** Запоминаем, откуда открыли /wallet (переживает редирект Stripe и потерю location.state). */
+/** Запоминаем, откуда открыли депозит (/deposit) (переживает редирект Stripe и потерю location.state). */
 export function setWalletEntryFrom(pathname) {
   if (!isSafeWalletFromPath(pathname)) return
   try {
@@ -42,5 +43,5 @@ export function navigateToWallet(navigate, currentPathname) {
   if (isSafeWalletFromPath(from)) {
     setWalletEntryFrom(from)
   }
-  navigate('/wallet', isSafeWalletFromPath(from) ? { state: { from } } : undefined)
+  navigate('/deposit', isSafeWalletFromPath(from) ? { state: { from } } : undefined)
 }

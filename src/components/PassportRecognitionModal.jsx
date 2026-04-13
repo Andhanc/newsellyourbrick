@@ -36,7 +36,7 @@ const PassportRecognitionModal = ({ isOpen, onClose, onConfirm, extractedData })
           
           <p className="passport-recognition-modal__text">
             Мы попробовали автоматически распознать ваши данные с фото паспорта.
-            Пожалуйста, перейдите в раздел "Данные", чтобы проверить и при необходимости отредактировать автоматически заполненные поля.
+            Проверьте поля в форме ниже и при необходимости исправьте их — изменения сохраняются автоматически.
           </p>
 
           <div className="passport-recognition-modal__data-preview">
@@ -64,6 +64,12 @@ const PassportRecognitionModal = ({ isOpen, onClose, onConfirm, extractedData })
                 <span className="data-value">{extractedData.passportNumber}</span>
               </div>
             )}
+            {extractedData?.identificationNumber && (
+              <div className="data-preview-item">
+                <span className="data-label">Идентификационный номер:</span>
+                <span className="data-value">{extractedData.identificationNumber}</span>
+              </div>
+            )}
           </div>
 
           <div className="passport-recognition-modal__buttons">
@@ -71,7 +77,7 @@ const PassportRecognitionModal = ({ isOpen, onClose, onConfirm, extractedData })
               className="passport-recognition-modal__button passport-recognition-modal__button--primary"
               onClick={handleConfirm}
             >
-              Проверить данные
+              Понятно
             </button>
             <button 
               className="passport-recognition-modal__button passport-recognition-modal__button--secondary"

@@ -527,7 +527,7 @@ const ShareDetailPage = () => {
         onClose={() => setIsDepositRequiredOpen(false)}
         onGoToDeposit={() => {
           setIsDepositRequiredOpen(false)
-          navigate('/wallet')
+          navigate('/deposit')
         }}
       />
     </div>

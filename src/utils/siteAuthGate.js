@@ -16,7 +16,7 @@ export function routeRequiresSiteLogin(to) {
   if (!p) return false
   if (p === '/map') return true
   if (p === '/chat' || p.startsWith('/chat/')) return true
-  if (p === '/wallet' || p === '/bonuses' || p === '/calculator') return true
+  if (p === '/wallet' || p === '/deposit' || p === '/bonuses' || p === '/calculator') return true
   if (p === '/profile' || p.startsWith('/profile/')) return true
   return false
 }
