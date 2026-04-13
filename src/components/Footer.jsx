@@ -106,6 +106,7 @@ const Footer = () => {
     [
       { onClick: goWallet, label: t('wallet') },
       { to: '/profile', label: t('profile') },
+      { to: '/test', label: 'Тест' },
       { to: '/about#about-for-investors', label: t('footerForInvestors') },
       { to: '/about#about-team', label: t('footerOurTeam') },
     ],

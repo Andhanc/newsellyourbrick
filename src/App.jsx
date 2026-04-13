@@ -50,6 +50,7 @@ const AdminPanelPage = lazy(() => import('./admin/AdminPanelPage'))
 const About = lazy(() => import('./pages/About'))
 const InvestmentCalculator = lazy(() => import('./pages/InvestmentCalculator'))
 const JetonPage = lazy(() => import('./pages/JetonPage'))
+const TestPage = lazy(() => import('./pages/TestPage'))
 const BlockedUserModal = lazy(() => import('./components/BlockedUserModal'))
 
 const PageFallback = () => <div className="app-page-fallback" style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }} aria-hidden="true" />
@@ -443,6 +444,7 @@ function App() {
               <Route path="/shares/:id" element={<ShareDetailPage />} />
               <Route path="/calculator" element={<InvestmentCalculator />} />
               <Route path="/jeton" element={<JetonPage />} />
+              <Route path="/test" element={<TestPage />} />
               <Route path="/owner" element={<OwnerDashboard />} />
               <Route path="/owner/property/new" element={<AddProperty />} />
               <Route path="/property/:id/edit" element={<AddProperty />} />
