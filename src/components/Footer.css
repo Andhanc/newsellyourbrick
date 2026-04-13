@@ -2,10 +2,10 @@
 .footer {
   background: #ffffff;
   color: #6b7280;
-  padding: 40px 0 56px;
-  margin-top: 40px;
+  padding: 10px 0 56px;
+  margin-top: 10px;
   font-family: 'Montserrat', sans-serif;
-  border-top: 1px solid #e5e7eb;
+  border-top: none;
   text-align: left;
   position: relative;
   z-index: 10;
@@ -1019,6 +1019,30 @@ body.admin-panel-active .footer .footer__upper {
   }
 }
 
+/* Жестко фиксируем мобильный порядок в основном футере */
+@media (max-width: 767px) {
+  #site-footer.footer .footer__whatsapp-qr {
+    order: 1 !important;
+  }
+
+  #site-footer.footer .footer__brand--mobile {
+    display: flex !important;
+    order: 2 !important;
+    width: 100%;
+    justify-content: center;
+    margin: 12px 0 0;
+  }
+
+  #site-footer.footer .footer__brand--desktop-inline {
+    display: none !important;
+  }
+
+  #site-footer.footer .footer__store-buttons {
+    order: 3 !important;
+    width: 100%;
+  }
+}
+
 /*
  * Глобальные дубли .footer_* в MainPage.css и PropertyDetailClassic.css загружаются
  * после этого файла и перебивают каскад: мобильное меню снова становится видимым
@@ -1036,6 +1060,15 @@ body.admin-panel-active .footer .footer__upper {
 
   #site-footer.footer .footer__menu.footer__menu--mobile {
     display: none !important;
+  }
+
+  /* На десктопе показываем только правый логотип */
+  #site-footer.footer .footer__brand--mobile {
+    display: none !important;
+  }
+
+  #site-footer.footer .footer__brand--desktop-inline {
+    display: flex !important;
   }
 }
 
@@ -1138,5 +1171,10 @@ body.admin-panel-active .footer .footer__upper {
   font-weight: 600;
   color: #111827;
   font-family: 'Montserrat', sans-serif;
+}
+
+/* Глобальные стили страниц задают .footer border-top; убираем его только у основного футера */
+#site-footer.footer {
+  border-top: none;
 }
 

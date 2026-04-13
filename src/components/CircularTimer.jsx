@@ -273,10 +273,10 @@ const CircularTimer = ({
             <stop offset="100%" stopColor="#059669" stopOpacity="1" />
           </linearGradient>
           <linearGradient id="grayGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#d1d5db" stopOpacity="1" />
-            <stop offset="30%" stopColor="#9ca3af" stopOpacity="1" />
-            <stop offset="60%" stopColor="#6b7280" stopOpacity="1" />
-            <stop offset="100%" stopColor="#374151" stopOpacity="1" />
+            <stop offset="0%" stopColor="#c7d2fe" stopOpacity="1" />
+            <stop offset="30%" stopColor="#a5b4fc" stopOpacity="1" />
+            <stop offset="60%" stopColor="#6366f1" stopOpacity="1" />
+            <stop offset="100%" stopColor="#4338ca" stopOpacity="1" />
           </linearGradient>
           
           {/* Радиальные градиенты для объемного центра (красный) */}
@@ -376,7 +376,7 @@ const CircularTimer = ({
           cx={size / 2}
           cy={size / 2}
           r={centerRadius}
-          fill={showEndedCenter ? '#64748b' : isLeader ? "url(#centerGreenRadial)" : "url(#centerOrangeRadial)"}
+          fill={showEndedCenter ? '#4f46e5' : isLeader ? "url(#centerGreenRadial)" : "url(#centerOrangeRadial)"}
         />
         
       </svg>

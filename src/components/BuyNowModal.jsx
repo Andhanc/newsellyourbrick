@@ -10,10 +10,11 @@ import { startPropertyReservationCheckout } from '../utils/subscriptionCheckout'
 import { hasEmailForBuyNowFlow } from '../utils/buyNowEmailGate'
 import ShareSignaturePad from './ShareSignaturePad'
 import './BuyNowModal.css'
+import reserveTermsPdf from '../../Document.pdf'
 
 const DEPOSIT_FRACTION = 0.1
 const WALLET_OFFSET_EUR = 3000
-const POLICY_PDF_URL = '/docs/buy-now-reservation-policy-test.pdf'
+const POLICY_PDF_URL = reserveTermsPdf
 
 const BuyNowModal = ({
   isOpen,
@@ -126,7 +127,15 @@ const BuyNowModal = ({
   const currencySymbol =
     currency === 'USD' ? '$' : currency === 'EUR' ? '€' : currency === 'BYN' ? 'Br' : ''
 
-  const minSalePrice = Number(property?.price) || 0
+  const minSalePriceRaw =
+    Number(property?.price) ||
+    Number(property?.minimumSalePrice) ||
+    Number(property?.auction_starting_price) ||
+    Number(property?.auctionStartingPrice) ||
+    Number(property?.currentBid) ||
+    (isAuctionWinner ? Number(winningBidAmount) : 0) ||
+    0
+  const minSalePrice = Math.round(minSalePriceRaw * 100) / 100
   const tenPercent = Math.round(minSalePrice * DEPOSIT_FRACTION * 100) / 100
   const isEur = currency === 'EUR'
   const canUseWallet =
@@ -271,6 +280,7 @@ const BuyNowModal = ({
                     {currencySymbol}
                     {winningBidNum != null ? formatMoney(winningBidNum) : '—'}
                   </span>
+                  <span className="buy-now-modal__sum-footnote">{t('auctionWinPaymentModalWinningBidHint')}</span>
                 </div>
                 <div className="buy-now-modal__sum-card buy-now-modal__sum-card--accent">
                   <span className="buy-now-modal__sum-label">
@@ -299,6 +309,7 @@ const BuyNowModal = ({
                     {currencySymbol}
                     {formatMoney(minSalePrice)}
                   </span>
+                  <span className="buy-now-modal__sum-footnote">{t('buyNowModalFullPriceHint')}</span>
                 </div>
                 <div className="buy-now-modal__sum-card buy-now-modal__sum-card--accent">
                   <span className="buy-now-modal__sum-label">
@@ -316,6 +327,7 @@ const BuyNowModal = ({
                       })}
                     </span>
                   )}
+                  <span className="buy-now-modal__sum-footnote">{t('buyNowModalReserveHint')}</span>
                 </div>
               </>
             )}

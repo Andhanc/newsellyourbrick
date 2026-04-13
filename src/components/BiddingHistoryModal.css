@@ -353,7 +353,8 @@
 .bid-item__header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
+  flex-wrap: wrap;
   gap: 16px;
 }
 
@@ -365,6 +366,8 @@
   align-items: center;
   gap: 8px;
   flex: 1;
+  min-width: 0;
+  flex-wrap: wrap;
 }
 
 .bid-item__country-flag {
@@ -397,6 +400,8 @@
   font-weight: 700;
   color: #4A90E2;
   white-space: nowrap;
+  margin-left: auto;
+  max-width: 100%;
 }
 
 .bid-item--highest .bid-item__amount {
@@ -442,8 +447,14 @@
     flex-wrap: wrap;
   }
 
-  .bid-item__amount {
+  .bidding-history-modal .bid-item__header {
+    gap: 10px;
+  }
+
+  .bidding-history-modal .bid-item__amount {
     width: 100%;
-    text-align: right;
+    text-align: left;
+    margin-left: 0;
+    font-size: 18px;
   }
 }

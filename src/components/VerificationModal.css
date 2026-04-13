@@ -39,6 +39,7 @@
   position: relative;
   display: flex;
   flex-direction: column;
+  min-height: 0;
   border: 1px solid rgba(10, 186, 181, 0.1);
 }
 
@@ -221,7 +222,9 @@
 .verification-modal__content {
   padding: 48px 48px 60px;
   flex: 1;
-  overflow: hidden; /* убираем скроллбар */
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
   background: linear-gradient(to bottom, transparent 0%, rgba(10, 186, 181, 0.01) 100%);
 }
 
@@ -977,7 +980,7 @@
   }
 
   .verification-modal__content {
-    padding: 30px 24px;
+    padding: 30px 24px 36px;
   }
 
   .verification-step__icon {
@@ -995,6 +998,9 @@
   .verification-modal__footer {
     padding: 20px 24px;
     flex-direction: column;
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
   }
 
   .verification-modal__btn {
@@ -1026,6 +1032,10 @@
   .verification-modal {
     border-radius: 0;
     max-height: 100vh;
+  }
+
+  .verification-modal__content {
+    padding-bottom: 42px;
   }
 
   .verification-progress__circle {

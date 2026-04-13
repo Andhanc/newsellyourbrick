@@ -1130,13 +1130,22 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
               }, 600) // Время анимации падения
             }
             
-            // Сохраняем информацию о лидере
-            setCurrentLeader({
-              id: leaderBid.user_id,
-              userId: leaderBid.user_id,
-              userIdNumber: leaderBid.user_id_number,
-              bidAmount: maxBid,
-              bidDate: leaderBid.created_at
+            // Сохраняем информацию о лидере и не теряем флаг/страну при фоновых обновлениях.
+            const leaderCountryFromBid = leaderBid.bidder_country || leaderBid.country || ''
+            const leaderFlagFromBid = flagEmojiForStoredCountry(leaderCountryFromBid) || ''
+            setCurrentLeader((prev) => {
+              const isSameLeader =
+                prev &&
+                (String(prev.userId ?? prev.id) === String(leaderBid.user_id))
+              return {
+                id: leaderBid.user_id,
+                userId: leaderBid.user_id,
+                userIdNumber: leaderBid.user_id_number ?? (isSameLeader ? prev.userIdNumber : undefined),
+                bidAmount: maxBid,
+                bidDate: leaderBid.created_at,
+                country: isSameLeader ? (prev.country || leaderCountryFromBid) : leaderCountryFromBid,
+                countryFlag: isSameLeader ? (prev.countryFlag || leaderFlagFromBid) : leaderFlagFromBid,
+              }
             })
             
             // Обновляем ID текущего лидера
@@ -2249,12 +2258,21 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                 
                 // Обновляем информацию о лидере
                 const previousLeaderIdSync = currentLeaderId
-                setCurrentLeader({
-                  id: leaderBid.user_id,
-                  userId: leaderBid.user_id,
-                  userIdNumber: leaderBid.user_id_number,
-                  bidAmount: maxBid,
-                  bidDate: leaderBid.created_at
+                const leaderCountryFromBid = leaderBid.bidder_country || leaderBid.country || ''
+                const leaderFlagFromBid = flagEmojiForStoredCountry(leaderCountryFromBid) || ''
+                setCurrentLeader((prev) => {
+                  const isSameLeader =
+                    prev &&
+                    (String(prev.userId ?? prev.id) === String(leaderBid.user_id))
+                  return {
+                    id: leaderBid.user_id,
+                    userId: leaderBid.user_id,
+                    userIdNumber: leaderBid.user_id_number ?? (isSameLeader ? prev.userIdNumber : undefined),
+                    bidAmount: maxBid,
+                    bidDate: leaderBid.created_at,
+                    country: isSameLeader ? (prev.country || leaderCountryFromBid) : leaderCountryFromBid,
+                    countryFlag: isSameLeader ? (prev.countryFlag || leaderFlagFromBid) : leaderFlagFromBid,
+                  }
                 })
                 setCurrentLeaderId(newCurrentLeaderId)
                 
@@ -2392,6 +2410,21 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
     }
     navigate('/auction')
   }
+
+  const currentUserNumericId =
+    Number(userData?.id) ||
+    Number(user?.id) ||
+    Number(getStoredNumericUserId()) ||
+    null
+  const currentLeaderNumericId =
+    Number(currentLeader?.userId ?? currentLeader?.id) || null
+  const isCurrentUserLeadingCard =
+    Boolean(currentUserNumericId) &&
+    Boolean(currentLeaderNumericId) &&
+    currentUserNumericId === currentLeaderNumericId
+  const currentLeaderLabel = isCurrentUserLeadingCard
+    ? 'ВЫ ЛИДЕР АУКЦИОНА'
+    : t('propertyDetailAuctionLeader')
 
   return (
     <div className="property-detail-page-new">
@@ -3374,7 +3407,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                       )}
                       {currentLeader && !auctionEndedForSidebar && (
                         <div className={`auction-leader-card ${isLeaderChanging ? 'auction-leader-card--entering' : ''}`}>
-                          <div className="auction-leader-label">{t('propertyDetailAuctionLeader')}</div>
+                          <div className="auction-leader-label">{currentLeaderLabel}</div>
                           <div className="auction-leader-name">
                             {currentLeader.countryFlag && (
                               <span className="auction-leader-country-flag">{currentLeader.countryFlag}</span>
@@ -3412,7 +3445,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                       )}
                       {currentLeader && !auctionEndedForSidebar && (
                         <div className={`auction-leader-card ${isLeaderChanging ? 'auction-leader-card--entering' : ''}`}>
-                          <div className="auction-leader-label">{t('propertyDetailAuctionLeader')}</div>
+                          <div className="auction-leader-label">{currentLeaderLabel}</div>
                           <div className="auction-leader-name">
                             {currentLeader.countryFlag && (
                               <span className="auction-leader-country-flag">{currentLeader.countryFlag}</span>
@@ -3432,7 +3465,9 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                   {/* Показываем лидера для обычных объектов (без таймера) */}
                   {!isAuctionProperty && currentLeader && (
                     <div className="auction-leader-card">
-                      <div className="auction-leader-label">{t('propertyDetailCurrentLeader')}</div>
+                      <div className="auction-leader-label">
+                        {isCurrentUserLeadingCard ? 'ВЫ ЛИДЕР АУКЦИОНА' : t('propertyDetailCurrentLeader')}
+                      </div>
                       <div className="auction-leader-name">
                         {currentLeader.countryFlag && (
                           <span className="auction-leader-country-flag">{currentLeader.countryFlag}</span>
@@ -3765,6 +3800,14 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
       />
 
       {/* Модальное окно с инструкциями по покупке */}
+      {(() => {
+        const minimumSalePriceForCheckout =
+          Number(displayProperty.price) ||
+          Number(displayProperty.auction_starting_price) ||
+          Number(displayProperty.currentBid) ||
+          Number(currentBid) ||
+          0
+        return (
       <BuyNowModal
         isOpen={isBuyNowModalOpen}
         onClose={() => {
@@ -3787,13 +3830,16 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
           id: displayProperty.id,
           title: propertyInfo,
           name: propertyInfo,
-          price: displayProperty.price,
+          price: minimumSalePriceForCheckout,
+          minimumSalePrice: minimumSalePriceForCheckout,
           currency: displayProperty.currency,
           property_type: displayProperty.property_type,
           isAuction: isAuctionProperty,
           currentBid: currentBid || displayProperty.currentBid || displayProperty.auction_starting_price || displayProperty.price
         }}
       />
+        )
+      })()}
 
       <AuctionReminderModal
         property={displayProperty}

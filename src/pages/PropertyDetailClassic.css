@@ -1310,7 +1310,7 @@
 }
 
 .auction-leader-label {
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 1px;
@@ -1834,24 +1834,60 @@
   padding: 10px 20px;
   border-radius: 10px;
   border: none;
-  background: #000000;
-  color: #ffffff;
+  background: linear-gradient(135deg, #d0d8f0 0%, #e8e8f5 40%, #f0e0eb 70%, #f8e8f0 100%);
+  color: #111827;
   font-weight: 600;
   font-family: 'Montserrat', sans-serif;
   font-size: 14px;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   width: 100%;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   display: block;
   margin: 0 auto 20px;
   letter-spacing: 0.3px;
+  position: relative;
+  overflow: hidden;
+}
+
+.property-detail-sidebar__history-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.25), transparent);
+  transition: left 0.6s ease;
+}
+
+.property-detail-sidebar__history-btn::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 10px;
+  padding: 1px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.1));
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.3s ease;
 }
 
 .property-detail-sidebar__history-btn:hover {
-  background: #1a1a1a;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
-  transform: translateY(-1px);
+  background: linear-gradient(135deg, #e0e8f8 0%, #f0f0fa 40%, #f8e8f5 70%, #fef0f8 100%);
+  box-shadow: 0 4px 14px rgba(208, 216, 240, 0.4), 0 2px 6px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.property-detail-sidebar__history-btn:hover::before {
+  left: 100%;
+}
+
+.property-detail-sidebar__history-btn:hover::after {
+  opacity: 1;
 }
 
 /* Функционал ставки */
@@ -1876,8 +1912,10 @@
   flex: 1;
   padding: 10px 16px;
   border-radius: 8px;
-  border: none;
-  background: #000000;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: linear-gradient(135deg, rgba(10, 186, 181, 0.85) 0%, rgba(8, 154, 149, 0.85) 100%);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
   color: #ffffff;
   font-weight: 600;
   font-family: 'Montserrat', sans-serif;
@@ -1886,14 +1924,20 @@
   transition: all 0.3s ease;
   position: relative;
   overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  box-shadow:
+    0 4px 16px rgba(10, 186, 181, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.1);
 }
 
 .bidding-section__quick-btn:hover {
-  background: #000000;
+  background: linear-gradient(135deg, rgba(10, 186, 181, 0.95) 0%, rgba(8, 154, 149, 0.95) 100%);
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
-  color: #0ABAB5;
+  box-shadow:
+    0 6px 20px rgba(10, 186, 181, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.15);
+  border-color: rgba(255, 255, 255, 0.4);
 }
 
 .bidding-section__quick-btn:active {
@@ -1957,15 +2001,20 @@
   width: 100%;
   padding: 12px 20px;
   border-radius: 8px;
-  border: none;
-  background: #000000;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: linear-gradient(135deg, rgba(10, 186, 181, 0.85) 0%, rgba(8, 154, 149, 0.85) 100%);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
   color: #ffffff;
   font-weight: 600;
   font-family: 'Montserrat', sans-serif;
   font-size: 15px;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  box-shadow:
+    0 4px 16px rgba(10, 186, 181, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.1);
   position: relative;
   overflow: hidden;
 }
@@ -1982,9 +2031,14 @@
 }
 
 .bidding-section__submit-btn:hover:not(:disabled) {
-  background: #1a1a1a;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
-  transform: translateY(-1px);
+  background: linear-gradient(135deg, #4fcfca 0%, #18b6b1 52%, #0e9d98 100%);
+  box-shadow:
+    0 10px 24px rgba(10, 186, 181, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
+  border-color: rgba(190, 249, 247, 0.95);
+  filter: saturate(1.08);
 }
 
 .bidding-section__submit-btn:hover:not(:disabled)::before {
@@ -1993,7 +2047,9 @@
 
 .bidding-section__submit-btn:active:not(:disabled) {
   transform: translateY(0);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+  box-shadow:
+    0 2px 10px rgba(10, 186, 181, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.25);
 }
 
 .bidding-section__submit-btn:disabled {

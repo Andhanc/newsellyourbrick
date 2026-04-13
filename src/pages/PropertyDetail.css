@@ -530,9 +530,13 @@
 }
 
 .glass-button:hover {
-  background: rgba(8, 154, 149, 0.9); /* немного темнее тиффани при наведении с прозрачностью */
-  transform: translateY(-1px);
-  box-shadow: 0 24px 55px rgba(10, 186, 181, 0.5);
+  background: linear-gradient(135deg, #55d4cf 0%, #1cbcb7 55%, #0c9d98 100%);
+  transform: translateY(-2px);
+  box-shadow:
+    0 24px 55px rgba(10, 186, 181, 0.52),
+    0 0 0 2px rgba(167, 243, 240, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  filter: saturate(1.08);
 }
 
 .glass-button:active {

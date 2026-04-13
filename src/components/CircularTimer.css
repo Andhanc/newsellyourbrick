@@ -96,7 +96,7 @@
 }
 
 .circular-timer--compact.circular-timer--ended .circular-timer-center {
-  fill: #64748b !important;
+  fill: #4f46e5 !important;
 }
 
 /* Для compact не переопределяем stroke колец:
