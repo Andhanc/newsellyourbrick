@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { FiChevronDown } from 'react-icons/fi'
 
 // Полный список всех стран с телефонными кодами
-const COUNTRY_CODES = [
+export const COUNTRY_CODES = [
   { code: '1', name: 'США/Канада', flag: '🇺🇸' },
   { code: '7', name: 'Россия/Казахстан', flag: '🇷🇺' },
   { code: '20', name: 'Египет', flag: '🇪🇬' },

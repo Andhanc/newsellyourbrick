@@ -5,12 +5,15 @@ import { useTranslation } from 'react-i18next'
 import { FiSearch } from 'react-icons/fi'
 import { ShieldQuestionMark, ShieldAlert, ShieldCheck } from 'lucide-react'
 import Header from '../components/Header'
+import DepositButton from '../components/DepositButton'
 import FlipCard from '../components/ui/FlipCard'
 import { useLazyLoad } from '../hooks/useLazyLoad'
 import PropertyTimer from '../components/PropertyTimer'
 import CircularTimer from '../components/CircularTimer'
 import AuctionMobileLayout from '../components/ui/AuctionMobileLayout'
 import { hasBuyNowOption } from '../utils/hasBuyNowOption'
+import { fetchUserDeposit } from '../utils/depositApi'
+import { fetchNumericDbUserIdForApi, getStoredNumericUserId } from '../services/authService'
 import './Shares.css'
 import '../components/PropertyList.css'
 
@@ -24,6 +27,8 @@ const Debts = () => {
   const [openRiskCard, setOpenRiskCard] = useState(null)
   const [apiDebts, setApiDebts] = useState([])
   const [loadingDebts, setLoadingDebts] = useState(true)
+  const [dbUserId, setDbUserId] = useState(() => getStoredNumericUserId())
+  const [userDeposit, setUserDeposit] = useState(0)
   const [isMobile, setIsMobile] = useState(
     () => typeof window !== 'undefined' && window.innerWidth <= MOBILE_BREAKPOINT,
   )
@@ -34,6 +39,35 @@ const Debts = () => {
     window.addEventListener('resize', check)
     return () => window.removeEventListener('resize', check)
   }, [])
+
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      const id = await fetchNumericDbUserIdForApi({ clerkUser: null, clerkUserLoaded: false })
+      if (!cancelled && id) setDbUserId(id)
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!dbUserId) return
+    let cancelled = false
+    ;(async () => {
+      try {
+        const deposit = await fetchUserDeposit(API_BASE, dbUserId, { ttlMs: 15000 })
+        if (!cancelled && deposit && typeof deposit.depositAmount === 'number') {
+          setUserDeposit(deposit.depositAmount || 0)
+        }
+      } catch {
+        if (!cancelled) setUserDeposit(0)
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [dbUserId])
 
   const loadDebts = useCallback(async () => {
     try {
@@ -373,6 +407,17 @@ const Debts = () => {
           )}
         </div>
       </main>
+      <div className="shares-floats">
+        {dbUserId ? <DepositButton amount={userDeposit} /> : null}
+        <button
+          type="button"
+          className="ai-button"
+          onClick={() => navigate('/chat')}
+          aria-label="AI Assistant"
+        >
+          AI
+        </button>
+      </div>
     </div>
   )
 }

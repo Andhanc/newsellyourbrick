@@ -64,7 +64,14 @@ function spotlightDimPath(vw, vh, hole) {
  * Затемнение вьюпорта с «окном» вокруг целевого элемента: клики проходят только в прорезь.
  * Подсказка и стрелка — pointer-events: none.
  */
-export function ProfileSpotlightOnboarding({ active, targetRef, message }) {
+export function ProfileSpotlightOnboarding({
+  active,
+  targetRef,
+  message,
+  bubbleShiftX = 0,
+  bubbleShiftY = 0,
+  headRotateDeg = 0,
+}) {
   const reduceMotion = useReducedMotion()
   const [box, setBox] = useState(null)
   const lastBoxRef = useRef(null)
@@ -157,25 +164,25 @@ export function ProfileSpotlightOnboarding({ active, targetRef, message }) {
     const tyTop = r.top
     const tyBottom = r.top + r.height
 
-    bubbleLeft = Math.max(16, Math.min(tx - bubbleW / 2, vw - bubbleW - 16))
+    bubbleLeft = Math.max(16, Math.min(tx - bubbleW / 2 + bubbleShiftX, vw - bubbleW - 16))
 
     const preferAbove = r.top > bubbleApproxH + 96
     let arrowFrom
     let arrowTo
     if (preferAbove) {
-      bubbleTop = Math.max(16, r.top - bubbleApproxH - 40)
+      bubbleTop = Math.max(16, r.top - bubbleApproxH - 40 + bubbleShiftY)
       arrowFrom = { x: bubbleLeft + bubbleW / 2, y: bubbleTop + bubbleApproxH + 2 }
       arrowTo = { x: tx, y: tyTop - 3 }
     } else {
-      bubbleTop = Math.min(vh - bubbleApproxH - 16, tyBottom + 36)
+      bubbleTop = Math.min(vh - bubbleApproxH - 16, tyBottom + 36 + bubbleShiftY)
       arrowFrom = { x: bubbleLeft + bubbleW / 2, y: bubbleTop - 2 }
       arrowTo = { x: tx, y: tyBottom + 3 }
     }
 
     const dx = arrowTo.x - arrowFrom.x
     const dy = arrowTo.y - arrowFrom.y
-    /** Более длинная плавная дуга, как на референсе. */
-    const lift = preferAbove ? -Math.max(64, Math.abs(dy) * 0.5) : Math.max(64, Math.abs(dy) * 0.5)
+    /** Более длинная плавная дуга, направленная к целевому элементу. */
+    const lift = preferAbove ? Math.max(64, Math.abs(dy) * 0.5) : -Math.max(64, Math.abs(dy) * 0.5)
     const c1 = { x: arrowFrom.x + dx * 0.2, y: arrowFrom.y + lift * 0.75 }
     const c2 = { x: arrowTo.x - dx * 0.14, y: arrowTo.y - lift * 0.52 }
 
@@ -191,15 +198,31 @@ export function ProfileSpotlightOnboarding({ active, targetRef, message }) {
     const ux = fx / fl
     const uy = fy / fl
     /** Открытая «V» у острия: две линии от основания к точке (как на референсе). */
-    const headDepth = 13
-    const headHalf = 6.5
+    const headDepth = 11
+    const headHalf = 6
     const perpX = -uy
     const perpY = ux
     const baseMid = { x: tip.x - ux * headDepth, y: tip.y - uy * headDepth }
-    const wingL = { x: baseMid.x + perpX * headHalf, y: baseMid.y + perpY * headHalf }
-    const wingR = { x: baseMid.x - perpX * headHalf, y: baseMid.y - perpY * headHalf }
+    let wingL = { x: baseMid.x + perpX * headHalf, y: baseMid.y + perpY * headHalf }
+    let wingR = { x: baseMid.x - perpX * headHalf, y: baseMid.y - perpY * headHalf }
 
-    stemPath = `M ${arrowFrom.x} ${arrowFrom.y} C ${c1.x} ${c1.y} ${c2.x} ${c2.y} ${tip.x} ${tip.y}`
+    // Чуть поворачиваем только наконечник против часовой, чтобы он смотрел левее.
+    const headRotateRad = (headRotateDeg * Math.PI) / 180
+    const cosA = Math.cos(headRotateRad)
+    const sinA = Math.sin(headRotateRad)
+    const rotateAroundTip = (p) => {
+      const dxp = p.x - tip.x
+      const dyp = p.y - tip.y
+      return {
+        x: tip.x + dxp * cosA - dyp * sinA,
+        y: tip.y + dxp * sinA + dyp * cosA,
+      }
+    }
+    wingL = rotateAroundTip(wingL)
+    wingR = rotateAroundTip(wingR)
+
+    const shaftEnd = { x: tip.x - ux * 1.2, y: tip.y - uy * 1.2 }
+    stemPath = `M ${arrowFrom.x} ${arrowFrom.y} C ${c1.x} ${c1.y} ${c2.x} ${c2.y} ${shaftEnd.x} ${shaftEnd.y}`
     headPath = `M ${wingL.x} ${wingL.y} L ${tip.x} ${tip.y} M ${wingR.x} ${wingR.y} L ${tip.x} ${tip.y}`
   }
 
@@ -334,7 +357,7 @@ export function ProfileSpotlightOnboarding({ active, targetRef, message }) {
                   <path
                     d={headPath}
                     fill="none"
-                    className="profile-spotlight__arrow-stroke"
+                    className="profile-spotlight__arrow-stroke profile-spotlight__arrow-head"
                     strokeLinecap="round"
                     strokeLinejoin="round"
                   />

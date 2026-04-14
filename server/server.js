@@ -1772,32 +1772,8 @@ app.put('/api/users/:id', async (req, res) => {
         });
       }
       
-      // Если пользователь зарегистрирован через WhatsApp (есть phone_number, но email был null или is_verified = 0)
-      // и email изменился, требуем подтверждение
-      const isWhatsAppUser = currentUser.phone_number && 
-                            (!currentUser.email || currentUser.is_verified === 0);
-      
-      if (isWhatsAppUser) {
-        // Если email изменился и пользователь WhatsApp, требуем подтверждение
-        // Возвращаем специальный ответ, указывающий на необходимость подтверждения
-        return res.status(200).json({ 
-          success: false, 
-          requiresVerification: true,
-          message: 'Для подтверждения email необходим код подтверждения. Пожалуйста, используйте /api/users/:id/verify-email',
-          error: 'Требуется подтверждение email' 
-        });
-      } else if (currentUser.is_verified === 0 && emailLower !== currentUser.email?.toLowerCase()) {
-        // Если email изменился и ранее не был подтвержден, тоже требуем подтверждение
-        return res.status(200).json({ 
-          success: false, 
-          requiresVerification: true,
-          message: 'Для подтверждения email необходим код подтверждения. Пожалуйста, используйте /api/users/:id/verify-email',
-          error: 'Требуется подтверждение email' 
-        });
-      }
-      
-      // Если email уже подтвержден и просто обновляется, не меняем статус верификации документов.
-      // is_verified используется только для статуса KYC (одобрение документов администратором).
+      // Смена email подтверждается явным согласием на фронтенде перед сохранением.
+      // Здесь пропускаем изменение дальше, оставляя серверную проверку уникальности.
     }
     
     // Если пароль передан, валидируем и хешируем его перед сохранением

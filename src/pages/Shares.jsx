@@ -3,8 +3,11 @@ import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { FiSearch } from 'react-icons/fi'
 import Header from '../components/Header'
+import DepositButton from '../components/DepositButton'
 import { AnimatedMarqueeHero } from '../components/ui/hero-3'
 import { useLazyLoad } from '../hooks/useLazyLoad'
+import { fetchUserDeposit } from '../utils/depositApi'
+import { fetchNumericDbUserIdForApi, getStoredNumericUserId } from '../services/authService'
 import './Shares.css'
 
 // Фотографии разных объектов недвижимости для бегущей строки
@@ -69,6 +72,8 @@ const Shares = () => {
   const [apiShares, setApiShares] = useState([])
   const [loadingShares, setLoadingShares] = useState(true)
   const [compactShareCards, setCompactShareCards] = useState(false)
+  const [dbUserId, setDbUserId] = useState(() => getStoredNumericUserId())
+  const [userDeposit, setUserDeposit] = useState(0)
 
   useEffect(() => {
     const mq = window.matchMedia('(max-width: 768px)')
@@ -77,6 +82,35 @@ const Shares = () => {
     mq.addEventListener('change', update)
     return () => mq.removeEventListener('change', update)
   }, [])
+
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      const id = await fetchNumericDbUserIdForApi({ clerkUser: null, clerkUserLoaded: false })
+      if (!cancelled && id) setDbUserId(id)
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!dbUserId) return
+    let cancelled = false
+    ;(async () => {
+      try {
+        const deposit = await fetchUserDeposit(API_BASE, dbUserId, { ttlMs: 15000 })
+        if (!cancelled && deposit && typeof deposit.depositAmount === 'number') {
+          setUserDeposit(deposit.depositAmount || 0)
+        }
+      } catch {
+        if (!cancelled) setUserDeposit(0)
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [dbUserId])
 
   const loadShares = useCallback(async () => {
     try {
@@ -233,6 +267,17 @@ const Shares = () => {
           )}
         </div>
       </main>
+      <div className="shares-floats">
+        {dbUserId ? <DepositButton amount={userDeposit} /> : null}
+        <button
+          type="button"
+          className="ai-button"
+          onClick={() => navigate('/chat')}
+          aria-label="AI Assistant"
+        >
+          AI
+        </button>
+      </div>
     </div>
   )
 }

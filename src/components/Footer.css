@@ -1178,3 +1178,9 @@ body.admin-panel-active .footer .footer__upper {
   border-top: none;
 }
 
+/* Во время обязательного онбординга из кабинета покупателя отключаем переходы в футере. */
+body.profile-onboarding-gate-locked #site-footer.footer :is(a, button) {
+  pointer-events: none !important;
+  cursor: default !important;
+}
+

@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useUser, useClerk } from '@clerk/clerk-react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
+import { AsYouType } from 'libphonenumber-js'
 import {
   FiHash,
   FiShield,
@@ -39,6 +40,8 @@ import { startProSubscriptionCheckout } from '../utils/subscriptionCheckout'
 import DirectionSummaryCard from '../components/ui/direction-summary-card'
 import TransactionHistoryCard from '../components/ui/transaction-history-card'
 import PassportRecognitionModal from '../components/PassportRecognitionModal'
+import { countries as countryList } from '../components/CountrySelect'
+import { COUNTRY_CODES as phoneCountryCodes } from '../components/PhoneInput'
 import { ProfileSpotlightOnboarding } from '../components/ProfileSpotlightOnboarding'
 import { ServiceQuickLinksTour } from '../components/ServiceQuickLinksTour'
 import { fetchVerificationStatus, invalidateVerificationStatusCache } from '../utils/verificationStatusApi'
@@ -49,17 +52,27 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
 const PROFILE_SAVE_DEBOUNCE_MS = 500
 
 /** Показывать затемнённые подсказки, пока заполнено меньше этого процента полей (при перезагрузке снова, пока не достигнут порог). */
-const PROFILE_ONBOARDING_MIN_COMPLETE_PCT = 78
+const PROFILE_ONBOARDING_MIN_COMPLETE_PCT = 100
 
 /** После перехода к полю из тоста — не крутим подсветку на тосте; при новом открытии панели «Данные» ключ сбрасывается в TestPage. */
 const TOAST_GUIDE_FIELD_NAV_DONE_PREFIX = 'syb.profile.dataToastGuide.fieldNavDone:'
 
 const PROFILE_COMPLETE_CELEBRATION_SHOWN_PREFIX = 'syb.profile.newProfileCompleteCelebrationShown:'
+const SERVICE_TOUR_ACK_PREFIX = 'syb.profile.serviceTourAck:'
 
 function readToastGuideFieldNavDone(userId) {
   if (userId == null || userId === '') return false
   try {
     return sessionStorage.getItem(`${TOAST_GUIDE_FIELD_NAV_DONE_PREFIX}${userId}`) === '1'
+  } catch {
+    return false
+  }
+}
+
+function readServiceTourAck(userId) {
+  if (userId == null || userId === '') return false
+  try {
+    return localStorage.getItem(`${SERVICE_TOUR_ACK_PREFIX}${userId}`) === '1'
   } catch {
     return false
   }
@@ -96,7 +109,7 @@ const PROFILE_FIELD_I18N = {
 
 function isProfileFieldFilledFromFormOnly(key, profileForm) {
   const v = profileForm[key]
-  if (key === 'phone') return phoneDigits(v).length > 0
+  if (key === 'phone') return phoneDigits(v).length >= 8
   return !!(v && String(v).trim())
 }
 
@@ -178,6 +191,48 @@ function phoneDigits(s) {
   return (s || '').replace(/\D/g, '')
 }
 
+function normalizeCountryNameForPhoneCode(name) {
+  return String(name || '')
+    .toLowerCase()
+    .replace(/ё/g, 'е')
+    .replace(/[().,'"`]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+function countryIsoFromStoredName(name) {
+  const key = normalizeCountryNameForPhoneCode(name)
+  if (!key) return null
+  const hit = countryList.find((c) => normalizeCountryNameForPhoneCode(c.name) === key)
+  return hit?.code || null
+}
+
+function formatPhoneAsYouType(raw, iso2) {
+  const source = String(raw || '')
+  const hasLeadingPlus = source.trim().startsWith('+')
+  const digits = source.replace(/\D/g, '')
+  if (!digits) return hasLeadingPlus ? '+' : ''
+
+  if (hasLeadingPlus) {
+    const formatter = new AsYouType()
+    return formatter.input(`+${digits}`)
+  }
+
+  if (iso2) {
+    const formatter = new AsYouType(iso2)
+    return formatter.input(digits)
+  }
+
+  return digits
+}
+
+function formatPhoneForDisplayByCountry(phone, countryName) {
+  const base = formatPhoneWithPlus(phone)
+  if (!base) return ''
+  const iso2 = countryIsoFromStoredName(countryName)
+  return formatPhoneAsYouType(base, iso2)
+}
+
 function emptyProfileForm() {
   return Object.fromEntries(PROFILE_FIELDS_META.map((f) => [f.key, '']))
 }
@@ -187,7 +242,7 @@ function buildProfileFormFromRow(row, clerkUser, fallbackEmail) {
     first_name: row?.first_name ?? clerkUser?.firstName ?? '',
     last_name: row?.last_name ?? clerkUser?.lastName ?? '',
     email: row?.email ?? fallbackEmail ?? '',
-    phone: formatPhoneWithPlus(row?.phone_number ?? ''),
+    phone: formatPhoneForDisplayByCountry(row?.phone_number ?? '', row?.country ?? ''),
     country: row?.country ?? '',
     address: row?.address ?? '',
     passport_series: row?.passport_series ?? '',
@@ -225,6 +280,10 @@ function isProfileFieldUnchanged(fieldKey, raw, row) {
     return a === b
   }
   return next === prevNorm
+}
+
+function normalizedEmailValue(v) {
+  return String(v || '').trim().toLowerCase()
 }
 
 function mergeExtractedPassportIntoProfileForm(prev, extracted) {
@@ -434,7 +493,10 @@ function TestPage() {
   const [savingField, setSavingField] = useState(null)
   /** После успешного сохранения поля на сервер — показываем галочку у инпута, до следующего изменения. */
   const [profileFieldSavedOk, setProfileFieldSavedOk] = useState({})
+  const [countryDropdownOpen, setCountryDropdownOpen] = useState(false)
+  const [countrySearchQuery, setCountrySearchQuery] = useState('')
   const [profileSaveAllLoading, setProfileSaveAllLoading] = useState(false)
+  const [savePulseDismissed, setSavePulseDismissed] = useState(false)
   const [isRecognizingPassport, setIsRecognizingPassport] = useState(false)
   const [isSavingExtractPatch, setIsSavingExtractPatch] = useState(false)
   const [showPassportRecognitionModal, setShowPassportRecognitionModal] = useState(false)
@@ -446,6 +508,7 @@ function TestPage() {
   const [profileCompletionToastDismissedForInput, setProfileCompletionToastDismissedForInput] = useState(false)
   const [showProfileCompleteCelebration, setShowProfileCompleteCelebration] = useState(false)
   const [showServiceQuickLinksTour, setShowServiceQuickLinksTour] = useState(false)
+  const [serviceTourAcknowledged, setServiceTourAcknowledged] = useState(false)
   const [windowSize, setWindowSize] = useState(() =>
     typeof window !== 'undefined' ? { width: window.innerWidth, height: window.innerHeight } : { width: 0, height: 0 },
   )
@@ -459,6 +522,7 @@ function TestPage() {
   const saveTimersRef = useRef({})
   const persistFieldRef = useRef(async () => {})
   const passportInputRef = useRef(null)
+  const countryFieldRef = useRef(null)
   const serviceTourTimerRef = useRef(null)
   const directionSharesRef = useRef(null)
   const directionAuctionRef = useRef(null)
@@ -467,6 +531,39 @@ function TestPage() {
   const quickLinkSharesRef = directionSharesRef
   const quickLinkAuctionRef = directionAuctionRef
   const quickLinkDebtsRef = directionDebtsRef
+
+  const sortedCountries = useMemo(
+    () => [...countryList].sort((a, b) => a.name.localeCompare(b.name, 'ru')),
+    [],
+  )
+  const phoneCodeByCountryName = useMemo(() => {
+    const map = new Map()
+    for (const item of phoneCountryCodes) {
+      const key = normalizeCountryNameForPhoneCode(item.name)
+      if (!key || !item.code) continue
+      if (!map.has(key)) map.set(key, `+${item.code}`)
+    }
+    map.set('сша', '+1')
+    map.set('канада', '+1')
+    map.set('сша канада', '+1')
+    map.set('россия', '+7')
+    map.set('казахстан', '+7')
+    return map
+  }, [])
+  const countryIsoByName = useMemo(() => {
+    const map = new Map()
+    for (const c of countryList) {
+      map.set(normalizeCountryNameForPhoneCode(c.name), c.code)
+    }
+    return map
+  }, [])
+  const filteredCountries = useMemo(() => {
+    const q = countrySearchQuery.trim().toLowerCase()
+    if (!q) return sortedCountries
+    return sortedCountries.filter(
+      (c) => c.name.toLowerCase().includes(q) || c.code.toLowerCase().includes(q),
+    )
+  }, [countrySearchQuery, sortedCountries])
 
   /** Подсказка на тост: один раз за открытие панели «Данные»; сбрасывается при закрытии панели. */
   const toastHintShownThisDataOpenRef = useRef(false)
@@ -516,6 +613,28 @@ function TestPage() {
   }, [])
 
   useEffect(() => {
+    if (!countryDropdownOpen) return undefined
+    const onPointerDownOutside = (event) => {
+      if (!countryFieldRef.current) return
+      if (countryFieldRef.current.contains(event.target)) return
+      setCountryDropdownOpen(false)
+    }
+    document.addEventListener('mousedown', onPointerDownOutside)
+    document.addEventListener('touchstart', onPointerDownOutside)
+    return () => {
+      document.removeEventListener('mousedown', onPointerDownOutside)
+      document.removeEventListener('touchstart', onPointerDownOutside)
+    }
+  }, [countryDropdownOpen])
+
+  useEffect(() => {
+    if (!dataSheetOpen) {
+      setCountryDropdownOpen(false)
+      setCountrySearchQuery('')
+    }
+  }, [dataSheetOpen])
+
+  useEffect(() => {
     if (!isLoaded) return
     if (!isSiteUserSignedIn(user, isLoaded)) {
       requestOpenLoginModal({ wizard: true })
@@ -533,6 +652,14 @@ function TestPage() {
       /* ignore */
     }
   }, [numericUserId])
+
+  useEffect(() => {
+    if (resolvedNumericUserId == null || resolvedNumericUserId === '') {
+      setServiceTourAcknowledged(false)
+      return
+    }
+    setServiceTourAcknowledged(readServiceTourAck(String(resolvedNumericUserId)))
+  }, [resolvedNumericUserId])
 
   useEffect(() => {
     if (!resolvedNumericUserId) return
@@ -750,6 +877,7 @@ function TestPage() {
       if (!row) return
 
       if (isProfileFieldUnchanged(fieldKey, rawValue, row)) return
+      if (fieldKey === 'phone' && phoneDigits(rawValue).length < 8) return
 
       const apiKey = profileFieldToApiKey(fieldKey)
       const body = { [apiKey]: toApiPayloadValue(fieldKey, rawValue) }
@@ -816,19 +944,55 @@ function TestPage() {
 
   const handleProfileChange = useCallback(
     (fieldKey) => (e) => {
-      const v = e.target.value
+      const raw = e.target.value
+      const iso2 =
+        fieldKey === 'phone'
+          ? countryIsoByName.get(normalizeCountryNameForPhoneCode(profileForm.country || ''))
+          : null
+      const v = fieldKey === 'phone' ? formatPhoneAsYouType(raw, iso2) : raw
       setProfileForm((prev) => ({ ...prev, [fieldKey]: v }))
+      setSavePulseDismissed(false)
       setProfileFieldSavedOk((prev) => ({ ...prev, [fieldKey]: false }))
-      scheduleProfileSave(fieldKey, v)
+      if (fieldKey !== 'email') {
+        scheduleProfileSave(fieldKey, v)
+      }
     },
-    [scheduleProfileSave],
+    [countryIsoByName, profileForm.country, scheduleProfileSave],
   )
 
   const handleProfileBlur = useCallback((fieldKey) => (e) => {
+    if (fieldKey === 'email') return
     clearTimeout(saveTimersRef.current[fieldKey])
     delete saveTimersRef.current[fieldKey]
     void persistFieldRef.current(fieldKey, e.target.value)
   }, [])
+
+  const handleCountrySelect = useCallback(
+    (countryName) => {
+      const autoPhoneCode = phoneCodeByCountryName.get(normalizeCountryNameForPhoneCode(countryName)) || ''
+      const currentPhone = String(profileForm.phone || '').trim()
+      const shouldAutofillPhone =
+        !!autoPhoneCode && (phoneDigits(currentPhone).length === 0 || /^\+\d{1,4}$/.test(currentPhone))
+      setProfileForm((prev) => {
+        const next = { ...prev, country: countryName }
+        if (shouldAutofillPhone) {
+          next.phone = autoPhoneCode
+        }
+        return next
+      })
+      setSavePulseDismissed(false)
+      setProfileFieldSavedOk((prev) => ({ ...prev, country: false }))
+      clearTimeout(saveTimersRef.current.country)
+      delete saveTimersRef.current.country
+      void persistFieldRef.current('country', countryName)
+      if (shouldAutofillPhone) {
+        setProfileFieldSavedOk((prev) => ({ ...prev, phone: false }))
+      }
+      setCountryDropdownOpen(false)
+      setCountrySearchQuery('')
+    },
+    [phoneCodeByCountryName, profileForm.phone],
+  )
 
   const handlePassportRecognition = useCallback(
     async (file) => {
@@ -925,6 +1089,16 @@ function TestPage() {
   )
 
   const profileFieldsLocked = isRecognizingPassport || isSavingExtractPatch
+  const isProfileFullyCompleted = PROFILE_FIELDS_META.every((f) =>
+    isProfileFieldFilledFromFormOnly(f.key, completionFormMerged),
+  )
+  const shouldPulseSaveButton =
+    dataSheetOpen &&
+    !dbUserLoading &&
+    !profileFieldsLocked &&
+    !profileSaveAllLoading &&
+    !savePulseDismissed &&
+    isProfileFullyCompleted
 
   /** Явное «Сохранить»: проверка всех полей, один PUT на сервер, модалка «Поздравляем». */
   const handleProfilePanelSaveClick = useCallback(async () => {
@@ -946,6 +1120,17 @@ function TestPage() {
     if (!row) {
       showNotification('Данные профиля ещё загружаются', 'info')
       return
+    }
+    const nextEmail = normalizedEmailValue(form.email)
+    const prevEmail = normalizedEmailValue(row.email)
+    const emailChanged = nextEmail !== prevEmail
+    if (emailChanged) {
+      const confirmed = window.confirm(
+        'Вы действительно хотите изменить email? Старый адрес будет заменён новым.',
+      )
+      if (!confirmed) {
+        return
+      }
     }
 
     const body = {}
@@ -988,6 +1173,7 @@ function TestPage() {
             setProfileForm(buildProfileFormFromRow(fresh, user, email))
             const allOk = Object.fromEntries(PROFILE_FIELDS_META.map((f) => [f.key, true]))
             setProfileFieldSavedOk((prev) => ({ ...prev, ...allOk }))
+            setSavePulseDismissed(true)
             invalidateUserByIdCache(API_BASE_URL, persistUserId)
             invalidateVerificationStatusCache(API_BASE_URL, persistUserId)
             void loadVerificationStatus(true)
@@ -1005,6 +1191,7 @@ function TestPage() {
       setProfileForm(buildProfileFormFromRow(json.data, user, email))
       const allOk = Object.fromEntries(PROFILE_FIELDS_META.map((f) => [f.key, true]))
       setProfileFieldSavedOk((prev) => ({ ...prev, ...allOk }))
+      setSavePulseDismissed(true)
       invalidateUserByIdCache(API_BASE_URL, persistUserId)
       invalidateVerificationStatusCache(API_BASE_URL, persistUserId)
       void loadVerificationStatus(true)
@@ -1025,6 +1212,7 @@ function TestPage() {
     user,
     email,
     loadVerificationStatus,
+    savePulseDismissed,
   ])
 
   const profileCompletionRows = useMemo(() => {
@@ -1060,7 +1248,7 @@ function TestPage() {
     return localPct
   }, [verificationStatus, profileCompletionStats.pct])
 
-  const needsProfileOnboarding = completionPctForOnboarding < PROFILE_ONBOARDING_MIN_COMPLETE_PCT
+  const needsProfileOnboarding = profileCompletionStats.pct < PROFILE_ONBOARDING_MIN_COMPLETE_PCT
 
   /** Пока профиль &lt; 78% — только сценарий подсказок, без обходных кликов по кабинету. */
   const profileGateActive =
@@ -1079,7 +1267,7 @@ function TestPage() {
   /** Тост прогресса держим до 100%; порог 78% только для гейта и спотлайта (`needsProfileOnboarding`). */
   const showProfileCompletionWidget =
     Boolean(resolvedNumericUserId && profileCompletionRows.length > 0) &&
-    completionPctForOnboarding < 100
+    profileCompletionStats.pct < 100
   const showProfileCompletionToast =
     dataSheetOpen && showProfileCompletionWidget && !profileCompletionToastDismissedForInput
 
@@ -1096,27 +1284,8 @@ function TestPage() {
     return () => window.removeEventListener('resize', handleResize)
   }, [])
 
-  /**
-   * Модалка при 100% или когда по полям всё заполнено (в т.ч. при отставании progress с API).
-   * Не требуем открытую панель «Данные»: иначе при сворачивании до прихода verification-status модалка никогда не показывалась.
-   */
-  useEffect(() => {
-    if (resolvedNumericUserId == null || resolvedNumericUserId === '') return
-    const idKey = String(resolvedNumericUserId)
-    const allFilledByForm = PROFILE_FIELDS_META.every((f) =>
-      isProfileFieldFilledFromFormOnly(f.key, completionFormMerged),
-    )
-    const pct = completionPctForOnboarding
-    if (pct < 100 && !allFilledByForm) return
-    let alreadyShown = false
-    try {
-      alreadyShown = localStorage.getItem(`${PROFILE_COMPLETE_CELEBRATION_SHOWN_PREFIX}${idKey}`) === '1'
-    } catch {
-      alreadyShown = false
-    }
-    if (alreadyShown) return
-    setShowProfileCompleteCelebration(true)
-  }, [completionPctForOnboarding, resolvedNumericUserId, completionFormMerged])
+  /** Важно: модалку «Поздравляем» показываем только после явного клика «Сохранить»
+   * (см. handleProfilePanelSaveClick), а не при автосохранении по вводу. */
 
   useEffect(() => {
     if (dataSheetOpen) return
@@ -1256,8 +1425,17 @@ function TestPage() {
   }, [resolvedNumericUserId])
 
   const handleServiceQuickLinksTourDismiss = useCallback(() => {
+    const id = resolvedNumericUserId
+    if (id != null && id !== '') {
+      try {
+        localStorage.setItem(`${SERVICE_TOUR_ACK_PREFIX}${String(id)}`, '1')
+      } catch {
+        /* ignore */
+      }
+    }
+    setServiceTourAcknowledged(true)
     setShowServiceQuickLinksTour(false)
-  }, [])
+  }, [resolvedNumericUserId])
 
   useEffect(() => {
     if (!showProfileCompleteCelebration) return
@@ -1341,7 +1519,23 @@ function TestPage() {
     !showServiceQuickLinksTour
 
   const onboardingGateUiLocked =
-    profileGateActive && !showProfileCompleteCelebration && !showServiceQuickLinksTour
+    isLoaded &&
+    isSiteUserSignedIn(user, isLoaded) &&
+    Boolean(resolvedNumericUserId) &&
+    !serviceTourAcknowledged &&
+    !showProfileCompleteCelebration
+
+  useEffect(() => {
+    const bodyClass = 'profile-onboarding-gate-locked'
+    if (onboardingGateUiLocked) {
+      document.body.classList.add(bodyClass)
+      return () => {
+        document.body.classList.remove(bodyClass)
+      }
+    }
+    document.body.classList.remove(bodyClass)
+    return undefined
+  }, [onboardingGateUiLocked])
 
   const toastGuideStrictActive =
     profileGateActive &&
@@ -1496,6 +1690,12 @@ function TestPage() {
                 ) : null}
               </div>
             </div>
+            {isProfileFullyCompleted ? (
+              <Link to="/" className="test-hero-pro__home-btn">
+                <span>Главная</span>
+                <FiArrowRight size={15} aria-hidden />
+              </Link>
+            ) : null}
           </div>
 
           <nav className="test-hero-pro__shortcuts" aria-label="Разделы кабинета">
@@ -1672,7 +1872,9 @@ function TestPage() {
                   </h3>
                   <button
                     type="button"
-                    className="test-data-panel__save"
+                    className={`test-data-panel__save${
+                      shouldPulseSaveButton ? ' test-data-panel__save--pulse' : ''
+                    }`}
                     onClick={handleProfilePanelSaveClick}
                     disabled={
                       dbUserLoading ||
@@ -1718,7 +1920,72 @@ function TestPage() {
                                   : ''
                               }${multiline ? ' test-data-field__input-wrap--textarea' : ''}`}
                             >
-                              {multiline ? (
+                              {key === 'country' ? (
+                                <div ref={countryFieldRef} className="test-country-select">
+                                  {(() => {
+                                    const countrySaved = profileFieldSavedOk[key] && savingField !== key
+                                    return (
+                                  <button
+                                    id={`profile-field-${key}`}
+                                    type="button"
+                                    className={`test-data-field__input test-country-select__trigger${
+                                      countrySaved ? ' test-country-select__trigger--saved' : ''
+                                    }`}
+                                    onClick={() => {
+                                      setCountryDropdownOpen((prev) => !prev)
+                                      setCountrySearchQuery('')
+                                    }}
+                                    disabled={profileFieldsLocked}
+                                    aria-haspopup="listbox"
+                                    aria-expanded={countryDropdownOpen}
+                                  >
+                                    <span className="test-country-select__value">
+                                      {profileForm[key] ? profileForm[key] : 'Выберите страну'}
+                                    </span>
+                                    <span className="test-country-select__chevron" aria-hidden>
+                                      <FiChevronDown size={18} />
+                                    </span>
+                                  </button>
+                                    )
+                                  })()}
+
+                                  {countryDropdownOpen ? (
+                                    <div className="test-country-select__menu" role="listbox" aria-label="Список стран">
+                                      <input
+                                        type="text"
+                                        className="test-country-select__search"
+                                        placeholder="Поиск страны..."
+                                        value={countrySearchQuery}
+                                        onChange={(e) => setCountrySearchQuery(e.target.value)}
+                                        autoFocus
+                                      />
+                                      {filteredCountries.map((country) => {
+                                        const selected = profileForm.country === country.name
+                                        return (
+                                          <button
+                                            key={country.code}
+                                            type="button"
+                                            className={`test-country-select__option${
+                                              selected ? ' test-country-select__option--selected' : ''
+                                            }`}
+                                            onClick={() => handleCountrySelect(country.name)}
+                                            role="option"
+                                            aria-selected={selected}
+                                          >
+                                            <span className="test-country-select__option-flag" aria-hidden>
+                                              {country.flag}
+                                            </span>
+                                            <span className="test-country-select__option-name">{country.name}</span>
+                                          </button>
+                                        )
+                                      })}
+                                      {filteredCountries.length === 0 ? (
+                                        <p className="test-country-select__empty">{t('countryNoResults')}</p>
+                                      ) : null}
+                                    </div>
+                                  ) : null}
+                                </div>
+                              ) : multiline ? (
                                 <textarea
                                   id={`profile-field-${key}`}
                                   className="test-data-field__input test-data-field__input--textarea"
@@ -2213,6 +2480,9 @@ function TestPage() {
         active={showTileDataOnboarding}
         targetRef={dataTileRef}
         message="Необходимо заполнить данные"
+        bubbleShiftX={-74}
+        bubbleShiftY={-22}
+        headRotateDeg={-10}
       />
       <ProfileSpotlightOnboarding
         key={`profile-toast-guide-${toastGuideStep}`}

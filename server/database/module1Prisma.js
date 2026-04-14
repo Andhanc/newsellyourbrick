@@ -85,16 +85,21 @@ export const userQueries = {
 
   getByEmail: async (email) => {
     const prisma = getPrisma();
-    const u = await prisma.users.findFirst({ where: { email: email ?? undefined } });
+    const normalized = email == null ? null : String(email).trim().toLowerCase();
+    if (!normalized) return null;
+    const u = await prisma.users.findFirst({
+      where: { email: { equals: normalized, mode: 'insensitive' } },
+    });
     return userToPlain(u);
   },
 
   /** Все записи с данным email (несколько аккаунтов: покупатель + продавец). */
   getAllByEmail: async (email) => {
     const prisma = getPrisma();
-    if (!email) return [];
+    const normalized = email == null ? null : String(email).trim().toLowerCase();
+    if (!normalized) return [];
     const rows = await prisma.users.findMany({
-      where: { email },
+      where: { email: { equals: normalized, mode: 'insensitive' } },
       orderBy: { id: 'asc' },
     });
     return rows.map(userToPlain);

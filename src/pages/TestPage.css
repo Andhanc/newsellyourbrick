@@ -115,6 +115,30 @@
   min-width: 0;
 }
 
+.test-hero-pro__home-btn {
+  margin-left: auto;
+  align-self: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  padding: 0;
+  border: none;
+  text-decoration: none;
+  font-family: inherit;
+  font-size: 1.15rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  color: #0abab5;
+  background: transparent;
+  transition: transform 0.15s ease, filter 0.15s ease;
+}
+
+.test-hero-pro__home-btn:hover {
+  transform: translateX(1px);
+  filter: brightness(0.95);
+}
+
 .test-hero-pro__avatar-wrap {
   position: relative;
   flex-shrink: 0;
@@ -490,31 +514,65 @@ a.test-history-mini-card:focus-visible {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 100px;
+  min-width: 10rem;
   flex-shrink: 0;
-  padding: 8px 14px;
-  border-radius: 10px;
-  border: 1px solid rgba(10, 186, 181, 0.45);
-  background: linear-gradient(145deg, rgba(10, 186, 181, 0.12) 0%, rgba(5, 150, 105, 0.1) 100%);
-  font-size: 13px;
-  font-weight: 800;
-  font-family: inherit;
-  color: var(--test-teal-dark);
+  padding: 12px 24px;
+  border-radius: 12px;
+  border: none;
+  background: linear-gradient(135deg, #5ec9c4 0%, #0abab5 48%, #089a96 100%);
+  box-shadow:
+    0 4px 16px rgba(10, 186, 181, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  font-size: 15px;
+  font-weight: 700;
+  font-family: 'Montserrat', system-ui, sans-serif;
+  color: #ffffff;
   cursor: pointer;
   transition:
-    background 0.18s ease,
-    border-color 0.18s ease,
+    transform 0.15s ease,
+    filter 0.15s ease,
+    box-shadow 0.15s ease,
     opacity 0.18s ease;
 }
 
 .test-data-panel__save:hover:not(:disabled) {
-  background: linear-gradient(145deg, rgba(10, 186, 181, 0.2) 0%, rgba(5, 150, 105, 0.14) 100%);
-  border-color: rgba(10, 186, 181, 0.65);
+  transform: translateY(-1px);
+  filter: brightness(1.04);
+  box-shadow:
+    0 8px 24px rgba(10, 186, 181, 0.48),
+    inset 0 1px 0 rgba(255, 255, 255, 0.45);
 }
 
 .test-data-panel__save:disabled {
-  opacity: 0.5;
+  opacity: 0.58;
   cursor: not-allowed;
+  transform: none;
+  filter: none;
+  box-shadow:
+    0 2px 8px rgba(10, 186, 181, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+.test-data-panel__save--pulse {
+  animation: test-save-btn-pulse 1.1s ease-in-out infinite;
+}
+
+@keyframes test-save-btn-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(10, 186, 181, 0);
+    filter: brightness(1);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(10, 186, 181, 0.22);
+    filter: brightness(1.06);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .test-data-panel__save--pulse {
+    animation: none;
+  }
 }
 
 .test-data-panel__hint {
@@ -828,6 +886,109 @@ a.test-history-mini-card:focus-visible {
   min-height: 72px;
 }
 
+.test-country-select {
+  position: relative;
+}
+
+.test-country-select__trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.test-country-select__trigger--saved .test-country-select__chevron {
+  margin-right: 24px;
+}
+
+.test-country-select__value {
+  min-width: 0;
+}
+
+.test-country-select__chevron {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--test-teal-dark);
+}
+
+.test-country-select__menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  z-index: 12;
+  max-height: 260px;
+  overflow-y: auto;
+  border-radius: 10px;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  background: #fff;
+  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.12);
+  padding: 6px;
+}
+
+.test-country-select__search {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0 0 6px;
+  padding: 8px 10px;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  border-radius: 8px;
+  font: inherit;
+  font-size: 14px;
+  color: var(--test-ink);
+  background: #fff;
+}
+
+.test-country-select__search:focus {
+  outline: none;
+  border-color: rgba(10, 186, 181, 0.45);
+  box-shadow: 0 0 0 3px rgba(10, 186, 181, 0.12);
+}
+
+.test-country-select__option {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--test-ink);
+  font: inherit;
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.test-country-select__option:hover {
+  background: rgba(10, 186, 181, 0.1);
+}
+
+.test-country-select__option--selected {
+  background: rgba(10, 186, 181, 0.14);
+}
+
+.test-country-select__option-flag {
+  width: 1.2rem;
+  flex-shrink: 0;
+}
+
+.test-country-select__option-name {
+  min-width: 0;
+}
+
+.test-country-select__empty {
+  margin: 6px 4px 4px;
+  font-size: 13px;
+  color: var(--test-muted);
+}
+
 .test-data-field--saving .test-data-field__input {
   opacity: 0.88;
 }
@@ -943,6 +1104,18 @@ a.test-history-mini-card:focus-visible {
 }
 
 @media (max-width: 560px) {
+  .test-hero-pro__identity {
+    flex-wrap: wrap;
+  }
+
+  .test-hero-pro__home-btn {
+    margin-left: 0;
+    width: auto;
+    padding: 0;
+    border-radius: 0;
+    font-size: 1rem;
+  }
+
   .test-data-panel__section-head {
     flex-direction: column;
     align-items: stretch;
@@ -1306,29 +1479,28 @@ button.test-hero-icon-tile {
 }
 
 .test-direction-card__foot .test-direction-card__thumbs {
+  position: relative;
+  top: -10px;
+  margin-top: 0;
   padding-left: calc(1.2rem + 2px);
   padding-right: 1.15rem;
 }
 
 @media (min-width: 640px) {
   .test-direction-card__foot .test-direction-card__thumbs {
+    top: -10px;
     padding-left: calc(1.35rem + 2px);
     padding-right: 1.25rem;
   }
 }
 
 .test-direction-card__bottom-line {
-  height: 3px;
-  width: 100%;
-  margin-top: 0.95rem;
-  flex-shrink: 0;
-  background: var(--dir-accent);
-  box-shadow: 0 1px 0 color-mix(in srgb, var(--dir-accent) 35%, transparent);
+  display: none;
 }
 
 @media (min-width: 640px) {
   .test-direction-card__bottom-line {
-    margin-top: 1.05rem;
+    display: none;
   }
 }
 
@@ -1411,6 +1583,7 @@ button.test-hero-icon-tile {
   font-size: 13px;
   font-weight: 400;
   line-height: 1.45;
+  min-height: calc(1.45em * 2);
   color: var(--test-muted);
 }
 
@@ -1961,11 +2134,11 @@ button.test-doc-row {
   }
 }
 
-/* Модалка «Профиль заполнен» + конфетти (диалог выше слоя конфетти) */
+/* Модалка «Профиль заполнен» + конфетти (конфетти поверх диалога) */
 .test-profile-complete-confetti {
   position: fixed;
   inset: 0;
-  z-index: 2147483150;
+  z-index: 2147483300;
   pointer-events: none;
 }
 
