@@ -3540,6 +3540,42 @@ app.put('/api/purchase-requests/:id/status', async (req, res) => {
     const updatedRequest = await purchaseRequestQueries.getById(req.params.id);
     
     console.log(`✅ Статус запроса #${req.params.id} обновлен: ${status}`);
+
+    // Завершение сделки: перенос активов с аккаунта покупателя на продавца (один email), чтобы кабинет продавца видел покупки
+    if (status === 'completed') {
+      try {
+        const rawBuyerId = request.buyer_id;
+        const buyerIdNum =
+          rawBuyerId != null ? parseInt(String(rawBuyerId).trim(), 10) : NaN;
+        if (Number.isFinite(buyerIdNum)) {
+          const buyerUser = await userQueries.getById(buyerIdNum);
+          const email =
+            buyerUser?.email && String(buyerUser.email).trim().toLowerCase();
+          if (email) {
+            const sameEmail = await userQueries.getAllByEmail(email);
+            const sellerRow = sameEmail.find(
+              (u) =>
+                Number(u.id) !== buyerIdNum &&
+                String(u.role || '').toLowerCase() === 'seller'
+            );
+            if (sellerRow) {
+              await userQueries.migrateBuyerAssetsToSellerUser(
+                buyerIdNum,
+                Number(sellerRow.id)
+              );
+              console.log(
+                `✅ Перенос активов покупатель→продавец после завершения запроса #${req.params.id}: ${buyerIdNum} → ${sellerRow.id}`
+              );
+            }
+          }
+        }
+      } catch (migrateOnCompleteErr) {
+        console.error(
+          '❌ Ошибка переноса активов при завершении запроса на покупку:',
+          migrateOnCompleteErr
+        );
+      }
+    }
     
     // Если статус "processing", отправляем уведомления покупателю
     if (status === 'processing') {
@@ -4277,11 +4313,66 @@ app.get('/api/owner/:sellerId/interest-count', async (req, res) => {
 });
 
 /**
+ * POST /api/auth/email/check-seller-registration — перед регистрацией продавца: есть ли покупатель с этим email
+ */
+app.post('/api/auth/email/check-seller-registration', async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email || typeof email !== 'string') {
+      return res.status(400).json({ success: false, error: 'Укажите email' });
+    }
+    const emailLower = email.toLowerCase().trim();
+    const rows = await userQueries.getAllByEmail(emailLower);
+    if (rows.length === 0) {
+      return res.json({ success: true, status: 'ok' });
+    }
+    const isSellerRole = (r) => r === 'seller' || r === 'owner';
+    const isBuyerLike = (r) => r === 'buyer' || r === 'client' || !r;
+    if (rows.some((u) => isSellerRole(u.role))) {
+      return res.status(409).json({
+        success: false,
+        status: 'already_seller',
+        error: 'Этот email уже зарегистрирован как продавец. Войдите в кабинет продавца.',
+      });
+    }
+    const buyers = rows.filter((u) => isBuyerLike(u.role));
+    if (buyers.length === 0) {
+      return res.status(409).json({
+        success: false,
+        status: 'email_unavailable',
+        error: 'Этот email уже используется в системе.',
+      });
+    }
+    const buyer = buyers[0];
+    const { password } = req.body;
+    if (password && typeof password === 'string' && buyer.password) {
+      const hashedTry = crypto.createHash('sha256').update(password).digest('hex');
+      if (hashedTry === buyer.password) {
+        return res.status(400).json({
+          success: false,
+          status: 'password_same_as_buyer',
+          error:
+            'Пароль кабинета продавца должен отличаться от пароля кабинета покупателя. Укажите другой пароль.',
+        });
+      }
+    }
+    return res.json({
+      success: true,
+      status: 'needs_confirmation',
+      buyerId: buyer.id,
+    });
+  } catch (error) {
+    console.error('❌ check-seller-registration:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
  * POST /api/auth/email/register - Регистрация через Email
  */
 app.post('/api/auth/email/register', async (req, res) => {
   try {
-    const { email, password, name, code, referrer_id: referrerId } = req.body;
+    const { email, password, name, code, referrer_id: referrerId, link_buyer_id: linkBuyerIdRaw } = req.body;
     
     if (!email || !password || !name) {
       return res.status(400).json({ 
@@ -4304,14 +4395,49 @@ app.post('/api/auth/email/register', async (req, res) => {
     }
     
     const emailLower = email.toLowerCase();
-    
-    // Проверяем, существует ли пользователь с таким email
-    const existingUser = await userQueries.getByEmail(emailLower);
-    if (existingUser) {
-      return res.status(409).json({ 
-        success: false, 
-        error: 'Пользователь с таким email уже существует' 
-      });
+    const linkBuyerId = linkBuyerIdRaw != null ? parseInt(String(linkBuyerIdRaw), 10) : null;
+    const regRole = req.body.role || 'buyer';
+
+    let linkBuyer = null;
+    if (linkBuyerId) {
+      if (regRole !== 'seller' && regRole !== 'owner') {
+        return res.status(400).json({
+          success: false,
+          error: 'Привязка к покупателю допустима только при регистрации продавца',
+        });
+      }
+      linkBuyer = await userQueries.getById(linkBuyerId);
+      if (!linkBuyer || (linkBuyer.email || '').toLowerCase() !== emailLower) {
+        return res.status(400).json({
+          success: false,
+          error: 'Не удалось подтвердить аккаунт покупателя для этого email',
+        });
+      }
+      const br = linkBuyer.role || 'buyer';
+      if (br === 'seller' || br === 'owner') {
+        return res.status(409).json({
+          success: false,
+          error: 'Аккаунт уже оформлен как продавец',
+        });
+      }
+      const others = await userQueries.getAllByEmail(emailLower);
+      if (others.some((u) => u.id !== linkBuyerId && (u.role === 'seller' || u.role === 'owner'))) {
+        return res.status(409).json({
+          success: false,
+          error: 'Для этого email уже есть кабинет продавца',
+        });
+      }
+    }
+
+    // Дубликат email: запрещён, кроме сценария «второй аккаунт продавца» с подтверждённым покупателем
+    if (!linkBuyer) {
+      const existingUser = await userQueries.getByEmail(emailLower);
+      if (existingUser) {
+        return res.status(409).json({
+          success: false,
+          error: 'Пользователь с таким email уже существует',
+        });
+      }
     }
     
     // Разбиваем имя на имя и фамилию
@@ -4325,6 +4451,15 @@ app.post('/api/auth/email/register', async (req, res) => {
       .createHash('sha256')
       .update(password)
       .digest('hex');
+
+    if (linkBuyer && linkBuyer.password && linkBuyer.password === hashedPassword) {
+      return res.status(400).json({
+        success: false,
+        status: 'password_same_as_buyer',
+        error:
+          'Пароль кабинета продавца должен отличаться от пароля кабинета покупателя. Укажите другой пароль.',
+      });
+    }
     
     const newUser = {
       first_name: firstName,
@@ -4332,7 +4467,7 @@ app.post('/api/auth/email/register', async (req, res) => {
       email: emailLower,
       password: hashedPassword, // Сохраняем хешированный пароль
       phone_number: null, // Телефон не требуется для email регистрации
-      role: req.body.role || 'buyer', // Используем переданную роль или 'buyer' по умолчанию
+      role: linkBuyer ? 'seller' : (req.body.role || 'buyer'),
       // ВАЖНО: is_verified отвечает за верификацию документов администратором,
       // а не за подтверждение email. Новый пользователь всегда стартует как не верифицированный.
       is_verified: 0,
@@ -4360,27 +4495,50 @@ app.post('/api/auth/email/register', async (req, res) => {
       }
     }
 
+    if (linkBuyer) {
+      try {
+        await userQueries.migrateBuyerAssetsToSellerUser(linkBuyer.id, createdUser.id);
+        const dep = Number(linkBuyer.deposit_amount) || 0;
+        if (dep > 0) {
+          await userQueries.update(createdUser.id, { deposit_amount: dep });
+          await userQueries.update(linkBuyer.id, { deposit_amount: 0 });
+        }
+      } catch (migErr) {
+        console.error('❌ Ошибка переноса данных покупателя → продавец:', migErr);
+        try {
+          await userQueries.delete(createdUser.id);
+        } catch (delErr) {
+          console.error('❌ Не удалось откатить создание продавца:', delErr);
+        }
+        return res.status(500).json({
+          success: false,
+          error: 'Не удалось перенести данные покупателя. Попробуйте позже или обратитесь в поддержку.',
+        });
+      }
+    }
+
+    const createdUserFinal = linkBuyer ? await userQueries.getById(createdUser.id) : createdUser;
+
     console.log('✅ Пользователь успешно сохранен в БД:', {
-      id: createdUser.id,
-      email: createdUser.email,
-      name: `${createdUser.first_name} ${createdUser.last_name}`.trim(),
-      role: createdUser.role
+      id: createdUserFinal.id,
+      email: createdUserFinal.email,
+      name: `${createdUserFinal.first_name} ${createdUserFinal.last_name}`.trim(),
+      role: createdUserFinal.role
     });
     
-    // Не возвращаем пароль в ответе (даже захешированный)
-    const { password: userPassword, ...userWithoutPassword } = createdUser;
-    
     // Безопасно получаем user_id_number (может не существовать в старых БД)
-    const userIdNumber = createdUser.hasOwnProperty('user_id_number') ? (createdUser.user_id_number || null) : null;
+    const userIdNumber = createdUserFinal.hasOwnProperty('user_id_number')
+      ? (createdUserFinal.user_id_number || null)
+      : null;
     
     res.status(201).json({ 
       success: true, 
       user: {
-        id: createdUser.id,
-        name: `${createdUser.first_name} ${createdUser.last_name}`.trim(),
-        email: createdUser.email,
-        role: createdUser.role,
-        phone: createdUser.phone_number,
+        id: createdUserFinal.id,
+        name: `${createdUserFinal.first_name} ${createdUserFinal.last_name}`.trim(),
+        email: createdUserFinal.email,
+        role: createdUserFinal.role,
+        phone: createdUserFinal.phone_number,
         ...(userIdNumber !== null && { user_id_number: userIdNumber })
       }
     });
@@ -4412,54 +4570,44 @@ app.post('/api/auth/email/login', async (req, res) => {
     const identifier = email.toLowerCase().trim();
     
     console.log('🔐 Попытка входа:', { identifier });
-    
-    // Сначала пробуем найти пользователя по email
-    let user = await userQueries.getByEmail(identifier);
-    
-    // Если не нашли по email, можно добавить поиск по username в будущем
-    // Пока ищем только по email
-    
-    if (!user) {
+
+    const candidates = await userQueries.getAllByEmail(identifier);
+    if (candidates.length === 0) {
       console.log('❌ Пользователь не найден:', identifier);
-      return res.status(401).json({ 
-        success: false, 
-        error: 'Неверный email или пароль' 
+      return res.status(401).json({
+        success: false,
+        error: 'Неверный email или пароль',
       });
     }
-    
-    console.log('✅ Пользователь найден:', { id: user.id, email: user.email, hasPassword: !!user.password });
-    
-    // Проверяем пароль
-    // Если у пользователя нет пароля (WhatsApp регистрация или старые записи)
-    if (!user.password) {
-      console.log('⚠️ У пользователя нет пароля');
-      // Для пользователей без пароля - требуем установить пароль в настройках
-      return res.status(401).json({ 
-        success: false, 
-        error: 'Пароль не установлен. Установите пароль в настройках профиля (вкладка "Данные").' 
+
+    const hashedPassword = crypto.createHash('sha256').update(password).digest('hex');
+
+    /** Несколько аккаунтов с одним email (покупатель + продавец) — подбираем по паролю */
+    let user = null;
+    for (const u of candidates) {
+      if (!u.password) continue;
+      if (u.password === hashedPassword) {
+        user = u;
+        break;
+      }
+    }
+
+    if (!user) {
+      if (candidates.length === 1 && !candidates[0].password) {
+        return res.status(401).json({
+          success: false,
+          error:
+            'Пароль не установлен. Установите пароль в настройках профиля (вкладка "Данные").',
+        });
+      }
+      console.log('❌ Неверный пароль для email:', identifier);
+      return res.status(401).json({
+        success: false,
+        error: 'Неверный email или пароль',
       });
     }
-    
-    // Хешируем введенный пароль тем же способом для сравнения
-    const hashedPassword = crypto
-      .createHash('sha256')
-      .update(password)
-      .digest('hex');
-    
-    console.log('🔑 Проверка пароля:', { 
-      storedHash: user.password.substring(0, 20) + '...', 
-      inputHash: hashedPassword.substring(0, 20) + '...',
-      match: user.password === hashedPassword
-    });
-    
-    // Сравниваем хеши паролей
-    if (user.password !== hashedPassword) {
-      console.log('❌ Неверный пароль');
-      return res.status(401).json({ 
-        success: false, 
-        error: 'Неверный email или пароль' 
-      });
-    }
+
+    console.log('✅ Пользователь найден:', { id: user.id, email: user.email, role: user.role });
     
     // Проверяем, заблокирован ли пользователь
     if (user.is_blocked === 1) {

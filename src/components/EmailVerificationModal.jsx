@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { sendEmailVerificationCode, verifyEmailCode, verifyEmailForProfileUpdate, validateEmail } from '../services/authService'
 import './EmailVerificationModal.css'
 
-const EmailVerificationModal = ({ isOpen, onClose, onSuccess, email: initialEmail, password, name, isProfileUpdate = false, userId = null, role = 'buyer' }) => {
+const EmailVerificationModal = ({ isOpen, onClose, onSuccess, email: initialEmail, password, name, isProfileUpdate = false, userId = null, role = 'buyer', linkBuyerId = null }) => {
   const { t } = useTranslation()
   const [email, setEmail] = useState(initialEmail || '')
   const [code, setCode] = useState(['', '', '', '', '', ''])
@@ -210,7 +210,7 @@ const EmailVerificationModal = ({ isOpen, onClose, onSuccess, email: initialEmai
         }
       } else {
         // Регистрация
-        result = await verifyEmailCode(email, codeString, password, name, role)
+        result = await verifyEmailCode(email, codeString, password, name, role, linkBuyerId)
 
         if (result.success) {
           // Успешная регистрация

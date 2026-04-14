@@ -694,6 +694,36 @@
   box-sizing: border-box;
 }
 
+/* Ошибка: пароль продавца совпадает с паролем покупателя */
+.login-modal__input--error,
+.login-modal__input--error:focus {
+  border-color: #dc2626 !important;
+  box-shadow: 0 0 0 1px rgba(220, 38, 38, 0.2);
+  transform: none;
+}
+
+.login-modal--buyer .login-modal__input--error:focus,
+.login-modal--seller .login-modal__input--error:focus {
+  border-color: #dc2626 !important;
+  box-shadow: 0 0 0 1px rgba(220, 38, 38, 0.2);
+}
+
+.login-modal__password-wrapper--error .login-modal__input--password {
+  border-color: #dc2626;
+}
+
+.login-modal__register-bottom-error {
+  margin-top: 14px;
+  padding: 12px 14px;
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 10px;
+  color: #b91c1c;
+  font-size: 14px;
+  line-height: 1.45;
+  text-align: center;
+}
+
 .login-modal__password-toggle {
   position: absolute;
   right: 12px;

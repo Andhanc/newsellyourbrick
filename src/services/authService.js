@@ -1963,9 +1963,48 @@ export const sendEmailVerificationCode = async (email) => {
 }
 
 /**
- * Проверяет код верификации email и регистрирует пользователя
+ * Перед регистрацией продавца: проверка email и что пароль продавца не совпадает с паролем покупателя.
+ * @param {string} password — пароль из формы регистрации продавца (для сравнения с хешем покупателя)
  */
-export const verifyEmailCode = async (email, code, password, name, role = 'buyer') => {
+export const checkSellerRegistrationEmail = async (email, password = null) => {
+  try {
+    const emailLower = email.toLowerCase().trim()
+    if (!emailLower.includes('@')) {
+      return { success: false, error: 'Укажите корректный email' }
+    }
+    const base = await getApiBaseUrl()
+    const response = await fetch(`${base.replace(/\/$/, '')}/auth/email/check-seller-registration`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: emailLower,
+        ...(password != null && password !== '' ? { password } : {}),
+      }),
+    })
+    const data = await response.json().catch(() => ({}))
+    if (!response.ok) {
+      return {
+        success: false,
+        status: data.status,
+        error: data.error || 'Не удалось проверить email',
+      }
+    }
+    return {
+      success: true,
+      status: data.status,
+      buyerId: data.buyerId,
+    }
+  } catch (e) {
+    console.error('checkSellerRegistrationEmail:', e)
+    return { success: false, error: 'Ошибка сети. Попробуйте позже.' }
+  }
+}
+
+/**
+ * Проверяет код верификации email и регистрирует пользователя
+ * @param {number|null} linkBuyerId — если задан, создаётся второй аккаунт продавца и переносятся данные покупателя
+ */
+export const verifyEmailCode = async (email, code, password, name, role = 'buyer', linkBuyerId = null) => {
   try {
     const emailLower = email.toLowerCase()
     
@@ -2002,7 +2041,8 @@ export const verifyEmailCode = async (email, code, password, name, role = 'buyer
           name: registrationName,
           code,
           role: role,
-          ...(referrerId && { referrer_id: referrerId })
+          ...(referrerId && { referrer_id: referrerId }),
+          ...(linkBuyerId != null && Number.isFinite(Number(linkBuyerId)) && { link_buyer_id: Number(linkBuyerId) }),
         })
       })
       

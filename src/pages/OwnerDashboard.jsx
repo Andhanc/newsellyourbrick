@@ -33,6 +33,7 @@ import WelcomeModal from '../components/WelcomeModal'
 import QuickAddCard from '../components/QuickAddCard'
 import FileUploadModal from '../components/FileUploadModal'
 import PropertyCalculatorModal from '../components/PropertyCalculatorModal'
+import OwnerPurchasedAssets from '../components/OwnerPurchasedAssets'
 import BiddingHistoryModal from '../components/BiddingHistoryModal'
 import CountrySelect, { countries as countryList } from '../components/CountrySelect'
 import { getUserData, saveUserData, logout, clearUserData, CLERK_DB_USER_SYNCED } from '../services/authService'
@@ -1654,6 +1655,10 @@ const OwnerDashboard = () => {
             </div>
           </div>
         )}
+
+        {activeTab === 'properties' && userId ? (
+          <OwnerPurchasedAssets userId={userId} />
+        ) : null}
 
         {/* Контент вкладок */}
         {activeTab === 'properties' && (

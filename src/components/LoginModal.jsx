@@ -6,8 +6,9 @@ import { useSignIn, useAuth, useUser } from '@clerk/clerk-react'
 import { useTranslation } from 'react-i18next'
 import WhatsAppVerificationModal from './WhatsAppVerificationModal'
 import EmailVerificationModal from './EmailVerificationModal'
+import BuyerSellerLinkConfirmModal from './BuyerSellerLinkConfirmModal'
 import VerificationDocumentsModal from './VerificationDocumentsModal'
-import { registerWithEmail, loginWithEmail, validatePassword, saveUserData, getReferrerId } from '../services/authService'
+import { registerWithEmail, loginWithEmail, validatePassword, saveUserData, getReferrerId, checkSellerRegistrationEmail } from '../services/authService'
 import { getApiBaseUrl } from '../utils/apiConfig'
 import { getClerkOAuthReturnUrl } from '../utils/clerkOAuth'
 import { showNotification } from '../utils/toastHelper'
@@ -40,8 +41,13 @@ const LoginModal = ({ isOpen, onClose, authEntryVariant = 'header_wizard' }) => 
   })
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
+  /** Ошибка «пароль продавца = пароль покупателя» — текст под кнопкой регистрации, не сверху формы */
+  const [registerBottomError, setRegisterBottomError] = useState('')
   const [showWhatsAppModal, setShowWhatsAppModal] = useState(false)
   const [showEmailVerificationModal, setShowEmailVerificationModal] = useState(false)
+  const [showBuyerSellerLinkConfirm, setShowBuyerSellerLinkConfirm] = useState(false)
+  const [pendingSellerLinkBuyerId, setPendingSellerLinkBuyerId] = useState(null)
+  const [sellerRegistrationBuyerId, setSellerRegistrationBuyerId] = useState(null)
   const [showVerificationDocumentsModal, setShowVerificationDocumentsModal] = useState(false)
   const [newUserId, setNewUserId] = useState(null)
   const [showPassword, setShowPassword] = useState(false)
@@ -173,6 +179,7 @@ const LoginModal = ({ isOpen, onClose, authEntryVariant = 'header_wizard' }) => 
   const handleBackToRoleStep = () => {
     setWizardPhase('role')
     setError('')
+    setRegisterBottomError('')
   }
 
   /** После создания записи в БД из сессии Clerk — кабинет по выбранной роли */
@@ -183,6 +190,9 @@ const LoginModal = ({ isOpen, onClose, authEntryVariant = 'header_wizard' }) => 
 
   const handleInputChange = (e) => {
     const { name, value } = e.target
+    if (name === 'password' || name === 'confirmPassword') {
+      setRegisterBottomError('')
+    }
     setFormData(prev => ({
       ...prev,
       [name]: value
@@ -192,6 +202,7 @@ const LoginModal = ({ isOpen, onClose, authEntryVariant = 'header_wizard' }) => 
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
+    setRegisterBottomError('')
     setIsLoading(true)
     
     if (isLogin) {
@@ -369,6 +380,33 @@ const LoginModal = ({ isOpen, onClose, authEntryVariant = 'header_wizard' }) => 
         setError('Имя должно содержать минимум 2 символа')
         setIsLoading(false)
         return
+      }
+
+      if (userRole === 'seller' || userRole === 'owner') {
+        const chk = await checkSellerRegistrationEmail(formData.email, formData.password)
+        if (!chk.success) {
+          if (chk.status === 'password_same_as_buyer') {
+            setError('')
+            setRegisterBottomError(
+              chk.error ||
+                'Пароль кабинета продавца должен отличаться от пароля кабинета покупателя. Укажите другой пароль.'
+            )
+          } else {
+            setRegisterBottomError('')
+            setError(chk.error || 'Не удалось проверить email')
+          }
+          setIsLoading(false)
+          return
+        }
+        if (chk.status === 'needs_confirmation' && chk.buyerId != null) {
+          setPendingSellerLinkBuyerId(chk.buyerId)
+          setShowBuyerSellerLinkConfirm(true)
+          setIsLoading(false)
+          return
+        }
+        setSellerRegistrationBuyerId(null)
+      } else {
+        setSellerRegistrationBuyerId(null)
       }
       
       try {
@@ -619,6 +657,50 @@ const LoginModal = ({ isOpen, onClose, authEntryVariant = 'header_wizard' }) => 
     }
   }
 
+  const handleBuyerSellerLinkConfirmed = async () => {
+    setShowBuyerSellerLinkConfirm(false)
+    setIsLoading(true)
+    setError('')
+    setRegisterBottomError('')
+    try {
+      const chk = await checkSellerRegistrationEmail(formData.email, formData.password)
+      if (!chk.success) {
+        if (chk.status === 'password_same_as_buyer') {
+          setError('')
+          setRegisterBottomError(
+            chk.error ||
+              'Пароль кабинета продавца должен отличаться от пароля кабинета покупателя. Укажите другой пароль.'
+          )
+        } else {
+          setRegisterBottomError('')
+          setError(chk.error || 'Не удалось продолжить регистрацию')
+        }
+        setPendingSellerLinkBuyerId(null)
+        return
+      }
+      if (chk.status !== 'needs_confirmation') {
+        setError('Не удалось подтвердить данные. Попробуйте снова.')
+        setPendingSellerLinkBuyerId(null)
+        return
+      }
+      const buyerId = chk.buyerId != null ? chk.buyerId : pendingSellerLinkBuyerId
+      setSellerRegistrationBuyerId(buyerId)
+      const result = await registerWithEmail(formData.email, formData.password, formData.name)
+      if (result.success) {
+        setShowEmailVerificationModal(true)
+      } else {
+        setError(result.error || 'Не удалось отправить код')
+        setSellerRegistrationBuyerId(null)
+      }
+    } catch (e) {
+      console.error(e)
+      setError('Произошла ошибка. Попробуйте позже.')
+      setSellerRegistrationBuyerId(null)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   const handleEmailVerificationSuccess = (user) => {
     // Успешная регистрация через email
     const userRole = user.role || localStorage.getItem('userRole') || 'buyer'
@@ -635,6 +717,7 @@ const LoginModal = ({ isOpen, onClose, authEntryVariant = 'header_wizard' }) => 
     } else {
       navigate('/profile')
     }
+    setSellerRegistrationBuyerId(null)
   }
   
   const handleVerificationDocumentsComplete = () => {
@@ -650,6 +733,7 @@ const LoginModal = ({ isOpen, onClose, authEntryVariant = 'header_wizard' }) => 
   const setAuthMode = (nextIsLogin) => {
     if (nextIsLogin === isLogin) return
     setIsLogin(nextIsLogin)
+    setRegisterBottomError('')
     setFormData({
       email: '',
       password: '',
@@ -666,7 +750,7 @@ const LoginModal = ({ isOpen, onClose, authEntryVariant = 'header_wizard' }) => 
   return (
     <>
       {/* Скрываем LoginModal когда открыт EmailVerificationModal */}
-      {!showEmailVerificationModal && (
+      {!showEmailVerificationModal && !showBuyerSellerLinkConfirm && (
         <div className="login-modal-overlay" onClick={onClose}>
           <div
             className={`login-modal${loginModalTintClass ? ` ${loginModalTintClass}` : ''}`}
@@ -993,7 +1077,9 @@ const LoginModal = ({ isOpen, onClose, authEntryVariant = 'header_wizard' }) => 
               <FiLock size={18} />
                 {t('passwordLabel')}
             </label>
-            <div className="login-modal__password-wrapper">
+            <div
+              className={`login-modal__password-wrapper${registerBottomError ? ' login-modal__password-wrapper--error' : ''}`}
+            >
               <input
                 type={showPassword ? "text" : "password"}
                 id="password"
@@ -1002,9 +1088,11 @@ const LoginModal = ({ isOpen, onClose, authEntryVariant = 'header_wizard' }) => 
                 onChange={handleInputChange}
                 onFocus={() => setIsPasswordFocused(true)}
                 onBlur={() => setIsPasswordFocused(false)}
-                className="login-modal__input login-modal__input--password"
+                className={`login-modal__input login-modal__input--password${registerBottomError ? ' login-modal__input--error' : ''}`}
                 placeholder={t('passwordPlaceholder')}
                 required
+                aria-invalid={registerBottomError ? 'true' : undefined}
+                aria-describedby={registerBottomError ? 'login-register-bottom-error' : undefined}
               />
               <button
                 type="button"
@@ -1065,6 +1153,16 @@ const LoginModal = ({ isOpen, onClose, authEntryVariant = 'header_wizard' }) => 
               ? (isLogin ? t('loginProcessing') : t('registerProcessing')) 
               : (isLogin ? t('loginButton') : t('registerButton'))}
           </button>
+
+          {!isLogin && registerBottomError && (
+            <div
+              id="login-register-bottom-error"
+              className="login-modal__register-bottom-error"
+              role="alert"
+            >
+              {registerBottomError}
+            </div>
+          )}
         </form>
 
         <div className="login-modal__footer">
@@ -1096,11 +1194,22 @@ const LoginModal = ({ isOpen, onClose, authEntryVariant = 'header_wizard' }) => 
         mode={isLogin ? 'login' : 'register'}
       />
       
+      <BuyerSellerLinkConfirmModal
+        isOpen={showBuyerSellerLinkConfirm}
+        onClose={() => {
+          setShowBuyerSellerLinkConfirm(false)
+          setPendingSellerLinkBuyerId(null)
+        }}
+        onConfirm={handleBuyerSellerLinkConfirmed}
+        email={formData.email}
+      />
+
       <EmailVerificationModal
         isOpen={showEmailVerificationModal}
         onClose={() => {
           console.log('📧 Закрываем EmailVerificationModal')
           setShowEmailVerificationModal(false)
+          setSellerRegistrationBuyerId(null)
           onClose() // Также закрываем LoginModal
         }}
         onSuccess={handleEmailVerificationSuccess}
@@ -1108,6 +1217,7 @@ const LoginModal = ({ isOpen, onClose, authEntryVariant = 'header_wizard' }) => 
         password={formData.password}
         name={formData.name}
         role={userRole}
+        linkBuyerId={sellerRegistrationBuyerId}
       />
       
       <VerificationDocumentsModal

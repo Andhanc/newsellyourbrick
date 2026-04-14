@@ -89,6 +89,73 @@ export const userQueries = {
     return userToPlain(u);
   },
 
+  /** Все записи с данным email (несколько аккаунтов: покупатель + продавец). */
+  getAllByEmail: async (email) => {
+    const prisma = getPrisma();
+    if (!email) return [];
+    const rows = await prisma.users.findMany({
+      where: { email },
+      orderBy: { id: 'asc' },
+    });
+    return rows.map(userToPlain);
+  },
+
+  /**
+   * Переносит активы покупателя на нового пользователя-продавца (доли, платежи, избранное и т.д.).
+   */
+  migrateBuyerAssetsToSellerUser: async (buyerId, sellerId) => {
+    const prisma = getPrisma();
+    const b = Number(buyerId);
+    const s = Number(sellerId);
+    if (!b || !s || b === s) return;
+
+    await prisma.$transaction(async (tx) => {
+      await tx.property_shares.updateMany({ where: { buyer_id: b }, data: { buyer_id: s } });
+      await tx.share_purchase_signature_intents.updateMany({ where: { buyer_id: b }, data: { buyer_id: s } });
+      await tx.property_reservation_signature_intents.updateMany({ where: { buyer_id: b }, data: { buyer_id: s } });
+      await tx.purchase_requests.updateMany({
+        where: { buyer_id: String(b) },
+        data: { buyer_id: String(s) },
+      });
+      await tx.bids.updateMany({ where: { user_id: b }, data: { user_id: s } });
+      await tx.auction_winners.updateMany({ where: { user_id: b }, data: { user_id: s } });
+      await tx.stripe_payments.updateMany({ where: { user_id: b }, data: { user_id: s } });
+      await tx.transactions.updateMany({ where: { user_id: b }, data: { user_id: s } });
+      await tx.property_favorites.updateMany({ where: { user_id: b }, data: { user_id: s } });
+      await tx.documents.updateMany({ where: { user_id: b }, data: { user_id: s } });
+      await tx.notifications.updateMany({ where: { user_id: b }, data: { user_id: s } });
+      await tx.bonus_task_submissions.updateMany({ where: { user_id: b }, data: { user_id: s } });
+      await tx.test_drive_bookings.updateMany({ where: { user_id: b }, data: { user_id: s } });
+      await tx.crm_leads.updateMany({ where: { user_id: b }, data: { user_id: s } });
+      await tx.assistant_leads.updateMany({ where: { user_id: b }, data: { user_id: s } });
+      await tx.live_chat_sessions.updateMany({ where: { user_id: b }, data: { user_id: s } });
+      await tx.properties.updateMany({ where: { user_id: b }, data: { user_id: s } });
+      await tx.properties_apartments.updateMany({ where: { user_id: b }, data: { user_id: s } });
+      await tx.properties_houses.updateMany({ where: { user_id: b }, data: { user_id: s } });
+
+      const subState = await tx.stripe_subscription_state.findUnique({ where: { user_id: b } });
+      if (subState) {
+        await tx.stripe_subscription_state.delete({ where: { user_id: b } });
+        const existingSellerSub = await tx.stripe_subscription_state.findUnique({ where: { user_id: s } });
+        if (!existingSellerSub) {
+          await tx.stripe_subscription_state.create({
+            data: {
+              user_id: s,
+              stripe_customer_id: subState.stripe_customer_id,
+              stripe_subscription_id: subState.stripe_subscription_id,
+              plan_key: subState.plan_key,
+              status: subState.status,
+              current_period_start: subState.current_period_start,
+              current_period_end: subState.current_period_end,
+              cancel_at_period_end: subState.cancel_at_period_end ?? 0,
+              updated_at: subState.updated_at,
+            },
+          });
+        }
+      }
+    });
+  },
+
   getByPhone: async (phone) => {
     const prisma = getPrisma();
     const u = await prisma.users.findFirst({ where: { phone_number: phone ?? undefined } });
@@ -126,6 +193,8 @@ export const userQueries = {
       'telegram_username',
       'telegram_photo_url',
       'user_id_number',
+      'deposit_amount',
+      'has_card',
     ];
     for (const key of allowed) {
       if (Object.prototype.hasOwnProperty.call(userData, key)) {
@@ -133,6 +202,10 @@ export const userQueries = {
           data[key] = userData[key] ? 1 : 0;
         } else if (key === 'password') {
           data[key] = userData[key] || null;
+        } else if (key === 'deposit_amount') {
+          data[key] = userData[key] != null ? Number(userData[key]) : null;
+        } else if (key === 'has_card') {
+          data[key] = userData[key] ? 1 : 0;
         } else {
           data[key] = userData[key] ?? null;
         }
