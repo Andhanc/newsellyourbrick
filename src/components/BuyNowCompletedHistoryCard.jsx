@@ -13,6 +13,8 @@ function BuyNowCompletedHistoryCard({
   formatDate,
   sharePurchaseImageSrc,
   placeholderSrc,
+  purchaseTerms,
+  onSellObject,
 }) {
   const { t } = useTranslation()
   const b = row.billing || {}
@@ -52,6 +54,9 @@ function BuyNowCompletedHistoryCard({
         <div className="won-property-card__info">
           <h3 className="won-property-card__title">{title}</h3>
           <p className="won-property-card__location">{t('buyerHistory_reserveBuyNowChannel')}</p>
+          {purchaseTerms ? (
+            <p className="won-property-card__terms">{purchaseTerms}</p>
+          ) : null}
           {tenPct != null && (
             <p className="history-reservation-pay-summary won-property-card__buy-now-summary">
               {t('buyerHistory_reserveCompletedPayment', {
@@ -90,6 +95,11 @@ function BuyNowCompletedHistoryCard({
               {t('buyerWon_viewProperty')}
             </Link>
           )}
+          {typeof onSellObject === 'function' ? (
+            <button type="button" className="card-button card-button--secondary" onClick={onSellObject}>
+              Продать объект
+            </button>
+          ) : null}
         </div>
       </div>
     </div>

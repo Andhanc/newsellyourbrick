@@ -322,18 +322,36 @@
 }
 
 .test-history-section__title {
-  margin: 0 0 10px;
-  font-size: 11px;
+  margin: 0;
+  font-size: 12px;
   font-weight: 800;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--test-muted);
 }
 
+.test-history-section__head {
+  margin: 0 0 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.test-history-section__pill {
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #0f766e;
+  background: rgba(10, 186, 181, 0.12);
+  border: 1px solid rgba(10, 186, 181, 0.24);
+}
+
 .test-history-section__grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
+  grid-template-columns: 1fr;
+  gap: 8px;
 }
 
 @media (max-width: 520px) {
@@ -344,10 +362,11 @@
 
 .test-history-mini-card {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  align-items: stretch;
   min-width: 0;
   overflow: hidden;
-  border-radius: 14px;
+  border-radius: 12px;
   border: 1px solid rgba(15, 23, 42, 0.07);
   background: #fff;
   text-decoration: none;
@@ -372,8 +391,9 @@ a.test-history-mini-card:focus-visible {
 
 .test-history-mini-card__thumb {
   position: relative;
-  aspect-ratio: 16 / 10;
-  width: 100%;
+  width: 136px;
+  min-width: 136px;
+  max-width: 136px;
   overflow: hidden;
   background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
 }
@@ -389,7 +409,7 @@ a.test-history-mini-card:focus-visible {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  padding: 10px 11px 12px;
+  padding: 9px 10px 10px;
   min-width: 0;
 }
 
@@ -414,6 +434,82 @@ a.test-history-mini-card:focus-visible {
   line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+.test-history-mini-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.test-history-mini-card__meta-item {
+  font-size: 11px;
+  color: #334155;
+}
+
+.test-history-mini-card__terms {
+  margin-top: 6px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: rgba(10, 186, 181, 0.08);
+  border: 1px solid rgba(10, 186, 181, 0.2);
+  color: #0f766e;
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.test-history-mini-card__actions {
+  margin-top: 6px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.test-history-mini-card__action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 9px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  background: #ffffff;
+  color: #0f172a;
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+@media (max-width: 560px) {
+  .test-history-mini-card {
+    flex-direction: column;
+  }
+
+  .test-history-mini-card__thumb {
+    width: 100%;
+    min-width: 100%;
+    max-width: 100%;
+    aspect-ratio: 16 / 9;
+  }
+}
+
+.test-history-mini-card__action-btn:hover {
+  border-color: rgba(10, 186, 181, 0.45);
+  color: #0f766e;
+}
+
+.test-history-mini-card__action-btn--sell {
+  border-color: #111111;
+  background: #111111;
+  color: #ffffff;
+}
+
+.test-history-mini-card__action-btn--sell:hover {
+  border-color: #000000;
+  background: #000000;
+  color: #ffffff;
 }
 
 @media (max-width: 560px) {
@@ -2254,4 +2350,71 @@ button.test-doc-row {
 .test-profile-completion__row--missing:disabled {
   opacity: 0.45;
   cursor: not-allowed;
+}
+
+.test-data-panel__footer-actions {
+  margin-top: 14px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(15, 23, 42, 0.08);
+  display: flex;
+  justify-content: center;
+}
+
+.test-sell-prompt-modal-root {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1400;
+  padding: 16px;
+}
+
+.test-sell-prompt-modal {
+  width: min(560px, 100%);
+  border-radius: 16px;
+  background: #ffffff;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.24);
+  padding: 20px;
+}
+
+.test-sell-prompt-modal__title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.test-sell-prompt-modal__text {
+  margin: 10px 0 0;
+  font-size: 15px;
+  line-height: 1.5;
+  color: #334155;
+}
+
+.test-sell-prompt-modal__actions {
+  margin-top: 16px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.test-sell-prompt-modal__btn {
+  min-width: 126px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid #0abab5;
+  background: #0abab5;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.test-sell-prompt-modal__btn--ghost {
+  border-color: rgba(15, 23, 42, 0.15);
+  background: #fff;
+  color: #0f172a;
 }

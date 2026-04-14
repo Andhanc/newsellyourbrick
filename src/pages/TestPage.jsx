@@ -15,6 +15,8 @@ import {
   FiMessageCircle,
   FiAlertCircle,
   FiHome,
+  FiHeart,
+  FiUserPlus,
   FiFileText,
   FiBookOpen,
   FiArrowRight,
@@ -38,7 +40,6 @@ import { useCabinetOverviewData, normalizeSubscriptionPlanVisual } from '../hook
 import SubscriptionCabinetPreview from '../components/SubscriptionCabinetPreview'
 import { startProSubscriptionCheckout } from '../utils/subscriptionCheckout'
 import DirectionSummaryCard from '../components/ui/direction-summary-card'
-import TransactionHistoryCard from '../components/ui/transaction-history-card'
 import PassportRecognitionModal from '../components/PassportRecognitionModal'
 import { countries as countryList } from '../components/CountrySelect'
 import { COUNTRY_CODES as phoneCountryCodes } from '../components/PhoneInput'
@@ -419,8 +420,8 @@ const MAIN_CARDS = [
 ]
 
 const QUICK_LINKS = [
-  { title: 'Долги', subtitle: 'Задолженности', to: '/debts', icon: FiAlertCircle },
-  { title: 'Аукцион', subtitle: 'Торги', to: '/auction', icon: FiHome },
+  { title: 'Понравилось', subtitle: 'Избранные объекты', to: '/favorites', icon: FiHeart },
+  { title: 'Стать продавцом', subtitle: 'Регистрация продавца', icon: FiUserPlus, action: 'becomeSeller' },
   { title: 'Выйти', subtitle: 'Выход из аккаунта', icon: FiLogOut, action: 'logout' },
 ]
 
@@ -509,6 +510,7 @@ function TestPage() {
   const [showProfileCompleteCelebration, setShowProfileCompleteCelebration] = useState(false)
   const [showServiceQuickLinksTour, setShowServiceQuickLinksTour] = useState(false)
   const [serviceTourAcknowledged, setServiceTourAcknowledged] = useState(false)
+  const [isSellObjectPromptOpen, setIsSellObjectPromptOpen] = useState(false)
   const [windowSize, setWindowSize] = useState(() =>
     typeof window !== 'undefined' ? { width: window.innerWidth, height: window.innerHeight } : { width: 0, height: 0 },
   )
@@ -597,6 +599,61 @@ function TestPage() {
     }
     window.location.assign('/')
   }, [user, signOut, t])
+
+  const handleBecomeSellerRegister = useCallback(async () => {
+    try {
+      sessionStorage.setItem('login_modal_mode', 'register')
+      sessionStorage.setItem('login_modal_user_role', 'seller')
+    } catch {
+      /* ignore storage errors */
+    }
+    sessionStorage.setItem('clerk_logout_in_progress', 'true')
+    try {
+      if (user && signOut) {
+        await signOut()
+      }
+    } catch (e) {
+      console.warn('TestPage become seller signOut:', e)
+    }
+    try {
+      await logout()
+    } catch (e) {
+      console.warn('TestPage become seller logout:', e)
+    } finally {
+      sessionStorage.removeItem('clerk_logout_in_progress')
+    }
+    requestOpenLoginModal({ wizard: false })
+    navigate('/', { replace: true })
+  }, [user, signOut, navigate])
+
+  const handleSellObjectFromHistory = useCallback(async () => {
+    const role = String(
+      localStorage.getItem('userRole') || getUserData()?.role || 'buyer'
+    ).toLowerCase()
+    if (role === 'seller' || role === 'owner') {
+      navigate('/owner/property/new')
+      return
+    }
+    await handleBecomeSellerRegister()
+  }, [handleBecomeSellerRegister, navigate])
+
+  const historyPurchaseTermsBySection = useCallback((sectionKey) => {
+    if (sectionKey === 'auction') {
+      return 'Условия: победа в торгах, оплата депозита в срок и завершение сделки.'
+    }
+    if (sectionKey === 'reserve') {
+      return 'Условия: резерв 10% и последующая полная оплата объекта.'
+    }
+    if (sectionKey === 'shares') {
+      return 'Условия: фиксируются количество долей и цена за долю на дату покупки.'
+    }
+    return ''
+  }, [])
+
+  const handleSellObjectPromptConfirm = useCallback(async () => {
+    setIsSellObjectPromptOpen(false)
+    await handleSellObjectFromHistory()
+  }, [handleSellObjectFromHistory])
 
   useEffect(() => {
     dbUserRowRef.current = dbUserRow
@@ -1870,21 +1927,7 @@ function TestPage() {
                   <h3 id="test-data-panel-title" className="test-data-panel__title">
                     Данные профиля
                   </h3>
-                  <button
-                    type="button"
-                    className={`test-data-panel__save${
-                      shouldPulseSaveButton ? ' test-data-panel__save--pulse' : ''
-                    }`}
-                    onClick={handleProfilePanelSaveClick}
-                    disabled={
-                      dbUserLoading ||
-                      !resolvedNumericUserId ||
-                      profileFieldsLocked ||
-                      profileSaveAllLoading
-                    }
-                  >
-                    {profileSaveAllLoading ? 'Сохранение…' : 'Сохранить'}
-                  </button>
+                  <span className="test-data-panel__toolbar-spacer" aria-hidden />
                 </div>
                 <p className="test-data-panel__hint">
                   Поля сохраняются автоматически: при паузе в наборе или при уходе с поля.
@@ -1896,6 +1939,7 @@ function TestPage() {
                     Не удалось определить профиль. Обновите страницу или войдите снова.
                   </p>
                 ) : (
+                  <>
                   <div className="test-data-panel__sections">
                     <section className="test-data-panel__section" aria-labelledby="profile-section-main">
                       <h4 id="profile-section-main" className="test-data-panel__section-title">
@@ -2115,6 +2159,24 @@ function TestPage() {
                       </div>
                     </section>
                   </div>
+                  <div className="test-data-panel__footer-actions">
+                    <button
+                      type="button"
+                      className={`test-data-panel__save${
+                        shouldPulseSaveButton ? ' test-data-panel__save--pulse' : ''
+                      }`}
+                      onClick={handleProfilePanelSaveClick}
+                      disabled={
+                        dbUserLoading ||
+                        !resolvedNumericUserId ||
+                        profileFieldsLocked ||
+                        profileSaveAllLoading
+                      }
+                    >
+                      {profileSaveAllLoading ? 'Сохранение…' : 'Сохранить'}
+                    </button>
+                  </div>
+                  </>
                 )}
               </div>
             </div>
@@ -2166,11 +2228,24 @@ function TestPage() {
                         className="test-history-section"
                         aria-labelledby={`hist-sec-${section.key}`}
                       >
-                        <h4 id={`hist-sec-${section.key}`} className="test-history-section__title">
-                          {section.title}
-                        </h4>
+                        <div className={`test-history-section__head test-history-section__head--${section.key}`}>
+                          <h4 id={`hist-sec-${section.key}`} className="test-history-section__title">
+                            {section.key === 'reserve' ? 'Купить сейчас' : section.title}
+                          </h4>
+                          {['auction', 'reserve', 'shares'].includes(section.key) ? (
+                            <span className="test-history-section__pill">
+                              {section.key === 'auction'
+                                ? 'Сделки аукциона'
+                                : section.key === 'reserve'
+                                  ? 'Фиксированная цена'
+                                  : 'Долевые покупки'}
+                            </span>
+                          ) : null}
+                        </div>
                         <div className="test-history-section__grid">
                           {section.items.map((item) => {
+                            const isPurchasedSection = ['auction', 'reserve', 'shares'].includes(section.key)
+                            const termsText = isPurchasedSection ? historyPurchaseTermsBySection(section.key) : ''
                             const cardBody = (
                               <>
                                 <div className="test-history-mini-card__thumb">
@@ -2184,23 +2259,41 @@ function TestPage() {
                                 <div className="test-history-mini-card__text">
                                   <span className="test-history-mini-card__title">{item.title}</span>
                                   <span className="test-history-mini-card__sub">{item.subtitle}</span>
+                                  <div className="test-history-mini-card__meta">
+                                    <span className="test-history-mini-card__meta-item">
+                                      <b>Сумма:</b> {item.amount || '—'}
+                                    </span>
+                                    <span className="test-history-mini-card__meta-item">
+                                      <b>Дата:</b> {item.purchaseDate || '—'}
+                                    </span>
+                                  </div>
+                                  {termsText ? (
+                                    <span className="test-history-mini-card__terms">{termsText}</span>
+                                  ) : null}
+                                  <div className="test-history-mini-card__actions">
+                                    {item.href ? (
+                                      <Link
+                                        to={item.href}
+                                        className="test-history-mini-card__action-btn"
+                                        onClick={() => setHistorySheetOpen(false)}
+                                      >
+                                        Открыть объект
+                                      </Link>
+                                    ) : null}
+                                    {isPurchasedSection ? (
+                                      <button
+                                        type="button"
+                                        className="test-history-mini-card__action-btn test-history-mini-card__action-btn--sell"
+                                        onClick={() => setIsSellObjectPromptOpen(true)}
+                                      >
+                                        Продать объект
+                                      </button>
+                                    ) : null}
+                                  </div>
                                 </div>
                               </>
                             )
-                            return item.href ? (
-                              <Link
-                                key={item.id}
-                                to={item.href}
-                                className="test-history-mini-card"
-                                onClick={() => setHistorySheetOpen(false)}
-                              >
-                                {cardBody}
-                              </Link>
-                            ) : (
-                              <div key={item.id} className="test-history-mini-card">
-                                {cardBody}
-                              </div>
-                            )
+                            return <div key={item.id} className="test-history-mini-card">{cardBody}</div>
                           })}
                         </div>
                       </section>
@@ -2369,6 +2462,7 @@ function TestPage() {
                       {QUICK_LINKS.map((link) => {
                         const Icon = link.icon
                         const isLogout = link.action === 'logout'
+                        const isBecomeSeller = link.action === 'becomeSeller'
                         const inner = (
                           <>
                             <span className="test-quick-pill__icon">
@@ -2393,6 +2487,18 @@ function TestPage() {
                             </button>
                           )
                         }
+                        if (isBecomeSeller) {
+                          return (
+                            <button
+                              key="quick-become-seller"
+                              type="button"
+                              className="test-quick-pill"
+                              onClick={handleBecomeSellerRegister}
+                            >
+                              {inner}
+                            </button>
+                          )
+                        }
                         return (
                           <Link key={link.to} to={link.to} className="test-quick-pill">
                             {inner}
@@ -2404,18 +2510,6 @@ function TestPage() {
                 </div>
 
                 <aside className="test-bento__rail">
-                  <TransactionHistoryCard
-                    className="test-bento__rail-card"
-                    totalLabel="Событий в истории"
-                    totalAmountDisplay={historyLoading ? '…' : String(historyCount)}
-                    subtitle="Аукционы, резервы, доли и ставки — как на странице «История»"
-                    listTitle="Последние события"
-                    items={recentHistoryRows}
-                    defaultSelectedId={recentHistoryRows[0]?.id}
-                    historyHref="/history"
-                    historyButtonLabel="Вся история"
-                  />
-
                   <section className="test-panel test-panel--tight" aria-labelledby="test-docs-title">
                     <h2 id="test-docs-title" className="test-panel__title test-panel__title--sm">
                       Документы
@@ -2552,6 +2646,40 @@ function TestPage() {
         bonusesRef={directionAuctionRef}
         debtsRef={directionDebtsRef}
       />
+
+      {isSellObjectPromptOpen ? (
+        <div className="test-sell-prompt-modal-root">
+          <div
+            className="test-sell-prompt-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="test-sell-prompt-title"
+          >
+            <h3 id="test-sell-prompt-title" className="test-sell-prompt-modal__title">
+              Чтобы продать объект зарегистрируйтесь как продавец
+            </h3>
+            <p className="test-sell-prompt-modal__text">
+              Ваш объект автоматически перенесется в новый кабинет.
+            </p>
+            <div className="test-sell-prompt-modal__actions">
+              <button
+                type="button"
+                className="test-sell-prompt-modal__btn test-sell-prompt-modal__btn--ghost"
+                onClick={() => setIsSellObjectPromptOpen(false)}
+              >
+                Отмена
+              </button>
+              <button
+                type="button"
+                className="test-sell-prompt-modal__btn"
+                onClick={handleSellObjectPromptConfirm}
+              >
+                Продолжить
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   )
 }

@@ -9,6 +9,7 @@ import BuyNowCompletedHistoryCard from '../components/BuyNowCompletedHistoryCard
 import BuyerCabinetSidebar from '../components/BuyerCabinetSidebar'
 import { ensureCanOpenProperty } from '../utils/propertyAccessGuard'
 import { fetchVerificationStatus } from '../utils/verificationStatusApi'
+import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
 import i18n from '../i18n/config'
 import './History.css'
 import './Profile.css'
@@ -307,6 +308,24 @@ const History = () => {
   const [isLoadingSharePurchases, setIsLoadingSharePurchases] = useState(true)
   const [bidHistory, setBidHistory] = useState([])
   const [isLoadingBids, setIsLoadingBids] = useState(true)
+
+  const handleSellObject = () => {
+    const role = String(
+      localStorage.getItem('userRole') || getUserData()?.role || 'buyer'
+    ).toLowerCase()
+    if (role === 'seller' || role === 'owner') {
+      navigate('/owner/property/new')
+      return
+    }
+    try {
+      sessionStorage.setItem('login_modal_mode', 'register')
+      sessionStorage.setItem('login_modal_user_role', 'seller')
+    } catch {
+      /* ignore */
+    }
+    requestOpenLoginModal({ wizard: false })
+    navigate('/', { replace: true })
+  }
 
   const loadReservationPurchases = async () => {
     if (!userId) return
@@ -660,25 +679,60 @@ const History = () => {
                   </div>
                 ) : (
                   <>
-                    {purchaseHistory.map((purchase) => (
-                      <WonPropertyCard
-                        key={purchase.id}
-                        purchase={purchase}
-                        formatPrice={formatPrice}
-                        formatDate={formatDate}
-                      />
-                    ))}
-                    {!isLoadingReservations &&
-                      completedBuyNowReservations.map((row) => (
-                        <BuyNowCompletedHistoryCard
-                          key={row.id || row.dedupe_key}
-                          row={row}
-                          formatPrice={formatPrice}
-                          formatDate={formatDate}
-                          sharePurchaseImageSrc={sharePurchaseImageSrc}
-                          placeholderSrc={SHARE_PURCHASE_IMAGE_PLACEHOLDER}
-                        />
-                      ))}
+                    {purchaseHistory.length > 0 ? (
+                      <div className="history-purchase-group">
+                        <h3 className="history-purchase-group__title">
+                          {t('buyerHistory_auctionBids')}
+                        </h3>
+                        <p className="history-purchase-group__subtitle">
+                          {t('buyerHistory_termsAuctionPurchased', {
+                            defaultValue:
+                              'Покупка с аукциона: после победы вносится резерв/депозит, затем завершается сделка.',
+                          })}
+                        </p>
+                        {purchaseHistory.map((purchase) => (
+                          <WonPropertyCard
+                            key={purchase.id}
+                            purchase={purchase}
+                            formatPrice={formatPrice}
+                            formatDate={formatDate}
+                            purchaseTerms={t('buyerHistory_termsAuctionPurchased', {
+                              defaultValue:
+                                'Условия покупки: победа в торгах, оплата депозита в срок и завершение сделки.',
+                            })}
+                            onSellObject={handleSellObject}
+                          />
+                        ))}
+                      </div>
+                    ) : null}
+                    {!isLoadingReservations && completedBuyNowReservations.length > 0 ? (
+                      <div className="history-purchase-group">
+                        <h3 className="history-purchase-group__title">
+                          {t('buyerHistory_buyNowSection', { defaultValue: 'Купить сейчас' })}
+                        </h3>
+                        <p className="history-purchase-group__subtitle">
+                          {t('buyerHistory_termsBuyNowPurchased', {
+                            defaultValue:
+                              'Покупка по фиксированной цене: резерв 10% и последующая полная оплата объекта.',
+                          })}
+                        </p>
+                        {completedBuyNowReservations.map((row) => (
+                          <BuyNowCompletedHistoryCard
+                            key={row.id || row.dedupe_key}
+                            row={row}
+                            formatPrice={formatPrice}
+                            formatDate={formatDate}
+                            sharePurchaseImageSrc={sharePurchaseImageSrc}
+                            placeholderSrc={SHARE_PURCHASE_IMAGE_PLACEHOLDER}
+                            purchaseTerms={t('buyerHistory_termsBuyNowPurchased', {
+                              defaultValue:
+                                'Условия покупки: внесен резерв, подтверждена сделка, объект закреплен за вами.',
+                            })}
+                            onSellObject={handleSellObject}
+                          />
+                        ))}
+                      </div>
+                    ) : null}
                     {isLoadingReservations && purchaseHistory.length === 0 ? (
                       <div className="empty-state" style={{ marginTop: 16 }}>
                         <p>{t('buyerHistory_loadingReserves')}</p>
@@ -803,10 +857,16 @@ const History = () => {
                     <p>{t('buyerHistory_loadingShares')}</p>
                   </div>
                 ) : sharePurchases.length > 0 ? (
-                  <div className="history-reservations" style={{ marginTop: 24 }}>
+                  <div className="history-reservations history-purchase-group" style={{ marginTop: 24 }}>
                     <h3 className="section-subtitle" style={{ marginBottom: 12, fontSize: '1.1rem' }}>
                       {t('buyerHistory_shareSection')}
                     </h3>
+                    <p className="history-purchase-group__subtitle">
+                      {t('buyerHistory_termsSharesPurchased', {
+                        defaultValue:
+                          'Покупка долей: фиксируется количество долей и цена за долю на дату сделки.',
+                      })}
+                    </p>
                     {sharePurchases.map((row) => {
                       const cur = (row.currency || 'USD').toUpperCase()
                       const shareTo = `/shares/${row.property_type}-${row.property_id}`
@@ -840,6 +900,12 @@ const History = () => {
                                 {[row.property_location, row.property_type].filter(Boolean).join(' · ')}
                               </p>
                             )}
+                            <p className="history-purchase-terms">
+                              {t('buyerHistory_termsSharesPurchased', {
+                                defaultValue:
+                                  'Условия покупки: количество долей и стоимость зафиксированы при оплате.',
+                              })}
+                            </p>
                             <div className="card-details">
                               <div className="detail-item">
                                 <span className="detail-label">{t('buyerHistory_sharesBought')}</span>
@@ -865,6 +931,13 @@ const History = () => {
                             <Link to={shareTo} className="card-button">
                               {t('buyerHistory_shareOpenObject')}
                             </Link>
+                            <button
+                              type="button"
+                              className="card-button card-button--secondary"
+                              onClick={handleSellObject}
+                            >
+                              Продать объект
+                            </button>
                           </div>
                         </div>
                       )

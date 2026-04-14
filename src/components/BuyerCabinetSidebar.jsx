@@ -147,13 +147,6 @@ export default function BuyerCabinetSidebar({
           </svg>
           <span>{t('subscriptions')}</span>
         </Link>
-        <Link to="/history" className={navClass('/history')}>
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden>
-            <rect x="2" y="4" width="16" height="12" rx="2" stroke="currentColor" strokeWidth="1.5" />
-            <path d="M6 8H14M6 12H10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-          </svg>
-          <span>{t('history')}</span>
-        </Link>
         <Link to="/chat?manager=1" className={navClass('/chat')}>
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden>
             <path

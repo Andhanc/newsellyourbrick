@@ -9,7 +9,7 @@ import './WonPropertyCard.css'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
 
-const WonPropertyCard = ({ purchase, formatPrice, formatDate }) => {
+const WonPropertyCard = ({ purchase, formatPrice, formatDate, purchaseTerms, onSellObject }) => {
   const { t, i18n } = useTranslation()
   const billingLocale = (() => {
     const code = (i18n.language || 'ru').split('-')[0]
@@ -125,6 +125,9 @@ const WonPropertyCard = ({ purchase, formatPrice, formatDate }) => {
           <p className="won-property-card__location">
             {purchase.location || t('buyerHistory_fallbackAddress')}
           </p>
+          {purchaseTerms ? (
+            <p className="won-property-card__terms">{purchaseTerms}</p>
+          ) : null}
           
           <div className="won-property-card__quick-info">
             <div className="quick-info__item">
@@ -161,6 +164,15 @@ const WonPropertyCard = ({ purchase, formatPrice, formatDate }) => {
               <span>{t('buyerWon_details')}</span>
               {isDetailsOpen ? <FiChevronUp /> : <FiChevronDown />}
             </button>
+            {purchase.depositPaid && typeof onSellObject === 'function' ? (
+              <button
+                type="button"
+                className="won-property-card__sell-button"
+                onClick={onSellObject}
+              >
+                Продать объект
+              </button>
+            ) : null}
           </div>
         </div>
       </div>
