@@ -60,6 +60,7 @@ server/uploads/
 *.gif
 *.pdf
 !public/documents/reserve-terms.pdf
+!Document.pdf
 *.doc
 *.docx
 
