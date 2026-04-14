@@ -273,6 +273,8 @@
   "propertyDetailAuctionWinner": "Победитель аукциона",
   "auctionCircularEndedShort": "Завершён",
   "auctionCardSeeResult": "Итог аукциона",
+  "auctionSoldOutLabel": "Sold Out",
+  "auctionResultSummary": "Итоги аукциона",
   "propertyDetailAuctionCompleted": "Аукцион завершён",
   "propertyDetailBuyNowPurchaseCompleted": "Сделка «Купить сейчас» завершена",
   "propertyDetailWinnerUserId": "Номер игрока: {{id}}",

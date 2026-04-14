@@ -1617,8 +1617,31 @@ export function registerStripeBillingRoutes(app) {
       if (!Number.isFinite(userId)) {
         return res.status(400).json({ success: false, error: 'Некорректный userId' });
       }
-      const rows = await sharePurchaseQueries.listByBuyerEnriched(userId, 100);
-      return res.json({ success: true, data: rows });
+      const user = await userQueries.getById(userId);
+      const email = user?.email ? String(user.email).trim().toLowerCase() : '';
+      let userIds = [userId];
+
+      // Один и тот же человек может иметь buyer+seller на одном email.
+      // В таком кейсе показываем покупки долей в обоих кабинетах.
+      if (email) {
+        const sameEmailUsers = await userQueries.getAllByEmail(email);
+        const ids = sameEmailUsers
+          .map((u) => Number(u.id))
+          .filter((id) => Number.isFinite(id) && id > 0);
+        if (ids.length > 0) {
+          userIds = Array.from(new Set(ids));
+        }
+      }
+
+      const allRows = await Promise.all(
+        userIds.map((id) => sharePurchaseQueries.listByBuyerEnriched(id, 100))
+      );
+      const rows = allRows
+        .flat()
+        .filter(Boolean)
+        .sort((a, b) => new Date(b.purchase_date).getTime() - new Date(a.purchase_date).getTime());
+      const dedupedRows = Array.from(new Map(rows.map((row) => [row.id, row])).values());
+      return res.json({ success: true, data: dedupedRows });
     } catch (err) {
       console.error('[Stripe] share-purchases:', err?.message || err);
       return res.status(500).json({ success: false, error: err?.message });

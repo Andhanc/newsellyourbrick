@@ -273,6 +273,8 @@
   "propertyDetailAuctionWinner": "Auction winner",
   "auctionCircularEndedShort": "Ended",
   "auctionCardSeeResult": "Auction result",
+  "auctionSoldOutLabel": "Sold Out",
+  "auctionResultSummary": "Auction summary",
   "propertyDetailAuctionCompleted": "Auction completed",
   "propertyDetailBuyNowPurchaseCompleted": "Buy now purchase completed",
   "propertyDetailWinnerUserId": "User ID: {{id}}",

@@ -477,6 +477,7 @@ const PropertyList = ({
                     : null
                 
                 const isTimerExpired = isEffectiveAuctionTimerExpired(property)
+                const isAuctionEndedCard = isTimerExpired && hasTimer
                 const buyNowWinnerId = property.buy_now_winner_user_id
 
                 // Зеленый линейный таймер (PropertyTimer) — преаукцион, пока не началась фаза кругового таймера
@@ -534,7 +535,7 @@ const PropertyList = ({
                 return (
             <div 
               key={property.id} 
-              className={`property-card${isTimerExpired && hasTimer ? ' property-card--auction-ended' : ''}`}
+              className={`property-card${isAuctionEndedCard ? ' property-card--auction-ended' : ''}`}
               onClick={(e) => {
                 // Проверяем, что клик не по кнопке или ссылке
                 if (e.target.closest('button') || e.target.closest('a')) {
@@ -545,6 +546,23 @@ const PropertyList = ({
               }}
               style={{ cursor: 'pointer' }}
             >
+              {isAuctionEndedCard ? (
+                <div className="property-auction-ended-overlay property-auction-ended-overlay--full-card">
+                  <span className="property-auction-ended-overlay__title">{t('auctionSoldOutLabel')}</span>
+                  <button
+                    type="button"
+                    className="property-auction-ended-overlay__result-link"
+                    onClick={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      openProperty(property)
+                    }}
+                  >
+                    <span>{t('auctionResultSummary')}</span>
+                    <span aria-hidden>→</span>
+                  </button>
+                </div>
+              ) : null}
               <div className="property-link">
                 <div className="property-image-container">
                   <img 
@@ -702,25 +720,23 @@ const PropertyList = ({
                       </>
                     )}
                     <div className="property-actions" onClick={(e) => e.stopPropagation()}>
-                      <button 
-                        className={`btn btn-primary btn-liquid-glass${isTimerExpired && hasTimer ? ' btn-liquid-glass--auction-ended' : ''}`}
-                        onClick={(e) => {
-                          e.preventDefault()
-                          e.stopPropagation()
-                          openProperty(property)
-                        }}
-                        disabled={isReserved}
-                        style={{
-                          opacity: isReserved ? 0.5 : 1,
-                          cursor: isReserved ? 'not-allowed' : 'pointer'
-                        }}
-                      >
-                        {isReserved
-                          ? t('objectReserved')
-                          : isTimerExpired && hasTimer
-                            ? t('auctionCardSeeResult')
-                            : t('placeBid')}
-                      </button>
+                      {!isAuctionEndedCard ? (
+                        <button 
+                          className="btn btn-primary btn-liquid-glass"
+                          onClick={(e) => {
+                            e.preventDefault()
+                            e.stopPropagation()
+                            openProperty(property)
+                          }}
+                          disabled={isReserved}
+                          style={{
+                            opacity: isReserved ? 0.5 : 1,
+                            cursor: isReserved ? 'not-allowed' : 'pointer'
+                          }}
+                        >
+                          {isReserved ? t('objectReserved') : t('placeBid')}
+                        </button>
+                      ) : null}
                       {hasBuyNowPrice && !isAuctionListingEnded(property) && (
                         <button 
                           className="btn btn-buy-now btn-liquid-glass-buy"

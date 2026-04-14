@@ -108,6 +108,7 @@
   background: #fff;
   border-radius: var(--am-radius);
   border: 1px solid var(--am-border);
+  position: relative;
   box-shadow: var(--am-shadow);
   overflow: hidden;
   font-family: inherit;

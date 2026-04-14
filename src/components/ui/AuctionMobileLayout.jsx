@@ -379,6 +379,7 @@ function AuctionMobileItem({
       : null
 
   const isTimerExpired = isEffectiveAuctionTimerExpired(property)
+  const isAuctionEndedCard = isTimerExpired && hasTimer
   const buyNowWinnerId = property.buy_now_winner_user_id
 
   const greenOnImage =
@@ -465,12 +466,29 @@ function AuctionMobileItem({
           'auction-mobile-item',
           view === 'list' && 'auction-mobile-item--list auction-mobile--list',
           view === 'card' && 'auction-mobile-item--card auction-mobile--card',
-          isTimerExpired && hasTimer && 'auction-mobile-item--ended',
+          isAuctionEndedCard && 'auction-mobile-item--ended',
         )}
         onClick={openProperty}
         style={{ cursor: 'pointer' }}
         whileTap={reduceMotion ? undefined : { scale: 0.992 }}
       >
+        {isAuctionEndedCard ? (
+          <div className="property-auction-ended-overlay property-auction-ended-overlay--full-card">
+            <span className="property-auction-ended-overlay__title">{t('auctionSoldOutLabel')}</span>
+            <button
+              type="button"
+              className="property-auction-ended-overlay__result-link"
+              onClick={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                goDetail()
+              }}
+            >
+              <span>{t('auctionResultSummary')}</span>
+              <span aria-hidden>→</span>
+            </button>
+          </div>
+        ) : null}
         <div className="auction-mobile-item__media">
           <div className="auction-mobile-image-wrap">
             <img src={propertyImage} alt={propertyTitle} className="rounded-[inherit]" />
@@ -630,30 +648,27 @@ function AuctionMobileItem({
             )}
             onClick={(e) => e.stopPropagation()}
           >
-            <button
-              type="button"
-              className={cn(
-                'btn btn-primary btn-liquid-glass',
-                isTimerExpired && hasTimer && 'btn-liquid-glass--auction-ended',
-              )}
-              onClick={(e) => {
-                e.preventDefault()
-                e.stopPropagation()
-                goDetail()
-              }}
-              disabled={isReserved}
-              style={{
-                opacity: isReserved ? 0.5 : 1,
-                cursor: isReserved ? 'not-allowed' : 'pointer',
-              }}
-            >
-              {isReserved
-                ? t('objectReserved')
-                : isTimerExpired && hasTimer
-                  ? t('auctionCardSeeResult')
-                  : t('placeBid')}
-            </button>
-            {showBuyNow && (
+            {!isAuctionEndedCard ? (
+              <button
+                type="button"
+                className={cn(
+                  'btn btn-primary btn-liquid-glass',
+                )}
+                onClick={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  goDetail()
+                }}
+                disabled={isReserved}
+                style={{
+                  opacity: isReserved ? 0.5 : 1,
+                  cursor: isReserved ? 'not-allowed' : 'pointer',
+                }}
+              >
+                {isReserved ? t('objectReserved') : t('placeBid')}
+              </button>
+            ) : null}
+            {showBuyNow && !isAuctionListingEnded(property) && (
               <button
                 type="button"
                 className="btn btn-buy-now btn-liquid-glass-buy"
@@ -670,12 +685,12 @@ function AuctionMobileItem({
                   }
                   goDetail()
                 }}
-                disabled={isReserved || isTimerExpired || !buyNowEmailOk}
+                disabled={isReserved || !buyNowEmailOk}
                 title={!buyNowEmailOk ? t('buyNowEmailRequired') : undefined}
                 style={{
-                  opacity: isReserved || isTimerExpired || !buyNowEmailOk ? 0.45 : 1,
+                  opacity: isReserved || !buyNowEmailOk ? 0.45 : 1,
                   cursor:
-                    isReserved || isTimerExpired || !buyNowEmailOk ? 'not-allowed' : 'pointer',
+                    isReserved || !buyNowEmailOk ? 'not-allowed' : 'pointer',
                 }}
               >
                 {isReserved ? t('objectReserved') : t('buyNowSectionTitle')}
