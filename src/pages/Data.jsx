@@ -10,7 +10,6 @@ import EmailVerificationModal from '../components/EmailVerificationModal'
 import PassportRecognitionModal from '../components/PassportRecognitionModal'
 import CountrySelect, { countries as countryList } from '../components/CountrySelect'
 import VerificationToast from '../components/VerificationToast'
-import { extractPassportData } from '../services/aiService'
 import { showNotification } from '../utils/toastHelper'
 import { fetchVerificationStatus } from '../utils/verificationStatusApi'
 import './Data.css'
@@ -1285,12 +1284,18 @@ const Data = () => {
     
     try {
       // Динамически импортируем Tesseract.js только при необходимости
-      const Tesseract = await import('tesseract.js')
+      const tesseractModule = await import('tesseract.js')
+      const recognize =
+        tesseractModule.recognize ||
+        tesseractModule.default?.recognize
+      if (typeof recognize !== 'function') {
+        throw new Error('OCR engine недоступен')
+      }
       
       console.log('📸 Начало распознавания паспорта...')
       
       // Распознаем текст с помощью Tesseract.js
-      const { data: { text } } = await Tesseract.recognize(file, 'rus+eng', {
+      const { data: { text } } = await recognize(file, 'eng', {
         logger: (m) => {
           if (m.status === 'recognizing text') {
             console.log('🔄 Прогресс:', Math.round(m.progress * 100) + '%')
@@ -1310,7 +1315,8 @@ const Data = () => {
       })
       
       if (!response.ok) {
-        throw new Error('Ошибка при извлечении данных из паспорта')
+        const errorPayload = await response.json().catch(() => null)
+        throw new Error(errorPayload?.error || 'Ошибка при извлечении данных из паспорта')
       }
       
       const result = await response.json()

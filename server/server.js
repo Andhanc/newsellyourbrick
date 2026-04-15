@@ -1930,17 +1930,82 @@ app.post('/api/users/:id/upload-passport', upload.single('passport_photo'), asyn
 
 // ========== РОУТЫ ДЛЯ РАСПОЗНАВАНИЯ ПАСПОРТА ==========
 
-const AI_API_URL = "https://api.intelligence.io.solutions/api/v1/chat/completions";
-const AI_MODEL = "deepseek-ai/DeepSeek-V3.2";
-const LEGACY_INTELLIGENCE_IO_API_KEY =
-  "io-v2-eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJvd25lciI6ImE5YzAwNjc4LTFjNzEtNDY5Ny1hY2NiLTliYTU0NTdhMWU4NSIsImV4cCI6NDkyMTI0NDg2NX0.E92VNc-ri_VH1bRLZfJ4seHnvr_hdL0vzgBbRC97WYDaENrvqU-jV1gYxqG128Tvyf8yfEczZ9hfpdKeZ2E0UA";
-function getIntelligenceIoApiKeyServer() {
-  const v =
-    process.env.INTELLIGENCE_IO_API_KEY ||
-    process.env.VITE_INTELLIGENCE_IO_API_KEY ||
-    "";
-  const trimmed = String(v).trim();
-  return trimmed || LEGACY_INTELLIGENCE_IO_API_KEY;
+const MRZ_LINE_MIN_LENGTH = 30;
+const MRZ_TD3_LINE_LENGTH = 44;
+
+function cleanupMrzLine(rawLine = "") {
+  return String(rawLine)
+    .toUpperCase()
+    .replace(/[^A-Z0-9<]/g, "")
+    .trim();
+}
+
+function normalizePersonName(raw = "") {
+  const words = String(raw)
+    .replace(/</g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .split(" ")
+    .filter(Boolean);
+
+  if (!words.length) return null;
+  return words
+    .map((word) => word.charAt(0) + word.slice(1).toLowerCase())
+    .join(" ");
+}
+
+function parseMrzTd3Lines(line1, line2) {
+  const l1 = cleanupMrzLine(line1).padEnd(MRZ_TD3_LINE_LENGTH, "<").slice(0, MRZ_TD3_LINE_LENGTH);
+  const l2 = cleanupMrzLine(line2).padEnd(MRZ_TD3_LINE_LENGTH, "<").slice(0, MRZ_TD3_LINE_LENGTH);
+
+  if (!l1.startsWith("P<")) return null;
+
+  const namesRaw = l1.slice(5);
+  const [lastNameRaw = "", firstNamesRaw = ""] = namesRaw.split("<<");
+  const passportNumberRaw = l2.slice(0, 9).replace(/</g, "").trim();
+  const personalNumberRaw = l2.slice(28, 42).replace(/</g, "").trim();
+
+  if (!passportNumberRaw) return null;
+
+  // Для совместимости текущей формы:
+  // passportSeries — первые 2 символа номера, passportNumber — остаток (или весь номер, если короткий).
+  const passportSeries =
+    passportNumberRaw.length > 2 ? passportNumberRaw.slice(0, 2) : null;
+  const passportNumber =
+    passportNumberRaw.length > 2 ? passportNumberRaw.slice(2) : passportNumberRaw;
+
+  return {
+    firstName: normalizePersonName(firstNamesRaw),
+    lastName: normalizePersonName(lastNameRaw),
+    middleName: null,
+    passportSeries,
+    passportNumber: passportNumber || null,
+    identificationNumber: personalNumberRaw || null,
+    address: null,
+    email: null,
+    source: "mrz_td3",
+  };
+}
+
+function extractPassportDataFromMrz(recognizedText = "") {
+  const lines = String(recognizedText)
+    .split(/\r?\n/)
+    .map((line) => cleanupMrzLine(line))
+    .filter((line) => line.length >= MRZ_LINE_MIN_LENGTH && /[<]/.test(line));
+
+  if (!lines.length) return null;
+
+  // Ищем типичный паспортный MRZ (TD3): 2 строки по 44 символа, первая начинается с P<
+  for (let i = 0; i < lines.length - 1; i += 1) {
+    const first = lines[i];
+    const second = lines[i + 1];
+    if (!first.startsWith("P<")) continue;
+    if (!second || second.length < MRZ_LINE_MIN_LENGTH) continue;
+    const parsed = parseMrzTd3Lines(first, second);
+    if (parsed) return parsed;
+  }
+
+  return null;
 }
 
 /**
@@ -1949,132 +2014,28 @@ function getIntelligenceIoApiKeyServer() {
  */
 app.post('/api/passport/extract', async (req, res) => {
   try {
-    const { recognizedText } = req.body;
+    const recognizedText = req.body?.recognizedText;
 
     if (!recognizedText || !recognizedText.trim()) {
       return res.status(400).json({ success: false, error: 'Распознанный текст не предоставлен' });
     }
 
-    console.log('🤖 Извлечение данных из текста паспорта...');
+    console.log('🛂 Извлечение данных из MRZ паспорта...');
 
-    const systemPrompt = `Ты специалист по извлечению данных из документов. Твоя задача - проанализировать распознанный текст с фото паспорта и извлечь структурированные данные.
+    const extractedData = extractPassportDataFromMrz(recognizedText);
 
-**ТВОЯ РОЛЬ:**
-- Анализируй предоставленный текст, распознанный с фото паспорта
-- Извлекай максимально много информации для заполнения полей формы пользователя
-- Будь точным и аккуратным при извлечении данных
+    if (!extractedData) {
+      return res.status(422).json({
+        success: false,
+        error: 'Не удалось распознать MRZ-зону паспорта. Попробуйте фото более высокого качества (нижние 2 строки паспорта должны быть видны полностью).',
+      });
+    }
 
-**ПОЛЯ ДЛЯ ИЗВЛЕЧЕНИЯ:**
-1. firstName (Имя) - имя владельца паспорта
-2. lastName (Фамилия) - фамилия владельца паспорта
-3. middleName (Отчество) - отчество, если есть
-4. passportSeries (Серия паспорта) - первые 2 цифры серии паспорта
-5. passportNumber (Номер паспорта) - номер паспорта (обычно 7 цифр)
-6. identificationNumber (Идентификационный номер) - персональный идентификационный номер
-7. address (Адрес) - адрес регистрации/проживания
-8. email (Email) - если есть в документе
-
-**ВАЖНО:**
-- Извлекай только данные, которые точно присутствуют в тексте
-- Если поле не найдено, оставляй его пустым (null)
-- Для passportSeries извлекай только первые 2 цифры
-- Для passportNumber извлекай только цифры (без серии)
-- Нормализуй имена и фамилии (первая буква заглавная, остальные строчные)
-- Если текст не содержит данных паспорта, верни объект с null значениями
-
-**ФОРМАТ ОТВЕТА:**
-Отвечай ТОЛЬКО в формате JSON (без дополнительного текста):
-{
-  "firstName": "Имя или null",
-  "lastName": "Фамилия или null",
-  "middleName": "Отчество или null",
-  "passportSeries": "XX или null",
-  "passportNumber": "XXXXXXX или null",
-  "identificationNumber": "XXXXXXXXXXXXX или null",
-  "address": "Адрес или null",
-  "email": "email@example.com или null"
-}`;
-
-    const messages = [
-      { role: "system", content: systemPrompt },
-      { 
-        role: "user", 
-        content: `Распознанный текст с фото паспорта:\n\n${recognizedText}\n\nИзвлеки данные в формате JSON.`
-      }
-    ];
-
-    const headers = {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${getIntelligenceIoApiKeyServer()}`
-    };
-
-    const payload = {
-      "model": AI_MODEL,
-      "messages": messages,
-      "temperature": 0.1 // Низкая температура для более точного извлечения
-    };
-
-    const aiResponse = await fetch(AI_API_URL, {
-      method: 'POST',
-      headers: headers,
-      body: JSON.stringify(payload),
+    console.log('✅ Данные успешно извлечены:', extractedData);
+    res.json({
+      success: true,
+      data: extractedData,
     });
-
-    if (!aiResponse.ok) {
-      const errorText = await aiResponse.text();
-      console.error(`AI API Error ${aiResponse.status}: ${errorText}`);
-      throw new Error(`AI API Error: ${aiResponse.status}`);
-    }
-
-    const aiData = await aiResponse.json();
-
-    if (aiData.choices && aiData.choices.length > 0) {
-      let messageContent = aiData.choices[0].message?.content || "";
-
-      // Удаляем возможные служебные метки
-      while (messageContent.includes("</think>")) {
-        messageContent = messageContent.split("</think>").pop().trim();
-      }
-      messageContent = messageContent.replace(/<\/?redacted_reasoning>/g, "").trim();
-      messageContent = messageContent.replace(/<\/?think>/g, "").trim();
-
-      // Пытаемся распарсить JSON из ответа
-      try {
-        let jsonText = messageContent;
-        jsonText = jsonText.replace(/```json\s*/g, '').replace(/```\s*/g, '');
-        
-        const jsonMatch = jsonText.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-          const parsed = JSON.parse(jsonMatch[0]);
-          
-          // Валидация и нормализация данных
-          const extractedData = {
-            firstName: parsed.firstName && parsed.firstName !== 'null' ? parsed.firstName.trim() : null,
-            lastName: parsed.lastName && parsed.lastName !== 'null' ? parsed.lastName.trim() : null,
-            middleName: parsed.middleName && parsed.middleName !== 'null' ? parsed.middleName.trim() : null,
-            passportSeries: parsed.passportSeries && parsed.passportSeries !== 'null' ? parsed.passportSeries.trim() : null,
-            passportNumber: parsed.passportNumber && parsed.passportNumber !== 'null' ? parsed.passportNumber.trim() : null,
-            identificationNumber: parsed.identificationNumber && parsed.identificationNumber !== 'null' ? parsed.identificationNumber.trim() : null,
-            address: parsed.address && parsed.address !== 'null' ? parsed.address.trim() : null,
-            email: parsed.email && parsed.email !== 'null' ? parsed.email.trim() : null
-          };
-
-          console.log('✅ Данные успешно извлечены:', extractedData);
-          
-          res.json({
-            success: true,
-            data: extractedData
-          });
-        } else {
-          throw new Error("AI не вернул валидный JSON");
-        }
-      } catch (parseError) {
-        console.error("Ошибка парсинга JSON от AI:", parseError);
-        throw new Error("Не удалось распарсить ответ от AI");
-      }
-    } else {
-      throw new Error("Неожиданный формат ответа от AI");
-    }
   } catch (error) {
     console.error('❌ Ошибка при извлечении данных из паспорта:', error);
     res.status(500).json({ success: false, error: error.message });

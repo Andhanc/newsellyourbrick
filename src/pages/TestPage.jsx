@@ -1063,10 +1063,16 @@ function TestPage() {
       let extracted = null
       setIsRecognizingPassport(true)
       try {
-        const Tesseract = await import('tesseract.js')
+        const tesseractModule = await import('tesseract.js')
+        const recognize =
+          tesseractModule.recognize ||
+          tesseractModule.default?.recognize
+        if (typeof recognize !== 'function') {
+          throw new Error('OCR engine недоступен')
+        }
         const {
           data: { text },
-        } = await Tesseract.recognize(file, 'rus+eng', {
+        } = await recognize(file, 'eng', {
           logger: () => {},
         })
 
@@ -1077,7 +1083,8 @@ function TestPage() {
         })
 
         if (!response.ok) {
-          throw new Error('Ошибка при извлечении данных из паспорта')
+          const errorPayload = await response.json().catch(() => null)
+          throw new Error(errorPayload?.error || 'Ошибка при извлечении данных из паспорта')
         }
 
         const result = await response.json()
