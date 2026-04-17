@@ -8,6 +8,46 @@
   overscroll-behavior: auto;
 }
 
+/* Максимально плавный переход яркости к светлому футеру (#site-footer): длинная зона + много ступеней */
+.investment-calculator-page__footer-blend {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: clamp(220px, 52vh, 640px);
+  pointer-events: none;
+  z-index: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0) 32%,
+    rgba(255, 255, 255, 0.012) 40%,
+    rgba(255, 255, 255, 0.028) 46%,
+    rgba(255, 255, 255, 0.048) 51%,
+    rgba(255, 255, 255, 0.072) 55.5%,
+    rgba(255, 255, 255, 0.1) 60%,
+    rgba(255, 255, 255, 0.13) 64%,
+    rgba(255, 255, 255, 0.165) 67.5%,
+    rgba(255, 255, 255, 0.205) 71%,
+    rgba(255, 255, 255, 0.25) 74%,
+    rgba(255, 255, 255, 0.3) 77%,
+    rgba(255, 255, 255, 0.355) 79.5%,
+    rgba(255, 255, 255, 0.415) 82%,
+    rgba(255, 255, 255, 0.48) 84.2%,
+    rgba(255, 255, 255, 0.545) 86.2%,
+    rgba(255, 255, 255, 0.61) 88%,
+    rgba(255, 255, 255, 0.675) 89.6%,
+    rgba(255, 255, 255, 0.735) 91.1%,
+    rgba(255, 255, 255, 0.79) 92.4%,
+    rgba(255, 255, 255, 0.84) 93.5%,
+    rgba(255, 255, 255, 0.885) 94.5%,
+    rgba(255, 255, 255, 0.925) 95.5%,
+    rgba(255, 255, 255, 0.958) 96.6%,
+    rgba(255, 255, 255, 0.982) 97.8%,
+    #ffffff 100%
+  );
+}
+
 /* На странице калькулятора не создаем локальные вертикальные скроллы —
    прокрутка должна идти только через глобальный контейнер приложения. */
 .investment-calculator-page,
@@ -704,7 +744,7 @@ select.parameter-input option {
   display: flex;
   align-items: stretch;
   width: 100%;
-  max-width: 440px;
+  max-width: min(560px, 100%);
   padding: 0.25rem;
   border-radius: 999px;
   background: rgba(0, 0, 0, 0.35);
@@ -714,18 +754,18 @@ select.parameter-input option {
 
 .calc-stepper__item {
   flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0.15rem;
+  gap: 0.2rem;
   padding: 0.45rem 0.35rem;
   border-radius: 999px;
   color: rgba(255, 255, 255, 0.42);
   font-size: 0.65rem;
   font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.04em;
   transition: color 0.2s ease, background 0.2s ease;
 }
 
@@ -756,9 +796,45 @@ select.parameter-input option {
 }
 
 .calc-stepper__label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.12rem;
   text-align: center;
   line-height: 1.15;
   max-width: 100%;
+  min-width: 0;
+  width: 100%;
+  padding: 0 0.1rem;
+  box-sizing: border-box;
+}
+
+.calc-stepper__title {
+  display: block;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.calc-stepper__pick {
+  display: block;
+  max-width: 100%;
+  font-size: 0.56rem;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: 0.01em;
+  text-transform: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  opacity: 0.92;
+}
+
+.calc-stepper__item.is-done .calc-stepper__pick {
+  color: rgba(233, 213, 255, 0.92);
+}
+
+.calc-stepper__item.is-active .calc-stepper__pick {
+  color: rgba(255, 255, 255, 0.88);
 }
 
 .calc-wizard-section {

@@ -666,20 +666,50 @@ const InvestmentCalculator = () => {
     }
   };
 
+  const strategyStepperSummary =
+    investmentStrategy === 'rent'
+      ? t('calcStrategyRentTitle')
+      : investmentStrategy === 'resale'
+        ? t('calcStrategyResaleTitle')
+        : investmentStrategy === 'fractional'
+          ? t('calcStrategyFractionalTitle')
+          : null;
+
+  const sourceStepperSummary = (() => {
+    if (!dataSource) return null;
+    if (dataSource === 'manual') return t('calcSourceManualTitle');
+    const base = t('calcSourceFavoritesTitle');
+    const prop = selectedFavoriteItem?.property;
+    const raw = prop ? String(prop.title || prop.name || (prop.id != null ? `#${prop.id}` : '')).trim() : '';
+    return raw ? `${base} · ${raw}` : base;
+  })();
+
   const stepper = (
     <div className="calc-stepper" role="list" aria-label={t('calcStepperAria')}>
-      {[1, 2, 3].map((n) => (
-        <div
-          key={n}
-          role="listitem"
-          className={`calc-stepper__item ${wizardStep === n ? 'is-active' : ''} ${wizardStep > n ? 'is-done' : ''}`}
-        >
-          <span className="calc-stepper__num">{n}</span>
-          <span className="calc-stepper__label">
-            {n === 1 ? t('calcStep1Short') : n === 2 ? t('calcStep2Short') : t('calcStep3Short')}
-          </span>
-        </div>
-      ))}
+      {[1, 2, 3].map((n) => {
+        const showStrategyPick = n === 1 && wizardStep >= 2 && strategyStepperSummary;
+        const showSourcePick = n === 2 && wizardStep >= 2 && dataSource && sourceStepperSummary;
+        const pickTitle = showStrategyPick ? strategyStepperSummary : showSourcePick ? sourceStepperSummary : undefined;
+        return (
+          <div
+            key={n}
+            role="listitem"
+            className={`calc-stepper__item ${wizardStep === n ? 'is-active' : ''} ${wizardStep > n ? 'is-done' : ''}`}
+          >
+            <span className="calc-stepper__num">{n}</span>
+            <span className="calc-stepper__label">
+              <span className="calc-stepper__title">
+                {n === 1 ? t('calcStep1Short') : n === 2 ? t('calcStep2Short') : t('calcStep3Short')}
+              </span>
+              {(showStrategyPick || showSourcePick) && (
+                <span className="calc-stepper__pick" title={pickTitle}>
+                  {showStrategyPick ? strategyStepperSummary : sourceStepperSummary}
+                </span>
+              )}
+            </span>
+          </div>
+        );
+      })}
     </div>
   );
 
@@ -1463,6 +1493,8 @@ const InvestmentCalculator = () => {
           </>
         )}
       </div>
+
+      <div className="investment-calculator-page__footer-blend" aria-hidden="true" />
 
       {showSubGateOverlay && (
         <div className="calc-sub-gate-overlay">

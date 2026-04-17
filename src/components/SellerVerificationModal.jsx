@@ -17,6 +17,13 @@ const SellerVerificationModal = ({ isOpen, onClose, userId, onComplete, required
     setShowVerification(true)
   }
 
+  const handleInfoItemKeyDown = (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault()
+      handleStartVerification()
+    }
+  }
+
   const handleVerificationComplete = async () => {
     // Не закрываем модальное окно сразу, ждем завершения onComplete
     if (onComplete) {
@@ -77,7 +84,13 @@ const SellerVerificationModal = ({ isOpen, onClose, userId, onComplete, required
           </div>
 
           <div className="seller-verification-modal__info">
-            <div className="seller-verification-modal__info-item">
+            <div
+              className="seller-verification-modal__info-item"
+              role="button"
+              tabIndex={0}
+              onClick={handleStartVerification}
+              onKeyDown={handleInfoItemKeyDown}
+            >
               <div className="seller-verification-modal__icon">📄</div>
               <div className="seller-verification-modal__info-content">
                 <h3 className="seller-verification-modal__info-title">Фото паспорта</h3>
@@ -87,7 +100,13 @@ const SellerVerificationModal = ({ isOpen, onClose, userId, onComplete, required
               </div>
             </div>
 
-            <div className="seller-verification-modal__info-item">
+            <div
+              className="seller-verification-modal__info-item"
+              role="button"
+              tabIndex={0}
+              onClick={handleStartVerification}
+              onKeyDown={handleInfoItemKeyDown}
+            >
               <div className="seller-verification-modal__icon">📷</div>
               <div className="seller-verification-modal__info-content">
                 <h3 className="seller-verification-modal__info-title">Ваше селфи</h3>
@@ -97,7 +116,13 @@ const SellerVerificationModal = ({ isOpen, onClose, userId, onComplete, required
               </div>
             </div>
 
-            <div className="seller-verification-modal__info-item">
+            <div
+              className="seller-verification-modal__info-item"
+              role="button"
+              tabIndex={0}
+              onClick={handleStartVerification}
+              onKeyDown={handleInfoItemKeyDown}
+            >
               <div className="seller-verification-modal__icon">📸</div>
               <div className="seller-verification-modal__info-content">
                 <h3 className="seller-verification-modal__info-title">Селфи с паспортом рядом с лицом</h3>
