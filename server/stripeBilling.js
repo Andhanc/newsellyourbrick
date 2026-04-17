@@ -14,6 +14,7 @@ import { getPrisma } from './database/prismaClient.js';
  * STRIPE_SECRET_KEY, STRIPE_PRICE_ID_PRO, FRONTEND_URL;
  * STRIPE_PRICE_ID_DEPOSIT — price_... или prod_... (для prod подставится активная recurring-цена);
  * опционально STRIPE_WEBHOOK_SECRET для POST /api/webhooks/stripe
+ * опционально STRIPE_LISTING_PUBLICATION_FEE_EUR (по умолчанию 29) — оплата публикации объявления
  *
  * Резерв 10% (динамическая сумма): Checkout mode=payment + line_items[].price_data —
  * отдельный Product/Price в Dashboard под каждую сумму не нужен.
@@ -298,6 +299,109 @@ function normalizeStripeCurrency(raw) {
 function minStripeUnitAmount(currency) {
   const c = String(currency || '').toLowerCase();
   return ZERO_DECIMAL_CURRENCIES.has(c) ? 1 : 50;
+}
+
+const LISTING_PUBLICATION_FEE_MAJOR_EUR = (() => {
+  const n = Number(String(process.env.STRIPE_LISTING_PUBLICATION_FEE_EUR || '29').trim());
+  return Number.isFinite(n) && n > 0 ? n : 29;
+})();
+
+/**
+ * Разовая оплата публикации объявления (фикс. EUR) — идемпотентная запись в stripe_payments.
+ */
+export async function processListingPublicationFeePaidSession(stripe, session) {
+  if (!stripe || !session?.id) {
+    return { ok: false, error: 'invalid_session' };
+  }
+  let sess = session;
+  try {
+    sess = await stripe.checkout.sessions.retrieve(session.id, {
+      expand: ['payment_intent'],
+    });
+  } catch (e) {
+    console.error('[Stripe] listing publication retrieve session:', e?.message || e);
+    return { ok: false, error: 'retrieve_failed' };
+  }
+
+  if (sess.mode !== 'payment') {
+    return { ok: false, error: 'not_payment_mode' };
+  }
+  if (sess.metadata?.checkout_purpose !== 'listing_publication_fee') {
+    return { ok: false, error: 'wrong_purpose' };
+  }
+  const piObj =
+    sess.payment_intent && typeof sess.payment_intent === 'object' ? sess.payment_intent : null;
+  const paidOk =
+    sess.payment_status === 'paid' ||
+    sess.payment_status === 'no_payment_required' ||
+    piObj?.status === 'succeeded';
+  if (!paidOk) {
+    return { ok: false, error: 'not_paid' };
+  }
+
+  const userId = parseInt(sess.metadata?.app_user_id || '', 10);
+  const metaCents = parseInt(sess.metadata?.listing_fee_cents || '', 10);
+  const feeCents = majorToStripeMinor(LISTING_PUBLICATION_FEE_MAJOR_EUR, 'eur');
+  if (!Number.isFinite(userId) || userId < 1) {
+    return { ok: false, error: 'bad_metadata' };
+  }
+  if (Number.isFinite(metaCents) && metaCents !== feeCents) {
+    return { ok: false, error: 'bad_metadata' };
+  }
+
+  const existing = await stripeSubscriptionQueries.hasPaymentByDedupeKey(sess.id);
+  if (existing) {
+    return { ok: true, already: true };
+  }
+
+  if (sess.amount_total != null && Number.isFinite(feeCents)) {
+    const diff = Math.abs(sess.amount_total - feeCents);
+    const tol = Math.max(2, Math.round(feeCents * 0.03));
+    if (diff > tol) {
+      console.warn('[Stripe] listing publication: paid amount differs from expected fee', {
+        amount_total: sess.amount_total,
+        feeCents,
+        diff,
+      });
+    }
+  }
+
+  const buyer = await userQueries.getById(userId);
+  if (!buyer) {
+    return { ok: false, error: 'user_not_found' };
+  }
+
+  const customerId =
+    typeof sess.customer === 'string' ? sess.customer : sess.customer?.id || null;
+  const stripeCents = sess.amount_total != null ? sess.amount_total : feeCents;
+
+  const insertRes = await stripeSubscriptionQueries.insertPayment({
+    dedupe_key: sess.id,
+    user_id: userId,
+    stripe_customer_id: customerId,
+    stripe_subscription_id: null,
+    stripe_invoice_id: null,
+    stripe_checkout_session_id: sess.id,
+    amount_cents: stripeCents,
+    currency: 'eur',
+    status: 'paid',
+    plan_key: 'listing_publication_fee',
+    billing_reason: JSON.stringify({
+      type: 'listing_publication_fee',
+      fee_eur: LISTING_PUBLICATION_FEE_MAJOR_EUR,
+    }),
+    agreement_signature: null,
+    agreement_policy_version: null,
+    paid_at: new Date().toISOString(),
+    period_start: null,
+    period_end: null,
+    customer_email: sess.customer_details?.email || sess.customer_email || buyer.email || null,
+  });
+
+  if (insertRes?.changes === 0) {
+    return { ok: true, already: true };
+  }
+  return { ok: true };
 }
 
 /**
@@ -888,6 +992,11 @@ export function createStripeWebhookHandler() {
             await processSharePurchasePaidSession(stripe, full);
             break;
           }
+          if (session.mode === 'payment' && session.metadata?.checkout_purpose === 'listing_publication_fee') {
+            const full = await stripe.checkout.sessions.retrieve(session.id);
+            await processListingPublicationFeePaidSession(stripe, full);
+            break;
+          }
           if (session.mode === 'subscription' && session.metadata?.checkout_purpose !== 'wallet_deposit') {
             await syncCheckoutSessionToDatabase(stripe, session.id);
           }
@@ -1312,6 +1421,132 @@ export function registerStripeBillingRoutes(app) {
       return res.json({ success: true, data: { already: !!result.already } });
     } catch (err) {
       console.error('[Stripe] confirm-property-reservation:', err?.message || err);
+      return res.status(500).json({ success: false, error: err?.message || 'Ошибка' });
+    }
+  });
+
+  app.post('/api/billing/create-listing-publication-checkout', async (req, res) => {
+    try {
+      if (!stripe) {
+        return res.status(503).json({
+          success: false,
+          error: 'Платежи не настроены: задайте STRIPE_SECRET_KEY в .env',
+        });
+      }
+      const userIdRaw = req.body?.userId;
+      const customerEmail =
+        typeof req.body?.customerEmail === 'string' ? req.body.customerEmail.trim().slice(0, 320) : '';
+      let returnPath =
+        typeof req.body?.returnPath === 'string' && req.body.returnPath.startsWith('/')
+          ? req.body.returnPath.split('?')[0].slice(0, 200)
+          : '/owner/property/new';
+      if (returnPath.includes('..')) {
+        returnPath = '/owner/property/new';
+      }
+
+      const userId = userIdRaw != null ? parseInt(String(userIdRaw).trim(), 10) : NaN;
+      if (!Number.isFinite(userId) || userId < 1) {
+        return res.status(400).json({
+          success: false,
+          error: 'Укажите числовой userId',
+        });
+      }
+
+      const buyer = await userQueries.getById(userId);
+      if (!buyer) {
+        return res.status(404).json({ success: false, error: 'Пользователь не найден' });
+      }
+
+      const currency = 'eur';
+      const unitAmount = majorToStripeMinor(LISTING_PUBLICATION_FEE_MAJOR_EUR, currency);
+      if (unitAmount < minStripeUnitAmount(currency)) {
+        return res.status(400).json({
+          success: false,
+          error: 'Сумма публикации слишком мала для Stripe',
+        });
+      }
+
+      const successUrl = `${frontendBase}${returnPath}?listing_fee_checkout=success&session_id={CHECKOUT_SESSION_ID}`;
+      const cancelUrl = `${frontendBase}${returnPath}?listing_fee_checkout=canceled`;
+
+      const session = await stripe.checkout.sessions.create({
+        mode: 'payment',
+        payment_method_types: ['card'],
+        line_items: [
+          {
+            quantity: 1,
+            price_data: {
+              currency,
+              unit_amount: unitAmount,
+              product_data: {
+                name: `Размещение объявления на платформе`,
+                description: `Оплата публикации объекта (${LISTING_PUBLICATION_FEE_MAJOR_EUR} €).`.slice(0, 500),
+              },
+            },
+          },
+        ],
+        success_url: successUrl,
+        cancel_url: cancelUrl,
+        metadata: {
+          app_user_id: String(userId),
+          checkout_purpose: 'listing_publication_fee',
+          listing_fee_cents: String(unitAmount),
+        },
+        ...(customerEmail && customerEmail.includes('@') ? { customer_email: customerEmail } : {}),
+      });
+
+      return res.json({ success: true, url: session.url });
+    } catch (err) {
+      console.error('[Stripe] create-listing-publication-checkout:', err?.message || err);
+      return res.status(500).json({
+        success: false,
+        error: err?.message || 'Ошибка Stripe',
+      });
+    }
+  });
+
+  app.post('/api/billing/confirm-listing-publication-fee', async (req, res) => {
+    try {
+      if (!stripe) {
+        return res.status(503).json({ success: false, error: 'Stripe не настроен' });
+      }
+      const sessionId = typeof req.body?.session_id === 'string' ? req.body.session_id.trim() : '';
+      const userIdRaw = req.body?.userId;
+      const userId = userIdRaw != null ? String(userIdRaw).trim() : '';
+      if (!sessionId || !sessionId.startsWith('cs_')) {
+        return res.status(400).json({ success: false, error: 'Нужен session_id (cs_...)' });
+      }
+      if (!userId || !/^\d+$/.test(userId)) {
+        return res.status(400).json({ success: false, error: 'Нужен числовой userId' });
+      }
+      const session = await stripe.checkout.sessions.retrieve(sessionId, {
+        expand: ['payment_intent'],
+      });
+      if (String(session.metadata?.app_user_id || '') !== userId) {
+        return res.status(403).json({ success: false, error: 'user_mismatch' });
+      }
+      let ready = session;
+      let attempts = 0;
+      const sessionPaidLike = (s) => {
+        const pi = s.payment_intent && typeof s.payment_intent === 'object' ? s.payment_intent : null;
+        return (
+          s.payment_status === 'paid' ||
+          s.payment_status === 'no_payment_required' ||
+          pi?.status === 'succeeded'
+        );
+      };
+      while (!sessionPaidLike(ready) && attempts < 15) {
+        await new Promise((r) => setTimeout(r, 400));
+        ready = await stripe.checkout.sessions.retrieve(sessionId, { expand: ['payment_intent'] });
+        attempts += 1;
+      }
+      const result = await processListingPublicationFeePaidSession(stripe, ready);
+      if (!result.ok) {
+        return res.status(400).json({ success: false, error: result.error || 'confirm_failed' });
+      }
+      return res.json({ success: true, data: { already: !!result.already } });
+    } catch (err) {
+      console.error('[Stripe] confirm-listing-publication-fee:', err?.message || err);
       return res.status(500).json({ success: false, error: err?.message || 'Ошибка' });
     }
   });

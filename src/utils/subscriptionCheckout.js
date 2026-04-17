@@ -1,4 +1,19 @@
-const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api'
+/**
+ * Если в .env указан только origin бэкенда без /api (например http://localhost:3000),
+ * запросы на /billing/... уходили в никуда — добавляем /api.
+ */
+function normalizeBillingApiBase() {
+  let base = String(import.meta.env.VITE_API_BASE_URL ?? '/api').trim()
+  if (!base) base = '/api'
+  if (!/^https?:\/\//i.test(base)) {
+    return base.replace(/\/+$/, '') || '/api'
+  }
+  const noTrailing = base.replace(/\/+$/, '')
+  if (/\/api$/i.test(noTrailing)) return noTrailing
+  return `${noTrailing}/api`
+}
+
+const API_BASE = normalizeBillingApiBase()
 
 /** После возврата с Stripe — синхронизировать сессию в БД */
 export async function confirmCheckoutSession(sessionId) {
@@ -122,4 +137,72 @@ export async function confirmPropertyReservationSession(sessionId, userId) {
     return { ok: false, error: data.error || 'confirm_failed' }
   }
   return { ok: true, data: data.data }
+}
+
+/** Stripe Checkout: оплата публикации объявления (фикс. сумма в EUR на сервере). */
+export async function startListingPublicationCheckout({
+  userId,
+  customerEmail,
+  returnPath,
+} = {}) {
+  try {
+    const res = await fetch(`${API_BASE}/billing/create-listing-publication-checkout`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userId: userId != null ? String(userId) : undefined,
+        customerEmail: customerEmail || undefined,
+        returnPath: returnPath || undefined,
+      }),
+    })
+    const data = await res.json().catch(() => ({}))
+    const errText = data.error || data.message || 'Не удалось создать оплату публикации'
+    if (!res.ok) {
+      return { ok: false, error: errText }
+    }
+    const checkoutUrl =
+      typeof data.url === 'string'
+        ? data.url
+        : typeof data?.data?.url === 'string'
+          ? data.data.url
+          : ''
+    if (checkoutUrl && /^https?:\/\//i.test(checkoutUrl)) {
+      window.location.assign(checkoutUrl)
+      return { ok: true }
+    }
+    return { ok: false, error: 'Сервер не вернул ссылку на оплату (проверьте STRIPE_SECRET_KEY и логи API).' }
+  } catch (e) {
+    const msg = String(e?.message || '')
+    const isNetwork =
+      e?.name === 'TypeError' && (msg.includes('fetch') || msg.includes('Failed') || msg.includes('Network'))
+    return {
+      ok: false,
+      error: isNetwork
+        ? 'Нет связи с сервером. Запустите API (npm run server) или проверьте VITE_API_BASE_URL (нужен путь …/api).'
+        : msg || 'Ошибка сети',
+    }
+  }
+}
+
+export async function confirmListingPublicationFeeSession(sessionId, userId) {
+  try {
+    const res = await fetch(`${API_BASE}/billing/confirm-listing-publication-fee`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ session_id: sessionId, userId: String(userId) }),
+    })
+    const data = await res.json().catch(() => ({}))
+    if (!res.ok) {
+      return { ok: false, error: data.error || data.message || 'confirm_failed' }
+    }
+    return { ok: true, data: data.data }
+  } catch (e) {
+    const msg = String(e?.message || '')
+    const isNetwork =
+      e?.name === 'TypeError' && (msg.includes('fetch') || msg.includes('Failed') || msg.includes('Network'))
+    return {
+      ok: false,
+      error: isNetwork ? 'Нет связи с сервером при подтверждении оплаты.' : msg || 'confirm_failed',
+    }
+  }
 }

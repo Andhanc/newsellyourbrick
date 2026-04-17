@@ -4888,15 +4888,25 @@
   justify-content: flex-start;
 }
 
-.listing-fee-modal__option--promo {
-  border-color: #6366f1;
-  background: rgba(99, 102, 241, 0.08);
-  color: #4f46e5;
+.listing-fee-modal__option--card {
+  border-color: #0ABAB5;
+  background: rgba(10, 186, 181, 0.08);
+  color: #0f766e;
 }
 
-.listing-fee-modal__option--promo:hover {
-  border-color: #4f46e5;
-  background: rgba(99, 102, 241, 0.14);
+.listing-fee-modal__option--card:hover:not(:disabled) {
+  border-color: #0891a8;
+  background: rgba(10, 186, 181, 0.14);
+}
+
+.listing-fee-modal__option--card:disabled {
+  opacity: 0.75;
+  cursor: wait;
+}
+
+.listing-fee-modal__option-badge--price {
+  color: #0ABAB5;
+  font-weight: 700;
 }
 
 .listing-fee-modal__option-badge {

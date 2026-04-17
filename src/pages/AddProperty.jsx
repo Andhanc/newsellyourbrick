@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
-import { useNavigate, useParams, useLocation } from 'react-router-dom'
+import { useNavigate, useParams, useLocation, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { 
   FiUpload, 
@@ -47,6 +47,10 @@ import { showNotification } from '../utils/toastHelper'
 import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
 import { notifyBonusSubmissionsChanged } from '../utils/bonusSubmissionsSync'
 import { scrollMainTo } from '../utils/mainScroll'
+import {
+  confirmListingPublicationFeeSession,
+  startListingPublicationCheckout,
+} from '../utils/subscriptionCheckout'
 import AnimatedGenerateButton from '../components/ui/animated-generate-button-shadcn-tailwind'
 import AddPropertyProgress from '../components/AddPropertyProgress'
 import './AddProperty.css'
@@ -70,13 +74,63 @@ function saveDraftPayload(payload, draftKey = DRAFT_KEY) {
   } catch (e) {
     if (e?.name === 'QuotaExceededError') {
       try {
-        const withoutMedia = { ...payload, photos: [], videos: [], additionalDocuments: [] }
+        const withoutMedia = {
+          ...payload,
+          photos: [],
+          videos: [],
+          additionalDocuments: [],
+          requiredDocuments: { ownership: null, noDebts: null },
+          debtDocumentsByCategory: {},
+        }
         localStorage.setItem(draftKey, JSON.stringify(withoutMedia))
       } catch {
         // ignore
       }
     }
   }
+}
+
+/** Сохранение File в черновик (localStorage) — после возврата со Stripe страница перезагружается. */
+async function draftDocToSerializable(doc) {
+  if (!doc) return null
+  if (doc instanceof File) {
+    const dataUrl = await new Promise((resolve, reject) => {
+      const r = new FileReader()
+      r.onloadend = () => resolve(r.result)
+      r.onerror = () => reject(r.error || new Error('read'))
+      r.readAsDataURL(doc)
+    })
+    return { name: doc.name, type: doc.type || 'application/pdf', dataUrl }
+  }
+  if (typeof doc.dataUrl === 'string' && doc.dataUrl.startsWith('data:')) {
+    return { name: doc.name || 'document', type: doc.type || 'application/pdf', dataUrl: doc.dataUrl }
+  }
+  return null
+}
+
+async function draftSerializableToFile(doc, fallbackName = 'document.pdf') {
+  if (!doc) return null
+  if (doc instanceof File) return doc
+  if (doc.isExisting) return null
+  if (typeof doc.dataUrl === 'string' && doc.dataUrl.startsWith('data:')) {
+    const blob = await (await fetch(doc.dataUrl)).blob()
+    return new File([blob], doc.name || fallbackName, { type: doc.type || blob.type || 'application/pdf' })
+  }
+  return null
+}
+
+const DEBT_DRAFT_CATEGORY_KEYS = ['cat1', 'cat2', 'cat3', 'cat4', 'cat5', 'cat6']
+
+async function serializeDebtDocsForDraft(debtDocumentsByCategory) {
+  const out = {}
+  for (const key of DEBT_DRAFT_CATEGORY_KEYS) {
+    out[key] = {}
+    for (const [idx, f] of Object.entries(debtDocumentsByCategory[key] || {})) {
+      const ser = await draftDocToSerializable(f)
+      if (ser) out[key][idx] = ser
+    }
+  }
+  return out
 }
 
 function clearDraft(draftKey = DRAFT_KEY) {
@@ -96,6 +150,7 @@ const AddProperty = ({
   const { t } = useTranslation()
   const navigate = useNavigate()
   const location = useLocation()
+  const [searchParams, setSearchParams] = useSearchParams()
   const { id } = useParams() // ID объекта для редактирования
   const isEditMode = !!id // Режим редактирования
   const propertyTypeFromNavState = location?.state?.property_type || null
@@ -223,6 +278,8 @@ const AddProperty = ({
   const [listingFeePromoCode, setListingFeePromoCode] = useState('')
   const [listingFeePromoError, setListingFeePromoError] = useState(null)
   const [listingFeePromoLoading, setListingFeePromoLoading] = useState(false)
+  const [listingFeeStripeLoading, setListingFeeStripeLoading] = useState(false)
+  const listingFeeCheckoutHandledRef = useRef(null)
   const [userId, setUserId] = useState(null)
   /** После успешного промо/«оплаты» объявление уже отправлено — не дублировать POST после привязки карты */
   const listingPublishedAfterFeeRef = useRef(false)
@@ -820,9 +877,14 @@ const AddProperty = ({
       showNotification('Пожалуйста, заполните заголовок и загрузите хотя бы одно фото')
       return false
     }
+    const resolvedOwnershipDoc = await draftSerializableToFile(
+      requiredDocuments.ownership,
+      'ownership.pdf'
+    )
+    const resolvedNoDebtsDoc = await draftSerializableToFile(requiredDocuments.noDebts, 'no-debts.pdf')
+
     if (!formData.isDebtProperty) {
-      const requiresNoDebts = true
-      if (!uploadedDocuments.ownership || (requiresNoDebts && !uploadedDocuments.noDebts)) {
+      if (!resolvedOwnershipDoc || !resolvedNoDebtsDoc) {
         showNotification('Пожалуйста, загрузите все необходимые документы')
         return false
       }
@@ -1153,36 +1215,27 @@ const AddProperty = ({
         type: doc.type
       }))))
       
-      // Документы
-      // Отправляем только если это новый файл (File объект), а не существующий документ
-      if (requiredDocuments.ownership) {
-        // Проверяем, является ли это File объектом (новый файл) или существующим документом
-        if (requiredDocuments.ownership instanceof File) {
-          formDataToSend.append('ownership_document', requiredDocuments.ownership)
-        } else if (requiredDocuments.ownership.isExisting && isEditMode) {
-          // Если это существующий документ при редактировании, не отправляем его заново
-          // Сервер сохранит существующий документ
-          console.log('📄 Документ о праве собственности уже загружен, пропускаем')
-        }
+      // Документы (File или восстановленные из черновика после Stripe)
+      if (resolvedOwnershipDoc) {
+        formDataToSend.append('ownership_document', resolvedOwnershipDoc)
+      } else if (requiredDocuments.ownership?.isExisting && isEditMode) {
+        console.log('📄 Документ о праве собственности уже загружен, пропускаем')
       }
-      if (!formData.isDebtProperty && requiredDocuments.noDebts) {
-        // Проверяем, является ли это File объектом (новый файл) или существующим документом
-        if (requiredDocuments.noDebts instanceof File) {
-          formDataToSend.append('no_debts_document', requiredDocuments.noDebts)
-        } else if (requiredDocuments.noDebts.isExisting && isEditMode) {
-          // Если это существующий документ при редактировании, не отправляем его заново
-          // Сервер сохранит существующий документ
-          console.log('📄 Справка об отсутствии долгов уже загружена, пропускаем')
-        }
+      if (!formData.isDebtProperty && resolvedNoDebtsDoc) {
+        formDataToSend.append('no_debts_document', resolvedNoDebtsDoc)
+      } else if (!formData.isDebtProperty && requiredDocuments.noDebts?.isExisting && isEditMode) {
+        console.log('📄 Справка об отсутствии долгов уже загружена, пропускаем')
       }
       // Документы по долгу — 6 категорий (cat1..cat6)
       if (formData.isDebtProperty) {
-        DEBT_DOC_CATEGORIES.forEach(({ key }) => {
-          const files = Object.values(debtDocumentsByCategory[key] || {}).filter(f => f instanceof File)
-          files.forEach(file => {
-            formDataToSend.append(`debt_doc_${key}`, file)
-          })
-        })
+        for (const { key } of DEBT_DOC_CATEGORIES) {
+          for (const [, raw] of Object.entries(debtDocumentsByCategory[key] || {})) {
+            const f = await draftSerializableToFile(raw, `debt-${key}.pdf`)
+            if (f instanceof File) {
+              formDataToSend.append(`debt_doc_${key}`, f)
+            }
+          }
+        }
       }
       
       console.log('📤 Отправка объявления на сервер...')
@@ -1325,6 +1378,27 @@ const AddProperty = ({
     if (typeof draft.showHint1 === 'boolean') setShowHint1(draft.showHint1)
     if (typeof draft.showHint2 === 'boolean') setShowHint2(draft.showHint2)
     if (Array.isArray(draft.additionalDocuments)) setAdditionalDocuments(draft.additionalDocuments)
+    if (draft.requiredDocuments && typeof draft.requiredDocuments === 'object') {
+      const own = draft.requiredDocuments.ownership || null
+      const nd = draft.requiredDocuments.noDebts || null
+      setRequiredDocuments({ ownership: own, noDebts: nd })
+      setUploadedDocuments({
+        ownership: !!own,
+        noDebts: !!nd,
+      })
+    }
+    if (draft.debtDocumentsByCategory && typeof draft.debtDocumentsByCategory === 'object') {
+      setDebtDocumentsByCategory((prev) => {
+        const next = { ...prev }
+        for (const key of Object.keys(draft.debtDocumentsByCategory)) {
+          next[key] = { ...(prev[key] || {}), ...draft.debtDocumentsByCategory[key] }
+        }
+        return next
+      })
+    }
+    if (draft.debtDocumentsStep === 'required' || draft.debtDocumentsStep === 'categories') {
+      setDebtDocumentsStep(draft.debtDocumentsStep)
+    }
   }, [isEditMode])
 
   // Сохранение черновика в localStorage (с дебаунсом), только для нового объекта
@@ -1333,34 +1407,45 @@ const AddProperty = ({
     if (isEditMode) return
     if (saveDraftTimeoutRef.current) clearTimeout(saveDraftTimeoutRef.current)
     saveDraftTimeoutRef.current = setTimeout(() => {
-      saveDraftTimeoutRef.current = null
-      const payload = {
-        formData,
-        currentStep,
-        photos: photos.map(p => ({ id: p.id, url: p.url })),
-        videos: videos.map(v => ({ ...v })),
-        bedrooms,
-        guests,
-        addressSearch,
-        selectedCoordinates,
-        mapCenter,
-        locationMapZoom,
-        citySearch,
-        currency,
-        areaUnit,
-        savedLocationData,
-        showHints,
-        showHint1,
-        showHint2,
-        additionalDocuments: additionalDocuments.map(d => ({ name: d.name, url: d.url, type: d.type }))
-      }
-      saveDraftPayload(payload, draftKey)
+      void (async () => {
+        saveDraftTimeoutRef.current = null
+        const [ownSer, ndSer] = await Promise.all([
+          draftDocToSerializable(requiredDocuments.ownership),
+          draftDocToSerializable(requiredDocuments.noDebts),
+        ])
+        const debtSer = await serializeDebtDocsForDraft(debtDocumentsByCategory)
+        const payload = {
+          formData,
+          currentStep,
+          photos: photos.map(p => ({ id: p.id, url: p.url })),
+          videos: videos.map(v => ({ ...v })),
+          bedrooms,
+          guests,
+          addressSearch,
+          selectedCoordinates,
+          mapCenter,
+          locationMapZoom,
+          citySearch,
+          currency,
+          areaUnit,
+          savedLocationData,
+          showHints,
+          showHint1,
+          showHint2,
+          additionalDocuments: additionalDocuments.map(d => ({ name: d.name, url: d.url, type: d.type })),
+          requiredDocuments: { ownership: ownSer, noDebts: ndSer },
+          debtDocumentsByCategory: debtSer,
+          debtDocumentsStep,
+        }
+        saveDraftPayload(payload, draftKey)
+      })()
     }, DRAFT_SAVE_DEBOUNCE_MS)
     return () => {
       if (saveDraftTimeoutRef.current) clearTimeout(saveDraftTimeoutRef.current)
     }
   }, [
     isEditMode,
+    draftKey,
     formData,
     currentStep,
     photos,
@@ -1378,7 +1463,10 @@ const AddProperty = ({
     showHints,
     showHint1,
     showHint2,
-    additionalDocuments
+    additionalDocuments,
+    requiredDocuments,
+    debtDocumentsByCategory,
+    debtDocumentsStep,
   ])
 
   // Функция геокодирования адреса при редактировании
@@ -3420,6 +3508,71 @@ const AddProperty = ({
     }
   }
 
+  const handleListingFeePayCard = async () => {
+    if (!userId) {
+      requestOpenLoginModal({ wizard: true })
+      return
+    }
+    const uid = String(userId).trim()
+    if (!/^\d+$/.test(uid)) {
+      showNotification(
+        'Для оплаты нужен числовой id пользователя в базе. Подождите синхронизацию после входа или обновите страницу.',
+        'error'
+      )
+      return
+    }
+    setListingFeeStripeLoading(true)
+    try {
+      // Сразу сохранить черновик с документами (до редиректа debounce мог не успеть)
+      const [ownSer, ndSer] = await Promise.all([
+        draftDocToSerializable(requiredDocuments.ownership),
+        draftDocToSerializable(requiredDocuments.noDebts),
+      ])
+      const debtSer = await serializeDebtDocsForDraft(debtDocumentsByCategory)
+      saveDraftPayload(
+        {
+          formData,
+          currentStep,
+          photos: photos.map((p) => ({ id: p.id, url: p.url })),
+          videos: videos.map((v) => ({ ...v })),
+          bedrooms,
+          guests,
+          addressSearch,
+          selectedCoordinates,
+          mapCenter,
+          locationMapZoom,
+          citySearch,
+          currency,
+          areaUnit,
+          savedLocationData,
+          showHints,
+          showHint1,
+          showHint2,
+          additionalDocuments: additionalDocuments.map((d) => ({ name: d.name, url: d.url, type: d.type })),
+          requiredDocuments: { ownership: ownSer, noDebts: ndSer },
+          debtDocumentsByCategory: debtSer,
+          debtDocumentsStep,
+        },
+        draftKey
+      )
+
+      const ud = getUserData()
+      const customerEmail = ud?.email || undefined
+      const result = await startListingPublicationCheckout({
+        userId: uid,
+        customerEmail,
+        returnPath: location.pathname || '/owner/property/new',
+      })
+      if (!result.ok) {
+        showNotification(result.error || 'Не удалось перейти к оплате', 'error')
+      }
+    } catch (e) {
+      showNotification(e?.message || 'Ошибка при запуске оплаты', 'error')
+    } finally {
+      setListingFeeStripeLoading(false)
+    }
+  }
+
   const handleApplyListingFeePromo = async () => {
     const code = (listingFeePromoCode || '').trim()
     if (!code) {
@@ -3473,6 +3626,66 @@ const AddProperty = ({
       navigate(location.pathname, { replace: true, state: {} })
     }
   }, [isEditMode, location.state?.openListingFeeModal, location.pathname, navigate])
+
+  // Возврат с Stripe после оплаты публикации (как резерв «Купить сейчас»)
+  useEffect(() => {
+    const checkout = searchParams.get('listing_fee_checkout')
+    const sessionId = searchParams.get('session_id')
+
+    if (checkout === 'canceled') {
+      const next = new URLSearchParams(searchParams)
+      next.delete('listing_fee_checkout')
+      next.delete('session_id')
+      setSearchParams(next, { replace: true })
+      if (!isEditMode) {
+        setCurrentStep('price')
+        setShowListingFeeModal(true)
+        setShowPromoInputInFeeModal(false)
+        setListingFeePromoCode('')
+        setListingFeePromoError(null)
+      }
+      return
+    }
+
+    if (checkout !== 'success' || !sessionId || !sessionId.startsWith('cs_')) return
+    if (!userId) return
+    if (listingFeeCheckoutHandledRef.current === sessionId) return
+
+    let cancelled = false
+    const run = async () => {
+      listingFeeCheckoutHandledRef.current = sessionId
+      try {
+        const result = await confirmListingPublicationFeeSession(sessionId, String(userId))
+        if (cancelled) return
+        if (result.ok) {
+          if (result.data?.already) {
+            showNotification('Оплата публикации уже была учтена ранее.')
+          } else {
+            showNotification('Оплата получена. Продолжаем публикацию.')
+          }
+          const next = new URLSearchParams(searchParams)
+          next.delete('listing_fee_checkout')
+          next.delete('session_id')
+          setSearchParams(next, { replace: true })
+          await handleAfterListingFeeSuccess()
+        } else {
+          showNotification(result.error || 'Не удалось подтвердить оплату', 'error')
+          listingFeeCheckoutHandledRef.current = null
+        }
+      } catch (e) {
+        if (!cancelled) {
+          showNotification(e?.message || 'Ошибка подтверждения оплаты', 'error')
+          listingFeeCheckoutHandledRef.current = null
+        }
+      }
+    }
+    run()
+    return () => {
+      cancelled = true
+    }
+    // handleAfterListingFeeSuccess меняется каждый рендер — намеренно не в deps (как PropertyDetail + Stripe)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, userId, setSearchParams, isEditMode])
 
   // Единый скролл для страницы добавления объекта:
   // прокрутка должна идти через глобальный .app-layout, без локального скролла блока формы.
@@ -6909,14 +7122,21 @@ const AddProperty = ({
                   Чтобы выложить объект, необходимо оплатить <strong>29 €</strong> за размещение на платформе.
                 </p>
                 <div className="listing-fee-modal__options">
-                  <button type="button" className="listing-fee-modal__option listing-fee-modal__option--disabled" disabled>
-                    <FiCreditCard size={24} />
-                    <span>Карта</span>
-                    <span className="listing-fee-modal__option-badge">Пока недоступно</span>
+                  <button
+                    type="button"
+                    className="listing-fee-modal__option listing-fee-modal__option--card"
+                    onClick={handleListingFeePayCard}
+                    disabled={listingFeeStripeLoading}
+                  >
+                    <FiCreditCard size={24} aria-hidden />
+                    <span>{listingFeeStripeLoading ? 'Переход к оплате…' : 'Карта (Stripe)'}</span>
+                    <span className="listing-fee-modal__option-badge listing-fee-modal__option-badge--price">
+                      29 €
+                    </span>
                   </button>
                   <button
                     type="button"
-                    className="listing-fee-modal__option listing-fee-modal__option--promo"
+                    className="listing-fee-modal__option"
                     onClick={() => setShowPromoInputInFeeModal(true)}
                   >
                     <FiGift size={24} />

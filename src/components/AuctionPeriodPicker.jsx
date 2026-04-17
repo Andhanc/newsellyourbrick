@@ -2,6 +2,19 @@ import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import './AuctionPeriodPicker.css'
 
+/** Локальная полночь; при невалидной строке (в т.ч. пробелы) — fallback. */
+const parseDayOr = (value, fallback) => {
+  const base = new Date(fallback)
+  base.setHours(0, 0, 0, 0)
+  if (value == null) return base
+  const raw = String(value).trim()
+  if (!raw) return base
+  const d = new Date(raw)
+  if (Number.isNaN(d.getTime())) return base
+  d.setHours(0, 0, 0, 0)
+  return d
+}
+
 const AuctionPeriodPicker = ({
   startDate,
   endDate,
@@ -18,14 +31,19 @@ const AuctionPeriodPicker = ({
   const [endDateValue, setEndDateValue] = useState(endDate || '')
   const [error, setError] = useState('')
 
-  // Автоматически устанавливаем сегодняшнюю дату как дату начала
-  // только для новых объявлений, когда дата еще не задана.
+  // Дата начала по умолчанию — сегодня; пустая/пробельная/невалидная строка тоже заменяется.
   useEffect(() => {
-    if (startDate) return
     const today = new Date()
     today.setHours(0, 0, 0, 0)
     const todayStr = today.toISOString().split('T')[0]
-    onStartDateChange(todayStr)
+    const raw = startDate == null ? '' : String(startDate).trim()
+    if (!raw) {
+      onStartDateChange(todayStr)
+      return
+    }
+    if (Number.isNaN(new Date(raw).getTime())) {
+      onStartDateChange(todayStr)
+    }
   }, [startDate, onStartDateChange])
 
   useEffect(() => {
@@ -38,13 +56,15 @@ const AuctionPeriodPicker = ({
   const calculateMinEndDate = () => {
     const today = new Date()
     today.setHours(0, 0, 0, 0)
-    const start = startDate ? new Date(startDate) : today
+    const start = parseDayOr(startDate, today)
     const minEnd = new Date(start)
-    
-    // Добавляем минимальный период: месяцы + дни
-    minEnd.setMonth(minEnd.getMonth() + Number(minMonths) || 0)
-    minEnd.setDate(minEnd.getDate() + Number(minDays) || 0)
-    
+
+    const m = Number(minMonths)
+    const dayAdd = Number(minDays)
+    minEnd.setMonth(minEnd.getMonth() + (Number.isFinite(m) ? m : 0))
+    minEnd.setDate(minEnd.getDate() + (Number.isFinite(dayAdd) ? dayAdd : 0))
+
+    if (Number.isNaN(minEnd.getTime())) return undefined
     return minEnd.toISOString().split('T')[0]
   }
 
@@ -61,13 +81,22 @@ const AuctionPeriodPicker = ({
 
     const today = new Date()
     today.setHours(0, 0, 0, 0)
-    const start = startDate ? new Date(startDate) : today
+    const start = parseDayOr(startDate, today)
     const end = new Date(endDateStr)
+    if (Number.isNaN(end.getTime())) {
+      setError('')
+      return true
+    }
     const minEnd = new Date(start)
-    
-    // Добавляем минимальный период: месяцы + дни
-    minEnd.setMonth(minEnd.getMonth() + Number(minMonths) || 0)
-    minEnd.setDate(minEnd.getDate() + Number(minDays) || 0)
+
+    const m = Number(minMonths)
+    const dayAdd = Number(minDays)
+    minEnd.setMonth(minEnd.getMonth() + (Number.isFinite(m) ? m : 0))
+    minEnd.setDate(minEnd.getDate() + (Number.isFinite(dayAdd) ? dayAdd : 0))
+    if (Number.isNaN(minEnd.getTime())) {
+      setError('')
+      return true
+    }
     
     if (end < minEnd) {
       const minDateStr = minEnd.toLocaleDateString(undefined, {
