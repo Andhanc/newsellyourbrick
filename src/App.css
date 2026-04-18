@@ -117,3 +117,43 @@ body.auction-mobile-lock-x {
     overflow-x: clip;
   }
 }
+
+.app-page-fallback {
+  color: #64748b;
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.route-error-boundary {
+  min-height: 50vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+  gap: 16px;
+  text-align: center;
+}
+
+.route-error-boundary__text {
+  max-width: 360px;
+  margin: 0;
+  color: #334155;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.route-error-boundary__btn {
+  padding: 12px 22px;
+  border: none;
+  border-radius: 10px;
+  background: #2563eb;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.route-error-boundary__btn:hover {
+  background: #1d4ed8;
+}

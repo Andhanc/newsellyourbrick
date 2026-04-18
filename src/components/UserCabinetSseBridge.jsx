@@ -95,9 +95,17 @@ export default function UserCabinetSseBridge() {
     const onClerkSynced = () => connect()
     window.addEventListener(CLERK_DB_USER_SYNCED, onClerkSynced)
 
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible' && !cancelled) {
+        connect()
+      }
+    }
+    document.addEventListener('visibilitychange', onVisibility)
+
     return () => {
       cancelled = true
       window.removeEventListener(CLERK_DB_USER_SYNCED, onClerkSynced)
+      document.removeEventListener('visibilitychange', onVisibility)
       closeEs()
     }
   }, [location.pathname])

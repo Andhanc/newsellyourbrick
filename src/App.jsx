@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react'
+import { Suspense } from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { useEffect, useState, useRef } from 'react'
 import { TonConnectUIProvider } from '@tonconnect/ui-react'
@@ -23,36 +23,47 @@ import './App.css'
 import { GlassFilterDefs } from './components/ui/GlassFilterDefs'
 import { LayoutScrollRefContext } from './context/LayoutScrollContext'
 import { scrollMainTo } from './utils/mainScroll'
+import { lazyWithRetry } from './utils/lazyWithRetry'
+import RouteErrorBoundary from './components/RouteErrorBoundary'
 
 // Ленивая загрузка страниц — чанк грузится только при переходе на маршрут
-const Home = lazy(() => import('./pages/Home'))
-const PropertyDetailPage = lazy(() => import('./pages/PropertyDetailPage'))
-const TestDriveBookingPage = lazy(() => import('./pages/TestDriveBookingPage'))
-const MapPage = lazy(() => import('./pages/MapPage'))
-const MyBookingsPage = lazy(() => import('./pages/MyBookingsPage'))
-const Data = lazy(() => import('./pages/Data'))
-const Subscriptions = lazy(() => import('./pages/Subscriptions'))
-const History = lazy(() => import('./pages/History'))
-const Chat = lazy(() => import('./pages/Chat'))
-const Favorites = lazy(() => import('./pages/Favorites'))
-const Compare = lazy(() => import('./pages/Compare'))
-const Bonuses = lazy(() => import('./pages/Bonuses'))
-const Shares = lazy(() => import('./pages/Shares'))
-const Debts = lazy(() => import('./pages/Debts'))
-const ShareDetailPage = lazy(() => import('./pages/ShareDetailPage'))
-const OwnerDashboard = lazy(() => import('./pages/OwnerDashboard'))
-const TelegramAuthCallback = lazy(() => import('./pages/TelegramAuthCallback'))
-const AddProperty = lazy(() => import('./pages/AddProperty'))
-const Wallet = lazy(() => import('./pages/Wallet'))
-const SearchResults = lazy(() => import('./pages/SearchResults'))
-const AdminPanelPage = lazy(() => import('./admin/AdminPanelPage'))
-const About = lazy(() => import('./pages/About'))
-const InvestmentCalculator = lazy(() => import('./pages/InvestmentCalculator'))
-const JetonPage = lazy(() => import('./pages/JetonPage'))
-const TestPage = lazy(() => import('./pages/TestPage'))
-const BlockedUserModal = lazy(() => import('./components/BlockedUserModal'))
+const Home = lazyWithRetry(() => import('./pages/Home'))
+const PropertyDetailPage = lazyWithRetry(() => import('./pages/PropertyDetailPage'))
+const TestDriveBookingPage = lazyWithRetry(() => import('./pages/TestDriveBookingPage'))
+const MapPage = lazyWithRetry(() => import('./pages/MapPage'))
+const MyBookingsPage = lazyWithRetry(() => import('./pages/MyBookingsPage'))
+const Data = lazyWithRetry(() => import('./pages/Data'))
+const Subscriptions = lazyWithRetry(() => import('./pages/Subscriptions'))
+const History = lazyWithRetry(() => import('./pages/History'))
+const Chat = lazyWithRetry(() => import('./pages/Chat'))
+const Favorites = lazyWithRetry(() => import('./pages/Favorites'))
+const Compare = lazyWithRetry(() => import('./pages/Compare'))
+const Bonuses = lazyWithRetry(() => import('./pages/Bonuses'))
+const Shares = lazyWithRetry(() => import('./pages/Shares'))
+const Debts = lazyWithRetry(() => import('./pages/Debts'))
+const ShareDetailPage = lazyWithRetry(() => import('./pages/ShareDetailPage'))
+const OwnerDashboard = lazyWithRetry(() => import('./pages/OwnerDashboard'))
+const TelegramAuthCallback = lazyWithRetry(() => import('./pages/TelegramAuthCallback'))
+const AddProperty = lazyWithRetry(() => import('./pages/AddProperty'))
+const Wallet = lazyWithRetry(() => import('./pages/Wallet'))
+const SearchResults = lazyWithRetry(() => import('./pages/SearchResults'))
+const AdminPanelPage = lazyWithRetry(() => import('./admin/AdminPanelPage'))
+const About = lazyWithRetry(() => import('./pages/About'))
+const InvestmentCalculator = lazyWithRetry(() => import('./pages/InvestmentCalculator'))
+const JetonPage = lazyWithRetry(() => import('./pages/JetonPage'))
+const TestPage = lazyWithRetry(() => import('./pages/TestPage'))
+const BlockedUserModal = lazyWithRetry(() => import('./components/BlockedUserModal'))
 
-const PageFallback = () => <div className="app-page-fallback" style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }} aria-hidden="true" />
+const PageFallback = () => (
+  <div
+    className="app-page-fallback"
+    style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+    role="status"
+    aria-live="polite"
+  >
+    Загрузка…
+  </div>
+)
 
 // Компонент для валидации сессии при запуске приложения
 function SessionValidator({ onBlockedChange }) {
@@ -417,6 +428,7 @@ function App() {
       <LayoutScrollRefContext.Provider value={appLayoutRef}>
       <div ref={appLayoutRef} className={`app-layout ${isBlocked ? 'app-layout--blocked' : ''}`}>
         <div className="app-layout__content">
+          <RouteErrorBoundary>
           <Suspense fallback={<PageFallback />}>
             <Routes>
               <Route path="/" element={<MainPage />} />
@@ -453,6 +465,7 @@ function App() {
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </Suspense>
+          </RouteErrorBoundary>
         </div>
         <Footer />
       </div>
