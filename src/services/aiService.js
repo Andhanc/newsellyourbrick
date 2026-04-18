@@ -1,13 +1,60 @@
+import { getApiBaseUrlSync } from '../utils/apiConfig'
+
 const AI_API_URL = "https://api.intelligence.io.solutions/api/v1/chat/completions";
 const AI_MODEL = "deepseek-ai/DeepSeek-V3.2";
-/** Запасной ключ из репозитория; провайдер может отозвать его — задайте VITE_INTELLIGENCE_IO_API_KEY в .env */
+/** Запасной ключ из репозитория; провайдер может отозвать его — задайте ключ в .env или на сервере */
 const LEGACY_INTELLIGENCE_IO_API_KEY =
   "io-v2-eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJvd25lciI6ImE5YzAwNjc4LTFjNzEtNDY5Ny1hY2NiLTliYTU0NTdhMWU4NSIsImV4cCI6NDkyMTI0NDg2NX0.E92VNc-ri_VH1bRLZfJ4seHnvr_hdL0vzgBbRC97WYDaENrvqU-jV1gYxqG128Tvyf8yfEczZ9hfpdKeZ2E0UA";
 
+/** Убирает переносы/пробелы из ключа, префикс Bearer, лишние кавычки (частая ошибка в UI хостинга). */
+function normalizeIntelligenceIoKey(raw) {
+  if (raw == null) return ''
+  let s = String(raw).trim()
+  if ((s.startsWith('"') && s.endsWith('"')) || (s.startsWith("'") && s.endsWith("'"))) {
+    s = s.slice(1, -1).trim()
+  }
+  if (s.toLowerCase().startsWith('bearer ')) s = s.slice(7).trim()
+  s = s.replace(/\r\n/g, '').replace(/\n/g, '').replace(/\s/g, '')
+  return s
+}
+
 function getIntelligenceIoApiKey() {
-  const v = import.meta.env.VITE_INTELLIGENCE_IO_API_KEY;
-  const trimmed = typeof v === "string" ? v.trim() : "";
-  return trimmed || LEGACY_INTELLIGENCE_IO_API_KEY;
+  const v = import.meta.env.VITE_INTELLIGENCE_IO_API_KEY
+  const trimmed = normalizeIntelligenceIoKey(v)
+  return trimmed || LEGACY_INTELLIGENCE_IO_API_KEY
+}
+
+/** В браузере запросы идут на POST /api/ai/intelligence-chat — ключ подставляет Node (runtime). */
+function useServerIntelligenceProxy() {
+  return typeof window !== 'undefined'
+}
+
+function getChatCompletionsUrl() {
+  if (useServerIntelligenceProxy()) {
+    return `${getApiBaseUrlSync()}/ai/intelligence-chat`
+  }
+  return AI_API_URL
+}
+
+function buildIntelligenceRequestHeaders() {
+  const h = { 'Content-Type': 'application/json' }
+  if (!useServerIntelligenceProxy()) {
+    h.Authorization = `Bearer ${getIntelligenceIoApiKey()}`
+  }
+  return h
+}
+
+function isIntelligenceProxyActive() {
+  return useServerIntelligenceProxy()
+}
+
+async function postIntelligenceChat(payload, init = {}) {
+  return fetch(getChatCompletionsUrl(), {
+    method: 'POST',
+    headers: buildIntelligenceRequestHeaders(),
+    body: JSON.stringify(payload),
+    ...init,
+  })
 }
 
 /** Убирает markdown из текста ответа для чистого отображения */
@@ -77,10 +124,6 @@ wantsManager = false если пользователь только выбира
   ];
 
   try {
-    const headers = {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${getIntelligenceIoApiKey()}`
-    };
     const payload = {
       model: AI_MODEL,
       messages,
@@ -89,10 +132,7 @@ wantsManager = false если пользователь только выбира
     };
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 20000);
-    const response = await fetch(AI_API_URL, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(payload),
+    const response = await postIntelligenceChat(payload, {
       signal: controller.signal
     });
     clearTimeout(timeoutId);
@@ -297,15 +337,10 @@ ${JSON.stringify(userPreferences, null, 0)}
 
   try {
     console.log('🤖 Отправка запроса к AI сервису...', {
-      url: AI_API_URL,
+      url: getChatCompletionsUrl(),
       model: AI_MODEL,
       messagesCount: messages.length
     });
-
-    const headers = {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${getIntelligenceIoApiKey()}`
-    };
 
     const payload = {
       "model": AI_MODEL,
@@ -317,10 +352,7 @@ ${JSON.stringify(userPreferences, null, 0)}
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 45000);
 
-    const response = await fetch(AI_API_URL, {
-      method: 'POST',
-      headers: headers,
-      body: JSON.stringify(payload),
+    const response = await postIntelligenceChat(payload, {
       signal: controller.signal
     });
 
@@ -330,10 +362,22 @@ ${JSON.stringify(userPreferences, null, 0)}
       const errorText = await response.text();
       console.error(`❌ API Error ${response.status}:`, errorText);
       
+      if (response.status === 503) {
+        console.error('🔑 Intelligence.io: ключ не задан на сервере (прокси)')
+        return {
+          text: 'Ошибка: на сервере не задан ключ Intelligence.io. В переменных окружения Node укажите INTELLIGENCE_IO_API_KEY или VITE_INTELLIGENCE_IO_API_KEY и перезапустите сервер.',
+          buttons: null,
+          needsMoreInfo: false,
+          recommendations: null
+        };
+      }
+
       if (response.status === 401) {
         console.error('🔑 Ошибка авторизации: API ключ недействителен или истек');
         return {
-          text: "Ошибка: сервер AI отклонил ключ. Укажите актуальный ключ в переменной VITE_INTELLIGENCE_IO_API_KEY (.env локально, на хостинге — в переменных сборки) и пересоберите фронт.",
+          text: isIntelligenceProxyActive()
+            ? 'Ошибка: ключ Intelligence.io отклонён провайдером или неверен. Проверьте значение INTELLIGENCE_IO_API_KEY / VITE_INTELLIGENCE_IO_API_KEY в переменных сервера (одна строка, без переносов и без слова Bearer), перезапустите сервер.'
+            : 'Ошибка: сервер AI отклонил ключ. Укажите актуальный ключ в VITE_INTELLIGENCE_IO_API_KEY (.env) и пересоберите фронт.',
           buttons: null,
           needsMoreInfo: false,
           recommendations: null
@@ -552,22 +596,13 @@ export async function extractPassportData(recognizedText) {
   ];
 
   try {
-    const headers = {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${getIntelligenceIoApiKey()}`
-    };
-
     const payload = {
       "model": AI_MODEL,
       "messages": messages,
       "temperature": 0.1 // Низкая температура для более точного извлечения
     };
 
-    const response = await fetch(AI_API_URL, {
-      method: 'POST',
-      headers: headers,
-      body: JSON.stringify(payload),
-    });
+    const response = await postIntelligenceChat(payload);
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -649,11 +684,6 @@ export async function generateListingDescription(draftText, title = '') {
     { role: 'user', content: userParts.join('\n\n') }
   ]
 
-  const headers = {
-    'Content-Type': 'application/json',
-    Authorization: `Bearer ${getIntelligenceIoApiKey()}`
-  }
-
   const payload = {
     model: AI_MODEL,
     messages,
@@ -665,10 +695,7 @@ export async function generateListingDescription(draftText, title = '') {
   const timeoutId = setTimeout(() => controller.abort(), 45000)
 
   try {
-    const response = await fetch(AI_API_URL, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(payload),
+    const response = await postIntelligenceChat(payload, {
       signal: controller.signal
     })
 
@@ -797,11 +824,6 @@ export async function askPropertyCompareAssistant(propertyLeft, propertyRight, o
     },
   ]
 
-  const headers = {
-    'Content-Type': 'application/json',
-    Authorization: `Bearer ${getIntelligenceIoApiKey()}`,
-  }
-
   const payload = {
     model: AI_MODEL,
     messages,
@@ -819,10 +841,7 @@ export async function askPropertyCompareAssistant(propertyLeft, propertyRight, o
   }
 
   try {
-    const response = await fetch(AI_API_URL, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(payload),
+    const response = await postIntelligenceChat(payload, {
       signal: controller.signal,
     })
 

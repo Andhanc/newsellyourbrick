@@ -15,14 +15,14 @@ const TIERS = {
     title: 'Pro',
     descKey: 'buyerPricing_proDesc',
     showStrikePrice: false,
-    priceMain: '€99',
+    priceMain: '€149',
     featureKeys: ['buyerPricing_featP0', 'buyerPricing_featP1', 'buyerPricing_featP2'],
   },
   vip: {
     title: 'VIP',
     descKey: 'buyerPricing_vipDesc',
     showStrikePrice: false,
-    priceMain: '€399',
+    priceMain: '€499',
     featureKeys: ['buyerPricing_featV0', 'buyerPricing_featV1', 'buyerPricing_featV2'],
   },
 }

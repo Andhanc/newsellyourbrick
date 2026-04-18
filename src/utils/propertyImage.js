@@ -121,29 +121,14 @@ export function normalizePropertyMediaFields(prop) {
 }
 
 export function getPropertyCardImage(property, fallbackUrl) {
+  if (!property) return fallbackUrl
+  const { image } = normalizePropertyMediaFields(property)
+  if (image) return image
   const baseOrigin = getBaseOrigin()
-
-  let images = property?.images
-  if (typeof images === 'string') {
-    try {
-      images = JSON.parse(images)
-    } catch {
-      images = [images]
-    }
-  }
-
-  const candidates = [
-    Array.isArray(images) ? images[0] : images,
-    property?.image,
-    property?.image_url,
-    property?.imageUrl,
-    property?.photo_url,
-  ]
-
-  for (const candidate of candidates) {
+  const extras = [property.image_url, property.imageUrl, property.photo_url]
+  for (const candidate of extras) {
     const normalized = normalizeImageUrl(candidate, baseOrigin)
     if (normalized) return normalized
   }
-
   return fallbackUrl
 }

@@ -19,6 +19,7 @@ import Header from '../components/Header';
 import IncomeExpensesChart from '../components/IncomeExpensesChart';
 import BackgroundIcons from '../components/BackgroundIcons';
 import { getApiBaseUrlSync } from '../utils/apiConfig';
+import { getPropertyCardImage } from '../utils/propertyImage';
 import { scrollMainTo } from '../utils/mainScroll';
 import { requestOpenLoginModal } from '../utils/requestOpenLoginModal';
 import { isSiteUserSignedIn } from '../utils/siteAuthGate';
@@ -63,10 +64,7 @@ function listingPriceEuros(property) {
 }
 
 function listingThumb(property) {
-  const img = property?.image || property?.images?.[0];
-  if (typeof img === 'string' && img) return img;
-  if (img && typeof img === 'object' && img.url) return img.url;
-  return PLACEHOLDER_IMG;
+  return getPropertyCardImage(property, PLACEHOLDER_IMG);
 }
 
 /** Доступ к инвестиционному калькулятору: активная подписка Pro или VIP */

@@ -103,12 +103,12 @@ export default function PricingCards({
 
   const handleProCall = () => {
     if (typeof onBookCall === 'function') onBookCall('pro')
-    else window.open('https://checkout.stripe.com/pay?amount=9900&currency=eur&description=Pro', '_blank')
+    else window.open('https://checkout.stripe.com/pay?amount=14900&currency=eur&description=Pro', '_blank')
   }
 
   const handleVipCall = () => {
     if (typeof onBookCall === 'function') onBookCall('vip')
-    else window.open('https://checkout.stripe.com/pay?amount=39900&currency=eur&description=VIP', '_blank')
+    else window.open('https://checkout.stripe.com/pay?amount=49900&currency=eur&description=VIP', '_blank')
   }
 
   const perMonth = t('buyerPricing_perMonth')
@@ -323,7 +323,7 @@ export default function PricingCards({
                 ) : null}
               </div>
               <div className="pricing-card__price-row">
-                <span className="pricing-card__price">€99</span>
+                <span className="pricing-card__price">€149</span>
                 <span className="pricing-card__price-unit">{perMonth}</span>
               </div>
               {useCreative ? proFeaturesGrid : null}
@@ -395,7 +395,7 @@ export default function PricingCards({
                 </div>
               </div>
               <div className="pricing-card__price-row">
-                <span className="pricing-card__price">€399</span>
+                <span className="pricing-card__price">€499</span>
                 <span className="pricing-card__price-unit">{perMonth}</span>
               </div>
               {useCreative ? vipFeaturesGrid : null}

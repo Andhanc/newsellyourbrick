@@ -24,6 +24,7 @@ import { buildOwnerSaleCelebrations } from './ownerSaleCelebrations.js';
 import { getAuctionMinBidStep } from '../src/utils/auctionBidStep.js';
 import { registerStripeBillingRoutes, createStripeWebhookHandler } from './stripeBilling.js';
 import { sendCrmEmailViaEmailJS, resolveBuyerEmailForPurchaseRequest } from './emailJsCrmSend.js';
+import { registerIntelligenceIoProxy, getIntelligenceIoKeyFromEnv } from './intelligenceIoProxy.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -70,9 +71,16 @@ console.log('[SERVER] 📧 Итоговая конфигурация EmailJS:');
 console.log('[SERVER]    - Service ID:', emailJsServiceId ? emailJsServiceId.substring(0, 15) + '...' : '❌ не установлен');
 console.log('[SERVER]    - Template ID:', emailJsTemplateId || '❌ не установлен');
 console.log('[SERVER]    - Public Key:', emailJsPublicKey ? emailJsPublicKey.substring(0, 15) + '...' : '❌ не установлен');
+const intelligenceKeyOk = !!getIntelligenceIoKeyFromEnv();
+console.log(
+  '[SERVER] 🤖 Intelligence.io (умный помощник / POST /api/ai/intelligence-chat):',
+  intelligenceKeyOk ? '✅ ключ в окружении сервера' : '❌ нет INTELLIGENCE_IO_API_KEY / VITE_INTELLIGENCE_IO_API_KEY → 401 в чате до настройки'
+);
 console.log('[SERVER] ═══════════════════════════════════════════════════════');
 
 const app = express();
+
+registerIntelligenceIoProxy(app);
 // На Railway в production: сервер должен слушать на PORT (который устанавливает Railway, например 8080)
 // В development: используем SERVER_PORT или 3000
 // Логика: если NODE_ENV=production и есть PORT, используем PORT, иначе SERVER_PORT или 3000

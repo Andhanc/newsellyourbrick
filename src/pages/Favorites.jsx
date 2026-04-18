@@ -9,6 +9,7 @@ import { usePropertyFavorites } from '../context/PropertyFavoritesContext'
 import { hasDbBackedProperty } from '../utils/propertyFavoriteKey'
 import { ensureCanOpenProperty } from '../utils/propertyAccessGuard'
 import { useFavoriteAuctionItems } from '../hooks/useFavoriteAuctionItems'
+import { getPropertyCardImage } from '../utils/propertyImage'
 
 const Favorites = () => {
   const navigate = useNavigate()
@@ -72,7 +73,10 @@ const Favorites = () => {
                   >
                     <div className="favorite-card-image">
                       <img
-                        src={auction.image || auction.images?.[0]}
+                        src={getPropertyCardImage(
+                          auction,
+                          'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=800&q=80'
+                        )}
                         alt={auction.name || auction.title}
                         onError={(e) => {
                           e.target.src =

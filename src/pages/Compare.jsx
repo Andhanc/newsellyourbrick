@@ -9,6 +9,7 @@ import { useFavoriteAuctionItems } from '../hooks/useFavoriteAuctionItems'
 import { getComparisonGroupKey } from '../utils/propertyFavoriteKey'
 import { showNotification } from '../utils/toastHelper'
 import { askPropertyCompareAssistant } from '../services/aiService'
+import { getPropertyCardImage } from '../utils/propertyImage'
 import './Compare.css'
 
 const PLACEHOLDER_IMG =
@@ -405,7 +406,7 @@ const Compare = () => {
                       >
                         <div className="compare-pick-card-image">
                           <img
-                            src={item.property.image || item.property.images?.[0] || PLACEHOLDER_IMG}
+                            src={getPropertyCardImage(item.property, PLACEHOLDER_IMG)}
                             alt=""
                             onError={(e) => {
                               e.target.src = PLACEHOLDER_IMG

@@ -9,6 +9,7 @@ import { useLazyLoad } from '../hooks/useLazyLoad'
 import { fetchUserDeposit } from '../utils/depositApi'
 import { fetchNumericDbUserIdForApi, getStoredNumericUserId } from '../services/authService'
 import './Shares.css'
+import { getPropertyCardImage } from '../utils/propertyImage'
 
 // Фотографии разных объектов недвижимости для бегущей строки
 const HERO_MARQUEE_IMAGES = [
@@ -23,6 +24,9 @@ const HERO_MARQUEE_IMAGES = [
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api'
 
 // Демо-объекты долей (показываются вместе с объектами из API)
+const SHARE_CARD_FALLBACK =
+  'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=800&q=80'
+
 const DEMO_SHARE_OBJECTS = [
   {
     id: 'share-demo-1',
@@ -120,7 +124,7 @@ const Shares = () => {
         setApiShares(json.data.map((p) => ({
           ...p,
           id: p.shareId || `${p.property_type}-${p.id}`,
-          image: p.image || (Array.isArray(p.photos) && p.photos[0] ? (typeof p.photos[0] === 'string' ? p.photos[0] : p.photos[0].url) : null)
+          image: getPropertyCardImage(p, SHARE_CARD_FALLBACK),
         })))
       }
     } catch (_) {
@@ -220,7 +224,7 @@ const Shares = () => {
                     </span>
                   </div>
                   <img
-                    src={obj.image || 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=800&q=80'}
+                    src={getPropertyCardImage(obj, SHARE_CARD_FALLBACK)}
                     alt={obj.title}
                     className="share-card__image"
                   />
