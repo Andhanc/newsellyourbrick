@@ -15,6 +15,17 @@ function normalizeBillingApiBase() {
 
 const API_BASE = normalizeBillingApiBase()
 
+/**
+ * Переход на hosted Stripe Checkout.
+ * Используем replace(), а не href/assign: иначе в истории остаётся checkout.stripe.com
+ * и кнопка «Назад» после оплаты снова открывает Stripe.
+ */
+export function navigateToStripeCheckout(checkoutUrl) {
+  const u = String(checkoutUrl || '').trim()
+  if (!/^https?:\/\//i.test(u)) return
+  window.location.replace(u)
+}
+
 /** После возврата с Stripe — синхронизировать сессию в БД */
 export async function confirmCheckoutSession(sessionId) {
   const res = await fetch(`${API_BASE}/billing/confirm-session`, {
@@ -49,7 +60,7 @@ export async function startDepositWalletCheckout({ userId, customerEmail } = {})
     return { ok: false, error: data.error || 'Не удалось создать сессию оплаты' }
   }
   if (data.url) {
-    window.location.href = data.url
+    navigateToStripeCheckout(data.url)
     return { ok: true }
   }
   return { ok: false, error: 'Сервер не вернул ссылку на оплату' }
@@ -84,7 +95,7 @@ export async function startProSubscriptionCheckout({ userId, customerEmail } = {
     return { ok: false, error: data.error || 'Не удалось создать сессию оплаты' }
   }
   if (data.url) {
-    window.location.href = data.url
+    navigateToStripeCheckout(data.url)
     return { ok: true }
   }
   return { ok: false, error: 'Сервер не вернул ссылку на оплату' }
@@ -120,7 +131,7 @@ export async function startPropertyReservationCheckout({
     return { ok: false, error: data.error || 'Не удалось создать оплату резерва' }
   }
   if (data.url) {
-    window.location.href = data.url
+    navigateToStripeCheckout(data.url)
     return { ok: true }
   }
   return { ok: false, error: 'Сервер не вернул ссылку на оплату' }
@@ -167,7 +178,7 @@ export async function startListingPublicationCheckout({
           ? data.data.url
           : ''
     if (checkoutUrl && /^https?:\/\//i.test(checkoutUrl)) {
-      window.location.assign(checkoutUrl)
+      navigateToStripeCheckout(checkoutUrl)
       return { ok: true }
     }
     return { ok: false, error: 'Сервер не вернул ссылку на оплату (проверьте STRIPE_SECRET_KEY и логи API).' }

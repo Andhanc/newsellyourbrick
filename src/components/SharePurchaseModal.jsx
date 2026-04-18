@@ -4,6 +4,7 @@ import ShareSignaturePad from './ShareSignaturePad'
 import { fetchUserDeposit } from '../utils/depositApi'
 import './SharePurchaseModal.css'
 import { RESERVE_TERMS_PDF_URL as POLICY_PDF_URL } from '../utils/reserveTermsPdfUrl'
+import { navigateToStripeCheckout } from '../utils/subscriptionCheckout'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api'
 const WALLET_OFFSET_EUR = 3000
@@ -141,7 +142,7 @@ const SharePurchaseModal = ({
         return
       }
       if (data.url) {
-        window.location.href = data.url
+        navigateToStripeCheckout(data.url)
         return
       }
       setError('Сервер не вернул ссылку на оплату')

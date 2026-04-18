@@ -59,6 +59,10 @@ import '../components/PropertyList.css'
 import './MainPage.css'
 import './OwnerDashboard.css'
 import { useTranslation } from 'react-i18next'
+import {
+  exportOwnerAnalyticsExcel,
+  downloadXlsxBuffer,
+} from '../utils/ownerAnalyticsExcelExport'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
 
@@ -1444,87 +1448,43 @@ const OwnerDashboard = () => {
     return properties
   }
 
-  const handleExportToExcel = () => {
-    // Формируем данные для Excel отчета
-    const analyticsData = []
-    
-    // Заголовки
-    analyticsData.push([
-      'Название', 
-      'Локация', 
-      'Цена', 
-      'Спальни', 
-      'Ванные', 
-      'Площадь (м²)', 
-      'Статус', 
-      'Лайки', 
-      'Ставки', 
-      'Куплено долей',
-      'Дата публикации'
-    ])
-    
-    // Данные по объявлениям
-    properties.forEach(property => {
-      const statusText = property.status === 'active' ? 'Активно' : 
-                        property.status === 'sold' ? 'Продано' : 
-                        'На модерации'
-      
-      analyticsData.push([
-        property.title,
-        property.location,
-        property.price,
-        property.beds,
-        property.baths,
-        property.sqft,
-        statusText,
-        property.likesCount ?? 0,
-        property.bidsCount ?? 0,
-        Number(property.shares_sold) || 0,
-        formatDateSafe(property.publishedDate)
-      ])
-    })
-    
-    // Добавляем итоговую статистику
-    analyticsData.push([])
-    analyticsData.push(['ИТОГОВАЯ СТАТИСТИКА'])
-    analyticsData.push(['Всего объявлений', totalProperties])
-    analyticsData.push(['Активных объявлений', activeProperties])
-    analyticsData.push(['Продано объявлений', soldProperties])
-    analyticsData.push(['Всего лайков', totalLikes])
-    analyticsData.push(['Всего ставок', totalBids])
-    analyticsData.push(['Куплено долей (всего)', totalSharesSoldAgg])
-    analyticsData.push(['Заинтересованных пользователей', interestCount])
-    analyticsData.push(['Общая выручка', properties
-      .filter(p => p.status === 'sold')
-      .reduce((sum, p) => sum + p.price, 0)])
-    analyticsData.push(['Средняя цена', 
-      totalProperties > 0 ? Math.round(properties.reduce((sum, p) => sum + p.price, 0) / totalProperties) : 0])
-    analyticsData.push(['Конверсия лайки → ставки (%)', `${convLikesToBidsPct}%`])
-    analyticsData.push(['Интерес на объявление', interestPerListing])
-    
-    // Преобразуем в CSV формат
-    const csvContent = analyticsData
-      .map(row => row.map(cell => {
-        // Экранируем кавычки и запятые
-        if (typeof cell === 'string' && (cell.includes(',') || cell.includes('"') || cell.includes('\n'))) {
-          return `"${cell.replace(/"/g, '""')}"`
-        }
-        return cell
-      }).join(','))
-      .join('\n')
-    
-    // Добавляем BOM для правильной кодировки в Excel
-    const BOM = '\uFEFF'
-    const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' })
-    const link = document.createElement('a')
-    const url = URL.createObjectURL(blob)
-    link.setAttribute('href', url)
-    link.setAttribute('download', `analytics_report_${new Date().toISOString().split('T')[0]}.csv`)
-    link.style.visibility = 'hidden'
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    URL.revokeObjectURL(url)
+  const handleExportToExcel = async () => {
+    if (!userId) {
+      showToast('Войдите в аккаунт, чтобы скачать отчёт', 'error')
+      return
+    }
+    try {
+      const res = await fetch(`${API_BASE_URL}/owner/${userId}/my-sales`)
+      const json = await res.json().catch(() => ({}))
+      const mySalesData =
+        res.ok && json.success && json.data
+          ? json.data
+          : { auction: [], shares: [], debts: [], buy_now: [] }
+
+      const buffer = await exportOwnerAnalyticsExcel({
+        formatDateSafe,
+        properties,
+        mySalesData,
+        stats: {
+          totalProperties,
+          activeProperties,
+          soldProperties,
+          totalLikes,
+          totalBids,
+          totalSharesSoldAgg,
+          interestCount,
+          convLikesToBidsPct,
+          interestPerListing,
+        },
+      })
+      downloadXlsxBuffer(
+        buffer,
+        `analytics_report_${new Date().toISOString().split('T')[0]}.xlsx`
+      )
+    } catch (e) {
+      console.error('export excel', e)
+      showToast('Не удалось сформировать Excel-отчёт', 'error')
+    }
   }
 
   const handleOwnerNotificationView = async (notificationId) => {
