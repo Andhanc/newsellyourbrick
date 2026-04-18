@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useUser, useClerk } from '@clerk/clerk-react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
@@ -36,9 +36,10 @@ import Confetti from 'react-confetti'
 import { scrollMainTo } from '../utils/mainScroll'
 import { isSiteUserSignedIn } from '../utils/siteAuthGate'
 import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
-import { useCabinetOverviewData, normalizeSubscriptionPlanVisual } from '../hooks/useCabinetOverviewData'
-import SubscriptionCabinetPreview from '../components/SubscriptionCabinetPreview'
-import { startProSubscriptionCheckout } from '../utils/subscriptionCheckout'
+import { useCabinetOverviewData, effectivePurchasedTier } from '../hooks/useCabinetOverviewData'
+import PricingCards from '../components/ui/PricingCards'
+import { SUBSCRIPTION_BILLING_UPDATED_EVENT } from '../hooks/useCabinetOverviewData'
+import { startProSubscriptionCheckout, confirmCheckoutSession } from '../utils/subscriptionCheckout'
 import DirectionSummaryCard from '../components/ui/direction-summary-card'
 import PassportRecognitionModal from '../components/PassportRecognitionModal'
 import { countries as countryList } from '../components/CountrySelect'
@@ -463,6 +464,7 @@ function bookingsWord(n) {
 
 function TestPage() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const { t } = useTranslation()
   const { user, isLoaded } = useUser()
   const { signOut } = useClerk()
@@ -508,6 +510,7 @@ function TestPage() {
   /** После клика по строке в тосте — скрываем тост, чтобы не перекрывал поля ввода. */
   const [profileCompletionToastDismissedForInput, setProfileCompletionToastDismissedForInput] = useState(false)
   const [showProfileCompleteCelebration, setShowProfileCompleteCelebration] = useState(false)
+  const [subscriptionCheckoutCelebration, setSubscriptionCheckoutCelebration] = useState(false)
   const [showServiceQuickLinksTour, setShowServiceQuickLinksTour] = useState(false)
   const [serviceTourAcknowledged, setServiceTourAcknowledged] = useState(false)
   const [isSellObjectPromptOpen, setIsSellObjectPromptOpen] = useState(false)
@@ -785,6 +788,59 @@ function TestPage() {
     }
   }, [subscriptionSheetOpen, numericUserId])
 
+  const refetchSubscriptionBillingState = useCallback(async () => {
+    const uid = numericUserId ?? getStoredNumericUserId()
+    if (!uid) return
+    try {
+      const res = await fetch(`${API_BASE_URL}/users/${uid}/subscription-billing`)
+      const json = await res.json()
+      const sub = json?.success && json?.data ? json.data.subscription : null
+      setSubscriptionSheetState(sub)
+      if (json?.success) {
+        window.dispatchEvent(new CustomEvent(SUBSCRIPTION_BILLING_UPDATED_EVENT))
+      }
+    } catch {
+      /* ignore */
+    }
+  }, [numericUserId])
+
+  /** Возврат с Stripe Checkout Pro: подтверждение сессии и поздравление на профиле (как после верификации). */
+  useEffect(() => {
+    const celebrationFlag = searchParams.get('subscription_celebration') === '1'
+    const checkout = searchParams.get('subscription_checkout')
+    const sessionId = searchParams.get('session_id')
+
+    if (celebrationFlag) {
+      void refetchSubscriptionBillingState()
+      setSubscriptionCheckoutCelebration(true)
+      navigate('/profile', { replace: true })
+      return
+    }
+
+    if (checkout !== 'success' || !sessionId || !sessionId.startsWith('cs_')) return
+
+    let cancelled = false
+    void (async () => {
+      const r = await confirmCheckoutSession(sessionId)
+      if (cancelled) return
+      if (r.ok) {
+        await refetchSubscriptionBillingState()
+        if (!cancelled) setSubscriptionCheckoutCelebration(true)
+      } else {
+        showNotification(
+          r.error === 'no_app_user_id'
+            ? t('buyerSubs_checkoutErrorSupport')
+            : t('buyerSubs_checkoutErrorPending'),
+          'error'
+        )
+      }
+      if (!cancelled) navigate('/profile', { replace: true })
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [searchParams, navigate, t, refetchSubscriptionBillingState])
+
   useEffect(() => {
     if (!numericUserId) {
       setBookingsSheetRows([])
@@ -852,15 +908,24 @@ function TestPage() {
     ''
 
   const subscriptionProfileVisual = useMemo(() => {
-    if (subscriptionSheetState) return normalizeSubscriptionPlanVisual(subscriptionSheetState)
+    if (subscriptionSheetState) return effectivePurchasedTier(subscriptionSheetState)
     const s = String(subscriptionPlanLabel || '').toLowerCase()
     if (s.includes('vip')) return 'vip'
     if (s.includes('pro')) return 'pro'
     return 'starter'
   }, [subscriptionSheetState, subscriptionPlanLabel])
 
-  const handleSubscriptionUpgradeNext = useCallback(async () => {
-    if (subscriptionProfileVisual === 'starter') {
+  const handleSubscriptionPlanSubscribe = useCallback(async (plan) => {
+    if (plan === 'starter') {
+      showNotification(t('buyerCabinet_toastStarter'), 'info')
+      return
+    }
+    if (plan === 'pro') {
+      const tier = subscriptionProfileVisual
+      if (tier === 'pro' || tier === 'vip') {
+        showNotification(t('buyerCabinet_toastDuplicateSubscription'), 'info')
+        return
+      }
       setSubscriptionUpgradeLoading(true)
       try {
         const ud = getUserData()
@@ -870,14 +935,18 @@ function TestPage() {
           customerEmail: ud?.email,
         })
         if (!result.ok) {
-          showNotification(result.error || t('buyerCabinet_checkoutError'), 'error')
+          const msg =
+            result.error === 'already_subscribed_pro'
+              ? t('buyerCabinet_toastDuplicateSubscription')
+              : result.error || t('buyerCabinet_checkoutError')
+          showNotification(msg, result.error === 'already_subscribed_pro' ? 'info' : 'error')
         }
       } finally {
         setSubscriptionUpgradeLoading(false)
       }
       return
     }
-    if (subscriptionProfileVisual === 'pro') {
+    if (plan === 'vip') {
       showNotification(t('buyerCabinet_toastVipSoon'), 'info')
     }
   }, [subscriptionProfileVisual, t])
@@ -1326,6 +1395,7 @@ function TestPage() {
     profileGateActive &&
     !dataSheetOpen &&
     !showProfileCompleteCelebration &&
+    !subscriptionCheckoutCelebration &&
     !showServiceQuickLinksTour
 
   /** Тост прогресса держим до 100%; порог 78% только для гейта и спотлайта (`needsProfileOnboarding`). */
@@ -1466,6 +1536,11 @@ function TestPage() {
     ],
   )
 
+  const handleSubscriptionCheckoutCelebrationGo = useCallback(() => {
+    setSubscriptionCheckoutCelebration(false)
+    scrollMainTo(0, 0, 'smooth')
+  }, [])
+
   const handleProfileCompleteCelebrationGo = useCallback(() => {
     const id = resolvedNumericUserId
     if (id != null && id !== '') {
@@ -1502,7 +1577,7 @@ function TestPage() {
   }, [resolvedNumericUserId])
 
   useEffect(() => {
-    if (!showProfileCompleteCelebration) return
+    if (!showProfileCompleteCelebration && !subscriptionCheckoutCelebration) return
     const onKeyDown = (e) => {
       if (e.key === 'Escape') {
         e.preventDefault()
@@ -1511,7 +1586,7 @@ function TestPage() {
     }
     window.addEventListener('keydown', onKeyDown, true)
     return () => window.removeEventListener('keydown', onKeyDown, true)
-  }, [showProfileCompleteCelebration])
+  }, [showProfileCompleteCelebration, subscriptionCheckoutCelebration])
 
   /**
    * Через 1 с после открытия «Данные» (<78%) — подсказка на тост.
@@ -1580,6 +1655,7 @@ function TestPage() {
     Boolean(firstMissingKey) &&
     !readToastGuideFieldNavDone(resolvedNumericUserId) &&
     !showProfileCompleteCelebration &&
+    !subscriptionCheckoutCelebration &&
     !showServiceQuickLinksTour
 
   const onboardingGateUiLocked =
@@ -1587,7 +1663,8 @@ function TestPage() {
     isSiteUserSignedIn(user, isLoaded) &&
     Boolean(resolvedNumericUserId) &&
     !serviceTourAcknowledged &&
-    !showProfileCompleteCelebration
+    !showProfileCompleteCelebration &&
+    !subscriptionCheckoutCelebration
 
   useEffect(() => {
     const bodyClass = 'profile-onboarding-gate-locked'
@@ -2331,17 +2408,22 @@ function TestPage() {
                   </h3>
                   <span className="test-data-panel__toolbar-spacer" aria-hidden />
                 </div>
-                <p className="test-data-panel__hint test-data-panel__hint--subscription">
-                  {t('subCab_preview_dropboxHint')}
-                </p>
-                <SubscriptionCabinetPreview
-                  loading={subscriptionSheetLoading}
-                  currentVisual={subscriptionProfileVisual}
-                  subscription={subscriptionSheetState}
-                  onUpgradeNext={handleSubscriptionUpgradeNext}
-                  upgradeLoading={subscriptionUpgradeLoading}
-                  onSeeAll={() => setSubscriptionSheetOpen(false)}
-                />
+                {subscriptionSheetLoading ? (
+                  <p className="test-data-panel__loading">{t('buyerCabinet_billingLoading')}</p>
+                ) : (
+                  <div className="test-subscription-pricing-wrap">
+                    <div className="test-subscription-pricing-scroll">
+                      <PricingCards
+                        creative
+                        compact={false}
+                        mobileTwoColumn={false}
+                        currentPlanVisual={subscriptionProfileVisual}
+                        checkoutBusy={subscriptionUpgradeLoading}
+                        onBookCall={handleSubscriptionPlanSubscribe}
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -2592,7 +2674,7 @@ function TestPage() {
         message={toastGuideMessage}
       />
 
-      {showProfileCompleteCelebration ? (
+      {showProfileCompleteCelebration || subscriptionCheckoutCelebration ? (
         <>
           <div className="test-profile-complete-confetti" aria-hidden>
             {!reduceMotionUi ? (
@@ -2635,11 +2717,23 @@ function TestPage() {
               aria-labelledby="test-profile-complete-title"
             >
               <h2 id="test-profile-complete-title" className="test-profile-complete-modal__title">
-                Поздравляем!
+                {showProfileCompleteCelebration ? 'Поздравляем!' : t('buyerSubs_celebrationTitle')}
               </h2>
-              <p className="test-profile-complete-modal__text">Вы успешно зарегистрировали профиль.</p>
-              <button type="button" className="test-profile-complete-modal__btn" onClick={handleProfileCompleteCelebrationGo}>
-                Перейти
+              <p className="test-profile-complete-modal__text">
+                {showProfileCompleteCelebration
+                  ? 'Вы успешно зарегистрировали профиль.'
+                  : t('buyerSubs_celebrationBody')}
+              </p>
+              <button
+                type="button"
+                className="test-profile-complete-modal__btn"
+                onClick={
+                  showProfileCompleteCelebration
+                    ? handleProfileCompleteCelebrationGo
+                    : handleSubscriptionCheckoutCelebrationGo
+                }
+              >
+                {showProfileCompleteCelebration ? 'Перейти' : t('buyerSubs_celebrationCta')}
               </button>
             </div>
           </div>

@@ -16,6 +16,7 @@ import { fetchVerificationStatus } from '../utils/verificationStatusApi'
 import { fetchUserById } from '../utils/usersApi'
 import BuyerCabinetSidebar from '../components/BuyerCabinetSidebar'
 import { useChainedAppLayoutScroll } from '../hooks/useChainedAppLayoutScroll'
+import { effectivePurchasedTier } from '../hooks/useCabinetOverviewData'
 import './Profile.css'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
@@ -1110,7 +1111,9 @@ const Profile = () => {
                 <PricingCards
                   compact
                   mobileTwoColumn
+                  currentPlanVisual={effectivePurchasedTier(subscriptionBilling?.subscription)}
                   onBookCall={async (plan) => {
+                    const tier = effectivePurchasedTier(subscriptionBilling?.subscription)
                     if (plan === 'starter') {
                       showNotification(t('buyerCabinet_toastStarter'), 'info')
                       return
@@ -1122,6 +1125,10 @@ const Profile = () => {
                     if (plan !== 'pro') {
                       return
                     }
+                    if (tier === 'pro' || tier === 'vip') {
+                      showNotification(t('buyerCabinet_toastDuplicateSubscription'), 'info')
+                      return
+                    }
                     const userData = getUserData()
                     const uid = userData?.id ?? localStorage.getItem('userId')
                     const result = await startProSubscriptionCheckout({
@@ -1129,7 +1136,14 @@ const Profile = () => {
                       customerEmail: profileData.email || userData?.email,
                     })
                     if (!result.ok) {
-                      showNotification(result.error || t('buyerCabinet_checkoutError'), 'error')
+                      const msg =
+                        result.error === 'already_subscribed_pro'
+                          ? t('buyerCabinet_toastDuplicateSubscription')
+                          : result.error || t('buyerCabinet_checkoutError')
+                      showNotification(
+                        msg,
+                        result.error === 'already_subscribed_pro' ? 'info' : 'error',
+                      )
                     }
                   }}
                 />

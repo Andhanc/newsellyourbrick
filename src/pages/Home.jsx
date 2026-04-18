@@ -36,6 +36,7 @@ import { getApiBaseUrl } from '../utils/apiConfig'
 import { fetchUserDeposit } from '../utils/depositApi'
 import { getManagerContactButtons } from '../services/liveChatApi'
 import { getEffectiveAuctionEndTime } from '../utils/auctionReminderBounds'
+import { useManagerLiveChat } from '../hooks/useManagerLiveChat'
 
 function formatPropertyForList(prop, isAuction) {
   return {
@@ -82,6 +83,8 @@ function Home() {
   
   // Состояния для чата AI
   const [isChatOpen, setIsChatOpen] = useState(false)
+  const [isManagerChatOpen, setIsManagerChatOpen] = useState(false)
+  const [managerChatInput, setManagerChatInput] = useState('')
   const [floatWidgetsHiddenByFooter, setFloatWidgetsHiddenByFooter] = useState(false)
   const [chatMessages, setChatMessages] = useState([])
   const [chatInput, setChatInput] = useState('')
@@ -319,9 +322,78 @@ function Home() {
     return () => window.removeEventListener('focus', onFocus)
   }, [dbUserId])
 
+  const isLoggedIn = isAuthenticated() || (user && userLoaded)
+  const getChatUserId = useMemo(() => {
+    if (isLoggedIn) {
+      const currentUserData = getUserData()
+      const userId = currentUserData.id || localStorage.getItem('userId') || dbUserId
+      if (userId) {
+        return `user_${userId}`
+      }
+    }
+
+    let sessionId = localStorage.getItem('chatSessionId')
+    if (!sessionId) {
+      sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+      localStorage.setItem('chatSessionId', sessionId)
+    }
+    return sessionId
+  }, [isLoggedIn, dbUserId])
+
+  const {
+    liveChatToken,
+    managerConnecting,
+    managerMessagesRef,
+    managerThreadUi,
+    enterLiveManagerChat,
+    pauseManagerPolling,
+    sendManagerMessage,
+  } = useManagerLiveChat(getChatUserId, t)
+
+  const openManagerChatDock = useCallback(async () => {
+    if (!isSiteUserSignedIn(user, userLoaded)) {
+      requestOpenLoginModal({ wizard: true })
+      return
+    }
+    setIsChatOpen(false)
+    setIsManagerChatOpen(true)
+    try {
+      await enterLiveManagerChat()
+    } catch {
+      setIsManagerChatOpen(false)
+    }
+  }, [enterLiveManagerChat, user, userLoaded])
+
+  const closeManagerChatDock = useCallback(() => {
+    setIsManagerChatOpen(false)
+    setManagerChatInput('')
+    pauseManagerPolling()
+  }, [pauseManagerPolling])
+
+  useEffect(() => {
+    window.dispatchEvent(
+      new CustomEvent('managerChatStateChange', { detail: { isOpen: isManagerChatOpen } })
+    )
+  }, [isManagerChatOpen])
+
+  useEffect(() => {
+    const onOpenManager = () => {
+      void openManagerChatDock()
+    }
+    window.addEventListener('openManagerChat', onOpenManager)
+    return () => window.removeEventListener('openManagerChat', onOpenManager)
+  }, [openManagerChatDock])
+
   // Функции для чата AI
   const toggleChat = () => {
-    setIsChatOpen((prev) => !prev)
+    setIsChatOpen((prev) => {
+      const next = !prev
+      if (next) {
+        setIsManagerChatOpen(false)
+        pauseManagerPolling()
+      }
+      return next
+    })
   }
 
   const handleChatInputChange = (e) => {
@@ -389,7 +461,7 @@ function Home() {
           requestOpenLoginModal({ wizard: true })
           return
         }
-        navigate('/chat?manager=1')
+        void openManagerChatDock()
         return
       }
       if (contactPref === 'telegram') {
@@ -608,28 +680,6 @@ function Home() {
     return userRole === 'buyer' || userRole === 'client'
   }
 
-  // Функция для получения уникального идентификатора пользователя/сессии
-  const isLoggedIn = isAuthenticated() || (user && userLoaded)
-  const getChatUserId = useMemo(() => {
-    // Если пользователь авторизован, используем его ID
-    if (isLoggedIn) {
-      const currentUserData = getUserData()
-      const userId = currentUserData.id || localStorage.getItem('userId') || dbUserId
-      if (userId) {
-        return `user_${userId}`
-      }
-    }
-    
-    // Если пользователь не авторизован, создаем/используем уникальный ID сессии
-    let sessionId = localStorage.getItem('chatSessionId')
-    if (!sessionId) {
-      // Генерируем уникальный ID сессии
-      sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-      localStorage.setItem('chatSessionId', sessionId)
-    }
-    return sessionId
-  }, [isLoggedIn, dbUserId])
-
   // Загружаем историю чата из localStorage при монтировании компонента или изменении пользователя
   const chatHistoryLoadedRef = useRef(false)
   const lastChatUserIdRef = useRef(null)
@@ -733,17 +783,17 @@ function Home() {
   // Обработчик события для открытия AI чата из хедера
   useEffect(() => {
     const handleOpenAIChat = () => {
-      if (!isChatOpen) {
-        setIsChatOpen(true)
-      }
+      setIsManagerChatOpen(false)
+      pauseManagerPolling()
+      setIsChatOpen(true)
     }
 
     window.addEventListener('openAIChat', handleOpenAIChat)
-    
+
     return () => {
       window.removeEventListener('openAIChat', handleOpenAIChat)
     }
-  }, [isChatOpen])
+  }, [pauseManagerPolling])
 
   useEffect(() => {
     const footer = document.getElementById('site-footer')
@@ -965,6 +1015,94 @@ function Home() {
             </button>
           </form>
         </div>
+        )}
+
+        {isManagerChatOpen && (
+          <div
+            className={`chat-widget chat-widget--manager-dock${
+              isChatOpen ? ' chat-widget--stacked-above-ai' : ''
+            }`}
+            role="dialog"
+            aria-label={t('chatManagerTitle')}
+          >
+            <div className="chat-widget__header">
+              <div className="chat-widget__header-info">
+                <div className="chat-widget__avatar chat-widget__avatar--manager">M</div>
+                <div className="chat-widget__header-text">
+                  <h3 className="chat-widget__title">{t('chatManagerTitle')}</h3>
+                  <span className="chat-widget__status">{t('chatManagerOnline')}</span>
+                </div>
+              </div>
+              <button
+                type="button"
+                className="chat-widget__close"
+                onClick={closeManagerChatDock}
+                aria-label={t('closeChat')}
+              >
+                <FiX size={20} />
+              </button>
+            </div>
+
+            <div className="chat-widget__messages" ref={managerMessagesRef}>
+              {managerConnecting && (
+                <div className="chat-widget__message chat-widget__message--bot">
+                  <div className="chat-widget__message-content">
+                    <div className="chat-widget__typing" aria-hidden>
+                      <span />
+                      <span />
+                      <span />
+                    </div>
+                    <p className="chat-widget__manager-connect-hint">{t('liveChatWaitNotice')}</p>
+                  </div>
+                </div>
+              )}
+              {!managerConnecting &&
+                managerThreadUi.map((message) => (
+                  <div
+                    key={message.id}
+                    className={`chat-widget__message ${
+                      message.sender === 'user'
+                        ? 'chat-widget__message--user'
+                        : message.sender === 'manager'
+                          ? 'chat-widget__message--manager'
+                          : 'chat-widget__message--system'
+                    }`}
+                  >
+                    <div className="chat-widget__message-content">{message.text}</div>
+                    <div className="chat-widget__message-time">{message.time}</div>
+                  </div>
+                ))}
+            </div>
+
+            <form
+              className="chat-widget__input-form"
+              onSubmit={(e) => {
+                e.preventDefault()
+                if (!managerChatInput.trim() || managerConnecting || !liveChatToken) return
+                const text = managerChatInput.trim()
+                setManagerChatInput('')
+                void sendManagerMessage(text)
+              }}
+            >
+              <input
+                type="text"
+                className="chat-widget__input"
+                placeholder={t('chatPlaceholder')}
+                value={managerChatInput}
+                onChange={(e) => setManagerChatInput(e.target.value)}
+                autoComplete="off"
+                disabled={managerConnecting || !liveChatToken}
+              />
+              <button
+                type="submit"
+                className="chat-widget__send"
+                aria-label={t('sendMessage')}
+                disabled={managerConnecting || !liveChatToken}
+              >
+                <FiSend size={18} />
+              </button>
+            </form>
+          </div>
         )}
       </div>
 

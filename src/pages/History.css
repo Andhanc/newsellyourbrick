@@ -456,6 +456,33 @@
   flex-direction: column;
 }
 
+/* «Мои ставки» (сетка): фото — ровно половина высоты карточки; контент — другая половина */
+.history-list--bids-grid .bid-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
+  min-height: 280px;
+  height: 100%;
+  padding: 0;
+  overflow: hidden;
+  align-self: stretch;
+}
+
+.history-list--bids-grid .bid-card .card-image {
+  width: 100%;
+  max-width: none;
+  min-height: 0;
+  height: 100%;
+  border-radius: 0;
+}
+
+.history-list--bids-grid .bid-card .card-content {
+  min-height: 0;
+  padding: 24px;
+  box-sizing: border-box;
+  overflow-y: auto;
+}
+
 .card-image {
   flex-shrink: 0;
   width: 200px;
@@ -726,6 +753,10 @@
   .card-image {
     width: 100%;
     height: 200px;
+  }
+
+  .history-list--bids-grid .bid-card .card-image {
+    height: 100%;
   }
 }
 

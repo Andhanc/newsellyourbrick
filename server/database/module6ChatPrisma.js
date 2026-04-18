@@ -470,6 +470,8 @@ export const liveChatQueries = {
           u.last_name AS client_last_name,
           u.email AS client_email,
           u.phone_number AS client_phone,
+          u.user_photo AS client_user_photo,
+          u.telegram_photo_url AS client_telegram_photo_url,
           al.email AS lead_email,
           al.phone AS lead_phone,
           al.summary AS lead_summary
@@ -494,6 +496,8 @@ export const liveChatQueries = {
           u.last_name AS client_last_name,
           u.email AS client_email,
           u.phone_number AS client_phone,
+          u.user_photo AS client_user_photo,
+          u.telegram_photo_url AS client_telegram_photo_url,
           al.email AS lead_email,
           al.phone AS lead_phone,
           al.summary AS lead_summary

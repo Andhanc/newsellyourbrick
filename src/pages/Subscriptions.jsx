@@ -9,6 +9,9 @@ import { startProSubscriptionCheckout, confirmCheckoutSession } from '../utils/s
 import { showNotification } from '../utils/toastHelper'
 import './Subscriptions.css'
 import { useChainedAppLayoutScroll } from '../hooks/useChainedAppLayoutScroll'
+import { effectivePurchasedTier } from '../hooks/useCabinetOverviewData'
+
+const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api'
 
 const Subscriptions = () => {
   const navigate = useNavigate()
@@ -16,6 +19,7 @@ const Subscriptions = () => {
   const { t } = useTranslation()
   const [searchParams, setSearchParams] = useSearchParams()
   const [userId, setUserId] = useState(null)
+  const [subscriptionBilling, setSubscriptionBilling] = useState(null)
   const buyerCabinetPageRef = useRef(null)
   const buyerCabinetMainScrollRef = useRef(null)
 
@@ -43,6 +47,25 @@ const Subscriptions = () => {
   }, [])
 
   useEffect(() => {
+    if (!userId) return
+    let cancelled = false
+    fetch(`${API_BASE}/users/${userId}/subscription-billing`)
+      .then((r) => r.json())
+      .then((json) => {
+        if (cancelled) return
+        if (json.success && json.data) setSubscriptionBilling(json.data)
+        else setSubscriptionBilling(null)
+      })
+      .catch(() => {
+        if (!cancelled) setSubscriptionBilling(null)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [userId])
+
+  /** Старые ссылки Stripe на /subscriptions?checkout=success — подтверждаем и уводим на профиль с поздравлением. */
+  useEffect(() => {
     const checkout = searchParams.get('checkout')
     const sessionId = searchParams.get('session_id')
     if (checkout !== 'success' || !sessionId || !sessionId.startsWith('cs_')) return
@@ -51,7 +74,7 @@ const Subscriptions = () => {
       const r = await confirmCheckoutSession(sessionId)
       if (cancelled) return
       if (r.ok) {
-        showNotification(t('buyerSubs_checkoutSuccess'), 'success')
+        navigate('/profile?subscription_celebration=1', { replace: true })
       } else {
         showNotification(
           r.error === 'no_app_user_id'
@@ -59,16 +82,16 @@ const Subscriptions = () => {
             : t('buyerSubs_checkoutErrorPending'),
           'error'
         )
+        const next = new URLSearchParams(searchParams)
+        next.delete('checkout')
+        next.delete('session_id')
+        setSearchParams(next, { replace: true })
       }
-      const next = new URLSearchParams(searchParams)
-      next.delete('checkout')
-      next.delete('session_id')
-      setSearchParams(next, { replace: true })
     })()
     return () => {
       cancelled = true
     }
-  }, [searchParams, setSearchParams, t])
+  }, [searchParams, setSearchParams, t, navigate])
 
   const handleBack = () => {
     navigate(-1)
@@ -76,6 +99,11 @@ const Subscriptions = () => {
 
   const handleBookCall = async (plan) => {
     if (plan === 'pro') {
+      const tier = effectivePurchasedTier(subscriptionBilling?.subscription)
+      if (tier === 'pro' || tier === 'vip') {
+        showNotification(t('buyerCabinet_toastDuplicateSubscription'), 'info')
+        return
+      }
       const userData = getUserData()
       const uid = userData?.id ?? localStorage.getItem('userId')
       const result = await startProSubscriptionCheckout({
@@ -83,7 +111,11 @@ const Subscriptions = () => {
         customerEmail: userData?.email,
       })
       if (!result.ok) {
-        showNotification(result.error || t('buyerCabinet_checkoutError'), 'error')
+        const msg =
+          result.error === 'already_subscribed_pro'
+            ? t('buyerCabinet_toastDuplicateSubscription')
+            : result.error || t('buyerCabinet_checkoutError')
+        showNotification(msg, result.error === 'already_subscribed_pro' ? 'info' : 'error')
       }
       return
     }
@@ -122,7 +154,12 @@ const Subscriptions = () => {
         </header>
 
         <div className="subscriptions-focus__cards">
-          <PricingCards onBookCall={handleBookCall} mobileTwoColumn />
+          <PricingCards
+            creative
+            onBookCall={handleBookCall}
+            mobileTwoColumn
+            currentPlanVisual={effectivePurchasedTier(subscriptionBilling?.subscription)}
+          />
         </div>
       </div>
     </div>

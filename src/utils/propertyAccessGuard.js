@@ -1,5 +1,4 @@
 import { isAuthenticated } from '../services/authService'
-import { requestOpenLoginModal } from './requestOpenLoginModal'
 
 /**
  * @param {boolean} [clerkSignedIn] — передать true, если пользователь вошёл через Clerk (useUser: user && isLoaded)
@@ -9,8 +8,6 @@ export const ensureCanOpenProperty = (clerkSignedIn) => {
   if (isAdmin || isAuthenticated() || clerkSignedIn === true) {
     return true
   }
-
-  requestOpenLoginModal({ wizard: true })
   return false
 }
 

@@ -30,7 +30,9 @@ const BuyNowModal = ({
   const [stripeLoading, setStripeLoading] = useState(false)
   const [walletBalanceEur, setWalletBalanceEur] = useState(null)
   const [useWalletDeposit, setUseWalletDeposit] = useState(false)
+  const [reserveInEur, setReserveInEur] = useState(null)
   const [pdfOpened, setPdfOpened] = useState(false)
+  const [isPdfViewerOpen, setIsPdfViewerOpen] = useState(false)
   const [agreed, setAgreed] = useState(false)
   const signaturePadRef = useRef(null)
 
@@ -92,9 +94,12 @@ const BuyNowModal = ({
         const API_BASE_URL = await getApiBaseUrl()
         const deposit = await fetchUserDeposit(API_BASE_URL, dbUserId, { ttlMs: 15000 })
         if (cancelled || !deposit) return
-        if (typeof deposit.depositAmount === 'number') {
-          setWalletBalanceEur(deposit.depositAmount)
+        const parsedDeposit = Number(deposit.depositAmount)
+        if (Number.isFinite(parsedDeposit)) {
+          setWalletBalanceEur(parsedDeposit)
+          return
         }
+        setWalletBalanceEur(null)
       } catch {
         setWalletBalanceEur(null)
       }
@@ -108,6 +113,7 @@ const BuyNowModal = ({
     if (!isOpen) {
       setUseWalletDeposit(false)
       setPdfOpened(false)
+      setIsPdfViewerOpen(false)
       setAgreed(false)
     }
   }, [isOpen])
@@ -118,8 +124,6 @@ const BuyNowModal = ({
     setAgreed(false)
     signaturePadRef.current?.clear()
   }, [useWalletDeposit, isOpen])
-
-  if (!isOpen) return null
 
   const propertyTitle = property?.title || property?.name || t('listingDefault')
   const currency = (property?.currency || 'USD').toUpperCase()
@@ -136,14 +140,27 @@ const BuyNowModal = ({
     0
   const minSalePrice = Math.round(minSalePriceRaw * 100) / 100
   const tenPercent = Math.round(minSalePrice * DEPOSIT_FRACTION * 100) / 100
-  const isEur = currency === 'EUR'
-  const canUseWallet =
-    isEur && walletBalanceEur != null && walletBalanceEur >= WALLET_OFFSET_EUR && tenPercent > WALLET_OFFSET_EUR
+  const reserveBasisForWallet =
+    currency === 'EUR'
+      ? tenPercent
+      : Number.isFinite(reserveInEur) && reserveInEur != null
+        ? reserveInEur
+        : null
+  const canUseWallet = walletBalanceEur != null && walletBalanceEur >= WALLET_OFFSET_EUR && reserveBasisForWallet > WALLET_OFFSET_EUR
 
-  let cardPayDisplay = tenPercent
+  let reserveDisplayAmount = tenPercent
+  let reserveDisplayCurrency = currency
   if (useWalletDeposit && canUseWallet) {
-    cardPayDisplay = Math.round(Math.max(0, tenPercent - WALLET_OFFSET_EUR) * 100) / 100
+    if (currency === 'EUR') {
+      reserveDisplayAmount = Math.round(Math.max(0, tenPercent - WALLET_OFFSET_EUR) * 100) / 100
+      reserveDisplayCurrency = 'EUR'
+    } else {
+      const reserveEurValue = Number.isFinite(reserveInEur) && reserveInEur != null ? reserveInEur : tenPercent
+      reserveDisplayAmount = Math.round(Math.max(0, reserveEurValue - WALLET_OFFSET_EUR) * 100) / 100
+      reserveDisplayCurrency = 'EUR'
+    }
   }
+  const reserveDisplaySymbol = reserveDisplayCurrency === 'USD' ? '$' : reserveDisplayCurrency === 'EUR' ? '€' : ''
 
   const winningBidNum =
     isAuctionWinner && winningBidAmount != null ? Math.round(Number(winningBidAmount) * 100) / 100 : null
@@ -152,9 +169,54 @@ const BuyNowModal = ({
   const formatMoney = (n) =>
     Number(n).toLocaleString(locale === 'ru' ? 'ru-RU' : locale, { maximumFractionDigits: 2 })
 
-  const openPdf = () => {
-    window.open(POLICY_PDF_URL, '_blank', 'noopener,noreferrer')
-    setPdfOpened(true)
+  useEffect(() => {
+    if (!isOpen) return
+    if (currency === 'EUR') {
+      setReserveInEur(tenPercent)
+      return
+    }
+    if (!(tenPercent > 0)) {
+      setReserveInEur(null)
+      return
+    }
+    let cancelled = false
+    ;(async () => {
+      try {
+        const API_BASE_URL = await getApiBaseUrl()
+        const params = new URLSearchParams({
+          from: currency.toLowerCase(),
+          to: 'eur',
+          amount: String(tenPercent),
+        })
+        const resp = await fetch(`${API_BASE_URL}/billing/fx/convert?${params.toString()}`)
+        const data = await resp.json().catch(() => ({}))
+        if (!resp.ok || !data?.success) throw new Error(data?.error || 'fx_error')
+        const convertedAmount = Number(data?.data?.amount)
+        if (!cancelled && Number.isFinite(convertedAmount) && convertedAmount > 0) {
+          setReserveInEur(convertedAmount)
+        }
+      } catch {
+        if (!cancelled) setReserveInEur(null)
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [isOpen, currency, tenPercent])
+
+  const openPdf = async () => {
+    try {
+      const resp = await fetch(POLICY_PDF_URL, { method: 'HEAD' })
+      const contentType = resp.headers.get('content-type') || ''
+      if (!resp.ok || !contentType.toLowerCase().includes('pdf')) {
+        showNotification('Файл условий не найден. Добавьте public/documents/Document.pdf', 'error')
+        return
+      }
+      setIsPdfViewerOpen(true)
+      setPdfOpened(true)
+    } catch {
+      showNotification('Не удалось открыть файл условий', 'error')
+    }
   }
 
   const clearSignature = () => {
@@ -187,7 +249,7 @@ const BuyNowModal = ({
       showNotification(t('buyNowModalErrorSignatureSave'), 'error')
       return
     }
-    if (useWalletDeposit && isEur && !canUseWallet) {
+    if (useWalletDeposit && !canUseWallet) {
       showNotification(t('buyNowModalErrorDeposit'), 'error')
       return
     }
@@ -241,8 +303,10 @@ const BuyNowModal = ({
     !property?.id ||
     minSalePrice <= 0 ||
     !agreed ||
-    (useWalletDeposit && isEur && !canUseWallet) ||
+    (useWalletDeposit && !canUseWallet) ||
     !hasValidWinningBid
+
+  if (!isOpen) return null
 
   return (
     <div className="buy-now-modal-overlay" onClick={onClose}>
@@ -286,17 +350,9 @@ const BuyNowModal = ({
                     <FiPercent size={14} aria-hidden /> {t('auctionWinPaymentModalReserveLabel')}
                   </span>
                   <span className="buy-now-modal__sum-value">
-                    {currencySymbol}
-                    {formatMoney(tenPercent)}
+                    {reserveDisplaySymbol}
+                    {formatMoney(useWalletDeposit && canUseWallet ? reserveDisplayAmount : tenPercent)}
                   </span>
-                  {useWalletDeposit && canUseWallet && (
-                    <span className="buy-now-modal__sum-note">
-                      {t('buyNowModalCardPayNote', {
-                        card: `${currencySymbol}${formatMoney(cardPayDisplay)}`,
-                        wallet: `${WALLET_OFFSET_EUR.toLocaleString(locale === 'ru' ? 'ru-RU' : locale)} €`,
-                      })}
-                    </span>
-                  )}
                   <span className="buy-now-modal__sum-footnote">{t('auctionWinPaymentModalReserveHint')}</span>
                 </div>
               </>
@@ -315,17 +371,9 @@ const BuyNowModal = ({
                     <FiPercent size={14} aria-hidden /> {t('buyNowModalReservePercentLabel')}
                   </span>
                   <span className="buy-now-modal__sum-value">
-                    {currencySymbol}
-                    {formatMoney(tenPercent)}
+                    {reserveDisplaySymbol}
+                    {formatMoney(useWalletDeposit && canUseWallet ? reserveDisplayAmount : tenPercent)}
                   </span>
-                  {useWalletDeposit && canUseWallet && (
-                    <span className="buy-now-modal__sum-note">
-                      {t('buyNowModalCardPayNote', {
-                        card: `${currencySymbol}${formatMoney(cardPayDisplay)}`,
-                        wallet: `${WALLET_OFFSET_EUR.toLocaleString(locale === 'ru' ? 'ru-RU' : locale)} €`,
-                      })}
-                    </span>
-                  )}
                   <span className="buy-now-modal__sum-footnote">{t('buyNowModalReserveHint')}</span>
                 </div>
               </>
@@ -348,20 +396,19 @@ const BuyNowModal = ({
               type="button"
               role="switch"
               aria-checked={useWalletDeposit}
-              disabled={!isEur || !canUseWallet}
+              disabled={!canUseWallet}
               className={`buy-now-modal__switch ${useWalletDeposit ? 'buy-now-modal__switch--on' : ''} ${
-                !isEur || !canUseWallet ? 'buy-now-modal__switch--disabled' : ''
+                !canUseWallet ? 'buy-now-modal__switch--disabled' : ''
               }`}
               onClick={() => {
-                if (!isEur || !canUseWallet) return
+                if (!canUseWallet) return
                 setUseWalletDeposit((v) => !v)
               }}
             >
               <span className="buy-now-modal__switch-knob" />
             </button>
           </div>
-          {!isEur && <p className="buy-now-modal__inline-hint">{t('buyNowModalWalletOnlyEurHint')}</p>}
-          {isEur && walletBalanceEur != null && walletBalanceEur < WALLET_OFFSET_EUR && (
+          {walletBalanceEur != null && walletBalanceEur < WALLET_OFFSET_EUR && (
             <p className="buy-now-modal__inline-hint">{t('buyNowModalWalletNeedDepositHint')}</p>
           )}
 
@@ -453,6 +500,29 @@ const BuyNowModal = ({
             </button>
           </div>
         </div>
+
+        {isPdfViewerOpen && (
+          <div className="buy-now-modal__pdf-viewer-overlay" onClick={() => setIsPdfViewerOpen(false)}>
+            <div className="buy-now-modal__pdf-viewer" onClick={(e) => e.stopPropagation()}>
+              <div className="buy-now-modal__pdf-viewer-head">
+                <strong>{t('buyNowModalPdfTerms')}</strong>
+                <button
+                  type="button"
+                  className="buy-now-modal__pdf-viewer-close"
+                  onClick={() => setIsPdfViewerOpen(false)}
+                  aria-label={t('buyNowModalCloseAria')}
+                >
+                  <FiX size={18} />
+                </button>
+              </div>
+              <iframe
+                title="Reserve terms PDF"
+                src={POLICY_PDF_URL}
+                className="buy-now-modal__pdf-viewer-frame"
+              />
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )

@@ -115,6 +115,27 @@
   object-fit: cover;
 }
 
+.admin-chat__avatar-fill {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.admin-chat__avatar-fill--initials {
+  background: linear-gradient(135deg, #6366f1 0%, #7c3aed 100%);
+  color: #fff;
+  font-weight: 700;
+  font-size: 1rem;
+  letter-spacing: 0.02em;
+}
+
+.admin-chat__avatar-fill--ai {
+  background: linear-gradient(135deg, #0ea5e9 0%, #0369a1 100%);
+  color: #fff;
+}
+
 .admin-chat__status-dot {
   position: absolute;
   bottom: 2px;
@@ -233,6 +254,10 @@
   object-fit: cover;
 }
 
+.admin-chat__main-avatar .admin-chat__avatar-fill {
+  border-radius: 50%;
+}
+
 .admin-chat__main-name {
   font-size: 1.125rem;
   font-weight: 600;
@@ -265,6 +290,26 @@
   letter-spacing: 0.04em;
   color: #64748b;
   margin-bottom: 0.5rem;
+}
+
+.admin-chat__client-card-note {
+  margin: 0 0 0.875rem;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: #64748b;
+}
+
+.admin-chat__client-section-title {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: #475569;
+  margin: 0.75rem 0 0.35rem;
+}
+
+.admin-chat__client-section-title:first-of-type {
+  margin-top: 0;
 }
 
 .admin-chat__client-dl {

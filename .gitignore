@@ -53,6 +53,7 @@ Thumbs.db
 # Uploads
 server/uploads/
 *.jpg
+!src/assets/moneta.jpg
 *.jpeg
 *.png
 !6019556644745841501.png

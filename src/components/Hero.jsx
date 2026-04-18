@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import heroFeatureCoinMoneta from '../assets/moneta.jpg'
 import './Hero.css'
 
 const Hero = () => {
@@ -16,7 +17,7 @@ const Hero = () => {
     {
       titleKey: 'heroFeature2Title',
       textKey: 'heroFeature2Text',
-      img: 'https://static.cdn-cian.ru/frontend/valuation-my-home-page-frontend/icon_2.d6f1a6545650e2f8.svg',
+      img: heroFeatureCoinMoneta,
       altKey: 'heroFeature2Alt'
     },
     {
@@ -50,7 +51,11 @@ const Hero = () => {
               }}
             >
               <div className="hero-feature-image">
-                <img src={feature.img} alt={t(feature.altKey)} />
+                <img
+                  src={feature.img}
+                  alt={t(feature.altKey)}
+                  className={`hero-feature-image__img${index === 1 ? ' hero-feature-image__img--euro-coin' : ''}`}
+                />
               </div>
               <div className="hero-feature-content">
                 <h3>{t(feature.titleKey)}</h3>

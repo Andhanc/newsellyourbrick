@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { FiX, FiExternalLink, FiTrash2 } from 'react-icons/fi'
 import ShareSignaturePad from './ShareSignaturePad'
 import { fetchUserDeposit } from '../utils/depositApi'
+import { showNotification } from '../utils/toastHelper'
 import './SharePurchaseModal.css'
 import { RESERVE_TERMS_PDF_URL as POLICY_PDF_URL } from '../utils/reserveTermsPdfUrl'
 import { navigateToStripeCheckout } from '../utils/subscriptionCheckout'
@@ -71,10 +72,20 @@ const SharePurchaseModal = ({
     return `$${Number(n).toLocaleString('en-US')}`
   }
 
-  const openPdf = () => {
-    const url = POLICY_PDF_URL
-    window.open(url, '_blank', 'noopener,noreferrer')
-    setPdfOpened(true)
+  const openPdf = async () => {
+    try {
+      const resp = await fetch(POLICY_PDF_URL, { method: 'HEAD' })
+      const contentType = resp.headers.get('content-type') || ''
+      if (!resp.ok || !contentType.toLowerCase().includes('pdf')) {
+        showNotification('Файл условий не найден. Добавьте public/documents/Document.pdf', 'error')
+        return
+      }
+      const url = POLICY_PDF_URL
+      window.open(url, '_blank', 'noopener,noreferrer')
+      setPdfOpened(true)
+    } catch {
+      showNotification('Не удалось открыть файл условий', 'error')
+    }
   }
 
   const clearSignature = () => {

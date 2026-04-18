@@ -22,6 +22,13 @@ function normalizeRawImageValue(value) {
   return typeof value === 'string' ? value : ''
 }
 
+function extractUploadsPath(pathname) {
+  if (typeof pathname !== 'string' || !pathname) return ''
+  if (pathname.startsWith('/uploads/')) return pathname
+  if (pathname.startsWith('/api/uploads/')) return pathname
+  return ''
+}
+
 /**
  * Абсолютные URL вида http://localhost:3000/uploads/... или https://старый-домен/uploads/...
  * в браузере пользователя не открываются. Переносим путь /uploads/... на origin бэкенда
@@ -40,10 +47,11 @@ function maybeRebaseAbsoluteUploadsUrl(value, baseOrigin) {
   }
   try {
     const u = new URL(value)
-    if (!u.pathname.startsWith('/uploads/')) return null
+    const uploadsPath = extractUploadsPath(u.pathname)
+    if (!uploadsPath) return null
     const localhostish = /^(localhost|127\.0\.0\.1|0\.0\.0\.0)$/i.test(u.hostname)
     if (localhostish || u.origin !== targetOrigin) {
-      return `${targetOrigin}${u.pathname}${u.search || ''}`
+      return `${targetOrigin}${uploadsPath}${u.search || ''}`
     }
   } catch {
     return null
@@ -54,6 +62,7 @@ function maybeRebaseAbsoluteUploadsUrl(value, baseOrigin) {
 function normalizeImageUrl(raw, baseOrigin) {
   const value = normalizeRawImageValue(raw).trim().replace(/\\/g, '/')
   if (!value) return ''
+  const normalizedBase = (baseOrigin || '').replace(/\/$/, '')
 
   if (
     value.startsWith('data:') ||
@@ -68,15 +77,20 @@ function normalizeImageUrl(raw, baseOrigin) {
     return value
   }
 
-  if (value.startsWith('/uploads/')) {
-    return `${baseOrigin}${value}`
+  const uploadsPath = extractUploadsPath(value)
+  if (uploadsPath) {
+    return `${normalizedBase}${uploadsPath}`
   }
 
   if (value.startsWith('uploads/')) {
-    return `${baseOrigin}/${value}`
+    return `${normalizedBase}/${value}`
   }
 
-  return `${baseOrigin}/uploads/${value.replace(/^\/+/, '')}`
+  if (value.startsWith('api/uploads/')) {
+    return `${normalizedBase}/${value}`
+  }
+
+  return `${normalizedBase}/uploads/${value.replace(/^\/+/, '')}`
 }
 
 /**

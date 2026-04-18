@@ -61,7 +61,7 @@
   padding: 20px;
 }
 
-.hero-feature-image img {
+.hero-feature-image__img {
   width: 120px;
   height: 120px;
   object-fit: contain;
@@ -71,21 +71,27 @@
 }
 
 /* Тонировка иконок карточек в оттенки тифани с сохранением объёма/градиента */
-.hero-feature-card:nth-child(1) .hero-feature-image img {
+.hero-feature-card:nth-child(1) .hero-feature-image__img {
   filter: hue-rotate(-46deg) saturate(1.28) brightness(1.05);
 }
 
-.hero-feature-card:nth-child(2) .hero-feature-image img {
-  filter: hue-rotate(-42deg) saturate(1.32) brightness(1.04);
+/* 3D-монета €: те же габариты, что у PNG/SVG соседей (120×120); только тиффани-фильтр */
+.hero-feature-card:nth-child(2) .hero-feature-image__img--euro-coin {
+  filter: hue-rotate(-34deg) saturate(1.35) brightness(1.1) contrast(1.04);
 }
 
-.hero-feature-card:nth-child(3) .hero-feature-image img {
+.hero-feature-card:nth-child(3) .hero-feature-image__img {
   filter: hue-rotate(-50deg) saturate(1.24) brightness(1.06);
 }
 
-.hero-feature-card:hover .hero-feature-image img {
+.hero-feature-card:hover .hero-feature-image__img:not(.hero-feature-image__img--euro-coin) {
   transform: scale(1.05);
   filter: hue-rotate(-45deg) saturate(1.36) brightness(1.07);
+}
+
+.hero-feature-card:hover .hero-feature-image__img--euro-coin {
+  transform: scale(1.05);
+  filter: hue-rotate(-38deg) saturate(1.42) brightness(1.12) contrast(1.05);
 }
 
 .hero-feature-content {
@@ -297,7 +303,7 @@
     padding: 12px;
   }
 
-  .hero-feature-image img {
+  .hero-feature-image__img {
     width: 56px;
     height: 56px;
   }
@@ -345,7 +351,7 @@
     padding: 8px;
   }
 
-  .hero-feature-image img {
+  .hero-feature-image__img {
     width: 44px;
     height: 44px;
   }

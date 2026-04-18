@@ -12,6 +12,7 @@ import { getPrisma } from './database/prismaClient.js';
 /**
  * Stripe Checkout + webhook + синхронизация подписки Pro.
  * STRIPE_SECRET_KEY, STRIPE_PRICE_ID_PRO, FRONTEND_URL;
+ * STRIPE_PRICE_ID_PRO — Price ID (price_...) с валютой EUR в Stripe Dashboard (Checkout берёт валюту из цены);
  * STRIPE_PRICE_ID_DEPOSIT — price_... или prod_... (для prod подставится активная recurring-цена);
  * опционально STRIPE_WEBHOOK_SECRET для POST /api/webhooks/stripe
  * опционально STRIPE_LISTING_PUBLICATION_FEE_EUR (по умолчанию 29) — оплата публикации объявления
@@ -61,6 +62,7 @@ function computeMinimumSalePriceMajor(property) {
 
 const SHARE_PURCHASE_POLICY_VERSION = 'share_policy_test_v1';
 const RESERVATION_POLICY_VERSION = 'buy_now_reservation_v1';
+const FX_CACHE_TTL_MS = 10 * 60 * 1000;
 
 const SIGNATURE_DATA_URL_MAX_CHARS = 750_000;
 const AGREEMENT_SIGNATURE_STORE_MAX_CHARS = 900_000;
@@ -194,9 +196,6 @@ export async function processSharePurchasePaidSession(stripe, session) {
     return { ok: false, error: curNorm.error };
   }
   const currency = curNorm.currency;
-  if (useWalletDeposit && currency !== 'eur') {
-    return { ok: false, error: 'wallet_deposit_only_eur' };
-  }
 
   const totalShares = property.total_shares != null ? Number(property.total_shares) : 0;
   const sharesSold = property.shares_sold != null ? Number(property.shares_sold) : 0;
@@ -280,6 +279,69 @@ export async function processSharePurchasePaidSession(stripe, session) {
 
 /** Списание 3000 EUR с кошелька депозита при оплате резерва (только с EUR-объявлениями). */
 const WALLET_DEPOSIT_OFFSET_EUR = 3000;
+const fxRateCache = new Map();
+
+function roundMoneyMajor(amount) {
+  return Math.round((Number(amount) || 0) * 100) / 100;
+}
+
+async function getEurToCurrencyRate(currency) {
+  const target = String(currency || 'eur')
+    .trim()
+    .toLowerCase();
+  if (!target || target === 'eur') return 1;
+
+  const cached = fxRateCache.get(target);
+  const now = Date.now();
+  if (cached && cached.expiresAt > now && Number.isFinite(cached.rate) && cached.rate > 0) {
+    return cached.rate;
+  }
+
+  const resp = await fetch('https://open.er-api.com/v6/latest/EUR');
+  if (!resp.ok) {
+    throw new Error('fx_rate_fetch_failed');
+  }
+  const payload = await resp.json();
+  const rawRate = payload?.rates?.[target.toUpperCase()];
+  const rate = Number(rawRate);
+  if (!Number.isFinite(rate) || rate <= 0) {
+    throw new Error('fx_rate_invalid');
+  }
+  fxRateCache.set(target, { rate, expiresAt: now + FX_CACHE_TTL_MS });
+  return rate;
+}
+
+async function convertEurToCurrencyMajor(amountEur, currency) {
+  const rate = await getEurToCurrencyRate(currency);
+  return { rate, amountMajor: roundMoneyMajor((Number(amountEur) || 0) * rate) };
+}
+
+async function convertCurrencyMajor(amount, fromCurrency, toCurrency) {
+  const from = String(fromCurrency || 'eur')
+    .trim()
+    .toLowerCase();
+  const to = String(toCurrency || 'eur')
+    .trim()
+    .toLowerCase();
+  const amountNum = Number(amount) || 0;
+  if (!from || !to) throw new Error('fx_currency_invalid');
+  if (from === to) return { rate: 1, amountMajor: roundMoneyMajor(amountNum) };
+  if (from === 'eur') {
+    const rate = await getEurToCurrencyRate(to);
+    return { rate, amountMajor: roundMoneyMajor(amountNum * rate) };
+  }
+  if (to === 'eur') {
+    const eurToFromRate = await getEurToCurrencyRate(from);
+    if (!Number.isFinite(eurToFromRate) || eurToFromRate <= 0) throw new Error('fx_rate_invalid');
+    return { rate: 1 / eurToFromRate, amountMajor: roundMoneyMajor(amountNum / eurToFromRate) };
+  }
+  const eurToFromRate = await getEurToCurrencyRate(from);
+  const eurToToRate = await getEurToCurrencyRate(to);
+  if (!Number.isFinite(eurToFromRate) || eurToFromRate <= 0) throw new Error('fx_rate_invalid');
+  if (!Number.isFinite(eurToToRate) || eurToToRate <= 0) throw new Error('fx_rate_invalid');
+  const amountEur = amountNum / eurToFromRate;
+  return { rate: eurToToRate / eurToFromRate, amountMajor: roundMoneyMajor(amountEur * eurToToRate) };
+}
 
 function normalizeStripeCurrency(raw) {
   const c = String(raw || 'usd')
@@ -468,9 +530,6 @@ export async function processPropertyReservationPaidSession(stripe, session) {
 
   const useWallet = sess.metadata?.use_wallet_deposit === '1';
   const curLower = (sess.currency || property.currency || 'eur').toString().toLowerCase();
-  if (useWallet && curLower !== 'eur') {
-    return { ok: false, error: 'wallet_deposit_only_eur' };
-  }
 
   const buyer = await userQueries.getById(userId);
   const buyerName = buyer
@@ -493,12 +552,30 @@ export async function processPropertyReservationPaidSession(stripe, session) {
     }
   }
 
-  const minSaleMajor = computeMinimumSalePriceMajor(property);
-  if (!(minSaleMajor > 0)) {
+  const minSaleMajorBase = computeMinimumSalePriceMajor(property);
+  if (!(minSaleMajorBase > 0)) {
     return { ok: false, error: 'invalid_minimum_price' };
   }
-  const tenPctMajor = minSaleMajor * 0.1;
+  const propertyCurrencyNorm = normalizeStripeCurrency(property.currency || curLower);
+  const propertyCurrency = propertyCurrencyNorm.ok ? propertyCurrencyNorm.currency : curLower;
+  let minSaleMajor = minSaleMajorBase;
+  if (propertyCurrency !== curLower) {
+    try {
+      const converted = await convertCurrencyMajor(minSaleMajorBase, propertyCurrency, curLower);
+      minSaleMajor = converted.amountMajor;
+    } catch (e) {
+      console.warn('[Stripe] reservation billing convert minSale:', e?.message || e);
+    }
+  }
+  const tenPctMajor = roundMoneyMajor(minSaleMajor * 0.1);
   const walletEurApplied = useWallet ? WALLET_DEPOSIT_OFFSET_EUR : 0;
+  const walletAppliedMajorRaw = Number.parseFloat(String(sess.metadata?.wallet_applied_major || ''));
+  const walletAppliedMajor =
+    useWallet && Number.isFinite(walletAppliedMajorRaw)
+      ? Math.max(0, walletAppliedMajorRaw)
+      : useWallet && curLower === 'eur'
+        ? WALLET_DEPOSIT_OFFSET_EUR
+        : 0;
 
   const signingIntentId =
     sess.metadata?.signing_intent_id != null ? String(sess.metadata.signing_intent_id).trim() : '';
@@ -584,8 +661,7 @@ export async function processPropertyReservationPaidSession(stripe, session) {
     }
 
     const stripeCents = sess.amount_total ?? expectedDepositCents;
-    const totalPaidTowardPrice =
-      stripeCents / 100 + (curLower === 'eur' ? walletEurApplied : 0);
+    const totalPaidTowardPrice = stripeCents / 100 + walletAppliedMajor;
     const remainingToFull = Math.max(0, minSaleMajor - totalPaidTowardPrice);
 
     const billingPayload = {
@@ -594,6 +670,7 @@ export async function processPropertyReservationPaidSession(stripe, session) {
       ten_percent: tenPctMajor,
       paid_stripe_cents: stripeCents,
       wallet_eur_applied: walletEurApplied,
+      wallet_applied_major: walletAppliedMajor,
       currency: curLower,
       purchase_request_id: createdRequestId,
       property_id: propertyId,
@@ -1023,6 +1100,15 @@ export function createStripeWebhookHandler() {
   };
 }
 
+/** Не открывать повторный Checkout Pro, если в БД уже есть активная платная подписка (Pro/VIP). */
+function userHasActivePaidCabinetSubscription(state) {
+  if (!state) return false;
+  const st = String(state.status || '').toLowerCase();
+  if (!['active', 'trialing', 'past_due', 'paused'].includes(st)) return false;
+  const pk = String(state.plan_key || '').toLowerCase();
+  return pk === 'pro' || pk === 'vip';
+}
+
 export function registerStripeBillingRoutes(app) {
   const stripe = getStripe();
   const priceIdPro = (process.env.STRIPE_PRICE_ID_PRO || '').trim();
@@ -1101,12 +1187,43 @@ export function registerStripeBillingRoutes(app) {
         });
       }
 
+      let proPrice;
+      try {
+        proPrice = await stripe.prices.retrieve(priceIdPro);
+      } catch (priceErr) {
+        console.error('[Stripe] retrieve Pro price:', priceErr?.message || priceErr);
+        return res.status(503).json({
+          success: false,
+          error:
+            priceErr?.message ||
+            'Не удалось загрузить цену Pro из Stripe. Проверьте STRIPE_PRICE_ID_PRO.',
+        });
+      }
+      const proCurrency = String(proPrice?.currency || '').toLowerCase();
+      if (proCurrency !== 'eur') {
+        return res.status(503).json({
+          success: false,
+          error: `Подписка Pro должна быть в EUR в Stripe (указанная цена в ${proCurrency.toUpperCase() || '?'}). Создайте цену в евро и обновите STRIPE_PRICE_ID_PRO в .env.`,
+        });
+      }
+
+      const uidPro = parseInt(userId, 10);
+      if (Number.isFinite(uidPro)) {
+        const existingSub = await stripeSubscriptionQueries.getStateByUserId(uidPro);
+        if (userHasActivePaidCabinetSubscription(existingSub)) {
+          return res.status(409).json({
+            success: false,
+            error: 'already_subscribed_pro',
+          });
+        }
+      }
+
       const session = await stripe.checkout.sessions.create({
         mode: 'subscription',
         payment_method_types: ['card'],
         line_items: [{ price: priceIdPro, quantity: 1 }],
-        success_url: `${frontendBase}/subscriptions?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${frontendBase}/subscriptions?checkout=canceled`,
+        success_url: `${frontendBase}/profile?subscription_checkout=success&session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${frontendBase}/profile`,
         metadata: userId ? { app_user_id: userId } : {},
         subscription_data: userId ? { metadata: { app_user_id: userId } } : undefined,
         ...(customerEmail && customerEmail.includes('@') ? { customer_email: customerEmail } : {}),
@@ -1237,13 +1354,6 @@ export function registerStripeBillingRoutes(app) {
         req.body?.useDeposit === 1 ||
         req.body?.useDeposit === '1';
 
-      if (useWalletDeposit && currency !== 'eur') {
-        return res.status(400).json({
-          success: false,
-          error: 'Списание с депозита доступно только для объявлений в EUR',
-        });
-      }
-
       const buyerRow = await userQueries.getById(userId);
       if (useWalletDeposit) {
         const dep = buyerRow != null ? parseFloat(buyerRow.deposit_amount) || 0 : 0;
@@ -1255,19 +1365,28 @@ export function registerStripeBillingRoutes(app) {
         }
       }
 
-      const tenPctMajor = minSaleMajor * 0.1;
-      let cardMajor = tenPctMajor;
+      const tenPctMajor = roundMoneyMajor(minSaleMajor * 0.1);
+      let checkoutCurrency = currency;
+      let tenPctMajorCheckout = tenPctMajor;
+      let cardMajor = tenPctMajorCheckout;
+      let walletAppliedMajor = 0;
       if (useWalletDeposit) {
-        cardMajor = tenPctMajor - WALLET_DEPOSIT_OFFSET_EUR;
+        if (currency !== 'eur') {
+          const convertedReserve = await convertCurrencyMajor(tenPctMajor, currency, 'eur');
+          checkoutCurrency = 'eur';
+          tenPctMajorCheckout = convertedReserve.amountMajor;
+        }
+        walletAppliedMajor = WALLET_DEPOSIT_OFFSET_EUR;
+        cardMajor = tenPctMajorCheckout - walletAppliedMajor;
       }
-      const minUnit = minStripeUnitAmount(currency);
-      const unitAmount = majorToStripeMinor(cardMajor, currency);
+      const minUnit = minStripeUnitAmount(checkoutCurrency);
+      const unitAmount = majorToStripeMinor(cardMajor, checkoutCurrency);
       if (unitAmount < minUnit) {
         return res.status(400).json({
           success: false,
           error: useWalletDeposit
-            ? `После вычета 3000 € с депозита сумма к оплате картой слишком мала. Увеличьте минимальную цену продажи или оплатите без депозита.`
-            : `Сумма резерва слишком мала для Stripe (минимум ${minUnit} в минимальных единицах ${currency.toUpperCase()})`,
+            ? `После вычета 3000 € с депозита сумма к оплате картой в EUR слишком мала. Увеличьте минимальную цену продажи или оплатите без депозита.`
+            : `Сумма резерва слишком мала для Stripe (минимум ${minUnit} в минимальных единицах ${checkoutCurrency.toUpperCase()})`,
         });
       }
 
@@ -1315,7 +1434,7 @@ export function registerStripeBillingRoutes(app) {
       const saleMinor = majorToStripeMinor(minSaleMajor, currency);
       const titleShort = (property.title || `Объект #${propertyId}`).slice(0, 100);
       const productDesc = useWalletDeposit
-        ? `Резерв 10% от мин. цены; 3000 € с вашего депозита, остальное картой. Объект #${propertyId}`
+        ? `Резерв 10%: при использовании депозита оплата в EUR, 3000 EUR с депозита, остальное картой. Объект #${propertyId}`
         : `Резерв 10% от минимальной цены продажи. Объект #${propertyId}`;
 
       const basePath = returnPath || `/property/${propertyId}`;
@@ -1329,7 +1448,7 @@ export function registerStripeBillingRoutes(app) {
           {
             quantity: 1,
             price_data: {
-              currency,
+              currency: checkoutCurrency,
               unit_amount: unitAmount,
               product_data: {
                 name: `Резерв 10% — ${titleShort}`,
@@ -1348,8 +1467,12 @@ export function registerStripeBillingRoutes(app) {
           deposit_cents: String(unitAmount),
           sale_price_cents: String(saleMinor),
           use_wallet_deposit: useWalletDeposit ? '1' : '0',
+          property_currency: currency,
+          checkout_currency: checkoutCurrency,
           min_sale_major: String(minSaleMajor),
           ten_pct_major: String(tenPctMajor),
+          ten_pct_major_checkout: String(tenPctMajorCheckout),
+          wallet_applied_major: String(walletAppliedMajor),
           signing_intent_id: signingIntentId,
           policy_version: RESERVATION_POLICY_VERSION,
         },
@@ -1693,10 +1816,6 @@ export function registerStripeBillingRoutes(app) {
         return res.status(400).json({ success: false, error: curNorm.error });
       }
       const currency = curNorm.currency;
-      if (useWalletDeposit && currency !== 'eur') {
-        return res.status(400).json({ success: false, error: 'Списание депозита доступно только для объектов в EUR' });
-      }
-
       const objectPrice = Number(property.price) || 0;
       if (!(objectPrice > 0) || !(totalShares > 0)) {
         return res.status(400).json({ success: false, error: 'Некорректная цена или число долей объекта' });
@@ -1704,11 +1823,20 @@ export function registerStripeBillingRoutes(app) {
       const pricePerShare = objectPrice / totalShares;
       const totalPrice = pricePerShare * sharesCount;
       let walletEurApplied = 0;
+      let walletAppliedMajor = 0;
+      let fxRateEurToCurrency = currency === 'eur' ? 1 : null;
       if (useWalletDeposit) {
-        if (totalPrice <= WALLET_DEPOSIT_OFFSET_EUR) {
+        if (currency === 'eur') {
+          walletAppliedMajor = WALLET_DEPOSIT_OFFSET_EUR;
+        } else {
+          const converted = await convertEurToCurrencyMajor(WALLET_DEPOSIT_OFFSET_EUR, currency);
+          walletAppliedMajor = converted.amountMajor;
+          fxRateEurToCurrency = converted.rate;
+        }
+        if (totalPrice <= walletAppliedMajor) {
           return res.status(400).json({
             success: false,
-            error: 'Сумма покупки должна быть выше 3000 € для списания депозита',
+            error: 'Сумма покупки должна быть выше эквивалента 3000 € для списания депозита',
           });
         }
         const buyer = await userQueries.getById(userId);
@@ -1718,7 +1846,7 @@ export function registerStripeBillingRoutes(app) {
         }
         walletEurApplied = WALLET_DEPOSIT_OFFSET_EUR;
       }
-      const stripeTotalMajor = Math.max(0, totalPrice - walletEurApplied);
+      const stripeTotalMajor = Math.max(0, totalPrice - walletAppliedMajor);
       const unitAmount = majorToStripeMinor(stripeTotalMajor, currency);
       const minUnit = minStripeUnitAmount(currency);
       if (unitAmount < minUnit) {
@@ -1766,6 +1894,8 @@ export function registerStripeBillingRoutes(app) {
           price_per_share_major: String(pricePerShare),
           total_price_major: String(totalPrice),
           stripe_total_major: String(stripeTotalMajor),
+          wallet_applied_major: String(walletAppliedMajor),
+          fx_rate_eur_to_currency: fxRateEurToCurrency != null ? String(fxRateEurToCurrency) : '',
           wallet_eur_applied: String(walletEurApplied),
           use_wallet_deposit: useWalletDeposit ? '1' : '0',
           total_cents: String(unitAmount),
@@ -1937,6 +2067,62 @@ export function registerStripeBillingRoutes(app) {
     }
   });
 
+  app.get('/api/billing/fx/eur-to/:currency', async (req, res) => {
+    try {
+      const currency = String(req.params.currency || '')
+        .trim()
+        .toLowerCase();
+      if (!/^[a-z]{3}$/.test(currency)) {
+        return res.status(400).json({ success: false, error: 'Некорректная валюта' });
+      }
+      const rate = await getEurToCurrencyRate(currency);
+      const amount3000 = roundMoneyMajor(WALLET_DEPOSIT_OFFSET_EUR * rate);
+      return res.json({
+        success: true,
+        data: {
+          from: 'EUR',
+          to: currency.toUpperCase(),
+          rate,
+          amount3000,
+        },
+      });
+    } catch (err) {
+      console.error('[Stripe] fx eur-to:', err?.message || err);
+      return res.status(500).json({ success: false, error: 'Не удалось получить курс валют' });
+    }
+  });
+
+  app.get('/api/billing/fx/convert', async (req, res) => {
+    try {
+      const from = String(req.query?.from || '')
+        .trim()
+        .toLowerCase();
+      const to = String(req.query?.to || '')
+        .trim()
+        .toLowerCase();
+      const amount = Number(req.query?.amount);
+      if (!/^[a-z]{3}$/.test(from) || !/^[a-z]{3}$/.test(to)) {
+        return res.status(400).json({ success: false, error: 'Некорректные валюты' });
+      }
+      if (!Number.isFinite(amount) || amount < 0) {
+        return res.status(400).json({ success: false, error: 'Некорректная сумма' });
+      }
+      const converted = await convertCurrencyMajor(amount, from, to);
+      return res.json({
+        success: true,
+        data: {
+          from: from.toUpperCase(),
+          to: to.toUpperCase(),
+          rate: converted.rate,
+          amount: converted.amountMajor,
+        },
+      });
+    } catch (err) {
+      console.error('[Stripe] fx convert:', err?.message || err);
+      return res.status(500).json({ success: false, error: 'Не удалось конвертировать сумму' });
+    }
+  });
+
   /** Профиль: текущая подписка + платежи */
   app.get('/api/users/:userId/subscription-billing', async (req, res) => {
     try {
@@ -2038,7 +2224,9 @@ export function registerStripeBillingRoutes(app) {
   });
 
   if (stripe && priceIdPro) {
-    console.log('[Stripe] Подписка Pro: Checkout включён (STRIPE_PRICE_ID_PRO задан)');
+    console.log(
+      '[Stripe] Подписка Pro: Checkout включён (STRIPE_PRICE_ID_PRO; в Checkout валюта = валюте этой цены в Dashboard — должна быть EUR)'
+    );
   } else {
     console.log(
       '[Stripe] Checkout Pro отключён: укажите STRIPE_SECRET_KEY и STRIPE_PRICE_ID_PRO в .env'

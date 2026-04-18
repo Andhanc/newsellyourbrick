@@ -43,6 +43,7 @@ const Header = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false) // Статус авторизации
   const [hasIncompleteProfile, setHasIncompleteProfile] = useState(false)
   const [isAIChatOpen, setIsAIChatOpen] = useState(false) // Состояние AI чата для страницы аукцион
+  const [isManagerChatOpen, setIsManagerChatOpen] = useState(false)
   const [notifications, setNotifications] = useState([])
   const [notificationsLoading, setNotificationsLoading] = useState(false)
   const languageDropdownRef = useRef(null)
@@ -121,6 +122,14 @@ const Header = () => {
     return () => {
       window.removeEventListener('aiChatStateChange', handleAIChatStateChange)
     }
+  }, [])
+
+  useEffect(() => {
+    const onManager = (event) => {
+      setIsManagerChatOpen(Boolean(event.detail?.isOpen))
+    }
+    window.addEventListener('managerChatStateChange', onManager)
+    return () => window.removeEventListener('managerChatStateChange', onManager)
   }, [])
 
   // Открываем модальное окно регистрации/входа принудительно (например после OAuth)
@@ -448,6 +457,11 @@ const Header = () => {
     if (!isSiteUserSignedIn(user, userLoaded)) {
       setLoginModalEntry('wizard')
       setIsLoginModalOpen(true)
+      if (closeMenu) setIsMenuOpen(false)
+      return
+    }
+    if (path === '/chat?manager=1' || String(path).startsWith('/chat?manager=')) {
+      window.dispatchEvent(new CustomEvent('openManagerChat'))
       if (closeMenu) setIsMenuOpen(false)
       return
     }
@@ -830,9 +844,11 @@ const Header = () => {
           </div>
 
           <div className="new-header__filters">
-            <button
+                       <button
               type="button"
-              className={`new-header__filter-btn ${location.pathname === '/chat' ? 'new-header__filter-btn--active' : ''}`}
+              className={`new-header__filter-btn ${
+                location.pathname === '/chat' || isManagerChatOpen ? 'new-header__filter-btn--active' : ''
+              }`}
               onClick={() => openLoginOrNavigate('/chat?manager=1')}
             >
               <span>{t('chat')}</span>

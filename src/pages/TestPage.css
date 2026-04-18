@@ -533,6 +533,8 @@ a.test-history-mini-card:focus-visible {
   grid-template-columns: 1fr auto 1fr;
   align-items: center;
   gap: 8px 12px;
+  position: relative;
+  z-index: 1;
 }
 
 .test-data-panel__toolbar--subscription .test-data-panel__back {
@@ -556,6 +558,111 @@ a.test-history-mini-card:focus-visible {
 .test-data-panel__hint--subscription {
   margin-top: 0;
   margin-bottom: 10px;
+}
+
+/* Тарифы в дропбоксе «Подписки»: слой выше тулбара; без горизонтального скролла */
+.test-subscription-pricing-wrap {
+  position: relative;
+  z-index: 2;
+  max-width: 100%;
+  margin: 4px -4px 0;
+  overflow: visible;
+  isolation: isolate;
+}
+
+.test-subscription-pricing-scroll {
+  overflow-x: hidden;
+  overflow-y: visible;
+  /* Место под float-badge (top: -14px) */
+  padding-top: 22px;
+  margin-top: -10px;
+}
+
+.test-subscription-pricing-wrap .pricing-cards--creative {
+  padding: 26px 14px 32px;
+  margin: 0 auto;
+}
+
+/* Жёстко фиксируем креативные тарифы в панели профиля (выше любых правил .test-page / дропбокса). */
+.test-subscription-pricing-wrap .pricing-cards--creative .pricing-card--creative-outer--left .pricing-card--starter,
+.test-subscription-pricing-wrap .pricing-cards--creative .pricing-card--creative-outer--right .pricing-card--vip {
+  background: transparent !important;
+  border: 2px solid rgba(10, 186, 181, 0.55) !important;
+}
+
+.test-subscription-pricing-wrap
+  .pricing-cards--creative
+  .pricing-card--creative-outer--left
+  .pricing-card--starter
+  .pricing-card__header,
+.test-subscription-pricing-wrap
+  .pricing-cards--creative
+  .pricing-card--creative-outer--right
+  .pricing-card--vip
+  .pricing-card__header {
+  background: #fff !important;
+}
+
+.test-subscription-pricing-wrap
+  .pricing-cards--creative
+  .pricing-card--creative-outer--left
+  .pricing-card--starter
+  .pricing-card__title,
+.test-subscription-pricing-wrap
+  .pricing-cards--creative
+  .pricing-card--creative-outer--right
+  .pricing-card--vip
+  .pricing-card__title {
+  color: #000 !important;
+}
+
+.test-subscription-pricing-wrap
+  .pricing-cards--creative
+  .pricing-card--creative-outer--center
+  .pricing-card--pro
+  .pricing-card__header {
+  background: linear-gradient(165deg, #1ba8a3 0%, #0abab5 32%, #089a95 58%, #056963 88%, #044e48 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.22) !important;
+}
+
+.test-subscription-pricing-wrap
+  .pricing-cards--creative
+  .pricing-card--creative-outer--center
+  .pricing-card--pro
+  .pricing-card__title,
+.test-subscription-pricing-wrap
+  .pricing-cards--creative
+  .pricing-card--creative-outer--center
+  .pricing-card--pro
+  .pricing-card__price,
+.test-subscription-pricing-wrap
+  .pricing-cards--creative
+  .pricing-card--creative-outer--center
+  .pricing-card--pro
+  .pricing-card__price-unit,
+.test-subscription-pricing-wrap
+  .pricing-cards--creative
+  .pricing-card--creative-outer--center
+  .pricing-card--pro
+  .pricing-card__feature {
+  color: #fff !important;
+}
+
+.test-subscription-pricing-wrap
+  .pricing-cards--creative
+  .pricing-card--creative-outer--center
+  .pricing-card--pro
+  .pricing-card__toggle-label {
+  color: #fff !important;
+}
+
+.test-subscription-pricing-wrap
+  .pricing-cards--creative
+  .pricing-card--creative-outer--center
+  .pricing-card--pro
+  .pricing-card__toggle[data-enabled='true'] {
+  background: #0abab5 !important;
+  border-color: #089a95 !important;
 }
 
 .test-data-panel__back {
@@ -1875,8 +1982,100 @@ button.test-hero-icon-tile {
 
 @media (max-width: 640px) {
   .test-direction-summaries__grid {
-    grid-template-columns: 1fr;
-    gap: 16px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .test-direction-card {
+    border-radius: 14px;
+  }
+
+  .test-direction-card__head {
+    padding: 0.52rem 0.5rem 0.42rem;
+  }
+
+  .test-direction-card__top {
+    position: relative;
+    gap: 0.16rem;
+    padding-right: 1.08rem;
+  }
+
+  .test-direction-card__eyebrow {
+    font-size: 8px;
+    letter-spacing: 0.1em;
+  }
+
+  .test-direction-card__title {
+    margin-top: 0.28rem;
+    font-size: clamp(0.78rem, 2.8vw, 0.95rem);
+    line-height: 1.05;
+  }
+
+  .test-direction-card__subtitle {
+    margin-top: 0.3rem;
+    font-size: 9.4px;
+    line-height: 1.25;
+    min-height: 1.25em;
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .test-direction-card--debts .test-direction-card__subtitle {
+    font-size: 9.1px;
+    letter-spacing: -0.015em;
+  }
+
+  .test-direction-card__desc {
+    display: none;
+  }
+
+  .test-direction-card__arrow-wrap {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: auto;
+    height: auto;
+  }
+
+  .test-direction-card__arrow {
+    width: 0.98rem;
+    height: 0.98rem;
+    align-self: auto;
+    border-width: 1px;
+    box-shadow: 0 1px 5px color-mix(in srgb, var(--dir-accent) 28%, transparent);
+  }
+
+  .test-direction-card__arrow svg {
+    width: 8px;
+    height: 8px;
+  }
+
+  .test-direction-card__foot {
+    padding-top: 0.55rem;
+  }
+
+  .test-direction-card__foot .test-direction-card__thumbs {
+    top: -7px;
+    padding-left: calc(0.5rem + 1px);
+    padding-right: 0.45rem;
+  }
+
+  .test-direction-card__thumb {
+    width: 1.12rem;
+    height: 1.12rem;
+    border-radius: 6px;
+    border-width: 1px;
+  }
+
+  .test-direction-card__badge {
+    width: 1.22rem;
+    height: 1.22rem;
+    font-size: 9px;
+    border-width: 1px;
   }
 }
 

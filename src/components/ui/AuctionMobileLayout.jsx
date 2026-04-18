@@ -12,6 +12,7 @@ import PropertyTimer from '../PropertyTimer'
 import CircularTimer from '../CircularTimer'
 import { showNotification } from '@/utils/toastHelper'
 import { ensureCanOpenProperty } from '@/utils/propertyAccessGuard'
+import { requestOpenLoginModal } from '@/utils/requestOpenLoginModal'
 import { hasBuyNowOption } from '@/utils/hasBuyNowOption'
 import { hasEmailForBuyNowFlow } from '@/utils/buyNowEmailGate'
 import {
@@ -398,7 +399,27 @@ function AuctionMobileItem({
     : property.price || 0
 
   const goDetail = () => {
-    if (!ensureCanOpenProperty()) return
+    if (!ensureCanOpenProperty()) {
+      showNotification(
+        <span>
+          Чтобы открыть страницу объекта, войдите в систему.{' '}
+          <button
+            type="button"
+            className="auth-toast-link"
+            onClick={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              requestOpenLoginModal({ wizard: true })
+            }}
+          >
+            Войти / Регистрация <span className="auth-toast-link__arrow">→</span>
+          </button>
+        </span>,
+        'warning',
+        7000,
+      )
+      return
+    }
     navigate(`/property/${property.id}`, { state: { property } })
   }
 

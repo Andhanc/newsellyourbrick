@@ -14,6 +14,7 @@ import i18n from '../i18n/config'
 import './History.css'
 import './Profile.css'
 import { useChainedAppLayoutScroll } from '../hooks/useChainedAppLayoutScroll'
+import { PlaceCard } from '@/components/ui/card-22'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
 
@@ -33,6 +34,14 @@ function intlLocale() {
   const code = (i18n.language || 'ru').split('-')[0]
   const map = { ru: 'ru-RU', en: 'en-US', de: 'de-DE', es: 'es-ES', fr: 'fr-FR', sv: 'sv-SE' }
   return map[code] || 'en-US'
+}
+
+function currencySymbolFromCode(currency) {
+  const c = String(currency || 'EUR').toUpperCase()
+  if (c === 'USD') return '$'
+  if (c === 'EUR') return '€'
+  if (c === 'BYN') return 'Br'
+  return '€'
 }
 
 /** Срок резерва в истории: обратный отсчёт 3 суток с момента оплаты. */
@@ -537,6 +546,23 @@ const History = () => {
                 endDate: property.auction_end_date || property.end_date
               })
               
+              const imageUrls = []
+              const pushImg = (raw) => {
+                if (raw == null) return
+                const u = String(raw).trim()
+                if (!u) return
+                if (u.startsWith('http') || u.startsWith('data:')) imageUrls.push(u)
+                else imageUrls.push(u.startsWith('/') ? u : `/${u.replace(/^\/+/, '')}`)
+              }
+              if (Array.isArray(photos) && photos.length) {
+                photos.forEach((p) => {
+                  if (typeof p === 'string') pushImg(p)
+                  else if (p && typeof p === 'object') pushImg(p.url || p.src || p.path)
+                })
+              }
+              if (imageUrls.length === 0 && property.image) pushImg(property.image)
+              if (imageUrls.length === 0) imageUrls.push(SHARE_PURCHASE_IMAGE_PLACEHOLDER)
+
               return {
                 id: propertyId,
                 propertyId: propertyId,
@@ -550,7 +576,8 @@ const History = () => {
                 finalPrice: status === 'won' || status === 'lost' ? currentMaxBid : null,
                 endTime: property.auction_end_date || property.end_date || null,
                 currency: property.currency || 'USD',
-                isAuction: isAuction
+                isAuction: isAuction,
+                imageUrls,
               }
             })
           )
@@ -601,21 +628,6 @@ const History = () => {
     const key = `buyerHistory_status_${status}`
     const tr = t(key)
     return tr !== key ? tr : status
-  }
-
-  const getStatusClass = (status) => {
-    switch(status) {
-      case 'completed':
-      case 'won':
-        return 'status-success'
-      case 'active':
-        return 'status-active'
-      case 'outbid':
-      case 'lost':
-        return 'status-failed'
-      default:
-        return ''
-    }
   }
 
   const { activeReservationPurchases, completedBuyNowReservations } = useMemo(() => {
@@ -955,87 +967,59 @@ const History = () => {
                     <p>{t('buyerHistory_loading')}</p>
                   </div>
                 ) : bidHistory.length > 0 ? (
-                  bidHistory.map((bid) => (
-                    <div key={bid.id} className="history-card bid-card">
-                      <div className="card-content">
-                        <div className="card-header">
-                          <h3 className="card-title">
-                            {bid.propertyTitle || t('buyerHistory_fallbackProperty')}
-                          </h3>
-                          <div className={`status-badge ${getStatusClass(bid.status)}`}>
-                            {getStatusLabel(bid.status)}
-                          </div>
-                        </div>
-                        <p className="card-location">{bid.location || t('buyerHistory_fallbackAddress')}</p>
-                        <div className="card-details">
-                          <div className="detail-item">
-                            <span className="detail-label">{t('buyerHistory_yourBid')}</span>
-                            <span className="detail-value price">{formatPrice(bid.bidAmount)}</span>
-                          </div>
-                          {bid.status === 'active' && (
-                            <div className="detail-item">
-                              <span className="detail-label">{t('buyerHistory_currentBid')}</span>
-                              <span className="detail-value price">{formatPrice(bid.currentBid)}</span>
-                            </div>
-                          )}
-                          {(bid.status === 'won' || bid.status === 'lost') && (
-                            <div className="detail-item">
-                              <span className="detail-label">{t('buyerHistory_finalPrice')}</span>
-                              <span className="detail-value price">{formatPrice(bid.finalPrice)}</span>
-                            </div>
-                          )}
-                          {bid.status === 'outbid' && (
-                            <div className="detail-item">
-                              <span className="detail-label">{t('buyerHistory_currentBid')}</span>
-                              <span className="detail-value price">{formatPrice(bid.currentBid)}</span>
-                            </div>
-                          )}
-                          <div className="detail-item">
-                            <span className="detail-label">{t('buyerHistory_bidDateLabel')}</span>
-                            <span className="detail-value">
-                              {formatDate(bid.bidDate)} {t('buyerHistory_bidDateAt')} {bid.bidTime}
-                            </span>
-                          </div>
-                        </div>
-                        {bid.status === 'active' && (
-                          <Link
-                            to={`/property/${bid.id}`}
-                            className="card-button"
-                            onClick={(e) => {
-                              if (ensureCanOpenProperty()) return
-                              e.preventDefault()
-                            }}
-                          >
-                            {t('buyerHistory_continueBid')}
-                          </Link>
-                        )}
-                        {bid.status === 'outbid' && (
-                          <Link
-                            to={`/property/${bid.id}`}
-                            className="card-button"
-                            onClick={(e) => {
-                              if (ensureCanOpenProperty()) return
-                              e.preventDefault()
-                            }}
-                          >
-                            {t('buyerHistory_raiseBid')}
-                          </Link>
-                        )}
-                        {(bid.status === 'won' || bid.status === 'lost') && (
-                          <Link
-                            to={`/property/${bid.id}`}
-                            className="card-link"
-                            onClick={(e) => {
-                              if (ensureCanOpenProperty()) return
-                              e.preventDefault()
-                            }}
-                          >
-                            {t('buyerHistory_viewProperty')}
-                          </Link>
-                        )}
-                      </div>
-                    </div>
-                  ))
+                  bidHistory.map((bid) => {
+                    const dateRange = bid.endTime
+                      ? `${formatDate(bid.bidDate)} — ${formatDate(bid.endTime)}`
+                      : formatDate(bid.bidDate)
+                    const tags = [
+                      bid.isAuction ? t('buyerHistory_bidCard_tagAuction') : t('buyerHistory_bidCard_tagListing'),
+                      getStatusLabel(bid.status),
+                    ]
+                    const descParts = [
+                      bid.location || t('buyerHistory_fallbackAddress'),
+                      `${t('buyerHistory_yourBid')} ${formatPrice(bid.bidAmount, bid.currency)}`,
+                    ]
+                    if (bid.status === 'active' || bid.status === 'outbid') {
+                      descParts.push(`${t('buyerHistory_currentBid')} ${formatPrice(bid.currentBid, bid.currency)}`)
+                    }
+                    if (bid.status === 'won' || bid.status === 'lost') {
+                      descParts.push(`${t('buyerHistory_finalPrice')} ${formatPrice(bid.finalPrice, bid.currency)}`)
+                    }
+                    descParts.push(
+                      `${t('buyerHistory_bidDateLabel')} ${formatDate(bid.bidDate)} ${t('buyerHistory_bidDateAt')} ${bid.bidTime}`
+                    )
+                    const description = descParts.join(' · ')
+                    const ctaLabel =
+                      bid.status === 'active'
+                        ? t('buyerHistory_continueBid')
+                        : bid.status === 'outbid'
+                          ? t('buyerHistory_raiseBid')
+                          : t('buyerHistory_viewProperty')
+                    return (
+                      <PlaceCard
+                        key={bid.id}
+                        className="w-full max-w-none"
+                        images={bid.imageUrls || [SHARE_PURCHASE_IMAGE_PLACEHOLDER]}
+                        tags={tags}
+                        rating={null}
+                        title={bid.propertyTitle || t('buyerHistory_fallbackProperty')}
+                        dateRange={dateRange}
+                        hostType={t('buyerHistory_bidCard_hostType')}
+                        isTopRated={bid.status === 'won'}
+                        topRatedLabel={t('buyerHistory_bidCard_topRated')}
+                        description={description}
+                        priceAmount={bid.currentBid}
+                        currencySymbol={currencySymbolFromCode(bid.currency)}
+                        priceSuffix={t('buyerHistory_bidCard_priceSuffix')}
+                        bookNowLabel={ctaLabel}
+                        bookNowTo={`/property/${bid.id}`}
+                        onBookNowClick={(e) => {
+                          if (ensureCanOpenProperty()) return
+                          e.preventDefault()
+                        }}
+                      />
+                    )
+                  })
                 ) : (
                   <div className="empty-state">
                     <p>{t('buyerHistory_emptyBids')}</p>

@@ -190,6 +190,7 @@ const ClerkAuthSync = () => {
                 role: userRole === 'seller' ? 'seller' : 'buyer',
                 is_verified: 0,
                 is_online: 1,
+                ...(userImage ? { user_photo: userImage } : {}),
                 ...(referrerId && { referrer_id: referrerId })
               })
             })
@@ -209,6 +210,17 @@ const ClerkAuthSync = () => {
           
           // Используем ID из БД для обновления localStorage
           if (dbUserId) {
+            if (userImage) {
+              try {
+                await fetch(`${API_BASE_URL}/users/${dbUserId}`, {
+                  method: 'PUT',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ user_photo: userImage }),
+                })
+              } catch (e) {
+                console.warn('⚠️ ClerkAuthSync: не удалось сохранить user_photo в БД:', e)
+              }
+            }
             // Обновляем localStorage с правильным ID из БД
             const updatedUserData = {
               ...clerkUserData,

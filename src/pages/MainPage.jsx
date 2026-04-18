@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useMemo, useCallback } from 'react'
 import { useLazyLoad } from '../hooks/useLazyLoad'
+import { useManagerLiveChat } from '../hooks/useManagerLiveChat'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useUser } from '@clerk/clerk-react'
@@ -392,6 +393,8 @@ function MainPage() {
     message: '',
   })
   const [isChatOpen, setIsChatOpen] = useState(false)
+  const [isManagerChatOpen, setIsManagerChatOpen] = useState(false)
+  const [managerChatInput, setManagerChatInput] = useState('')
   const [aiAssistantHiddenByFooter, setAiAssistantHiddenByFooter] = useState(false)
   const layoutScrollRef = useLayoutScrollRef()
   const [chatMessages, setChatMessages] = useState([])
@@ -456,6 +459,16 @@ function MainPage() {
     }
     return sessionId
   }, [isLoggedIn, user, userLoaded])
+
+  const {
+    managerMessagesRef,
+    managerThreadUi,
+    managerConnecting,
+    liveChatToken,
+    enterLiveManagerChat,
+    pauseManagerPolling,
+    sendManagerMessage,
+  } = useManagerLiveChat(getChatUserId, t)
 
   // Загружаем историю чата из localStorage при монтировании компонента или изменении пользователя
   const lastChatUserIdRef = useRef(null)
@@ -1189,15 +1202,6 @@ function MainPage() {
   const isMainSiteUserLoggedIn = () =>
     isLoggedIn || (userLoaded && !!user) || getUserData().isLoggedIn
 
-  const goMapOrChatIfAuthed = (path) => {
-    if (!isMainSiteUserLoggedIn()) {
-      setMainLoginModalAuthEntry('header_wizard')
-      setIsLoginModalOpen(true)
-      return
-    }
-    navigate(path)
-  }
-
   const goWalletIfAuthed = () => {
     if (!isMainSiteUserLoggedIn()) {
       setMainLoginModalAuthEntry('header_wizard')
@@ -1254,6 +1258,27 @@ function MainPage() {
     setIsLoginModalOpen(false)
     setMainLoginModalAuthEntry('header_wizard')
   }
+
+  // Открытие LoginModal по глобальному запросу (например, клик из toast «Войти / Регистрация»)
+  useEffect(() => {
+    const openForcedLoginModal = () => {
+      const forceOpen = sessionStorage.getItem('login_modal_force_open')
+      if (forceOpen !== 'true') return
+
+      const wantWizard = sessionStorage.getItem('login_modal_force_wizard') === 'true'
+      sessionStorage.removeItem('login_modal_force_open')
+      sessionStorage.removeItem('login_modal_force_wizard')
+
+      setMainLoginModalAuthEntry(wantWizard ? 'header_wizard' : 'default')
+      setIsLoginModalOpen(true)
+    }
+
+    openForcedLoginModal()
+    window.addEventListener('forceOpenLoginModal', openForcedLoginModal)
+    return () => {
+      window.removeEventListener('forceOpenLoginModal', openForcedLoginModal)
+    }
+  }, [])
 
   // Функция поиска страниц
   const searchPages = (query) => {
@@ -1861,7 +1886,62 @@ function MainPage() {
   }
 
   const toggleChat = () => {
-    setIsChatOpen((prev) => !prev)
+    setIsChatOpen((prev) => {
+      const next = !prev
+      if (next) {
+        setIsManagerChatOpen(false)
+        pauseManagerPolling()
+      }
+      return next
+    })
+  }
+
+  const openManagerChatDock = useCallback(async () => {
+    if (!isMainSiteUserLoggedIn()) {
+      setMainLoginModalAuthEntry('header_wizard')
+      setIsLoginModalOpen(true)
+      return
+    }
+    setIsChatOpen(false)
+    setIsManagerChatOpen(true)
+    try {
+      await enterLiveManagerChat()
+    } catch {
+      setIsManagerChatOpen(false)
+    }
+  }, [enterLiveManagerChat])
+
+  const closeManagerChatDock = useCallback(() => {
+    setIsManagerChatOpen(false)
+    setManagerChatInput('')
+    pauseManagerPolling()
+  }, [pauseManagerPolling])
+
+  useEffect(() => {
+    window.dispatchEvent(
+      new CustomEvent('managerChatStateChange', { detail: { isOpen: isManagerChatOpen } })
+    )
+  }, [isManagerChatOpen])
+
+  useEffect(() => {
+    const onOpenManager = () => {
+      void openManagerChatDock()
+    }
+    window.addEventListener('openManagerChat', onOpenManager)
+    return () => window.removeEventListener('openManagerChat', onOpenManager)
+  }, [openManagerChatDock])
+
+  const goMapOrChatIfAuthed = (path) => {
+    if (!isMainSiteUserLoggedIn()) {
+      setMainLoginModalAuthEntry('header_wizard')
+      setIsLoginModalOpen(true)
+      return
+    }
+    if (path === '/chat?manager=1' || String(path).startsWith('/chat?manager=')) {
+      void openManagerChatDock()
+      return
+    }
+    navigate(path)
   }
 
   const handleChatInputChange = (e) => {
@@ -1930,7 +2010,7 @@ function MainPage() {
           setIsLoginModalOpen(true)
           return
         }
-        navigate('/chat?manager=1')
+        void openManagerChatDock()
         return
       }
       if (contactPref === 'telegram') {
@@ -2284,8 +2364,32 @@ function MainPage() {
     window.location.href = 'tel:+79991234567'
   }
 
+  const showPropertyAuthRequiredToast = () => {
+    showNotification(
+      <span>
+        Чтобы открыть страницу объекта, войдите в систему.{' '}
+        <button
+          type="button"
+          className="auth-toast-link"
+          onClick={(e) => {
+            e.preventDefault()
+            e.stopPropagation()
+            requestOpenLoginModal({ wizard: true })
+          }}
+        >
+          Войти / Регистрация <span className="auth-toast-link__arrow">→</span>
+        </button>
+      </span>,
+      'warning',
+      7000
+    )
+  }
+
   const handlePropertyClick = (category, propertyId, isClassic = false, hasTimer = false, property = null) => {
-    if (!ensureCanOpenProperty()) return
+    if (!ensureCanOpenProperty()) {
+      showPropertyAuthRequiredToast()
+      return
+    }
     // Если объект не передан, пытаемся найти его в массивах
     let propertyToNavigate = property
     
@@ -2636,7 +2740,9 @@ function MainPage() {
           <div className="new-header__filters">
             <button
               type="button"
-              className={`new-header__filter-btn new-header__filter-btn--hide-4 ${location.pathname === '/chat' ? 'new-header__filter-btn--active' : ''}`}
+              className={`new-header__filter-btn new-header__filter-btn--hide-4 ${
+                location.pathname === '/chat' || isManagerChatOpen ? 'new-header__filter-btn--active' : ''
+              }`}
               onClick={() => goMapOrChatIfAuthed('/chat?manager=1')}
             >
               <span>{t('chat')}</span>
@@ -3679,6 +3785,10 @@ function MainPage() {
           <div 
             className="apartments-section__header"
             onClick={() => {
+              if (!ensureCanOpenProperty()) {
+                showPropertyAuthRequiredToast()
+                return
+              }
               // Для долевых объектов ведём на страницу всех долей
               navigate('/shares')
             }}
@@ -3689,20 +3799,56 @@ function MainPage() {
           </div>
           
           <div className="apartments-section__content">
-            <div className="properties-grid">
-              {sharesSection.map((townhouse, index) => {
+            <div className="main-shares-grid">
+              {sharesSection.map((townhouse) => {
                 const formatPrice = (price) => {
                   if (price >= 1000000) {
                     return `$${(price / 1000000).toFixed(1)}M`
                   }
                   return `$${price.toLocaleString('en-US')}`
                 }
+                const totalShares = Math.max(
+                  1,
+                  Number(
+                    townhouse.totalShares ??
+                      townhouse.total_shares ??
+                      townhouse.shares_total ??
+                      20
+                  ) || 1
+                )
+                const soldShares = Math.min(
+                  Number(
+                    townhouse.sharesSold ??
+                      townhouse.shares_sold ??
+                      townhouse.sold_shares ??
+                      townhouse.purchased_shares ??
+                      0
+                  ) || 0,
+                  totalShares
+                )
+                const soldPercent = Math.max(
+                  0,
+                  Math.min(Math.round((soldShares / totalShares) * 100), 100)
+                )
+                const isSoldOut = soldShares >= totalShares
+                const totalPrice = Number(
+                  townhouse.totalPrice ?? townhouse.total_price ?? townhouse.price ?? 0
+                )
+                const pricePerShare = Number(
+                  townhouse.pricePerShare ??
+                    townhouse.price_per_share ??
+                    (totalShares > 0 ? totalPrice / totalShares : 0)
+                )
                 
                 return (
-                  <div key={townhouse.id} className="property-card">
-                    <div 
-                      className="property-link"
+                  <article key={townhouse.id} className={`main-share-card${isSoldOut ? ' main-share-card--sold-out' : ''}`}>
+                    <div
+                      className="main-share-card__click"
                       onClick={() => {
+                        if (!ensureCanOpenProperty()) {
+                          showPropertyAuthRequiredToast()
+                          return
+                        }
                         // Для долевых объектов открываем специальную страницу долей
                         const propertyType = townhouse.property_type || townhouse.propertyType || 'apartment'
                         const shareId = `${propertyType}-${townhouse.id}`
@@ -3710,12 +3856,21 @@ function MainPage() {
                       }}
                       style={{ cursor: 'pointer' }}
                     >
-                      <div className="property-image-container">
-                        <img loading="lazy" 
+                      <div className="main-share-card__image-wrap">
+                        <div className="main-share-card__scale" aria-hidden>
+                          <div className="main-share-card__scale-track">
+                            <div className="main-share-card__scale-fill" style={{ height: `${soldPercent}%` }} />
+                          </div>
+                          <span className="main-share-card__scale-label main-share-card__scale-label--bottom">0%</span>
+                          <span className="main-share-card__scale-label main-share-card__scale-label--top">100%</span>
+                        </div>
+                        <img
+                          loading="lazy"
                           src={townhouse.image} 
                           alt={townhouse.name}
-                          className="property-image"
+                          className="main-share-card__image"
                         />
+                        <div className="main-share-card__sold-overlay" style={{ height: `${soldPercent}%` }} />
                         <button
                           type="button"
                           className={`property-favorite ${
@@ -3737,50 +3892,30 @@ function MainPage() {
                           </svg>
                         </button>
                       </div>
-                      <div className="property-content">
-                        {index % 2 === 1 && townhouse.isAuction && townhouse.endTime && (
-                          <PropertyTimer endTime={townhouse.endTime} compact={true} />
+                      <div className="main-share-card__content">
+                        <h3 className="main-share-card__title">{townhouse.name}</h3>
+                        <p className="main-share-card__location">{townhouse.location}</p>
+                        {(townhouse.sqft || townhouse.area || townhouse.beds || townhouse.rooms) && (
+                          <p className="main-share-card__specs">
+                            {(townhouse.sqft || townhouse.area || 0)} {t('squareMeters')} · {(townhouse.beds || townhouse.rooms || 0)} {t('roomsShort')}
+                          </p>
                         )}
-                        <h3 className="property-title">{townhouse.name}</h3>
-                        {!(index % 2 === 1 && townhouse.isAuction && townhouse.endTime) && townhouse.description && (
-                          <p className="property-description">{townhouse.description}</p>
-                        )}
-                        <p className="property-location">{townhouse.location}</p>
-                        {index % 2 === 1 && townhouse.isAuction && townhouse.endTime ? (
-                          townhouse.currentBid && (
-                            <div className="property-bid-info">
-                              <span className="bid-label">{t('currentBid')}</span>
-                              <span className="bid-value">{formatPrice(townhouse.currentBid)}</span>
-                            </div>
-                          )
-                        ) : (
-                          <>
-                            <div className="property-specs">
-                            {townhouse.beds && (
-                              <div className="spec-item">
-                                <MdBed size={18} />
-                                <span>{townhouse.beds}</span>
-                              </div>
-                            )}
-                            {townhouse.baths && (
-                              <div className="spec-item">
-                                <MdOutlineBathtub size={18} />
-                                <span>{townhouse.baths}</span>
-                              </div>
-                            )}
-                            {townhouse.sqft && (
-                              <div className="spec-item">
-                                <BiArea size={18} />
-                                <span>{townhouse.sqft} {t('squareMeters')}</span>
-                              </div>
-                            )}
-                            </div>
-                            <div className="property-price">{formatPrice(townhouse.price)}</div>
-                          </>
-                        )}
+                        <div className="main-share-card__prices">
+                          <div className="main-share-card__price-row">
+                            {t('sharesTotalCost')} <strong>{formatPrice(totalPrice)}</strong>
+                          </div>
+                          <div className="main-share-card__price-row">
+                            {t('sharesPerShare')} <strong>{formatPrice(pricePerShare)}</strong>
+                          </div>
+                        </div>
+                        <div className="main-share-card__footer">
+                          <span className="main-share-card__sold">
+                            {isSoldOut ? t('sharesAllSold') : t('sharesSoldCount', { sold: soldShares, total: totalShares })}
+                          </span>
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  </article>
                 )
               })}
             </div>
@@ -4356,6 +4491,94 @@ function MainPage() {
               className="chat-widget__send"
               aria-label={t('sendMessage')}
               disabled={isLoadingAI}
+            >
+              <FiSend size={18} />
+            </button>
+          </form>
+        </div>
+      )}
+
+      {isManagerChatOpen && (
+        <div
+          className={`chat-widget chat-widget--manager-dock${
+            isChatOpen ? ' chat-widget--stacked-above-ai' : ''
+          }`}
+          role="dialog"
+          aria-label={t('chatManagerTitle')}
+        >
+          <div className="chat-widget__header">
+            <div className="chat-widget__header-info">
+              <div className="chat-widget__avatar chat-widget__avatar--manager">M</div>
+              <div className="chat-widget__header-text">
+                <h3 className="chat-widget__title">{t('chatManagerTitle')}</h3>
+                <span className="chat-widget__status">{t('chatManagerOnline')}</span>
+              </div>
+            </div>
+            <button
+              type="button"
+              className="chat-widget__close"
+              onClick={closeManagerChatDock}
+              aria-label={t('closeChat')}
+            >
+              <FiX size={20} />
+            </button>
+          </div>
+
+          <div className="chat-widget__messages" ref={managerMessagesRef}>
+            {managerConnecting && (
+              <div className="chat-widget__message chat-widget__message--bot">
+                <div className="chat-widget__message-content">
+                  <div className="chat-widget__typing" aria-hidden>
+                    <span />
+                    <span />
+                    <span />
+                  </div>
+                  <p className="chat-widget__manager-connect-hint">{t('liveChatWaitNotice')}</p>
+                </div>
+              </div>
+            )}
+            {!managerConnecting &&
+              managerThreadUi.map((message) => (
+                <div
+                  key={message.id}
+                  className={`chat-widget__message ${
+                    message.sender === 'user'
+                      ? 'chat-widget__message--user'
+                      : message.sender === 'manager'
+                        ? 'chat-widget__message--manager'
+                        : 'chat-widget__message--system'
+                  }`}
+                >
+                  <div className="chat-widget__message-content">{message.text}</div>
+                  <div className="chat-widget__message-time">{message.time}</div>
+                </div>
+              ))}
+          </div>
+
+          <form
+            className="chat-widget__input-form"
+            onSubmit={(e) => {
+              e.preventDefault()
+              if (!managerChatInput.trim() || managerConnecting || !liveChatToken) return
+              const text = managerChatInput.trim()
+              setManagerChatInput('')
+              void sendManagerMessage(text)
+            }}
+          >
+            <input
+              type="text"
+              className="chat-widget__input"
+              placeholder={t('chatPlaceholder')}
+              value={managerChatInput}
+              onChange={(e) => setManagerChatInput(e.target.value)}
+              autoComplete="off"
+              disabled={managerConnecting || !liveChatToken}
+            />
+            <button
+              type="submit"
+              className="chat-widget__send"
+              aria-label={t('sendMessage')}
+              disabled={managerConnecting || !liveChatToken}
             >
               <FiSend size={18} />
             </button>

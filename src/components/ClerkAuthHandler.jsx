@@ -187,6 +187,19 @@ const ClerkAuthHandler = () => {
 
       const syncToDatabase = async () => {
         try {
+          const saveClerkProfilePhoto = async (uid) => {
+            if (!uid || !userImage) return
+            try {
+              await fetch(`${API_BASE_URL}/users/${uid}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user_photo: userImage }),
+              })
+            } catch (e) {
+              console.warn('⚠️ ClerkAuthHandler: не удалось сохранить user_photo в БД:', e)
+            }
+          }
+
           let dbUserId = null
           let shouldOpenRegister = false
           let roleFromDatabase = null
@@ -300,6 +313,7 @@ const ClerkAuthHandler = () => {
                 role: userRole === 'seller' ? 'seller' : 'buyer',
                 is_verified: 0,
                 is_online: 1,
+                ...(userImage ? { user_photo: userImage } : {}),
                 ...(referrerId && { referrer_id: referrerId })
               })
             })
@@ -332,6 +346,7 @@ const ClerkAuthHandler = () => {
             dbUserId &&
             isOAuthCompletionContext
           ) {
+            await saveClerkProfilePhoto(dbUserId)
             return {
               dbUserId,
               shouldOpenRegister: false,
@@ -342,6 +357,7 @@ const ClerkAuthHandler = () => {
           
           // Используем ID из БД для обновления localStorage (effectiveCabinetRole здесь недоступен — он объявлен ниже по коду)
           if (dbUserId) {
+            await saveClerkProfilePhoto(dbUserId)
             const resolvedCabinetRole = roleFromDatabase || clerkUserData.role
             const updatedUserData = {
               ...clerkUserData,

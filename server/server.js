@@ -1621,7 +1621,12 @@ app.post('/api/users', async (req, res) => {
     }
     if (existingUser) {
       // Пользователь уже зарегистрирован — возвращаем его данные (вход, а не повторная регистрация)
-      await userQueries.update(existingUser.id, { is_online: 1 });
+      const onlinePatch = { is_online: 1 };
+      const incomingPhoto = userData.user_photo != null && String(userData.user_photo).trim();
+      if (incomingPhoto) {
+        onlinePatch.user_photo = String(userData.user_photo).trim();
+      }
+      await userQueries.update(existingUser.id, onlinePatch);
       const updated = await userQueries.getById(existingUser.id);
       const userWithoutPassword = removePasswordFromUser(updated);
       return res.json({ success: true, data: userWithoutPassword });

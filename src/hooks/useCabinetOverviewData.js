@@ -10,6 +10,9 @@ import { fetchUserById } from '../utils/usersApi'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
 
+/** После оплаты / синхронизации Stripe — перечитать тариф в превью кабинета. */
+export const SUBSCRIPTION_BILLING_UPDATED_EVENT = 'subscription-billing-updated'
+
 function formatShortDate(iso) {
   if (!iso) return '—'
   const d = new Date(iso)
@@ -71,6 +74,23 @@ export function normalizeSubscriptionPlanVisual(sub) {
   if (k === 'starter' || k === 'free') return 'starter'
   if (k === 'vip') return 'vip'
   return 'pro'
+}
+
+const SUBSCRIPTION_UI_INACTIVE_STATUSES = new Set([
+  'canceled',
+  'unpaid',
+  'incomplete_expired',
+  'incomplete',
+])
+
+/**
+ * Тариф для кнопок оплаты и превью: неактивная подписка в БД → starter (можно снова оформить Pro).
+ */
+export function effectivePurchasedTier(sub) {
+  if (!sub) return 'starter'
+  const st = String(sub.status || '').toLowerCase()
+  if (SUBSCRIPTION_UI_INACTIVE_STATUSES.has(st)) return 'starter'
+  return normalizeSubscriptionPlanVisual(sub)
 }
 
 function subscriptionPlanBadgeLabel(visual) {
@@ -426,7 +446,8 @@ export function useCabinetOverviewData() {
       return
     }
     let cancelled = false
-    ;(async () => {
+
+    const loadSubscriptionPlanLabel = async () => {
       try {
         const res = await fetch(`${API_BASE_URL}/users/${uid}/subscription-billing`)
         const json = res.ok ? await res.json().catch(() => null) : null
@@ -437,9 +458,17 @@ export function useCabinetOverviewData() {
       } catch {
         if (!cancelled) setSubscriptionPlanLabel('Starter')
       }
-    })()
+    }
+
+    void loadSubscriptionPlanLabel()
+
+    const onBillingUpdated = () => {
+      void loadSubscriptionPlanLabel()
+    }
+    window.addEventListener(SUBSCRIPTION_BILLING_UPDATED_EVENT, onBillingUpdated)
     return () => {
       cancelled = true
+      window.removeEventListener(SUBSCRIPTION_BILLING_UPDATED_EVENT, onBillingUpdated)
     }
   }, [numericUserId, userLoaded])
 

@@ -14,6 +14,7 @@ import AnimatedLoadingSkeleton from './ui/AnimatedLoadingSkeleton'
 import AuctionMobileLayout from './ui/AuctionMobileLayout'
 import { ensureCanOpenProperty } from '../utils/propertyAccessGuard'
 import { showNotification } from '../utils/toastHelper'
+import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
 import {
   getEffectiveAuctionEndTime,
   hasTestTimerDateString,
@@ -254,7 +255,27 @@ const PropertyList = ({
   }
 
   const openProperty = (property) => {
-    if (!ensureCanOpenProperty()) return
+    if (!ensureCanOpenProperty()) {
+      showNotification(
+        <span>
+          Чтобы открыть страницу объекта, войдите в систему.{' '}
+          <button
+            type="button"
+            className="auth-toast-link"
+            onClick={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              requestOpenLoginModal({ wizard: true })
+            }}
+          >
+            Войти / Регистрация <span className="auth-toast-link__arrow">→</span>
+          </button>
+        </span>,
+        'warning',
+        7000
+      )
+      return
+    }
     navigate(`/property/${property.id}`, {
       state: { property }
     })

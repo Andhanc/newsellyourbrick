@@ -112,6 +112,14 @@ const defaultAssistantPreferences = () => ({
 
 const MANAGER_QUERY_VALUES = new Set(['1', 'true', 'yes', 'manager'])
 
+function appendUniqueManagerMessages(prev, incoming) {
+  const nextList = Array.isArray(incoming) ? incoming.filter(Boolean) : []
+  if (!nextList.length) return prev
+  const existingIds = new Set((prev || []).map((m) => m?.id).filter((id) => id != null))
+  const uniqueToAdd = nextList.filter((m) => m?.id != null && !existingIds.has(m.id))
+  return uniqueToAdd.length ? [...(prev || []), ...uniqueToAdd] : prev
+}
+
 const Chat = () => {
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
@@ -235,7 +243,7 @@ const Chat = () => {
         const chunk = await fetchLiveChatMessagesSince(token, lastManagerMsgIdRef.current)
         if (chunk.length) {
           lastManagerMsgIdRef.current = Math.max(...chunk.map((r) => r.id))
-          setManagerChatMessages((p) => [...p, ...normalizeLiveChatRows(chunk)])
+          setManagerChatMessages((p) => appendUniqueManagerMessages(p, normalizeLiveChatRows(chunk)))
         }
       } catch {
         /* ignore */
@@ -287,32 +295,18 @@ const Chat = () => {
     }
   }, [resumeLiveManagerIfNeeded])
 
-  // Открытие чата с менеджером по ссылке из хедера: /chat?manager=1
-  useEffect(() => {
+  // /chat?manager=1 — редирект на главную и открытие той же правой панели, что у AI (без блюра и без ожидания на /chat)
+  useLayoutEffect(() => {
     const raw = searchParams.get('manager')
     if (raw == null || raw === '') return
     if (!MANAGER_QUERY_VALUES.has(String(raw).toLowerCase())) return
 
-    let cancelled = false
-    setActiveChat('tech-support')
-    ;(async () => {
-      try {
-        await enterLiveManagerChat()
-        if (!cancelled) setSearchParams({}, { replace: true })
-      } catch (err) {
-        console.error(err)
-        if (!cancelled) {
-          const msg = err?.message || t('liveChatError')
-          showNotification(msg)
-          // Убираем ?manager=1, чтобы не застрять в пустом экране менеджера
-          setSearchParams({}, { replace: true })
-        }
-      }
-    })()
-    return () => {
-      cancelled = true
-    }
-  }, [searchParams, enterLiveManagerChat, setSearchParams, t])
+    navigate('/', { replace: true })
+    const tmr = window.setTimeout(() => {
+      window.dispatchEvent(new CustomEvent('openManagerChat'))
+    }, 0)
+    return () => clearTimeout(tmr)
+  }, [searchParams, navigate])
 
   const backToTechSupportAi = useCallback(() => {
     if (managerPollRef.current) {
@@ -594,7 +588,9 @@ const Chat = () => {
       try {
         const row = await sendLiveChatUserMessage(liveChatToken, text)
         lastManagerMsgIdRef.current = Math.max(lastManagerMsgIdRef.current, row.id)
-        setManagerChatMessages((prev) => [...prev, ...normalizeLiveChatRows([row])])
+        setManagerChatMessages((prev) =>
+          appendUniqueManagerMessages(prev, normalizeLiveChatRows([row]))
+        )
       } catch (err) {
         showNotification(err?.message || t('liveChatError'))
       }

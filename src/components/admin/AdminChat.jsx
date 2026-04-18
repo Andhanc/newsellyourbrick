@@ -2,17 +2,44 @@ import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { FiSend, FiSearch, FiZap, FiMessageCircle, FiCpu } from 'react-icons/fi';
 import './AdminChat.css';
 import { askPropertyAssistant } from '../../services/aiService';
-import { getApiBaseUrl } from '../../utils/apiConfig';
+import { getApiBaseUrl, getApiBaseUrlSync } from '../../utils/apiConfig';
 import {
   fetchAdminLiveChatMessages,
   fetchAdminLiveChatSessions,
   sendAdminLiveChatMessage,
 } from '../../services/liveChatApi';
 
-const AI_AVATAR =
-  'https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&w=150&q=80';
-const LIVE_AVATAR =
-  'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=150&q=80';
+function resolveClientAvatarUrl(row) {
+  if (!row) return null;
+  const raw = [row.client_user_photo, row.client_telegram_photo_url]
+    .map((x) => (x != null && String(x).trim() ? String(x).trim() : ''))
+    .find(Boolean);
+  if (!raw) return null;
+  if (raw.startsWith('http://') || raw.startsWith('https://')) return raw;
+  const path = raw.startsWith('/') ? raw : `/${raw}`;
+  // В dev Vite проксирует /uploads на бэкенд — достаточно origin текущей страницы
+  if (typeof window !== 'undefined') {
+    return `${window.location.origin}${path}`;
+  }
+  const base = getApiBaseUrlSync().replace(/\/api\/?$/, '') || '';
+  return `${String(base).replace(/\/$/, '')}${path}`;
+}
+
+function initialsFromClientRow(s) {
+  const fn = [s?.client_first_name, s?.client_last_name].filter(Boolean);
+  if (fn.length) {
+    const a = (fn[0][0] || '').toUpperCase();
+    const b = fn.length > 1 && fn[1][0] ? fn[1][0].toUpperCase() : '';
+    return (a + b).slice(0, 2) || '?';
+  }
+  const em = s?.client_email || s?.lead_email;
+  if (em && String(em)[0]) return String(em)[0].toUpperCase();
+  if (s?.client_phone || s?.lead_phone) {
+    const p = String(s.client_phone || s.lead_phone).replace(/\D/g, '');
+    if (p.length >= 2) return p.slice(-2);
+  }
+  return '?';
+}
 
 function formatSessionTime(iso) {
   if (!iso) return '';
@@ -52,7 +79,8 @@ function liveRowToChatItem(s) {
     sessionId: s.id,
     liveRow: s,
     name: clientTitleFromRow(s),
-    avatar: LIVE_AVATAR,
+    avatarUrl: resolveClientAvatarUrl(s),
+    avatarInitials: initialsFromClientRow(s),
     type: 'live',
     status: 'online',
     lastMessage: s.last_message_preview || 'Нет сообщений',
@@ -67,6 +95,7 @@ const AdminChat = () => {
   const [inputMessage, setInputMessage] = useState('');
   const [isLoadingAI, setIsLoadingAI] = useState(false);
   const messagesEndRef = useRef(null);
+  const messagesScrollRef = useRef(null);
   const [liveSessions, setLiveSessions] = useState([]);
   const [messagesByKey, setMessagesByKey] = useState({});
 
@@ -92,7 +121,8 @@ const AdminChat = () => {
     const ai = {
       id: 'ai-assistant',
       name: 'Умный помощник',
-      avatar: AI_AVATAR,
+      avatarUrl: null,
+      avatarInitials: 'AI',
       type: 'ai',
       status: 'online',
       lastMessage: 'Готов помочь с вопросами по админ-панели',
@@ -119,6 +149,8 @@ const AdminChat = () => {
         ...prev,
         liveRow: row,
         name: clientTitleFromRow(row),
+        avatarUrl: resolveClientAvatarUrl(row),
+        avatarInitials: initialsFromClientRow(row),
         lastMessage: row.last_message_preview || 'Нет сообщений',
         timestamp: formatSessionTime(row.updated_at),
       };
@@ -232,13 +264,32 @@ const AdminChat = () => {
     };
   }, []);
 
-  useEffect(() => {
-    scrollToBottom();
-  }, [selectedChat, messagesByKey]);
+  const scrollMessagesToBottom = useCallback(() => {
+    const el = messagesScrollRef.current;
+    if (el) {
+      el.scrollTop = el.scrollHeight;
+      return;
+    }
+    messagesEndRef.current?.scrollIntoView({ block: 'nearest' });
+  }, []);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
+  useEffect(() => {
+    const t = requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        scrollMessagesToBottom();
+      });
+    });
+    return () => cancelAnimationFrame(t);
+  }, [selectedChat, messagesByKey, scrollMessagesToBottom]);
+
+  const selectChat = useCallback((chat) => {
+    if (typeof window !== 'undefined') {
+      window.scrollTo(0, 0);
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    }
+    setSelectedChat(chat);
+  }, []);
 
   const chatMatchesQuery = (chat, q) => {
     if (!q.trim()) return true;
@@ -408,10 +459,20 @@ const AdminChat = () => {
             <div
               key={chat.id}
               className={`admin-chat__item ${selectedChat?.id === chat.id ? 'active' : ''}`}
-              onClick={() => setSelectedChat(chat)}
+              onClick={() => selectChat(chat)}
             >
               <div className="admin-chat__item-avatar">
-                <img src={chat.avatar} alt={chat.name} />
+                {chat.type === 'ai' ? (
+                  <div className="admin-chat__avatar-fill admin-chat__avatar-fill--ai" aria-hidden>
+                    <FiCpu size={22} />
+                  </div>
+                ) : chat.avatarUrl ? (
+                  <img src={chat.avatarUrl} alt="" />
+                ) : (
+                  <div className="admin-chat__avatar-fill admin-chat__avatar-fill--initials" aria-hidden>
+                    {chat.avatarInitials}
+                  </div>
+                )}
                 {chat.status === 'online' && <span className="admin-chat__status-dot"></span>}
                 {chat.type === 'ai' && (
                   <div className="admin-chat__ai-badge">
@@ -441,7 +502,17 @@ const AdminChat = () => {
             <div className="admin-chat__main-header">
               <div className="admin-chat__main-header-info">
                 <div className="admin-chat__main-avatar">
-                  <img src={selectedChat.avatar} alt={selectedChat.name} />
+                  {selectedChat.type === 'ai' ? (
+                    <div className="admin-chat__avatar-fill admin-chat__avatar-fill--ai" aria-hidden>
+                      <FiCpu size={22} />
+                    </div>
+                  ) : selectedChat.avatarUrl ? (
+                    <img src={selectedChat.avatarUrl} alt="" />
+                  ) : (
+                    <div className="admin-chat__avatar-fill admin-chat__avatar-fill--initials" aria-hidden>
+                      {selectedChat.avatarInitials}
+                    </div>
+                  )}
                   {selectedChat.status === 'online' && <span className="admin-chat__status-dot"></span>}
                 </div>
                 <div>
@@ -463,6 +534,11 @@ const AdminChat = () => {
             {selectedChat.type === 'live' && selectedLiveRow && (
               <div className="admin-chat__client-card">
                 <div className="admin-chat__client-card-title">Клиент</div>
+                <p className="admin-chat__client-card-note">
+                  Данные профиля в базе (аккаунт на сайте).
+                </p>
+
+                <div className="admin-chat__client-section-title">Профиль в базе</div>
                 <dl className="admin-chat__client-dl">
                   {selectedLiveRow.user_id != null && (
                     <>
@@ -482,45 +558,21 @@ const AdminChat = () => {
                   )}
                   {selectedLiveRow.client_email && (
                     <>
-                      <dt>Email (аккаунт)</dt>
+                      <dt>Email</dt>
                       <dd>{selectedLiveRow.client_email}</dd>
                     </>
                   )}
                   {selectedLiveRow.client_phone && (
                     <>
-                      <dt>Телефон (аккаунт)</dt>
+                      <dt>Телефон</dt>
                       <dd>{selectedLiveRow.client_phone}</dd>
-                    </>
-                  )}
-                  {selectedLiveRow.lead_email && (
-                    <>
-                      <dt>Email (лид помощника)</dt>
-                      <dd>{selectedLiveRow.lead_email}</dd>
-                    </>
-                  )}
-                  {selectedLiveRow.lead_phone && (
-                    <>
-                      <dt>Телефон (лид помощника)</dt>
-                      <dd>{selectedLiveRow.lead_phone}</dd>
-                    </>
-                  )}
-                  {selectedLiveRow.assistant_session_id && (
-                    <>
-                      <dt>Сессия чата помощника</dt>
-                      <dd className="admin-chat__client-mono">{selectedLiveRow.assistant_session_id}</dd>
-                    </>
-                  )}
-                  {selectedLiveRow.lead_summary && (
-                    <>
-                      <dt>Сводка лида</dt>
-                      <dd>{selectedLiveRow.lead_summary}</dd>
                     </>
                   )}
                 </dl>
               </div>
             )}
 
-            <div className="admin-chat__messages">
+            <div className="admin-chat__messages" ref={messagesScrollRef}>
               {currentMessages.map((message) => {
                 const isSent =
                   message.role === 'manager' ||

@@ -96,6 +96,62 @@
   color: #1f2937;
 }
 
+.auth-toast-link {
+  appearance: none;
+  border: 0;
+  background: none;
+  color: #0abab5;
+  text-decoration: none;
+  cursor: pointer;
+  padding: 0;
+  font: inherit;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  position: relative;
+  transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.auth-toast-link::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -2px;
+  height: 2px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 0.25s ease;
+}
+
+.auth-toast-link:hover {
+  color: #089c97;
+}
+
+.auth-toast-link:focus-visible {
+  outline: none;
+  color: #089c97;
+}
+
+.auth-toast-link:hover::after,
+.auth-toast-link:focus-visible::after {
+  transform: scaleX(1);
+}
+
+.auth-toast-link__arrow {
+  display: inline-block;
+  font-weight: 700;
+  transform: translateX(0);
+  transition: transform 0.2s ease;
+}
+
+.auth-toast-link:hover .auth-toast-link__arrow,
+.auth-toast-link:focus-visible .auth-toast-link__arrow {
+  transform: translateX(3px);
+}
+
 /* Адаптивность */
 @media (max-width: 768px) {
   .toast {

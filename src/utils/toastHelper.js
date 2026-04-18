@@ -7,7 +7,7 @@ import { showToast } from '../components/ToastContainer'
 export const showNotification = (message, type = null, duration = 4000) => {
   // Если тип не указан, определяем автоматически
   if (!type) {
-    const messageLower = message.toLowerCase()
+    const messageLower = typeof message === 'string' ? message.toLowerCase() : ''
     
     // Успешные сообщения
     if (
