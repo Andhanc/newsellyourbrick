@@ -13080,12 +13080,19 @@ if (process.env.NODE_ENV === 'production') {
     }
     
     console.log('📦 Production режим: раздача статики из dist');
+
+    const sendSpaIndex = (res, indexPath) => {
+      // Свежий index.html — иначе после деплоя в кэше остаются ссылки на старые чанки → 404/MIME-ошибки
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.sendFile(indexPath);
+    };
     
     // Явно обрабатываем корневой маршрут - отдаем index.html
     app.get('/', (req, res) => {
       const indexPath = join(distPath, 'index.html');
       if (fs.existsSync(indexPath)) {
-        res.sendFile(indexPath);
+        sendSpaIndex(res, indexPath);
       } else {
         console.error(`❌ index.html не найден по пути: ${indexPath}`);
         res.status(404).send('index.html not found');
@@ -13106,6 +13113,19 @@ if (process.env.NODE_ENV === 'production') {
       // Если файл не найден, передаем управление следующему обработчику
       fallthrough: true
     }));
+
+    // express.static с fallthrough: отсутствующий /assets/*.js иначе доходит до app.get('*') и получает
+    // index.html → «MIME type text/html» и Failed to fetch dynamically imported module.
+    app.use((req, res, next) => {
+      const p = req.path || '';
+      if (
+        p.startsWith('/assets/') ||
+        /\.(?:js|mjs|css|map|woff2?|ttf|eot)$/i.test(p)
+      ) {
+        return res.status(404).type('text/plain; charset=utf-8').send('Not found');
+      }
+      next();
+    });
   } else {
     console.warn('⚠️ Production режим, но папка dist не найдена. Запустите npm run build перед деплоем.');
     console.warn(`⚠️ Ожидаемый путь: ${distPath}`);
@@ -13128,6 +13148,8 @@ if (process.env.NODE_ENV === 'production') {
     // Для всех остальных маршрутов отдаем index.html (SPA routing)
     const indexPath = join(distPath, 'index.html');
     if (fs.existsSync(indexPath)) {
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+      res.setHeader('Pragma', 'no-cache');
       res.sendFile(indexPath);
     } else {
       console.error(`❌ index.html не найден по пути: ${indexPath}`);
