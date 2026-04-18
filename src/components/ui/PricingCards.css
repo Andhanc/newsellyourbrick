@@ -912,7 +912,7 @@
 }
 
 /* =============================================================================
-   Creative layout: белый фон блока, наклон боковых карточек, центр Pro Tiffany,
+   Creative layout: наклон боковых карточек, центр Pro Tiffany,
    список функций внутри верхней карточки, motion — framer-motion.
    ============================================================================= */
 
@@ -923,9 +923,9 @@
   margin: 0 auto;
   padding: 40px 20px 48px;
   border-radius: 28px;
-  background: #ffffff;
-  box-shadow: 0 8px 40px rgba(15, 23, 42, 0.08);
-  border: 1px solid rgba(15, 23, 42, 0.06);
+  background: transparent;
+  box-shadow: none;
+  border: none;
   box-sizing: border-box;
 }
 
