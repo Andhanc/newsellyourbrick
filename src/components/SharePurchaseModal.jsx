@@ -21,6 +21,7 @@ const SharePurchaseModal = ({
   returnPath,
 }) => {
   const [pdfOpened, setPdfOpened] = useState(false)
+  const [isPdfViewerOpen, setIsPdfViewerOpen] = useState(false)
   const [agreed, setAgreed] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState(null)
@@ -31,6 +32,7 @@ const SharePurchaseModal = ({
   useEffect(() => {
     if (!isOpen) {
       setPdfOpened(false)
+      setIsPdfViewerOpen(false)
       setAgreed(false)
       setSubmitting(false)
       setError(null)
@@ -80,8 +82,7 @@ const SharePurchaseModal = ({
         showNotification('Файл условий не найден. Добавьте public/documents/Document.pdf', 'error')
         return
       }
-      const url = POLICY_PDF_URL
-      window.open(url, '_blank', 'noopener,noreferrer')
+      setIsPdfViewerOpen(true)
       setPdfOpened(true)
     } catch {
       showNotification('Не удалось открыть файл условий', 'error')
@@ -218,7 +219,8 @@ const SharePurchaseModal = ({
 
           <div className="share-purchase-modal__policy">
             <p className="share-purchase-modal__policy-intro">
-              Перед покупкой ознакомьтесь с условиями долевого участия. Документ откроется в новой вкладке.
+              Перед покупкой ознакомьтесь с условиями долевого участия. Документ откроется в окне поверх этой
+              формы.
             </p>
             <button type="button" className="share-purchase-modal__pdf-btn" onClick={openPdf}>
               <FiExternalLink size={18} />
@@ -268,6 +270,29 @@ const SharePurchaseModal = ({
           )}
         </div>
       </div>
+
+      {isPdfViewerOpen && (
+        <div
+          className="share-purchase-modal__pdf-viewer-overlay"
+          role="presentation"
+          onClick={() => setIsPdfViewerOpen(false)}
+        >
+          <div className="share-purchase-modal__pdf-viewer" onClick={(e) => e.stopPropagation()}>
+            <div className="share-purchase-modal__pdf-viewer-head">
+              <strong>Условия резерва (PDF)</strong>
+              <button
+                type="button"
+                className="share-purchase-modal__pdf-viewer-close"
+                onClick={() => setIsPdfViewerOpen(false)}
+                aria-label="Закрыть просмотр PDF"
+              >
+                <FiX size={18} />
+              </button>
+            </div>
+            <iframe title="Условия покупки долей" src={POLICY_PDF_URL} className="share-purchase-modal__pdf-viewer-frame" />
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -483,30 +483,31 @@ const ClerkAuthHandler = () => {
           console.log('ClerkAuthHandler: Cleaned OAuth params from URL')
         }
 
-        // Редиректим только если это реальный OAuth редирект, а не обычное обновление страницы
-        // Проверяем наличие OAuth параметров или недавний OAuth редирект
-        if (hasOAuthParams || oauthRedirectStarted || wasOnClerkDomain) {
+        // Редирект в кабинет только после реального возврата OAuth (явные query/hash от Clerk ИЛИ
+        // флаг clerk_oauth_redirect_started). Не используем wasOnClerkDomain и широкий hasOAuthParams
+        // (includes('__clerk')) — иначе F5 и посторонние фрагменты в URL давали ложный редирект на /profile.
+        if (isOAuthCompletionContext) {
           // Определяем куда редиректить в зависимости от роли пользователя
           const savedUserRole = effectiveCabinetRole || localStorage.getItem('userRole') || 'buyer'
           const redirectPath = (savedUserRole === 'seller' || savedUserRole === 'owner') ? '/owner' : '/profile'
 
           // Навигация на правильную страницу в зависимости от роли
           if (window.location.pathname !== redirectPath) {
-            console.log('ClerkAuthHandler: OAuth redirect detected, navigating to', redirectPath, 'for role:', savedUserRole)
+            console.log('ClerkAuthHandler: OAuth return — navigating to', redirectPath, 'for role:', savedUserRole)
             navigate(redirectPath, { replace: true })
           } else {
             console.log('ClerkAuthHandler: Already on correct page after OAuth, data should update automatically')
           }
         } else {
-          console.log('ClerkAuthHandler: Normal page refresh, no redirect needed. Current path:', window.location.pathname)
+          console.log('ClerkAuthHandler: No OAuth return context — stay on', window.location.pathname)
         }
       })()
 
       // Прерываем текущий рендер эффекта: дальнейшие действия выполняются в async IIFE.
       return
-    } else if ((!isSignedIn && !session) && (hasOAuthParams || oauthRedirectStarted || wasOnClerkDomain) && !hasProcessed) {
-      // Если есть OAuth параметры или был запущен OAuth редирект, но пользователь не авторизован, ждем и проверяем повторно
-      console.log('ClerkAuthHandler: OAuth redirect detected but user not signed in yet, waiting...')
+    } else if (!isSignedIn && !session && isOAuthCompletionContext && !hasProcessed) {
+      // Ожидание сессии только при явном возврате OAuth (те же критерии, что и редирект в кабинет)
+      console.log('ClerkAuthHandler: OAuth return but user not signed in yet, waiting...')
       console.log('ClerkAuthHandler: Referrer:', document.referrer)
       console.log('ClerkAuthHandler: Was on Clerk domain:', wasOnClerkDomain)
       console.log('ClerkAuthHandler: This might indicate:')
