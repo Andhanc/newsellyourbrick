@@ -1743,6 +1743,28 @@
   gap: 10px;
 }
 
+.auction-leader-bid--price-up {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.auction-leader-bid__amount {
+  display: inline;
+}
+
+.auction-leader-bid--price-up .auction-leader-bid__amount {
+  animation: priceIncrease 0.65s ease-out;
+  color: #10b981;
+}
+
+.auction-leader-bid__arrow-up {
+  flex-shrink: 0;
+  color: #10b981;
+  animation: arrowBounce 0.65s ease-out;
+}
+
 .recent-bid-item {
   padding: 12px;
   background: #f9fafb;

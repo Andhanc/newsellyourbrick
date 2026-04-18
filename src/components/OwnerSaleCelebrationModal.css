@@ -1,0 +1,183 @@
+.owner-sale-celebration-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10050;
+  padding: 20px;
+  animation: ownerSaleCelebrationFade 0.25s ease-out;
+}
+
+@keyframes ownerSaleCelebrationFade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.owner-sale-celebration-overlay .owner-sale-celebration-confetti {
+  position: fixed;
+  inset: 0;
+  z-index: 10051;
+  pointer-events: none;
+}
+
+.owner-sale-celebration-modal {
+  position: relative;
+  z-index: 10052;
+  background: #fff;
+  border-radius: 20px;
+  max-width: 420px;
+  width: 100%;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.28);
+  overflow: hidden;
+  animation: ownerSaleCelebrationSlide 0.35s ease-out;
+}
+
+@keyframes ownerSaleCelebrationSlide {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.owner-sale-celebration-modal__close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  border: none;
+  background: rgba(0, 0, 0, 0.06);
+  border-radius: 10px;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #374151;
+  transition: background 0.2s, color 0.2s;
+  z-index: 2;
+}
+
+.owner-sale-celebration-modal__close:hover {
+  background: rgba(0, 0, 0, 0.1);
+  color: #111827;
+}
+
+.owner-sale-celebration-modal__inner {
+  padding: 28px 24px 24px;
+  text-align: center;
+}
+
+.owner-sale-celebration-modal__headline {
+  margin: 0 0 6px;
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: #059669;
+  line-height: 1.2;
+}
+
+.owner-sale-celebration-modal__subhead {
+  margin: 0 0 20px;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.owner-sale-celebration-modal__thumb {
+  width: 100%;
+  max-width: 200px;
+  aspect-ratio: 4 / 3;
+  margin: 0 auto 14px;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+  background: #f3f4f6;
+}
+
+.owner-sale-celebration-modal__thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.owner-sale-celebration-modal__title {
+  margin: 0 0 8px;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1f2937;
+  line-height: 1.35;
+}
+
+.owner-sale-celebration-modal__location {
+  margin: 0 0 14px;
+  font-size: 0.875rem;
+  color: #6b7280;
+}
+
+.owner-sale-celebration-modal__detail {
+  margin: 0 0 10px;
+  font-size: 0.95rem;
+  color: #374151;
+  line-height: 1.45;
+}
+
+.owner-sale-celebration-modal__sum {
+  margin: 0 0 22px;
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #047857;
+}
+
+.owner-sale-celebration-modal__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.owner-sale-celebration-modal__btn-primary {
+  width: 100%;
+  padding: 14px 18px;
+  border: none;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  background: #0d9488;
+  color: #fff;
+  transition: filter 0.2s, transform 0.15s;
+}
+
+.owner-sale-celebration-modal__btn-primary:hover {
+  filter: brightness(1.06);
+}
+
+.owner-sale-celebration-modal__btn-primary:active {
+  transform: scale(0.99);
+}
+
+.owner-sale-celebration-modal__btn-secondary {
+  width: 100%;
+  padding: 10px 16px;
+  border: none;
+  background: transparent;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #6b7280;
+  cursor: pointer;
+  border-radius: 8px;
+}
+
+.owner-sale-celebration-modal__btn-secondary:hover {
+  color: #374151;
+  background: #f9fafb;
+}

@@ -20,6 +20,7 @@ import { Address, beginCell, Cell } from '@ton/core';
 import { getMarketData, getMortgageRates, getRentalYieldByRegion } from './services/investmentDataService.js';
 import { translatePropertyToAllLanguages } from './services/aiPropertyTranslate.js';
 import { buildDatabaseSnapshot } from './services/storageSnapshot.js';
+import { buildOwnerSaleCelebrations } from './ownerSaleCelebrations.js';
 import { getAuctionMinBidStep } from '../src/utils/auctionBidStep.js';
 import { registerStripeBillingRoutes, createStripeWebhookHandler } from './stripeBilling.js';
 import { sendCrmEmailViaEmailJS, resolveBuyerEmailForPurchaseRequest } from './emailJsCrmSend.js';
@@ -299,6 +300,86 @@ function broadcastUserCabinetEvent(userId, payload) {
       set.delete(res);
     }
   });
+}
+
+/** Таблица Prisma для избранного/ставок по строке объекта (getByUserId раньше не всегда имел source_table). */
+function engagementTableFromPropertyRow(p) {
+  if (!p) return 'properties_apartments';
+  const st = p.source_table;
+  if (st != null && String(st).trim() !== '') {
+    return favoriteQueries.normalizePropertyTable(st);
+  }
+  const pt = String(p.property_type || '').toLowerCase();
+  if (pt === 'house' || pt === 'villa') return 'properties_houses';
+  if (pt === 'apartment' || pt === 'commercial') return 'properties_apartments';
+  return 'properties_apartments';
+}
+
+async function fetchEngagementCountsForProperty(prisma, propertyId, propertyTable) {
+  const pid = Number(propertyId);
+  const tbl = String(propertyTable || 'properties_apartments');
+  const bidWhere =
+    tbl === 'properties_apartments'
+      ? { property_id: pid, OR: [{ property_table: tbl }, { property_table: null }] }
+      : { property_id: pid, property_table: tbl };
+  const [likes_count, bids_count] = await Promise.all([
+    prisma.property_favorites.count({
+      where: { property_id: pid, property_table: tbl },
+    }),
+    prisma.bids.count({ where: bidWhere }),
+  ]);
+  return { likes_count, bids_count };
+}
+
+/** Push владельцу объекта: лайки/ставки обновились (один канал SSE user-updates, без polling). */
+async function notifyOwnerPropertyEngagement(prisma, propertyRow, propertyTableOverride) {
+  try {
+    const ownerId = propertyRow?.user_id;
+    if (!ownerId) return;
+    const tbl = propertyTableOverride || engagementTableFromPropertyRow(propertyRow);
+    const { likes_count, bids_count } = await fetchEngagementCountsForProperty(
+      prisma,
+      propertyRow.id,
+      tbl
+    );
+    const payload = {
+      type: 'property_engagement',
+      property_id: Number(propertyRow.id),
+      likes_count,
+      bids_count,
+    };
+    const isAuc =
+      propertyRow.is_auction === 1 ||
+      propertyRow.is_auction === true ||
+      propertyRow.is_auction === '1' ||
+      propertyRow.is_auction === 'true';
+    if (isAuc) {
+      try {
+        const pid = Number(propertyRow.id);
+        const bidWhere =
+          tbl === 'properties_apartments'
+            ? { property_id: pid, OR: [{ property_table: tbl }, { property_table: null }] }
+            : { property_id: pid, property_table: tbl };
+        const agg = await prisma.bids.aggregate({ where: bidWhere, _max: { bid_amount: true } });
+        const maxBid = agg?._max?.bid_amount != null ? Number(agg._max.bid_amount) : null;
+        const start =
+          propertyRow.auction_starting_price != null && propertyRow.auction_starting_price !== ''
+            ? Number(propertyRow.auction_starting_price)
+            : NaN;
+        const hasMax = maxBid != null && Number.isFinite(maxBid) && maxBid > 0;
+        payload.current_bid = hasMax
+          ? maxBid
+          : Number.isFinite(start) && start > 0
+            ? start
+            : null;
+      } catch (_) {
+        payload.current_bid = null;
+      }
+    }
+    broadcastUserCabinetEvent(ownerId, payload);
+  } catch (e) {
+    console.warn('notifyOwnerPropertyEngagement:', e?.message || e);
+  }
 }
 
 /** In-app уведомление покупателю: верификация одобрена — можно делать ставки на аукционе */
@@ -1070,6 +1151,22 @@ app.post('/api/users/:userId/favorites', async (req, res) => {
       return res.status(400).json({ success: false, error: 'Укажите property_id' });
     }
     const result = await favoriteQueries.add(userId, property_id, property_table);
+    if (result.changes > 0) {
+      try {
+        const prismaFav = getPrisma();
+        const pid = parseInt(property_id, 10);
+        const propRow = await propertyQueries.getById(pid, null);
+        if (propRow) {
+          void notifyOwnerPropertyEngagement(
+            prismaFav,
+            propRow,
+            favoriteQueries.normalizePropertyTable(property_table)
+          );
+        }
+      } catch (e) {
+        console.warn('POST favorites — push лайков владельцу:', e?.message || e);
+      }
+    }
     res.json({ success: true, added: result.changes > 0 });
   } catch (error) {
     console.error('POST /api/users/:userId/favorites:', error);
@@ -1092,6 +1189,22 @@ app.delete('/api/users/:userId/favorites', async (req, res) => {
       return res.status(400).json({ success: false, error: 'Укажите property_id' });
     }
     const result = await favoriteQueries.remove(userId, property_id, property_table);
+    if (result.changes > 0) {
+      try {
+        const prismaFav = getPrisma();
+        const pid = parseInt(property_id, 10);
+        const propRow = await propertyQueries.getById(pid, null);
+        if (propRow) {
+          void notifyOwnerPropertyEngagement(
+            prismaFav,
+            propRow,
+            favoriteQueries.normalizePropertyTable(property_table)
+          );
+        }
+      } catch (e) {
+        console.warn('DELETE favorites — push лайков владельцу:', e?.message || e);
+      }
+    }
     res.json({ success: true, removed: result.changes > 0 });
   } catch (error) {
     console.error('DELETE /api/users/:userId/favorites:', error);
@@ -9764,7 +9877,7 @@ app.get('/api/properties/user/:userId', async (req, res) => {
     }
 
     // Добавляем информацию о пользователе к каждому объекту и парсим JSON поля
-    const formattedProperties = properties.map(prop => {
+    let formattedProperties = properties.map(prop => {
       const formatted = { ...prop };
       
       // Добавляем информацию о пользователе
@@ -9850,9 +9963,388 @@ app.get('/api/properties/user/:userId', async (req, res) => {
       return formatted;
     });
 
+    const idTableConditions = [];
+    const seenPair = new Set();
+    for (const p of formattedProperties) {
+      const id = Number(p.id);
+      if (!Number.isFinite(id)) continue;
+      const table = engagementTableFromPropertyRow(p);
+      const k = `${id}\0${table}`;
+      if (seenPair.has(k)) continue;
+      seenPair.add(k);
+      idTableConditions.push({ property_id: id, property_table: table });
+    }
+
+    if (idTableConditions.length > 0) {
+      try {
+        const [favGroups, bidCountGroups] = await Promise.all([
+          prisma.property_favorites.groupBy({
+            by: ['property_id', 'property_table'],
+            where: { OR: idTableConditions },
+            _count: { _all: true },
+          }),
+          prisma.bids.groupBy({
+            by: ['property_id', 'property_table'],
+            where: { OR: idTableConditions },
+            _count: { _all: true },
+          }),
+        ]);
+        const toCountMap = (rows) =>
+          new Map(rows.map((r) => [`${r.property_id}\0${r.property_table}`, r._count._all]));
+        const likesMap = toCountMap(favGroups);
+        const bidsCountMap = toCountMap(bidCountGroups);
+
+        let nullBidByPropertyId = new Map();
+        const aptIds = formattedProperties
+          .filter((p) => engagementTableFromPropertyRow(p) === 'properties_apartments')
+          .map((p) => Number(p.id))
+          .filter((id) => Number.isFinite(id));
+        if (aptIds.length > 0) {
+          const nullRows = await prisma.bids.groupBy({
+            by: ['property_id'],
+            where: { property_id: { in: aptIds }, property_table: null },
+            _count: { _all: true },
+          });
+          nullBidByPropertyId = new Map(nullRows.map((r) => [r.property_id, r._count._all]));
+        }
+
+        formattedProperties = formattedProperties.map((p) => {
+          const id = Number(p.id);
+          const table = engagementTableFromPropertyRow(p);
+          const key = `${id}\0${table}`;
+          let bids = bidsCountMap.get(key) ?? 0;
+          if (table === 'properties_apartments') {
+            bids += nullBidByPropertyId.get(id) ?? 0;
+          }
+          return {
+            ...p,
+            likes_count: likesMap.get(key) ?? 0,
+            bids_count: bids,
+          };
+        });
+      } catch (aggErr) {
+        console.warn('GET /api/properties/user — лайки/кол-во ставок:', aggErr?.message || aggErr);
+        formattedProperties = formattedProperties.map((p) => ({
+          ...p,
+          likes_count: 0,
+          bids_count: 0,
+        }));
+      }
+    } else {
+      formattedProperties = formattedProperties.map((p) => ({
+        ...p,
+        likes_count: 0,
+        bids_count: 0,
+      }));
+    }
+
+    const isAuctionRow = (p) =>
+      p.is_auction === 1 ||
+      p.is_auction === true ||
+      p.is_auction === '1' ||
+      p.is_auction === 'true';
+
+    const auctionPropertyIds = formattedProperties
+      .filter(isAuctionRow)
+      .map((p) => Number(p.id))
+      .filter((id) => Number.isFinite(id));
+
+    if (auctionPropertyIds.length > 0) {
+      try {
+        const bidGroups = await prisma.bids.groupBy({
+          by: ['property_id'],
+          where: { property_id: { in: auctionPropertyIds } },
+          _max: { bid_amount: true },
+        });
+        const maxBidByPropertyId = new Map(
+          bidGroups.map((g) => [g.property_id, g._max.bid_amount != null ? Number(g._max.bid_amount) : null])
+        );
+        formattedProperties = formattedProperties.map((p) => {
+          if (!isAuctionRow(p)) return p;
+          const maxBid = maxBidByPropertyId.get(Number(p.id));
+          const start = p.auction_starting_price != null && p.auction_starting_price !== ''
+            ? Number(p.auction_starting_price)
+            : NaN;
+          const hasMaxBid = maxBid != null && Number.isFinite(maxBid) && maxBid > 0;
+          const currentBid = hasMaxBid
+            ? maxBid
+            : (Number.isFinite(start) && start > 0 ? start : null);
+          return { ...p, current_bid: currentBid };
+        });
+      } catch (bidAggErr) {
+        console.warn('GET /api/properties/user — агрегация ставок:', bidAggErr?.message || bidAggErr);
+      }
+    }
+
     res.json({ success: true, data: formattedProperties });
   } catch (error) {
     console.error('Ошибка при получении объявлений пользователя:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * GET /api/owner/:userId/my-sales — продажи продавца по разделам (аукцион после кругового таймера, доли, долги, купить сейчас).
+ */
+app.get('/api/owner/:userId/my-sales', async (req, res) => {
+  try {
+    const prisma = getPrisma();
+    const uid = parseInt(String(req.params.userId).trim(), 10);
+    if (!uid || Number.isNaN(uid)) {
+      return res.status(400).json({ success: false, error: 'Некорректный user_id' });
+    }
+
+    const parsePhotosField = (raw) => {
+      if (!raw) return [];
+      if (Array.isArray(raw)) return raw;
+      if (typeof raw === 'string') {
+        try {
+          const p = JSON.parse(raw);
+          return Array.isArray(p) ? p : [];
+        } catch {
+          return [];
+        }
+      }
+      return [];
+    };
+
+    const firstCover = (photosField) => {
+      const arr = parsePhotosField(photosField);
+      const first = arr[0];
+      if (typeof first === 'string') return first;
+      if (first && typeof first === 'object' && first.url) return String(first.url);
+      return null;
+    };
+
+    const isDebtRow = (p) =>
+      p &&
+      (p.sale_type === 'debt' ||
+        p.is_debt === 1 ||
+        p.is_debt === true ||
+        p.has_debt === 1 ||
+        p.has_debt === true);
+
+    const isShareRow = (p) =>
+      p &&
+      (p.is_share === 1 ||
+        p.is_share === true ||
+        p.sale_type === 'share' ||
+        p.is_shared_ownership === 1 ||
+        p.is_shared_ownership === true ||
+        p.is_shared === 1 ||
+        p.is_shared === true);
+
+    const hadCircularAuctionRow = (p) => {
+      if (!p) return false;
+      const dur = Number(p.test_timer_duration);
+      if (Number.isFinite(dur) && dur > 0) return true;
+      const end = p.test_timer_end_date;
+      return end != null && String(end).trim() !== '';
+    };
+
+    const isAuctionRow = (p) =>
+      p &&
+      (p.is_auction === 1 || p.is_auction === true || p.is_auction === '1' || p.is_auction === 'true');
+
+    const [apartments, houses] = await Promise.all([
+      prisma.properties_apartments.findMany({ where: { user_id: uid } }),
+      prisma.properties_houses.findMany({ where: { user_id: uid } }),
+    ]);
+
+    const attachMeta = (row, sourceTable) => {
+      const photos = parsePhotosField(row.photos);
+      const tbl =
+        row.property_type === 'house' || row.property_type === 'villa'
+          ? 'properties_houses'
+          : 'properties_apartments';
+      return {
+        ...row,
+        source_table: sourceTable,
+        property_table: tbl,
+        photos,
+        cover_url: firstCover(row.photos),
+      };
+    };
+
+    const ownerProps = [
+      ...apartments.map((r) => attachMeta(r, 'apartments')),
+      ...houses.map((r) => attachMeta(r, 'houses')),
+    ];
+
+    const propByKey = new Map();
+    for (const p of ownerProps) {
+      propByKey.set(`${p.property_table}:${Number(p.id)}`, p);
+    }
+
+    const aptIds = apartments.map((p) => Number(p.id)).filter(Number.isFinite);
+    const houseIds = houses.map((p) => Number(p.id)).filter(Number.isFinite);
+    const orWinner = [];
+    if (aptIds.length) {
+      orWinner.push({ property_id: { in: aptIds }, property_table: 'properties_apartments' });
+    }
+    if (houseIds.length) {
+      orWinner.push({ property_id: { in: houseIds }, property_table: 'properties_houses' });
+    }
+
+    let winners = [];
+    if (orWinner.length) {
+      winners = await prisma.auction_winners.findMany({
+        where: { OR: orWinner },
+        orderBy: { won_at: 'desc' },
+      });
+    }
+
+    const winnerDedup = [];
+    const seenWinner = new Set();
+    for (const w of winners) {
+      const tbl = w.property_table === 'properties_houses' ? 'properties_houses' : 'properties_apartments';
+      const k = `${tbl}:${Number(w.property_id)}`;
+      if (seenWinner.has(k)) continue;
+      seenWinner.add(k);
+      winnerDedup.push({ ...w, property_table: tbl });
+    }
+
+    const winnerKeySet = new Set(winnerDedup.map((w) => `${w.property_table}:${Number(w.property_id)}`));
+
+    const auction = [];
+    const debts = [];
+
+    for (const w of winnerDedup) {
+      const p = propByKey.get(`${w.property_table}:${Number(w.property_id)}`);
+      if (!p) continue;
+      const debt = isDebtRow(p);
+      const base = {
+        id: p.id,
+        property_type: p.property_type,
+        property_table: w.property_table,
+        source_table: p.source_table,
+        title: p.title || '',
+        location: p.location || '',
+        currency: w.currency || p.currency || 'USD',
+        sale_amount: Number(w.winning_bid_amount) || 0,
+        sold_at: w.won_at,
+        photos: p.photos,
+        cover_url: p.cover_url,
+      };
+      if (debt) {
+        debts.push(base);
+        continue;
+      }
+      if (isAuctionRow(p) && hadCircularAuctionRow(p)) {
+        auction.push(base);
+      }
+    }
+
+    const shareCandidates = ownerProps.filter((p) => {
+      if (!isShareRow(p)) return false;
+      const sold = Number(p.shares_sold) || 0;
+      return sold > 0;
+    });
+    const sharePropIds = shareCandidates.map((p) => Number(p.id)).filter(Number.isFinite);
+    let allSharePurchases = [];
+    if (sharePropIds.length) {
+      allSharePurchases = await prisma.property_shares.findMany({
+        where: { property_id: { in: sharePropIds }, status: 'completed' },
+      });
+    }
+    const purchasesByPropertyId = new Map();
+    for (const r of allSharePurchases) {
+      const pid = Number(r.property_id);
+      if (!Number.isFinite(pid)) continue;
+      if (!purchasesByPropertyId.has(pid)) purchasesByPropertyId.set(pid, []);
+      purchasesByPropertyId.get(pid).push(r);
+    }
+
+    const shares = [];
+    for (const p of shareCandidates) {
+      const sold = Number(p.shares_sold) || 0;
+      const total = Number(p.total_shares) || 0;
+      const shareRows = purchasesByPropertyId.get(Number(p.id)) || [];
+      const relevant = shareRows.filter((r) => {
+        const pt = String(r.property_type || '').toLowerCase();
+        const ppt = String(p.property_type || '').toLowerCase();
+        return pt === ppt || (ppt === 'commercial' && pt === 'apartment');
+      });
+      const sumTotal = relevant.reduce((s, r) => s + (Number(r.total_price) || 0), 0);
+      const amount = sumTotal > 0 ? sumTotal : 0;
+      const pct = total > 0 ? Math.min(100, (sold / total) * 100) : null;
+      shares.push({
+        id: p.id,
+        property_type: p.property_type,
+        property_table: p.property_table,
+        source_table: p.source_table,
+        title: p.title || '',
+        location: p.location || '',
+        currency: p.currency || 'USD',
+        sale_amount: amount,
+        percent_sold: pct,
+        shares_sold: sold,
+        total_shares: total,
+        photos: p.photos,
+        cover_url: p.cover_url,
+      });
+    }
+
+    const buy_now = [];
+    for (const p of ownerProps) {
+      const bn =
+        p.buy_now_completed_at != null && String(p.buy_now_completed_at).trim() !== '';
+      if (!bn) continue;
+      if (isShareRow(p)) continue;
+      const k = `${p.property_table}:${Number(p.id)}`;
+      if (winnerKeySet.has(k)) continue;
+      const debt = isDebtRow(p);
+      const amount = Number(p.price) || 0;
+      const row = {
+        id: p.id,
+        property_type: p.property_type,
+        property_table: p.property_table,
+        source_table: p.source_table,
+        title: p.title || '',
+        location: p.location || '',
+        currency: p.currency || 'USD',
+        sale_amount: amount,
+        sold_at: p.buy_now_completed_at,
+        photos: p.photos,
+        cover_url: p.cover_url,
+      };
+      if (debt) {
+        const exists = debts.find((d) => Number(d.id) === Number(p.id) && d.property_table === p.property_table);
+        if (!exists) debts.push(row);
+      } else {
+        buy_now.push(row);
+      }
+    }
+
+    res.json({
+      success: true,
+      data: {
+        auction,
+        shares,
+        debts,
+        buy_now,
+      },
+    });
+  } catch (error) {
+    console.error('GET /api/owner/:userId/my-sales:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * GET /api/owner/:userId/sale-celebrations — свежие события продажи для поздравления в кабинете продавца.
+ */
+app.get('/api/owner/:userId/sale-celebrations', async (req, res) => {
+  try {
+    const prisma = getPrisma();
+    const uid = parseInt(String(req.params.userId).trim(), 10);
+    if (!uid || Number.isNaN(uid)) {
+      return res.status(400).json({ success: false, error: 'Некорректный user_id' });
+    }
+    const items = await buildOwnerSaleCelebrations(prisma, uid);
+    res.json({ success: true, data: { items } });
+  } catch (error) {
+    console.error('GET /api/owner/:userId/sale-celebrations:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });
@@ -11231,7 +11723,11 @@ app.post('/api/bids', async (req, res) => {
       minimum_bid: newMinimumBid,
       ...(extendedTestTimer || {}),
     });
-    
+
+    if (property?.user_id) {
+      void notifyOwnerPropertyEngagement(prisma, property, tableName);
+    }
+
     res.json({
       success: true,
       data: {

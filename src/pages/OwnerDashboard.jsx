@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
+import { flushSync } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { useClerk, useUser } from '@clerk/clerk-react'
 import { 
@@ -8,7 +9,6 @@ import {
   FiTrendingUp,
   FiEdit2,
   FiTrash2,
-  FiEye,
   FiPlus,
   FiLogOut,
   FiUser,
@@ -21,11 +21,17 @@ import {
   FiDollarSign as FiDollar,
   FiClock,
   FiAlertCircle,
+  FiLayers,
+  FiZap,
   FiCheck,
   FiTag,
   FiMenu,
   FiBell,
-  FiArrowRight
+  FiArrowRight,
+  FiArrowUp,
+  FiHeart,
+  FiActivity,
+  FiShoppingBag
 } from 'react-icons/fi'
 import { MdBed, MdOutlineBathtub } from 'react-icons/md'
 import { BiArea } from 'react-icons/bi'
@@ -35,6 +41,11 @@ import FileUploadModal from '../components/FileUploadModal'
 import PropertyCalculatorModal from '../components/PropertyCalculatorModal'
 import OwnerPurchasedAssets from '../components/OwnerPurchasedAssets'
 import BiddingHistoryModal from '../components/BiddingHistoryModal'
+import OwnerModerationNoticeModal from '../components/OwnerModerationNoticeModal'
+import OwnerPropertyBidAnalyticsModal from '../components/OwnerPropertyBidAnalyticsModal'
+import OwnerMySalesSection from '../components/OwnerMySalesSection'
+import OwnerSaleCelebrationModal from '../components/OwnerSaleCelebrationModal'
+import { getDismissedCelebrationIds, dismissCelebration } from '../utils/ownerSaleCelebrationStorage'
 import CountrySelect, { countries as countryList } from '../components/CountrySelect'
 import { getUserData, saveUserData, logout, clearUserData, CLERK_DB_USER_SYNCED } from '../services/authService'
 import { showNotification } from '../utils/toastHelper'
@@ -42,6 +53,7 @@ import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
 import { showToast } from '../components/ToastContainer'
 import { fetchVerificationStatus } from '../utils/verificationStatusApi'
 import { fetchUserById } from '../utils/usersApi'
+import { getPropertyListingKind } from '../utils/propertyListingKind.js'
 import '../components/PropertyList.css'
 import './MainPage.css'
 import './OwnerDashboard.css'
@@ -72,6 +84,18 @@ const formatDateSafe = (value) => {
 
   if (Number.isNaN(date.getTime())) return 'Не указано'
   return date.toLocaleDateString('ru-RU')
+}
+
+const ruCountWithNoun = (n, one, few, many) => {
+  const abs = Math.abs(Number(n)) || 0
+  const n100 = abs % 100
+  const n10 = abs % 10
+  let word = many
+  if (n100 > 10 && n100 < 20) word = many
+  else if (n10 === 1) word = one
+  else if (n10 >= 2 && n10 <= 4) word = few
+  else word = many
+  return `${abs} ${word}`
 }
 
 // Демонстрационные данные объявлений владельца
@@ -147,15 +171,23 @@ const OwnerDashboard = () => {
   const { signOut } = useClerk()
   const { user: clerkUser } = useUser()
   const [properties, setProperties] = useState([])
-  const [activeTab, setActiveTab] = useState('properties') // 'properties' или 'analytics'
+  const [activeTab, setActiveTab] = useState('properties') // 'properties' | 'analytics' | 'sales'
   const [showWelcomeModal, setShowWelcomeModal] = useState(false)
   const [showFileUploadModal, setShowFileUploadModal] = useState(false)
   const [isProfilePanelOpen, setIsProfilePanelOpen] = useState(false)
   const [isSalesExpanded, setIsSalesExpanded] = useState(false)
   const [isCalculatorModalOpen, setIsCalculatorModalOpen] = useState(false)
   const [selectedPropertyForHistory, setSelectedPropertyForHistory] = useState(null)
+  const [propertyForBidAnalytics, setPropertyForBidAnalytics] = useState(null)
+  const [moderationNotice, setModerationNotice] = useState({
+    open: false,
+    title: '',
+    message: '',
+  })
   const [activeFilter, setActiveFilter] = useState('all') // 'all', 'active', 'pending', 'rejected'
   const [propertiesLoading, setPropertiesLoading] = useState(false)
+  /** id объекта → подсветка роста текущей ставки (SSE) */
+  const [ownerBidPulseIds, setOwnerBidPulseIds] = useState({})
   const [ownerProfile, setOwnerProfile] = useState({
     firstName: '',
     lastName: '',
@@ -177,6 +209,8 @@ const OwnerDashboard = () => {
   const [verificationStatus, setVerificationStatus] = useState(null)
   const [showVerificationSuccess, setShowVerificationSuccess] = useState(false)
   const [userId, setUserId] = useState(null)
+  const [saleCelebration, setSaleCelebration] = useState(null)
+  const saleCelebrationRef = useRef(null)
   const [ownerNotifOpen, setOwnerNotifOpen] = useState(false)
   const [ownerNotifications, setOwnerNotifications] = useState([])
   const [ownerNotifLoading, setOwnerNotifLoading] = useState(false)
@@ -184,6 +218,7 @@ const OwnerDashboard = () => {
   const [uploading, setUploading] = useState({ passport: false, passportWithFace: false })
   const passportInputRef = useRef(null)
   const passportWithFaceInputRef = useRef(null)
+  const ownerBidPulseTimersRef = useRef({})
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [propertyToDelete, setPropertyToDelete] = useState(null)
   const [deleteReason, setDeleteReason] = useState('')
@@ -351,6 +386,66 @@ const OwnerDashboard = () => {
     return () => clearInterval(poll)
   }, [userId])
 
+  const fetchOwnerSaleCelebrations = useCallback(async () => {
+    if (!userId) return
+    if (saleCelebrationRef.current) return
+    try {
+      const base = (API_BASE_URL || '/api').replace(/\/$/, '')
+      const res = await fetch(`${base}/owner/${userId}/sale-celebrations`)
+      const json = await res.json()
+      if (!json.success) return
+      const items = Array.isArray(json.data?.items) ? json.data.items : []
+      const dismissed = getDismissedCelebrationIds()
+      const next = items.find((it) => it.event_id && !dismissed.has(it.event_id)) || null
+      if (next) {
+        saleCelebrationRef.current = next
+        setSaleCelebration(next)
+      }
+    } catch {
+      /* ignore */
+    }
+  }, [userId])
+
+  const finishSaleCelebrationAndPoll = useCallback(() => {
+    const cur = saleCelebrationRef.current
+    if (cur?.event_id) dismissCelebration(cur.event_id)
+    saleCelebrationRef.current = null
+    setSaleCelebration(null)
+    queueMicrotask(() => {
+      void fetchOwnerSaleCelebrations()
+    })
+  }, [fetchOwnerSaleCelebrations])
+
+  const handleSaleCelebrationGoToSales = useCallback(() => {
+    flushSync(() => {
+      setActiveTab('sales')
+    })
+    finishSaleCelebrationAndPoll()
+    requestAnimationFrame(() => {
+      document.getElementById('owner-dashboard-my-sales')?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      })
+    })
+  }, [finishSaleCelebrationAndPoll])
+
+  useEffect(() => {
+    if (!userId) return
+    void fetchOwnerSaleCelebrations()
+    const id = setInterval(() => void fetchOwnerSaleCelebrations(), 45000)
+    const onVis = () => {
+      if (document.visibilityState === 'visible') void fetchOwnerSaleCelebrations()
+    }
+    document.addEventListener('visibilitychange', onVis)
+    const onFocus = () => void fetchOwnerSaleCelebrations()
+    window.addEventListener('focus', onFocus)
+    return () => {
+      clearInterval(id)
+      document.removeEventListener('visibilitychange', onVis)
+      window.removeEventListener('focus', onFocus)
+    }
+  }, [userId, fetchOwnerSaleCelebrations])
+
   // Загружаем объявления пользователя
   const loadUserProperties = async (userId) => {
     if (!userId) return
@@ -472,16 +567,29 @@ const OwnerDashboard = () => {
               moderationStatus: (prop.moderation_status === 'approved' && prop.has_pending_edit)
                 ? 'pending_edit'
                 : prop.moderation_status, // Сохраняем оригинальный статус
-              views: 0, // TODO: добавить подсчет просмотров
-              inquiries: 0, // TODO: добавить подсчет запросов
+              views: 0,
+              inquiries: 0,
+              likesCount: Number(prop.likes_count ?? prop.likesCount) || 0,
+              bidsCount: Number(prop.bids_count ?? prop.bidsCount) || 0,
               publishedDate: prop.created_at || prop.updated_at || null,
               rejectionReason: prop.rejection_reason || null,
               hasPendingEdit: Boolean(prop.has_pending_edit),
               pendingEditRequestedAt: prop.pending_edit_requested_at || null,
               isAuction: prop.is_auction === 1 || prop.is_auction === true || prop.is_auction === '1' || prop.is_auction === 'true',
               photosCount: photosCount,
+              sale_type: prop.sale_type || null,
+              is_share: prop.is_share,
+              is_shared_ownership: prop.is_shared_ownership,
+              is_debt: prop.is_debt,
+              has_debt: prop.has_debt,
+              currentBid: prop.current_bid ?? prop.currentBid ?? null,
+              endTime: prop.end_time ?? prop.endTime ?? prop.auction_end_date ?? null,
+              test_timer_end_date: prop.test_timer_end_date ?? null,
               // Поля аукциона для отображения стартовой суммы ставки
               auction_starting_price: prop.auction_starting_price || prop.auctionStartingPrice || null,
+              auction_start_date: prop.auction_start_date || prop.auctionStartDate || prop.start_date || null,
+              auction_end_date: prop.auction_end_date || prop.auctionEndDate || null,
+              starting_price: prop.starting_price || prop.startingPrice || null,
               currency: prop.currency || 'USD'
             }
           })
@@ -607,6 +715,62 @@ const OwnerDashboard = () => {
     window.addEventListener('owner-properties-update', handlePropertiesPush)
     return () => window.removeEventListener('owner-properties-update', handlePropertiesPush)
   }, [userId])
+
+  // SSE: лайки, ставки и (для аукциона) текущая ставка — патчим state без полного reload и без polling
+  useEffect(() => {
+    const handleEngagement = (e) => {
+      const d = e.detail
+      if (!d || d.property_id == null) return
+      const pid = Number(d.property_id)
+      const likes = Number(d.likes_count)
+      const bids = Number(d.bids_count)
+      const cbRaw = d.current_bid
+      const nb =
+        cbRaw !== undefined && cbRaw !== null && String(cbRaw).trim() !== ''
+          ? Number(cbRaw)
+          : NaN
+      if (!Number.isFinite(pid)) return
+      setProperties((prev) =>
+        prev.map((p) => {
+          if (Number(p.id) !== pid) return p
+          const next = {
+            ...p,
+            likesCount: Number.isFinite(likes) ? likes : p.likesCount ?? 0,
+            bidsCount: Number.isFinite(bids) ? bids : p.bidsCount ?? 0,
+          }
+          if (!Number.isFinite(nb)) return next
+          const prevCb = Number(p.currentBid ?? p.current_bid)
+          const prevOk = Number.isFinite(prevCb) && prevCb > 0
+          const baseline = prevOk
+            ? prevCb
+            : Number(p.auction_starting_price ?? p.starting_price ?? 0) || 0
+          if (nb > baseline) {
+            queueMicrotask(() => {
+              if (ownerBidPulseTimersRef.current[pid]) {
+                clearTimeout(ownerBidPulseTimersRef.current[pid])
+              }
+              setOwnerBidPulseIds((s) => ({ ...s, [pid]: true }))
+              ownerBidPulseTimersRef.current[pid] = setTimeout(() => {
+                setOwnerBidPulseIds((s) => {
+                  const copy = { ...s }
+                  delete copy[pid]
+                  return copy
+                })
+                delete ownerBidPulseTimersRef.current[pid]
+              }, 2000)
+            })
+          }
+          return { ...next, currentBid: nb, current_bid: nb }
+        })
+      )
+    }
+    window.addEventListener('owner-property-engagement', handleEngagement)
+    return () => {
+      window.removeEventListener('owner-property-engagement', handleEngagement)
+      Object.values(ownerBidPulseTimersRef.current).forEach((tid) => clearTimeout(tid))
+      ownerBidPulseTimersRef.current = {}
+    }
+  }, [])
 
   // Проверяем, все ли поля заполнены
   const isAllFieldsFilled = () => {
@@ -1031,6 +1195,28 @@ const OwnerDashboard = () => {
     navigate(`/property/${id}`, { state: { fromOwnerDashboard: true } })
   }
 
+  const handleOpenBidAnalytics = (property) => {
+    if (!property) return
+    if (property.status === 'pending') {
+      setModerationNotice({
+        open: true,
+        title: 'Объект на модерации',
+        message:
+          'Объект на модерации. Раздел аналитики по ставкам откроется после того, как модератор одобрит публикацию.',
+      })
+      return
+    }
+    if (property.status === 'rejected') {
+      setModerationNotice({
+        open: true,
+        title: 'Аналитика недоступна',
+        message: 'Для отклонённых объявлений график по ставкам не отображается.',
+      })
+      return
+    }
+    setPropertyForBidAnalytics(property)
+  }
+
   // Проверка заполненности обязательных полей профиля
   const checkProfileFields = async () => {
     const dbUserId = localStorage.getItem('userId')
@@ -1426,6 +1612,13 @@ const OwnerDashboard = () => {
             <FiBarChart2 size={20} />
             <span>{t('ownerTabAnalytics')}</span>
           </button>
+          <button
+            className={`owner-dashboard__tab ${activeTab === 'sales' ? 'owner-dashboard__tab--active' : ''}`}
+            onClick={() => setActiveTab('sales')}
+          >
+            <FiShoppingBag size={20} />
+            <span>{t('ownerTabMySales')}</span>
+          </button>
         </div>
       </header>
 
@@ -1633,6 +1826,10 @@ const OwnerDashboard = () => {
         </section>
 
         {/* Блок "Рассчитать стоимость объекта" */}
+        {activeTab === 'sales' && userId ? (
+          <OwnerMySalesSection userId={userId} apiBaseUrl={API_BASE_URL} />
+        ) : null}
+
         {activeTab === 'properties' && (
           <div className="property-calculator-card">
             <div className="property-calculator-card__image">
@@ -1707,6 +1904,7 @@ const OwnerDashboard = () => {
               </div>
             ) : (
               getFilteredProperties().map((property) => {
+                const kind = getPropertyListingKind(property)
                 const startingPriceRaw =
                   property.auction_starting_price ??
                   property.auctionStartingPrice ??
@@ -1731,6 +1929,17 @@ const OwnerDashboard = () => {
                 const minSalePriceNum = Number(property.price) || 0
                 const hasMinSalePrice = property.isAuction && minSalePriceNum > 0
 
+                const startNum = Number(startingPriceRaw)
+                const apiCurrent = Number(property.currentBid ?? property.current_bid)
+                const showAuctionCurrentBid = kind.key === 'auction' || kind.key === 'auction_buy_now'
+                const currentBidValue =
+                  showAuctionCurrentBid &&
+                  (Number.isFinite(apiCurrent) && apiCurrent > 0
+                    ? apiCurrent
+                    : Number.isFinite(startNum) && startNum > 0
+                      ? startNum
+                      : null)
+
                 return (
                   <div key={property.id} className="property-card property-card-owner">
                     <div className="property-image-container property-card-owner__image">
@@ -1750,19 +1959,69 @@ const OwnerDashboard = () => {
                       <div className="property-card-owner__header">
                         <div className="property-card-owner__title-wrapper">
                           <h3 className="property-card-owner__title">{property.title}</h3>
+                          {(() => {
+                            const icon =
+                              kind.key === 'shares' ? (
+                                <FiLayers size={14} aria-hidden />
+                              ) : kind.key === 'debt' ? (
+                                <FiAlertCircle size={14} aria-hidden />
+                              ) : kind.key === 'auction' ? (
+                                <FiClock size={14} aria-hidden />
+                              ) : kind.key === 'auction_buy_now' ? (
+                                <FiZap size={14} aria-hidden />
+                              ) : (
+                                <FiTag size={14} aria-hidden />
+                              )
+                            return (
+                              <span
+                                className={`property-listing-kind property-listing-kind--${kind.classSuffix}`}
+                                title={kind.label}
+                              >
+                                {icon}
+                                <span className="property-listing-kind__text">{kind.label}</span>
+                              </span>
+                            )
+                          })()}
                         </div>
-                        {/* Показываем цену только если: 
-                            1. Объект НЕ на аукционе ИЛИ
-                            2. Объект на аукционе, но есть цена "Купить сейчас" (price > 0)
-                        */}
+                        {/* Цена «купить сейчас» / фикс. + под ней текущая ставка для аукциона */}
                         {(() => {
                           const priceNum = Number(property.price) || 0
-                          const shouldShowPrice = (!property.isAuction || (property.isAuction && priceNum > 0)) && priceNum > 0
-                          return shouldShowPrice ? (
-                            <div className="property-card-owner__price">
-                              ${priceNum.toLocaleString('ru-RU')}
+                          const shouldShowPrice =
+                            (!property.isAuction || (property.isAuction && priceNum > 0)) && priceNum > 0
+                          const showBidUnderPrice =
+                            showAuctionCurrentBid && currentBidValue != null
+                          if (!shouldShowPrice && !showBidUnderPrice) return null
+                          return (
+                            <div className="property-card-owner__price-column">
+                              {shouldShowPrice ? (
+                                <div className="property-card-owner__price">
+                                  ${priceNum.toLocaleString('ru-RU')}
+                                </div>
+                              ) : null}
+                              {showBidUnderPrice ? (
+                                <div
+                                  className={`property-card-owner__current-bid ${
+                                    ownerBidPulseIds[property.id] ? 'property-card-owner__current-bid--pulse' : ''
+                                  }`}
+                                >
+                                  <span className="property-card-owner__current-bid-label">Текущая ставка</span>
+                                  <span className="property-card-owner__current-bid-value-row">
+                                    <span className="property-card-owner__current-bid-value">
+                                      {getCurrencySymbol()}
+                                      {formatPrice(currentBidValue)}
+                                    </span>
+                                    {ownerBidPulseIds[property.id] ? (
+                                      <FiArrowUp
+                                        className="property-card-owner__current-bid-arrow"
+                                        size={18}
+                                        aria-hidden
+                                      />
+                                    ) : null}
+                                  </span>
+                                </div>
+                              ) : null}
                             </div>
-                          ) : null
+                          )
                         })()}
                       </div>
 
@@ -1791,31 +2050,33 @@ const OwnerDashboard = () => {
                         {property.status === 'sold' && <span>Продано</span>}
                       </div>
 
-                      {startingPriceRaw && (
-                        <div className="property-bid-info property-card-owner__starting-price">
-                          <span className="bid-label">Текущая ставка:</span>
-                          <span className="bid-value">
-                            {getCurrencySymbol()}
-                            {formatPrice(startingPriceRaw)}
-                          </span>
-                        </div>
-                      )}
-
                       <div className="property-content-bottom">
                       <div className="property-card-owner__stats">
                         <div className="property-card-owner__stat">
-                          <FiEye size={14} />
-                          <span>{property.views} просмотров</span>
+                          <FiHeart size={14} aria-hidden />
+                          <span>
+                            {ruCountWithNoun(property.likesCount ?? 0, 'лайк', 'лайка', 'лайков')}
+                          </span>
                         </div>
                         <div className="property-card-owner__stat">
-                          <span>{property.inquiries} запросов</span>
+                          <FiActivity size={14} aria-hidden />
+                          <span>
+                            {ruCountWithNoun(property.bidsCount ?? 0, 'ставка', 'ставки', 'ставок')}
+                          </span>
                         </div>
-                        <div
-                          className={`property-card-owner__stat ${
-                            property.hasPendingEdit ? 'property-card-owner__stat--published-mobile-hidden' : ''
-                          }`}
-                        >
-                          <span>Опубликовано: {formatDateSafe(property.publishedDate)}</span>
+                        <div className="property-card-owner__stat property-card-owner__stat--status">
+                          <span>
+                            Статус:{' '}
+                            {property.status === 'active'
+                              ? 'Опубликован'
+                              : property.status === 'pending'
+                                ? 'На модерации'
+                                : property.status === 'rejected'
+                                  ? 'Отклонено'
+                                  : property.status === 'sold'
+                                    ? 'Продано'
+                                    : 'Не указано'}
+                          </span>
                         </div>
                         {property.rejectionReason && !property.rejectionReason.startsWith('EDIT:') && (
                           <div className="property-card-owner__stat" style={{ color: '#ef4444', fontWeight: 500 }}>
@@ -1843,6 +2104,14 @@ const OwnerDashboard = () => {
                             История
                           </button>
                         )}
+                        <button
+                          type="button"
+                          className="action-btn action-btn--analytics"
+                          onClick={() => handleOpenBidAnalytics(property)}
+                        >
+                          <FiBarChart2 size={14} aria-hidden />
+                          Аналитика
+                        </button>
                         <button
                           className="action-btn action-btn--view"
                           onClick={() => handleViewProperty(property.id)}
@@ -2075,6 +2344,12 @@ const OwnerDashboard = () => {
         userName={`${ownerProfile.firstName || ''} ${ownerProfile.lastName || ''}`.trim() || 'Ваш кабинет продавца'}
       />
 
+      <OwnerSaleCelebrationModal
+        celebration={saleCelebration}
+        onClose={finishSaleCelebrationAndPoll}
+        onGoToSales={handleSaleCelebrationGoToSales}
+      />
+
       {/* Модальное окно загрузки файла */}
       <FileUploadModal
         isOpen={showFileUploadModal}
@@ -2096,6 +2371,19 @@ const OwnerDashboard = () => {
         isOpen={!!selectedPropertyForHistory}
         onClose={() => setSelectedPropertyForHistory(null)}
         property={selectedPropertyForHistory}
+      />
+
+      <OwnerModerationNoticeModal
+        isOpen={moderationNotice.open}
+        onClose={() => setModerationNotice((s) => ({ ...s, open: false }))}
+        title={moderationNotice.title}
+        message={moderationNotice.message}
+      />
+
+      <OwnerPropertyBidAnalyticsModal
+        isOpen={!!propertyForBidAnalytics}
+        onClose={() => setPropertyForBidAnalytics(null)}
+        property={propertyForBidAnalytics}
       />
 
       {/* Модальное окно о необходимости заполнить поля профиля */}

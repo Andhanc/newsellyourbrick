@@ -9,6 +9,7 @@ import i18n from '../i18n/config'
  * Одно SSE-подключение на вкладку для push из админки (без polling):
  * — верификация пользователя → verification-status-update
  * — модерация объявления → owner-properties-update
+ * — лайки/ставки по объявлению владельца → owner-property-engagement (без polling)
  */
 export default function UserCabinetSseBridge() {
   const location = useLocation()
@@ -66,6 +67,9 @@ export default function UserCabinetSseBridge() {
           }
           if (data.type === 'property_moderation') {
             window.dispatchEvent(new CustomEvent('owner-properties-update', { detail: data }))
+          }
+          if (data.type === 'property_engagement') {
+            window.dispatchEvent(new CustomEvent('owner-property-engagement', { detail: data }))
           }
         } catch (_) {}
       }

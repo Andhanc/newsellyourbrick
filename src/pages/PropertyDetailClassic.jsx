@@ -955,6 +955,23 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
           if (typeof event.data === 'string' && event.data.startsWith(':')) return
           const data = JSON.parse(event.data)
           if (data.type === 'bid_placed' && Number(data.property_id) === Number(displayProperty.id)) {
+            const nextBid = Number(data.bid_amount)
+            if (Number.isFinite(nextBid) && nextBid > 0) {
+              const start = Number(
+                displayProperty.auction_starting_price ?? displayProperty.price ?? 0
+              )
+              setCurrentBid((prev) => {
+                const prevNum = prev != null && !Number.isNaN(Number(prev)) ? Number(prev) : null
+                const oldForAnim = prevNum != null ? prevNum : start
+                if (nextBid > oldForAnim) {
+                  setPrevBid(oldForAnim)
+                }
+                return nextBid
+              })
+              setCurrentLeader((prev) =>
+                prev && typeof prev === 'object' ? { ...prev, bidAmount: nextBid } : prev
+              )
+            }
             if (data.test_timer_end_date) {
               setProperty((prev) => ({
                 ...prev,
@@ -1237,9 +1254,12 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
             // Обновляем ID предыдущего лидера (после проверки перебития)
             setPreviousLeaderId(newCurrentLeaderId)
             
-            setCurrentBid(prev => {
+            setCurrentBid((prev) => {
               if (prev !== maxBid) {
-                setPrevBid(prev !== null ? prev : maxBid)
+                const startingPrice = isAuctionProperty
+                  ? Number(displayProperty.auction_starting_price || 0)
+                  : Number(displayProperty.price || 0)
+                setPrevBid(prev !== null && !Number.isNaN(Number(prev)) ? Number(prev) : startingPrice)
                 return maxBid
               }
               return prev
@@ -3416,9 +3436,23 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                               {currentLeader.userIdNumber || currentLeader.userId || currentLeader.id}
                             </span>
                           </div>
-                          <div className="auction-leader-bid">
-                            {t('propertyDetailBid')} {displayProperty.currency === 'USD' ? '$' : displayProperty.currency === 'EUR' ? '€' : displayProperty.currency === 'BYN' ? 'Br' : ''}
-                            {currentLeader.bidAmount.toLocaleString('ru-RU')}
+                          <div
+                            className={`auction-leader-bid ${priceAnimation ? 'auction-leader-bid--price-up' : ''}`}
+                          >
+                            <span className="auction-leader-bid__amount">
+                              {t('propertyDetailBid')}{' '}
+                              {displayProperty.currency === 'USD'
+                                ? '$'
+                                : displayProperty.currency === 'EUR'
+                                  ? '€'
+                                  : displayProperty.currency === 'BYN'
+                                    ? 'Br'
+                                    : ''}
+                              {currentLeader.bidAmount.toLocaleString('ru-RU')}
+                            </span>
+                            {priceAnimation && (
+                              <FiArrowUp className="auction-leader-bid__arrow-up" size={18} aria-hidden />
+                            )}
                           </div>
                         </div>
                       )}
@@ -3454,9 +3488,23 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                               {currentLeader.userIdNumber || currentLeader.userId || currentLeader.id}
                             </span>
                           </div>
-                          <div className="auction-leader-bid">
-                            {t('propertyDetailBid')} {displayProperty.currency === 'USD' ? '$' : displayProperty.currency === 'EUR' ? '€' : displayProperty.currency === 'BYN' ? 'Br' : ''}
-                            {currentLeader.bidAmount.toLocaleString('ru-RU')}
+                          <div
+                            className={`auction-leader-bid ${priceAnimation ? 'auction-leader-bid--price-up' : ''}`}
+                          >
+                            <span className="auction-leader-bid__amount">
+                              {t('propertyDetailBid')}{' '}
+                              {displayProperty.currency === 'USD'
+                                ? '$'
+                                : displayProperty.currency === 'EUR'
+                                  ? '€'
+                                  : displayProperty.currency === 'BYN'
+                                    ? 'Br'
+                                    : ''}
+                              {currentLeader.bidAmount.toLocaleString('ru-RU')}
+                            </span>
+                            {priceAnimation && (
+                              <FiArrowUp className="auction-leader-bid__arrow-up" size={18} aria-hidden />
+                            )}
                           </div>
                         </div>
                       )}
@@ -3476,9 +3524,23 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                           {currentLeader.userIdNumber || currentLeader.userId || currentLeader.id}
                         </span>
                       </div>
-                      <div className="auction-leader-bid">
-                        {t('propertyDetailBid')} {displayProperty.currency === 'USD' ? '$' : displayProperty.currency === 'EUR' ? '€' : displayProperty.currency === 'BYN' ? 'Br' : ''}
-                        {currentLeader.bidAmount.toLocaleString('ru-RU')}
+                      <div
+                        className={`auction-leader-bid ${priceAnimation ? 'auction-leader-bid--price-up' : ''}`}
+                      >
+                        <span className="auction-leader-bid__amount">
+                          {t('propertyDetailBid')}{' '}
+                          {displayProperty.currency === 'USD'
+                            ? '$'
+                            : displayProperty.currency === 'EUR'
+                              ? '€'
+                              : displayProperty.currency === 'BYN'
+                                ? 'Br'
+                                : ''}
+                          {currentLeader.bidAmount.toLocaleString('ru-RU')}
+                        </span>
+                        {priceAnimation && (
+                          <FiArrowUp className="auction-leader-bid__arrow-up" size={18} aria-hidden />
+                        )}
                       </div>
                     </div>
                   )}

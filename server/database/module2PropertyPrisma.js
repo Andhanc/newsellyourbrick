@@ -333,7 +333,11 @@ export const apartmentQueries = {
       take: limit,
       skip: offset,
     });
-    return rows.map((r) => parseApartmentRow({ ...r }));
+    return rows.map((r) => {
+      const p = parseApartmentRow({ ...r });
+      if (p) p.source_table = 'apartments';
+      return p;
+    });
   },
 
   getAll: async (filters = {}, limit = 100, offset = 0) => {
@@ -543,7 +547,11 @@ export const houseQueries = {
       take: limit,
       skip: offset,
     });
-    return rows.map((r) => parseHouseRow({ ...r }));
+    return rows.map((r) => {
+      const p = parseHouseRow({ ...r });
+      if (p) p.source_table = 'houses';
+      return p;
+    });
   },
 
   getAll: async (filters = {}, limit = 100, offset = 0) => {

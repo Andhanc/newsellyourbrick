@@ -1,0 +1,379 @@
+/* Премиальное модальное окно аналитики ставок */
+
+.owner-bid-analytics-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10002;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right))
+    max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+  background:
+    radial-gradient(ellipse 120% 80% at 50% -20%, rgba(16, 185, 129, 0.18), transparent 55%),
+    radial-gradient(ellipse 80% 50% at 100% 50%, rgba(99, 102, 241, 0.08), transparent 45%),
+    linear-gradient(165deg, rgba(15, 23, 42, 0.82) 0%, rgba(2, 6, 23, 0.92) 100%);
+  backdrop-filter: blur(20px) saturate(1.35);
+  -webkit-backdrop-filter: blur(20px) saturate(1.35);
+  animation: oba-overlay-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes oba-overlay-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.owner-bid-analytics-modal {
+  --oba-gold: #c4a35a;
+  --oba-gold-soft: rgba(196, 163, 90, 0.35);
+  --oba-surface: linear-gradient(168deg, #ffffff 0%, #f8fafc 42%, #f1f5f9 100%);
+  --oba-border: rgba(15, 23, 42, 0.06);
+  --oba-shadow:
+    0 0 0 1px rgba(196, 163, 90, 0.28),
+    0 0 0 1px rgba(255, 255, 255, 0.65) inset,
+    0 1px 0 rgba(255, 255, 255, 0.9) inset,
+    0 32px 64px -16px rgba(0, 0, 0, 0.45),
+    0 12px 24px -8px rgba(0, 0, 0, 0.2);
+
+  position: relative;
+  width: 100%;
+  max-width: 980px;
+  max-height: min(92vh, 900px);
+  overflow: hidden auto;
+  border-radius: clamp(20px, 3vw, 28px);
+  background: var(--oba-surface);
+  border: 1px solid var(--oba-border);
+  box-shadow: var(--oba-shadow);
+  animation: oba-modal-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes oba-modal-in {
+  from {
+    opacity: 0;
+    transform: translateY(28px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Мягкое свечение за карточкой */
+.owner-bid-analytics-modal__ambient {
+  pointer-events: none;
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  background: linear-gradient(
+    135deg,
+    rgba(16, 185, 129, 0.08) 0%,
+    transparent 40%,
+    rgba(99, 102, 241, 0.06) 100%
+  );
+  opacity: 0.9;
+}
+
+.owner-bid-analytics-modal__close {
+  position: absolute;
+  top: clamp(16px, 2.5vw, 22px);
+  right: clamp(16px, 2.5vw, 22px);
+  z-index: 10;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.85);
+  color: #334155;
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.25s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.2s ease;
+}
+
+.owner-bid-analytics-modal__close:hover {
+  background: #0f172a;
+  color: #fff;
+  border-color: #0f172a;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.25);
+  transform: rotate(90deg) scale(1.02);
+}
+
+.owner-bid-analytics-modal__close:active {
+  transform: rotate(90deg) scale(0.96);
+}
+
+.owner-bid-analytics-modal__header {
+  position: relative;
+  z-index: 2;
+  padding: clamp(24px, 4vw, 36px) clamp(20px, 4vw, 40px) clamp(20px, 3vw, 28px);
+  padding-right: clamp(64px, 12vw, 88px);
+  border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.65) 0%, rgba(248, 250, 252, 0.3) 100%);
+}
+
+.owner-bid-analytics-modal__header::after {
+  content: '';
+  position: absolute;
+  left: clamp(20px, 4vw, 40px);
+  right: clamp(20px, 4vw, 40px);
+  bottom: 0;
+  height: 2px;
+  border-radius: 2px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--oba-gold-soft) 15%,
+    var(--oba-gold) 50%,
+    var(--oba-gold-soft) 85%,
+    transparent 100%
+  );
+  opacity: 0.85;
+}
+
+.owner-bid-analytics-modal__eyebrow {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #64748b;
+  margin-bottom: 14px;
+}
+
+.owner-bid-analytics-modal__headline {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.owner-bid-analytics-modal__icon-ring {
+  flex-shrink: 0;
+  width: 52px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 16px;
+  color: #0f766e;
+  background: linear-gradient(145deg, rgba(16, 185, 129, 0.18) 0%, rgba(16, 185, 129, 0.06) 100%);
+  border: 1px solid rgba(16, 185, 129, 0.22);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.8) inset,
+    0 8px 20px -8px rgba(16, 185, 129, 0.35);
+}
+
+.owner-bid-analytics-modal__titles {
+  min-width: 0;
+}
+
+.owner-bid-analytics-modal__heading {
+  margin: 0;
+  font-size: clamp(1.35rem, 2.5vw, 1.75rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.2;
+  color: #0f172a;
+}
+
+.owner-bid-analytics-modal__property {
+  margin: 10px 0 0;
+  font-size: clamp(0.95rem, 1.6vw, 1.05rem);
+  font-weight: 500;
+  color: #475569;
+  line-height: 1.35;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.owner-bid-analytics-modal__body {
+  position: relative;
+  z-index: 2;
+  padding: clamp(16px, 2.5vw, 24px) clamp(16px, 3vw, 28px) clamp(20px, 3vw, 28px);
+}
+
+.owner-bid-analytics-modal__chart-shell {
+  border-radius: clamp(16px, 2vw, 22px);
+  padding: 2px;
+  background: linear-gradient(
+    160deg,
+    rgba(196, 163, 90, 0.2) 0%,
+    rgba(15, 23, 42, 0.06) 40%,
+    rgba(16, 185, 129, 0.12) 100%
+  );
+  box-shadow: 0 4px 24px -4px rgba(15, 23, 42, 0.08);
+}
+
+.owner-bid-analytics-modal__chart-shell > * {
+  border-radius: clamp(14px, 1.8vw, 20px);
+}
+
+/* Загрузка */
+.owner-bid-analytics-modal__loading {
+  position: relative;
+  padding: clamp(36px, 6vw, 56px) 24px;
+  text-align: center;
+  border-radius: clamp(16px, 2vw, 22px);
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  overflow: hidden;
+}
+
+.owner-bid-analytics-modal__loading-shimmer {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    105deg,
+    transparent 40%,
+    rgba(255, 255, 255, 0.85) 50%,
+    transparent 60%
+  );
+  background-size: 200% 100%;
+  animation: oba-shimmer 1.8s ease-in-out infinite;
+}
+
+@keyframes oba-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.owner-bid-analytics-modal__loading-rows {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.owner-bid-analytics-modal__loading-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #10b981, #059669);
+  animation: oba-dot 1.2s ease-in-out infinite;
+}
+
+.owner-bid-analytics-modal__loading-dot:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.owner-bid-analytics-modal__loading-dot:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+@keyframes oba-dot {
+  0%,
+  80%,
+  100% {
+    opacity: 0.35;
+    transform: scale(0.85);
+  }
+  40% {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+}
+
+.owner-bid-analytics-modal__loading-text {
+  position: relative;
+  margin: 0;
+  font-size: 15px;
+  font-weight: 500;
+  color: #475569;
+}
+
+/* Пустое состояние / ошибка */
+.owner-bid-analytics-modal__state {
+  position: relative;
+  padding: clamp(32px, 5vw, 48px) clamp(20px, 4vw, 32px);
+  text-align: center;
+  font-size: 15px;
+  line-height: 1.55;
+  border-radius: clamp(16px, 2vw, 22px);
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  color: #475569;
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.8) inset;
+}
+
+.owner-bid-analytics-modal__state--error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  color: #991b1b;
+  border-color: rgba(248, 113, 113, 0.35);
+  background: linear-gradient(180deg, #fffefe 0%, #fef2f2 100%);
+}
+
+.owner-bid-analytics-modal__state-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  margin: 0 auto 16px;
+  border-radius: 12px;
+  font-weight: 800;
+  font-size: 18px;
+  color: #b91c1c;
+  background: rgba(254, 202, 202, 0.5);
+  border: 1px solid rgba(248, 113, 113, 0.35);
+}
+
+.owner-bid-analytics-modal__state--empty .owner-bid-analytics-modal__state-title {
+  margin: 0 0 10px;
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+}
+
+.owner-bid-analytics-modal__state--empty .owner-bid-analytics-modal__state-desc {
+  margin: 0 auto;
+  max-width: 380px;
+  font-size: 14px;
+  color: #64748b;
+  line-height: 1.6;
+}
+
+@media (max-width: 540px) {
+  .owner-bid-analytics-modal__headline {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .owner-bid-analytics-modal__icon-ring {
+    width: 48px;
+    height: 48px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .owner-bid-analytics-overlay,
+  .owner-bid-analytics-modal,
+  .owner-bid-analytics-modal__loading-shimmer,
+  .owner-bid-analytics-modal__loading-dot {
+    animation: none;
+  }
+
+  .owner-bid-analytics-modal {
+    transform: none;
+  }
+}
