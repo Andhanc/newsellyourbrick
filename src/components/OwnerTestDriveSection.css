@@ -1,0 +1,281 @@
+.owner-test-drive {
+  max-width: 1200px;
+  margin: 0 auto 32px;
+  padding: 0 24px;
+}
+
+/* Внутри вкладки «Аналитика» — без внешних отступов секции */
+.owner-test-drive--embedded {
+  max-width: none;
+  margin: 24px 0 0;
+  padding: 0;
+}
+
+.owner-test-drive--embedded .owner-test-drive__surface {
+  box-shadow: none;
+  background: #f9f9f9;
+  border: 1px solid #f0f0f0;
+}
+
+.owner-test-drive--embedded .owner-test-drive__hero {
+  padding: 18px 22px;
+}
+
+.owner-test-drive__surface {
+  background: #fff;
+  border-radius: 16px;
+  border: 1px solid #e8e8e8;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+}
+
+.owner-test-drive__hero {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 24px 28px;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border-bottom: 1px solid #e8e8e8;
+}
+
+.owner-test-drive__hero-main {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.owner-test-drive__icon-ring {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #0f172a;
+  flex-shrink: 0;
+}
+
+.owner-test-drive__page-title {
+  margin: 0 0 6px;
+  font-size: 22px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.owner-test-drive__page-desc {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #64748b;
+  max-width: 560px;
+}
+
+.owner-test-drive__total-pill {
+  flex-shrink: 0;
+  min-width: 36px;
+  height: 36px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: #0f172a;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.owner-test-drive__loading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 32px 28px;
+  color: #64748b;
+  font-size: 15px;
+}
+
+.owner-test-drive__spinner {
+  width: 22px;
+  height: 22px;
+  border: 2px solid #e2e8f0;
+  border-top-color: #0f172a;
+  border-radius: 50%;
+  animation: owner-td-spin 0.7s linear infinite;
+}
+
+@keyframes owner-td-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.owner-test-drive__notice {
+  padding: 16px 28px;
+  font-size: 14px;
+}
+
+.owner-test-drive__notice--error {
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+.owner-test-drive__empty-state {
+  padding: 48px 28px 56px;
+  text-align: center;
+}
+
+.owner-test-drive__empty-icon {
+  color: #cbd5e1;
+  margin-bottom: 16px;
+}
+
+.owner-test-drive__empty-title {
+  margin: 0 0 8px;
+  font-size: 18px;
+  font-weight: 600;
+  color: #334155;
+}
+
+.owner-test-drive__empty-text {
+  margin: 0 auto;
+  max-width: 420px;
+  font-size: 14px;
+  line-height: 1.55;
+  color: #64748b;
+}
+
+.owner-test-drive__list {
+  list-style: none;
+  margin: 0;
+  padding: 20px 24px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.owner-test-drive-card {
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  background: #fafafa;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.owner-test-drive-card:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.06);
+}
+
+.owner-test-drive-card--approved {
+  border-color: #bbf7d0;
+  background: linear-gradient(180deg, #f0fdf4 0%, #fafafa 100%);
+}
+
+.owner-test-drive-card--pending {
+  border-color: #fde68a;
+  background: linear-gradient(180deg, #fffbeb 0%, #fafafa 100%);
+}
+
+.owner-test-drive-card--rejected {
+  border-color: #fecaca;
+  background: linear-gradient(180deg, #fef2f2 0%, #fafafa 100%);
+}
+
+.owner-test-drive-card__inner {
+  padding: 20px 22px;
+}
+
+.owner-test-drive-card__head {
+  margin-bottom: 12px;
+}
+
+.owner-test-drive-badge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: 999px;
+  margin-bottom: 10px;
+}
+
+.owner-test-drive-badge--pending {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.owner-test-drive-badge--approved {
+  background: #d1fae5;
+  color: #047857;
+}
+
+.owner-test-drive-badge--rejected {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.owner-test-drive-card__title {
+  margin: 0 0 6px;
+  font-size: 17px;
+  font-weight: 600;
+  color: #0f172a;
+  line-height: 1.3;
+}
+
+.owner-test-drive-card__buyer {
+  margin: 0;
+  font-size: 13px;
+  color: #64748b;
+}
+
+.owner-test-drive-card__dates-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  color: #475569;
+  margin-bottom: 16px;
+}
+
+.owner-test-drive-card__footer {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.owner-test-drive-card__cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border-radius: 10px;
+  border: none;
+  background: #0f172a;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.2s, transform 0.15s;
+}
+
+.owner-test-drive-card__cta:hover {
+  background: #1e293b;
+}
+
+.owner-test-drive-card__cta:active {
+  transform: scale(0.98);
+}
+
+@media (max-width: 640px) {
+  .owner-test-drive {
+    padding: 0 16px;
+  }
+
+  .owner-test-drive__hero {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

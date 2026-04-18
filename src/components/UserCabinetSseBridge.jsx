@@ -10,6 +10,7 @@ import i18n from '../i18n/config'
  * — верификация пользователя → verification-status-update
  * — модерация объявления → owner-properties-update
  * — лайки/ставки по объявлению владельца → owner-property-engagement (без polling)
+ * — новое in-app уведомление (напр. тест-драйв) → owner-notifications-refresh
  */
 export default function UserCabinetSseBridge() {
   const location = useLocation()
@@ -70,6 +71,9 @@ export default function UserCabinetSseBridge() {
           }
           if (data.type === 'property_engagement') {
             window.dispatchEvent(new CustomEvent('owner-property-engagement', { detail: data }))
+          }
+          if (data.type === 'notifications_refresh') {
+            window.dispatchEvent(new CustomEvent('owner-notifications-refresh'))
           }
         } catch (_) {}
       }

@@ -9387,6 +9387,11 @@ app.post('/api/properties/:id/test-drive/request', async (req, res) => {
     if (ownerNotificationId) {
       await testDriveBookingQueries.updateOwnerNotificationId(bookingId, ownerNotificationId);
     }
+    try {
+      broadcastUserCabinetEvent(ownerId, { type: 'notifications_refresh' });
+    } catch (e) {
+      console.warn('SSE notifications_refresh (test-drive):', e?.message || e);
+    }
     return res.json({ success: true, data: { booking_id: bookingId, status: 'pending' } });
   } catch (error) {
     console.error('POST test-drive/request:', error);
@@ -9528,6 +9533,44 @@ app.get('/api/test-drive-bookings/user/:userId', async (req, res) => {
     return res.json({ success: true, data });
   } catch (error) {
     console.error('GET test-drive-bookings/user:', error);
+    return res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * GET /api/test-drive-bookings/owner/:ownerUserId — заявки на тест-драйв по объектам продавца
+ */
+app.get('/api/test-drive-bookings/owner/:ownerUserId', async (req, res) => {
+  try {
+    const ownerUserId = parseInt(req.params.ownerUserId, 10);
+    if (!ownerUserId || Number.isNaN(ownerUserId)) {
+      return res.status(400).json({ success: false, error: 'Некорректный ownerUserId' });
+    }
+    await testDriveBookingQueries.ensureTable();
+    const rows = await testDriveBookingQueries.listByOwnerUserId(ownerUserId);
+    const prisma = getPrisma();
+    const data = await Promise.all(
+      rows.map(async (row) => {
+        const withTitle = await enrichTestDriveBookingWithPropertyTitle(row);
+        let buyer_display = null;
+        try {
+          const u = await prisma.users.findUnique({
+            where: { id: Number(row.user_id) },
+            select: { first_name: true, last_name: true, email: true },
+          });
+          if (u) {
+            buyer_display =
+              [u.first_name, u.last_name].filter(Boolean).join(' ').trim() || u.email || null;
+          }
+        } catch {
+          /* ignore */
+        }
+        return { ...withTitle, buyer_display };
+      })
+    );
+    return res.json({ success: true, data });
+  } catch (error) {
+    console.error('GET test-drive-bookings/owner:', error);
     return res.status(500).json({ success: false, error: error.message });
   }
 });
@@ -10268,6 +10311,11 @@ app.get('/api/owner/:userId/my-sales', async (req, res) => {
       const sumTotal = relevant.reduce((s, r) => s + (Number(r.total_price) || 0), 0);
       const amount = sumTotal > 0 ? sumTotal : 0;
       const pct = total > 0 ? Math.min(100, (sold / total) * 100) : null;
+      const purchaseTimes = relevant
+        .map((r) => (r.purchase_date ? new Date(r.purchase_date).getTime() : NaN))
+        .filter((t) => Number.isFinite(t));
+      const sold_at =
+        purchaseTimes.length > 0 ? new Date(Math.max(...purchaseTimes)).toISOString() : null;
       shares.push({
         id: p.id,
         property_type: p.property_type,
@@ -10280,6 +10328,7 @@ app.get('/api/owner/:userId/my-sales', async (req, res) => {
         percent_sold: pct,
         shares_sold: sold,
         total_shares: total,
+        sold_at,
         photos: p.photos,
         cover_url: p.cover_url,
       });

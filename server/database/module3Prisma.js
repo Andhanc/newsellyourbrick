@@ -187,6 +187,44 @@ export const testDriveBookingQueries = {
     return rows.map((r) => bookingToPlain(r));
   },
 
+  /** Бронирования по объектам, принадлежащим продавцу (owner user_id). */
+  listByOwnerUserId: async (ownerUserId) => {
+    const prisma = getPrisma();
+    const uid = Number(ownerUserId);
+    if (!uid || Number.isNaN(uid)) return [];
+    const [apartments, houses] = await Promise.all([
+      prisma.properties_apartments.findMany({
+        where: { user_id: uid },
+        select: { id: true },
+      }),
+      prisma.properties_houses.findMany({
+        where: { user_id: uid },
+        select: { id: true },
+      }),
+    ]);
+    const aptIds = apartments.map((a) => Number(a.id)).filter(Number.isFinite);
+    const houseIds = houses.map((h) => Number(h.id)).filter(Number.isFinite);
+    const or = [];
+    if (aptIds.length) {
+      or.push({
+        property_table: 'properties_apartments',
+        property_id: { in: aptIds },
+      });
+    }
+    if (houseIds.length) {
+      or.push({
+        property_table: 'properties_houses',
+        property_id: { in: houseIds },
+      });
+    }
+    if (!or.length) return [];
+    const rows = await prisma.test_drive_bookings.findMany({
+      where: { OR: or },
+      orderBy: { created_at: 'desc' },
+    });
+    return rows.map((r) => bookingToPlain(r));
+  },
+
   listActiveForProperty: async (propertyId, propertyTable) => {
         const prisma = getPrisma();
     const rows = await prisma.test_drive_bookings.findMany({

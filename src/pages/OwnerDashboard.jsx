@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react'
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { flushSync } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { useClerk, useUser } from '@clerk/clerk-react'
@@ -16,7 +16,6 @@ import {
   FiBarChart2,
   FiX,
   FiDownload,
-  FiChevronDown,
   FiCalendar,
   FiDollarSign as FiDollar,
   FiClock,
@@ -31,7 +30,7 @@ import {
   FiArrowUp,
   FiHeart,
   FiActivity,
-  FiShoppingBag
+  FiShoppingBag,
 } from 'react-icons/fi'
 import { MdBed, MdOutlineBathtub } from 'react-icons/md'
 import { BiArea } from 'react-icons/bi'
@@ -43,6 +42,8 @@ import OwnerPurchasedAssets from '../components/OwnerPurchasedAssets'
 import BiddingHistoryModal from '../components/BiddingHistoryModal'
 import OwnerModerationNoticeModal from '../components/OwnerModerationNoticeModal'
 import OwnerPropertyBidAnalyticsModal from '../components/OwnerPropertyBidAnalyticsModal'
+import OwnerTestDriveSection from '../components/OwnerTestDriveSection'
+import OwnerTestDriveRequestModal from '../components/OwnerTestDriveRequestModal'
 import OwnerMySalesSection from '../components/OwnerMySalesSection'
 import OwnerSaleCelebrationModal from '../components/OwnerSaleCelebrationModal'
 import { getDismissedCelebrationIds, dismissCelebration } from '../utils/ownerSaleCelebrationStorage'
@@ -53,7 +54,7 @@ import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
 import { showToast } from '../components/ToastContainer'
 import { fetchVerificationStatus } from '../utils/verificationStatusApi'
 import { fetchUserById } from '../utils/usersApi'
-import { getPropertyListingKind } from '../utils/propertyListingKind.js'
+import { getPropertyListingKind } from '../utils/propertyListingKind'
 import '../components/PropertyList.css'
 import './MainPage.css'
 import './OwnerDashboard.css'
@@ -175,7 +176,8 @@ const OwnerDashboard = () => {
   const [showWelcomeModal, setShowWelcomeModal] = useState(false)
   const [showFileUploadModal, setShowFileUploadModal] = useState(false)
   const [isProfilePanelOpen, setIsProfilePanelOpen] = useState(false)
-  const [isSalesExpanded, setIsSalesExpanded] = useState(false)
+  const [analyticsSalesData, setAnalyticsSalesData] = useState(null)
+  const [analyticsSalesLoading, setAnalyticsSalesLoading] = useState(false)
   const [isCalculatorModalOpen, setIsCalculatorModalOpen] = useState(false)
   const [selectedPropertyForHistory, setSelectedPropertyForHistory] = useState(null)
   const [propertyForBidAnalytics, setPropertyForBidAnalytics] = useState(null)
@@ -213,6 +215,9 @@ const OwnerDashboard = () => {
   const saleCelebrationRef = useRef(null)
   const [ownerNotifOpen, setOwnerNotifOpen] = useState(false)
   const [ownerNotifications, setOwnerNotifications] = useState([])
+  const [testDriveModalNotification, setTestDriveModalNotification] = useState(null)
+  const [testDriveModalResponding, setTestDriveModalResponding] = useState(false)
+  const dismissedTestDriveModalIdsRef = useRef(new Set())
   const [ownerNotifLoading, setOwnerNotifLoading] = useState(false)
   const [userDocuments, setUserDocuments] = useState({ passport: null, passportWithFace: null })
   const [uploading, setUploading] = useState({ passport: false, passportWithFace: false })
@@ -355,10 +360,11 @@ const OwnerDashboard = () => {
     return () => window.removeEventListener('resize', handleResize)
   }, [ownerProfile.firstName, ownerProfile.lastName])
 
-  useEffect(() => {
-    if (!userId) return
-    const load = async () => {
-      setOwnerNotifLoading(true)
+  const loadOwnerNotifications = useCallback(
+    async (options = {}) => {
+      const { silent = false } = options
+      if (!userId) return
+      if (!silent) setOwnerNotifLoading(true)
       try {
         const r = await fetch(`${API_BASE_URL}/notifications/user/${userId}`)
         const d = await r.json()
@@ -378,12 +384,52 @@ const OwnerDashboard = () => {
       } catch (e) {
         console.warn('owner notifications', e)
       } finally {
-        setOwnerNotifLoading(false)
+        if (!silent) setOwnerNotifLoading(false)
       }
-    }
-    load()
-    const poll = setInterval(load, 60000)
+    },
+    [userId]
+  )
+
+  useEffect(() => {
+    if (!userId) return
+    void loadOwnerNotifications({ silent: false })
+    const poll = setInterval(() => void loadOwnerNotifications({ silent: true }), 60000)
     return () => clearInterval(poll)
+  }, [userId, loadOwnerNotifications])
+
+  useEffect(() => {
+    const onSseNotifications = () => {
+      void loadOwnerNotifications({ silent: true })
+    }
+    window.addEventListener('owner-notifications-refresh', onSseNotifications)
+    return () => window.removeEventListener('owner-notifications-refresh', onSseNotifications)
+  }, [loadOwnerNotifications])
+
+  useEffect(() => {
+    if (!userId) {
+      setTestDriveModalNotification(null)
+      return
+    }
+    const candidates = ownerNotifications
+      .filter((n) => {
+        if (n.type !== 'test_drive_request') return false
+        let d = n.data
+        if (typeof d === 'string') {
+          try {
+            d = JSON.parse(d)
+          } catch {
+            return false
+          }
+        }
+        return d?.booking_id != null
+      })
+      .filter((n) => !dismissedTestDriveModalIdsRef.current.has(Number(n.id)))
+      .sort((a, b) => Number(b.id) - Number(a.id))
+    setTestDriveModalNotification(candidates[0] ?? null)
+  }, [ownerNotifications, userId])
+
+  useEffect(() => {
+    dismissedTestDriveModalIdsRef.current = new Set()
   }, [userId])
 
   const fetchOwnerSaleCelebrations = useCallback(async () => {
@@ -590,7 +636,9 @@ const OwnerDashboard = () => {
               auction_start_date: prop.auction_start_date || prop.auctionStartDate || prop.start_date || null,
               auction_end_date: prop.auction_end_date || prop.auctionEndDate || null,
               starting_price: prop.starting_price || prop.startingPrice || null,
-              currency: prop.currency || 'USD'
+              currency: prop.currency || 'USD',
+              shares_sold: Number(prop.shares_sold) || 0,
+              total_shares: Number(prop.total_shares) || 0,
             }
           })
           setProperties(formattedProperties)
@@ -715,6 +763,31 @@ const OwnerDashboard = () => {
     window.addEventListener('owner-properties-update', handlePropertiesPush)
     return () => window.removeEventListener('owner-properties-update', handlePropertiesPush)
   }, [userId])
+
+  useEffect(() => {
+    if (activeTab !== 'analytics' || !userId) return
+    let cancelled = false
+    setAnalyticsSalesLoading(true)
+    fetch(`${API_BASE_URL}/owner/${userId}/my-sales`)
+      .then((r) => r.json())
+      .then((json) => {
+        if (cancelled) return
+        if (json.success && json.data) {
+          setAnalyticsSalesData(json.data)
+        } else {
+          setAnalyticsSalesData({ auction: [], shares: [], debts: [], buy_now: [] })
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setAnalyticsSalesData({ auction: [], shares: [], debts: [], buy_now: [] })
+      })
+      .finally(() => {
+        if (!cancelled) setAnalyticsSalesLoading(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [activeTab, userId])
 
   // SSE: лайки, ставки и (для аукциона) текущая ставка — патчим state без полного reload и без polling
   useEffect(() => {
@@ -1115,6 +1188,53 @@ const OwnerDashboard = () => {
     .reduce((sum, p) => sum + (p.price || 0), 0)
   const totalViews = properties.reduce((sum, p) => sum + (p.views || 0), 0)
   const totalInquiries = properties.reduce((sum, p) => sum + (p.inquiries || 0), 0)
+  const totalLikes = properties.reduce((sum, p) => sum + (p.likesCount || 0), 0)
+  const totalBids = properties.reduce((sum, p) => sum + (p.bidsCount || 0), 0)
+  const totalSharesSoldAgg = properties.reduce((sum, p) => sum + (Number(p.shares_sold) || 0), 0)
+  const convLikesToBidsPct = totalLikes > 0 ? ((totalBids / totalLikes) * 100).toFixed(1) : '0'
+  const interestPerListing =
+    totalProperties > 0 ? (interestCount / totalProperties).toFixed(1) : '0'
+
+  const topListingsByEngagement = useMemo(() => {
+    const score = (p) => {
+      const likes = p.likesCount ?? 0
+      const bids = p.bidsCount ?? 0
+      const sold = Number(p.shares_sold) || 0
+      const kind = getPropertyListingKind(p).key
+      if (kind === 'shares') return likes * 2 + sold * 12
+      return likes * 2 + bids * 6
+    }
+    return [...properties].sort((a, b) => score(b) - score(a)).slice(0, 3)
+  }, [properties])
+
+  const salesDynamicsSeries = useMemo(() => {
+    if (!analyticsSalesData) return { months: [], max: 1 }
+    const now = new Date()
+    const months = []
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
+      months.push({
+        key: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`,
+        label: d.toLocaleDateString(i18n.language === 'ru' ? 'ru-RU' : 'en-US', { month: 'short' }),
+        count: 0,
+      })
+    }
+    const buckets = Object.fromEntries(months.map((m) => [m.key, 0]))
+    const addDate = (raw) => {
+      if (!raw) return
+      const dt = new Date(raw)
+      if (Number.isNaN(dt.getTime())) return
+      const k = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}`
+      if (Object.prototype.hasOwnProperty.call(buckets, k)) buckets[k] += 1
+    }
+    ;['auction', 'debts', 'buy_now'].forEach((section) => {
+      for (const item of analyticsSalesData[section] || []) addDate(item.sold_at)
+    })
+    for (const item of analyticsSalesData.shares || []) addDate(item.sold_at)
+    const series = months.map((m) => ({ ...m, count: buckets[m.key] || 0 }))
+    const max = Math.max(1, ...series.map((s) => s.count))
+    return { months: series, max }
+  }, [analyticsSalesData, i18n.language])
 
   const handleDeleteProperty = (id) => {
     const property = properties.find(p => p.id === id)
@@ -1337,8 +1457,9 @@ const OwnerDashboard = () => {
       'Ванные', 
       'Площадь (м²)', 
       'Статус', 
-      'Просмотры', 
-      'Запросы', 
+      'Лайки', 
+      'Ставки', 
+      'Куплено долей',
       'Дата публикации'
     ])
     
@@ -1356,8 +1477,9 @@ const OwnerDashboard = () => {
         property.baths,
         property.sqft,
         statusText,
-        property.views,
-        property.inquiries,
+        property.likesCount ?? 0,
+        property.bidsCount ?? 0,
+        Number(property.shares_sold) || 0,
         formatDateSafe(property.publishedDate)
       ])
     })
@@ -1368,17 +1490,17 @@ const OwnerDashboard = () => {
     analyticsData.push(['Всего объявлений', totalProperties])
     analyticsData.push(['Активных объявлений', activeProperties])
     analyticsData.push(['Продано объявлений', soldProperties])
-    analyticsData.push(['Всего просмотров', totalViews])
-    analyticsData.push(['Всего запросов', totalInquiries])
+    analyticsData.push(['Всего лайков', totalLikes])
+    analyticsData.push(['Всего ставок', totalBids])
+    analyticsData.push(['Куплено долей (всего)', totalSharesSoldAgg])
+    analyticsData.push(['Заинтересованных пользователей', interestCount])
     analyticsData.push(['Общая выручка', properties
       .filter(p => p.status === 'sold')
       .reduce((sum, p) => sum + p.price, 0)])
     analyticsData.push(['Средняя цена', 
-      Math.round(properties.reduce((sum, p) => sum + p.price, 0) / totalProperties)])
-    analyticsData.push(['Конверсия просмотры → запросы', 
-      totalViews > 0 ? ((totalInquiries / totalViews) * 100).toFixed(1) + '%' : '0%'])
-    analyticsData.push(['Конверсия запросы → продажи', 
-      totalInquiries > 0 ? ((soldProperties / totalInquiries) * 100).toFixed(1) + '%' : '0%'])
+      totalProperties > 0 ? Math.round(properties.reduce((sum, p) => sum + p.price, 0) / totalProperties) : 0])
+    analyticsData.push(['Конверсия лайки → ставки (%)', `${convLikesToBidsPct}%`])
+    analyticsData.push(['Интерес на объявление', interestPerListing])
     
     // Преобразуем в CSV формат
     const csvContent = analyticsData
@@ -1408,22 +1530,7 @@ const OwnerDashboard = () => {
   const handleOwnerNotificationView = async (notificationId) => {
     try {
       await fetch(`${API_BASE_URL}/notifications/${notificationId}/view`, { method: 'PUT' })
-      if (!userId) return
-      const r = await fetch(`${API_BASE_URL}/notifications/user/${userId}`)
-      const d = await r.json()
-      if (d.success) {
-        const list = (d.data || []).map((n) => {
-          if (n.data && typeof n.data === 'string') {
-            try {
-              return { ...n, data: JSON.parse(n.data) }
-            } catch {
-              return n
-            }
-          }
-          return n
-        })
-        setOwnerNotifications(list)
-      }
+      await loadOwnerNotifications({ silent: true })
     } catch (e) {
       console.warn('owner notif view', e)
     }
@@ -1465,29 +1572,38 @@ const OwnerDashboard = () => {
         'success',
         4000
       )
-      const r = await fetch(`${API_BASE_URL}/notifications/user/${userId}`)
-      const d = await r.json()
-      if (d.success) {
-        const list = (d.data || []).map((n) => {
-          if (n.data && typeof n.data === 'string') {
-            try {
-              return { ...n, data: JSON.parse(n.data) }
-            } catch {
-              return n
-            }
-          }
-          return n
-        })
-        setOwnerNotifications(list)
-      }
+      await loadOwnerNotifications({ silent: true })
     } catch (e) {
       console.error('owner test-drive respond', e)
       showToast('Ошибка сети', 'error')
     }
   }
 
+  const handleTestDriveModalLater = () => {
+    if (testDriveModalNotification?.id != null) {
+      dismissedTestDriveModalIdsRef.current.add(Number(testDriveModalNotification.id))
+    }
+    setTestDriveModalNotification(null)
+  }
+
+  const handleTestDriveModalRespond = async (action) => {
+    if (!testDriveModalNotification) return
+    setTestDriveModalResponding(true)
+    try {
+      await respondOwnerTestDrive(testDriveModalNotification, action)
+    } finally {
+      setTestDriveModalResponding(false)
+    }
+  }
+
   return (
     <div className="owner-dashboard">
+      <OwnerTestDriveRequestModal
+        notification={testDriveModalNotification}
+        onLater={handleTestDriveModalLater}
+        onRespond={handleTestDriveModalRespond}
+        responding={testDriveModalResponding}
+      />
       <header className="owner-dashboard__header">
         <div
           className="owner-dashboard__header-content"
@@ -1825,10 +1941,12 @@ const OwnerDashboard = () => {
           </div>
         </section>
 
-        {/* Блок "Рассчитать стоимость объекта" */}
+        {/* Блок «Мои продажи» */}
         {activeTab === 'sales' && userId ? (
           <OwnerMySalesSection userId={userId} apiBaseUrl={API_BASE_URL} />
         ) : null}
+
+        {/* Блок "Рассчитать стоимость объекта" */}
 
         {activeTab === 'properties' && (
           <div className="property-calculator-card">
@@ -2159,38 +2277,109 @@ const OwnerDashboard = () => {
               <div className="analytics-grid">
                 <div className="analytics-card">
                   <h3 className="analytics-card__title">{t('ownerAnalyticsSalesDynamics')}</h3>
-                  <div className="analytics-chart">
-                    <div className="chart-placeholder">
-                      <p>{t('ownerAnalyticsChartLabel')}</p>
-                      <div className="chart-bars">
-                        <div className="chart-bar" style={{ height: '60%' }}></div>
-                        <div className="chart-bar" style={{ height: '80%' }}></div>
-                        <div className="chart-bar" style={{ height: '45%' }}></div>
-                        <div className="chart-bar" style={{ height: '90%' }}></div>
-                        <div className="chart-bar" style={{ height: '70%' }}></div>
-                        <div className="chart-bar" style={{ height: '85%' }}></div>
+                  <div className="analytics-chart analytics-chart--sales">
+                    {analyticsSalesLoading || !analyticsSalesData ? (
+                      <div className="analytics-chart__loading">{t('ownerAnalyticsChartLoading')}</div>
+                    ) : salesDynamicsSeries.months.length === 0 ? (
+                      <div className="chart-placeholder chart-placeholder--compact">
+                        <p>{t('ownerAnalyticsChartEmpty')}</p>
                       </div>
-                    </div>
+                    ) : (
+                      <>
+                        <svg
+                          className="owner-sales-dynamics-svg"
+                          viewBox="0 0 360 150"
+                          preserveAspectRatio="xMidYMid meet"
+                          role="img"
+                          aria-label={t('ownerAnalyticsSalesDynamics')}
+                        >
+                          <defs>
+                            <linearGradient id="ownerSalesAreaGrad" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="0%" stopColor="#6366f1" stopOpacity="0.45" />
+                              <stop offset="100%" stopColor="#6366f1" stopOpacity="0.02" />
+                            </linearGradient>
+                            <linearGradient id="ownerSalesLineGrad" x1="0" y1="0" x2="1" y2="0">
+                              <stop offset="0%" stopColor="#4f46e5" />
+                              <stop offset="100%" stopColor="#a855f7" />
+                            </linearGradient>
+                          </defs>
+                          {(() => {
+                            const months = salesDynamicsSeries.months
+                            const max = salesDynamicsSeries.max
+                            const w = 320
+                            const h = 88
+                            const padX = 16
+                            const padY = 8
+                            const n = months.length
+                            const pts = months.map((m, i) => {
+                              const x =
+                                n <= 1
+                                  ? padX + w / 2
+                                  : padX + (i / (n - 1)) * (w - 2 * padX)
+                              const ratio = max > 0 ? m.count / max : 0
+                              const y = padY + (1 - ratio) * (h - 2 * padY)
+                              return { x, y, ...m }
+                            })
+                            const baseline = padY + h - 2 * padY
+                            const lineD = pts
+                              .map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`)
+                              .join(' ')
+                            const areaD = `${lineD} L ${pts[pts.length - 1].x.toFixed(1)} ${baseline} L ${pts[0].x.toFixed(1)} ${baseline} Z`
+                            return (
+                              <>
+                                <path d={areaD} fill="url(#ownerSalesAreaGrad)" />
+                                <path
+                                  d={lineD}
+                                  fill="none"
+                                  stroke="url(#ownerSalesLineGrad)"
+                                  strokeWidth="2.5"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                />
+                                {pts.map((p) => (
+                                  <circle key={p.key} cx={p.x} cy={p.y} r="4" fill="#fff" stroke="#4f46e5" strokeWidth="2" />
+                                ))}
+                              </>
+                            )
+                          })()}
+                        </svg>
+                        <div className="owner-sales-dynamics-labels">
+                          {salesDynamicsSeries.months.map((m) => (
+                            <span key={m.key} className="owner-sales-dynamics-labels__item">
+                              {m.label}
+                            </span>
+                          ))}
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
 
                 <div className="analytics-card">
                   <h3 className="analytics-card__title">{t('ownerAnalyticsTopListings')}</h3>
                   <div className="top-properties">
-                    {properties
-                      .sort((a, b) => b.views - a.views)
-                      .slice(0, 3)
-                      .map((property, index) => (
+                    {topListingsByEngagement.length === 0 ? (
+                      <p className="top-properties__empty">{t('ownerAnalyticsTopEmpty')}</p>
+                    ) : null}
+                    {topListingsByEngagement.map((property, index) => {
+                      const kind = getPropertyListingKind(property).key
+                      const likes = property.likesCount ?? 0
+                      const bids = property.bidsCount ?? 0
+                      const purchases = Number(property.shares_sold) || 0
+                      const statsText =
+                        kind === 'shares'
+                          ? t('ownerAnalyticsTopStatsShares', { likes, purchases })
+                          : t('ownerAnalyticsTopStatsBids', { likes, bids })
+                      return (
                         <div key={property.id} className="top-property-item">
                           <div className="top-property-item__rank">#{index + 1}</div>
                           <div className="top-property-item__content">
                             <h4 className="top-property-item__title">{property.title}</h4>
-                            <p className="top-property-item__stats">
-                              {t('ownerAnalyticsViewsInquiriesFormat', { views: property.views, inquiries: property.inquiries })}
-                            </p>
+                            <p className="top-property-item__stats">{statsText}</p>
                           </div>
                         </div>
-                      ))}
+                      )
+                    })}
                   </div>
                 </div>
 
@@ -2198,29 +2387,22 @@ const OwnerDashboard = () => {
                   <h3 className="analytics-card__title">{t('ownerAnalyticsConversion')}</h3>
                   <div className="conversion-stats">
                     <div className="conversion-item">
-                      <span className="conversion-item__label">{t('ownerAnalyticsViewsToInquiries')}</span>
-                      <span className="conversion-item__value">
-                        {totalViews > 0 ? ((totalInquiries / totalViews) * 100).toFixed(1) : 0}%
-                      </span>
+                      <span className="conversion-item__label">{t('ownerAnalyticsConvLikesToBids')}</span>
+                      <span className="conversion-item__value">{convLikesToBidsPct}%</span>
                     </div>
                     <div className="conversion-item">
-                      <span className="conversion-item__label">{t('ownerAnalyticsInquiriesToSales')}</span>
-                      <span className="conversion-item__value">
-                        {totalInquiries > 0 ? ((soldProperties / totalInquiries) * 100).toFixed(1) : 0}%
-                      </span>
+                      <span className="conversion-item__label">{t('ownerAnalyticsConvInterestPerListing')}</span>
+                      <span className="conversion-item__value">{interestPerListing}</span>
                     </div>
                     <div className="conversion-item">
-                      <span className="conversion-item__label">{t('ownerAnalyticsOverallConversion')}</span>
-                      <span className="conversion-item__value">
-                        {totalViews > 0 ? ((soldProperties / totalViews) * 100).toFixed(1) : 0}%
-                      </span>
+                      <span className="conversion-item__label">{t('ownerAnalyticsConvSharesSold')}</span>
+                      <span className="conversion-item__value">{totalSharesSoldAgg}</span>
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* Блоки "Статистика по статусам" и "Мои продажи" в одной линии */}
-              <div className="analytics-bottom-row">
+              <div className="analytics-bottom-row analytics-bottom-row--single">
                 <div className="analytics-card analytics-card--half">
                   <h3 className="analytics-card__title">{t('ownerAnalyticsStatsByStatus')}</h3>
                   <div className="status-stats">
@@ -2254,84 +2436,15 @@ const OwnerDashboard = () => {
                     </div>
                   </div>
                 </div>
-
-                {/* Блок "Мои продажи" */}
-                <div className="my-sales-card my-sales-card--inline">
-                  <button 
-                  className="my-sales-card__header"
-                  onClick={() => setIsSalesExpanded(!isSalesExpanded)}
-                  aria-expanded={isSalesExpanded}
-                >
-                  <h3 className="my-sales-card__title">{t('ownerAnalyticsMySales')}</h3>
-                  <FiChevronDown 
-                    size={24} 
-                    className={`my-sales-card__icon ${isSalesExpanded ? 'my-sales-card__icon--expanded' : ''}`}
-                  />
-                  </button>
-                  
-                  {isSalesExpanded && (
-                    <div className="my-sales-card__content">
-                    {properties.filter(p => p.status === 'sold' && p.buyer).length > 0 ? (
-                      <div className="sales-list">
-                        {properties
-                          .filter(p => p.status === 'sold' && p.buyer)
-                          .map((property) => (
-                            <div key={property.id} className="sale-item">
-                              <div className="sale-item__image">
-                                <img src={property.image} alt={property.title} />
-                              </div>
-                              <div className="sale-item__info">
-                                <h4 className="sale-item__property-title">{property.title}</h4>
-                                <p className="sale-item__property-location">{property.location}</p>
-                                
-                                <div className="sale-item__buyer">
-                                  <div className="sale-item__buyer-info">
-                                    <div className="sale-item__buyer-field">
-                                      <FiUser size={16} />
-                                      <span className="sale-item__buyer-label">{t('ownerAnalyticsBuyerLabel')}</span>
-                                      <span className="sale-item__buyer-value">{property.buyer.name}</span>
-                                    </div>
-                                    <div className="sale-item__buyer-field">
-                                      <FiDollar size={16} />
-                                      <span className="sale-item__buyer-label">{t('ownerAnalyticsSalePriceLabel')}</span>
-                                      <span className="sale-item__buyer-value sale-item__buyer-value--price">
-                                        ${property.buyer.purchasePrice.toLocaleString('ru-RU')}
-                                      </span>
-                                    </div>
-                                    <div className="sale-item__buyer-field">
-                                      <FiCalendar size={16} />
-                                      <span className="sale-item__buyer-label">{t('ownerAnalyticsSaleDateLabel')}</span>
-                                      <span className="sale-item__buyer-value">
-                                        {new Date(property.soldDate).toLocaleDateString(i18n.language === 'ru' ? 'ru-RU' : i18n.language === 'de' ? 'de-DE' : i18n.language === 'es' ? 'es-ES' : i18n.language === 'fr' ? 'fr-FR' : i18n.language === 'sv' ? 'sv-SE' : 'en-US', {
-                                          day: 'numeric',
-                                          month: 'long',
-                                          year: 'numeric'
-                                        })}
-                                      </span>
-                                    </div>
-                                    <div className="sale-item__buyer-field">
-                                      <span className="sale-item__buyer-label">{t('ownerAnalyticsEmailLabel')}</span>
-                                      <span className="sale-item__buyer-value">{property.buyer.email}</span>
-                                    </div>
-                                    <div className="sale-item__buyer-field">
-                                      <span className="sale-item__buyer-label">{t('ownerAnalyticsPhoneLabel')}</span>
-                                      <span className="sale-item__buyer-value">{property.buyer.phone}</span>
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-                      </div>
-                    ) : (
-                      <div className="sales-empty">
-                        <p>{t('ownerAnalyticsNoSalesYet')}</p>
-                      </div>
-                    )}
-                    </div>
-                  )}
-                </div>
               </div>
+
+              {userId ? (
+                <OwnerTestDriveSection
+                  embedded
+                  userId={userId}
+                  apiBaseUrl={API_BASE_URL}
+                />
+              ) : null}
             </div>
           </section>
         )}
