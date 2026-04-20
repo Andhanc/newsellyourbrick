@@ -684,7 +684,7 @@ const AddProperty = ({
     return value.toString().replace(/,/g, '')
   }
 
-  /** Если задана цена «Купить сейчас», стартовая ставка не может превышать 20% от неё. */
+  /** Если задана цена «Купить сейчас», стартовая ставка не может превышать 30% от неё. */
   const getAuctionStartingVsBuyNowError = useCallback((buyNowRaw, startingRaw) => {
     const buyNow = Number(removeCommas(String(buyNowRaw ?? '')))
     const startingStr = String(startingRaw ?? '')
@@ -693,7 +693,7 @@ const AddProperty = ({
     if (!startingDigits) return null
     const starting = Number(removeCommas(startingStr))
     if (!Number.isFinite(starting) || starting <= 0) return null
-    const maxAllowed = buyNow * 0.2
+    const maxAllowed = buyNow * 0.3
     if (starting > maxAllowed + 1e-9) {
       return t('addPropertyPriceStartingBidMaxBuyNowPercent')
     }
@@ -1103,7 +1103,7 @@ const AddProperty = ({
         }
       }
 
-      // Правило 20% от «Купить сейчас» для стартовой ставки (в т.ч. для долгов на аукционе)
+      // Правило 30% от «Купить сейчас» для стартовой ставки (в т.ч. для долгов на аукционе)
       if (!isShare) {
         const publishBuyNowErr = getAuctionStartingVsBuyNowError(formData.price, formData.auctionStartingPrice)
         if (publishBuyNowErr) {
@@ -1960,7 +1960,7 @@ const AddProperty = ({
           }))
           setUploadedDocuments(prev => ({ ...prev, noDebts: true }))
         }
-        // После загрузки: правило 20% от «Купить сейчас» для стартовой ставки
+        // После загрузки: правило 30% от «Купить сейчас» для стартовой ставки
         if (property.price && property.auction_starting_price) {
           const loadErr = getAuctionStartingVsBuyNowError(
             String(property.price),

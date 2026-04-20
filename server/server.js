@@ -7119,14 +7119,14 @@ app.post('/api/properties', upload.fields([
       propertyData.garage = garage ? 1 : 0;
     }
 
-    // Цена «Купить сейчас» + аукцион: стартовая ставка не больше 20% от buy now (в т.ч. для долгов на аукционе)
+    // Цена «Купить сейчас» + аукцион: стартовая ставка не больше 30% от buy now (в т.ч. для долгов на аукционе)
     if (!isShare && normalizedIsAuction === 1) {
       const bn = propertyData.price
       const st = propertyData.auction_starting_price
-      if (bn && bn > 0 && st != null && !Number.isNaN(st) && st > 0 && st > bn * 0.2 + 1e-9) {
+      if (bn && bn > 0 && st != null && !Number.isNaN(st) && st > 0 && st > bn * 0.3 + 1e-9) {
         return res.status(400).json({
           success: false,
-          error: 'Стартовая ставка не может превышать 20% от цены «Купить сейчас».'
+          error: 'Стартовая ставка не может превышать 30% от цены «Купить сейчас».'
         })
       }
     }
@@ -7903,11 +7903,11 @@ app.put('/api/properties/:id', upload.fields([
         effectiveStarting != null &&
         !Number.isNaN(effectiveStarting) &&
         effectiveStarting > 0 &&
-        effectiveStarting > effectiveBuyNow * 0.2 + 1e-9
+        effectiveStarting > effectiveBuyNow * 0.3 + 1e-9
       ) {
         return res.status(400).json({
           success: false,
-          error: 'Стартовая ставка не может превышать 20% от цены «Купить сейчас».'
+          error: 'Стартовая ставка не может превышать 30% от цены «Купить сейчас».'
         })
       }
       
