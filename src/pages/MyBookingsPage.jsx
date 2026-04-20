@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, useCallback } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useUser, useClerk } from '@clerk/clerk-react'
@@ -41,6 +41,7 @@ export default function MyBookingsPage() {
   const [bookings, setBookings] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [cancelNotice, setCancelNotice] = useState(null)
   const cardRefs = useRef({})
   const buyerCabinetPageRef = useRef(null)
   const buyerCabinetMainScrollRef = useRef(null)
@@ -54,15 +55,16 @@ export default function MyBookingsPage() {
     }
   }, [highlightBookingId, bookings])
 
-  useEffect(() => {
-    const load = async () => {
+  const loadBookings = useCallback(
+    async (silent = false) => {
       try {
+        if (!silent) setLoading(true)
         const { getApiBaseUrl } = await import('../utils/apiConfig')
         API_BASE_URL = await getApiBaseUrl()
         const uid = localStorage.getItem('userId')
         if (!uid || !/^\d+$/.test(uid)) {
           setError(i18n.t('buyerBookings_loginRequired'))
-          setLoading(false)
+          if (!silent) setLoading(false)
           return
         }
         const res = await fetch(`${API_BASE_URL}/test-drive-bookings/user/${uid}`)
@@ -78,11 +80,62 @@ export default function MyBookingsPage() {
         setError(e.message || i18n.t('buyerBookings_networkError'))
         setBookings([])
       } finally {
-        setLoading(false)
+        if (!silent) setLoading(false)
+      }
+    },
+    [i18n.language]
+  )
+
+  useEffect(() => {
+    loadBookings(false)
+  }, [loadBookings, user?.id, i18n.language])
+
+  useEffect(() => {
+    const onSseNotifications = () => {
+      void loadBookings(true)
+    }
+    window.addEventListener('owner-notifications-refresh', onSseNotifications)
+    return () => window.removeEventListener('owner-notifications-refresh', onSseNotifications)
+  }, [loadBookings])
+
+  useEffect(() => {
+    const loadCancelNotice = async () => {
+      try {
+        const uid = localStorage.getItem('userId')
+        if (!uid || !/^\d+$/.test(uid)) return
+        const res = await fetch(`${API_BASE_URL}/notifications/user/${uid}`)
+        const data = await res.json().catch(() => ({}))
+        if (!res.ok || !data.success || !Array.isArray(data.data)) return
+        const hit = data.data.find(
+          (n) =>
+            n.type === 'test_drive_cancelled' &&
+            Number(n.view_count || 0) === 0 &&
+            n.data?.reason
+        )
+        if (hit) {
+          setCancelNotice({
+            id: hit.id,
+            reason: String(hit.data.reason || ''),
+            title: hit.title || 'Бронь отменена продавцом',
+          })
+        }
+      } catch {
+        /* ignore */
       }
     }
-    load()
-  }, [user?.id, i18n.language])
+    loadCancelNotice()
+  }, [user?.id])
+
+  const closeCancelNotice = async () => {
+    if (cancelNotice?.id) {
+      try {
+        await fetch(`${API_BASE_URL}/notifications/${cancelNotice.id}/view`, { method: 'PUT' })
+      } catch {
+        /* ignore */
+      }
+    }
+    setCancelNotice(null)
+  }
 
   const statusLabel = (statusKey) => {
     const k = `buyerBookings_status_${statusKey}`
@@ -112,6 +165,23 @@ export default function MyBookingsPage() {
 
   return (
     <div className="profile-page" ref={buyerCabinetPageRef}>
+      {cancelNotice ? (
+        <div className="my-bookings-cancel-modal__overlay" role="presentation">
+          <div className="my-bookings-cancel-modal" role="dialog" aria-modal="true">
+            <h3 className="my-bookings-cancel-modal__title">{cancelNotice.title}</h3>
+            <p className="my-bookings-cancel-modal__text">
+              Причина от продавца: <strong>{cancelNotice.reason}</strong>
+            </p>
+            <button
+              type="button"
+              className="my-bookings-card__cta"
+              onClick={closeCancelNotice}
+            >
+              Понятно
+            </button>
+          </div>
+        </div>
+      ) : null}
       <div className="profile-container buyer-cabinet-layout-container">
         <BuyerCabinetSidebar
           asideClassName="profile-sidebar"
@@ -181,7 +251,23 @@ export default function MyBookingsPage() {
                         </span>
                       </div>
                       <p className="my-bookings-card__hint">{t('buyerBookings_hint')}</p>
+                      {b.owner_comment ? (
+                        <div className="my-bookings-card__hint" style={{ marginTop: 8 }}>
+                          <strong>Комментарий владельца:</strong> {b.owner_comment}
+                        </div>
+                      ) : null}
                       <div className="my-bookings-card__footer">
+                        {String(b.status || '').toLowerCase() === 'approved' &&
+                        (b.owner_comment || Number(b.check_in_enabled) === 1) ? (
+                          <button
+                            type="button"
+                            className="my-bookings-card__cta"
+                            onClick={() => navigate(`/profile/bookings/${b.id}/check-in`)}
+                          >
+                            <span>Заселиться</span>
+                            <FiArrowRight size={18} aria-hidden />
+                          </button>
+                        ) : null}
                         <button
                           type="button"
                           className="my-bookings-card__cta"

@@ -9173,6 +9173,49 @@ function testDriveRangesOverlap(aStart, aEnd, bStart, bEnd) {
   return !(aEnd < bStart || bEnd < aStart);
 }
 
+function parseTestDrivePricingFromProperty(property) {
+  let td = property?.test_drive_data || null;
+  if (typeof td === 'string') {
+    try {
+      td = JSON.parse(td);
+    } catch {
+      td = null;
+    }
+  }
+  return {
+    daily_price: Number(td?.price_per_day) || 0,
+    insurance_deposit: Number(td?.insurance_deposit) || 0,
+  };
+}
+
+function mapAmenityCodeToRuLabel(code) {
+  const m = {
+    balcony: 'Балкон',
+    parking: 'Парковка',
+    elevator: 'Лифт',
+    electricity: 'Электричество',
+    internet: 'Интернет',
+    security: 'Охрана',
+    furniture: 'Мебель',
+    pool: 'Бассейн',
+    garden: 'Сад',
+    garage: 'Гараж',
+  };
+  if (m[code]) return m[code];
+  if (/^feature\d+$/i.test(code)) return code.replace(/^feature/i, 'Удобство #');
+  return String(code);
+}
+
+function parseJsonSafe(value, fallback = null) {
+  if (value == null) return fallback;
+  if (typeof value !== 'string') return value;
+  try {
+    return JSON.parse(value);
+  } catch {
+    return fallback;
+  }
+}
+
 /**
  * GET /api/properties/:id/test-drive/eligibility — депозит, ставка, флаги для UI
  */
@@ -9292,6 +9335,55 @@ app.get('/api/properties/:id/test-drive/bookings', async (req, res) => {
   } catch (error) {
     console.error('GET test-drive/bookings:', error);
     res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * GET /api/properties/:id/test-drive/quote — расчет суммы по выбранному диапазону
+ */
+app.get('/api/properties/:id/test-drive/quote', async (req, res) => {
+  try {
+    const propertyId = parseInt(req.params.id, 10);
+    const { start_date, end_date } = req.query || {};
+    if (!propertyId || Number.isNaN(propertyId)) {
+      return res.status(400).json({ success: false, error: 'Некорректный id объекта' });
+    }
+    if (!start_date || !end_date || typeof start_date !== 'string' || typeof end_date !== 'string') {
+      return res.status(400).json({ success: false, error: 'Укажите start_date и end_date' });
+    }
+    const property = await propertyQueries.getById(String(propertyId), null);
+    if (!property) return res.status(404).json({ success: false, error: 'Объект не найден' });
+    const td =
+      property.test_drive === 1 || property.test_drive === true || property.test_drive === '1';
+    if (!td) {
+      return res.status(400).json({ success: false, error: 'Тест-драйв для этого объекта недоступен' });
+    }
+    const s = new Date(start_date + 'T12:00:00');
+    const e = new Date(end_date + 'T12:00:00');
+    if (Number.isNaN(s.getTime()) || Number.isNaN(e.getTime()) || e < s) {
+      return res.status(400).json({ success: false, error: 'Некорректный диапазон дат' });
+    }
+    const dayCount = Math.round((e - s) / (24 * 60 * 60 * 1000)) + 1;
+    if (dayCount < 2 || dayCount > 5) {
+      return res.status(400).json({ success: false, error: 'Выберите от 2 до 5 дней подряд' });
+    }
+    const pricing = parseTestDrivePricingFromProperty(property);
+    if (!(pricing.daily_price > 0)) {
+      return res.status(400).json({ success: false, error: 'Продавец не настроил цену за сутки' });
+    }
+    return res.json({
+      success: true,
+      data: {
+        day_count: dayCount,
+        daily_price: pricing.daily_price,
+        insurance_deposit: pricing.insurance_deposit,
+        total_amount: Number((pricing.daily_price * dayCount).toFixed(2)),
+        currency: (property.currency || 'USD').toUpperCase(),
+      },
+    });
+  } catch (error) {
+    console.error('GET test-drive/quote:', error);
+    return res.status(500).json({ success: false, error: error.message });
   }
 });
 
@@ -9417,8 +9509,9 @@ app.post('/api/properties/:id/test-drive/request', async (req, res) => {
  */
 app.put('/api/test-drive-bookings/:bookingId/respond', async (req, res) => {
   try {
+    await testDriveBookingQueries.ensureTable();
     const bookingId = parseInt(req.params.bookingId, 10);
-    const { user_id, action } = req.body || {};
+    const { user_id, action, owner_comment } = req.body || {};
     const ownerId = parseInt(user_id, 10);
     if (!bookingId || Number.isNaN(bookingId) || !ownerId || Number.isNaN(ownerId)) {
       return res.status(400).json({ success: false, error: 'Нужны bookingId и user_id владельца' });
@@ -9430,7 +9523,7 @@ app.put('/api/test-drive-bookings/:bookingId/respond', async (req, res) => {
     if (!booking) {
       return res.status(404).json({ success: false, error: 'Заявка не найдена' });
     }
-    if (booking.status !== 'pending') {
+    if (booking.status !== 'pending' && booking.status !== 'paid') {
       return res.status(400).json({ success: false, error: 'Заявка уже обработана' });
     }
     const property = await propertyQueries.getById(String(booking.property_id), null);
@@ -9446,20 +9539,33 @@ app.put('/api/test-drive-bookings/:bookingId/respond', async (req, res) => {
       return res.status(500).json({ success: false, error: 'Некорректный user_id в заявке' });
     }
     const newStatus = action === 'approve' ? 'approved' : 'rejected';
-    await testDriveBookingQueries.updateStatus(bookingId, newStatus);
+    if (action === 'approve') {
+      const ownerComment = String(owner_comment || '').trim();
+      if (!ownerComment) {
+        return res.status(400).json({
+          success: false,
+          error: 'Добавьте комментарий для покупателя: заезд, ключи и инструкции',
+        });
+      }
+      await testDriveBookingQueries.approveWithOwnerComment(bookingId, ownerComment);
+    } else {
+      await testDriveBookingQueries.updateStatus(bookingId, newStatus);
+    }
     const propTitle = property.title || `Объект #${booking.property_id}`;
     if (action === 'approve') {
       const ins = await notificationQueries.create({
         user_id: buyerUserId,
         type: 'test_drive_result',
         title: 'Тест-драйв подтверждён',
-        message: `Владелец подтвердил тест-драйв объекта «${propTitle}» с ${booking.start_date} по ${booking.end_date}. Заезд: с 15:00 в первый день, выезд до 12:00 в последний день. Детали в карточке объекта.`,
+        message: `Владелец подтвердил тест-драйв объекта «${propTitle}» с ${booking.start_date} по ${booking.end_date}.`,
         data: {
           booking_id: bookingId,
           property_id: booking.property_id,
           property_table: booking.property_table,
           start_date: booking.start_date,
           end_date: booking.end_date,
+          owner_comment: String(owner_comment || '').trim(),
+          check_in_enabled: 1,
         },
         is_read: 0,
         view_count: 0,
@@ -9468,6 +9574,11 @@ app.put('/api/test-drive-bookings/:bookingId/respond', async (req, res) => {
         notificationId: ins?.lastInsertRowid,
         buyerUserId,
       });
+      try {
+        broadcastUserCabinetEvent(buyerUserId, { type: 'notifications_refresh' });
+      } catch {
+        /* ignore */
+      }
     } else {
       const ins = await notificationQueries.create({
         user_id: buyerUserId,
@@ -9486,6 +9597,11 @@ app.put('/api/test-drive-bookings/:bookingId/respond', async (req, res) => {
         notificationId: ins?.lastInsertRowid,
         buyerUserId,
       });
+      try {
+        broadcastUserCabinetEvent(buyerUserId, { type: 'notifications_refresh' });
+      } catch {
+        /* ignore */
+      }
     }
     if (booking.owner_notification_id) {
       try {
@@ -9546,6 +9662,100 @@ app.get('/api/test-drive-bookings/user/:userId', async (req, res) => {
     return res.json({ success: true, data });
   } catch (error) {
     console.error('GET test-drive-bookings/user:', error);
+    return res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * GET /api/test-drive-bookings/:bookingId/detail — детали заселения для покупателя
+ */
+app.get('/api/test-drive-bookings/:bookingId/detail', async (req, res) => {
+  try {
+    await testDriveBookingQueries.ensureTable();
+    const bookingId = parseInt(req.params.bookingId, 10);
+    const userId = parseInt(String(req.query.user_id || ''), 10);
+    if (!Number.isFinite(bookingId) || !Number.isFinite(userId)) {
+      return res.status(400).json({ success: false, error: 'Некорректные bookingId/user_id' });
+    }
+    const booking = await testDriveBookingQueries.getById(bookingId);
+    if (!booking) return res.status(404).json({ success: false, error: 'Бронь не найдена' });
+    if (Number(booking.user_id) !== userId) {
+      return res.status(403).json({ success: false, error: 'Доступ запрещен' });
+    }
+    const property = await propertyQueries.getById(String(booking.property_id), null);
+    if (!property) return res.status(404).json({ success: false, error: 'Объект не найден' });
+    let amenitiesRaw = [];
+    if (Array.isArray(property.amenities)) amenitiesRaw = property.amenities;
+    else if (typeof property.amenities === 'string') {
+      try {
+        const parsed = JSON.parse(property.amenities);
+        amenitiesRaw = Array.isArray(parsed) ? parsed : [];
+      } catch {
+        amenitiesRaw = [];
+      }
+    }
+    const amenities = amenitiesRaw.map(mapAmenityCodeToRuLabel);
+    return res.json({
+      success: true,
+      data: {
+        booking: {
+          id: booking.id,
+          property_id: booking.property_id,
+          property_table: booking.property_table,
+          start_date: booking.start_date,
+          end_date: booking.end_date,
+          status: booking.status,
+          owner_comment: booking.owner_comment || '',
+          check_in_status: booking.check_in_status || 'pending_checkin',
+          check_in_report: parseJsonSafe(booking.check_in_report, null),
+        },
+        property: {
+          id: property.id,
+          title: property.title || `Объект #${property.id}`,
+          location: property.location || '',
+          amenities,
+        },
+      },
+    });
+  } catch (error) {
+    console.error('GET test-drive-bookings/:bookingId/detail:', error);
+    return res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * PUT /api/test-drive-bookings/:bookingId/check-in-report — отчет о заселении покупателя
+ */
+app.put('/api/test-drive-bookings/:bookingId/check-in-report', async (req, res) => {
+  try {
+    await testDriveBookingQueries.ensureTable();
+    const bookingId = parseInt(req.params.bookingId, 10);
+    const userId = parseInt(String(req.body?.user_id || ''), 10);
+    const report = req.body?.report || null;
+    if (!Number.isFinite(bookingId) || !Number.isFinite(userId)) {
+      return res.status(400).json({ success: false, error: 'Некорректные bookingId/user_id' });
+    }
+    if (!report || typeof report !== 'object') {
+      return res.status(400).json({ success: false, error: 'report обязателен' });
+    }
+    const booking = await testDriveBookingQueries.getById(bookingId);
+    if (!booking) return res.status(404).json({ success: false, error: 'Бронь не найдена' });
+    if (Number(booking.user_id) !== userId) {
+      return res.status(403).json({ success: false, error: 'Доступ запрещен' });
+    }
+    if (String(booking.status || '').toLowerCase() !== 'approved') {
+      return res.status(400).json({ success: false, error: 'Заселение доступно только для подтвержденной брони' });
+    }
+    const ready = String(report.ready_to_stay || '').toLowerCase() === 'yes';
+    const checkInStatus = ready ? 'checked_in' : 'issues_reported';
+    await testDriveBookingQueries.saveCheckInReport(
+      bookingId,
+      JSON.stringify(report),
+      checkInStatus
+    );
+    return res.json({ success: true, data: { booking_id: bookingId, check_in_status: checkInStatus } });
+  } catch (error) {
+    console.error('PUT test-drive-bookings/:bookingId/check-in-report:', error);
     return res.status(500).json({ success: false, error: error.message });
   }
 });
@@ -10145,6 +10355,7 @@ app.get('/api/properties/user/:userId', async (req, res) => {
 app.get('/api/owner/:userId/my-sales', async (req, res) => {
   try {
     const prisma = getPrisma();
+    await testDriveBookingQueries.ensureTable();
     const uid = parseInt(String(req.params.userId).trim(), 10);
     if (!uid || Number.isNaN(uid)) {
       return res.status(400).json({ success: false, error: 'Некорректный user_id' });
@@ -10378,6 +10589,49 @@ app.get('/api/owner/:userId/my-sales', async (req, res) => {
       }
     }
 
+    const tdPayments = await prisma.stripe_payments.findMany({
+      where: { plan_key: 'test_drive_booking', status: 'paid' },
+      orderBy: { paid_at: 'desc' },
+      take: 2000,
+    });
+    const test_drive = [];
+    for (const pay of tdPayments) {
+      let billing = {};
+      try {
+        billing = JSON.parse(pay.billing_reason || '{}');
+      } catch {
+        billing = {};
+      }
+      const ownerId = Number(billing.owner_user_id);
+      if (!Number.isFinite(ownerId) || ownerId !== uid) continue;
+      const table = String(billing.property_table || 'properties_apartments');
+      const pid = Number(billing.property_id);
+      if (!Number.isFinite(pid)) continue;
+      const prop = propByKey.get(`${table}:${pid}`);
+      if (!prop) continue;
+      const bookingId = Number(billing.booking_id);
+      if (!Number.isFinite(bookingId)) continue;
+      const booking = await testDriveBookingQueries.getById(bookingId);
+      if (!booking) continue;
+      test_drive.push({
+        id: pid,
+        booking_id: bookingId,
+        buyer_user_id: Number(booking.user_id),
+        booking_status: booking.status || null,
+        check_in_status: booking.check_in_status || null,
+        property_type: prop.property_type,
+        property_table: table,
+        source_table: prop.source_table,
+        title: prop.title || '',
+        location: prop.location || '',
+        currency: (pay.currency || prop.currency || 'USD').toString().toUpperCase(),
+        sale_amount: Number(pay.amount_cents || 0) / 100,
+        sold_at: pay.paid_at || pay.created_at || null,
+        photos: prop.photos,
+        cover_url: prop.cover_url,
+      });
+    }
+
     res.json({
       success: true,
       data: {
@@ -10385,6 +10639,7 @@ app.get('/api/owner/:userId/my-sales', async (req, res) => {
         shares,
         debts,
         buy_now,
+        test_drive,
       },
     });
   } catch (error) {
@@ -10408,6 +10663,74 @@ app.get('/api/owner/:userId/sale-celebrations', async (req, res) => {
   } catch (error) {
     console.error('GET /api/owner/:userId/sale-celebrations:', error);
     res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * PUT /api/test-drive-bookings/:bookingId/cancel-by-owner — продавец снимает бронь с причиной
+ */
+app.put('/api/test-drive-bookings/:bookingId/cancel-by-owner', async (req, res) => {
+  try {
+    await testDriveBookingQueries.ensureTable();
+    const bookingId = parseInt(req.params.bookingId, 10);
+    const ownerId = parseInt(String(req.body?.user_id || ''), 10);
+    const reason = String(req.body?.reason || '').trim();
+    if (!Number.isFinite(bookingId) || !Number.isFinite(ownerId)) {
+      return res.status(400).json({ success: false, error: 'Некорректные bookingId/user_id' });
+    }
+    if (!reason) {
+      return res.status(400).json({ success: false, error: 'Укажите причину снятия брони' });
+    }
+    const booking = await testDriveBookingQueries.getById(bookingId);
+    if (!booking) {
+      return res.status(404).json({ success: false, error: 'Бронь не найдена' });
+    }
+    const property = await propertyQueries.getById(String(booking.property_id), null);
+    if (!property) {
+      return res.status(404).json({ success: false, error: 'Объект не найден' });
+    }
+    const propertyOwnerId = parseInt(String(property.user_id), 10);
+    if (!Number.isFinite(propertyOwnerId) || propertyOwnerId !== ownerId) {
+      return res.status(403).json({ success: false, error: 'Только владелец может снять бронь' });
+    }
+    const buyerUserId = parseInt(String(booking.user_id), 10);
+    if (!Number.isFinite(buyerUserId)) {
+      return res.status(500).json({ success: false, error: 'Некорректный покупатель в брони' });
+    }
+
+    await getPrisma().test_drive_bookings.delete({ where: { id: bookingId } });
+    if (booking.owner_notification_id) {
+      try {
+        await notificationQueries.delete(booking.owner_notification_id);
+      } catch {
+        /* ignore */
+      }
+    }
+    await notificationQueries.create({
+      user_id: buyerUserId,
+      type: 'test_drive_cancelled',
+      title: 'Бронь тест-драйва снята',
+      message: `Продавец снял бронь тест-драйва по объекту «${
+        property.title || `Объект #${booking.property_id}`
+      }». Причина: ${reason}`,
+      data: {
+        booking_id: bookingId,
+        property_id: booking.property_id,
+        property_table: booking.property_table,
+        reason,
+      },
+      is_read: 0,
+      view_count: 0,
+    });
+    try {
+      broadcastUserCabinetEvent(buyerUserId, { type: 'notifications_refresh' });
+    } catch {
+      /* ignore */
+    }
+    return res.json({ success: true, data: { booking_id: bookingId, deleted: true } });
+  } catch (error) {
+    console.error('PUT test-drive-bookings cancel-by-owner:', error);
+    return res.status(500).json({ success: false, error: error.message });
   }
 });
 

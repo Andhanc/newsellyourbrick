@@ -353,6 +353,29 @@
   font-variant-numeric: tabular-nums;
 }
 
+.owner-my-sales__cancel-row {
+  width: 100%;
+  margin-top: 10px;
+}
+
+.owner-my-sales__cancel-btn {
+  width: 100%;
+  min-height: 36px;
+  border-radius: 10px;
+  border: 1px solid rgba(220, 38, 38, 0.25);
+  background: #fef2f2;
+  color: #b91c1c;
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.owner-my-sales__cancel-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
 .owner-my-sales__empty-inline {
   margin: 0;
   padding: 16px 18px;

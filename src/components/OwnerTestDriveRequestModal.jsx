@@ -1,4 +1,5 @@
 import { createPortal } from 'react-dom'
+import { useState } from 'react'
 import { FiCalendar, FiX } from 'react-icons/fi'
 import { useTranslation } from 'react-i18next'
 import './OwnerTestDriveRequestModal.css'
@@ -18,12 +19,13 @@ function parseData(raw) {
 
 export default function OwnerTestDriveRequestModal({
   notification,
-  onClose,
   onLater,
   onRespond,
   responding,
 }) {
   const { t } = useTranslation()
+  const [showApproveComment, setShowApproveComment] = useState(false)
+  const [ownerComment, setOwnerComment] = useState('')
   if (!notification || typeof document === 'undefined') return null
 
   const data = parseData(notification.data)
@@ -71,34 +73,69 @@ export default function OwnerTestDriveRequestModal({
           </p>
         ) : null}
         <div className="owner-td-request-modal__actions">
-          <button
-            type="button"
-            className="owner-td-request-modal__btn owner-td-request-modal__btn--ghost"
-            onClick={onLater}
-            disabled={responding}
-          >
-            {t('ownerTestDriveModalLater')}
-          </button>
-          {hasBooking ? (
+          {!showApproveComment ? (
             <>
               <button
                 type="button"
-                className="owner-td-request-modal__btn owner-td-request-modal__btn--reject"
-                onClick={() => onRespond('reject')}
+                className="owner-td-request-modal__btn owner-td-request-modal__btn--ghost"
+                onClick={onLater}
                 disabled={responding}
               >
-                {responding ? '…' : t('ownerTestDriveModalReject')}
+                {t('ownerTestDriveModalLater')}
               </button>
-              <button
-                type="button"
-                className="owner-td-request-modal__btn owner-td-request-modal__btn--approve"
-                onClick={() => onRespond('approve')}
-                disabled={responding}
-              >
-                {responding ? '…' : t('ownerTestDriveModalApprove')}
-              </button>
+              {hasBooking ? (
+                <>
+                  <button
+                    type="button"
+                    className="owner-td-request-modal__btn owner-td-request-modal__btn--reject"
+                    onClick={() => onRespond('reject')}
+                    disabled={responding}
+                  >
+                    {responding ? '…' : t('ownerTestDriveModalReject')}
+                  </button>
+                  <button
+                    type="button"
+                    className="owner-td-request-modal__btn owner-td-request-modal__btn--approve"
+                    onClick={() => setShowApproveComment(true)}
+                    disabled={responding}
+                  >
+                    {t('ownerTestDriveModalApprove')}
+                  </button>
+                </>
+              ) : null}
             </>
-          ) : null}
+          ) : (
+            <div className="owner-td-request-modal__comment-wrap">
+              <label className="owner-td-request-modal__comment-label">
+                Комментарий для покупателя (время заезда, как забрать ключи и т.д.)
+              </label>
+              <textarea
+                className="owner-td-request-modal__comment-input"
+                rows={4}
+                value={ownerComment}
+                onChange={(e) => setOwnerComment(e.target.value)}
+                placeholder="Например: Заезд с 15:00, ключи у консьержа, код домофона 1234."
+              />
+              <div className="owner-td-request-modal__comment-actions">
+                <button
+                  type="button"
+                  className="owner-td-request-modal__btn owner-td-request-modal__btn--ghost"
+                  onClick={() => setShowApproveComment(false)}
+                  disabled={responding}
+                >
+                  Назад
+                </button>
+                <button
+                  type="button"
+                  className="owner-td-request-modal__btn owner-td-request-modal__btn--approve"
+                  onClick={() => onRespond('approve', ownerComment)}
+                  disabled={responding || !ownerComment.trim()}
+                >
+                  {responding ? '…' : 'Подтвердить и отправить'}
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>,

@@ -779,11 +779,11 @@ const OwnerDashboard = () => {
         if (json.success && json.data) {
           setAnalyticsSalesData(json.data)
         } else {
-          setAnalyticsSalesData({ auction: [], shares: [], debts: [], buy_now: [] })
+          setAnalyticsSalesData({ auction: [], shares: [], debts: [], test_drive: [], buy_now: [] })
         }
       })
       .catch(() => {
-        if (!cancelled) setAnalyticsSalesData({ auction: [], shares: [], debts: [], buy_now: [] })
+        if (!cancelled) setAnalyticsSalesData({ auction: [], shares: [], debts: [], test_drive: [], buy_now: [] })
       })
       .finally(() => {
         if (!cancelled) setAnalyticsSalesLoading(false)
@@ -1231,7 +1231,7 @@ const OwnerDashboard = () => {
       const k = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}`
       if (Object.prototype.hasOwnProperty.call(buckets, k)) buckets[k] += 1
     }
-    ;['auction', 'debts', 'buy_now'].forEach((section) => {
+    ;['auction', 'debts', 'buy_now', 'test_drive'].forEach((section) => {
       for (const item of analyticsSalesData[section] || []) addDate(item.sold_at)
     })
     for (const item of analyticsSalesData.shares || []) addDate(item.sold_at)
@@ -1459,7 +1459,7 @@ const OwnerDashboard = () => {
       const mySalesData =
         res.ok && json.success && json.data
           ? json.data
-          : { auction: [], shares: [], debts: [], buy_now: [] }
+          : { auction: [], shares: [], debts: [], test_drive: [], buy_now: [] }
 
       const buffer = await exportOwnerAnalyticsExcel({
         formatDateSafe,
@@ -1496,7 +1496,7 @@ const OwnerDashboard = () => {
     }
   }
 
-  const respondOwnerTestDrive = async (notification, action) => {
+  const respondOwnerTestDrive = async (notification, action, ownerComment = '') => {
     let payload = notification?.data
     if (typeof payload === 'string') {
       try {
@@ -1519,7 +1519,11 @@ const OwnerDashboard = () => {
         {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ user_id: userId, action }),
+          body: JSON.stringify({
+            user_id: userId,
+            action,
+            owner_comment: action === 'approve' ? ownerComment : undefined,
+          }),
         }
       )
       const json = await res.json().catch(() => ({}))
@@ -1546,11 +1550,11 @@ const OwnerDashboard = () => {
     setTestDriveModalNotification(null)
   }
 
-  const handleTestDriveModalRespond = async (action) => {
+  const handleTestDriveModalRespond = async (action, ownerComment = '') => {
     if (!testDriveModalNotification) return
     setTestDriveModalResponding(true)
     try {
-      await respondOwnerTestDrive(testDriveModalNotification, action)
+      await respondOwnerTestDrive(testDriveModalNotification, action, ownerComment)
     } finally {
       setTestDriveModalResponding(false)
     }

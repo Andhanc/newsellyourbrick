@@ -14,7 +14,7 @@ let API_BASE_URL = getApiBaseUrlSync()
 export default function TestDriveBookingPage() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const [searchParams] = useSearchParams()
+  const [searchParams, setSearchParams] = useSearchParams()
   const propertyTable =
     searchParams.get('table') || 'properties_apartments'
 
@@ -24,6 +24,31 @@ export default function TestDriveBookingPage() {
   const [saving, setSaving] = useState(false)
   const [pendingRange, setPendingRange] = useState(null)
   const [calendarResetKey, setCalendarResetKey] = useState(0)
+  const [quoteData, setQuoteData] = useState(null)
+  const [paymentOpen, setPaymentOpen] = useState(false)
+  const [paymentStep, setPaymentStep] = useState(1)
+  const [checkoutLoading, setCheckoutLoading] = useState(false)
+  const [isMobile, setIsMobile] = useState(
+    typeof window !== 'undefined' ? window.innerWidth <= 768 : false
+  )
+
+  const currencyFmt = (amount, currency) => {
+    try {
+      return new Intl.NumberFormat('ru-RU', {
+        style: 'currency',
+        currency: (currency || 'USD').toUpperCase(),
+        maximumFractionDigits: 2,
+      }).format(Number(amount) || 0)
+    } catch {
+      return `${Number(amount) || 0} ${(currency || 'USD').toUpperCase()}`
+    }
+  }
+
+  useEffect(() => {
+    const onResize = () => setIsMobile(window.innerWidth <= 768)
+    window.addEventListener('resize', onResize)
+    return () => window.removeEventListener('resize', onResize)
+  }, [])
 
   useEffect(() => {
     const load = async () => {
@@ -58,6 +83,35 @@ export default function TestDriveBookingPage() {
     load()
   }, [id, propertyTable])
 
+  useEffect(() => {
+    const checkoutResult = searchParams.get('test_drive_checkout')
+    const sid = searchParams.get('session_id')
+    if (checkoutResult !== 'success' || !sid) return
+    const uid = localStorage.getItem('userId')
+    if (!uid || !/^\d+$/.test(uid)) return
+    ;(async () => {
+      try {
+        const res = await fetch(`${API_BASE_URL}/billing/confirm-test-drive-checkout`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ session_id: sid, userId: parseInt(uid, 10) }),
+        })
+        const data = await res.json()
+        if (!res.ok || !data.success) {
+          showToast(data.error || 'Не удалось подтвердить оплату', 'error')
+          return
+        }
+        showToast('Оплата прошла успешно. Бронирование добавлено в ваши записи.', 'success', 5000)
+        const newParams = new URLSearchParams(searchParams)
+        newParams.delete('test_drive_checkout')
+        newParams.delete('session_id')
+        setSearchParams(newParams, { replace: true })
+      } catch {
+        showToast('Ошибка подтверждения оплаты', 'error')
+      }
+    })()
+  }, [searchParams, setSearchParams])
+
   const handleRangeSelected = (range) => {
     setPendingRange(range)
   }
@@ -67,59 +121,79 @@ export default function TestDriveBookingPage() {
     setCalendarResetKey((k) => k + 1)
   }
 
-  const handleSubmitTestDriveRequest = async () => {
+  const fetchQuote = async () => {
+    if (!pendingRange) return null
+    const res = await fetch(
+      `${API_BASE_URL}/properties/${id}/test-drive/quote?start_date=${encodeURIComponent(
+        pendingRange.start
+      )}&end_date=${encodeURIComponent(pendingRange.end)}`
+    )
+    const data = await res.json()
+    if (!res.ok || !data.success) {
+      throw new Error(data.error || 'Не удалось рассчитать стоимость')
+    }
+    return data.data
+  }
+
+  const handleOpenPayment = async () => {
     if (!pendingRange) return
-    const { start: startYmd, end: endYmd } = pendingRange
     const uid = localStorage.getItem('userId')
     if (!uid || !/^\d+$/.test(uid)) {
       requestOpenLoginModal({ wizard: true })
       return
     }
+    setPaymentOpen(true)
+    setPaymentStep(1)
+    setQuoteData(null)
+  }
+
+  const handleContinueToStep2 = async () => {
     setSaving(true)
     try {
-      const res = await fetch(
-        `${API_BASE_URL}/properties/${id}/test-drive/request`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            user_id: parseInt(uid, 10),
-            start_date: startYmd,
-            end_date: endYmd,
-            property_table: propertyTable,
-          }),
-        }
-      )
-      const data = await res.json()
-      if (!res.ok || !data.success) {
-        showToast(data.error || 'Не удалось сохранить', 'error')
-        return
-      }
-      showToast(
-        'Заявка отправлена владельцу. Ожидайте ответа в уведомлениях.',
-        'success',
-        5000
-      )
-      const uidRefresh = localStorage.getItem('userId')
-      const userQ2 =
-        uidRefresh && /^\d+$/.test(uidRefresh)
-          ? `&user_id=${encodeURIComponent(uidRefresh)}`
-          : ''
-      const br = await fetch(
-        `${API_BASE_URL}/properties/${id}/test-drive/bookings?property_table=${encodeURIComponent(propertyTable)}${userQ2}`
-      )
-      const bj = await br.json()
-      if (bj.success && bj.data?.booked_dates) {
-        setBookedDates(bj.data.booked_dates)
-        setMyBookedDates(
-          Array.isArray(bj.data.my_booked_dates) ? bj.data.my_booked_dates : []
-        )
-      }
-      navigate(`/property/${id}`)
+      const quote = await fetchQuote()
+      setQuoteData(quote)
+      setPaymentStep(2)
     } catch (e) {
-      showToast('Ошибка сети', 'error')
+      showToast(e.message || 'Ошибка расчета', 'error')
     } finally {
       setSaving(false)
+    }
+  }
+
+  const handlePay = async () => {
+    if (!pendingRange) return
+    const uid = localStorage.getItem('userId')
+    if (!uid || !/^\d+$/.test(uid)) {
+      requestOpenLoginModal({ wizard: true })
+      return
+    }
+    setCheckoutLoading(true)
+    try {
+      const customerEmail = localStorage.getItem('userEmail') || ''
+      const res = await fetch(`${API_BASE_URL}/billing/create-test-drive-checkout`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: parseInt(uid, 10),
+          propertyId: parseInt(id, 10),
+          propertyType: null,
+          propertyTable,
+          startDate: pendingRange.start,
+          endDate: pendingRange.end,
+          customerEmail,
+          returnPath: `/property/${id}/test-drive`,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok || !data.success || !data.url) {
+        showToast(data.error || 'Не удалось создать оплату', 'error')
+        return
+      }
+      window.location.href = data.url
+    } catch {
+      showToast('Ошибка сети', 'error')
+    } finally {
+      setCheckoutLoading(false)
     }
   }
 
@@ -181,7 +255,7 @@ export default function TestDriveBookingPage() {
                   type="button"
                   className="test-drive-page__btn test-drive-page__btn--primary"
                   disabled={saving}
-                  onClick={handleSubmitTestDriveRequest}
+                  onClick={handleOpenPayment}
                 >
                   Запросить тест-драйв
                 </button>
@@ -242,6 +316,63 @@ export default function TestDriveBookingPage() {
           </motion.div>
         </aside>
       </div>
+      {paymentOpen && pendingRange && (
+        <div className="test-drive-pay-overlay" onClick={() => setPaymentOpen(false)}>
+          <div
+            className={`test-drive-pay-sheet${isMobile ? ' test-drive-pay-sheet--mobile' : ''}`}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="test-drive-pay-sheet__title">
+              {paymentStep === 1 ? 'Инструкция и правила тест-драйва' : 'Шаг 2: оплата тест-драйва'}
+            </h3>
+            {paymentStep === 1 ? (
+              <>
+                <p className="test-drive-pay-sheet__text">
+                  После оплаты бронирование сразу попадёт в ваши бронирования, в мои продажи продавца и в админ-панель.
+                  В назначенные даты вы заселяетесь по согласованию с владельцем.
+                </p>
+                <ul className="test-drive-pay-sheet__rules">
+                  <li>Заезд в первый день с 15:00, выезд в последний день до 12:00.</li>
+                  <li>Соблюдайте правила объекта и сохранность имущества.</li>
+                  <li>Страховой депозит возвращается по условиям продавца.</li>
+                </ul>
+                <button
+                  type="button"
+                  className="test-drive-page__btn test-drive-page__btn--primary"
+                  disabled={saving}
+                  onClick={handleContinueToStep2}
+                >
+                  Перейти к оплате
+                </button>
+              </>
+            ) : (
+              <>
+                <p className="test-drive-pay-sheet__text">
+                  Выбрано: <strong>{pendingRange.start}</strong> — <strong>{pendingRange.end}</strong>
+                </p>
+                {quoteData ? (
+                  <div className="test-drive-pay-sheet__summary">
+                    <p>Суток: <strong>{quoteData.day_count}</strong></p>
+                    <p>Стоимость за сутки: <strong>{currencyFmt(quoteData.daily_price, quoteData.currency)}</strong></p>
+                    <p>Страховой депозит: <strong>{currencyFmt(quoteData.insurance_deposit, quoteData.currency)}</strong></p>
+                    <p>К оплате за тест-драйв: <strong>{currencyFmt(quoteData.total_amount, quoteData.currency)}</strong></p>
+                  </div>
+                ) : (
+                  <p>Расчет суммы...</p>
+                )}
+                <button
+                  type="button"
+                  className="test-drive-page__btn test-drive-page__btn--primary"
+                  disabled={checkoutLoading || !quoteData}
+                  onClick={handlePay}
+                >
+                  {checkoutLoading ? 'Переход к оплате...' : 'Оплатить'}
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

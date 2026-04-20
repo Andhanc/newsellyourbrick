@@ -271,8 +271,9 @@
     padding: 4px 6px;
     gap: 2px;
     max-width: 100%;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     justify-content: center;
+    white-space: nowrap;
   }
 
   .property-timer.compact .time-value {
@@ -328,6 +329,46 @@
 
   .property-timer--detail {
     padding: 0 2px;
+  }
+}
+
+@media (max-width: 430px) {
+  .property-timer.compact .timer-compact-time {
+    padding: 3px 5px;
+    gap: 1px;
+  }
+
+  .property-timer.compact .time-value {
+    font-size: 12px;
+  }
+
+  .property-timer.compact .time-label {
+    font-size: 7px;
+    letter-spacing: 0.1px;
+  }
+
+  .property-timer.compact .timer-separator {
+    font-size: 10px;
+    margin: 0;
+  }
+}
+
+@media (max-width: 360px) {
+  .property-timer.compact .timer-compact-time {
+    padding: 2px 4px;
+  }
+
+  .property-timer.compact .time-value {
+    font-size: 11px;
+  }
+
+  .property-timer.compact .time-label {
+    font-size: 6px;
+    letter-spacing: 0;
+  }
+
+  .property-timer.compact .timer-separator {
+    font-size: 9px;
   }
 }
 

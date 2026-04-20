@@ -159,6 +159,37 @@
   background: #1e293b;
 }
 
+.owner-td-request-modal__comment-wrap {
+  width: 100%;
+}
+
+.owner-td-request-modal__comment-label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 0.9rem;
+  color: #334155;
+  font-weight: 600;
+}
+
+.owner-td-request-modal__comment-input {
+  width: 100%;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-family: inherit;
+  font-size: 0.9rem;
+  color: #0f172a;
+  resize: vertical;
+  min-height: 90px;
+}
+
+.owner-td-request-modal__comment-actions {
+  margin-top: 10px;
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
 @media (max-width: 480px) {
   .owner-td-request-modal__actions {
     flex-direction: column;

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { FiShoppingBag, FiInbox } from 'react-icons/fi'
 import { getPropertyCardImage } from '../utils/propertyImage'
+import { showToast } from './ToastContainer'
 import './OwnerMySalesSection.css'
 
 const FALLBACK_IMG =
@@ -23,6 +24,7 @@ const SALES_SECTION_FILTERS = [
   { id: 'auction', labelKey: 'ownerSalesFilterAuction' },
   { id: 'shares', labelKey: 'ownerSalesFilterShares' },
   { id: 'debts', labelKey: 'ownerSalesFilterDebt' },
+  { id: 'test_drive', labelKey: 'ownerTabTestDrive' },
   { id: 'buy_now', labelKey: 'ownerSalesFilterBuyNow' },
 ]
 
@@ -30,6 +32,7 @@ const SALES_SECTIONS = [
   { id: 'auction', titleKey: 'ownerSalesSectionAuction', itemsKey: 'auction' },
   { id: 'shares', titleKey: 'ownerSalesSectionShares', itemsKey: 'shares' },
   { id: 'debts', titleKey: 'ownerSalesSectionDebt', itemsKey: 'debts' },
+  { id: 'test_drive', titleKey: 'ownerTabTestDrive', itemsKey: 'test_drive' },
   { id: 'buy_now', titleKey: 'ownerSalesSectionBuyNow', itemsKey: 'buy_now' },
 ]
 
@@ -39,10 +42,12 @@ export default function OwnerMySalesSection({ userId, apiBaseUrl }) {
   const [sectionFilter, setSectionFilter] = useState('all')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [cancellingBookingId, setCancellingBookingId] = useState(null)
   const [payload, setPayload] = useState({
     auction: [],
     shares: [],
     debts: [],
+    test_drive: [],
     buy_now: [],
   })
 
@@ -64,13 +69,14 @@ export default function OwnerMySalesSection({ userId, apiBaseUrl }) {
           auction: Array.isArray(json.data?.auction) ? json.data.auction : [],
           shares: Array.isArray(json.data?.shares) ? json.data.shares : [],
           debts: Array.isArray(json.data?.debts) ? json.data.debts : [],
+          test_drive: Array.isArray(json.data?.test_drive) ? json.data.test_drive : [],
           buy_now: Array.isArray(json.data?.buy_now) ? json.data.buy_now : [],
         })
         setError(null)
       } catch (e) {
         if (!silent) {
           setError(e?.message || 'error')
-          setPayload({ auction: [], shares: [], debts: [], buy_now: [] })
+          setPayload({ auction: [], shares: [], debts: [], test_drive: [], buy_now: [] })
         }
       } finally {
         if (!silent) setLoading(false)
@@ -116,7 +122,40 @@ export default function OwnerMySalesSection({ userId, apiBaseUrl }) {
     })
   }
 
-  const renderCard = (item) => {
+  const handleCancelBooking = async (item, e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    const bookingId = Number(item.booking_id)
+    if (!Number.isFinite(bookingId)) return
+    const reason = window.prompt('Укажите причину снятия брони для покупателя')
+    if (reason == null) return
+    if (!reason.trim()) {
+      showToast('Нужно указать причину', 'warning')
+      return
+    }
+    try {
+      setCancellingBookingId(bookingId)
+      const base = (apiBaseUrl || '/api').replace(/\/$/, '')
+      const res = await fetch(`${base}/test-drive-bookings/${bookingId}/cancel-by-owner`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: userId, reason }),
+      })
+      const json = await res.json().catch(() => ({}))
+      if (!res.ok || !json.success) {
+        showToast(json.error || 'Не удалось снять бронь', 'error')
+        return
+      }
+      showToast('Бронь снята, покупателю отправлена причина', 'success')
+      await fetchMySales(true)
+    } catch {
+      showToast('Ошибка сети', 'error')
+    } finally {
+      setCancellingBookingId(null)
+    }
+  }
+
+  const renderCard = (item, sectionId) => {
     const img = getPropertyCardImage(
       {
         photos: item.photos,
@@ -160,13 +199,30 @@ export default function OwnerMySalesSection({ userId, apiBaseUrl }) {
                 {formatSaleAmount(item.sale_amount, item.currency)}
               </span>
             </div>
+            {sectionId === 'test_drive' && String(item.check_in_status || '').toLowerCase() === 'checked_in' ? (
+              <p className="owner-my-sales__meta" style={{ color: '#2e9d5c', fontWeight: 700 }}>
+                Клиент заселился
+              </p>
+            ) : null}
+            {sectionId === 'test_drive' && item.booking_id ? (
+              <div className="owner-my-sales__cancel-row">
+                <button
+                  type="button"
+                  className="owner-my-sales__cancel-btn"
+                  onClick={(e) => handleCancelBooking(item, e)}
+                  disabled={cancellingBookingId === Number(item.booking_id)}
+                >
+                  {cancellingBookingId === Number(item.booking_id) ? 'Снимаем...' : 'Снять бронь'}
+                </button>
+              </div>
+            ) : null}
           </div>
         </div>
       </div>
     )
   }
 
-  const renderSection = (titleKey, items) => (
+  const renderSection = (titleKey, items, sectionId) => (
     <div className="owner-my-sales__section">
       <div className="owner-my-sales__section-head">
         <h3 className="owner-my-sales__section-title">{t(titleKey)}</h3>
@@ -177,13 +233,19 @@ export default function OwnerMySalesSection({ userId, apiBaseUrl }) {
       {items.length === 0 ? (
         <p className="owner-my-sales__empty-inline">{t('ownerSalesEmptySection')}</p>
       ) : (
-        <div className="properties-grid owner-my-sales__grid">{items.map(renderCard)}</div>
+        <div className="properties-grid owner-my-sales__grid">
+          {items.map((item) => renderCard(item, sectionId))}
+        </div>
       )}
     </div>
   )
 
   const totalCount =
-    payload.auction.length + payload.shares.length + payload.debts.length + payload.buy_now.length
+    payload.auction.length +
+    payload.shares.length +
+    payload.debts.length +
+    payload.test_drive.length +
+    payload.buy_now.length
 
   const visibleSections =
     sectionFilter === 'all'
@@ -250,8 +312,8 @@ export default function OwnerMySalesSection({ userId, apiBaseUrl }) {
 
         {!loading && !error && totalCount > 0 ? (
           <div className="owner-my-sales__sections">
-            {visibleSections.map(({ titleKey, itemsKey }) => (
-              <div key={titleKey}>{renderSection(titleKey, payload[itemsKey] || [])}</div>
+            {visibleSections.map(({ id, titleKey, itemsKey }) => (
+              <div key={titleKey}>{renderSection(titleKey, payload[itemsKey] || [], id)}</div>
             ))}
           </div>
         ) : null}

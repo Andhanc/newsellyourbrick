@@ -6,6 +6,7 @@ import {
   userQueries,
   sharePurchaseQueries,
   reservationSignatureQueries,
+  notificationQueries,
 } from './database/database.js';
 import { getPrisma } from './database/prismaClient.js';
 
@@ -58,6 +59,34 @@ function majorToStripeMinor(amountMajor, currency) {
 function computeMinimumSalePriceMajor(property) {
   const price = Number(property.price) || 0;
   return Number.isFinite(price) && price > 0 ? price : 0;
+}
+
+function parseTestDrivePricing(property) {
+  if (!property) {
+    return { dailyPrice: 0, insuranceDeposit: 0 };
+  }
+  let raw = property.test_drive_data;
+  if (typeof raw === 'string') {
+    try {
+      raw = JSON.parse(raw);
+    } catch {
+      raw = null;
+    }
+  }
+  const dailyPrice = Number(raw?.price_per_day) || 0;
+  const insuranceDeposit = Number(raw?.insurance_deposit) || 0;
+  return { dailyPrice, insuranceDeposit };
+}
+
+function isValidYmd(v) {
+  return typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v);
+}
+
+function calcDayCountInclusive(startYmd, endYmd) {
+  const s = new Date(`${startYmd}T12:00:00`);
+  const e = new Date(`${endYmd}T12:00:00`);
+  if (Number.isNaN(s.getTime()) || Number.isNaN(e.getTime()) || e < s) return null;
+  return Math.round((e - s) / (24 * 60 * 60 * 1000)) + 1;
 }
 
 const SHARE_PURCHASE_POLICY_VERSION = 'share_policy_test_v1';
@@ -719,6 +748,212 @@ export async function processPropertyReservationPaidSession(stripe, session) {
   }
 }
 
+export async function processTestDriveBookingPaidSession(stripe, session) {
+  if (!stripe || !session?.id) {
+    return { ok: false, error: 'invalid_session' };
+  }
+  let sess = session;
+  try {
+    sess = await stripe.checkout.sessions.retrieve(session.id, {
+      expand: ['payment_intent'],
+    });
+  } catch (e) {
+    console.error('[Stripe] test-drive retrieve checkout session:', e?.message || e);
+    return { ok: false, error: 'retrieve_failed' };
+  }
+
+  if (sess.mode !== 'payment') return { ok: false, error: 'not_payment_mode' };
+  if (sess.metadata?.checkout_purpose !== 'test_drive_booking') {
+    return { ok: false, error: 'wrong_purpose' };
+  }
+  const piObj =
+    sess.payment_intent && typeof sess.payment_intent === 'object' ? sess.payment_intent : null;
+  const paidOk =
+    sess.payment_status === 'paid' ||
+    sess.payment_status === 'no_payment_required' ||
+    piObj?.status === 'succeeded';
+  if (!paidOk) return { ok: false, error: 'not_paid' };
+
+  const userId = parseInt(sess.metadata?.app_user_id || '', 10);
+  const propertyId = parseInt(sess.metadata?.property_id || '', 10);
+  const startDate = String(sess.metadata?.start_date || '');
+  const endDate = String(sess.metadata?.end_date || '');
+  const propertyTable = String(sess.metadata?.property_table || 'properties_apartments');
+  const dayCount = parseInt(sess.metadata?.days_count || '', 10);
+  const dailyPrice = Number(sess.metadata?.daily_price || 0);
+  const insuranceDeposit = Number(sess.metadata?.insurance_deposit || 0);
+  const expectedTotalCents = parseInt(sess.metadata?.total_cents || '', 10);
+
+  if (!Number.isFinite(userId) || !Number.isFinite(propertyId)) {
+    return { ok: false, error: 'bad_metadata' };
+  }
+  if (!isValidYmd(startDate) || !isValidYmd(endDate)) {
+    return { ok: false, error: 'bad_dates' };
+  }
+  if (!Number.isFinite(dayCount) || dayCount < 2 || dayCount > 5) {
+    return { ok: false, error: 'bad_day_count' };
+  }
+
+  const existingPayment = await stripeSubscriptionQueries.hasPaymentByDedupeKey(sess.id);
+  if (existingPayment) return { ok: true, already: true };
+
+  const property = await propertyQueries.getById(propertyId, null);
+  if (!property) return { ok: false, error: 'property_not_found' };
+  const testDriveEnabled =
+    property.test_drive === 1 || property.test_drive === true || property.test_drive === '1';
+  if (!testDriveEnabled) return { ok: false, error: 'test_drive_disabled' };
+
+  const tableResolved = property.source_table || propertyTable || 'properties_apartments';
+  const quote = parseTestDrivePricing(property);
+  const quoteTotalMajor = roundMoneyMajor((Number(quote.dailyPrice) || 0) * dayCount);
+  if (!(quoteTotalMajor > 0)) return { ok: false, error: 'invalid_test_drive_price' };
+  const computedTotalCents = majorToStripeMinor(quoteTotalMajor, sess.currency || property.currency || 'usd');
+  if (Number.isFinite(expectedTotalCents) && Math.abs(expectedTotalCents - computedTotalCents) > 2) {
+    console.warn('[Stripe] test-drive amount mismatch', {
+      expectedTotalCents,
+      computedTotalCents,
+      sessionAmount: sess.amount_total,
+    });
+  }
+
+  const existingForDates = await getPrisma().test_drive_bookings.findMany({
+    where: {
+      property_id: Number(propertyId),
+      property_table: tableResolved,
+      status: { in: ['pending', 'approved', 'paid'] },
+    },
+    select: { start_date: true, end_date: true },
+  });
+  const overlap = existingForDates.some((r) => !(endDate < r.start_date || r.end_date < startDate));
+  if (overlap) {
+    const sameExisting = await getPrisma().test_drive_bookings.findFirst({
+      where: {
+        property_id: Number(propertyId),
+        property_table: tableResolved,
+        user_id: Number(userId),
+        start_date: startDate,
+        end_date: endDate,
+        status: { in: ['approved', 'paid'] },
+      },
+      select: { id: true },
+    });
+    if (sameExisting) {
+      return { ok: true, already: true, bookingId: sameExisting.id };
+    }
+    return { ok: false, error: 'dates_unavailable' };
+  }
+
+  const existingMine = await getPrisma().test_drive_bookings.count({
+    where: {
+      user_id: Number(userId),
+      property_id: Number(propertyId),
+      property_table: tableResolved,
+      status: { in: ['pending', 'approved', 'paid'] },
+    },
+  });
+  if (existingMine > 0) {
+    const sameMine = await getPrisma().test_drive_bookings.findFirst({
+      where: {
+        user_id: Number(userId),
+        property_id: Number(propertyId),
+        property_table: tableResolved,
+        start_date: startDate,
+        end_date: endDate,
+        status: { in: ['approved', 'paid', 'pending'] },
+      },
+      select: { id: true },
+    });
+    if (sameMine) {
+      return { ok: true, already: true, bookingId: sameMine.id };
+    }
+    return { ok: false, error: 'already_requested' };
+  }
+
+  const bookingRow = await getPrisma().test_drive_bookings.create({
+    data: {
+      property_id: Number(propertyId),
+      property_table: tableResolved,
+      user_id: Number(userId),
+      start_date: startDate,
+      end_date: endDate,
+      status: 'paid',
+    },
+  });
+
+  const billingPayload = {
+    type: 'test_drive_booking',
+    booking_id: bookingRow.id,
+    property_id: Number(propertyId),
+    property_table: tableResolved,
+    owner_user_id: Number(property.user_id),
+    start_date: startDate,
+    end_date: endDate,
+    days_count: dayCount,
+    daily_price: Number(dailyPrice) || quote.dailyPrice,
+    insurance_deposit: Number(insuranceDeposit) || quote.insuranceDeposit || 0,
+    total_major: quoteTotalMajor,
+    currency: String(sess.currency || property.currency || 'usd').toLowerCase(),
+  };
+  await stripeSubscriptionQueries.insertPayment({
+    dedupe_key: sess.id,
+    user_id: Number(userId),
+    stripe_customer_id:
+      typeof sess.customer === 'string' ? sess.customer : sess.customer?.id || null,
+    stripe_subscription_id: null,
+    stripe_invoice_id: null,
+    stripe_checkout_session_id: sess.id,
+    amount_cents: sess.amount_total ?? computedTotalCents,
+    currency: String(sess.currency || property.currency || 'usd').toLowerCase(),
+    status: 'paid',
+    plan_key: 'test_drive_booking',
+    billing_reason: JSON.stringify(billingPayload),
+    paid_at: new Date().toISOString(),
+    period_start: null,
+    period_end: null,
+    customer_email: sess.customer_details?.email || sess.customer_email || null,
+  });
+
+  try {
+    const buyer = await userQueries.getById(userId);
+    const buyerName =
+      [buyer?.first_name, buyer?.last_name].filter(Boolean).join(' ') ||
+      buyer?.email ||
+      `Пользователь #${userId}`;
+    const title = 'Запрос на тест-драйв';
+    const message = `${buyerName} оплатил тест-драйв объекта «${
+      property.title || `Объект #${propertyId}`
+    }» с ${startDate} по ${endDate}. Подтвердите и добавьте комментарий по заселению (ключи, время заезда).`;
+    const notifRun = await notificationQueries.create({
+      user_id: Number(property.user_id),
+      type: 'test_drive_request',
+      title,
+      message,
+      data: {
+        booking_id: bookingRow.id,
+        property_id: Number(propertyId),
+        property_table: tableResolved,
+        buyer_id: Number(userId),
+        start_date: startDate,
+        end_date: endDate,
+        paid: true,
+      },
+      is_read: 0,
+      view_count: 0,
+    });
+    const ownerNotificationId = notifRun?.lastInsertRowid;
+    if (ownerNotificationId) {
+      await getPrisma().test_drive_bookings.update({
+        where: { id: Number(bookingRow.id) },
+        data: { owner_notification_id: Number(ownerNotificationId) },
+      });
+    }
+  } catch (e) {
+    console.warn('[Stripe] test-drive owner notification:', e?.message || e);
+  }
+
+  return { ok: true, bookingId: bookingRow.id };
+}
+
 function isoFromUnix(sec) {
   if (sec == null) return null;
   return new Date(sec * 1000).toISOString();
@@ -1072,6 +1307,11 @@ export function createStripeWebhookHandler() {
           if (session.mode === 'payment' && session.metadata?.checkout_purpose === 'listing_publication_fee') {
             const full = await stripe.checkout.sessions.retrieve(session.id);
             await processListingPublicationFeePaidSession(stripe, full);
+            break;
+          }
+          if (session.mode === 'payment' && session.metadata?.checkout_purpose === 'test_drive_booking') {
+            const full = await stripe.checkout.sessions.retrieve(session.id);
+            await processTestDriveBookingPaidSession(stripe, full);
             break;
           }
           if (session.mode === 'subscription' && session.metadata?.checkout_purpose !== 'wallet_deposit') {
@@ -1499,6 +1739,148 @@ export function registerStripeBillingRoutes(app) {
         success: false,
         error: err?.message || 'Ошибка Stripe',
       });
+    }
+  });
+
+  app.post('/api/billing/create-test-drive-checkout', async (req, res) => {
+    try {
+      if (!stripe) {
+        return res.status(503).json({ success: false, error: 'Платежи не настроены' });
+      }
+      const userId = parseInt(String(req.body?.userId || '').trim(), 10);
+      const propertyId = parseInt(String(req.body?.propertyId || '').trim(), 10);
+      const propertyType =
+        req.body?.propertyType != null ? String(req.body.propertyType).trim().slice(0, 32) : null;
+      const startDate = String(req.body?.startDate || '');
+      const endDate = String(req.body?.endDate || '');
+      const propertyTable = String(req.body?.propertyTable || 'properties_apartments');
+      const customerEmail =
+        typeof req.body?.customerEmail === 'string' ? req.body.customerEmail.trim().slice(0, 320) : '';
+      const returnPath =
+        typeof req.body?.returnPath === 'string' && req.body.returnPath.startsWith('/')
+          ? req.body.returnPath.split('?')[0].slice(0, 200)
+          : `/property/${propertyId}/test-drive`;
+
+      if (!Number.isFinite(userId) || !Number.isFinite(propertyId)) {
+        return res.status(400).json({ success: false, error: 'Укажите userId и propertyId' });
+      }
+      if (!isValidYmd(startDate) || !isValidYmd(endDate)) {
+        return res.status(400).json({ success: false, error: 'Некорректные даты' });
+      }
+      const dayCount = calcDayCountInclusive(startDate, endDate);
+      if (!Number.isFinite(dayCount) || dayCount < 2 || dayCount > 5) {
+        return res.status(400).json({ success: false, error: 'Выберите от 2 до 5 дней' });
+      }
+      const property = await propertyQueries.getById(propertyId, propertyType || null);
+      if (!property) return res.status(404).json({ success: false, error: 'Объект не найден' });
+      const testDriveEnabled =
+        property.test_drive === 1 || property.test_drive === true || property.test_drive === '1';
+      if (!testDriveEnabled) {
+        return res.status(400).json({ success: false, error: 'Тест-драйв недоступен' });
+      }
+      const { dailyPrice, insuranceDeposit } = parseTestDrivePricing(property);
+      if (!(dailyPrice > 0)) {
+        return res.status(400).json({
+          success: false,
+          error: 'Продавец не настроил стоимость тест-драйва за сутки',
+        });
+      }
+      const curNorm = normalizeStripeCurrency(property.currency || 'usd');
+      if (!curNorm.ok) return res.status(400).json({ success: false, error: curNorm.error });
+      const currency = curNorm.currency;
+      const totalMajor = roundMoneyMajor(dailyPrice * dayCount);
+      const unitAmount = majorToStripeMinor(totalMajor, currency);
+      if (unitAmount < minStripeUnitAmount(currency)) {
+        return res.status(400).json({ success: false, error: 'Сумма слишком мала для Stripe' });
+      }
+      const titleShort = (property.title || `Объект #${propertyId}`).slice(0, 80);
+      const successUrl = `${frontendBase}${returnPath}?test_drive_checkout=success&session_id={CHECKOUT_SESSION_ID}`;
+      const cancelUrl = `${frontendBase}${returnPath}?test_drive_checkout=canceled`;
+      const session = await stripe.checkout.sessions.create({
+        mode: 'payment',
+        payment_method_types: ['card'],
+        line_items: [
+          {
+            quantity: 1,
+            price_data: {
+              currency,
+              unit_amount: unitAmount,
+              product_data: {
+                name: `Тест-драйв (${dayCount} дн.) — ${titleShort}`,
+                description: `Оплата тест-драйва объекта #${propertyId} (${startDate} - ${endDate})`.slice(0, 500),
+              },
+            },
+          },
+        ],
+        success_url: successUrl,
+        cancel_url: cancelUrl,
+        metadata: {
+          checkout_purpose: 'test_drive_booking',
+          app_user_id: String(userId),
+          property_id: String(propertyId),
+          property_type: String(property.property_type || propertyType || ''),
+          property_table: String(property.source_table || propertyTable || 'properties_apartments'),
+          start_date: startDate,
+          end_date: endDate,
+          days_count: String(dayCount),
+          daily_price: String(dailyPrice),
+          insurance_deposit: String(insuranceDeposit || 0),
+          total_cents: String(unitAmount),
+          total_major: String(totalMajor),
+        },
+        ...(customerEmail && customerEmail.includes('@') ? { customer_email: customerEmail } : {}),
+      });
+      return res.json({
+        success: true,
+        url: session.url,
+        data: {
+          daily_price: dailyPrice,
+          insurance_deposit: insuranceDeposit || 0,
+          day_count: dayCount,
+          total_major: totalMajor,
+          currency: currency.toUpperCase(),
+        },
+      });
+    } catch (err) {
+      console.error('[Stripe] create-test-drive-checkout:', err?.message || err);
+      return res.status(500).json({ success: false, error: err?.message || 'Ошибка Stripe' });
+    }
+  });
+
+  app.post('/api/billing/confirm-test-drive-checkout', async (req, res) => {
+    try {
+      if (!stripe) {
+        return res.status(503).json({ success: false, error: 'Stripe не настроен' });
+      }
+      const sessionId = typeof req.body?.session_id === 'string' ? req.body.session_id.trim() : '';
+      const userId = String(req.body?.userId || '').trim();
+      if (!sessionId || !sessionId.startsWith('cs_')) {
+        return res.status(400).json({ success: false, error: 'Нужен session_id (cs_...)' });
+      }
+      if (!/^\d+$/.test(userId)) {
+        return res.status(400).json({ success: false, error: 'Нужен числовой userId' });
+      }
+      const session = await stripe.checkout.sessions.retrieve(sessionId, {
+        expand: ['payment_intent'],
+      });
+      if (String(session.metadata?.app_user_id || '') !== userId) {
+        return res.status(403).json({ success: false, error: 'user_mismatch' });
+      }
+      const result = await processTestDriveBookingPaidSession(stripe, session);
+      if (!result.ok) {
+        console.warn('[Stripe] confirm-test-drive-checkout failed:', result.error, {
+          sessionId,
+          userId,
+        });
+        return res.status(400).json({ success: false, error: result.error || 'confirm_failed' });
+      }
+      return res.json({
+        success: true,
+        data: { already: !!result.already, booking_id: result.bookingId || null },
+      });
+    } catch (err) {
+      console.error('[Stripe] confirm-test-drive-checkout:', err?.message || err);
+      return res.status(500).json({ success: false, error: err?.message || 'Ошибка Stripe' });
     }
   });
 

@@ -2,6 +2,9 @@
  * Модуль 3: запросы на покупку и бронирования тест-драйва — PostgreSQL через Prisma.
  */
 import { getPrisma } from './prismaClient.js';
+import prismaPkg from '@prisma/client';
+
+const { Prisma } = prismaPkg;
 
 function bookingToPlain(row) {
   if (!row) return null;
@@ -145,7 +148,20 @@ export const purchaseRequestQueries = {
 
 export const testDriveBookingQueries = {
   ensureTable: async () => {
-      },
+    const prisma = getPrisma();
+    await prisma.$executeRawUnsafe(
+      'ALTER TABLE test_drive_bookings ADD COLUMN IF NOT EXISTS owner_comment TEXT'
+    );
+    await prisma.$executeRawUnsafe(
+      'ALTER TABLE test_drive_bookings ADD COLUMN IF NOT EXISTS check_in_enabled INT DEFAULT 0'
+    );
+    await prisma.$executeRawUnsafe(
+      'ALTER TABLE test_drive_bookings ADD COLUMN IF NOT EXISTS check_in_report TEXT'
+    );
+    await prisma.$executeRawUnsafe(
+      "ALTER TABLE test_drive_bookings ADD COLUMN IF NOT EXISTS check_in_status TEXT DEFAULT 'pending_checkin'"
+    );
+  },
 
   create: async (row) => {
         const prisma = getPrisma();
@@ -174,16 +190,17 @@ export const testDriveBookingQueries = {
 
   getById: async (id) => {
     const prisma = getPrisma();
-    const row = await prisma.test_drive_bookings.findUnique({ where: { id: Number(id) } });
-    return bookingToPlain(row);
+    const rows = await prisma.$queryRaw(
+      Prisma.sql`SELECT * FROM test_drive_bookings WHERE id = ${Number(id)} LIMIT 1`
+    );
+    return bookingToPlain(Array.isArray(rows) ? rows[0] : null);
   },
 
   listByUserId: async (userId) => {
-        const prisma = getPrisma();
-    const rows = await prisma.test_drive_bookings.findMany({
-      where: { user_id: Number(userId) },
-      orderBy: { created_at: 'desc' },
-    });
+    const prisma = getPrisma();
+    const rows = await prisma.$queryRaw(
+      Prisma.sql`SELECT * FROM test_drive_bookings WHERE user_id = ${Number(userId)} ORDER BY created_at DESC`
+    );
     return rows.map((r) => bookingToPlain(r));
   },
 
@@ -218,10 +235,14 @@ export const testDriveBookingQueries = {
       });
     }
     if (!or.length) return [];
-    const rows = await prisma.test_drive_bookings.findMany({
-      where: { OR: or },
-      orderBy: { created_at: 'desc' },
-    });
+    const rows = await prisma.$queryRaw(
+      Prisma.sql`
+        SELECT * FROM test_drive_bookings
+        WHERE (${aptIds.length > 0 ? Prisma.sql`(property_table = 'properties_apartments' AND property_id IN (${Prisma.join(aptIds)}))` : Prisma.sql`FALSE`}
+           OR ${houseIds.length > 0 ? Prisma.sql`(property_table = 'properties_houses' AND property_id IN (${Prisma.join(houseIds)}))` : Prisma.sql`FALSE`})
+        ORDER BY created_at DESC
+      `
+    );
     return rows.map((r) => bookingToPlain(r));
   },
 
@@ -231,7 +252,7 @@ export const testDriveBookingQueries = {
       where: {
         property_id: Number(propertyId),
         property_table: propertyTable,
-        status: { in: ['pending', 'approved'] },
+        status: { in: ['pending', 'approved', 'paid'] },
       },
       orderBy: { start_date: 'asc' },
     });
@@ -257,5 +278,33 @@ export const testDriveBookingQueries = {
       data: { status },
     });
     return { changes: 1 };
+  },
+
+  approveWithOwnerComment: async (id, ownerComment) => {
+    const prisma = getPrisma();
+    const updated = await prisma.$executeRaw(
+      Prisma.sql`
+        UPDATE test_drive_bookings
+        SET status = 'approved',
+            owner_comment = ${String(ownerComment || '')},
+            check_in_enabled = 1,
+            check_in_status = 'awaiting_buyer_checkin'
+        WHERE id = ${Number(id)}
+      `
+    );
+    return { changes: Number(updated || 0) };
+  },
+
+  saveCheckInReport: async (id, reportJson, checkInStatus) => {
+    const prisma = getPrisma();
+    const updated = await prisma.$executeRaw(
+      Prisma.sql`
+        UPDATE test_drive_bookings
+        SET check_in_report = ${String(reportJson || '{}')},
+            check_in_status = ${String(checkInStatus || 'pending_checkin')}
+        WHERE id = ${Number(id)}
+      `
+    );
+    return { changes: Number(updated || 0) };
   },
 };

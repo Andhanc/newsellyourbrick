@@ -948,6 +948,17 @@ function MainPage() {
       return
     }
     try {
+      let ownerComment = ''
+      if (action === 'approve') {
+        ownerComment =
+          window.prompt(
+            'Добавьте комментарий для покупателя: время заезда, получение ключей и т.д.'
+          ) || ''
+        if (!ownerComment.trim()) {
+          showToast('Комментарий обязателен при подтверждении', 'warning')
+          return
+        }
+      }
       const res = await fetch(
         `${API_BASE_URL}/test-drive-bookings/${payload.booking_id}/respond`,
         {
@@ -956,6 +967,7 @@ function MainPage() {
           body: JSON.stringify({
             user_id: parseInt(dbUserId, 10),
             action,
+            owner_comment: action === 'approve' ? ownerComment : undefined,
           }),
         }
       )

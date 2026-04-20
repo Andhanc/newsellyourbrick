@@ -355,6 +355,8 @@ const AddProperty = ({
   const [formData, setFormData] = useState({
     propertyType: '', // Сначала выбираем тип
     testDrive: null, // null, true или false
+    testDrivePricePerDay: '',
+    testDriveInsuranceDeposit: '',
     title: '',
     description: '',
     price: '',
@@ -1090,6 +1092,15 @@ const AddProperty = ({
         const testDriveValue = (formData.testDrive === true || formData.testDrive === 1) ? '1' : '0'
         console.log('🔍 Отправка test_drive на сервер:', { formData_testDrive: formData.testDrive, testDriveValue })
         formDataToSend.append('test_drive', testDriveValue)
+        if (testDriveValue === '1') {
+          formDataToSend.append(
+            'test_drive_data',
+            JSON.stringify({
+              price_per_day: Number(formData.testDrivePricePerDay) || 0,
+              insurance_deposit: Number(formData.testDriveInsuranceDeposit) || 0,
+            })
+          )
+        }
       }
 
       // Правило 20% от «Купить сейчас» для стартовой ставки (в т.ч. для долгов на аукционе)
@@ -1765,6 +1776,8 @@ const AddProperty = ({
         setFormData({
           propertyType: property.property_type || '',
           testDrive: property.test_drive !== undefined && property.test_drive !== null ? (property.test_drive === 1 || property.test_drive === true) : null,
+          testDrivePricePerDay: testDriveData?.price_per_day ? String(testDriveData.price_per_day) : '',
+          testDriveInsuranceDeposit: testDriveData?.insurance_deposit ? String(testDriveData.insurance_deposit) : '',
           title: property.title || '',
           description: property.description || '',
           price: property.price ? String(property.price) : '',
@@ -2283,7 +2296,7 @@ const AddProperty = ({
       console.log('🔍 Обновленный formData.testDrive:', newData.testDrive)
       return newData
     })
-    setCurrentStep('property-name')
+    setCurrentStep(answer ? 'test-drive-pricing' : 'property-name')
   }
 
   const handleGenerateDescription = async () => {
@@ -3937,9 +3950,15 @@ const AddProperty = ({
                   } else if (formData.isDebtProperty) {
                     setCurrentStep('debt-type-selection')
                   } else {
-                    setCurrentStep('test-drive-question')
-                    setFormData(prev => ({ ...prev, testDrive: null }))
+                    if (formData.testDrive === true) {
+                      setCurrentStep('test-drive-pricing')
+                    } else {
+                      setCurrentStep('test-drive-question')
+                      setFormData(prev => ({ ...prev, testDrive: null }))
+                    }
                   }
+                } else if (currentStep === 'test-drive-pricing') {
+                  setCurrentStep('test-drive-question')
                 } else if (currentStep === 'location') {
                   setCurrentStep('property-name')
                 } else if (currentStep === 'details') {
@@ -4236,6 +4255,79 @@ const AddProperty = ({
             </div>
 
 
+          </div>
+        ) : wizardRenderStep === 'test-drive-pricing' ? (
+          <div className="property-name-screen">
+            <div className="property-name-main">
+              <h2 className="property-name-title">Настройки тест-драйва</h2>
+              <p className="property-name-subtitle" style={{ marginBottom: 18 }}>
+                Укажите стоимость за сутки и страховой депозит для клиента.
+              </p>
+              <div className="property-name-input-group">
+                <label className="property-name-label">Стоимость за сутки</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={formData.testDrivePricePerDay || ''}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      testDrivePricePerDay: e.target.value,
+                    }))
+                  }
+                  className="property-name-input"
+                  placeholder="0"
+                />
+              </div>
+              <div className="property-name-input-group">
+                <label className="property-name-label">Страховой депозит</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={formData.testDriveInsuranceDeposit || ''}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      testDriveInsuranceDeposit: e.target.value,
+                    }))
+                  }
+                  className="property-name-input"
+                  placeholder="0"
+                />
+              </div>
+              <div className="property-name-actions">
+                <button
+                  type="button"
+                  className="property-name-back-btn"
+                  onClick={() => setCurrentStep('test-drive-question')}
+                >
+                  <FiChevronLeft size={16} />
+                  {t('addPropertyBack')}
+                </button>
+                <button
+                  type="button"
+                  className="property-name-continue-btn"
+                  onClick={() => {
+                    const price = Number(formData.testDrivePricePerDay)
+                    const deposit = Number(formData.testDriveInsuranceDeposit)
+                    if (!(price > 0)) {
+                      showNotification('Укажите стоимость за сутки больше 0')
+                      return
+                    }
+                    if (deposit < 0) {
+                      showNotification('Страховой депозит не может быть отрицательным')
+                      return
+                    }
+                    setCurrentStep('property-name')
+                  }}
+                >
+                  {t('addPropertyContinue')}
+                  <FiChevronRight size={16} />
+                </button>
+              </div>
+            </div>
           </div>
         ) : wizardRenderStep === 'property-name' ? (
           /* Экран ввода названия и описания */

@@ -183,3 +183,63 @@
   border-color: rgba(59, 130, 246, 0.35);
   background: linear-gradient(135deg, #fff 0%, #eff6ff 100%);
 }
+
+.test-drive-pay-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  background: rgba(2, 6, 23, 0.55);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 16px;
+}
+
+.test-drive-pay-sheet {
+  width: min(560px, 100%);
+  background: #fff;
+  border-radius: 20px;
+  padding: 22px;
+  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.25);
+}
+
+.test-drive-pay-sheet--mobile {
+  align-self: flex-end;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+  width: 100%;
+  max-width: 100%;
+}
+
+.test-drive-pay-sheet__title {
+  font-size: 20px;
+  font-weight: 800;
+  margin: 0 0 12px;
+  color: #0f172a;
+}
+
+.test-drive-pay-sheet__text {
+  color: #334155;
+  line-height: 1.5;
+  margin: 0 0 12px;
+}
+
+.test-drive-pay-sheet__rules {
+  margin: 0 0 16px;
+  padding-left: 18px;
+  color: #475569;
+  line-height: 1.45;
+}
+
+.test-drive-pay-sheet__summary {
+  margin: 8px 0 14px;
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: #f8fafc;
+}
+
+.test-drive-pay-sheet__summary p {
+  margin: 6px 0;
+  color: #334155;
+}

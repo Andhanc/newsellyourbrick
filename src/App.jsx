@@ -30,6 +30,7 @@ import RouteErrorBoundary from './components/RouteErrorBoundary'
 const Home = lazyWithRetry(() => import('./pages/Home'))
 const PropertyDetailPage = lazyWithRetry(() => import('./pages/PropertyDetailPage'))
 const TestDriveBookingPage = lazyWithRetry(() => import('./pages/TestDriveBookingPage'))
+const TestDriveCheckInPage = lazyWithRetry(() => import('./pages/TestDriveCheckInPage'))
 const MapPage = lazyWithRetry(() => import('./pages/MapPage'))
 const MyBookingsPage = lazyWithRetry(() => import('./pages/MyBookingsPage'))
 const Data = lazyWithRetry(() => import('./pages/Data'))
@@ -435,6 +436,7 @@ function App() {
               <Route path="/auction" element={<Home />} />
               <Route path="/main" element={<Home />} />
               <Route path="/property/:id/test-drive" element={<TestDriveBookingPage />} />
+              <Route path="/profile/bookings/:bookingId/check-in" element={<TestDriveCheckInPage />} />
               <Route path="/property/:id" element={<PropertyDetailPage />} />
               <Route path="/search-results" element={<SearchResults />} />
               <Route path="/map" element={<MapPage />} />

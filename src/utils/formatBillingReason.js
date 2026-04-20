@@ -18,6 +18,10 @@ export function formatBillingReasonForUi(raw) {
       const pid = j.property_id != null ? String(j.property_id) : '—'
       return i18n.t('buyerBilling_reasonReservation', { id: pid })
     }
+    if (j.type === 'test_drive_booking') {
+      const pid = j.property_id != null ? String(j.property_id) : '—'
+      return `Оплата тест-драйва по объекту #${pid}`
+    }
   } catch {
     return null
   }
