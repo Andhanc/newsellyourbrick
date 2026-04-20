@@ -28,6 +28,8 @@ import {
   FiChevronUp,
   FiCheck,
   FiLogOut,
+  FiSend,
+  FiX,
 } from 'react-icons/fi'
 import { getStoredNumericUserId, getUserData, logout } from '../services/authService'
 import { fetchUserById, invalidateUserByIdCache } from '../utils/usersApi'
@@ -47,6 +49,7 @@ import { COUNTRY_CODES as phoneCountryCodes } from '../components/PhoneInput'
 import { ProfileSpotlightOnboarding } from '../components/ProfileSpotlightOnboarding'
 import { ServiceQuickLinksTour } from '../components/ServiceQuickLinksTour'
 import { fetchVerificationStatus, invalidateVerificationStatusCache } from '../utils/verificationStatusApi'
+import { useManagerLiveChat } from '../hooks/useManagerLiveChat'
 import './TestPage.css'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
@@ -397,7 +400,7 @@ const MAIN_CARDS = [
     accent: 'violet',
   },
   {
-    title: 'Кошелёк',
+    title: 'Депозит',
     description: 'Баланс, пополнения и вывод средств',
     to: '/deposit',
     icon: FiCreditCard,
@@ -414,7 +417,7 @@ const MAIN_CARDS = [
   {
     title: 'Чат',
     description: 'Поддержка и персональный менеджер',
-    to: '/chat?manager=1',
+    action: 'managerChat',
     icon: FiMessageCircle,
     accent: 'jade',
   },
@@ -485,6 +488,8 @@ function TestPage() {
   const [historySheetOpen, setHistorySheetOpen] = useState(false)
   const [subscriptionSheetOpen, setSubscriptionSheetOpen] = useState(false)
   const [bookingsSheetOpen, setBookingsSheetOpen] = useState(false)
+  const [isManagerChatOpen, setIsManagerChatOpen] = useState(false)
+  const [managerChatInput, setManagerChatInput] = useState('')
   const [subscriptionSheetLoading, setSubscriptionSheetLoading] = useState(false)
   const [subscriptionSheetState, setSubscriptionSheetState] = useState(null)
   const [subscriptionUpgradeLoading, setSubscriptionUpgradeLoading] = useState(false)
@@ -492,6 +497,7 @@ function TestPage() {
   const [bookingsSheetRows, setBookingsSheetRows] = useState([])
   const [dbUserRow, setDbUserRow] = useState(null)
   const [dbUserLoading, setDbUserLoading] = useState(false)
+  const [verificationStatusHydrated, setVerificationStatusHydrated] = useState(false)
   const [profileForm, setProfileForm] = useState(emptyProfileForm)
   const [savingField, setSavingField] = useState(null)
   /** После успешного сохранения поля на сервер — показываем галочку у инпута, до следующего изменения. */
@@ -710,6 +716,8 @@ function TestPage() {
       if (s) setVerificationStatus(s)
     } catch {
       /* ignore */
+    } finally {
+      setVerificationStatusHydrated(true)
     }
   }, [numericUserId])
 
@@ -723,6 +731,7 @@ function TestPage() {
 
   useEffect(() => {
     if (!resolvedNumericUserId) return
+    setVerificationStatusHydrated(false)
     void loadVerificationStatus(false)
     const onPush = () => void loadVerificationStatus(true)
     window.addEventListener('verification-status-update', onPush)
@@ -873,20 +882,83 @@ function TestPage() {
   }, [dataSheetOpen, historySheetOpen, subscriptionSheetOpen, bookingsSheetOpen])
 
   useEffect(() => {
-    if (!dataSheetOpen && !historySheetOpen && !subscriptionSheetOpen && !bookingsSheetOpen) return
+    if (
+      !dataSheetOpen &&
+      !historySheetOpen &&
+      !subscriptionSheetOpen &&
+      !bookingsSheetOpen &&
+      !isManagerChatOpen
+    )
+      return
     const onKey = (e) => {
       if (e.key === 'Escape') {
         setDataSheetOpen(false)
         setHistorySheetOpen(false)
         setSubscriptionSheetOpen(false)
         setBookingsSheetOpen(false)
+        setIsManagerChatOpen(false)
+        setManagerChatInput('')
       }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [dataSheetOpen, historySheetOpen, subscriptionSheetOpen, bookingsSheetOpen])
+  }, [
+    bookingsSheetOpen,
+    dataSheetOpen,
+    historySheetOpen,
+    isManagerChatOpen,
+    subscriptionSheetOpen,
+  ])
 
   const userData = useMemo(() => getUserData(), [])
+  const isLoggedIn = isSiteUserSignedIn(user, isLoaded)
+  const getChatUserId = useMemo(() => {
+    if (isLoggedIn) {
+      const freshUserData = getUserData()
+      const storedUserId = freshUserData?.id || localStorage.getItem('userId')
+      if (storedUserId) return `user_${storedUserId}`
+    }
+    let sessionId = localStorage.getItem('chatSessionId')
+    if (!sessionId) {
+      sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+      localStorage.setItem('chatSessionId', sessionId)
+    }
+    return sessionId
+  }, [isLoggedIn, user, isLoaded])
+
+  const {
+    liveChatToken,
+    managerConnecting,
+    managerMessagesRef,
+    managerThreadUi,
+    enterLiveManagerChat,
+    pauseManagerPolling,
+    sendManagerMessage,
+  } = useManagerLiveChat(getChatUserId, t)
+
+  const openManagerChatModal = useCallback(async () => {
+    if (!isSiteUserSignedIn(user, isLoaded)) {
+      requestOpenLoginModal({ wizard: true })
+      return
+    }
+    setIsManagerChatOpen(true)
+    try {
+      await enterLiveManagerChat()
+    } catch {
+      setIsManagerChatOpen(false)
+    }
+  }, [enterLiveManagerChat, isLoaded, user])
+
+  const closeManagerChatModal = useCallback(() => {
+    setIsManagerChatOpen(false)
+    setManagerChatInput('')
+    pauseManagerPolling()
+  }, [pauseManagerPolling])
+
+  useEffect(() => {
+    if (!isManagerChatOpen) pauseManagerPolling()
+  }, [isManagerChatOpen, pauseManagerPolling])
+
   const fullName =
     user?.fullName ||
     [user?.firstName, user?.lastName].filter(Boolean).join(' ') ||
@@ -1388,6 +1460,7 @@ function TestPage() {
     isLoaded &&
     isSiteUserSignedIn(user, isLoaded) &&
     Boolean(resolvedNumericUserId) &&
+    verificationStatusHydrated &&
     needsProfileOnboarding
 
   /** Не требуем Clerk `user`: при регистрации по email сессия часто только локальная (isLoggedIn в userData). */
@@ -1847,19 +1920,25 @@ function TestPage() {
                 const isHistory = card.to === '/history'
                 const isSubscriptions = card.sheet === 'subscriptions'
                 const isBookings = card.sheet === 'bookings'
+                const isManagerChat = card.action === 'managerChat'
                 const isData = card.to === '/data'
+                const isDeposit = card.to === '/deposit'
+                const cardTitle = isDeposit ? t('buyerCabinet_tileDepositTitle') : card.title
+                const cardDescription = isDeposit
+                  ? t('buyerCabinet_tileDepositDescription')
+                  : card.description
                 const showHistoryCount = isHistory && !historyLoading && historyCount > 0
                 const showBookingsCount =
                   isBookings && !bookingsSheetLoading && bookingsSheetRows.length > 0
                 const planLabel = subscriptionPlanLabel || 'Starter'
                 const historyAria = showHistoryCount
-                  ? `${card.title}, ${historyCount} ${historyObjectsWord(historyCount)} в истории`
+                  ? `${cardTitle}, ${historyCount} ${historyObjectsWord(historyCount)} в истории`
                   : undefined
                 const subscriptionsAria = isSubscriptions
-                  ? `${card.title}, тариф ${planLabel}`
+                  ? `${cardTitle}, тариф ${planLabel}`
                   : undefined
                 const bookingsAria = showBookingsCount
-                  ? `${card.title}, ${bookingsSheetRows.length} ${bookingsWord(bookingsSheetRows.length)}`
+                  ? `${cardTitle}, ${bookingsSheetRows.length} ${bookingsWord(bookingsSheetRows.length)}`
                   : undefined
                 const ariaLabel = historyAria ?? subscriptionsAria ?? bookingsAria
                 const tileClass = `test-hero-icon-tile test-hero-icon-tile--${card.accent}${
@@ -1887,7 +1966,7 @@ function TestPage() {
                         <span className="test-hero-icon-tile__plan-badge">{planLabel}</span>
                       ) : null}
                     </span>
-                    <span className="test-hero-icon-tile__label">{card.title}</span>
+                    <span className="test-hero-icon-tile__label">{cardTitle}</span>
                   </>
                 )
                 if (isData) {
@@ -1897,8 +1976,8 @@ function TestPage() {
                       key={card.title}
                       type="button"
                       className={tileClass}
-                      title={card.description}
-                      aria-label={card.title}
+                      title={cardDescription}
+                      aria-label={cardTitle}
                       aria-pressed={dataSheetOpen}
                       onClick={() => {
                         const openDataForOnboarding =
@@ -1923,8 +2002,8 @@ function TestPage() {
                       key={card.title}
                       type="button"
                       className={tileClass}
-                      title={card.description}
-                      aria-label={ariaLabel ?? card.title}
+                      title={cardDescription}
+                      aria-label={ariaLabel ?? cardTitle}
                       aria-pressed={historySheetOpen}
                       onClick={() => {
                         setDataSheetOpen(false)
@@ -1943,8 +2022,8 @@ function TestPage() {
                       key={card.title}
                       type="button"
                       className={tileClass}
-                      title={card.description}
-                      aria-label={ariaLabel ?? card.title}
+                      title={cardDescription}
+                      aria-label={ariaLabel ?? cardTitle}
                       aria-pressed={subscriptionSheetOpen}
                       onClick={() => {
                         setDataSheetOpen(false)
@@ -1963,8 +2042,8 @@ function TestPage() {
                       key={card.title}
                       type="button"
                       className={tileClass}
-                      title={card.description}
-                      aria-label={ariaLabel ?? card.title}
+                      title={cardDescription}
+                      aria-label={ariaLabel ?? cardTitle}
                       aria-pressed={bookingsSheetOpen}
                       onClick={() => {
                         setDataSheetOpen(false)
@@ -1977,12 +2056,33 @@ function TestPage() {
                     </button>
                   )
                 }
+                if (isManagerChat) {
+                  return (
+                    <button
+                      key={card.title}
+                      type="button"
+                      className={tileClass}
+                      title={cardDescription}
+                      aria-label={cardTitle}
+                      aria-pressed={isManagerChatOpen}
+                      onClick={() => {
+                        setDataSheetOpen(false)
+                        setHistorySheetOpen(false)
+                        setSubscriptionSheetOpen(false)
+                        setBookingsSheetOpen(false)
+                        void openManagerChatModal()
+                      }}
+                    >
+                      {iconInner}
+                    </button>
+                  )
+                }
                 return (
                   <Link
                     key={card.title}
                     to={card.to}
                     className={tileClass}
-                    title={card.description}
+                    title={cardDescription}
                     aria-label={ariaLabel}
                   >
                     {iconInner}
@@ -2747,6 +2847,90 @@ function TestPage() {
         bonusesRef={directionAuctionRef}
         debtsRef={directionDebtsRef}
       />
+
+      {isManagerChatOpen ? (
+        <div className="test-manager-chat-modal-root" role="dialog" aria-modal="true" aria-label={t('chatManagerTitle')}>
+          <div className="chat-widget chat-widget--manager-dock">
+            <div className="chat-widget__header">
+              <div className="chat-widget__header-info">
+                <div className="chat-widget__avatar chat-widget__avatar--manager">M</div>
+                <div className="chat-widget__header-text">
+                  <h3 className="chat-widget__title">{t('chatManagerTitle')}</h3>
+                  <span className="chat-widget__status">{t('chatManagerOnline')}</span>
+                </div>
+              </div>
+              <button
+                type="button"
+                className="chat-widget__close"
+                onClick={closeManagerChatModal}
+                aria-label={t('closeChat')}
+              >
+                <FiX size={20} />
+              </button>
+            </div>
+
+            <div className="chat-widget__messages" ref={managerMessagesRef}>
+              {managerConnecting ? (
+                <div className="chat-widget__message chat-widget__message--bot">
+                  <div className="chat-widget__message-content">
+                    <div className="chat-widget__typing" aria-hidden>
+                      <span />
+                      <span />
+                      <span />
+                    </div>
+                    <p className="chat-widget__manager-connect-hint">{t('liveChatWaitNotice')}</p>
+                  </div>
+                </div>
+              ) : (
+                managerThreadUi.map((message) => (
+                  <div
+                    key={message.id}
+                    className={`chat-widget__message ${
+                      message.sender === 'user'
+                        ? 'chat-widget__message--user'
+                        : message.sender === 'manager'
+                          ? 'chat-widget__message--manager'
+                          : 'chat-widget__message--system'
+                    }`}
+                  >
+                    <div className="chat-widget__message-content">{message.text}</div>
+                    <div className="chat-widget__message-time">{message.time}</div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <form
+              className="chat-widget__input-form"
+              onSubmit={(e) => {
+                e.preventDefault()
+                if (!managerChatInput.trim() || managerConnecting || !liveChatToken) return
+                const text = managerChatInput.trim()
+                setManagerChatInput('')
+                void sendManagerMessage(text)
+              }}
+            >
+              <input
+                type="text"
+                className="chat-widget__input"
+                placeholder={t('chatPlaceholder')}
+                value={managerChatInput}
+                onChange={(e) => setManagerChatInput(e.target.value)}
+                autoComplete="off"
+                disabled={managerConnecting || !liveChatToken}
+              />
+              <button
+                type="submit"
+                className="chat-widget__send"
+                aria-label={t('sendMessage')}
+                disabled={managerConnecting || !liveChatToken}
+              >
+                <FiSend size={18} />
+              </button>
+            </form>
+          </div>
+        </div>
+      ) : null}
 
       {isSellObjectPromptOpen ? (
         <div className="test-sell-prompt-modal-root">

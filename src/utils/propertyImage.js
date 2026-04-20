@@ -98,15 +98,28 @@ function normalizeImageUrl(raw, baseOrigin) {
  */
 export function normalizePropertyMediaFields(prop) {
   const baseOrigin = getBaseOrigin()
-  let list = prop?.images ?? prop?.photos
-  if (typeof list === 'string') {
+  let imagesList = prop?.images
+  if (typeof imagesList === 'string') {
     try {
-      list = JSON.parse(list)
+      imagesList = JSON.parse(imagesList)
     } catch {
-      list = list.trim() ? [list] : []
+      imagesList = imagesList.trim() ? [imagesList] : []
     }
   }
-  if (!Array.isArray(list)) list = []
+  if (!Array.isArray(imagesList)) imagesList = []
+
+  let photosList = prop?.photos
+  if (typeof photosList === 'string') {
+    try {
+      photosList = JSON.parse(photosList)
+    } catch {
+      photosList = photosList.trim() ? [photosList] : []
+    }
+  }
+  if (!Array.isArray(photosList)) photosList = []
+
+  // Если images пустой, используем photos как источник карточек
+  const list = imagesList.length > 0 ? imagesList : photosList
 
   const normalizedList = list.map((entry) => normalizeImageUrl(entry, baseOrigin)).filter(Boolean)
 

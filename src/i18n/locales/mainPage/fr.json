@@ -366,6 +366,8 @@
   "closeMenu": "Fermer le menu",
   "openSearch": "Ouvrir la recherche",
   "wallet": "Portefeuille",
+  "buyerCabinet_tileDepositTitle": "Dépôt",
+  "buyerCabinet_tileDepositDescription": "Solde, recharges et retraits",
   "subscriptions": "Abonnements",
   "data": "Données",
   "logIn": "Connexion",

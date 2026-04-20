@@ -366,6 +366,8 @@
   "closeMenu": "Stäng menyn",
   "openSearch": "Öppna sökning",
   "wallet": "Plånbok",
+  "buyerCabinet_tileDepositTitle": "Insättning",
+  "buyerCabinet_tileDepositDescription": "Saldo, insättningar och uttag",
   "subscriptions": "Prenumerationer",
   "data": "Data",
   "logIn": "Logga in",

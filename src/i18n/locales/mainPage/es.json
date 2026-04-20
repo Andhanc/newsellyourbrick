@@ -366,6 +366,8 @@
   "closeMenu": "Cerrar menú",
   "openSearch": "Abrir búsqueda",
   "wallet": "Monedero",
+  "buyerCabinet_tileDepositTitle": "Depósito",
+  "buyerCabinet_tileDepositDescription": "Saldo, recargas y retiradas",
   "subscriptions": "Suscripciones",
   "data": "Datos",
   "logIn": "Iniciar sesión",

@@ -366,6 +366,8 @@
   "closeMenu": "Menü schließen",
   "openSearch": "Suche öffnen",
   "wallet": "Geldbörse",
+  "buyerCabinet_tileDepositTitle": "Einzahlung",
+  "buyerCabinet_tileDepositDescription": "Kontostand, Einzahlungen und Auszahlungen",
   "subscriptions": "Abonnements",
   "data": "Daten",
   "logIn": "Anmelden",

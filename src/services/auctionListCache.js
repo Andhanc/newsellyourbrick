@@ -6,6 +6,7 @@
 
 import { getApiBaseUrl } from '../utils/apiConfig'
 import { getEffectiveAuctionEndTime } from '../utils/auctionReminderBounds'
+import { normalizePropertyMediaFields } from '../utils/propertyImage'
 
 const BID_OVERRIDES_STORAGE_KEY = 'syb_auction_bid_overrides_v1'
 
@@ -133,6 +134,7 @@ function dedupeAuctionListById(items) {
 }
 
 function formatPropertyForList(prop, isAuction) {
+  const { image: normalizedImage, images: normalizedImages } = normalizePropertyMediaFields(prop)
   return {
     ...prop,
     title: prop.title || prop.name || '',
@@ -142,8 +144,8 @@ function formatPropertyForList(prop, isAuction) {
     endTime: isAuction ? getEffectiveAuctionEndTime(prop) : null,
     isAuction,
     test_timer_end_date: prop.test_timer_end_date || null,
-    images: prop.images || (prop.image ? [prop.image] : []),
-    image: prop.image || (prop.images && prop.images[0] ? prop.images[0] : null),
+    images: normalizedImages,
+    image: normalizedImage,
     rooms: prop.rooms || prop.beds || 0,
     beds: prop.bedrooms || prop.rooms || prop.beds || 0,
     bedrooms: prop.bedrooms || prop.rooms || 0,

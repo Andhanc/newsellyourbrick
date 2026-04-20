@@ -368,6 +368,8 @@
   "closeMenu": "Close menu",
   "openSearch": "Open search",
   "wallet": "Wallet",
+  "buyerCabinet_tileDepositTitle": "Deposit",
+  "buyerCabinet_tileDepositDescription": "Balance, top-ups and withdrawals",
   "subscriptions": "Subscriptions",
   "data": "Data",
   "logIn": "Log in",

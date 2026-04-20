@@ -368,6 +368,8 @@
   "closeMenu": "Закрыть меню",
   "openSearch": "Открыть поиск",
   "wallet": "Кошелек",
+  "buyerCabinet_tileDepositTitle": "Депозит",
+  "buyerCabinet_tileDepositDescription": "Баланс, пополнения и вывод средств",
   "subscriptions": "Подписки",
   "data": "Данные",
   "logIn": "Войти",
