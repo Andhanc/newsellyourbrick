@@ -482,17 +482,22 @@ const OwnerDashboard = () => {
   useEffect(() => {
     if (!userId) return
     void fetchOwnerSaleCelebrations()
-    const id = setInterval(() => void fetchOwnerSaleCelebrations(), 45000)
+    const id = setInterval(() => void fetchOwnerSaleCelebrations(), 12000)
     const onVis = () => {
       if (document.visibilityState === 'visible') void fetchOwnerSaleCelebrations()
     }
     document.addEventListener('visibilitychange', onVis)
     const onFocus = () => void fetchOwnerSaleCelebrations()
+    const onSseRefresh = () => void fetchOwnerSaleCelebrations()
     window.addEventListener('focus', onFocus)
+    window.addEventListener('owner-notifications-refresh', onSseRefresh)
+    window.addEventListener('owner-properties-update', onSseRefresh)
     return () => {
       clearInterval(id)
       document.removeEventListener('visibilitychange', onVis)
       window.removeEventListener('focus', onFocus)
+      window.removeEventListener('owner-notifications-refresh', onSseRefresh)
+      window.removeEventListener('owner-properties-update', onSseRefresh)
     }
   }, [userId, fetchOwnerSaleCelebrations])
 

@@ -20,14 +20,18 @@ export default function GlobalVerificationSuccessGate() {
   const [isOpen, setIsOpen] = useState(false)
   const loadingRef = useRef(false)
 
-  const loadVerificationNotification = useCallback(async () => {
+  const loadVerificationNotification = useCallback(async (options = {}) => {
+    const { force = false } = options
     if (loadingRef.current) return
     const dbUserId = readNumericDbUserId()
     if (!dbUserId) return
 
     loadingRef.current = true
     try {
-      const notifications = await fetchUserNotifications(dbUserId, { ttlMs: 15000 })
+      const notifications = await fetchUserNotifications(dbUserId, {
+        ttlMs: force ? 0 : 15000,
+        force,
+      })
 
       const verificationNotif = notifications.find(
         (n) => n.type === 'verification_success' && n.view_count === 0
@@ -68,18 +72,19 @@ export default function GlobalVerificationSuccessGate() {
     const onFocus = () => {
       loadVerificationNotification()
     }
-    const onVerificationPush = () => {
-      loadVerificationNotification()
-    }
+    const onVerificationPush = () => loadVerificationNotification({ force: true })
+    const onOwnerNotificationsPush = () => loadVerificationNotification({ force: true })
     const onClerkSynced = () => {
       loadVerificationNotification()
     }
     window.addEventListener('focus', onFocus)
     window.addEventListener('verification-status-update', onVerificationPush)
+    window.addEventListener('owner-notifications-refresh', onOwnerNotificationsPush)
     window.addEventListener(CLERK_DB_USER_SYNCED, onClerkSynced)
     return () => {
       window.removeEventListener('focus', onFocus)
       window.removeEventListener('verification-status-update', onVerificationPush)
+      window.removeEventListener('owner-notifications-refresh', onOwnerNotificationsPush)
       window.removeEventListener(CLERK_DB_USER_SYNCED, onClerkSynced)
     }
   }, [loadVerificationNotification])

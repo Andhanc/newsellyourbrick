@@ -709,7 +709,8 @@ function MainPage() {
 
   // Загрузка уведомлений
   useEffect(() => {
-    const loadNotifications = async () => {
+    const loadNotifications = async (options = {}) => {
+      const { force = false } = options
       const userData = getUserData()
       if (!userData) {
         return
@@ -750,7 +751,10 @@ function MainPage() {
       }
       setNotificationsLoading(true)
       try {
-        const notificationsList = await fetchUserNotifications(dbUserId, { ttlMs: 15000 })
+        const notificationsList = await fetchUserNotifications(dbUserId, {
+          ttlMs: force ? 0 : 15000,
+          force,
+        })
 
         // Проверяем новые уведомления о перебитой ставке и тест-драйве.
         // Первый успешный ответ после монтирования только заполняет previousNotificationIds — без toast,
@@ -801,7 +805,10 @@ function MainPage() {
     if (isLoggedIn) {
       loadNotifications()
       const handleFocus = () => loadNotifications()
+      const handleSseNotificationsRefresh = () => loadNotifications({ force: true })
       window.addEventListener('focus', handleFocus)
+      window.addEventListener('owner-notifications-refresh', handleSseNotificationsRefresh)
+      window.addEventListener('verification-status-update', handleSseNotificationsRefresh)
       const pollId = setInterval(() => {
         if (document.visibilityState === 'visible') {
           loadNotifications()
@@ -809,6 +816,8 @@ function MainPage() {
       }, 120000)
       return () => {
         window.removeEventListener('focus', handleFocus)
+        window.removeEventListener('owner-notifications-refresh', handleSseNotificationsRefresh)
+        window.removeEventListener('verification-status-update', handleSseNotificationsRefresh)
         clearInterval(pollId)
       }
     }

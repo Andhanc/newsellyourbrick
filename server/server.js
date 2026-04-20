@@ -3753,9 +3753,25 @@ app.put('/api/purchase-requests/:id/status', async (req, res) => {
               view_count: 0
             });
           }
+          try {
+            broadcastUserCabinetEvent(buyerIdForNotif, { type: 'notifications_refresh' });
+          } catch (e) {
+            console.warn('[SSE] notifications_refresh (purchase request buyer):', e?.message || e);
+          }
         }
       } catch (buyerNotifError) {
         console.error('❌ Ошибка создания buyer-уведомления по purchase request:', buyerNotifError);
+      }
+    }
+
+    if (status === 'completed') {
+      try {
+        const sellerId = parseInt(String(request.seller_id || '').trim(), 10);
+        if (Number.isFinite(sellerId) && sellerId > 0) {
+          broadcastUserCabinetEvent(sellerId, { type: 'notifications_refresh' });
+        }
+      } catch (e) {
+        console.warn('[SSE] notifications_refresh (purchase request seller):', e?.message || e);
       }
     }
 
@@ -7338,6 +7354,19 @@ app.post('/api/properties', upload.fields([
       message: 'Объявление успешно отправлено на модерацию'
     };
     
+    // Мгновенно обновляем кабинет продавца без ожидания polling/focus.
+    try {
+      broadcastUserCabinetEvent(property.user_id, {
+        type: 'property_moderation',
+        property_id: Number(property.id),
+        moderation_status: 'pending',
+        property_type: property.property_type
+      });
+      broadcastUserCabinetEvent(property.user_id, { type: 'notifications_refresh' });
+    } catch (cabErr) {
+      console.warn('[SSE] user cabinet (property submit pending):', cabErr?.message || cabErr);
+    }
+    
     console.log('📤 Отправка ответа клиенту:', {
       success: responseData.success,
       hasData: !!responseData.data,
@@ -7969,6 +7998,22 @@ app.put('/api/properties/:id', upload.fields([
       
       // Получаем созданную запись
       const newProperty = await prisma.properties.findUnique({ where: { id: Number(newPropertyId) } });
+      
+      // Мгновенно обновляем кабинет продавца: изменения ушли на модерацию.
+      try {
+        const ownerId = newProperty?.user_id ?? originalProperty?.user_id;
+        if (ownerId) {
+          broadcastUserCabinetEvent(ownerId, {
+            type: 'property_moderation',
+            property_id: Number(originalPropertyId),
+            moderation_status: 'pending',
+            property_type: newProperty?.property_type || originalProperty?.property_type
+          });
+          broadcastUserCabinetEvent(ownerId, { type: 'notifications_refresh' });
+        }
+      } catch (cabErr) {
+        console.warn('[SSE] user cabinet (property edit pending):', cabErr?.message || cabErr);
+      }
       
       res.json({
         success: true,

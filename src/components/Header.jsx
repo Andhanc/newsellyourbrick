@@ -556,7 +556,8 @@ const Header = () => {
   }
 
   useEffect(() => {
-    const loadNotifications = async () => {
+    const loadNotifications = async (options = {}) => {
+      const { force = false } = options
       if (!isLoggedIn) {
         setNotifications([])
         return
@@ -570,7 +571,10 @@ const Header = () => {
 
       setNotificationsLoading(true)
       try {
-        const parsedNotifications = await fetchUserNotifications(dbUserId, { ttlMs: 15000 })
+        const parsedNotifications = await fetchUserNotifications(dbUserId, {
+          ttlMs: force ? 0 : 15000,
+          force,
+        })
         setNotifications(parsedNotifications || [])
       } catch (error) {
         console.error('Ошибка загрузки уведомлений:', error)
@@ -584,7 +588,10 @@ const Header = () => {
     if (!isLoggedIn) return
 
     const handleFocus = () => loadNotifications()
+    const handleSseRefresh = () => loadNotifications({ force: true })
     window.addEventListener('focus', handleFocus)
+    window.addEventListener('owner-notifications-refresh', handleSseRefresh)
+    window.addEventListener('verification-status-update', handleSseRefresh)
     const pollId = setInterval(() => {
       if (document.visibilityState === 'visible') {
         loadNotifications()
@@ -593,6 +600,8 @@ const Header = () => {
 
     return () => {
       window.removeEventListener('focus', handleFocus)
+      window.removeEventListener('owner-notifications-refresh', handleSseRefresh)
+      window.removeEventListener('verification-status-update', handleSseRefresh)
       clearInterval(pollId)
     }
   }, [isLoggedIn])
