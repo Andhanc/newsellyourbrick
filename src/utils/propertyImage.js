@@ -16,7 +16,18 @@ function getBaseOrigin() {
 function normalizeRawImageValue(value) {
   if (!value) return ''
   if (typeof value === 'object') {
-    const maybeUrl = value.url || value.path || value.image || value.src || ''
+    const maybeUrl =
+      value.url ||
+      value.path ||
+      value.image ||
+      value.src ||
+      value.photo_url ||
+      value.image_url ||
+      value.secure_url ||
+      value.file_url ||
+      value.filename ||
+      value.name ||
+      ''
     return typeof maybeUrl === 'string' ? maybeUrl : ''
   }
   return typeof value === 'string' ? value : ''
@@ -25,8 +36,36 @@ function normalizeRawImageValue(value) {
 function extractUploadsPath(pathname) {
   if (typeof pathname !== 'string' || !pathname) return ''
   if (pathname.startsWith('/uploads/')) return pathname
-  if (pathname.startsWith('/api/uploads/')) return pathname
+  if (pathname.startsWith('/api/uploads/')) return pathname.replace(/^\/api/, '')
   return ''
+}
+
+function parseImageList(raw) {
+  if (Array.isArray(raw)) return raw
+  if (raw == null) return []
+  if (typeof raw !== 'string') return []
+  const t = raw.trim()
+  if (!t) return []
+  try {
+    const parsed = JSON.parse(t)
+    if (Array.isArray(parsed)) return parsed
+    if (parsed && typeof parsed === 'object') {
+      if (Array.isArray(parsed.photos)) return parsed.photos
+      if (Array.isArray(parsed.images)) return parsed.images
+      const one = normalizeRawImageValue(parsed)
+      return one ? [one] : []
+    }
+    return typeof parsed === 'string' && parsed.trim() ? [parsed] : []
+  } catch {
+    // legacy format: "a.jpg,b.jpg" or "a.jpg; b.jpg"
+  }
+  if (t.includes(',') || t.includes(';')) {
+    return t
+      .split(/[;,]/)
+      .map((part) => part.trim())
+      .filter(Boolean)
+  }
+  return [t]
 }
 
 /**
@@ -60,7 +99,10 @@ function maybeRebaseAbsoluteUploadsUrl(value, baseOrigin) {
 }
 
 function normalizeImageUrl(raw, baseOrigin) {
-  const value = normalizeRawImageValue(raw).trim().replace(/\\/g, '/')
+  const value = normalizeRawImageValue(raw)
+    .trim()
+    .replace(/^['"]+|['"]+$/g, '')
+    .replace(/\\/g, '/')
   if (!value) return ''
   const normalizedBase = (baseOrigin || '').replace(/\/$/, '')
 
@@ -98,25 +140,8 @@ function normalizeImageUrl(raw, baseOrigin) {
  */
 export function normalizePropertyMediaFields(prop) {
   const baseOrigin = getBaseOrigin()
-  let imagesList = prop?.images
-  if (typeof imagesList === 'string') {
-    try {
-      imagesList = JSON.parse(imagesList)
-    } catch {
-      imagesList = imagesList.trim() ? [imagesList] : []
-    }
-  }
-  if (!Array.isArray(imagesList)) imagesList = []
-
-  let photosList = prop?.photos
-  if (typeof photosList === 'string') {
-    try {
-      photosList = JSON.parse(photosList)
-    } catch {
-      photosList = photosList.trim() ? [photosList] : []
-    }
-  }
-  if (!Array.isArray(photosList)) photosList = []
+  const imagesList = parseImageList(prop?.images)
+  const photosList = parseImageList(prop?.photos)
 
   // Если images пустой, используем photos как источник карточек
   const list = imagesList.length > 0 ? imagesList : photosList
