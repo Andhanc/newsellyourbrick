@@ -6586,8 +6586,38 @@
   }
 
   .main-shares-grid {
-    grid-template-columns: 1fr;
-    gap: 16px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .main-share-card {
+    border-radius: 14px;
+  }
+
+  .main-share-card__content {
+    padding: 12px;
+    gap: 6px;
+  }
+
+  .main-share-card__title {
+    font-size: 14px;
+  }
+
+  .main-share-card__location,
+  .main-share-card__specs,
+  .main-share-card__price-row {
+    font-size: 12px;
+  }
+
+  .main-share-card__prices {
+    padding: 10px;
+    margin-bottom: 10px;
+    gap: 6px;
+  }
+
+  .main-share-card__sold {
+    font-size: 11px;
+    padding: 6px 8px;
   }
 
   .apartments-section__personal {
