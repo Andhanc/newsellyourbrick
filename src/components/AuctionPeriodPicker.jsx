@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
+import { FiCalendar } from 'react-icons/fi'
 import './AuctionPeriodPicker.css'
 
 /** Локальная полночь; при невалидной строке (в т.ч. пробелы) — fallback. */
@@ -125,18 +126,27 @@ const AuctionPeriodPicker = ({
 
   return (
     <div className="auction-period-picker">
-      {label && <label className="auction-period-label">{label}</label>}
-      
+      {label && (
+        <div className="auction-period-header">
+          <span className="auction-period-header__icon" aria-hidden="true">
+            <FiCalendar size={22} strokeWidth={2} />
+          </span>
+          <label className="auction-period-label">{label}</label>
+        </div>
+      )}
+
       <div className="auction-period-content">
         <div className="auction-period-end-date">
           <label className="auction-period-field-label">{t('addPropertyPriceAuctionEndDateLabel')}</label>
-          <input
-            type="date"
-            value={endDateValue}
-            onChange={handleEndDateChange}
-            className={`auction-period-date-input ${error ? 'auction-period-date-input--error' : ''}`}
+          <div className="auction-period-date-shell">
+            <input
+              type="date"
+              value={endDateValue}
+              onChange={handleEndDateChange}
+              className={`auction-period-date-input ${error ? 'auction-period-date-input--error' : ''}`}
               min={minEndDate || undefined}
-          />
+            />
+          </div>
           {!disableMinConstraints && error && (
             <div className="auction-period-error">
               {error}

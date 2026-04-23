@@ -1,7 +1,7 @@
-import { useState, useRef, useEffect, useCallback } from 'react'
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { useNavigate, useParams, useLocation, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { 
+import {
   FiUpload, 
   FiX, 
   FiChevronLeft, 
@@ -21,7 +21,12 @@ import {
   FiClock,
   FiPieChart,
   FiCreditCard,
-  FiGift
+  FiGift,
+  FiLayers,
+  FiTrendingUp,
+  FiShield,
+  FiZap,
+  FiTarget
 } from 'react-icons/fi'
 import { PiBuildingApartment, PiBuildings, PiWarehouse } from 'react-icons/pi'
 
@@ -32,8 +37,225 @@ const ADD_PROPERTY_NAME_PLACEHOLDER_I18N_KEYS = {
   commercial: 'addPropertyNamePlaceholderCommercial'
 }
 
+const PROPERTY_TYPE_OPTIONS = [
+  { id: 'house', backendType: 'house', title: 'Дом', description: 'Частный дом, таунхаус или коттедж', icon: 'house' },
+  { id: 'villa', backendType: 'villa', title: 'Вилла', description: 'Премиальная загородная недвижимость', icon: 'villa' },
+  { id: 'apartments', backendType: 'apartment', title: 'Аппартаменты', description: 'Сервисные или инвестиционные апартаменты', icon: 'apartments' },
+  { id: 'apartment', backendType: 'apartment', title: 'Квартира', description: 'Квартира в многоквартирном доме', icon: 'apartment' },
+  { id: 'commercial', backendType: 'commercial', title: 'Коммерческая недвижимость', description: 'Офис, магазин, склад или другое помещение', icon: 'commercial' },
+  { id: 'land', backendType: 'house', title: 'Земля', description: 'Участок под застройку, ферму или бизнес', icon: 'land' },
+  { id: 'other', backendType: 'commercial', title: 'Другое', description: 'Нестандартный объект, смешанный формат', icon: 'other' },
+]
+
+const LISTING_MODE_OPTIONS = [
+  { id: 'auction', title: 'Аукцион', description: 'Продажа через торги по стартовой цене', icon: 'auction', tone: 'teal' },
+  { id: 'auction_buy_now', title: 'Аукцион + Купить сейчас', description: 'Торги + мгновенная покупка по фиксированной цене', icon: 'flash', tone: 'violet' },
+  { id: 'shares', title: 'Доли', description: 'Продажа объекта по долям с указанием количества', icon: 'shares', tone: 'blue' },
+  { id: 'debt', title: 'Долги', description: 'Продажа проблемного объекта как долгового кейса', icon: 'debt', tone: 'amber' },
+  { id: 'debt_auction', title: 'Долги + Аукцион', description: 'Долговой объект с торгами и стартовой ставкой', icon: 'target', tone: 'slate' },
+]
+
+const LISTING_MODE_THEME_STAGES = ['aurora', 'sunset', 'midnight']
+
+/** Single-page поток включён (используется в эффектах до объявления переменной внутри компонента) */
+const USE_ADD_PROPERTY_SINGLE_PAGE = true
+
+/** Тексты инструкций и боковой колонки для single-page потока */
+const SINGLE_PAGE_SECTION_HELP = {
+  type: {
+    title: 'Тип объекта',
+    lead: 'Выберите категорию, которая совпадает с документом и тем, как объект продаётся.',
+    tips: [
+      'От типа зависят поля на шаге «Параметры» (комнаты, площадь и т.д.)',
+      'Если сомневаетесь между «Квартира» и «Апартаменты», ориентируйтесь на правовой статус помещения',
+    ],
+    recommend: 'Для большинства жилых лотов подходит «Квартира» или «Дом».',
+  },
+  address: {
+    title: 'Адрес на карте',
+    lead: 'Страна и город — из списка с поиском. Улицу лучше выбрать из подсказок, затем уточните точку маркером.',
+    tips: [
+      'Сначала выберите страну, затем начните вводить город — появятся подсказки',
+      'Перетащите маркер на карте — адрес и координаты обновятся автоматически',
+    ],
+    recommend: 'Точная точка на карте повышает доверие покупателей и снижает вопросы по локации.',
+  },
+  details: {
+    title: 'Параметры',
+    lead: 'Укажите реальные цифры из выписки или планировки.',
+    tips: [
+      'Площадь лучше указать как в документе (общая / жилая — что измеряете)',
+      'Материал дома помогает фильтрам и ожиданиям по качеству',
+    ],
+    recommend: 'Честные цифры снижают количество отказов после просмотра.',
+  },
+  amenities: {
+    title: 'Описание и удобства',
+    lead: 'Коротко опишите сильные стороны и отметьте ключевые опции.',
+    tips: [
+      '2–4 предложения о виде, ремонте, инфраструктуре рядом — лучше длинного «водянистого» текста',
+      'Отметьте то, что реально есть: это проверяется на сделке',
+    ],
+    recommend: 'Конкретика («вид на парк», «тихий двор») продаёт лучше общих фраз.',
+  },
+  media: {
+    title: 'Фото и видео',
+    lead: 'Добавьте светлые кадры разных ракурсов и короткое видео объекта.',
+    tips: [
+      'Первые кадры — фасад, гостиная, кухня, вид из окна',
+      'Видео до 1 минуты: обход по комнатам без ускоренной «моталки»',
+    ],
+    recommend: 'Минимум 5 качественных фото заметно повышают отклик.',
+  },
+  documents: {
+    title: 'Документы',
+    lead: 'Загрузите обязательные файлы и при необходимости добавьте подтверждающие документы.',
+    tips: [
+      'PDF или скан хорошего разрешения, чтобы был читаем текст',
+      'Дополнительно можно приложить выписку ЕГРН, план и т.п. (до 5 файлов)',
+    ],
+    recommend: 'Полный пакет ускоряет модерацию и проверку покупателем.',
+  },
+  testdrive: {
+    title: 'Тест-драйв',
+    lead: 'Если готовы показывать объект по записи — включите опцию и укажите условия.',
+    tips: [
+      'Укажите реалистичную цену за сутки и размер страхового депозита',
+      'Если не планируете показы — выберите «Нет»',
+    ],
+    recommend: 'Тест-драйв повышает интерес, но требует времени на организацию показов.',
+  },
+  listing: {
+    title: 'Формат продажи',
+    lead: 'Выберите модель торгов: классический аукцион, аукцион с «Купить сейчас», доли или долговой кейс.',
+    tips: [
+      '«Купить сейчас» задаёт верхнюю планку цены для мгновенной сделки',
+      'Для долей и долгов появятся отдельные поля на шаге «Цена»',
+    ],
+    recommend: 'Если не уверены — начните с классического аукциона.',
+  },
+  price: {
+    title: 'Цена и сроки аукциона',
+    lead: 'Укажите стартовую ставку и период проведения торгов. Для комбинированных форматов заполните все обязательные поля.',
+    tips: [
+      'Даты аукциона должны быть в будущем и логично отстоять друг от друга',
+      'Стартовая цена — это вход в торги, не финальная продажа',
+    ],
+    recommend: 'Короткий аукцион (7–14 дней) часто даёт более горячий интерес.',
+  },
+}
+
+/** Boolean-поля удобств на одностраничном шаге (совпадают с buildSinglePageAmenityGroups и submit) */
+const SINGLE_PAGE_AMENITY_FORM_KEYS = [
+  'parking',
+  'feature1',
+  'feature12',
+  'feature2',
+  'furniture',
+  'feature3',
+  'feature4',
+  'electricity',
+  'feature18',
+  'internet',
+  'security',
+  'feature5',
+  'feature6',
+  'feature16',
+  'feature17',
+  'balcony',
+  'feature7',
+  'feature8',
+  'elevator',
+  'pool',
+  'garden',
+]
+
+function buildSinglePageAmenityGroups(t) {
+  return [
+    {
+      id: 'parking',
+      title: t('addPropertyAmenitiesCategoryParking'),
+      items: [
+        { key: 'parking', label: t('addPropertyAmenitiesParkingSpace') },
+        { key: 'feature1', label: t('addPropertyAmenitiesUndergroundParking') },
+        { key: 'feature12', label: t('addPropertyAmenitiesBikeParking') },
+      ],
+    },
+    {
+      id: 'furniture',
+      title: t('addPropertyAmenitiesCategoryFurniture'),
+      items: [
+        { key: 'feature2', label: t('addPropertyAmenitiesKitchenFurniture') },
+        { key: 'furniture', label: t('addPropertyAmenitiesBuiltInFurniture') },
+        { key: 'feature3', label: t('addPropertyAmenitiesWashingMachine') },
+        { key: 'feature4', label: t('addPropertyAmenitiesDishwasher') },
+        { key: 'electricity', label: t('addPropertyAmenitiesAirConditioning') },
+        { key: 'feature18', label: t('addPropertyAmenitiesWardrobe') },
+      ],
+    },
+    {
+      id: 'security',
+      title: t('addPropertyAmenitiesCategorySecurity'),
+      items: [
+        { key: 'internet', label: t('addPropertyAmenitiesInternet') },
+        { key: 'security', label: t('addPropertyAmenitiesSecurity') },
+        { key: 'feature5', label: t('addPropertyAmenitiesIntercom') },
+        { key: 'feature6', label: t('addPropertyAmenitiesCctv') },
+        { key: 'feature16', label: t('addPropertyAmenitiesVideoIntercom') },
+        { key: 'feature17', label: t('addPropertyAmenitiesConcierge') },
+      ],
+    },
+    {
+      id: 'rooms',
+      title: t('addPropertyAmenitiesCategoryRooms'),
+      items: [
+        { key: 'balcony', label: t('addPropertyAmenitiesBalcony') },
+        { key: 'feature7', label: t('addPropertyAmenitiesLoggia') },
+        { key: 'feature8', label: t('addPropertyAmenitiesStorage') },
+        { key: 'elevator', label: t('addPropertyAmenitiesElevator') },
+      ],
+    },
+    {
+      id: 'outdoor',
+      title: t('addPropertyAmenitiesCategoryOutdoor'),
+      items: [
+        { key: 'pool', label: t('propertyDetailAmenityPool') },
+        { key: 'garden', label: t('propertyDetailAmenityGarden') },
+      ],
+    },
+  ]
+}
+
 function getAddPropertyNamePlaceholderKey(propertyType) {
   return ADD_PROPERTY_NAME_PLACEHOLDER_I18N_KEYS[propertyType] || ADD_PROPERTY_NAME_PLACEHOLDER_I18N_KEYS.apartment
+}
+
+function getListingModeIcon(icon) {
+  switch (icon) {
+    case 'auction':
+      return <FiTrendingUp size={20} />
+    case 'flash':
+      return <FiZap size={20} />
+    case 'shares':
+      return <FiPieChart size={20} />
+    case 'debt':
+      return <FiShield size={20} />
+    case 'target':
+      return <FiTarget size={20} />
+    default:
+      return <FiLayers size={20} />
+  }
+}
+
+function getValidCoordsForPreview(coords) {
+  if (!coords) return null
+  const tuple = Array.isArray(coords) ? coords : [coords.lat, coords.lng]
+  if (!Array.isArray(tuple) || tuple.length !== 2) return null
+  const lat = Number(tuple[0])
+  const lng = Number(tuple[1])
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null
+  if (lat < -90 || lat > 90 || lng < -180 || lng > 180) return null
+  return [lat, lng]
 }
 import { MdBed, MdOutlineBathtub, MdLightbulb } from 'react-icons/md'
 import { BiArea } from 'react-icons/bi'
@@ -57,6 +279,91 @@ import './AddProperty.css'
 
 const DRAFT_KEY = 'addPropertyDraft'
 const DRAFT_SAVE_DEBOUNCE_MS = 600
+const INITIAL_FORM_DATA = {
+  propertyType: '',
+  propertyTypeUi: '',
+  listingMode: '',
+  testDrive: null,
+  testDrivePricePerDay: '',
+  testDriveInsuranceDeposit: '',
+  title: '',
+  description: '',
+  price: '',
+  isAuction: true,
+  auctionStartDate: '',
+  auctionEndDate: '',
+  auctionStartingPrice: '',
+  area: '',
+  livingArea: '',
+  buildingType: '',
+  rooms: '',
+  bedrooms: '',
+  bathrooms: '',
+  floor: '',
+  totalFloors: '',
+  yearBuilt: '',
+  location: '',
+  address: '',
+  apartment: '',
+  country: '',
+  city: '',
+  coordinates: null,
+  balcony: false,
+  parking: false,
+  elevator: false,
+  landArea: '',
+  pool: false,
+  garden: false,
+  commercialType: '',
+  businessHours: '',
+  renovation: '',
+  condition: '',
+  heating: '',
+  waterSupply: '',
+  sewerage: '',
+  electricity: false,
+  internet: false,
+  security: false,
+  furniture: false,
+  feature1: false,
+  feature2: false,
+  feature3: false,
+  feature4: false,
+  feature5: false,
+  feature6: false,
+  feature7: false,
+  feature8: false,
+  feature9: false,
+  feature10: false,
+  feature11: false,
+  feature12: false,
+  feature13: false,
+  feature14: false,
+  feature15: false,
+  feature16: false,
+  feature17: false,
+  feature18: false,
+  feature19: false,
+  feature20: false,
+  feature21: false,
+  feature22: false,
+  feature23: false,
+  feature24: false,
+  feature25: false,
+  feature26: false,
+  additionalAmenities: '',
+  debtUtilities: false,
+  debtBankPledge: false,
+  debtPropertyTaxes: false,
+  debtArrest: false,
+  debtInherited: false,
+  debtThirdParty: false,
+  debtOther: '',
+  debtAmount: '',
+  isShareProperty: false,
+  isDebtProperty: false,
+  totalShares: ''
+}
 
 function loadDraft(draftKey = DRAFT_KEY) {
   try {
@@ -344,6 +651,52 @@ const AddProperty = ({
   const [showDescriptionCompareModal, setShowDescriptionCompareModal] = useState(false)
   const [descriptionCompareDraft, setDescriptionCompareDraft] = useState('')
   const [descriptionCompareAi, setDescriptionCompareAi] = useState('')
+  const [showListingModePicker, setShowListingModePicker] = useState(false)
+  const [listingModeThemeStage, setListingModeThemeStage] = useState(0)
+  const [spActiveSection, setSpActiveSection] = useState('type')
+  const listingModeScrollRef = useRef(null)
+  const listingModeWheelAccumulatorRef = useRef(0)
+  const singlePagePriceSectionRef = useRef(null)
+  const handleResetAll = () => {
+    const confirmed = window.confirm('Сбросить всю заполненную информацию? Это действие нельзя отменить.')
+    if (!confirmed) return
+
+    setFormData(INITIAL_FORM_DATA)
+    setPhotos([])
+    setVideos([])
+    setAdditionalDocuments([])
+    setRequiredDocuments({ ownership: null, noDebts: null })
+    setUploadedDocuments({ ownership: false, noDebts: false })
+    setCurrentStep('type-selection')
+    setShowListingModePicker(false)
+    setValidationErrors({})
+    setAddressSearch('')
+    setAddressSuggestions([])
+    setShowSuggestions(false)
+    setCitySearch('')
+    setCitySuggestions([])
+    setShowCitySuggestions(false)
+    setHouseSuggestions([])
+    setShowHouseSuggestions(false)
+    setSelectedCoordinates(null)
+    setMapCenter(null)
+    setLocationMapZoom(null)
+    setMediaItems([])
+    setPhotosMediaIndex(0)
+    setCurrentMediaIndex(0)
+    setDebtDocumentsStep('required')
+    setSelectedDebtDocCategory(null)
+    setMissingRequiredDebtDocs([])
+    setDebtDocumentsByCategory(() => {
+      const init = {}
+      DEBT_DOC_CATEGORIES.forEach(({ key }) => {
+        init[key] = {}
+      })
+      return init
+    })
+    clearDraft(draftKey)
+    showNotification('Все поля формы очищены', 'success')
+  }
 
   const currencies = [
     { code: 'USD', symbol: '$', name: 'Доллар США' },
@@ -352,96 +705,15 @@ const AddProperty = ({
     { code: 'GBP', symbol: '£', name: 'Фунт стерлингов' }
   ]
   
-  const [formData, setFormData] = useState({
-    propertyType: '', // Сначала выбираем тип
-    testDrive: null, // null, true или false
-    testDrivePricePerDay: '',
-    testDriveInsuranceDeposit: '',
-    title: '',
-    description: '',
-    price: '',
-    isAuction: true, // Все объекты всегда аукционные (кроме долей и долгов)
-    auctionStartDate: '',
-    auctionEndDate: '',
-    auctionStartingPrice: '',
-    // Общие поля
-    area: '',
-    livingArea: '',
-    buildingType: '',
-    rooms: '',
-    bedrooms: '',
-    bathrooms: '',
-    floor: '',
-    totalFloors: '',
-    yearBuilt: '',
-    location: '',
-    address: '',
-    apartment: '',
-    country: '',
-    city: '',
-    coordinates: null, // [lat, lng]
-    // Дополнительные поля для квартиры
-    balcony: false,
-    parking: false,
-    elevator: false,
-    // Дополнительные поля для дома/виллы
-    landArea: '',
-    pool: false,
-    garden: false,
-    // Дополнительные поля для коммерческой
-    commercialType: '',
-    businessHours: '',
-    // Общие дополнительные
-    renovation: '',
-    condition: '',
-    heating: '',
-    waterSupply: '',
-    sewerage: '',
-    electricity: false,
-    internet: false,
-    security: false,
-    furniture: false,
-    // 12 новых чекбоксов
-    feature1: false,
-    feature2: false,
-    feature3: false,
-    feature4: false,
-    feature5: false,
-    feature6: false,
-    feature7: false,
-    feature8: false,
-    feature9: false,
-    feature10: false,
-    feature11: false,
-    feature12: false,
-    feature13: false,
-    feature14: false,
-    feature15: false,
-    feature16: false,
-    feature17: false,
-    feature18: false,
-    feature19: false,
-    feature20: false,
-    feature21: false,
-    feature22: false,
-    feature23: false,
-    feature24: false,
-    feature25: false,
-    feature26: false,
-    additionalAmenities: '',
-    // Поля для объектов с долгами
-    debtUtilities: false,
-    debtBankPledge: false,
-    debtPropertyTaxes: false,
-    debtArrest: false,
-    debtInherited: false,
-    debtThirdParty: false,
-    debtOther: '',
-    debtAmount: '',
-    isShareProperty: false,
-    isDebtProperty: false,
-    totalShares: ''
-  })
+  const [formData, setFormData] = useState(INITIAL_FORM_DATA)
+
+  useEffect(() => {
+    if (currentStep !== 'listing-type') return
+    const node = listingModeScrollRef.current
+    if (!node) return
+    node.scrollTo({ top: 0, behavior: 'auto' })
+    setListingModeThemeStage(0)
+  }, [currentStep])
 
   // Закрытие выпадающего списка валют при клике вне его
   useEffect(() => {
@@ -1072,9 +1344,12 @@ const AddProperty = ({
       formDataToSend.append('description', formData.description || '')
       if (formData.price) formDataToSend.append('price', String(formData.price))
       formDataToSend.append('currency', currency)
-      // Для доли и долгов: без аукциона и тест-драйва
-      const isShare = !!formData.isShareProperty
-      const isDebt = !!formData.isDebtProperty
+      const listingMode = formData.listingMode || 'auction'
+      const isShare = listingMode === 'shares'
+      const isDebt = listingMode === 'debt' || listingMode === 'debt_auction'
+      const isAuctionMode = listingMode === 'auction' || listingMode === 'auction_buy_now' || listingMode === 'debt_auction'
+      const isBuyNowMode = listingMode === 'auction_buy_now'
+      formDataToSend.append('listing_mode', listingMode)
       formDataToSend.append('is_share', isShare ? '1' : '0')
       formDataToSend.append('is_debt', isDebt ? '1' : '0')
       if (isShare) {
@@ -1082,7 +1357,11 @@ const AddProperty = ({
         formDataToSend.append('test_drive', '0')
         formDataToSend.append('sale_type', 'share')
         if (formData.totalShares) formDataToSend.append('total_shares', String(formData.totalShares))
-      } else if (isDebt) {
+      } else if (isDebt && listingMode === 'debt') {
+        formDataToSend.append('is_auction', '0')
+        formDataToSend.append('test_drive', '0')
+        formDataToSend.append('sale_type', 'debt')
+      } else if (isDebt && listingMode === 'debt_auction') {
         formDataToSend.append('is_auction', '1')
         formDataToSend.append('test_drive', '0')
         formDataToSend.append('sale_type', 'debt')
@@ -1104,7 +1383,7 @@ const AddProperty = ({
       }
 
       // Правило 30% от «Купить сейчас» для стартовой ставки (в т.ч. для долгов на аукционе)
-      if (!isShare) {
+      if (!isShare && isBuyNowMode) {
         const publishBuyNowErr = getAuctionStartingVsBuyNowError(formData.price, formData.auctionStartingPrice)
         if (publishBuyNowErr) {
           setIsSubmitting(false)
@@ -1113,9 +1392,9 @@ const AddProperty = ({
           return false
         }
       }
-      if (formData.auctionStartDate) formDataToSend.append('auction_start_date', formData.auctionStartDate)
-      if (formData.auctionEndDate) formDataToSend.append('auction_end_date', formData.auctionEndDate)
-      if (formData.auctionStartingPrice) formDataToSend.append('auction_starting_price', String(formData.auctionStartingPrice))
+      if (isAuctionMode && formData.auctionStartDate) formDataToSend.append('auction_start_date', formData.auctionStartDate)
+      if (isAuctionMode && formData.auctionEndDate) formDataToSend.append('auction_end_date', formData.auctionEndDate)
+      if (isAuctionMode && formData.auctionStartingPrice) formDataToSend.append('auction_starting_price', String(formData.auctionStartingPrice))
       
       // Общие характеристики
       if (formData.area) formDataToSend.append('area', String(formData.area))
@@ -2226,10 +2505,16 @@ const AddProperty = ({
         return <FiHome size={64} />
       case 'apartment':
         return <PiBuildingApartment size={64} />
+      case 'apartments':
+        return <PiBuildingApartment size={64} />
       case 'villa':
         return <PiBuildings size={64} />
       case 'commercial':
         return <PiWarehouse size={64} />
+      case 'land':
+        return <FiMapPin size={64} />
+      case 'other':
+        return <FiLayers size={64} />
       default:
         return <FiHome size={64} />
     }
@@ -2242,30 +2527,41 @@ const AddProperty = ({
         return 'Дом'
       case 'apartment':
         return 'Квартира'
+      case 'apartments':
+        return 'Аппартаменты'
       case 'villa':
         return 'Вилла'
       case 'commercial':
-        return 'Апартаменты'
+        return 'Коммерческая недвижимость'
+      case 'land':
+        return 'Земля'
+      case 'other':
+        return 'Другое'
       default:
         return 'Недвижимость'
     }
   }
 
-  // Обработчик выбора типа недвижимости (isShare = true при выборе типа для долевого объекта)
-  const handlePropertyTypeSelect = (type, isShare = false) => {
-    const isApartmentOrCommercial = type === 'apartment' || type === 'commercial'
-    const isHouseOrVilla = type === 'house' || type === 'villa'
+  // Выбор типа объекта в новом каталоге.
+  const handlePropertyTypeSelect = (typeId) => {
+    const selectedOption = PROPERTY_TYPE_OPTIONS.find(item => item.id === typeId)
+    const backendType = selectedOption?.backendType || 'apartment'
+    const isApartmentOrCommercial = backendType === 'apartment' || backendType === 'commercial'
+    const isHouseOrVilla = backendType === 'house' || backendType === 'villa'
     
     setFormData(prev => ({
       ...prev,
-      propertyType: type,
-      isShareProperty: !!isShare,
+      propertyType: backendType,
+      propertyTypeUi: typeId,
+      listingMode: '',
+      isShareProperty: false,
       isDebtProperty: false,
+      totalShares: '',
+      debtAmount: '',
       bedrooms: isApartmentOrCommercial ? '' : prev.bedrooms,
       rooms: isHouseOrVilla ? '' : prev.rooms
     }))
-    // Для доли: без тест-драйва и аукциона — сразу к названию
-    setCurrentStep(isShare ? 'property-name' : 'test-drive-question')
+    setCurrentStep('property-name')
   }
 
   // Обработчик выбора типа недвижимости для объявления \"Долги\"
@@ -2288,6 +2584,52 @@ const AddProperty = ({
     setCurrentStep('property-name')
   }
 
+  const handleListingModeSelect = (mode, options = {}) => {
+    const { skipStepTransition = false, smoothScrollToPrice = false } = options
+    setFormData(prev => ({
+      ...prev,
+      listingMode: mode,
+      isShareProperty: mode === 'shares',
+      isDebtProperty: mode === 'debt' || mode === 'debt_auction',
+      isAuction: mode === 'auction' || mode === 'auction_buy_now' || mode === 'debt_auction',
+      testDrive: (mode === 'shares' || mode === 'debt' || mode === 'debt_auction') ? false : prev.testDrive,
+    }))
+    setShowListingModePicker(false)
+    if (!skipStepTransition) {
+      setCurrentStep('price')
+      return
+    }
+
+    if (smoothScrollToPrice) {
+      requestAnimationFrame(() => {
+        singlePagePriceSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      })
+    }
+  }
+
+  const handleListingModeThemeScroll = (event) => {
+    const node = event.currentTarget
+    const maxScroll = Math.max(node.scrollHeight - node.clientHeight, 1)
+    const progress = node.scrollTop / maxScroll
+    const nextStage = Math.min(
+      LISTING_MODE_THEME_STAGES.length - 1,
+      Math.floor(progress * LISTING_MODE_THEME_STAGES.length)
+    )
+    setListingModeThemeStage(prev => (prev === nextStage ? prev : nextStage))
+  }
+
+  const handleListingModeThemeWheel = (event) => {
+    const threshold = 80
+    listingModeWheelAccumulatorRef.current += event.deltaY
+    if (Math.abs(listingModeWheelAccumulatorRef.current) < threshold) return
+    const direction = listingModeWheelAccumulatorRef.current > 0 ? 1 : -1
+    listingModeWheelAccumulatorRef.current = 0
+    setListingModeThemeStage(prev => {
+      const next = Math.max(0, Math.min(LISTING_MODE_THEME_STAGES.length - 1, prev + direction))
+      return next
+    })
+  }
+
   // Обработчик ответа на вопрос о тест-драйве
   const handleTestDriveAnswer = (answer) => {
     console.log('🔍 handleTestDriveAnswer вызван с answer:', answer, 'тип:', typeof answer)
@@ -2296,7 +2638,7 @@ const AddProperty = ({
       console.log('🔍 Обновленный formData.testDrive:', newData.testDrive)
       return newData
     })
-    setCurrentStep(answer ? 'test-drive-pricing' : 'property-name')
+    setCurrentStep(answer ? 'test-drive-pricing' : 'listing-type')
   }
 
   const handleGenerateDescription = async () => {
@@ -2616,7 +2958,7 @@ const AddProperty = ({
 
   // Карта: при вводе города подстраиваем центр под первый геокод (не только по клику в подсказке)
   useEffect(() => {
-    if (currentStep !== 'location' || !formData.country) return
+    if (!(USE_ADD_PROPERTY_SINGLE_PAGE || currentStep === 'location') || !formData.country) return
     const cityToken = (citySearch || '').split(',')[0].trim()
     if (cityToken.length < 2) return
     // Улица уже вводится/выбрана — не перебиваем точку на карте отложенным геокодом города
@@ -2788,9 +3130,52 @@ const AddProperty = ({
       location: formattedAddress,
       coordinates: coords, // Сохраняем координаты для отображения на карте
       country: country,
-      city: city
+      city: city,
+      apartment: '',
     }))
   }
+
+  const handleSinglePageMarkerDragEnd = useCallback(async ({ lat, lng }) => {
+    const coords = [lat, lng]
+    setSelectedCoordinates(coords)
+    setMapCenter(coords)
+    setLocationMapZoom(16)
+    setFormData(prev => ({ ...prev, coordinates: coords }))
+    try {
+      const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lng)}&accept-language=ru&addressdetails=1`
+      const response = await fetch(url, {
+        headers: { 'User-Agent': 'PropertyListingApp/1.0' },
+      })
+      if (!response.ok) return
+      const data = await response.json()
+      const a = data.address || {}
+      const country = a.country || ''
+      const city =
+        a.city || a.town || a.village || a.municipality || a.county || a.state || ''
+      const road = a.road || ''
+      const hn = a.house_number || ''
+      const streetLine = [road, hn].filter(Boolean).join(', ')
+      const display = typeof data.display_name === 'string' ? data.display_name : ''
+      const shortAddr =
+        streetLine ||
+        display.split(',').map((s) => s.trim()).filter(Boolean).slice(0, 2).join(', ')
+      const formatted = country && city && shortAddr ? `${country}, ${city}, ${shortAddr}` : display || shortAddr
+
+      setFormData((prev) => ({
+        ...prev,
+        country: country || prev.country,
+        city: city || prev.city,
+        address: shortAddr || prev.address,
+        location: formatted || prev.location,
+        coordinates: coords,
+        apartment: hn || prev.apartment,
+      }))
+      if (city) setCitySearch(city)
+      if (shortAddr) setAddressSearch(shortAddr)
+    } catch (e) {
+      console.warn('reverse geocode', e)
+    }
+  }, [])
 
   // Поиск домов (номер дома) на основе выбранной улицы
   const searchHouse = async (houseValue) => {
@@ -3377,7 +3762,7 @@ const AddProperty = ({
     }, 300)
   }
 
-  // Обработчик перехода к цене после загрузки документов
+  // Обработчик перехода к тест-драйву после загрузки документов
   const handleDocumentsContinue = () => {
     if (formData.isDebtProperty) {
       const missing = REQUIRED_DEBT_DOCS.filter(req =>
@@ -3410,12 +3795,18 @@ const AddProperty = ({
       }
     }
 
-    setCurrentStep('price')
+    setCurrentStep('test-drive-question')
   }
 
   // Обработчик перехода к форме после указания цены
   const handlePriceContinue = async () => {
-    if (formData.isShareProperty) {
+    const mode = formData.listingMode || 'auction'
+    const isShareMode = mode === 'shares'
+    const isDebtMode = mode === 'debt'
+    const isDebtAuctionMode = mode === 'debt_auction'
+    const isAuctionMode = mode === 'auction' || mode === 'auction_buy_now' || mode === 'debt_auction'
+
+    if (isShareMode) {
       // Для доли: обязательны общая цена и количество долей
       const priceNum = Number(removeCommas(String(formData.price || '')))
       const totalSharesNum = parseInt(formData.totalShares, 10)
@@ -3427,44 +3818,51 @@ const AddProperty = ({
         showNotification('Укажите количество долей (целое число больше 0)')
         return
       }
-    } else if (formData.isDebtProperty) {
-      // Для долгов: обязательна сумма долга + параметры аукциона; цена «Купить сейчас» опциональна
+    } else if (isDebtMode || isDebtAuctionMode) {
+      // Для долгов: обязательна сумма долга, а в режиме debt_auction еще и аукционные поля.
       const debtAmountNum = Number(removeCommas(String(formData.debtAmount || '')))
       if (!formData.debtAmount || !Number.isFinite(debtAmountNum) || debtAmountNum <= 0) {
         showNotification('Укажите сумму долга')
         return
       }
-      if (!formData.auctionStartDate || !formData.auctionEndDate) {
+      if (isDebtAuctionMode && (!formData.auctionStartDate || !formData.auctionEndDate)) {
         showNotification('Пожалуйста, укажите период проведения аукциона')
         return
       }
-      const startingNumContinue = Number(removeCommas(String(formData.auctionStartingPrice || '')))
-      if (!formData.auctionStartingPrice || !Number.isFinite(startingNumContinue) || startingNumContinue <= 0) {
+      const startingNumContinue = Number(removeCommas(String(formData.auctionStartingPrice || '0')))
+      if (isDebtAuctionMode && (!formData.auctionStartingPrice || !Number.isFinite(startingNumContinue) || startingNumContinue <= 0)) {
         showNotification('Пожалуйста, укажите стартовую цену аукциона')
         return
       }
-      const buyNowRuleErr = getAuctionStartingVsBuyNowError(formData.price, formData.auctionStartingPrice)
-      if (buyNowRuleErr) {
+      const buyNowRuleErr = getAuctionStartingVsBuyNowError(mode === 'debt_auction' ? '' : formData.price, formData.auctionStartingPrice)
+      if (isDebtAuctionMode && buyNowRuleErr) {
         setValidationErrors(prev => ({ ...prev, auctionStartingPrice: buyNowRuleErr }))
         showNotification(buyNowRuleErr)
         return
       }
     } else {
-      // Цена "Купить сейчас" опциональна; проверяем аукционные поля
-      if (!formData.auctionStartDate || !formData.auctionEndDate) {
+      // Для аукционных режимов: проверяем поля аукциона.
+      if (isAuctionMode && (!formData.auctionStartDate || !formData.auctionEndDate)) {
         showNotification('Пожалуйста, укажите период проведения аукциона')
         return
       }
       const startingNumContinue = Number(removeCommas(String(formData.auctionStartingPrice || '')))
-      if (!formData.auctionStartingPrice || !Number.isFinite(startingNumContinue) || startingNumContinue <= 0) {
+      if (isAuctionMode && (!formData.auctionStartingPrice || !Number.isFinite(startingNumContinue) || startingNumContinue <= 0)) {
         showNotification('Пожалуйста, укажите стартовую цену аукциона')
         return
       }
-      const buyNowRuleErr = getAuctionStartingVsBuyNowError(formData.price, formData.auctionStartingPrice)
-      if (buyNowRuleErr) {
+      const buyNowRuleErr = getAuctionStartingVsBuyNowError(mode === 'auction_buy_now' ? formData.price : '', formData.auctionStartingPrice)
+      if (mode === 'auction_buy_now' && buyNowRuleErr) {
         setValidationErrors(prev => ({ ...prev, auctionStartingPrice: buyNowRuleErr }))
         showNotification(buyNowRuleErr)
         return
+      }
+      if (mode === 'auction_buy_now') {
+        const buyNowNum = Number(removeCommas(String(formData.price || '')))
+        if (!formData.price || !Number.isFinite(buyNowNum) || buyNowNum <= 0) {
+          showNotification('Для режима "Аукцион + Купить сейчас" укажите цену "Купить сейчас"')
+          return
+        }
       }
     }
 
@@ -3885,6 +4283,126 @@ const AddProperty = ({
 
   /* Пока открыта оплата публикации — под модалкой всегда экран цены (не форма публикации) */
   const wizardRenderStep = showListingFeeModal ? 'price' : currentStep
+  const useSinglePageFlow = USE_ADD_PROPERTY_SINGLE_PAGE
+
+  const hasType = !!formData.propertyType
+  const hasAddress = !!((formData.location || formData.address || '').trim())
+  const hasDetails = (() => {
+    if (!hasType) return false
+    if (formData.propertyType === 'apartment' || formData.propertyType === 'commercial') {
+      return Number(formData.rooms) > 0 && Number(formData.area) > 0
+    }
+    return Number(formData.area) > 0
+  })()
+  const hasAmenities = !!(
+    (formData.additionalAmenities || '').trim() ||
+    SINGLE_PAGE_AMENITY_FORM_KEYS.some((key) => formData[key])
+  )
+
+  const singlePageAmenityGroups = useMemo(() => buildSinglePageAmenityGroups(t), [t])
+  const hasMedia = photos.length > 0 || videos.length > 0
+  const hasDocuments = !!(
+    requiredDocuments.ownership ||
+    requiredDocuments.noDebts ||
+    (additionalDocuments && additionalDocuments.length > 0)
+  )
+  const singlePageMapCoords =
+    getValidCoordsForPreview(selectedCoordinates) ||
+    getValidCoordsForPreview(mapCenter) ||
+    getValidCoordsForPreview(formData.coordinates)
+  const hasTestDrive = formData.testDrive === false || (formData.testDrive === true && Number(formData.testDrivePricePerDay) > 0)
+  const hasListingType = !!formData.listingMode
+  const hasPrice = (() => {
+    const mode = formData.listingMode || 'auction'
+    if (mode === 'shares') return Number(removeCommas(String(formData.price || ''))) > 0 && Number(formData.totalShares) > 0
+    if (mode === 'debt') return Number(removeCommas(String(formData.debtAmount || ''))) > 0
+    if (mode === 'debt_auction') return Number(removeCommas(String(formData.debtAmount || ''))) > 0 && Number(removeCommas(String(formData.auctionStartingPrice || ''))) > 0
+    if (mode === 'auction_buy_now') return Number(removeCommas(String(formData.price || ''))) > 0 && Number(removeCommas(String(formData.auctionStartingPrice || ''))) > 0
+    return Number(removeCommas(String(formData.auctionStartingPrice || ''))) > 0
+  })()
+
+  const singlePageSections = [
+    hasType,
+    hasAddress,
+    hasDetails,
+    hasAmenities,
+    hasMedia,
+    hasDocuments,
+    hasTestDrive,
+    hasListingType,
+    hasPrice,
+  ]
+  const completedSinglePageSections = singlePageSections.filter(Boolean).length
+  const singlePageProgress = Math.round((completedSinglePageSections / 9) * 100)
+  const stepFlow = [
+    { id: 'type-selection', label: 'Тип' },
+    { id: 'property-name', label: 'Описание' },
+    { id: 'location', label: 'Адрес' },
+    { id: 'details', label: 'Параметры' },
+    { id: 'amenities', label: 'Удобства' },
+    { id: 'photos', label: 'Фото/видео' },
+    { id: 'documents', label: 'Документы' },
+    { id: 'test-drive-question', label: 'Тест-драйв' },
+    { id: 'listing-type', label: 'Размещение' },
+    { id: 'price', label: 'Цена' },
+  ]
+  const currentStepForProgress = wizardRenderStep === 'test-drive-pricing' ? 'test-drive-question' : wizardRenderStep
+  const currentStepIndex = Math.max(0, stepFlow.findIndex(step => step.id === currentStepForProgress))
+  const progressPercent = Math.round((currentStepIndex / stepFlow.length) * 100)
+  const remainingSteps = Math.max(0, stepFlow.length - (currentStepIndex + 1))
+
+  const applyListingModeFromSinglePage = (mode) => {
+    setFormData((prev) => ({
+      ...prev,
+      listingMode: mode,
+      isShareProperty: mode === 'shares',
+      isDebtProperty: mode === 'debt' || mode === 'debt_auction',
+      isAuction: mode === 'auction' || mode === 'auction_buy_now' || mode === 'debt_auction',
+      testDrive:
+        mode === 'shares' || mode === 'debt' || mode === 'debt_auction' ? false : prev.testDrive,
+    }))
+    setShowListingModePicker(false)
+  }
+
+  const spGuideCopy =
+    SINGLE_PAGE_SECTION_HELP[spActiveSection] || SINGLE_PAGE_SECTION_HELP.type
+
+  useEffect(() => {
+    if (!useSinglePageFlow) return
+    let observer
+    const timer = window.setTimeout(() => {
+      const sections = document.querySelectorAll('[data-sp-section]')
+      if (!sections.length) return
+      observer = new IntersectionObserver(
+        (entries) => {
+          const visible = entries
+            .filter((e) => e.isIntersecting && e.intersectionRatio >= 0.18)
+            .sort((a, b) => b.intersectionRatio - a.intersectionRatio)
+          const id = visible[0]?.target?.getAttribute('data-sp-section')
+          if (id) setSpActiveSection(id)
+        },
+        { root: null, threshold: [0.18, 0.35, 0.55], rootMargin: '-10% 0px -38% 0px' }
+      )
+      sections.forEach((el) => observer.observe(el))
+    }, 80)
+    return () => {
+      window.clearTimeout(timer)
+      if (observer) observer.disconnect()
+    }
+  }, [
+    useSinglePageFlow,
+    formData.propertyType,
+    formData.listingMode,
+    formData.city,
+    hasType,
+    hasAddress,
+    hasDetails,
+    hasAmenities,
+    hasMedia,
+    hasDocuments,
+    hasTestDrive,
+    hasListingType,
+  ])
 
   // Чтобы при переходе между шагами страница/контейнер начинались сверху,
   // а не с позиции скролла, на которой пользователь выбрал прошлый пункт.
@@ -3934,31 +4452,20 @@ const AddProperty = ({
                 }
 
                 if (currentStep === 'test-drive-question') {
-                  if (isEditMode) {
-                    if (adminMode && typeof onAdminBack === 'function') onAdminBack()
-                    else navigate('/owner')
-                  } else {
-                    setCurrentStep('type-selection')
-                    setFormData(prev => ({ ...prev, propertyType: '', isShareProperty: false, isDebtProperty: false }))
-                  }
+                  setCurrentStep('documents')
                 } else if (currentStep === 'share-type-selection' || currentStep === 'debt-type-selection') {
                   setCurrentStep('type-selection')
-                  setFormData(prev => ({ ...prev, propertyType: '', isShareProperty: false, isDebtProperty: false }))
+                  setFormData(prev => ({ ...prev, propertyType: '', propertyTypeUi: '', listingMode: '', isShareProperty: false, isDebtProperty: false }))
                 } else if (currentStep === 'property-name') {
-                  if (formData.isShareProperty) {
-                    setCurrentStep('share-type-selection')
-                  } else if (formData.isDebtProperty) {
-                    setCurrentStep('debt-type-selection')
-                  } else {
-                    if (formData.testDrive === true) {
-                      setCurrentStep('test-drive-pricing')
-                    } else {
-                      setCurrentStep('test-drive-question')
-                      setFormData(prev => ({ ...prev, testDrive: null }))
-                    }
-                  }
+                  setCurrentStep('type-selection')
                 } else if (currentStep === 'test-drive-pricing') {
                   setCurrentStep('test-drive-question')
+                } else if (currentStep === 'listing-type') {
+                  if (formData.testDrive === true) {
+                    setCurrentStep('test-drive-pricing')
+                  } else {
+                    setCurrentStep('test-drive-question')
+                  }
                 } else if (currentStep === 'location') {
                   setCurrentStep('property-name')
                 } else if (currentStep === 'details') {
@@ -3975,7 +4482,7 @@ const AddProperty = ({
                     setCurrentStep('photos')
                   }
                 } else if (currentStep === 'price') {
-                  setCurrentStep('documents')
+                  setCurrentStep('listing-type')
                 } else if (currentStep === 'form') {
                   setCurrentStep('price')
                 } else {
@@ -3991,9 +4498,736 @@ const AddProperty = ({
               {isEditMode ? t('addPropertyTitleEdit') : t('addPropertyTitleNew')}
             </h1>
           </div>
+          <button
+            type="button"
+            className="add-property-reset-btn"
+            onClick={handleResetAll}
+          >
+            Сбросить
+          </button>
+        </div>
+        <div className="add-property-wizard-progress">
+          <div className="add-property-wizard-progress__top">
+            <span>Шаг {currentStepIndex + 1} из {stepFlow.length}</span>
+            <span>{progressPercent}% заполнено</span>
+          </div>
+          <div className="add-property-wizard-progress__track">
+            <div
+              className="add-property-wizard-progress__fill"
+              style={{ width: `${progressPercent}%` }}
+            />
+          </div>
+          <div className="add-property-wizard-progress__labels">
+            {stepFlow.map((step, index) => (
+              <span
+                key={step.id}
+                className={`add-property-wizard-progress__label ${index <= currentStepIndex ? 'is-done' : ''}`}
+              >
+                {step.label}
+              </span>
+            ))}
+          </div>
+          <p className="add-property-wizard-progress__hint">
+            {remainingSteps > 0 ? `Осталось шагов: ${remainingSteps}` : 'Последний шаг перед проверкой и публикацией'}
+          </p>
         </div>
 
-        {wizardRenderStep === 'type-selection' ? (
+        {useSinglePageFlow ? (
+          <div className="single-page-add-flow single-page-add-flow--studio">
+            <input ref={fileInputRef} type="file" accept="image/*" multiple style={{ display: 'none' }} onChange={handlePhotoUpload} />
+            <input ref={videoInputRef} type="file" accept="video/*" multiple style={{ display: 'none' }} onChange={handleVideoUpload} />
+            <input ref={documentInputRef} type="file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" multiple style={{ display: 'none' }} onChange={handleDocumentUpload} />
+            <input ref={ownershipInputRef} type="file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" style={{ display: 'none' }} onChange={(e) => handleRequiredDocumentUpload('ownership', e)} />
+            <input ref={noDebtsInputRef} type="file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" style={{ display: 'none' }} onChange={(e) => handleRequiredDocumentUpload('noDebts', e)} />
+
+            <div className="single-page-add-flow__layout">
+              <div className="single-page-add-flow__main">
+                <div className="sp-studio-toolbar">
+                  <div className="sp-studio-toolbar__title">
+                    <span className="sp-studio-toolbar__eyebrow">Мастер публикации</span>
+                    <h2 className="sp-studio-toolbar__heading">Добавление объекта</h2>
+                  </div>
+                </div>
+
+                <section data-sp-section="type" className="sp-card sp-card--enter">
+                  <header className="sp-card__head">
+                    <span className="sp-card__step">Шаг 1</span>
+                    <h3 className="sp-card__title">Тип недвижимости</h3>
+                    <p className="sp-card__lead">{SINGLE_PAGE_SECTION_HELP.type.lead}</p>
+                  </header>
+                  <div className="sp-radio-stack" role="radiogroup" aria-label="Тип объекта">
+                    {PROPERTY_TYPE_OPTIONS.map((option) => (
+                      <label
+                        key={option.id}
+                        className={`sp-radio-row ${formData.propertyTypeUi === option.id ? 'is-selected' : ''}`}
+                      >
+                        <input
+                          type="radio"
+                          name="sp-property-type"
+                          checked={formData.propertyTypeUi === option.id}
+                          onChange={() => handlePropertyTypeSelect(option.id)}
+                        />
+                        <span className="sp-radio-row__icon" aria-hidden="true">{getPropertyTypeIcon(option.icon)}</span>
+                        <span className="sp-radio-row__text">
+                          <span className="sp-radio-row__title">{option.title}</span>
+                          <span className="sp-radio-row__desc">{option.description}</span>
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                </section>
+
+                {hasType && (
+                  <section data-sp-section="address" className="sp-card sp-card--enter sp-card--accent">
+                    <header className="sp-card__head">
+                      <span className="sp-card__step">Шаг 2</span>
+                      <h3 className="sp-card__title">Адрес и карта</h3>
+                      <p className="sp-card__lead">{SINGLE_PAGE_SECTION_HELP.address.lead}</p>
+                    </header>
+
+                    <div className="property-location-input-group">
+                      <label className="property-location-label">{t('addPropertyLocationCountryLabel')}</label>
+                      <CountrySelect
+                        value={formData.country}
+                        onChange={async (countryName) => {
+                          setFormData((prev) => ({ ...prev, country: countryName }))
+                          if (citySearch) searchCity(citySearch, countryName)
+                          if (!countryName || !String(countryName).trim()) {
+                            setLocationMapZoom(null)
+                            return
+                          }
+                          const item = await fetchNominatimFirst(countryName)
+                          if (!item) return
+                          const lat = parseFloat(item.lat)
+                          const lng = parseFloat(item.lon)
+                          if (isNaN(lat) || isNaN(lng)) return
+                          setMapCenter([lat, lng])
+                          setSelectedCoordinates([lat, lng])
+                          setLocationMapZoom(6)
+                        }}
+                        placeholder={t('addPropertyLocationCountryPlaceholder')}
+                        className="property-location-country-select"
+                      />
+                    </div>
+
+                    <div className="property-location-input-group">
+                      <label className="property-location-label">{t('addPropertyLocationCityLabel')}</label>
+                      <div className="property-location-search-wrapper">
+                        <input
+                          type="text"
+                          ref={citySearchRef}
+                          value={citySearch}
+                          onChange={(e) => {
+                            const value = e.target.value
+                            setCitySearch(value)
+                            const cityName = value.split(',')[0].trim()
+                            setFormData((prev) => ({ ...prev, city: cityName }))
+                            if (citySearchTimeoutRef.current) clearTimeout(citySearchTimeoutRef.current)
+                            if (value.length >= 2) {
+                              citySearchTimeoutRef.current = setTimeout(() => {
+                                searchCity(value, formData.country)
+                              }, 700)
+                            } else {
+                              setCitySuggestions([])
+                              setShowCitySuggestions(false)
+                              setIsCitySearching(false)
+                              setLocationMapZoom(null)
+                            }
+                          }}
+                          onFocus={() => {
+                            if (citySuggestions.length > 0) setShowCitySuggestions(true)
+                            if (citySearch && citySearch.length >= 2 && citySuggestions.length === 0) {
+                              searchCity(citySearch, formData.country)
+                            }
+                          }}
+                          onBlur={() => setTimeout(() => setShowCitySuggestions(false), 200)}
+                          className="property-location-input property-location-input--with-icon"
+                          placeholder={t('addPropertyLocationCityPlaceholder')}
+                        />
+                        <div className="property-location-input-icon">
+                          {isCitySearching ? (
+                            <FiLoader className="spinner" size={18} />
+                          ) : citySearch.length >= 2 && (citySuggestions.length > 0 || citySearch.includes(',')) ? (
+                            <FiCheck size={18} />
+                          ) : citySearch.length >= 2 && citySuggestions.length === 0 && !citySearch.includes(',') ? (
+                            <FiLoader className="spinner" size={18} />
+                          ) : null}
+                        </div>
+                        {showCitySuggestions && citySuggestions.length > 0 && (
+                          <div className="property-location-suggestions">
+                            {citySuggestions.map((city, index) => (
+                              <div
+                                key={index}
+                                className="property-location-suggestion-item"
+                                onClick={() => handleCitySelect(city)}
+                              >
+                                <FiMapPin size={16} />
+                                <span>{city.display_name}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="property-location-input-group">
+                      <label className="property-location-label">{t('addPropertyLocationStreetLabel')}</label>
+                      <div className="property-location-search-wrapper">
+                        <input
+                          id="sp-address-search-input"
+                          type="text"
+                          value={addressSearch}
+                          onChange={(e) => {
+                            const value = e.target.value
+                            setAddressSearch(value)
+                            if (!value.trim()) {
+                              setAddressSuggestions([])
+                              setShowSuggestions(false)
+                              setIsAddressSearching(false)
+                              setSelectedCoordinates(null)
+                              setMapCenter(null)
+                              setLocationMapZoom(null)
+                              setFormData((prev) => ({
+                                ...prev,
+                                address: '',
+                                location: '',
+                                coordinates: null,
+                                apartment: '',
+                              }))
+                              return
+                            }
+                            if (value.length < 3 || !formData.city) {
+                              setAddressSuggestions([])
+                              setShowSuggestions(false)
+                              setIsAddressSearching(false)
+                            }
+                          }}
+                          onFocus={() => {
+                            if (addressSuggestions.length > 0) setShowSuggestions(true)
+                            else if (addressSearch && addressSearch.length >= 2 && formData.city) {
+                              searchAddress(addressSearch)
+                            }
+                          }}
+                          onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+                          className="property-location-input property-location-input--with-icon"
+                          placeholder={
+                            formData.city
+                              ? t('addPropertyLocationStreetPlaceholder')
+                              : t('addPropertyLocationStreetPlaceholderNoCity')
+                          }
+                          disabled={!formData.city}
+                        />
+                        {formData.city && (
+                          <div className="property-location-input-icon">
+                            {isAddressSearching ? (
+                              <FiLoader className="spinner" size={18} />
+                            ) : addressSearch.length >= 2 &&
+                              (addressSuggestions.length > 0 || addressSearch.includes(',')) ? (
+                              <FiCheck size={18} />
+                            ) : addressSearch.length >= 2 &&
+                              addressSuggestions.length === 0 &&
+                              !addressSearch.includes(',') ? (
+                              <FiLoader className="spinner" size={18} />
+                            ) : null}
+                          </div>
+                        )}
+                        {showSuggestions && addressSuggestions.length > 0 && (
+                          <div className="property-location-suggestions">
+                            {getUniqueAddressSuggestions().map(({ suggestion, label }, index) => (
+                              <div
+                                key={index}
+                                className="property-location-suggestion-item"
+                                onClick={() => handleAddressSelect(suggestion)}
+                              >
+                                <FiMapPin size={16} />
+                                <span>{label}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="property-location-input-group">
+                      <label className="property-location-label">{t('addPropertyLocationHouseNumberLabel')}</label>
+                      <div className="property-location-search-wrapper">
+                        <input
+                          type="text"
+                          name="apartment"
+                          value={formData.apartment}
+                          onChange={(e) => {
+                            const value = e.target.value
+                            setFormData((prev) => {
+                              const streetLine = (addressSearch || prev.address || '').trim()
+                              const c = prev.country || ''
+                              const cityName = prev.city || ''
+                              const tail = [streetLine, value.trim()].filter(Boolean).join(', ')
+                              const location =
+                                c && cityName && tail ? `${c}, ${cityName}, ${tail}` : tail || prev.location
+                              return { ...prev, apartment: value, location }
+                            })
+                            if (houseSearchTimeoutRef.current) {
+                              clearTimeout(houseSearchTimeoutRef.current)
+                            }
+                            if (value && addressSearch && formData.city) {
+                              houseSearchTimeoutRef.current = setTimeout(() => {
+                                searchHouse(value)
+                              }, 600)
+                            } else {
+                              setHouseSuggestions([])
+                              setShowHouseSuggestions(false)
+                            }
+                          }}
+                          onFocus={() => {
+                            if (houseSuggestions.length > 0) setShowHouseSuggestions(true)
+                          }}
+                          onBlur={() => setTimeout(() => setShowHouseSuggestions(false), 200)}
+                          className="property-location-input"
+                          placeholder={t('addPropertyLocationHouseNumberPlaceholder')}
+                          disabled={!formData.city || !addressSearch?.trim()}
+                        />
+                        {showHouseSuggestions && houseSuggestions.length > 0 && (
+                          <div className="property-location-suggestions">
+                            {houseSuggestions.map((suggestion, index) => (
+                              <div
+                                key={index}
+                                className="property-location-suggestion-item"
+                                onClick={() => handleHouseSelect(suggestion)}
+                              >
+                                <FiMapPin size={16} />
+                                <span>{formatShortAddressWithHouse(suggestion)}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <p className="sp-map-hint">
+                      {singlePageMapCoords
+                        ? 'Перетащите маркер на карте — адрес и координаты обновятся автоматически (геокодинг).'
+                        : 'Выберите город и улицу из подсказок — на карте появится маркер.'}
+                    </p>
+                    <div className="sp-map-wrap">
+                      <LocationMap
+                        center={singlePageMapCoords || [55, 20]}
+                        zoom={singlePageMapCoords ? (locationMapZoom ?? 15) : 4}
+                        marker={singlePageMapCoords}
+                        markerDraggable={!!singlePageMapCoords}
+                        onMarkerDragEnd={handleSinglePageMarkerDragEnd}
+                      />
+                    </div>
+                  </section>
+                )}
+
+                {hasAddress && (
+                  <section data-sp-section="details" className="sp-card sp-card--enter">
+                    <header className="sp-card__head">
+                      <span className="sp-card__step">Шаг 3</span>
+                      <h3 className="sp-card__title">Параметры</h3>
+                      <p className="sp-card__lead">{SINGLE_PAGE_SECTION_HELP.details.lead}</p>
+                    </header>
+                    <div className="single-page-add-flow__grid">
+                      <input
+                        type="number"
+                        value={formData.rooms}
+                        onChange={(e) => setFormData((prev) => ({ ...prev, rooms: e.target.value }))}
+                        className="property-name-input"
+                        placeholder="Комнат"
+                      />
+                      <input
+                        type="number"
+                        value={formData.bedrooms}
+                        onChange={(e) => setFormData((prev) => ({ ...prev, bedrooms: e.target.value }))}
+                        className="property-name-input"
+                        placeholder="Спален"
+                      />
+                      <input
+                        type="number"
+                        value={formData.area}
+                        onChange={(e) => setFormData((prev) => ({ ...prev, area: e.target.value }))}
+                        className="property-name-input"
+                        placeholder="Площадь, м²"
+                      />
+                      <select
+                        value={formData.buildingType}
+                        onChange={(e) => setFormData((prev) => ({ ...prev, buildingType: e.target.value }))}
+                        className="property-name-input"
+                      >
+                        <option value="">Материал / тип</option>
+                        <option value="brick">Кирпич</option>
+                        <option value="monolithic">Монолит</option>
+                        <option value="panel">Панель</option>
+                        <option value="wood">Дерево</option>
+                        <option value="other">Другое</option>
+                      </select>
+                    </div>
+                  </section>
+                )}
+
+                {hasDetails && (
+                  <section data-sp-section="amenities" className="sp-card sp-card--enter">
+                    <header className="sp-card__head">
+                      <span className="sp-card__step">Шаг 4</span>
+                      <h3 className="sp-card__title">Описание и удобства</h3>
+                      <p className="sp-card__lead">{SINGLE_PAGE_SECTION_HELP.amenities.lead}</p>
+                    </header>
+                    <div className="sp-amenity-desc">
+                      <label className="sp-amenity-desc__label" htmlFor="sp-additional-amenities">
+                        {t('addPropertyAmenitiesOtherLabel')}
+                      </label>
+                      <textarea
+                        id="sp-additional-amenities"
+                        value={formData.additionalAmenities || ''}
+                        onChange={(e) => setFormData((prev) => ({ ...prev, additionalAmenities: e.target.value }))}
+                        className="property-name-textarea sp-amenity-textarea"
+                        placeholder={t('addPropertyAmenitiesOtherPlaceholder')}
+                        rows={7}
+                      />
+                    </div>
+                    <p className="sp-amenity-groups-intro">{t('addPropertyAmenitiesGroupsIntro')}</p>
+                    <div className="sp-amenity-groups">
+                      {singlePageAmenityGroups.map((group) => (
+                        <div key={group.id} className="sp-amenity-group">
+                          <h4 className="sp-amenity-group__title">{group.title}</h4>
+                          <div className="sp-amenity-group__chips single-page-add-flow__chips sp-chips">
+                            {group.items.map(({ key, label }) => (
+                              <button
+                                key={key}
+                                type="button"
+                                className={`single-page-add-flow__chip ${formData[key] ? 'active' : ''}`}
+                                onClick={() => setFormData((prev) => ({ ...prev, [key]: !prev[key] }))}
+                              >
+                                {label}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+                )}
+
+                {hasAmenities && (
+                  <section data-sp-section="media" className="sp-card sp-card--enter">
+                    <header className="sp-card__head">
+                      <span className="sp-card__step">Шаг 5</span>
+                      <h3 className="sp-card__title">Фото и видео</h3>
+                      <p className="sp-card__lead">{SINGLE_PAGE_SECTION_HELP.media.lead}</p>
+                    </header>
+                    <div className="single-page-add-flow__stats sp-stats">
+                      <span>Фото: {photos.length}/10</span>
+                      <span>Видео: {videos.length}/3</span>
+                    </div>
+                    <div className="single-page-add-flow__upload-row sp-actions">
+                      <button type="button" className="sp-btn sp-btn--primary" onClick={() => fileInputRef.current?.click()}>
+                        Выбрать фотографии
+                      </button>
+                      <button type="button" className="sp-btn sp-btn--ghost" onClick={() => videoInputRef.current?.click()}>
+                        Загрузить видео
+                      </button>
+                    </div>
+                    {(photos.length > 0 || videos.length > 0) && (
+                      <div className="single-page-add-flow__media-grid sp-media-grid">
+                        {photos.map((photo) => (
+                          <div key={photo.id} className="sp-media-tile">
+                            <img src={photo.url} alt="" />
+                            <button type="button" className="sp-media-tile__remove" onClick={() => handleRemovePhoto(photo.id)} aria-label="Удалить фото">
+                              <FiX size={16} />
+                            </button>
+                          </div>
+                        ))}
+                        {videos.map((video) => (
+                          <div key={video.id} className="sp-media-tile sp-media-tile--video">
+                            {video.type === 'file' ? (
+                              <video src={video.url} controls preload="metadata" />
+                            ) : (
+                              <div className="single-page-add-flow__media-video-placeholder">
+                                <FiVideo size={20} />
+                                <span>Ссылка</span>
+                              </div>
+                            )}
+                            <button type="button" className="sp-media-tile__remove" onClick={() => handleRemoveVideo(video.id)} aria-label="Удалить видео">
+                              <FiX size={16} />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </section>
+                )}
+
+                {hasMedia && (
+                  <section data-sp-section="documents" className="sp-card sp-card--enter">
+                    <header className="sp-card__head">
+                      <span className="sp-card__step">Шаг 6</span>
+                      <h3 className="sp-card__title">Документы</h3>
+                      <p className="sp-card__lead">{SINGLE_PAGE_SECTION_HELP.documents.lead}</p>
+                    </header>
+                    <div className="single-page-add-flow__upload-row sp-actions">
+                      <button type="button" className="sp-btn sp-btn--primary" onClick={() => ownershipInputRef.current?.click()}>
+                        {requiredDocuments.ownership ? 'Заменить документ собственности' : 'Документ собственности'}
+                      </button>
+                      <button type="button" className="sp-btn sp-btn--ghost" onClick={() => noDebtsInputRef.current?.click()}>
+                        {requiredDocuments.noDebts ? 'Заменить справку' : 'Справка об отсутствии долгов'}
+                      </button>
+                      <button type="button" className="sp-btn sp-btn--ghost" onClick={() => documentInputRef.current?.click()}>
+                        Доп. документы
+                      </button>
+                    </div>
+                    <div className="sp-doc-grid">
+                      <div className={`sp-doc-tile ${requiredDocuments.ownership ? 'is-ready' : ''}`}>
+                        <div className="sp-doc-tile__icon"><FiFileText size={22} /></div>
+                        <div className="sp-doc-tile__body">
+                          <span className="sp-doc-tile__label">Собственность</span>
+                          <span className="sp-doc-tile__name">{requiredDocuments.ownership?.name || 'Не загружен'}</span>
+                        </div>
+                      </div>
+                      <div className={`sp-doc-tile ${requiredDocuments.noDebts ? 'is-ready' : ''}`}>
+                        <div className="sp-doc-tile__icon"><FiFileText size={22} /></div>
+                        <div className="sp-doc-tile__body">
+                          <span className="sp-doc-tile__label">Без долгов</span>
+                          <span className="sp-doc-tile__name">{requiredDocuments.noDebts?.name || 'Не загружена'}</span>
+                        </div>
+                      </div>
+                      {additionalDocuments.map((doc) => (
+                        <div key={doc.id} className="sp-doc-tile is-ready">
+                          {doc.type === 'pdf' ? (
+                            <div className="sp-doc-thumb sp-doc-thumb--pdf"><FiFileText size={28} /></div>
+                          ) : (
+                            <img className="sp-doc-thumb" src={doc.url} alt="" />
+                          )}
+                          <div className="sp-doc-tile__body">
+                            <span className="sp-doc-tile__label">Дополнительно</span>
+                            <span className="sp-doc-tile__name">{doc.name}</span>
+                          </div>
+                          <button type="button" className="sp-doc-tile__remove" onClick={() => handleRemoveDocument(doc.id)} aria-label="Удалить">
+                            <FiX size={14} />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+                )}
+
+                {hasDocuments && (
+                  <section data-sp-section="testdrive" className="sp-card sp-card--enter">
+                    <header className="sp-card__head">
+                      <span className="sp-card__step">Шаг 7</span>
+                      <h3 className="sp-card__title">Тест-драйв</h3>
+                      <p className="sp-card__lead">{SINGLE_PAGE_SECTION_HELP.testdrive.lead}</p>
+                    </header>
+                    <div className="single-page-add-flow__chips sp-chips">
+                      <button type="button" className={`single-page-add-flow__chip ${formData.testDrive === true ? 'active' : ''}`} onClick={() => setFormData((prev) => ({ ...prev, testDrive: true }))}>
+                        Да
+                      </button>
+                      <button type="button" className={`single-page-add-flow__chip ${formData.testDrive === false ? 'active' : ''}`} onClick={() => setFormData((prev) => ({ ...prev, testDrive: false }))}>
+                        Нет
+                      </button>
+                    </div>
+                    {formData.testDrive === true && (
+                      <div className="single-page-add-flow__grid">
+                        <input
+                          type="number"
+                          className="property-name-input"
+                          placeholder="Стоимость за сутки"
+                          value={formData.testDrivePricePerDay || ''}
+                          onChange={(e) => setFormData((prev) => ({ ...prev, testDrivePricePerDay: e.target.value }))}
+                        />
+                        <input
+                          type="number"
+                          className="property-name-input"
+                          placeholder="Страховой депозит"
+                          value={formData.testDriveInsuranceDeposit || ''}
+                          onChange={(e) => setFormData((prev) => ({ ...prev, testDriveInsuranceDeposit: e.target.value }))}
+                        />
+                      </div>
+                    )}
+                  </section>
+                )}
+
+                {hasTestDrive && (
+                  <section data-sp-section="listing" className="sp-card sp-card--enter">
+                    <header className="sp-card__head">
+                      <span className="sp-card__step">Шаг 8</span>
+                      <h3 className="sp-card__title">Формат продажи</h3>
+                      <p className="sp-card__lead">{SINGLE_PAGE_SECTION_HELP.listing.lead}</p>
+                    </header>
+                    <div className="sp-radio-stack" role="radiogroup" aria-label="Тип размещения">
+                      {LISTING_MODE_OPTIONS.map((mode) => (
+                        <label
+                          key={mode.id}
+                          className={`sp-radio-row sp-radio-row--listing sp-radio-row--${mode.tone} ${formData.listingMode === mode.id ? 'is-selected' : ''}`}
+                        >
+                          <input
+                            type="radio"
+                            name="sp-listing-mode"
+                            checked={formData.listingMode === mode.id}
+                            onChange={() => applyListingModeFromSinglePage(mode.id)}
+                          />
+                          <span className="sp-radio-row__icon" aria-hidden="true">{getListingModeIcon(mode.icon)}</span>
+                          <span className="sp-radio-row__text">
+                            <span className="sp-radio-row__title">{mode.title}</span>
+                            <span className="sp-radio-row__desc">{mode.description}</span>
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+                  </section>
+                )}
+
+                {hasListingType && (
+                  <section ref={singlePagePriceSectionRef} data-sp-section="price" className="sp-card sp-card--enter sp-card--price">
+                    <header className="sp-card__head">
+                      <span className="sp-card__step">Шаг 9</span>
+                      <h3 className="sp-card__title">Цена, долги и сроки аукциона</h3>
+                      <p className="sp-card__lead">{SINGLE_PAGE_SECTION_HELP.price.lead}</p>
+                    </header>
+
+                    {formData.listingMode === 'shares' && (
+                      <div className="single-page-add-flow__grid sp-price-block">
+                        <label className="sp-field-label">{t('addPropertyPriceSharesTotalLabel')}</label>
+                        <input
+                          type="text"
+                          className="property-name-input"
+                          value={formData.price ? formatNumberWithCommas(formData.price) : ''}
+                          onChange={handlePriceChange}
+                          inputMode="numeric"
+                        />
+                        <label className="sp-field-label">{t('addPropertyPriceSharesCountLabel')}</label>
+                        <input
+                          type="number"
+                          min={1}
+                          className="property-name-input"
+                          value={formData.totalShares}
+                          onChange={(e) =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              totalShares: e.target.value.replace(/\D/g, ''),
+                            }))
+                          }
+                          placeholder={t('addPropertyPriceSharesCountPlaceholder')}
+                        />
+                      </div>
+                    )}
+
+                    {(formData.listingMode === 'debt' || formData.listingMode === 'debt_auction') && (
+                      <div className="single-page-add-flow__grid sp-price-block">
+                        <label className="sp-field-label">{t('addPropertyPriceDebtAmountLabel')}</label>
+                        <input
+                          type="text"
+                          className="property-name-input"
+                          inputMode="numeric"
+                          value={formData.debtAmount ? formatNumberWithCommas(formData.debtAmount) : ''}
+                          onChange={(e) => {
+                            const raw = removeCommas(e.target.value.replace(/[^\d,]/g, ''))
+                            setFormData((prev) => ({ ...prev, debtAmount: raw }))
+                          }}
+                        />
+                      </div>
+                    )}
+
+                    {(formData.listingMode === 'auction' ||
+                      formData.listingMode === 'auction_buy_now' ||
+                      formData.listingMode === 'debt_auction') && (
+                      <div className="sp-auction-block">
+                        <div className="auction-fields-section sp-auction-picker">
+                          <AuctionPeriodPicker
+                            label={t('addPropertyPriceAuctionPeriodLabel')}
+                            startDate={formData.auctionStartDate}
+                            endDate={formData.auctionEndDate}
+                            onStartDateChange={(date) => setFormData((prev) => ({ ...prev, auctionStartDate: date }))}
+                            onEndDateChange={(date) => setFormData((prev) => ({ ...prev, auctionEndDate: date }))}
+                            disableMinConstraints={adminMode || isAdminAddedProperty || isEditMode}
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="single-page-add-flow__grid sp-price-block">
+                      {(formData.listingMode === 'auction' ||
+                        formData.listingMode === 'auction_buy_now' ||
+                        formData.listingMode === 'debt_auction') && (
+                        <>
+                          <label className="sp-field-label">
+                            Купить сейчас {formData.listingMode === 'auction_buy_now' ? '(обязательно)' : '(опционально)'}
+                          </label>
+                          <input
+                            type="text"
+                            className="property-name-input"
+                            value={formData.price ? formatNumberWithCommas(formData.price) : ''}
+                            onChange={handlePriceChange}
+                            inputMode="numeric"
+                          />
+                        </>
+                      )}
+                      {(formData.listingMode === 'auction' ||
+                        formData.listingMode === 'auction_buy_now' ||
+                        formData.listingMode === 'debt_auction') && (
+                        <>
+                          <label className="sp-field-label">{t('addPropertyPriceStartingBidLabel')}</label>
+                          <input
+                            type="text"
+                            className="property-name-input"
+                            value={formData.auctionStartingPrice ? formatNumberWithCommas(formData.auctionStartingPrice) : ''}
+                            onChange={handleAuctionPriceChange}
+                            inputMode="numeric"
+                          />
+                        </>
+                      )}
+                    </div>
+
+                    <div className="sp-submit-row">
+                      <button type="button" className="sp-btn sp-btn--primary sp-btn--wide" disabled={!hasPrice || isSubmitting} onClick={handlePriceContinue}>
+                        {isSubmitting ? 'Отправка...' : 'Оплата и верификация'}
+                      </button>
+                    </div>
+                  </section>
+                )}
+              </div>
+
+              <aside className="single-page-add-flow__aside" aria-label="Прогресс и подсказки">
+                <div className="sp-aside-stack">
+                  <div className="sp-aside-progress-card">
+                    <p className="sp-aside-progress-card__eyebrow">Заполнение анкеты</p>
+                    <div
+                      className="single-page-add-flow__progress-circle sp-aside-progress-ring"
+                      aria-label={`Заполнено ${singlePageProgress}%`}
+                    >
+                      <svg viewBox="0 0 42 42">
+                        <circle cx="21" cy="21" r="16" className="single-page-add-flow__progress-bg" />
+                        <circle
+                          cx="21"
+                          cy="21"
+                          r="16"
+                          className="single-page-add-flow__progress-fg"
+                          style={{ strokeDasharray: `${(singlePageProgress / 100) * 100.53} 100.53` }}
+                        />
+                      </svg>
+                      <span>{singlePageProgress}%</span>
+                    </div>
+                    <p className="sp-aside-progress-card__hint">
+                      {singlePageProgress >= 100 ? 'Можно переходить к оплате' : 'Заполните блоки слева — подсказки обновляются при прокрутке'}
+                    </p>
+                  </div>
+                  <div className="sp-aside-card">
+                    <div className="sp-aside-card__kicker">Советы</div>
+                    <h4 className="sp-aside-card__title">{spGuideCopy.title}</h4>
+                    <p className="sp-aside-card__lead">{spGuideCopy.lead}</p>
+                    <ul className="sp-aside-card__list">
+                      {spGuideCopy.tips.map((tip, i) => (
+                        <li key={i}>{tip}</li>
+                      ))}
+                    </ul>
+                    <div className="sp-aside-card__rec">
+                      <strong>Рекомендация.</strong> {spGuideCopy.recommend}
+                    </div>
+                  </div>
+                </div>
+              </aside>
+            </div>
+          </div>
+        ) : wizardRenderStep === 'type-selection' ? (
           /* Экран выбора типа недвижимости */
           <div className="property-type-selection-screen">
             <div className="property-type-selection-header">
@@ -4006,143 +5240,29 @@ const AddProperty = ({
             </div>
             
             <div className="property-type-cards-container">
-              <div 
-                className="property-type-card-large"
-                onClick={() => handlePropertyTypeSelect('house')}
-              >
-                <div className="property-type-card-icon">
-                  <FiHome size={48} />
-                </div>
-                <h3 className="property-type-card-title">{t('addPropertyTypeHouseTitle')}</h3>
-                <p className="property-type-card-description">
-                  {t('addPropertyTypeHouseDescription')}
-                </p>
-                <button 
-                  type="button"
-                  className="property-type-card-button"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    handlePropertyTypeSelect('house')
-                  }}
+              {PROPERTY_TYPE_OPTIONS.map((option) => (
+                <div
+                  key={option.id}
+                  className="property-type-card-large"
+                  onClick={() => handlePropertyTypeSelect(option.id)}
                 >
-                  {t('addPropertyTypeContinue')}
-                </button>
-              </div>
-
-              <div 
-                className="property-type-card-large"
-                onClick={() => handlePropertyTypeSelect('apartment')}
-              >
-                <div className="property-type-card-icon">
-                  <PiBuildingApartment size={48} />
+                  <div className="property-type-card-icon">
+                    {getPropertyTypeIcon(option.icon)}
+                  </div>
+                  <h3 className="property-type-card-title">{option.title}</h3>
+                  <p className="property-type-card-description">{option.description}</p>
+                  <button
+                    type="button"
+                    className="property-type-card-button"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handlePropertyTypeSelect(option.id)
+                    }}
+                  >
+                    Продолжить
+                  </button>
                 </div>
-                <h3 className="property-type-card-title">{t('addPropertyTypeApartmentTitle')}</h3>
-                <p className="property-type-card-description">
-                  {t('addPropertyTypeApartmentDescription')}
-                </p>
-                <button 
-                  type="button"
-                  className="property-type-card-button"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    handlePropertyTypeSelect('apartment')
-                  }}
-                >
-                  {t('addPropertyTypeContinue')}
-                </button>
-              </div>
-
-              <div 
-                className="property-type-card-large"
-                onClick={() => handlePropertyTypeSelect('villa')}
-              >
-                <div className="property-type-card-icon">
-                  <PiBuildings size={48} />
-                </div>
-                <h3 className="property-type-card-title">{t('addPropertyTypeVillaTitle')}</h3>
-                <p className="property-type-card-description">
-                  {t('addPropertyTypeVillaDescription')}
-                </p>
-                <button 
-                  type="button"
-                  className="property-type-card-button"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    handlePropertyTypeSelect('villa')
-                  }}
-                >
-                  {t('addPropertyTypeContinue')}
-                </button>
-              </div>
-
-              <div 
-                className="property-type-card-large"
-                onClick={() => handlePropertyTypeSelect('commercial')}
-              >
-                <div className="property-type-card-icon">
-                  <PiWarehouse size={48} />
-                </div>
-                <h3 className="property-type-card-title">{t('addPropertyTypeApartmentsTitle')}</h3>
-                <p className="property-type-card-description">
-                  {t('addPropertyTypeApartmentsDescription')}
-                </p>
-                <button 
-                  type="button"
-                  className="property-type-card-button"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    handlePropertyTypeSelect('commercial')
-                  }}
-                >
-                  {t('addPropertyTypeContinue')}
-                </button>
-              </div>
-
-              <div 
-                className="property-type-card-large property-type-card-large--share"
-                onClick={() => setCurrentStep('share-type-selection')}
-              >
-                <div className="property-type-card-icon property-type-card-icon--share">
-                  <FiPieChart size={48} />
-                </div>
-                <h3 className="property-type-card-title">{t('addPropertyTypeShareTitle')}</h3>
-                <p className="property-type-card-description">
-                  {t('addPropertyTypeShareDescription')}
-                </p>
-                <button 
-                  type="button"
-                  className="property-type-card-button"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    setCurrentStep('share-type-selection')
-                  }}
-                >
-                  {t('addPropertyTypeContinue')}
-                </button>
-              </div>
-
-              <div 
-                className="property-type-card-large property-type-card-large--debt"
-                onClick={() => setCurrentStep('debt-type-selection')}
-              >
-                <div className="property-type-card-icon property-type-card-icon--debt">
-                  <FiPieChart size={48} />
-                </div>
-                <h3 className="property-type-card-title">{t('addPropertyTypeDebtTitle')}</h3>
-                <p className="property-type-card-description">
-                  {t('addPropertyTypeDebtDescription')}
-                </p>
-                <button 
-                  type="button"
-                  className="property-type-card-button"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    setCurrentStep('debt-type-selection')
-                  }}
-                >
-                  {t('addPropertyTypeContinue')}
-                </button>
-              </div>
+              ))}
             </div>
 
      
@@ -4320,7 +5440,7 @@ const AddProperty = ({
                       showNotification('Страховой депозит не может быть отрицательным')
                       return
                     }
-                    setCurrentStep('property-name')
+                    setCurrentStep('listing-type')
                   }}
                 >
                   {t('addPropertyContinue')}
@@ -6724,6 +7844,55 @@ const AddProperty = ({
               />
             </div>
           </div>
+        ) : wizardRenderStep === 'listing-type' ? (
+          <div className={`listing-mode-stage listing-mode-stage--${LISTING_MODE_THEME_STAGES[listingModeThemeStage]}`}>
+            <div className="listing-mode-stage__glow listing-mode-stage__glow--left" aria-hidden="true" />
+            <div className="listing-mode-stage__glow listing-mode-stage__glow--right" aria-hidden="true" />
+            <div className="listing-mode-stage__hero">
+              <span className="listing-mode-stage__pill">Шаг 8 из 9</span>
+              <h2>Выберите тип размещения</h2>
+              <p>Прокрутите карточки вниз и выберите подходящий формат публикации. Фон динамически меняется при скролле.</p>
+            </div>
+            <div
+              ref={listingModeScrollRef}
+              className="listing-mode-stage__scroller"
+              onScroll={handleListingModeThemeScroll}
+              onWheel={handleListingModeThemeWheel}
+            >
+              <div className="listing-mode-stage__cards">
+                {LISTING_MODE_OPTIONS.map((mode, index) => (
+                  <button
+                    key={mode.id}
+                    type="button"
+                    className={`listing-mode-stage__card listing-mode-stage__card--${mode.tone} ${formData.listingMode === mode.id ? 'listing-mode-stage__card--active' : ''}`}
+                    style={{ animationDelay: `${index * 70}ms` }}
+                    onClick={() => handleListingModeSelect(mode.id)}
+                  >
+                    <span className="listing-mode-stage__card-icon">{getListingModeIcon(mode.icon)}</span>
+                    <span className="listing-mode-stage__card-content">
+                      <strong>{mode.title}</strong>
+                      <small>{mode.description}</small>
+                    </span>
+                    <span className="listing-mode-stage__card-cta">Выбрать</span>
+                  </button>
+                ))}
+                <div className="listing-mode-stage__scroll-tip">
+                  <FiChevronDown size={18} />
+                  <span>Скролл и колесо мыши переключают тему оформления</span>
+                </div>
+              </div>
+            </div>
+            <div className="property-name-actions listing-mode-stage__actions">
+              <button
+                type="button"
+                className="property-name-back-btn"
+                onClick={() => setCurrentStep('documents')}
+              >
+                <FiChevronLeft size={16} />
+                {t('addPropertyBack')}
+              </button>
+            </div>
+          </div>
         ) : wizardRenderStep === 'price' ? (
           /* Экран цены:
              - для доли — только общая цена и количество долей
@@ -6732,18 +7901,18 @@ const AddProperty = ({
           <div className="property-price-screen">
             <div className="property-price-main">
               <h2 className="property-price-title">
-                {formData.isShareProperty
+                {formData.listingMode === 'shares'
                   ? t('addPropertyPriceTitleShares')
-                  : formData.isDebtProperty
+                  : (formData.listingMode === 'debt' || formData.listingMode === 'debt_auction')
                     ? t('addPropertyPriceTitleDebt')
                     : t('addPropertyPriceTitle')}
               </h2>
               
-              {formData.isShareProperty ? (
+              {formData.listingMode === 'shares' ? (
                 <p className="property-price-description">
                   {t('addPropertyPriceDescriptionShares')}
                 </p>
-              ) : formData.isDebtProperty ? (
+              ) : (formData.listingMode === 'debt' || formData.listingMode === 'debt_auction') ? (
                 <p className="property-price-description">
                   {t('addPropertyPriceDescriptionDebt')}
                 </p>
@@ -6754,7 +7923,7 @@ const AddProperty = ({
               )}
 
               {/* Для доли: общая цена + количество долей + цена за долю */}
-              {formData.isShareProperty && (
+              {formData.listingMode === 'shares' && (
                 <>
                   <div className="price-input-section">
                     <label className="price-input-label">{t('addPropertyPriceSharesTotalLabel')}</label>
@@ -6813,7 +7982,7 @@ const AddProperty = ({
               )}
 
               {/* Для долгов: сумма долга + фиксированная цена продажи */}
-              {formData.isDebtProperty && !formData.isShareProperty && (
+              {(formData.listingMode === 'debt' || formData.listingMode === 'debt_auction') && (
                 <>
                 <div className="price-input-section">
                   <label className="price-input-label">{t('addPropertyPriceDebtAmountLabel')}</label>
@@ -6866,15 +8035,17 @@ const AddProperty = ({
                 </>
               )}
 
-              {!formData.isShareProperty && (
+              {(formData.listingMode === 'auction' || formData.listingMode === 'auction_buy_now' || formData.listingMode === 'debt_auction') && (
                 <>
               {/* Блок цены "Купить сейчас" */}
               <div className="price-input-section">
                 <label className="price-input-label">
-                  Купить сейчас (опционально)
+                  Купить сейчас {formData.listingMode === 'auction_buy_now' ? '(обязательно)' : '(опционально)'}
                 </label>
                 <p style={{ fontSize: '14px', color: '#666', marginTop: '4px', marginBottom: '12px' }}>
-                  Укажите цену, за которую вы готовы мгновенно продать объект. Если не укажете, объект будет только на аукционе.
+                  {formData.listingMode === 'auction_buy_now'
+                    ? 'Для этого типа размещения нужно указать цену мгновенной покупки.'
+                    : 'Укажите цену, за которую вы готовы мгновенно продать объект. Если не укажете, объект будет только на аукционе.'}
                 </p>
                 <div className="price-input-wrapper-large">
                   <div className="currency-selector">
@@ -6916,6 +8087,7 @@ const AddProperty = ({
                     className="price-input-large"
                     placeholder="0"
                     inputMode="numeric"
+                    required={formData.listingMode === 'auction_buy_now'}
                   />
                 </div>
               </div>
@@ -7007,7 +8179,7 @@ const AddProperty = ({
                 <button
                   type="button"
                   className="property-price-back-btn"
-                  onClick={() => setCurrentStep('documents')}
+                  onClick={() => setCurrentStep('listing-type')}
                 >
                   <FiChevronLeft size={16} />
                   {t('addPropertyBack')}

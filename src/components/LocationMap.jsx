@@ -4,49 +4,39 @@ import 'maplibre-gl/dist/maplibre-gl.css'
 import './LocationMap.css'
 import { SATELLITE_MAP_STYLE, SATELLITE_MAP_MAX_ZOOM } from '../utils/mapStyles'
 
-const LocationMap = ({ center, zoom = 10, marker }) => {
+const LocationMap = ({
+  center,
+  zoom = 10,
+  marker,
+  markerDraggable = false,
+  onMarkerDragEnd,
+}) => {
   const mapContainerRef = useRef(null)
   const mapRef = useRef(null)
   const markerRef = useRef(null)
-  const lastCenterRef = useRef(null) // Для отслеживания последних координат, чтобы не обновлять карту постоянно
+  const lastCenterRef = useRef(null)
   const lastZoomAppliedRef = useRef(null)
+  const onMarkerDragEndRef = useRef(onMarkerDragEnd)
+  const markerDraggableRef = useRef(markerDraggable)
 
-  // Логируем полученные пропсы
-  useEffect(() => {
-    console.log('🗺️ LocationMap получил пропсы:', { center, zoom, marker })
-  }, [center, zoom, marker])
+  onMarkerDragEndRef.current = onMarkerDragEnd
+  markerDraggableRef.current = markerDraggable
 
-  // Инициализация карты
+  // Инициализация карты (без маркера — маркер в отдельном эффекте)
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) return
 
-    // Определяем начальный центр карты - вид высоко над Европой
-    let initialCenter = [20, 55] // Центр Европы [lng, lat]
-    let initialZoom = 3 // Высокий вид над Европой
-    
-    // Если есть валидные координаты, используем их
+    let initialCenter = [20, 55]
+    let initialZoom = 3
+
     if (Array.isArray(center) && center.length === 2) {
       const lat = parseFloat(center[0])
       const lng = parseFloat(center[1])
       if (!isNaN(lat) && !isNaN(lng) && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
-        // Проверяем, не являются ли координаты дефолтными (вид над Европой)
         const isDefaultView = Math.abs(lat - 55) < 1 && Math.abs(lng - 20) < 1
-        if (isDefaultView) {
-          // Если координаты дефолтные, используем дефолтный зум (высокий вид)
-          initialCenter = [lng, lat]
-          initialZoom = 3 // Высокий вид над Европой
-          console.log('🗺️ LocationMap: инициализация с дефолтными координатами (вид над Европой)', initialCenter, 'zoom:', initialZoom)
-        } else {
-          // Если координаты не дефолтные, используем переданный зум
-          initialCenter = [lng, lat]
-          initialZoom = zoom || 15
-          console.log('🗺️ LocationMap: инициализация с координатами', initialCenter, 'из', center, 'zoom:', initialZoom)
-        }
-      } else {
-        console.warn('⚠️ LocationMap: невалидные координаты при инициализации', center)
+        initialCenter = [lng, lat]
+        initialZoom = isDefaultView ? 3 : (zoom || 15)
       }
-    } else {
-      console.log('🗺️ LocationMap: инициализация с дефолтными координатами (вид над Европой)', initialCenter, 'zoom:', initialZoom)
     }
 
     const map = new maplibregl.Map({
@@ -56,65 +46,11 @@ const LocationMap = ({ center, zoom = 10, marker }) => {
       zoom: Math.min(initialZoom, SATELLITE_MAP_MAX_ZOOM),
       minZoom: 2,
       maxZoom: SATELLITE_MAP_MAX_ZOOM,
-      attributionControl: false
+      attributionControl: false,
     })
 
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right')
-
     mapRef.current = map
-
-    // Функция для создания маркера
-    const createMarker = (coords) => {
-      if (!Array.isArray(coords) || coords.length !== 2) return
-      
-      const lat = parseFloat(coords[0])
-      const lng = parseFloat(coords[1])
-      
-      if (isNaN(lat) || isNaN(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
-        console.warn('⚠️ LocationMap: невалидные координаты для маркера при инициализации', coords)
-        return
-      }
-      
-      // Проверяем, не являются ли координаты дефолтными (вид над Европой)
-      const isDefaultView = Math.abs(lat - 55) < 1 && Math.abs(lng - 20) < 1
-      if (isDefaultView) {
-        console.log('📍 LocationMap: пропускаем создание маркера на дефолтных координатах')
-        return
-      }
-      
-      const lngLat = [lng, lat]
-      console.log('📍 LocationMap: создаем маркер при инициализации на координатах', lngLat, 'из', coords)
-      
-      // Ждем, пока карта загрузится, перед добавлением маркера
-      if (map.loaded()) {
-        markerRef.current = new maplibregl.Marker({
-          color: '#0ABAB5',
-          pitchAlignment: 'map',
-          rotationAlignment: 'viewport',
-          subpixelPositioning: true
-        })
-          .setLngLat(lngLat)
-          .addTo(map)
-        console.log('✅ LocationMap: маркер создан при инициализации')
-      } else {
-        map.once('load', () => {
-          markerRef.current = new maplibregl.Marker({
-            color: '#0ABAB5',
-            pitchAlignment: 'map',
-            rotationAlignment: 'viewport',
-            subpixelPositioning: true
-          })
-            .setLngLat(lngLat)
-            .addTo(map)
-          console.log('✅ LocationMap: маркер создан после загрузки карты')
-        })
-      }
-    }
-
-    // Создаем маркер только если он явно передан и не является дефолтным
-    if (Array.isArray(marker) && marker.length === 2) {
-      createMarker(marker)
-    }
 
     return () => {
       if (markerRef.current) {
@@ -126,33 +62,20 @@ const LocationMap = ({ center, zoom = 10, marker }) => {
     }
   }, [])
 
-  // Обновление центра/зума (только один раз при изменении координат)
   useEffect(() => {
     if (!mapRef.current) return
-    
-    // Если координаты не переданы или невалидны, не обновляем
+
     if (!Array.isArray(center) || center.length !== 2) {
       return
     }
-    
-    // Проверяем валидность координат
+
     const lat = parseFloat(center[0])
     const lng = parseFloat(center[1])
-    
-    if (isNaN(lat) || isNaN(lng)) {
-      console.warn('⚠️ LocationMap: координаты не являются числами', center)
-      return
-    }
-    
-    // Проверяем диапазоны координат
-    if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
-      console.warn('⚠️ LocationMap: координаты вне допустимого диапазона', { lat, lng })
-      return
-    }
-    
-    // MapLibre использует формат [lng, lat]
+
+    if (isNaN(lat) || isNaN(lng)) return
+    if (lat < -90 || lat > 90 || lng < -180 || lng > 180) return
+
     const lngLat = [lng, lat]
-    
     const centerKey = `${lat.toFixed(4)}-${lng.toFixed(4)}`
     if (lastCenterRef.current === centerKey) {
       return
@@ -161,10 +84,9 @@ const LocationMap = ({ center, zoom = 10, marker }) => {
 
     const applyCenter = () => {
       try {
-        console.log('🗺️ LocationMap: обновляем центр карты на', lngLat, 'из координат', center)
         mapRef.current.setCenter(lngLat)
-      } catch (error) {
-        console.warn('⚠️ LocationMap: ошибка при обновлении центра карты', error)
+      } catch {
+        // ignore
       }
     }
 
@@ -175,7 +97,6 @@ const LocationMap = ({ center, zoom = 10, marker }) => {
     applyCenter()
   }, [center])
 
-  // Зум задаётся родителем; при undefined не трогаем зум (сохраняем вид по умолчанию или после жеста)
   useEffect(() => {
     if (!mapRef.current) return
     if (zoom === undefined || zoom === null) {
@@ -189,8 +110,8 @@ const LocationMap = ({ center, zoom = 10, marker }) => {
         if (lastZoomAppliedRef.current === z) return
         lastZoomAppliedRef.current = z
         mapRef.current.setZoom(z)
-      } catch (error) {
-        console.warn('⚠️ LocationMap: ошибка при обновлении зума', error)
+      } catch {
+        // ignore
       }
     }
 
@@ -201,77 +122,79 @@ const LocationMap = ({ center, zoom = 10, marker }) => {
     applyZoom()
   }, [zoom])
 
-  // Обновление маркера
+  const placeMarker = (lngLat) => {
+    const map = mapRef.current
+    if (!map) return
+
+    const lat = lngLat[1]
+    const lng = lngLat[0]
+    const isDefaultView = Math.abs(lat - 55) < 1 && Math.abs(lng - 20) < 1
+    if (isDefaultView) {
+      if (markerRef.current) {
+        markerRef.current.remove()
+        markerRef.current = null
+      }
+      return
+    }
+
+    if (markerRef.current) {
+      markerRef.current.remove()
+      markerRef.current = null
+    }
+
+    const draggable = !!markerDraggableRef.current
+
+    try {
+      const m = new maplibregl.Marker({
+        color: '#0ABAB5',
+        pitchAlignment: 'map',
+        rotationAlignment: 'viewport',
+        subpixelPositioning: true,
+        draggable,
+      })
+        .setLngLat(lngLat)
+        .addTo(map)
+      markerRef.current = m
+      if (draggable && typeof m.on === 'function') {
+        m.on('dragend', () => {
+          const ll = m.getLngLat()
+          onMarkerDragEndRef.current?.({ lat: ll.lat, lng: ll.lng })
+        })
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  // Маркер: создаём/обновляем после загрузки карты
   useEffect(() => {
     if (!mapRef.current) return
 
-    if (Array.isArray(marker) && marker.length === 2) {
-      const lat = parseFloat(marker[0])
-      const lng = parseFloat(marker[1])
-      
-      // Проверяем валидность координат маркера
-      if (isNaN(lat) || isNaN(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
-        console.warn('⚠️ LocationMap: невалидные координаты маркера', marker)
-        return
-      }
-      
-      // Проверяем, не являются ли координаты дефолтными (вид над Европой)
-      const isDefaultView = Math.abs(lat - 55) < 1 && Math.abs(lng - 20) < 1
-      if (isDefaultView) {
-        console.log('📍 LocationMap: пропускаем создание маркера на дефолтных координатах')
-        if (markerRef.current) {
-          markerRef.current.remove()
-          markerRef.current = null
-        }
-        return
-      }
-      
-      // MapLibre использует формат [lng, lat]
-      const lngLat = [lng, lat]
-      console.log('📍 LocationMap: обновляем маркер на координатах', lngLat, 'из', marker)
-
-      // Ждем, пока карта загрузится, если нужно
-      if (!mapRef.current.loaded()) {
-        mapRef.current.once('load', () => {
-          updateMarker(lngLat)
-        })
-        return
-      }
-      
-      updateMarker(lngLat)
-      
-      function updateMarker(lngLat) {
-        try {
-          if (!markerRef.current) {
-            console.log('📍 LocationMap: создаем новый маркер')
-            markerRef.current = new maplibregl.Marker({
-              color: '#0ABAB5',
-              pitchAlignment: 'map',
-              rotationAlignment: 'viewport',
-              subpixelPositioning: true
-            })
-              .setLngLat(lngLat)
-              .addTo(mapRef.current)
-            console.log('✅ LocationMap: маркер создан и добавлен на карту')
-          } else {
-            console.log('📍 LocationMap: обновляем позицию существующего маркера')
-            markerRef.current.setLngLat(lngLat)
-          }
-        } catch (error) {
-          console.warn('⚠️ LocationMap: ошибка при обновлении маркера', error)
-        }
-      }
-    } else {
-      // Если маркер не передан, удаляем существующий маркер
+    if (!Array.isArray(marker) || marker.length !== 2) {
       if (markerRef.current) {
-        console.log('📍 LocationMap: удаляем маркер (маркер не передан)')
         markerRef.current.remove()
         markerRef.current = null
-      } else {
-        console.log('📍 LocationMap: маркер не передан')
       }
+      return
     }
-  }, [marker])
+
+    const lat = parseFloat(marker[0])
+    const lng = parseFloat(marker[1])
+
+    if (isNaN(lat) || isNaN(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+      return
+    }
+
+    const lngLat = [lng, lat]
+
+    const run = () => placeMarker(lngLat)
+
+    if (!mapRef.current.loaded()) {
+      mapRef.current.once('load', run)
+      return
+    }
+    run()
+  }, [marker, markerDraggable])
 
   return (
     <div className="location-map-container">
@@ -281,4 +204,3 @@ const LocationMap = ({ center, zoom = 10, marker }) => {
 }
 
 export default LocationMap
-

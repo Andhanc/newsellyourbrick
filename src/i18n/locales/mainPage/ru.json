@@ -1043,6 +1043,8 @@
   "addPropertyAmenitiesStorage": "Кладовая",
   "addPropertyAmenitiesElevator": "Лифт",
   "addPropertyAmenitiesCategoryOther": "Дополнительно",
+  "addPropertyAmenitiesCategoryOutdoor": "Двор и участок",
+  "addPropertyAmenitiesGroupsIntro": "Отметьте удобства по разделам — так объявление лучше находят в фильтрах.",
   "addPropertyAmenitiesOtherLabel": "Укажите другие удобства, если такие есть",
   "addPropertyAmenitiesOtherPlaceholder": "Например: встроенная система умного дома, проектор, музыкальная система и т.д.",
   "addPropertyAmenitiesHint1Title": "Какие удобства указать?",

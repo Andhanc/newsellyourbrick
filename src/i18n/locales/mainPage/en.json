@@ -1043,6 +1043,8 @@
   "addPropertyAmenitiesStorage": "Storage room",
   "addPropertyAmenitiesElevator": "Elevator",
   "addPropertyAmenitiesCategoryOther": "Other",
+  "addPropertyAmenitiesCategoryOutdoor": "Outdoor & grounds",
+  "addPropertyAmenitiesGroupsIntro": "Select amenities by category — this helps buyers find your listing in filters.",
   "addPropertyAmenitiesOtherLabel": "List other amenities if any",
   "addPropertyAmenitiesOtherPlaceholder": "E.g.: smart home system, projector, sound system, etc.",
   "addPropertyAmenitiesHint1Title": "What amenities to list?",

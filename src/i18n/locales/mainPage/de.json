@@ -1041,6 +1041,8 @@
   "addPropertyAmenitiesStorage": "Abstellraum",
   "addPropertyAmenitiesElevator": "Aufzug",
   "addPropertyAmenitiesCategoryOther": "Sonstiges",
+  "addPropertyAmenitiesCategoryOutdoor": "Außenbereich & Grundstück",
+  "addPropertyAmenitiesGroupsIntro": "Wählen Sie Ausstattung nach Kategorie — so finden Käufer Ihr Inserat leichter in Filtern.",
   "addPropertyAmenitiesOtherLabel": "Geben Sie weitere Ausstattung an, falls vorhanden",
   "addPropertyAmenitiesOtherPlaceholder": "z. B.: Smart-Home-System, Beamer, Musikanlage usw.",
   "addPropertyAmenitiesHint1Title": "Welche Ausstattung angeben?",

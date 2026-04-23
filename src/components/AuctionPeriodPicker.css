@@ -1,52 +1,49 @@
 .auction-period-picker {
   width: 100%;
+  color: #0f172a;
+}
+
+.auction-period-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.auction-period-header__icon {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  border-radius: 14px;
+  background: linear-gradient(145deg, rgba(10, 186, 181, 0.14) 0%, rgba(10, 186, 181, 0.06) 100%);
+  border: 1px solid rgba(10, 186, 181, 0.28);
+  color: #0a8f8a;
+  box-shadow: 0 4px 12px rgba(8, 120, 116, 0.1);
 }
 
 .auction-period-label {
   display: block;
   font-size: 17px;
-  font-weight: 700;
-  color: #000000;
-  margin-bottom: 20px;
-  letter-spacing: -0.3px;
-  position: relative;
-  padding-left: 28px;
-}
-
-.auction-period-label::before {
-  content: '📅';
-  position: absolute;
-  left: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: 20px;
-  filter: drop-shadow(0 2px 4px rgba(10, 186, 181, 0.3));
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #0f172a;
+  margin: 0;
+  line-height: 1.25;
 }
 
 .auction-period-content {
   display: flex;
   flex-direction: column;
-  gap: 20px;
-  background: linear-gradient(135deg, 
-    rgba(255, 255, 255, 0.9) 0%, 
-    rgba(248, 250, 255, 0.85) 100%
-  );
-  padding: 24px;
+  gap: 0;
+  padding: 22px 22px 20px;
   border-radius: 18px;
-  border: 2px solid rgba(255, 255, 255, 0.5);
-  box-shadow: 
-    0 8px 24px rgba(10, 186, 181, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.8);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  transition: all 0.3s ease;
-}
-
-.auction-period-content:hover {
-  box-shadow: 
-    0 12px 32px rgba(10, 186, 181, 0.15),
-    inset 0 1px 0 rgba(255, 255, 255, 0.9);
-  transform: translateY(-2px);
+  background: linear-gradient(165deg, #ffffff 0%, #f8fafc 45%, #f4fdfc 100%);
+  border: 1px solid rgba(226, 232, 240, 0.95);
+  box-shadow:
+    0 10px 28px rgba(15, 23, 42, 0.06),
+    0 1px 0 rgba(255, 255, 255, 0.9) inset;
 }
 
 .auction-period-end-date {
@@ -56,172 +53,123 @@
 }
 
 .auction-period-field-label {
-  font-size: 14px;
-  font-weight: 600;
-  color: #000000;
-  margin-bottom: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #475569;
+  margin: 0 0 2px;
   display: flex;
   align-items: center;
   gap: 8px;
+  letter-spacing: 0.02em;
 }
 
 .auction-period-field-label::before {
   content: '';
   width: 4px;
-  height: 16px;
-  background: linear-gradient(135deg, #0ABAB5 0%, #089C97 100%);
-  border-radius: 2px;
+  height: 14px;
+  border-radius: 3px;
+  background: linear-gradient(180deg, #0dc4be 0%, #0ABAB5 50%, #08928e 100%);
+  flex-shrink: 0;
+}
+
+.auction-period-date-shell {
+  position: relative;
+  border-radius: 14px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.auction-period-date-shell:focus-within {
+  border-color: rgba(10, 186, 181, 0.55);
+  box-shadow:
+    0 0 0 3px rgba(10, 186, 181, 0.12),
+    0 6px 18px rgba(10, 186, 181, 0.1);
 }
 
 .auction-period-date-input {
-  padding: 14px 18px;
-  border: 2px solid rgba(224, 224, 224, 0.5);
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 14px 16px;
+  margin: 0;
+  border: none;
   border-radius: 14px;
   font-size: 15px;
-  font-weight: 500;
-  color: #000000;
-  background: linear-gradient(135deg, #ffffff 0%, #fafbfc 100%);
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  width: 100%;
-  max-width: 100%;
-  box-sizing: border-box;
-  box-shadow: 
-    0 4px 12px rgba(0, 0, 0, 0.05),
-    inset 0 1px 0 rgba(255, 255, 255, 0.8);
-  position: relative;
+  font-weight: 600;
+  font-family: inherit;
+  color: #0f172a;
+  background: transparent;
+  color-scheme: light;
+  min-height: 50px;
+  cursor: pointer;
+  transition: color 0.15s ease;
 }
 
-.auction-period-date-input::placeholder {
-  color: #999;
-  font-weight: 400;
+.auction-period-date-input:hover {
+  color: #0d9488;
 }
 
 .auction-period-date-input:focus {
   outline: none;
-  border-color: #0ABAB5;
-  box-shadow: 
-    0 8px 24px rgba(10, 186, 181, 0.2),
-    0 0 0 4px rgba(10, 186, 181, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.9);
-  transform: translateY(-2px);
-  background: linear-gradient(135deg, #ffffff 0%, #f0f9ff 100%);
+}
+
+.auction-period-date-input::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.75;
+  padding: 4px;
+  margin-right: 2px;
+  border-radius: 8px;
+  transition: opacity 0.15s ease, background 0.15s ease;
+}
+
+.auction-period-date-shell:focus-within .auction-period-date-input::-webkit-calendar-picker-indicator {
+  opacity: 1;
+  background: rgba(10, 186, 181, 0.12);
 }
 
 .auction-period-date-input:disabled {
-  background: #f5f5f5;
+  background: #f1f5f9;
   cursor: not-allowed;
-  opacity: 0.6;
+  opacity: 0.65;
 }
 
 .auction-period-date-input--error {
-  border-color: #e74c3c;
+  color: #b91c1c;
+}
+
+.auction-period-date-shell:has(.auction-period-date-input--error) {
+  border-color: #fca5a5;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.12);
 }
 
 .auction-period-date-input--error:focus {
-  border-color: #e74c3c;
-  box-shadow: 0 0 0 3px rgba(231, 76, 60, 0.1);
+  outline: none;
 }
 
 .auction-period-error {
-  margin-top: 8px;
-  padding: 10px 12px;
-  background: #fee;
-  border: 1px solid #e74c3c;
-  border-radius: 6px;
+  margin-top: 4px;
+  padding: 12px 14px;
+  background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+  border: 1px solid #fecaca;
+  border-radius: 12px;
   font-size: 13px;
-  color: #c0392b;
-  line-height: 1.4;
-  max-width: 300px;
+  font-weight: 600;
+  color: #b91c1c;
+  line-height: 1.45;
 }
 
 .auction-period-hint {
-  margin-top: 10px;
-  padding: 14px 18px;
-  background: linear-gradient(135deg, 
-    rgba(255, 255, 255, 0.7) 0%, 
-    rgba(248, 250, 255, 0.65) 50%,
-    rgba(240, 245, 255, 0.7) 100%
-  );
-  backdrop-filter: blur(25px) saturate(180%);
-  -webkit-backdrop-filter: blur(25px) saturate(180%);
-  border: 2px solid rgba(255, 255, 255, 0.4);
-  border-radius: 16px;
+  margin-top: 6px;
+  padding: 12px 14px;
+  background: rgba(10, 186, 181, 0.08);
+  border: 1px solid rgba(10, 186, 181, 0.22);
+  border-radius: 12px;
   font-size: 13px;
-  font-weight: 500;
-  color: #000000;
+  font-weight: 600;
+  color: #134e4a;
   line-height: 1.5;
-  max-width: 100%;
-  box-shadow: 
-    0 12px 32px rgba(10, 186, 181, 0.15),
-    0 4px 16px rgba(0, 0, 0, 0.08),
-    inset 0 1px 0 rgba(255, 255, 255, 0.8),
-    inset 0 -1px 0 rgba(10, 186, 181, 0.1);
-  position: relative;
-  overflow: hidden;
-  animation: slideIn 0.3s ease-out;
-}
-
-.auction-period-hint::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: linear-gradient(90deg, 
-    transparent, 
-    rgba(10, 186, 181, 0.4),
-    rgba(10, 186, 181, 0.7),
-    rgba(10, 186, 181, 0.4),
-    transparent
-  );
-  pointer-events: none;
-  animation: shimmer 3s infinite;
-}
-
-.auction-period-hint::after {
-  content: '';
-  position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-  background: radial-gradient(
-    circle,
-    rgba(10, 186, 181, 0.08) 0%,
-    transparent 70%
-  );
-  pointer-events: none;
-  animation: pulse 4s ease-in-out infinite;
-}
-
-@keyframes slideIn {
-  from {
-    opacity: 0;
-    transform: translateY(-5px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes shimmer {
-  0%, 100% {
-    opacity: 0.3;
-  }
-  50% {
-    opacity: 0.8;
-  }
-}
-
-@keyframes pulse {
-  0%, 100% {
-    transform: scale(1);
-    opacity: 0.5;
-  }
-  50% {
-    transform: scale(1.1);
-    opacity: 0.8;
-  }
 }
