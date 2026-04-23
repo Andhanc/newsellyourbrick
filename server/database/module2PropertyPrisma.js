@@ -216,7 +216,7 @@ function buildHouseWhere(filters = {}) {
   return buildApartmentWhere(filters);
 }
 
-function passesApprovedFilters(p) {
+export function passesApprovedFilters(p) {
   const a = p.is_auction;
   const auctionOff =
     a === 0 ||
@@ -231,7 +231,7 @@ function passesApprovedFilters(p) {
   return true;
 }
 
-function passesAuctionFilters(p) {
+export function passesAuctionFilters(p) {
   const a = p.is_auction;
   const auctionOn = a === 1 || a === '1' || String(a) === '1';
   if (!auctionOn) return false;
@@ -244,13 +244,102 @@ function passesAuctionFilters(p) {
   return true;
 }
 
-function passesDebtFilters(p) {
+export function passesDebtFilters(p) {
   return (
     p.sale_type === 'debt' ||
     p.is_debt === 1 ||
     p.has_debt === 1 ||
     ['red', 'yellow', 'green'].includes(p.debt_severity)
   );
+}
+
+/** Минимальный join пользователя для списков (не тянуть все поля users). */
+const PROPERTY_LIST_USER_INCLUDE = {
+  users: {
+    select: {
+      first_name: true,
+      last_name: true,
+      email: true,
+      phone_number: true,
+      role: true,
+    },
+  },
+};
+
+function approvedBuyNowPrismaWhere(propertyType = null) {
+  const w = {
+    moderation_status: 'approved',
+    AND: [
+      { OR: [{ is_auction: null }, { is_auction: 0 }] },
+      { NOT: { sale_type: 'debt' } },
+      { OR: [{ is_debt: null }, { is_debt: 0 }] },
+      { OR: [{ has_debt: null }, { has_debt: 0 }] },
+      {
+        OR: [{ debt_severity: null }, { debt_severity: { notIn: ['red', 'yellow', 'green'] } }],
+      },
+    ],
+  };
+  if (propertyType) w.property_type = propertyType;
+  return w;
+}
+
+function auctionListPrismaWhere(propertyType = null) {
+  const w = {
+    moderation_status: 'approved',
+    is_auction: 1,
+    NOT: { sale_type: 'debt' },
+    AND: [
+      { OR: [{ is_debt: null }, { is_debt: 0 }] },
+      { OR: [{ has_debt: null }, { has_debt: 0 }] },
+      {
+        OR: [{ debt_severity: null }, { debt_severity: { notIn: ['red', 'yellow', 'green'] } }],
+      },
+      {
+        OR: [
+          { auction_starting_price: { not: null } },
+          {
+            AND: [{ auction_end_date: { not: null } }, { NOT: { auction_end_date: '' } }],
+          },
+        ],
+      },
+    ],
+  };
+  if (propertyType) w.property_type = propertyType;
+  return w;
+}
+
+function debtListPrismaWhere(propertyType = null) {
+  const w = {
+    moderation_status: 'approved',
+    OR: [
+      { sale_type: 'debt' },
+      { is_debt: 1 },
+      { has_debt: 1 },
+      { debt_severity: { in: ['red', 'yellow', 'green'] } },
+    ],
+  };
+  if (propertyType) w.property_type = propertyType;
+  return w;
+}
+
+function shareSectionPrismaWhere(propertyType = null) {
+  const w = {
+    moderation_status: 'approved',
+    AND: [
+      {
+        OR: [{ sale_type: 'share' }, { is_shared_ownership: 1 }],
+      },
+      { OR: [{ is_auction: null }, { is_auction: 0 }] },
+      { NOT: { sale_type: 'debt' } },
+      { OR: [{ is_debt: null }, { is_debt: 0 }] },
+      { OR: [{ has_debt: null }, { has_debt: 0 }] },
+      {
+        OR: [{ debt_severity: null }, { debt_severity: { notIn: ['red', 'yellow', 'green'] } }],
+      },
+    ],
+  };
+  if (propertyType) w.property_type = propertyType;
+  return w;
 }
 
 export const apartmentQueries = {
@@ -708,18 +797,12 @@ export const propertyQueries = {
 
   getAuctionsCount: async () => {
         const prisma = getPrisma();
-    const [aptRows, houseRows] = await Promise.all([
-      prisma.properties_apartments.findMany({
-        where: { moderation_status: 'approved' },
-        select: { is_auction: true },
-      }),
-      prisma.properties_houses.findMany({
-        where: { moderation_status: 'approved' },
-        select: { is_auction: true },
-      }),
+    const auctionish = { moderation_status: 'approved', is_auction: 1 };
+    const [c1, c2] = await Promise.all([
+      prisma.properties_apartments.count({ where: auctionish }),
+      prisma.properties_houses.count({ where: auctionish }),
     ]);
-    const countAuction = (rows) => rows.filter((r) => r.is_auction === 1 || r.is_auction === '1').length;
-    return countAuction(aptRows) + countAuction(houseRows);
+    return c1 + c2;
   },
 
   getCategoryStatsByType: async () => {
@@ -752,50 +835,36 @@ export const propertyQueries = {
   },
 
   getCategoryStatsBySection: async () => {
-        const prisma = getPrisma();
-    const tables = [
-      () => prisma.properties_apartments,
-      () => prisma.properties_houses,
-    ];
-    let debt = 0;
-    let auction = 0;
-    let share = 0;
-    let totalApproved = 0;
-    for (const getDelegate of tables) {
-      const d = getDelegate();
-      const approved = await d.findMany({ where: { moderation_status: 'approved' } });
-      totalApproved += approved.length;
-      debt += approved.filter(
-        (p) =>
-          p.sale_type === 'debt' ||
-          p.is_debt === 1 ||
-          p.has_debt === 1
-      ).length;
-      auction += approved.filter((p) => {
-        const aOn = p.is_auction === 1 || p.is_auction === '1';
-        const notDebtSale = p.sale_type !== 'debt';
-        const noDebtFlags = (p.is_debt == null || p.is_debt === 0) && (p.has_debt == null || p.has_debt === 0);
-        return (
-          aOn &&
-          notDebtSale &&
-          noDebtFlags &&
-          (p.debt_severity == null || !['red', 'yellow', 'green'].includes(p.debt_severity))
-        );
-      }).length;
-      share += approved.filter((p) => {
-        const isShare = p.sale_type === 'share' || p.is_shared_ownership === 1;
-        const notAuction = p.is_auction == null || p.is_auction === 0 || p.is_auction === '0';
-        const notDebtSale = p.sale_type !== 'debt';
-        const noDebtFlags = (p.is_debt == null || p.is_debt === 0) && (p.has_debt == null || p.has_debt === 0);
-        return (
-          isShare &&
-          notAuction &&
-          notDebtSale &&
-          noDebtFlags &&
-          (p.debt_severity == null || !['red', 'yellow', 'green'].includes(p.debt_severity))
-        );
-      }).length;
-    }
+    const prisma = getPrisma();
+    const approvedBase = { moderation_status: 'approved' };
+    const debtWhere = debtListPrismaWhere(null);
+    const auctionWhere = auctionListPrismaWhere(null);
+    const shareWhere = shareSectionPrismaWhere(null);
+
+    const [
+      aptTotal,
+      houseTotal,
+      aptDebt,
+      houseDebt,
+      aptAuction,
+      houseAuction,
+      aptShare,
+      houseShare,
+    ] = await Promise.all([
+      prisma.properties_apartments.count({ where: approvedBase }),
+      prisma.properties_houses.count({ where: approvedBase }),
+      prisma.properties_apartments.count({ where: debtWhere }),
+      prisma.properties_houses.count({ where: debtWhere }),
+      prisma.properties_apartments.count({ where: auctionWhere }),
+      prisma.properties_houses.count({ where: auctionWhere }),
+      prisma.properties_apartments.count({ where: shareWhere }),
+      prisma.properties_houses.count({ where: shareWhere }),
+    ]);
+
+    const totalApproved = aptTotal + houseTotal;
+    const debt = aptDebt + houseDebt;
+    const auction = aptAuction + houseAuction;
+    const share = aptShare + houseShare;
     const buyNow = Math.max(0, totalApproved - debt - auction - share);
     const out = [];
     if (auction > 0) out.push({ section: 'auction', count: auction });
@@ -1128,19 +1197,22 @@ export const propertyQueries = {
   },
 
   getApproved: async (propertyType = null) => {
-        const prisma = getPrisma();
-    const whereA = { moderation_status: 'approved' };
-    const whereH = { moderation_status: 'approved' };
-    if (propertyType) {
-      whereA.property_type = propertyType;
-      whereH.property_type = propertyType;
-    }
+    const prisma = getPrisma();
+    const where = approvedBuyNowPrismaWhere(propertyType || null);
     const [aptRows, houseRows] = await Promise.all([
-      prisma.properties_apartments.findMany({ where: whereA, include: { users: true } }),
-      prisma.properties_houses.findMany({ where: whereH, include: { users: true } }),
+      prisma.properties_apartments.findMany({
+        where,
+        include: PROPERTY_LIST_USER_INCLUDE,
+        orderBy: [{ reviewed_at: 'desc' }, { created_at: 'desc' }],
+      }),
+      prisma.properties_houses.findMany({
+        where,
+        include: PROPERTY_LIST_USER_INCLUDE,
+        orderBy: [{ reviewed_at: 'desc' }, { created_at: 'desc' }],
+      }),
     ]);
-    const apartments = mapListWithUserParse(aptRows, 'apt').filter((p) => p && passesApprovedFilters(p));
-    const houses = mapListWithUserParse(houseRows, 'house').filter((p) => p && passesApprovedFilters(p));
+    const apartments = mapListWithUserParse(aptRows, 'apt').filter(Boolean);
+    const houses = mapListWithUserParse(houseRows, 'house').filter(Boolean);
     const all = [...apartments, ...houses].sort((a, b) => {
       const dateA = new Date(a.reviewed_at || a.created_at);
       const dateB = new Date(b.reviewed_at || b.created_at);
@@ -1150,16 +1222,19 @@ export const propertyQueries = {
   },
 
   getAuctions: async (propertyType = null) => {
-        const prisma = getPrisma();
-    const whereA = { moderation_status: 'approved' };
-    const whereH = { moderation_status: 'approved' };
-    if (propertyType) {
-      whereA.property_type = propertyType;
-      whereH.property_type = propertyType;
-    }
+    const prisma = getPrisma();
+    const where = auctionListPrismaWhere(propertyType || null);
     const [aptRows, houseRows] = await Promise.all([
-      prisma.properties_apartments.findMany({ where: whereA, include: { users: true } }),
-      prisma.properties_houses.findMany({ where: whereH, include: { users: true } }),
+      prisma.properties_apartments.findMany({
+        where,
+        include: PROPERTY_LIST_USER_INCLUDE,
+        orderBy: { auction_end_date: 'asc' },
+      }),
+      prisma.properties_houses.findMany({
+        where,
+        include: PROPERTY_LIST_USER_INCLUDE,
+        orderBy: { auction_end_date: 'asc' },
+      }),
     ]);
     const apartments = mapListWithUserParse(aptRows, 'apt').filter((p) => p && passesAuctionFilters(p));
     const houses = mapListWithUserParse(houseRows, 'house').filter((p) => p && passesAuctionFilters(p));
@@ -1170,19 +1245,22 @@ export const propertyQueries = {
   },
 
   getDebts: async (propertyType = null) => {
-        const prisma = getPrisma();
-    const whereA = { moderation_status: 'approved' };
-    const whereH = { moderation_status: 'approved' };
-    if (propertyType) {
-      whereA.property_type = propertyType;
-      whereH.property_type = propertyType;
-    }
+    const prisma = getPrisma();
+    const where = debtListPrismaWhere(propertyType || null);
     const [aptRows, houseRows] = await Promise.all([
-      prisma.properties_apartments.findMany({ where: whereA, include: { users: true } }),
-      prisma.properties_houses.findMany({ where: whereH, include: { users: true } }),
+      prisma.properties_apartments.findMany({
+        where,
+        include: PROPERTY_LIST_USER_INCLUDE,
+        orderBy: { created_at: 'desc' },
+      }),
+      prisma.properties_houses.findMany({
+        where,
+        include: PROPERTY_LIST_USER_INCLUDE,
+        orderBy: { created_at: 'desc' },
+      }),
     ]);
-    const apartments = mapListWithUserParse(aptRows, 'apt').filter((p) => p && passesDebtFilters(p));
-    const houses = mapListWithUserParse(houseRows, 'house').filter((p) => p && passesDebtFilters(p));
+    const apartments = mapListWithUserParse(aptRows, 'apt').filter(Boolean);
+    const houses = mapListWithUserParse(houseRows, 'house').filter(Boolean);
     const all = [...apartments, ...houses].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
     return all;
   },

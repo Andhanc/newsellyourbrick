@@ -1,10 +1,12 @@
 import dotenv from 'dotenv';
 import express from 'express';
+import compression from 'compression';
 import cors from 'cors';
 import axios from 'axios';
 import { initDatabase, closeDatabase, schemaCache } from './database/database.js';
-import { userQueries, documentQueries, notificationQueries, testDriveBookingQueries, administratorQueries, debtReasonQueries, debtDocumentQueries, whatsappUserQueries, purchaseRequestQueries, assistantLeadQueries, liveChatQueries, apartmentQueries, houseQueries, propertyQueries, favoriteQueries, crmQueries, auctionReminderQueries } from './database/database.js';
+import { userQueries, documentQueries, notificationQueries, testDriveBookingQueries, administratorQueries, debtReasonQueries, debtDocumentQueries, whatsappUserQueries, purchaseRequestQueries, assistantLeadQueries, liveChatQueries, apartmentQueries, houseQueries, propertyQueries, favoriteQueries, crmQueries, auctionReminderQueries, passesApprovedFilters, passesAuctionFilters } from './database/database.js';
 import { getPrisma } from './database/prismaClient.js';
+import { mergePropertyTranslations, mergeReservationFields } from './propertyListBatch.js';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import multer from 'multer';
@@ -80,6 +82,21 @@ console.log('[SERVER] ═══════════════════�
 
 const app = express();
 
+if (process.env.NODE_ENV === 'production') {
+  app.set('trust proxy', 1);
+}
+
+app.use(
+  compression({
+    threshold: 2048,
+    filter: (req, res) => {
+      const p = req.path || '';
+      if (p.startsWith('/api/events')) return false;
+      return compression.filter(req, res);
+    },
+  })
+);
+
 registerIntelligenceIoProxy(app);
 // На Railway в production: сервер должен слушать на PORT (который устанавливает Railway, например 8080)
 // В development: используем SERVER_PORT или 3000
@@ -87,6 +104,9 @@ registerIntelligenceIoProxy(app);
 const PORT = (process.env.NODE_ENV === 'production' && process.env.PORT) 
   ? parseInt(process.env.PORT, 10) 
   : (process.env.SERVER_PORT ? parseInt(process.env.SERVER_PORT, 10) : 3000);
+
+/** Лог каждого HTTP-запроса и шум SSE: в production выключено, для отладки задайте VERBOSE_HTTP=1 */
+const VERBOSE_HTTP = process.env.VERBOSE_HTTP === '1' || process.env.NODE_ENV !== 'production';
 
 /**
  * Валидация пароля
@@ -193,7 +213,11 @@ const auctionSSEClients = new Set();
 function broadcastAuctionNewObjects(properties) {
   if (!properties || properties.length === 0) return;
   const payload = JSON.stringify({ type: 'new_auction_objects', properties });
-  console.log(`[SSE] 📤 Рассылка новых объектов аукциона подписчикам: ${auctionSSEClients.size} клиент(ов), объектов: ${properties.length}`);
+  if (VERBOSE_HTTP) {
+    console.log(
+      `[SSE] 📤 Рассылка новых объектов аукциона подписчикам: ${auctionSSEClients.size} клиент(ов), объектов: ${properties.length}`
+    );
+  }
   auctionSSEClients.forEach((res) => {
     try {
       res.write(`data: ${payload}\n\n`);
@@ -229,7 +253,9 @@ app.get('/api/events/auction-updates', async (req, res) => {
   res.setHeader('X-Accel-Buffering', 'no');
   res.flushHeaders();
   auctionSSEClients.add(res);
-  console.log(`[SSE] 🔌 Подключён подписчик аукциона. Всего: ${auctionSSEClients.size}`);
+  if (VERBOSE_HTTP) {
+    console.log(`[SSE] 🔌 Подключён подписчик аукциона. Всего: ${auctionSSEClients.size}`);
+  }
   res.write(': connected\n\n');
   if (typeof res.flush === 'function') res.flush();
   const heartbeat = setInterval(() => {
@@ -690,38 +716,36 @@ let requestStats = {
   startTime: Date.now()
 };
 
-// Middleware для логирования всех запросов
 app.use((req, res, next) => {
+  if (!VERBOSE_HTTP) return next();
+
   requestCount++;
   requestStats.total++;
-  
-  // Подсчет по методам
   requestStats.byMethod[req.method] = (requestStats.byMethod[req.method] || 0) + 1;
-  
-  // Подсчет по путям (только для API запросов)
   if (req.path.startsWith('/api/')) {
-    const pathKey = req.method + ' ' + req.path.split('?')[0]; // Убираем query параметры
+    const pathKey = req.method + ' ' + req.path.split('?')[0];
     requestStats.byPath[pathKey] = (requestStats.byPath[pathKey] || 0) + 1;
   }
-  
-  // Логируем каждый запрос
-  const timestamp = new Date().toISOString();
-  console.log(`📥 [${requestCount}] ${req.method} ${req.path}${req.query && Object.keys(req.query).length > 0 ? '?' + new URLSearchParams(req.query).toString() : ''}`);
-  
-  // Логируем статистику каждые 10 запросов
+  console.log(
+    `📥 [${requestCount}] ${req.method} ${req.path}${
+      req.query && Object.keys(req.query).length > 0 ? '?' + new URLSearchParams(req.query).toString() : ''
+    }`
+  );
   if (requestCount % 10 === 0) {
     const uptime = Math.floor((Date.now() - requestStats.startTime) / 1000);
     console.log(`\n📊 Статистика запросов (за ${uptime} сек):`);
     console.log(`   Всего запросов: ${requestStats.total}`);
     console.log(`   По методам:`, requestStats.byMethod);
-    console.log(`   Топ-10 API запросов:`, Object.entries(requestStats.byPath)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 10)
-      .map(([path, count]) => `${path}: ${count}`)
-      .join(', '));
+    console.log(
+      `   Топ-10 API запросов:`,
+      Object.entries(requestStats.byPath)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 10)
+        .map(([path, count]) => `${path}: ${count}`)
+        .join(', ')
+    );
     console.log('');
   }
-  
   next();
 });
 
@@ -8164,23 +8188,9 @@ app.get('/api/properties/approved', async (req, res) => {
     
     // Используем функцию из propertyQueries, которая работает с новыми таблицами
     const properties = await propertyQueries.getApproved(type || null);
-    
-    console.log(`✅ Получено одобренных объявлений: ${properties.length}, фильтр type=${type || 'null'}`);
-    if (properties.length > 0) {
-      console.log('📋 Пример данных из БД (первое объявление):', {
-        id: properties[0].id,
-        title: properties[0].title,
-        property_type: properties[0].property_type,
-        source_table: properties[0].source_table,
-        moderation_status: properties[0].moderation_status,
-        is_auction: properties[0].is_auction,
-        amenities: properties[0].amenities,
-        amenities_type: typeof properties[0].amenities,
-        additional_amenities: properties[0].additional_amenities,
-        additional_amenities_type: typeof properties[0].additional_amenities
-      });
-    } else {
-      console.log('⚠️ Не найдено одобренных объявлений для типа:', type || 'все типы');
+
+    if (VERBOSE_HTTP) {
+      console.log(`✅ Получено одобренных объявлений: ${properties.length}, фильтр type=${type || 'null'}`);
     }
     
     // Преобразуем данные в формат для фронтенда (возвращаем ВСЕ поля)
@@ -8333,35 +8343,17 @@ app.get('/api/properties/approved', async (req, res) => {
       return formatted;
     });
     
-    // Подстановка переводов по языку (lang из футера) для списка
+    // Подстановка переводов по языку (lang из футера) — один батч-запрос вместо N findUnique
     const lang = req.query.lang && String(req.query.lang).trim().toLowerCase();
-    if (lang && ['ru', 'en', 'de', 'es', 'fr', 'sv'].includes(lang) && formattedProperties.length > 0) {
+    if (lang && formattedProperties.length > 0) {
       try {
-        const prisma = getPrisma();
-        for (const prop of formattedProperties) {
-          const table = prop.source_table || 'properties_apartments';
-          const tr = await prisma.property_translations.findUnique({
-            where: {
-              property_id_property_table_lang_code: {
-                property_id: Number(prop.id),
-                property_table: String(table),
-                lang_code: String(lang),
-              },
-            },
-            select: { title: true, description: true, additional_amenities: true, location: true },
-          });
-          if (tr) {
-            if (tr.title) { prop.title = tr.title; prop.name = tr.title; }
-            if (tr.description) prop.description = tr.description;
-            if (tr.additional_amenities != null) prop.additional_amenities = tr.additional_amenities;
-            if (tr.location != null) prop.location = tr.location;
-          }
-        }
+        await mergePropertyTranslations(formattedProperties, lang);
       } catch (e) {
         console.warn('GET /api/properties/approved - подстановка переводов:', e.message);
       }
     }
 
+    res.setHeader('Cache-Control', 'public, max-age=20, stale-while-revalidate=120');
     res.json({
       success: true,
       data: formattedProperties
@@ -8419,6 +8411,7 @@ app.get('/api/properties/debts', async (req, res) => {
       return formatted;
     });
 
+    res.setHeader('Cache-Control', 'public, max-age=20, stale-while-revalidate=120');
     res.json({ success: true, data: formattedProperties });
   } catch (error) {
     console.error('Ошибка при получении объектов-долгов:', error);
@@ -8518,17 +8511,9 @@ app.get('/api/properties/auctions', async (req, res) => {
     
     // Используем функцию из propertyQueries, которая работает с новыми таблицами
     let properties = await propertyQueries.getAuctions(type || null);
-    
-    console.log(`✅ Получено аукционных объявлений: ${properties.length}`);
-    if (properties.length > 0) {
-      console.log('📋 Пример данных из БД (первое объявление):', {
-        id: properties[0].id,
-        title: properties[0].title,
-        amenities: properties[0].amenities,
-        amenities_type: typeof properties[0].amenities,
-        additional_amenities: properties[0].additional_amenities,
-        additional_amenities_type: typeof properties[0].additional_amenities
-      });
+
+    if (VERBOSE_HTTP) {
+      console.log(`✅ Получено аукционных объявлений: ${properties.length}`);
     }
     
     const prisma = getPrisma();
@@ -8548,15 +8533,26 @@ app.get('/api/properties/auctions', async (req, res) => {
       timerWhereApartments.property_type = String(type);
       timerWhereHouses.property_type = String(type);
     }
+    const userSelect = {
+      users: {
+        select: {
+          first_name: true,
+          last_name: true,
+          email: true,
+          phone_number: true,
+          role: true,
+        },
+      },
+    };
     const [apartmentsWithTestTimer, housesWithTestTimer] = await Promise.all([
       prisma.properties_apartments.findMany({
         where: timerWhereApartments,
-        include: { users: true },
+        include: userSelect,
         orderBy: { test_timer_end_date: 'asc' },
       }),
       prisma.properties_houses.findMany({
         where: timerWhereHouses,
-        include: { users: true },
+        include: userSelect,
         orderBy: { test_timer_end_date: 'asc' },
       }),
     ]);
@@ -8589,8 +8585,8 @@ app.get('/api/properties/auctions', async (req, res) => {
       return new Date(aDate) - new Date(bDate);
     });
     
-    // Преобразуем данные в формат для фронтенда (возвращаем ВСЕ поля)
-    const formattedProperties = await Promise.all(properties.map(async (prop) => {
+    // Преобразуем данные в формат для фронтенда (возвращаем ВСЕ поля); резервы — пакетом после map
+    const formattedProperties = properties.map((prop) => {
       const formatted = { ...prop };
       
       // Парсим JSON поля безопасно
@@ -8740,67 +8736,39 @@ app.get('/api/properties/auctions', async (req, res) => {
         // Убеждаемся, что land_area передается
         formatted.land_area = formatted.land_area || null;
       }
-      
-      // Проверяем резервацию объекта
-      try {
-        const reservationInfo = await propertyQueries.isReserved(formatted.id);
-        formatted.is_reserved = reservationInfo.isReserved || false;
-        formatted.reserved_until = reservationInfo.reservedUntil || null;
-        formatted.reserved_by = reservationInfo.reservedBy || null;
-      } catch (reservationError) {
-        console.warn(`⚠️ Ошибка при проверке резервации для объекта ID=${formatted.id}:`, reservationError);
-        formatted.is_reserved = false;
-        formatted.reserved_until = null;
-        formatted.reserved_by = null;
-      }
-      
+
       return formatted;
-    }));
-    
-    // Логируем для отладки (только для первого объекта)
-    if (formattedProperties.length > 0) {
+    });
+
+    try {
+      await mergeReservationFields(formattedProperties);
+    } catch (reservationError) {
+      console.warn('GET /api/properties/auctions - пакетная загрузка резервов:', reservationError);
+      for (const f of formattedProperties) {
+        f.is_reserved = false;
+        f.reserved_until = null;
+        f.reserved_by = null;
+      }
+    }
+
+    if (VERBOSE_HTTP && formattedProperties.length > 0) {
       console.log('📋 Отформатированные данные аукциона (первое объявление):', {
         id: formattedProperties[0].id,
         title: formattedProperties[0].title,
         amenities: formattedProperties[0].amenities,
-        amenities_length: Array.isArray(formattedProperties[0].amenities) ? formattedProperties[0].amenities.length : 'not array',
-        additional_amenities: formattedProperties[0].additional_amenities,
-        additional_amenities_length: formattedProperties[0].additional_amenities ? formattedProperties[0].additional_amenities.length : 0,
-        balcony: formattedProperties[0].balcony,
-        parking: formattedProperties[0].parking,
-        elevator: formattedProperties[0].elevator
       });
     }
 
-    // Подстановка переводов по языку (lang из футера) для списка аукционов
     const lang = req.query.lang && String(req.query.lang).trim().toLowerCase();
-    if (lang && ['ru', 'en', 'de', 'es', 'fr', 'sv'].includes(lang) && formattedProperties.length > 0) {
+    if (lang && formattedProperties.length > 0) {
       try {
-        const prisma = getPrisma();
-        for (const prop of formattedProperties) {
-          const table = prop.source_table || 'properties_apartments';
-          const tr = await prisma.property_translations.findUnique({
-            where: {
-              property_id_property_table_lang_code: {
-                property_id: Number(prop.id),
-                property_table: String(table),
-                lang_code: String(lang),
-              },
-            },
-            select: { title: true, description: true, additional_amenities: true, location: true },
-          });
-          if (tr) {
-            if (tr.title) { prop.title = tr.title; prop.name = tr.title; }
-            if (tr.description) prop.description = tr.description;
-            if (tr.additional_amenities != null) prop.additional_amenities = tr.additional_amenities;
-            if (tr.location != null) prop.location = tr.location;
-          }
-        }
+        await mergePropertyTranslations(formattedProperties, lang);
       } catch (e) {
         console.warn('GET /api/properties/auctions - подстановка переводов:', e.message);
       }
     }
-    
+
+    res.setHeader('Cache-Control', 'public, max-age=15, stale-while-revalidate=120');
     res.json({
       success: true,
       data: formattedProperties
@@ -11275,15 +11243,17 @@ app.put('/api/properties/:id/approve', async (req, res) => {
       let listName = '';
       
       if (updatedProperty.is_auction === 1 || updatedProperty.is_auction === '1' || updatedProperty.is_auction === true) {
-        const auctionsCheck = await propertyQueries.getAuctions(null);
-        isInList = auctionsCheck.some(p => p.id === parseInt(id));
+        isInList = passesAuctionFilters(updatedProperty);
         listName = 'аукционных';
-        console.log(`📋 Проверка публикации (аукцион): объявление ${id} ${isInList ? 'найдено' : 'НЕ найдено'} в списке ${listName} (всего ${listName}: ${auctionsCheck.length})`);
+        if (VERBOSE_HTTP) {
+          console.log(`📋 Проверка публикации (аукцион): объявление ${id} ${isInList ? 'проходит фильтр' : 'не проходит фильтр'} списка ${listName}`);
+        }
       } else {
-        const approvedCheck = await propertyQueries.getApproved(null);
-        isInList = approvedCheck.some(p => p.id === parseInt(id));
+        isInList = passesApprovedFilters(updatedProperty);
         listName = 'одобренных';
-        console.log(`📋 Проверка публикации: объявление ${id} ${isInList ? 'найдено' : 'НЕ найдено'} в списке ${listName} (всего ${listName}: ${approvedCheck.length})`);
+        if (VERBOSE_HTTP) {
+          console.log(`📋 Проверка публикации: объявление ${id} ${isInList ? 'проходит фильтр' : 'не проходит фильтр'} списка ${listName}`);
+        }
       }
       
       if (!isInList) {
@@ -11311,7 +11281,9 @@ app.put('/api/properties/:id/approve', async (req, res) => {
       const isAuction = updatedProperty.is_auction === 1 || updatedProperty.is_auction === '1' || updatedProperty.is_auction === true;
       if (isAuction) {
         try {
-          console.log(`[SSE] 📤 Аукционный объект ID=${id} одобрен — рассылаем подписчикам страницы аукциона`);
+          if (VERBOSE_HTTP) {
+            console.log(`[SSE] 📤 Аукционный объект ID=${id} одобрен — рассылаем подписчикам страницы аукциона`);
+          }
           const formatted = await formatOneAuctionPropertyForApi(updatedProperty);
           broadcastAuctionNewObjects([formatted]);
         } catch (broadcastErr) {
@@ -12174,6 +12146,38 @@ app.post('/api/bids', async (req, res) => {
       success: false, 
       error: error.message || 'Внутренняя ошибка сервера' 
     });
+  }
+});
+
+/**
+ * POST /api/bids/max-amounts — макс. ставка по каждому property_id (один запрос вместо N × GET /property/:id).
+ * Body: { ids: number[] }
+ */
+app.post('/api/bids/max-amounts', async (req, res) => {
+  try {
+    const raw = req.body?.ids;
+    const ids = Array.isArray(raw) ? raw.map((x) => Number(x)).filter((n) => Number.isFinite(n)) : [];
+    const unique = [...new Set(ids)].slice(0, 300);
+    if (unique.length === 0) {
+      return res.json({ success: true, data: {} });
+    }
+    const prisma = getPrisma();
+    const grouped = await prisma.bids.groupBy({
+      by: ['property_id'],
+      where: { property_id: { in: unique } },
+      _max: { bid_amount: true },
+    });
+    const data = {};
+    for (const row of grouped) {
+      const max = row._max.bid_amount;
+      if (max != null && Number.isFinite(Number(max))) {
+        data[String(row.property_id)] = Number(max);
+      }
+    }
+    res.json({ success: true, data });
+  } catch (error) {
+    console.error('POST /api/bids/max-amounts:', error);
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 

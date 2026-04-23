@@ -222,6 +222,32 @@ async function fetchMaxBidForProperty(apiBaseUrl, propertyId) {
   }
 }
 
+/** Map propertyId -> max bid; при ошибке null (fallback на поштучные запросы). */
+async function fetchMaxBidsBatch(apiBaseUrl, propertyIds) {
+  const ids = [...new Set(propertyIds.map((x) => Number(x)).filter((n) => Number.isFinite(n)))]
+  if (ids.length === 0) return new Map()
+  const base = String(apiBaseUrl || '').replace(/\/$/, '')
+  try {
+    const response = await fetch(`${base}/bids/max-amounts`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids }),
+    })
+    if (!response.ok) return null
+    const payload = await response.json().catch(() => null)
+    if (!payload?.success || payload.data == null || typeof payload.data !== 'object') return null
+    const m = new Map()
+    for (const [k, v] of Object.entries(payload.data)) {
+      const id = Number(k)
+      const max = asFiniteNumberOrNull(v)
+      if (Number.isFinite(id) && max != null) m.set(id, max)
+    }
+    return m
+  } catch {
+    return null
+  }
+}
+
 async function enrichAuctionListWithMaxBids(apiBaseUrl, list) {
   if (!Array.isArray(list) || list.length === 0) return list
   const auctionItems = list.filter((item) => {
@@ -235,19 +261,23 @@ async function enrichAuctionListWithMaxBids(apiBaseUrl, list) {
   })
   if (auctionItems.length === 0) return list
 
-  const bidEntries = await Promise.all(
-    auctionItems.map(async (item) => {
-      const maxBid = await fetchMaxBidForProperty(apiBaseUrl, item.id)
-      return { id: Number(item.id), maxBid }
-    })
-  )
+  const auctionIds = auctionItems.map((item) => Number(item.id)).filter((id) => Number.isFinite(id))
+  let bidById = await fetchMaxBidsBatch(apiBaseUrl, auctionIds)
 
-  const bidById = new Map()
-  bidEntries.forEach((entry) => {
-    if (!Number.isFinite(entry.id) || entry.maxBid == null) return
-    const prev = bidById.get(entry.id)
-    bidById.set(entry.id, prev == null ? entry.maxBid : Math.max(prev, entry.maxBid))
-  })
+  if (bidById == null) {
+    const bidEntries = await Promise.all(
+      auctionItems.map(async (item) => {
+        const maxBid = await fetchMaxBidForProperty(apiBaseUrl, item.id)
+        return { id: Number(item.id), maxBid }
+      })
+    )
+    bidById = new Map()
+    bidEntries.forEach((entry) => {
+      if (!Number.isFinite(entry.id) || entry.maxBid == null) return
+      const prev = bidById.get(entry.id)
+      bidById.set(entry.id, prev == null ? entry.maxBid : Math.max(prev, entry.maxBid))
+    })
+  }
 
   if (bidById.size === 0) return list
 

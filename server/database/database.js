@@ -37,7 +37,13 @@ export async function closeDatabase() {
 }
 
 export { userQueries, documentQueries, notificationQueries, favoriteQueries } from './module1Prisma.js';
-export { apartmentQueries, houseQueries, propertyQueries } from './module2PropertyPrisma.js';
+export {
+  apartmentQueries,
+  houseQueries,
+  propertyQueries,
+  passesApprovedFilters,
+  passesAuctionFilters,
+} from './module2PropertyPrisma.js';
 export { sharePurchaseQueries } from './moduleSharePurchasePrisma.js';
 export { reservationSignatureQueries } from './moduleReservationSignaturePrisma.js';
 export { purchaseRequestQueries, testDriveBookingQueries } from './module3Prisma.js';
