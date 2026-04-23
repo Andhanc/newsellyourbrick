@@ -315,10 +315,10 @@
 .history-button {
   margin-top: 0.2rem;
   padding: 0.4rem 0.6rem;
-  background: transparent;
-  border: 1px solid var(--primary);
+  background: #000000;
+  border: 1px solid #000000;
   border-radius: 8px;
-  color: var(--primary);
+  color: #ffffff;
   font-size: 0.75rem;
   font-weight: 500;
   cursor: pointer;
@@ -331,8 +331,8 @@
 }
 
 .history-button:hover {
-  background: var(--primary);
-  color: white;
+  background: #111111;
+  color: #ffffff;
 }
 
 .history-button i {

@@ -13,6 +13,7 @@ import { roleSkipsAuctionKyc } from '../utils/buyerAuctionKyc'
 import { fetchUserDeposit } from '../utils/depositApi'
 import { navigateToWallet } from '../utils/walletNavigation'
 import { getPropertyEntryFrom } from '../utils/propertyNavigation'
+import { normalizePropertyMediaFields } from '../utils/propertyImage'
 import BidOutbidNotification from '../components/BidOutbidNotification'
 import { FiX, FiLayers, FiHome, FiCheck, FiX as FiXIcon, FiLock } from 'react-icons/fi'
 import { IoLocationOutline } from 'react-icons/io5'
@@ -92,33 +93,13 @@ const PropertyDetail = () => {
 
   // Функция для обработки данных объекта
   const processPropertyData = async (prop) => {
-    // Получаем базовый URL без /api
-    const baseUrl = API_BASE_URL.replace('/api', '').replace(/\/$/, '')
-    
-    // Обрабатываем фотографии
-    let processedImages = []
-    if (prop.photos && Array.isArray(prop.photos) && prop.photos.length > 0) {
-      processedImages = prop.photos.map(photo => {
-        if (typeof photo === 'string') {
-          const photoStr = photo.trim()
-          if (photoStr.startsWith('data:')) return photoStr
-          else if (photoStr.startsWith('http://') || photoStr.startsWith('https://')) return photoStr
-          else if (photoStr.startsWith('/uploads/')) return `${baseUrl}${photoStr}`
-          else if (photoStr.startsWith('uploads/')) return `${baseUrl}/${photoStr}`
-          else return `${baseUrl}/uploads/${photoStr}`
-        } else if (photo && typeof photo === 'object' && photo.url) {
-          const photoUrl = String(photo.url).trim()
-          if (photoUrl.startsWith('data:')) return photoUrl
-          else if (photoUrl.startsWith('http://') || photoUrl.startsWith('https://')) return photoUrl
-          else if (photoUrl.startsWith('/uploads/')) return `${baseUrl}${photoUrl}`
-          else if (photoUrl.startsWith('uploads/')) return `${baseUrl}/${photoUrl}`
-          else return `${baseUrl}/uploads/${photoUrl}`
-        }
-        return photo
-      })
-    }
+    // Обрабатываем фотографии (включая legacy форматы photos/images)
+    const { image: normalizedImage, images: normalizedImages } = normalizePropertyMediaFields(prop)
+    let processedImages = normalizedImages
     if (processedImages.length === 0) {
-      processedImages = ['https://images.unsplash.com/photo-1568605114967-8130f3a36994?auto=format&fit=crop&w=800&q=80']
+      processedImages = normalizedImage
+        ? [normalizedImage]
+        : ['https://images.unsplash.com/photo-1568605114967-8130f3a36994?auto=format&fit=crop&w=800&q=80']
     }
     
     // Обрабатываем видео

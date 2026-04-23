@@ -59,6 +59,16 @@ function parseImageList(raw) {
   } catch {
     // legacy format: "a.jpg,b.jpg" or "a.jpg; b.jpg"
   }
+  // legacy postgres array literal: {"a.jpg","b.jpg"}
+  if (t.startsWith('{') && t.endsWith('}')) {
+    const inner = t.slice(1, -1)
+    if (inner.trim()) {
+      return inner
+        .split(',')
+        .map((part) => part.trim().replace(/^"+|"+$/g, ''))
+        .filter(Boolean)
+    }
+  }
   if (t.includes(',') || t.includes(';')) {
     return t
       .split(/[;,]/)
@@ -163,7 +173,18 @@ export function getPropertyCardImage(property, fallbackUrl) {
   const { image } = normalizePropertyMediaFields(property)
   if (image) return image
   const baseOrigin = getBaseOrigin()
-  const extras = [property.image_url, property.imageUrl, property.photo_url]
+  const extras = [
+    property.image_url,
+    property.imageUrl,
+    property.photo_url,
+    property.photo,
+    property.thumbnail,
+    property.preview,
+    property.cover_photo,
+    property.main_photo,
+    property.main_image,
+    property.avatar,
+  ]
   for (const candidate of extras) {
     const normalized = normalizeImageUrl(candidate, baseOrigin)
     if (normalized) return normalized

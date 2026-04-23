@@ -3760,9 +3760,27 @@
     display: flex;
     justify-content: center;
     width: 100%;
-    position: relative;
-    z-index: 10; /* выше фона (z-index:1) и оверлея (z-index:2) */
+    position: fixed;
+    top: 0;
+    z-index: 1000; /* держим меню поверх контента при скролле */
     box-sizing: border-box;
+  }
+
+  .new-header-spacer {
+    height: 104px;
+    width: 100%;
+    flex-shrink: 0;
+  }
+
+  .new-header {
+    left: 0;
+    right: 0;
+  }
+
+  @media (max-width: 768px) {
+    .new-header-spacer {
+      height: 88px;
+    }
   }
 
   /* Когда меню открыто, поднимаем хедер выше backdrop */

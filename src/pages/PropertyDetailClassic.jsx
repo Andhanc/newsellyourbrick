@@ -1291,7 +1291,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
             
             // Сохраняем последние две ставки (сортируем по дате для отображения последних)
             const sortedByDate = [...data.data].sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-            const newRecentBids = sortedByDate.slice(0, 2)
+            const newRecentBids = sortedByDate.slice(0, 3)
             setRecentBids(prev => {
               const prevStr = JSON.stringify(prev)
               const newStr = JSON.stringify(newRecentBids)
@@ -2248,7 +2248,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
               if (bidsData.success && bidsData.data && bidsData.data.length > 0) {
                 // Сортируем по дате для получения последних ставок
                 const sortedByDate = [...bidsData.data].sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-                setRecentBids(sortedByDate.slice(0, 2))
+                setRecentBids(sortedByDate.slice(0, 3))
                 
                 // Сортируем ставки для определения лидера
                 const sortedBids = [...bidsData.data].sort((a, b) => {

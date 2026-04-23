@@ -75,7 +75,7 @@ import {
 import { fetchUserById } from '../utils/usersApi'
 
 import { getApiBaseUrl, getApiBaseUrlSync } from '../utils/apiConfig'
-import { normalizePropertyMediaFields } from '../utils/propertyImage'
+import { normalizePropertyMediaFields, getPropertyCardImage } from '../utils/propertyImage'
 import { navigateToWallet } from '../utils/walletNavigation'
 import { usePropertyFavorites } from '../context/PropertyFavoritesContext'
 import { useLayoutScrollRef } from '../context/LayoutScrollContext'
@@ -861,7 +861,7 @@ function MainPage() {
             const data = json?.data
             if (!data || !data.id) return null
 
-            const firstPhoto = Array.isArray(data.photos) ? data.photos[0] : null
+            const firstPhoto = getPropertyCardImage(data, null)
             return [
               Number(propertyId),
               {
@@ -1604,11 +1604,12 @@ function MainPage() {
       debts.map((p) => normalizeProperty(p)).forEach((p) => { if (p && p.id != null) byId.set(p.id, p) })
       setHomeProperties(Array.from(byId.values()))
       const pt = (p) => (p && p.property_type) ? String(p.property_type).toLowerCase() : ''
+      const normalizedApproved = approved.map((p) => normalizeProperty(p))
       setApprovedProperties({
-        apartments: approved.filter((p) => pt(p) === 'commercial'),
-        villas: approved.filter((p) => pt(p) === 'villa'),
-        flats: approved.filter((p) => pt(p) === 'apartment'),
-        houses: approved.filter((p) => pt(p) === 'house')
+        apartments: normalizedApproved.filter((p) => pt(p) === 'commercial'),
+        villas: normalizedApproved.filter((p) => pt(p) === 'villa'),
+        flats: normalizedApproved.filter((p) => pt(p) === 'apartment'),
+        houses: normalizedApproved.filter((p) => pt(p) === 'house')
       })
     } catch (error) {
       console.error('❌ Ошибка загрузки объектов для главной страницы:', error)
@@ -2492,6 +2493,7 @@ function MainPage() {
         <div className={`hero-section__image hero-section__image--buy ${propertyMode === 'buy' ? 'hero-section__image--active' : ''}`} style={{ backgroundImage: `url(${heroImages.buy})` }}></div>
         <div className="hero-section__overlay"></div>
         {/* Новый хедер для десктопной версии */}
+        <div className="new-header-spacer" aria-hidden="true" />
         <header className={`new-header ${isMenuOpen ? 'new-header--menu-open' : ''}`}>
         <div className={`new-header__container ${isMenuOpen ? 'new-header__container--menu-open' : ''}`}>
         <div className="new-header__left">
@@ -3466,7 +3468,7 @@ function MainPage() {
           <div 
             className="apartments-section__header"
             onClick={() => {
-              window.location.href = '/auction?category=Apartment&filter=auction'
+              navigate('/auction?filter=auction')
             }}
             style={{ cursor: 'pointer' }}
           >
@@ -3586,7 +3588,7 @@ function MainPage() {
             className="apartments-section__header"
             onClick={() => {
               // Переход на страницу аукциона с фильтром "Купить сейчас"
-              window.location.href = '/auction?category=Villa&filter=buy_now'
+              navigate('/auction?filter=buy_now')
             }}
             style={{ cursor: 'pointer' }}
           >
@@ -3689,7 +3691,7 @@ function MainPage() {
           <div 
             className="apartments-section__header"
             onClick={() => {
-              window.location.href = '/debts'
+              navigate('/debts')
             }}
             style={{ cursor: 'pointer' }}
           >

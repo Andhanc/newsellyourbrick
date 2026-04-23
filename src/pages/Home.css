@@ -23,9 +23,9 @@
 }
 
 .home-page .new-header {
-  background: #f5f5f5;
+  background: transparent;
   padding: 20px 0;
-  position: sticky;
+  position: fixed;
   top: 0;
   z-index: 1000;
   /* Центрируем new-header, как на Главной */

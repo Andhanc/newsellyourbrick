@@ -16,7 +16,7 @@ import {
   FiAlertCircle,
   FiHome,
   FiHeart,
-  FiUserPlus,
+  FiMap,
   FiFileText,
   FiBookOpen,
   FiArrowRight,
@@ -304,171 +304,152 @@ function mergeExtractedPassportIntoProfileForm(prev, extracted) {
   }
 }
 
-const DIRECTION_SUMMARIES = [
-  {
-    variant: 'shares',
-    areaLabel: 'Инвестиции',
-    headline: 'Доли',
-    subCardTitle: 'Мой портфель',
-    subCardSubtitle: 'Объекты и доли, в которых вы участвуете',
-    to: '/shares',
-    moreCount: 8,
-    thumbnails: [
-      {
-        src: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=160&h=160&fit=crop&q=80',
-        alt: 'Современный дом',
-      },
-      {
-        src: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=160&h=160&fit=crop&q=80',
-        alt: 'Вилла с бассейном',
-      },
-      {
-        src: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=160&h=160&fit=crop&q=80',
-        alt: 'Дом с плоской крышей',
-      },
-    ],
-  },
-  {
-    variant: 'auction',
-    areaLabel: 'Платформа',
-    headline: 'Аукцион',
-    subCardTitle: 'Торги и лоты',
-    subCardSubtitle: 'Актуальные объекты и ставки',
-    to: '/auction',
-    moreCount: 6,
-    thumbnails: [
-      {
-        src: 'https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?w=160&h=160&fit=crop&q=80',
-        alt: 'Загородный коттедж',
-      },
-      {
-        src: 'https://images.unsplash.com/photo-1600047509807-ba8f99d2cdde?w=160&h=160&fit=crop&q=80',
-        alt: 'Фасад жилого дома',
-      },
-      {
-        src: 'https://images.unsplash.com/photo-1570129477492-45c003edd2be?w=160&h=160&fit=crop&q=80',
-        alt: 'Дом с газоном',
-      },
-    ],
-  },
-  {
-    variant: 'debts',
-    areaLabel: 'Финансы',
-    headline: 'Долги',
-    subCardTitle: 'Задолженности',
-    subCardSubtitle: 'График платежей и напоминания',
-    to: '/debts',
-    moreCount: 5,
-    thumbnails: [
-      {
-        src: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=160&h=160&fit=crop&q=80',
-        alt: 'Интерьер гостиной в доме',
-      },
-      {
-        src: 'https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=160&h=160&fit=crop&q=80',
-        alt: 'Многоэтажный дом',
-      },
-      {
-        src: 'https://images.unsplash.com/photo-1605276374104-dee2a0ed3cd6?w=160&h=160&fit=crop&q=80',
-        alt: 'Архитектура жилого комплекса',
-      },
-    ],
-  },
-]
-
-const MAIN_CARDS = [
-  {
-    title: 'Данные',
-    description: 'Паспорт, документы и статусы в одном месте',
-    to: '/data',
-    icon: FiDatabase,
-    accent: 'teal',
-  },
-  {
-    title: 'История',
-    description: 'Лента операций и действий по аккаунту',
-    to: '/history',
-    icon: FiClock,
-    accent: 'ocean',
-  },
-  {
-    title: 'Бронирования',
-    description: 'Текущие визиты и завершённые записи',
-    to: '/profile/bookings',
-    sheet: 'bookings',
-    icon: FiCalendar,
-    accent: 'violet',
-  },
-  {
-    title: 'Депозит',
-    description: 'Баланс, пополнения и вывод средств',
-    to: '/deposit',
-    icon: FiCreditCard,
-    accent: 'amber',
-  },
-  {
-    title: 'Подписки',
-    description: 'Тарифы, лимиты и продление доступа',
-    to: '/subscriptions',
-    sheet: 'subscriptions',
-    icon: FiLayers,
-    accent: 'rose',
-  },
-  {
-    title: 'Чат',
-    description: 'Поддержка и персональный менеджер',
-    action: 'managerChat',
-    icon: FiMessageCircle,
-    accent: 'jade',
-  },
-]
-
-const QUICK_LINKS = [
-  { title: 'Понравилось', subtitle: 'Избранные объекты', to: '/favorites', icon: FiHeart },
-  { title: 'Стать продавцом', subtitle: 'Регистрация продавца', icon: FiUserPlus, action: 'becomeSeller' },
-  { title: 'Выйти', subtitle: 'Выход из аккаунта', icon: FiLogOut, action: 'logout' },
-]
-
-function historyObjectsWord(n) {
-  const k = n % 100
-  if (k >= 11 && k <= 14) return 'объектов'
-  const d = n % 10
-  if (d === 1) return 'объект'
-  if (d >= 2 && d <= 4) return 'объекта'
-  return 'объектов'
+function buildDirectionSummaries(t) {
+  return [
+    {
+      variant: 'shares',
+      areaLabel: t('buyerCabinet_directionAreaInvestments'),
+      headline: t('buyerCabinet_directionHeadlineShares'),
+      subCardTitle: t('buyerCabinet_directionSharesTitle'),
+      subCardSubtitle: t('buyerCabinet_directionSharesSubtitle'),
+      to: '/shares',
+      moreCount: 8,
+      thumbnails: [
+        {
+          src: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=160&h=160&fit=crop&q=80',
+          alt: t('buyerCabinet_thumbModernHouse'),
+        },
+        {
+          src: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=160&h=160&fit=crop&q=80',
+          alt: t('buyerCabinet_thumbVillaPool'),
+        },
+        {
+          src: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=160&h=160&fit=crop&q=80',
+          alt: t('buyerCabinet_thumbFlatRoofHouse'),
+        },
+      ],
+    },
+    {
+      variant: 'auction',
+      areaLabel: t('buyerCabinet_directionAreaPlatform'),
+      headline: t('buyerCabinet_directionHeadlineAuction'),
+      subCardTitle: t('buyerCabinet_directionAuctionTitle'),
+      subCardSubtitle: t('buyerCabinet_directionAuctionSubtitle'),
+      to: '/auction',
+      moreCount: 6,
+      thumbnails: [
+        {
+          src: 'https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?w=160&h=160&fit=crop&q=80',
+          alt: t('buyerCabinet_thumbCountryCottage'),
+        },
+        {
+          src: 'https://images.unsplash.com/photo-1600047509807-ba8f99d2cdde?w=160&h=160&fit=crop&q=80',
+          alt: t('buyerCabinet_thumbFacade'),
+        },
+        {
+          src: 'https://images.unsplash.com/photo-1570129477492-45c003edd2be?w=160&h=160&fit=crop&q=80',
+          alt: t('buyerCabinet_thumbLawnHouse'),
+        },
+      ],
+    },
+    {
+      variant: 'debts',
+      areaLabel: t('buyerCabinet_directionAreaFinance'),
+      headline: t('buyerCabinet_directionHeadlineDebts'),
+      subCardTitle: t('buyerCabinet_directionDebtsTitle'),
+      subCardSubtitle: t('buyerCabinet_directionDebtsSubtitle'),
+      to: '/debts',
+      moreCount: 5,
+      thumbnails: [
+        {
+          src: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=160&h=160&fit=crop&q=80',
+          alt: t('buyerCabinet_thumbLivingRoom'),
+        },
+        {
+          src: 'https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=160&h=160&fit=crop&q=80',
+          alt: t('buyerCabinet_thumbMultiStoreyHouse'),
+        },
+        {
+          src: 'https://images.unsplash.com/photo-1605276374104-dee2a0ed3cd6?w=160&h=160&fit=crop&q=80',
+          alt: t('buyerCabinet_thumbResidentialArchitecture'),
+        },
+      ],
+    },
+  ]
 }
 
-function formatDateRangeRu(start, end) {
+function buildMainCards(t) {
+  return [
+    {
+      title: t('buyerCabinet_cardDataTitle'),
+      description: t('buyerCabinet_cardDataSubtitle'),
+      to: '/data',
+      icon: FiDatabase,
+      accent: 'teal',
+    },
+    {
+      title: t('buyerCabinet_cardHistoryTitle'),
+      description: t('buyerCabinet_cardHistorySubtitle'),
+      to: '/history',
+      icon: FiClock,
+      accent: 'ocean',
+    },
+    {
+      title: t('buyerCabinet_cardBookingsTitle'),
+      description: t('buyerCabinet_cardBookingsSubtitle'),
+      to: '/profile/bookings',
+      sheet: 'bookings',
+      icon: FiCalendar,
+      accent: 'violet',
+    },
+    {
+      title: t('buyerCabinet_tileDepositTitle'),
+      description: t('buyerCabinet_tileDepositDescription'),
+      to: '/deposit',
+      icon: FiCreditCard,
+      accent: 'amber',
+    },
+    {
+      title: t('buyerCabinet_cardSubscriptionsTitle'),
+      description: t('buyerCabinet_cardSubscriptionsSubtitle'),
+      to: '/subscriptions',
+      sheet: 'subscriptions',
+      icon: FiLayers,
+      accent: 'rose',
+    },
+    {
+      title: t('buyerCabinet_cardChatTitle'),
+      description: t('buyerCabinet_cardChatSubtitle'),
+      action: 'managerChat',
+      icon: FiMessageCircle,
+      accent: 'jade',
+    },
+  ]
+}
+
+function buildQuickLinks(t) {
+  return [
+    { title: t('buyerCabinet_quickFavoritesTitle'), subtitle: t('buyerCabinet_quickFavoritesSubtitle'), to: '/favorites', icon: FiHeart },
+    { title: t('buyerCabinet_quickMapTitle'), subtitle: t('buyerCabinet_quickMapSubtitle'), to: '/map', icon: FiMap },
+    { title: t('buyerCabinet_quickLogoutTitle'), subtitle: t('buyerCabinet_quickLogoutSubtitle'), icon: FiLogOut, action: 'logout' },
+  ]
+}
+
+function formatDateRange(start, end, locale) {
   try {
     const s = new Date(`${start}T12:00:00`)
     const e = new Date(`${end}T12:00:00`)
     const o = { day: 'numeric', month: 'short', year: 'numeric' }
-    return `${s.toLocaleDateString('ru-RU', o)} — ${e.toLocaleDateString('ru-RU', o)}`
+    return `${s.toLocaleDateString(locale, o)} — ${e.toLocaleDateString(locale, o)}`
   } catch {
     return `${start} — ${end}`
   }
 }
 
-function bookingStatusLabelRu(statusKey) {
-  const k = (statusKey || 'pending').toLowerCase()
-  if (k === 'approved') return 'Подтверждено'
-  if (k === 'rejected') return 'Отклонено'
-  return 'Ожидает'
-}
-
-function bookingsWord(n) {
-  const k = n % 100
-  if (k >= 11 && k <= 14) return 'бронирований'
-  const d = n % 10
-  if (d === 1) return 'бронирование'
-  if (d >= 2 && d <= 4) return 'бронирования'
-  return 'бронирований'
-}
-
 function TestPage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const { user, isLoaded } = useUser()
   const { signOut } = useClerk()
   const {
@@ -480,6 +461,10 @@ function TestPage() {
     historyLoading,
     subscriptionPlanLabel,
   } = useCabinetOverviewData()
+  const directionSummaries = useMemo(() => buildDirectionSummaries(t), [t])
+  const mainCards = useMemo(() => buildMainCards(t), [t])
+  const quickLinks = useMemo(() => buildQuickLinks(t), [t])
+  const locale = useMemo(() => (i18n.language === 'en' ? 'en-US' : i18n.language), [i18n.language])
 
   /** State из хука может отставать от localStorage на первом кадре — для онбординга и % нужен синхронный id. */
   const resolvedNumericUserId = numericUserId ?? getStoredNumericUserId()
@@ -1899,46 +1884,43 @@ function TestPage() {
                 {verified ? (
                   <span className="test-chip test-chip--ok">
                     <FiCheckCircle size={13} aria-hidden />
-                    Email подтверждён
+                    {t('buyerCabinet_emailVerified')}
                   </span>
                 ) : null}
               </div>
             </div>
             {isProfileFullyCompleted ? (
               <Link to="/" className="test-hero-pro__home-btn">
-                <span>Главная</span>
+                <span>{t('buyerCabinet_home')}</span>
                 <FiArrowRight size={15} aria-hidden />
               </Link>
             ) : null}
           </div>
 
-          <nav className="test-hero-pro__shortcuts" aria-label="Разделы кабинета">
-            <p className="test-hero-pro__shortcuts-label">Разделы кабинета</p>
+          <nav className="test-hero-pro__shortcuts" aria-label={t('buyerCabinet_sectionsAria')}>
+            <p className="test-hero-pro__shortcuts-label">{t('buyerCabinet_sectionsLabel')}</p>
             <div className="test-hero-icon-grid">
-              {MAIN_CARDS.map((card) => {
+              {mainCards.map((card) => {
                 const Icon = card.icon
                 const isHistory = card.to === '/history'
                 const isSubscriptions = card.sheet === 'subscriptions'
                 const isBookings = card.sheet === 'bookings'
                 const isManagerChat = card.action === 'managerChat'
                 const isData = card.to === '/data'
-                const isDeposit = card.to === '/deposit'
-                const cardTitle = isDeposit ? t('buyerCabinet_tileDepositTitle') : card.title
-                const cardDescription = isDeposit
-                  ? t('buyerCabinet_tileDepositDescription')
-                  : card.description
+                const cardTitle = card.title
+                const cardDescription = card.description
                 const showHistoryCount = isHistory && !historyLoading && historyCount > 0
                 const showBookingsCount =
                   isBookings && !bookingsSheetLoading && bookingsSheetRows.length > 0
                 const planLabel = subscriptionPlanLabel || 'Starter'
                 const historyAria = showHistoryCount
-                  ? `${cardTitle}, ${historyCount} ${historyObjectsWord(historyCount)} в истории`
+                  ? t('buyerCabinet_historyAria', { title: cardTitle, count: historyCount })
                   : undefined
                 const subscriptionsAria = isSubscriptions
-                  ? `${cardTitle}, тариф ${planLabel}`
+                  ? t('buyerCabinet_subscriptionsAria', { title: cardTitle, plan: planLabel })
                   : undefined
                 const bookingsAria = showBookingsCount
-                  ? `${cardTitle}, ${bookingsSheetRows.length} ${bookingsWord(bookingsSheetRows.length)}`
+                  ? t('buyerCabinet_bookingsAria', { title: cardTitle, count: bookingsSheetRows.length })
                   : undefined
                 const ariaLabel = historyAria ?? subscriptionsAria ?? bookingsAria
                 const tileClass = `test-hero-icon-tile test-hero-icon-tile--${card.accent}${
@@ -2106,7 +2088,7 @@ function TestPage() {
                     onClick={() => setDataSheetOpen(false)}
                   >
                     <FiArrowLeft size={18} aria-hidden />
-                    Свернуть
+                    {t('buyerCabinet_collapse')}
                   </button>
                   <h3 id="test-data-panel-title" className="test-data-panel__title">
                     Данные профиля
@@ -2117,7 +2099,7 @@ function TestPage() {
                   Поля сохраняются автоматически: при паузе в наборе или при уходе с поля.
                 </p>
                 {dbUserLoading ? (
-                  <p className="test-data-panel__loading">Загрузка…</p>
+                  <p className="test-data-panel__loading">{t('buyerCabinet_billingLoading')}</p>
                 ) : !resolvedNumericUserId ? (
                   <p className="test-data-panel__hint">
                     Не удалось определить профиль. Обновите страницу или войдите снова.
@@ -2379,30 +2361,30 @@ function TestPage() {
                     onClick={() => setHistorySheetOpen(false)}
                   >
                     <FiArrowLeft size={18} aria-hidden />
-                    Свернуть
+                    {t('buyerCabinet_collapse')}
                   </button>
                   <h3 id="test-history-panel-title" className="test-data-panel__title">
-                    История
+                    {t('buyerHistory_title')}
                   </h3>
                   <Link to="/history" className="test-data-panel__full-link">
-                    Вся история
+                    {t('buyerCabinet_allHistory')}
                     <FiArrowRight size={15} aria-hidden />
                   </Link>
                 </div>
                 <p className="test-data-panel__hint">
-                  Аукционы, резервы, доли и ставки — как на странице «История».
+                  {t('buyerCabinet_historySheetHint')}
                 </p>
                 <div className="test-history-dropbox__summary">
-                  <span className="test-history-dropbox__summary-label">Событий в истории</span>
+                  <span className="test-history-dropbox__summary-label">{t('buyerCabinet_historyEventsLabel')}</span>
                   <span className="test-history-dropbox__summary-value">
                     {historyLoading ? '…' : historyCount}
                   </span>
                 </div>
                 {historyLoading ? (
-                  <p className="test-data-panel__loading">Загрузка…</p>
+                  <p className="test-data-panel__loading">{t('buyerCabinet_billingLoading')}</p>
                 ) : historySections.length === 0 ? (
                   <p className="test-history-dropbox__empty">
-                    Пока нет событий — они появятся после ставок и покупок.
+                    {t('buyerCabinet_historyEmpty')}
                   </p>
                 ) : (
                   <div className="test-history-dropbox__scroll">
@@ -2414,15 +2396,15 @@ function TestPage() {
                       >
                         <div className={`test-history-section__head test-history-section__head--${section.key}`}>
                           <h4 id={`hist-sec-${section.key}`} className="test-history-section__title">
-                            {section.key === 'reserve' ? 'Купить сейчас' : section.title}
+                            {section.key === 'reserve' ? t('buyNowTitle') : section.title}
                           </h4>
                           {['auction', 'reserve', 'shares'].includes(section.key) ? (
                             <span className="test-history-section__pill">
                               {section.key === 'auction'
-                                ? 'Сделки аукциона'
+                                ? t('buyerCabinet_historyPillAuction')
                                 : section.key === 'reserve'
-                                  ? 'Фиксированная цена'
-                                  : 'Долевые покупки'}
+                                  ? t('buyerCabinet_historyPillReserve')
+                                  : t('buyerCabinet_historyPillShares')}
                             </span>
                           ) : null}
                         </div>
@@ -2445,10 +2427,10 @@ function TestPage() {
                                   <span className="test-history-mini-card__sub">{item.subtitle}</span>
                                   <div className="test-history-mini-card__meta">
                                     <span className="test-history-mini-card__meta-item">
-                                      <b>Сумма:</b> {item.amount || '—'}
+                                      <b>{t('buyerCabinet_amountLabel')}</b> {item.amount || '—'}
                                     </span>
                                     <span className="test-history-mini-card__meta-item">
-                                      <b>Дата:</b> {item.purchaseDate || '—'}
+                                      <b>{t('buyerCabinet_dateLabel')}</b> {item.purchaseDate || '—'}
                                     </span>
                                   </div>
                                   {termsText ? (
@@ -2461,7 +2443,7 @@ function TestPage() {
                                         className="test-history-mini-card__action-btn"
                                         onClick={() => setHistorySheetOpen(false)}
                                       >
-                                        Открыть объект
+                                        {t('buyerCabinet_openProperty')}
                                       </Link>
                                     ) : null}
                                     {isPurchasedSection ? (
@@ -2470,7 +2452,7 @@ function TestPage() {
                                         className="test-history-mini-card__action-btn test-history-mini-card__action-btn--sell"
                                         onClick={() => setIsSellObjectPromptOpen(true)}
                                       >
-                                        Продать объект
+                                        {t('buyerCabinet_sellProperty')}
                                       </button>
                                     ) : null}
                                   </div>
@@ -2501,10 +2483,10 @@ function TestPage() {
                     onClick={() => setSubscriptionSheetOpen(false)}
                   >
                     <FiArrowLeft size={18} aria-hidden />
-                    Свернуть
+                    {t('buyerCabinet_collapse')}
                   </button>
                   <h3 id="test-subscription-panel-title" className="test-data-panel__title">
-                    Подписки
+                    {t('buyerCabinet_cardSubscriptionsTitle')}
                   </h3>
                   <span className="test-data-panel__toolbar-spacer" aria-hidden />
                 </div>
@@ -2541,31 +2523,31 @@ function TestPage() {
                     onClick={() => setBookingsSheetOpen(false)}
                   >
                     <FiArrowLeft size={18} aria-hidden />
-                    Свернуть
+                    {t('buyerCabinet_collapse')}
                   </button>
                   <h3 id="test-bookings-panel-title" className="test-data-panel__title">
-                    Бронирования
+                    {t('buyerCabinet_cardBookingsTitle')}
                   </h3>
                   <Link to="/profile/bookings" className="test-data-panel__full-link">
-                    Все бронирования
+                    {t('buyerCabinet_allBookings')}
                     <FiArrowRight size={15} aria-hidden />
                   </Link>
                 </div>
                 <p className="test-data-panel__hint">
-                  Записи на просмотр объектов (тест-драйв). Подробности — на странице бронирований.
+                  {t('buyerCabinet_bookingsSheetHint')}
                 </p>
                 {bookingsSheetLoading ? (
-                  <p className="test-data-panel__loading">Загрузка…</p>
+                  <p className="test-data-panel__loading">{t('buyerCabinet_billingLoading')}</p>
                 ) : bookingsSheetRows.length === 0 ? (
                   <p className="test-history-dropbox__empty">
-                    Пока нет бронирований — они появятся после записи на просмотр объекта.
+                    {t('buyerCabinet_bookingsEmpty')}
                   </p>
                 ) : (
                   <div className="test-booking-dropbox__list">
                     {bookingsSheetRows.slice(0, 5).map((b) => {
                       const statusKey = (b.status || 'pending').toLowerCase()
                       const title =
-                        b.property_title || `Объект #${b.property_id}`
+                        b.property_title || t('buyerCabinet_propertyWithId', { id: b.property_id })
                       return (
                         <Link
                           key={b.id}
@@ -2574,18 +2556,18 @@ function TestPage() {
                           onClick={() => setBookingsSheetOpen(false)}
                         >
                           <span className={`test-booking-mini__badge test-booking-mini__badge--${['pending', 'approved', 'rejected'].includes(statusKey) ? statusKey : 'pending'}`}>
-                            {bookingStatusLabelRu(statusKey)}
+                            {t(`buyerCabinet_bookingStatus_${statusKey}`, t('buyerCabinet_bookingStatus_pending'))}
                           </span>
                           <span className="test-booking-mini__title">{title}</span>
                           <span className="test-booking-mini__meta">
-                            {formatDateRangeRu(b.start_date, b.end_date)}
+                            {formatDateRange(b.start_date, b.end_date, locale)}
                           </span>
                         </Link>
                       )
                     })}
                     {bookingsSheetRows.length > 5 ? (
                       <p className="test-booking-dropbox__more">
-                        Показаны 5 из {bookingsSheetRows.length}. Остальные — в полном списке.
+                        {t('buyerCabinet_bookingsShownOfTotal', { shown: 5, total: bookingsSheetRows.length })}
                       </p>
                     ) : null}
                   </div>
@@ -2609,7 +2591,7 @@ function TestPage() {
                 aria-label="Ключевые направления: доли, аукцион и долги"
               >
                 <div className="test-direction-summaries__grid">
-                  {DIRECTION_SUMMARIES.map((item) => {
+                  {directionSummaries.map((item) => {
                     const dirRef =
                       item.to === '/shares'
                         ? directionSharesRef
@@ -2642,13 +2624,13 @@ function TestPage() {
                     <div className="test-panel__head">
                       <div>
                         <h2 id="test-quick-title" className="test-panel__title">
-                          Направления
+                          {t('buyerCabinet_directionsTitle')}
                         </h2>
-                        <p className="test-panel__subtitle">Инвестиции и операции</p>
+                        <p className="test-panel__subtitle">{t('buyerCabinet_directionsSubtitle')}</p>
                       </div>
                     </div>
                     <div className="test-quick-row">
-                      {QUICK_LINKS.map((link) => {
+                      {quickLinks.map((link) => {
                         const Icon = link.icon
                         const isLogout = link.action === 'logout'
                         const isBecomeSeller = link.action === 'becomeSeller'
@@ -2701,7 +2683,7 @@ function TestPage() {
                 <aside className="test-bento__rail">
                   <section className="test-panel test-panel--tight" aria-labelledby="test-docs-title">
                     <h2 id="test-docs-title" className="test-panel__title test-panel__title--sm">
-                      Документы
+                      {t('buyerCabinet_docsTitle')}
                     </h2>
                     <div className="test-docs-stack">
                       <button
@@ -2717,8 +2699,8 @@ function TestPage() {
                       >
                         <FiFileText size={18} aria-hidden />
                         <div>
-                          <span className="test-doc-row__title">Ваши файлы</span>
-                          <span className="test-doc-row__sub">Паспорт и реквизиты в разделе «Данные»</span>
+                          <span className="test-doc-row__title">{t('buyerCabinet_docsFilesTitle')}</span>
+                          <span className="test-doc-row__sub">{t('buyerCabinet_docsFilesSubtitle')}</span>
                         </div>
                         <FiArrowRight size={16} aria-hidden />
                       </button>
@@ -2735,8 +2717,8 @@ function TestPage() {
                       >
                         <FiBookOpen size={18} aria-hidden />
                         <div>
-                          <span className="test-doc-row__title">Соглашения</span>
-                          <span className="test-doc-row__sub">Правила и обработка данных</span>
+                          <span className="test-doc-row__title">{t('buyerCabinet_docsAgreementsTitle')}</span>
+                          <span className="test-doc-row__sub">{t('buyerCabinet_docsAgreementsSubtitle')}</span>
                         </div>
                         <FiArrowRight size={16} aria-hidden />
                       </button>

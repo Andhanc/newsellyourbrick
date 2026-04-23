@@ -11,6 +11,7 @@ import {
   isSafePropertyEntryPath,
   setPropertyEntryFrom,
 } from '../utils/propertyNavigation'
+import { normalizePropertyMediaFields } from '../utils/propertyImage'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
 
@@ -135,56 +136,15 @@ const PropertyDetailPage = () => {
               })
               console.log('📥 PropertyDetailPage - Координаты (raw):', prop.coordinates, typeof prop.coordinates)
               
-              // Получаем базовый URL без /api
-              const baseUrl = API_BASE_URL.replace('/api', '').replace(/\/$/, '')
-              
-              // Обрабатываем фотографии
-              let processedImages = []
-              if (prop.photos && Array.isArray(prop.photos) && prop.photos.length > 0) {
-                processedImages = prop.photos.map(photo => {
-                  if (typeof photo === 'string') {
-                    const photoStr = photo.trim()
-                    // Data URL (base64) - используем как есть
-                    if (photoStr.startsWith('data:')) {
-                      return photoStr
-                    }
-                    // Полный HTTP/HTTPS URL - используем как есть
-                    else if (photoStr.startsWith('http://') || photoStr.startsWith('https://')) {
-                      return photoStr
-                    }
-                    // Путь начинается с /uploads/ - добавляем базовый URL
-                    else if (photoStr.startsWith('/uploads/')) {
-                      return `${baseUrl}${photoStr}`
-                    }
-                    // Путь начинается с uploads/ без слеша - добавляем / и базовый URL
-                    else if (photoStr.startsWith('uploads/')) {
-                      return `${baseUrl}/${photoStr}`
-                    }
-                    // Относительный путь - добавляем /uploads/
-                    else {
-                      return `${baseUrl}/uploads/${photoStr}`
-                    }
-                  } else if (photo && typeof photo === 'object' && photo.url) {
-                    const photoUrl = String(photo.url).trim()
-                    if (photoUrl.startsWith('data:')) {
-                      return photoUrl
-                    } else if (photoUrl.startsWith('http://') || photoUrl.startsWith('https://')) {
-                      return photoUrl
-                    } else if (photoUrl.startsWith('/uploads/')) {
-                      return `${baseUrl}${photoUrl}`
-                    } else if (photoUrl.startsWith('uploads/')) {
-                      return `${baseUrl}/${photoUrl}`
-                    } else {
-                      return `${baseUrl}/uploads/${photoUrl}`
-                    }
-                  }
-                  return photo
-                })
-              }
+              // Обрабатываем фотографии (включая legacy форматы photos/images)
+              const { image: normalizedImage, images: normalizedImages } = normalizePropertyMediaFields(prop)
+              let processedImages = normalizedImages
               
               // Если нет фотографий, используем дефолтное изображение
               if (processedImages.length === 0) {
-                processedImages = ['https://images.unsplash.com/photo-1568605114967-8130f3a36994?auto=format&fit=crop&w=800&q=80']
+                processedImages = normalizedImage
+                  ? [normalizedImage]
+                  : ['https://images.unsplash.com/photo-1568605114967-8130f3a36994?auto=format&fit=crop&w=800&q=80']
               }
               
               // Обрабатываем видео

@@ -219,17 +219,11 @@
   margin-top: 0.5rem;
   align-self: flex-start;
   padding: 0.25rem 0.75rem;
-  /* Эффект жидкого стекла с оттенком тифани */
-  background: linear-gradient(135deg, rgba(10, 186, 181, 0.35) 0%, rgba(45, 212, 191, 0.4) 50%, rgba(20, 184, 166, 0.35) 100%);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  background: #000000;
   border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  box-shadow: 
-    0 4px 6px rgba(0, 0, 0, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.4),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.1);
-  color: #000000;
+  border: 1px solid #000000;
+  box-shadow: none;
+  color: #ffffff;
   font-size: 0.8rem;
   font-weight: 500;
   cursor: pointer;
@@ -238,31 +232,11 @@
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Эффект блеска при наведении */
-.property-card__history-button::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
-  transition: left 0.5s;
-}
-
-.property-card__history-button:hover::before {
-  left: 100%;
-}
-
 .property-card__history-button:hover {
-  background: linear-gradient(135deg, rgba(10, 186, 181, 0.45) 0%, rgba(45, 212, 191, 0.5) 50%, rgba(20, 184, 166, 0.45) 100%);
-  border-color: rgba(255, 255, 255, 0.5);
-  box-shadow: 
-    0 6px 12px rgba(10, 186, 181, 0.35),
-    inset 0 1px 0 rgba(255, 255, 255, 0.5),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.1);
-  transform: translateY(-2px);
-  color: #000000;
+  background: #111111;
+  border-color: #111111;
+  transform: translateY(-1px);
+  color: #ffffff;
 }
 
 /* Кнопка "Смотреть еще" */

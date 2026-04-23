@@ -12,6 +12,7 @@ import PropertyTimer from '../components/PropertyTimer'
 import CircularTimer from '../components/CircularTimer'
 import AuctionMobileLayout from '../components/ui/AuctionMobileLayout'
 import { hasBuyNowOption } from '../utils/hasBuyNowOption'
+import { getPropertyCardImage } from '../utils/propertyImage'
 import { fetchUserDeposit } from '../utils/depositApi'
 import { fetchNumericDbUserIdForApi, getStoredNumericUserId } from '../services/authService'
 import './Shares.css'
@@ -85,9 +86,10 @@ const Debts = () => {
         }
 
         const mapped = json.data.filter(isDebtRecord).map((p) => {
-          const photos = (p.photos && (Array.isArray(p.photos) ? p.photos : typeof p.photos === 'string' ? (() => { try { return JSON.parse(p.photos) } catch (e) { return [] } })() : [])) || []
-          const firstPhoto = photos[0]
-          const image = typeof firstPhoto === 'string' ? firstPhoto : firstPhoto && firstPhoto.url ? firstPhoto.url : null
+          const image = getPropertyCardImage(
+            p,
+            'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=800&q=80'
+          )
           const location = p.location || [p.city, p.country].filter(Boolean).join(', ') || ''
           const priceNumber = p.price != null && p.price !== '' ? Number(p.price) : 0
           const debtAmount = p.debt_amount != null && p.debt_amount !== '' ? Number(p.debt_amount) : null
@@ -114,7 +116,7 @@ const Debts = () => {
             title: p.title || p.name || '',
             location,
             image,
-            images: p.images || (image ? [image] : []),
+            images: image ? [image] : [],
             price: priceNumber,
             debt_amount: debtAmount,
             currentBid,

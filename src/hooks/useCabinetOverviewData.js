@@ -7,6 +7,7 @@ import {
   CLERK_DB_USER_SYNCED,
 } from '../services/authService'
 import { fetchUserById } from '../utils/usersApi'
+import { getPropertyCardImage } from '../utils/propertyImage'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
 
@@ -48,21 +49,7 @@ function sharePurchaseImageSrc(raw) {
 }
 
 function firstPhotoFromProperty(prop) {
-  if (!prop) return null
-  let photos = prop.photos
-  if (!photos) return null
-  if (typeof photos === 'string') {
-    try {
-      photos = JSON.parse(photos)
-    } catch {
-      return null
-    }
-  }
-  if (!Array.isArray(photos) || photos.length === 0) return null
-  const p = photos[0]
-  if (typeof p === 'string') return p
-  if (p && typeof p === 'object') return p.url || p.src || null
-  return null
+  return getPropertyCardImage(prop, null)
 }
 
 /** Для обзора кабинета: без подписки и пустой plan_key считаем Starter (не Pro). */

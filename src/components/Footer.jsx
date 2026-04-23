@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
-import { useUser } from '@clerk/clerk-react'
+import { useUser, useClerk } from '@clerk/clerk-react'
 import { useTranslation } from 'react-i18next'
 import { FaApple, FaWhatsapp } from 'react-icons/fa'
 import { MdSentimentDissatisfied } from 'react-icons/md'
@@ -12,6 +12,7 @@ import { navigateToWallet } from '../utils/walletNavigation'
 import { isSiteUserSignedIn, routeRequiresSiteLogin } from '../utils/siteAuthGate'
 import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
 import { UI_LANGUAGES } from '../constants/uiLanguages'
+import { getUserData, logout } from '../services/authService'
 
 const WHATSAPP_HREF = 'https://wa.me/447700183959'
 
@@ -20,6 +21,7 @@ const Footer = () => {
   const navigate = useNavigate()
   const location = useLocation()
   const { user, isLoaded: userLoaded } = useUser()
+  const { signOut } = useClerk()
   const languageDropdownRef = useRef(null)
   const [storeComingSoonOpen, setStoreComingSoonOpen] = useState(false)
   const [isLanguageDropdownOpen, setIsLanguageDropdownOpen] = useState(false)
@@ -74,6 +76,36 @@ const Footer = () => {
     navigateToWallet(navigate, location.pathname)
   }
 
+  const roleRaw = String(localStorage.getItem('userRole') || getUserData()?.role || '').toLowerCase()
+  const isBuyerSignedIn = isSiteUserSignedIn(user, userLoaded) && roleRaw === 'buyer'
+
+  const handleBecomeSellerRegister = useCallback(async () => {
+    scrollToTop()
+    try {
+      sessionStorage.setItem('login_modal_mode', 'register')
+      sessionStorage.setItem('login_modal_user_role', 'seller')
+    } catch {
+      /* ignore storage errors */
+    }
+    sessionStorage.setItem('clerk_logout_in_progress', 'true')
+    try {
+      if (user && signOut) {
+        await signOut()
+      }
+    } catch (e) {
+      console.warn('Footer become seller signOut:', e)
+    }
+    try {
+      await logout()
+    } catch (e) {
+      console.warn('Footer become seller logout:', e)
+    } finally {
+      sessionStorage.removeItem('clerk_logout_in_progress')
+    }
+    requestOpenLoginModal({ wizard: false })
+    navigate('/', { replace: true })
+  }, [navigate, signOut, user])
+
   const handleFooterProtectedNav = (to) => {
     scrollToTop()
     if (routeRequiresSiteLogin(to) && !isSiteUserSignedIn(user, userLoaded)) {
@@ -90,6 +122,7 @@ const Footer = () => {
       { to: '/auction', label: t('auction') },
       { to: '/auction?filter=buy_now', label: t('buyNowSectionTitle') },
       { to: '/shares', label: t('shares') },
+      ...(isBuyerSignedIn ? [{ onClick: handleBecomeSellerRegister, label: t('becomeSeller') }] : []),
     ],
     [
       { to: '/debts', label: t('debtsTitle') },

@@ -609,6 +609,7 @@ const Header = () => {
   return (
     <>
       {/* Новый хедер для десктопной версии */}
+      <div className="new-header-spacer" aria-hidden="true" />
       <header className={`new-header ${isMenuOpen ? 'new-header--menu-open' : ''}`}>
         <div className={`new-header__container ${isMenuOpen ? 'new-header__container--menu-open' : ''}`}>
           <div className="new-header__left">

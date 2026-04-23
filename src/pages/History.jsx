@@ -10,6 +10,7 @@ import BuyerCabinetSidebar from '../components/BuyerCabinetSidebar'
 import { ensureCanOpenProperty } from '../utils/propertyAccessGuard'
 import { fetchVerificationStatus } from '../utils/verificationStatusApi'
 import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
+import { getPropertyCardImage } from '../utils/propertyImage'
 import i18n from '../i18n/config'
 import './History.css'
 import './Profile.css'
@@ -214,8 +215,10 @@ const History = () => {
           // Преобразуем данные в формат для отображения
           const formattedPurchases = result.data.map(winner => {
             const property = winner.property || {}
-            const photos = property.photos || []
-            const firstPhoto = photos.length > 0 ? photos[0] : null
+            const firstPhoto = getPropertyCardImage(
+              property,
+              'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800'
+            )
             
             return {
               id: winner.id,
@@ -225,7 +228,7 @@ const History = () => {
               purchasePrice: winner.winning_bid_amount,
               purchaseDate: winner.won_at || winner.auction_end_date,
               status: winner.deposit_paid === 1 ? 'deposit_paid' : 'pending_deposit',
-              image: firstPhoto || 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800',
+              image: firstPhoto,
               currency: winner.currency || 'USD',
               depositAmount: winner.deposit_amount,
               depositDueDate: winner.deposit_due_date,

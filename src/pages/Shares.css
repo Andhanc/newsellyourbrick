@@ -48,7 +48,7 @@
 .shares-page .new-header {
   background: transparent;
   padding: 20px 0;
-  position: sticky;
+  position: fixed;
   top: 0;
   z-index: 1000;
   display: flex;

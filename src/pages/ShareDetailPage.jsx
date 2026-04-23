@@ -9,6 +9,7 @@ import { getUserData, isAuthenticated, getStoredNumericUserId, CLERK_DB_USER_SYN
 import { showNotification } from '../utils/toastHelper'
 import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
 import { fetchUserDeposit } from '../utils/depositApi'
+import { getPropertyCardImage } from '../utils/propertyImage'
 import './ShareDetailPage.css'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api'
@@ -136,23 +137,7 @@ const ShareDetailPage = () => {
       .then((res) => (res.ok ? res.json() : Promise.reject(new Error('Not found'))))
       .then((json) => {
         const p = json.data || json
-        const photos =
-          (p.photos &&
-            (Array.isArray(p.photos)
-              ? p.photos
-              : typeof p.photos === 'string'
-                ? (() => {
-                    try {
-                      return JSON.parse(p.photos)
-                    } catch {
-                      return []
-                    }
-                  })()
-                : [])) ||
-          []
-        const firstPhoto = photos[0]
-        const image =
-          typeof firstPhoto === 'string' ? firstPhoto : firstPhoto && firstPhoto.url ? firstPhoto.url : null
+        const image = getPropertyCardImage(p, null)
         const totalShares = p.total_shares != null ? Number(p.total_shares) : 20
         const sharesSold = p.shares_sold != null ? Number(p.shares_sold) : 0
         const price = p.price != null ? Number(p.price) : 0

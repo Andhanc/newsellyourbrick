@@ -81,13 +81,19 @@ const PropertyList = ({
     return () => window.removeEventListener('resize', check)
   }, [])
   
-  // Маппинг категорий из URL (английские) в русские названия для фильтра
-  const categoryMap = {
-    'Apartment': 'апартаменты',
-    'Villa': 'вилла',
-    'Flat': 'квартира',
-    'Townhouse': 'дом',
-    'House': 'дом'
+  const normalizeCategoryFromUrl = (rawCategory) => {
+    const normalized = String(rawCategory || '')
+      .trim()
+      .toLowerCase()
+
+    if (!normalized) return null
+    if (['apartment', 'apartments', 'апартамент', 'апартаменты'].includes(normalized)) return 'апартаменты'
+    if (['flat', 'flats', 'квартира', 'квартиры'].includes(normalized)) return 'квартира'
+    if (['villa', 'villas', 'вилла', 'виллы'].includes(normalized)) return 'вилла'
+    if (['house', 'houses', 'townhouse', 'townhouses', 'дом', 'дома'].includes(normalized)) return 'дом'
+    if (['all', 'все'].includes(normalized)) return 'все'
+
+    return null
   }
   
   // Читаем параметры из URL при загрузке и прокручиваем к объектам
@@ -96,9 +102,8 @@ const PropertyList = ({
     const category = searchParams.get('category')
     const filter = searchParams.get('filter')
     
-    if (category && categoryMap[category]) {
-      setPropertyType(categoryMap[category])
-    }
+    const normalizedCategory = normalizeCategoryFromUrl(category)
+    if (normalizedCategory) setPropertyType(normalizedCategory)
     
     // Применяем фильтр типа продажи (аукцион / купить сейчас)
     if (filter === 'auction') {
@@ -174,10 +179,11 @@ const PropertyList = ({
       // Если есть property_type из API, используем его
       if (property.property_type) {
         const typeMap = {
-          'квартира': ['apartment'],
-          'апартаменты': ['commercial'],
+          'квартира': ['apartment', 'flat'],
+          // Исторически "Apartment" из ссылок главной может приходить в обе модели: apartment/commercial.
+          'апартаменты': ['commercial', 'apartment'],
           'вилла': ['villa'],
-          'дом': ['house']
+          'дом': ['house', 'townhouse']
         }
         if (typeMap[propertyType] && !typeMap[propertyType].includes(property.property_type)) {
           return false

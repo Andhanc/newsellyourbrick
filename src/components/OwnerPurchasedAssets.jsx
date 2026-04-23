@@ -81,8 +81,10 @@ export default function OwnerPurchasedAssets({ userId }) {
         }
         const formatted = result.data.map((winner) => {
           const property = winner.property || {}
-          const photos = property.photos || []
-          const firstPhoto = photos.length > 0 ? photos[0] : null
+          const firstPhoto = getPropertyCardImage(
+            property,
+            'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800'
+          )
           return {
             id: winner.id,
             propertyId: winner.property_id,
@@ -91,8 +93,7 @@ export default function OwnerPurchasedAssets({ userId }) {
             purchasePrice: winner.winning_bid_amount,
             purchaseDate: winner.won_at || winner.auction_end_date,
             image:
-              firstPhoto ||
-              'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800',
+              firstPhoto,
             currency: winner.currency || 'USD',
             winnerData: winner,
           }

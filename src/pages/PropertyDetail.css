@@ -487,11 +487,33 @@
   font-weight: 600;
   cursor: pointer;
   border: none;
-  background: transparent;
+  background: #000000;
+  color: #ffffff;
+}
+
+.btn-bid-history.glass-button,
+.btn-bid-history.glass-button--secondary,
+.btn-bid-history.glass-button.glass-button--secondary {
+  background: #000000;
+  color: #ffffff;
+  border: 1px solid #000000;
+  box-shadow: none;
 }
 
 .btn-bid-history:hover {
-  opacity: 0.9;
+  opacity: 1;
+  background: #111111;
+  color: #ffffff;
+}
+
+.btn-bid-history.glass-button:hover,
+.btn-bid-history.glass-button--secondary:hover,
+.btn-bid-history.glass-button.glass-button--secondary:hover {
+  background: #111111;
+  color: #ffffff;
+  box-shadow: none;
+  transform: none;
+  filter: none;
 }
 
 /* Жидкое стекло (glassmorphism) для правого блока */

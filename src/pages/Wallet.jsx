@@ -27,6 +27,7 @@ import { getUsdtJettonWalletAddress, buildUsdtTransferTransaction } from '../uti
 import { ensureCanOpenProperty } from '../utils/propertyAccessGuard'
 import { isSiteUserSignedIn } from '../utils/siteAuthGate'
 import { hasEmailForBuyNowFlow } from '../utils/buyNowEmailGate'
+import { getPropertyCardImage } from '../utils/propertyImage'
 import {
   isSafeWalletFromPath,
   getWalletEntryFrom,
@@ -663,7 +664,7 @@ const Wallet = () => {
         <div className="deposit-instruction">
           <div className="deposit-instruction__content">
             <h2>Что такое депозит?</h2>
-            <p>Депозит — это 3000 евро, которые вы вносите для участия в аукционе.</p>
+            <p>Депозит — это 3000 евро, которые вы вносите для участия в аукционе. Депозит можно вернуть в любой момент.</p>
           </div>
         </div>
 
@@ -734,43 +735,7 @@ const Wallet = () => {
             <div className="wallet-won-object__content">
               <div className="wallet-won-object__image-wrapper">
                 {(() => {
-                  // Обрабатываем photos - может быть массивом или JSON строкой
-                  let photos = []
-                  if (wonProperty.photos) {
-                    if (typeof wonProperty.photos === 'string') {
-                      try {
-                        photos = JSON.parse(wonProperty.photos)
-                      } catch (e) {
-                        photos = [wonProperty.photos]
-                      }
-                    } else if (Array.isArray(wonProperty.photos)) {
-                      photos = wonProperty.photos
-                    }
-                  }
-                  
-                  // Формируем URL для фото
-                  const firstPhoto = photos.length > 0 ? photos[0] : null
-                  let photoUrl = null
-                  
-                  if (firstPhoto) {
-                    if (typeof firstPhoto === 'string') {
-                      if (firstPhoto.startsWith('http://') || firstPhoto.startsWith('https://')) {
-                        photoUrl = firstPhoto
-                      } else {
-                        const baseUrl = API_BASE_URL ? API_BASE_URL.replace('/api', '').replace(/\/$/, '') : ''
-                        if (baseUrl) {
-                          const cleanPath = firstPhoto.startsWith('/') ? firstPhoto : `/${firstPhoto}`
-                          if (firstPhoto.startsWith('/uploads/') || firstPhoto.startsWith('uploads/')) {
-                            photoUrl = `${baseUrl}${cleanPath}`
-                          } else {
-                            photoUrl = `${baseUrl}/uploads${cleanPath}`
-                          }
-                        }
-                      }
-                    } else if (typeof firstPhoto === 'object' && firstPhoto !== null) {
-                      photoUrl = firstPhoto.url || firstPhoto.path || null
-                    }
-                  }
+                  const photoUrl = getPropertyCardImage(wonProperty, null)
                   
                   return photoUrl ? (
                     <img 
@@ -831,46 +796,7 @@ const Wallet = () => {
             </h3>
             <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
               {(() => {
-                // Обрабатываем photos - может быть массивом или JSON строкой
-                let photos = []
-                if (userBid.photos) {
-                  if (typeof userBid.photos === 'string') {
-                    try {
-                      photos = JSON.parse(userBid.photos)
-                    } catch (e) {
-                      photos = [userBid.photos]
-                    }
-                  } else if (Array.isArray(userBid.photos)) {
-                    photos = userBid.photos
-                  }
-                }
-                
-                // Формируем URL для фото
-                const firstPhoto = photos.length > 0 ? photos[0] : null
-                let photoUrl = null
-                
-                if (firstPhoto) {
-                  if (typeof firstPhoto === 'string') {
-                    if (firstPhoto.startsWith('http://') || firstPhoto.startsWith('https://')) {
-                      // Полный URL
-                      photoUrl = firstPhoto
-                    } else {
-                      // Относительный путь - формируем полный URL
-                      const baseUrl = API_BASE_URL ? API_BASE_URL.replace('/api', '').replace(/\/$/, '') : ''
-                      if (baseUrl) {
-                        const cleanPath = firstPhoto.startsWith('/') ? firstPhoto : `/${firstPhoto}`
-                        if (firstPhoto.startsWith('/uploads/') || firstPhoto.startsWith('uploads/')) {
-                          photoUrl = `${baseUrl}${cleanPath}`
-                        } else {
-                          photoUrl = `${baseUrl}/uploads${cleanPath}`
-                        }
-                      }
-                    }
-                  } else if (typeof firstPhoto === 'object' && firstPhoto !== null) {
-                    // Объект с url
-                    photoUrl = firstPhoto.url || firstPhoto.path || null
-                  }
-                }
+                const photoUrl = getPropertyCardImage(userBid, null)
                 
                 return photoUrl ? (
                   <img 
