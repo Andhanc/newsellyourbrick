@@ -12,6 +12,7 @@ import CountrySelect, { countries as countryList } from '../components/CountrySe
 import VerificationToast from '../components/VerificationToast'
 import { showNotification } from '../utils/toastHelper'
 import { fetchVerificationStatus } from '../utils/verificationStatusApi'
+import { evaluatePassportText, validatePassportImageFile } from '../utils/passportPhotoValidation'
 import './Data.css'
 import './Profile.css'
 import { useChainedAppLayoutScroll } from '../hooks/useChainedAppLayoutScroll'
@@ -308,6 +309,7 @@ const Data = () => {
   const [userId, setUserId] = useState(null)
   const [isWhatsAppUser, setIsWhatsAppUser] = useState(false)
   const [isRecognizingPassport, setIsRecognizingPassport] = useState(false)
+  const [passportPhotoHints, setPassportPhotoHints] = useState([])
   const [showPassportRecognitionModal, setShowPassportRecognitionModal] = useState(false)
   const [extractedPassportData, setExtractedPassportData] = useState(null)
   const passportInputRef = useRef(null)
@@ -1281,8 +1283,15 @@ const Data = () => {
   // Обработка распознавания паспорта
   const handlePassportRecognition = async (file) => {
     setIsRecognizingPassport(true)
+    setPassportPhotoHints([])
     
     try {
+      const photoValidation = await validatePassportImageFile(file)
+      setPassportPhotoHints(photoValidation.hints)
+      if (photoValidation.shouldBlock) {
+        throw new Error(photoValidation.hints[0] || 'Нужно более качественное фото документа')
+      }
+
       // Динамически импортируем Tesseract.js только при необходимости
       const tesseractModule = await import('tesseract.js')
       const recognize =
@@ -1304,6 +1313,12 @@ const Data = () => {
       })
       
       console.log('✅ Текст распознан:', text.substring(0, 200) + '...')
+
+      const passportTextCheck = evaluatePassportText(text)
+      setPassportPhotoHints(passportTextCheck.hints)
+      if (!passportTextCheck.isPassportLikely) {
+        throw new Error('Не удалось подтвердить, что на фото именно паспорт. Попробуйте переснять документ крупнее.')
+      }
       
       // Отправляем распознанный текст на сервер для извлечения данных через AI
       const response = await fetch(`${API_BASE_URL}/passport/extract`, {
@@ -1661,6 +1676,13 @@ const Data = () => {
                   e.target.value = ''
                 }}
               />
+              {passportPhotoHints.length > 0 && (
+                <div className="passport-photo-hints" role="status" aria-live="polite">
+                  {passportPhotoHints.map((hint, idx) => (
+                    <p key={`${hint}-${idx}`}>{hint}</p>
+                  ))}
+                </div>
+              )}
               <div className="data-grid">
                 <div id="data-field-passportSeries" className="data-field">
                   <label>{t('buyerData_labelPassportSeries')}</label>

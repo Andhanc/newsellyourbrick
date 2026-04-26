@@ -47,6 +47,8 @@ const SELFIE_MIN_DETECTION_SCORE = 0.52
 const SELFIE_MIN_FACE_HEIGHT_IN_OVAL = 0.34
 const SELFIE_MAX_FACE_HEIGHT_IN_OVAL = 0.92
 const SELFIE_VIDEO_EDGE_MARGIN = 0.03
+const PASSPORT_DETECT_INTERVAL_MS = 280
+const PASSPORT_STABLE_OK_FRAMES = 3
 
 const VerificationModal = ({ isOpen, onClose, userId, onComplete, required }) => {
   const [currentStep, setCurrentStep] = useState(1)
@@ -798,6 +800,9 @@ const Camera = ({ type, onCapture, onClose }) => {
   const detectionCanvasRef = useRef(null)
   const clipRegionRef = useRef(null)
   const selfieStableOkRef = useRef(0)
+  const passportStableOkRef = useRef(0)
+  const passportScanBusyRef = useRef(false)
+  const passportGateRef = useRef({ canShoot: false, hint: '', inFrame: false })
   const selfieGateRef = useRef({ canShoot: false, hint: '', inOval: false })
   const [clipRegion, setClipRegion] = useState(null)
   const [isCapturing, setIsCapturing] = useState(false)
@@ -805,6 +810,10 @@ const Camera = ({ type, onCapture, onClose }) => {
   /** Подсказка для шага селфи */
   const [selfieFaceHint, setSelfieFaceHint] = useState('')
   const [selfieFaceOk, setSelfieFaceOk] = useState(false)
+  /** Подсказка для шага паспорта */
+  const [passportHint, setPassportHint] = useState('')
+  const [passportOk, setPassportOk] = useState(false)
+  const [passportInFrame, setPassportInFrame] = useState(false)
   /** Лицо в овале по геометрии (ещё без стабильной серии кадров) — подсветка рамки */
   const [selfieInOvalFrame, setSelfieInOvalFrame] = useState(false)
   const [modelsLoaded, setModelsLoaded] = useState(false)
@@ -930,6 +939,13 @@ const Camera = ({ type, onCapture, onClose }) => {
   }, [type, modelsLoading])
 
   useEffect(() => {
+    if (type !== 'passport') return
+    setPassportHint('Наведите разворот паспорта в рамку')
+    setPassportOk(false)
+    setPassportInFrame(false)
+  }, [type])
+
+  useEffect(() => {
     startCamera()
     return () => {
       stopCamera()
@@ -950,6 +966,10 @@ const Camera = ({ type, onCapture, onClose }) => {
         setTimeout(() => {
           startFaceDetection()
         }, 400)
+      } else if (type === 'passport') {
+        setTimeout(() => {
+          startPassportDetection()
+        }, 350)
       }
     }
 
@@ -1000,6 +1020,16 @@ const Camera = ({ type, onCapture, onClose }) => {
       setSelfieFaceOk(next.canShoot)
       setSelfieFaceHint(next.hint)
       setSelfieInOvalFrame(next.inOval)
+    }
+  }
+
+  const applyPassportGateUi = (next) => {
+    const prev = passportGateRef.current
+    if (prev.canShoot !== next.canShoot || prev.hint !== next.hint || prev.inFrame !== next.inFrame) {
+      passportGateRef.current = next
+      setPassportOk(next.canShoot)
+      setPassportHint(next.hint)
+      setPassportInFrame(next.inFrame)
     }
   }
 
@@ -1173,6 +1203,160 @@ const Camera = ({ type, onCapture, onClose }) => {
     tick()
   }
 
+  const startPassportDetection = () => {
+    if (!videoRef.current || type !== 'passport') return
+    passportStableOkRef.current = 0
+    passportScanBusyRef.current = false
+
+    if (detectionIntervalRef.current) {
+      clearInterval(detectionIntervalRef.current)
+    }
+
+    const tick = async () => {
+      if (passportScanBusyRef.current) return
+      const video = videoRef.current
+      const preview = previewRef.current
+      const region = clipRegionRef.current
+      if (!video || video.readyState !== 4 || !preview || !region || region.kind !== 'rect') {
+        applyPassportGateUi({ canShoot: false, hint: 'Подождите, готовим рамку…', inFrame: false })
+        return
+      }
+
+      const vw = video.videoWidth
+      const vh = video.videoHeight
+      const pr = preview.getBoundingClientRect()
+      if (!vw || !vh || !pr.width || !pr.height) return
+
+      const scaleX = vw / pr.width
+      const scaleY = vh / pr.height
+      const sx = Math.max(0, Math.floor(region.x * scaleX))
+      const sy = Math.max(0, Math.floor(region.y * scaleY))
+      const sw = Math.min(vw - sx, Math.floor(region.w * scaleX))
+      const sh = Math.min(vh - sy, Math.floor(region.h * scaleY))
+      if (sw < 80 || sh < 80) {
+        passportStableOkRef.current = 0
+        applyPassportGateUi({ canShoot: false, hint: 'Подведите паспорт к рамке', inFrame: false })
+        return
+      }
+
+      passportScanBusyRef.current = true
+      try {
+        const canvas = detectionCanvasRef.current || document.createElement('canvas')
+        detectionCanvasRef.current = canvas
+        const ctx = canvas.getContext('2d', { willReadFrequently: true })
+        if (!ctx) {
+          applyPassportGateUi({
+            canShoot: false,
+            hint: 'Не удалось проверить кадр — попробуйте ещё раз',
+            inFrame: false,
+          })
+          return
+        }
+
+        const targetW = 640
+        const targetH = Math.max(1, Math.round((sh / sw) * targetW))
+        canvas.width = targetW
+        canvas.height = targetH
+        ctx.drawImage(video, sx, sy, sw, sh, 0, 0, targetW, targetH)
+
+        const image = ctx.getImageData(0, 0, targetW, targetH).data
+        let brightnessSum = 0
+        let edgeEnergy = 0
+        let darkPixels = 0
+        let brightPixels = 0
+        let sqSum = 0
+        const step = 4
+        const rowStride = targetW * 4
+        for (let y = 1; y < targetH - 1; y += step) {
+          for (let x = 1; x < targetW - 1; x += step) {
+            const idx = y * rowStride + x * 4
+            const r = image[idx]
+            const g = image[idx + 1]
+            const b = image[idx + 2]
+            const gray = 0.299 * r + 0.587 * g + 0.114 * b
+            brightnessSum += gray
+            sqSum += gray * gray
+            if (gray < 70) darkPixels += 1
+            if (gray > 200) brightPixels += 1
+
+            const left = image[idx - 4]
+            const right = image[idx + 4]
+            const up = image[idx - rowStride]
+            const down = image[idx + rowStride]
+            edgeEnergy += Math.abs(right - left) + Math.abs(down - up)
+          }
+        }
+
+        const sampleCount = Math.max(1, Math.floor((targetH / step) * (targetW / step)))
+        const brightness = brightnessSum / sampleCount
+        const edgeScore = edgeEnergy / sampleCount
+        const darkRatio = darkPixels / sampleCount
+        const brightRatio = brightPixels / sampleCount
+        const variance = Math.max(0, sqSum / sampleCount - brightness * brightness)
+        const contrast = Math.sqrt(variance)
+
+        const severeIssues = []
+        const softIssues = []
+
+        if (brightness < 24) severeIssues.push('Слишком темно — добавьте свет и уберите тени')
+        else if (brightness < 40) softIssues.push('Немного темно, добавьте света для лучшего распознавания')
+
+        if (brightness > 245) severeIssues.push('Сильная пересветка — уберите блики и вспышку')
+        else if (brightness > 230) softIssues.push('Есть пересвет, слегка наклоните паспорт от источника света')
+
+        if (edgeScore < 3) severeIssues.push('Фото размыто — удерживайте телефон ровно')
+        else if (edgeScore < 8) softIssues.push('Почти хорошо: наведите фокус и держите телефон неподвижно')
+
+        if (contrast < 10) severeIssues.push('Подведите паспорт ближе — текст должен быть крупнее')
+        else if (contrast < 16) softIssues.push('Подвиньте паспорт ближе к рамке для более четкого текста')
+
+        if (darkRatio < 0.008) softIssues.push('Не хватает темных символов, центрируйте разворот')
+        if (brightRatio < 0.015) softIssues.push('Мало светлых областей, добавьте света')
+
+        if (severeIssues.length > 0) {
+          passportStableOkRef.current = 0
+          applyPassportGateUi({
+            canShoot: false,
+            hint: severeIssues[0],
+            inFrame: true,
+          })
+          return
+        }
+
+        passportStableOkRef.current += 1
+        if (passportStableOkRef.current < PASSPORT_STABLE_OK_FRAMES) {
+          applyPassportGateUi({
+            canShoot: false,
+            hint:
+              softIssues[0] ||
+              `Отлично, зафиксируйте кадр… (${passportStableOkRef.current}/${PASSPORT_STABLE_OK_FRAMES})`,
+            inFrame: true,
+          })
+          return
+        }
+
+        applyPassportGateUi({
+          canShoot: true,
+          hint: softIssues[0] || 'Паспорт в фокусе, можно снимать',
+          inFrame: true,
+        })
+      } catch (error) {
+        console.error('Ошибка проверки паспорта:', error)
+        passportStableOkRef.current = 0
+        applyPassportGateUi({
+          canShoot: false,
+          hint: 'Не удалось подтвердить документ — попробуйте снова',
+          inFrame: false,
+        })
+      } finally {
+        passportScanBusyRef.current = false
+      }
+    }
+
+    detectionIntervalRef.current = window.setInterval(tick, PASSPORT_DETECT_INTERVAL_MS)
+    tick()
+  }
+
   const stopCamera = () => {
     if (detectionIntervalRef.current) {
       clearInterval(detectionIntervalRef.current)
@@ -1189,15 +1373,22 @@ const Camera = ({ type, onCapture, onClose }) => {
       blurVideoRef.current.srcObject = null
     }
     selfieStableOkRef.current = 0
+    passportStableOkRef.current = 0
+    passportScanBusyRef.current = false
+    passportGateRef.current = { canShoot: false, hint: '', inFrame: false }
     selfieGateRef.current = { canShoot: false, hint: '', inOval: false }
     setSelfieFaceOk(false)
     setSelfieFaceHint('')
     setSelfieInOvalFrame(false)
+    setPassportOk(false)
+    setPassportHint('')
+    setPassportInFrame(false)
   }
 
   const capturePhoto = () => {
     if (!videoRef.current || !canvasRef.current) return
     if (type === 'selfie' && !selfieFaceOk) return
+    if (type === 'passport' && !passportOk) return
 
     setIsCapturing(true)
 
@@ -1336,10 +1527,28 @@ const Camera = ({ type, onCapture, onClose }) => {
             <div className="camera-passport-overlay">
               <div className="camera-passport-guide">
                 <div ref={shapeGuideRef} className="camera-passport-guide__rect" />
-                <div className="camera-passport-guide__text">
-                  Расположите паспорт в рамке
+                <div
+                  className={`camera-passport-guide__text ${
+                    passportOk
+                      ? 'camera-passport-guide__text--ok'
+                      : passportInFrame
+                        ? 'camera-passport-guide__text--progress'
+                        : ''
+                  }`}
+                  role="status"
+                  aria-live="polite"
+                >
+                  {passportHint || 'Расположите паспорт в рамке'}
                 </div>
               </div>
+              {passportOk && (
+                <div className="camera-face-notification">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                    <path d="M20 6L9 17L4 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                  <span>Можно нажать затвор</span>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -1360,13 +1569,16 @@ const Camera = ({ type, onCapture, onClose }) => {
             disabled={
               isCapturing ||
               (type === 'selfie' &&
-                (!modelsLoaded || modelsLoading || !selfieFaceOk))
+                (!modelsLoaded || modelsLoading || !selfieFaceOk)) ||
+              (type === 'passport' && !passportOk)
             }
             title={
               type === 'selfie' && !modelsLoaded
                 ? 'Сначала загрузится проверка лица'
                 : type === 'selfie' && !selfieFaceOk
                   ? 'Дождитесь зелёной рамки и подсказки «можно снимать»'
+                  : type === 'passport' && !passportOk
+                    ? 'Дождитесь проверки паспорта и подсказки «можно снимать»'
                   : undefined
             }
           >

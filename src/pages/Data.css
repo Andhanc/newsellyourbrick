@@ -1173,3 +1173,22 @@
 .recognize-passport-button:disabled::after {
   display: none;
 }
+
+.passport-photo-hints {
+  margin: 12px 0 18px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(10, 186, 181, 0.25);
+  background: rgba(10, 186, 181, 0.08);
+}
+
+.passport-photo-hints p {
+  margin: 0;
+  color: #0f172a;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.passport-photo-hints p + p {
+  margin-top: 6px;
+}

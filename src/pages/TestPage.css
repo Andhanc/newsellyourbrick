@@ -1300,6 +1300,25 @@ a.test-history-mini-card:focus-visible {
   pointer-events: none;
 }
 
+.test-passport-hints {
+  margin: 10px 0 2px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(10, 186, 181, 0.3);
+  background: rgba(10, 186, 181, 0.08);
+}
+
+.test-passport-hints p {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--test-text);
+}
+
+.test-passport-hints p + p {
+  margin-top: 5px;
+}
+
 .test-spinner {
   width: 16px;
   height: 16px;

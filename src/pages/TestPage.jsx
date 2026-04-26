@@ -50,6 +50,7 @@ import { ProfileSpotlightOnboarding } from '../components/ProfileSpotlightOnboar
 import { ServiceQuickLinksTour } from '../components/ServiceQuickLinksTour'
 import { fetchVerificationStatus, invalidateVerificationStatusCache } from '../utils/verificationStatusApi'
 import { useManagerLiveChat } from '../hooks/useManagerLiveChat'
+import { evaluatePassportText, validatePassportImageFile } from '../utils/passportPhotoValidation'
 import './TestPage.css'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
@@ -492,6 +493,7 @@ function TestPage() {
   const [profileSaveAllLoading, setProfileSaveAllLoading] = useState(false)
   const [savePulseDismissed, setSavePulseDismissed] = useState(false)
   const [isRecognizingPassport, setIsRecognizingPassport] = useState(false)
+  const [passportPhotoHints, setPassportPhotoHints] = useState([])
   const [isSavingExtractPatch, setIsSavingExtractPatch] = useState(false)
   const [showPassportRecognitionModal, setShowPassportRecognitionModal] = useState(false)
   const [extractedPassportData, setExtractedPassportData] = useState(null)
@@ -1188,7 +1190,14 @@ function TestPage() {
 
       let extracted = null
       setIsRecognizingPassport(true)
+      setPassportPhotoHints([])
       try {
+        const photoValidation = await validatePassportImageFile(file)
+        setPassportPhotoHints(photoValidation.hints)
+        if (photoValidation.shouldBlock) {
+          throw new Error(photoValidation.hints[0] || 'Нужно более качественное фото документа')
+        }
+
         const tesseractModule = await import('tesseract.js')
         const recognize =
           tesseractModule.recognize ||
@@ -1201,6 +1210,12 @@ function TestPage() {
         } = await recognize(file, 'eng', {
           logger: () => {},
         })
+
+        const passportTextCheck = evaluatePassportText(text)
+        setPassportPhotoHints(passportTextCheck.hints)
+        if (!passportTextCheck.isPassportLikely) {
+          throw new Error('Не удалось подтвердить, что на фото именно паспорт. Попробуйте переснять документ крупнее.')
+        }
 
         const response = await fetch(`${API_BASE_URL}/passport/extract`, {
           method: 'POST',
@@ -2293,6 +2308,13 @@ function TestPage() {
                           e.target.value = ''
                         }}
                       />
+                      {passportPhotoHints.length > 0 && (
+                        <div className="test-passport-hints" role="status" aria-live="polite">
+                          {passportPhotoHints.map((hint, idx) => (
+                            <p key={`${hint}-${idx}`}>{hint}</p>
+                          ))}
+                        </div>
+                      )}
                       <div className="test-data-panel__grid">
                         {PROFILE_PASSPORT_FIELDS.map(({ key, label, type, autoComplete }) => (
                           <div

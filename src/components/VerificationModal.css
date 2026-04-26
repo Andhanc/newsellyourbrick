@@ -843,6 +843,16 @@
   transition: all 0.3s ease;
 }
 
+.camera-passport-guide__text--progress {
+  background: rgba(10, 186, 181, 0.32);
+  border: 1px solid rgba(10, 186, 181, 0.45);
+}
+
+.camera-passport-guide__text--ok {
+  background: rgba(34, 197, 94, 0.35);
+  border: 1px solid rgba(74, 222, 128, 0.6);
+}
+
 .camera-face-notification {
   position: absolute;
   top: 20px;

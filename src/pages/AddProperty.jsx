@@ -48,11 +48,11 @@ const PROPERTY_TYPE_OPTIONS = [
 ]
 
 const LISTING_MODE_OPTIONS = [
-  { id: 'auction', title: 'Аукцион', description: 'Продажа через торги по стартовой цене', icon: 'auction', tone: 'teal' },
-  { id: 'auction_buy_now', title: 'Аукцион + Продать сейчас', description: 'Торги + мгновенная продажа по фиксированной цене', icon: 'flash', tone: 'violet' },
-  { id: 'shares', title: 'Доли', description: 'Продажа объекта по долям с указанием количества', icon: 'shares', tone: 'blue' },
-  { id: 'debt', title: 'Долги', description: 'Продажа проблемного объекта как долгового кейса', icon: 'debt', tone: 'amber' },
-  { id: 'debt_auction', title: 'Долги + Аукцион', description: 'Долговой объект с торгами и стартовой ставкой', icon: 'target', tone: 'slate' },
+  { id: 'auction', title: 'Аукцион', description: 'Максимизирует рыночную цену за счет конкуренции между покупателями', icon: 'auction', tone: 'teal' },
+  { id: 'auction_buy_now', title: 'Аукцион + Продать сейчас', description: 'Дает два сценария сразу: борьба ставок и быстрая сделка по фиксированной цене', icon: 'flash', tone: 'violet' },
+  { id: 'shares', title: 'Доли', description: 'Расширяет круг покупателей за счет входа с меньшим бюджетом', icon: 'shares', tone: 'blue' },
+  { id: 'debt', title: 'Долги', description: 'Подходит для сложных кейсов: помогает быстрее найти целевого инвестора', icon: 'debt', tone: 'amber' },
+  { id: 'debt_auction', title: 'Долги + Аукцион', description: 'Ускоряет продажу проблемного актива и повышает шанс на лучшую цену через торги', icon: 'target', tone: 'slate' },
 ]
 
 const LISTING_MODE_THEME_STAGES = ['aurora', 'sunset', 'midnight']
@@ -91,12 +91,12 @@ const SINGLE_PAGE_SECTION_HELP = {
   },
   amenities: {
     title: 'Описание и удобства',
-    lead: 'Коротко опишите сильные стороны и отметьте ключевые опции.',
+    lead: 'Соберите “витрину” объекта: живое описание + удобства, которые действительно важны покупателю.',
     tips: [
-      '2–4 предложения о виде, ремонте, инфраструктуре рядом — лучше длинного «водянистого» текста',
-      'Отметьте то, что реально есть: это проверяется на сделке',
+      'Пишите по формуле: локация → состояние → преимущества → для кого подходит',
+      'Лучше 4 конкретных факта, чем длинный общий текст без деталей',
     ],
-    recommend: 'Конкретика («вид на парк», «тихий двор») продаёт лучше общих фраз.',
+    recommend: 'Описание должно отвечать на вопрос покупателя: “Почему именно этот объект стоит посмотреть первым?”.',
   },
   media: {
     title: 'Фото и видео',
@@ -118,21 +118,22 @@ const SINGLE_PAGE_SECTION_HELP = {
   },
   testdrive: {
     title: 'Тест-драйв',
-    lead: 'Если готовы показывать объект по записи — включите опцию и укажите условия.',
+    lead: 'Тест-драйв — это краткосрочный просмотр/проживание по записи: покупатель “примеряет” объект перед решением о сделке.',
     tips: [
-      'Укажите реалистичную цену за сутки и размер страхового депозита',
-      'Если не планируете показы — выберите «Нет»',
+      'Зачем это нужно: повышает доверие, снижает страх покупки и ускоряет принятие решения',
+      'Укажите прозрачные условия: цена за сутки, депозит и базовые правила пользования',
     ],
-    recommend: 'Тест-драйв повышает интерес, но требует времени на организацию показов.',
+    recommend: 'Если объект “сложно почувствовать по фото” (вид, атмосфера, планировка) — тест-драйв заметно повышает конверсию в сделку.',
   },
   listing: {
     title: 'Формат продажи',
-    lead: 'Выберите модель торгов: классический аукцион, аукцион с «Продать сейчас», доли или долговой кейс.',
+    lead: 'Выберите стратегию продажи под вашу цель: максимальная цена, скорость сделки, гибкий вход для покупателя или работа со сложным активом.',
     tips: [
-      '«Продать сейчас» задаёт верхнюю планку цены для мгновенной сделки',
+      'Аукцион — когда хотите раскрыть рыночный спрос и получить лучшую ставку',
+      '«Продать сейчас» — когда важны и скорость, и контроль цены одновременно',
       'Для долей и долгов появятся отдельные поля на шаге «Цена»',
     ],
-    recommend: 'Если не уверены — начните с классического аукциона.',
+    recommend: 'Если не уверены, начните с «Аукцион + Продать сейчас»: это самый гибкий формат с балансом скорости и доходности.',
   },
   price: {
     title: 'Цена и сроки аукциона',
@@ -170,8 +171,24 @@ const SINGLE_PAGE_AMENITY_FORM_KEYS = [
   'garden',
 ]
 
-function buildSinglePageAmenityGroups(t) {
-  return [
+function getSinglePageTypeProfile(propertyTypeUi, propertyType) {
+  if (propertyTypeUi) {
+    if (propertyTypeUi === 'apartments') return 'apartments'
+    if (propertyTypeUi === 'apartment') return 'apartment'
+    if (propertyTypeUi === 'house') return 'house'
+    if (propertyTypeUi === 'villa') return 'villa'
+    if (propertyTypeUi === 'commercial') return 'commercial'
+    if (propertyTypeUi === 'land') return 'land'
+    if (propertyTypeUi === 'other') return 'other'
+  }
+  if (propertyType === 'house') return 'house'
+  if (propertyType === 'villa') return 'villa'
+  if (propertyType === 'commercial') return 'commercial'
+  return 'apartment'
+}
+
+function buildSinglePageAmenityGroups(t, typeProfile) {
+  const allGroups = [
     {
       id: 'parking',
       title: t('addPropertyAmenitiesCategoryParking'),
@@ -224,6 +241,50 @@ function buildSinglePageAmenityGroups(t) {
       ],
     },
   ]
+
+  if (typeProfile === 'land') {
+    return [
+      {
+        id: 'land-infra',
+        title: 'Инфраструктура участка',
+        items: [
+          { key: 'parking', label: 'Подъезд для автомобиля' },
+          { key: 'electricity', label: 'Электричество рядом/подключено' },
+          { key: 'internet', label: 'Интернет рядом/подключен' },
+          { key: 'security', label: 'Охраняемая территория' },
+        ],
+      },
+    ]
+  }
+
+  if (typeProfile === 'house' || typeProfile === 'villa') {
+    return allGroups.filter((group) => ['parking', 'furniture', 'security', 'outdoor'].includes(group.id))
+  }
+
+  if (typeProfile === 'commercial') {
+    return allGroups
+      .filter((group) => ['parking', 'security', 'furniture'].includes(group.id))
+      .map((group) => {
+        if (group.id !== 'furniture') return group
+        return {
+          ...group,
+          title: 'Инженерия и оснащение',
+          items: [
+            { key: 'internet', label: t('addPropertyAmenitiesInternet') },
+            { key: 'electricity', label: 'Электричество / мощность' },
+            { key: 'feature3', label: t('addPropertyAmenitiesWashingMachine') },
+            { key: 'feature4', label: t('addPropertyAmenitiesDishwasher') },
+          ],
+        }
+      })
+  }
+
+  if (typeProfile === 'other') {
+    return allGroups.filter((group) => ['parking', 'security', 'outdoor'].includes(group.id))
+  }
+
+  // apartment / apartments
+  return allGroups.filter((group) => ['parking', 'furniture', 'security', 'rooms'].includes(group.id))
 }
 
 function getAddPropertyNamePlaceholderKey(propertyType) {
@@ -297,6 +358,7 @@ const INITIAL_FORM_DATA = {
   area: '',
   livingArea: '',
   buildingType: '',
+  constructionType: '',
   rooms: '',
   bedrooms: '',
   bathrooms: '',
@@ -306,6 +368,8 @@ const INITIAL_FORM_DATA = {
   location: '',
   address: '',
   apartment: '',
+  cadastralAddress: '',
+  cadastralNumber: '',
   country: '',
   city: '',
   coordinates: null,
@@ -572,6 +636,10 @@ const AddProperty = ({
     ownership: null,
     noDebts: null
   })
+  const [requiredDocumentPreviews, setRequiredDocumentPreviews] = useState({
+    ownership: '',
+    noDebts: '',
+  })
   const [uploadedDocuments, setUploadedDocuments] = useState({
     ownership: false,
     noDebts: false
@@ -655,6 +723,7 @@ const AddProperty = ({
   const [showDescriptionCompareModal, setShowDescriptionCompareModal] = useState(false)
   const [descriptionCompareDraft, setDescriptionCompareDraft] = useState('')
   const [descriptionCompareAi, setDescriptionCompareAi] = useState('')
+  const [showTestDriveInfoModal, setShowTestDriveInfoModal] = useState(false)
   const [showListingModePicker, setShowListingModePicker] = useState(false)
   const [listingModeThemeStage, setListingModeThemeStage] = useState(0)
   const [spActiveSection, setSpActiveSection] = useState('type')
@@ -1438,10 +1507,13 @@ const AddProperty = ({
       if (formData.area) formDataToSend.append('area', String(formData.area))
       if (formData.livingArea) formDataToSend.append('living_area', String(formData.livingArea))
       if (formData.buildingType) formDataToSend.append('building_type', formData.buildingType)
+      if (formData.constructionType) formDataToSend.append('construction_type', formData.constructionType)
       
-      // Для квартир/апартаментов отправляем rooms, для домов/вилл - bedrooms
-      const isApartmentOrCommercial = formData.propertyType === 'apartment' || formData.propertyType === 'commercial'
-      const isHouseOrVilla = formData.propertyType === 'house' || formData.propertyType === 'villa'
+      // Для квартир/апартаментов отправляем rooms, для домов/вилл - bedrooms.
+      // Для земли/другого комнатные параметры не отправляем.
+      const submitTypeProfile = getSinglePageTypeProfile(formData.propertyTypeUi, formData.propertyType)
+      const isApartmentOrCommercial = submitTypeProfile === 'apartment' || submitTypeProfile === 'apartments'
+      const isHouseOrVilla = submitTypeProfile === 'house' || submitTypeProfile === 'villa'
       
       // ВАЖНО: отправляем всегда, даже если пустое, чтобы сервер мог корректно обработать
       // Важно: проверяем на undefined/null/пустую строку, а не на truthiness, чтобы 0 отправлялся как '0'
@@ -1462,11 +1534,7 @@ const AddProperty = ({
         });
         formDataToSend.append('bedrooms', bedroomsValue);
       }
-      // Для других типов отправляем оба поля (на случай, если тип не определен)
-      if (!isApartmentOrCommercial && !isHouseOrVilla) {
-        formDataToSend.append('rooms', (formData.rooms !== undefined && formData.rooms !== null && formData.rooms !== '') ? String(formData.rooms) : '')
-        formDataToSend.append('bedrooms', (formData.bedrooms !== undefined && formData.bedrooms !== null && formData.bedrooms !== '') ? String(formData.bedrooms) : '')
-      }
+      // Для прочих профилей (земля/коммерция/другое) комнатные параметры не отправляем.
       
       if (formData.bathrooms) formDataToSend.append('bathrooms', String(formData.bathrooms))
       if (formData.floor) formDataToSend.append('floor', String(formData.floor))
@@ -1486,6 +1554,8 @@ const AddProperty = ({
       if (formData.coordinates) {
         formDataToSend.append('coordinates', JSON.stringify(formData.coordinates))
       }
+      if (formData.cadastralAddress) formDataToSend.append('cadastral_address', formData.cadastralAddress)
+      if (formData.cadastralNumber) formDataToSend.append('cadastral_number', formData.cadastralNumber)
       
       // Дополнительные поля
       formDataToSend.append('balcony', formData.balcony ? '1' : '0')
@@ -2108,6 +2178,7 @@ const AddProperty = ({
           area: property.area ? String(property.area) : '',
           livingArea: property.living_area ? String(property.living_area) : '',
           buildingType: property.building_type || '',
+          constructionType: property.construction_type || '',
           rooms: (property.rooms !== undefined && property.rooms !== null && property.rooms !== '') ? String(property.rooms) : '',
           bedrooms: (property.bedrooms !== undefined && property.bedrooms !== null && property.bedrooms !== '') ? String(property.bedrooms) : '',
           bathrooms: (property.bathrooms !== undefined && property.bathrooms !== null && property.bathrooms !== '') ? String(property.bathrooms) : '',
@@ -2120,6 +2191,8 @@ const AddProperty = ({
           location: property.location || '',
           address: property.address || '',
           apartment: property.apartment || '',
+          cadastralAddress: property.cadastral_address || '',
+          cadastralNumber: property.cadastral_number || '',
           country: property.country || '',
           city: property.city || '',
           coordinates: parsedCoordinates || null, // Устанавливаем координаты сразу после парсинга
@@ -2333,7 +2406,10 @@ const AddProperty = ({
       floor: 'Этаж',
       total_floors: 'Всего этажей',
       year_built: 'Год постройки',
+      construction_type: 'Тип конструкции',
       location: 'Местоположение',
+      cadastral_address: 'Кадастровый адрес',
+      cadastral_number: 'Кадастровый номер',
       land_area: 'Площадь участка',
       commercial_type: 'Тип коммерческой',
       business_hours: 'Часы работы',
@@ -2374,7 +2450,10 @@ const AddProperty = ({
         'floor': 'floor',
         'total_floors': 'totalFloors',
         'year_built': 'yearBuilt',
+        'construction_type': 'constructionType',
         'location': 'location',
+        'cadastral_address': 'cadastralAddress',
+        'cadastral_number': 'cadastralNumber',
         'land_area': 'landArea',
         'commercial_type': 'commercialType',
         'business_hours': 'businessHours',
@@ -2496,6 +2575,14 @@ const AddProperty = ({
   const handleRequiredDocumentChange = (type, e) => {
     const file = e.target.files[0]
     if (file) {
+      setRequiredDocumentPreviews((prev) => {
+        const next = { ...prev }
+        if (next[type] && next[type].startsWith('blob:')) {
+          URL.revokeObjectURL(next[type])
+        }
+        next[type] = file.type.startsWith('image/') ? URL.createObjectURL(file) : ''
+        return next
+      })
       setRequiredDocuments(prev => ({
         ...prev,
         [type]: file
@@ -2509,6 +2596,14 @@ const AddProperty = ({
   }
 
   const handleRemoveRequiredDocument = (type) => {
+    setRequiredDocumentPreviews((prev) => {
+      const next = { ...prev }
+      if (next[type] && next[type].startsWith('blob:')) {
+        URL.revokeObjectURL(next[type])
+      }
+      next[type] = ''
+      return next
+    })
     setRequiredDocuments(prev => ({
       ...prev,
       [type]: null
@@ -2527,6 +2622,16 @@ const AddProperty = ({
     ]
     setMediaItems(items)
   }, [photos, videos])
+
+  useEffect(() => {
+    return () => {
+      Object.values(requiredDocumentPreviews).forEach((url) => {
+        if (typeof url === 'string' && url.startsWith('blob:')) {
+          URL.revokeObjectURL(url)
+        }
+      })
+    }
+  }, [requiredDocumentPreviews])
 
   const nextMedia = () => {
     setCurrentMediaIndex((prev) => (prev + 1) % mediaItems.length)
@@ -2584,11 +2689,49 @@ const AddProperty = ({
   const handlePropertyTypeSelect = (typeId) => {
     const selectedOption = PROPERTY_TYPE_OPTIONS.find(item => item.id === typeId)
     const backendType = selectedOption?.backendType || 'apartment'
-    const isApartmentOrCommercial = backendType === 'apartment' || backendType === 'commercial'
-    const isHouseOrVilla = backendType === 'house' || backendType === 'villa'
+    const typeProfile = getSinglePageTypeProfile(typeId, backendType)
+    const typeSpecificReset = {
+      rooms: '',
+      bedrooms: '',
+      bathrooms: '',
+      floor: '',
+      totalFloors: '',
+      yearBuilt: '',
+      buildingType: '',
+      constructionType: '',
+      area: '',
+      livingArea: '',
+      landArea: '',
+      commercialType: '',
+      cadastralAddress: '',
+      cadastralNumber: '',
+      parking: false,
+      feature1: false,
+      feature12: false,
+      feature2: false,
+      furniture: false,
+      feature3: false,
+      feature4: false,
+      electricity: false,
+      feature18: false,
+      internet: false,
+      security: false,
+      feature5: false,
+      feature6: false,
+      feature16: false,
+      feature17: false,
+      balcony: false,
+      feature7: false,
+      feature8: false,
+      elevator: false,
+      pool: false,
+      garden: false,
+      additionalAmenities: '',
+    }
     
     setFormData(prev => ({
       ...prev,
+      ...typeSpecificReset,
       propertyType: backendType,
       propertyTypeUi: typeId,
       listingMode: '',
@@ -2596,8 +2739,9 @@ const AddProperty = ({
       isDebtProperty: false,
       totalShares: '',
       debtAmount: '',
-      bedrooms: isApartmentOrCommercial ? '' : prev.bedrooms,
-      rooms: isHouseOrVilla ? '' : prev.rooms
+      // Для "земли" и "другого" оставляем единый backend type, но UI-логика идет по profile.
+      // Значения type-specific уже очищены в typeSpecificReset.
+      commercialType: typeProfile === 'land' ? 'residential' : '',
     }))
     setCurrentStep('property-name')
   }
@@ -3556,9 +3700,10 @@ const AddProperty = ({
     // Валидация всех полей
     const errors = {}
     const currentYear = new Date().getFullYear()
+    const detailsTypeProfile = getSinglePageTypeProfile(formData.propertyTypeUi, formData.propertyType)
     
-    // Проверка для формы квартир и коммерческой недвижимости
-    if (formData.propertyType === 'apartment' || formData.propertyType === 'commercial') {
+    // Проверка для квартиры и апартаментов
+    if (detailsTypeProfile === 'apartment' || detailsTypeProfile === 'apartments') {
       // Проверка обязательных полей
       if (!formData.rooms || formData.rooms === '' || parseFloat(formData.rooms) <= 0) {
         errors.rooms = 'Укажите количество комнат'
@@ -3599,8 +3744,18 @@ const AddProperty = ({
       }
     }
     
-    // Проверка для формы дома и виллы
-    if (formData.propertyType === 'house' || formData.propertyType === 'villa') {
+    // Проверка для коммерческой недвижимости
+    if (detailsTypeProfile === 'commercial') {
+      if (!formData.area || formData.area === '' || parseFloat(formData.area) <= 0) {
+        errors.area = 'Укажите площадь помещения'
+      }
+      if (!formData.commercialType || formData.commercialType === '') {
+        errors.commercialType = 'Выберите тип коммерческого объекта'
+      }
+    }
+
+    // Проверка для дома и виллы
+    if (detailsTypeProfile === 'house' || detailsTypeProfile === 'villa') {
       // Проверка обязательных полей
       if (!formData.landArea || formData.landArea === '' || parseFloat(formData.landArea) <= 0) {
         errors.landArea = 'Укажите площадь участка'
@@ -3632,6 +3787,23 @@ const AddProperty = ({
       const yearBuilt = parseFloat(formData.yearBuilt)
       if (yearBuilt > currentYear) {
         errors.yearBuilt = `Год постройки не может быть больше ${currentYear}`
+      }
+    }
+
+    // Проверка для земельного участка
+    if (detailsTypeProfile === 'land') {
+      if (!formData.landArea || formData.landArea === '' || parseFloat(formData.landArea) <= 0) {
+        errors.landArea = 'Укажите площадь участка'
+      }
+      if (!formData.commercialType || formData.commercialType === '') {
+        errors.commercialType = 'Выберите назначение участка'
+      }
+    }
+
+    // Проверка для "другого"
+    if (detailsTypeProfile === 'other') {
+      if (!formData.area || formData.area === '' || parseFloat(formData.area) <= 0) {
+        errors.area = 'Укажите площадь объекта'
       }
     }
     
@@ -3676,7 +3848,7 @@ const AddProperty = ({
     
     // Сохраняем данные о спальнях в formData
     // ВАЖНО: для домов/вилл НЕ перезаписываем bedrooms, если оно уже было введено в простое поле
-    const isHouseOrVilla = formData.propertyType === 'house' || formData.propertyType === 'villa'
+    const isHouseOrVilla = detailsTypeProfile === 'house' || detailsTypeProfile === 'villa'
     setFormData(prev => {
       // Для домов/вилл сохраняем значение из простого поля ввода, если оно есть
       if (isHouseOrVilla && prev.bedrooms !== undefined && prev.bedrooms !== null && prev.bedrooms !== '') {
@@ -4323,12 +4495,30 @@ const AddProperty = ({
   const wizardRenderStep = showListingFeeModal ? 'price' : currentStep
   const useSinglePageFlow = USE_ADD_PROPERTY_SINGLE_PAGE
 
+  const singlePageTypeProfile = useMemo(
+    () => getSinglePageTypeProfile(formData.propertyTypeUi, formData.propertyType),
+    [formData.propertyTypeUi, formData.propertyType]
+  )
+
   const hasType = !!formData.propertyType
+  const hasPropertyName = !!((formData.title || '').trim() && (formData.description || '').trim())
   const hasAddress = !!((formData.location || formData.address || '').trim())
   const hasDetails = (() => {
     if (!hasType) return false
-    if (formData.propertyType === 'apartment' || formData.propertyType === 'commercial') {
+    if (singlePageTypeProfile === 'apartment' || singlePageTypeProfile === 'apartments') {
       return Number(formData.rooms) > 0 && Number(formData.area) > 0
+    }
+    if (singlePageTypeProfile === 'house' || singlePageTypeProfile === 'villa') {
+      return Number(formData.landArea) > 0 && Number(formData.area) > 0
+    }
+    if (singlePageTypeProfile === 'commercial') {
+      return Number(formData.area) > 0 && !!(formData.commercialType || '').trim()
+    }
+    if (singlePageTypeProfile === 'land') {
+      return Number(formData.landArea) > 0 && !!(formData.commercialType || '').trim()
+    }
+    if (singlePageTypeProfile === 'other') {
+      return Number(formData.area) > 0
     }
     return Number(formData.area) > 0
   })()
@@ -4337,7 +4527,10 @@ const AddProperty = ({
     SINGLE_PAGE_AMENITY_FORM_KEYS.some((key) => formData[key])
   )
 
-  const singlePageAmenityGroups = useMemo(() => buildSinglePageAmenityGroups(t), [t])
+  const singlePageAmenityGroups = useMemo(
+    () => buildSinglePageAmenityGroups(t, singlePageTypeProfile),
+    [t, singlePageTypeProfile]
+  )
   const hasMedia = photos.length > 0 || videos.length > 0
   const hasDocuments = !!(
     requiredDocuments.ownership ||
@@ -4382,6 +4575,7 @@ const AddProperty = ({
 
   const singlePageSections = [
     hasType,
+    hasPropertyName,
     hasAddress,
     hasDetails,
     hasAmenities,
@@ -4392,7 +4586,7 @@ const AddProperty = ({
     hasPrice,
   ]
   const completedSinglePageSections = singlePageSections.filter(Boolean).length
-  const singlePageProgress = Math.round((completedSinglePageSections / 9) * 100)
+  const singlePageProgress = Math.round((completedSinglePageSections / singlePageSections.length) * 100)
   const stepFlow = [
     { id: 'type-selection', label: 'Тип' },
     { id: 'property-name', label: 'Описание' },
@@ -4407,8 +4601,22 @@ const AddProperty = ({
   ]
   const currentStepForProgress = wizardRenderStep === 'test-drive-pricing' ? 'test-drive-question' : wizardRenderStep
   const currentStepIndex = Math.max(0, stepFlow.findIndex(step => step.id === currentStepForProgress))
-  const progressPercent = Math.round((currentStepIndex / stepFlow.length) * 100)
+  const progressPercent = useSinglePageFlow
+    ? singlePageProgress
+    : Math.round((currentStepIndex / stepFlow.length) * 100)
   const remainingSteps = Math.max(0, stepFlow.length - (currentStepIndex + 1))
+  const singlePageStepDoneMap = {
+    'type-selection': hasType,
+    'property-name': hasPropertyName,
+    'location': hasAddress,
+    'details': hasDetails,
+    'amenities': hasAmenities,
+    'photos': hasMedia,
+    'documents': hasDocuments,
+    'test-drive-question': hasTestDrive,
+    'listing-type': hasListingType,
+    'price': hasPrice,
+  }
 
   const applyListingModeFromSinglePage = (mode) => {
     setFormData((prev) => ({
@@ -4580,7 +4788,11 @@ const AddProperty = ({
             {stepFlow.map((step, index) => (
               <span
                 key={step.id}
-                className={`add-property-wizard-progress__label ${index <= currentStepIndex ? 'is-done' : ''}`}
+                className={`add-property-wizard-progress__label ${
+                  useSinglePageFlow
+                    ? (singlePageStepDoneMap[step.id] ? 'is-done' : '')
+                    : (index <= currentStepIndex ? 'is-done' : '')
+                }`}
               >
                 {step.label}
               </span>
@@ -4596,8 +4808,8 @@ const AddProperty = ({
             <input ref={fileInputRef} type="file" accept="image/*" multiple style={{ display: 'none' }} onChange={handlePhotoUpload} />
             <input ref={videoInputRef} type="file" accept="video/*" multiple style={{ display: 'none' }} onChange={handleVideoUpload} />
             <input ref={documentInputRef} type="file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" multiple style={{ display: 'none' }} onChange={handleDocumentUpload} />
-            <input ref={ownershipInputRef} type="file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" style={{ display: 'none' }} onChange={(e) => handleRequiredDocumentUpload('ownership', e)} />
-            <input ref={noDebtsInputRef} type="file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" style={{ display: 'none' }} onChange={(e) => handleRequiredDocumentUpload('noDebts', e)} />
+            <input id="sp-ownership-input" ref={ownershipInputRef} type="file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" style={{ display: 'none' }} onChange={(e) => handleRequiredDocumentChange('ownership', e)} />
+            <input id="sp-no-debts-input" ref={noDebtsInputRef} type="file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" style={{ display: 'none' }} onChange={(e) => handleRequiredDocumentChange('noDebts', e)} />
 
             <div className="single-page-add-flow__layout">
               <div className="single-page-add-flow__main">
@@ -4637,9 +4849,51 @@ const AddProperty = ({
                 </section>
 
                 {hasType && (
-                  <section data-sp-section="address" className="sp-card sp-card--enter sp-card--accent">
+                  <section data-sp-section="property-name" className="sp-card sp-card--enter">
                     <header className="sp-card__head">
                       <span className="sp-card__step">Шаг 2</span>
+                      <h3 className="sp-card__title">Название и описание</h3>
+                      <p className="sp-card__lead">
+                        Создайте первое впечатление: лаконичное название и описание, которое подчеркивает ценность объекта. ИИ поможет сделать текст сильнее.
+                      </p>
+                    </header>
+                    <div className="sp-property-name-full-row">
+                      <input
+                        type="text"
+                        value={formData.title || ''}
+                        onChange={(e) => setFormData((prev) => ({ ...prev, title: e.target.value }))}
+                        className="property-name-input sp-property-name-full-input"
+                        placeholder={t(getAddPropertyNamePlaceholderKey(formData.propertyType || 'apartment'))}
+                      />
+                    </div>
+                    <div className="sp-property-name-full-row">
+                      <textarea
+                        value={formData.description || ''}
+                        onChange={(e) => setFormData((prev) => ({ ...prev, description: e.target.value }))}
+                        className="property-name-textarea sp-property-name-full-input"
+                        placeholder={t('addPropertyDescriptionPlaceholder')}
+                        rows={8}
+                      />
+                    </div>
+                    <div className="property-name-generate-row">
+                      <AnimatedGenerateButton
+                        labelIdle={t('addPropertyGenerateDescriptionButton')}
+                        labelActive={t('addPropertyGeneratingDescription')}
+                        generating={isGeneratingDescription}
+                        highlightHueDeg={210}
+                        onClick={handleGenerateDescription}
+                        disabled={isGeneratingDescription || !(formData.description || '').trim()}
+                        ariaLabel={t('addPropertyGenerateDescriptionButton')}
+                        className="property-name-generate-btn-wrap"
+                      />
+                    </div>
+                  </section>
+                )}
+
+                {hasPropertyName && (
+                  <section data-sp-section="address" className="sp-card sp-card--enter sp-card--accent">
+                    <header className="sp-card__head">
+                      <span className="sp-card__step">Шаг 4</span>
                       <h3 className="sp-card__title">Адрес и карта</h3>
                       <p className="sp-card__lead">{SINGLE_PAGE_SECTION_HELP.address.lead}</p>
                     </header>
@@ -4862,6 +5116,29 @@ const AddProperty = ({
                       </div>
                     </div>
 
+                    <div className="single-page-add-flow__grid">
+                      <div className="property-location-input-group">
+                        <label className="property-location-label">Кадастровый адрес (опционально)</label>
+                        <input
+                          type="text"
+                          value={formData.cadastralAddress || ''}
+                          onChange={(e) => setFormData((prev) => ({ ...prev, cadastralAddress: e.target.value }))}
+                          className="property-location-input"
+                          placeholder="Как в кадастровой выписке"
+                        />
+                      </div>
+                      <div className="property-location-input-group">
+                        <label className="property-location-label">Кадастровый номер (опционально)</label>
+                        <input
+                          type="text"
+                          value={formData.cadastralNumber || ''}
+                          onChange={(e) => setFormData((prev) => ({ ...prev, cadastralNumber: e.target.value }))}
+                          className="property-location-input"
+                          placeholder="Например: 77:01:0004012:3456"
+                        />
+                      </div>
+                    </div>
+
                     <p className="sp-map-hint">
                       {singlePageMapCoords
                         ? 'Перетащите маркер на карте — адрес и координаты обновятся автоматически (геокодинг).'
@@ -4887,39 +5164,234 @@ const AddProperty = ({
                       <p className="sp-card__lead">{SINGLE_PAGE_SECTION_HELP.details.lead}</p>
                     </header>
                     <div className="single-page-add-flow__grid">
-                      <input
-                        type="number"
-                        value={formData.rooms}
-                        onChange={(e) => setFormData((prev) => ({ ...prev, rooms: e.target.value }))}
-                        className="property-name-input"
-                        placeholder="Комнат"
-                      />
-                      <input
-                        type="number"
-                        value={formData.bedrooms}
-                        onChange={(e) => setFormData((prev) => ({ ...prev, bedrooms: e.target.value }))}
-                        className="property-name-input"
-                        placeholder="Спален"
-                      />
-                      <input
-                        type="number"
-                        value={formData.area}
-                        onChange={(e) => setFormData((prev) => ({ ...prev, area: e.target.value }))}
-                        className="property-name-input"
-                        placeholder="Площадь, м²"
-                      />
-                      <select
-                        value={formData.buildingType}
-                        onChange={(e) => setFormData((prev) => ({ ...prev, buildingType: e.target.value }))}
-                        className="property-name-input"
-                      >
-                        <option value="">Материал / тип</option>
-                        <option value="brick">Кирпич</option>
-                        <option value="monolithic">Монолит</option>
-                        <option value="panel">Панель</option>
-                        <option value="wood">Дерево</option>
-                        <option value="other">Другое</option>
-                      </select>
+                      {(singlePageTypeProfile === 'apartment' || singlePageTypeProfile === 'apartments') && (
+                        <>
+                          <input
+                            type="number"
+                            value={formData.rooms}
+                            onChange={(e) => setFormData((prev) => ({ ...prev, rooms: e.target.value }))}
+                            className="property-name-input"
+                            placeholder="Комнат"
+                          />
+                          <input
+                            type="number"
+                            value={formData.bedrooms}
+                            onChange={(e) => setFormData((prev) => ({ ...prev, bedrooms: e.target.value }))}
+                            className="property-name-input"
+                            placeholder="Спален"
+                          />
+                          <input
+                            type="number"
+                            value={formData.bathrooms}
+                            onChange={(e) => setFormData((prev) => ({ ...prev, bathrooms: e.target.value }))}
+                            className="property-name-input"
+                            placeholder="Ванных"
+                          />
+                          <input
+                            type="number"
+                            value={formData.area}
+                            onChange={(e) => setFormData((prev) => ({ ...prev, area: e.target.value }))}
+                            className="property-name-input"
+                            placeholder="Площадь, м²"
+                          />
+                          <input
+                            type="number"
+                            value={formData.floor}
+                            onChange={(e) => setFormData((prev) => ({ ...prev, floor: e.target.value }))}
+                            className="property-name-input"
+                            placeholder="Этаж"
+                          />
+                          <input
+                            type="number"
+                            value={formData.totalFloors}
+                            onChange={(e) => setFormData((prev) => ({ ...prev, totalFloors: e.target.value }))}
+                            className="property-name-input"
+                            placeholder="Этажей в здании"
+                          />
+                          <select
+                            value={formData.buildingType}
+                            onChange={(e) => setFormData((prev) => ({ ...prev, buildingType: e.target.value }))}
+                            className="property-name-input"
+                          >
+                            <option value="">Материал / тип</option>
+                            <option value="brick">Кирпич</option>
+                            <option value="monolithic">Монолит</option>
+                            <option value="panel">Панель</option>
+                            <option value="wood">Дерево</option>
+                            <option value="other">Другое</option>
+                          </select>
+                          <select
+                            value={formData.constructionType || ''}
+                            onChange={(e) => setFormData((prev) => ({ ...prev, constructionType: e.target.value }))}
+                            className="property-name-input"
+                          >
+                            <option value="">Тип конструкции</option>
+                            <option value="frame">Каркасная</option>
+                            <option value="monolithic_frame">Монолитно-каркасная</option>
+                            <option value="panel_frame">Панельно-каркасная</option>
+                            <option value="modular">Модульная</option>
+                            <option value="other">Другое</option>
+                          </select>
+                        </>
+                      )}
+
+                      {(singlePageTypeProfile === 'house' || singlePageTypeProfile === 'villa') && (
+                        <>
+                          <input
+                            type="number"
+                            value={formData.landArea}
+                            onChange={(e) => setFormData((prev) => ({ ...prev, landArea: e.target.value }))}
+                            className="property-name-input"
+                            placeholder="Площадь участка, м²"
+                          />
+                          <input
+                            type="number"
+                            value={formData.area}
+                            onChange={(e) => setFormData((prev) => ({ ...prev, area: e.target.value }))}
+                            className="property-name-input"
+                            placeholder="Площадь дома, м²"
+                          />
+                          <input
+                            type="number"
+                            value={formData.bedrooms}
+                            onChange={(e) => setFormData((prev) => ({ ...prev, bedrooms: e.target.value }))}
+                            className="property-name-input"
+                            placeholder="Спален"
+                          />
+                          <input
+                            type="number"
+                            value={formData.bathrooms}
+                            onChange={(e) => setFormData((prev) => ({ ...prev, bathrooms: e.target.value }))}
+                            className="property-name-input"
+                            placeholder="Ванных"
+                          />
+                          <input
+                            type="number"
+                            value={formData.totalFloors}
+                            onChange={(e) => setFormData((prev) => ({ ...prev, totalFloors: e.target.value }))}
+                            className="property-name-input"
+                            placeholder="Этажей"
+                          />
+                          <select
+                            value={formData.buildingType}
+                            onChange={(e) => setFormData((prev) => ({ ...prev, buildingType: e.target.value }))}
+                            className="property-name-input"
+                          >
+                            <option value="">Материал / тип</option>
+                            <option value="brick">Кирпич</option>
+                            <option value="monolithic">Монолит</option>
+                            <option value="panel">Панель</option>
+                            <option value="wood">Дерево</option>
+                            <option value="other">Другое</option>
+                          </select>
+                          <select
+                            value={formData.constructionType || ''}
+                            onChange={(e) => setFormData((prev) => ({ ...prev, constructionType: e.target.value }))}
+                            className="property-name-input"
+                          >
+                            <option value="">Тип конструкции</option>
+                            <option value="frame">Каркасная</option>
+                            <option value="monolithic_frame">Монолитно-каркасная</option>
+                            <option value="panel_frame">Панельно-каркасная</option>
+                            <option value="modular">Модульная</option>
+                            <option value="other">Другое</option>
+                          </select>
+                        </>
+                      )}
+
+                      {singlePageTypeProfile === 'commercial' && (
+                        <>
+                          <input
+                            type="number"
+                            value={formData.area}
+                            onChange={(e) => setFormData((prev) => ({ ...prev, area: e.target.value }))}
+                            className="property-name-input"
+                            placeholder="Площадь помещения, м²"
+                          />
+                          <input
+                            type="number"
+                            value={formData.floor}
+                            onChange={(e) => setFormData((prev) => ({ ...prev, floor: e.target.value }))}
+                            className="property-name-input"
+                            placeholder="Этаж / уровень"
+                          />
+                          <input
+                            type="number"
+                            value={formData.totalFloors}
+                            onChange={(e) => setFormData((prev) => ({ ...prev, totalFloors: e.target.value }))}
+                            className="property-name-input"
+                            placeholder="Этажей в здании"
+                          />
+                          <select
+                            value={formData.commercialType}
+                            onChange={(e) => setFormData((prev) => ({ ...prev, commercialType: e.target.value }))}
+                            className="property-name-input"
+                          >
+                            <option value="">Тип коммерческого объекта</option>
+                            <option value="office">Офис</option>
+                            <option value="shop">Магазин</option>
+                            <option value="warehouse">Склад</option>
+                            <option value="other">Другое</option>
+                          </select>
+                          <select
+                            value={formData.constructionType || ''}
+                            onChange={(e) => setFormData((prev) => ({ ...prev, constructionType: e.target.value }))}
+                            className="property-name-input"
+                          >
+                            <option value="">Тип конструкции</option>
+                            <option value="open_space">Открытая планировка</option>
+                            <option value="cabinet">Кабинетная</option>
+                            <option value="mixed">Смешанная</option>
+                            <option value="other">Другое</option>
+                          </select>
+                        </>
+                      )}
+
+                      {singlePageTypeProfile === 'land' && (
+                        <>
+                          <input
+                            type="number"
+                            value={formData.landArea}
+                            onChange={(e) => setFormData((prev) => ({ ...prev, landArea: e.target.value }))}
+                            className="property-name-input"
+                            placeholder="Площадь участка, м²"
+                          />
+                          <select
+                            value={formData.commercialType}
+                            onChange={(e) => setFormData((prev) => ({ ...prev, commercialType: e.target.value }))}
+                            className="property-name-input"
+                          >
+                            <option value="">Назначение участка</option>
+                            <option value="residential">Под жилую застройку</option>
+                            <option value="commercial">Под бизнес/коммерцию</option>
+                            <option value="agricultural">Сельхоз назначение</option>
+                            <option value="industrial">Промышленное назначение</option>
+                            <option value="other">Другое</option>
+                          </select>
+                        </>
+                      )}
+
+                      {singlePageTypeProfile === 'other' && (
+                        <>
+                          <input
+                            type="number"
+                            value={formData.area}
+                            onChange={(e) => setFormData((prev) => ({ ...prev, area: e.target.value }))}
+                            className="property-name-input"
+                            placeholder="Площадь, м²"
+                          />
+                          <select
+                            value={formData.commercialType}
+                            onChange={(e) => setFormData((prev) => ({ ...prev, commercialType: e.target.value }))}
+                            className="property-name-input"
+                          >
+                            <option value="">Тип объекта</option>
+                            <option value="mixed">Смешанный</option>
+                            <option value="special">Специального назначения</option>
+                            <option value="other">Другое</option>
+                          </select>
+                        </>
+                      )}
                     </div>
                   </section>
                 )}
@@ -4927,7 +5399,7 @@ const AddProperty = ({
                 {hasDetails && (
                   <section data-sp-section="amenities" className="sp-card sp-card--enter">
                     <header className="sp-card__head">
-                      <span className="sp-card__step">Шаг 4</span>
+                      <span className="sp-card__step">Шаг 5</span>
                       <h3 className="sp-card__title">Описание и удобства</h3>
                       <p className="sp-card__lead">{SINGLE_PAGE_SECTION_HELP.amenities.lead}</p>
                     </header>
@@ -4970,7 +5442,7 @@ const AddProperty = ({
                 {hasAmenities && (
                   <section data-sp-section="media" className="sp-card sp-card--enter">
                     <header className="sp-card__head">
-                      <span className="sp-card__step">Шаг 5</span>
+                      <span className="sp-card__step">Шаг 6</span>
                       <h3 className="sp-card__title">Фото и видео</h3>
                       <p className="sp-card__lead">{SINGLE_PAGE_SECTION_HELP.media.lead}</p>
                     </header>
@@ -5019,52 +5491,97 @@ const AddProperty = ({
                 {hasMedia && (
                   <section data-sp-section="documents" className="sp-card sp-card--enter">
                     <header className="sp-card__head">
-                      <span className="sp-card__step">Шаг 6</span>
+                      <span className="sp-card__step">Шаг 7</span>
                       <h3 className="sp-card__title">Документы</h3>
                       <p className="sp-card__lead">{SINGLE_PAGE_SECTION_HELP.documents.lead}</p>
                     </header>
-                    <div className="single-page-add-flow__upload-row sp-actions">
-                      <button type="button" className="sp-btn sp-btn--primary" onClick={() => ownershipInputRef.current?.click()}>
-                        {requiredDocuments.ownership ? 'Заменить документ собственности' : 'Документ собственности'}
-                      </button>
-                      <button type="button" className="sp-btn sp-btn--ghost" onClick={() => noDebtsInputRef.current?.click()}>
-                        {requiredDocuments.noDebts ? 'Заменить справку' : 'Справка об отсутствии обременений'}
-                      </button>
-                      <button type="button" className="sp-btn sp-btn--ghost" onClick={() => documentInputRef.current?.click()}>
-                        Доп. документы
-                      </button>
-                    </div>
-                    <div className="sp-doc-grid">
-                      <div className={`sp-doc-tile ${requiredDocuments.ownership ? 'is-ready' : ''}`}>
-                        <div className="sp-doc-tile__icon"><FiFileText size={22} /></div>
-                        <div className="sp-doc-tile__body">
-                          <span className="sp-doc-tile__label">Собственность</span>
-                          <span className="sp-doc-tile__name">{requiredDocuments.ownership?.name || 'Не загружен'}</span>
-                        </div>
-                      </div>
-                      <div className={`sp-doc-tile ${requiredDocuments.noDebts ? 'is-ready' : ''}`}>
-                        <div className="sp-doc-tile__icon"><FiFileText size={22} /></div>
-                        <div className="sp-doc-tile__body">
-                          <span className="sp-doc-tile__label">Без долгов</span>
-                          <span className="sp-doc-tile__name">{requiredDocuments.noDebts?.name || 'Не загружена'}</span>
-                        </div>
-                      </div>
-                      {additionalDocuments.map((doc) => (
-                        <div key={doc.id} className="sp-doc-tile is-ready">
-                          {doc.type === 'pdf' ? (
-                            <div className="sp-doc-thumb sp-doc-thumb--pdf"><FiFileText size={28} /></div>
-                          ) : (
-                            <img className="sp-doc-thumb" src={doc.url} alt="" />
-                          )}
-                          <div className="sp-doc-tile__body">
-                            <span className="sp-doc-tile__label">Дополнительно</span>
-                            <span className="sp-doc-tile__name">{doc.name}</span>
+                    <div className="sp-doc-actions-simple">
+                      <div className="sp-doc-action-card">
+                        <button
+                          type="button"
+                          className="sp-btn sp-btn--ghost sp-btn--wide"
+                          onClick={() => {
+                            if (ownershipInputRef.current) ownershipInputRef.current.click()
+                            else document.getElementById('sp-ownership-input')?.click()
+                          }}
+                        >
+                          Документ собственности
+                        </button>
+                        {!requiredDocuments.ownership ? (
+                          <div className="sp-doc-action-status">Файл пока не загружен</div>
+                        ) : (
+                          <div className="sp-doc-required-preview">
+                            {requiredDocumentPreviews.ownership ? (
+                              <img src={requiredDocumentPreviews.ownership} alt={requiredDocuments.ownership.name} className="sp-doc-required-preview__thumb" />
+                            ) : (
+                              <div className="sp-doc-required-preview__thumb sp-doc-required-preview__thumb--file">
+                                <FiFileText size={20} />
+                              </div>
+                            )}
+                            <div className="sp-doc-required-preview__meta">
+                              <span>{requiredDocuments.ownership.name}</span>
+                              <button type="button" onClick={() => handleRemoveRequiredDocument('ownership')} aria-label="Удалить документ собственности">
+                                <FiX size={14} />
+                              </button>
+                            </div>
                           </div>
-                          <button type="button" className="sp-doc-tile__remove" onClick={() => handleRemoveDocument(doc.id)} aria-label="Удалить">
-                            <FiX size={14} />
-                          </button>
+                        )}
+                      </div>
+
+                      <div className="sp-doc-action-card">
+                        <button
+                          type="button"
+                          className="sp-btn sp-btn--ghost sp-btn--wide"
+                          onClick={() => {
+                            if (noDebtsInputRef.current) noDebtsInputRef.current.click()
+                            else document.getElementById('sp-no-debts-input')?.click()
+                          }}
+                        >
+                          Справка об отсутствии обременений
+                        </button>
+                        {!requiredDocuments.noDebts ? (
+                          <div className="sp-doc-action-status">Файл пока не загружен</div>
+                        ) : (
+                          <div className="sp-doc-required-preview">
+                            {requiredDocumentPreviews.noDebts ? (
+                              <img src={requiredDocumentPreviews.noDebts} alt={requiredDocuments.noDebts.name} className="sp-doc-required-preview__thumb" />
+                            ) : (
+                              <div className="sp-doc-required-preview__thumb sp-doc-required-preview__thumb--file">
+                                <FiFileText size={20} />
+                              </div>
+                            )}
+                            <div className="sp-doc-required-preview__meta">
+                              <span>{requiredDocuments.noDebts.name}</span>
+                              <button type="button" onClick={() => handleRemoveRequiredDocument('noDebts')} aria-label="Удалить справку об отсутствии обременений">
+                                <FiX size={14} />
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="sp-doc-action-card">
+                        <button type="button" className="sp-btn sp-btn--ghost sp-btn--wide" onClick={() => documentInputRef.current?.click()}>
+                          Дополнительные документы
+                        </button>
+                        <div className={`sp-doc-action-status ${additionalDocuments.length > 0 ? 'is-ready' : ''}`}>
+                          {additionalDocuments.length > 0
+                            ? `Загружено файлов: ${additionalDocuments.length}`
+                            : 'Файлы пока не загружены'}
                         </div>
-                      ))}
+                        {additionalDocuments.length > 0 && (
+                          <div className="sp-doc-action-files">
+                            {additionalDocuments.map((doc) => (
+                              <div key={doc.id} className="sp-doc-action-file">
+                                <span>{doc.name}</span>
+                                <button type="button" onClick={() => handleRemoveDocument(doc.id)} aria-label="Удалить документ">
+                                  <FiX size={14} />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </section>
                 )}
@@ -5072,8 +5589,17 @@ const AddProperty = ({
                 {hasDocuments && (
                   <section data-sp-section="testdrive" className="sp-card sp-card--enter">
                     <header className="sp-card__head">
-                      <span className="sp-card__step">Шаг 7</span>
-                      <h3 className="sp-card__title">Тест-драйв</h3>
+                      <span className="sp-card__step">Шаг 8</span>
+                      <div className="sp-card__head-row">
+                        <h3 className="sp-card__title">Тест-драйв</h3>
+                        <button
+                          type="button"
+                          className="sp-head-info-btn"
+                          onClick={() => setShowTestDriveInfoModal(true)}
+                        >
+                          Подробнее
+                        </button>
+                      </div>
                       <p className="sp-card__lead">{SINGLE_PAGE_SECTION_HELP.testdrive.lead}</p>
                     </header>
                     <div className="single-page-add-flow__chips sp-chips">
@@ -5108,7 +5634,7 @@ const AddProperty = ({
                 {hasTestDrive && (
                   <section data-sp-section="listing" className="sp-card sp-card--enter">
                     <header className="sp-card__head">
-                      <span className="sp-card__step">Шаг 8</span>
+                      <span className="sp-card__step">Шаг 9</span>
                       <h3 className="sp-card__title">Формат продажи</h3>
                       <p className="sp-card__lead">{SINGLE_PAGE_SECTION_HELP.listing.lead}</p>
                     </header>
@@ -5138,7 +5664,7 @@ const AddProperty = ({
                 {hasListingType && (
                   <section ref={singlePagePriceSectionRef} data-sp-section="price" className="sp-card sp-card--enter sp-card--price">
                     <header className="sp-card__head">
-                      <span className="sp-card__step">Шаг 9</span>
+                      <span className="sp-card__step">Шаг 10</span>
                       <h3 className="sp-card__title">Цена, долги и сроки аукциона</h3>
                       <p className="sp-card__lead">{SINGLE_PAGE_SECTION_HELP.price.lead}</p>
                     </header>
@@ -5284,6 +5810,11 @@ const AddProperty = ({
                                 inputMode="numeric"
                               />
                             </div>
+                            {(formData.listingMode === 'auction_buy_now' || formData.listingMode === 'debt_auction') && (
+                              <div className="sp-price-tip">
+                                <strong>Подсказка по цене:</strong> финальная цена сделки может быть ниже цены предложения до 10%.
+                              </div>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -6570,6 +7101,51 @@ const AddProperty = ({
                       </div>
                     </div>
 
+                  </div>
+                ) : formData.propertyType === 'land' ? (
+                  <div className="property-details-form">
+                    {/* Переключатель единиц измерения */}
+                    <div className="detail-form-field detail-form-field--centered">
+                      <label className="detail-form-label">
+                        <span className="detail-form-label-text">{t('addPropertyDetailsUnitsLabel')}</span>
+                      </label>
+                      <div className="area-unit-toggle">
+                        <button
+                          type="button"
+                          className={`area-unit-toggle-btn ${areaUnit === 'square_meters' ? 'active' : ''}`}
+                          onClick={() => setAreaUnit('square_meters')}
+                        >
+                          {t('addPropertyDetailsUnitSqm')}
+                        </button>
+                        <button
+                          type="button"
+                          className={`area-unit-toggle-btn ${areaUnit === 'square_feet' ? 'active' : ''}`}
+                          onClick={() => setAreaUnit('square_feet')}
+                        >
+                          {t('addPropertyDetailsUnitSqft')}
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Площадь участка */}
+                    <div className="detail-form-field">
+                      <label className="detail-form-label">
+                        <span className="detail-form-label-text">{t('addPropertyDetailsLandAreaLabel')}</span>
+                      </label>
+                      <input
+                        type="number"
+                        value={formData.landArea}
+                        onChange={(e) => handleDetailChange('landArea', e.target.value)}
+                        onWheel={(e) => e.target.blur()}
+                        className={`detail-form-input detail-form-input--narrow ${validationErrors.landArea ? 'detail-form-input--error' : ''}`}
+                        placeholder="0"
+                        min="0"
+                        step="0.01"
+                      />
+                      {validationErrors.landArea && (
+                        <span className="detail-form-error">{validationErrors.landArea}</span>
+                      )}
+                    </div>
                   </div>
                 ) : (
                   /* Старая форма для других типов недвижимости */
@@ -8725,6 +9301,58 @@ const AddProperty = ({
                 <FiCheck size={18} strokeWidth={2.5} />
                 {t('addPropertyDescriptionAccept')}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showTestDriveInfoModal && (
+        <div
+          className="testdrive-info-modal-overlay"
+          onClick={() => setShowTestDriveInfoModal(false)}
+          role="presentation"
+        >
+          <div
+            className="testdrive-info-modal"
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="testdrive-info-title"
+          >
+            <button
+              type="button"
+              className="testdrive-info-modal__close"
+              onClick={() => setShowTestDriveInfoModal(false)}
+              aria-label={t('closeModalAria')}
+            >
+              <FiX size={20} />
+            </button>
+            <h2 id="testdrive-info-title" className="testdrive-info-modal__title">
+              Как работает тест-драйв
+            </h2>
+            <p className="testdrive-info-modal__lead">
+              Это безопасный формат предварительного проживания/просмотра, который помогает покупателю принять решение, а вам — быстрее выйти на сделку.
+            </p>
+            <div className="testdrive-info-modal__list">
+              <div className="testdrive-info-modal__item">
+                <span className="testdrive-info-modal__index">1</span>
+                <p>Вы указываете стоимость тест-драйва и страховой депозит в карточке объекта.</p>
+              </div>
+              <div className="testdrive-info-modal__item">
+                <span className="testdrive-info-modal__index">2</span>
+                <p>Покупатель выбирает удобную дату, и вам приходит уведомление с запросом на подтверждение.</p>
+              </div>
+              <div className="testdrive-info-modal__item">
+                <span className="testdrive-info-modal__index">3</span>
+                <p>После подтверждения клиент получает инструкции: правила проживания и максимальный срок тест-драйва (до 3 суток).</p>
+              </div>
+              <div className="testdrive-info-modal__item">
+                <span className="testdrive-info-modal__index">4</span>
+                <p>Если покупатель затем оплачивает дом, стоимость тест-драйва засчитывается в общую сумму сделки.</p>
+              </div>
+            </div>
+            <div className="testdrive-info-modal__note">
+              Такой формат снижает число «случайных» показов и повышает доверие к объекту.
             </div>
           </div>
         </div>
