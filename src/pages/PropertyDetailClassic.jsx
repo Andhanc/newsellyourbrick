@@ -42,6 +42,7 @@ import { navigateToWallet } from '../utils/walletNavigation'
 import { getPropertyEntryFrom } from '../utils/propertyNavigation'
 import { hasDbBackedProperty } from '../utils/propertyFavoriteKey'
 import { patchCachedAuctionPropertyBid } from '../services/auctionListCache'
+import { usePropertyFavorites } from '../context/PropertyFavoritesContext'
 import {
   getEffectiveAuctionEndTime,
   hasTestTimerDateString,
@@ -387,7 +388,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
         }
       }
       
-      // Справка об отсутствии долгов (не показываем для объектов с долгами)
+      // Справка об отсутствии обременений (не показываем для объектов с долгами)
       if (
         !isDebtProperty &&
         (displayProperty.no_debts_document || property.no_debts_document || property.noDebtsDocument)
@@ -395,11 +396,11 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
         const docUrl = displayProperty.no_debts_document || property.no_debts_document || property.noDebtsDocument
         if (docUrl) {
           const processedUrl = await processDocumentUrl(docUrl)
-          console.log('📄 Справка об отсутствии долгов:', { original: docUrl, processed: processedUrl })
+          console.log('📄 Справка об отсутствии обременений:', { original: docUrl, processed: processedUrl })
           docs.push({
-            name: 'Справка об отсутствии долгов',
+            name: 'Справка об отсутствии обременений',
             url: processedUrl,
-            type: getDocumentType(docUrl, 'Справка об отсутствии долгов')
+            type: getDocumentType(docUrl, 'Справка об отсутствии обременений')
           })
         }
       }
@@ -674,9 +675,9 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
 
   const propertyInfo = displayProperty.title || displayProperty.name
 
-  const [isFavorite, setIsFavorite] = useState(false)
   const [auctionUserDeposit, setAuctionUserDeposit] = useState(0)
   const [auctionKycVerified, setAuctionKycVerified] = useState(null)
+  const { isFavorite: isFavoriteInStore, toggleFavorite } = usePropertyFavorites()
 
   // Признак аукционного объекта (включая объекты с долгами — их UX тоже аукционный).
   // Тестовый круговой таймер задаётся без is_auction — всё равно показываем аукционный блок.
@@ -690,6 +691,23 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
     hadCircularTimerAuction
 
   const auctionEndTime = getEffectiveAuctionEndTime(displayProperty)
+  const favoriteProperty = useMemo(() => {
+    const sourceTable =
+      displayProperty.source_table ||
+      property.source_table ||
+      displayProperty.sourceTable ||
+      property.sourceTable
+
+    return {
+      ...displayProperty,
+      id: displayProperty.id,
+      source_table: sourceTable,
+    }
+  }, [displayProperty, property])
+  const isFavorite = isFavoriteInStore(
+    favoriteProperty,
+    hasDbBackedProperty(favoriteProperty) ? undefined : 'property'
+  )
 
   useEffect(() => {
     if (!isAuctionProperty || !displayProperty?.id || currentBid == null) return
@@ -1776,7 +1794,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [displayProperty.id, user, userLoaded])
 
-  const handleToggleFavorite = () => {
+  const handleToggleFavorite = async () => {
     // Проверяем авторизацию через Clerk или старую систему
     const isClerkAuth = user && userLoaded
     const isOldAuth = isAuthenticated()
@@ -1787,7 +1805,10 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
       return
     }
     
-    setIsFavorite((prev) => !prev)
+    await toggleFavorite(
+      favoriteProperty,
+      hasDbBackedProperty(favoriteProperty) ? undefined : 'property'
+    )
   }
 
   const handleShare = () => {

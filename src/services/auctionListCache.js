@@ -301,6 +301,15 @@ async function enrichAuctionListWithMaxBids(apiBaseUrl, list) {
  */
 export async function fetchAuctionList() {
   const API_BASE_URL = await getApiBaseUrl()
+  const lang = (() => {
+    try {
+      if (typeof window === 'undefined') return 'ru'
+      const raw = window.localStorage?.getItem('i18nextLng') || 'ru'
+      return String(raw).split('-')[0] || 'ru'
+    } catch {
+      return 'ru'
+    }
+  })()
   const types = [
     { apiType: 'commercial' },
     { apiType: 'villa' },
@@ -309,27 +318,61 @@ export async function fetchAuctionList() {
   ]
   const allAuctionProperties = []
   const allNonAuctionProperties = []
+  const allDebtProperties = []
   let allTestProperties = []
 
   try {
-    const testRes = await fetch(`${API_BASE_URL}/properties/test-timers`)
+    const testRes = await fetch(`${API_BASE_URL}/properties/test-timers?lang=${encodeURIComponent(lang)}`)
     if (testRes.ok) {
       const data = await testRes.json()
       if (data.success && data.data) allTestProperties = data.data
     }
   } catch (_) {}
 
+  // Общие списки без type: здесь могут быть объекты с нестандартным/пустым property_type,
+  // которые иначе теряются при выборке только по фиксированным типам.
+  try {
+    const [auctionAllRes, approvedAllRes] = await Promise.all([
+      fetch(`${API_BASE_URL}/properties/auctions?lang=${encodeURIComponent(lang)}`),
+      fetch(`${API_BASE_URL}/properties/approved?lang=${encodeURIComponent(lang)}`)
+    ])
+    if (auctionAllRes.ok) {
+      const data = await auctionAllRes.json()
+      if (data.success && data.data) {
+        allAuctionProperties.push(...data.data)
+      }
+    }
+    if (approvedAllRes.ok) {
+      const data = await approvedAllRes.json()
+      if (data.success && data.data) {
+        const nonAuction = data.data.filter(
+          prop => !prop.is_auction || prop.is_auction === 0 || prop.is_auction === false
+        )
+        allNonAuctionProperties.push(...nonAuction)
+      }
+    }
+  } catch (_) {}
+
+  try {
+    const debtsRes = await fetch(`${API_BASE_URL}/properties/debts`)
+    if (debtsRes.ok) {
+      const data = await debtsRes.json()
+      if (data.success && data.data) {
+        allDebtProperties.push(...data.data)
+      }
+    }
+  } catch (_) {}
+
   for (const { apiType } of types) {
     try {
       const [auctionRes, approvedRes] = await Promise.all([
-        fetch(`${API_BASE_URL}/properties/auctions?type=${apiType}`),
-        fetch(`${API_BASE_URL}/properties/approved?type=${apiType}`)
+        fetch(`${API_BASE_URL}/properties/auctions?type=${apiType}&lang=${encodeURIComponent(lang)}`),
+        fetch(`${API_BASE_URL}/properties/approved?type=${apiType}&lang=${encodeURIComponent(lang)}`)
       ])
       if (auctionRes.ok) {
         const data = await auctionRes.json()
         if (data.success && data.data) {
-          const nonTest = data.data.filter(prop => !prop.test_timer_end_date)
-          allAuctionProperties.push(...nonTest)
+          allAuctionProperties.push(...data.data)
         }
       }
       if (approvedRes.ok) {
@@ -347,7 +390,13 @@ export async function fetchAuctionList() {
   const baseList = dedupeAuctionListById([
     ...allTestProperties.map(p => formatPropertyForList(p, true)),
     ...allAuctionProperties.map(p => formatPropertyForList(p, true)),
-    ...allNonAuctionProperties.map(p => formatPropertyForList(p, false))
+    ...allNonAuctionProperties.map(p => formatPropertyForList(p, false)),
+    ...allDebtProperties.map((p) => formatPropertyForList(
+      p,
+      p?.is_auction === 1 ||
+      p?.is_auction === true ||
+      (p?.test_timer_end_date != null && p?.test_timer_end_date !== '')
+    ))
   ])
 
   const allProperties = await enrichAuctionListWithMaxBids(API_BASE_URL, baseList)

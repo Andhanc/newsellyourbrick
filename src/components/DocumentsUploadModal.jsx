@@ -34,7 +34,7 @@ const DocumentsUploadModal = ({ isOpen, onClose, onComplete }) => {
     },
     {
       key: 'noDebts',
-      label: 'Справка об отсутствии долгов',
+      label: 'Справка об отсутствии обременений',
       ref: noDebtsRef,
       description: 'Загрузите справку об отсутствии задолженностей'
     }

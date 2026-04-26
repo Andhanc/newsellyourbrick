@@ -49,7 +49,7 @@ const PROPERTY_TYPE_OPTIONS = [
 
 const LISTING_MODE_OPTIONS = [
   { id: 'auction', title: 'Аукцион', description: 'Продажа через торги по стартовой цене', icon: 'auction', tone: 'teal' },
-  { id: 'auction_buy_now', title: 'Аукцион + Купить сейчас', description: 'Торги + мгновенная покупка по фиксированной цене', icon: 'flash', tone: 'violet' },
+  { id: 'auction_buy_now', title: 'Аукцион + Продать сейчас', description: 'Торги + мгновенная продажа по фиксированной цене', icon: 'flash', tone: 'violet' },
   { id: 'shares', title: 'Доли', description: 'Продажа объекта по долям с указанием количества', icon: 'shares', tone: 'blue' },
   { id: 'debt', title: 'Долги', description: 'Продажа проблемного объекта как долгового кейса', icon: 'debt', tone: 'amber' },
   { id: 'debt_auction', title: 'Долги + Аукцион', description: 'Долговой объект с торгами и стартовой ставкой', icon: 'target', tone: 'slate' },
@@ -127,9 +127,9 @@ const SINGLE_PAGE_SECTION_HELP = {
   },
   listing: {
     title: 'Формат продажи',
-    lead: 'Выберите модель торгов: классический аукцион, аукцион с «Купить сейчас», доли или долговой кейс.',
+    lead: 'Выберите модель торгов: классический аукцион, аукцион с «Продать сейчас», доли или долговой кейс.',
     tips: [
-      '«Купить сейчас» задаёт верхнюю планку цены для мгновенной сделки',
+      '«Продать сейчас» задаёт верхнюю планку цены для мгновенной сделки',
       'Для долей и долгов появятся отдельные поля на шаге «Цена»',
     ],
     recommend: 'Если не уверены — начните с классического аукциона.',
@@ -262,6 +262,7 @@ import { BiArea } from 'react-icons/bi'
 import LocationMap from '../components/LocationMap'
 import AuctionPeriodPicker from '../components/AuctionPeriodPicker'
 import SellerVerificationModal from '../components/SellerVerificationModal'
+import PropertyCalculatorModal from '../components/PropertyCalculatorModal'
 import CountrySelect from '../components/CountrySelect'
 import { getUserData } from '../services/authService'
 import { generateListingDescription } from '../services/aiService'
@@ -580,6 +581,7 @@ const AddProperty = ({
   const [mediaItems, setMediaItems] = useState([]) // Объединенный массив фото и видео
   const [photosMediaIndex, setPhotosMediaIndex] = useState(0) // Индекс для карусели на странице загрузки фотографий
   const [showVerificationModal, setShowVerificationModal] = useState(false)
+  const [isCalculatorModalOpen, setIsCalculatorModalOpen] = useState(false)
   const [showListingFeeModal, setShowListingFeeModal] = useState(false)
   const [showPromoInputInFeeModal, setShowPromoInputInFeeModal] = useState(false)
   const [listingFeePromoCode, setListingFeePromoCode] = useState('')
@@ -594,6 +596,8 @@ const AddProperty = ({
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showVideoLinkModal, setShowVideoLinkModal] = useState(false)
   const [videoLink, setVideoLink] = useState('')
+  const [showVideoSourceModal, setShowVideoSourceModal] = useState(false)
+  const [videoLinkType, setVideoLinkType] = useState('any')
   const [showPhotoLinkModal, setShowPhotoLinkModal] = useState(false)
   const [photoLink, setPhotoLink] = useState('')
   const [currency, setCurrency] = useState('USD')
@@ -704,6 +708,7 @@ const AddProperty = ({
     { code: 'RUB', symbol: '₽', name: 'Российский рубль' },
     { code: 'GBP', symbol: '£', name: 'Фунт стерлингов' }
   ]
+  const quickCurrencies = currencies.filter((curr) => ['USD', 'EUR', 'GBP'].includes(curr.code))
   
   const [formData, setFormData] = useState(INITIAL_FORM_DATA)
 
@@ -786,6 +791,33 @@ const AddProperty = ({
     return null
   }
 
+  const closeVideoLinkModal = useCallback(() => {
+    setShowVideoLinkModal(false)
+    setVideoLink('')
+    setVideoLinkType('any')
+  }, [])
+
+  const openVideoSourceModal = useCallback(() => {
+    if (videos.length >= 3) {
+      showNotification('Можно загрузить максимум 3 видео')
+      return
+    }
+    setShowVideoSourceModal(true)
+  }, [videos.length])
+
+  const handleVideoSourceSelect = useCallback((source) => {
+    setShowVideoSourceModal(false)
+    if (source === 'device') {
+      videoInputRef.current?.click()
+      return
+    }
+
+    if (source === 'youtube' || source === 'googledrive') {
+      setVideoLinkType(source)
+      setShowVideoLinkModal(true)
+    }
+  }, [])
+
   // Функция для проверки и обработки ссылки на видео
   const handleVideoLinkSubmit = () => {
     if (!videoLink.trim()) {
@@ -795,8 +827,10 @@ const AddProperty = ({
 
     const youtubeId = getYouTubeVideoId(videoLink)
     const googleDriveId = getGoogleDriveVideoId(videoLink)
+    const isYoutubeMode = videoLinkType === 'youtube'
+    const isDriveMode = videoLinkType === 'googledrive'
 
-    if (youtubeId) {
+    if ((isYoutubeMode && youtubeId) || (!isDriveMode && youtubeId)) {
       const newVideo = {
         id: Date.now() + Math.random(),
         type: 'youtube',
@@ -805,9 +839,8 @@ const AddProperty = ({
         thumbnail: `https://img.youtube.com/vi/${youtubeId}/maxresdefault.jpg`
       }
       setVideos(prev => [...prev, newVideo])
-      setVideoLink('')
-      setShowVideoLinkModal(false)
-    } else if (googleDriveId) {
+      closeVideoLinkModal()
+    } else if ((isDriveMode && googleDriveId) || (!isYoutubeMode && googleDriveId)) {
       const newVideo = {
         id: Date.now() + Math.random(),
         type: 'googledrive',
@@ -816,10 +849,15 @@ const AddProperty = ({
         embedUrl: `https://drive.google.com/file/d/${googleDriveId}/preview`
       }
       setVideos(prev => [...prev, newVideo])
-      setVideoLink('')
-      setShowVideoLinkModal(false)
+      closeVideoLinkModal()
     } else {
-      showNotification('Пожалуйста, введите корректную ссылку на YouTube или Google Drive')
+      if (isYoutubeMode) {
+        showNotification('Пожалуйста, введите корректную ссылку на YouTube')
+      } else if (isDriveMode) {
+        showNotification('Пожалуйста, введите корректную ссылку на Google Drive')
+      } else {
+        showNotification('Пожалуйста, введите корректную ссылку на YouTube или Google Drive')
+      }
     }
   }
 
@@ -1514,7 +1552,7 @@ const AddProperty = ({
       if (!formData.isDebtProperty && resolvedNoDebtsDoc) {
         formDataToSend.append('no_debts_document', resolvedNoDebtsDoc)
       } else if (!formData.isDebtProperty && requiredDocuments.noDebts?.isExisting && isEditMode) {
-        console.log('📄 Справка об отсутствии долгов уже загружена, пропускаем')
+        console.log('📄 Справка об отсутствии обременений уже загружена, пропускаем')
       }
       // Документы по долгу — 6 категорий (cat1..cat6)
       if (formData.isDebtProperty) {
@@ -2228,7 +2266,7 @@ const AddProperty = ({
           const noDebtsDocName = property.no_debts_document_name || 
             (property.no_debts_document.includes('/') 
               ? property.no_debts_document.split('/').pop() 
-              : 'Справка об отсутствии долгов')
+              : 'Справка об отсутствии обременений')
           setRequiredDocuments(prev => ({
             ...prev,
             noDebts: {
@@ -3860,7 +3898,7 @@ const AddProperty = ({
       if (mode === 'auction_buy_now') {
         const buyNowNum = Number(removeCommas(String(formData.price || '')))
         if (!formData.price || !Number.isFinite(buyNowNum) || buyNowNum <= 0) {
-          showNotification('Для режима "Аукцион + Купить сейчас" укажите цену "Купить сейчас"')
+          showNotification('Для режима "Аукцион + Продать сейчас" укажите цену "Продать сейчас"')
           return
         }
       }
@@ -4320,6 +4358,27 @@ const AddProperty = ({
     if (mode === 'auction_buy_now') return Number(removeCommas(String(formData.price || ''))) > 0 && Number(removeCommas(String(formData.auctionStartingPrice || ''))) > 0
     return Number(removeCommas(String(formData.auctionStartingPrice || ''))) > 0
   })()
+
+  const handleApplyCalculatedPrice = useCallback((recommendedPrice) => {
+    const normalized = Math.max(0, Math.round(Number(recommendedPrice) || 0))
+    if (!normalized) return
+
+    setFormData((prev) => {
+      const next = {
+        ...prev,
+        auctionStartingPrice: String(normalized)
+      }
+
+      if (!prev.price || Number(removeCommas(String(prev.price))) <= 0) {
+        next.price = String(normalized)
+      }
+
+      return next
+    })
+
+    setIsCalculatorModalOpen(false)
+    showNotification('Рекомендованная цена применена к вашему объекту', 'success')
+  }, [])
 
   const singlePageSections = [
     hasType,
@@ -4923,7 +4982,7 @@ const AddProperty = ({
                       <button type="button" className="sp-btn sp-btn--primary" onClick={() => fileInputRef.current?.click()}>
                         Выбрать фотографии
                       </button>
-                      <button type="button" className="sp-btn sp-btn--ghost" onClick={() => videoInputRef.current?.click()}>
+                      <button type="button" className="sp-btn sp-btn--ghost" onClick={openVideoSourceModal}>
                         Загрузить видео
                       </button>
                     </div>
@@ -4969,7 +5028,7 @@ const AddProperty = ({
                         {requiredDocuments.ownership ? 'Заменить документ собственности' : 'Документ собственности'}
                       </button>
                       <button type="button" className="sp-btn sp-btn--ghost" onClick={() => noDebtsInputRef.current?.click()}>
-                        {requiredDocuments.noDebts ? 'Заменить справку' : 'Справка об отсутствии долгов'}
+                        {requiredDocuments.noDebts ? 'Заменить справку' : 'Справка об отсутствии обременений'}
                       </button>
                       <button type="button" className="sp-btn sp-btn--ghost" onClick={() => documentInputRef.current?.click()}>
                         Доп. документы
@@ -5130,56 +5189,116 @@ const AddProperty = ({
                     {(formData.listingMode === 'auction' ||
                       formData.listingMode === 'auction_buy_now' ||
                       formData.listingMode === 'debt_auction') && (
-                      <div className="sp-auction-block">
-                        <div className="auction-fields-section sp-auction-picker">
-                          <AuctionPeriodPicker
-                            label={t('addPropertyPriceAuctionPeriodLabel')}
-                            startDate={formData.auctionStartDate}
-                            endDate={formData.auctionEndDate}
-                            onStartDateChange={(date) => setFormData((prev) => ({ ...prev, auctionStartDate: date }))}
-                            onEndDateChange={(date) => setFormData((prev) => ({ ...prev, auctionEndDate: date }))}
-                            disableMinConstraints={adminMode || isAdminAddedProperty || isEditMode}
-                          />
+                      <div className="sp-auction-layout">
+                        <div className="sp-auction-block">
+                          <div className="auction-fields-section sp-auction-picker">
+                            <AuctionPeriodPicker
+                              label={t('addPropertyPriceAuctionPeriodLabel')}
+                              startDate={formData.auctionStartDate}
+                              endDate={formData.auctionEndDate}
+                              onStartDateChange={(date) => setFormData((prev) => ({ ...prev, auctionStartDate: date }))}
+                              onEndDateChange={(date) => setFormData((prev) => ({ ...prev, auctionEndDate: date }))}
+                              disableMinConstraints={adminMode || isAdminAddedProperty || isEditMode}
+                            />
+                          </div>
+                        </div>
+
+                        <div className="sp-auction-layout__side">
+                          <div className="single-page-add-flow__grid sp-price-block">
+                            {(formData.listingMode === 'auction_buy_now' ||
+                              formData.listingMode === 'debt_auction') && (
+                              <>
+                                <label className="sp-field-label">
+                                  Продать сейчас {formData.listingMode === 'auction_buy_now' ? '(обязательно)' : '(опционально)'}
+                                </label>
+                                <div className={`sp-currency-input-wrap currency-selector ${showCurrencyDropdown === 'sp-price' ? 'is-open' : ''}`}>
+                                  <button
+                                    type="button"
+                                    className="sp-currency-button"
+                                    onClick={() => setShowCurrencyDropdown(showCurrencyDropdown === 'sp-price' ? null : 'sp-price')}
+                                  >
+                                    <span>{quickCurrencies.find((c) => c.code === currency)?.symbol || '$'}</span>
+                                    <FiChevronDown size={14} />
+                                  </button>
+                                  {showCurrencyDropdown === 'sp-price' && (
+                                    <div className="sp-currency-dropdown">
+                                      {quickCurrencies.map((curr) => (
+                                        <button
+                                          key={curr.code}
+                                          type="button"
+                                          className={`sp-currency-option ${currency === curr.code ? 'is-active' : ''}`}
+                                          onClick={() => {
+                                            setCurrency(curr.code)
+                                            setShowCurrencyDropdown(null)
+                                          }}
+                                        >
+                                          <span>{curr.symbol}</span>
+                                          <span>{curr.code}</span>
+                                        </button>
+                                      ))}
+                                    </div>
+                                  )}
+                                  <input
+                                    type="text"
+                                    className="property-name-input sp-price-input-with-currency"
+                                    value={formData.price ? formatNumberWithCommas(formData.price) : ''}
+                                    onChange={handlePriceChange}
+                                    inputMode="numeric"
+                                  />
+                                </div>
+                              </>
+                            )}
+                            <label className="sp-field-label">{t('addPropertyPriceStartingBidLabel')}</label>
+                            <div className={`sp-currency-input-wrap currency-selector ${showCurrencyDropdown === 'sp-auction' ? 'is-open' : ''}`}>
+                              <button
+                                type="button"
+                                className="sp-currency-button"
+                                onClick={() => setShowCurrencyDropdown(showCurrencyDropdown === 'sp-auction' ? null : 'sp-auction')}
+                              >
+                                <span>{quickCurrencies.find((c) => c.code === currency)?.symbol || '$'}</span>
+                                <FiChevronDown size={14} />
+                              </button>
+                              {showCurrencyDropdown === 'sp-auction' && (
+                                <div className="sp-currency-dropdown">
+                                  {quickCurrencies.map((curr) => (
+                                    <button
+                                      key={curr.code}
+                                      type="button"
+                                      className={`sp-currency-option ${currency === curr.code ? 'is-active' : ''}`}
+                                      onClick={() => {
+                                        setCurrency(curr.code)
+                                        setShowCurrencyDropdown(null)
+                                      }}
+                                    >
+                                      <span>{curr.symbol}</span>
+                                      <span>{curr.code}</span>
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
+                              <input
+                                type="text"
+                                className="property-name-input sp-price-input-with-currency"
+                                value={formData.auctionStartingPrice ? formatNumberWithCommas(formData.auctionStartingPrice) : ''}
+                                onChange={handleAuctionPriceChange}
+                                inputMode="numeric"
+                              />
+                            </div>
+                          </div>
                         </div>
                       </div>
                     )}
 
-                    <div className="single-page-add-flow__grid sp-price-block">
-                      {(formData.listingMode === 'auction' ||
-                        formData.listingMode === 'auction_buy_now' ||
-                        formData.listingMode === 'debt_auction') && (
-                        <>
-                          <label className="sp-field-label">
-                            Купить сейчас {formData.listingMode === 'auction_buy_now' ? '(обязательно)' : '(опционально)'}
-                          </label>
-                          <input
-                            type="text"
-                            className="property-name-input"
-                            value={formData.price ? formatNumberWithCommas(formData.price) : ''}
-                            onChange={handlePriceChange}
-                            inputMode="numeric"
-                          />
-                        </>
-                      )}
-                      {(formData.listingMode === 'auction' ||
-                        formData.listingMode === 'auction_buy_now' ||
-                        formData.listingMode === 'debt_auction') && (
-                        <>
-                          <label className="sp-field-label">{t('addPropertyPriceStartingBidLabel')}</label>
-                          <input
-                            type="text"
-                            className="property-name-input"
-                            value={formData.auctionStartingPrice ? formatNumberWithCommas(formData.auctionStartingPrice) : ''}
-                            onChange={handleAuctionPriceChange}
-                            inputMode="numeric"
-                          />
-                        </>
-                      )}
-                    </div>
-
                     <div className="sp-submit-row">
                       <button type="button" className="sp-btn sp-btn--primary sp-btn--wide" disabled={!hasPrice || isSubmitting} onClick={handlePriceContinue}>
                         {isSubmitting ? 'Отправка...' : 'Оплата и верификация'}
+                      </button>
+                      <button
+                        type="button"
+                        className="sp-btn sp-btn--ghost sp-btn--wide"
+                        onClick={() => setIsCalculatorModalOpen(true)}
+                      >
+                        Расчет стоимости объекта
                       </button>
                     </div>
                   </section>
@@ -7216,7 +7335,7 @@ const AddProperty = ({
                     <button
                       type="button"
                       className="photos-option-btn photos-option-btn--video"
-                      onClick={() => videoInputRef.current?.click()}
+                      onClick={openVideoSourceModal}
                     >
                       <FiVideo size={20} />
                       {t('addPropertyPhotosUploadVideo')}
@@ -7226,7 +7345,7 @@ const AddProperty = ({
                     <button
                       type="button"
                       className="photos-option-btn photos-option-btn--link"
-                      onClick={() => setShowVideoLinkModal(true)}
+                      onClick={openVideoSourceModal}
                     >
                       <FiLink size={20} />
                       {t('addPropertyPhotosAddLink')}
@@ -7275,23 +7394,35 @@ const AddProperty = ({
 
               {/* Модальное окно для добавления ссылки на видео */}
               {showVideoLinkModal && (
-                <div className="video-link-modal-overlay" onClick={() => setShowVideoLinkModal(false)}>
+                <div className="video-link-modal-overlay" onClick={closeVideoLinkModal}>
                   <div className="video-link-modal" onClick={(e) => e.stopPropagation()}>
                     <button
                       type="button"
                       className="video-link-modal-close"
-                      onClick={() => setShowVideoLinkModal(false)}
+                      onClick={closeVideoLinkModal}
                     >
                       <FiX size={20} />
                     </button>
-                    <h3 className="video-link-modal-title">{t('addPropertyPhotosVideoLinkTitle')}</h3>
+                    <h3 className="video-link-modal-title">
+                      {videoLinkType === 'youtube' ? 'YouTube' : videoLinkType === 'googledrive' ? 'Google Drive' : t('addPropertyPhotosVideoLinkTitle')}
+                    </h3>
                     <p className="video-link-modal-subtitle">
-                      {t('addPropertyPhotosVideoLinkSubtitle')}
+                      {videoLinkType === 'youtube'
+                        ? 'Вставьте ссылку на видео с YouTube'
+                        : videoLinkType === 'googledrive'
+                          ? 'Вставьте ссылку на видео из Google Drive'
+                          : t('addPropertyPhotosVideoLinkSubtitle')}
                     </p>
                     <input
                       type="text"
                       className="video-link-input"
-                      placeholder={t('addPropertyPhotosVideoLinkPlaceholder')}
+                      placeholder={
+                        videoLinkType === 'youtube'
+                          ? 'https://youtube.com/watch?v=...'
+                          : videoLinkType === 'googledrive'
+                            ? 'https://drive.google.com/file/d/...'
+                            : t('addPropertyPhotosVideoLinkPlaceholder')
+                      }
                       value={videoLink}
                       onChange={(e) => setVideoLink(e.target.value)}
                       onKeyPress={(e) => {
@@ -7305,8 +7436,7 @@ const AddProperty = ({
                         type="button"
                         className="video-link-modal-cancel"
                         onClick={() => {
-                          setShowVideoLinkModal(false)
-                          setVideoLink('')
+                          closeVideoLinkModal()
                         }}
                       >
                         {t('addPropertyPhotosVideoLinkCancel')}
@@ -8035,12 +8165,12 @@ const AddProperty = ({
                 </>
               )}
 
-              {(formData.listingMode === 'auction' || formData.listingMode === 'auction_buy_now' || formData.listingMode === 'debt_auction') && (
+              {(formData.listingMode === 'auction_buy_now' || formData.listingMode === 'debt_auction') && (
                 <>
               {/* Блок цены "Купить сейчас" */}
               <div className="price-input-section">
                 <label className="price-input-label">
-                  Купить сейчас {formData.listingMode === 'auction_buy_now' ? '(обязательно)' : '(опционально)'}
+                  Продать сейчас {formData.listingMode === 'auction_buy_now' ? '(обязательно)' : '(опционально)'}
                 </label>
                 <p style={{ fontSize: '14px', color: '#666', marginTop: '4px', marginBottom: '12px' }}>
                   {formData.listingMode === 'auction_buy_now'
@@ -8300,23 +8430,63 @@ const AddProperty = ({
       )}
 
       {/* Модальное окно для добавления ссылки на видео */}
-      {showVideoLinkModal && (
-        <div className="video-link-modal-overlay" onClick={() => setShowVideoLinkModal(false)}>
-          <div className="video-link-modal" onClick={(e) => e.stopPropagation()}>
-            <button 
+      {showVideoSourceModal && (
+        <div className="video-link-modal-overlay" onClick={() => setShowVideoSourceModal(false)}>
+          <div className="video-source-modal" onClick={(e) => e.stopPropagation()}>
+            <button
+              type="button"
               className="video-link-modal-close"
-              onClick={() => setShowVideoLinkModal(false)}
+              onClick={() => setShowVideoSourceModal(false)}
             >
               <FiX size={20} />
             </button>
-            <h3 className="video-link-modal-title">{t('addPropertyPhotosVideoLinkTitle')}</h3>
+            <h3 className="video-link-modal-title">Выберите источник видео</h3>
+            <p className="video-link-modal-subtitle">Добавьте видео одним из трёх способов.</p>
+            <div className="video-source-modal__actions">
+              <button type="button" className="video-source-modal__btn" onClick={() => handleVideoSourceSelect('device')}>
+                Устройство
+              </button>
+              <button type="button" className="video-source-modal__btn" onClick={() => handleVideoSourceSelect('youtube')}>
+                YouTube
+              </button>
+              <button type="button" className="video-source-modal__btn" onClick={() => handleVideoSourceSelect('googledrive')}>
+                Google Drive
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Модальное окно для добавления ссылки на видео */}
+      {showVideoLinkModal && (
+        <div className="video-link-modal-overlay" onClick={closeVideoLinkModal}>
+          <div className="video-link-modal" onClick={(e) => e.stopPropagation()}>
+            <button 
+              className="video-link-modal-close"
+              onClick={closeVideoLinkModal}
+            >
+              <FiX size={20} />
+            </button>
+            <h3 className="video-link-modal-title">
+              {videoLinkType === 'youtube' ? 'YouTube' : videoLinkType === 'googledrive' ? 'Google Drive' : t('addPropertyPhotosVideoLinkTitle')}
+            </h3>
             <p className="video-link-modal-subtitle">
-              {t('addPropertyPhotosVideoLinkSubtitle')}
+              {videoLinkType === 'youtube'
+                ? 'Вставьте ссылку на видео с YouTube'
+                : videoLinkType === 'googledrive'
+                  ? 'Вставьте ссылку на видео из Google Drive'
+                  : t('addPropertyPhotosVideoLinkSubtitle')}
             </p>
             <input
               type="text"
               className="video-link-input"
-              placeholder={t('addPropertyPhotosVideoLinkPlaceholder')}
+              placeholder={
+                videoLinkType === 'youtube'
+                  ? 'https://youtube.com/watch?v=...'
+                  : videoLinkType === 'googledrive'
+                    ? 'https://drive.google.com/file/d/...'
+                    : t('addPropertyPhotosVideoLinkPlaceholder')
+              }
               value={videoLink}
               onChange={(e) => setVideoLink(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && handleVideoLinkSubmit()}
@@ -8326,8 +8496,7 @@ const AddProperty = ({
                 type="button"
                 className="video-link-modal-cancel"
                 onClick={() => {
-                  setShowVideoLinkModal(false)
-                  setVideoLink('')
+                  closeVideoLinkModal()
                 }}
               >
                 {t('addPropertyPhotosVideoLinkCancel')}
@@ -8343,6 +8512,23 @@ const AddProperty = ({
           </div>
         </div>
       )}
+
+      <PropertyCalculatorModal
+        isOpen={isCalculatorModalOpen}
+        onClose={() => setIsCalculatorModalOpen(false)}
+        lockFields={true}
+        initialPropertyData={{
+          propertyType: formData.propertyType,
+          area: formData.area,
+          rooms: formData.rooms,
+          bedrooms: formData.bedrooms,
+          city: formData.city,
+          country: formData.country,
+          address: formData.address,
+          location: formData.location
+        }}
+        onApplyRecommendedPrice={handleApplyCalculatedPrice}
+      />
 
       <SellerVerificationModal
         isOpen={showVerificationModal}

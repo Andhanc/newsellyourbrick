@@ -1166,11 +1166,11 @@ const ModerationPropertyDetail = ({ property, onBack, onApprove, onReject }) => 
               );
             })()}
             
-            {/* Справка об отсутствии долгов — не показываем для объектов с долгами */}
+            {/* Справка об отсутствии обременений — не показываем для объектов с долгами */}
             {!isDebtProperty && (property.no_debts_document || property.noDebtsDocument) && (() => {
               const rawDocUrl = property.no_debts_document || property.noDebtsDocument;
               const docUrl = processDocumentUrl(rawDocUrl);
-              const docName = property.no_debts_document_name || property.noDebtsDocumentName || 'Справка об отсутствии долгов';
+              const docName = property.no_debts_document_name || property.noDebtsDocumentName || 'Справка об отсутствии обременений';
               const docType = getDocumentType(rawDocUrl, docName);
               
               return (

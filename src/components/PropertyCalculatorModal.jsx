@@ -10,7 +10,64 @@ const DEFAULT_CITIES = [
   { value: 'madrid', label: 'Мадрид', region: 'Мадрид' }
 ]
 
-const PropertyCalculatorModal = ({ isOpen, onClose }) => {
+function normalizeCityInput(value = '') {
+  return String(value)
+    .split(',')[0]
+    .trim()
+    .toLowerCase()
+}
+
+function mapListingToCalculatorData(source = {}) {
+  const rawPropertyType = String(source.propertyType || '').toLowerCase()
+  const propertyTypeMap = {
+    apartment: 'apartment',
+    apartamento: 'apartamento',
+    house: 'house',
+    villa: 'villa',
+    commercial: 'commercial',
+    land: 'land'
+  }
+
+  const propertyType = propertyTypeMap[rawPropertyType] || 'apartment'
+  const skipRooms = propertyType === 'land' || propertyType === 'commercial'
+  const area = source.area != null && source.area !== '' ? String(source.area) : ''
+  let rooms = 'studio'
+
+  if (!skipRooms) {
+    const rawRooms = source.rooms ?? source.bedrooms
+    const parsedRooms = parseInt(rawRooms, 10)
+    if (Number.isFinite(parsedRooms) && parsedRooms > 0) {
+      rooms = String(Math.min(parsedRooms, 5))
+    } else {
+      rooms = 'studio'
+    }
+  }
+
+  const cityAlias = {
+    madrid: 'madrid',
+    мадрид: 'madrid',
+    barcelona: 'barcelona',
+    барселона: 'barcelona'
+  }
+  const rawCity = normalizeCityInput(source.city)
+  const mappedCity = cityAlias[rawCity] || rawCity || 'barcelona'
+
+  return {
+    area,
+    rooms,
+    city: mappedCity,
+    district: 'all',
+    propertyType
+  }
+}
+
+const PropertyCalculatorModal = ({
+  isOpen,
+  onClose,
+  initialPropertyData = null,
+  onApplyRecommendedPrice,
+  lockFields = false
+}) => {
   const [formData, setFormData] = useState({
     area: '',
     rooms: 'studio',
@@ -23,6 +80,19 @@ const PropertyCalculatorModal = ({ isOpen, onClose }) => {
   const [isLoading, setIsLoading] = useState(false)
   const [results, setResults] = useState(null)
   const [error, setError] = useState(null)
+  const fieldsAreLocked = lockFields && !!initialPropertyData
+  const initialMappedData = useMemo(
+    () => mapListingToCalculatorData(initialPropertyData || {}),
+    [initialPropertyData]
+  )
+
+  useEffect(() => {
+    if (!isOpen || !initialPropertyData) return
+    setFormData((prev) => ({
+      ...prev,
+      ...initialMappedData
+    }))
+  }, [isOpen, initialMappedData, initialPropertyData])
 
   useEffect(() => {
     if (!isOpen) return
@@ -43,7 +113,34 @@ const PropertyCalculatorModal = ({ isOpen, onClose }) => {
     }
   }, [isOpen])
 
-  const citiesList = calcOptions.cities.length ? calcOptions.cities : DEFAULT_CITIES
+  useEffect(() => {
+    if (!isOpen || !formData.city || !calcOptions.cities?.length) return
+    const existsByValue = calcOptions.cities.some((c) => c.value === formData.city)
+    if (existsByValue) return
+
+    const normalizedCurrent = String(formData.city).trim().toLowerCase()
+    const byLabel = calcOptions.cities.find((c) => String(c.label || '').trim().toLowerCase() === normalizedCurrent)
+    if (byLabel?.value) {
+      setFormData((prev) => ({ ...prev, city: byLabel.value }))
+    }
+  }, [isOpen, formData.city, calcOptions.cities])
+
+  const baseCitiesList = calcOptions.cities.length ? calcOptions.cities : DEFAULT_CITIES
+  const citiesList = useMemo(() => {
+    if (!formData.city) return baseCitiesList
+    const hasCity = baseCitiesList.some((c) => c.value === formData.city)
+    if (hasCity) return baseCitiesList
+
+    const fallbackLabel = initialPropertyData?.city || formData.city
+    return [
+      {
+        value: formData.city,
+        label: fallbackLabel,
+        region: 'Текущая локация'
+      },
+      ...baseCitiesList
+    ]
+  }, [baseCitiesList, formData.city, initialPropertyData?.city])
 
   const citiesByRegion = useMemo(() => {
     const m = {}
@@ -67,6 +164,7 @@ const PropertyCalculatorModal = ({ isOpen, onClose }) => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target
+    if (fieldsAreLocked && name !== 'district') return
     setFormData((prev) => {
       if (name === 'city') {
         return { ...prev, city: value, district: 'all' }
@@ -103,6 +201,8 @@ const PropertyCalculatorModal = ({ isOpen, onClose }) => {
         area: parseInt(formData.area, 10),
         rooms: roomsPayload,
         city: formData.city,
+        country: initialPropertyData?.country || null,
+        street: initialPropertyData?.address || initialPropertyData?.location || null,
         district: formData.district || 'all',
         propertyType: formData.propertyType,
         maxPrice: null,
@@ -141,6 +241,17 @@ const PropertyCalculatorModal = ({ isOpen, onClose }) => {
   }
 
   const handleReset = () => {
+    if (fieldsAreLocked) {
+      setFormData((prev) => ({
+        ...prev,
+        ...initialMappedData,
+        district: 'all'
+      }))
+      setResults(null)
+      setError(null)
+      return
+    }
+
     setFormData({
       area: '',
       rooms: 'studio',
@@ -190,7 +301,7 @@ const PropertyCalculatorModal = ({ isOpen, onClose }) => {
                 Калькулятор стоимости
               </h2>
               <p className="property-calculator-modal__subtitle">
-                Тип жилья, город и район — ориентир по цене по данным Pisos.com
+                Тип жилья, город и район — ориентир по цене на основе объявлений с нескольких площадок
               </p>
             </div>
           </div>
@@ -218,6 +329,7 @@ const PropertyCalculatorModal = ({ isOpen, onClose }) => {
                       <FiHome size={18} />
                       Параметры объекта
                     </h3>
+                    <div className="property-calculator-form__panel-separator" />
                     <div className="property-calculator-form__field property-calculator-form__field--full">
                       <label className="property-calculator-form__label">
                         <FiLayers size={18} />
@@ -227,7 +339,8 @@ const PropertyCalculatorModal = ({ isOpen, onClose }) => {
                         name="propertyType"
                         value={formData.propertyType}
                         onChange={handleInputChange}
-                        className="property-calculator-form__select"
+                        className={`property-calculator-form__select ${fieldsAreLocked ? 'property-calculator-form__select--locked' : ''}`}
+                        disabled={fieldsAreLocked}
                       >
                         <option value="apartment">Квартира</option>
                         <option value="apartamento">Апартаменты</option>
@@ -253,6 +366,7 @@ const PropertyCalculatorModal = ({ isOpen, onClose }) => {
                           className="property-calculator-form__input"
                           min="1"
                           required
+                          readOnly={fieldsAreLocked}
                         />
                       </div>
 
@@ -266,8 +380,9 @@ const PropertyCalculatorModal = ({ isOpen, onClose }) => {
                             name="rooms"
                             value={formData.rooms}
                             onChange={handleInputChange}
-                            className="property-calculator-form__select"
+                            className={`property-calculator-form__select ${fieldsAreLocked ? 'property-calculator-form__select--locked' : ''}`}
                             required
+                            disabled={fieldsAreLocked}
                           >
                             <option value="studio">Студия</option>
                             <option value="1">1</option>
@@ -289,8 +404,9 @@ const PropertyCalculatorModal = ({ isOpen, onClose }) => {
                         name="city"
                         value={formData.city}
                         onChange={handleInputChange}
-                        className="property-calculator-form__select"
+                        className={`property-calculator-form__select ${fieldsAreLocked ? 'property-calculator-form__select--locked' : ''}`}
                         required
+                        disabled={fieldsAreLocked}
                       >
                         {Object.entries(citiesByRegion).map(([region, cities]) => (
                           <optgroup key={region} label={region}>
@@ -334,7 +450,7 @@ const PropertyCalculatorModal = ({ isOpen, onClose }) => {
                     </button>
                     <button
                       type="submit"
-                      className="property-calculator-form__button property-calculator-form__button--primary"
+                      className="property-calculator-form__button property-calculator-form__button--liquid"
                       disabled={isLoading}
                     >
                       {isLoading ? 'Поиск...' : 'Рассчитать стоимость'}
@@ -368,10 +484,6 @@ const PropertyCalculatorModal = ({ isOpen, onClose }) => {
                     {results.note}
                   </div>
                 )}
-                <p className="property-calculator-result__note">
-                  Оценка строится по медиане цен похожих объявлений (при большой выборке — с отсечением
-                  экстремальных значений). Это не официальная оценка для банка или нотариуса.
-                </p>
               </div>
 
               {results.similarProperties && results.similarProperties.length > 0 ? (
@@ -384,7 +496,16 @@ const PropertyCalculatorModal = ({ isOpen, onClose }) => {
                       <div key={index} className="property-calculator-result__similar-item">
                         {property.image && (
                           <div className="property-calculator-result__similar-image">
-                            <img src={property.image} alt="" />
+                            <img
+                              src={property.image}
+                              alt=""
+                              loading="lazy"
+                              referrerPolicy="no-referrer"
+                              onError={(e) => {
+                                const imageWrap = e.currentTarget.closest('.property-calculator-result__similar-image')
+                                if (imageWrap) imageWrap.remove()
+                              }}
+                            />
                           </div>
                         )}
                         <div className="property-calculator-result__similar-content">
@@ -421,13 +542,13 @@ const PropertyCalculatorModal = ({ isOpen, onClose }) => {
 
               <div className="property-calculator-result__actions">
                 <button
-                  className="property-calculator-form__button property-calculator-form__button--secondary"
+                  className="property-calculator-form__button property-calculator-form__button--liquid"
                   onClick={handleReset}
                 >
                   Новый расчет
                 </button>
                 <button
-                  className="property-calculator-form__button property-calculator-form__button--primary"
+                  className="property-calculator-form__button property-calculator-form__button--secondary"
                   onClick={onClose}
                 >
                   Закрыть

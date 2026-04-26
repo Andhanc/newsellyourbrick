@@ -56,7 +56,7 @@ const DocumentsModal = ({ isOpen, onClose, onComplete }) => {
     },
     {
       key: 'noDebts',
-      label: 'Справка об отсутствии долгов',
+      label: 'Справка об отсутствии обременений',
       description: 'Загрузите справку об отсутствии задолженностей'
     }
   ]

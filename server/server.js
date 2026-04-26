@@ -12924,7 +12924,7 @@ app.get('/api/properties/calculator-options', async (req, res) => {
  * Принимает параметры недвижимости и возвращает рекомендуемую цену и похожие объекты
  */
 app.post('/api/properties/calculate-price', async (req, res) => {
-    const { area, rooms, city, propertyType, district, maxPrice, minPrice } = req.body;
+    const { area, rooms, city, country, street, propertyType, district, maxPrice, minPrice } = req.body;
     const pt = propertyType || 'apartment';
     const noRoomsType = pt === 'land' || pt === 'commercial';
 
@@ -12946,6 +12946,8 @@ app.post('/api/properties/calculate-price', async (req, res) => {
       area,
       rooms,
       city,
+      country: country || 'не указана',
+      street: street || 'не указана',
       district: district || 'all',
       propertyType: pt,
       maxPrice: maxPrice || 'не указано',
@@ -12957,6 +12959,8 @@ app.post('/api/properties/calculate-price', async (req, res) => {
         area,
         rooms: noRoomsType ? null : rooms,
         city,
+        country,
+        street,
         propertyType: pt,
         district: district || 'all',
         maxPrice,

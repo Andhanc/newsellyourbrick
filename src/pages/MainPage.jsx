@@ -80,6 +80,7 @@ import { navigateToWallet } from '../utils/walletNavigation'
 import { usePropertyFavorites } from '../context/PropertyFavoritesContext'
 import { useLayoutScrollRef } from '../context/LayoutScrollContext'
 import { UI_LANGUAGES } from '../constants/uiLanguages'
+import { isAuctionListingEnded } from '../utils/auctionReminderBounds'
 
 // Используем синхронную версию для инициализации, затем обновим при загрузке
 let API_BASE_URL = getApiBaseUrlSync()
@@ -3491,6 +3492,7 @@ function MainPage() {
                   apartment.isAuction === true &&
                   apartment.endTime != null &&
                   apartment.endTime !== ''
+                const isAuctionEndedCard = isAuctionListingEnded(apartment)
 
                 const currentBidValue =
                   apartment.currentBid != null
@@ -3498,7 +3500,27 @@ function MainPage() {
                     : (apartment.auction_starting_price || apartment.price || 0)
                 
                 return (
-                  <div key={apartment.id} className="property-card">
+                  <div
+                    key={apartment.id}
+                    className={`property-card${isAuctionEndedCard ? ' property-card--auction-ended' : ''}`}
+                  >
+                    {isAuctionEndedCard ? (
+                      <div className="property-auction-ended-overlay property-auction-ended-overlay--full-card">
+                        <span className="property-auction-ended-overlay__title">{t('auctionSoldOutLabel')}</span>
+                        <button
+                          type="button"
+                          className="property-auction-ended-overlay__result-link"
+                          onClick={(e) => {
+                            e.preventDefault()
+                            e.stopPropagation()
+                            handlePropertyClick('apartment', apartment.id, false, hasTimer, apartment)
+                          }}
+                        >
+                          <span>{t('auctionResultSummary')}</span>
+                          <span aria-hidden>→</span>
+                        </button>
+                      </div>
+                    ) : null}
                     <div 
                       className="property-link"
                       onClick={() => {
@@ -3607,8 +3629,30 @@ function MainPage() {
                   return `$${price.toLocaleString('en-US')}`
                 }
 
+                const isAuctionEndedCard = isAuctionListingEnded(villa)
+
                 return (
-                  <div key={villa.id} className="property-card">
+                  <div
+                    key={villa.id}
+                    className={`property-card${isAuctionEndedCard ? ' property-card--auction-ended' : ''}`}
+                  >
+                    {isAuctionEndedCard ? (
+                      <div className="property-auction-ended-overlay property-auction-ended-overlay--full-card">
+                        <span className="property-auction-ended-overlay__title">{t('auctionSoldOutLabel')}</span>
+                        <button
+                          type="button"
+                          className="property-auction-ended-overlay__result-link"
+                          onClick={(e) => {
+                            e.preventDefault()
+                            e.stopPropagation()
+                            handlePropertyClick('villa', villa.id, false, false, villa)
+                          }}
+                        >
+                          <span>{t('auctionResultSummary')}</span>
+                          <span aria-hidden>→</span>
+                        </button>
+                      </div>
+                    ) : null}
                     <div 
                       className="property-link"
                       onClick={() => {

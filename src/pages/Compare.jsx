@@ -44,12 +44,26 @@ function formatPrice(price) {
   return `$${n.toLocaleString('en-US')}`
 }
 
+function toPositiveNumber(value) {
+  const n = Number(value)
+  return Number.isFinite(n) && n > 0 ? n : null
+}
+
 function effectivePrice(p) {
-  const bid = p.currentBid != null && p.currentBid !== '' ? Number(p.currentBid) : NaN
   const isAuc = p.isAuction === true || p.is_auction === 1 || p.is_auction === true
-  if (isAuc && !Number.isNaN(bid) && bid > 0) return bid
-  const pr = p.price != null && p.price !== '' ? Number(p.price) : NaN
-  return Number.isNaN(pr) ? null : pr
+  const bid = toPositiveNumber(p.currentBid ?? p.current_bid ?? p.auction_current_bid)
+  const start = toPositiveNumber(p.auction_starting_price ?? p.starting_price)
+  const buyNowOrPrice = toPositiveNumber(p.price)
+
+  // Для чистого аукциона ориентируемся на текущую ставку, иначе на стартовую.
+  if (isAuc && bid != null) return bid
+  if (isAuc && start != null) return start
+
+  // Для buy-now/обычных карточек — цена продажи; если её нет, fallback на старт аукциона.
+  if (buyNowOrPrice != null) return buyNowOrPrice
+  if (start != null) return start
+  if (bid != null) return bid
+  return null
 }
 
 function areaM2(p) {
@@ -142,7 +156,7 @@ function buildRows(left, right) {
   const rows = []
   rows.push({
     id: 'price',
-    label: isAuc ? 'Текущая ставка / цена' : 'Цена',
+    label: isAuc ? 'Текущая ставка' : 'Цена',
     left: pL != null ? formatPrice(pL) : '—',
     right: pR != null ? formatPrice(pR) : '—',
     winner: compareMetric(pL, pR, 'lower'),
@@ -534,6 +548,66 @@ const Compare = () => {
                       </tr>
                     </tbody>
                   </table>
+                </div>
+                <div className="compare-mobile-table" aria-hidden={false}>
+                  {tableRows.map((row) => (
+                    <div key={`m-${row.id}`} className="compare-mobile-row">
+                      <div className="compare-mobile-row__label">{row.label}</div>
+                      <div className="compare-mobile-row__grid">
+                        <div
+                          className={[
+                            'compare-mobile-row__cell',
+                            !row.displayOnly && row.winner === 'left' && 'compare-mobile-row__cell--win',
+                            !row.displayOnly && row.winner === 'tie' && 'compare-mobile-row__cell--tie',
+                            row.displayOnly && 'compare-mobile-row__cell--plain',
+                          ]
+                            .filter(Boolean)
+                            .join(' ')}
+                        >
+                          <span className="compare-mobile-row__name">
+                            {pair.left.property.name || pair.left.property.title}
+                          </span>
+                          <span className="compare-mobile-row__value">{row.left}</span>
+                          {!row.displayOnly && row.winner === 'left' && (
+                            <span className="compare-win-tag">лучше</span>
+                          )}
+                        </div>
+                        <div
+                          className={[
+                            'compare-mobile-row__cell',
+                            !row.displayOnly && row.winner === 'right' && 'compare-mobile-row__cell--win',
+                            !row.displayOnly && row.winner === 'tie' && 'compare-mobile-row__cell--tie',
+                            row.displayOnly && 'compare-mobile-row__cell--plain',
+                          ]
+                            .filter(Boolean)
+                            .join(' ')}
+                        >
+                          <span className="compare-mobile-row__name">
+                            {pair.right.property.name || pair.right.property.title}
+                          </span>
+                          <span className="compare-mobile-row__value">{row.right}</span>
+                          {!row.displayOnly && row.winner === 'right' && (
+                            <span className="compare-win-tag">лучше</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  <div
+                    className={[
+                      'compare-mobile-summary',
+                      summary.side === 'left' && 'compare-mobile-summary--left',
+                      summary.side === 'right' && 'compare-mobile-summary--right',
+                      summary.side === 'tie' && 'compare-mobile-summary--tie',
+                    ]
+                      .filter(Boolean)
+                      .join(' ')}
+                  >
+                    <strong>{summary.text}</strong>{' '}
+                    <span className="compare-table-score">
+                      ({totals.left} : {totals.right})
+                    </span>
+                  </div>
                 </div>
 
                 <section className="compare-ai-section" aria-labelledby="compare-ai-heading">

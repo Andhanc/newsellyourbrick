@@ -1,4 +1,5 @@
 .location-map-container {
+  position: relative;
   width: 100%;
   height: 100%;
 }
@@ -9,5 +10,36 @@
   border-radius: 12px;
   min-height: 500px;
   overflow: hidden;
+}
+
+.location-map-container--fullscreen {
+  background: #000;
+}
+
+.location-map-fullscreen-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 3;
+  width: 30px;
+  height: 30px;
+  border: 1px solid rgba(15, 23, 42, 0.18);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.95);
+  color: #0f172a;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  cursor: pointer;
+}
+
+.location-map-fullscreen-btn:hover {
+  background: #ffffff;
+}
+
+.location-map-container .maplibregl-ctrl-top-right {
+  top: 40px;
+  
 }
 

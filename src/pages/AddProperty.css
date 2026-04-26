@@ -1040,6 +1040,41 @@
   animation: slideUp 0.3s ease-out;
 }
 
+.video-source-modal {
+  background: #fff;
+  border-radius: 16px;
+  padding: 28px;
+  max-width: 460px;
+  width: 100%;
+  position: relative;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: slideUp 0.3s ease-out;
+}
+
+.video-source-modal__actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.video-source-modal__btn {
+  border: 1px solid #dbe5ef;
+  border-radius: 10px;
+  background: #f8fafc;
+  color: #0f172a;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 12px 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.video-source-modal__btn:hover {
+  border-color: #0abab5;
+  background: rgba(10, 186, 181, 0.08);
+}
+
 @keyframes slideUp {
   from {
     opacity: 0;
@@ -1169,6 +1204,12 @@
 
 .video-link-modal-submit:active {
   transform: translateY(0);
+}
+
+@media (max-width: 720px) {
+  .video-source-modal__actions {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* Сравнение черновика и варианта ИИ после генерации описания */
@@ -7848,13 +7889,15 @@
 .sp-map-wrap {
   border-radius: 16px;
   overflow: hidden;
-  border: 1px solid #dbe5ef;
+  border: none;
+  background: transparent;
+  box-shadow: none;
   min-height: 280px;
 }
 
 .sp-map-wrap .location-map-container,
 .sp-map-wrap .location-map {
-  min-height: 280px;
+  min-height: 320px;
 }
 
 .sp-textarea {
@@ -8051,12 +8094,128 @@
   margin-bottom: 16px;
 }
 
+.sp-auction-layout {
+  display: grid;
+  grid-template-columns: minmax(280px, 1fr) minmax(320px, 1.45fr);
+  gap: 20px;
+  align-items: start;
+  margin-bottom: 16px;
+}
+
+.sp-auction-layout__side .sp-price-block {
+  margin-bottom: 0;
+  overflow: visible;
+}
+
+.sp-auction-layout__side .sp-currency-input-wrap {
+  width: 50%;
+  min-width: 260px;
+}
+
+.sp-currency-input-wrap {
+  position: relative;
+  z-index: 1;
+}
+
+.sp-currency-input-wrap.is-open {
+  z-index: 3000;
+}
+
+.sp-currency-button {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 34px;
+  min-width: 62px;
+  border: 1px solid #dbe5ef;
+  border-radius: 10px;
+  background: #f8fafc;
+  color: #0f172a;
+  font-size: 13px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 10px;
+  cursor: pointer;
+  z-index: 2;
+}
+
+.sp-price-input-with-currency {
+  padding-left: 84px;
+}
+
+.sp-currency-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 10px;
+  background: #fff;
+  border: 1px solid #dbe5ef;
+  border-radius: 10px;
+  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.12);
+  z-index: 1200;
+  min-width: 110px;
+  padding: 4px;
+}
+
+.sp-currency-option {
+  width: 100%;
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+  padding: 8px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+  font-weight: 700;
+  color: #334155;
+  cursor: pointer;
+}
+
+.sp-currency-option:hover,
+.sp-currency-option.is-active {
+  background: rgba(10, 186, 181, 0.12);
+  color: #0f766e;
+}
+
 .sp-auction-picker.auction-fields-section {
   margin: 0;
 }
 
 .sp-submit-row {
   margin-top: 8px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.sp-submit-row .sp-btn--wide {
+  flex: 1 1 280px;
+  max-width: none;
+}
+
+@media (max-width: 980px) {
+  .sp-auction-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .sp-auction-layout__side .property-name-input {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .sp-auction-layout__side .sp-currency-input-wrap {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .sp-submit-row .sp-btn--wide {
+    flex-basis: 100%;
+  }
 }
 
 .sp-aside-card {

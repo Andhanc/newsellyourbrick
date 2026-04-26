@@ -1033,8 +1033,8 @@ a.test-history-mini-card:focus-visible {
   display: block;
 }
 
-.test-data-field__input-wrap--saved .test-data-field__input,
-.test-data-field__input-wrap--saved .test-data-field__input--textarea {
+.test-data-field__input-wrap .test-data-field__input,
+.test-data-field__input-wrap .test-data-field__input--textarea {
   padding-right: 38px;
 }
 
@@ -1050,6 +1050,16 @@ a.test-history-mini-card:focus-visible {
   pointer-events: none;
   color: #059669;
   filter: drop-shadow(0 0 1px rgba(255, 255, 255, 0.9));
+  width: 20px;
+  height: 20px;
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.test-data-field__saved--visible {
+  visibility: visible;
+  opacity: 1;
 }
 
 .test-data-field__input-wrap--textarea .test-data-field__saved {
@@ -1102,10 +1112,6 @@ a.test-history-mini-card:focus-visible {
   cursor: pointer;
 }
 
-.test-country-select__trigger--saved .test-country-select__chevron {
-  margin-right: 24px;
-}
-
 .test-country-select__value {
   min-width: 0;
 }
@@ -1116,6 +1122,7 @@ a.test-history-mini-card:focus-visible {
   justify-content: center;
   flex-shrink: 0;
   color: var(--test-teal-dark);
+  margin-right: 24px;
 }
 
 .test-country-select__menu {
@@ -1199,11 +1206,20 @@ a.test-history-mini-card:focus-visible {
 .test-data-field__saving {
   display: block;
   margin-top: 6px;
+  min-height: 14px;
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--test-teal-dark);
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.test-data-field__saving--visible {
+  visibility: visible;
+  opacity: 1;
 }
 
 .test-data-panel__sections {

@@ -5,6 +5,7 @@ import { usePropertyFavorites, PROPERTY_FAVORITES_CHANGED } from '../context/Pro
 import { favoriteCompositeKey } from '../utils/propertyFavoriteKey'
 import { getApiBaseUrl } from '../utils/apiConfig'
 import { getEffectiveAuctionEndTime } from '../utils/auctionReminderBounds'
+import { normalizePropertyMediaFields } from '../utils/propertyImage'
 
 export function useFavoriteAuctionItems() {
   const { favoriteRows } = usePropertyFavorites()
@@ -15,13 +16,22 @@ export function useFavoriteAuctionItems() {
   const loadCatalog = useCallback(async () => {
     try {
       const apiBase = await getApiBaseUrl()
-      const lang = 'ru'
-      const [approvedRes, auctionsRes] = await Promise.all([
+      const lang = (() => {
+        try {
+          if (typeof window === 'undefined') return 'ru'
+          return (window.localStorage?.getItem('i18nextLng') || 'ru').split('-')[0] || 'ru'
+        } catch {
+          return 'ru'
+        }
+      })()
+      const [approvedRes, auctionsRes, debtsRes] = await Promise.all([
         fetch(`${apiBase}/properties/approved?lang=${lang}`),
         fetch(`${apiBase}/properties/auctions?lang=${lang}`),
+        fetch(`${apiBase}/properties/debts`),
       ])
       let approved = []
       let auctions = []
+      let debts = []
       if (approvedRes.ok) {
         const json = await approvedRes.json()
         if (json?.success && Array.isArray(json.data)) approved = json.data
@@ -29,6 +39,10 @@ export function useFavoriteAuctionItems() {
       if (auctionsRes.ok) {
         const json = await auctionsRes.json()
         if (json?.success && Array.isArray(json.data)) auctions = json.data
+      }
+      if (debtsRes.ok) {
+        const json = await debtsRes.json()
+        if (json?.success && Array.isArray(json.data)) debts = json.data
       }
       const normalizeProperty = (prop, options = {}) => {
         const { forceAuction = null } = options
@@ -39,19 +53,14 @@ export function useFavoriteAuctionItems() {
           prop.auction_starting_price != null && prop.auction_starting_price !== ''
             ? Number(prop.auction_starting_price)
             : null
+        const { image: normalizedImage, images: normalizedImages } = normalizePropertyMediaFields(prop)
         return {
           ...prop,
           isAuction,
           title: prop.title || prop.name || '',
           name: prop.name || prop.title || '',
-          image:
-            prop.image ||
-            (Array.isArray(prop.images) && prop.images[0]
-              ? typeof prop.images[0] === 'string'
-                ? prop.images[0]
-                : prop.images[0].url
-              : null),
-          images: Array.isArray(prop.images) ? prop.images : prop.image ? [prop.image] : [],
+          image: normalizedImage,
+          images: normalizedImages,
           price: priceNumber,
           auction_starting_price: auctionStartingPrice,
           currentBid: prop.currentBid || prop.auction_current_bid || prop.auctionCurrentBid || null,
@@ -81,6 +90,7 @@ export function useFavoriteAuctionItems() {
       }
       approved.forEach((p) => add(p, {}))
       auctions.forEach((p) => add(p, { forceAuction: true }))
+      debts.forEach((p) => add(p, { forceAuction: p?.is_auction === 1 || p?.is_auction === true }))
       setCatalogByKey(byKey)
       setCatalogVersion((v) => v + 1)
     } catch (e) {

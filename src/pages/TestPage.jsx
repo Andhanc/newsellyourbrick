@@ -2220,15 +2220,27 @@ function TestPage() {
                                   disabled={profileFieldsLocked}
                                 />
                               )}
-                              {profileFieldSavedOk[key] && savingField !== key ? (
-                                <span className="test-data-field__saved" role="img" aria-label="Сохранено">
-                                  <FiCheck size={18} strokeWidth={2.5} aria-hidden />
-                                </span>
-                              ) : null}
+                              <span
+                                className={`test-data-field__saved${
+                                  profileFieldSavedOk[key] && savingField !== key
+                                    ? ' test-data-field__saved--visible'
+                                    : ''
+                                }`}
+                                role="img"
+                                aria-label="Сохранено"
+                                aria-hidden={!(profileFieldSavedOk[key] && savingField !== key)}
+                              >
+                                <FiCheck size={18} strokeWidth={2.5} aria-hidden />
+                              </span>
                             </div>
-                            {savingField === key ? (
-                              <span className="test-data-field__saving">Сохранение…</span>
-                            ) : null}
+                            <span
+                              className={`test-data-field__saving${
+                                savingField === key ? ' test-data-field__saving--visible' : ''
+                              }`}
+                              aria-hidden={savingField !== key}
+                            >
+                              {t('buyerCabinet_fieldSaving')}
+                            </span>
                           </div>
                         ))}
                       </div>
@@ -2311,15 +2323,27 @@ function TestPage() {
                                 spellCheck={false}
                                 disabled={profileFieldsLocked}
                               />
-                              {profileFieldSavedOk[key] && savingField !== key ? (
-                                <span className="test-data-field__saved" role="img" aria-label="Сохранено">
-                                  <FiCheck size={18} strokeWidth={2.5} aria-hidden />
-                                </span>
-                              ) : null}
+                              <span
+                                className={`test-data-field__saved${
+                                  profileFieldSavedOk[key] && savingField !== key
+                                    ? ' test-data-field__saved--visible'
+                                    : ''
+                                }`}
+                                role="img"
+                                aria-label="Сохранено"
+                                aria-hidden={!(profileFieldSavedOk[key] && savingField !== key)}
+                              >
+                                <FiCheck size={18} strokeWidth={2.5} aria-hidden />
+                              </span>
                             </div>
-                            {savingField === key ? (
-                              <span className="test-data-field__saving">Сохранение…</span>
-                            ) : null}
+                            <span
+                              className={`test-data-field__saving${
+                                savingField === key ? ' test-data-field__saving--visible' : ''
+                              }`}
+                              aria-hidden={savingField !== key}
+                            >
+                              {t('buyerCabinet_fieldSaving')}
+                            </span>
                           </div>
                         ))}
                       </div>

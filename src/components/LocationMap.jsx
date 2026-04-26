@@ -1,5 +1,6 @@
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import maplibregl from 'maplibre-gl'
+import { FiMaximize2, FiMinimize2 } from 'react-icons/fi'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import './LocationMap.css'
 import { SATELLITE_MAP_STYLE, SATELLITE_MAP_MAX_ZOOM } from '../utils/mapStyles'
@@ -10,7 +11,9 @@ const LocationMap = ({
   marker,
   markerDraggable = false,
   onMarkerDragEnd,
+  allowFullscreen = true,
 }) => {
+  const containerRef = useRef(null)
   const mapContainerRef = useRef(null)
   const mapRef = useRef(null)
   const markerRef = useRef(null)
@@ -18,6 +21,7 @@ const LocationMap = ({
   const lastZoomAppliedRef = useRef(null)
   const onMarkerDragEndRef = useRef(onMarkerDragEnd)
   const markerDraggableRef = useRef(markerDraggable)
+  const [isFullscreen, setIsFullscreen] = useState(false)
 
   onMarkerDragEndRef.current = onMarkerDragEnd
   markerDraggableRef.current = markerDraggable
@@ -60,7 +64,74 @@ const LocationMap = ({
       map.remove()
       mapRef.current = null
     }
-  }, [])
+  }, [allowFullscreen])
+
+  useEffect(() => {
+    if (!allowFullscreen || typeof document === 'undefined') return undefined
+
+    const getFullscreenElement = () => (
+      document.fullscreenElement ||
+      document.webkitFullscreenElement ||
+      document.mozFullScreenElement ||
+      document.msFullscreenElement ||
+      null
+    )
+
+    const handleFullscreenChange = () => {
+      const fullscreenElement = getFullscreenElement()
+      setIsFullscreen(fullscreenElement === containerRef.current)
+      if (mapRef.current) {
+        setTimeout(() => {
+          try {
+            mapRef.current?.resize()
+          } catch {
+            // ignore
+          }
+        }, 30)
+      }
+    }
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange)
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange)
+    document.addEventListener('mozfullscreenchange', handleFullscreenChange)
+    document.addEventListener('MSFullscreenChange', handleFullscreenChange)
+
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange)
+      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange)
+      document.removeEventListener('mozfullscreenchange', handleFullscreenChange)
+      document.removeEventListener('MSFullscreenChange', handleFullscreenChange)
+    }
+  }, [allowFullscreen])
+
+  const toggleFullscreen = () => {
+    if (!allowFullscreen || typeof document === 'undefined') return
+    const element = containerRef.current
+    if (!element) return
+
+    const fullscreenElement =
+      document.fullscreenElement ||
+      document.webkitFullscreenElement ||
+      document.mozFullScreenElement ||
+      document.msFullscreenElement
+
+    if (!fullscreenElement) {
+      const requestFullscreen =
+        element.requestFullscreen ||
+        element.webkitRequestFullscreen ||
+        element.mozRequestFullScreen ||
+        element.msRequestFullscreen
+      requestFullscreen?.call(element)
+      return
+    }
+
+    const exitFullscreen =
+      document.exitFullscreen ||
+      document.webkitExitFullscreen ||
+      document.mozCancelFullScreen ||
+      document.msExitFullscreen
+    exitFullscreen?.call(document)
+  }
 
   useEffect(() => {
     if (!mapRef.current) return
@@ -197,7 +268,18 @@ const LocationMap = ({
   }, [marker, markerDraggable])
 
   return (
-    <div className="location-map-container">
+    <div ref={containerRef} className={`location-map-container ${isFullscreen ? 'location-map-container--fullscreen' : ''}`}>
+      {allowFullscreen && (
+        <button
+          type="button"
+          className="location-map-fullscreen-btn"
+          onClick={toggleFullscreen}
+          aria-label={isFullscreen ? 'Свернуть карту' : 'Открыть карту'}
+          title={isFullscreen ? 'Свернуть карту' : 'Открыть карту'}
+        >
+          {isFullscreen ? <FiMinimize2 size={15} /> : <FiMaximize2 size={15} />}
+        </button>
+      )}
       <div ref={mapContainerRef} className="location-map" />
     </div>
   )
