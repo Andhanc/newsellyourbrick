@@ -1,0 +1,42 @@
+{
+  "generatedAt": "2026-04-26T19:15:11.899Z",
+  "target": "http://localhost:3000",
+  "paths": [
+    "/health",
+    "/api/health"
+  ],
+  "sla": {
+    "maxP95Ms": 800,
+    "maxErrorRatePercent": 1
+  },
+  "run": {
+    "warmupSec": 5,
+    "durationSec": 20,
+    "steps": [
+      25,
+      50,
+      100,
+      200,
+      300,
+      400,
+      500
+    ]
+  },
+  "result": {
+    "safePeakConnections": 0,
+    "estimatedPeakUsers": 0,
+    "firstBreakingStep": 25,
+    "note": "Оценка \"пользователей\" приближенная: 1 соединение ~= 1 активный пользователь."
+  },
+  "steps": [
+    {
+      "connections": 25,
+      "totalRequests": 0,
+      "requestsPerSec": 0,
+      "p95": null,
+      "errors": 229583,
+      "errorRatePercent": 100,
+      "slaPassed": false
+    }
+  ]
+}
