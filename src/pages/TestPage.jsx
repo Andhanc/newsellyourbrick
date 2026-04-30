@@ -85,18 +85,17 @@ function readServiceTourAck(userId) {
 }
 
 const PROFILE_MAIN_FIELDS = [
-  { key: 'first_name', label: 'Имя', autoComplete: 'given-name' },
-  { key: 'last_name', label: 'Фамилия', autoComplete: 'family-name' },
-  { key: 'email', label: 'Email', type: 'email', autoComplete: 'email' },
-  { key: 'phone', label: 'Телефон', autoComplete: 'tel' },
-  { key: 'country', label: 'Страна', autoComplete: 'country-name' },
-  { key: 'address', label: 'Адрес проживания', multiline: true, autoComplete: 'street-address' },
+  { key: 'first_name', labelKey: 'buyerData_labelFirstName', autoComplete: 'given-name' },
+  { key: 'last_name', labelKey: 'buyerData_labelLastName', autoComplete: 'family-name' },
+  { key: 'email', labelKey: 'buyerData_labelEmail', type: 'email', autoComplete: 'email' },
+  { key: 'phone', labelKey: 'buyerData_labelPhone', autoComplete: 'tel' },
+  { key: 'country', labelKey: 'buyerData_labelCountry', autoComplete: 'country-name' },
+  { key: 'address', labelKey: 'buyerData_labelAddress', multiline: true, autoComplete: 'street-address' },
 ]
 
 const PROFILE_PASSPORT_FIELDS = [
-  { key: 'passport_series', label: 'Серия паспорта', autoComplete: 'off' },
-  { key: 'passport_number', label: 'Номер паспорта', autoComplete: 'off' },
-  { key: 'identification_number', label: 'Идентификационный номер', autoComplete: 'off' },
+  { key: 'passport_number', labelKey: 'buyerData_labelPassportNumber', autoComplete: 'off' },
+  { key: 'identification_number', labelKey: 'buyerData_labelIdNumberByCountry', autoComplete: 'off' },
 ]
 
 const PROFILE_FIELDS_META = [...PROFILE_MAIN_FIELDS, ...PROFILE_PASSPORT_FIELDS]
@@ -108,9 +107,8 @@ const PROFILE_FIELD_I18N = {
   phone: 'buyerData_labelPhone',
   country: 'buyerData_labelCountry',
   address: 'buyerData_labelAddress',
-  passport_series: 'buyerData_labelPassportSeries',
   passport_number: 'buyerData_labelPassportNumber',
-  identification_number: 'buyerData_labelIdNumber',
+  identification_number: 'buyerData_labelIdNumberByCountry',
 }
 
 function isProfileFieldFilledFromFormOnly(key, profileForm) {
@@ -151,9 +149,6 @@ function isProfileFieldFilled(key, mf, profileForm) {
       break
     case 'address':
       serverOk = !mf.address
-      break
-    case 'passport_series':
-      serverOk = !mf.passportSeries
       break
     case 'passport_number':
       serverOk = !mf.passportNumber
@@ -204,6 +199,75 @@ function normalizeCountryNameForPhoneCode(name) {
     .replace(/[().,'"`]/g, ' ')
     .replace(/\s+/g, ' ')
     .trim()
+}
+
+function normalizeCountryForDocumentRules(value) {
+  return String(value || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[().,'"`]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+function isSpainCountry(value) {
+  const normalized = normalizeCountryForDocumentRules(value)
+  return (
+    normalized === 'es' ||
+    normalized === 'spain' ||
+    normalized === 'espana' ||
+    normalized === 'испания' ||
+    normalized === 'espagne' ||
+    normalized === 'spanien'
+  )
+}
+
+function isValidSpainDniNie(value) {
+  const normalized = String(value || '')
+    .toUpperCase()
+    .replace(/[\s-]/g, '')
+
+  const dniRegex = /^\d{8}[A-Z]$/
+  const nieRegex = /^[XYZ]\d{7}[A-Z]$/
+  return dniRegex.test(normalized) || nieRegex.test(normalized)
+}
+
+function getIdentificationLabelKeyByCountry(countryName) {
+  return isSpainCountry(countryName) ? 'buyerData_labelDniNie' : 'buyerData_labelIdNumber'
+}
+
+function replacePhoneDialCodeByCountry({
+  currentPhone,
+  previousCountry,
+  nextCountry,
+  phoneCodeByCountryName,
+}) {
+  const nextDialCode =
+    phoneCodeByCountryName.get(normalizeCountryNameForPhoneCode(nextCountry || '')) || ''
+  if (!nextDialCode) return String(currentPhone || '')
+
+  let localDigits = phoneDigits(currentPhone)
+  if (!localDigits) return nextDialCode
+
+  const previousDialCode =
+    phoneCodeByCountryName.get(normalizeCountryNameForPhoneCode(previousCountry || '')) || ''
+  const previousDialDigits = phoneDigits(previousDialCode)
+
+  if (previousDialDigits && localDigits.startsWith(previousDialDigits)) {
+    localDigits = localDigits.slice(previousDialDigits.length)
+  } else {
+    const allDialDigits = Array.from(phoneCodeByCountryName.values())
+      .map((dial) => phoneDigits(dial))
+      .filter(Boolean)
+      .sort((a, b) => b.length - a.length)
+    const detectedDial = allDialDigits.find((dial) => localDigits.startsWith(dial))
+    if (detectedDial) localDigits = localDigits.slice(detectedDial.length)
+  }
+
+  const raw = localDigits ? `${nextDialCode} ${localDigits}` : `${nextDialCode}`
+  const iso2 = countryIsoFromStoredName(nextCountry || '')
+  return formatPhoneAsYouType(raw, iso2)
 }
 
 function countryIsoFromStoredName(name) {
@@ -1063,6 +1127,16 @@ function TestPage() {
 
       if (isProfileFieldUnchanged(fieldKey, rawValue, row)) return
       if (fieldKey === 'phone' && phoneDigits(rawValue).length < 8) return
+      if (
+        fieldKey === 'identification_number' &&
+        String(rawValue || '').trim() &&
+        isSpainCountry(profileForm.country) &&
+        !isValidSpainDniNie(rawValue)
+      ) {
+        showNotification(t('buyerData_invalidDniNie'), 'error')
+        setProfileFieldSavedOk((prev) => ({ ...prev, [fieldKey]: false }))
+        return
+      }
 
       const apiKey = profileFieldToApiKey(fieldKey)
       const body = { [apiKey]: toApiPayloadValue(fieldKey, rawValue) }
@@ -1112,7 +1186,7 @@ function TestPage() {
         setSavingField(null)
       }
     },
-    [numericUserId, user, email, loadVerificationStatus],
+    [numericUserId, user, email, loadVerificationStatus, profileForm.country, t],
   )
 
   useEffect(() => {
@@ -1154,15 +1228,17 @@ function TestPage() {
 
   const handleCountrySelect = useCallback(
     (countryName) => {
-      const autoPhoneCode = phoneCodeByCountryName.get(normalizeCountryNameForPhoneCode(countryName)) || ''
       const currentPhone = String(profileForm.phone || '').trim()
-      const shouldAutofillPhone =
-        !!autoPhoneCode && (phoneDigits(currentPhone).length === 0 || /^\+\d{1,4}$/.test(currentPhone))
+      const previousCountry = profileForm.country
+      const nextPhone = replacePhoneDialCodeByCountry({
+        currentPhone,
+        previousCountry,
+        nextCountry: countryName,
+        phoneCodeByCountryName,
+      })
       setProfileForm((prev) => {
         const next = { ...prev, country: countryName }
-        if (shouldAutofillPhone) {
-          next.phone = autoPhoneCode
-        }
+        if (nextPhone !== currentPhone) next.phone = nextPhone
         return next
       })
       setSavePulseDismissed(false)
@@ -1170,13 +1246,14 @@ function TestPage() {
       clearTimeout(saveTimersRef.current.country)
       delete saveTimersRef.current.country
       void persistFieldRef.current('country', countryName)
-      if (shouldAutofillPhone) {
+      if (nextPhone !== currentPhone) {
         setProfileFieldSavedOk((prev) => ({ ...prev, phone: false }))
+        scheduleProfileSave('phone', nextPhone)
       }
       setCountryDropdownOpen(false)
       setCountrySearchQuery('')
     },
-    [phoneCodeByCountryName, profileForm.phone],
+    [phoneCodeByCountryName, profileForm.phone, profileForm.country, scheduleProfileSave],
   )
 
   const handlePassportRecognition = useCallback(
@@ -1312,18 +1389,32 @@ function TestPage() {
     const form = completionFormMerged
     const missing = PROFILE_FIELDS_META.filter((f) => !isProfileFieldFilledFromFormOnly(f.key, form))
     if (missing.length > 0) {
-      const names = missing.map((f) => t(PROFILE_FIELD_I18N[f.key] || f.label)).join(', ')
+      const names = missing
+        .map((f) => {
+          if (f.key === 'identification_number') {
+            return t(getIdentificationLabelKeyByCountry(form.country))
+          }
+          return t(PROFILE_FIELD_I18N[f.key] || f.labelKey)
+        })
+        .join(', ')
       showNotification(`Заполните поля: ${names}`, 'info')
+      return
+    }
+    if (
+      isSpainCountry(form.country) &&
+      !isValidSpainDniNie(form.identification_number)
+    ) {
+      showNotification(t('buyerData_invalidDniNie'), 'error')
       return
     }
     const persistUserId = numericUserId ?? getStoredNumericUserId()
     if (!persistUserId) {
-      showNotification('Не удалось определить профиль', 'error')
+      showNotification(t('buyerData_profileNotResolved'), 'error')
       return
     }
     const row = dbUserRowRef.current
     if (!row) {
-      showNotification('Данные профиля ещё загружаются', 'info')
+      showNotification(t('buyerData_profileDataLoading'), 'info')
       return
     }
     const nextEmail = normalizedEmailValue(form.email)
@@ -1425,7 +1516,10 @@ function TestPage() {
     const mf = normalizeVerificationMissingFields(verificationStatus?.missingFields)
     return PROFILE_FIELDS_META.map((f) => ({
       key: f.key,
-      label: t(PROFILE_FIELD_I18N[f.key] || f.label),
+      label:
+        f.key === 'identification_number'
+          ? t(getIdentificationLabelKeyByCountry(completionForm.country))
+          : t(PROFILE_FIELD_I18N[f.key] || f.label),
       filled: isProfileFieldFilled(f.key, mf, completionForm),
     }))
   }, [verificationStatus, resolvedNumericUserId, completionForm, t])
@@ -2106,28 +2200,28 @@ function TestPage() {
                     {t('buyerCabinet_collapse')}
                   </button>
                   <h3 id="test-data-panel-title" className="test-data-panel__title">
-                    Данные профиля
+                    {t('buyerData_profilePanelTitle')}
                   </h3>
                   <span className="test-data-panel__toolbar-spacer" aria-hidden />
                 </div>
                 <p className="test-data-panel__hint">
-                  Поля сохраняются автоматически: при паузе в наборе или при уходе с поля.
+                  {t('buyerData_profileAutosaveHint')}
                 </p>
                 {dbUserLoading ? (
                   <p className="test-data-panel__loading">{t('buyerCabinet_billingLoading')}</p>
                 ) : !resolvedNumericUserId ? (
                   <p className="test-data-panel__hint">
-                    Не удалось определить профиль. Обновите страницу или войдите снова.
+                    {t('buyerData_profileNotResolved')}
                   </p>
                 ) : (
                   <>
                   <div className="test-data-panel__sections">
                     <section className="test-data-panel__section" aria-labelledby="profile-section-main">
                       <h4 id="profile-section-main" className="test-data-panel__section-title">
-                        Личные данные и контакты
+                        {t('buyerData_sectionContacts')}
                       </h4>
                       <div className="test-data-panel__grid">
-                        {PROFILE_MAIN_FIELDS.map(({ key, label, multiline, type, autoComplete }) => (
+                        {PROFILE_MAIN_FIELDS.map(({ key, labelKey, multiline, type, autoComplete }) => (
                           <div
                             key={key}
                             id={`test-profile-field-wrap-${key}`}
@@ -2136,7 +2230,7 @@ function TestPage() {
                             }`}
                           >
                             <label className="test-data-field__label" htmlFor={`profile-field-${key}`}>
-                              {label}
+                              {t(PROFILE_FIELD_I18N[key] || labelKey)}
                             </label>
                             <div
                               className={`test-data-field__input-wrap${
@@ -2165,7 +2259,7 @@ function TestPage() {
                                     aria-expanded={countryDropdownOpen}
                                   >
                                     <span className="test-country-select__value">
-                                      {profileForm[key] ? profileForm[key] : 'Выберите страну'}
+                                      {profileForm[key] ? profileForm[key] : t('buyerData_placeholderCountry')}
                                     </span>
                                     <span className="test-country-select__chevron" aria-hidden>
                                       <FiChevronDown size={18} />
@@ -2179,7 +2273,7 @@ function TestPage() {
                                       <input
                                         type="text"
                                         className="test-country-select__search"
-                                        placeholder="Поиск страны..."
+                                        placeholder={t('buyerData_countrySearchPlaceholder')}
                                         value={countrySearchQuery}
                                         onChange={(e) => setCountrySearchQuery(e.target.value)}
                                         autoFocus
@@ -2268,11 +2362,10 @@ function TestPage() {
                       <div className="test-data-panel__section-head">
                         <div>
                           <h4 id="profile-section-passport" className="test-data-panel__section-title">
-                            Паспорт и идентификация
+                            {t('buyerData_sectionPassportAndId')}
                           </h4>
                           <p className="test-data-panel__section-sub">
-                            Загрузите фото разворота паспорта — текст распознается на устройстве, затем данные
-                            извлекаются и сохраняются автоматически.
+                            {t('buyerData_passportRecognizeHint')}
                           </p>
                         </div>
                         <button
@@ -2284,12 +2377,12 @@ function TestPage() {
                           {isRecognizingPassport || isSavingExtractPatch ? (
                             <>
                               <span className="test-spinner" aria-hidden />
-                              {isRecognizingPassport ? 'Распознаём…' : 'Сохраняем…'}
+                              {isRecognizingPassport ? t('buyerData_recognizing') : t('buyerData_saveInProgress')}
                             </>
                           ) : (
                             <>
                               <FiUpload size={17} strokeWidth={2} aria-hidden />
-                              Распознать с фото
+                              {t('buyerData_recognizePassport')}
                             </>
                           )}
                         </button>
@@ -2316,7 +2409,7 @@ function TestPage() {
                         </div>
                       )}
                       <div className="test-data-panel__grid">
-                        {PROFILE_PASSPORT_FIELDS.map(({ key, label, type, autoComplete }) => (
+                        {PROFILE_PASSPORT_FIELDS.map(({ key, labelKey, type, autoComplete }) => (
                           <div
                             key={key}
                             id={`test-profile-field-wrap-${key}`}
@@ -2325,7 +2418,9 @@ function TestPage() {
                             }`}
                           >
                             <label className="test-data-field__label" htmlFor={`profile-field-${key}`}>
-                              {label}
+                              {key === 'identification_number'
+                                ? t(getIdentificationLabelKeyByCountry(profileForm.country))
+                                : t(PROFILE_FIELD_I18N[key] || labelKey)}
                             </label>
                             <div
                               className={`test-data-field__input-wrap${
@@ -2385,7 +2480,7 @@ function TestPage() {
                         profileSaveAllLoading
                       }
                     >
-                      {profileSaveAllLoading ? 'Сохранение…' : 'Сохранить'}
+                      {profileSaveAllLoading ? t('buyerData_saveInProgress') : t('buyerData_save')}
                     </button>
                   </div>
                   </>

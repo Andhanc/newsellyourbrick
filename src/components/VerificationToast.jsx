@@ -134,7 +134,7 @@ const VerificationToast = ({ userId }) => {
     address: { labelKey: 'buyerVerify_field_address', icon: <FiMapPin size={16} /> },
     passportSeries: { labelKey: 'buyerData_labelPassportSeries', icon: <FiCreditCard size={16} /> },
     passportNumber: { labelKey: 'buyerData_labelPassportNumber', icon: <FiCreditCard size={16} /> },
-    identificationNumber: { labelKey: 'buyerData_labelIdNumber', icon: <FiCreditCard size={16} /> },
+    identificationNumber: { labelKey: 'buyerData_labelIdNumberByCountry', icon: <FiCreditCard size={16} /> },
   };
 
   const filledFields = [];

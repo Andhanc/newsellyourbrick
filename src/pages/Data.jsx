@@ -283,6 +283,62 @@ const getDialCodeForCountryName = (countryName) => {
 
 const normalizePhoneCode = (phone) => (phone || '').replace(/[^\d]/g, '')
 
+const ALL_DIAL_CODES_NORMALIZED = Array.from(
+  new Set(Object.values(COUNTRY_PHONE_CODES).map((dial) => normalizePhoneCode(dial)).filter(Boolean))
+).sort((a, b) => b.length - a.length)
+
+const replacePhoneDialCodeByCountry = (currentPhone, previousCountry, nextCountry) => {
+  const nextDial = getDialCodeForCountryName(nextCountry)
+  if (!nextDial) return currentPhone
+
+  const nextDialNorm = normalizePhoneCode(nextDial)
+  let localDigits = normalizePhoneCode(currentPhone)
+  if (!localDigits) return `${nextDial} `
+
+  const previousDialNorm = normalizePhoneCode(getDialCodeForCountryName(previousCountry))
+  if (previousDialNorm && localDigits.startsWith(previousDialNorm)) {
+    localDigits = localDigits.slice(previousDialNorm.length)
+  } else {
+    const anyDetectedDial = ALL_DIAL_CODES_NORMALIZED.find((code) => localDigits.startsWith(code))
+    if (anyDetectedDial) {
+      localDigits = localDigits.slice(anyDetectedDial.length)
+    }
+  }
+
+  return localDigits ? `${nextDial} ${localDigits}` : `${nextDial} `
+}
+
+const normalizeCountryForDocumentRules = (value) =>
+  String(value || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[().,'"`]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+
+const isSpainCountry = (value) => {
+  const normalized = normalizeCountryForDocumentRules(value)
+  return (
+    normalized === 'es' ||
+    normalized === 'spain' ||
+    normalized === 'espana' ||
+    normalized === 'испания' ||
+    normalized === 'espagne' ||
+    normalized === 'spanien'
+  )
+}
+
+const isValidSpainDniNie = (value) => {
+  const normalized = String(value || '')
+    .toUpperCase()
+    .replace(/[\s-]/g, '')
+
+  const dniRegex = /^\d{8}[A-Z]$/
+  const nieRegex = /^[XYZ]\d{7}[A-Z]$/
+  return dniRegex.test(normalized) || nieRegex.test(normalized)
+}
+
 const Data = () => {
   const { t } = useTranslation()
   const navigate = useNavigate()
@@ -651,8 +707,7 @@ const Data = () => {
   const isPassportDataComplete = () => {
     if (!verificationStatus?.missingFields) return false
     const { missingFields } = verificationStatus
-    return !missingFields.passportSeries && 
-           !missingFields.passportNumber && 
+    return !missingFields.passportNumber && 
            !missingFields.identificationNumber
   }
 
@@ -674,17 +729,19 @@ const Data = () => {
   const incompleteDataLabels = useMemo(() => {
     if (!verificationStatus?.missingFields) return null
     const mf = verificationStatus.missingFields
+    const idLabelKey = isSpainCountry(userData.country)
+      ? 'buyerData_labelDniNie'
+      : 'buyerData_labelIdNumber'
     const labels = []
     if (mf.firstName) labels.push(t('buyerData_labelFirstName'))
     if (mf.lastName) labels.push(t('buyerData_labelLastName'))
     if (mf.emailOrPhone) labels.push(t('buyerData_incompleteBannerContact'))
     if (mf.country) labels.push(t('buyerData_labelCountry'))
     if (mf.address) labels.push(t('buyerData_labelAddress'))
-    if (mf.passportSeries) labels.push(t('buyerData_labelPassportSeries'))
     if (mf.passportNumber) labels.push(t('buyerData_labelPassportNumber'))
-    if (mf.identificationNumber) labels.push(t('buyerData_labelIdNumber'))
+    if (mf.identificationNumber) labels.push(t(idLabelKey))
     return labels
-  }, [verificationStatus, t])
+  }, [verificationStatus, t, userData.country])
 
   // Проверяем, нужно ли показывать индикатор для "Профиль"
   const shouldShowProfileIndicator = () => {
@@ -897,6 +954,16 @@ const Data = () => {
 
       // Форматируем номер телефона (убираем все кроме цифр)
       const phoneDigits = userData.phone ? userData.phone.replace(/\D/g, '') || null : null
+
+      const identificationValue = (userData.identificationNumber || '').trim()
+      if (
+        isSpainCountry(userData.country) &&
+        identificationValue &&
+        !isValidSpainDniNie(identificationValue)
+      ) {
+        showNotification(t('buyerData_invalidDniNie'))
+        return
+      }
 
       // Подготавливаем данные для отправки на backend
       const updateData = {
@@ -1382,6 +1449,10 @@ const Data = () => {
     // Закрываем модальное окно (оно закроется автоматически через onConfirm)
   }
 
+  const identificationLabelKey = isSpainCountry(userData.country)
+    ? 'buyerData_labelDniNie'
+    : 'buyerData_labelIdNumber'
+
   return (
     <div className="data-page" ref={buyerCabinetPageRef}>
       <div className="data-container buyer-cabinet-layout-container">
@@ -1543,21 +1614,10 @@ const Data = () => {
                       value={userData.country}
                       onChange={(value) => {
                         const previousCountry = userData.country
-                        const previousDial = getDialCodeForCountryName(previousCountry)
                         const currentPhone = userData.phone || ''
-                        const currentNorm = normalizePhoneCode(currentPhone)
-                        const previousDialNorm = normalizePhoneCode(previousDial)
-
                         handleChange('country', value)
-
-                        const newDial = getDialCodeForCountryName(value)
-                        // Если телефон пустой или содержит только старый автоподставленный код — заменяем на код новой страны
-                        if (
-                          (!currentPhone.trim() || (previousDialNorm && currentNorm && currentNorm === previousDialNorm)) &&
-                          newDial
-                        ) {
-                          handleChange('phone', `${newDial} `)
-                        }
+                        const nextPhone = replacePhoneDialCodeByCountry(currentPhone, previousCountry, value)
+                        if (nextPhone !== currentPhone) handleChange('phone', nextPhone)
                       }}
                       placeholder={t('buyerData_placeholderCountry')}
                       className="data-input"
@@ -1684,21 +1744,6 @@ const Data = () => {
                 </div>
               )}
               <div className="data-grid">
-                <div id="data-field-passportSeries" className="data-field">
-                  <label>{t('buyerData_labelPassportSeries')}</label>
-                  {isEditing ? (
-                    <input
-                      type="text"
-                      value={userData.passportSeries}
-                      onChange={(e) => handleChange('passportSeries', e.target.value)}
-                      className="data-input"
-                      maxLength="2"
-                    />
-                  ) : (
-                    <div className="data-value">{userData.passportSeries}</div>
-                  )}
-                </div>
-
                 <div id="data-field-passportNumber" className="data-field">
                   <label>{t('buyerData_labelPassportNumber')}</label>
                   {isEditing ? (
@@ -1714,7 +1759,7 @@ const Data = () => {
                 </div>
 
                 <div id="data-field-identificationNumber" className="data-field data-field-full">
-                  <label>{t('buyerData_labelIdNumber')}</label>
+                  <label>{t(identificationLabelKey)}</label>
                   {isEditing ? (
                     <input
                       type="text"

@@ -16,7 +16,7 @@ import crypto from 'crypto';
 import qrcode from 'qrcode-terminal';
 import whatsappPkg from 'whatsapp-web.js';
 import { calculatePropertyPrice } from './services/propertyParser.js';
-import { SPAIN_CITIES, DISTRICTS_BY_CITY } from './data/propertyCalculatorLocations.js';
+import { SPAIN_CITIES, DISTRICTS_BY_CITY, getDistrictOptions } from './data/propertyCalculatorLocations.js';
 import { parseBulkImportFile, rowToPropertyData } from './services/bulkImportProperties.js';
 import { Address, beginCell, Cell } from '@ton/core';
 import { getMarketData, getMortgageRates, getRentalYieldByRegion } from './services/investmentDataService.js';
@@ -783,7 +783,9 @@ const propertyTimers = new Map();
 const notifiedProperties = new Set();
 // ========== КОНЕЦ СИСТЕМЫ ОТСЛЕЖИВАНИЯ ==========
 
-const waClient = new Client({
+const waRemoteVersionPath = String(process.env.WA_WEB_VERSION_REMOTE_PATH || '').trim();
+
+const waClientOptions = {
   authStrategy: new LocalAuth({
     dataPath: join(__dirname, '.wwebjs_auth')
   }),
@@ -810,14 +812,22 @@ const waClient = new Client({
     // Игнорируем ошибки HTTPS (если есть проблемы с сертификатами)
     ignoreHTTPSErrors: true
   },
-  // Фиксация версии веб-клиента WhatsApp, чтобы избежать ошибок
-  // вида "Cannot read properties of undefined (reading 'markedUnread')"
-  // из-за изменения внутреннего кода WhatsApp Web.
-  webVersionCache: {
-    type: 'remote',
-    remotePath: 'https://raw.githubusercontent.com/wppconnect-team/wa-version/main/html/2.2412.54.html'
-  }
-});
+  // По умолчанию не привязываем сервер к GitHub remote cache,
+  // чтобы при проблемах DNS (ENOTFOUND raw.githubusercontent.com)
+  // WhatsApp-клиент не шумел ошибками на старте.
+  // При необходимости можно явно включить remote cache через env:
+  // WA_WEB_VERSION_REMOTE_PATH=https://...
+  ...(waRemoteVersionPath
+    ? {
+      webVersionCache: {
+        type: 'remote',
+        remotePath: waRemoteVersionPath
+      }
+    }
+    : {})
+};
+
+const waClient = new Client(waClientOptions);
 
 waClient.on('qr', (qr) => {
   // Сохраняем QR-код для отображения в футере
@@ -1458,14 +1468,13 @@ app.get('/api/users/:id/verification-status', async (req, res) => {
     const readiness = checkUserReadinessForModeration(userForCheck);
     
     // Подсчитываем прогресс заполнения
-    const totalFields = 8; // Всего полей
+    const totalFields = 7; // Всего полей
     let filledFields = 0;
     if (readiness.missingFields.firstName === false) filledFields++;
     if (readiness.missingFields.lastName === false) filledFields++;
     if (readiness.missingFields.emailOrPhone === false) filledFields++;
     if (readiness.missingFields.country === false) filledFields++;
     if (readiness.missingFields.address === false) filledFields++;
-    if (readiness.missingFields.passportSeries === false) filledFields++;
     if (readiness.missingFields.passportNumber === false) filledFields++;
     if (readiness.missingFields.identificationNumber === false) filledFields++;
     
@@ -2247,6 +2256,39 @@ function computeOwnerCabinetProfileStatus(user) {
   return { ownerCabinetProfileComplete, ownerCabinetHasPassword };
 }
 
+function normalizeCountryForDocumentRules(value) {
+  return String(value || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[().,'"`]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function isSpainCountry(value) {
+  const normalized = normalizeCountryForDocumentRules(value);
+  return (
+    normalized === 'es' ||
+    normalized === 'spain' ||
+    normalized === 'espana' ||
+    normalized === 'испания' ||
+    normalized === 'espagne' ||
+    normalized === 'spanien'
+  );
+}
+
+function isValidIdentificationNumberForCountry(value, country) {
+  const raw = String(value || '').trim();
+  if (!raw) return false;
+  if (!isSpainCountry(country)) return true;
+
+  const normalized = raw.toUpperCase().replace(/[\s-]/g, '');
+  const dniRegex = /^\d{8}[A-Z]$/;
+  const nieRegex = /^[XYZ]\d{7}[A-Z]$/;
+  return dniRegex.test(normalized) || nieRegex.test(normalized);
+}
+
 /**
  * Проверяет готовность пользователя к модерации
  * Пользователь готов, если:
@@ -2287,16 +2329,19 @@ function checkUserReadinessForModeration(user) {
     // Для покупателей требуем все поля
     const hasCountry = user.country && user.country.trim() !== '';
     const hasAddress = user.address && user.address.trim() !== '';
-    const hasPassportSeries = user.passport_series && user.passport_series.trim() !== '';
     const hasPassportNumber = user.passport_number && user.passport_number.trim() !== '';
-    const hasIdentificationNumber = user.identification_number && user.identification_number.trim() !== '';
+    const hasIdentificationNumber = isValidIdentificationNumberForCountry(
+      user.identification_number,
+      user.country
+    );
     
     allFieldsFilled = basicFieldsFilled && hasCountry && hasAddress && 
-                     hasPassportSeries && hasPassportNumber && hasIdentificationNumber;
+                     hasPassportNumber && hasIdentificationNumber;
     
     missingFields.country = !hasCountry;
     missingFields.address = !hasAddress;
-    missingFields.passportSeries = !hasPassportSeries;
+    // Серия паспорта больше не обязательна в профиле покупателя.
+    missingFields.passportSeries = false;
     missingFields.passportNumber = !hasPassportNumber;
     missingFields.identificationNumber = !hasIdentificationNumber;
   } else if (userRole === 'seller' || userRole === 'owner') {
@@ -12915,6 +12960,138 @@ app.get('/api/properties/calculator-options', async (req, res) => {
     data: {
       cities: SPAIN_CITIES,
       districtsByCity: DISTRICTS_BY_CITY
+    }
+  });
+});
+
+function normalizeDistrictText(value = '') {
+  return String(value || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/['’]/g, '')
+    .replace(/[^a-z0-9\s-]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function resolveCalculatorCity(rawCity = '') {
+  const cityNorm = normalizeDistrictText(rawCity);
+  if (!cityNorm) return null;
+  return (
+    SPAIN_CITIES.find((c) => normalizeDistrictText(c.value) === cityNorm) ||
+    SPAIN_CITIES.find((c) => normalizeDistrictText(c.label) === cityNorm) ||
+    SPAIN_CITIES.find((c) => normalizeDistrictText(c.value).includes(cityNorm)) ||
+    SPAIN_CITIES.find((c) => normalizeDistrictText(c.label).includes(cityNorm)) ||
+    null
+  );
+}
+
+function detectDistrictByAddress({ cityValue, addressText, nominatimAddress = {} }) {
+  const districtOptions = getDistrictOptions(cityValue);
+  if (!Array.isArray(districtOptions) || districtOptions.length <= 1) {
+    return districtOptions?.[0] || { value: 'all', label: 'Весь город' };
+  }
+
+  const candidates = [
+    nominatimAddress.suburb,
+    nominatimAddress.city_district,
+    nominatimAddress.district,
+    nominatimAddress.neighbourhood,
+    nominatimAddress.quarter,
+    nominatimAddress.borough,
+    nominatimAddress.residential,
+    nominatimAddress.county,
+    addressText
+  ]
+    .filter(Boolean)
+    .map((item) => normalizeDistrictText(item))
+    .filter(Boolean);
+
+  const haystack = candidates.join(' ');
+  if (!haystack) return districtOptions[0];
+
+  let best = districtOptions[0];
+  let bestScore = -1;
+
+  for (const option of districtOptions) {
+    if (option.value === 'all') continue;
+    const keywords = Array.isArray(option.keywords) ? option.keywords : [];
+    if (!keywords.length) continue;
+    const score = keywords.reduce((acc, kw) => {
+      const normalizedKw = normalizeDistrictText(kw);
+      if (!normalizedKw) return acc;
+      return haystack.includes(normalizedKw) ? acc + normalizedKw.length : acc;
+    }, 0);
+    if (score > bestScore) {
+      bestScore = score;
+      best = option;
+    }
+  }
+
+  return bestScore > 0 ? best : districtOptions[0];
+}
+
+/**
+ * POST /api/properties/detect-district
+ * Определяет район по адресу объекта через Nominatim + локальный словарь районов.
+ */
+app.post('/api/properties/detect-district', async (req, res) => {
+  const { address, city, country } = req.body || {};
+
+  if (!address || !city) {
+    return res.status(400).json({
+      success: false,
+      error: 'Необходимо передать address и city'
+    });
+  }
+
+  const cityCfg = resolveCalculatorCity(city);
+  if (!cityCfg) {
+    return res.json({
+      success: true,
+      data: {
+        city: String(city || ''),
+        district: 'all',
+        districtLabel: 'Весь город',
+        source: 'fallback_city_not_found',
+        nominatimAddress: null
+      }
+    });
+  }
+
+  const query = `${String(address || '').trim()}, ${cityCfg.label || cityCfg.value}, ${String(country || 'Spain').trim()}`;
+  let nominatimAddress = null;
+
+  try {
+    const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&limit=1&accept-language=es&q=${encodeURIComponent(query)}`;
+    const response = await axios.get(url, {
+      timeout: 9000,
+      headers: {
+        Accept: 'application/json',
+        'User-Agent': 'newsellyourbrick/1.0 district-detector'
+      }
+    });
+    const hit = Array.isArray(response.data) ? response.data[0] : null;
+    nominatimAddress = hit?.address || null;
+  } catch (err) {
+    console.warn('⚠️ detect-district Nominatim error:', err.message);
+  }
+
+  const districtRecord = detectDistrictByAddress({
+    cityValue: cityCfg.value,
+    addressText: address,
+    nominatimAddress
+  });
+
+  return res.json({
+    success: true,
+    data: {
+      city: cityCfg.value,
+      district: districtRecord?.value || 'all',
+      districtLabel: districtRecord?.label || 'Весь город',
+      source: nominatimAddress ? 'nominatim+keywords' : 'keywords_only',
+      nominatimAddress
     }
   });
 });

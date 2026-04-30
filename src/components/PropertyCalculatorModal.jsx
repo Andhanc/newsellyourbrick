@@ -57,7 +57,8 @@ function mapListingToCalculatorData(source = {}) {
     rooms,
     city: mappedCity,
     district: 'all',
-    propertyType
+    propertyType,
+    street: source.address || source.location || ''
   }
 }
 
@@ -73,13 +74,17 @@ const PropertyCalculatorModal = ({
     rooms: 'studio',
     city: 'barcelona',
     district: 'all',
-    propertyType: 'apartment'
+    propertyType: 'apartment',
+    street: ''
   })
 
   const [calcOptions, setCalcOptions] = useState({ cities: [], districtsByCity: {} })
   const [isLoading, setIsLoading] = useState(false)
   const [results, setResults] = useState(null)
   const [error, setError] = useState(null)
+  const [isDetectingDistrict, setIsDetectingDistrict] = useState(false)
+  const [districtHint, setDistrictHint] = useState('')
+  const [districtTouched, setDistrictTouched] = useState(false)
   const fieldsAreLocked = lockFields && !!initialPropertyData
   const initialMappedData = useMemo(
     () => mapListingToCalculatorData(initialPropertyData || {}),
@@ -88,11 +93,19 @@ const PropertyCalculatorModal = ({
 
   useEffect(() => {
     if (!isOpen || !initialPropertyData) return
+    // Важно: инициализируем форму только в момент открытия модалки.
+    // Иначе при каждом ререндере родителя district сбрасывается в "all".
     setFormData((prev) => ({
       ...prev,
       ...initialMappedData
     }))
-  }, [isOpen, initialMappedData, initialPropertyData])
+  }, [isOpen])
+
+  useEffect(() => {
+    if (!isOpen) return
+    setDistrictTouched(false)
+    setDistrictHint('')
+  }, [isOpen])
 
   useEffect(() => {
     if (!isOpen) return
@@ -160,6 +173,44 @@ const PropertyCalculatorModal = ({
 
   const skipRooms = formData.propertyType === 'land' || formData.propertyType === 'commercial'
 
+  useEffect(() => {
+    if (!isOpen || !formData.city || !formData.street) return
+    let cancelled = false
+
+    const detectDistrict = async () => {
+      setIsDetectingDistrict(true)
+      try {
+        const response = await axios.post('/api/properties/detect-district', {
+          address: formData.street,
+          city: formData.city,
+          country: initialPropertyData?.country || null
+        })
+
+        if (cancelled) return
+        if (!response.data?.success) return
+        const detectedDistrict = response.data?.data?.district || 'all'
+        const detectedLabel = response.data?.data?.districtLabel || 'Весь город'
+
+        setDistrictHint(`Определен район: ${detectedLabel}`)
+        setFormData((prev) => {
+          if (!fieldsAreLocked && districtTouched) return prev
+          if (!detectedDistrict) return prev
+          if (prev.district === detectedDistrict) return prev
+          return { ...prev, district: detectedDistrict }
+        })
+      } catch (_) {
+        if (!cancelled) setDistrictHint('')
+      } finally {
+        if (!cancelled) setIsDetectingDistrict(false)
+      }
+    }
+
+    detectDistrict()
+    return () => {
+      cancelled = true
+    }
+  }, [isOpen, formData.city, formData.street, initialPropertyData?.country, fieldsAreLocked, districtTouched])
+
   if (!isOpen) return null
 
   const handleInputChange = (e) => {
@@ -168,6 +219,10 @@ const PropertyCalculatorModal = ({
     setFormData((prev) => {
       if (name === 'city') {
         return { ...prev, city: value, district: 'all' }
+      }
+      if (name === 'district') {
+        setDistrictTouched(true)
+        return { ...prev, district: value }
       }
       return { ...prev, [name]: value }
     })
@@ -197,17 +252,23 @@ const PropertyCalculatorModal = ({
         : parseInt(formData.rooms, 10)
 
     try {
-      const response = await axios.post('/api/properties/calculate-price', {
-        area: parseInt(formData.area, 10),
-        rooms: roomsPayload,
-        city: formData.city,
-        country: initialPropertyData?.country || null,
-        street: initialPropertyData?.address || initialPropertyData?.location || null,
-        district: formData.district || 'all',
-        propertyType: formData.propertyType,
-        maxPrice: null,
-        minPrice: null
-      })
+      const response = await axios.post(
+        '/api/properties/calculate-price',
+        {
+          area: parseInt(formData.area, 10),
+          rooms: roomsPayload,
+          city: formData.city,
+          country: initialPropertyData?.country || null,
+          street: formData.street || initialPropertyData?.address || initialPropertyData?.location || null,
+          district: formData.district || 'all',
+          propertyType: formData.propertyType,
+          maxPrice: null,
+          minPrice: null
+        },
+        {
+          timeout: 120000
+        }
+      )
 
       if (response.data.success) {
         const data = response.data.data
@@ -234,7 +295,13 @@ const PropertyCalculatorModal = ({
       }
     } catch (err) {
       console.error('Ошибка при парсинге:', err)
-      setError(err.response?.data?.error || 'Ошибка при подключении к серверу. Попробуйте позже.')
+      const isTimeout = err?.code === 'ECONNABORTED' || /timeout/i.test(String(err?.message || ''))
+      setError(
+        err.response?.data?.error ||
+        (isTimeout
+          ? 'Расчет занял слишком много времени. Попробуйте еще раз или уточните параметры.'
+          : 'Ошибка при подключении к серверу. Попробуйте позже.')
+      )
     } finally {
       setIsLoading(false)
     }
@@ -257,7 +324,8 @@ const PropertyCalculatorModal = ({
       rooms: 'studio',
       city: 'barcelona',
       district: 'all',
-      propertyType: 'apartment'
+        propertyType: 'apartment',
+        street: ''
     })
     setResults(null)
     setError(null)
@@ -277,6 +345,14 @@ const PropertyCalculatorModal = ({
       minimumFractionDigits: 0,
       maximumFractionDigits: 0
     }).format(price)
+  }
+
+  const sanitizeAddress = (value = '') => {
+    const text = String(value || '').replace(/\s+/g, ' ').trim()
+    if (!text) return ''
+    if (/cerca de mi ubicaci[oó]n actual/i.test(text)) return ''
+    if (/near my current location/i.test(text)) return ''
+    return text
   }
 
   return (
@@ -423,6 +499,22 @@ const PropertyCalculatorModal = ({
                     <div className="property-calculator-form__field property-calculator-form__field--full">
                       <label className="property-calculator-form__label">
                         <FiMapPin size={18} />
+                        Адрес объекта
+                      </label>
+                      <input
+                        type="text"
+                        name="street"
+                        value={formData.street || ''}
+                        onChange={handleInputChange}
+                        placeholder="Улица, дом"
+                        className="property-calculator-form__input"
+                        readOnly={fieldsAreLocked}
+                      />
+                    </div>
+
+                    <div className="property-calculator-form__field property-calculator-form__field--full">
+                      <label className="property-calculator-form__label">
+                        <FiMapPin size={18} />
                         Район (опционально)
                       </label>
                       <select
@@ -437,6 +529,11 @@ const PropertyCalculatorModal = ({
                           </option>
                         ))}
                       </select>
+                      {(isDetectingDistrict || districtHint) && (
+                        <div className="property-calculator-result__note" style={{ marginTop: '6px' }}>
+                          {isDetectingDistrict ? 'Определяем район по адресу...' : districtHint}
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -494,20 +591,23 @@ const PropertyCalculatorModal = ({
                   <div className="property-calculator-result__similar-list">
                     {results.similarProperties.slice(0, 10).map((property, index) => (
                       <div key={index} className="property-calculator-result__similar-item">
-                        {property.image && (
-                          <div className="property-calculator-result__similar-image">
+                        <div className="property-calculator-result__similar-image">
+                          {property.image ? (
                             <img
                               src={property.image}
                               alt=""
                               loading="lazy"
                               referrerPolicy="no-referrer"
                               onError={(e) => {
-                                const imageWrap = e.currentTarget.closest('.property-calculator-result__similar-image')
-                                if (imageWrap) imageWrap.remove()
+                                e.currentTarget.style.display = 'none'
                               }}
                             />
-                          </div>
-                        )}
+                          ) : (
+                            <div className="property-calculator-result__similar-image-placeholder">
+                              <FiHome size={24} />
+                            </div>
+                          )}
+                        </div>
                         <div className="property-calculator-result__similar-content">
                           <div className="property-calculator-result__similar-price">
                             {formatPrice(property.price)}
@@ -519,9 +619,9 @@ const PropertyCalculatorModal = ({
                             {property.area && <span>{property.area} м²</span>}
                             {property.rooms != null && <span>{property.rooms} комн.</span>}
                           </div>
-                          {property.address && (
+                          {sanitizeAddress(property.address) && (
                             <div className="property-calculator-result__similar-address">
-                              {property.address}
+                              {sanitizeAddress(property.address)}
                             </div>
                           )}
                         </div>

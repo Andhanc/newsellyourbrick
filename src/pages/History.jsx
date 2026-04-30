@@ -295,8 +295,7 @@ const History = () => {
   const isPassportDataComplete = () => {
     if (!verificationStatus?.missingFields) return false
     const { missingFields } = verificationStatus
-    return !missingFields.passportSeries && 
-           !missingFields.passportNumber && 
+    return !missingFields.passportNumber && 
            !missingFields.identificationNumber
   }
 

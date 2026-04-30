@@ -43,7 +43,7 @@ const VerificationProgress = ({ userId, onStartVerification }) => {
     address: 'Адрес',
     passportSeries: 'Серия паспорта',
     passportNumber: 'Номер паспорта',
-    identificationNumber: 'Идентификационный номер'
+    identificationNumber: 'DNI/NIE (для Испании) или идентификационный номер'
   };
 
   const missingFieldsList = Object.entries(status.missingFields)

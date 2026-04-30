@@ -188,9 +188,9 @@ export default defineConfig(({ mode }) => {
           secure: false,
           // Используем IPv4 для избежания проблем с IPv6 на Railway
           family: 4, // Принудительно используем IPv4
-          // Таймауты для избежания зависаний
-          timeout: 30000, // 30 секунд
-          proxyTimeout: 30000,
+          // Калькулятор цены может работать дольше 30с (парсинг нескольких источников).
+          timeout: 120000, // 120 секунд
+          proxyTimeout: 120000,
           // Улучшенная обработка ошибок
           configure: (proxy, _options) => {
             proxy.on('proxyReq', (proxyReq, req, res) => {

@@ -381,8 +381,7 @@ const Profile = () => {
   const isPassportDataComplete = () => {
     if (!verificationStatus?.missingFields) return false
     const { missingFields } = verificationStatus
-    return !missingFields.passportSeries && 
-           !missingFields.passportNumber && 
+    return !missingFields.passportNumber && 
            !missingFields.identificationNumber
   }
 
@@ -406,7 +405,7 @@ const Profile = () => {
                                 missingFields.address)
     
     // Проверяем паспортные данные
-    const hasPassportMissing = !!(missingFields.passportSeries || missingFields.passportNumber || 
+    const hasPassportMissing = !!(missingFields.passportNumber || 
                                    missingFields.identificationNumber)
     
     // Показываем точку если есть хотя бы одно незаполненное поле
