@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FiSend, FiPhone, FiMessageSquare, FiColumns } from 'react-icons/fi';
+import { FiSend, FiPhone, FiMessageSquare, FiColumns, FiMenu } from 'react-icons/fi';
 import PhoneInput from '../PhoneInput';
 import { getApiBaseUrl } from '../../utils/apiConfig';
 import CrmBoard from './CrmBoard';
@@ -187,18 +187,32 @@ const ClientsWhatsApp = () => {
   );
 };
 
-const Clients = () => {
+const Clients = ({ onOpenAdminNav }) => {
   const [tab, setTab] = useState('crm');
 
   return (
     <div className="clients-container">
       <div className="clients-header">
-        <h2 className="clients-title">
-          <FiColumns className="clients-title-icon" />
-          Клиенты: CRM и мессенджеры
-        </h2>
+        <div className="clients-header-row">
+          <h2 className="clients-title">
+            <FiColumns className="clients-title-icon" />
+            Клиенты: CRM и мессенджеры
+          </h2>
+          {typeof onOpenAdminNav === 'function' && (
+            <button
+              type="button"
+              className="clients-admin-nav-btn"
+              onClick={onOpenAdminNav}
+              aria-label="Открыть меню разделов админки"
+            >
+              <FiMenu aria-hidden />
+              <span>Меню разделов</span>
+            </button>
+          )}
+        </div>
         <p className="clients-subtitle">
-          Воронка продаж, касания и письма; отдельно — WhatsApp для быстрых сообщений
+          Все зарегистрированные пользователи подтягиваются в воронку автоматически (по одной карточке на
+          аккаунт). Воронка, касания и письма; отдельно — WhatsApp.
         </p>
       </div>
 

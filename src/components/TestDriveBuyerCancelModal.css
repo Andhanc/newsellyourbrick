@@ -1,0 +1,165 @@
+.tdbuyer-cancel-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 12040;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px 16px;
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(4px);
+}
+
+.tdbuyer-cancel-dialog {
+  width: min(440px, 100%);
+  max-height: min(88vh, 640px);
+  overflow: auto;
+  border-radius: 16px;
+  padding: 20px 20px 18px;
+  background: #fff;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.18);
+}
+
+.tdbuyer-cancel-dialog__title {
+  margin: 0 0 12px;
+  font-size: 1.15rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #0f172a;
+}
+
+.tdbuyer-cancel-dialog__warn {
+  margin: 0 0 14px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  font-size: 13px;
+  line-height: 1.45;
+  color: #7c2d12;
+  background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
+  border: 1px solid rgba(251, 146, 60, 0.45);
+}
+
+.tdbuyer-cancel-dialog__warn strong {
+  display: block;
+  margin-bottom: 4px;
+  font-weight: 800;
+}
+
+.tdbuyer-cancel-dialog__note {
+  margin: 0 0 14px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: 13px;
+  line-height: 1.45;
+  color: #475569;
+  background: rgba(248, 250, 252, 0.95);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.tdbuyer-cancel-dialog__label {
+  margin: 0 0 8px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #334155;
+}
+
+.tdbuyer-cancel-dialog__options {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.tdbuyer-cancel-dialog__option {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 9px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  cursor: pointer;
+  font-size: 13px;
+  line-height: 1.35;
+  color: #0f172a;
+  background: #fff;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.tdbuyer-cancel-dialog__option:has(input:focus-visible) {
+  outline: 2px solid #0d9488;
+  outline-offset: 1px;
+}
+
+.tdbuyer-cancel-dialog__option:has(input:checked) {
+  border-color: rgba(13, 148, 136, 0.55);
+  background: rgba(240, 253, 250, 0.65);
+}
+
+.tdbuyer-cancel-dialog__option input {
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.tdbuyer-cancel-dialog__textarea {
+  width: 100%;
+  min-height: 88px;
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  font-size: 14px;
+  font-family: inherit;
+  resize: vertical;
+  box-sizing: border-box;
+}
+
+.tdbuyer-cancel-dialog__textarea:focus {
+  outline: none;
+  border-color: rgba(13, 148, 136, 0.55);
+  box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.12);
+}
+
+.tdbuyer-cancel-dialog__err {
+  margin: 0 0 10px;
+  font-size: 13px;
+  color: #b91c1c;
+}
+
+.tdbuyer-cancel-dialog__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 4px;
+}
+
+.tdbuyer-cancel-dialog__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  background: #fff;
+  color: #334155;
+}
+
+.tdbuyer-cancel-dialog__btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.tdbuyer-cancel-dialog__btn--danger {
+  border-color: rgba(185, 28, 28, 0.35);
+  background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+  color: #991b1b;
+}
+
+.tdbuyer-cancel-dialog__btn--danger:hover:not(:disabled) {
+  border-color: rgba(185, 28, 28, 0.55);
+}

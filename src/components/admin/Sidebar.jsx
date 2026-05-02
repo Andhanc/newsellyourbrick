@@ -1,8 +1,16 @@
 import React from 'react';
-import { FaChartBar, FaUsers, FaShieldAlt, FaComment, FaBuilding, FaSignOutAlt, FaKey, FaWhatsapp, FaAddressBook, FaShoppingCart, FaFlask, FaTimes, FaGift, FaRobot, FaFileInvoiceDollar, FaFileAlt, FaWarehouse, FaPlusSquare } from 'react-icons/fa';
+import { FaChartBar, FaUsers, FaShieldAlt, FaComment, FaBuilding, FaSignOutAlt, FaKey, FaWhatsapp, FaAddressBook, FaShoppingCart, FaFlask, FaTimes, FaGift, FaRobot, FaFileInvoiceDollar, FaFileAlt, FaWarehouse, FaPlusSquare, FaCar } from 'react-icons/fa';
 import './Sidebar.css';
 
-const Sidebar = ({ activeSection, onSectionChange, onLogout, adminPermissions }) => {
+const Sidebar = ({
+  activeSection,
+  onSectionChange,
+  onLogout,
+  adminPermissions,
+  crmLayout = false,
+  crmMenuOpen = false,
+  onCrmMenuClose,
+}) => {
   // Получаем права доступа из localStorage или пропсов
   const permissions = adminPermissions || JSON.parse(localStorage.getItem('adminPermissions') || '{}');
   const isSuperAdmin = permissions.is_super_admin || false;
@@ -15,6 +23,7 @@ const Sidebar = ({ activeSection, onSectionChange, onLogout, adminPermissions })
     { id: 'smart_assistant', icon: FaRobot, label: 'Умный помощник', permission: 'can_access_chat' },
     { id: 'addition', icon: FaPlusSquare, label: 'Добавление', permission: 'can_access_objects' },
     { id: 'objects', icon: FaBuilding, label: 'Объекты', permission: 'can_access_objects' },
+    { id: 'test_drive', icon: FaCar, label: 'Тест-драйв', permission: 'can_access_objects' },
     { id: 'debt_reasons', icon: FaFileInvoiceDollar, label: 'Причина долга', permission: 'can_access_objects' },
     { id: 'debt_documents', icon: FaFileAlt, label: 'Необходимые документы', permission: 'can_access_objects' },
     { id: 'whatsapp', icon: FaWhatsapp, label: 'WhatsApp', permission: 'can_access_whatsapp' },
@@ -51,10 +60,21 @@ const Sidebar = ({ activeSection, onSectionChange, onLogout, adminPermissions })
       sidebar.classList.remove('active');
     }
     removeSidebarBackdrop();
+    if (crmLayout && typeof onCrmMenuClose === 'function') {
+      onCrmMenuClose();
+    }
   };
 
+  const sidebarClass = [
+    'sidebar',
+    crmLayout ? 'sidebar--crm-drawer' : '',
+    crmLayout && crmMenuOpen ? 'sidebar--crm-drawer-open' : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
+
   return (
-    <div className="sidebar" id="sidebar">
+    <div className={sidebarClass} id="sidebar">
       <div className="sidebar-header">
         <h2>Sellyourbrick</h2>
         <button
@@ -82,7 +102,12 @@ const Sidebar = ({ activeSection, onSectionChange, onLogout, adminPermissions })
         })}
         <div
           className="menu-item menu-item--logout"
-          onClick={onLogout}
+          onClick={() => {
+            if (crmLayout && typeof onCrmMenuClose === 'function') {
+              onCrmMenuClose();
+            }
+            onLogout();
+          }}
         >
           <FaSignOutAlt size={20} />
           <span>Выйти</span>

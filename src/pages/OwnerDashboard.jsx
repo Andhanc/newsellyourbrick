@@ -43,7 +43,6 @@ import BiddingHistoryModal from '../components/BiddingHistoryModal'
 import OwnerModerationNoticeModal from '../components/OwnerModerationNoticeModal'
 import OwnerPropertyBidAnalyticsModal from '../components/OwnerPropertyBidAnalyticsModal'
 import OwnerTestDriveSection from '../components/OwnerTestDriveSection'
-import OwnerTestDriveRequestModal from '../components/OwnerTestDriveRequestModal'
 import OwnerMySalesSection from '../components/OwnerMySalesSection'
 import OwnerSaleCelebrationModal from '../components/OwnerSaleCelebrationModal'
 import { getDismissedCelebrationIds, dismissCelebration } from '../utils/ownerSaleCelebrationStorage'
@@ -220,9 +219,6 @@ const OwnerDashboard = () => {
   const saleCelebrationRef = useRef(null)
   const [ownerNotifOpen, setOwnerNotifOpen] = useState(false)
   const [ownerNotifications, setOwnerNotifications] = useState([])
-  const [testDriveModalNotification, setTestDriveModalNotification] = useState(null)
-  const [testDriveModalResponding, setTestDriveModalResponding] = useState(false)
-  const dismissedTestDriveModalIdsRef = useRef(new Set())
   const [ownerNotifLoading, setOwnerNotifLoading] = useState(false)
   const [userDocuments, setUserDocuments] = useState({ passport: null, passportWithFace: null })
   const [uploading, setUploading] = useState({ passport: false, passportWithFace: false })
@@ -409,33 +405,6 @@ const OwnerDashboard = () => {
     window.addEventListener('owner-notifications-refresh', onSseNotifications)
     return () => window.removeEventListener('owner-notifications-refresh', onSseNotifications)
   }, [loadOwnerNotifications])
-
-  useEffect(() => {
-    if (!userId) {
-      setTestDriveModalNotification(null)
-      return
-    }
-    const candidates = ownerNotifications
-      .filter((n) => {
-        if (n.type !== 'test_drive_request') return false
-        let d = n.data
-        if (typeof d === 'string') {
-          try {
-            d = JSON.parse(d)
-          } catch {
-            return false
-          }
-        }
-        return d?.booking_id != null
-      })
-      .filter((n) => !dismissedTestDriveModalIdsRef.current.has(Number(n.id)))
-      .sort((a, b) => Number(b.id) - Number(a.id))
-    setTestDriveModalNotification(candidates[0] ?? null)
-  }, [ownerNotifications, userId])
-
-  useEffect(() => {
-    dismissedTestDriveModalIdsRef.current = new Set()
-  }, [userId])
 
   const fetchOwnerSaleCelebrations = useCallback(async () => {
     if (!userId) return
@@ -649,6 +618,15 @@ const OwnerDashboard = () => {
               currency: prop.currency || 'USD',
               shares_sold: Number(prop.shares_sold) || 0,
               total_shares: Number(prop.total_shares) || 0,
+              test_drive: prop.test_drive === 1 || prop.test_drive === true || prop.test_drive === '1',
+              source_table:
+                prop.source_table === 'houses'
+                  ? 'properties_houses'
+                  : prop.source_table === 'properties_houses'
+                    ? 'properties_houses'
+                    : prop.source_table === 'properties_apartments'
+                      ? 'properties_apartments'
+                      : 'properties_apartments',
             }
           })
           setProperties(formattedProperties)
@@ -1246,6 +1224,19 @@ const OwnerDashboard = () => {
     return { months: series, max }
   }, [analyticsSalesData, i18n.language])
 
+  const sellerTestDriveProperties = useMemo(
+    () =>
+      properties
+        .filter((p) => p.test_drive)
+        .map((p) => ({
+          id: p.id,
+          title: p.title,
+          image: p.image,
+          property_table: p.source_table || 'properties_apartments',
+        })),
+    [properties]
+  )
+
   const handleDeleteProperty = (id) => {
     const property = properties.find(p => p.id === id)
     if (property) {
@@ -1549,31 +1540,8 @@ const OwnerDashboard = () => {
     }
   }
 
-  const handleTestDriveModalLater = () => {
-    if (testDriveModalNotification?.id != null) {
-      dismissedTestDriveModalIdsRef.current.add(Number(testDriveModalNotification.id))
-    }
-    setTestDriveModalNotification(null)
-  }
-
-  const handleTestDriveModalRespond = async (action, ownerComment = '') => {
-    if (!testDriveModalNotification) return
-    setTestDriveModalResponding(true)
-    try {
-      await respondOwnerTestDrive(testDriveModalNotification, action, ownerComment)
-    } finally {
-      setTestDriveModalResponding(false)
-    }
-  }
-
   return (
     <div className="owner-dashboard">
-      <OwnerTestDriveRequestModal
-        notification={testDriveModalNotification}
-        onLater={handleTestDriveModalLater}
-        onRespond={handleTestDriveModalRespond}
-        responding={testDriveModalResponding}
-      />
       <header className="owner-dashboard__header">
         <div
           className="owner-dashboard__header-content"
@@ -2413,6 +2381,7 @@ const OwnerDashboard = () => {
                   embedded
                   userId={userId}
                   apiBaseUrl={API_BASE_URL}
+                  sellerTestDriveProperties={sellerTestDriveProperties}
                 />
               ) : null}
             </div>

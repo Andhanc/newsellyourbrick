@@ -30,9 +30,10 @@ import RouteErrorBoundary from './components/RouteErrorBoundary'
 const Home = lazyWithRetry(() => import('./pages/Home'))
 const PropertyDetailPage = lazyWithRetry(() => import('./pages/PropertyDetailPage'))
 const TestDriveBookingPage = lazyWithRetry(() => import('./pages/TestDriveBookingPage'))
-const TestDriveCheckInPage = lazyWithRetry(() => import('./pages/TestDriveCheckInPage'))
+const TestDriveCheckInRoute = lazyWithRetry(() => import('./pages/TestDriveCheckInRoute'))
 const MapPage = lazyWithRetry(() => import('./pages/MapPage'))
 const MyBookingsPage = lazyWithRetry(() => import('./pages/MyBookingsPage'))
+const Profile = lazyWithRetry(() => import('./pages/Profile'))
 const Data = lazyWithRetry(() => import('./pages/Data'))
 const Subscriptions = lazyWithRetry(() => import('./pages/Subscriptions'))
 const History = lazyWithRetry(() => import('./pages/History'))
@@ -436,12 +437,13 @@ function App() {
               <Route path="/auction" element={<Home />} />
               <Route path="/main" element={<Home />} />
               <Route path="/property/:id/test-drive" element={<TestDriveBookingPage />} />
-              <Route path="/profile/bookings/:bookingId/check-in" element={<TestDriveCheckInPage />} />
+              <Route path="/profile/bookings/:bookingId/check-in" element={<TestDriveCheckInRoute />} />
               <Route path="/property/:id" element={<PropertyDetailPage />} />
               <Route path="/search-results" element={<SearchResults />} />
               <Route path="/map" element={<MapPage />} />
               <Route path="/profile/bookings" element={<MyBookingsPage />} />
               <Route path="/profile" element={<TestPage />} />
+              <Route path="/profile-legacy" element={<Profile />} />
               <Route path="/oauth-bridge" element={<OAuthBridgePage />} />
               <Route path="/auth/telegram-callback" element={<TelegramAuthCallback />} />
               <Route path="/data" element={<Data />} />

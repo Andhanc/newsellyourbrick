@@ -12,8 +12,9 @@ import { getPrisma } from './database/prismaClient.js';
 
 /**
  * Stripe Checkout + webhook + синхронизация подписки Pro.
- * STRIPE_SECRET_KEY, STRIPE_PRICE_ID_PRO, FRONTEND_URL;
+ * STRIPE_SECRET_KEY, STRIPE_PRICE_ID_PRO, STRIPE_PRICE_ID_PRO_YEAR, FRONTEND_URL;
  * STRIPE_PRICE_ID_PRO — Price ID (price_...) с валютой EUR в Stripe Dashboard (Checkout берёт валюту из цены);
+ * STRIPE_PRICE_ID_PRO_YEAR — Price ID (price_...) для годовой подписки Pro (обычно со скидкой);
  * STRIPE_PRICE_ID_DEPOSIT — price_... или prod_... (для prod подставится активная recurring-цена);
  * опционально STRIPE_WEBHOOK_SECRET для POST /api/webhooks/stripe
  * опционально STRIPE_LISTING_PUBLICATION_FEE_EUR (по умолчанию 29) — оплата публикации объявления
@@ -956,6 +957,70 @@ export async function processTestDriveBookingPaidSession(stripe, session) {
   return { ok: true, bookingId: bookingRow.id };
 }
 
+const TEST_DRIVE_BUYER_CANCEL_CODES = new Set([
+  'dates_changed',
+  'found_alternative',
+  'property_not_fit',
+  'price_concern',
+  'personal',
+  'other',
+]);
+
+export function parseTestDriveBuyerCancelBody(body) {
+  const reasonCode = String(body?.reason_code || '').trim();
+  const reasonText = String(body?.reason_text || '').trim();
+  if (!TEST_DRIVE_BUYER_CANCEL_CODES.has(reasonCode)) {
+    return { ok: false, error: 'invalid_reason_code' };
+  }
+  if (reasonCode === 'other') {
+    if (reasonText.length < 5) return { ok: false, error: 'reason_text_too_short' };
+    return { ok: true, reasonCode, reasonDetail: reasonText };
+  }
+  return { ok: true, reasonCode, reasonDetail: '' };
+}
+
+/**
+ * Частичный возврат 50% суммы оплаты Checkout (тест-драйв).
+ */
+export async function refundHalfTestDriveBookingPayment(paymentRow) {
+  if (!paymentRow || !paymentRow.stripe_checkout_session_id) {
+    return { ok: true, skipped: true };
+  }
+  const storedCents = Number(paymentRow.amount_cents) || 0;
+  if (!(storedCents > 0)) return { ok: true, skipped: true };
+
+  const stripe = getStripe();
+  if (!stripe) {
+    return { ok: false, error: 'stripe_not_configured' };
+  }
+
+  const sessId = String(paymentRow.stripe_checkout_session_id);
+  try {
+    const sess = await stripe.checkout.sessions.retrieve(sessId, { expand: ['payment_intent'] });
+    const piRaw = sess.payment_intent;
+    const pi = typeof piRaw === 'string' ? piRaw : piRaw?.id;
+    if (!pi) return { ok: false, error: 'no_payment_intent' };
+
+    const total = Number(sess.amount_total != null ? sess.amount_total : storedCents);
+    const half = Math.max(1, Math.floor(total * 0.5));
+
+    await stripe.refunds.create({
+      payment_intent: pi,
+      amount: half,
+      reason: 'requested_by_customer',
+      metadata: {
+        checkout_session: sessId,
+        refund_kind: 'test_drive_buyer_cancel_half',
+      },
+    });
+    return { ok: true, refunded_cents: half, total_cents: total };
+  } catch (e) {
+    const msg = e?.message || String(e);
+    console.error('[Stripe] refundHalfTestDriveBookingPayment:', msg);
+    return { ok: false, error: 'refund_failed', message: msg };
+  }
+}
+
 function isoFromUnix(sec) {
   if (sec == null) return null;
   return new Date(sec * 1000).toISOString();
@@ -1354,6 +1419,7 @@ function userHasActivePaidCabinetSubscription(state) {
 export function registerStripeBillingRoutes(app) {
   const stripe = getStripe();
   const priceIdPro = (process.env.STRIPE_PRICE_ID_PRO || '').trim();
+  const priceIdProYear = (process.env.STRIPE_PRICE_ID_PRO_YEAR || '').trim();
   const priceIdDeposit = (process.env.STRIPE_PRICE_ID_DEPOSIT || '').trim();
   const frontendBase = (process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/$/, '');
 
@@ -1366,6 +1432,7 @@ export function registerStripeBillingRoutes(app) {
         });
       }
       const plan = String(req.body?.plan || '').toLowerCase();
+      const billingCycle = String(req.body?.billingCycle || 'monthly').toLowerCase() === 'yearly' ? 'yearly' : 'monthly';
       const userId = req.body?.userId != null ? String(req.body.userId).slice(0, 128) : '';
       const customerEmail =
         typeof req.body?.customerEmail === 'string' ? req.body.customerEmail.trim().slice(0, 320) : '';
@@ -1422,30 +1489,34 @@ export function registerStripeBillingRoutes(app) {
           error: 'Неизвестный план. Доступны: pro, deposit',
         });
       }
-      if (!priceIdPro) {
+      const selectedProPriceId = billingCycle === 'yearly' ? priceIdProYear : priceIdPro;
+      if (!selectedProPriceId) {
         return res.status(503).json({
           success: false,
-          error: 'Не задан STRIPE_PRICE_ID_PRO (ID цены из Stripe → продукт Pro)',
+          error:
+            billingCycle === 'yearly'
+              ? 'Не задан STRIPE_PRICE_ID_PRO_YEAR (ID годовой цены Pro из Stripe)'
+              : 'Не задан STRIPE_PRICE_ID_PRO (ID месячной цены Pro из Stripe)',
         });
       }
 
       let proPrice;
       try {
-        proPrice = await stripe.prices.retrieve(priceIdPro);
+        proPrice = await stripe.prices.retrieve(selectedProPriceId);
       } catch (priceErr) {
         console.error('[Stripe] retrieve Pro price:', priceErr?.message || priceErr);
         return res.status(503).json({
           success: false,
           error:
             priceErr?.message ||
-            'Не удалось загрузить цену Pro из Stripe. Проверьте STRIPE_PRICE_ID_PRO.',
+            `Не удалось загрузить ${billingCycle === 'yearly' ? 'годовую' : 'месячную'} цену Pro из Stripe.`,
         });
       }
       const proCurrency = String(proPrice?.currency || '').toLowerCase();
       if (proCurrency !== 'eur') {
         return res.status(503).json({
           success: false,
-          error: `Подписка Pro должна быть в EUR в Stripe (указанная цена в ${proCurrency.toUpperCase() || '?'}). Создайте цену в евро и обновите STRIPE_PRICE_ID_PRO в .env.`,
+          error: `Подписка Pro должна быть в EUR в Stripe (указанная цена в ${proCurrency.toUpperCase() || '?'}). Создайте цену в евро и обновите ENV для Pro в .env.`,
         });
       }
 
@@ -1463,11 +1534,13 @@ export function registerStripeBillingRoutes(app) {
       const session = await stripe.checkout.sessions.create({
         mode: 'subscription',
         payment_method_types: ['card'],
-        line_items: [{ price: priceIdPro, quantity: 1 }],
+        line_items: [{ price: selectedProPriceId, quantity: 1 }],
         success_url: `${frontendBase}/profile?subscription_checkout=success&session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${frontendBase}/profile`,
-        metadata: userId ? { app_user_id: userId } : {},
-        subscription_data: userId ? { metadata: { app_user_id: userId } } : undefined,
+        metadata: userId ? { app_user_id: userId, billing_cycle: billingCycle } : { billing_cycle: billingCycle },
+        subscription_data: userId
+          ? { metadata: { app_user_id: userId, billing_cycle: billingCycle } }
+          : { metadata: { billing_cycle: billingCycle } },
         ...(customerEmail && customerEmail.includes('@') ? { customer_email: customerEmail } : {}),
       });
 
@@ -2611,6 +2684,11 @@ export function registerStripeBillingRoutes(app) {
     console.log(
       '[Stripe] Подписка Pro: Checkout включён (STRIPE_PRICE_ID_PRO; в Checkout валюта = валюте этой цены в Dashboard — должна быть EUR)'
     );
+    if (priceIdProYear) {
+      console.log('[Stripe] Подписка Pro (год): Checkout включён (STRIPE_PRICE_ID_PRO_YEAR)');
+    } else {
+      console.log('[Stripe] Подписка Pro (год): отключена, задайте STRIPE_PRICE_ID_PRO_YEAR');
+    }
   } else {
     console.log(
       '[Stripe] Checkout Pro отключён: укажите STRIPE_SECRET_KEY и STRIPE_PRICE_ID_PRO в .env'

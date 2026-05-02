@@ -130,7 +130,7 @@ export const stripeSubscriptionQueries = {
   },
 
   listReservationPurchasesByUserId: async (userId, limit = 100) => {
-        const uid = parseInt(userId, 10);
+    const uid = parseInt(userId, 10);
     if (!Number.isFinite(uid)) return [];
     const rows = await getPrisma().stripe_payments.findMany({
       where: { user_id: uid, plan_key: 'property_reservation' },
@@ -138,6 +138,38 @@ export const stripeSubscriptionQueries = {
       take: Math.min(limit, 200),
     });
     return rows.map(toPlain);
+  },
+
+  /** Платежи тест-драйва пользователя (billing_reason JSON содержит booking_id). */
+  listTestDriveBookingPaymentsByUserId: async (userId, limit = 120) => {
+    const uid = parseInt(userId, 10);
+    if (!Number.isFinite(uid)) return [];
+    const rows = await getPrisma().stripe_payments.findMany({
+      where: { user_id: uid, plan_key: 'test_drive_booking' },
+      orderBy: { paid_at: 'desc' },
+      take: Math.min(limit, 200),
+    });
+    return rows.map(toPlain);
+  },
+
+  findTestDrivePaymentByBookingId: async (userId, bookingId) => {
+    const uid = parseInt(userId, 10);
+    const bid = parseInt(bookingId, 10);
+    if (!Number.isFinite(uid) || !Number.isFinite(bid)) return null;
+    const rows = await getPrisma().stripe_payments.findMany({
+      where: { user_id: uid, plan_key: 'test_drive_booking' },
+      orderBy: { paid_at: 'desc' },
+      take: 60,
+    });
+    for (const row of rows) {
+      try {
+        const j = JSON.parse(row.billing_reason || '{}');
+        if (Number(j.booking_id) === bid) return toPlain(row);
+      } catch {
+        /* ignore */
+      }
+    }
+    return null;
   },
 
   listAllReservationPurchasesWithUsers: async (limit = 500) => {

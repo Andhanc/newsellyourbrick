@@ -97,7 +97,7 @@ const Subscriptions = () => {
     navigate(-1)
   }
 
-  const handleBookCall = async (plan) => {
+  const handleBookCall = async (plan, billingCycle = 'monthly') => {
     if (plan === 'pro') {
       const tier = effectivePurchasedTier(subscriptionBilling?.subscription)
       if (tier === 'pro' || tier === 'vip') {
@@ -109,6 +109,7 @@ const Subscriptions = () => {
       const result = await startProSubscriptionCheckout({
         userId: uid,
         customerEmail: userData?.email,
+        billingCycle,
       })
       if (!result.ok) {
         const msg =

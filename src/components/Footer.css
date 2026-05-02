@@ -1161,7 +1161,8 @@ body.admin-panel-active .footer .footer__upper {
 .footer-store-modal-overlay {
   position: fixed;
   inset: 0;
-  z-index: 10000;
+  /* Портал на document.body — выше маршрутных модалок (≈12100+) */
+  z-index: 13100;
   background: rgba(0, 0, 0, 0.45);
   display: flex;
   align-items: center;

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/admin/Sidebar';
 import Header from '../components/admin/Header';
@@ -21,6 +21,7 @@ import StorageMirror from '../components/admin/StorageMirror';
 import DebtReasons from '../components/admin/DebtReasons';
 import DebtDocuments from '../components/admin/DebtDocuments';
 import AdminAddition from '../components/admin/AdminAddition';
+import AdminTestDrive from '../components/admin/AdminTestDrive';
 import { mockBusinessInfo } from '../data/mockData';
 import { clearUserData, clearUserDataWithoutAdmin } from '../services/authService';
 import { showNotification } from '../utils/toastHelper';
@@ -32,7 +33,17 @@ const AdminPanelPage = () => {
   const [activeSection, setActiveSection] = useState('statistics');
   const [showUsersModal, setShowUsersModal] = useState(false);
   const [adminPermissions, setAdminPermissions] = useState(null);
+  const [clientsMenuOpen, setClientsMenuOpen] = useState(false);
   const mainContentRef = useRef(null);
+
+  const isClientsSection = activeSection === 'clients';
+
+  const closeClientsAdminMenu = useCallback(() => {
+    setClientsMenuOpen(false);
+    if (typeof document === 'undefined') return;
+    const sidebar = document.getElementById('sidebar');
+    if (sidebar) sidebar.classList.remove('active');
+  }, []);
 
   // Проверка авторизации администратора и загрузка прав доступа
   useEffect(() => {
@@ -71,6 +82,7 @@ const AdminPanelPage = () => {
     smart_assistant: 'Умный помощник',
     addition: 'Добавление',
     objects: 'Объекты',
+    test_drive: 'Тест-драйв',
     debt_reasons: 'Причина долга',
     debt_documents: 'Необходимые документы',
     whatsapp: 'WhatsApp',
@@ -97,6 +109,7 @@ const AdminPanelPage = () => {
       smart_assistant: adminPermissions.can_access_chat,
       addition: adminPermissions.can_access_objects,
       objects: adminPermissions.can_access_objects,
+      test_drive: adminPermissions.can_access_objects,
       debt_reasons: adminPermissions.can_access_objects,
       debt_documents: adminPermissions.can_access_objects,
       whatsapp: adminPermissions.can_access_whatsapp,
@@ -132,6 +145,7 @@ const AdminPanelPage = () => {
   const handleSectionChange = (section) => {
     // Проверяем права доступа перед сменой секции
     if (hasAccess(section)) {
+      closeClientsAdminMenu();
       setActiveSection(section);
     } else {
       showNotification('У вас нет прав доступа к этому разделу');
@@ -176,6 +190,8 @@ const AdminPanelPage = () => {
         return <AdminAddition onPublishComplete={() => handleSectionChange('statistics')} />;
       case 'objects':
         return <ObjectsList />;
+      case 'test_drive':
+        return <AdminTestDrive />;
       case 'debt_reasons':
         return <DebtReasons />;
       case 'debt_documents':
@@ -183,7 +199,7 @@ const AdminPanelPage = () => {
       case 'whatsapp':
         return <WhatsApp />;
       case 'clients':
-        return <Clients />;
+        return <Clients onOpenAdminNav={() => setClientsMenuOpen(true)} />;
       case 'purchase_requests':
         return <PurchaseRequests />;
       case 'bonuses':
@@ -200,13 +216,16 @@ const AdminPanelPage = () => {
   };
 
   return (
-    <div className="admin-panel-app">
+    <div className={`admin-panel-app${isClientsSection ? ' admin-panel-app--crm-layout' : ''}`}>
       <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
       <Sidebar 
         activeSection={activeSection} 
         onSectionChange={handleSectionChange}
         onLogout={handleLogout}
         adminPermissions={adminPermissions}
+        crmLayout={isClientsSection}
+        crmMenuOpen={clientsMenuOpen}
+        onCrmMenuClose={closeClientsAdminMenu}
       />
       <div ref={mainContentRef} className="main-content">
         <Header 
@@ -216,6 +235,14 @@ const AdminPanelPage = () => {
         />
         {renderContent()}
       </div>
+      {isClientsSection && clientsMenuOpen && (
+        <div
+          role="presentation"
+          aria-hidden
+          className="admin-sidebar-backdrop crm-admin-nav-backdrop"
+          onClick={closeClientsAdminMenu}
+        />
+      )}
       <UsersModal
         isOpen={showUsersModal}
         onClose={() => setShowUsersModal(false)}

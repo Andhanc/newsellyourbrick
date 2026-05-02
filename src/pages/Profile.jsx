@@ -1111,7 +1111,7 @@ const Profile = () => {
                   compact
                   mobileTwoColumn
                   currentPlanVisual={effectivePurchasedTier(subscriptionBilling?.subscription)}
-                  onBookCall={async (plan) => {
+                  onBookCall={async (plan, billingCycle = 'monthly') => {
                     const tier = effectivePurchasedTier(subscriptionBilling?.subscription)
                     if (plan === 'starter') {
                       showNotification(t('buyerCabinet_toastStarter'), 'info')
@@ -1133,6 +1133,7 @@ const Profile = () => {
                     const result = await startProSubscriptionCheckout({
                       userId: uid,
                       customerEmail: profileData.email || userData?.email,
+                      billingCycle,
                     })
                     if (!result.ok) {
                       const msg =

@@ -5,6 +5,17 @@ import { ShoppingCart } from 'lucide-react'
 import './PricingCards.css'
 
 const TIER_ORDER = { starter: 0, pro: 1, vip: 2 }
+const YEARLY_DISCOUNT = 0.25
+const PRO_MONTHLY_PRICE = 149
+const VIP_MONTHLY_PRICE = 499
+
+function yearlyPrice(monthlyPrice) {
+  return Math.round(monthlyPrice * 12 * (1 - YEARLY_DISCOUNT))
+}
+
+function formatEuro(value) {
+  return new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(value)
+}
 
 function tierBelow(tier, current) {
   if (current == null) return false
@@ -56,9 +67,9 @@ export default function PricingCards({
   currentPlanVisual = null,
 }) {
   const { t } = useTranslation()
-  const [starterMonthly, setStarterMonthly] = useState(false)
-  const [proMonthly, setProMonthly] = useState(false)
-  const [vipMonthly, setVipMonthly] = useState(false)
+  /** Общий период для платных тарифов (Pro/VIP): один явный переключатель над карточками. */
+  const [billingCycle, setBillingCycle] = useState('monthly')
+  const isYearly = billingCycle === 'yearly'
 
   const starterFeatureKeys = ['buyerPricing_featS0', 'buyerPricing_featS1', 'buyerPricing_featS2']
   const proFeatureKeys = ['buyerPricing_featP0', 'buyerPricing_featP1', 'buyerPricing_featP2', 'buyerPricing_featP3']
@@ -98,22 +109,26 @@ export default function PricingCards({
   )
 
   const handleStarterCall = () => {
-    if (typeof onBookCall === 'function') onBookCall('starter')
+    if (typeof onBookCall === 'function') onBookCall('starter', billingCycle)
   }
 
   const handleProCall = () => {
-    if (typeof onBookCall === 'function') onBookCall('pro')
+    if (typeof onBookCall === 'function') onBookCall('pro', billingCycle)
     else window.open('https://checkout.stripe.com/pay?amount=14900&currency=eur&description=Pro', '_blank')
   }
 
   const handleVipCall = () => {
-    if (typeof onBookCall === 'function') onBookCall('vip')
+    if (typeof onBookCall === 'function') onBookCall('vip', billingCycle)
     else window.open('https://checkout.stripe.com/pay?amount=49900&currency=eur&description=VIP', '_blank')
   }
 
   const perMonth = t('buyerPricing_perMonth')
-  const toggleAria = t('buyerPricing_toggleAria')
-  const toggleLabel = t('buyerPricing_toggleLabel')
+  const perYear = t('buyerPricing_perYear')
+
+  const proYearPrice = yearlyPrice(PRO_MONTHLY_PRICE)
+  const vipYearPrice = yearlyPrice(VIP_MONTHLY_PRICE)
+  const proMonthlyEquivalent = Math.round(proYearPrice / 12)
+  const vipMonthlyEquivalent = Math.round(vipYearPrice / 12)
 
   const starterCurrent = cur === 'starter'
   const starterBelow = tierBelow('starter', cur)
@@ -134,22 +149,6 @@ export default function PricingCards({
     </div>
   )
 
-  const starterToggle = (
-    <div className="pricing-card__toggle-wrap">
-      <button
-        type="button"
-        className="pricing-card__toggle"
-        data-enabled={starterMonthly}
-        onClick={() => setStarterMonthly(!starterMonthly)}
-        aria-pressed={starterMonthly}
-        aria-label={toggleAria}
-      >
-        <span className="pricing-card__toggle-thumb" />
-      </button>
-      <span className="pricing-card__toggle-label">{toggleLabel}</span>
-    </div>
-  )
-
   const proFeaturesGrid = (
     <div className="pricing-card__features-grid pricing-card__features-grid--in-header">
       {proFeatureKeys.map((key) => (
@@ -158,22 +157,6 @@ export default function PricingCards({
           <span>{t(key)}</span>
         </div>
       ))}
-    </div>
-  )
-
-  const proToggle = (
-    <div className="pricing-card__toggle-wrap">
-      <button
-        type="button"
-        className="pricing-card__toggle"
-        data-enabled={proMonthly}
-        onClick={() => setProMonthly(!proMonthly)}
-        aria-pressed={proMonthly}
-        aria-label={toggleAria}
-      >
-        <span className="pricing-card__toggle-thumb" />
-      </button>
-      <span className="pricing-card__toggle-label">{toggleLabel}</span>
     </div>
   )
 
@@ -188,19 +171,41 @@ export default function PricingCards({
     </div>
   )
 
-  const vipToggle = (
-    <div className="pricing-card__toggle-wrap">
-      <button
-        type="button"
-        className="pricing-card__toggle"
-        data-enabled={vipMonthly}
-        onClick={() => setVipMonthly(!vipMonthly)}
-        aria-pressed={vipMonthly}
-        aria-label={toggleAria}
-      >
-        <span className="pricing-card__toggle-thumb" />
-      </button>
-      <span className="pricing-card__toggle-label">{toggleLabel}</span>
+  const billingSwitch = (
+    <div className={`pricing-cards__billing${useCreative ? ' pricing-cards__billing--creative' : ''}`}>
+      <div className="pricing-cards__billing-copy">
+        <h3 className="pricing-cards__billing-title">{t('buyerPricing_billingTitle')}</h3>
+        <p className="pricing-cards__billing-body">
+          {isYearly
+            ? t('buyerPricing_billingBodyYearly', {
+                proEq: `€${formatEuro(proMonthlyEquivalent)}`,
+                vipEq: `€${formatEuro(vipMonthlyEquivalent)}`,
+              })
+            : t('buyerPricing_billingBodyMonthly')}
+        </p>
+      </div>
+      <div className="pricing-cards__billing-controls" role="group" aria-label={t('buyerPricing_billingGroupAria')}>
+        <div className="pricing-cards__billing-tabs">
+          <button
+            type="button"
+            className="pricing-cards__billing-tab"
+            data-active={billingCycle === 'monthly'}
+            aria-pressed={billingCycle === 'monthly'}
+            onClick={() => setBillingCycle('monthly')}
+          >
+            {t('buyerPricing_tabMonthly')}
+          </button>
+          <button
+            type="button"
+            className="pricing-cards__billing-tab"
+            data-active={billingCycle === 'yearly'}
+            aria-pressed={billingCycle === 'yearly'}
+            onClick={() => setBillingCycle('yearly')}
+          >
+            {t('buyerPricing_tabYearly')}
+          </button>
+        </div>
+      </div>
     </div>
   )
 
@@ -210,6 +215,7 @@ export default function PricingCards({
         mobileTwoColumn && !useCreative ? ' pricing-cards--mobile-two-col' : ''
       }`}
     >
+      {billingSwitch}
       <div
         className={`pricing-cards__grid ${compact ? 'pricing-cards__grid--compact' : ''}${
           useCreative ? ' pricing-cards__grid--creative' : ''
@@ -262,7 +268,6 @@ export default function PricingCards({
                   <ShoppingCart size={20} strokeWidth={2} />
                 </button>
               )}
-              {useCreative ? starterToggle : null}
             </div>
             {!useCreative ? (
               <div className="pricing-card__features">
@@ -273,19 +278,6 @@ export default function PricingCards({
                       <span>{t(key)}</span>
                     </div>
                   ))}
-                </div>
-                <div className="pricing-card__toggle-wrap">
-                  <button
-                    type="button"
-                    className="pricing-card__toggle"
-                    data-enabled={starterMonthly}
-                    onClick={() => setStarterMonthly(!starterMonthly)}
-                    aria-pressed={starterMonthly}
-                    aria-label={toggleAria}
-                  >
-                    <span className="pricing-card__toggle-thumb" />
-                  </button>
-                  <span className="pricing-card__toggle-label">{toggleLabel}</span>
                 </div>
               </div>
             ) : null}
@@ -323,8 +315,8 @@ export default function PricingCards({
                 ) : null}
               </div>
               <div className="pricing-card__price-row">
-                <span className="pricing-card__price">€149</span>
-                <span className="pricing-card__price-unit">{perMonth}</span>
+                <span className="pricing-card__price">€{formatEuro(isYearly ? proYearPrice : PRO_MONTHLY_PRICE)}</span>
+                <span className="pricing-card__price-unit">{isYearly ? perYear : perMonth}</span>
               </div>
               {useCreative ? proFeaturesGrid : null}
               {proCurrent ? (
@@ -346,7 +338,6 @@ export default function PricingCards({
                   <ShoppingCart size={20} strokeWidth={2} />
                 </button>
               )}
-              {useCreative ? proToggle : null}
             </div>
             {!useCreative ? (
               <div className="pricing-card__features">
@@ -357,19 +348,6 @@ export default function PricingCards({
                       <span>{t(key)}</span>
                     </div>
                   ))}
-                </div>
-                <div className="pricing-card__toggle-wrap">
-                  <button
-                    type="button"
-                    className="pricing-card__toggle"
-                    data-enabled={proMonthly}
-                    onClick={() => setProMonthly(!proMonthly)}
-                    aria-pressed={proMonthly}
-                    aria-label={toggleAria}
-                  >
-                    <span className="pricing-card__toggle-thumb" />
-                  </button>
-                  <span className="pricing-card__toggle-label">{toggleLabel}</span>
                 </div>
               </div>
             ) : null}
@@ -395,8 +373,8 @@ export default function PricingCards({
                 </div>
               </div>
               <div className="pricing-card__price-row">
-                <span className="pricing-card__price">€499</span>
-                <span className="pricing-card__price-unit">{perMonth}</span>
+                <span className="pricing-card__price">€{formatEuro(isYearly ? vipYearPrice : VIP_MONTHLY_PRICE)}</span>
+                <span className="pricing-card__price-unit">{isYearly ? perYear : perMonth}</span>
               </div>
               {useCreative ? vipFeaturesGrid : null}
               {vipCurrent ? (
@@ -409,7 +387,6 @@ export default function PricingCards({
                   <ShoppingCart size={20} strokeWidth={2} />
                 </button>
               )}
-              {useCreative ? vipToggle : null}
             </div>
             {!useCreative ? (
               <div className="pricing-card__features">
@@ -420,19 +397,6 @@ export default function PricingCards({
                       <span>{t(key)}</span>
                     </div>
                   ))}
-                </div>
-                <div className="pricing-card__toggle-wrap">
-                  <button
-                    type="button"
-                    className="pricing-card__toggle"
-                    data-enabled={vipMonthly}
-                    onClick={() => setVipMonthly(!vipMonthly)}
-                    aria-pressed={vipMonthly}
-                    aria-label={toggleAria}
-                  >
-                    <span className="pricing-card__toggle-thumb" />
-                  </button>
-                  <span className="pricing-card__toggle-label">{toggleLabel}</span>
                 </div>
               </div>
             ) : null}

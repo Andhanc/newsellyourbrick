@@ -23,6 +23,7 @@ import {
   FiCheckCircle,
   FiMail,
   FiArrowLeft,
+  FiBell,
   FiUpload,
   FiChevronDown,
   FiChevronUp,
@@ -30,6 +31,9 @@ import {
   FiLogOut,
   FiSend,
   FiX,
+  FiCopy,
+  FiUserPlus,
+  FiGift,
 } from 'react-icons/fi'
 import { getStoredNumericUserId, getUserData, logout } from '../services/authService'
 import { fetchUserById, invalidateUserByIdCache } from '../utils/usersApi'
@@ -48,6 +52,9 @@ import { countries as countryList } from '../components/CountrySelect'
 import { COUNTRY_CODES as phoneCountryCodes } from '../components/PhoneInput'
 import { ProfileSpotlightOnboarding } from '../components/ProfileSpotlightOnboarding'
 import { ServiceQuickLinksTour } from '../components/ServiceQuickLinksTour'
+import TestDriveBuyerCancelModal from '../components/TestDriveBuyerCancelModal'
+import TestDriveCheckInModal from '../components/TestDriveCheckInModal'
+import { formatMoneyFromMinorUnits, formatMoneyMajorUnits } from '../utils/formatStripeMoney'
 import { fetchVerificationStatus, invalidateVerificationStatusCache } from '../utils/verificationStatusApi'
 import { useManagerLiveChat } from '../hooks/useManagerLiveChat'
 import { evaluatePassportText, validatePassportImageFile } from '../utils/passportPhotoValidation'
@@ -493,11 +500,18 @@ function buildMainCards(t) {
 }
 
 function buildQuickLinks(t) {
-  return [
-    { title: t('buyerCabinet_quickFavoritesTitle'), subtitle: t('buyerCabinet_quickFavoritesSubtitle'), to: '/favorites', icon: FiHeart },
-    { title: t('buyerCabinet_quickMapTitle'), subtitle: t('buyerCabinet_quickMapSubtitle'), to: '/map', icon: FiMap },
-    { title: t('buyerCabinet_quickLogoutTitle'), subtitle: t('buyerCabinet_quickLogoutSubtitle'), icon: FiLogOut, action: 'logout' },
-  ]
+  return {
+    primary: [
+      { title: t('buyerCabinet_quickFavoritesTitle'), subtitle: t('buyerCabinet_quickFavoritesSubtitle'), to: '/favorites', icon: FiHeart },
+      { title: t('buyerCabinet_quickMapTitle'), subtitle: t('buyerCabinet_quickMapSubtitle'), to: '/map', icon: FiMap },
+    ],
+    logout: {
+      title: t('buyerCabinet_quickLogoutTitle'),
+      subtitle: t('buyerCabinet_quickLogoutSubtitle'),
+      icon: FiLogOut,
+      action: 'logout',
+    },
+  }
 }
 
 function formatDateRange(start, end, locale) {
@@ -528,8 +542,17 @@ function TestPage() {
   } = useCabinetOverviewData()
   const directionSummaries = useMemo(() => buildDirectionSummaries(t), [t])
   const mainCards = useMemo(() => buildMainCards(t), [t])
-  const quickLinks = useMemo(() => buildQuickLinks(t), [t])
+  const { quickLinksPrimary, quickLogoutLink } = useMemo(() => {
+    const { primary, logout } = buildQuickLinks(t)
+    return { quickLinksPrimary: primary, quickLogoutLink: logout }
+  }, [t])
+  const QuickLogoutIcon = quickLogoutLink.icon
   const locale = useMemo(() => (i18n.language === 'en' ? 'en-US' : i18n.language), [i18n.language])
+  const moneyLocale = useMemo(() => {
+    const raw = (i18n.language || 'en').split('-')[0]
+    const map = { ru: 'ru-RU', en: 'en-US', de: 'de-DE', es: 'es-ES', fr: 'fr-FR', sv: 'sv-SE' }
+    return map[raw] || 'en-US'
+  }, [i18n.language])
 
   /** State из хука может отставать от localStorage на первом кадре — для онбординга и % нужен синхронный id. */
   const resolvedNumericUserId = numericUserId ?? getStoredNumericUserId()
@@ -545,6 +568,19 @@ function TestPage() {
   const [subscriptionUpgradeLoading, setSubscriptionUpgradeLoading] = useState(false)
   const [bookingsSheetLoading, setBookingsSheetLoading] = useState(false)
   const [bookingsSheetRows, setBookingsSheetRows] = useState([])
+  const [ownerCommentCountsByBooking, setOwnerCommentCountsByBooking] = useState({})
+  const [testDriveCancelBooking, setTestDriveCancelBooking] = useState(null)
+  const [checkInBookingId, setCheckInBookingId] = useState(null)
+  const visibleBookingsSheetRows = useMemo(
+    () =>
+      bookingsSheetRows.filter((b) => {
+        const statusKey = String(b?.status || '').toLowerCase()
+        const cancelledBy = String(b?.cancelled_by || '').toLowerCase()
+        return !(statusKey === 'cancelled' && cancelledBy === 'buyer')
+      }),
+    [bookingsSheetRows],
+  )
+  const [ownerCommentModalBooking, setOwnerCommentModalBooking] = useState(null)
   const [dbUserRow, setDbUserRow] = useState(null)
   const [dbUserLoading, setDbUserLoading] = useState(false)
   const [verificationStatusHydrated, setVerificationStatusHydrated] = useState(false)
@@ -573,6 +609,29 @@ function TestPage() {
   const [isSellObjectPromptOpen, setIsSellObjectPromptOpen] = useState(false)
   const [windowSize, setWindowSize] = useState(() =>
     typeof window !== 'undefined' ? { width: window.innerWidth, height: window.innerHeight } : { width: 0, height: 0 },
+  )
+  const [profileReferralCopied, setProfileReferralCopied] = useState(false)
+  const profileReferralCopyTimerRef = useRef(null)
+
+  const profileReferralUrl = useMemo(() => {
+    if (!resolvedNumericUserId || typeof window === 'undefined') return ''
+    return `${window.location.origin}/?ref=${resolvedNumericUserId}`
+  }, [resolvedNumericUserId])
+
+  const copyProfileReferralLink = useCallback(() => {
+    if (!profileReferralUrl || !navigator.clipboard?.writeText) return
+    void navigator.clipboard.writeText(profileReferralUrl).then(() => {
+      setProfileReferralCopied(true)
+      if (profileReferralCopyTimerRef.current) clearTimeout(profileReferralCopyTimerRef.current)
+      profileReferralCopyTimerRef.current = setTimeout(() => setProfileReferralCopied(false), 2600)
+    })
+  }, [profileReferralUrl])
+
+  useEffect(
+    () => () => {
+      if (profileReferralCopyTimerRef.current) clearTimeout(profileReferralCopyTimerRef.current)
+    },
+    [],
   )
 
   const dbUserRowRef = useRef(dbUserRow)
@@ -901,30 +960,50 @@ function TestPage() {
     }
   }, [searchParams, navigate, t, refetchSubscriptionBillingState])
 
-  useEffect(() => {
+  const refetchBookingsSheetRows = useCallback(() => {
     if (!numericUserId) {
       setBookingsSheetRows([])
-      return
+      setOwnerCommentCountsByBooking({})
+      setBookingsSheetLoading(false)
+      return Promise.resolve()
     }
-    let cancelled = false
     setBookingsSheetLoading(true)
-    fetch(`${API_BASE_URL}/test-drive-bookings/user/${numericUserId}`)
-      .then((r) => r.json())
-      .then((json) => {
-        if (cancelled) return
-        const rows = json?.success && Array.isArray(json.data) ? json.data : []
+    return Promise.all([
+      fetch(`${API_BASE_URL}/test-drive-bookings/user/${numericUserId}`).then((r) =>
+        r.json().catch(() => ({})),
+      ),
+      fetch(`${API_BASE_URL}/notifications/user/${numericUserId}/unread`).then((r) =>
+        r.json().catch(() => ({})),
+      ),
+    ])
+      .then(([bookingsJson, notificationsJson]) => {
+        const rows = bookingsJson?.success && Array.isArray(bookingsJson.data) ? bookingsJson.data : []
+        const notifications =
+          notificationsJson?.success && Array.isArray(notificationsJson.data) ? notificationsJson.data : []
+        const ownerCommentCounts = {}
+        for (const n of notifications) {
+          if (String(n?.type || '') !== 'test_drive_result') continue
+          const data = n?.data || {}
+          const bookingId = data?.booking_id
+          if (!Boolean(String(data?.owner_comment || '').trim()) || bookingId == null) continue
+          const key = String(bookingId)
+          ownerCommentCounts[key] = (ownerCommentCounts[key] || 0) + 1
+        }
+        setOwnerCommentCountsByBooking(ownerCommentCounts)
         setBookingsSheetRows(rows)
       })
       .catch(() => {
-        if (!cancelled) setBookingsSheetRows([])
+        setBookingsSheetRows([])
+        setOwnerCommentCountsByBooking({})
       })
       .finally(() => {
-        if (!cancelled) setBookingsSheetLoading(false)
+        setBookingsSheetLoading(false)
       })
-    return () => {
-      cancelled = true
-    }
   }, [numericUserId])
+
+  useEffect(() => {
+    void refetchBookingsSheetRows()
+  }, [refetchBookingsSheetRows])
 
   useEffect(() => {
     if (dataSheetOpen || historySheetOpen || subscriptionSheetOpen || bookingsSheetOpen) {
@@ -948,6 +1027,7 @@ function TestPage() {
         setSubscriptionSheetOpen(false)
         setBookingsSheetOpen(false)
         setIsManagerChatOpen(false)
+        setOwnerCommentModalBooking(null)
         setManagerChatInput('')
       }
     }
@@ -1038,7 +1118,7 @@ function TestPage() {
     return 'starter'
   }, [subscriptionSheetState, subscriptionPlanLabel])
 
-  const handleSubscriptionPlanSubscribe = useCallback(async (plan) => {
+  const handleSubscriptionPlanSubscribe = useCallback(async (plan, billingCycle = 'monthly') => {
     if (plan === 'starter') {
       showNotification(t('buyerCabinet_toastStarter'), 'info')
       return
@@ -1056,6 +1136,7 @@ function TestPage() {
         const result = await startProSubscriptionCheckout({
           userId: uid,
           customerEmail: ud?.email,
+          billingCycle,
         })
         if (!result.ok) {
           const msg =
@@ -2020,7 +2101,7 @@ function TestPage() {
                 const cardDescription = card.description
                 const showHistoryCount = isHistory && !historyLoading && historyCount > 0
                 const showBookingsCount =
-                  isBookings && !bookingsSheetLoading && bookingsSheetRows.length > 0
+                  isBookings && !bookingsSheetLoading && visibleBookingsSheetRows.length > 0
                 const planLabel = subscriptionPlanLabel || 'Starter'
                 const historyAria = showHistoryCount
                   ? t('buyerCabinet_historyAria', { title: cardTitle, count: historyCount })
@@ -2029,7 +2110,7 @@ function TestPage() {
                   ? t('buyerCabinet_subscriptionsAria', { title: cardTitle, plan: planLabel })
                   : undefined
                 const bookingsAria = showBookingsCount
-                  ? t('buyerCabinet_bookingsAria', { title: cardTitle, count: bookingsSheetRows.length })
+                  ? t('buyerCabinet_bookingsAria', { title: cardTitle, count: visibleBookingsSheetRows.length })
                   : undefined
                 const ariaLabel = historyAria ?? subscriptionsAria ?? bookingsAria
                 const tileClass = `test-hero-icon-tile test-hero-icon-tile--${card.accent}${
@@ -2050,7 +2131,7 @@ function TestPage() {
                       ) : null}
                       {showBookingsCount ? (
                         <span className="test-hero-icon-tile__count-badge" aria-hidden="true">
-                          {bookingsSheetRows.length > 99 ? '99+' : bookingsSheetRows.length}
+                          {visibleBookingsSheetRows.length > 99 ? '99+' : visibleBookingsSheetRows.length}
                         </span>
                       ) : null}
                       {isSubscriptions ? (
@@ -2679,36 +2760,177 @@ function TestPage() {
                 </p>
                 {bookingsSheetLoading ? (
                   <p className="test-data-panel__loading">{t('buyerCabinet_billingLoading')}</p>
-                ) : bookingsSheetRows.length === 0 ? (
+                ) : visibleBookingsSheetRows.length === 0 ? (
                   <p className="test-history-dropbox__empty">
                     {t('buyerCabinet_bookingsEmpty')}
                   </p>
                 ) : (
                   <div className="test-booking-dropbox__list">
-                    {bookingsSheetRows.slice(0, 5).map((b) => {
+                    {visibleBookingsSheetRows.slice(0, 5).map((b) => {
                       const statusKey = (b.status || 'pending').toLowerCase()
+                      const bookingIdKey = String(b.id)
                       const title =
                         b.property_title || t('buyerCabinet_propertyWithId', { id: b.property_id })
+                      const ownerComment = String(b.owner_comment || '').trim()
+                      const ownerCommentNotificationsCount =
+                        ownerCommentCountsByBooking[bookingIdKey] != null
+                          ? Number(ownerCommentCountsByBooking[bookingIdKey]) || 0
+                          : ownerComment
+                            ? 1
+                            : 0
+                      const coverUrl =
+                        typeof b.property_cover_url === 'string' && b.property_cover_url.trim()
+                          ? b.property_cover_url.trim()
+                          : ''
+                      const badgeTone = ['pending', 'approved', 'rejected', 'paid'].includes(statusKey)
+                        ? statusKey
+                        : 'pending'
+                      const paidCents =
+                        b.paid_amount_cents != null && Number.isFinite(Number(b.paid_amount_cents))
+                          ? Number(b.paid_amount_cents)
+                          : null
+                      const paidLine =
+                        paidCents != null && paidCents > 0
+                          ? t('buyerBookings_paidLine', {
+                              amount: formatMoneyFromMinorUnits(
+                                paidCents,
+                                b.paid_currency || 'eur',
+                                moneyLocale,
+                              ),
+                            })
+                          : null
+                      const insAmt = b.insurance_deposit_amount
+                      const insLine =
+                        insAmt != null && Number.isFinite(Number(insAmt))
+                          ? t('buyerBookings_insuranceLine', {
+                              amount: formatMoneyMajorUnits(
+                                Number(insAmt),
+                                b.paid_currency || 'eur',
+                                moneyLocale,
+                              ),
+                            })
+                          : null
+                      const canCancel = ['pending', 'paid', 'approved'].includes(statusKey)
+                      const canCheckIn =
+                        statusKey === 'approved' &&
+                        (Boolean(String(b.owner_comment || '').trim()) ||
+                          Number(b.check_in_enabled) === 1)
                       return (
-                        <Link
-                          key={b.id}
-                          to={`/profile/bookings?booking=${b.id}`}
-                          className="test-booking-mini"
-                          onClick={() => setBookingsSheetOpen(false)}
-                        >
-                          <span className={`test-booking-mini__badge test-booking-mini__badge--${['pending', 'approved', 'rejected'].includes(statusKey) ? statusKey : 'pending'}`}>
-                            {t(`buyerCabinet_bookingStatus_${statusKey}`, t('buyerCabinet_bookingStatus_pending'))}
-                          </span>
-                          <span className="test-booking-mini__title">{title}</span>
-                          <span className="test-booking-mini__meta">
-                            {formatDateRange(b.start_date, b.end_date, locale)}
-                          </span>
-                        </Link>
+                        <div key={b.id} className="test-booking-mini-wrap">
+                          {ownerCommentNotificationsCount > 0 ? (
+                            <button
+                              type="button"
+                              className="test-booking-mini__owner-note-btn"
+                              onClick={() =>
+                                setOwnerCommentModalBooking({
+                                  title,
+                                  comment: ownerComment,
+                                  count: ownerCommentNotificationsCount,
+                                })
+                              }
+                              aria-label={t('buyerCabinet_bookingOwnerCommentOpen', {
+                                count: ownerCommentNotificationsCount,
+                              })}
+                            >
+                              <FiBell size={14} aria-hidden />
+                              <span className="test-booking-mini__owner-note-count">
+                                {ownerCommentNotificationsCount > 99
+                                  ? '99+'
+                                  : ownerCommentNotificationsCount}
+                              </span>
+                            </button>
+                          ) : null}
+                          <Link
+                            to={`/profile/bookings?booking=${b.id}`}
+                            className="test-booking-mini"
+                            onClick={() => setBookingsSheetOpen(false)}
+                          >
+                            <div className="test-booking-mini__media" aria-hidden>
+                              {coverUrl ? (
+                                <img
+                                  src={coverUrl}
+                                  alt=""
+                                  className="test-booking-mini__media-img"
+                                  loading="lazy"
+                                  decoding="async"
+                                  onError={(e) => {
+                                    e.currentTarget.style.display = 'none'
+                                  }}
+                                />
+                              ) : null}
+                              <div className="test-booking-mini__media-fallback">
+                                <FiHome size={22} strokeWidth={1.35} aria-hidden />
+                              </div>
+                            </div>
+                            <div className="test-booking-mini__body">
+                              <div className="test-booking-mini__row">
+                                <span
+                                  className={`test-booking-mini__badge test-booking-mini__badge--${badgeTone}`}
+                                >
+                                  {t(
+                                    `buyerCabinet_bookingStatus_${statusKey}`,
+                                    t('buyerCabinet_bookingStatus_pending'),
+                                  )}
+                                </span>
+                              </div>
+                              <span className="test-booking-mini__title">{title}</span>
+                              {paidLine ? (
+                                <span className="test-booking-mini__money-line">{paidLine}</span>
+                              ) : null}
+                              {insLine ? (
+                                <span className="test-booking-mini__money-line test-booking-mini__money-line--muted">
+                                  {insLine}
+                                </span>
+                              ) : null}
+                              <span className="test-booking-mini__meta">
+                                <FiCalendar
+                                  size={14}
+                                  className="test-booking-mini__meta-icon"
+                                  aria-hidden
+                                />
+                                {formatDateRange(b.start_date, b.end_date, locale)}
+                              </span>
+                              <span className="test-booking-mini__mobile-cta">
+                                {t('buyerBookings_cta')}
+                                <FiArrowRight size={14} aria-hidden />
+                              </span>
+                            </div>
+                            <div className="test-booking-mini__cta">
+                              <span className="test-booking-mini__cta-label">{t('buyerBookings_cta')}</span>
+                              <FiArrowRight size={18} className="test-booking-mini__cta-arrow" aria-hidden />
+                            </div>
+                          </Link>
+                          {canCheckIn ? (
+                            <button
+                              type="button"
+                              className="test-booking-mini__checkin-btn"
+                              onClick={() => {
+                                setBookingsSheetOpen(false)
+                                setCheckInBookingId(b.id)
+                              }}
+                            >
+                              {t('buyerBookings_checkInCta')}
+                              <FiArrowRight size={16} aria-hidden />
+                            </button>
+                          ) : null}
+                          {canCancel ? (
+                            <button
+                              type="button"
+                              className="test-booking-mini__cancel-btn"
+                              onClick={() => setTestDriveCancelBooking(b)}
+                            >
+                              {t('buyerBookings_cancel')}
+                            </button>
+                          ) : null}
+                        </div>
                       )
                     })}
-                    {bookingsSheetRows.length > 5 ? (
+                    {visibleBookingsSheetRows.length > 5 ? (
                       <p className="test-booking-dropbox__more">
-                        {t('buyerCabinet_bookingsShownOfTotal', { shown: 5, total: bookingsSheetRows.length })}
+                        {t('buyerCabinet_bookingsShownOfTotal', {
+                          shown: 5,
+                          total: visibleBookingsSheetRows.length,
+                        })}
                       </p>
                     ) : null}
                   </div>
@@ -2770,10 +2992,9 @@ function TestPage() {
                         <p className="test-panel__subtitle">{t('buyerCabinet_directionsSubtitle')}</p>
                       </div>
                     </div>
-                    <div className="test-quick-row">
-                      {quickLinks.map((link) => {
+                    <div className="test-quick-row test-quick-row--primary">
+                      {quickLinksPrimary.map((link) => {
                         const Icon = link.icon
-                        const isLogout = link.action === 'logout'
                         const isBecomeSeller = link.action === 'becomeSeller'
                         const inner = (
                           <>
@@ -2787,18 +3008,6 @@ function TestPage() {
                             <FiArrowRight size={15} className="test-quick-pill__arrow" aria-hidden />
                           </>
                         )
-                        if (isLogout) {
-                          return (
-                            <button
-                              key="quick-logout"
-                              type="button"
-                              className="test-quick-pill test-quick-pill--logout"
-                              onClick={handleQuickLogout}
-                            >
-                              {inner}
-                            </button>
-                          )
-                        }
                         if (isBecomeSeller) {
                           return (
                             <button
@@ -2817,6 +3026,78 @@ function TestPage() {
                           </Link>
                         )
                       })}
+                    </div>
+                    <div className="test-cabinet-home-discover" aria-label={t('buyerData_profileDiscoverAria')}>
+                      {profileReferralUrl ? (
+                        <div className="test-cabinet-home-discover__referral-card">
+                          <div className="test-cabinet-home-discover__referral-card-head">
+                            <span className="test-cabinet-home-discover__referral-card-icon" aria-hidden>
+                              <FiUserPlus size={18} strokeWidth={2} />
+                            </span>
+                            <span className="test-cabinet-home-discover__referral-card-title">{t('bonus9Title')}</span>
+                          </div>
+                          <label
+                            className="test-cabinet-home-discover__referral-label"
+                            htmlFor="test-cabinet-referral-url"
+                          >
+                            {t('bonusesReferralLabel')}
+                          </label>
+                          <div className="test-cabinet-home-discover__referral-row">
+                            <input
+                              id="test-cabinet-referral-url"
+                              readOnly
+                              type="text"
+                              className="test-cabinet-home-discover__referral-input"
+                              value={profileReferralUrl}
+                              aria-label={t('bonusesReferralLabel')}
+                            />
+                            <button
+                              type="button"
+                              className="test-cabinet-home-discover__referral-copy"
+                              onClick={copyProfileReferralLink}
+                              title={t('bonusesCopyLink')}
+                              aria-label={t('bonusesCopyLinkAria')}
+                            >
+                              {profileReferralCopied ? (
+                                <FiCheck size={18} strokeWidth={2.5} aria-hidden />
+                              ) : (
+                                <FiCopy size={18} aria-hidden />
+                              )}
+                            </button>
+                          </div>
+                          <p className="test-cabinet-home-discover__referral-hint">{t('bonusesReferralHint')}</p>
+                        </div>
+                      ) : null}
+                      <Link to="/bonuses" className="test-cabinet-home-discover__bonuses-cta">
+                        <span className="test-cabinet-home-discover__bonuses-cta-icon" aria-hidden>
+                          <FiGift size={20} strokeWidth={2} />
+                        </span>
+                        <span className="test-cabinet-home-discover__bonuses-cta-body">
+                          <span className="test-cabinet-home-discover__bonuses-cta-title">
+                            {t('buyerData_moreBonusesCta')}
+                          </span>
+                          <span className="test-cabinet-home-discover__bonuses-cta-sub">
+                            {t('buyerData_moreBonusesCtaSub')}
+                          </span>
+                        </span>
+                        <FiArrowRight size={18} className="test-cabinet-home-discover__bonuses-cta-arrow" aria-hidden />
+                      </Link>
+                    </div>
+                    <div className="test-quick-row test-quick-row--logout-below">
+                      <button
+                        type="button"
+                        className="test-quick-pill test-quick-pill--logout"
+                        onClick={handleQuickLogout}
+                      >
+                        <span className="test-quick-pill__icon">
+                          <QuickLogoutIcon size={17} aria-hidden />
+                        </span>
+                        <span className="test-quick-pill__body">
+                          <span className="test-quick-pill__title">{quickLogoutLink.title}</span>
+                          <span className="test-quick-pill__sub">{quickLogoutLink.subtitle}</span>
+                        </span>
+                        <FiArrowRight size={15} className="test-quick-pill__arrow" aria-hidden />
+                      </button>
                     </div>
                   </section>
                 </div>
@@ -3083,6 +3364,58 @@ function TestPage() {
                 onClick={handleSellObjectPromptConfirm}
               >
                 Продолжить
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      <TestDriveCheckInModal
+        open={checkInBookingId != null}
+        bookingId={checkInBookingId}
+        onClose={() => setCheckInBookingId(null)}
+        onSuccess={() => {
+          void refetchBookingsSheetRows()
+          window.dispatchEvent(new CustomEvent('owner-notifications-refresh'))
+        }}
+      />
+
+      <TestDriveBuyerCancelModal
+        open={!!testDriveCancelBooking}
+        booking={testDriveCancelBooking}
+        hasOnlinePayment={Boolean(
+          testDriveCancelBooking &&
+            testDriveCancelBooking.paid_amount_cents != null &&
+            Number(testDriveCancelBooking.paid_amount_cents) > 0,
+        )}
+        onClose={() => setTestDriveCancelBooking(null)}
+        onSuccess={() => {
+          void refetchBookingsSheetRows()
+          window.dispatchEvent(new CustomEvent('owner-notifications-refresh'))
+        }}
+      />
+
+      {ownerCommentModalBooking ? (
+        <div
+          className="test-owner-comment-modal__overlay"
+          role="presentation"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) setOwnerCommentModalBooking(null)
+          }}
+        >
+          <div className="test-owner-comment-modal" role="dialog" aria-modal="true">
+            <h3 className="test-owner-comment-modal__title">{t('buyerCabinet_bookingOwnerCommentTitle')}</h3>
+            <p className="test-owner-comment-modal__property">
+              <strong>{ownerCommentModalBooking.title}</strong>
+            </p>
+            <p className="test-owner-comment-modal__text">{ownerCommentModalBooking.comment}</p>
+            <div className="test-owner-comment-modal__actions">
+              <button
+                type="button"
+                className="test-owner-comment-modal__btn"
+                onClick={() => setOwnerCommentModalBooking(null)}
+              >
+                {t('buyerCabinet_bookingOwnerCommentClose')}
               </button>
             </div>
           </div>

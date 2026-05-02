@@ -1,5 +1,34 @@
+import { Prisma } from '@prisma/client';
 import { getPrisma } from './prismaClient.js';
 
+function parseTs(s) {
+  if (s == null || s === '') return null;
+  const str = String(s).replace(' ', 'T');
+  const d = new Date(str);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
+/** Чек-in тест-драйва отправлен не в дни забронированного слота. */
+function checkInOutsideBookingSlot(submittedAt, startDate, endDate) {
+  const sub = parseTs(submittedAt);
+  const start = parseTs(startDate);
+  const endRaw = endDate ? parseTs(endDate) : start;
+  if (!sub || !start) return false;
+  const end = endRaw || start;
+  const slotStart = new Date(start);
+  slotStart.setUTCHours(0, 0, 0, 0);
+  const slotEnd = new Date(end);
+  slotEnd.setUTCHours(23, 59, 59, 999);
+  return sub < slotStart || sub > slotEnd;
+}
+
+function paymentOutsideDeclaredPeriod(paidAt, periodStart, periodEnd) {
+  const paid = parseTs(paidAt);
+  const ps = parseTs(periodStart);
+  const pe = parseTs(periodEnd);
+  if (!paid || !ps || !pe) return false;
+  return paid < ps || paid > pe;
+}
 
 function parseCrmInterests(raw) {
   if (!raw) return [];
@@ -57,6 +86,152 @@ async function getStageIdBySlugPg(slug) {
   return row ? row.id : null;
 }
 
+/** Оставляет один лид на пользователя (минимальный id), остальные удаляет вместе с активностями (cascade). */
+async function dedupeCrmLeadsByUserIdPg() {
+  const prisma = getPrisma();
+  await prisma.$executeRaw`
+    DELETE FROM "crm_leads" AS d
+    WHERE d."user_id" IS NOT NULL
+      AND EXISTS (
+        SELECT 1 FROM "crm_leads" c
+        WHERE c."user_id" = d."user_id" AND c."id" < d."id"
+      )
+  `;
+}
+
+/** Все пользователи без лида попадают в первую стадию воронки (без дублей по user_id). */
+async function syncRegisteredUsersIntoCrmPg() {
+  const prisma = getPrisma();
+  await ensureStagesPg();
+  const stageNew = await prisma.crm_stages.findFirst({
+    where: { slug: 'new' },
+    select: { id: true },
+  });
+  const stageFirst = stageNew || (await prisma.crm_stages.findFirst({ orderBy: { sort_order: 'asc' }, select: { id: true } }));
+  if (!stageFirst?.id) return 0;
+  const stageId = stageFirst.id;
+  const inserted = await prisma.$executeRaw`
+    INSERT INTO "crm_leads" (
+      "user_id", "display_name", "email", "phone", "stage_id", "sort_order",
+      "temperature", "interests", "deal_value", "currency",
+      "next_action", "next_action_at", "internal_notes", "source",
+      "assistant_lead_id", "created_at", "updated_at"
+    )
+    SELECT
+      u."id",
+      COALESCE(
+        NULLIF(TRIM(CONCAT(COALESCE(u."first_name", ''), ' ', COALESCE(u."last_name", ''))), ''),
+        u."email",
+        CONCAT('Пользователь #', u."id"::text)
+      ),
+      u."email",
+      u."phone_number",
+      ${stageId}::integer,
+      (
+        COALESCE(
+          (SELECT MAX(l."sort_order") FROM "crm_leads" l WHERE l."stage_id" = ${stageId}::integer),
+          -1
+        )::integer + ROW_NUMBER() OVER (ORDER BY u."id")
+      )::integer,
+      'warm',
+      '[]',
+      NULL,
+      'EUR',
+      NULL,
+      NULL,
+      NULL,
+      'auto_user_sync',
+      NULL,
+      to_char(now() AT TIME ZONE 'utc', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'),
+      to_char(now() AT TIME ZONE 'utc', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"')
+    FROM "users" u
+    WHERE NOT EXISTS (SELECT 1 FROM "crm_leads" c WHERE c."user_id" = u."id")
+    ORDER BY u."id"
+    LIMIT 10000
+  `;
+  return typeof inserted === 'bigint' ? Number(inserted) : Number(inserted || 0);
+}
+
+async function fetchUserScheduleSignals(userIds) {
+  const map = new Map();
+  const prisma = getPrisma();
+  const ids = [...new Set((userIds || []).map((x) => parseInt(x, 10)).filter((n) => Number.isFinite(n) && n > 0))];
+  for (const id of ids) {
+    map.set(id, { off_schedule: false, off_schedule_labels: [] });
+  }
+  if (!ids.length) return map;
+
+  const trows = await prisma.$queryRaw`
+    SELECT "user_id", "id", "start_date", "end_date", "check_in_report"
+    FROM "test_drive_bookings"
+    WHERE "user_id" IN (${Prisma.join(ids)})
+      AND "check_in_report" IS NOT NULL
+      AND TRIM("check_in_report") <> ''
+      AND TRIM("check_in_report") <> '{}'
+  `;
+  for (const row of trows) {
+    const uid = row.user_id;
+    let submittedAt = null;
+    try {
+      const j = JSON.parse(String(row.check_in_report));
+      submittedAt = j && j.submitted_at;
+    } catch {
+      /* ignore */
+    }
+    if (!submittedAt || !checkInOutsideBookingSlot(submittedAt, row.start_date, row.end_date)) continue;
+    const slot = map.get(uid);
+    if (!slot) continue;
+    const label = `Тест-драйв #${row.id}: чек-in не в дни слота`;
+    if (!slot.off_schedule_labels.includes(label)) {
+      slot.off_schedule_labels.push(label);
+      slot.off_schedule = true;
+    }
+  }
+
+  const payments = await prisma.stripe_payments.findMany({
+    where: { user_id: { in: ids } },
+    select: { user_id: true, id: true, paid_at: true, period_start: true, period_end: true },
+    orderBy: { id: 'desc' },
+  });
+  for (const p of payments) {
+    if (!p.period_start || !p.period_end || !p.paid_at) continue;
+    if (!paymentOutsideDeclaredPeriod(p.paid_at, p.period_start, p.period_end)) continue;
+    const slot = map.get(p.user_id);
+    if (!slot) continue;
+    const label = `Оплата #${p.id}: дата оплаты вне периода счёта`;
+    if (!slot.off_schedule_labels.includes(label)) {
+      slot.off_schedule_labels.push(label);
+      slot.off_schedule = true;
+    }
+  }
+
+  return map;
+}
+
+function attachScheduleFlagsToLead(lead, userSignals, now) {
+  const labels = [];
+  let off = false;
+  if (lead.user_id && userSignals.has(lead.user_id)) {
+    const u = userSignals.get(lead.user_id);
+    if (u.off_schedule) {
+      off = true;
+      labels.push(...u.off_schedule_labels);
+    }
+  }
+  const na = parseTs(lead.next_action_at != null ? String(lead.next_action_at).replace(' ', 'T') : '');
+  if (na && na < now) {
+    off = true;
+    const lab = 'Просрочен плановый контакт (дата в CRM)';
+    if (!labels.includes(lab)) labels.push(lab);
+  }
+  return {
+    ...lead,
+    off_schedule: off,
+    off_schedule_labels: labels,
+    crm_next_contact_overdue: Boolean(na && na < now),
+  };
+}
+
 export const crmQueries = {
   ensureStages: async () => {
         return ensureStagesPg();
@@ -69,9 +244,12 @@ export const crmQueries = {
 
   getBoard: async () => {
         await ensureStagesPg();
-    const stages = await getPrisma().crm_stages.findMany({ orderBy: [{ sort_order: 'asc' }, { id: 'asc' }] });
+    await dedupeCrmLeadsByUserIdPg();
+    await syncRegisteredUsersIntoCrmPg();
+    const prisma = getPrisma();
+    const stages = await prisma.crm_stages.findMany({ orderBy: [{ sort_order: 'asc' }, { id: 'asc' }] });
     const leads = (
-      await getPrisma().crm_leads.findMany({
+      await prisma.crm_leads.findMany({
         select: {
           id: true,
           user_id: true,
@@ -95,13 +273,31 @@ export const crmQueries = {
         orderBy: [{ stage_id: 'asc' }, { sort_order: 'asc' }, { id: 'asc' }],
       })
     ).map(normalizeCrmLeadRow);
+    const now = new Date();
+    const userIds = leads.map((L) => L.user_id).filter(Boolean);
+    const userSignals = await fetchUserScheduleSignals(userIds);
+    const enriched = leads.map((L) => attachScheduleFlagsToLead(L, userSignals, now));
     const byStage = {};
     for (const s of stages) byStage[s.id] = [];
-    for (const L of leads) {
+    for (const L of enriched) {
       if (!byStage[L.stage_id]) byStage[L.stage_id] = [];
       byStage[L.stage_id].push(L);
     }
     return { stages, leadsByStage: byStage };
+  },
+
+  /** Сигналы «не в срок» для карточки лида (для детальной панели). */
+  getLeadScheduleSignals: async (lead) => {
+    if (!lead) return { off_schedule: false, off_schedule_labels: [], crm_next_contact_overdue: false };
+    const normalized = normalizeCrmLeadRow(lead);
+    const now = new Date();
+    const userSignals = normalized.user_id ? await fetchUserScheduleSignals([normalized.user_id]) : new Map();
+    const out = attachScheduleFlagsToLead(normalized, userSignals, now);
+    return {
+      off_schedule: out.off_schedule,
+      off_schedule_labels: out.off_schedule_labels,
+      crm_next_contact_overdue: out.crm_next_contact_overdue,
+    };
   },
 
   getLeadById: async (id) => {

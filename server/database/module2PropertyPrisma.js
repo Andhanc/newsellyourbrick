@@ -961,9 +961,41 @@ export const propertyQueries = {
     return null;
   },
 
-  updateModerationStatus: async (id, status, reviewedBy = null, rejectionReason = null, debtSeverity = null) => {
+  updateModerationStatus: async (
+    id,
+    status,
+    reviewedBy = null,
+    rejectionReason = null,
+    debtSeverity = null,
+    /** apartment|commercial|house|villa — обязателен при коллизии id в двух таблицах */
+    targetPropertyType = null
+  ) => {
         const prisma = getPrisma();
     const nid = Number(id);
+    const hint = targetPropertyType ? String(targetPropertyType).toLowerCase() : null;
+
+    // Явная таблица: не трогаем «чужую» строку с тем же числовым id в другой таблице.
+    if (hint === 'apartment' || hint === 'commercial') {
+      const row = await prisma.properties_apartments.findUnique({
+        where: { id: nid },
+        select: { id: true, property_type: true },
+      });
+      if (row && (row.property_type === 'apartment' || row.property_type === 'commercial')) {
+        return apartmentQueries.updateModerationStatus(nid, status, reviewedBy, rejectionReason, debtSeverity);
+      }
+      throw new Error(`Объявление с ID ${id} не найдено в таблице квартир/коммерции`);
+    }
+    if (hint === 'house' || hint === 'villa') {
+      const row = await prisma.properties_houses.findUnique({
+        where: { id: nid },
+        select: { id: true, property_type: true },
+      });
+      if (row && (row.property_type === 'house' || row.property_type === 'villa')) {
+        return houseQueries.updateModerationStatus(nid, status, reviewedBy, rejectionReason, debtSeverity);
+      }
+      throw new Error(`Объявление с ID ${id} не найдено в таблице домов`);
+    }
+
     let propertyInHouses = null;
     let propertyInApartments = null;
     try {

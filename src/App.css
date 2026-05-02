@@ -63,6 +63,12 @@
   overflow-x: hidden;
   scrollbar-width: none; 
   -ms-overflow-style: none; 
+  /*
+   * Футер (#site-footer) имеет z-index: 10 — без слоя у контента фиксированные модалки
+   * внутри страницы оказываются ниже футера и не затемняют его.
+   */
+  position: relative;
+  z-index: 11;
 }
 
 .app-layout > footer {

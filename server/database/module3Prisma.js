@@ -161,6 +161,24 @@ export const testDriveBookingQueries = {
     await prisma.$executeRawUnsafe(
       "ALTER TABLE test_drive_bookings ADD COLUMN IF NOT EXISTS check_in_status TEXT DEFAULT 'pending_checkin'"
     );
+    await prisma.$executeRawUnsafe(
+      'ALTER TABLE test_drive_bookings ADD COLUMN IF NOT EXISTS cancelled_by TEXT'
+    );
+    await prisma.$executeRawUnsafe(
+      'ALTER TABLE test_drive_bookings ADD COLUMN IF NOT EXISTS cancellation_reason_code TEXT'
+    );
+    await prisma.$executeRawUnsafe(
+      'ALTER TABLE test_drive_bookings ADD COLUMN IF NOT EXISTS cancellation_reason TEXT'
+    );
+    await prisma.$executeRawUnsafe(
+      'ALTER TABLE test_drive_bookings ADD COLUMN IF NOT EXISTS cancelled_at TIMESTAMP'
+    );
+    await prisma.$executeRawUnsafe(
+      `UPDATE test_drive_bookings
+       SET cancelled_at = COALESCE(cancelled_at, created_at)
+       WHERE LOWER(TRIM(COALESCE(status, ''))) = 'cancelled'
+         AND cancelled_at IS NULL`
+    );
   },
 
   create: async (row) => {

@@ -34,6 +34,34 @@ const TEMP_CLASS = {
   hot: 'crm-board__temp--hot',
 };
 
+function fmtCrmShortDate(s) {
+  if (s == null || s === '') return '—';
+  const d = new Date(String(s).replace(' ', 'T'));
+  if (Number.isNaN(d.getTime())) return String(s).slice(0, 16);
+  return d.toLocaleString('ru-RU', {
+    day: '2-digit',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
+function sourceRu(src) {
+  const m = {
+    manual: 'Вручную',
+    user_import: 'Импорт',
+    assistant_import: 'Помощник',
+    auto_user_sync: 'База пользователей',
+  };
+  return m[src] || src || '—';
+}
+
+function clip(s, n) {
+  if (s == null || s === '') return '—';
+  const t = String(s).trim();
+  return t.length <= n ? t : `${t.slice(0, n)}…`;
+}
+
 export default function CrmBoard() {
   const [board, setBoard] = useState({ stages: [], leadsByStage: {} });
   const [loading, setLoading] = useState(true);
@@ -157,7 +185,19 @@ export default function CrmBoard() {
       });
       const json = await res.json();
       if (!json.success) throw new Error(json.error);
-      setDetail((d) => ({ ...d, lead: json.data }));
+      const r1 = await fetch(`${base}/admin/crm/leads/${drawerLeadId}`);
+      const j1 = await r1.json();
+      if (j1.success) {
+        setDetail((d) => ({
+          ...d,
+          lead: j1.data.lead,
+          userSummary: j1.data.userSummary ?? d?.userSummary,
+          touchCount: j1.data.touchCount,
+          activityCount: j1.data.activityCount,
+        }));
+      } else {
+        setDetail((d) => ({ ...d, lead: json.data }));
+      }
       loadBoard();
       showNotification('Сохранено', 'success');
     } catch (err) {
@@ -425,9 +465,58 @@ export default function CrmBoard() {
                       tabIndex={0}
                       onKeyDown={(e) => e.key === 'Enter' && openDrawer(L.id)}
                     >
-                      <p className="crm-board__card-title">{L.display_name}</p>
-                      {L.email && <p className="crm-board__card-meta">{L.email}</p>}
-                      {L.phone && <p className="crm-board__card-meta">{L.phone}</p>}
+                      <div className="crm-board__card-top">
+                        <p className="crm-board__card-title">{L.display_name}</p>
+                        {L.off_schedule ? (
+                          <span className="crm-board__risk" title={(L.off_schedule_labels || []).join('\n')}>
+                            Не в срок
+                          </span>
+                        ) : null}
+                      </div>
+                      <dl className="crm-board__card-dl">
+                        <div>
+                          <dt>Этап</dt>
+                          <dd>{stage.label}</dd>
+                        </div>
+                        <div>
+                          <dt>Email</dt>
+                          <dd>{L.email || '—'}</dd>
+                        </div>
+                        <div>
+                          <dt>Телефон</dt>
+                          <dd>{L.phone || '—'}</dd>
+                        </div>
+                        <div>
+                          <dt>Источник</dt>
+                          <dd>{sourceRu(L.source)}</dd>
+                        </div>
+                        <div>
+                          <dt>В системе</dt>
+                          <dd>{fmtCrmShortDate(L.created_at)}</dd>
+                        </div>
+                        <div>
+                          <dt>След. контакт</dt>
+                          <dd
+                            className={
+                              L.crm_next_contact_overdue ? 'crm-board__card-dd--warn' : undefined
+                            }
+                          >
+                            {fmtCrmShortDate(L.next_action_at)}
+                          </dd>
+                        </div>
+                        <div>
+                          <dt>След. шаг</dt>
+                          <dd title={L.next_action || ''}>{clip(L.next_action, 48)}</dd>
+                        </div>
+                        <div>
+                          <dt>Сделка</dt>
+                          <dd>
+                            {L.deal_value != null && String(L.deal_value).trim() !== ''
+                              ? `${L.deal_value} ${L.currency || 'EUR'}`
+                              : '—'}
+                          </dd>
+                        </div>
+                      </dl>
                       <span
                         className={`crm-board__temp ${TEMP_CLASS[L.temperature] || TEMP_CLASS.warm}`}
                       >
@@ -531,6 +620,73 @@ export default function CrmBoard() {
                     {detail.userSummary.role}, {detail.userSummary.country || 'страна не указана'}
                   </div>
                 )}
+
+                {lead.off_schedule ? (
+                  <div className="crm-board__schedule-alert" role="status">
+                    <strong>Не в срок</strong>
+                    <ul>
+                      {(lead.off_schedule_labels || []).map((t) => (
+                        <li key={t}>{t}</li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : (
+                  <div className="crm-board__schedule-ok">Сроки по данным платформы и CRM — без отклонений</div>
+                )}
+
+                <div className="crm-board__detail-grid">
+                  <div className="crm-board__detail-item">
+                    <span className="crm-board__detail-k">Источник лида</span>
+                    <span className="crm-board__detail-v">{sourceRu(lead.source)}</span>
+                  </div>
+                  <div className="crm-board__detail-item">
+                    <span className="crm-board__detail-k">User ID</span>
+                    <span className="crm-board__detail-v">{lead.user_id ?? '—'}</span>
+                  </div>
+                  <div className="crm-board__detail-item">
+                    <span className="crm-board__detail-k">Создан</span>
+                    <span className="crm-board__detail-v">{fmtCrmShortDate(lead.created_at)}</span>
+                  </div>
+                  <div className="crm-board__detail-item">
+                    <span className="crm-board__detail-k">Обновлён</span>
+                    <span className="crm-board__detail-v">{fmtCrmShortDate(lead.updated_at)}</span>
+                  </div>
+                  <div className="crm-board__detail-item">
+                    <span className="crm-board__detail-k">Помощник (лид)</span>
+                    <span className="crm-board__detail-v">{lead.assistant_lead_id ?? '—'}</span>
+                  </div>
+                  <div className="crm-board__detail-item">
+                    <span className="crm-board__detail-k">Просрочен контакт</span>
+                    <span className="crm-board__detail-v">
+                      {lead.crm_next_contact_overdue ? 'Да' : 'Нет'}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="crm-board__field crm-board__field--row2">
+                  <div>
+                    <label>Сумма сделки</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      defaultValue={lead.deal_value != null ? String(lead.deal_value) : ''}
+                      key={`dv-${lead.id}-${lead.deal_value}`}
+                      onBlur={(e) => {
+                        const v = e.target.value.trim();
+                        saveLeadPatch({ deal_value: v === '' ? null : Number(v) });
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <label>Валюта</label>
+                    <input
+                      defaultValue={lead.currency || 'EUR'}
+                      key={`cur-${lead.id}-${lead.currency}`}
+                      maxLength={8}
+                      onBlur={(e) => saveLeadPatch({ currency: e.target.value.trim() || 'EUR' })}
+                    />
+                  </div>
+                </div>
 
                 <div className="crm-board__field">
                   <label>Температура</label>

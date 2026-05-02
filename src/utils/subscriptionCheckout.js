@@ -80,12 +80,14 @@ export async function confirmWalletDepositSession(sessionId, userId) {
   return { ok: true, data: data.data }
 }
 
-export async function startProSubscriptionCheckout({ userId, customerEmail } = {}) {
+export async function startProSubscriptionCheckout({ userId, customerEmail, billingCycle = 'monthly' } = {}) {
+  const normalizedBillingCycle = billingCycle === 'yearly' ? 'yearly' : 'monthly'
   const res = await fetch(`${API_BASE}/billing/create-checkout-session`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       plan: 'pro',
+      billingCycle: normalizedBillingCycle,
       userId: userId != null ? String(userId) : undefined,
       customerEmail: customerEmail || undefined,
     }),

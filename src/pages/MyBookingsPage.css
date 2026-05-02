@@ -151,9 +151,48 @@
   background: linear-gradient(135deg, #ffffff 0%, #f0fdfa 55%, #ecfeff 100%);
 }
 
+.my-bookings-card--paid .my-bookings-card__inner {
+  border-left-color: #0891b2;
+  background: linear-gradient(135deg, #ffffff 0%, #ecfeff 50%, #f0f9ff 100%);
+}
+
 .my-bookings-card--rejected .my-bookings-card__inner {
   border-left-color: #f87171;
   background: linear-gradient(135deg, #ffffff 0%, #fef2f2 100%);
+}
+
+.my-bookings-card--cancelled .my-bookings-card__inner {
+  border-left-color: #94a3b8;
+  background: linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%);
+}
+
+.my-bookings-card__cancel-info {
+  margin-top: 12px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: rgba(254, 243, 199, 0.45);
+  border: 1px solid rgba(251, 191, 36, 0.35);
+}
+
+.my-bookings-card__cancel-line {
+  margin: 0 0 8px;
+  font-size: 0.88rem;
+  line-height: 1.45;
+  color: #422006;
+}
+
+.my-bookings-card__cancel-line:last-of-type {
+  margin-bottom: 0;
+}
+
+.my-bookings-card__cancel-line--muted {
+  color: #78716c;
+}
+
+.my-bookings-card__cancel-meta {
+  margin: 10px 0 0;
+  font-size: 0.75rem;
+  color: #78716c;
 }
 
 .my-bookings-card__head {
@@ -208,10 +247,22 @@
   box-shadow: 0 1px 2px rgba(15, 118, 110, 0.12);
 }
 
+.my-bookings-badge--paid {
+  background: linear-gradient(135deg, #cffafe 0%, #a5f3fc 100%);
+  color: #0e7490;
+  box-shadow: 0 1px 2px rgba(14, 116, 144, 0.12);
+}
+
 .my-bookings-badge--rejected {
   background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
   color: #991b1b;
   box-shadow: 0 1px 2px rgba(153, 27, 27, 0.1);
+}
+
+.my-bookings-badge--cancelled {
+  background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%);
+  color: #334155;
+  box-shadow: 0 1px 2px rgba(51, 65, 85, 0.1);
 }
 
 .my-bookings-card__dates-row {
@@ -242,8 +293,16 @@
   color: #d97706;
 }
 
+.my-bookings-card--paid .my-bookings-card__dates-icon {
+  color: #0891b2;
+}
+
 .my-bookings-card--rejected .my-bookings-card__dates-icon {
   color: #dc2626;
+}
+
+.my-bookings-card--cancelled .my-bookings-card__dates-icon {
+  color: #64748b;
 }
 
 .my-bookings-card__dates-text {
@@ -261,7 +320,24 @@
   color: #64748b;
 }
 
+.my-bookings-card__money {
+  margin: 0 0 6px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #0f172a;
+  line-height: 1.4;
+}
+
+.my-bookings-card__money--muted {
+  font-weight: 600;
+  color: #64748b;
+}
+
 .my-bookings-card__footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
   padding-top: 4px;
   border-top: 1px solid rgba(226, 232, 240, 0.85);
 }
@@ -295,6 +371,16 @@
 
 .my-bookings-card__cta:active {
   transform: translateY(0);
+}
+
+.my-bookings-card__cta--danger {
+  color: #991b1b;
+  background: linear-gradient(135deg, #fef2f2 0%, #fecaca 100%);
+  box-shadow: 0 2px 12px rgba(185, 28, 28, 0.18);
+}
+
+.my-bookings-card__cta--danger:hover {
+  box-shadow: 0 6px 18px rgba(185, 28, 28, 0.28);
 }
 
 @media (min-width: 480px) {

@@ -5,7 +5,10 @@ import { useUser, useClerk } from '@clerk/clerk-react'
 import { getApiBaseUrlSync } from '../utils/apiConfig'
 import { logout } from '../services/authService'
 import { FiArrowRight, FiCalendar } from 'react-icons/fi'
+import TestDriveBuyerCancelModal from '../components/TestDriveBuyerCancelModal'
+import TestDriveCheckInModal from '../components/TestDriveCheckInModal'
 import BuyerCabinetSidebar from '../components/BuyerCabinetSidebar'
+import { formatMoneyFromMinorUnits, formatMoneyMajorUnits } from '../utils/formatStripeMoney'
 import { useChainedAppLayoutScroll } from '../hooks/useChainedAppLayoutScroll'
 import i18n from '../i18n/config'
 import './Profile.css'
@@ -42,6 +45,8 @@ export default function MyBookingsPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [cancelNotice, setCancelNotice] = useState(null)
+  const [buyerCancelBooking, setBuyerCancelBooking] = useState(null)
+  const [checkInBookingId, setCheckInBookingId] = useState(null)
   const cardRefs = useRef({})
   const buyerCabinetPageRef = useRef(null)
   const buyerCabinetMainScrollRef = useRef(null)
@@ -163,8 +168,39 @@ export default function MyBookingsPage() {
     setTimeout(() => window.location.reload(), 0)
   }
 
+  const visibleBookings = bookings.filter((b) => {
+    const statusKey = String(b.status || '').toLowerCase()
+    const cancelledBy = String(b.cancelled_by || '').toLowerCase()
+    // В новом кабинете скрываем брони, которые покупатель отменил сам.
+    return !(statusKey === 'cancelled' && cancelledBy === 'buyer')
+  })
+
   return (
     <div className="profile-page" ref={buyerCabinetPageRef}>
+      <TestDriveCheckInModal
+        open={checkInBookingId != null}
+        bookingId={checkInBookingId}
+        onClose={() => setCheckInBookingId(null)}
+        onSuccess={() => {
+          void loadBookings(true)
+          window.dispatchEvent(new CustomEvent('owner-notifications-refresh'))
+        }}
+      />
+
+      <TestDriveBuyerCancelModal
+        open={!!buyerCancelBooking}
+        booking={buyerCancelBooking}
+        hasOnlinePayment={Boolean(
+          buyerCancelBooking &&
+            buyerCancelBooking.paid_amount_cents != null &&
+            Number(buyerCancelBooking.paid_amount_cents) > 0,
+        )}
+        onClose={() => setBuyerCancelBooking(null)}
+        onSuccess={() => {
+          void loadBookings(true)
+          window.dispatchEvent(new CustomEvent('owner-notifications-refresh'))
+        }}
+      />
       {cancelNotice ? (
         <div className="my-bookings-cancel-modal__overlay" role="presentation">
           <div className="my-bookings-cancel-modal" role="dialog" aria-modal="true">
@@ -205,7 +241,7 @@ export default function MyBookingsPage() {
           {!loading && error && (
             <div className="my-bookings-state my-bookings-state--error">{error}</div>
           )}
-          {!loading && !error && bookings.length === 0 && (
+          {!loading && !error && visibleBookings.length === 0 && (
             <div className="my-bookings-empty">
               <div className="my-bookings-empty__icon" aria-hidden>
                 <FiCalendar size={40} strokeWidth={1.25} />
@@ -214,19 +250,51 @@ export default function MyBookingsPage() {
               <p className="my-bookings-empty__text">{t('buyerBookings_emptyText')}</p>
             </div>
           )}
-          {!loading && !error && bookings.length > 0 && (
+          {!loading && !error && visibleBookings.length > 0 && (
             <ul className="my-bookings-list">
-              {bookings.map((b) => {
+              {visibleBookings.map((b) => {
                 const idKey = String(b.id)
                 const isHi = highlightBookingId === idKey
                 const statusKey = (b.status || 'pending').toLowerCase()
                 const label = statusLabel(statusKey)
-                const cardVariant = ['pending', 'approved', 'rejected'].includes(statusKey)
+                const cardVariant = ['pending', 'paid', 'approved', 'rejected', 'cancelled'].includes(statusKey)
                   ? statusKey
                   : 'pending'
                 const title =
                   b.property_title || t('buyerBookings_propertyFallback', { id: b.property_id })
                 const table = b.property_table || 'properties_apartments'
+                const paidCents =
+                  b.paid_amount_cents != null && Number.isFinite(Number(b.paid_amount_cents))
+                    ? Number(b.paid_amount_cents)
+                    : null
+                const paidLine =
+                  paidCents != null && paidCents > 0
+                    ? t('buyerBookings_paidLine', {
+                        amount: formatMoneyFromMinorUnits(
+                          paidCents,
+                          b.paid_currency || 'eur',
+                          billingLocaleFromLang(),
+                        ),
+                      })
+                    : null
+                const insAmt = b.insurance_deposit_amount
+                const insLine =
+                  insAmt != null && Number.isFinite(Number(insAmt))
+                    ? t('buyerBookings_insuranceLine', {
+                        amount: formatMoneyMajorUnits(
+                          Number(insAmt),
+                          b.paid_currency || 'eur',
+                          billingLocaleFromLang(),
+                        ),
+                      })
+                    : null
+                const canBuyerCancel = ['pending', 'paid', 'approved'].includes(statusKey)
+                const cancelReason =
+                  b.cancellation_reason ||
+                  (b.cancellation_reason_code ? String(b.cancellation_reason_code) : '') ||
+                  ''
+                const cancelledByOwner = String(b.cancelled_by || '').toLowerCase() === 'owner'
+                const cancelledByBuyer = String(b.cancelled_by || '').toLowerCase() === 'buyer'
                 return (
                   <li
                     key={b.id}
@@ -250,6 +318,41 @@ export default function MyBookingsPage() {
                           {formatDateRange(b.start_date, b.end_date)}
                         </span>
                       </div>
+                      {paidLine ? <p className="my-bookings-card__money">{paidLine}</p> : null}
+                      {insLine ? (
+                        <p className="my-bookings-card__money my-bookings-card__money--muted">{insLine}</p>
+                      ) : null}
+                      {statusKey === 'cancelled' ? (
+                        <div className="my-bookings-card__cancel-info">
+                          {cancelledByOwner ? (
+                            <p className="my-bookings-card__cancel-line">
+                              <strong>{t('buyerBookings_cancelledByOwner')}</strong>
+                            </p>
+                          ) : null}
+                          {cancelledByBuyer ? (
+                            <p className="my-bookings-card__cancel-line">
+                              <strong>{t('buyerBookings_cancelledByYou')}</strong>
+                            </p>
+                          ) : null}
+                          {!cancelledByOwner && !cancelledByBuyer ? (
+                            <p className="my-bookings-card__cancel-line">
+                              <strong>{t('buyerBookings_cancelledGeneric')}</strong>
+                            </p>
+                          ) : null}
+                          {cancelReason ? (
+                            <p className="my-bookings-card__cancel-line">
+                              {t('buyerBookings_cancelledReason')} <strong>{cancelReason}</strong>
+                            </p>
+                          ) : (
+                            <p className="my-bookings-card__cancel-line my-bookings-card__cancel-line--muted">
+                              {t('buyerBookings_cancelledNoReason')}
+                            </p>
+                          )}
+                          {b.cancelled_at ? (
+                            <p className="my-bookings-card__cancel-meta">{b.cancelled_at}</p>
+                          ) : null}
+                        </div>
+                      ) : null}
                       <p className="my-bookings-card__hint">{t('buyerBookings_hint')}</p>
                       {b.owner_comment ? (
                         <div className="my-bookings-card__hint" style={{ marginTop: 8 }}>
@@ -262,10 +365,19 @@ export default function MyBookingsPage() {
                           <button
                             type="button"
                             className="my-bookings-card__cta"
-                            onClick={() => navigate(`/profile/bookings/${b.id}/check-in`)}
+                            onClick={() => setCheckInBookingId(b.id)}
                           >
-                            <span>Заселиться</span>
+                            <span>{t('buyerBookings_checkInCta')}</span>
                             <FiArrowRight size={18} aria-hidden />
+                          </button>
+                        ) : null}
+                        {canBuyerCancel ? (
+                          <button
+                            type="button"
+                            className="my-bookings-card__cta my-bookings-card__cta--danger"
+                            onClick={() => setBuyerCancelBooking(b)}
+                          >
+                            <span>{t('buyerBookings_cancel')}</span>
                           </button>
                         ) : null}
                         <button

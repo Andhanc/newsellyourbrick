@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useUser, useClerk } from '@clerk/clerk-react'
 import { useTranslation } from 'react-i18next'
@@ -319,34 +320,37 @@ const Footer = () => {
         </div>
       </div>
 
-      {storeComingSoonOpen && (
-        <div
-          className="footer-store-modal-overlay"
-          role="presentation"
-          onClick={closeStoreComingSoon}
-        >
-          <div
-            className="footer-store-modal"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="footer-store-modal-title"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              type="button"
-              className="footer-store-modal__close"
+      {storeComingSoonOpen && typeof document !== 'undefined'
+        ? createPortal(
+            <div
+              className="footer-store-modal-overlay"
+              role="presentation"
               onClick={closeStoreComingSoon}
-              aria-label={t('footerCloseModal')}
             >
-              <FiX size={22} />
-            </button>
-            <MdSentimentDissatisfied className="footer-store-modal__icon" aria-hidden />
-            <p id="footer-store-modal-title" className="footer-store-modal__title">
-              {t('footerComingSoon')}
-            </p>
-          </div>
-        </div>
-      )}
+              <div
+                className="footer-store-modal"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="footer-store-modal-title"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <button
+                  type="button"
+                  className="footer-store-modal__close"
+                  onClick={closeStoreComingSoon}
+                  aria-label={t('footerCloseModal')}
+                >
+                  <FiX size={22} />
+                </button>
+                <MdSentimentDissatisfied className="footer-store-modal__icon" aria-hidden />
+                <p id="footer-store-modal-title" className="footer-store-modal__title">
+                  {t('footerComingSoon')}
+                </p>
+              </div>
+            </div>,
+            document.body,
+          )
+        : null}
     </footer>
   )
 }

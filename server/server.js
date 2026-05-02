@@ -4,7 +4,7 @@ import compression from 'compression';
 import cors from 'cors';
 import axios from 'axios';
 import { initDatabase, closeDatabase, schemaCache } from './database/database.js';
-import { userQueries, documentQueries, notificationQueries, testDriveBookingQueries, administratorQueries, debtReasonQueries, debtDocumentQueries, whatsappUserQueries, purchaseRequestQueries, assistantLeadQueries, liveChatQueries, apartmentQueries, houseQueries, propertyQueries, favoriteQueries, crmQueries, auctionReminderQueries, passesApprovedFilters, passesAuctionFilters } from './database/database.js';
+import { userQueries, documentQueries, notificationQueries, testDriveBookingQueries, administratorQueries, debtReasonQueries, debtDocumentQueries, whatsappUserQueries, purchaseRequestQueries, assistantLeadQueries, liveChatQueries, apartmentQueries, houseQueries, propertyQueries, favoriteQueries, crmQueries, auctionReminderQueries, passesApprovedFilters, passesAuctionFilters, stripeSubscriptionQueries } from './database/database.js';
 import { getPrisma } from './database/prismaClient.js';
 import { mergePropertyTranslations, mergeReservationFields } from './propertyListBatch.js';
 import { fileURLToPath } from 'url';
@@ -24,7 +24,12 @@ import { translatePropertyToAllLanguages } from './services/aiPropertyTranslate.
 import { buildDatabaseSnapshot } from './services/storageSnapshot.js';
 import { buildOwnerSaleCelebrations } from './ownerSaleCelebrations.js';
 import { getAuctionMinBidStep } from '../src/utils/auctionBidStep.js';
-import { registerStripeBillingRoutes, createStripeWebhookHandler } from './stripeBilling.js';
+import {
+  registerStripeBillingRoutes,
+  createStripeWebhookHandler,
+  refundHalfTestDriveBookingPayment,
+  parseTestDriveBuyerCancelBody,
+} from './stripeBilling.js';
 import { sendCrmEmailViaEmailJS, resolveBuyerEmailForPurchaseRequest } from './emailJsCrmSend.js';
 import { registerIntelligenceIoProxy, getIntelligenceIoKeyFromEnv } from './intelligenceIoProxy.js';
 
@@ -6538,9 +6543,10 @@ app.get('/api/admin/crm/leads/:id', async (req, res) => {
     }
     const touchCount = await crmQueries.countTouchActivities(id);
     const activityCount = await crmQueries.countActivities(id);
+    const scheduleSignals = await crmQueries.getLeadScheduleSignals(lead);
     res.json({
       success: true,
-      data: { lead, userSummary, touchCount, activityCount },
+      data: { lead: { ...lead, ...scheduleSignals }, userSummary, touchCount, activityCount },
     });
   } catch (error) {
     console.error('CRM lead get:', error);
@@ -9729,35 +9735,328 @@ app.put('/api/test-drive-bookings/:bookingId/respond', async (req, res) => {
   }
 });
 
+function firstPhotoUrlFromPropertyPhotosField(photosField) {
+  if (photosField == null || photosField === '') return null;
+  let list = photosField;
+  if (typeof list === 'string') {
+    try {
+      list = JSON.parse(list);
+    } catch {
+      return null;
+    }
+  }
+  if (!Array.isArray(list) || list.length === 0) return null;
+  const first = list[0];
+  if (typeof first === 'string') return first;
+  if (first && typeof first === 'object' && first.url != null) return String(first.url);
+  return null;
+}
+
 async function enrichTestDriveBookingWithPropertyTitle(row) {
   const prisma = getPrisma();
   const table = row.property_table || 'properties_apartments';
   let title = null;
+  let property_cover_url = null;
   try {
     if (table === 'properties_houses') {
       const p = await prisma.properties_houses.findUnique({
         where: { id: Number(row.property_id) },
-        select: { title: true },
+        select: { title: true, photos: true },
       });
       title = p?.title;
+      property_cover_url = firstPhotoUrlFromPropertyPhotosField(p?.photos);
     } else if (table === 'properties_apartments') {
       const p = await prisma.properties_apartments.findUnique({
         where: { id: Number(row.property_id) },
-        select: { title: true },
+        select: { title: true, photos: true },
       });
       title = p?.title;
+      property_cover_url = firstPhotoUrlFromPropertyPhotosField(p?.photos);
     } else {
       const p = await prisma.properties.findUnique({
         where: { id: Number(row.property_id) },
-        select: { title: true },
+        select: { title: true, photos: true },
       });
       title = p?.title;
+      property_cover_url = firstPhotoUrlFromPropertyPhotosField(p?.photos);
     }
   } catch (e) {
     /* ignore */
   }
-  return { ...row, property_title: title || `Объект #${row.property_id}` };
+  return {
+    ...row,
+    property_title: title || `Объект #${row.property_id}`,
+    property_cover_url,
+  };
 }
+
+function mergeTestDriveBookingsWithPaymentRows(userId, enrichedRows) {
+  return stripeSubscriptionQueries.listTestDriveBookingPaymentsByUserId(userId, 120).then((pays) => {
+    const byBid = new Map();
+    for (const p of pays) {
+      try {
+        const j = JSON.parse(p.billing_reason || '{}');
+        const bid = Number(j.booking_id);
+        if (!Number.isFinite(bid) || byBid.has(bid)) continue;
+        byBid.set(bid, { p, j });
+      } catch {
+        /* ignore */
+      }
+    }
+    return enrichedRows.map((row) => {
+      const hit = byBid.get(Number(row.id));
+      if (!hit) {
+        return {
+          ...row,
+          paid_amount_cents: null,
+          paid_currency: null,
+          insurance_deposit_amount: null,
+        };
+      }
+      const insRaw = hit.j.insurance_deposit;
+      const ins =
+        insRaw != null && insRaw !== '' && !Number.isNaN(Number(insRaw)) ? Number(insRaw) : null;
+      return {
+        ...row,
+        paid_amount_cents: hit.p.amount_cents,
+        paid_currency: hit.p.currency,
+        insurance_deposit_amount: ins,
+      };
+    });
+  });
+}
+
+/** Платежи по заявкам для кабинета продавца (несколько покупателей). */
+async function mergeTestDriveOwnerBookingsWithPayments(enrichedRows) {
+  const buyerIds = [
+    ...new Set(
+      enrichedRows
+        .map((r) => Number(r.user_id))
+        .filter((n) => Number.isFinite(n) && n > 0)
+    ),
+  ];
+  if (!buyerIds.length) {
+    return enrichedRows.map((row) => ({
+      ...row,
+      paid_amount_cents: null,
+      paid_currency: null,
+      insurance_deposit_amount: null,
+    }));
+  }
+  const payLists = await Promise.all(
+    buyerIds.map((uid) => stripeSubscriptionQueries.listTestDriveBookingPaymentsByUserId(uid, 200))
+  );
+  const byBid = new Map();
+  for (const pays of payLists) {
+    for (const p of pays) {
+      try {
+        const j = JSON.parse(p.billing_reason || '{}');
+        const bid = Number(j.booking_id);
+        if (!Number.isFinite(bid) || byBid.has(bid)) continue;
+        byBid.set(bid, { p, j });
+      } catch {
+        /* ignore */
+      }
+    }
+  }
+  return enrichedRows.map((row) => {
+    const hit = byBid.get(Number(row.id));
+    if (!hit) {
+      return {
+        ...row,
+        paid_amount_cents: null,
+        paid_currency: null,
+        insurance_deposit_amount: null,
+      };
+    }
+    const insRaw = hit.j.insurance_deposit;
+    const ins =
+      insRaw != null && insRaw !== '' && !Number.isNaN(Number(insRaw)) ? Number(insRaw) : null;
+    return {
+      ...row,
+      paid_amount_cents: hit.p.amount_cents,
+      paid_currency: hit.p.currency,
+      insurance_deposit_amount: ins,
+    };
+  });
+}
+
+/**
+ * GET /api/admin/test-drive/properties — объекты с включённым тест-драйвом и/или с бронями + счётчик
+ */
+app.get('/api/admin/test-drive/properties', async (req, res) => {
+  try {
+    await testDriveBookingQueries.ensureTable();
+    const prisma = getPrisma();
+    const grouped = await prisma.test_drive_bookings.groupBy({
+      by: ['property_id', 'property_table'],
+      _count: { _all: true },
+    });
+    const countByKey = new Map();
+    const aptIdsBk = new Set();
+    const houseIdsBk = new Set();
+    for (const g of grouped) {
+      const key = `${g.property_table}:${g.property_id}`;
+      countByKey.set(key, g._count._all);
+      if (g.property_table === 'properties_houses') houseIdsBk.add(Number(g.property_id));
+      else aptIdsBk.add(Number(g.property_id));
+    }
+    const aptIn = Array.from(aptIdsBk).filter((n) => Number.isFinite(n));
+    const houseIn = Array.from(houseIdsBk).filter((n) => Number.isFinite(n));
+    const aptWhere =
+      aptIn.length > 0
+        ? { OR: [{ test_drive: 1 }, { id: { in: aptIn } }] }
+        : { test_drive: 1 };
+    const houseWhere =
+      houseIn.length > 0
+        ? { OR: [{ test_drive: 1 }, { id: { in: houseIn } }] }
+        : { test_drive: 1 };
+    const [apartments, houses] = await Promise.all([
+      prisma.properties_apartments.findMany({
+        where: aptWhere,
+        select: {
+          id: true,
+          title: true,
+          photos: true,
+          user_id: true,
+          location: true,
+          city: true,
+          test_drive: true,
+          moderation_status: true,
+        },
+      }),
+      prisma.properties_houses.findMany({
+        where: houseWhere,
+        select: {
+          id: true,
+          title: true,
+          photos: true,
+          user_id: true,
+          location: true,
+          city: true,
+          test_drive: true,
+          moderation_status: true,
+        },
+      }),
+    ]);
+    const rows = [];
+    for (const a of apartments) {
+      const pt = 'properties_apartments';
+      const key = `${pt}:${a.id}`;
+      rows.push({
+        property_id: a.id,
+        property_table: pt,
+        title: a.title,
+        cover_url: firstPhotoUrlFromPropertyPhotosField(a.photos),
+        owner_user_id: a.user_id,
+        location_line: [a.city, a.location].filter(Boolean).join(', ') || '—',
+        test_drive: a.test_drive,
+        moderation_status: a.moderation_status,
+        booking_count: countByKey.get(key) || 0,
+      });
+    }
+    for (const h of houses) {
+      const pt = 'properties_houses';
+      const key = `${pt}:${h.id}`;
+      rows.push({
+        property_id: h.id,
+        property_table: pt,
+        title: h.title,
+        cover_url: firstPhotoUrlFromPropertyPhotosField(h.photos),
+        owner_user_id: h.user_id,
+        location_line: [h.city, h.location].filter(Boolean).join(', ') || '—',
+        test_drive: h.test_drive,
+        moderation_status: h.moderation_status,
+        booking_count: countByKey.get(key) || 0,
+      });
+    }
+    rows.sort((x, y) => {
+      const c = (y.booking_count || 0) - (x.booking_count || 0);
+      if (c !== 0) return c;
+      return String(x.title || '').localeCompare(String(y.title || ''), 'ru');
+    });
+    return res.json({ success: true, data: rows });
+  } catch (error) {
+    console.error('GET /api/admin/test-drive/properties:', error);
+    return res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * GET /api/admin/test-drive/property-bookings?property_id=&property_table=
+ * Список броней по объекту с данными покупателя (для админки).
+ */
+app.get('/api/admin/test-drive/property-bookings', async (req, res) => {
+  try {
+    await testDriveBookingQueries.ensureTable();
+    const propertyId = parseInt(String(req.query.property_id || ''), 10);
+    const rawTable = String(req.query.property_table || 'properties_apartments').trim();
+    if (!Number.isFinite(propertyId) || propertyId <= 0) {
+      return res.status(400).json({ success: false, error: 'Укажите корректный property_id' });
+    }
+    const allowed = ['properties_apartments', 'properties_houses'];
+    const propertyTable = allowed.includes(rawTable) ? rawTable : 'properties_apartments';
+    const prisma = getPrisma();
+    const rows = await prisma.$queryRaw`
+      SELECT
+        t.id,
+        t.property_id,
+        t.property_table,
+        t.user_id,
+        t.start_date,
+        t.end_date,
+        t.status,
+        t.cancelled_by,
+        t.cancellation_reason_code,
+        t.cancellation_reason,
+        t.cancelled_at,
+        t.owner_comment,
+        t.check_in_enabled,
+        t.check_in_report,
+        t.check_in_status,
+        t.created_at,
+        u.first_name AS buyer_first_name,
+        u.last_name AS buyer_last_name,
+        u.email AS buyer_email,
+        u.phone_number AS buyer_phone,
+        u.role AS buyer_role
+      FROM test_drive_bookings t
+      INNER JOIN users u ON u.id = t.user_id
+      WHERE t.property_id = ${propertyId} AND t.property_table = ${propertyTable}
+      ORDER BY t.start_date ASC NULLS LAST, t.id ASC
+    `;
+    const data = (Array.isArray(rows) ? rows : []).map((row) => ({
+      id: row.id,
+      property_id: row.property_id,
+      property_table: row.property_table,
+      user_id: row.user_id,
+      start_date: row.start_date,
+      end_date: row.end_date,
+      status: row.status,
+      cancelled_by: row.cancelled_by ?? null,
+      cancellation_reason_code: row.cancellation_reason_code ?? null,
+      cancellation_reason: row.cancellation_reason ?? null,
+      cancelled_at: row.cancelled_at instanceof Date ? row.cancelled_at.toISOString() : row.cancelled_at,
+      owner_comment: row.owner_comment ?? null,
+      check_in_enabled: row.check_in_enabled ?? null,
+      check_in_report: row.check_in_report ?? null,
+      check_in_status: row.check_in_status ?? null,
+      created_at: row.created_at instanceof Date ? row.created_at.toISOString() : row.created_at,
+      buyer: {
+        id: row.user_id,
+        first_name: row.buyer_first_name,
+        last_name: row.buyer_last_name,
+        email: row.buyer_email,
+        phone_number: row.buyer_phone,
+        role: row.buyer_role,
+      },
+    }));
+    return res.json({ success: true, data });
+  } catch (error) {
+    console.error('GET /api/admin/test-drive/property-bookings:', error);
+    return res.status(500).json({ success: false, error: error.message });
+  }
+});
 
 /**
  * GET /api/test-drive-bookings/user/:userId — бронирования тест-драйва пользователя
@@ -9770,10 +10069,136 @@ app.get('/api/test-drive-bookings/user/:userId', async (req, res) => {
     }
     await testDriveBookingQueries.ensureTable();
     const rows = await testDriveBookingQueries.listByUserId(userId);
-    const data = await Promise.all(rows.map(enrichTestDriveBookingWithPropertyTitle));
+    const enriched = await Promise.all(rows.map(enrichTestDriveBookingWithPropertyTitle));
+    const data = await mergeTestDriveBookingsWithPaymentRows(userId, enriched);
     return res.json({ success: true, data });
   } catch (error) {
     console.error('GET test-drive-bookings/user:', error);
+    return res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * PUT /api/test-drive-bookings/:bookingId/cancel-by-buyer — отмена брони покупателем (до 50% возврат при оплате онлайн).
+ */
+app.put('/api/test-drive-bookings/:bookingId/cancel-by-buyer', async (req, res) => {
+  try {
+    await testDriveBookingQueries.ensureTable();
+    const bookingId = parseInt(req.params.bookingId, 10);
+    const userId = parseInt(String(req.body?.user_id || ''), 10);
+    if (!Number.isFinite(bookingId) || !Number.isFinite(userId)) {
+      return res.status(400).json({ success: false, error: 'Некорректные bookingId или user_id' });
+    }
+    const parsed = parseTestDriveBuyerCancelBody(req.body || {});
+    if (!parsed.ok) {
+      const errMap = {
+        invalid_reason_code: 'Выберите причину из списка',
+        reason_text_too_short: 'Опишите причину не короче 5 символов',
+      };
+      return res.status(400).json({
+        success: false,
+        error: errMap[parsed.error] || parsed.error,
+        error_code: parsed.error,
+      });
+    }
+
+    const booking = await testDriveBookingQueries.getById(bookingId);
+    if (!booking) {
+      return res.status(404).json({ success: false, error: 'Бронь не найдена' });
+    }
+    if (Number(booking.user_id) !== userId) {
+      return res.status(403).json({ success: false, error: 'Можно отменить только свою бронь' });
+    }
+    const st = String(booking.status || '').toLowerCase();
+    if (st === 'rejected') {
+      return res.status(400).json({ success: false, error: 'Эта заявка уже отклонена' });
+    }
+    if (!['pending', 'approved', 'paid'].includes(st)) {
+      return res.status(400).json({ success: false, error: 'Бронь нельзя отменить в текущем статусе' });
+    }
+
+    const paymentRow = await stripeSubscriptionQueries.findTestDrivePaymentByBookingId(userId, bookingId);
+    if (paymentRow && Number(paymentRow.amount_cents) > 0) {
+      const ref = await refundHalfTestDriveBookingPayment(paymentRow);
+      if (!ref.ok) {
+        return res.status(502).json({
+          success: false,
+          error:
+            ref.error === 'stripe_not_configured'
+              ? 'Платёжная система временно недоступна — попробуйте позже'
+              : 'Не удалось оформить возврат средств. Обратитесь в поддержку или попробуйте позже.',
+          error_code: ref.error,
+          message: ref.message,
+        });
+      }
+    }
+
+    const property = await propertyQueries.getById(String(booking.property_id), null);
+    if (!property) {
+      return res.status(404).json({ success: false, error: 'Объект не найден' });
+    }
+    const ownerId = parseInt(String(property.user_id), 10);
+    const propTitle = property.title || `Объект #${booking.property_id}`;
+    const reasonLabelRu = {
+      dates_changed: 'Изменились даты поездки',
+      found_alternative: 'Нашёл другой объект',
+      property_not_fit: 'Объект не подошёл',
+      price_concern: 'Вопрос по цене / условиям',
+      personal: 'Личные обстоятельства',
+      other: parsed.reasonDetail,
+    };
+    const reasonLine = reasonLabelRu[parsed.reasonCode] || parsed.reasonCode;
+
+    if (booking.owner_notification_id) {
+      try {
+        await notificationQueries.delete(booking.owner_notification_id);
+      } catch {
+        /* ignore */
+      }
+    }
+
+    await getPrisma().$executeRaw`
+      UPDATE test_drive_bookings
+      SET status = 'cancelled',
+          cancelled_by = 'buyer',
+          cancellation_reason_code = ${parsed.reasonCode || null},
+          cancellation_reason = ${reasonLine || null},
+          cancelled_at = NOW()
+      WHERE id = ${bookingId}
+    `;
+
+    if (Number.isFinite(ownerId) && ownerId > 0) {
+      await notificationQueries.create({
+        user_id: ownerId,
+        type: 'test_drive_buyer_cancelled',
+        title: 'Покупатель отменил бронь тест-драйва',
+        message: `Покупатель отменил бронь объекта «${propTitle}» с ${booking.start_date} по ${booking.end_date}. Причина: ${reasonLine}.`,
+        data: {
+          booking_id: bookingId,
+          property_id: booking.property_id,
+          property_table: booking.property_table,
+          buyer_id: userId,
+          reason_code: parsed.reasonCode,
+          reason_detail: parsed.reasonDetail || null,
+        },
+        is_read: 0,
+        view_count: 0,
+      });
+      try {
+        broadcastUserCabinetEvent(ownerId, { type: 'notifications_refresh' });
+      } catch {
+        /* ignore */
+      }
+    }
+    try {
+      broadcastUserCabinetEvent(userId, { type: 'notifications_refresh' });
+    } catch {
+      /* ignore */
+    }
+
+    return res.json({ success: true, data: { booking_id: bookingId, cancelled: true } });
+  } catch (error) {
+    console.error('PUT test-drive-bookings cancel-by-buyer:', error);
     return res.status(500).json({ success: false, error: error.message });
   }
 });
@@ -9903,7 +10328,8 @@ app.get('/api/test-drive-bookings/owner/:ownerUserId', async (req, res) => {
         return { ...withTitle, buyer_display };
       })
     );
-    return res.json({ success: true, data });
+    const merged = await mergeTestDriveOwnerBookingsWithPayments(data);
+    return res.json({ success: true, data: merged });
   } catch (error) {
     console.error('GET test-drive-bookings/owner:', error);
     return res.status(500).json({ success: false, error: error.message });
@@ -10730,6 +11156,9 @@ app.get('/api/owner/:userId/my-sales', async (req, res) => {
         booking_id: bookingId,
         buyer_user_id: Number(booking.user_id),
         booking_status: booking.status || null,
+        start_date: booking.start_date || null,
+        end_date: booking.end_date || null,
+        owner_comment: booking.owner_comment || null,
         check_in_status: booking.check_in_status || null,
         property_type: prop.property_type,
         property_table: table,
@@ -10797,6 +11226,10 @@ app.put('/api/test-drive-bookings/:bookingId/cancel-by-owner', async (req, res) 
     if (!booking) {
       return res.status(404).json({ success: false, error: 'Бронь не найдена' });
     }
+    const st = String(booking.status || '').toLowerCase();
+    if (!['pending', 'approved', 'paid'].includes(st)) {
+      return res.status(400).json({ success: false, error: 'Бронь нельзя снять в текущем статусе' });
+    }
     const property = await propertyQueries.getById(String(booking.property_id), null);
     if (!property) {
       return res.status(404).json({ success: false, error: 'Объект не найден' });
@@ -10810,7 +11243,15 @@ app.put('/api/test-drive-bookings/:bookingId/cancel-by-owner', async (req, res) 
       return res.status(500).json({ success: false, error: 'Некорректный покупатель в брони' });
     }
 
-    await getPrisma().test_drive_bookings.delete({ where: { id: bookingId } });
+    await getPrisma().$executeRaw`
+      UPDATE test_drive_bookings
+      SET status = 'cancelled',
+          cancelled_by = 'owner',
+          cancellation_reason_code = 'owner_reason',
+          cancellation_reason = ${reason},
+          cancelled_at = NOW()
+      WHERE id = ${bookingId}
+    `;
     if (booking.owner_notification_id) {
       try {
         await notificationQueries.delete(booking.owner_notification_id);
@@ -10839,7 +11280,7 @@ app.put('/api/test-drive-bookings/:bookingId/cancel-by-owner', async (req, res) 
     } catch {
       /* ignore */
     }
-    return res.json({ success: true, data: { booking_id: bookingId, deleted: true } });
+    return res.json({ success: true, data: { booking_id: bookingId, cancelled: true } });
   } catch (error) {
     console.error('PUT test-drive-bookings cancel-by-owner:', error);
     return res.status(500).json({ success: false, error: error.message });
@@ -11223,8 +11664,15 @@ app.put('/api/properties/:id/approve', async (req, res) => {
       });
       
       // Используем функцию из propertyQueries, которая работает с новыми таблицами
-      console.log(`🔄 Вызов updateModerationStatus для ID=${id}, status=approved`);
-      const result = await propertyQueries.updateModerationStatus(id, 'approved', reviewed_by, null);
+      console.log(`🔄 Вызов updateModerationStatus для ID=${id}, status=approved, тип=${property.property_type}`);
+      const result = await propertyQueries.updateModerationStatus(
+        id,
+        'approved',
+        reviewed_by,
+        null,
+        null,
+        property.property_type
+      );
       
       console.log(`📊 Результат updateModerationStatus:`, {
         changes: result?.changes || 0,
@@ -11297,9 +11745,8 @@ app.put('/api/properties/:id/approve', async (req, res) => {
         }
       }
       
-      // ВАЖНО: Получаем обновленное объявление с указанием правильного типа
-      // Используем requestedPropertyType или property.property_type для гарантии получения из правильной таблицы
-      const propertyTypeForRetrieval = requestedPropertyType || property.property_type;
+      // После updateModerationStatus читаем из той же таблицы, что и одобряли (не из типа запроса клиента).
+      const propertyTypeForRetrieval = property.property_type;
       console.log(`🔍 Получение обновленного объекта ID=${id} с типом=${propertyTypeForRetrieval}`);
       const updatedProperty = await propertyQueries.getById(id, propertyTypeForRetrieval);
       
@@ -11405,13 +11852,15 @@ app.put('/api/properties/:id/approve', async (req, res) => {
         console.warn('[SSE] user cabinet (property):', cabErr.message);
       }
 
-      // ВАЖНО: Финальная проверка - убеждаемся, что возвращаем правильный объект
-      if (requestedPropertyType && updatedProperty.property_type !== requestedPropertyType) {
-        console.error(`❌ КРИТИЧЕСКАЯ ОШИБКА перед отправкой ответа! Запрошен тип ${requestedPropertyType}, но updatedProperty имеет тип ${updatedProperty.property_type}`);
+      // Финальная проверка: тип записи совпадает с тем объектом, который одобряли
+      if (updatedProperty.property_type !== property.property_type) {
+        console.error(
+          `❌ КРИТИЧЕСКАЯ ОШИБКА перед отправкой ответа! Ожидали тип ${property.property_type}, получили ${updatedProperty.property_type}`
+        );
         console.error(`   Source table: ${updatedProperty.source_table || 'unknown'}`);
-        return res.status(500).json({ 
-          success: false, 
-          error: `Получен объект с неправильным типом: запрошен ${requestedPropertyType}, получен ${updatedProperty.property_type}` 
+        return res.status(500).json({
+          success: false,
+          error: `Получен объект с неправильным типом: ожидался ${property.property_type}, получен ${updatedProperty.property_type}`,
         });
       }
       

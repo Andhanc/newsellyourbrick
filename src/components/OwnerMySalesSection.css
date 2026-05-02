@@ -371,9 +371,114 @@
   cursor: pointer;
 }
 
+.owner-my-sales__confirm-btn {
+  width: 100%;
+  min-height: 36px;
+  border-radius: 10px;
+  border: 1px solid rgba(13, 148, 136, 0.5);
+  background: #ecfeff;
+  color: #0f766e;
+  font-size: 0.85rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+  cursor: pointer;
+}
+
 .owner-my-sales__cancel-btn:disabled {
   opacity: 0.65;
   cursor: not-allowed;
+}
+
+.owner-my-sales__confirm-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.owner-my-sales__status-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.owner-my-sales__status-chip--approved {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.owner-my-sales__comment-btn {
+  width: 100%;
+  min-height: 34px;
+  border-radius: 10px;
+  border: 1px solid #cbd5e1;
+  background: #fff;
+  color: #334155;
+  font-size: 0.82rem;
+  font-weight: 700;
+  margin-top: 8px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.owner-my-sales__comment-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10060;
+  background: rgba(15, 23, 42, 0.42);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.owner-my-sales__comment-modal {
+  position: relative;
+  width: min(560px, 100%);
+  background: #fff;
+  border-radius: 14px;
+  padding: 18px;
+}
+
+.owner-my-sales__comment-modal-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  border: none;
+  background: #f1f5f9;
+  border-radius: 8px;
+  width: 30px;
+  height: 30px;
+  cursor: pointer;
+}
+
+.owner-my-sales__comment-modal-title {
+  margin: 0;
+  font-size: 1rem;
+  color: #0f172a;
+}
+
+.owner-my-sales__comment-modal-subtitle {
+  margin: 6px 0 12px;
+  font-size: 0.82rem;
+  color: #64748b;
+}
+
+.owner-my-sales__comment-modal-body {
+  white-space: pre-wrap;
+  font-size: 0.9rem;
+  color: #1f2937;
+  line-height: 1.45;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #f8fafc;
+  padding: 12px;
 }
 
 .owner-my-sales__empty-inline {
