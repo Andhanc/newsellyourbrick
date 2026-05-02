@@ -6906,6 +6906,7 @@ app.post('/api/properties', upload.fields([
       auction_start_date,
       auction_end_date,
       auction_starting_price,
+      minimum_sale_price,
       is_share = 0,
       total_shares
     } = req.body;
@@ -7118,6 +7119,14 @@ app.post('/api/properties', upload.fields([
       auction_start_date: auction_start_date || null,
       auction_end_date: auction_end_date || null,
       auction_starting_price: auction_starting_price ? parseFloat(auction_starting_price) : null,
+      minimum_sale_price:
+        minimum_sale_price !== undefined &&
+        minimum_sale_price !== null &&
+        minimum_sale_price !== '' &&
+        !Number.isNaN(parseFloat(String(minimum_sale_price))) &&
+        parseFloat(String(minimum_sale_price)) > 0
+          ? parseFloat(String(minimum_sale_price))
+          : null,
       area: area ? parseFloat(area) : null,
       living_area: living_area ? parseFloat(living_area) : null,
       building_type: building_type || null,
@@ -7212,6 +7221,13 @@ app.post('/api/properties', upload.fields([
         return res.status(400).json({
           success: false,
           error: 'Стартовая ставка не может превышать 30% от цены «Купить сейчас».'
+        })
+      }
+      const minS = propertyData.minimum_sale_price
+      if (minS != null && minS > 0 && bn != null && bn > 0 && minS > bn + 1e-9) {
+        return res.status(400).json({
+          success: false,
+          error: 'Минимальная цена продажи не может быть выше цены «Купить сейчас».'
         })
       }
     }
@@ -7692,7 +7708,8 @@ app.put('/api/properties/:id', upload.fields([
       is_auction = 0,
       auction_start_date,
       auction_end_date,
-      auction_starting_price
+      auction_starting_price,
+      minimum_sale_price
     } = req.body;
     
     // Нормализуем is_auction
@@ -7927,6 +7944,16 @@ app.put('/api/properties/:id', upload.fields([
         lockedAuctionStartDateForEdit ?? (auction_start_date || originalProperty.auction_start_date),
         auction_end_date || originalProperty.auction_end_date,
         auction_starting_price ? parseFloat(auction_starting_price) : originalProperty.auction_starting_price,
+        minimum_sale_price !== undefined &&
+        minimum_sale_price !== null &&
+        minimum_sale_price !== '' &&
+        !Number.isNaN(parseFloat(String(minimum_sale_price))) &&
+        parseFloat(String(minimum_sale_price)) > 0
+          ? parseFloat(String(minimum_sale_price))
+          : (originalProperty.minimum_sale_price != null &&
+              !Number.isNaN(parseFloat(String(originalProperty.minimum_sale_price)))
+              ? parseFloat(String(originalProperty.minimum_sale_price))
+              : null),
         area ? parseFloat(area) : originalProperty.area,
         living_area ? parseFloat(living_area) : originalProperty.living_area,
         building_type || originalProperty.building_type,
@@ -8008,6 +8035,32 @@ app.put('/api/properties/:id', upload.fields([
           error: 'Стартовая ставка не может превышать 30% от цены «Купить сейчас».'
         })
       }
+
+      const effectiveMinSale =
+        minimum_sale_price !== undefined &&
+        minimum_sale_price !== null &&
+        minimum_sale_price !== '' &&
+        !Number.isNaN(parseFloat(String(minimum_sale_price))) &&
+        parseFloat(String(minimum_sale_price)) > 0
+          ? parseFloat(String(minimum_sale_price))
+          : (originalProperty.minimum_sale_price != null &&
+              !Number.isNaN(parseFloat(String(originalProperty.minimum_sale_price)))
+              ? parseFloat(String(originalProperty.minimum_sale_price))
+              : null)
+      if (
+        !isShareEdit &&
+        !isDebtEdit &&
+        normalizedIsAuction === 1 &&
+        effectiveMinSale != null &&
+        effectiveMinSale > 0 &&
+        effectiveBuyNow &&
+        effectiveMinSale > effectiveBuyNow + 1e-9
+      ) {
+        return res.status(400).json({
+          success: false,
+          error: 'Минимальная цена продажи не может быть выше цены «Купить сейчас».'
+        })
+      }
       
       const created = await prisma.properties.create({
         data: {
@@ -8021,44 +8074,45 @@ app.put('/api/properties/:id', upload.fields([
           auction_start_date: values[7],
           auction_end_date: values[8],
           auction_starting_price: values[9],
-          area: values[10],
-          living_area: values[11],
-          building_type: values[12],
-          rooms: values[13],
-          bedrooms: values[14],
-          bathrooms: values[15],
-          floor: values[16],
-          total_floors: values[17],
-          year_built: values[18],
-          location: values[19],
-          balcony: values[20],
-          parking: values[21],
-          elevator: values[22],
-          land_area: values[23],
-          garage: values[24],
-          pool: values[25],
-          garden: values[26],
-          commercial_type: values[27],
-          business_hours: values[28],
-          renovation: values[29],
-          condition: values[30],
-          heating: values[31],
-          water_supply: values[32],
-          sewerage: values[33],
-          electricity: values[34],
-          internet: values[35],
-          security: values[36],
-          furniture: values[37],
-          photos: values[38],
-          videos: values[39],
-          additional_documents: values[40],
-          additional_amenities: values[41],
-          ownership_document: values[42],
-          no_debts_document: values[43],
-          test_drive: values[44],
-          test_drive_data: values[45],
-          moderation_status: values[46],
-          rejection_reason: values[47],
+          minimum_sale_price: values[10],
+          area: values[11],
+          living_area: values[12],
+          building_type: values[13],
+          rooms: values[14],
+          bedrooms: values[15],
+          bathrooms: values[16],
+          floor: values[17],
+          total_floors: values[18],
+          year_built: values[19],
+          location: values[20],
+          balcony: values[21],
+          parking: values[22],
+          elevator: values[23],
+          land_area: values[24],
+          garage: values[25],
+          pool: values[26],
+          garden: values[27],
+          commercial_type: values[28],
+          business_hours: values[29],
+          renovation: values[30],
+          condition: values[31],
+          heating: values[32],
+          water_supply: values[33],
+          sewerage: values[34],
+          electricity: values[35],
+          internet: values[36],
+          security: values[37],
+          furniture: values[38],
+          photos: values[39],
+          videos: values[40],
+          additional_documents: values[41],
+          additional_amenities: values[42],
+          ownership_document: values[43],
+          no_debts_document: values[44],
+          test_drive: values[45],
+          test_drive_data: values[46],
+          moderation_status: values[47],
+          rejection_reason: values[48],
         },
       });
       const newPropertyId = created.id;

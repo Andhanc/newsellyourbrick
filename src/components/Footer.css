@@ -408,7 +408,7 @@ body.admin-panel-active .footer .footer__brand-text {
   border: 1px solid #d1d5db;
   background: #ffffff;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
   font-size: 14px;
   font-weight: 500;
   color: #111827;
@@ -426,13 +426,35 @@ body.admin-panel-active .footer .footer__brand-text {
 .footer__language-flag {
   width: 24px;
   height: 18px;
-  display: inline-block;
+  min-width: 24px;
+  min-height: 18px;
+  max-width: 24px;
+  max-height: 18px;
+  display: block;
+  box-sizing: border-box;
+  /* cover — как раньше: флаг заполняет рамку без растягивания полос (100% 100% визуально «сжимал») */
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-  border-radius: 2px;
+  border-radius: 3px;
   flex-shrink: 0;
   border: 1px solid rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  filter: none;
+}
+
+/* Выше каскадом/страничные стили не должны превращать флаги в «круглые» пятна */
+#site-footer.footer .footer__language-flag {
+  border-radius: 3px !important;
+  width: 24px !important;
+  height: 18px !important;
+  min-width: 24px !important;
+  min-height: 18px !important;
+  max-width: 24px !important;
+  max-height: 18px !important;
+  flex-shrink: 0 !important;
+  background-size: cover !important;
+  filter: none !important;
 }
 
 .footer__language-name {
@@ -715,6 +737,19 @@ body.admin-panel-active .footer .footer__language-selector-btn {
 body.admin-panel-active .footer .footer__language-flag {
   width: 20px;
   height: 15px;
+  min-width: 20px;
+  min-height: 15px;
+  max-width: 20px;
+  max-height: 15px;
+}
+
+body.admin-panel-active #site-footer.footer .footer__language-flag {
+  width: 20px !important;
+  height: 15px !important;
+  min-width: 20px !important;
+  min-height: 15px !important;
+  max-width: 20px !important;
+  max-height: 15px !important;
 }
 
 /* Responsive Design для футера */
@@ -901,7 +936,6 @@ body.admin-panel-active .footer .footer__upper {
     flex: 1 1 0;
   }
 
-  .footer__language-selector-btn,
   .footer__store-btn {
     width: 100%;
     justify-content: center;
@@ -910,6 +944,16 @@ body.admin-panel-active .footer .footer__upper {
     height: 48px;
     box-sizing: border-box;
     overflow: hidden;
+  }
+
+  .footer__language-selector-btn {
+    width: 100%;
+    justify-content: center;
+    padding: 8px 6px;
+    min-width: 0;
+    height: 48px;
+    box-sizing: border-box;
+    overflow: visible;
   }
 
   /* Текст в кнопках стора и селекторе языка на мобилке */

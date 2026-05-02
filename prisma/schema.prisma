@@ -242,6 +242,7 @@ model properties {
   auction_start_date     String?
   auction_end_date       String?
   auction_starting_price Float?
+  minimum_sale_price     Float?
   area                   Float?
   rooms                  Int?
   bedrooms               Int?
@@ -306,6 +307,7 @@ model properties_apartments {
   auction_start_date     String?
   auction_end_date       String?
   auction_starting_price Float?
+  minimum_sale_price     Float?
   area                   Float?
   living_area            Float?
   building_type          String?
@@ -394,6 +396,7 @@ model properties_houses {
   auction_start_date     String?
   auction_end_date       String?
   auction_starting_price Float?
+  minimum_sale_price     Float?
   area                   Float?
   living_area            Float?
   land_area              Float?

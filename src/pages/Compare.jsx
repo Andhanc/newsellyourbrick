@@ -71,6 +71,84 @@ function areaM2(p) {
   return a > 0 ? a : null
 }
 
+function livingAreaM2(p) {
+  const a = Number(p.living_area ?? p.livingArea ?? 0)
+  return a > 0 ? a : null
+}
+
+function landAreaM2(p) {
+  const a = Number(p.land_area ?? p.landArea ?? 0)
+  return a > 0 ? a : null
+}
+
+function auctionStartingPrice(p) {
+  return toPositiveNumber(p.auction_starting_price ?? p.auctionStartingPrice)
+}
+
+function isAuctionProperty(p) {
+  return p.isAuction === true || p.is_auction === 1 || p.is_auction === true
+}
+
+function isHouseLike(p) {
+  const t = String(p.property_type || '').toLowerCase()
+  if (t === 'house' || t === 'villa') return true
+  return p.source_table === 'houses'
+}
+
+function isApartmentLike(p) {
+  const t = String(p.property_type || '').toLowerCase()
+  if (t === 'apartment' || t === 'commercial') return true
+  return p.source_table === 'apartments'
+}
+
+function houseFloorsCount(p) {
+  const n = Number(p.floors ?? p.storeys ?? 0)
+  return Number.isFinite(n) && n > 0 ? n : null
+}
+
+function formatFloorInBuilding(p) {
+  const f = Number(p.floor ?? p.floor_number)
+  const tf = Number(p.total_floors ?? p.totalFloors)
+  const hasF = Number.isFinite(f) && f > 0
+  const hasTf = Number.isFinite(tf) && tf > 0
+  if (hasF && hasTf) return `${f} из ${tf}`
+  if (hasF) return String(f)
+  return '—'
+}
+
+function truthyAmenityFlag(v) {
+  return v === 1 || v === true || v === '1' || v === 'yes'
+}
+
+function amenityListIncludes(p, code) {
+  const a = p.amenities
+  if (!Array.isArray(a)) return false
+  return a.includes(code)
+}
+
+function countApartmentComfortFlags(p) {
+  const keys = ['balcony', 'parking', 'elevator', 'electricity', 'internet', 'security', 'furniture']
+  let n = 0
+  for (const k of keys) {
+    if (truthyAmenityFlag(p[k]) || amenityListIncludes(p, k)) n += 1
+  }
+  return n
+}
+
+function countHouseComfortFlags(p) {
+  const keys = ['pool', 'garden', 'garage', 'parking', 'electricity', 'internet', 'security', 'furniture']
+  let n = 0
+  for (const k of keys) {
+    if (truthyAmenityFlag(p[k]) || amenityListIncludes(p, k)) n += 1
+  }
+  return n
+}
+
+function comfortScore(p) {
+  if (isHouseLike(p)) return countHouseComfortFlags(p)
+  return countApartmentComfortFlags(p)
+}
+
 function compareMetric(a, b, mode) {
   if (a == null || b == null) return null
   if (Math.abs(a - b) < 1e-9) return 'tie'
@@ -116,12 +194,19 @@ function serializePropertyForAi(p) {
     country: p.country || null,
     price: p.price,
     current_bid: p.currentBid,
+    auction_starting_price: p.auction_starting_price ?? p.auctionStartingPrice ?? null,
     area_m2: p.sqft ?? p.area ?? null,
-    rooms: p.beds ?? p.rooms ?? null,
+    living_area_m2: p.living_area ?? p.livingArea ?? null,
+    land_area_m2: p.land_area ?? p.landArea ?? null,
+    rooms: p.beds ?? p.rooms ?? p.bedrooms ?? null,
     bathrooms: p.baths ?? p.bathrooms ?? null,
+    floor: p.floor ?? null,
+    total_floors: p.total_floors ?? p.totalFloors ?? null,
+    floors_in_house: p.floors ?? null,
     year_built: yearBuiltNum(p),
     building_type_code: p.building_type || p.buildingType || null,
     building_type_label: formatBuildingMaterial(p) !== '—' ? formatBuildingMaterial(p) : null,
+    comfort_flags_score: comfortScore(p),
     description: String(p.description || '').slice(0, 2000),
     source_table: p.source_table || null,
     tag: p.tag || null,
@@ -147,36 +232,82 @@ function scoreAiInfrastructure(rows) {
 function buildRows(left, right) {
   const pL = effectivePrice(left)
   const pR = effectivePrice(right)
-  const isAuc =
-    left.isAuction === true ||
-    left.is_auction === 1 ||
-    right.isAuction === true ||
-    right.is_auction === 1
+  const isAuc = isAuctionProperty(left) || isAuctionProperty(right)
+  const startL = auctionStartingPrice(left)
+  const startR = auctionStartingPrice(right)
 
   const rows = []
+
   rows.push({
     id: 'price',
-    label: isAuc ? 'Текущая ставка' : 'Цена',
+    label: isAuc ? 'Текущая ставка / цена сделки' : 'Цена',
     left: pL != null ? formatPrice(pL) : '—',
     right: pR != null ? formatPrice(pR) : '—',
     winner: compareMetric(pL, pR, 'lower'),
   })
 
+  if (isAuc && (startL != null || startR != null)) {
+    rows.push({
+      id: 'auction_start',
+      label: 'Стартовая цена аукциона',
+      left: startL != null ? formatPrice(startL) : '—',
+      right: startR != null ? formatPrice(startR) : '—',
+      winner: compareMetric(startL, startR, 'lower'),
+    })
+  }
+
   const aL = areaM2(left)
   const aR = areaM2(right)
+  let ppmL = null
+  let ppmR = null
+  if (pL != null && aL != null && aL > 0) ppmL = pL / aL
+  if (pR != null && aR != null && aR > 0) ppmR = pR / aR
+  rows.push({
+    id: 'ppm',
+    label: 'Цена за м² (по текущей цене)',
+    left: ppmL != null ? formatPrice(ppmL) : '—',
+    right: ppmR != null ? formatPrice(ppmR) : '—',
+    winner: compareMetric(ppmL, ppmR, 'lower'),
+  })
+
   rows.push({
     id: 'area',
-    label: 'Площадь',
+    label: 'Общая площадь',
     left: aL != null ? `${aL} м²` : '—',
     right: aR != null ? `${aR} м²` : '—',
     winner: compareMetric(aL, aR, 'higher'),
   })
 
+  const livL = livingAreaM2(left)
+  const livR = livingAreaM2(right)
+  if (livL != null || livR != null) {
+    rows.push({
+      id: 'living_area',
+      label: 'Жилая площадь',
+      left: livL != null ? `${livL} м²` : '—',
+      right: livR != null ? `${livR} м²` : '—',
+      winner: compareMetric(livL, livR, 'higher'),
+    })
+  }
+
+  const landL = landAreaM2(left)
+  const landR = landAreaM2(right)
+  const bothHouse = isHouseLike(left) && isHouseLike(right)
+  if (bothHouse && (landL != null || landR != null)) {
+    rows.push({
+      id: 'land_area',
+      label: 'Площадь участка',
+      left: landL != null ? `${landL} м²` : '—',
+      right: landR != null ? `${landR} м²` : '—',
+      winner: compareMetric(landL, landR, 'higher'),
+    })
+  }
+
   const bL = Number(left.beds || left.rooms || left.bedrooms || 0) || null
   const bR = Number(right.beds || right.rooms || right.bedrooms || 0) || null
   rows.push({
     id: 'beds',
-    label: 'Комнаты',
+    label: bothHouse ? 'Спальни / комнаты' : 'Комнаты',
     left: bL != null && bL > 0 ? String(bL) : '—',
     right: bR != null && bR > 0 ? String(bR) : '—',
     winner: compareMetric(bL, bR, 'higher'),
@@ -202,16 +333,41 @@ function buildRows(left, right) {
     winner: compareMetric(yL, yR, 'higher'),
   })
 
-  let ppmL = null
-  let ppmR = null
-  if (pL != null && aL != null && aL > 0) ppmL = pL / aL
-  if (pR != null && aR != null && aR > 0) ppmR = pR / aR
+  if (bothHouse) {
+    const hfL = houseFloorsCount(left)
+    const hfR = houseFloorsCount(right)
+    if (hfL != null || hfR != null) {
+      rows.push({
+        id: 'house_floors',
+        label: 'Этажей в доме',
+        left: hfL != null ? String(hfL) : '—',
+        right: hfR != null ? String(hfR) : '—',
+        winner: compareMetric(hfL, hfR, 'higher'),
+      })
+    }
+  }
+
+  const bothApt = isApartmentLike(left) && isApartmentLike(right)
+  if (bothApt) {
+    rows.push({
+      id: 'floor',
+      label: 'Этаж (в доме)',
+      left: formatFloorInBuilding(left),
+      right: formatFloorInBuilding(right),
+      winner: null,
+      displayOnly: true,
+    })
+  }
+
+  const cL = comfortScore(left)
+  const cR = comfortScore(right)
+  const comfortMax = bothHouse ? 8 : 7
   rows.push({
-    id: 'ppm',
-    label: 'Цена за м²',
-    left: ppmL != null ? formatPrice(ppmL) : '—',
-    right: ppmR != null ? formatPrice(ppmR) : '—',
-    winner: compareMetric(ppmL, ppmR, 'lower'),
+    id: 'comfort',
+    label: 'Удобства',
+    left: `${cL} / ${comfortMax}`,
+    right: `${cR} / ${comfortMax}`,
+    winner: compareMetric(cL, cR, 'higher'),
   })
 
   rows.push({
@@ -224,16 +380,6 @@ function buildRows(left, right) {
   })
 
   return rows
-}
-
-function scoreRows(rows) {
-  let left = 0
-  let right = 0
-  for (const r of rows) {
-    if (r.winner === 'left') left += 1
-    else if (r.winner === 'right') right += 1
-  }
-  return { left, right }
 }
 
 const Compare = () => {
@@ -294,18 +440,6 @@ const Compare = () => {
     return buildRows(pair.left.property, pair.right.property)
   }, [pair])
 
-  const totals = useMemo(() => scoreRows(tableRows), [tableRows])
-
-  const summary = useMemo(() => {
-    if (!pair) return null
-    const { left, right } = totals
-    const nL = pair.left.property.name || pair.left.property.title || 'Объект 1'
-    const nR = pair.right.property.name || pair.right.property.title || 'Объект 2'
-    if (left > right) return { text: `По сумме параметров выгоднее: ${nL}`, side: 'left' }
-    if (right > left) return { text: `По сумме параметров выгоднее: ${nR}`, side: 'right' }
-    return { text: 'По выбранным параметрам паритет — решайте по своим приоритетам', side: 'tie' }
-  }, [pair, totals])
-
   const aiScores = useMemo(
     () => (aiResult?.rows?.length ? scoreAiInfrastructure(aiResult.rows) : null),
     [aiResult]
@@ -355,8 +489,8 @@ const Compare = () => {
             Сравнение
           </h1>
           <p className="compare-subtitle">
-            Выберите два объекта из избранного одного типа — мы покажем таблицу и подскажем, где выгоднее по
-            ключевым цифрам.
+            Выберите два объекта из избранного одного типа — таблица сравнивает цены, площади, планировку,
+            год постройки, удобства и другие поля карточки; по числовым критериям подсчитывается счёт «лучше».
           </p>
           <div className="compare-header-actions">
             <Link to="/favorites" className="compare-link-muted">
@@ -462,7 +596,7 @@ const Compare = () => {
               </ul>
             </section>
 
-            {pair && summary && (
+            {pair && (
               <section className="compare-table-section" aria-labelledby="compare-table-heading">
                 <h2 id="compare-table-heading" className="compare-table-heading">
                   Сравнение
@@ -524,90 +658,8 @@ const Compare = () => {
                           </td>
                         </tr>
                       ))}
-                      <tr className="compare-table-summary-row">
-                        <th scope="row" className="compare-table-param">
-                          Итог по параметрам
-                        </th>
-                        <td
-                          colSpan={2}
-                          className={[
-                            'compare-table-summary',
-                            summary.side === 'left' && 'compare-table-summary--left',
-                            summary.side === 'right' && 'compare-table-summary--right',
-                            summary.side === 'tie' && 'compare-table-summary--tie',
-                          ]
-                            .filter(Boolean)
-                            .join(' ')}
-                        >
-                          <strong>{summary.text}</strong>
-                          <span className="compare-table-score">
-                            {' '}
-                            ({totals.left} : {totals.right})
-                          </span>
-                        </td>
-                      </tr>
                     </tbody>
                   </table>
-                </div>
-                <div className="compare-mobile-table" aria-hidden={false}>
-                  {tableRows.map((row) => (
-                    <div key={`m-${row.id}`} className="compare-mobile-row">
-                      <div className="compare-mobile-row__label">{row.label}</div>
-                      <div className="compare-mobile-row__grid">
-                        <div
-                          className={[
-                            'compare-mobile-row__cell',
-                            !row.displayOnly && row.winner === 'left' && 'compare-mobile-row__cell--win',
-                            !row.displayOnly && row.winner === 'tie' && 'compare-mobile-row__cell--tie',
-                            row.displayOnly && 'compare-mobile-row__cell--plain',
-                          ]
-                            .filter(Boolean)
-                            .join(' ')}
-                        >
-                          <span className="compare-mobile-row__name">
-                            {pair.left.property.name || pair.left.property.title}
-                          </span>
-                          <span className="compare-mobile-row__value">{row.left}</span>
-                          {!row.displayOnly && row.winner === 'left' && (
-                            <span className="compare-win-tag">лучше</span>
-                          )}
-                        </div>
-                        <div
-                          className={[
-                            'compare-mobile-row__cell',
-                            !row.displayOnly && row.winner === 'right' && 'compare-mobile-row__cell--win',
-                            !row.displayOnly && row.winner === 'tie' && 'compare-mobile-row__cell--tie',
-                            row.displayOnly && 'compare-mobile-row__cell--plain',
-                          ]
-                            .filter(Boolean)
-                            .join(' ')}
-                        >
-                          <span className="compare-mobile-row__name">
-                            {pair.right.property.name || pair.right.property.title}
-                          </span>
-                          <span className="compare-mobile-row__value">{row.right}</span>
-                          {!row.displayOnly && row.winner === 'right' && (
-                            <span className="compare-win-tag">лучше</span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                  <div
-                    className={[
-                      'compare-mobile-summary',
-                      summary.side === 'left' && 'compare-mobile-summary--left',
-                      summary.side === 'right' && 'compare-mobile-summary--right',
-                      summary.side === 'tie' && 'compare-mobile-summary--tie',
-                    ]
-                      .filter(Boolean)
-                      .join(' ')}
-                  >
-                    <strong>{summary.text}</strong>{' '}
-                    <span className="compare-table-score">
-                      ({totals.left} : {totals.right})
-                    </span>
-                  </div>
                 </div>
 
                 <section className="compare-ai-section" aria-labelledby="compare-ai-heading">

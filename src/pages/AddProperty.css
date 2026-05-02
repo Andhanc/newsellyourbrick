@@ -8347,20 +8347,214 @@ select.property-location-input {
   overflow: visible;
 }
 
-.sp-auction-layout__side .sp-currency-input-wrap {
-  width: 50%;
-  min-width: 260px;
+.sp-amount-stepper-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  background: #fff;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  border-radius: 14px;
+  padding: 16px 18px 14px;
+  box-shadow: 0 8px 28px rgba(15, 23, 42, 0.06);
 }
 
-.sp-price-tip {
-  margin-top: 8px;
-  padding: 10px 12px;
-  border: 1px solid rgba(20, 184, 166, 0.35);
-  background: rgba(20, 184, 166, 0.08);
-  color: #115e59;
-  border-radius: 10px;
+.sp-amount-stepper__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+  margin-bottom: 12px;
+}
+
+.sp-amount-stepper__badge {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: #fff;
+  background: linear-gradient(165deg, #5fd4d4 0%, #0ABAB5 48%, #089C97 100%);
+  border: none;
+  padding: 4px 10px;
+  border-radius: 999px;
+  box-shadow: 0 2px 10px rgba(10, 186, 181, 0.28);
+}
+
+.sp-amount-stepper__track {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.sp-amount-stepper__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(10, 186, 181, 0.22);
+  border: none;
+  box-shadow: none;
+}
+
+.sp-amount-stepper__dot.is-current {
+  background: #0ABAB5;
+}
+
+.sp-amount-stepper__title {
+  margin: 0 0 8px;
+  font-size: 17px;
+  font-weight: 700;
+  color: #0f172a;
+  line-height: 1.25;
+}
+
+.sp-amount-stepper__desc {
+  margin: 0 0 14px;
+  font-size: 14px;
+  line-height: 1.55;
+  color: #475569;
+  white-space: pre-line;
+}
+
+.sp-amount-stepper__field-label {
+  margin-top: 4px;
+}
+
+.sp-amount-stepper-panel .sp-currency-input-wrap {
+  align-self: flex-start;
+  width: 100%;
+  max-width: min(100%, 268px);
+  min-width: 0;
+  margin: 0;
+  margin-right: auto;
+  box-sizing: border-box;
+}
+
+.sp-amount-stepper__error {
+  margin: 8px 0 0;
   font-size: 13px;
+  color: #b91c1c;
   line-height: 1.35;
+}
+
+.sp-amount-stepper__nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 12px;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(226, 232, 240, 0.95);
+}
+
+.sp-amount-stepper__hint {
+  margin: 0;
+  flex: 1 1 200px;
+  font-size: 13px;
+  line-height: 1.45;
+  color: #64748b;
+}
+
+.sp-btn--amount-summary {
+  border-radius: 999px;
+  padding: 10px 16px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+  background: linear-gradient(165deg, #5fd4d4 0%, #0ABAB5 48%, #089C97 100%);
+  box-shadow: 0 2px 10px rgba(10, 186, 181, 0.28);
+  transition: filter 0.2s ease, box-shadow 0.2s ease;
+}
+
+.sp-btn--amount-summary:hover {
+  filter: brightness(1.06);
+}
+
+.sp-amount-summary-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2150;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(2, 6, 23, 0.55);
+  backdrop-filter: blur(2px);
+}
+
+.sp-amount-summary-modal {
+  position: relative;
+  width: min(400px, 100%);
+  padding: 22px 22px 18px;
+  border-radius: 16px;
+  background: #fff;
+  border: 1px solid rgba(203, 213, 225, 0.85);
+  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.2);
+}
+
+.sp-amount-summary-modal__close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: #64748b;
+  cursor: pointer;
+}
+
+.sp-amount-summary-modal__close:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.sp-amount-summary-modal__title {
+  margin: 0 36px 16px 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: #0f172a;
+  line-height: 1.25;
+}
+
+.sp-amount-summary-modal__list {
+  margin: 0 0 18px;
+  padding: 0;
+  list-style: none;
+}
+
+.sp-amount-summary-modal__row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid #e2e8f0;
+  font-size: 14px;
+}
+
+.sp-amount-summary-modal__row:last-of-type {
+  border-bottom: none;
+}
+
+.sp-amount-summary-modal__label {
+  color: #64748b;
+  font-weight: 600;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.sp-amount-summary-modal__value {
+  font-weight: 700;
+  color: #0f172a;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.sp-amount-summary-modal__ok {
+  width: 100%;
 }
 
 .testdrive-info-modal-overlay {
@@ -8472,34 +8666,68 @@ select.property-location-input {
 
 .sp-currency-button {
   position: absolute;
-  left: 10px;
+  left: 4px;
   top: 50%;
   transform: translateY(-50%);
   height: 34px;
-  min-width: 62px;
-  border: 1px solid #dbe5ef;
-  border-radius: 10px;
-  background: #f8fafc;
+  min-width: 48px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
   color: #0f172a;
   font-size: 13px;
   font-weight: 700;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  padding: 0 10px;
+  gap: 3px;
+  padding: 0 4px;
   cursor: pointer;
   z-index: 2;
+  box-shadow: none;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
 }
 
-.sp-price-input-with-currency {
-  padding-left: 84px;
+.sp-currency-button:active {
+  transform: translateY(-50%);
+}
+
+.sp-currency-button:focus-visible {
+  box-shadow: 0 0 0 2px rgba(10, 186, 181, 0.45);
+}
+
+.sp-currency-chevron {
+  flex-shrink: 0;
+  transform-origin: center;
+  transition: transform 0.22s ease;
+}
+
+.sp-currency-input-wrap.is-open .sp-currency-chevron {
+  transform: rotate(180deg);
+}
+
+/* Только внутри степпера: полная ширина, без max-width 600px у .property-name-input */
+.sp-amount-stepper-panel .sp-currency-input-wrap .property-name-input.sp-price-input-with-currency {
+  width: 100%;
+  max-width: none;
+  box-sizing: border-box;
+  padding-left: 52px;
+  padding-right: 16px;
+  text-align: left;
+}
+
+/* Без сдвига по Y при фокусе: иначе при клике по кнопке валюты поле теряет фокус и блок визуально «прыгает». */
+.sp-currency-input-wrap .property-name-input:focus,
+.sp-currency-input-wrap .property-name-input:focus-visible {
+  transform: none;
 }
 
 .sp-currency-dropdown {
   position: absolute;
   top: calc(100% + 8px);
-  left: 10px;
+  left: 4px;
   background: #fff;
   border: 1px solid #dbe5ef;
   border-radius: 10px;
@@ -8560,6 +8788,35 @@ select.property-location-input {
   .sp-auction-layout__side .sp-currency-input-wrap {
     width: 100%;
     min-width: 0;
+  }
+
+  /* Поле суммы на всю ширину колонки, без «узкой» полосы справа и пустоты слева */
+  .sp-auction-layout__side .sp-amount-stepper-panel {
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+
+  .sp-auction-layout__side .sp-amount-stepper-panel .sp-currency-input-wrap {
+    align-self: flex-start;
+    width: 100%;
+    max-width: min(100%, 268px);
+    margin-left: 0;
+    margin-right: auto;
+  }
+
+  .sp-auction-layout__side .sp-amount-stepper-panel .property-name-input.sp-price-input-with-currency {
+    width: 100%;
+    max-width: none;
+    margin-left: 0;
+    margin-right: 0;
+    box-sizing: border-box;
+  }
+
+  .sp-submit-row {
+    flex-direction: column-reverse;
+    align-items: stretch;
   }
 
   .sp-submit-row .sp-btn--wide {

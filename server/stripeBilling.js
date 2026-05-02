@@ -55,9 +55,11 @@ function majorToStripeMinor(amountMajor, currency) {
   return Math.max(1, Math.round((Number(amountMajor) || 0) * 100));
 }
 
-/** Минимальная цена продажи (поле price в БД), не текущая ставка аукциона. */
+/** Минимальная цена продажи: явное поле minimum_sale_price, иначе fallback на price (старые объявления). */
 function computeMinimumSalePriceMajor(property) {
-  const price = Number(property.price) || 0;
+  const minExplicit = Number(property?.minimum_sale_price) || 0;
+  if (Number.isFinite(minExplicit) && minExplicit > 0) return minExplicit;
+  const price = Number(property?.price) || 0;
   return Number.isFinite(price) && price > 0 ? price : 0;
 }
 

@@ -23,6 +23,10 @@
 .app-layout--blocked {
   pointer-events: none;
   user-select: none;
+}
+
+/* Размытие только у скроллящегося контента — футер остаётся чётким (флаги, текст) */
+.app-layout--blocked > .app-layout__content {
   opacity: 0.6;
   filter: blur(2px);
   transition: opacity 0.3s ease, filter 0.3s ease;

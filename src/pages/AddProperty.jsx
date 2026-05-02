@@ -57,6 +57,28 @@ const LISTING_MODE_OPTIONS = [
 
 const LISTING_MODE_THEME_STAGES = ['aurora', 'sunset', 'midnight']
 
+/** Значения поля «Тип конструкции» (единый список для квартир, домов и коммерции); подписи — i18n addPropertyConstructionType* */
+const CONSTRUCTION_TYPE_FORM_VALUES = ['monolithic', 'brick', 'panel', 'frame']
+
+const CONSTRUCTION_TYPE_I18N_KEYS = {
+  monolithic: 'addPropertyConstructionTypeMonolithic',
+  brick: 'addPropertyConstructionTypeBrick',
+  panel: 'addPropertyConstructionTypePanel',
+  frame: 'addPropertyConstructionTypeFrame',
+}
+
+const CONSTRUCTION_TYPE_ALLOWED = new Set(CONSTRUCTION_TYPE_FORM_VALUES)
+
+/** При редактировании: привести устаревшие коды к новому списку или очистить */
+function normalizeConstructionTypeForForm(raw) {
+  if (raw == null || raw === '') return ''
+  const v = String(raw)
+  if (CONSTRUCTION_TYPE_ALLOWED.has(v)) return v
+  if (v === 'monolithic_frame') return 'monolithic'
+  if (v === 'panel_frame') return 'panel'
+  return ''
+}
+
 /** Single-page поток включён (используется в эффектах до объявления переменной внутри компонента) */
 const USE_ADD_PROPERTY_SINGLE_PAGE = true
 
@@ -137,7 +159,7 @@ const SINGLE_PAGE_SECTION_HELP = {
   },
   price: {
     title: 'Цена и сроки аукциона',
-    lead: 'Укажите стартовую ставку и период проведения торгов. Для комбинированных форматов заполните все обязательные поля.',
+    lead: 'Суммы вводятся по шагам справа: сначала минимальная цена продажи, затем при необходимости «Продать сейчас», затем стартовая ставка. Слева укажите даты аукциона.',
     tips: [
       'Даты аукциона должны быть в будущем и логично отстоять друг от друга',
       'Стартовая цена — это вход в торги, не финальная продажа',
@@ -355,6 +377,7 @@ const INITIAL_FORM_DATA = {
   auctionStartDate: '',
   auctionEndDate: '',
   auctionStartingPrice: '',
+  minimumSalePrice: '',
   area: '',
   livingArea: '',
   buildingType: '',
@@ -670,6 +693,9 @@ const AddProperty = ({
   const [photoLink, setPhotoLink] = useState('')
   const [currency, setCurrency] = useState('USD')
   const [showCurrencyDropdown, setShowCurrencyDropdown] = useState(null) // 'price' или 'auction' или null
+  /** Подшаг ввода сумм на шаге 10 (single-page): 0 — мин. цена, далее «Продать сейчас» (если есть), стартовая ставка */
+  const [spAuctionAmountStepIndex, setSpAuctionAmountStepIndex] = useState(0)
+  const [showSpEnteredAmountsModal, setShowSpEnteredAmountsModal] = useState(false)
   const [currentStep, setCurrentStep] = useState('type-selection') // wizard steps through 'price' (legacy final form removed)
   const [showHint1, setShowHint1] = useState(true)
   const [showHint2, setShowHint2] = useState(true)
@@ -1079,6 +1105,15 @@ const AddProperty = ({
     return null
   }, [t])
 
+  /** Минимальная цена продажи не выше цены «Продать сейчас», если обе заданы. */
+  const getMinimumSaleVsBuyNowError = useCallback((minRaw, buyNowRaw) => {
+    const min = Number(removeCommas(String(minRaw ?? '')))
+    const buyNow = Number(removeCommas(String(buyNowRaw ?? '')))
+    if (!buyNow || buyNow <= 0 || !min || min <= 0) return null
+    if (min > buyNow + 1e-9) return t('addPropertyPriceMinimumSaleExceedsBuyNow')
+    return null
+  }, [t])
+
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target
     setFormData(prev => ({
@@ -1104,6 +1139,32 @@ const AddProperty = ({
       setValidationErrors(prev => {
         const next = { ...prev }
         delete next.auctionStartingPrice
+        return next
+      })
+    }
+    const minVsBuyErr = getMinimumSaleVsBuyNowError(formData.minimumSalePrice, numericValue)
+    if (minVsBuyErr) {
+      setValidationErrors(prev => ({ ...prev, minimumSalePrice: minVsBuyErr }))
+    } else {
+      setValidationErrors(prev => {
+        const next = { ...prev }
+        delete next.minimumSalePrice
+        return next
+      })
+    }
+  }
+
+  const handleMinimumSalePriceChange = (e) => {
+    const value = e.target.value
+    const numericValue = removeCommas(value)
+    setFormData((prev) => ({ ...prev, minimumSalePrice: numericValue }))
+    const minVsBuyErr = getMinimumSaleVsBuyNowError(numericValue, formData.price)
+    if (minVsBuyErr) {
+      setValidationErrors((prev) => ({ ...prev, minimumSalePrice: minVsBuyErr }))
+    } else {
+      setValidationErrors((prev) => {
+        const next = { ...prev }
+        delete next.minimumSalePrice
         return next
       })
     }
@@ -1489,6 +1550,16 @@ const AddProperty = ({
         }
       }
 
+      // Минимальная цена продажи не выше «Продать сейчас», если обе указаны (все аукционные режимы)
+      if (!isShare && isAuctionMode) {
+        const publishMinErr = getMinimumSaleVsBuyNowError(formData.minimumSalePrice, formData.price)
+        if (publishMinErr) {
+          setIsSubmitting(false)
+          setValidationErrors(prev => ({ ...prev, minimumSalePrice: publishMinErr }))
+          showNotification(publishMinErr)
+          return false
+        }
+      }
       // Правило 30% от «Купить сейчас» для стартовой ставки (в т.ч. для долгов на аукционе)
       if (!isShare && isBuyNowMode) {
         const publishBuyNowErr = getAuctionStartingVsBuyNowError(formData.price, formData.auctionStartingPrice)
@@ -1502,6 +1573,9 @@ const AddProperty = ({
       if (isAuctionMode && formData.auctionStartDate) formDataToSend.append('auction_start_date', formData.auctionStartDate)
       if (isAuctionMode && formData.auctionEndDate) formDataToSend.append('auction_end_date', formData.auctionEndDate)
       if (isAuctionMode && formData.auctionStartingPrice) formDataToSend.append('auction_starting_price', String(formData.auctionStartingPrice))
+      if (isAuctionMode && formData.minimumSalePrice) {
+        formDataToSend.append('minimum_sale_price', String(removeCommas(String(formData.minimumSalePrice))))
+      }
       
       // Общие характеристики
       if (formData.area) formDataToSend.append('area', String(formData.area))
@@ -2168,6 +2242,10 @@ const AddProperty = ({
           title: property.title || '',
           description: property.description || '',
           price: property.price ? String(property.price) : '',
+          minimumSalePrice:
+            property.minimum_sale_price != null && property.minimum_sale_price !== ''
+              ? String(property.minimum_sale_price)
+              : '',
           isShareProperty: !!(property.is_shared_ownership === 1 || property.is_shared_ownership === true),
           isDebtProperty: !!(property.is_debt === 1 || property.is_debt === true || property.sale_type === 'debt' || property.has_debt === 1 || property.has_debt === true),
           totalShares: (property.total_shares != null && property.total_shares !== '') ? String(property.total_shares) : '',
@@ -2178,7 +2256,7 @@ const AddProperty = ({
           area: property.area ? String(property.area) : '',
           livingArea: property.living_area ? String(property.living_area) : '',
           buildingType: property.building_type || '',
-          constructionType: property.construction_type || '',
+          constructionType: normalizeConstructionTypeForForm(property.construction_type),
           rooms: (property.rooms !== undefined && property.rooms !== null && property.rooms !== '') ? String(property.rooms) : '',
           bedrooms: (property.bedrooms !== undefined && property.bedrooms !== null && property.bedrooms !== '') ? String(property.bedrooms) : '',
           bathrooms: (property.bathrooms !== undefined && property.bathrooms !== null && property.bathrooms !== '') ? String(property.bathrooms) : '',
@@ -2366,6 +2444,21 @@ const AddProperty = ({
             })
           }
         }
+        if (property.minimum_sale_price != null && property.price) {
+          const loadMinErr = getMinimumSaleVsBuyNowError(
+            String(property.minimum_sale_price),
+            String(property.price)
+          )
+          if (loadMinErr) {
+            setValidationErrors((prev) => ({ ...prev, minimumSalePrice: loadMinErr }))
+          } else {
+            setValidationErrors((prev) => {
+              const next = { ...prev }
+              delete next.minimumSalePrice
+              return next
+            })
+          }
+        }
         
         // Начинаем пошаговый процесс редактирования:
         // для долей и долгов сразу переходим к названию, для остальных — к вопросу о тест-драйве
@@ -2406,7 +2499,7 @@ const AddProperty = ({
       floor: 'Этаж',
       total_floors: 'Всего этажей',
       year_built: 'Год постройки',
-      construction_type: 'Тип конструкции',
+      construction_type: t('addPropertyConstructionTypePlaceholder'),
       location: 'Местоположение',
       cadastral_address: 'Кадастровый адрес',
       cadastral_number: 'Кадастровый номер',
@@ -4044,6 +4137,19 @@ const AddProperty = ({
         showNotification('Пожалуйста, укажите стартовую цену аукциона')
         return
       }
+      if (isDebtAuctionMode) {
+        const minNum = Number(removeCommas(String(formData.minimumSalePrice || '')))
+        if (!formData.minimumSalePrice || !Number.isFinite(minNum) || minNum <= 0) {
+          showNotification(t('addPropertyPriceMinimumSaleRequired'))
+          return
+        }
+        const minVsBuyDebt = getMinimumSaleVsBuyNowError(formData.minimumSalePrice, formData.price)
+        if (minVsBuyDebt) {
+          setValidationErrors((prev) => ({ ...prev, minimumSalePrice: minVsBuyDebt }))
+          showNotification(minVsBuyDebt)
+          return
+        }
+      }
       const buyNowRuleErr = getAuctionStartingVsBuyNowError(mode === 'debt_auction' ? '' : formData.price, formData.auctionStartingPrice)
       if (isDebtAuctionMode && buyNowRuleErr) {
         setValidationErrors(prev => ({ ...prev, auctionStartingPrice: buyNowRuleErr }))
@@ -4061,6 +4167,11 @@ const AddProperty = ({
         showNotification('Пожалуйста, укажите стартовую цену аукциона')
         return
       }
+      const minSaleNumContinue = Number(removeCommas(String(formData.minimumSalePrice || '')))
+      if (isAuctionMode && (!formData.minimumSalePrice || !Number.isFinite(minSaleNumContinue) || minSaleNumContinue <= 0)) {
+        showNotification(t('addPropertyPriceMinimumSaleRequired'))
+        return
+      }
       const buyNowRuleErr = getAuctionStartingVsBuyNowError(mode === 'auction_buy_now' ? formData.price : '', formData.auctionStartingPrice)
       if (mode === 'auction_buy_now' && buyNowRuleErr) {
         setValidationErrors(prev => ({ ...prev, auctionStartingPrice: buyNowRuleErr }))
@@ -4071,6 +4182,12 @@ const AddProperty = ({
         const buyNowNum = Number(removeCommas(String(formData.price || '')))
         if (!formData.price || !Number.isFinite(buyNowNum) || buyNowNum <= 0) {
           showNotification('Для режима "Аукцион + Продать сейчас" укажите цену "Продать сейчас"')
+          return
+        }
+        const minVsBuy = getMinimumSaleVsBuyNowError(formData.minimumSalePrice, formData.price)
+        if (minVsBuy) {
+          setValidationErrors((prev) => ({ ...prev, minimumSalePrice: minVsBuy }))
+          showNotification(minVsBuy)
           return
         }
       }
@@ -4547,10 +4664,120 @@ const AddProperty = ({
     const mode = formData.listingMode || 'auction'
     if (mode === 'shares') return Number(removeCommas(String(formData.price || ''))) > 0 && Number(formData.totalShares) > 0
     if (mode === 'debt') return Number(removeCommas(String(formData.debtAmount || ''))) > 0
-    if (mode === 'debt_auction') return Number(removeCommas(String(formData.debtAmount || ''))) > 0 && Number(removeCommas(String(formData.auctionStartingPrice || ''))) > 0
-    if (mode === 'auction_buy_now') return Number(removeCommas(String(formData.price || ''))) > 0 && Number(removeCommas(String(formData.auctionStartingPrice || ''))) > 0
+    if (mode === 'debt_auction') {
+      return (
+        Number(removeCommas(String(formData.debtAmount || ''))) > 0 &&
+        Number(removeCommas(String(formData.auctionStartingPrice || ''))) > 0 &&
+        Number(removeCommas(String(formData.minimumSalePrice || ''))) > 0
+      )
+    }
+    if (mode === 'auction_buy_now') {
+      return (
+        Number(removeCommas(String(formData.minimumSalePrice || ''))) > 0 &&
+        Number(removeCommas(String(formData.price || ''))) > 0 &&
+        Number(removeCommas(String(formData.auctionStartingPrice || ''))) > 0
+      )
+    }
+    if (mode === 'auction') {
+      return (
+        Number(removeCommas(String(formData.minimumSalePrice || ''))) > 0 &&
+        Number(removeCommas(String(formData.auctionStartingPrice || ''))) > 0
+      )
+    }
     return Number(removeCommas(String(formData.auctionStartingPrice || ''))) > 0
   })()
+
+  const spAuctionAmountStepIds = useMemo(() => {
+    const m = formData.listingMode
+    if (m === 'auction') return ['minimum_sale', 'starting']
+    if (m === 'auction_buy_now' || m === 'debt_auction') return ['minimum_sale', 'buy_now', 'starting']
+    return []
+  }, [formData.listingMode])
+
+  const spCurAuctionAmountStepId = spAuctionAmountStepIds[spAuctionAmountStepIndex] ?? null
+
+  const spEnteredAmountSummaryRows = useMemo(() => {
+    const sym = quickCurrencies.find((c) => c.code === currency)?.symbol || '$'
+    const fmt = (raw) => {
+      const digits = String(raw ?? '').replace(/\D/g, '')
+      if (!digits) return null
+      return `${sym}${formatNumberWithCommas(digits)}`
+    }
+    const rows = []
+    for (const sid of spAuctionAmountStepIds) {
+      if (sid === 'minimum_sale') {
+        rows.push({ key: 'minimum_sale', label: t('addPropertyPriceStepMinTitle'), value: fmt(formData.minimumSalePrice) })
+      } else if (sid === 'buy_now') {
+        rows.push({ key: 'buy_now', label: t('addPropertyPriceStepBuyNowTitle'), value: fmt(formData.price) })
+      } else if (sid === 'starting') {
+        rows.push({ key: 'starting', label: t('addPropertyPriceStartingBidLabel'), value: fmt(formData.auctionStartingPrice) })
+      }
+    }
+    return rows
+  }, [spAuctionAmountStepIds, formData.minimumSalePrice, formData.price, formData.auctionStartingPrice, currency, t])
+
+  useEffect(() => {
+    if (['auction', 'auction_buy_now', 'debt_auction'].includes(formData.listingMode)) {
+      setSpAuctionAmountStepIndex(0)
+    }
+  }, [formData.listingMode])
+
+  const handleSpAuctionAmountStepNext = () => {
+    const stepIds = spAuctionAmountStepIds
+    const cur = stepIds[spAuctionAmountStepIndex]
+    if (!cur) return
+    if (cur === 'minimum_sale') {
+      const n = Number(removeCommas(String(formData.minimumSalePrice || '')))
+      if (!formData.minimumSalePrice || !Number.isFinite(n) || n <= 0) {
+        showNotification(t('addPropertyPriceMinimumSaleRequired'))
+        return
+      }
+    }
+    if (cur === 'buy_now') {
+      if (formData.listingMode === 'auction_buy_now') {
+        const n = Number(removeCommas(String(formData.price || '')))
+        if (!formData.price || !Number.isFinite(n) || n <= 0) {
+          showNotification(t('addPropertyPriceBuyNowRequired'))
+          return
+        }
+      }
+      const minVs = getMinimumSaleVsBuyNowError(formData.minimumSalePrice, formData.price)
+      if (minVs) {
+        showNotification(minVs)
+        setValidationErrors((prev) => ({ ...prev, minimumSalePrice: minVs }))
+        return
+      }
+      setValidationErrors((prev) => {
+        const next = { ...prev }
+        delete next.minimumSalePrice
+        return next
+      })
+    }
+    if (cur === 'starting') {
+      const n = Number(removeCommas(String(formData.auctionStartingPrice || '')))
+      if (!formData.auctionStartingPrice || !Number.isFinite(n) || n <= 0) {
+        showNotification(t('addPropertyPriceStartingBidRequired'))
+        return
+      }
+      const startErr = getAuctionStartingVsBuyNowError(
+        formData.listingMode === 'auction' ? '' : formData.price,
+        formData.auctionStartingPrice
+      )
+      if (startErr) {
+        showNotification(startErr)
+        setValidationErrors((prev) => ({ ...prev, auctionStartingPrice: startErr }))
+        return
+      }
+      setValidationErrors((prev) => {
+        const next = { ...prev }
+        delete next.auctionStartingPrice
+        return next
+      })
+    }
+    if (spAuctionAmountStepIndex < stepIds.length - 1) {
+      setSpAuctionAmountStepIndex((i) => i + 1)
+    }
+  }
 
   const handleApplyCalculatedPrice = useCallback((recommendedPrice) => {
     const normalized = Math.max(0, Math.round(Number(recommendedPrice) || 0))
@@ -4619,6 +4846,7 @@ const AddProperty = ({
   }
 
   const applyListingModeFromSinglePage = (mode) => {
+    setSpAuctionAmountStepIndex(0)
     setFormData((prev) => ({
       ...prev,
       listingMode: mode,
@@ -5225,12 +5453,10 @@ const AddProperty = ({
                             onChange={(e) => setFormData((prev) => ({ ...prev, constructionType: e.target.value }))}
                             className="property-name-input"
                           >
-                            <option value="">Тип конструкции</option>
-                            <option value="frame">Каркасная</option>
-                            <option value="monolithic_frame">Монолитно-каркасная</option>
-                            <option value="panel_frame">Панельно-каркасная</option>
-                            <option value="modular">Модульная</option>
-                            <option value="other">Другое</option>
+                            <option value="">{t('addPropertyConstructionTypePlaceholder')}</option>
+                            {CONSTRUCTION_TYPE_FORM_VALUES.map((value) => (
+                              <option key={value} value={value}>{t(CONSTRUCTION_TYPE_I18N_KEYS[value])}</option>
+                            ))}
                           </select>
                         </>
                       )}
@@ -5289,12 +5515,10 @@ const AddProperty = ({
                             onChange={(e) => setFormData((prev) => ({ ...prev, constructionType: e.target.value }))}
                             className="property-name-input"
                           >
-                            <option value="">Тип конструкции</option>
-                            <option value="frame">Каркасная</option>
-                            <option value="monolithic_frame">Монолитно-каркасная</option>
-                            <option value="panel_frame">Панельно-каркасная</option>
-                            <option value="modular">Модульная</option>
-                            <option value="other">Другое</option>
+                            <option value="">{t('addPropertyConstructionTypePlaceholder')}</option>
+                            {CONSTRUCTION_TYPE_FORM_VALUES.map((value) => (
+                              <option key={value} value={value}>{t(CONSTRUCTION_TYPE_I18N_KEYS[value])}</option>
+                            ))}
                           </select>
                         </>
                       )}
@@ -5338,11 +5562,10 @@ const AddProperty = ({
                             onChange={(e) => setFormData((prev) => ({ ...prev, constructionType: e.target.value }))}
                             className="property-name-input"
                           >
-                            <option value="">Тип конструкции</option>
-                            <option value="open_space">Открытая планировка</option>
-                            <option value="cabinet">Кабинетная</option>
-                            <option value="mixed">Смешанная</option>
-                            <option value="other">Другое</option>
+                            <option value="">{t('addPropertyConstructionTypePlaceholder')}</option>
+                            {CONSTRUCTION_TYPE_FORM_VALUES.map((value) => (
+                              <option key={value} value={value}>{t(CONSTRUCTION_TYPE_I18N_KEYS[value])}</option>
+                            ))}
                           </select>
                         </>
                       )}
@@ -5666,7 +5889,7 @@ const AddProperty = ({
                     <header className="sp-card__head">
                       <span className="sp-card__step">Шаг 10</span>
                       <h3 className="sp-card__title">Цена, долги и сроки аукциона</h3>
-                      <p className="sp-card__lead">{SINGLE_PAGE_SECTION_HELP.price.lead}</p>
+                      <p className="sp-card__lead">{t('addPropertyPriceSectionLead')}</p>
                     </header>
 
                     {formData.listingMode === 'shares' && (
@@ -5730,12 +5953,86 @@ const AddProperty = ({
                         </div>
 
                         <div className="sp-auction-layout__side">
-                          <div className="single-page-add-flow__grid sp-price-block">
-                            {(formData.listingMode === 'auction_buy_now' ||
-                              formData.listingMode === 'debt_auction') && (
+                          <div className="sp-amount-stepper-panel">
+                            <div className="sp-amount-stepper__meta" aria-live="polite">
+                              <span className="sp-amount-stepper__badge">
+                                {t('addPropertyPriceStepIndicator', {
+                                  current: spAuctionAmountStepIndex + 1,
+                                  total: spAuctionAmountStepIds.length,
+                                })}
+                              </span>
+                              <div className="sp-amount-stepper__track" role="list">
+                                {spAuctionAmountStepIds.map((sid, idx) => (
+                                  <span
+                                    key={sid}
+                                    role="listitem"
+                                    className={`sp-amount-stepper__dot ${idx === spAuctionAmountStepIndex ? 'is-current' : ''} ${idx < spAuctionAmountStepIndex ? 'is-done' : ''}`}
+                                    title={
+                                      sid === 'minimum_sale'
+                                        ? t('addPropertyPriceStepMinTitle')
+                                        : sid === 'buy_now'
+                                          ? t('addPropertyPriceStepBuyNowTitle')
+                                          : t('addPropertyPriceStepStartingTitle')
+                                    }
+                                  />
+                                ))}
+                              </div>
+                            </div>
+
+                            {spCurAuctionAmountStepId === 'minimum_sale' && (
                               <>
-                                <label className="sp-field-label">
-                                  Продать сейчас {formData.listingMode === 'auction_buy_now' ? '(обязательно)' : '(опционально)'}
+                                <h4 className="sp-amount-stepper__title">{t('addPropertyPriceStepMinTitle')}</h4>
+                                <div className="sp-amount-stepper__desc">{t('addPropertyPriceStepMinDesc')}</div>
+                                <div className={`sp-currency-input-wrap currency-selector ${showCurrencyDropdown === 'sp-min-sale' ? 'is-open' : ''}`}>
+                                  <button
+                                    type="button"
+                                    className="sp-currency-button"
+                                    onClick={() => setShowCurrencyDropdown(showCurrencyDropdown === 'sp-min-sale' ? null : 'sp-min-sale')}
+                                  >
+                                    <span>{quickCurrencies.find((c) => c.code === currency)?.symbol || '$'}</span>
+                                    <FiChevronDown className="sp-currency-chevron" size={14} aria-hidden />
+                                  </button>
+                                  {showCurrencyDropdown === 'sp-min-sale' && (
+                                    <div className="sp-currency-dropdown">
+                                      {quickCurrencies.map((curr) => (
+                                        <button
+                                          key={curr.code}
+                                          type="button"
+                                          className={`sp-currency-option ${currency === curr.code ? 'is-active' : ''}`}
+                                          onClick={() => {
+                                            setCurrency(curr.code)
+                                            setShowCurrencyDropdown(null)
+                                          }}
+                                        >
+                                          <span>{curr.symbol}</span>
+                                          <span>{curr.code}</span>
+                                        </button>
+                                      ))}
+                                    </div>
+                                  )}
+                                  <input
+                                    type="text"
+                                    className="property-name-input sp-price-input-with-currency"
+                                    aria-label={t('addPropertyPriceMinimumSaleLabel')}
+                                    value={formData.minimumSalePrice ? formatNumberWithCommas(formData.minimumSalePrice) : ''}
+                                    onChange={handleMinimumSalePriceChange}
+                                    inputMode="numeric"
+                                  />
+                                </div>
+                                {validationErrors.minimumSalePrice && (
+                                  <p className="sp-amount-stepper__error">{validationErrors.minimumSalePrice}</p>
+                                )}
+                              </>
+                            )}
+
+                            {spCurAuctionAmountStepId === 'buy_now' && (
+                              <>
+                                <h4 className="sp-amount-stepper__title">{t('addPropertyPriceStepBuyNowTitle')}</h4>
+                                <div className="sp-amount-stepper__desc">{t('addPropertyPriceStepBuyNowDesc')}</div>
+                                <label className="sp-field-label sp-amount-stepper__field-label">
+                                  {formData.listingMode === 'auction_buy_now'
+                                    ? t('addPropertyPriceBuyNowFieldLabelRequired')
+                                    : t('addPropertyPriceBuyNowFieldLabelOptional')}
                                 </label>
                                 <div className={`sp-currency-input-wrap currency-selector ${showCurrencyDropdown === 'sp-price' ? 'is-open' : ''}`}>
                                   <button
@@ -5744,7 +6041,7 @@ const AddProperty = ({
                                     onClick={() => setShowCurrencyDropdown(showCurrencyDropdown === 'sp-price' ? null : 'sp-price')}
                                   >
                                     <span>{quickCurrencies.find((c) => c.code === currency)?.symbol || '$'}</span>
-                                    <FiChevronDown size={14} />
+                                    <FiChevronDown className="sp-currency-chevron" size={14} aria-hidden />
                                   </button>
                                   {showCurrencyDropdown === 'sp-price' && (
                                     <div className="sp-currency-dropdown">
@@ -5772,49 +6069,85 @@ const AddProperty = ({
                                     inputMode="numeric"
                                   />
                                 </div>
+                                {validationErrors.minimumSalePrice && (
+                                  <p className="sp-amount-stepper__error">{validationErrors.minimumSalePrice}</p>
+                                )}
                               </>
                             )}
-                            <label className="sp-field-label">{t('addPropertyPriceStartingBidLabel')}</label>
-                            <div className={`sp-currency-input-wrap currency-selector ${showCurrencyDropdown === 'sp-auction' ? 'is-open' : ''}`}>
+
+                            {spCurAuctionAmountStepId === 'starting' && (
+                              <>
+                                <h4 className="sp-amount-stepper__title">{t('addPropertyPriceStepStartingTitle')}</h4>
+                                <div className="sp-amount-stepper__desc">
+                                  {formData.listingMode === 'auction'
+                                    ? t('addPropertyPriceStepStartingDescAuctionOnly')
+                                    : t('addPropertyPriceStepStartingDescWithBuyNow')}
+                                </div>
+                                <label className="sp-field-label sp-amount-stepper__field-label">{t('addPropertyPriceStartingBidLabel')}</label>
+                                <div className={`sp-currency-input-wrap currency-selector ${showCurrencyDropdown === 'sp-auction' ? 'is-open' : ''}`}>
+                                  <button
+                                    type="button"
+                                    className="sp-currency-button"
+                                    onClick={() => setShowCurrencyDropdown(showCurrencyDropdown === 'sp-auction' ? null : 'sp-auction')}
+                                  >
+                                    <span>{quickCurrencies.find((c) => c.code === currency)?.symbol || '$'}</span>
+                                    <FiChevronDown className="sp-currency-chevron" size={14} aria-hidden />
+                                  </button>
+                                  {showCurrencyDropdown === 'sp-auction' && (
+                                    <div className="sp-currency-dropdown">
+                                      {quickCurrencies.map((curr) => (
+                                        <button
+                                          key={curr.code}
+                                          type="button"
+                                          className={`sp-currency-option ${currency === curr.code ? 'is-active' : ''}`}
+                                          onClick={() => {
+                                            setCurrency(curr.code)
+                                            setShowCurrencyDropdown(null)
+                                          }}
+                                        >
+                                          <span>{curr.symbol}</span>
+                                          <span>{curr.code}</span>
+                                        </button>
+                                      ))}
+                                    </div>
+                                  )}
+                                  <input
+                                    type="text"
+                                    className="property-name-input sp-price-input-with-currency"
+                                    value={formData.auctionStartingPrice ? formatNumberWithCommas(formData.auctionStartingPrice) : ''}
+                                    onChange={handleAuctionPriceChange}
+                                    inputMode="numeric"
+                                  />
+                                </div>
+                                {validationErrors.auctionStartingPrice && (
+                                  <p className="sp-amount-stepper__error">{validationErrors.auctionStartingPrice}</p>
+                                )}
+                              </>
+                            )}
+
+                            <div className="sp-amount-stepper__nav">
                               <button
                                 type="button"
-                                className="sp-currency-button"
-                                onClick={() => setShowCurrencyDropdown(showCurrencyDropdown === 'sp-auction' ? null : 'sp-auction')}
+                                className="sp-btn sp-btn--ghost"
+                                disabled={spAuctionAmountStepIndex <= 0}
+                                onClick={() => setSpAuctionAmountStepIndex((i) => Math.max(0, i - 1))}
                               >
-                                <span>{quickCurrencies.find((c) => c.code === currency)?.symbol || '$'}</span>
-                                <FiChevronDown size={14} />
+                                {t('addPropertyPriceStepBack')}
                               </button>
-                              {showCurrencyDropdown === 'sp-auction' && (
-                                <div className="sp-currency-dropdown">
-                                  {quickCurrencies.map((curr) => (
-                                    <button
-                                      key={curr.code}
-                                      type="button"
-                                      className={`sp-currency-option ${currency === curr.code ? 'is-active' : ''}`}
-                                      onClick={() => {
-                                        setCurrency(curr.code)
-                                        setShowCurrencyDropdown(null)
-                                      }}
-                                    >
-                                      <span>{curr.symbol}</span>
-                                      <span>{curr.code}</span>
-                                    </button>
-                                  ))}
-                                </div>
+                              {spAuctionAmountStepIndex < spAuctionAmountStepIds.length - 1 ? (
+                                <button type="button" className="sp-btn sp-btn--primary" onClick={handleSpAuctionAmountStepNext}>
+                                  {t('addPropertyPriceStepNext')}
+                                </button>
+                              ) : (
+                                <button
+                                  type="button"
+                                  className="sp-btn sp-btn--amount-summary"
+                                  onClick={() => setShowSpEnteredAmountsModal(true)}
+                                >
+                                  {t('addPropertyPriceEnteredAmountsButton')}
+                                </button>
                               )}
-                              <input
-                                type="text"
-                                className="property-name-input sp-price-input-with-currency"
-                                value={formData.auctionStartingPrice ? formatNumberWithCommas(formData.auctionStartingPrice) : ''}
-                                onChange={handleAuctionPriceChange}
-                                inputMode="numeric"
-                              />
                             </div>
-                            {(formData.listingMode === 'auction_buy_now' || formData.listingMode === 'debt_auction') && (
-                              <div className="sp-price-tip">
-                                <strong>Подсказка по цене:</strong> финальная цена сделки может быть ниже цены предложения до 10%.
-                              </div>
-                            )}
                           </div>
                         </div>
                       </div>
@@ -8741,9 +9074,61 @@ const AddProperty = ({
                 </>
               )}
 
-              {(formData.listingMode === 'auction_buy_now' || formData.listingMode === 'debt_auction') && (
+              {(formData.listingMode === 'auction' ||
+                formData.listingMode === 'auction_buy_now' ||
+                formData.listingMode === 'debt_auction') && (
                 <>
-              {/* Блок цены "Купить сейчас" */}
+              <div className="price-input-section">
+                <label className="price-input-label">{t('addPropertyPriceMinimumSaleLabel')}</label>
+                <div className="price-input-wrapper-large">
+                  <div className="currency-selector">
+                    <button
+                      type="button"
+                      className="currency-button"
+                      onClick={() => setShowCurrencyDropdown(showCurrencyDropdown === 'min_sale' ? null : 'min_sale')}
+                    >
+                      <span className="currency-symbol">{currencies.find(c => c.code === currency)?.symbol || '$'}</span>
+                      <FiChevronDown className="currency-chevron" size={14} />
+                    </button>
+                    {showCurrencyDropdown === 'min_sale' && (
+                      <div className="currency-dropdown">
+                        {currencies.map((curr) => (
+                          <button
+                            key={curr.code}
+                            type="button"
+                            className={`currency-option ${currency === curr.code ? 'active' : ''}`}
+                            onClick={(e) => {
+                              e.preventDefault()
+                              e.stopPropagation()
+                              setCurrency(curr.code)
+                              setShowCurrencyDropdown(null)
+                            }}
+                          >
+                            <span className="currency-option-symbol">{curr.symbol}</span>
+                            <span className="currency-option-name">{curr.name}</span>
+                            <span className="currency-option-code">({curr.code})</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <input
+                    type="text"
+                    className={`price-input-large ${validationErrors.minimumSalePrice ? 'error' : ''}`}
+                    value={formData.minimumSalePrice ? formatNumberWithCommas(formData.minimumSalePrice) : ''}
+                    onChange={handleMinimumSalePriceChange}
+                    placeholder="0"
+                    inputMode="numeric"
+                  />
+                </div>
+                {validationErrors.minimumSalePrice && (
+                  <div className="validation-error" style={{ marginTop: '8px', color: '#ff4444', fontSize: '14px' }}>
+                    {validationErrors.minimumSalePrice}
+                  </div>
+                )}
+              </div>
+
+              {(formData.listingMode === 'auction_buy_now' || formData.listingMode === 'debt_auction') && (
               <div className="price-input-section">
                 <label className="price-input-label">
                   Продать сейчас {formData.listingMode === 'auction_buy_now' ? '(обязательно)' : '(опционально)'}
@@ -8797,6 +9182,7 @@ const AddProperty = ({
                   />
                 </div>
               </div>
+              )}
 
               {/* Информация об аукционе */}
               <div className="auction-info-section" style={{ marginTop: '24px', padding: '16px', background: '#f0f9ff', borderRadius: '12px', border: '1px solid #bae6fd' }}>
@@ -9085,6 +9471,47 @@ const AddProperty = ({
                 {t('addPropertyPhotosVideoLinkSubmit')}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {showSpEnteredAmountsModal && (
+        <div
+          className="sp-amount-summary-modal-overlay"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="sp-amount-summary-modal-title"
+          onClick={() => setShowSpEnteredAmountsModal(false)}
+        >
+          <div className="sp-amount-summary-modal" onClick={(e) => e.stopPropagation()}>
+            <button
+              type="button"
+              className="sp-amount-summary-modal__close"
+              onClick={() => setShowSpEnteredAmountsModal(false)}
+              aria-label={t('addPropertyPriceEnteredAmountsCloseAria')}
+            >
+              <FiX size={22} />
+            </button>
+            <h2 id="sp-amount-summary-modal-title" className="sp-amount-summary-modal__title">
+              {t('addPropertyPriceEnteredAmountsModalTitle')}
+            </h2>
+            <ul className="sp-amount-summary-modal__list">
+              {spEnteredAmountSummaryRows.map((row) => (
+                <li key={row.key} className="sp-amount-summary-modal__row">
+                  <span className="sp-amount-summary-modal__label">{row.label}</span>
+                  <span className="sp-amount-summary-modal__value">
+                    {row.value ?? t('addPropertyPriceSummaryValueEmpty')}
+                  </span>
+                </li>
+              ))}
+            </ul>
+            <button
+              type="button"
+              className="sp-btn sp-btn--primary sp-amount-summary-modal__ok"
+              onClick={() => setShowSpEnteredAmountsModal(false)}
+            >
+              {t('addPropertyPriceEnteredAmountsClose')}
+            </button>
           </div>
         </div>
       )}

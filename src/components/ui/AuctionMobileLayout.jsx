@@ -660,7 +660,13 @@ function AuctionMobileItem({
             </div>
           )}
 
-          {metaRow}
+          {view === 'list' ? (
+            metaRow ?? (
+              <div className="auction-mobile-meta auction-mobile-meta--placeholder" aria-hidden />
+            )
+          ) : (
+            metaRow
+          )}
 
           <div
             className={cn(
