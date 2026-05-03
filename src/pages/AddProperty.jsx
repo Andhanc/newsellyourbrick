@@ -48,12 +48,173 @@ const PROPERTY_TYPE_OPTIONS = [
 ]
 
 const LISTING_MODE_OPTIONS = [
-  { id: 'auction', title: 'Аукцион', description: 'Максимизирует рыночную цену за счет конкуренции между покупателями', icon: 'auction', tone: 'teal' },
-  { id: 'auction_buy_now', title: 'Аукцион + Продать сейчас', description: 'Дает два сценария сразу: борьба ставок и быстрая сделка по фиксированной цене', icon: 'flash', tone: 'violet' },
-  { id: 'shares', title: 'Доли', description: 'Расширяет круг покупателей за счет входа с меньшим бюджетом', icon: 'shares', tone: 'blue' },
-  { id: 'debt', title: 'Долги', description: 'Подходит для сложных кейсов: помогает быстрее найти целевого инвестора', icon: 'debt', tone: 'amber' },
-  { id: 'debt_auction', title: 'Долги + Аукцион', description: 'Ускоряет продажу проблемного актива и повышает шанс на лучшую цену через торги', icon: 'target', tone: 'slate' },
+  {
+    id: 'auction',
+    title: 'Аукцион',
+    description: 'Максимизирует рыночную цену за счет конкуренции между покупателями',
+    icon: 'auction',
+    tone: 'teal',
+    detail: {
+      howTitle: 'Как проходит продажа',
+      howLead:
+        'Вы задаёте стартовую цену и срок приёма ставок. Покупатели повышают ставки в открытой конкуренции; по окончании периода лидер получает право на сделку по итоговой сумме.',
+      howSteps: [
+        'Публикуете объект и параметры аукциона (старт, шаг, дата окончания).',
+        'Участники делают ставки — вы видите динамику спроса в реальном времени.',
+        'После завершения торгов фиксируется победитель и переходите к оформлению сделки по правилам платформы.',
+      ],
+      fitTitle: 'Кому подходит',
+      fitText:
+        'Когда объект востребован на рынке и вы хотите «проверить» справедливую цену через конкуренцию, а не полагаться на одну оценку или случайного покупателя.',
+      prosTitle: 'Преимущества',
+      pros: [
+        'Потенциально более высокая итоговая цена за счёт борьбы покупателей.',
+        'Прозрачная механика и понятный дедлайн принятия решений.',
+        'Снижение риска занижения цены при сильном интересе к объекту.',
+      ],
+    },
+  },
+  {
+    id: 'auction_buy_now',
+    title: 'Аукцион + Продать сейчас',
+    description: 'Дает два сценария сразу: борьба ставок и быстрая сделка по фиксированной цене',
+    icon: 'flash',
+    tone: 'violet',
+    detail: {
+      howTitle: 'Как проходит продажа',
+      howLead:
+        'Параллельно работают два канала: классические торги и цена «Продать сейчас». Если покупатель согласен на фикс — он может закрыть сделку без ожидания финала аукциона.',
+      howSteps: [
+        'Указываете старт аукциона и (отдельно) цену мгновенной покупки.',
+        'Покупатели либо повышают ставки, либо активируют «Продать сейчас».',
+        'При срабатывании фиксированной цены торги завершаются в пользу этого покупателя — дальше стандартное оформление сделки.',
+      ],
+      fitTitle: 'Кому подходит',
+      fitText:
+        'Когда важны и время, и доходность: часть аудитории готова переплатить за скорость, другая — выторговать лучшую цену.',
+      prosTitle: 'Преимущества',
+      pros: [
+        'Гибкость: охватываете и «торгашей», и тех, кто хочет купить сразу.',
+        'Меньше риска «зависнуть» в долгих переговорах без обязательств.',
+        'Часто быстрее выход к реальной сделке по сравнению с чистым аукционом без фикса.',
+      ],
+    },
+  },
+  {
+    id: 'shares',
+    title: 'Доли',
+    description: 'Расширяет круг покупателей за счет входа с меньшим бюджетом',
+    icon: 'shares',
+    tone: 'blue',
+    detail: {
+      howTitle: 'Как проходит продажа',
+      howLead:
+        'Вы задаёте оценку всего объекта и делите его на доли. На платформе отображается цена входа за одну долю; инвесторы приобретают части согласно вашим условиям и регламенту сделки.',
+      howSteps: [
+        'Указываете общую стоимость объекта и количество долей.',
+        'Система показывает покупателям цену одной доли и условия участия.',
+        'После набора интереса оформляется сделка по выбранной вами модели (полная продажа долей, пул инвесторов и т.д. — в рамках договорённостей).',
+      ],
+      fitTitle: 'Кому подходит',
+      fitText:
+        'Дорогая недвижимость, объекты для совместных инвестиций или ситуации, когда удобнее продать частями, чем искать одного покупателя на весь лот.',
+      prosTitle: 'Преимущества',
+      pros: [
+        'Ниже порог входа для покупателей — шире воронка интереса.',
+        'Возможность частично остаться в активе или привлечь нескольких партнёров.',
+        'Удобно для презентации инвестиционного кейса с понятной математикой.',
+      ],
+    },
+  },
+  {
+    id: 'debt',
+    title: 'Долги',
+    description: 'Подходит для сложных кейсов: помогает быстрее найти целевого инвестора',
+    icon: 'debt',
+    tone: 'amber',
+    detail: {
+      howTitle: 'Как проходит продажа',
+      howLead:
+        'Акцент на сумме обязательств и условиях актива. Публикация ориентирована на инвесторов и стратегических покупателей, которые принимают объект «как есть» и готовы работать с юридико-финансовой структурой.',
+      howSteps: [
+        'Заполняете блок по долгу и прикладываете требуемые документы.',
+        'Целевая аудитория видит ключевые цифры и ограничения без «воды».',
+        'Переговоры ведутся с отфильтрованными откликами — быстрее выход к серьёзному покупателю.',
+      ],
+      fitTitle: 'Кому подходит',
+      fitText:
+        'Обременения, срочность, нестандартный актив или необходимость найти не розничного, а профессионального контрагента.',
+      prosTitle: 'Преимущества',
+      pros: [
+        'Меньше случайных просмотров — выше доля релевантных обращений.',
+        'Экономия времени за счёт честного описания сложности сделки.',
+        'Фокус на инвесторах, которые умеют закрывать такие истории.',
+      ],
+    },
+  },
+  {
+    id: 'debt_auction',
+    title: 'Долги + Аукцион',
+    description: 'Ускоряет продажу проблемного актива и повышает шанс на лучшую цену через торги',
+    icon: 'target',
+    tone: 'slate',
+    detail: {
+      howTitle: 'Как проходит продажа',
+      howLead:
+        'Сочетание долгового профиля и аукционной механики: ставки помогают обнаружить рыночную цену при сохранении понятного срока и прозрачной процедуры отбора покупателя.',
+      howSteps: [
+        'Размещаете актив с параметрами долга и правилами торгов.',
+        'Участники конкурируют ставками с учётом рисков и обременений.',
+        'По завершении периода фиксируется победитель — переходите к сделке с пониманием итоговых условий.',
+      ],
+      fitTitle: 'Кому подходит',
+      fitText:
+        'Когда нельзя просто назначить одну цену «с потолка», но нужно ускорить выход актива на рынок и получить сигнал спроса через торги.',
+      prosTitle: 'Преимущества',
+      pros: [
+        'Конкуренция ставок снижает риск продешевить при неочевидном активе.',
+        'Фиксированный горизонт торгов дисциплинирует процесс.',
+        'Баланс между скоростью сделки и попыткой выжать максимум при сложном кейсе.',
+      ],
+    },
+  },
 ]
+
+/** Раскрывающаяся инструкция по формату продажи (общая разметка для single-page и мастера) */
+function ListingModeInstructionPanel({ mode, layout = 'stack' }) {
+  const d = mode.detail
+  if (!d) return null
+  return (
+    <div className={`lm-instruction lm-instruction--${layout} lm-instruction--tone-${mode.tone}`}>
+      <div className="lm-instruction__section">
+        <h4 className="lm-instruction__title">{d.howTitle}</h4>
+        <p className="lm-instruction__lead">{d.howLead}</p>
+        {d.howSteps?.length > 0 && (
+          <ol className="lm-instruction__steps">
+            {d.howSteps.map((step, i) => (
+              <li key={i}>{step}</li>
+            ))}
+          </ol>
+        )}
+      </div>
+      <div className="lm-instruction__section lm-instruction__section--accent">
+        <h4 className="lm-instruction__title">{d.fitTitle}</h4>
+        <p className="lm-instruction__p">{d.fitText}</p>
+      </div>
+      <div className="lm-instruction__section">
+        <h4 className="lm-instruction__title">{d.prosTitle}</h4>
+        <ul className="lm-instruction__pros">
+          {d.pros.map((line, i) => (
+            <li key={i}>
+              <FiCheck className="lm-instruction__pro-icon" aria-hidden />
+              <span>{line}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  )
+}
 
 const LISTING_MODE_THEME_STAGES = ['aurora', 'sunset', 'midnight']
 
@@ -391,7 +552,6 @@ const INITIAL_FORM_DATA = {
   location: '',
   address: '',
   apartment: '',
-  cadastralAddress: '',
   cadastralNumber: '',
   country: '',
   city: '',
@@ -752,6 +912,7 @@ const AddProperty = ({
   const [showTestDriveInfoModal, setShowTestDriveInfoModal] = useState(false)
   const [showListingModePicker, setShowListingModePicker] = useState(false)
   const [listingModeThemeStage, setListingModeThemeStage] = useState(0)
+  const [expandedListingModeId, setExpandedListingModeId] = useState(null)
   const [spActiveSection, setSpActiveSection] = useState('type')
   const listingModeScrollRef = useRef(null)
   const listingModeWheelAccumulatorRef = useRef(0)
@@ -768,6 +929,7 @@ const AddProperty = ({
     setUploadedDocuments({ ownership: false, noDebts: false })
     setCurrentStep('type-selection')
     setShowListingModePicker(false)
+    setExpandedListingModeId(null)
     setValidationErrors({})
     setAddressSearch('')
     setAddressSuggestions([])
@@ -1628,7 +1790,6 @@ const AddProperty = ({
       if (formData.coordinates) {
         formDataToSend.append('coordinates', JSON.stringify(formData.coordinates))
       }
-      if (formData.cadastralAddress) formDataToSend.append('cadastral_address', formData.cadastralAddress)
       if (formData.cadastralNumber) formDataToSend.append('cadastral_number', formData.cadastralNumber)
       
       // Дополнительные поля
@@ -2269,7 +2430,6 @@ const AddProperty = ({
           location: property.location || '',
           address: property.address || '',
           apartment: property.apartment || '',
-          cadastralAddress: property.cadastral_address || '',
           cadastralNumber: property.cadastral_number || '',
           country: property.country || '',
           city: property.city || '',
@@ -2501,7 +2661,6 @@ const AddProperty = ({
       year_built: 'Год постройки',
       construction_type: t('addPropertyConstructionTypePlaceholder'),
       location: 'Местоположение',
-      cadastral_address: 'Кадастровый адрес',
       cadastral_number: 'Кадастровый номер',
       land_area: 'Площадь участка',
       commercial_type: 'Тип коммерческой',
@@ -2545,7 +2704,6 @@ const AddProperty = ({
         'year_built': 'yearBuilt',
         'construction_type': 'constructionType',
         'location': 'location',
-        'cadastral_address': 'cadastralAddress',
         'cadastral_number': 'cadastralNumber',
         'land_area': 'landArea',
         'commercial_type': 'commercialType',
@@ -2796,7 +2954,6 @@ const AddProperty = ({
       livingArea: '',
       landArea: '',
       commercialType: '',
-      cadastralAddress: '',
       cadastralNumber: '',
       parking: false,
       feature1: false,
@@ -2861,6 +3018,7 @@ const AddProperty = ({
 
   const handleListingModeSelect = (mode, options = {}) => {
     const { skipStepTransition = false, smoothScrollToPrice = false } = options
+    setExpandedListingModeId(null)
     setFormData(prev => ({
       ...prev,
       listingMode: mode,
@@ -4846,6 +5004,7 @@ const AddProperty = ({
   }
 
   const applyListingModeFromSinglePage = (mode) => {
+    setExpandedListingModeId(null)
     setSpAuctionAmountStepIndex(0)
     setFormData((prev) => ({
       ...prev,
@@ -5344,27 +5503,15 @@ const AddProperty = ({
                       </div>
                     </div>
 
-                    <div className="single-page-add-flow__grid">
-                      <div className="property-location-input-group">
-                        <label className="property-location-label">Кадастровый адрес (опционально)</label>
-                        <input
-                          type="text"
-                          value={formData.cadastralAddress || ''}
-                          onChange={(e) => setFormData((prev) => ({ ...prev, cadastralAddress: e.target.value }))}
-                          className="property-location-input"
-                          placeholder="Как в кадастровой выписке"
-                        />
-                      </div>
-                      <div className="property-location-input-group">
-                        <label className="property-location-label">Кадастровый номер (опционально)</label>
-                        <input
-                          type="text"
-                          value={formData.cadastralNumber || ''}
-                          onChange={(e) => setFormData((prev) => ({ ...prev, cadastralNumber: e.target.value }))}
-                          className="property-location-input"
-                          placeholder="Например: 77:01:0004012:3456"
-                        />
-                      </div>
+                    <div className="property-location-input-group">
+                      <label className="property-location-label">Кадастровый номер (опционально)</label>
+                      <input
+                        type="text"
+                        value={formData.cadastralNumber || ''}
+                        onChange={(e) => setFormData((prev) => ({ ...prev, cadastralNumber: e.target.value }))}
+                        className="property-location-input"
+                        placeholder="Например: 77:01:0004012:3456"
+                      />
                     </div>
 
                     <p className="sp-map-hint">
@@ -5861,25 +6008,59 @@ const AddProperty = ({
                       <h3 className="sp-card__title">Формат продажи</h3>
                       <p className="sp-card__lead">{SINGLE_PAGE_SECTION_HELP.listing.lead}</p>
                     </header>
-                    <div className="sp-radio-stack" role="radiogroup" aria-label="Тип размещения">
-                      {LISTING_MODE_OPTIONS.map((mode) => (
-                        <label
-                          key={mode.id}
-                          className={`sp-radio-row sp-radio-row--listing sp-radio-row--${mode.tone} ${formData.listingMode === mode.id ? 'is-selected' : ''}`}
-                        >
-                          <input
-                            type="radio"
-                            name="sp-listing-mode"
-                            checked={formData.listingMode === mode.id}
-                            onChange={() => applyListingModeFromSinglePage(mode.id)}
-                          />
-                          <span className="sp-radio-row__icon" aria-hidden="true">{getListingModeIcon(mode.icon)}</span>
-                          <span className="sp-radio-row__text">
-                            <span className="sp-radio-row__title">{mode.title}</span>
-                            <span className="sp-radio-row__desc">{mode.description}</span>
-                          </span>
-                        </label>
-                      ))}
+                    <div className="sp-listing-mode-stack" role="radiogroup" aria-label="Тип размещения">
+                      {LISTING_MODE_OPTIONS.map((mode) => {
+                        const isOpen = expandedListingModeId === mode.id
+                        return (
+                          <div
+                            key={mode.id}
+                            className={`sp-listing-accordion sp-radio-row sp-radio-row--listing sp-radio-row--${mode.tone} ${formData.listingMode === mode.id ? 'is-selected' : ''} ${isOpen ? 'is-expanded' : ''}`}
+                          >
+                            <div className="sp-listing-accordion__top">
+                              <label className="sp-listing-accordion__label">
+                                <input
+                                  type="radio"
+                                  name="sp-listing-mode"
+                                  checked={formData.listingMode === mode.id}
+                                  onChange={() => applyListingModeFromSinglePage(mode.id)}
+                                />
+                                <span className="sp-radio-row__icon" aria-hidden="true">
+                                  {getListingModeIcon(mode.icon)}
+                                </span>
+                                <span className="sp-radio-row__text">
+                                  <span className="sp-radio-row__title">{mode.title}</span>
+                                  <span className="sp-radio-row__desc">{mode.description}</span>
+                                </span>
+                              </label>
+                              <button
+                                type="button"
+                                className="sp-listing-accordion__toggle"
+                                aria-expanded={isOpen}
+                                aria-controls={`listing-mode-help-${mode.id}`}
+                                id={`listing-mode-trigger-${mode.id}`}
+                                onClick={() =>
+                                  setExpandedListingModeId((prev) => (prev === mode.id ? null : mode.id))
+                                }
+                              >
+                                <FiChevronDown className={`sp-listing-accordion__chev ${isOpen ? 'is-open' : ''}`} aria-hidden />
+                                <span className="sp-listing-accordion__toggle-text">
+                                  {isOpen ? 'Свернуть' : 'Как это работает'}
+                                </span>
+                              </button>
+                            </div>
+                            {isOpen && (
+                              <div
+                                className="sp-listing-accordion__panel"
+                                id={`listing-mode-help-${mode.id}`}
+                                role="region"
+                                aria-labelledby={`listing-mode-trigger-${mode.id}`}
+                              >
+                                <ListingModeInstructionPanel mode={mode} layout="stack" />
+                              </div>
+                            )}
+                          </div>
+                        )
+                      })}
                     </div>
                   </section>
                 )}
@@ -8890,7 +9071,10 @@ const AddProperty = ({
             <div className="listing-mode-stage__hero">
               <span className="listing-mode-stage__pill">Шаг 8 из 9</span>
               <h2>Выберите тип размещения</h2>
-              <p>Прокрутите карточки вниз и выберите подходящий формат публикации. Фон динамически меняется при скролле.</p>
+              <p>
+                Откройте «Инструкцию» у формата, чтобы увидеть, как проходит продажа, кому он подходит и какие у него
+                преимущества. Затем нажмите «Выбрать». Фон шага меняется при прокрутке.
+              </p>
             </div>
             <div
               ref={listingModeScrollRef}
@@ -8899,22 +9083,49 @@ const AddProperty = ({
               onWheel={handleListingModeThemeWheel}
             >
               <div className="listing-mode-stage__cards">
-                {LISTING_MODE_OPTIONS.map((mode, index) => (
-                  <button
-                    key={mode.id}
-                    type="button"
-                    className={`listing-mode-stage__card listing-mode-stage__card--${mode.tone} ${formData.listingMode === mode.id ? 'listing-mode-stage__card--active' : ''}`}
-                    style={{ animationDelay: `${index * 70}ms` }}
-                    onClick={() => handleListingModeSelect(mode.id)}
-                  >
-                    <span className="listing-mode-stage__card-icon">{getListingModeIcon(mode.icon)}</span>
-                    <span className="listing-mode-stage__card-content">
-                      <strong>{mode.title}</strong>
-                      <small>{mode.description}</small>
-                    </span>
-                    <span className="listing-mode-stage__card-cta">Выбрать</span>
-                  </button>
-                ))}
+                {LISTING_MODE_OPTIONS.map((mode, index) => {
+                  const isOpen = expandedListingModeId === mode.id
+                  return (
+                    <div key={mode.id} className="listing-mode-stage__card-wrap" style={{ animationDelay: `${index * 70}ms` }}>
+                      <div
+                        className={`listing-mode-stage__card listing-mode-stage__card--${mode.tone} ${formData.listingMode === mode.id ? 'listing-mode-stage__card--active' : ''}`}
+                      >
+                        <div className="listing-mode-stage__card-top">
+                          <span className="listing-mode-stage__card-icon">{getListingModeIcon(mode.icon)}</span>
+                          <span className="listing-mode-stage__card-content">
+                            <strong>{mode.title}</strong>
+                            <small>{mode.description}</small>
+                          </span>
+                        </div>
+                        <div className="listing-mode-stage__card-actions">
+                          <button
+                            type="button"
+                            className="listing-mode-stage__btn listing-mode-stage__btn--ghost"
+                            aria-expanded={isOpen}
+                            onClick={() =>
+                              setExpandedListingModeId((prev) => (prev === mode.id ? null : mode.id))
+                            }
+                          >
+                            <FiChevronDown className={`listing-mode-stage__btn-chev ${isOpen ? 'is-open' : ''}`} aria-hidden />
+                            {isOpen ? 'Свернуть' : 'Инструкция'}
+                          </button>
+                          <button
+                            type="button"
+                            className="listing-mode-stage__btn listing-mode-stage__btn--primary"
+                            onClick={() => handleListingModeSelect(mode.id)}
+                          >
+                            Выбрать
+                          </button>
+                        </div>
+                      </div>
+                      {isOpen && (
+                        <div className={`listing-mode-stage__detail listing-mode-stage__detail--${mode.tone}`}>
+                          <ListingModeInstructionPanel mode={mode} layout="compact" />
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
                 <div className="listing-mode-stage__scroll-tip">
                   <FiChevronDown size={18} />
                   <span>Скролл и колесо мыши переключают тему оформления</span>

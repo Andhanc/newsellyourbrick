@@ -1,5 +1,5 @@
 import React from 'react';
-import { FaChartBar, FaUsers, FaShieldAlt, FaComment, FaBuilding, FaSignOutAlt, FaKey, FaWhatsapp, FaAddressBook, FaShoppingCart, FaFlask, FaTimes, FaGift, FaRobot, FaFileInvoiceDollar, FaFileAlt, FaWarehouse, FaPlusSquare, FaCar } from 'react-icons/fa';
+import { FaChartBar, FaUsers, FaShieldAlt, FaComment, FaBuilding, FaSignOutAlt, FaKey, FaWhatsapp, FaAddressBook, FaShoppingCart, FaFlask, FaTimes, FaGift, FaRobot, FaFileInvoiceDollar, FaFileAlt, FaWarehouse, FaPlusSquare, FaCar, FaGavel } from 'react-icons/fa';
 import './Sidebar.css';
 
 const Sidebar = ({
@@ -23,6 +23,7 @@ const Sidebar = ({
     { id: 'smart_assistant', icon: FaRobot, label: 'Умный помощник', permission: 'can_access_chat' },
     { id: 'addition', icon: FaPlusSquare, label: 'Добавление', permission: 'can_access_objects' },
     { id: 'objects', icon: FaBuilding, label: 'Объекты', permission: 'can_access_objects' },
+    { id: 'auctions', icon: FaGavel, label: 'Аукционы', permission: 'can_access_objects' },
     { id: 'test_drive', icon: FaCar, label: 'Тест-драйв', permission: 'can_access_objects' },
     { id: 'debt_reasons', icon: FaFileInvoiceDollar, label: 'Причина долга', permission: 'can_access_objects' },
     { id: 'debt_documents', icon: FaFileAlt, label: 'Необходимые документы', permission: 'can_access_objects' },

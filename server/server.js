@@ -12764,6 +12764,74 @@ app.get('/api/bids/property/:id', async (req, res) => {
 });
 
 /**
+ * GET /api/admin/auctions/:propertyId/bids — история ставок для админки с данными участников.
+ * Query: source_table=properties_apartments | properties_houses | apartments | houses
+ * (если не указан — все ставки с данным property_id, как публичный эндпоинт).
+ */
+app.get('/api/admin/auctions/:propertyId/bids', async (req, res) => {
+  try {
+    const propertyId = Number(req.params.propertyId);
+    if (!Number.isFinite(propertyId) || propertyId <= 0) {
+      return res.status(400).json({ success: false, error: 'Некорректный propertyId' });
+    }
+    let table = req.query.source_table != null ? String(req.query.source_table).trim() : '';
+    if (table === 'apartments') table = 'properties_apartments';
+    if (table === 'houses') table = 'properties_houses';
+    const prisma = getPrisma();
+    const where = { property_id: propertyId };
+    if (table === 'properties_apartments' || table === 'properties_houses') {
+      where.OR = [{ property_table: table }, { property_table: null }];
+    }
+    const bids = await prisma.bids.findMany({
+      where,
+      orderBy: { created_at: 'desc' },
+      include: {
+        users: {
+          select: {
+            id: true,
+            first_name: true,
+            last_name: true,
+            email: true,
+            phone_number: true,
+            country: true,
+            role: true,
+            user_id_number: true,
+            telegram_username: true,
+            telegram_id: true,
+          },
+        },
+      },
+    });
+    const data = bids.map((b) => ({
+      id: b.id,
+      user_id: b.user_id,
+      property_id: b.property_id,
+      property_table: b.property_table ?? null,
+      bid_amount: b.bid_amount,
+      created_at: b.created_at,
+      user: b.users
+        ? {
+            id: b.users.id,
+            first_name: b.users.first_name,
+            last_name: b.users.last_name,
+            email: b.users.email,
+            phone_number: b.users.phone_number,
+            country: b.users.country,
+            role: b.users.role,
+            user_id_number: b.users.user_id_number,
+            telegram_username: b.users.telegram_username,
+            telegram_id: b.users.telegram_id,
+          }
+        : null,
+    }));
+    res.json({ success: true, data });
+  } catch (error) {
+    console.error('GET /api/admin/auctions/:propertyId/bids:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
  * GET /api/bids/user/:id - Получить ставки пользователя (оптимизировано: batch по property_table)
  */
 app.get('/api/bids/user/:id', async (req, res) => {
