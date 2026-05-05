@@ -27,17 +27,19 @@ export function AnimatedMarqueeHero({
       )}
     >
       <div className="animated-marquee-hero__copy z-10 flex flex-col items-center">
-        <motion.div
-          initial="hidden"
-          animate="show"
-          variants={FADE_IN_ANIMATION_VARIANTS}
-          className="hero-tagline mb-4 inline-flex items-center gap-2.5 rounded-full border border-[rgba(10,186,181,0.35)] bg-white/90 px-6 py-3 text-sm font-semibold text-slate-700 shadow-[0_2px_12px_rgba(10,186,181,0.12),inset_0_1px_0_rgba(255,255,255,0.8)] backdrop-blur-md transition-shadow duration-300 hover:shadow-[0_4px_20px_rgba(10,186,181,0.18),inset_0_1px_0_rgba(255,255,255,0.9)] sm:mb-5 sm:gap-3 sm:px-8 sm:py-3.5"
-        >
-          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[linear-gradient(135deg,#0ABAB5_0%,#089a95_100%)] text-white shadow-[0_2px_8px_rgba(10,186,181,0.4)]">
-            <Users className="h-4 w-4" strokeWidth={2.5} />
-          </span>
-          <span className="tracking-tight leading-snug">{tagline}</span>
-        </motion.div>
+        {tagline ? (
+          <motion.div
+            initial="hidden"
+            animate="show"
+            variants={FADE_IN_ANIMATION_VARIANTS}
+            className="hero-tagline mb-4 inline-flex items-center gap-2.5 rounded-full border border-[rgba(10,186,181,0.35)] bg-white/90 px-6 py-3 text-sm font-semibold text-slate-700 shadow-[0_2px_12px_rgba(10,186,181,0.12),inset_0_1px_0_rgba(255,255,255,0.8)] backdrop-blur-md transition-shadow duration-300 hover:shadow-[0_4px_20px_rgba(10,186,181,0.18),inset_0_1px_0_rgba(255,255,255,0.9)] sm:mb-5 sm:gap-3 sm:px-8 sm:py-3.5"
+          >
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[linear-gradient(135deg,#0ABAB5_0%,#089a95_100%)] text-white shadow-[0_2px_8px_rgba(10,186,181,0.4)]">
+              <Users className="h-4 w-4" strokeWidth={2.5} />
+            </span>
+            <span className="tracking-tight leading-snug">{tagline}</span>
+          </motion.div>
+        ) : null}
 
         <motion.h1
           initial="hidden"
@@ -72,7 +74,7 @@ export function AnimatedMarqueeHero({
           animate="show"
           variants={FADE_IN_ANIMATION_VARIANTS}
           transition={{ delay: 0.5 }}
-          className="mt-4 max-w-xl text-base text-gray-600 md:mt-6 md:text-lg"
+          className="animated-marquee-hero__description mt-4 max-w-xl text-base text-gray-600 md:mt-6 md:text-lg"
         >
           {description}
         </motion.p>

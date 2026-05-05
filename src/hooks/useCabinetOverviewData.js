@@ -10,6 +10,41 @@ import { fetchUserById } from '../utils/usersApi'
 import { getPropertyCardImage } from '../utils/propertyImage'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
+const CABINET_JSON_CACHE = new Map()
+const HISTORY_CACHE_TTL_MS = 45000
+const SUBSCRIPTION_CACHE_TTL_MS = 30000
+
+async function fetchJsonCached(url, { ttlMs = 20000, force = false } = {}) {
+  const cached = CABINET_JSON_CACHE.get(url)
+  const now = Date.now()
+
+  if (!force && cached?.data && now - cached.ts < ttlMs) {
+    return cached.data
+  }
+  if (!force && cached?.promise) {
+    return cached.promise
+  }
+
+  const requestPromise = fetch(url)
+    .then((response) => (response.ok ? response.json().catch(() => null) : null))
+    .catch(() => null)
+
+  CABINET_JSON_CACHE.set(url, {
+    ts: now,
+    promise: requestPromise,
+    data: cached?.data || null,
+  })
+
+  try {
+    const data = await requestPromise
+    CABINET_JSON_CACHE.set(url, { ts: Date.now(), promise: null, data })
+    return data
+  } catch {
+    const fallback = cached?.data || null
+    CABINET_JSON_CACHE.set(url, { ts: Date.now(), promise: null, data: fallback })
+    return fallback
+  }
+}
 
 /** После оплаты / синхронизации Stripe — перечитать тариф в превью кабинета. */
 export const SUBSCRIPTION_BILLING_UPDATED_EVENT = 'subscription-billing-updated'
@@ -304,17 +339,15 @@ export function useCabinetOverviewData() {
           const userEmail =
             user.primaryEmailAddress?.emailAddress || user.emailAddresses?.[0]?.emailAddress
           if (userEmail) {
-            const userResponse = await fetch(
-              `${API_BASE_URL}/users/email/${encodeURIComponent(userEmail)}`
+            const userResponse = await fetchJsonCached(
+              `${API_BASE_URL}/users/email/${encodeURIComponent(userEmail)}`,
+              { ttlMs: 20000 }
             )
-            if (userResponse.ok) {
-              const userData = await userResponse.json()
-              if (userData.success && userData.data && userData.data.id) {
-                const numericId = userData.data.id
-                setNumericUserId(numericId)
-                localStorage.setItem('userId', String(numericId))
-                return
-              }
+            if (userResponse?.success && userResponse?.data?.id) {
+              const numericId = userResponse.data.id
+              setNumericUserId(numericId)
+              localStorage.setItem('userId', String(numericId))
+              return
             }
           }
         } catch (e) {
@@ -381,17 +414,20 @@ export function useCabinetOverviewData() {
     setHistoryLoading(true)
     ;(async () => {
       try {
-        const [wRes, rRes, sRes, bRes] = await Promise.all([
-          fetch(`${API_BASE_URL}/auction-winners/user/${uid}`),
-          fetch(`${API_BASE_URL}/users/${uid}/reservation-purchases`),
-          fetch(`${API_BASE_URL}/users/${uid}/share-purchases`),
-          fetch(`${API_BASE_URL}/bids/user/${uid}`),
+        const [wJson, rJson, sJson, bJson] = await Promise.all([
+          fetchJsonCached(`${API_BASE_URL}/auction-winners/user/${uid}`, {
+            ttlMs: HISTORY_CACHE_TTL_MS,
+          }),
+          fetchJsonCached(`${API_BASE_URL}/users/${uid}/reservation-purchases`, {
+            ttlMs: HISTORY_CACHE_TTL_MS,
+          }),
+          fetchJsonCached(`${API_BASE_URL}/users/${uid}/share-purchases`, {
+            ttlMs: HISTORY_CACHE_TTL_MS,
+          }),
+          fetchJsonCached(`${API_BASE_URL}/bids/user/${uid}`, {
+            ttlMs: HISTORY_CACHE_TTL_MS,
+          }),
         ])
-
-        const wJson = wRes.ok ? await wRes.json().catch(() => null) : null
-        const rJson = rRes.ok ? await rRes.json().catch(() => null) : null
-        const sJson = sRes.ok ? await sRes.json().catch(() => null) : null
-        const bJson = bRes.ok ? await bRes.json().catch(() => null) : null
 
         if (cancelled) return
 
@@ -436,8 +472,9 @@ export function useCabinetOverviewData() {
 
     const loadSubscriptionPlanLabel = async () => {
       try {
-        const res = await fetch(`${API_BASE_URL}/users/${uid}/subscription-billing`)
-        const json = res.ok ? await res.json().catch(() => null) : null
+        const json = await fetchJsonCached(`${API_BASE_URL}/users/${uid}/subscription-billing`, {
+          ttlMs: SUBSCRIPTION_CACHE_TTL_MS,
+        })
         if (cancelled) return
         const sub = json?.success && json?.data ? json.data.subscription : null
         const visual = normalizeSubscriptionPlanVisual(sub)

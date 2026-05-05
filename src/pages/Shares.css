@@ -131,6 +131,31 @@
   }
 }
 
+/* Hero-заголовок: обе строки жирные (явно, на случай конфликта с утилитами) */
+.shares-page .animated-marquee-hero .animated-marquee-hero__title {
+  font-weight: 700;
+}
+
+/* Вторая строка («для каждого»): Neucha — тот же характер, что заголовок «Аукцион» на главной */
+.shares-page .animated-marquee-hero .shares-hero__title-marker {
+  font-family: 'Neucha', 'Segoe Print', 'Segoe Script', cursive;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  line-height: 1.12;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Описание под заголовком — чуть ниже */
+.shares-page .animated-marquee-hero .animated-marquee-hero__description {
+  margin-top: 1.625rem !important;
+}
+
+@media (min-width: 768px) {
+  .shares-page .animated-marquee-hero .animated-marquee-hero__description {
+    margin-top: 2.25rem !important;
+  }
+}
+
 .shares-container {
   flex: 1;
   width: 100%;
@@ -560,6 +585,8 @@
   background: rgba(255, 255, 255, 0.8);
   border-radius: 20px;
   border: 1px dashed rgba(0, 0, 0, 0.12);
+  font-family: 'Neucha', 'Segoe Print', 'Segoe Script', cursive;
+  -webkit-font-smoothing: antialiased;
 }
 
 /* Cards */
@@ -578,6 +605,8 @@
   position: relative;
   display: flex;
   flex-direction: column;
+  font-family: 'Neucha', 'Segoe Print', 'Segoe Script', cursive;
+  -webkit-font-smoothing: antialiased;
 }
 
 .share-card:hover {
@@ -632,7 +661,7 @@
 .share-card__image-wrap .share-card__scale-label {
   position: absolute;
   font-size: 10px;
-  font-weight: 800;
+  font-weight: 700;
   color: #fff;
   line-height: 1;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
@@ -652,7 +681,7 @@
   transform: translate(-50%, 50%);
   margin-bottom: 4px;
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 700;
   color: #0d9488;
   background: rgba(255, 255, 255, 0.95);
   padding: 2px 6px;
@@ -674,7 +703,7 @@
   padding: 8px 14px;
   border-radius: 12px;
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.1em;
   background: linear-gradient(135deg, #0ABAB5 0%, #06a39e 100%);
@@ -718,7 +747,7 @@
 
 .share-card__sold-percent {
   font-size: 13px;
-  font-weight: 800;
+  font-weight: 700;
   color: #fff;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
   letter-spacing: 0.02em;
@@ -745,7 +774,7 @@
   align-items: center;
   justify-content: center;
   font-size: 22px;
-  font-weight: 800;
+  font-weight: 700;
   color: #fff;
   letter-spacing: 0.2em;
   text-shadow: 0 2px 12px rgba(0, 0, 0, 0.6);
@@ -775,23 +804,28 @@
 
 .share-card__title {
   font-size: 18px;
-  font-weight: 700;
+  font-weight: 400;
   color: #0f172a;
   margin: 0 0 8px;
-  line-height: 1.3;
-  letter-spacing: -0.01em;
+  line-height: 1.12;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
 .share-card__location {
   font-size: 14px;
   color: #475569;
   margin: 0 0 10px;
+  font-weight: 400;
+  letter-spacing: 0.04em;
 }
 
 .share-card__specs {
   font-size: 13px;
   color: #64748b;
   margin: 0 0 16px;
+  font-weight: 400;
+  letter-spacing: 0.04em;
 }
 
 .share-card__prices {
@@ -810,6 +844,8 @@
 .share-card__price-per-share {
   font-size: 13px;
   color: #475569;
+  font-weight: 400;
+  letter-spacing: 0.04em;
 }
 
 .share-card__price-total strong,
@@ -826,7 +862,7 @@
   display: inline-flex;
   align-items: center;
   font-size: 14px;
-  font-weight: 800;
+  font-weight: 700;
   color: #0f172a;
   background: linear-gradient(135deg, rgba(10, 186, 181, 0.16) 0%, rgba(10, 186, 181, 0.08) 100%);
   border: 1px solid rgba(10, 186, 181, 0.35);
@@ -937,7 +973,7 @@
 
   .share-card__title {
     font-size: 12px;
-    font-weight: 700;
+    font-weight: 400;
     margin: 0 0 4px;
     line-height: 1.28;
     display: -webkit-box;
@@ -1000,7 +1036,7 @@
     justify-content: center;
     text-align: center;
     font-size: 9px;
-    font-weight: 800;
+    font-weight: 700;
     padding: 6px 7px;
     border-radius: 8px;
     line-height: 1.3;
@@ -1053,5 +1089,266 @@
 
   .shares-search-bar__clear {
     right: 10px;
+  }
+}
+
+/* Скелетон карточек долей — те же скругления, сетка и пропорции фото */
+.share-card--skeleton {
+  pointer-events: none;
+  cursor: default;
+}
+
+.share-card--skeleton:hover {
+  transform: none;
+  box-shadow:
+    0 4px 24px -4px rgba(0, 0, 0, 0.08),
+    0 0 0 1px rgba(0, 0, 0, 0.04);
+  border-color: rgba(0, 0, 0, 0.06);
+}
+
+.share-card-skeleton__badge {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  z-index: 2;
+  width: 88px;
+  height: 32px;
+  border-radius: 12px;
+  background: linear-gradient(
+    105deg,
+    #dbeafe 0%,
+    #e2e8f0 40%,
+    rgba(232, 250, 248, 0.85) 50%,
+    #e2e8f0 60%,
+    #dbeafe 100%
+  );
+  background-size: 220% 100%;
+  animation: share-card-skeleton-wave 1.45s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+
+.share-card--skeleton .share-card__image-wrap {
+  background: #e8edf2;
+}
+
+.share-card-skeleton__shimmer {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: linear-gradient(
+    105deg,
+    #e8edf2 0%,
+    #f1f5f9 42%,
+    rgba(232, 250, 248, 0.95) 50%,
+    #f1f5f9 58%,
+    #e8edf2 100%
+  );
+  background-size: 220% 100%;
+  animation: share-card-skeleton-wave 1.45s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+
+.share-card-skeleton__media {
+  position: relative;
+}
+
+.share-card-skeleton__scale {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  bottom: 10px;
+  width: 26px;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  pointer-events: none;
+}
+
+.share-card-skeleton__scale-track {
+  position: absolute;
+  top: 14px;
+  bottom: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 8px;
+  border-radius: 4px;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.15) 0%,
+    rgba(148, 163, 184, 0.35) 100%
+  );
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.2);
+}
+
+.share-card-skeleton__line {
+  border-radius: 8px;
+  height: 12px;
+  background: linear-gradient(
+    90deg,
+    #e8edf2 0%,
+    #eef2f6 45%,
+    rgba(10, 186, 181, 0.12) 50%,
+    #eef2f6 55%,
+    #e8edf2 100%
+  );
+  background-size: 200% 100%;
+  animation: share-card-skeleton-wave 1.45s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+
+.share-card-skeleton__line--title {
+  width: 92%;
+  height: 16px;
+  margin-bottom: 8px;
+  border-radius: 9px;
+}
+
+.share-card-skeleton__line--title-short {
+  width: 58%;
+  height: 16px;
+  margin-bottom: 10px;
+  border-radius: 9px;
+  animation-delay: 0.06s;
+}
+
+.share-card-skeleton__line--loc {
+  width: 78%;
+  height: 13px;
+  margin-bottom: 16px;
+  border-radius: 6px;
+  animation-delay: 0.12s;
+}
+
+.share-card-skeleton__prices {
+  margin-top: auto;
+  padding: 16px 18px;
+  border-radius: 14px;
+  border: 1px solid rgba(10, 186, 181, 0.12);
+  background: rgba(241, 245, 249, 0.7);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.share-card-skeleton__line--price-row {
+  width: 100%;
+  height: 13px;
+  animation-delay: 0.08s;
+}
+
+.share-card-skeleton__line--price-row.share-card-skeleton__line--narrow {
+  width: 72%;
+  animation-delay: 0.14s;
+}
+
+.share-card-skeleton__footer {
+  height: 36px;
+  border-radius: 12px;
+  background: linear-gradient(
+    90deg,
+    #e2e8f0 0%,
+    #ecfdf5 50%,
+    #e2e8f0 100%
+  );
+  background-size: 200% 100%;
+  animation: share-card-skeleton-wave 1.45s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+  animation-delay: 0.18s;
+}
+
+.shares-grid .share-card--skeleton:nth-child(2) .share-card-skeleton__shimmer,
+.shares-grid .share-card--skeleton:nth-child(2) .share-card-skeleton__badge,
+.shares-grid .share-card--skeleton:nth-child(2) .share-card-skeleton__line,
+.shares-grid .share-card--skeleton:nth-child(2) .share-card-skeleton__footer {
+  animation-delay: 0.12s;
+}
+
+.shares-grid .share-card--skeleton:nth-child(3) .share-card-skeleton__shimmer,
+.shares-grid .share-card--skeleton:nth-child(3) .share-card-skeleton__badge,
+.shares-grid .share-card--skeleton:nth-child(3) .share-card-skeleton__line,
+.shares-grid .share-card--skeleton:nth-child(3) .share-card-skeleton__footer {
+  animation-delay: 0.24s;
+}
+
+.shares-grid .share-card--skeleton:nth-child(4) .share-card-skeleton__shimmer,
+.shares-grid .share-card--skeleton:nth-child(4) .share-card-skeleton__badge,
+.shares-grid .share-card--skeleton:nth-child(4) .share-card-skeleton__line,
+.shares-grid .share-card--skeleton:nth-child(4) .share-card-skeleton__footer {
+  animation-delay: 0.36s;
+}
+
+.shares-grid .share-card--skeleton:nth-child(5) .share-card-skeleton__shimmer,
+.shares-grid .share-card--skeleton:nth-child(5) .share-card-skeleton__badge,
+.shares-grid .share-card--skeleton:nth-child(5) .share-card-skeleton__line,
+.shares-grid .share-card--skeleton:nth-child(5) .share-card-skeleton__footer {
+  animation-delay: 0.48s;
+}
+
+.shares-grid .share-card--skeleton:nth-child(6) .share-card-skeleton__shimmer,
+.shares-grid .share-card--skeleton:nth-child(6) .share-card-skeleton__badge,
+.shares-grid .share-card--skeleton:nth-child(6) .share-card-skeleton__line,
+.shares-grid .share-card--skeleton:nth-child(6) .share-card-skeleton__footer {
+  animation-delay: 0.58s;
+}
+
+@keyframes share-card-skeleton-wave {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: -100% 0;
+  }
+}
+
+@media (max-width: 768px) {
+  .share-card-skeleton__badge {
+    top: 8px;
+    left: 8px;
+    width: 56px;
+    height: 22px;
+    border-radius: 8px;
+  }
+
+  .share-card-skeleton__scale {
+    top: 6px;
+    right: 6px;
+    bottom: 6px;
+    width: 20px;
+  }
+
+  .share-card-skeleton__scale-track {
+    width: 6px;
+    top: 11px;
+    bottom: 11px;
+    border-radius: 3px;
+  }
+
+  .share-card-skeleton__prices {
+    padding: 8px 9px;
+    gap: 6px;
+    margin-bottom: 8px;
+    border-radius: 10px;
+  }
+
+  .share-card-skeleton__line--title {
+    height: 11px;
+    margin-bottom: 4px;
+  }
+
+  .share-card-skeleton__line--title-short {
+    height: 11px;
+    margin-bottom: 4px;
+  }
+
+  .share-card-skeleton__line--loc {
+    height: 10px;
+    margin-bottom: 8px;
+  }
+
+  .share-card-skeleton__line--price-row {
+    height: 9px;
+  }
+
+  .share-card-skeleton__footer {
+    height: 26px;
+    border-radius: 8px;
   }
 }

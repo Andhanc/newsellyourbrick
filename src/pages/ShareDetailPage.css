@@ -26,6 +26,8 @@
   padding: 28px 24px 64px;
   position: relative;
   z-index: 1;
+  font-family: 'Neucha', 'Segoe Print', 'Segoe Script', cursive;
+  -webkit-font-smoothing: antialiased;
 }
 
 .share-detail-page__back {
@@ -54,7 +56,7 @@
   padding: 8px 16px;
   border-radius: 12px;
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.12em;
   background: linear-gradient(135deg, #0ABAB5 0%, #06a39e 100%);
@@ -161,21 +163,26 @@
 
 .share-detail__title {
   font-size: 26px;
-  font-weight: 700;
+  font-weight: 400;
   color: #0f172a;
   margin: 0 0 8px;
-  letter-spacing: -0.02em;
-  line-height: 1.25;
+  letter-spacing: 0.06em;
+  line-height: 1.12;
+  text-transform: uppercase;
 }
 
 .share-detail__location {
   font-size: 15px;
+  font-weight: 400;
+  letter-spacing: 0.04em;
   color: #475569;
   margin: 0 0 16px;
 }
 
 .share-detail__description {
   font-size: 15px;
+  font-weight: 400;
+  letter-spacing: 0.04em;
   color: #334155;
   line-height: 1.65;
   margin: 0 0 12px;
@@ -183,6 +190,8 @@
 
 .share-detail__specs {
   font-size: 14px;
+  font-weight: 400;
+  letter-spacing: 0.04em;
   color: #64748b;
   margin: 0 0 24px;
 }
@@ -197,6 +206,8 @@
 
 .share-detail__price-row {
   font-size: 15px;
+  font-weight: 400;
+  letter-spacing: 0.04em;
   color: #475569;
   margin-bottom: 8px;
 }
@@ -224,17 +235,20 @@
 
 .share-detail__chart-title {
   font-size: 17px;
-  font-weight: 600;
+  font-weight: 400;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
   color: #0f172a;
   margin: 0 0 8px;
-  letter-spacing: -0.01em;
+  line-height: 1.15;
 }
 
 .share-detail__chart-preview-hint {
   font-size: 13px;
   color: #0ABAB5;
   margin: 0 0 20px;
-  font-weight: 500;
+  font-weight: 400;
+  letter-spacing: 0.03em;
   display: flex;
   align-items: center;
   gap: 6px;
@@ -292,14 +306,16 @@
 
 .share-detail__pie-value {
   font-size: 28px;
-  font-weight: 800;
+  font-weight: 700;
   color: #0f172a;
-  letter-spacing: -0.03em;
+  letter-spacing: 0.03em;
   line-height: 1.1;
 }
 
 .share-detail__pie-label {
   font-size: 12px;
+  font-weight: 400;
+  letter-spacing: 0.03em;
   color: #64748b;
   margin-top: 2px;
 }
@@ -331,7 +347,8 @@
   gap: 10px;
   font-size: 14px;
   color: #475569;
-  font-weight: 500;
+  font-weight: 400;
+  letter-spacing: 0.03em;
 }
 
 .share-detail__legend-dot {
@@ -387,15 +404,18 @@
 
 .share-detail__sold-out-title {
   font-size: 22px;
-  font-weight: 800;
+  font-weight: 400;
   color: #0f172a;
   margin: 0 0 12px;
-  letter-spacing: -0.02em;
-  line-height: 1.25;
+  letter-spacing: 0.06em;
+  line-height: 1.12;
+  text-transform: uppercase;
 }
 
 .share-detail__sold-out-text {
   font-size: 15px;
+  font-weight: 400;
+  letter-spacing: 0.04em;
   color: #475569;
   line-height: 1.6;
   margin: 0 0 16px;
@@ -404,6 +424,8 @@
 
 .share-detail__sold-out-hint {
   font-size: 14px;
+  font-weight: 400;
+  letter-spacing: 0.03em;
   color: #64748b;
   line-height: 1.5;
   margin: 0 0 28px;

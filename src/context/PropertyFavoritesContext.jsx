@@ -110,7 +110,22 @@ export function PropertyFavoritesProvider({ children }) {
   }, [])
 
   useEffect(() => {
-    loadDbFavorites()
+    let cancelled = false
+    const run = () => {
+      if (!cancelled) void loadDbFavorites()
+    }
+    if (typeof window !== 'undefined' && typeof window.requestIdleCallback === 'function') {
+      const id = window.requestIdleCallback(run, { timeout: 4500 })
+      return () => {
+        cancelled = true
+        window.cancelIdleCallback(id)
+      }
+    }
+    const t = window.setTimeout(run, 600)
+    return () => {
+      cancelled = true
+      window.clearTimeout(t)
+    }
   }, [loadDbFavorites])
 
   useEffect(() => {

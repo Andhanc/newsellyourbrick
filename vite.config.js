@@ -153,7 +153,29 @@ export default defineConfig(({ mode }) => {
       // Используем более стабильные настройки
       rollupOptions: {
         output: {
-          manualChunks: undefined, // Отключаем ручное разбиение для dev режима
+          manualChunks(id) {
+            if (!id.includes('node_modules')) return
+            if (id.includes('@clerk')) return 'vendor-clerk'
+            if (id.includes('@tonconnect')) return 'vendor-tonconnect'
+            if (id.includes('framer-motion')) return 'vendor-framer'
+            if (id.includes('recharts')) return 'vendor-recharts'
+            if (
+              id.includes('i18next') ||
+              id.includes('react-i18next')
+            )
+              return 'vendor-i18n'
+            if (id.includes('react-router')) return 'vendor-router'
+            if (id.includes('react-dom') || id.includes('/react-dom/')) return 'vendor-react'
+            if (
+              id.includes(`${path.sep}node_modules${path.sep}react${path.sep}`) &&
+              !id.includes('react-i18next') &&
+              !id.includes('react-router') &&
+              !id.includes('react-icons')
+            ) {
+              return 'vendor-react'
+            }
+            if (id.includes('exceljs')) return 'vendor-excel'
+          },
         },
       },
       // Увеличиваем лимит памяти для сборки

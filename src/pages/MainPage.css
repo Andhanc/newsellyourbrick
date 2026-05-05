@@ -1,5 +1,5 @@
 
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&family=Neucha&display=swap');
 
 .app {
   font-family: 'Montserrat', sans-serif;
@@ -21,7 +21,7 @@
   padding: 50px 18px 0;
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 0;
 }
 
 .header {
@@ -1576,11 +1576,6 @@
   }
 }
 
-/* Аукцион: небольшой отступ сверху у названия (после таймера) */
-.apartments-section--auction .property-title {
-  margin-top: 6px;
-}
-
 /* Купить сейчас, Долги, Доли: сумма сразу под данными, без пустого зазора; одинаковый отступ снизу */
 @media (max-width: 768px) {
   .apartments-section--main-cards .property-content {
@@ -1861,6 +1856,186 @@
   font-weight: 500;
 }
 
+/* Скелетон карточек листинга (размеры как у .property-card / .property-image-container) */
+.property-card--skeleton {
+  pointer-events: none;
+  overflow: hidden;
+  box-shadow: 0 2px 12px rgba(15, 23, 42, 0.08);
+}
+
+.property-link--skeleton {
+  pointer-events: none;
+}
+
+.property-card--skeleton .property-image-container {
+  background: #f1f5f9;
+}
+
+.property-card-skeleton__shimmer {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(
+    105deg,
+    #e8edf2 0%,
+    #f1f5f9 42%,
+    rgba(232, 250, 248, 0.95) 50%,
+    #f1f5f9 58%,
+    #e8edf2 100%
+  );
+  background-size: 220% 100%;
+  animation: property-card-skeleton-wave 1.45s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+
+.property-card-skeleton__media {
+  width: 100%;
+  height: 100%;
+  min-height: 250px;
+}
+
+.property-card-skeleton__fav-ring {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.08);
+  z-index: 1;
+}
+
+.property-card-skeleton__fav-ring::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    120deg,
+    transparent 30%,
+    rgba(10, 186, 181, 0.12) 50%,
+    transparent 70%
+  );
+  background-size: 200% 100%;
+  animation: property-card-skeleton-wave 1.45s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+
+.property-card-skeleton__line {
+  border-radius: 8px;
+  height: 12px;
+  background: linear-gradient(
+    90deg,
+    #e8edf2 0%,
+    #eef2f6 45%,
+    rgba(10, 186, 181, 0.1) 50%,
+    #eef2f6 55%,
+    #e8edf2 100%
+  );
+  background-size: 200% 100%;
+  animation: property-card-skeleton-wave 1.45s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+
+.property-card-skeleton__line--title {
+  width: 88%;
+  height: 16px;
+  margin-bottom: 10px;
+  border-radius: 9px;
+}
+
+.property-card-skeleton__line--title-narrow {
+  width: 62%;
+  height: 16px;
+  margin-bottom: 14px;
+  border-radius: 9px;
+  animation-delay: 0.08s;
+}
+
+.property-card-skeleton__line--loc {
+  width: 72%;
+  height: 11px;
+  margin-bottom: 16px;
+  border-radius: 6px;
+  opacity: 0.92;
+  animation-delay: 0.12s;
+}
+
+.property-card-skeleton__line--price {
+  width: 44%;
+  height: 22px;
+  margin-bottom: 14px;
+  border-radius: 8px;
+  animation-delay: 0.16s;
+}
+
+.property-card-skeleton__specs {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  margin-top: auto;
+}
+
+.property-card-skeleton__pill {
+  width: 52px;
+  height: 22px;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    #e8edf2 0%,
+    #f1f5f9 50%,
+    #e8edf2 100%
+  );
+  background-size: 200% 100%;
+  animation: property-card-skeleton-wave 1.45s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+
+.property-card-skeleton__pill--grow {
+  flex: 1;
+  min-width: 72px;
+  max-width: 110px;
+  animation-delay: 0.06s;
+}
+
+.properties-grid .property-card--skeleton:nth-child(2) .property-card-skeleton__shimmer,
+.properties-grid .property-card--skeleton:nth-child(2) .property-card-skeleton__line,
+.properties-grid .property-card--skeleton:nth-child(2) .property-card-skeleton__pill {
+  animation-delay: 0.1s;
+}
+
+.properties-grid .property-card--skeleton:nth-child(3) .property-card-skeleton__shimmer,
+.properties-grid .property-card--skeleton:nth-child(3) .property-card-skeleton__line,
+.properties-grid .property-card--skeleton:nth-child(3) .property-card-skeleton__pill {
+  animation-delay: 0.2s;
+}
+
+.properties-grid .property-card--skeleton:nth-child(4) .property-card-skeleton__shimmer,
+.properties-grid .property-card--skeleton:nth-child(4) .property-card-skeleton__line,
+.properties-grid .property-card--skeleton:nth-child(4) .property-card-skeleton__pill {
+  animation-delay: 0.3s;
+}
+
+.properties-grid .property-card--skeleton:nth-child(5) .property-card-skeleton__shimmer,
+.properties-grid .property-card--skeleton:nth-child(5) .property-card-skeleton__line,
+.properties-grid .property-card--skeleton:nth-child(5) .property-card-skeleton__pill {
+  animation-delay: 0.4s;
+}
+
+.properties-grid .property-card--skeleton:nth-child(6) .property-card-skeleton__shimmer,
+.properties-grid .property-card--skeleton:nth-child(6) .property-card-skeleton__line,
+.properties-grid .property-card--skeleton:nth-child(6) .property-card-skeleton__pill {
+  animation-delay: 0.5s;
+}
+
+@keyframes property-card-skeleton-wave {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: -100% 0;
+  }
+}
+
 @media (min-width: 480px) {
   .app__content {
     padding: 60px 24px 0;
@@ -1892,7 +2067,7 @@
   --contact-teal: #0ABAB5;
   --contact-teal-deep: #0d9488;
   padding: clamp(40px, 6vw, 72px) 0 0;
-  margin-top: clamp(40px, 5vw, 64px);
+  margin-top: 0;
   margin-bottom: 0;
 }
 
@@ -6007,7 +6182,7 @@
 .apartments-section {
   padding: 40px 30px;
   background: #ffffff;
-  margin-top: 40px;
+  margin-top: 0;
 }
 
 .apartments-section__container {
@@ -6041,6 +6216,464 @@
   grid-template-columns: 1fr 300px;
   gap: 24px;
   align-items: start;
+}
+
+/* Главная — блок «Аукцион»: витрина-лента (портретные фото, заголовок + CTA как в референсе) */
+.apartments-section--auction-showcase,
+.apartments-section--buy-now-showcase,
+.apartments-section--debts-showcase,
+.apartments-section--shares-showcase {
+  --showcase-gap: clamp(14px, 1.6vw, 20px);
+  --showcase-pad-right: clamp(56px, 8vw, 112px);
+  --showcase-card-max: 308px;
+}
+
+/* Левый край витрины: увеличенный отступ от края экрана */
+.apartments-section--auction-showcase.apartments-section,
+.apartments-section--buy-now-showcase.apartments-section,
+.apartments-section--debts-showcase.apartments-section,
+.apartments-section--shares-showcase.apartments-section {
+  padding-left: clamp(96px, 12.5vw, 176px);
+}
+
+.apartments-section--auction-showcase,
+.apartments-section--debts-showcase {
+  background: #f4f4f5;
+  margin-top: 0;
+  padding-top: 44px;
+  padding-bottom: 44px;
+}
+
+.auction-showcase__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 26px;
+}
+
+/* Заголовки витрин: рукописный «маркерный» стиль (Neucha + кириллица) */
+.auction-showcase__title {
+  margin: 0;
+  font-family: 'Neucha', 'Segoe Print', 'Segoe Script', cursive;
+  font-size: clamp(32px, 4.2vw, 46px);
+  font-weight: 400;
+  color: #0a0a0a;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  line-height: 1.12;
+  -webkit-font-smoothing: antialiased;
+}
+
+.auction-showcase__subtitle {
+  margin: 12px 0 0;
+  font-size: clamp(17px, 1.45vw, 20px);
+  line-height: 1.5;
+  color: #0a0a0a;
+  font-weight: 400;
+  max-width: 520px;
+}
+
+.auction-showcase__cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: #0a0a0a;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  font-family: inherit;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.auction-showcase__cta-text {
+  white-space: nowrap;
+}
+
+.auction-showcase__cta:hover .auction-showcase__cta-icon {
+  background: #0a0a0a;
+  color: #fff;
+}
+
+.auction-showcase__cta-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 1.5px solid #0a0a0a;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.auction-showcase__carousel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.auction-showcase__scroller {
+  display: flex;
+  gap: var(--showcase-gap);
+  overflow-x: auto;
+  padding: 8px var(--showcase-pad-right) 10px 0;
+  margin: 0;
+  scroll-snap-type: x mandatory;
+  scroll-padding-inline: 0 var(--showcase-pad-right);
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+}
+
+.auction-showcase__scroller::-webkit-scrollbar {
+  height: 5px;
+}
+
+.auction-showcase__scroller::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.16);
+  border-radius: 3px;
+}
+
+.auction-showcase__nav {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 14px;
+  padding: 10px var(--showcase-pad-right) 0 0;
+}
+
+.auction-showcase__nav-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 46px;
+  padding: 0;
+  border-radius: 50%;
+  border: 1.5px solid rgba(10, 10, 10, 0.22);
+  background: rgba(255, 255, 255, 0.92);
+  color: #0a0a0a;
+  cursor: pointer;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.08);
+  transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.auction-showcase__nav-btn:hover {
+  background: #0a0a0a;
+  color: #fff;
+  border-color: #0a0a0a;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.18);
+  transform: translateY(-1px);
+}
+
+.auction-showcase__nav-btn:active {
+  transform: translateY(0);
+}
+
+.auction-showcase-card {
+  flex: 0 0 min(calc((100% - 2 * var(--showcase-gap)) / 3), var(--showcase-card-max));
+  width: min(calc((100% - 2 * var(--showcase-gap)) / 3), var(--showcase-card-max));
+  min-width: 0;
+  scroll-snap-align: start;
+  position: relative;
+  box-sizing: border-box;
+  border-radius: 18px;
+}
+
+.auction-showcase-card > .property-auction-ended-overlay--full-card {
+  border-radius: 18px;
+}
+
+.auction-showcase-card__link {
+  display: flex;
+  flex-direction: column;
+  cursor: pointer;
+  height: 100%;
+}
+
+.auction-showcase-card__surface {
+  background: #ffffff;
+  border-radius: 18px;
+  padding: 8px;
+  height: 100%;
+  box-shadow:
+    0 3px 5px rgba(0, 0, 0, 0.035),
+    0 14px 36px -12px rgba(15, 23, 42, 0.16),
+    0 0 0 1px rgba(0, 0, 0, 0.045);
+  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.3s ease;
+}
+
+.auction-showcase-card__link:hover .auction-showcase-card__surface {
+  transform: translateY(-3px);
+  box-shadow:
+    0 6px 10px rgba(0, 0, 0, 0.05),
+    0 22px 48px -16px rgba(15, 23, 42, 0.24),
+    0 0 0 1px rgba(0, 0, 0, 0.055);
+}
+
+.auction-showcase-card__media {
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  /* Шире кадр при сопоставимой высоте с прежним 3:4 на узкой карточке */
+  aspect-ratio: 1 / 1;
+  background: #e4e4e7;
+}
+
+.auction-showcase-card__image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.auction-showcase-card__link:hover .auction-showcase-card__image {
+  transform: scale(1.045);
+}
+
+.auction-showcase-card .property-favorite {
+  top: 8px;
+  right: 8px;
+  width: 34px;
+  height: 34px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.auction-showcase-card__caption {
+  padding: 10px 4px 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.auction-showcase-card__name {
+  margin: 0;
+  font-size: clamp(13px, 1vw, 15px);
+  font-weight: 600;
+  color: #0f172a;
+  line-height: 1.32;
+  letter-spacing: -0.01em;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.auction-showcase-card__bid {
+  margin: 0;
+  font-size: clamp(12px, 0.95vw, 14px);
+  color: #0f172a;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: baseline;
+}
+
+.auction-showcase-card__bid-label {
+  opacity: 0.52;
+  font-weight: 500;
+  font-size: 0.88em;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.auction-showcase-card__bid-value {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: #0d9488;
+}
+
+.apartments-section--buy-now-showcase .auction-showcase-card__bid-value {
+  color: #0f766e;
+}
+
+.auction-showcase-card--ended .auction-showcase-card__image {
+  filter: grayscale(0.22);
+}
+
+.auction-showcase-card--ended .auction-showcase-card__surface {
+  opacity: 0.97;
+}
+
+.auction-showcase-card--share-sold-out .auction-showcase-card__surface {
+  opacity: 0.96;
+}
+
+.auction-showcase-card--share-sold-out .auction-showcase-card__image {
+  filter: grayscale(0.15);
+}
+
+.auction-showcase-card__share-meter {
+  width: 100%;
+  height: 5px;
+  border-radius: 3px;
+  background: rgba(15, 23, 42, 0.1);
+  overflow: hidden;
+}
+
+.auction-showcase-card__share-meter-fill {
+  height: 100%;
+  border-radius: 3px;
+  background: linear-gradient(90deg, #0ABAB5 0%, #0f766e 100%);
+  transition: width 0.35s ease;
+}
+
+.auction-showcase-card__share-meta {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+  letter-spacing: 0.02em;
+}
+
+.auction-showcase-card__bid--secondary {
+  margin-top: -2px;
+}
+
+.auction-showcase-card__bid-value--muted {
+  color: #64748b !important;
+  font-weight: 600 !important;
+  font-size: 0.95em;
+}
+
+.auction-showcase-card__caption .property-timer.compact {
+  margin-bottom: 0;
+}
+
+@media (max-width: 1100px) {
+  .auction-showcase-card {
+    flex: 0 0 min(calc((100% - var(--showcase-gap)) / 2), var(--showcase-card-max));
+    width: min(calc((100% - var(--showcase-gap)) / 2), var(--showcase-card-max));
+  }
+}
+
+@media (max-width: 620px) {
+  .apartments-section--auction-showcase.apartments-section,
+  .apartments-section--buy-now-showcase.apartments-section,
+  .apartments-section--debts-showcase.apartments-section,
+  .apartments-section--shares-showcase.apartments-section {
+    padding-left: clamp(40px, 8vw, 60px);
+  }
+
+  .apartments-section--auction-showcase,
+  .apartments-section--buy-now-showcase,
+  .apartments-section--debts-showcase,
+  .apartments-section--shares-showcase {
+    --showcase-pad-right: 40px;
+    --showcase-card-max: 276px;
+  }
+
+  .auction-showcase-card {
+    flex: 0 0 min(276px, calc(100vw - 48px));
+    width: min(276px, calc(100vw - 48px));
+    scroll-snap-align: center;
+  }
+
+  .auction-showcase__nav-btn {
+    width: 44px;
+    height: 44px;
+  }
+}
+
+/* Главная — «Купить сейчас» и «Долевая продажа»: Tiffany; у долей плавный переход в палитру блока «Цифры» */
+.apartments-section--buy-now-showcase {
+  background: linear-gradient(165deg, #0ABAB5 0%, #089a95 52%, #078f8a 100%);
+  margin-top: 0;
+  padding-top: 44px;
+  padding-bottom: 44px;
+}
+
+/* Нижний тон совпадает с началом .landing-stats__bg-teal (#0d9488 → #0f766e → #0ABAB5) */
+.apartments-section--shares-showcase {
+  background: linear-gradient(
+    168deg,
+    #0ABAB5 0%,
+    #0aa8a2 18%,
+    #089a95 40%,
+    #0d9488 68%,
+    #0f766e 88%,
+    #0d9488 100%
+  );
+  margin-top: 0;
+  padding-top: 44px;
+  padding-bottom: 44px;
+}
+
+.apartments-section--buy-now-showcase .auction-showcase__title,
+.apartments-section--buy-now-showcase .auction-showcase__subtitle,
+.apartments-section--shares-showcase .auction-showcase__title,
+.apartments-section--shares-showcase .auction-showcase__subtitle {
+  color: #ffffff;
+}
+
+.apartments-section--buy-now-showcase .auction-showcase__subtitle,
+.apartments-section--shares-showcase .auction-showcase__subtitle {
+  opacity: 0.94;
+}
+
+.apartments-section--buy-now-showcase .auction-showcase__cta,
+.apartments-section--shares-showcase .auction-showcase__cta {
+  color: #ffffff;
+}
+
+.apartments-section--buy-now-showcase .auction-showcase__cta-icon,
+.apartments-section--shares-showcase .auction-showcase__cta-icon {
+  border-color: rgba(255, 255, 255, 0.95);
+  color: #ffffff;
+}
+
+.apartments-section--buy-now-showcase .auction-showcase__cta:hover .auction-showcase__cta-icon,
+.apartments-section--shares-showcase .auction-showcase__cta:hover .auction-showcase__cta-icon {
+  background: #ffffff;
+  color: #0a7f7b;
+}
+
+.apartments-section--buy-now-showcase .auction-showcase__scroller,
+.apartments-section--shares-showcase .auction-showcase__scroller {
+  scrollbar-color: rgba(255, 255, 255, 0.4) transparent;
+}
+
+.apartments-section--buy-now-showcase .auction-showcase__scroller::-webkit-scrollbar-thumb,
+.apartments-section--shares-showcase .auction-showcase__scroller::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.38);
+}
+
+.apartments-section--buy-now-showcase .auction-showcase__nav-btn,
+.apartments-section--shares-showcase .auction-showcase__nav-btn {
+  border-color: rgba(255, 255, 255, 0.88);
+  background: rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+  box-shadow: 0 4px 22px rgba(0, 0, 0, 0.12);
+}
+
+.apartments-section--buy-now-showcase .auction-showcase__nav-btn:hover,
+.apartments-section--shares-showcase .auction-showcase__nav-btn:hover {
+  background: #ffffff;
+  color: #0a7f7b;
+  border-color: #ffffff;
+  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.18);
+}
+
+@media (max-width: 600px) {
+  .auction-showcase__header {
+    flex-direction: column;
+    align-items: stretch;
+    margin-bottom: 20px;
+  }
+
+  .auction-showcase__cta {
+    align-self: flex-start;
+    margin-top: 4px;
+  }
+
+  .auction-showcase__subtitle {
+    font-size: clamp(16px, 3.8vw, 18px);
+  }
 }
 
 /* Главная: карточки в блоке "Долевая продажа" (как на странице /shares) */
@@ -7424,7 +8057,7 @@
   }
 }
 
-/* ========== Landing: Цифры Sally Your Brick — 70vh, анимация берюза → белый треугольник при скролле ========== */
+/* ========== Landing: Цифры SellYouBrick — 70vh, анимация берюза → белый треугольник при скролле ========== */
 .landing-stats {
   --stats-progress: var(--stats-scroll-progress, 0);
   position: relative;
@@ -7433,8 +8066,14 @@
   align-items: center;
   justify-content: center;
   padding: 56px 20px 64px;
-  background: #ffffff;
+  /* Не #fff: на стыке с витриной долей иначе виден субпиксельный «шов» */
+  background: #0d9488;
   overflow: hidden;
+}
+
+/* Бесшовный стык с блоком «Долевая продажа» (общая бирюзовая палитра) */
+.apartments-section--shares-showcase + .landing-stats {
+  margin-top: -1px;
 }
 
 /* Берюзовый слой (полный) */
@@ -7468,15 +8107,16 @@
 }
 
 .landing-stats__title {
-  font-size: clamp(20px, 4vw, 26px);
+  margin: 0 0 32px;
+  font-size: clamp(34px, 4.9vw, 52px);
   font-weight: 700;
+  line-height: 1.2;
   color: rgb(
     calc(255 * (1 - var(--stats-progress))),
     calc(255 * (1 - var(--stats-progress))),
     calc(255 * (1 - var(--stats-progress)))
   );
   text-align: center;
-  margin: 0 0 32px;
   text-shadow: 0 1px 2px rgba(0, 0, 0, calc(1 - var(--stats-progress)));
   transition: color 0.2s ease, text-shadow 0.2s ease;
 }
@@ -7485,6 +8125,92 @@
   display: grid;
   grid-template-columns: 1fr;
   gap: 20px;
+}
+
+.landing-stats__about-wrap {
+  margin-top: 40px;
+  display: flex;
+  justify-content: center;
+}
+
+.landing-stats__about-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  font-size: clamp(16px, 2.1vw, 18px);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: rgb(
+    calc(255 * (1 - var(--stats-progress))),
+    calc(255 * (1 - var(--stats-progress))),
+    calc(255 * (1 - var(--stats-progress)))
+  );
+  transition: color 0.2s ease, opacity 0.2s ease;
+}
+
+.landing-stats__about-link:hover {
+  opacity: 0.92;
+}
+
+.landing-stats__about-link:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 6px;
+  border-radius: 4px;
+}
+
+.landing-stats__about-link-text {
+  position: relative;
+  padding-bottom: 3px;
+}
+
+.landing-stats__about-link-text::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: 2px;
+  border-radius: 1px;
+  background: currentColor;
+  transform: scaleX(0.22);
+  transform-origin: left center;
+  opacity: 0.45;
+  transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.35s ease;
+}
+
+.landing-stats__about-link:hover .landing-stats__about-link-text::after,
+.landing-stats__about-link:focus-visible .landing-stats__about-link-text::after {
+  transform: scaleX(1);
+  opacity: 0.95;
+}
+
+.landing-stats__about-link-icon {
+  flex-shrink: 0;
+  margin-top: 1px;
+  transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.landing-stats__about-link:hover .landing-stats__about-link-icon,
+.landing-stats__about-link:focus-visible .landing-stats__about-link-icon {
+  transform: translateX(6px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-stats__about-link-text::after {
+    transition: none;
+    transform: scaleX(1);
+    opacity: 0.75;
+  }
+
+  .landing-stats__about-link-icon {
+    transition: none;
+  }
+
+  .landing-stats__about-link:hover .landing-stats__about-link-icon,
+  .landing-stats__about-link:focus-visible .landing-stats__about-link-icon {
+    transform: none;
+  }
 }
 
 .landing-stat {
@@ -7575,8 +8301,11 @@
   }
 
   .landing-stats__title {
-    font-size: 28px;
     margin-bottom: 40px;
+  }
+
+  .landing-stats__about-wrap {
+    margin-top: 48px;
   }
 
   .landing-stat {

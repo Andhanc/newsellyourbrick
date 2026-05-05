@@ -2257,4 +2257,189 @@
   margin-top: -1px;
 }
 
+/* Дублирующийся внешний @media (max-width: 768px) (~1462) исторически закрывался финальной `}` в конце файла; скелетон — на корневом уровне */
+}
+
+/* Скелетон карточек листинга (.property-card) — страницы долгов и др. без MainPage.css */
+.property-card--skeleton {
+  pointer-events: none;
+  overflow: hidden;
+  box-shadow: 0 2px 12px rgba(15, 23, 42, 0.08);
+}
+
+.property-card--skeleton:hover {
+  transform: none;
+}
+
+.property-link--skeleton {
+  pointer-events: none;
+}
+
+.property-card--skeleton .property-image-container {
+  background: #f1f5f9;
+}
+
+.property-card-skeleton__shimmer {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(
+    105deg,
+    #e8edf2 0%,
+    #f1f5f9 42%,
+    rgba(232, 250, 248, 0.95) 50%,
+    #f1f5f9 58%,
+    #e8edf2 100%
+  );
+  background-size: 220% 100%;
+  animation: property-card-skeleton-wave 1.45s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+
+.property-card-skeleton__media {
+  width: 100%;
+  height: 100%;
+  min-height: 250px;
+}
+
+.property-card-skeleton__fav-ring {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.08);
+  z-index: 1;
+}
+
+.property-card-skeleton__fav-ring::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    120deg,
+    transparent 30%,
+    rgba(10, 186, 181, 0.12) 50%,
+    transparent 70%
+  );
+  background-size: 200% 100%;
+  animation: property-card-skeleton-wave 1.45s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+
+.property-card-skeleton__line {
+  border-radius: 8px;
+  height: 12px;
+  background: linear-gradient(
+    90deg,
+    #e8edf2 0%,
+    #eef2f6 45%,
+    rgba(10, 186, 181, 0.1) 50%,
+    #eef2f6 55%,
+    #e8edf2 100%
+  );
+  background-size: 200% 100%;
+  animation: property-card-skeleton-wave 1.45s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+
+.property-card-skeleton__line--title {
+  width: 88%;
+  height: 16px;
+  margin-bottom: 10px;
+  border-radius: 9px;
+}
+
+.property-card-skeleton__line--title-narrow {
+  width: 62%;
+  height: 16px;
+  margin-bottom: 14px;
+  border-radius: 9px;
+  animation-delay: 0.08s;
+}
+
+.property-card-skeleton__line--loc {
+  width: 72%;
+  height: 11px;
+  margin-bottom: 16px;
+  border-radius: 6px;
+  opacity: 0.92;
+  animation-delay: 0.12s;
+}
+
+.property-card-skeleton__line--price {
+  width: 44%;
+  height: 22px;
+  margin-bottom: 14px;
+  border-radius: 8px;
+  animation-delay: 0.16s;
+}
+
+.property-card-skeleton__specs {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  margin-top: auto;
+}
+
+.property-card-skeleton__pill {
+  width: 52px;
+  height: 22px;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    #e8edf2 0%,
+    #f1f5f9 50%,
+    #e8edf2 100%
+  );
+  background-size: 200% 100%;
+  animation: property-card-skeleton-wave 1.45s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+
+.property-card-skeleton__pill--grow {
+  flex: 1;
+  min-width: 72px;
+  max-width: 110px;
+  animation-delay: 0.06s;
+}
+
+.properties-grid .property-card--skeleton:nth-child(2) .property-card-skeleton__shimmer,
+.properties-grid .property-card--skeleton:nth-child(2) .property-card-skeleton__line,
+.properties-grid .property-card--skeleton:nth-child(2) .property-card-skeleton__pill {
+  animation-delay: 0.1s;
+}
+
+.properties-grid .property-card--skeleton:nth-child(3) .property-card-skeleton__shimmer,
+.properties-grid .property-card--skeleton:nth-child(3) .property-card-skeleton__line,
+.properties-grid .property-card--skeleton:nth-child(3) .property-card-skeleton__pill {
+  animation-delay: 0.2s;
+}
+
+.properties-grid .property-card--skeleton:nth-child(4) .property-card-skeleton__shimmer,
+.properties-grid .property-card--skeleton:nth-child(4) .property-card-skeleton__line,
+.properties-grid .property-card--skeleton:nth-child(4) .property-card-skeleton__pill {
+  animation-delay: 0.3s;
+}
+
+.properties-grid .property-card--skeleton:nth-child(5) .property-card-skeleton__shimmer,
+.properties-grid .property-card--skeleton:nth-child(5) .property-card-skeleton__line,
+.properties-grid .property-card--skeleton:nth-child(5) .property-card-skeleton__pill {
+  animation-delay: 0.4s;
+}
+
+.properties-grid .property-card--skeleton:nth-child(6) .property-card-skeleton__shimmer,
+.properties-grid .property-card--skeleton:nth-child(6) .property-card-skeleton__line,
+.properties-grid .property-card--skeleton:nth-child(6) .property-card-skeleton__pill {
+  animation-delay: 0.5s;
+}
+
+@keyframes property-card-skeleton-wave {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: -100% 0;
+  }
 }

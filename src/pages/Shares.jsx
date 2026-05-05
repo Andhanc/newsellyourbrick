@@ -5,11 +5,11 @@ import { FiSearch } from 'react-icons/fi'
 import Header from '../components/Header'
 import DepositButton from '../components/DepositButton'
 import { AnimatedMarqueeHero } from '../components/ui/hero-3'
-import { useLazyLoad } from '../hooks/useLazyLoad'
 import { fetchUserDeposit } from '../utils/depositApi'
 import { fetchNumericDbUserIdForApi, getStoredNumericUserId } from '../services/authService'
 import './Shares.css'
 import { getPropertyCardImage } from '../utils/propertyImage'
+import { ShareCardSkeletonGrid } from '../components/ShareCardSkeletonGrid'
 
 // Фотографии разных объектов недвижимости для бегущей строки
 const HERO_MARQUEE_IMAGES = [
@@ -134,7 +134,9 @@ const Shares = () => {
     }
   }, [])
 
-  const [sharesSectionRef] = useLazyLoad(loadShares, { rootMargin: '200px' })
+  useEffect(() => {
+    void loadShares()
+  }, [loadShares])
 
   const allShareObjects = [...DEMO_SHARE_OBJECTS, ...apiShares]
   const filtered = allShareObjects.filter(
@@ -154,18 +156,17 @@ const Shares = () => {
       <Header />
       <div className="shares-page__bg" />
       <AnimatedMarqueeHero
-        tagline={t('sharesHeroTagline')}
         title={
           <>
             {t('sharesHeroTitleLine1')}
             <br />
-            {t('sharesHeroTitleLine2')}
+            <span className="shares-hero__title-marker">{t('sharesHeroTitleLine2')}</span>
           </>
         }
         description={t('sharesHeroDescription')}
         images={HERO_MARQUEE_IMAGES}
       />
-      <main ref={sharesSectionRef} className="shares-container">
+      <main className="shares-container">
         <div className="shares-search-bar">
           <FiSearch className="shares-search-bar__icon" size={20} />
           <input
@@ -187,8 +188,10 @@ const Shares = () => {
           )}
         </div>
 
-        <div id="shares-grid" className="shares-grid">
-          {filtered.length === 0 ? (
+        <div id="shares-grid" className="shares-grid" aria-busy={loadingShares}>
+          {loadingShares ? (
+            <ShareCardSkeletonGrid count={6} />
+          ) : filtered.length === 0 ? (
             <div className="shares-no-results">
               <p>{t('sharesEmpty')}</p>
             </div>

@@ -32,6 +32,7 @@ import {
 } from './stripeBilling.js';
 import { sendCrmEmailViaEmailJS, resolveBuyerEmailForPurchaseRequest } from './emailJsCrmSend.js';
 import { registerIntelligenceIoProxy, getIntelligenceIoKeyFromEnv } from './intelligenceIoProxy.js';
+import { publicPropertyListsCache } from './middleware/publicPropertyListsCache.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -93,7 +94,7 @@ if (process.env.NODE_ENV === 'production') {
 
 app.use(
   compression({
-    threshold: 2048,
+    threshold: 1024,
     filter: (req, res) => {
       const p = req.path || '';
       if (p.startsWith('/api/events')) return false;
@@ -571,6 +572,10 @@ app.get('/api/health', (req, res) => {
 
 // API endpoint для получения конфигурации клиента (runtime переменные)
 app.get('/api/config', async (req, res) => {
+  res.setHeader(
+    'Cache-Control',
+    'public, max-age=120, stale-while-revalidate=600'
+  );
   res.json({
     success: true,
     data: {
@@ -672,6 +677,7 @@ app.use(cors({
 app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), createStripeWebhookHandler());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(publicPropertyListsCache);
 
 registerStripeBillingRoutes(app);
 
@@ -8890,7 +8896,7 @@ app.get('/api/properties/auctions', async (req, res) => {
  */
 app.get('/api/properties/test-timers', async (req, res) => {
   try {
-    console.log('📥 GET /api/properties/test-timers - Запрос получен');
+    if (VERBOSE_HTTP) console.log('📥 GET /api/properties/test-timers - Запрос получен');
     const prisma = getPrisma();
     const [apartmentsRows, housesRows] = await Promise.all([
       prisma.properties_apartments.findMany({
@@ -9004,7 +9010,8 @@ app.get('/api/properties/test-timers', async (req, res) => {
         land_area: prop.land_area || null
       };
     });
-    
+
+    res.setHeader('Cache-Control', 'public, max-age=15, stale-while-revalidate=120');
     res.json({
       success: true,
       data: formattedProperties

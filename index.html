@@ -6,31 +6,25 @@
     <title>Аукцион недвижимости</title>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="alternate icon" href="/favicon.svg" />
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-     integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
-     crossorigin=""/>
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-     integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
-     crossorigin=""></script>
-    <!-- Facebook SDK -->
-    <script>
-      window.fbAsyncInit = function() {
-        FB.init({
-          appId: 'YOUR_APP_ID', // Замените на ваш Facebook App ID
-          cookie: true,
-          xfbml: true,
-          version: 'v18.0'
-        });
-      };
-      
-      (function(d, s, id) {
-        var js, fjs = d.getElementsByTagName(s)[0];
-        if (d.getElementById(id)) return;
-        js = d.createElement(s); js.id = id;
-        js.src = "https://connect.facebook.net/ru_RU/sdk.js";
-        fjs.parentNode.insertBefore(js, fjs);
-      }(document, 'script', 'facebook-jssdk'));
-    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&amp;family=Neucha&amp;display=swap"
+    />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&amp;display=swap"
+    />
+    <link
+      rel="preload"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+      as="style"
+      onload="this.onload=null;this.rel='stylesheet'"
+    />
+    <noscript>
+      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    </noscript>
   </head>
   <body>
     <div id="root"></div>

@@ -1002,8 +1002,9 @@ function TestPage() {
   }, [numericUserId])
 
   useEffect(() => {
+    if (!bookingsSheetOpen) return
     void refetchBookingsSheetRows()
-  }, [refetchBookingsSheetRows])
+  }, [bookingsSheetOpen, refetchBookingsSheetRows])
 
   useEffect(() => {
     if (dataSheetOpen || historySheetOpen || subscriptionSheetOpen || bookingsSheetOpen) {
@@ -2842,10 +2843,18 @@ function TestPage() {
                           ) : null}
                           <Link
                             to={`/profile/bookings?booking=${b.id}`}
-                            className="test-booking-mini"
+                            className={`test-booking-mini test-booking-mini--${badgeTone}`}
                             onClick={() => setBookingsSheetOpen(false)}
                           >
-                            <div className="test-booking-mini__media" aria-hidden>
+                            <div className="test-booking-mini__media">
+                              <span
+                                className={`test-booking-mini__badge test-booking-mini__badge--${badgeTone}`}
+                              >
+                                {t(
+                                  `buyerCabinet_bookingStatus_${statusKey}`,
+                                  t('buyerCabinet_bookingStatus_pending'),
+                                )}
+                              </span>
                               {coverUrl ? (
                                 <img
                                   src={coverUrl}
@@ -2858,41 +2867,35 @@ function TestPage() {
                                   }}
                                 />
                               ) : null}
-                              <div className="test-booking-mini__media-fallback">
+                              <div className="test-booking-mini__media-fallback" aria-hidden>
                                 <FiHome size={22} strokeWidth={1.35} aria-hidden />
                               </div>
                             </div>
                             <div className="test-booking-mini__body">
-                              <div className="test-booking-mini__row">
-                                <span
-                                  className={`test-booking-mini__badge test-booking-mini__badge--${badgeTone}`}
-                                >
-                                  {t(
-                                    `buyerCabinet_bookingStatus_${statusKey}`,
-                                    t('buyerCabinet_bookingStatus_pending'),
-                                  )}
-                                </span>
-                              </div>
                               <span className="test-booking-mini__title">{title}</span>
-                              {paidLine ? (
-                                <span className="test-booking-mini__money-line">{paidLine}</span>
-                              ) : null}
-                              {insLine ? (
-                                <span className="test-booking-mini__money-line test-booking-mini__money-line--muted">
-                                  {insLine}
-                                </span>
+                              {paidLine || insLine ? (
+                                <div className="test-booking-mini__finance">
+                                  {paidLine ? (
+                                    <span className="test-booking-mini__money-line">{paidLine}</span>
+                                  ) : null}
+                                  {insLine ? (
+                                    <span className="test-booking-mini__money-line test-booking-mini__money-line--muted">
+                                      {insLine}
+                                    </span>
+                                  ) : null}
+                                </div>
                               ) : null}
                               <span className="test-booking-mini__meta">
-                                <FiCalendar
-                                  size={14}
-                                  className="test-booking-mini__meta-icon"
-                                  aria-hidden
-                                />
+                                <span className="test-booking-mini__meta-icon-wrap" aria-hidden>
+                                  <FiCalendar size={15} className="test-booking-mini__meta-icon" />
+                                </span>
                                 {formatDateRange(b.start_date, b.end_date, locale)}
                               </span>
                               <span className="test-booking-mini__mobile-cta">
                                 {t('buyerBookings_cta')}
-                                <FiArrowRight size={14} aria-hidden />
+                                <span className="test-booking-mini__mobile-cta-ring" aria-hidden>
+                                  <FiArrowRight size={15} aria-hidden />
+                                </span>
                               </span>
                             </div>
                             <div className="test-booking-mini__cta">

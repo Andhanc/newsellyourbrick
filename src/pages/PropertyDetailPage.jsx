@@ -65,6 +65,9 @@ const PropertyDetailPage = () => {
   }, [location.pathname, location.search, location.state])
   
   useEffect(() => {
+    const abortController = new AbortController()
+    let isActive = true
+
     const loadProperty = async () => {
       // Если объект передан из state, используем его один раз как начальные данные
       if (propertyFromState && !initializedFromStateRef.current) {
@@ -79,62 +82,14 @@ const PropertyDetailPage = () => {
       if (id) {
         try {
           setIsLoading(true)
-          console.log(`🔍 PropertyDetailPage: Загрузка данных объекта ID=${id}`);
           const lang = (i18n.language || 'ru').split('-')[0]
-          const response = await fetch(`${API_BASE_URL}/properties/${id}?lang=${lang}`)
+          const response = await fetch(`${API_BASE_URL}/properties/${id}?lang=${lang}`, {
+            signal: abortController.signal,
+          })
           if (response.ok) {
             const result = await response.json()
-            console.log('📥 PropertyDetailPage - Ответ от API:', result)
-            console.log('📥 PropertyDetailPage - Данные о резервации из API:', {
-              is_reserved: result.data?.is_reserved,
-              reserved_until: result.data?.reserved_until,
-              reserved_by: result.data?.reserved_by
-            });
             if (result.success && result.data) {
               const prop = result.data
-              console.log('📥 PropertyDetailPage - Данные объекта (prop) - ВСЕ ПОЛЯ:', prop)
-              console.log('📥 PropertyDetailPage - Ключевые поля из API:', {
-                rooms: prop.rooms,
-                bedrooms: prop.bedrooms,
-                bathrooms: prop.bathrooms,
-                area: prop.area,
-                living_area: prop.living_area,
-                floor: prop.floor,
-                total_floors: prop.total_floors,
-                year_built: prop.year_built,
-                building_type: prop.building_type,
-                balcony: prop.balcony,
-                parking: prop.parking,
-                elevator: prop.elevator,
-                price: prop.price,
-                auction_starting_price: prop.auction_starting_price,
-                test_drive: prop.test_drive,
-                test_drive_type: typeof prop.test_drive,
-              })
-              console.log('📥 PropertyDetailPage - Все поля из API:', {
-                rooms: prop.rooms,
-                bedrooms: prop.bedrooms,
-                bathrooms: prop.bathrooms,
-                area: prop.area,
-                living_area: prop.living_area,
-                floor: prop.floor,
-                total_floors: prop.total_floors,
-                year_built: prop.year_built,
-                building_type: prop.building_type,
-                balcony: prop.balcony,
-                parking: prop.parking,
-                elevator: prop.elevator,
-                garage: prop.garage,
-                pool: prop.pool,
-                garden: prop.garden,
-                electricity: prop.electricity,
-                internet: prop.internet,
-                security: prop.security,
-                furniture: prop.furniture,
-                price: prop.price,
-                auction_starting_price: prop.auction_starting_price,
-              })
-              console.log('📥 PropertyDetailPage - Координаты (raw):', prop.coordinates, typeof prop.coordinates)
               
               // Обрабатываем фотографии (включая legacy форматы photos/images)
               const { image: normalizedImage, images: normalizedImages } = normalizePropertyMediaFields(prop)
@@ -183,8 +138,6 @@ const PropertyDetailPage = () => {
                       // Проверяем, что координаты валидны (широта: -90 до 90, долгота: -180 до 180)
                       if (!isNaN(lat) && !isNaN(lng) && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
                         coordinates = [lat, lng]
-                      } else {
-                        console.warn('⚠️ Некорректные координаты:', { lat, lng })
                       }
                     }
                   } else if (Array.isArray(prop.coordinates) && prop.coordinates.length >= 2) {
@@ -192,21 +145,13 @@ const PropertyDetailPage = () => {
                     const lng = parseFloat(prop.coordinates[1])
                     if (!isNaN(lat) && !isNaN(lng) && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
                       coordinates = [lat, lng]
-                    } else {
-                      console.warn('⚠️ Некорректные координаты:', { lat, lng })
                     }
                   }
-                } catch (e) {
-                  console.warn('Ошибка парсинга coordinates:', e)
+                } catch {
+                  // ignore invalid coordinates payload
                 }
               }
-              
-              console.log('📍 Координаты объекта:', {
-                raw: prop.coordinates,
-                processed: coordinates,
-                location: prop.location
-              })
-              
+
               const pt = normalizePropertyDetailType(prop)
 
               /** Поля аукциона/тест-таймера для getEffectiveAuctionEndTime и PropertyDetailClassic (должны совпадать с ответом API). */
@@ -332,69 +277,32 @@ const PropertyDetailPage = () => {
                 reserved_by: prop.reserved_by || null,
                 reservation_time_remaining: prop.reservation_time_remaining || null,
               }
-              
-              console.log('📥 PropertyDetailPage - Данные о резервации:', {
-                is_reserved: formattedProperty.is_reserved,
-                reserved_until: formattedProperty.reserved_until,
-                reserved_by: formattedProperty.reserved_by
-              });
-              
-              console.log('✅ Загружено объявление:', {
-                id: formattedProperty.id,
-                title: formattedProperty.title,
-                price: formattedProperty.price,
-                currency: formattedProperty.currency,
-                is_auction: formattedProperty.is_auction,
-                auction_end_date: formattedProperty.auction_end_date,
-                images_count: formattedProperty.images.length,
-                coordinates: formattedProperty.coordinates,
-                coordinates_type: typeof formattedProperty.coordinates,
-                coordinates_is_array: Array.isArray(formattedProperty.coordinates),
-                amenities: {
-                  balcony: formattedProperty.balcony,
-                  parking: formattedProperty.parking,
-                  elevator: formattedProperty.elevator,
-                  garage: formattedProperty.garage,
-                  pool: formattedProperty.pool,
-                  garden: formattedProperty.garden,
-                  electricity: formattedProperty.electricity,
-                  internet: formattedProperty.internet,
-                  security: formattedProperty.security,
-                  furniture: formattedProperty.furniture,
-                },
-                raw_amenities: {
-                  balcony: prop.balcony,
-                  parking: prop.parking,
-                  elevator: prop.elevator,
-                  garage: prop.garage,
-                  pool: prop.pool,
-                  garden: prop.garden,
-                  electricity: prop.electricity,
-                  internet: prop.internet,
-                  security: prop.security,
-                  furniture: prop.furniture,
-                }
-              })
-              setProperty(formattedProperty)
+              if (isActive) setProperty(formattedProperty)
             } else {
-              setError('Объявление не найдено')
+              if (isActive) setError('Объявление не найдено')
             }
           } else {
-            setError('Ошибка при загрузке объявления')
+            if (isActive) setError('Ошибка при загрузке объявления')
           }
         } catch (err) {
-          console.error('Ошибка загрузки объявления:', err)
-          setError('Ошибка при загрузке объявления')
+          if (err?.name !== 'AbortError' && isActive) {
+            console.error('Ошибка загрузки объявления:', err)
+            setError('Ошибка при загрузке объявления')
+          }
         } finally {
-          setIsLoading(false)
+          if (isActive) setIsLoading(false)
         }
       } else {
-        setIsLoading(false)
+        if (isActive) setIsLoading(false)
       }
     }
 
     loadProperty()
-  }, [id, propertyFromState])
+    return () => {
+      isActive = false
+      abortController.abort()
+    }
+  }, [id, propertyFromState, i18n.language])
 
   if (isLoading) {
     return (

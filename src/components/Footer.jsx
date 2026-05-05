@@ -141,8 +141,8 @@ const Footer = () => {
       { onClick: goWallet, label: t('wallet') },
       { to: '/profile', label: t('profile') },
       { to: '/test', label: 'Тест' },
-      { to: '/about#about-for-investors', label: t('footerForInvestors') },
-      { to: '/about#about-team', label: t('footerOurTeam') },
+      { to: '/about#about-intro', label: t('footerForInvestors') },
+      { to: '/about#about-intro', label: t('footerOurTeam') },
     ],
     [
       { to: '/subscriptions#subscriptions-pricing-section', label: t('tariffs') },
@@ -213,7 +213,15 @@ const Footer = () => {
               </div>
 
               <div className="footer__whatsapp-qr">
-                <img src={whatsappQR} alt="WhatsApp QR" className="footer__qr-image" />
+                <img
+                  src={whatsappQR}
+                  alt="WhatsApp QR"
+                  className="footer__qr-image"
+                  width={130}
+                  height={130}
+                  loading="lazy"
+                  decoding="async"
+                />
               </div>
 
               <div className="footer__brand footer__brand--mobile">

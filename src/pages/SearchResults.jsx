@@ -1,13 +1,16 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { MdBed, MdOutlineBathtub } from 'react-icons/md'
 import { BiArea } from 'react-icons/bi'
 import { FiArrowLeft, FiAlertCircle } from 'react-icons/fi'
 import { ensureCanOpenProperty } from '../utils/propertyAccessGuard'
 import { getApiBaseUrl } from '../utils/apiConfig'
+import { fetchDedupe } from '../utils/fetchDedupe'
 import './SearchResults.css'
 
 const SearchResults = () => {
+  const { i18n } = useTranslation()
   const navigate = useNavigate()
   const location = useLocation()
   const [properties, setProperties] = useState([])
@@ -31,37 +34,27 @@ const SearchResults = () => {
     try {
       setLoading(true)
       const API_BASE_URL = await getApiBaseUrl()
-      
-      // Загружаем все свойства
-      const types = ['commercial', 'villa', 'apartment', 'house']
+      const lang = encodeURIComponent(String(i18n.language || 'ru').split('-')[0] || 'ru')
+
+      const [approvedResponse, auctionResponse] = await Promise.all([
+        fetchDedupe(`${API_BASE_URL}/properties/approved?lang=${lang}`),
+        fetchDedupe(`${API_BASE_URL}/properties/auctions?lang=${lang}`),
+      ])
+
       const allProperties = []
-
-      for (const type of types) {
-        try {
-          // Загружаем одобренные объявления
-          const approvedUrl = `${API_BASE_URL}/properties/approved?type=${type}`
-          const approvedResponse = await fetch(approvedUrl)
-          if (approvedResponse.ok) {
-            const data = await approvedResponse.json()
-            if (data.success && data.data) {
-              const nonAuction = data.data.filter(prop => 
-                !prop.is_auction || prop.is_auction === 0 || prop.is_auction === false
-              )
-              allProperties.push(...nonAuction)
-            }
-          }
-
-          // Загружаем аукционные объявления
-          const auctionUrl = `${API_BASE_URL}/properties/auctions?type=${type}`
-          const auctionResponse = await fetch(auctionUrl)
-          if (auctionResponse.ok) {
-            const data = await auctionResponse.json()
-            if (data.success && data.data) {
-              allProperties.push(...data.data)
-            }
-          }
-        } catch (error) {
-          console.error(`Ошибка загрузки типа ${type}:`, error)
+      if (approvedResponse.ok) {
+        const data = await approvedResponse.json()
+        if (data.success && data.data) {
+          const nonAuction = data.data.filter(
+            (prop) => !prop.is_auction || prop.is_auction === 0 || prop.is_auction === false
+          )
+          allProperties.push(...nonAuction)
+        }
+      }
+      if (auctionResponse.ok) {
+        const data = await auctionResponse.json()
+        if (data.success && data.data) {
+          allProperties.push(...data.data)
         }
       }
 

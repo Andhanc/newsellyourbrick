@@ -1,10 +1,6 @@
 import { Suspense } from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { useEffect, useState, useRef } from 'react'
-import { TonConnectUIProvider } from '@tonconnect/ui-react'
-import MainPage from './pages/MainPage'
-import OAuthBridgePage from './pages/OAuthBridgePage'
-import Footer from './components/Footer'
 import ClerkAuthSync from './components/ClerkAuthSync'
 import ClerkAuthHandler from './components/ClerkAuthHandler'
 import ToastContainer from './components/ToastContainer'
@@ -25,6 +21,7 @@ import { LayoutScrollRefContext } from './context/LayoutScrollContext'
 import { scrollMainTo } from './utils/mainScroll'
 import { lazyWithRetry } from './utils/lazyWithRetry'
 import RouteErrorBoundary from './components/RouteErrorBoundary'
+import DebtsRouteSkeleton from './pages/DebtsRouteSkeleton'
 
 // Ленивая загрузка страниц — чанк грузится только при переходе на маршрут
 const Home = lazyWithRetry(() => import('./pages/Home'))
@@ -41,9 +38,6 @@ const Chat = lazyWithRetry(() => import('./pages/Chat'))
 const Favorites = lazyWithRetry(() => import('./pages/Favorites'))
 const Compare = lazyWithRetry(() => import('./pages/Compare'))
 const Bonuses = lazyWithRetry(() => import('./pages/Bonuses'))
-const Shares = lazyWithRetry(() => import('./pages/Shares'))
-const Debts = lazyWithRetry(() => import('./pages/Debts'))
-const ShareDetailPage = lazyWithRetry(() => import('./pages/ShareDetailPage'))
 const OwnerDashboard = lazyWithRetry(() => import('./pages/OwnerDashboard'))
 const TelegramAuthCallback = lazyWithRetry(() => import('./pages/TelegramAuthCallback'))
 const AddProperty = lazyWithRetry(() => import('./pages/AddProperty'))
@@ -55,6 +49,12 @@ const InvestmentCalculator = lazyWithRetry(() => import('./pages/InvestmentCalcu
 const JetonPage = lazyWithRetry(() => import('./pages/JetonPage'))
 const TestPage = lazyWithRetry(() => import('./pages/TestPage'))
 const BlockedUserModal = lazyWithRetry(() => import('./components/BlockedUserModal'))
+const DebtsPage = lazyWithRetry(() => import('./pages/Debts'))
+const LazyMainPage = lazyWithRetry(() => import('./pages/MainPage'))
+const LazyShares = lazyWithRetry(() => import('./pages/Shares'))
+const LazyShareDetailPage = lazyWithRetry(() => import('./pages/ShareDetailPage'))
+const LazyOAuthBridgePage = lazyWithRetry(() => import('./pages/OAuthBridgePage'))
+const LazyFooter = lazyWithRetry(() => import('./components/Footer'))
 
 const PageFallback = () => (
   <div
@@ -291,6 +291,47 @@ function ReferralCapture() {
   return null
 }
 
+/**
+ * Кэш списка аукциона: на /debts не запускаем — иначе батч запросов конкурирует с LCP и /properties/debts.
+ * На главных маршрутах — в idle, чтобы не блокировать первую отрисовку.
+ */
+function AuctionListPrefetch() {
+  const { pathname } = useLocation()
+
+  useEffect(() => {
+    if (pathname === '/debts') return undefined
+
+    let cancelled = false
+    const run = () => {
+      if (!cancelled) prefetchAuctionList()
+    }
+
+    const fastPaths = new Set(['/', '/auction', '/main'])
+    if (fastPaths.has(pathname)) {
+      if (typeof window !== 'undefined' && typeof window.requestIdleCallback === 'function') {
+        const id = window.requestIdleCallback(run, { timeout: 2500 })
+        return () => {
+          cancelled = true
+          window.cancelIdleCallback(id)
+        }
+      }
+      const t = window.setTimeout(run, 0)
+      return () => {
+        cancelled = true
+        window.clearTimeout(t)
+      }
+    }
+
+    const t = window.setTimeout(run, 6000)
+    return () => {
+      cancelled = true
+      window.clearTimeout(t)
+    }
+  }, [pathname])
+
+  return null
+}
+
 /** Флаг «уже бывал на сайте» — для вкладки Войти/Регистрация в LoginModal (localStorage + pagehide). */
 function ReturningVisitorSiteTracking() {
   useEffect(() => {
@@ -391,32 +432,22 @@ function App() {
     return () => {};
   }, [])
 
-  // Prefetch списка аукциона при старте — на /auction объекты покажутся сразу, без "Загрузка объявлений..."
-  useEffect(() => {
-    prefetchAuctionList()
-  }, [])
-
   useEffect(() => {
     runDevBackendHintOnce()
   }, [])
 
-  const tonManifestUrl = typeof window !== 'undefined'
-    ? `${window.location.origin}/tonconnect-manifest.json`
-    : '/tonconnect-manifest.json'
-
   return (
     <div className="app-root-fill">
-    <TonConnectUIProvider manifestUrl={tonManifestUrl}>
     <Router>
       <div className="app-shell">
       <PropertyFavoritesProvider>
-      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
       <RouteHistoryTracker />
       <ScrollToTop />
       <NumericUserIdHydration />
       <MainPageViewportLock />
       <AuctionMobileOverflowLock />
       <ReferralCapture />
+      <AuctionListPrefetch />
       <ReturningVisitorSiteTracking />
       <VisitorHeartbeat />
       <SessionValidator onBlockedChange={setIsBlocked} />
@@ -433,7 +464,14 @@ function App() {
           <RouteErrorBoundary>
           <Suspense fallback={<PageFallback />}>
             <Routes>
-              <Route path="/" element={<MainPage />} />
+              <Route
+                path="/"
+                element={
+                  <Suspense fallback={<PageFallback />}>
+                    <LazyMainPage />
+                  </Suspense>
+                }
+              />
               <Route path="/auction" element={<Home />} />
               <Route path="/main" element={<Home />} />
               <Route path="/property/:id/test-drive" element={<TestDriveBookingPage />} />
@@ -444,7 +482,14 @@ function App() {
               <Route path="/profile/bookings" element={<MyBookingsPage />} />
               <Route path="/profile" element={<TestPage />} />
               <Route path="/profile-legacy" element={<Profile />} />
-              <Route path="/oauth-bridge" element={<OAuthBridgePage />} />
+              <Route
+                path="/oauth-bridge"
+                element={
+                  <Suspense fallback={<PageFallback />}>
+                    <LazyOAuthBridgePage />
+                  </Suspense>
+                }
+              />
               <Route path="/auth/telegram-callback" element={<TelegramAuthCallback />} />
               <Route path="/data" element={<Data />} />
               <Route path="/subscriptions" element={<Subscriptions />} />
@@ -455,10 +500,31 @@ function App() {
               <Route path="/wallet" element={<Wallet />} />
               <Route path="/deposit" element={<Wallet />} />
               <Route path="/bonuses" element={<Bonuses />} />
-              <Route path="/shares" element={<Shares />} />
-              <Route path="/debts" element={<Debts />} />
+              <Route
+                path="/shares"
+                element={
+                  <Suspense fallback={<PageFallback />}>
+                    <LazyShares />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/debts"
+                element={
+                  <Suspense fallback={<DebtsRouteSkeleton />}>
+                    <DebtsPage />
+                  </Suspense>
+                }
+              />
               <Route path="/about" element={<About />} />
-              <Route path="/shares/:id" element={<ShareDetailPage />} />
+              <Route
+                path="/shares/:id"
+                element={
+                  <Suspense fallback={<PageFallback />}>
+                    <LazyShareDetailPage />
+                  </Suspense>
+                }
+              />
               <Route path="/calculator" element={<InvestmentCalculator />} />
               <Route path="/jeton" element={<JetonPage />} />
               <Route path="/test" element={<TestPage />} />
@@ -471,7 +537,22 @@ function App() {
           </Suspense>
           </RouteErrorBoundary>
         </div>
-        <Footer />
+        <Suspense
+          fallback={
+            <div
+              className="app-footer-skeleton"
+              style={{
+                minHeight: 120,
+                flexShrink: 0,
+                background: '#ffffff',
+                borderTop: '1px solid #e5e7eb',
+              }}
+              aria-hidden
+            />
+          }
+        >
+          <LazyFooter />
+        </Suspense>
       </div>
       </LayoutScrollRefContext.Provider>
       {isBlocked && (
@@ -483,7 +564,6 @@ function App() {
       </PropertyFavoritesProvider>
       </div>
     </Router>
-    </TonConnectUIProvider>
     </div>
   )
 }

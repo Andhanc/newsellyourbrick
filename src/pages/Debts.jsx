@@ -7,14 +7,15 @@ import { ShieldQuestionMark, ShieldAlert, ShieldCheck } from 'lucide-react'
 import Header from '../components/Header'
 import DepositButton from '../components/DepositButton'
 import FlipCard from '../components/ui/FlipCard'
-import { useLazyLoad } from '../hooks/useLazyLoad'
 import PropertyTimer from '../components/PropertyTimer'
 import CircularTimer from '../components/CircularTimer'
 import AuctionMobileLayout from '../components/ui/AuctionMobileLayout'
 import { hasBuyNowOption } from '../utils/hasBuyNowOption'
 import { getPropertyCardImage } from '../utils/propertyImage'
 import { fetchUserDeposit } from '../utils/depositApi'
+import { fetchDedupe } from '../utils/fetchDedupe'
 import { fetchNumericDbUserIdForApi, getStoredNumericUserId } from '../services/authService'
+import { PropertyListingSkeletonGrid } from '../components/PropertyListingSkeletonGrid'
 import './Shares.css'
 import '../components/PropertyList.css'
 
@@ -43,19 +44,40 @@ const Debts = () => {
 
   useEffect(() => {
     let cancelled = false
-    ;(async () => {
+    const run = async () => {
       const id = await fetchNumericDbUserIdForApi({ clerkUser: null, clerkUserLoaded: false })
       if (!cancelled && id) setDbUserId(id)
-    })()
+    }
+
+    /** Депозит/ID не нужны для первой отрисовки списка долгов — после idle не мешаем LCP */
+    const schedule =
+      typeof window !== 'undefined' && typeof window.requestIdleCallback === 'function'
+        ? () =>
+            window.requestIdleCallback(
+              () => {
+                void run()
+              },
+              { timeout: 6000 },
+            )
+        : () => window.setTimeout(() => void run(), 1800)
+
+    const idleIdOrTimer = schedule()
     return () => {
       cancelled = true
+      if (typeof idleIdOrTimer === 'number') {
+        if (typeof window !== 'undefined' && typeof window.requestIdleCallback === 'function') {
+          window.cancelIdleCallback(idleIdOrTimer)
+        } else if (typeof window !== 'undefined') {
+          window.clearTimeout(idleIdOrTimer)
+        }
+      }
     }
   }, [])
 
   useEffect(() => {
     if (!dbUserId) return
     let cancelled = false
-    ;(async () => {
+    const run = async () => {
       try {
         const deposit = await fetchUserDeposit(API_BASE, dbUserId, { ttlMs: 15000 })
         if (!cancelled && deposit && typeof deposit.depositAmount === 'number') {
@@ -64,15 +86,31 @@ const Debts = () => {
       } catch {
         if (!cancelled) setUserDeposit(0)
       }
-    })()
+    }
+
+    let idleIdOrTimer =
+      typeof window !== 'undefined' && typeof window.requestIdleCallback === 'function'
+        ? window.requestIdleCallback(
+            () => {
+              void run()
+            },
+            { timeout: 8000 },
+          )
+        : window.setTimeout(() => void run(), 400)
+
     return () => {
       cancelled = true
+      if (typeof window !== 'undefined' && typeof window.requestIdleCallback === 'function') {
+        window.cancelIdleCallback(idleIdOrTimer)
+      } else if (typeof window !== 'undefined') {
+        window.clearTimeout(idleIdOrTimer)
+      }
     }
   }, [dbUserId])
 
   const loadDebts = useCallback(async () => {
     try {
-      const res = await fetch(`${API_BASE}/properties/debts`)
+      const res = await fetchDedupe(`${API_BASE}/properties/debts`)
       const json = await (res.ok ? res.json() : { success: false, data: [] })
       if (json.success && Array.isArray(json.data)) {
         const isDebtRecord = (p) => {
@@ -145,7 +183,9 @@ const Debts = () => {
     }
   }, [])
 
-  const [debtsSectionRef] = useLazyLoad(loadDebts, { rootMargin: '200px' })
+  useEffect(() => {
+    void loadDebts()
+  }, [loadDebts])
 
   const filtered = apiDebts.filter(
     (obj) =>
@@ -164,7 +204,7 @@ const Debts = () => {
     <div className="shares-page">
       <Header />
       <div className="shares-page__bg" />
-      <main ref={debtsSectionRef} className="shares-container">
+      <main className="shares-container">
         <div className="shares-flip-cards shares-flip-cards--debts">
           <FlipCard
             color="#DC2626"
@@ -240,10 +280,17 @@ const Debts = () => {
           )}
         </div>
 
-        <div className="shares-grid">
+        <div className="shares-grid" aria-busy={loadingDebts}>
           {loadingDebts && (
-            <div className="shares-no-results">
-              <p>{t('debtsLoading')}</p>
+            <div style={{ gridColumn: '1 / -1' }}>
+              <div
+                className={
+                  isMobile ? 'properties-grid properties-grid--mobile-auction' : 'properties-grid'
+                }
+                aria-hidden="true"
+              >
+                <PropertyListingSkeletonGrid count={isMobile ? 4 : 6} />
+              </div>
             </div>
           )}
 

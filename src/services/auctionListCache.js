@@ -4,7 +4,8 @@
  * Prefetch при старте приложения — один запрос, без пулинга.
  */
 
-import { getApiBaseUrl } from '../utils/apiConfig'
+import { getApiBaseUrlSync } from '../utils/apiConfig'
+import { fetchDedupe } from '../utils/fetchDedupe'
 import { getEffectiveAuctionEndTime } from '../utils/auctionReminderBounds'
 import { normalizePropertyMediaFields } from '../utils/propertyImage'
 
@@ -248,6 +249,9 @@ async function fetchMaxBidsBatch(apiBaseUrl, propertyIds) {
   }
 }
 
+/** Параллельные вызовы fetchAuctionList (prefetch в App + mount Home) сливаем в один промис. */
+let fetchAuctionListInFlight = null
+
 async function enrichAuctionListWithMaxBids(apiBaseUrl, list) {
   if (!Array.isArray(list) || list.length === 0) return list
   const auctionItems = list.filter((item) => {
@@ -296,11 +300,14 @@ async function enrichAuctionListWithMaxBids(apiBaseUrl, list) {
 }
 
 /**
- * Загружает список объявлений (тот же набор запросов, что и на странице аукциона).
- * Сохраняет результат в кэш. Можно вызывать при старте приложения и из Home.
+ * Загружает список объявлений для /auction.
+ * Один параллельный батч (GET без type уже отдаёт все типы на бэкенде; повторные запросы по type были лишними).
  */
 export async function fetchAuctionList() {
-  const API_BASE_URL = await getApiBaseUrl()
+  if (fetchAuctionListInFlight) return fetchAuctionListInFlight
+
+  fetchAuctionListInFlight = (async () => {
+  const API_BASE_URL = getApiBaseUrlSync()
   const lang = (() => {
     try {
       if (typeof window === 'undefined') return 'ru'
@@ -310,82 +317,44 @@ export async function fetchAuctionList() {
       return 'ru'
     }
   })()
-  const types = [
-    { apiType: 'commercial' },
-    { apiType: 'villa' },
-    { apiType: 'apartment' },
-    { apiType: 'house' }
-  ]
+
   const allAuctionProperties = []
   const allNonAuctionProperties = []
   const allDebtProperties = []
   let allTestProperties = []
 
+  const langQ = encodeURIComponent(lang)
   try {
-    const testRes = await fetch(`${API_BASE_URL}/properties/test-timers?lang=${encodeURIComponent(lang)}`)
-    if (testRes.ok) {
-      const data = await testRes.json()
-      if (data.success && data.data) allTestProperties = data.data
-    }
-  } catch (_) {}
-
-  // Общие списки без type: здесь могут быть объекты с нестандартным/пустым property_type,
-  // которые иначе теряются при выборке только по фиксированным типам.
-  try {
-    const [auctionAllRes, approvedAllRes] = await Promise.all([
-      fetch(`${API_BASE_URL}/properties/auctions?lang=${encodeURIComponent(lang)}`),
-      fetch(`${API_BASE_URL}/properties/approved?lang=${encodeURIComponent(lang)}`)
+    /** test-timers не использует lang на бэкенде — без query для лучшего попадания в серверный кэш */
+    const [testRes, auctionAllRes, approvedAllRes, debtsRes] = await Promise.all([
+      fetchDedupe(`${API_BASE_URL}/properties/test-timers`),
+      fetchDedupe(`${API_BASE_URL}/properties/auctions?lang=${langQ}`),
+      fetchDedupe(`${API_BASE_URL}/properties/approved?lang=${langQ}`),
+      fetchDedupe(`${API_BASE_URL}/properties/debts`),
     ])
+
+    if (testRes.ok) {
+      const data = await testRes.json().catch(() => null)
+      if (data?.success && data.data) allTestProperties = data.data
+    }
     if (auctionAllRes.ok) {
-      const data = await auctionAllRes.json()
-      if (data.success && data.data) {
-        allAuctionProperties.push(...data.data)
-      }
+      const data = await auctionAllRes.json().catch(() => null)
+      if (data?.success && data.data) allAuctionProperties.push(...data.data)
     }
     if (approvedAllRes.ok) {
-      const data = await approvedAllRes.json()
-      if (data.success && data.data) {
+      const data = await approvedAllRes.json().catch(() => null)
+      if (data?.success && data.data) {
         const nonAuction = data.data.filter(
           prop => !prop.is_auction || prop.is_auction === 0 || prop.is_auction === false
         )
         allNonAuctionProperties.push(...nonAuction)
       }
     }
-  } catch (_) {}
-
-  try {
-    const debtsRes = await fetch(`${API_BASE_URL}/properties/debts`)
     if (debtsRes.ok) {
-      const data = await debtsRes.json()
-      if (data.success && data.data) {
-        allDebtProperties.push(...data.data)
-      }
+      const data = await debtsRes.json().catch(() => null)
+      if (data?.success && data.data) allDebtProperties.push(...data.data)
     }
   } catch (_) {}
-
-  for (const { apiType } of types) {
-    try {
-      const [auctionRes, approvedRes] = await Promise.all([
-        fetch(`${API_BASE_URL}/properties/auctions?type=${apiType}&lang=${encodeURIComponent(lang)}`),
-        fetch(`${API_BASE_URL}/properties/approved?type=${apiType}&lang=${encodeURIComponent(lang)}`)
-      ])
-      if (auctionRes.ok) {
-        const data = await auctionRes.json()
-        if (data.success && data.data) {
-          allAuctionProperties.push(...data.data)
-        }
-      }
-      if (approvedRes.ok) {
-        const data = await approvedRes.json()
-        if (data.success && data.data) {
-          const nonAuction = data.data.filter(
-            prop => !prop.is_auction || prop.is_auction === 0 || prop.is_auction === false
-          )
-          allNonAuctionProperties.push(...nonAuction)
-        }
-      }
-    } catch (_) {}
-  }
 
   const baseList = dedupeAuctionListById([
     ...allTestProperties.map(p => formatPropertyForList(p, true)),
@@ -403,6 +372,13 @@ export async function fetchAuctionList() {
 
   setCachedList(allProperties)
   return allProperties
+  })()
+
+  try {
+    return await fetchAuctionListInFlight
+  } finally {
+    fetchAuctionListInFlight = null
+  }
 }
 
 /**

@@ -3,9 +3,6 @@
 import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import ScrollExpandMedia from '@/components/ui/scroll-expansion-hero';
-import { Timeline } from '@/components/ui/timeline';
-import TeamShowcase from '@/components/ui/team-showcase';
-import StartWithUs from '@/components/ui/StartWithUs';
 import Header from '@/components/Header';
 import { scrollMainTo } from '@/utils/mainScroll';
 
@@ -28,67 +25,6 @@ const sampleMediaContent = {
   },
 };
 
-const timelineData = [
-  {
-    title: '2024',
-    content: (
-      <div>
-        <p className="text-neutral-800 dark:text-neutral-200 text-xs md:text-sm font-normal mb-8">
-          Запуск аукционов недвижимости, карты объектов и подписок. Платформа объединила продавцов и покупателей в одном сервисе.
-        </p>
-        <div className="timeline-about__grid">
-          <img src="https://images.unsplash.com/photo-1560518883-ce09059eeffa?q=80&w=600&auto=format&fit=crop" alt="Недвижимость" />
-          <img src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?q=80&w=600&auto=format&fit=crop" alt="Дом" />
-          <img src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=600&auto=format&fit=crop" alt="Интерьер" />
-          <img src="https://images.unsplash.com/photo-1600566753190-17f0baa2a6a3?q=80&w=600&auto=format&fit=crop" alt="Квартира" />
-        </div>
-      </div>
-    ),
-  },
-  {
-    title: '2023',
-    content: (
-      <div>
-        <p className="text-neutral-800 dark:text-neutral-200 text-xs md:text-sm font-normal mb-8">
-          Разработка идеи платформы и первых прототипов. Формирование команды и партнёрств с агентствами недвижимости.
-        </p>
-        <p className="text-neutral-800 dark:text-neutral-200 text-xs md:text-sm font-normal mb-8">
-          Исследование рынка, проектирование аукционной модели и удобного поиска по карте для покупателей и продавцов.
-        </p>
-        <div className="timeline-about__grid">
-          <img src="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=600&auto=format&fit=crop" alt="Офис" />
-          <img src="https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=600&auto=format&fit=crop" alt="Рабочее пространство" />
-          <img src="https://images.unsplash.com/photo-1504384308090-c894fdcc538d?q=80&w=600&auto=format&fit=crop" alt="Команда" />
-          <img src="https://images.unsplash.com/photo-1552664730-d307ca884978?q=80&w=600&auto=format&fit=crop" alt="Сделка" />
-        </div>
-      </div>
-    ),
-  },
-  {
-    title: 'Сейчас',
-    content: (
-      <div>
-        <p className="text-neutral-800 dark:text-neutral-200 text-xs md:text-sm font-normal mb-4">
-          Активно развиваем платформу: новые функции и стабильная работа для тысяч пользователей.
-        </p>
-        <div className="timeline-about__list">
-          <div className="timeline-about__list-item">✅ Аукционы недвижимости в реальном времени</div>
-          <div className="timeline-about__list-item">✅ Поиск на карте и избранное</div>
-          <div className="timeline-about__list-item">✅ Умный помощник в чате</div>
-          <div className="timeline-about__list-item">✅ Бонусы и подписки для пользователей</div>
-          <div className="timeline-about__list-item">✅ Безопасные сделки и поддержка</div>
-        </div>
-        <div className="timeline-about__grid">
-          <img src="https://images.unsplash.com/photo-1560518883-ce09059eeffa?q=80&w=600&auto=format&fit=crop" alt="Объект" />
-          <img src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?q=80&w=600&auto=format&fit=crop" alt="Недвижимость" />
-          <img src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?q=80&w=600&auto=format&fit=crop" alt="Квартира" />
-          <img src="https://images.unsplash.com/photo-1600566753190-17f0baa2a6a3?q=80&w=600&auto=format&fit=crop" alt="Интерьер" />
-        </div>
-      </div>
-    ),
-  },
-];
-
 const MediaContent = () => {
   const currentMedia = sampleMediaContent.video;
 
@@ -109,8 +45,6 @@ const MediaContent = () => {
 
 const ABOUT_HASH_TO_ID = {
   '#about-intro': 'about-intro',
-  '#about-for-investors': 'about-for-investors',
-  '#about-team': 'about-team',
 };
 
 const About = () => {
@@ -148,21 +82,6 @@ const About = () => {
       >
         <MediaContent />
       </ScrollExpandMedia>
-      <div className="w-full" id="about-for-investors">
-        <Timeline data={timelineData} />
-      </div>
-      <section className="team-section" id="about-team">
-        <div className="team-section__inner">
-          <h2 className="team-section__title">
-            Наша команда
-          </h2>
-          <p className="team-section__subtitle">
-            Люди, которые создают и развивают Sellyourbrick каждый день.
-          </p>
-          <TeamShowcase />
-        </div>
-      </section>
-      <StartWithUs />
     </div>
   );
 };

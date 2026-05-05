@@ -4,6 +4,12 @@ import { FaArrowLeft, FaArrowUp, FaArrowDown } from 'react-icons/fa'
 import { FiClock } from 'react-icons/fi'
 import { useUser, useAuth } from '@clerk/clerk-react'
 import {
+  TonConnectUIProvider,
+  useTonConnectUI,
+  useTonAddress,
+  useTonWallet,
+} from '@tonconnect/ui-react'
+import {
   getUserData,
   isAuthenticated,
   CLERK_DB_USER_SYNCED,
@@ -13,7 +19,6 @@ import {
 import { getApiBaseUrl, getApiBaseUrlSync } from '../utils/apiConfig'
 import UserBidHistoryModal from '../components/UserBidHistoryModal'
 import BuyNowModal from '../components/BuyNowModal'
-import { useTonConnectUI, useTonAddress, useTonWallet } from '@tonconnect/ui-react'
 import DepositTopUpPicker from '../components/DepositTopUpPicker'
 import SellerVerificationModal from '../components/SellerVerificationModal'
 import { showNotification } from '../utils/toastHelper'
@@ -42,12 +47,52 @@ let API_BASE_URL = getApiBaseUrlSync()
 // Адрес кошелька для приёма оплаты (0.01 USDT приходит на этот TON-адрес)
 const USDT_PAYMENT_RECIPIENT = 'UQA8j4T1Au4jDjWTfl_PrB4_Whoo15RZhszE9E6gxUvu7OTI'
 
-const Wallet = () => {
+const getTonManifestUrl = () =>
+  typeof window !== 'undefined'
+    ? `${window.location.origin}/tonconnect-manifest.json`
+    : '/tonconnect-manifest.json'
+
+const FOCUS_RELOAD_THROTTLE_MS = 15000
+
+const isSameTransactionList = (prev = [], next = []) => {
+  if (prev === next) return true
+  if (!Array.isArray(prev) || !Array.isArray(next)) return false
+  if (prev.length !== next.length) return false
+  for (let i = 0; i < prev.length; i += 1) {
+    const a = prev[i]
+    const b = next[i]
+    if (
+      a?.id !== b?.id ||
+      a?.amount !== b?.amount ||
+      a?.type !== b?.type ||
+      a?.description !== b?.description ||
+      a?.created_at !== b?.created_at
+    ) {
+      return false
+    }
+  }
+  return true
+}
+
+const isSameBid = (prev, next) => {
+  if (prev === next) return true
+  if (!prev || !next) return false
+  return (
+    prev.property_id === next.property_id &&
+    prev.bid_amount === next.bid_amount &&
+    prev.created_at === next.created_at &&
+    prev.auction_end_date === next.auction_end_date &&
+    prev.is_auction === next.is_auction
+  )
+}
+
+const WalletInner = () => {
   const navigate = useNavigate()
   const location = useLocation()
   const [searchParams, setSearchParams] = useSearchParams()
   const walletDepositHandledRef = useRef(null)
   const walletReservationHandledRef = useRef(null)
+  const lastFocusReloadAtRef = useRef(0)
   const { user, isLoaded: userLoaded } = useUser()
   const buyNowEmailOk = useMemo(() => hasEmailForBuyNowFlow(user, userLoaded), [user, userLoaded])
   const { isSignedIn, isLoaded: authLoaded } = useAuth()
@@ -241,7 +286,11 @@ const Wallet = () => {
     initAndLoad()
     
     const onFocus = () => {
-      if (API_BASE_URL && !API_BASE_URL.includes('localhost')) loadUserData(false)
+      if (!API_BASE_URL || API_BASE_URL.includes('localhost')) return
+      const now = Date.now()
+      if (now - lastFocusReloadAtRef.current < FOCUS_RELOAD_THROTTLE_MS) return
+      lastFocusReloadAtRef.current = now
+      loadUserData(false)
     }
     window.addEventListener('focus', onFocus)
     return () => window.removeEventListener('focus', onFocus)
@@ -298,14 +347,7 @@ const Wallet = () => {
         const transData = await transactionsRes.json()
         if (transData.success) {
           const newTransactions = transData.data || []
-          setTransactions(prev => {
-            const prevStr = JSON.stringify(prev)
-            const newStr = JSON.stringify(newTransactions)
-            if (prevStr !== newStr) {
-              return newTransactions
-            }
-            return prev
-          })
+          setTransactions((prev) => (isSameTransactionList(prev, newTransactions) ? prev : newTransactions))
         }
       }
 
@@ -332,9 +374,7 @@ const Wallet = () => {
         if (bidsData.success && bidsData.data && bidsData.data.length > 0) {
           const newUserBid = bidsData.data[0]
           setUserBid(prev => {
-            const prevStr = JSON.stringify(prev)
-            const newStr = JSON.stringify(newUserBid)
-            if (prevStr !== newStr) {
+            if (!isSameBid(prev, newUserBid)) {
               return newUserBid
             }
             return prev
@@ -997,5 +1037,11 @@ const Wallet = () => {
     </div>
   )
 }
+
+const Wallet = () => (
+  <TonConnectUIProvider manifestUrl={getTonManifestUrl()}>
+    <WalletInner />
+  </TonConnectUIProvider>
+)
 
 export default Wallet

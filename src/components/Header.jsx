@@ -20,6 +20,7 @@ import {
   fetchUserNotifications,
   invalidateUserNotificationsCache,
 } from '../utils/notificationsApi'
+/** Стили шапки (new-header*, меню, поиск и т.д.) определены в MainPage.css — импорт намеренно общий для визуального паритета. */
 import '../pages/MainPage.css'
 import { MenuToggleIcon } from '@/components/ui/menu-toggle-icon'
 import { UI_LANGUAGES } from '../constants/uiLanguages'

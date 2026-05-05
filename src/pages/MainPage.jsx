@@ -1,17 +1,20 @@
 import { useEffect, useRef, useState, useMemo, useCallback } from 'react'
-import { useLazyLoad } from '../hooks/useLazyLoad'
 import { useManagerLiveChat } from '../hooks/useManagerLiveChat'
 import { useTranslation } from 'react-i18next'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { useUser } from '@clerk/clerk-react'
 import './MainPage.css'
-import mainFon from '../../main fon.png'
+/** Фон hero-секции (внешнее изображение виллы) */
+const HERO_BACKGROUND_URL =
+  'https://www.magazindomov.ru/wp-content/uploads/2020/07/Villa-Palazzetta-1.jpg'
 import {
   FiBell,
   FiSearch,
   FiSliders,
   FiHeart,
   FiChevronDown,
+  FiChevronLeft,
+  FiChevronRight,
   FiArrowRight,
   FiShare2,
   FiX,
@@ -63,6 +66,7 @@ import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
 import { ensureCanOpenProperty } from '../utils/propertyAccessGuard'
 import LoginModal from '../components/LoginModal'
 import HeroRolePitchModal from '../components/HeroRolePitchModal'
+import { PropertyListingSkeletonGrid } from '../components/PropertyListingSkeletonGrid'
 import '../components/PropertyList.css'
 import { askPropertyAssistant, detectManagerContactIntent, filterPropertiesByLocation } from '../services/aiService'
 import { getUserData, clearUserData, isAuthenticated } from '../services/authService'
@@ -1050,11 +1054,43 @@ function MainPage() {
   const notificationRef = useRef(null)
   const menuRef = useRef(null)
   const landingStatsRef = useRef(null)
+  const auctionShowcaseScrollerRef = useRef(null)
+  const buyNowShowcaseScrollerRef = useRef(null)
+  const debtsShowcaseScrollerRef = useRef(null)
+  const sharesShowcaseScrollerRef = useRef(null)
   const [statsScrollProgress, setStatsScrollProgress] = useState(0)
 
+  const scrollAuctionShowcase = useCallback((direction) => {
+    const el = auctionShowcaseScrollerRef.current
+    if (!el) return
+    const delta = Math.max(Math.floor(el.clientWidth * 0.72), 300)
+    el.scrollBy({ left: direction * delta, behavior: 'smooth' })
+  }, [])
+
+  const scrollBuyNowShowcase = useCallback((direction) => {
+    const el = buyNowShowcaseScrollerRef.current
+    if (!el) return
+    const delta = Math.max(Math.floor(el.clientWidth * 0.72), 300)
+    el.scrollBy({ left: direction * delta, behavior: 'smooth' })
+  }, [])
+
+  const scrollDebtsShowcase = useCallback((direction) => {
+    const el = debtsShowcaseScrollerRef.current
+    if (!el) return
+    const delta = Math.max(Math.floor(el.clientWidth * 0.72), 300)
+    el.scrollBy({ left: direction * delta, behavior: 'smooth' })
+  }, [])
+
+  const scrollSharesShowcase = useCallback((direction) => {
+    const el = sharesShowcaseScrollerRef.current
+    if (!el) return
+    const delta = Math.max(Math.floor(el.clientWidth * 0.72), 300)
+    el.scrollBy({ left: direction * delta, behavior: 'smooth' })
+  }, [])
+
   const heroImages = {
-    rent: mainFon,
-    buy: mainFon
+    rent: HERO_BACKGROUND_URL,
+    buy: HERO_BACKGROUND_URL,
   }
   
   const heroImage = heroImages[propertyMode]
@@ -1459,85 +1495,11 @@ function MainPage() {
   // Состояние для одобренных объявлений из API
   // и общий список объектов для главной страницы
   const [homeProperties, setHomeProperties] = useState([])
-  const [approvedProperties, setApprovedProperties] = useState({
-    apartments: [],
-    villas: [],
-    flats: [],
-    houses: []
-  })
 
-  // Загрузка одобренных объявлений — только когда секция попадает во вьюпорт (без polling)
-  const loadApprovedProperties = useCallback(async () => {
-    try {
-      const types = [
-        { apiType: 'commercial', stateKey: 'apartments' },
-        { apiType: 'villa', stateKey: 'villas' },
-        { apiType: 'apartment', stateKey: 'flats' },
-        { apiType: 'house', stateKey: 'houses' }
-      ]
-      const loadedProperties = { apartments: [], villas: [], flats: [], houses: [] }
-      const lang = (i18n.language || 'ru').split('-')[0]
-      for (const { apiType, stateKey } of types) {
-        try {
-          const res = await fetch(`${API_BASE_URL}/properties/approved?type=${apiType}&lang=${lang}`)
-          if (res.ok) {
-            const data = await res.json()
-            if (data.success && data.data) {
-              loadedProperties[stateKey] = data.data.map((p) => {
-                const { image: ni, images: nims } = normalizePropertyMediaFields(p)
-                return {
-                  ...p,
-                  image: ni || LISTING_IMAGE_FALLBACK,
-                  images: nims.length > 0 ? nims : ni ? [ni] : [],
-                }
-              })
-            }
-          }
-        } catch (_) {}
-      }
-      setApprovedProperties(loadedProperties)
-    } catch (error) {
-      console.error('❌ Ошибка загрузки одобренных объявлений:', error)
-    }
-  }, [i18n.language])
-
-  // Объединяем статические данные с данными из API
-  const combinedApartments = useMemo(() => {
-    // Убираем дубликаты по ID, приоритет у данных из API
-    const apiIds = new Set(approvedProperties.apartments.map(p => p.id))
-    const uniqueStaticApartments = apartmentsData.filter(p => !apiIds.has(p.id))
-    return [...uniqueStaticApartments, ...approvedProperties.apartments]
-  }, [approvedProperties.apartments])
-
-  const combinedVillas = useMemo(() => {
-    // Убираем дубликаты по ID, приоритет у данных из API
-    const apiIds = new Set(approvedProperties.villas.map(p => p.id))
-    const uniqueStaticVillas = villasData.filter(p => !apiIds.has(p.id))
-    return [...uniqueStaticVillas, ...approvedProperties.villas]
-  }, [approvedProperties.villas])
-
-  const combinedFlats = useMemo(() => {
-    // Убираем дубликаты по ID, приоритет у данных из API
-    const apiIds = new Set(approvedProperties.flats.map(p => p.id))
-    const uniqueStaticFlats = flatsData.filter(p => !apiIds.has(p.id))
-    return [...uniqueStaticFlats, ...approvedProperties.flats]
-  }, [approvedProperties.flats])
-
-  const combinedTownhouses = useMemo(() => {
-    // Убираем дубликаты по ID, приоритет у данных из API
-    const apiIds = new Set(approvedProperties.houses.map(p => p.id))
-    const uniqueStaticHouses = townhousesData.filter(p => !apiIds.has(p.id))
-    return [...uniqueStaticHouses, ...approvedProperties.houses]
-  }, [approvedProperties.houses])
-
-  const filteredApartments = useMemo(() => filterBySearch(combinedApartments), [searchQuery, combinedApartments])
-  const filteredVillas = useMemo(() => filterBySearch(combinedVillas), [searchQuery, combinedVillas])
-  const filteredFlats = useMemo(() => filterBySearch(combinedFlats), [searchQuery, combinedFlats])
-  const filteredTownhouses = useMemo(() => filterBySearch(combinedTownhouses), [searchQuery, combinedTownhouses])
   const filteredRecommended = useMemo(() => filterBySearch(recommendedProperties), [searchQuery])
   const filteredNearby = useMemo(() => filterBySearch(nearbyProperties), [searchQuery])
 
-  // Один раз 2 запроса (approved + auctions), заполняем homeProperties и approvedProperties
+  // Три параллельных GET: approved + auctions + debts → homeProperties (без дублирующих запросов по type)
   const loadHomeProperties = useCallback(async () => {
     try {
       const apiBase = await getApiBaseUrl()
@@ -1604,28 +1566,15 @@ function MainPage() {
       auctions.map((p) => normalizeProperty(p, { forceAuction: true })).forEach((p) => { if (p && p.id != null) byId.set(p.id, p) })
       debts.map((p) => normalizeProperty(p)).forEach((p) => { if (p && p.id != null) byId.set(p.id, p) })
       setHomeProperties(Array.from(byId.values()))
-      const pt = (p) => (p && p.property_type) ? String(p.property_type).toLowerCase() : ''
-      const normalizedApproved = approved.map((p) => normalizeProperty(p))
-      setApprovedProperties({
-        apartments: normalizedApproved.filter((p) => pt(p) === 'commercial'),
-        villas: normalizedApproved.filter((p) => pt(p) === 'villa'),
-        flats: normalizedApproved.filter((p) => pt(p) === 'apartment'),
-        houses: normalizedApproved.filter((p) => pt(p) === 'house')
-      })
     } catch (error) {
       console.error('❌ Ошибка загрузки объектов для главной страницы:', error)
     }
   }, [i18n.language])
 
-  const loadMainPageData = loadHomeProperties
-
-  const [mainSectionRef, mainSectionState] = useLazyLoad(loadMainPageData, { rootMargin: '300px' })
-
   // При смене языка в футере перезагружаем объявления с переводами
   useEffect(() => {
     loadHomeProperties()
-    loadApprovedProperties()
-  }, [i18n.language, loadHomeProperties, loadApprovedProperties])
+  }, [i18n.language, loadHomeProperties])
 
   // SSE: новые лоты и тест-таймер с админки — без F5 (тот же канал, что на /auction)
   useEffect(() => {
@@ -2488,10 +2437,10 @@ function MainPage() {
       <section
         className="hero-section"
         // CSS-переменная для фонового изображения в pseudo-element'ах
-        style={{ ['--hero-bg']: `url(${heroImage})` }}
+        style={{ ['--hero-bg']: `url("${heroImage}")` }}
       >
-        <div className={`hero-section__image hero-section__image--rent ${propertyMode === 'rent' ? 'hero-section__image--active' : ''}`} style={{ backgroundImage: `url(${heroImages.rent})` }}></div>
-        <div className={`hero-section__image hero-section__image--buy ${propertyMode === 'buy' ? 'hero-section__image--active' : ''}`} style={{ backgroundImage: `url(${heroImages.buy})` }}></div>
+        <div className={`hero-section__image hero-section__image--rent ${propertyMode === 'rent' ? 'hero-section__image--active' : ''}`} style={{ backgroundImage: `url("${heroImages.rent}")` }}></div>
+        <div className={`hero-section__image hero-section__image--buy ${propertyMode === 'buy' ? 'hero-section__image--active' : ''}`} style={{ backgroundImage: `url("${heroImages.buy}")` }}></div>
         <div className="hero-section__overlay"></div>
         {/* Новый хедер для десктопной версии */}
         <div className="new-header-spacer" aria-hidden="true" />
@@ -3463,76 +3412,92 @@ function MainPage() {
       {/* Блок подборки недвижимости */}
       <PropertySearchBlock />
 
-      {/* Блок "Аукцион" — загрузка данных только когда секция во вьюпорте */}
-      <section ref={mainSectionRef} className="apartments-section apartments-section--auction">
+      {/* Блок "Аукцион" — данные: loadHomeProperties при монтировании / смене языка */}
+      <section
+        className="apartments-section apartments-section--auction apartments-section--auction-showcase"
+      >
         <div className="apartments-section__container">
-          <div 
-            className="apartments-section__header"
-            onClick={() => {
-              navigate('/auction?filter=auction')
-            }}
-            style={{ cursor: 'pointer' }}
-          >
-          <h2 className="apartments-section__title">{t('auctionSectionTitle')}</h2>
-            <FiArrowRight size={24} className="apartments-section__arrow" />
-          </div>
-          
-          <div className="apartments-section__content">
-            <div className="properties-grid">
-              {auctionSection.map((apartment) => {
-                const formatPrice = (price) => {
-                  if (!price) return '$0'
-                  if (price >= 1000000) {
-                    return `$${(price / 1000000).toFixed(1)}M`
-                  }
-                  return `$${price.toLocaleString('en-US')}`
+          <header className="auction-showcase__header">
+            <div className="auction-showcase__intro">
+              <h2 className="auction-showcase__title">{t('auctionSectionTitle')}</h2>
+              <p className="auction-showcase__subtitle">{t('auctionSectionSubtitle')}</p>
+            </div>
+            <button
+              type="button"
+              className="auction-showcase__cta"
+              onClick={() => navigate('/auction?filter=auction')}
+            >
+              <span className="auction-showcase__cta-text">{t('auctionSectionCta')}</span>
+              <span className="auction-showcase__cta-icon" aria-hidden>
+                <FiArrowRight size={18} strokeWidth={2.25} />
+              </span>
+            </button>
+          </header>
+
+          <div className="auction-showcase__carousel">
+            <div
+              ref={auctionShowcaseScrollerRef}
+              className="auction-showcase__scroller"
+            >
+            {auctionSection.map((apartment) => {
+              const formatPrice = (price) => {
+                if (!price) return '$0'
+                if (price >= 1000000) {
+                  return `$${(price / 1000000).toFixed(1)}M`
                 }
+                return `$${price.toLocaleString('en-US')}`
+              }
 
-                const hasTimer =
-                  apartment.isAuction === true &&
-                  apartment.endTime != null &&
-                  apartment.endTime !== ''
-                const isAuctionEndedCard = isAuctionListingEnded(apartment)
+              const hasTimer =
+                apartment.isAuction === true &&
+                apartment.endTime != null &&
+                apartment.endTime !== ''
+              const isAuctionEndedCard = isAuctionListingEnded(apartment)
 
-                const currentBidValue =
-                  apartment.currentBid != null
-                    ? apartment.currentBid
-                    : (apartment.auction_starting_price || apartment.price || 0)
-                
-                return (
+              const currentBidValue =
+                apartment.currentBid != null
+                  ? apartment.currentBid
+                  : (apartment.auction_starting_price || apartment.price || 0)
+
+              return (
+                <div
+                  key={apartment.id}
+                  className={`auction-showcase-card${
+                    isAuctionEndedCard ? ' auction-showcase-card--ended' : ''
+                  }`}
+                >
+                  {isAuctionEndedCard ? (
+                    <div className="property-auction-ended-overlay property-auction-ended-overlay--full-card">
+                      <span className="property-auction-ended-overlay__title">
+                        {t('auctionSoldOutLabel')}
+                      </span>
+                      <button
+                        type="button"
+                        className="property-auction-ended-overlay__result-link"
+                        onClick={(e) => {
+                          e.preventDefault()
+                          e.stopPropagation()
+                          handlePropertyClick('apartment', apartment.id, false, hasTimer, apartment)
+                        }}
+                      >
+                        <span>{t('auctionResultSummary')}</span>
+                        <span aria-hidden>→</span>
+                      </button>
+                    </div>
+                  ) : null}
                   <div
-                    key={apartment.id}
-                    className={`property-card${isAuctionEndedCard ? ' property-card--auction-ended' : ''}`}
+                    className="auction-showcase-card__link"
+                    onClick={() => {
+                      handlePropertyClick('apartment', apartment.id, false, hasTimer, apartment)
+                    }}
                   >
-                    {isAuctionEndedCard ? (
-                      <div className="property-auction-ended-overlay property-auction-ended-overlay--full-card">
-                        <span className="property-auction-ended-overlay__title">{t('auctionSoldOutLabel')}</span>
-                        <button
-                          type="button"
-                          className="property-auction-ended-overlay__result-link"
-                          onClick={(e) => {
-                            e.preventDefault()
-                            e.stopPropagation()
-                            handlePropertyClick('apartment', apartment.id, false, hasTimer, apartment)
-                          }}
-                        >
-                          <span>{t('auctionResultSummary')}</span>
-                          <span aria-hidden>→</span>
-                        </button>
-                      </div>
-                    ) : null}
-                    <div 
-                      className="property-link"
-                      onClick={() => {
-                        handlePropertyClick('apartment', apartment.id, false, hasTimer, apartment)
-                      }}
-                      style={{ cursor: 'pointer' }}
-                    >
-                      <div className="property-image-container">
-                        <img loading="lazy" 
-                          src={apartment.image} 
+                    <div className="auction-showcase-card__surface">
+                      <div className="auction-showcase-card__media">
+                        <img
+                          loading="lazy"
+                          src={apartment.image}
                           alt={apartment.name}
-                          className="property-image"
+                          className="auction-showcase-card__image"
                         />
                         <button
                           type="button"
@@ -3546,125 +3511,130 @@ function MainPage() {
                           }}
                         >
                           <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                            <path 
-                              d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" 
-                              stroke="currentColor" 
-                              strokeWidth="2" 
-                              fill={isFavorite(apartment, 'apartment') ? "currentColor" : "none"}
+                            <path
+                              d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              fill={isFavorite(apartment, 'apartment') ? 'currentColor' : 'none'}
                             />
                           </svg>
                         </button>
                       </div>
-                      <div className="property-content">
-                        <div className="property-header-fixed">
-                          {hasTimer && (
-                            <PropertyTimer endTime={apartment.endTime} compact={true} />
-                          )}
-                          <h3 className="property-title">{apartment.name}</h3>
-                          {apartment.description && (
-                            <p className="property-description">{apartment.description}</p>
-                          )}
-                          <p className="property-location">{apartment.location}</p>
-                        </div>
-                        {/* Строка характеристик под блоком заголовка */}
-                        <div className="property-specs">
-                          {apartment.beds && (
-                            <div className="spec-item">
-                              <MdBed size={18} />
-                              <span>{apartment.beds}</span>
-                            </div>
-                          )}
-                          {apartment.baths && (
-                            <div className="spec-item">
-                              <MdOutlineBathtub size={18} />
-                              <span>{apartment.baths}</span>
-                            </div>
-                          )}
-                          {apartment.sqft && (
-                            <div className="spec-item">
-                              <BiArea size={18} />
-                              <span>{apartment.sqft} {t('squareMeters')}</span>
-                            </div>
-                          )}
-                        </div>
-                        <div className="property-bid-info">
-                          <span className="bid-label">{t('currentBid')}</span>
-                          <span className="bid-value">
+                      <div className="auction-showcase-card__caption">
+                        {hasTimer ? (
+                          <PropertyTimer endTime={apartment.endTime} compact={true} />
+                        ) : null}
+                        <h3 className="auction-showcase-card__name">{apartment.name}</h3>
+                        <p className="auction-showcase-card__bid">
+                          <span className="auction-showcase-card__bid-label">{t('currentBid')}</span>
+                          <span className="auction-showcase-card__bid-value">
                             {formatPrice(currentBidValue)}
                           </span>
-                        </div>
+                        </p>
                       </div>
                     </div>
                   </div>
-                )
-              })}
+                </div>
+              )
+            })}
+            </div>
+            <div className="auction-showcase__nav" role="group" aria-label={t('showcaseCarouselNav')}>
+              <button
+                type="button"
+                className="auction-showcase__nav-btn auction-showcase__nav-btn--prev"
+                aria-label={t('showcaseCarouselPrev')}
+                onClick={() => scrollAuctionShowcase(-1)}
+              >
+                <FiChevronLeft size={22} strokeWidth={2.25} />
+              </button>
+              <button
+                type="button"
+                className="auction-showcase__nav-btn auction-showcase__nav-btn--next"
+                aria-label={t('showcaseCarouselNext')}
+                onClick={() => scrollAuctionShowcase(1)}
+              >
+                <FiChevronRight size={22} strokeWidth={2.25} />
+              </button>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Блок "Виллы" */}
-      <section className="apartments-section apartments-section--main-cards">
+      {/* Блок «Купить сейчас» — та же витрина-лента, фон Tiffany */}
+      <section className="apartments-section apartments-section--buy-now-showcase">
         <div className="apartments-section__container">
-          <div 
-            className="apartments-section__header"
-            onClick={() => {
-              // Переход на страницу аукциона с фильтром "Купить сейчас"
-              navigate('/auction?filter=buy_now')
-            }}
-            style={{ cursor: 'pointer' }}
-          >
-            <h2 className="apartments-section__title">{t('buyNowSectionTitle')}</h2>
-            <FiArrowRight size={24} className="apartments-section__arrow" />
-          </div>
-          
-          <div className="apartments-section__content">
-            <div className="properties-grid">
-              {buyNowSection.map((villa) => {
-                const formatPrice = (price) => {
-                  if (!price) return '$0'
-                  if (price >= 1000000) {
-                    return `$${(price / 1000000).toFixed(1)}M`
-                  }
-                  return `$${price.toLocaleString('en-US')}`
+          <header className="auction-showcase__header">
+            <div className="auction-showcase__intro">
+              <h2 className="auction-showcase__title">{t('buyNowSectionTitle')}</h2>
+              <p className="auction-showcase__subtitle">{t('buyNowSectionSubtitle')}</p>
+            </div>
+            <button
+              type="button"
+              className="auction-showcase__cta"
+              onClick={() => navigate('/auction?filter=buy_now')}
+            >
+              <span className="auction-showcase__cta-text">{t('buyNowSectionCta')}</span>
+              <span className="auction-showcase__cta-icon" aria-hidden>
+                <FiArrowRight size={18} strokeWidth={2.25} />
+              </span>
+            </button>
+          </header>
+
+          <div className="auction-showcase__carousel">
+            <div
+              ref={buyNowShowcaseScrollerRef}
+              className="auction-showcase__scroller"
+            >
+            {buyNowSection.map((villa) => {
+              const formatPrice = (price) => {
+                if (!price) return '$0'
+                if (price >= 1000000) {
+                  return `$${(price / 1000000).toFixed(1)}M`
                 }
+                return `$${price.toLocaleString('en-US')}`
+              }
 
-                const isAuctionEndedCard = isAuctionListingEnded(villa)
+              const isAuctionEndedCard = isAuctionListingEnded(villa)
 
-                return (
+              return (
+                <div
+                  key={villa.id}
+                  className={`auction-showcase-card${
+                    isAuctionEndedCard ? ' auction-showcase-card--ended' : ''
+                  }`}
+                >
+                  {isAuctionEndedCard ? (
+                    <div className="property-auction-ended-overlay property-auction-ended-overlay--full-card">
+                      <span className="property-auction-ended-overlay__title">
+                        {t('auctionSoldOutLabel')}
+                      </span>
+                      <button
+                        type="button"
+                        className="property-auction-ended-overlay__result-link"
+                        onClick={(e) => {
+                          e.preventDefault()
+                          e.stopPropagation()
+                          handlePropertyClick('villa', villa.id, false, false, villa)
+                        }}
+                      >
+                        <span>{t('auctionResultSummary')}</span>
+                        <span aria-hidden>→</span>
+                      </button>
+                    </div>
+                  ) : null}
                   <div
-                    key={villa.id}
-                    className={`property-card${isAuctionEndedCard ? ' property-card--auction-ended' : ''}`}
+                    className="auction-showcase-card__link"
+                    onClick={() => {
+                      handlePropertyClick('villa', villa.id, false, false, villa)
+                    }}
                   >
-                    {isAuctionEndedCard ? (
-                      <div className="property-auction-ended-overlay property-auction-ended-overlay--full-card">
-                        <span className="property-auction-ended-overlay__title">{t('auctionSoldOutLabel')}</span>
-                        <button
-                          type="button"
-                          className="property-auction-ended-overlay__result-link"
-                          onClick={(e) => {
-                            e.preventDefault()
-                            e.stopPropagation()
-                            handlePropertyClick('villa', villa.id, false, false, villa)
-                          }}
-                        >
-                          <span>{t('auctionResultSummary')}</span>
-                          <span aria-hidden>→</span>
-                        </button>
-                      </div>
-                    ) : null}
-                    <div 
-                      className="property-link"
-                      onClick={() => {
-                        handlePropertyClick('villa', villa.id, false, false, villa)
-                      }}
-                      style={{ cursor: 'pointer' }}
-                    >
-                      <div className="property-image-container">
-                        <img loading="lazy" 
-                          src={villa.image} 
+                    <div className="auction-showcase-card__surface">
+                      <div className="auction-showcase-card__media">
+                        <img
+                          loading="lazy"
+                          src={villa.image}
                           alt={villa.name}
-                          className="property-image"
+                          className="auction-showcase-card__image"
                         />
                         <button
                           type="button"
@@ -3678,163 +3648,158 @@ function MainPage() {
                           }}
                         >
                           <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                            <path 
-                              d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" 
-                              stroke="currentColor" 
-                              strokeWidth="2" 
-                              fill={isFavorite(villa, 'villa') ? "currentColor" : "none"}
+                            <path
+                              d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              fill={isFavorite(villa, 'villa') ? 'currentColor' : 'none'}
                             />
                           </svg>
                         </button>
                       </div>
-                      <div className="property-content">
-                        <div className="property-header-fixed">
-                          <h3 className="property-title">{villa.name}</h3>
-                          {villa.description && (
-                            <p className="property-description">{villa.description}</p>
-                          )}
-                          <p className="property-location">{villa.location}</p>
-                        </div>
-                        {/* Строка характеристик под блоком заголовка */}
-                        <div className="property-specs">
-                          {villa.beds && (
-                            <div className="spec-item">
-                              <MdBed size={18} />
-                              <span>{villa.beds}</span>
-                            </div>
-                          )}
-                          {villa.baths && (
-                            <div className="spec-item">
-                              <MdOutlineBathtub size={18} />
-                              <span>{villa.baths}</span>
-                            </div>
-                          )}
-                          {villa.sqft && (
-                            <div className="spec-item">
-                              <BiArea size={18} />
-                              <span>{villa.sqft} {t('squareMeters')}</span>
-                            </div>
-                          )}
-                        </div>
-                        <div className="property-content-bottom">
-                          <div className="property-price">{formatPrice(villa.price)}</div>
-                        </div>
+                      <div className="auction-showcase-card__caption">
+                        <h3 className="auction-showcase-card__name">{villa.name}</h3>
+                        <p className="auction-showcase-card__bid">
+                          <span className="auction-showcase-card__bid-label">
+                            {t('buyNowShowcasePriceLabel')}
+                          </span>
+                          <span className="auction-showcase-card__bid-value">
+                            {formatPrice(villa.price)}
+                          </span>
+                        </p>
                       </div>
                     </div>
                   </div>
-                )
-              })}
+                </div>
+              )
+            })}
+            </div>
+            <div className="auction-showcase__nav" role="group" aria-label={t('showcaseCarouselNav')}>
+              <button
+                type="button"
+                className="auction-showcase__nav-btn auction-showcase__nav-btn--prev"
+                aria-label={t('showcaseCarouselPrev')}
+                onClick={() => scrollBuyNowShowcase(-1)}
+              >
+                <FiChevronLeft size={22} strokeWidth={2.25} />
+              </button>
+              <button
+                type="button"
+                className="auction-showcase__nav-btn auction-showcase__nav-btn--next"
+                aria-label={t('showcaseCarouselNext')}
+                onClick={() => scrollBuyNowShowcase(1)}
+              >
+                <FiChevronRight size={22} strokeWidth={2.25} />
+              </button>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Блок "Квартиры" */}
-      <section className="apartments-section apartments-section--main-cards">
+      {/* Блок «Долги» — витрина как у аукциона, серый фон */}
+      <section className="apartments-section apartments-section--debts-showcase">
         <div className="apartments-section__container">
-          <div 
-            className="apartments-section__header"
-            onClick={() => {
-              navigate('/debts')
-            }}
-            style={{ cursor: 'pointer' }}
-          >
-            <h2 className="apartments-section__title">{t('debtsTitle')}</h2>
-            <FiArrowRight size={24} className="apartments-section__arrow" />
-          </div>
-          
-          <div className="apartments-section__content">
-            <div className="properties-grid">
-              {debtsSection.map((flat, index) => {
+          <header className="auction-showcase__header">
+            <div className="auction-showcase__intro">
+              <h2 className="auction-showcase__title">{t('debtsTitle')}</h2>
+              <p className="auction-showcase__subtitle">{t('debtsSectionSubtitle')}</p>
+            </div>
+            <button
+              type="button"
+              className="auction-showcase__cta"
+              onClick={() => navigate('/debts')}
+            >
+              <span className="auction-showcase__cta-text">{t('debtsSectionCta')}</span>
+              <span className="auction-showcase__cta-icon" aria-hidden>
+                <FiArrowRight size={18} strokeWidth={2.25} />
+              </span>
+            </button>
+          </header>
+
+          <div className="auction-showcase__carousel">
+            <div ref={debtsShowcaseScrollerRef} className="auction-showcase__scroller">
+              {debtsSection.map((flat) => {
                 const formatPrice = (price) => {
                   if (price >= 1000000) {
                     return `$${(price / 1000000).toFixed(1)}M`
                   }
                   return `$${price.toLocaleString('en-US')}`
                 }
-                
+                const hasTimer =
+                  flat.isAuction === true && flat.endTime != null && flat.endTime !== ''
+                const bidVal = flat.currentBid != null
+                  ? Number(flat.currentBid)
+                  : Number(flat.auction_starting_price || flat.price || 0)
+                const debtVal =
+                  flat.debt_amount != null &&
+                  flat.debt_amount !== '' &&
+                  !Number.isNaN(Number(flat.debt_amount))
+                    ? Number(flat.debt_amount)
+                    : null
+
                 return (
-                  <div key={flat.id} className="property-card">
-                    <div 
-                      className="property-link"
+                  <div key={flat.id} className="auction-showcase-card">
+                    <div
+                      className="auction-showcase-card__link"
                       onClick={() => {
-                        const hasTimer = flat.isAuction === true && flat.endTime != null && flat.endTime !== ''
                         handlePropertyClick('debt', flat.id, false, hasTimer, flat)
                       }}
-                      style={{ cursor: 'pointer' }}
                     >
-                      <div className="property-image-container">
-                        <img loading="lazy" 
-                          src={flat.image || 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=800&q=80'} 
-                          alt={flat.name}
-                          className="property-image"
-                        />
-                        <button
-                          type="button"
-                          className={`property-favorite ${
-                            isFavorite(flat, 'flat') ? 'active' : ''
-                          }`}
-                          onClick={(e) => {
-                            e.preventDefault()
-                            e.stopPropagation()
-                            toggleFavorite(flat, 'flat')
-                          }}
-                        >
-                          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                            <path 
-                              d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" 
-                              stroke="currentColor" 
-                              strokeWidth="2" 
-                              fill={isFavorite(flat, 'flat') ? "currentColor" : "none"}
-                            />
-                          </svg>
-                        </button>
-                      </div>
-                      <div className="property-content">
-                        <div className="property-header-fixed">
-                          {flat.isAuction === true && flat.endTime != null && flat.endTime !== '' && (
+                      <div className="auction-showcase-card__surface">
+                        <div className="auction-showcase-card__media">
+                          <img
+                            loading="lazy"
+                            src={
+                              flat.image ||
+                              'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=800&q=80'
+                            }
+                            alt={flat.name}
+                            className="auction-showcase-card__image"
+                          />
+                          <button
+                            type="button"
+                            className={`property-favorite ${
+                              isFavorite(flat, 'flat') ? 'active' : ''
+                            }`}
+                            onClick={(e) => {
+                              e.preventDefault()
+                              e.stopPropagation()
+                              toggleFavorite(flat, 'flat')
+                            }}
+                          >
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                              <path
+                                d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                fill={isFavorite(flat, 'flat') ? 'currentColor' : 'none'}
+                              />
+                            </svg>
+                          </button>
+                        </div>
+                        <div className="auction-showcase-card__caption">
+                          {hasTimer ? (
                             <PropertyTimer endTime={flat.endTime} compact={true} />
-                          )}
-                          <h3 className="property-title">{flat.name}</h3>
-                          {flat.description && (
-                            <p className="property-description">{flat.description}</p>
-                          )}
-                          <p className="property-location">{flat.location}</p>
-                        </div>
-                        {/* Строка характеристик под блоком заголовка */}
-                        <div className="property-specs">
-                          {flat.beds && (
-                            <div className="spec-item">
-                              <MdBed size={18} />
-                              <span>{flat.beds}</span>
-                            </div>
-                          )}
-                          {flat.baths && (
-                            <div className="spec-item">
-                              <MdOutlineBathtub size={18} />
-                              <span>{flat.baths}</span>
-                            </div>
-                          )}
-                          {flat.sqft && (
-                            <div className="spec-item">
-                              <BiArea size={18} />
-                              <span>{flat.sqft} {t('squareMeters')}</span>
-                            </div>
-                          )}
-                        </div>
-                        <div className="property-bid-info" style={{ display: 'grid', gap: 6 }}>
-                          {flat.debt_amount != null && flat.debt_amount !== '' && !Number.isNaN(Number(flat.debt_amount)) && (
-                            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10 }}>
-                              <span className="bid-label">{t('debtsDebtAmount')}</span>
-                              <span className="bid-value">{formatPrice(Number(flat.debt_amount))}</span>
-                            </div>
-                          )}
-                          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10 }}>
-                            <span className="bid-label">{t('currentBid')}</span>
-                            <span className="bid-value">
-                              {formatPrice(flat.currentBid != null ? Number(flat.currentBid) : (flat.auction_starting_price || flat.price || 0))}
+                          ) : null}
+                          <h3 className="auction-showcase-card__name">{flat.name}</h3>
+                          {debtVal != null ? (
+                            <p className="auction-showcase-card__bid">
+                              <span className="auction-showcase-card__bid-label">
+                                {t('debtsDebtAmount')}
+                              </span>
+                              <span className="auction-showcase-card__bid-value">
+                                {formatPrice(debtVal)}
+                              </span>
+                            </p>
+                          ) : null}
+                          <p className="auction-showcase-card__bid">
+                            <span className="auction-showcase-card__bid-label">
+                              {t('currentBid')}
                             </span>
-                          </div>
+                            <span className="auction-showcase-card__bid-value">
+                              {formatPrice(bidVal)}
+                            </span>
+                          </p>
                         </div>
                       </div>
                     </div>
@@ -3842,31 +3807,56 @@ function MainPage() {
                 )
               })}
             </div>
+            <div className="auction-showcase__nav" role="group" aria-label={t('showcaseCarouselNav')}>
+              <button
+                type="button"
+                className="auction-showcase__nav-btn auction-showcase__nav-btn--prev"
+                aria-label={t('showcaseCarouselPrev')}
+                onClick={() => scrollDebtsShowcase(-1)}
+              >
+                <FiChevronLeft size={22} strokeWidth={2.25} />
+              </button>
+              <button
+                type="button"
+                className="auction-showcase__nav-btn auction-showcase__nav-btn--next"
+                aria-label={t('showcaseCarouselNext')}
+                onClick={() => scrollDebtsShowcase(1)}
+              >
+                <FiChevronRight size={22} strokeWidth={2.25} />
+              </button>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Блок "Дома" */}
-      <section className="apartments-section apartments-section--main-cards">
+      {/* Блок «Долевая продажа» — витрина, Tiffany → градиент как у блока «Цифры» */}
+      <section className="apartments-section apartments-section--shares-showcase">
         <div className="apartments-section__container">
-          <div 
-            className="apartments-section__header"
-            onClick={() => {
-              if (!ensureCanOpenProperty()) {
-                showPropertyAuthRequiredToast()
-                return
-              }
-              // Для долевых объектов ведём на страницу всех долей
-              navigate('/shares')
-            }}
-            style={{ cursor: 'pointer' }}
-          >
-            <h2 className="apartments-section__title">{t('fractionalSaleTitle')}</h2>
-            <FiArrowRight size={24} className="apartments-section__arrow" />
-          </div>
-          
-          <div className="apartments-section__content">
-            <div className="main-shares-grid">
+          <header className="auction-showcase__header">
+            <div className="auction-showcase__intro">
+              <h2 className="auction-showcase__title">{t('fractionalSaleTitle')}</h2>
+              <p className="auction-showcase__subtitle">{t('fractionalSectionSubtitle')}</p>
+            </div>
+            <button
+              type="button"
+              className="auction-showcase__cta"
+              onClick={() => {
+                if (!ensureCanOpenProperty()) {
+                  showPropertyAuthRequiredToast()
+                  return
+                }
+                navigate('/shares')
+              }}
+            >
+              <span className="auction-showcase__cta-text">{t('fractionalSectionCta')}</span>
+              <span className="auction-showcase__cta-icon" aria-hidden>
+                <FiArrowRight size={18} strokeWidth={2.25} />
+              </span>
+            </button>
+          </header>
+
+          <div className="auction-showcase__carousel">
+            <div ref={sharesShowcaseScrollerRef} className="auction-showcase__scroller">
               {sharesSection.map((townhouse) => {
                 const formatPrice = (price) => {
                   if (price >= 1000000) {
@@ -3906,91 +3896,119 @@ function MainPage() {
                     townhouse.price_per_share ??
                     (totalShares > 0 ? totalPrice / totalShares : 0)
                 )
-                
+
                 return (
-                  <article key={townhouse.id} className={`main-share-card${isSoldOut ? ' main-share-card--sold-out' : ''}`}>
+                  <div
+                    key={townhouse.id}
+                    className={`auction-showcase-card${isSoldOut ? ' auction-showcase-card--share-sold-out' : ''}`}
+                  >
                     <div
-                      className="main-share-card__click"
+                      className="auction-showcase-card__link"
                       onClick={() => {
                         if (!ensureCanOpenProperty()) {
                           showPropertyAuthRequiredToast()
                           return
                         }
-                        // Для долевых объектов открываем специальную страницу долей
-                        const propertyType = townhouse.property_type || townhouse.propertyType || 'apartment'
+                        const propertyType =
+                          townhouse.property_type || townhouse.propertyType || 'apartment'
                         const shareId = `${propertyType}-${townhouse.id}`
                         navigate(`/shares/${shareId}`)
                       }}
-                      style={{ cursor: 'pointer' }}
                     >
-                      <div className="main-share-card__image-wrap">
-                        <div className="main-share-card__scale" aria-hidden>
-                          <div className="main-share-card__scale-track">
-                            <div className="main-share-card__scale-fill" style={{ height: `${soldPercent}%` }} />
-                          </div>
-                          <span className="main-share-card__scale-label main-share-card__scale-label--bottom">0%</span>
-                          <span className="main-share-card__scale-label main-share-card__scale-label--top">100%</span>
+                      <div className="auction-showcase-card__surface">
+                        <div className="auction-showcase-card__media">
+                          <img
+                            loading="lazy"
+                            src={townhouse.image}
+                            alt={townhouse.name}
+                            className="auction-showcase-card__image"
+                          />
+                          <button
+                            type="button"
+                            className={`property-favorite ${
+                              isFavorite(townhouse, 'townhouse') ? 'active' : ''
+                            }`}
+                            onClick={(e) => {
+                              e.preventDefault()
+                              e.stopPropagation()
+                              toggleFavorite(townhouse, 'townhouse')
+                            }}
+                          >
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                              <path
+                                d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                fill={isFavorite(townhouse, 'townhouse') ? 'currentColor' : 'none'}
+                              />
+                            </svg>
+                          </button>
                         </div>
-                        <img
-                          loading="lazy"
-                          src={townhouse.image} 
-                          alt={townhouse.name}
-                          className="main-share-card__image"
-                        />
-                        <div className="main-share-card__sold-overlay" style={{ height: `${soldPercent}%` }} />
-                        <button
-                          type="button"
-                          className={`property-favorite ${
-                            isFavorite(townhouse, 'townhouse') ? 'active' : ''
-                          }`}
-                          onClick={(e) => {
-                            e.preventDefault()
-                            e.stopPropagation()
-                            toggleFavorite(townhouse, 'townhouse')
-                          }}
-                        >
-                          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                            <path 
-                              d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" 
-                              stroke="currentColor" 
-                              strokeWidth="2" 
-                              fill={isFavorite(townhouse, 'townhouse') ? "currentColor" : "none"}
+                        <div className="auction-showcase-card__caption">
+                          <div
+                            className="auction-showcase-card__share-meter"
+                            aria-hidden
+                          >
+                            <div
+                              className="auction-showcase-card__share-meter-fill"
+                              style={{ width: `${soldPercent}%` }}
                             />
-                          </svg>
-                        </button>
-                      </div>
-                      <div className="main-share-card__content">
-                        <h3 className="main-share-card__title">{townhouse.name}</h3>
-                        <p className="main-share-card__location">{townhouse.location}</p>
-                        {(townhouse.sqft || townhouse.area || townhouse.beds || townhouse.rooms) && (
-                          <p className="main-share-card__specs">
-                            {(townhouse.sqft || townhouse.area || 0)} {t('squareMeters')} · {(townhouse.beds || townhouse.rooms || 0)} {t('roomsShort')}
+                          </div>
+                          <p className="auction-showcase-card__share-meta">
+                            {isSoldOut
+                              ? t('sharesAllSold')
+                              : t('sharesSoldCount', {
+                                  sold: soldShares,
+                                  total: totalShares,
+                                })}
                           </p>
-                        )}
-                        <div className="main-share-card__prices">
-                          <div className="main-share-card__price-row">
-                            {t('sharesTotalCost')} <strong>{formatPrice(totalPrice)}</strong>
-                          </div>
-                          <div className="main-share-card__price-row">
-                            {t('sharesPerShare')} <strong>{formatPrice(pricePerShare)}</strong>
-                          </div>
-                        </div>
-                        <div className="main-share-card__footer">
-                          <span className="main-share-card__sold">
-                            {isSoldOut ? t('sharesAllSold') : t('sharesSoldCount', { sold: soldShares, total: totalShares })}
-                          </span>
+                          <h3 className="auction-showcase-card__name">{townhouse.name}</h3>
+                          <p className="auction-showcase-card__bid">
+                            <span className="auction-showcase-card__bid-label">
+                              {t('sharesPerShare')}
+                            </span>
+                            <span className="auction-showcase-card__bid-value">
+                              {formatPrice(pricePerShare)}
+                            </span>
+                          </p>
+                          <p className="auction-showcase-card__bid auction-showcase-card__bid--secondary">
+                            <span className="auction-showcase-card__bid-label">
+                              {t('sharesTotalCost')}
+                            </span>
+                            <span className="auction-showcase-card__bid-value auction-showcase-card__bid-value--muted">
+                              {formatPrice(totalPrice)}
+                            </span>
+                          </p>
                         </div>
                       </div>
                     </div>
-                  </article>
+                  </div>
                 )
               })}
+            </div>
+            <div className="auction-showcase__nav" role="group" aria-label={t('showcaseCarouselNav')}>
+              <button
+                type="button"
+                className="auction-showcase__nav-btn auction-showcase__nav-btn--prev"
+                aria-label={t('showcaseCarouselPrev')}
+                onClick={() => scrollSharesShowcase(-1)}
+              >
+                <FiChevronLeft size={22} strokeWidth={2.25} />
+              </button>
+              <button
+                type="button"
+                className="auction-showcase__nav-btn auction-showcase__nav-btn--next"
+                aria-label={t('showcaseCarouselNext')}
+                onClick={() => scrollSharesShowcase(1)}
+              >
+                <FiChevronRight size={22} strokeWidth={2.25} />
+              </button>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Блок: Цифры Sally Your Brick — 70vh, анимация берюза → белый треугольник при скролле */}
+      {/* Блок: Цифры SellYouBrick — 70vh, анимация берюза → белый треугольник при скролле */}
       <section
         ref={landingStatsRef}
         className="landing-stats"
@@ -4009,6 +4027,12 @@ function MainPage() {
               <span className="landing-stat__value">12–25%</span>
               <span className="landing-stat__label">{t('statLabel2')}</span>
             </div>
+          </div>
+          <div className="landing-stats__about-wrap">
+            <Link to="/about" className="landing-stats__about-link">
+              <span className="landing-stats__about-link-text">{t('statsAboutMore')}</span>
+              <FiArrowRight className="landing-stats__about-link-icon" size={20} strokeWidth={2.25} aria-hidden />
+            </Link>
           </div>
         </div>
       </section>
@@ -4096,14 +4120,6 @@ function MainPage() {
       </section>
 
       <div className="app__content">
-      {isLoading && (
-        <div className="loader-overlay">
-          <div className="loader">
-            <div className="loader__circle loader__circle--1"></div>
-            <div className="loader__circle loader__circle--2"></div>
-          </div>
-        </div>
-      )}
       <nav className="categories">
         {getPropertyTypes.map((type) => {
           const IconComponent = type.icon
@@ -4137,8 +4153,11 @@ function MainPage() {
           <h2 className="section__title">{t('recommended')} {t('propertyWord')}</h2>
         </div>
 
-        <div className="properties-grid">
-          {(filteredProperties?.recommended || filteredRecommended).map((property, index) => {
+        <div className="properties-grid" aria-busy={isLoading}>
+          {isLoading ? (
+            <PropertyListingSkeletonGrid count={6} />
+          ) : (
+          (filteredProperties?.recommended || filteredRecommended).map((property, index) => {
             const formatPrice = (price) => {
               if (price >= 1000000) {
                 return `$${(price / 1000000).toFixed(1)}M`
@@ -4228,7 +4247,8 @@ function MainPage() {
                 </div>
               </div>
             )
-          })}
+          })
+          )}
         </div>
       </section>
 
@@ -4237,8 +4257,11 @@ function MainPage() {
           <h2 className="section__title">{t('nearby')} {t('propertyWord')}</h2>
         </div>
 
-        <div className="properties-grid">
-          {(filteredProperties?.nearby || filteredNearby).map((property, index) => {
+        <div className="properties-grid" aria-busy={isLoading}>
+          {isLoading ? (
+            <PropertyListingSkeletonGrid count={6} />
+          ) : (
+          (filteredProperties?.nearby || filteredNearby).map((property, index) => {
             const formatPrice = (price) => {
               if (price >= 1000000) {
                 return `$${(price / 1000000).toFixed(1)}M`
@@ -4331,7 +4354,8 @@ function MainPage() {
                 </div>
               </div>
             )
-          })}
+          })
+          )}
         </div>
       </section>
       </div>
