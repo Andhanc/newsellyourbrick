@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import ReactDOM from 'react-dom/client'
 import { GoogleOAuthProvider } from '@react-oauth/google'
 import { ClerkProvider } from '@clerk/clerk-react'
@@ -8,110 +8,180 @@ import './styles/buyer-cabinet-scroll.css'
 import './i18n/config'
 import { getClerkPublishableKey, getGoogleClientId } from './utils/env'
 
-// Функция для загрузки конфигурации с сервера (runtime)
-async function loadConfigFromServer() {
+const CONFIG_FETCH_TIMEOUT_MS = 14_000
+
+/** Один in-flight запрос: React StrictMode в dev монтирует эффект дважды. */
+let runtimeConfigPromise = null
+
+function AppBootPlaceholder() {
+  return (
+    <div className="app-root-fill app-html-boot-root" role="status" aria-live="polite">
+      <div className="app-html-boot-banner" aria-hidden="true" />
+      <p className="app-html-boot-note" lang="ru">
+        Загрузка интерфейса…
+      </p>
+      <div className="app-html-boot-strip" aria-hidden="true">
+        {Array.from({ length: 6 }, (_, i) => (
+          <div key={`boot-card-${i}`} className="app-html-boot-card" />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function ConfigErrorFullPage() {
+  return (
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: '100%',
+        fontFamily: 'system-ui, sans-serif',
+        padding: 20,
+        boxSizing: 'border-box',
+      }}
+    >
+      <div
+        style={{
+          maxWidth: 600,
+          background: '#fff3cd',
+          border: '2px solid #ffc107',
+          borderRadius: 8,
+          padding: 24,
+        }}
+      >
+        <h2 style={{ color: '#856404', marginTop: 0 }}>Ошибка конфигурации</h2>
+        <p style={{ color: '#856404', lineHeight: 1.6 }}>
+          <strong>Не задан Clerk Publishable Key</strong>
+        </p>
+        <p style={{ color: '#856404', lineHeight: 1.6 }}>
+          Укажите переменную <code>REACT_APP_CLERK_PUBLISHABLE_KEY</code> или{' '}
+          <code>VITE_CLERK_PUBLISHABLE_KEY</code> при сборке{' '}
+          <em>и</em> в окружении сервера (для <code>GET /api/config</code>), затем перезапустите приложение.
+        </p>
+        <p style={{ color: '#856404', lineHeight: 1.6, marginBottom: 0 }}>
+          Откройте консоль браузера для подробностей.
+        </p>
+      </div>
+    </div>
+  )
+}
+
+async function loadConfigFromServer(timeoutMs = CONFIG_FETCH_TIMEOUT_MS) {
+  const controller = typeof AbortController !== 'undefined' ? new AbortController() : null
+  const timer =
+    controller &&
+    window.setTimeout(() => {
+      controller.abort()
+    }, timeoutMs)
   try {
-    const response = await fetch('/api/config')
+    const response = await fetch('/api/config', {
+      signal: controller?.signal,
+      credentials: 'same-origin',
+    })
+    if (!response.ok) return null
     const data = await response.json()
     if (data.success && data.data) {
       return data.data
     }
   } catch (error) {
-    console.error('Ошибка загрузки конфигурации с сервера:', error)
+    if (error?.name === 'AbortError') {
+      console.error('Таймаут загрузки /api/config:', timeoutMs, 'ms')
+    } else {
+      console.error('Ошибка загрузки конфигурации с сервера:', error)
+    }
+  } finally {
+    if (timer != null) window.clearTimeout(timer)
   }
   return null
 }
 
-// Функция для отображения ошибки
-function showError() {
-  const errorMessage = `
-    ⚠️ Missing Clerk Publishable Key!
-    
-    Please set one of the following environment variables:
-    - REACT_APP_CLERK_PUBLISHABLE_KEY
-    - VITE_CLERK_PUBLISHABLE_KEY
-    
-    For Railway deployment:
-    1. Go to Railway Dashboard → Your Project → Variables
-    2. Add: REACT_APP_CLERK_PUBLISHABLE_KEY=pk_test_...
-    3. Railway will automatically restart your app
-    
-    For local development:
-    Create .env.local file with: REACT_APP_CLERK_PUBLISHABLE_KEY=pk_test_...
-  `
-  console.error(errorMessage)
-  
-  document.body.innerHTML = `
-    <div style="display: flex; align-items: center; justify-content: center; min-height: 100vh; font-family: system-ui; padding: 20px;">
-      <div style="max-width: 600px; background: #fff3cd; border: 2px solid #ffc107; border-radius: 8px; padding: 24px;">
-        <h2 style="color: #856404; margin-top: 0;">⚠️ Configuration Error</h2>
-        <p style="color: #856404; line-height: 1.6;">
-          <strong>Missing Clerk Publishable Key</strong>
-        </p>
-        <p style="color: #856404; line-height: 1.6;">
-          Please set <code>REACT_APP_CLERK_PUBLISHABLE_KEY</code> or <code>VITE_CLERK_PUBLISHABLE_KEY</code> environment variable.
-        </p>
-        <p style="color: #856404; line-height: 1.6;">
-          <strong>For Railway:</strong> Go to Dashboard → Variables → Add the key
-        </p>
-        <p style="color: #856404; line-height: 1.6; margin-bottom: 0;">
-          Check the browser console for more details.
-        </p>
-      </div>
-    </div>
-  `
+function loadRuntimeConfigOnce() {
+  if (!runtimeConfigPromise) {
+    runtimeConfigPromise = loadConfigFromServer()
+  }
+  return runtimeConfigPromise
 }
 
-// Инициализация приложения
-async function initApp() {
-  // Поддержка как REACT_APP_ (Create React App), так и VITE_ (Vite)
-  let GOOGLE_CLIENT_ID = getGoogleClientId()
-  let PUBLISHABLE_KEY = getClerkPublishableKey()
+/** @param {unknown} v */
+function normalizeKey(v) {
+  return typeof v === 'string' ? v.trim() : ''
+}
 
-  // Если переменные не установлены во время сборки, загружаем их с сервера (runtime)
-  if (!PUBLISHABLE_KEY) {
-    console.log('⚠️ Clerk Publishable Key не найден во время сборки, загружаем с сервера...')
-    const serverConfig = await loadConfigFromServer()
-    if (serverConfig && serverConfig.clerkPublishableKey) {
-      PUBLISHABLE_KEY = serverConfig.clerkPublishableKey
-      GOOGLE_CLIENT_ID = serverConfig.googleClientId || GOOGLE_CLIENT_ID
-      console.log('✅ Конфигурация загружена с сервера')
-    } else {
-      showError()
-      return
-    }
-  }
-
-  if (!PUBLISHABLE_KEY) {
-    showError()
-    return
-  }
-
-  // Оборачиваем App в GoogleOAuthProvider только если client_id установлен
-  const AppWrapper = () => {
-    if (GOOGLE_CLIENT_ID) {
+function AppWithProviders({ publishableKey, googleClientId }) {
+  const Wrapper = () => {
+    if (googleClientId) {
       return (
-        <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
+        <GoogleOAuthProvider clientId={googleClientId}>
           <App />
         </GoogleOAuthProvider>
       )
     }
     return <App />
   }
-
-  ReactDOM.createRoot(document.getElementById('root')).render(
-    <React.StrictMode>
-      <ClerkProvider 
-        publishableKey={PUBLISHABLE_KEY} 
-        afterSignOutUrl="/"
-        afterSignInUrl="/oauth-bridge"
-        afterSignUpUrl="/oauth-bridge"
-      >
-        <AppWrapper />
-      </ClerkProvider>
-    </React.StrictMode>,
+  return (
+    <ClerkProvider
+      publishableKey={publishableKey}
+      afterSignOutUrl="/"
+      afterSignInUrl="/oauth-bridge"
+      afterSignUpUrl="/oauth-bridge"
+    >
+      <Wrapper />
+    </ClerkProvider>
   )
 }
 
-// Запускаем приложение
-initApp()
+function RootGate() {
+  const initialClerkKey = useMemo(() => normalizeKey(getClerkPublishableKey()), [])
+  const initialGoogleId = useMemo(() => normalizeKey(getGoogleClientId()), [])
+  const [boot, setBoot] = useState(() => ({
+    status: initialClerkKey ? 'ready' : 'booting',
+    clerkKey: initialClerkKey,
+    googleClientId: initialGoogleId,
+  }))
+
+  useEffect(() => {
+    if (initialClerkKey) return undefined
+
+    let cancelled = false
+    ;(async () => {
+      const serverConfig = await loadRuntimeConfigOnce()
+      if (cancelled) return
+      const clerkKey = normalizeKey(serverConfig?.clerkPublishableKey)
+      const googleClientId = normalizeKey(serverConfig?.googleClientId) || initialGoogleId
+      if (clerkKey) {
+        setBoot({ status: 'ready', clerkKey, googleClientId })
+      } else {
+        setBoot({ status: 'error', clerkKey: '', googleClientId })
+        console.error(
+          'Missing Clerk Publishable Key: set REACT_APP_CLERK_PUBLISHABLE_KEY or VITE_CLERK_PUBLISHABLE_KEY for build and server env.',
+        )
+      }
+    })()
+
+    return () => {
+      cancelled = true
+    }
+  }, [initialClerkKey, initialGoogleId])
+
+  if (boot.status === 'booting') {
+    return <AppBootPlaceholder />
+  }
+  if (boot.status === 'error' || !boot.clerkKey) {
+    return <ConfigErrorFullPage />
+  }
+
+  return (
+    <AppWithProviders publishableKey={boot.clerkKey} googleClientId={boot.googleClientId} />
+  )
+}
+
+const rootEl = document.getElementById('root')
+if (rootEl) {
+  ReactDOM.createRoot(rootEl).render(
+    <React.StrictMode>
+      <RootGate />
+    </React.StrictMode>,
+  )
+}

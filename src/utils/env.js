@@ -30,8 +30,13 @@ export const getEnv = (key, defaultValue = '') => {
     // Игнорируем ошибки, если process не определен
   }
   
-  // Возвращаем первое доступное значение (приоритет REACT_APP_)
-  return reactValue || viteValue || defaultValue
+  const raw =
+    reactValue !== undefined && reactValue !== ''
+      ? reactValue
+      : viteValue !== undefined && viteValue !== ''
+        ? viteValue
+        : defaultValue
+  return typeof raw === 'string' ? raw.trim() : raw
 }
 
 /**
