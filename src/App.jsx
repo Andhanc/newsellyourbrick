@@ -7,6 +7,7 @@ import ToastContainer from './components/ToastContainer'
 import GlobalVerificationSuccessGate from './components/GlobalVerificationSuccessGate'
 import VisitorHeartbeat from './components/VisitorHeartbeat'
 import UserCabinetSseBridge from './components/UserCabinetSseBridge'
+
 import VerificationRejectedGate from './components/VerificationRejectedGate'
 import { validateSession, getUserData, ensureLocalUserIdFromSession } from './services/authService'
 import { prefetchAuctionList } from './services/auctionListCache'
