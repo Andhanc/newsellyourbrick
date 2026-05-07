@@ -4,18 +4,48 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Аукцион недвижимости</title>
+    <!-- Первый кадр до CSS/React: тот же фон, что у приложения, без «белой вспышки». -->
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: #fafafa;
+      }
+      #root {
+        min-height: 100%;
+        min-height: 100dvh;
+      }
+    </style>
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="alternate icon" href="/favicon.svg" />
+    <!-- Hero background (LCP): рукопожатие заранее -->
+    <link rel="dns-prefetch" href="https://www.magazindomov.ru" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- Шрифты без блокировки первой отрисовки (preload → stylesheet по onload). -->
     <link
-      rel="stylesheet"
+      rel="preload"
       href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&amp;family=Neucha&amp;display=swap"
+      as="style"
+      onload="this.onload=null;this.rel='stylesheet'"
     />
     <link
-      rel="stylesheet"
+      rel="preload"
       href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&amp;display=swap"
+      as="style"
+      onload="this.onload=null;this.rel='stylesheet'"
     />
+    <noscript>
+      <link
+        rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&amp;family=Neucha&amp;display=swap"
+      />
+      <link
+        rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@600;700;800&amp;display=swap"
+      />
+    </noscript>
     <link
       rel="preload"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
@@ -28,13 +58,6 @@
   </head>
   <body>
     <div id="root"></div>
-    <!-- Buffer polyfill для @ton/core и других Node-библиотек в браузере -->
-    <script type="module">
-      import { Buffer } from 'buffer';
-      if (typeof window !== 'undefined') window.Buffer = Buffer;
-      if (typeof globalThis !== 'undefined') globalThis.Buffer = Buffer;
-    </script>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
-

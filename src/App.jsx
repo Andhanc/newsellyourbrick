@@ -23,7 +23,7 @@ import { scrollMainTo } from './utils/mainScroll'
 import { lazyWithRetry } from './utils/lazyWithRetry'
 import RouteErrorBoundary from './components/RouteErrorBoundary'
 import DebtsRouteSkeleton from './pages/DebtsRouteSkeleton'
-import { MainPageSuspenseFallback } from './components/MainPageSuspenseFallback'
+import MainPage from './pages/MainPage'
 
 // Ленивая загрузка страниц — чанк грузится только при переходе на маршрут
 const Home = lazyWithRetry(() => import('./pages/Home'))
@@ -52,7 +52,6 @@ const JetonPage = lazyWithRetry(() => import('./pages/JetonPage'))
 const TestPage = lazyWithRetry(() => import('./pages/TestPage'))
 const BlockedUserModal = lazyWithRetry(() => import('./components/BlockedUserModal'))
 const DebtsPage = lazyWithRetry(() => import('./pages/Debts'))
-const LazyMainPage = lazyWithRetry(() => import('./pages/MainPage'))
 const LazyShares = lazyWithRetry(() => import('./pages/Shares'))
 const LazyShareDetailPage = lazyWithRetry(() => import('./pages/ShareDetailPage'))
 const LazyOAuthBridgePage = lazyWithRetry(() => import('./pages/OAuthBridgePage'))
@@ -293,10 +292,10 @@ function ReferralCapture() {
   return null
 }
 
-/** Сразу после гидрации начинаем грузить чанк главной — короче показ fallback только по карточкам. */
+/** Сразу после гидрации подгружаем чанк нижней части главной (витрины и сетки). */
 function MainPageChunkPrefetch() {
   useEffect(() => {
-    void import('./pages/MainPage')
+    void import('./pages/MainPageBelowFold')
   }, [])
   return null
 }
@@ -475,14 +474,7 @@ function App() {
           <RouteErrorBoundary>
           <Suspense fallback={<PageFallback />}>
             <Routes>
-              <Route
-                path="/"
-                element={
-                  <Suspense fallback={<MainPageSuspenseFallback />}>
-                    <LazyMainPage />
-                  </Suspense>
-                }
-              />
+              <Route path="/" element={<MainPage />} />
               <Route path="/auction" element={<Home />} />
               <Route path="/main" element={<Home />} />
               <Route path="/property/:id/test-drive" element={<TestDriveBookingPage />} />

@@ -1,3 +1,7 @@
+import { Buffer } from 'buffer'
+if (typeof globalThis !== 'undefined') globalThis.Buffer = Buffer
+if (typeof window !== 'undefined') window.Buffer = Buffer
+
 import React, { Suspense, use, useMemo } from 'react'
 import ReactDOM from 'react-dom/client'
 import { GoogleOAuthProvider } from '@react-oauth/google'
@@ -88,14 +92,28 @@ function loadRuntimeConfigOnce() {
   return runtimeConfigPromise
 }
 
+/** @param {unknown} v */
+function normalizeKey(v) {
+  return typeof v === 'string' ? v.trim() : ''
+}
+
 /** Параллельный старт /api/config до первого commit React, если ключа нет в бандле. */
 if (typeof window !== 'undefined' && !normalizeKey(getClerkPublishableKey())) {
   void loadRuntimeConfigOnce()
 }
 
-/** @param {unknown} v */
-function normalizeKey(v) {
-  return typeof v === 'string' ? v.trim() : ''
+/** Лёгкий экран до Clerk config с сервера (тот же фон, что в index.html — без пустого белого кадра). */
+function ConfigBootFallback() {
+  return (
+    <div
+      style={{
+        minHeight: '100dvh',
+        background: '#fafafa',
+      }}
+      aria-busy="true"
+      aria-label="Загрузка"
+    />
+  )
 }
 
 function AppWithProviders({ publishableKey, googleClientId }) {
@@ -148,7 +166,7 @@ function RootGate() {
   }
 
   return (
-    <Suspense fallback={null}>
+    <Suspense fallback={<ConfigBootFallback />}>
       <RootGateFromServer initialGoogleId={initialGoogleId} />
     </Suspense>
   )

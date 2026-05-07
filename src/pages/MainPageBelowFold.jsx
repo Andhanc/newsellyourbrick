@@ -7,8 +7,6 @@ import {
 import { MdBed, MdOutlineBathtub } from 'react-icons/md'
 import { BiArea } from 'react-icons/bi'
 import PropertyTimer from '../components/PropertyTimer'
-import PropertySearchBlock from '../components/PropertySearchBlock'
-import AnimatedFolder from '../components/ui/3d-folder'
 import { PropertyListingSkeletonGrid } from '../components/PropertyListingSkeletonGrid'
 import '../components/PropertyList.css'
 import { useMainPageDeferred } from './mainPageDeferredContext'
@@ -18,7 +16,6 @@ export default function MainPageBelowFold() {
     t,
     i18n,
     navigate,
-    landingFolderData,
     auctionSection,
     buyNowSection,
     debtsSection,
@@ -54,32 +51,6 @@ export default function MainPageBelowFold() {
 
   return (
     <>
-      {/* Блок: 4 инвестиционные модели (3D-папки) */}
-      <section id="landing-models" className="landing-models">
-        <div className="landing-models__container">
-          <h2 className="landing-models__title">
-            {t('landingModelsTitle')}
-          </h2>
-          <p className="landing-models__subtitle">{t('landingModelsSubtitle')}</p>
-          <div className="landing-models__grid landing-models__grid--folders">
-            {landingFolderData.map((folder, idx) => (
-              <AnimatedFolder
-                key={folder.title}
-                title={folder.title}
-                projects={folder.projects}
-                gradient={folder.gradient}
-                linkLabel={folder.linkLabel}
-                linkHref={folder.linkHref}
-                className="landing-models__folder"
-              />
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Блок подборки недвижимости */}
-      <PropertySearchBlock />
-
       {/* Блок "Аукцион" — только идущие лоты (завершённые не показываем) */}
       {auctionSection.length > 0 ? (
       <section
