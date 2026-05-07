@@ -27,21 +27,7 @@
     </noscript>
   </head>
   <body>
-    <div id="root">
-      <!-- Мгновенный скелетон до выполнения JS (без ключей сборки конфиг может грузиться с /api/config) -->
-      <div class="app-html-boot-root">
-        <div class="app-html-boot-banner" aria-hidden="true"></div>
-        <p class="app-html-boot-note" lang="ru">Загрузка интерфейса…</p>
-        <div class="app-html-boot-strip" aria-hidden="true">
-          <div class="app-html-boot-card"></div>
-          <div class="app-html-boot-card"></div>
-          <div class="app-html-boot-card"></div>
-          <div class="app-html-boot-card"></div>
-          <div class="app-html-boot-card"></div>
-          <div class="app-html-boot-card"></div>
-        </div>
-      </div>
-    </div>
+    <div id="root"></div>
     <!-- Buffer polyfill для @ton/core и других Node-библиотек в браузере -->
     <script type="module">
       import { Buffer } from 'buffer';

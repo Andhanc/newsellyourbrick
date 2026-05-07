@@ -1760,7 +1760,7 @@ function MainPage() {
             console.error('Error filtering properties:', error)
             setIsLoading(false)
           }
-        }, 500)
+        }, 150)
 
         return () => {
           clearTimeout(timeoutId)
@@ -2305,7 +2305,7 @@ function MainPage() {
         nearby: filteredNearby,
       })
       setIsLoading(false)
-    }, 2000)
+    }, 180)
   }
 
   const handleSocialLink = (platform) => {

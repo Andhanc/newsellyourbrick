@@ -23,6 +23,7 @@ import { scrollMainTo } from './utils/mainScroll'
 import { lazyWithRetry } from './utils/lazyWithRetry'
 import RouteErrorBoundary from './components/RouteErrorBoundary'
 import DebtsRouteSkeleton from './pages/DebtsRouteSkeleton'
+import { MainPageSuspenseFallback } from './components/MainPageSuspenseFallback'
 
 // Ленивая загрузка страниц — чанк грузится только при переходе на маршрут
 const Home = lazyWithRetry(() => import('./pages/Home'))
@@ -292,6 +293,14 @@ function ReferralCapture() {
   return null
 }
 
+/** Сразу после гидрации начинаем грузить чанк главной — короче показ fallback только по карточкам. */
+function MainPageChunkPrefetch() {
+  useEffect(() => {
+    void import('./pages/MainPage')
+  }, [])
+  return null
+}
+
 /**
  * Кэш списка аукциона: на /debts не запускаем — иначе батч запросов конкурирует с LCP и /properties/debts.
  * На главных маршрутах — в idle, чтобы не блокировать первую отрисовку.
@@ -449,6 +458,7 @@ function App() {
       <AuctionMobileOverflowLock />
       <ReferralCapture />
       <AuctionListPrefetch />
+      <MainPageChunkPrefetch />
       <ReturningVisitorSiteTracking />
       <VisitorHeartbeat />
       <SessionValidator onBlockedChange={setIsBlocked} />
@@ -468,7 +478,7 @@ function App() {
               <Route
                 path="/"
                 element={
-                  <Suspense fallback={<PageFallback />}>
+                  <Suspense fallback={<MainPageSuspenseFallback />}>
                     <LazyMainPage />
                   </Suspense>
                 }

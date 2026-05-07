@@ -1,0 +1,195 @@
+/* Скелетон карточек как у .auction-showcase-card на главной (лента, до загрузки MainPage.css). */
+.auction-showcase-skeleton-root {
+  --showcase-gap: clamp(14px, 1.6vw, 20px);
+  --showcase-pad-right: clamp(56px, 8vw, 112px);
+  --showcase-card-max: 308px;
+}
+
+.auction-showcase-skeleton-root .auction-showcase__carousel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.auction-showcase-skeleton-root .auction-showcase__scroller {
+  display: flex;
+  gap: var(--showcase-gap);
+  overflow-x: auto;
+  padding: 8px var(--showcase-pad-right) 10px 0;
+  margin: 0;
+  scroll-snap-type: x mandatory;
+  scroll-padding-inline: 0 var(--showcase-pad-right);
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+}
+
+.auction-showcase-skeleton-root .auction-showcase__scroller::-webkit-scrollbar {
+  height: 5px;
+}
+
+.auction-showcase-skeleton-root .auction-showcase__scroller::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.16);
+  border-radius: 3px;
+}
+
+.auction-showcase-skeleton-root .auction-showcase-card {
+  flex: 0 0 min(calc((100% - 2 * var(--showcase-gap)) / 3), var(--showcase-card-max));
+  width: min(calc((100% - 2 * var(--showcase-gap)) / 3), var(--showcase-card-max));
+  min-width: 0;
+  scroll-snap-align: start;
+  position: relative;
+  box-sizing: border-box;
+  border-radius: 18px;
+  pointer-events: none;
+}
+
+.auction-showcase-skeleton-root .auction-showcase-card__link {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.auction-showcase-skeleton-root .auction-showcase-card--skeleton .auction-showcase-card__surface {
+  background: #fff;
+  border-radius: 18px;
+  padding: 8px;
+  box-shadow:
+    0 3px 5px rgba(0, 0, 0, 0.035),
+    0 14px 36px -12px rgba(15, 23, 42, 0.16),
+    0 0 0 1px rgba(0, 0, 0, 0.045);
+}
+
+.auction-showcase-skeleton-root .auction-showcase-card--skeleton .auction-showcase-card__media {
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  aspect-ratio: 1 / 1;
+  background: #e4e4e7;
+}
+
+.auction-showcase-skeleton-root .auction-showcase-skeleton__shimmer {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    105deg,
+    #e4e4e7 0%,
+    #ececf0 40%,
+    #f4f4f6 50%,
+    #ececf0 60%,
+    #e4e4e7 100%
+  );
+  background-size: 200% 100%;
+  animation: auction-showcase-skeleton-wave 1.45s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+
+.auction-showcase-skeleton-root .auction-showcase-skeleton__fav {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: linear-gradient(
+    105deg,
+    rgba(255, 255, 255, 0.92) 0%,
+    rgba(248, 250, 252, 0.98) 45%,
+    rgba(255, 255, 255, 0.92) 100%
+  );
+  background-size: 200% 100%;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  z-index: 1;
+  animation: auction-showcase-skeleton-wave 1.45s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+  animation-delay: 0.08s;
+}
+
+.auction-showcase-skeleton-root .auction-showcase-card__caption {
+  padding: 10px 4px 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.auction-showcase-skeleton-root .auction-showcase-skeleton__timer-pill {
+  height: 26px;
+  max-width: min(220px, 92%);
+  border-radius: 999px;
+  border: 1.5px solid rgba(13, 148, 136, 0.22);
+  background: linear-gradient(
+    105deg,
+    rgba(226, 232, 240, 0.9) 0%,
+    rgba(241, 245, 249, 0.95) 45%,
+    rgba(226, 232, 240, 0.9) 100%
+  );
+  background-size: 200% 100%;
+  animation: auction-showcase-skeleton-wave 1.45s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+  animation-delay: 0.12s;
+}
+
+.auction-showcase-skeleton-root .auction-showcase-skeleton__line {
+  border-radius: 8px;
+  background: linear-gradient(
+    105deg,
+    #e2e8f0 0%,
+    #eef2f7 45%,
+    #e2e8f0 100%
+  );
+  background-size: 200% 100%;
+  animation: auction-showcase-skeleton-wave 1.45s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+
+.auction-showcase-skeleton-root .auction-showcase-skeleton__line--title {
+  height: 15px;
+  width: 88%;
+}
+
+.auction-showcase-skeleton-root .auction-showcase-skeleton__bid-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.auction-showcase-skeleton-root .auction-showcase-skeleton__line--label {
+  height: 12px;
+  width: 42%;
+  max-width: 160px;
+  opacity: 0.85;
+}
+
+.auction-showcase-skeleton-root .auction-showcase-skeleton__line--value {
+  height: 14px;
+  width: 28%;
+  max-width: 100px;
+  animation-delay: 0.1s;
+}
+
+@keyframes auction-showcase-skeleton-wave {
+  0% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: -100% 50%;
+  }
+}
+
+@media (max-width: 1100px) {
+  .auction-showcase-skeleton-root .auction-showcase-card {
+    flex: 0 0 min(calc((100% - var(--showcase-gap)) / 2), var(--showcase-card-max));
+    width: min(calc((100% - var(--showcase-gap)) / 2), var(--showcase-card-max));
+  }
+}
+
+@media (max-width: 620px) {
+  .auction-showcase-skeleton-root {
+    --showcase-pad-right: 40px;
+    --showcase-card-max: 276px;
+  }
+
+  .auction-showcase-skeleton-root .auction-showcase-card {
+    flex: 0 0 min(276px, calc(100vw - 48px));
+    width: min(276px, calc(100vw - 48px));
+    scroll-snap-align: center;
+  }
+}
