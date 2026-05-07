@@ -1493,12 +1493,16 @@ function MainPage() {
   // Состояние для одобренных объявлений из API
   // и общий список объектов для главной страницы
   const [homeProperties, setHomeProperties] = useState([])
+  /** Пока первый GET объявлений для витрин не завершился — скелетоны в каруселях «Аукцион», «Долги», доля и т.д. */
+  const [homePropertiesLoading, setHomePropertiesLoading] = useState(true)
 
   const filteredRecommended = useMemo(() => filterBySearch(recommendedProperties), [searchQuery])
   const filteredNearby = useMemo(() => filterBySearch(nearbyProperties), [searchQuery])
 
   // Три параллельных GET: approved + auctions + debts → homeProperties (без дублирующих запросов по type)
-  const loadHomeProperties = useCallback(async () => {
+  const loadHomeProperties = useCallback(async (options = {}) => {
+    const showSkeleton = options.showSkeleton !== false
+    if (showSkeleton) setHomePropertiesLoading(true)
     try {
       const apiBase = await getApiBaseUrl()
       const lang = (i18n.language || 'ru').split('-')[0]
@@ -1566,6 +1570,8 @@ function MainPage() {
       setHomeProperties(Array.from(byId.values()))
     } catch (error) {
       console.error('❌ Ошибка загрузки объектов для главной страницы:', error)
+    } finally {
+      if (showSkeleton) setHomePropertiesLoading(false)
     }
   }, [i18n.language])
 
@@ -1598,7 +1604,7 @@ function MainPage() {
           if (typeof event.data === 'string' && event.data.startsWith(':')) return
           const data = JSON.parse(event.data)
           if (data.type === 'test_timer_update' || data.type === 'new_auction_objects') {
-            loadHomeProperties()
+            loadHomeProperties({ showSkeleton: false })
           }
         } catch (_) {}
       }
@@ -3442,6 +3448,7 @@ function MainPage() {
           activeCategory,
           handleCategoryClick,
           isLoading,
+          homePropertiesLoading,
           filteredProperties,
           filteredRecommended,
           filteredNearby,

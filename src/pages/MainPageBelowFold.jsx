@@ -7,6 +7,7 @@ import {
 import { MdBed, MdOutlineBathtub } from 'react-icons/md'
 import { BiArea } from 'react-icons/bi'
 import PropertyTimer from '../components/PropertyTimer'
+import { AuctionShowcaseSkeletonCards } from '../components/AuctionShowcaseSkeletonStrip'
 import { PropertyListingSkeletonGrid } from '../components/PropertyListingSkeletonGrid'
 import '../components/PropertyList.css'
 import { useMainPageDeferred } from './mainPageDeferredContext'
@@ -43,6 +44,7 @@ export default function MainPageBelowFold() {
     activeCategory,
     handleCategoryClick,
     isLoading,
+    homePropertiesLoading,
     filteredProperties,
     filteredRecommended,
     filteredNearby,
@@ -52,7 +54,7 @@ export default function MainPageBelowFold() {
   return (
     <>
       {/* Блок "Аукцион" — только идущие лоты (завершённые не показываем) */}
-      {auctionSection.length > 0 ? (
+      {(auctionSection.length > 0 || homePropertiesLoading) ? (
       <section
         className="apartments-section apartments-section--auction apartments-section--auction-showcase"
       >
@@ -77,9 +79,13 @@ export default function MainPageBelowFold() {
           <div className="auction-showcase__carousel">
             <div
               ref={auctionShowcaseScrollerRef}
-              className="auction-showcase__scroller"
+              className={`auction-showcase__scroller${homePropertiesLoading ? ' auction-showcase-skeleton-root' : ''}`}
+              aria-busy={homePropertiesLoading}
             >
-            {auctionSection.map((apartment) => {
+            {homePropertiesLoading ? (
+              <AuctionShowcaseSkeletonCards />
+            ) : (
+            auctionSection.map((apartment) => {
               const formatPrice = (price) => {
                 if (!price) return '$0'
                 if (price >= 1000000) {
@@ -176,7 +182,8 @@ export default function MainPageBelowFold() {
                   </div>
                 </div>
               )
-            })}
+            })
+            )}
             </div>
             <div className="auction-showcase__nav" role="group" aria-label={t('showcaseCarouselNav')}>
               <button
@@ -184,6 +191,7 @@ export default function MainPageBelowFold() {
                 className="auction-showcase__nav-btn auction-showcase__nav-btn--prev"
                 aria-label={t('showcaseCarouselPrev')}
                 onClick={() => scrollAuctionShowcase(-1)}
+                disabled={homePropertiesLoading}
               >
                 <FiChevronLeft size={22} strokeWidth={2.25} />
               </button>
@@ -192,6 +200,7 @@ export default function MainPageBelowFold() {
                 className="auction-showcase__nav-btn auction-showcase__nav-btn--next"
                 aria-label={t('showcaseCarouselNext')}
                 onClick={() => scrollAuctionShowcase(1)}
+                disabled={homePropertiesLoading}
               >
                 <FiChevronRight size={22} strokeWidth={2.25} />
               </button>
@@ -202,7 +211,7 @@ export default function MainPageBelowFold() {
       ) : null}
 
       {/* Блок «Купить сейчас» — та же витрина-лента, фон Tiffany; только активные лоты */}
-      {buyNowSection.length > 0 ? (
+      {(buyNowSection.length > 0 || homePropertiesLoading) ? (
       <section className="apartments-section apartments-section--buy-now-showcase">
         <div className="apartments-section__container">
           <header className="auction-showcase__header">
@@ -225,9 +234,13 @@ export default function MainPageBelowFold() {
           <div className="auction-showcase__carousel">
             <div
               ref={buyNowShowcaseScrollerRef}
-              className="auction-showcase__scroller"
+              className={`auction-showcase__scroller${homePropertiesLoading ? ' auction-showcase-skeleton-root' : ''}`}
+              aria-busy={homePropertiesLoading}
             >
-            {buyNowSection.map((villa) => {
+            {homePropertiesLoading ? (
+              <AuctionShowcaseSkeletonCards />
+            ) : (
+            buyNowSection.map((villa) => {
               const formatPrice = (price) => {
                 if (!price) return '$0'
                 if (price >= 1000000) {
@@ -314,7 +327,8 @@ export default function MainPageBelowFold() {
                   </div>
                 </div>
               )
-            })}
+            })
+            )}
             </div>
             <div className="auction-showcase__nav" role="group" aria-label={t('showcaseCarouselNav')}>
               <button
@@ -322,6 +336,7 @@ export default function MainPageBelowFold() {
                 className="auction-showcase__nav-btn auction-showcase__nav-btn--prev"
                 aria-label={t('showcaseCarouselPrev')}
                 onClick={() => scrollBuyNowShowcase(-1)}
+                disabled={homePropertiesLoading}
               >
                 <FiChevronLeft size={22} strokeWidth={2.25} />
               </button>
@@ -330,6 +345,7 @@ export default function MainPageBelowFold() {
                 className="auction-showcase__nav-btn auction-showcase__nav-btn--next"
                 aria-label={t('showcaseCarouselNext')}
                 onClick={() => scrollBuyNowShowcase(1)}
+                disabled={homePropertiesLoading}
               >
                 <FiChevronRight size={22} strokeWidth={2.25} />
               </button>
@@ -360,8 +376,15 @@ export default function MainPageBelowFold() {
           </header>
 
           <div className="auction-showcase__carousel">
-            <div ref={debtsShowcaseScrollerRef} className="auction-showcase__scroller">
-              {debtsSection.map((flat) => {
+            <div
+              ref={debtsShowcaseScrollerRef}
+              className={`auction-showcase__scroller${homePropertiesLoading ? ' auction-showcase-skeleton-root' : ''}`}
+              aria-busy={homePropertiesLoading}
+            >
+              {homePropertiesLoading ? (
+                <AuctionShowcaseSkeletonCards />
+              ) : (
+              debtsSection.map((flat) => {
                 const formatPrice = (price) => {
                   if (price >= 1000000) {
                     return `$${(price / 1000000).toFixed(1)}M`
@@ -448,7 +471,8 @@ export default function MainPageBelowFold() {
                     </div>
                   </div>
                 )
-              })}
+              })
+              )}
             </div>
             <div className="auction-showcase__nav" role="group" aria-label={t('showcaseCarouselNav')}>
               <button
@@ -456,6 +480,7 @@ export default function MainPageBelowFold() {
                 className="auction-showcase__nav-btn auction-showcase__nav-btn--prev"
                 aria-label={t('showcaseCarouselPrev')}
                 onClick={() => scrollDebtsShowcase(-1)}
+                disabled={homePropertiesLoading}
               >
                 <FiChevronLeft size={22} strokeWidth={2.25} />
               </button>
@@ -464,6 +489,7 @@ export default function MainPageBelowFold() {
                 className="auction-showcase__nav-btn auction-showcase__nav-btn--next"
                 aria-label={t('showcaseCarouselNext')}
                 onClick={() => scrollDebtsShowcase(1)}
+                disabled={homePropertiesLoading}
               >
                 <FiChevronRight size={22} strokeWidth={2.25} />
               </button>
@@ -499,8 +525,15 @@ export default function MainPageBelowFold() {
           </header>
 
           <div className="auction-showcase__carousel">
-            <div ref={sharesShowcaseScrollerRef} className="auction-showcase__scroller">
-              {sharesSection.map((townhouse) => {
+            <div
+              ref={sharesShowcaseScrollerRef}
+              className={`auction-showcase__scroller${homePropertiesLoading ? ' auction-showcase-skeleton-root' : ''}`}
+              aria-busy={homePropertiesLoading}
+            >
+              {homePropertiesLoading ? (
+                <AuctionShowcaseSkeletonCards />
+              ) : (
+              sharesSection.map((townhouse) => {
                 const formatPrice = (price) => {
                   if (price >= 1000000) {
                     return `$${(price / 1000000).toFixed(1)}M`
@@ -627,7 +660,8 @@ export default function MainPageBelowFold() {
                     </div>
                   </div>
                 )
-              })}
+              })
+              )}
             </div>
             <div className="auction-showcase__nav" role="group" aria-label={t('showcaseCarouselNav')}>
               <button
@@ -635,6 +669,7 @@ export default function MainPageBelowFold() {
                 className="auction-showcase__nav-btn auction-showcase__nav-btn--prev"
                 aria-label={t('showcaseCarouselPrev')}
                 onClick={() => scrollSharesShowcase(-1)}
+                disabled={homePropertiesLoading}
               >
                 <FiChevronLeft size={22} strokeWidth={2.25} />
               </button>
@@ -643,6 +678,7 @@ export default function MainPageBelowFold() {
                 className="auction-showcase__nav-btn auction-showcase__nav-btn--next"
                 aria-label={t('showcaseCarouselNext')}
                 onClick={() => scrollSharesShowcase(1)}
+                disabled={homePropertiesLoading}
               >
                 <FiChevronRight size={22} strokeWidth={2.25} />
               </button>
