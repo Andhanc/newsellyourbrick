@@ -1648,7 +1648,7 @@ function MainPage() {
       if (!price) return true
       if (!start) return true
       return Number(price) <= Number(start)
-    })
+    }).filter((p) => !isAuctionListingEnded(p))
 
     return filterBySearch(base).slice(0, 8)
   }, [homeProperties, searchQuery])
@@ -1670,7 +1670,7 @@ function MainPage() {
       const start = p.auction_starting_price || 0
       if (!price || !start) return false
       return Number(price) > Number(start)
-    })
+    }).filter((p) => !isAuctionListingEnded(p))
 
     return filterBySearch(base).slice(0, 8)
   }, [homeProperties, searchQuery])
@@ -3412,7 +3412,8 @@ function MainPage() {
       {/* Блок подборки недвижимости */}
       <PropertySearchBlock />
 
-      {/* Блок "Аукцион" — данные: loadHomeProperties при монтировании / смене языка */}
+      {/* Блок "Аукцион" — только идущие лоты (завершённые не показываем) */}
+      {auctionSection.length > 0 ? (
       <section
         className="apartments-section apartments-section--auction apartments-section--auction-showcase"
       >
@@ -3559,8 +3560,10 @@ function MainPage() {
           </div>
         </div>
       </section>
+      ) : null}
 
-      {/* Блок «Купить сейчас» — та же витрина-лента, фон Tiffany */}
+      {/* Блок «Купить сейчас» — та же витрина-лента, фон Tiffany; только активные лоты */}
+      {buyNowSection.length > 0 ? (
       <section className="apartments-section apartments-section--buy-now-showcase">
         <div className="apartments-section__container">
           <header className="auction-showcase__header">
@@ -3695,6 +3698,7 @@ function MainPage() {
           </div>
         </div>
       </section>
+      ) : null}
 
       {/* Блок «Долги» — витрина как у аукциона, серый фон */}
       <section className="apartments-section apartments-section--debts-showcase">

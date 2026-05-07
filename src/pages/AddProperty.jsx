@@ -1678,7 +1678,6 @@ const AddProperty = ({
       const isShare = listingMode === 'shares'
       const isDebt = listingMode === 'debt' || listingMode === 'debt_auction'
       const isAuctionMode = listingMode === 'auction' || listingMode === 'auction_buy_now' || listingMode === 'debt_auction'
-      const isBuyNowMode = listingMode === 'auction_buy_now'
       formDataToSend.append('listing_mode', listingMode)
       formDataToSend.append('is_share', isShare ? '1' : '0')
       formDataToSend.append('is_debt', isDebt ? '1' : '0')
@@ -1722,8 +1721,9 @@ const AddProperty = ({
           return false
         }
       }
-      // Правило 30% от «Купить сейчас» для стартовой ставки (в т.ч. для долгов на аукционе)
-      if (!isShare && isBuyNowMode) {
+      // Правило 30% от «Купить сейчас» для стартовой ставки: при любой положительной цене buy now (аукцион + buy now, долг на аукционе и т.д.)
+      const publishBuyNowNum = Number(removeCommas(String(formData.price || '')))
+      if (!isShare && isAuctionMode && publishBuyNowNum > 0) {
         const publishBuyNowErr = getAuctionStartingVsBuyNowError(formData.price, formData.auctionStartingPrice)
         if (publishBuyNowErr) {
           setIsSubmitting(false)
@@ -4308,7 +4308,7 @@ const AddProperty = ({
           return
         }
       }
-      const buyNowRuleErr = getAuctionStartingVsBuyNowError(mode === 'debt_auction' ? '' : formData.price, formData.auctionStartingPrice)
+      const buyNowRuleErr = getAuctionStartingVsBuyNowError(formData.price, formData.auctionStartingPrice)
       if (isDebtAuctionMode && buyNowRuleErr) {
         setValidationErrors(prev => ({ ...prev, auctionStartingPrice: buyNowRuleErr }))
         showNotification(buyNowRuleErr)

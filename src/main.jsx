@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { Suspense, use, useMemo } from 'react'
 import ReactDOM from 'react-dom/client'
 import { GoogleOAuthProvider } from '@react-oauth/google'
 import { ClerkProvider } from '@clerk/clerk-react'
@@ -12,22 +12,6 @@ const CONFIG_FETCH_TIMEOUT_MS = 14_000
 
 /** Один in-flight запрос: React StrictMode в dev монтирует эффект дважды. */
 let runtimeConfigPromise = null
-
-function AppBootPlaceholder() {
-  return (
-    <div className="app-root-fill app-html-boot-root" role="status" aria-live="polite">
-      <div className="app-html-boot-banner" aria-hidden="true" />
-      <p className="app-html-boot-note" lang="ru">
-        Загрузка интерфейса…
-      </p>
-      <div className="app-html-boot-strip" aria-hidden="true">
-        {Array.from({ length: 6 }, (_, i) => (
-          <div key={`boot-card-${i}`} className="app-html-boot-card" />
-        ))}
-      </div>
-    </div>
-  )
-}
 
 function ConfigErrorFullPage() {
   return (
@@ -104,6 +88,11 @@ function loadRuntimeConfigOnce() {
   return runtimeConfigPromise
 }
 
+/** Параллельный старт /api/config до первого commit React, если ключа нет в бандле. */
+if (typeof window !== 'undefined' && !normalizeKey(getClerkPublishableKey())) {
+  void loadRuntimeConfigOnce()
+}
+
 /** @param {unknown} v */
 function normalizeKey(v) {
   return typeof v === 'string' ? v.trim() : ''
@@ -132,48 +121,36 @@ function AppWithProviders({ publishableKey, googleClientId }) {
   )
 }
 
+/**
+ * Ключ Clerk только с GET /api/config (в сборке пусто). Suspense + use(): без экрана «Загрузка интерфейса».
+ */
+function RootGateFromServer({ initialGoogleId }) {
+  const serverConfig = use(loadRuntimeConfigOnce())
+  const clerkKey = normalizeKey(serverConfig?.clerkPublishableKey)
+  const googleClientId = normalizeKey(serverConfig?.googleClientId) || initialGoogleId
+  if (!clerkKey) {
+    console.error(
+      'Missing Clerk Publishable Key: set REACT_APP_CLERK_PUBLISHABLE_KEY or VITE_CLERK_PUBLISHABLE_KEY for build and server env.',
+    )
+    return <ConfigErrorFullPage />
+  }
+  return <AppWithProviders publishableKey={clerkKey} googleClientId={googleClientId} />
+}
+
 function RootGate() {
   const initialClerkKey = useMemo(() => normalizeKey(getClerkPublishableKey()), [])
   const initialGoogleId = useMemo(() => normalizeKey(getGoogleClientId()), [])
-  const [boot, setBoot] = useState(() => ({
-    status: initialClerkKey ? 'ready' : 'booting',
-    clerkKey: initialClerkKey,
-    googleClientId: initialGoogleId,
-  }))
 
-  useEffect(() => {
-    if (initialClerkKey) return undefined
-
-    let cancelled = false
-    ;(async () => {
-      const serverConfig = await loadRuntimeConfigOnce()
-      if (cancelled) return
-      const clerkKey = normalizeKey(serverConfig?.clerkPublishableKey)
-      const googleClientId = normalizeKey(serverConfig?.googleClientId) || initialGoogleId
-      if (clerkKey) {
-        setBoot({ status: 'ready', clerkKey, googleClientId })
-      } else {
-        setBoot({ status: 'error', clerkKey: '', googleClientId })
-        console.error(
-          'Missing Clerk Publishable Key: set REACT_APP_CLERK_PUBLISHABLE_KEY or VITE_CLERK_PUBLISHABLE_KEY for build and server env.',
-        )
-      }
-    })()
-
-    return () => {
-      cancelled = true
-    }
-  }, [initialClerkKey, initialGoogleId])
-
-  if (boot.status === 'booting') {
-    return <AppBootPlaceholder />
-  }
-  if (boot.status === 'error' || !boot.clerkKey) {
-    return <ConfigErrorFullPage />
+  if (initialClerkKey) {
+    return (
+      <AppWithProviders publishableKey={initialClerkKey} googleClientId={initialGoogleId} />
+    )
   }
 
   return (
-    <AppWithProviders publishableKey={boot.clerkKey} googleClientId={boot.googleClientId} />
+    <Suspense fallback={null}>
+      <RootGateFromServer initialGoogleId={initialGoogleId} />
+    </Suspense>
   )
 }
 

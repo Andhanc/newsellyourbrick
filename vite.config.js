@@ -110,6 +110,9 @@ export default defineConfig(({ mode }) => {
       alias: {
         '@': path.resolve(__dirname, 'src'),
       },
+      // Один экземпляр React для всего бандла — иначе @clerk/clerk-react в отдельном chunk
+      // может получить undefined вместо React (useState undefined в vendor-clerk).
+      dedupe: ['react', 'react-dom'],
     },
     // Настройки esbuild для стабильной работы на Railway
     esbuild: {
@@ -155,7 +158,8 @@ export default defineConfig(({ mode }) => {
         output: {
           manualChunks(id) {
             if (!id.includes('node_modules')) return
-            if (id.includes('@clerk')) return 'vendor-clerk'
+            // Clerk не выносим в отдельный chunk: с React 19 + manualChunks легко ловим
+            // «Cannot read properties of undefined (reading 'useState')» в vendor-clerk.
             if (id.includes('@tonconnect')) return 'vendor-tonconnect'
             if (id.includes('framer-motion')) return 'vendor-framer'
             if (id.includes('recharts')) return 'vendor-recharts'

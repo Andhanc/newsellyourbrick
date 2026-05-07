@@ -11,14 +11,18 @@ puppeteer.use(StealthPlugin());
 
 const CALCULATOR_CACHE_TTL_MS = 20 * 60 * 1000;
 const CALCULATOR_CACHE_MAX_ITEMS = 200;
-const CALCULATOR_PIPELINE_VERSION = 'v6-staged-relaxation';
+const CALCULATOR_PIPELINE_VERSION = 'v7-es-5src-pagination-strict-loc';
 const TARGET_MIN_SOURCE_COVERAGE = 2;
 const TARGET_MIN_SIMILAR_COUNT = 4;
 const ENABLE_REGIONAL_FALLBACK = false;
 const propertyPriceCache = new Map();
-const SCRAPE_NAV_TIMEOUT_MS = 12000;
+const SCRAPE_NAV_TIMEOUT_MS = 22000;
 const SCRAPE_SETTLE_MS = 1200;
-const SCRAPE_SITE_TIMEOUT_MS = 15000;
+const SCRAPE_SITE_TIMEOUT_MS = 95000;
+/** Сколько страниц листинга обходим на каждой площадке (защита от бесконечного цикла и таймаутов). */
+const LISTING_MAX_PAGES_PER_SITE = 16;
+const LISTING_INTER_PAGE_DELAY_MS = 550;
+const LISTING_MAX_CARDS_PER_EVAL = 120;
 
 const CITY_BENCHMARK_EUR_PER_M2 = {
   madrid: 4300,
@@ -122,7 +126,7 @@ async function parseSpainRealEstate(page, url) {
   return properties;
 }
 
-async function parseFotocasa(page, url) {
+async function parseFotocasaOnce(page, url) {
   console.log(`🌐 Парсим Fotocasa: ${url}`);
   const resp = await page.goto(url, { waitUntil: 'domcontentloaded', timeout: SCRAPE_NAV_TIMEOUT_MS }).catch((e) => {
     console.error('DEBUG: Fotocasa goto error:', e.message);
@@ -132,7 +136,8 @@ async function parseFotocasa(page, url) {
   console.log('DEBUG: Fotocasa title=', await page.title());
   await new Promise(resolve => setTimeout(resolve, SCRAPE_SETTLE_MS));
 
-  const properties = await page.evaluate(() => {
+  const maxCards = LISTING_MAX_CARDS_PER_EVAL;
+  const properties = await page.evaluate((maxCard) => {
     const parseMoneyFromText = (text = '') => {
       const normalized = String(text || '').replace(/\u00A0/g, ' ');
       if (!normalized) return null;
@@ -176,7 +181,7 @@ async function parseFotocasa(page, url) {
     console.log('DEBUG: Fotocasa candidate cards=', cards.length, 'links=', linkAnchors.length);
 
     cards.forEach((card, index) => {
-      if (index >= 20) return;
+      if (index >= maxCard) return;
 
       try {
         const linkEl = card.querySelector('a[href*="/vivienda/"], a[href*="/inmueble/"]');
@@ -216,10 +221,10 @@ async function parseFotocasa(page, url) {
 
     // Добор ссылок: даже если часть карточек распарсилась, добавляем дополнительные
     // объявления как кандидатов для detail-enrich, чтобы не терять объем выдачи.
-    if (linkAnchors.length > 0 && results.length < 20) {
+    if (linkAnchors.length > 0 && results.length < maxCard) {
       const seen = new Set();
       results.forEach((x) => x?.link && seen.add(x.link));
-      Array.from(linkAnchors).slice(0, 30).forEach((a) => {
+      Array.from(linkAnchors).slice(0, maxCard + 20).forEach((a) => {
         const href = a.getAttribute('href') || a.href || '';
         const link = href.startsWith('http') ? href : `https://www.fotocasa.es${href.startsWith('/') ? '' : '/'}${href}`;
         if (!link || seen.has(link)) return;
@@ -238,12 +243,16 @@ async function parseFotocasa(page, url) {
     }
 
     return results;
-  });
+  }, maxCards);
 
   return properties;
 }
 
-async function parsePisos(page, url) {
+async function parseFotocasa(page, firstUrl) {
+  return mergePagedScrape(page, firstUrl, buildFotocasaPagedUrl, parseFotocasaOnce, 'Fotocasa');
+}
+
+async function parsePisosOnce(page, url) {
   console.log(`🌐 Парсим Pisos.com: ${url}`);
   const resp = await page.goto(url, { waitUntil: 'domcontentloaded', timeout: SCRAPE_NAV_TIMEOUT_MS }).catch((e) => {
     console.error('DEBUG: Pisos goto error:', e.message);
@@ -314,7 +323,7 @@ async function parsePisos(page, url) {
         // ignore malformed blocks
       }
     }
-    return results.slice(0, 30);
+    return results.slice(0, 400);
   });
 
   if (jsonLdItems.length >= 5) {
@@ -378,7 +387,7 @@ async function parsePisos(page, url) {
       if (!link || seen.has(link)) continue;
       seen.add(link);
       uniq.push({ a, link });
-      if (uniq.length >= 18) break;
+      if (uniq.length >= 100) break;
     }
 
     const diag = {
@@ -455,12 +464,16 @@ async function parsePisos(page, url) {
     if (!p?.link || seen.has(p.link)) continue;
     seen.add(p.link);
     deduped.push(p);
-    if (deduped.length >= 40) break;
+    if (deduped.length >= 600) break;
   }
   return deduped;
 }
 
-async function parseIdealista(page, url) {
+async function parsePisos(page, firstUrl) {
+  return mergePagedScrape(page, firstUrl, buildPisosPagedUrl, parsePisosOnce, 'Pisos.com');
+}
+
+async function parseIdealistaOnce(page, url) {
   console.log(`🌐 Парсим Idealista: ${url}`);
   let resp = await page.goto(url, { waitUntil: 'domcontentloaded', timeout: SCRAPE_NAV_TIMEOUT_MS }).catch((e) => {
     console.error('DEBUG: Idealista goto error:', e.message);
@@ -479,7 +492,8 @@ async function parseIdealista(page, url) {
   console.log('DEBUG: Idealista title=', await page.title());
   await new Promise(resolve => setTimeout(resolve, SCRAPE_SETTLE_MS));
 
-  const properties = await page.evaluate(() => {
+  const maxCards = LISTING_MAX_CARDS_PER_EVAL;
+  const properties = await page.evaluate((maxCard) => {
     const results = [];
     let cards = document.querySelectorAll('article.item, article[data-adid], [data-adid]');
     const linkAnchors = document.querySelectorAll('a[href*="/inmueble/"]');
@@ -490,7 +504,7 @@ async function parseIdealista(page, url) {
     }
 
     cards.forEach((card, index) => {
-      if (index >= 20) return;
+      if (index >= maxCard) return;
 
       try {
         const linkEl = card.querySelector('a[href*="/inmueble/"]') || (card.tagName === 'A' && card.href.includes('/inmueble/') ? card : null);
@@ -522,17 +536,22 @@ async function parseIdealista(page, url) {
     });
 
     return results;
-  });
+  }, maxCards);
 
   return properties;
 }
 
-async function parseThinkSpain(page, url, cityToken = '') {
+async function parseIdealista(page, firstUrl) {
+  return mergePagedScrape(page, firstUrl, buildIdealistaPagedUrl, parseIdealistaOnce, 'Idealista');
+}
+
+async function parseThinkSpainOnce(page, url, cityToken = '') {
   console.log(`🌐 Парсим ThinkSpain: ${url}`);
   await page.goto(url, { waitUntil: 'domcontentloaded', timeout: SCRAPE_NAV_TIMEOUT_MS });
   await new Promise((resolve) => setTimeout(resolve, SCRAPE_SETTLE_MS));
 
-  const properties = await page.evaluate((expectedCity) => {
+  const maxCards = LISTING_MAX_CARDS_PER_EVAL;
+  const properties = await page.evaluate(({ expectedCity, maxCard }) => {
     const results = [];
     const toAbs = (href) => {
       if (!href) return '';
@@ -553,7 +572,7 @@ async function parseThinkSpain(page, url, cityToken = '') {
     );
 
     cards.forEach((card, index) => {
-      if (index >= 80) return;
+      if (index >= maxCard * 2) return;
       const text = (card.textContent || '').replace(/\s+/g, ' ').trim();
       if (!text || text.length < 20) return;
 
@@ -597,18 +616,32 @@ async function parseThinkSpain(page, url, cityToken = '') {
       results.push({ price, area, rooms, address, link, image });
     });
 
-    return results.slice(0, 30);
-  }, cityToken);
+    return results.slice(0, maxCard * 2);
+  }, { expectedCity: cityToken, maxCard: maxCards });
 
   return properties;
 }
 
-async function parseGenericInternational(page, url, siteName, expectedCity = '') {
+async function parseThinkSpain(page, firstUrl, cityToken = '') {
+  const parseOnce = (pgPage, url) => parseThinkSpainOnce(pgPage, url, cityToken);
+  return mergePagedScrape(
+    page,
+    firstUrl,
+    (u, n) => buildQueryPagedUrl(u, n, 'page'),
+    parseOnce,
+    'ThinkSpain'
+  );
+}
+
+async function parseGenericInternational(page, url, siteName, expectedCity = '', opts = {}) {
+  const maxReturn = opts.maxReturn ?? 40;
+  const maxCardScan = opts.maxCardScan ?? 220;
+  const jsonLdCap = opts.jsonLdCap ?? 60;
   console.log(`🌍 Парсим ${siteName}: ${url}`);
   await page.goto(url, { waitUntil: 'domcontentloaded', timeout: SCRAPE_NAV_TIMEOUT_MS });
   await new Promise((resolve) => setTimeout(resolve, SCRAPE_SETTLE_MS));
 
-  const properties = await page.evaluate((cityNeedleRaw) => {
+  const properties = await page.evaluate(({ cityNeedleRaw, maxReturn: cap, maxCardScan: scanCap, jsonLdCap: jlCap }) => {
     const toAbs = (href) => {
       if (!href) return '';
       try {
@@ -647,6 +680,9 @@ async function parseGenericInternational(page, url, siteName, expectedCity = '')
     };
 
     const cityNeedle = String(cityNeedleRaw || '').toLowerCase().trim();
+    const maxReturn = cap;
+    const maxCardScan = scanCap;
+    const jsonLdCap = jlCap;
     const scripts = Array.from(document.querySelectorAll('script[type="application/ld+json"]'));
     const results = [];
 
@@ -681,11 +717,11 @@ async function parseGenericInternational(page, url, siteName, expectedCity = '')
       }
     }
 
-    if (results.length >= 5) return results.slice(0, 30);
+    if (results.length >= 5) return results.slice(0, jsonLdCap);
 
     const cards = document.querySelectorAll('article, li, [class*="listing"], [class*="property"], [class*="card"]');
     cards.forEach((card, index) => {
-      if (index >= 200) return;
+      if (index >= maxCardScan) return;
       const txt = (card.textContent || '').replace(/\s+/g, ' ').trim();
       if (!txt || txt.length < 20) return;
       const price = parsePrice(txt);
@@ -714,12 +750,32 @@ async function parseGenericInternational(page, url, siteName, expectedCity = '')
       results.push({ price, area, rooms, address: '', link, title, image });
     });
 
-    return results.slice(0, 30);
-  }, expectedCity);
+    return results.slice(0, maxReturn);
+  }, {
+    cityNeedleRaw: expectedCity,
+    maxReturn,
+    maxCardScan,
+    jsonLdCap
+  });
 
   return properties;
 }
 
+async function parseKyeroPaginated(page, baseUrl, cityLabel) {
+  const parseOnce = (pg, url) =>
+    parseGenericInternational(pg, url, 'Kyero', cityLabel, {
+      maxReturn: 120,
+      maxCardScan: 320,
+      jsonLdCap: 120
+    });
+  return mergePagedScrape(
+    page,
+    baseUrl,
+    (u, n) => buildQueryPagedUrl(u, n, 'page'),
+    parseOnce,
+    'Kyero'
+  );
+}
 /** Совместимость со старыми ключами cityMap */
 const cityMapLegacy = {
   madrid: ['мадрид', 'madrid'],
@@ -804,6 +860,83 @@ function normalizeSlug(value = '') {
   return normalizeComparable(value)
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '');
+}
+
+function buildIdealistaPagedUrl(firstUrl, pageNum) {
+  if (pageNum <= 1) return firstUrl;
+  try {
+    const u = new URL(firstUrl);
+    let p = u.pathname.replace(/\/pagina-\d+\.htm\/?$/i, '');
+    if (!p.endsWith('/')) p += '/';
+    u.pathname = `${p.replace(/\/$/, '')}/pagina-${pageNum}.htm`;
+    return u.toString();
+  } catch {
+    return firstUrl;
+  }
+}
+
+function buildPisosPagedUrl(firstUrl, pageNum) {
+  if (pageNum <= 1) return firstUrl;
+  try {
+    const u = new URL(firstUrl);
+    let p = u.pathname.replace(/\/pagina-\d+\/?$/i, '');
+    if (p.endsWith('/')) p = p.slice(0, -1);
+    u.pathname = `${p}/pagina-${pageNum}`;
+    return u.toString();
+  } catch {
+    return firstUrl;
+  }
+}
+
+function buildFotocasaPagedUrl(firstUrl, pageNum) {
+  try {
+    const u = new URL(firstUrl);
+    if (pageNum <= 1) u.searchParams.delete('pagina');
+    else u.searchParams.set('pagina', String(pageNum));
+    return u.toString();
+  } catch {
+    return firstUrl;
+  }
+}
+
+function buildQueryPagedUrl(firstUrl, pageNum, paramName = 'page') {
+  try {
+    const u = new URL(firstUrl);
+    if (pageNum <= 1) u.searchParams.delete(paramName);
+    else u.searchParams.set(paramName, String(pageNum));
+    return u.toString();
+  } catch {
+    return firstUrl;
+  }
+}
+
+async function mergePagedScrape(page, firstUrl, buildPageUrl, parseOnce, label) {
+  const merged = [];
+  const seen = new Set();
+  for (let pg = 1; pg <= LISTING_MAX_PAGES_PER_SITE; pg++) {
+    const url = buildPageUrl(firstUrl, pg);
+    let batch = [];
+    try {
+      batch = await parseOnce(page, url);
+    } catch (e) {
+      console.error(`DEBUG: ${label} page ${pg} error:`, e.message);
+      break;
+    }
+    if (!Array.isArray(batch)) batch = [];
+    let added = 0;
+    for (const item of batch) {
+      const k = normalizePropertyLink(item?.link);
+      if (!k || seen.has(k)) continue;
+      seen.add(k);
+      merged.push(item);
+      added++;
+    }
+    if (!batch.length || added === 0) break;
+    if (pg < LISTING_MAX_PAGES_PER_SITE) {
+      await new Promise((r) => setTimeout(r, LISTING_INTER_PAGE_DELAY_MS));
+    }
+  }
+  return merged;
 }
 
 function buildCalculatorCacheKey({
@@ -904,11 +1037,6 @@ function buildSpainSupplementalSites({ cityCfg }) {
 
   return [
     {
-      name: 'Kyero ES',
-      buildUrl: () => `https://www.kyero.com/en/property-for-sale/spain/${citySlug}`,
-      parseFunction: (page, url) => parseGenericInternational(page, url, 'Kyero ES', city)
-    },
-    {
       name: 'SpainHouses ES',
       buildUrl: () => `https://www.spainhouses.net/en/sale_homes-${city}.html`,
       parseFunction: (page, url) => parseGenericInternational(page, url, 'SpainHouses ES', city)
@@ -941,11 +1069,10 @@ function buildSpainSites({ cityCfg, areaValue, roomsValue, propertyType, minPric
     minPrice,
     maxPrice
   };
+  const kyeroSlug = normalizeSlug(cityCfg.value);
   return [
     { name: 'Fotocasa', buildUrl: () => buildFotocasaUrl(urlParams), parseFunction: parseFotocasa },
     { name: 'Idealista', buildUrl: () => buildIdealistaUrl(urlParams), parseFunction: parseIdealista },
-    // Резервный локальный источник Испании: включаем для устойчивости,
-    // когда международные площадки отдают 0/403.
     { name: 'Pisos.com', buildUrl: () => buildPisosUrl(urlParams), parseFunction: parsePisos },
     {
       name: 'ThinkSpain',
@@ -953,24 +1080,9 @@ function buildSpainSites({ cityCfg, areaValue, roomsValue, propertyType, minPric
       parseFunction: (page, url) => parseThinkSpain(page, url, cityCfg.value)
     },
     {
-      name: 'Spain-Real',
-      buildUrl: () => `https://spain-real.estate/property/${encodeURIComponent(cityCfg.value)}/`,
-      parseFunction: parseSpainRealEstate
-    },
-    {
-      name: 'Properstar ES',
-      buildUrl: () => `https://www.properstar.com/spain/buy/${cityCfg.value}`,
-      parseFunction: (page, url) => parseGenericInternational(page, url, 'Properstar ES', cityCfg.value)
-    },
-    {
-      name: 'Green-Acres ES',
-      buildUrl: () => `https://www.green-acres.es/en/property-for-sale/${cityCfg.value}`,
-      parseFunction: (page, url) => parseGenericInternational(page, url, 'Green-Acres ES', cityCfg.value)
-    },
-    {
-      name: 'JamesEdition ES',
-      buildUrl: () => `https://www.jamesedition.com/real_estate?q=${encodeURIComponent(cityCfg.value + ' spain')}`,
-      parseFunction: (page, url) => parseGenericInternational(page, url, 'JamesEdition ES', cityCfg.value)
+      name: 'Kyero',
+      buildUrl: () => `https://www.kyero.com/en/property-for-sale/spain/${kyeroSlug}`,
+      parseFunction: (page, url) => parseKyeroPaginated(page, url, cityCfg.value)
     }
   ];
 }
@@ -1080,7 +1192,7 @@ async function enrichPropertiesFromDetails(browser, items = []) {
   });
   if (!candidates.length) return items;
 
-  const maxToEnrich = Math.min(candidates.length, 10);
+  const maxToEnrich = Math.min(candidates.length, 32);
   const targetLinks = new Set(candidates.slice(0, maxToEnrich).map((p) => p.link));
   if (!targetLinks.size) return items;
 
@@ -1658,11 +1770,13 @@ function buildStrictUiCandidates({
       return false;
     }
     if (streetTokens.length) {
-      // Улица используется как мягкий фильтр: если токены есть, но не совпали — отбрасываем.
       if (!hasStreetMatch(p, streetTokens)) return false;
     }
-    if (!noRoomsType && roomsValue !== 'studio' && p.rooms != null) {
-      if (Math.abs((p.rooms || 0) - roomsValue) > 2) return false;
+    if (!noRoomsType && roomsValue === 'studio') {
+      if (!matchesRoomsWithTolerance(p, roomsValue, noRoomsType, 0)) return false;
+    } else if (!noRoomsType && roomsValue !== 'studio') {
+      if (p.rooms == null || !Number.isFinite(p.rooms)) return false;
+      if (!matchesRoomsWithTolerance(p, roomsValue, noRoomsType, 0)) return false;
     }
     if (areaValue && p.area) {
       if (p.area < areaValue * 0.65 || p.area > areaValue * 1.45) return false;
@@ -1728,24 +1842,36 @@ function selectComparablesByPriority({
     fallbackMode = cityFiltered.length > 0;
   }
 
+  const withDistrict = (list) =>
+    list.filter((p) => (hasDistrict ? propertyMatchesDistrict(p, districtRecord) : true));
+  const exactRoomsOnly = (list) =>
+    noRoomsType ? list : list.filter((p) => matchesRoomsWithTolerance(p, roomsValue, noRoomsType, 0));
+  const cityExactRooms = exactRoomsOnly(cityFiltered);
+
+  // Сначала город + тот же тип комнатности, затем улица/район; расширение — только если мало данных.
   const locationStages = [
-    cityFiltered.filter((p) => (hasDistrict ? propertyMatchesDistrict(p, districtRecord) : true) && hasStreetMatch(p, streetTokens)),
-    cityFiltered.filter((p) => (hasDistrict ? propertyMatchesDistrict(p, districtRecord) : true)),
+    withDistrict(cityExactRooms).filter((p) => hasStreetMatch(p, streetTokens)),
+    cityExactRooms.filter((p) => hasStreetMatch(p, streetTokens)),
+    withDistrict(cityExactRooms),
+    cityExactRooms,
+    withDistrict(cityFiltered).filter((p) => hasStreetMatch(p, streetTokens)),
+    withDistrict(cityFiltered),
     cityFiltered
   ];
 
-  let locationPool = locationStages.find((s) => s.length >= 5) || locationStages.find((s) => s.length > 0) || [];
+  let locationPool =
+    locationStages.find((s) => s.length >= 3) || locationStages.find((s) => s.length > 0) || [];
 
   const roomTolerances = noRoomsType ? [0] : [0, 1, 2];
   const roomStages = roomTolerances.map((tol) => locationPool.filter((p) => matchesRoomsWithTolerance(p, roomsValue, noRoomsType, tol)));
-  let roomsPool = roomStages.find((s) => s.length >= 5) || roomStages.find((s) => s.length > 0) || locationPool;
+  let roomsPool = roomStages.find((s) => s.length >= 3) || roomStages.find((s) => s.length > 0) || locationPool;
 
   const areaStages = [
     roomsPool.filter((p) => matchesAreaWithTolerance(p, areaValue, 0.85, 1.15)),
     roomsPool.filter((p) => matchesAreaWithTolerance(p, areaValue, 0.75, 1.25)),
     roomsPool.filter((p) => matchesAreaWithTolerance(p, areaValue, 0.65, 1.35))
   ];
-  let areaPool = areaStages.find((s) => s.length >= 5) || areaStages.find((s) => s.length > 0) || roomsPool;
+  let areaPool = areaStages.find((s) => s.length >= 3) || areaStages.find((s) => s.length > 0) || roomsPool;
 
   let similar = pickDiverseSimilar(rank(areaPool), 15);
   if (similar.length < 5) similar = mergeUniqueByLink(similar, pickDiverseSimilar(rank(roomsPool), 15), 15);
@@ -1777,22 +1903,14 @@ function buildFotocasaUrl({
 
 function buildIdealistaUrl({
   cityCfg,
-  areaValue,
-  roomsValue,
+  areaValue: _areaValue,
+  roomsValue: _roomsValue,
   propertyType
 }) {
   const path = idealistaListingPath(propertyType);
   const city = cityCfg.idealista;
-
-  if (propertyType === 'land') {
-    return `https://www.idealista.com/${path}/${city}/con-metros_${areaValue}/`;
-  }
-
-  const roomsForUrl = roomsValue === 'studio' ? 1 : (parseInt(roomsValue, 10) || 2);
-  if (propertyType === 'house' || propertyType === 'villa') {
-    return `https://www.idealista.com/${path}/${city}/con-metros_${areaValue},habitaciones_${roomsForUrl}/`;
-  }
-  return `https://www.idealista.com/${path}/${city}/con-metros_${areaValue},habitaciones_${roomsForUrl}/`;
+  // Полный листинг по типу в городе; фильтры по комнатам, адресу и площади — после парсинга.
+  return `https://www.idealista.com/${path}/${city}/`;
 }
 
 function buildPisosUrl({
@@ -1921,7 +2039,8 @@ function buildRelaxedSimilarProperties({
 }
 
 /**
- * Основная функция: несколько источников (Fotocasa, Idealista, Pisos), агрегация и устойчивая медиана
+ * Основная функция: Fotocasa, Idealista, Pisos, ThinkSpain, Kyero (Испания),
+ * многостраничный сбор листингов, агрегация и устойчивая медиана.
  */
 export async function calculatePropertyPrice({
   area,
@@ -2185,7 +2304,7 @@ export async function calculatePropertyPrice({
     valid = filterOutlierPrices(valid, { areaValue, benchmarkPerSqm: benchmarkPerSqmForFilter });
     console.log(`DEBUG: after outlier filter=${valid.length} (before=${beforeOutliers})`);
     const validSourcesBeforeCap = new Set(valid.map((p) => normalizeSourceKey(p?.source))).size;
-    valid = limitItemsPerSource(valid, { maxPerSource: 3, maxTotal: 30 });
+    valid = limitItemsPerSource(valid, { maxPerSource: 90, maxTotal: 450 });
     const validSourcesAfterCap = new Set(valid.map((p) => normalizeSourceKey(p?.source))).size;
     console.log(`DEBUG: after per-source cap=${valid.length}, sources(before=${validSourcesBeforeCap}, after=${validSourcesAfterCap})`);
     const prioritySelection = selectComparablesByPriority({
