@@ -28,7 +28,8 @@
     "db:deploy": "prisma migrate deploy",
     "db:status": "prisma migrate status",
     "load:test": "node scripts/load-test.js",
-    "puppeteer:install": "npx puppeteer browsers install chrome"
+    "puppeteer:install": "npx puppeteer browsers install chrome",
+    "import:housetenerife": "node scripts/import-housetenerife.mjs"
   },
   "dependencies": {
     "@clerk/clerk-react": "^5.59.2",
@@ -46,6 +47,7 @@
     "axios": "^1.13.2",
     "buffer": "^6.0.3",
     "chart.js": "^4.5.1",
+    "cheerio": "^1.2.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "compression": "^1.8.1",
