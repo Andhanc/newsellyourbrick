@@ -28,6 +28,8 @@ import MainPage from './pages/MainPage'
 const PropertyDetailPage = lazyWithRetry(() => import('./pages/PropertyDetailPage'))
 const TestDriveBookingPage = lazyWithRetry(() => import('./pages/TestDriveBookingPage'))
 const TestDriveCheckInRoute = lazyWithRetry(() => import('./pages/TestDriveCheckInRoute'))
+const TestDriveSurveyPage = lazyWithRetry(() => import('./pages/TestDriveSurveyPage'))
+const TestDriveExitFeedbackPage = lazyWithRetry(() => import('./pages/TestDriveExitFeedbackPage'))
 const MapPage = lazyWithRetry(() => import('./pages/MapPage'))
 const MyBookingsPage = lazyWithRetry(() => import('./pages/MyBookingsPage'))
 const Profile = lazyWithRetry(() => import('./pages/Profile'))
@@ -560,6 +562,22 @@ function App() {
                 element={
                   <LazyPage>
                     <TestDriveBookingPage />
+                  </LazyPage>
+                }
+              />
+              <Route
+                path="/test-drive/survey/:token"
+                element={
+                  <LazyPage>
+                    <TestDriveSurveyPage />
+                  </LazyPage>
+                }
+              />
+              <Route
+                path="/test-drive/feedback/:token"
+                element={
+                  <LazyPage>
+                    <TestDriveExitFeedbackPage />
                   </LazyPage>
                 }
               />

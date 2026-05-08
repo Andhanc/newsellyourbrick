@@ -35,6 +35,7 @@ const PaymentsModal = ({ isOpen, onClose }) => {
   const [rows, setRows] = useState([]);
   const [totalCount, setTotalCount] = useState(0);
   const [resRows, setResRows] = useState([]);
+  const [surveyRows, setSurveyRows] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -46,12 +47,14 @@ const PaymentsModal = ({ isOpen, onClose }) => {
       setError(null);
       try {
         const API_BASE_URL = await getApiBaseUrl();
-        const [allRes, resRes] = await Promise.all([
+        const [allRes, resRes, surveyRes] = await Promise.all([
           fetch(`${API_BASE_URL}/admin/stripe-payments`),
           fetch(`${API_BASE_URL}/admin/reservation-purchases`),
+          fetch(`${API_BASE_URL}/admin/test-drive/survey-financial`),
         ]);
         const allJson = await allRes.json().catch(() => ({}));
         const resJson = await resRes.json().catch(() => ({}));
+        const surveyJson = await surveyRes.json().catch(() => ({}));
         if (!allRes.ok || !allJson.success) {
           throw new Error(allJson.error || 'Не удалось загрузить платежи');
         }
@@ -59,6 +62,11 @@ const PaymentsModal = ({ isOpen, onClose }) => {
           setRows(allJson.data?.payments || []);
           setTotalCount(allJson.data?.totalCount ?? 0);
           setResRows(resJson.success && Array.isArray(resJson.data) ? resJson.data : []);
+          if (surveyRes.ok && surveyJson.success && Array.isArray(surveyJson.data)) {
+            setSurveyRows(surveyJson.data);
+          } else {
+            setSurveyRows([]);
+          }
         }
       } catch (e) {
         if (!cancelled) setError(e.message || 'Ошибка загрузки');
@@ -109,6 +117,13 @@ const PaymentsModal = ({ isOpen, onClose }) => {
             onClick={() => setTab('reservations')}
           >
             Резерв 10% ({resRows.length})
+          </button>
+          <button
+            type="button"
+            className={`payments-modal__tab ${tab === 'td_surveys' ? 'payments-modal__tab--active' : ''}`}
+            onClick={() => setTab('td_surveys')}
+          >
+            Тест-драйв · опросы ({surveyRows.length})
           </button>
         </div>
         <div className="payments-modal__body">
@@ -211,6 +226,65 @@ const PaymentsModal = ({ isOpen, onClose }) => {
                       </tr>
                     );
                   })}
+                </tbody>
+              </table>
+            </div>
+          )}
+          {!loading && !error && tab === 'td_surveys' && surveyRows.length === 0 && (
+            <div className="payments-modal__empty">Нет платежей тест-драйва с опросами</div>
+          )}
+          {!loading && !error && tab === 'td_surveys' && surveyRows.length > 0 && (
+            <div className="payments-modal__table-wrap">
+              <table className="payments-modal__table">
+                <thead>
+                  <tr>
+                    <th>Оплата</th>
+                    <th>Сумма</th>
+                    <th>Покупатель</th>
+                    <th>Бронь / объект</th>
+                    <th>WA рассылка</th>
+                    <th>Опрос</th>
+                    <th>Ответы (кратко)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {surveyRows.map((s) => (
+                    <tr key={`${s.booking_id}-${s.paid_at}`}>
+                      <td>{formatDate(s.paid_at)}</td>
+                      <td className="payments-modal__amount">{formatMoney(s.amount_cents, s.currency)}</td>
+                      <td>
+                        {[s.first_name, s.last_name].filter(Boolean).join(' ') || '—'}{' '}
+                        <span className="payments-modal__uid">#{s.user_id}</span>
+                        {s.email ? <div className="payments-modal__survey-email">{s.email}</div> : null}
+                      </td>
+                      <td>
+                        #{s.booking_id}
+                        <div className="payments-modal__survey-email">
+                          {s.property_table} · #{s.property_id}
+                        </div>
+                      </td>
+                      <td>
+                        <span
+                          className={
+                            String(s.survey_whatsapp_status || '').toLowerCase() === 'sent'
+                              ? 'payments-modal__pill payments-modal__pill--ok'
+                              : 'payments-modal__pill payments-modal__pill--wait'
+                          }
+                        >
+                          {String(s.survey_whatsapp_status || '').toLowerCase() === 'sent'
+                            ? 'отправлено'
+                            : 'ожидает'}
+                        </span>
+                        <div className="payments-modal__cell-muted">
+                          {s.survey_whatsapp_sent_at ? formatDate(s.survey_whatsapp_sent_at) : ''}
+                        </div>
+                      </td>
+                      <td>{s.survey_completed ? 'да' : 'нет'}</td>
+                      <td className="payments-modal__cell-muted" style={{ maxWidth: 280 }}>
+                        {s.answers_summary || '—'}
+                      </td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>

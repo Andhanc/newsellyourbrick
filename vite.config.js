@@ -96,7 +96,65 @@ export default defineConfig(({ mode }) => {
   console.log('[FRONTEND] 🌐 Vite будет слушать на порту:', vitePort);
   console.log('[FRONTEND] 🔗 API URL для прокси:', apiUrl);
   console.log('[FRONTEND] ═══════════════════════════════════════════════════════');
-  
+
+  /** Прокси /api → backend и для `vite`, и для `vite preview` (у preview свои настройки). */
+  const proxyConfigure = (proxy) => {
+    proxy.on('proxyReq', (proxyReq, req) => {
+      if (actualMode !== 'production') {
+        console.log(`[Proxy] ${req.method} ${req.url} -> ${apiUrl}${req.url}`);
+      }
+    });
+    proxy.on('error', (err, req, res) => {
+      console.error(`[Proxy Error] ${err.message} для ${req.url}`);
+      console.error(`[Proxy Error] Код: ${err.code}, Целевой URL: ${apiUrl}`);
+      if (res && !res.headersSent) {
+        res.writeHead(502, { 'Content-Type': 'application/json' });
+        res.end(
+          JSON.stringify({
+            success: false,
+            error:
+              'Сервер API недоступен. Запустите backend: npm run server (или npm run dev:all). Порт: ' +
+              backendPort,
+            details: process.env.NODE_ENV === 'development' ? err.message : undefined,
+          }),
+        );
+      }
+    });
+    proxy.on('proxyRes', (proxyRes, req) => {
+      if (actualMode !== 'production' && proxyRes.statusCode >= 400) {
+        console.warn(`[Proxy] ${req.method} ${req.url} -> ${proxyRes.statusCode}`);
+      }
+    });
+  };
+
+  const devProxy = {
+    '/api': {
+      target: apiUrl,
+      changeOrigin: true,
+      secure: false,
+      family: 4,
+      timeout: 120000,
+      proxyTimeout: 120000,
+      configure: proxyConfigure,
+    },
+    '/health': {
+      target: apiUrl,
+      changeOrigin: true,
+      secure: false,
+      family: 4,
+      timeout: 5000,
+      proxyTimeout: 5000,
+    },
+    '/uploads': {
+      target: apiUrl,
+      changeOrigin: true,
+      secure: false,
+      family: 4,
+      timeout: 30000,
+      proxyTimeout: 30000,
+    },
+  };
+
   return {
     plugins: [
       react({
@@ -207,62 +265,13 @@ export default defineConfig(({ mode }) => {
         clientPort: vitePort, // Для HMR в development
         overlay: false // Отключаем overlay для избежания ошибок esbuild на Railway
       },
-      proxy: {
-        '/api': {
-          target: apiUrl,
-          changeOrigin: true,
-          secure: false,
-          // Используем IPv4 для избежания проблем с IPv6 на Railway
-          family: 4, // Принудительно используем IPv4
-          // Калькулятор цены может работать дольше 30с (парсинг нескольких источников).
-          timeout: 120000, // 120 секунд
-          proxyTimeout: 120000,
-          // Улучшенная обработка ошибок
-          configure: (proxy, _options) => {
-            proxy.on('proxyReq', (proxyReq, req, res) => {
-              if (actualMode !== 'production') {
-                console.log(`[Proxy] ${req.method} ${req.url} -> ${apiUrl}${req.url}`)
-              }
-            })
-            proxy.on('error', (err, req, res) => {
-              console.error(`[Proxy Error] ${err.message} для ${req.url}`)
-              console.error(`[Proxy Error] Код: ${err.code}, Целевой URL: ${apiUrl}`)
-              // Отправляем понятную ошибку клиенту
-              if (res && !res.headersSent) {
-                res.writeHead(502, {
-                  'Content-Type': 'application/json'
-                })
-                res.end(JSON.stringify({
-                  success: false,
-                  error: 'Сервер временно недоступен. Пожалуйста, попробуйте позже.',
-                  details: process.env.NODE_ENV === 'development' ? err.message : undefined
-                }))
-              }
-            })
-            proxy.on('proxyRes', (proxyRes, req, res) => {
-              if (actualMode !== 'production' && proxyRes.statusCode >= 400) {
-                console.warn(`[Proxy] ${req.method} ${req.url} -> ${proxyRes.statusCode}`)
-              }
-            })
-          }
-        },
-        '/health': {
-          target: apiUrl,
-          changeOrigin: true,
-          secure: false,
-          family: 4,
-          timeout: 5000,
-          proxyTimeout: 5000
-        },
-        '/uploads': {
-          target: apiUrl,
-          changeOrigin: true,
-          secure: false,
-          family: 4,
-          timeout: 30000,
-          proxyTimeout: 30000
-        }
-      }
+      proxy: devProxy,
+    },
+    preview: {
+      port: parseInt(process.env.VITE_PREVIEW_PORT || '4173', 10),
+      host: 'localhost',
+      strictPort: false,
+      proxy: devProxy,
     },
     // Поддержка переменных REACT_APP_ (как в Create React App)
     define: {

@@ -7,9 +7,14 @@ import './TestDriveCheckInModal.css'
 
 const STEP_COUNT = 5
 
+/** Минимальная длина отзыва об объекте на шаге 1 (символов без пробелов по краям). */
+const MIN_PROPERTY_FEEDBACK_LEN = 15
+
 const initialForm = () => ({
-  entered_object: '',
-  entered_object_comment: '',
+  /** exceeded | matched | partially | below — насколько объект совпал с ожиданиями покупателя */
+  property_expectations: '',
+  /** Свободный отзыв именно об объекте (планировка, состояние, соответствие описанию) */
+  property_feedback: '',
   amenities_ok: '',
   amenities_comment: '',
   amenities_photos: [],
@@ -34,35 +39,47 @@ function toDataUrls(files) {
   )
 }
 
-function isStepValid(step, form) {
+/** @returns {{ key: string, params?: Record<string, unknown> } | null} */
+function getStepBlockReason(step, form) {
   switch (step) {
-    case 0:
-      if (!form.entered_object) return false
-      if (form.entered_object === 'no' && !String(form.entered_object_comment || '').trim()) return false
-      return true
+    case 0: {
+      if (!form.property_expectations) return { key: 'buyerCheckIn_step0_pickRating' }
+      const len = String(form.property_feedback || '').trim().length
+      if (len < MIN_PROPERTY_FEEDBACK_LEN)
+        return {
+          key: 'buyerCheckIn_step0_feedbackMin',
+          params: { min: MIN_PROPERTY_FEEDBACK_LEN, current: len },
+        }
+      return null
+    }
     case 1:
-      if (!form.amenities_ok) return false
+      if (!form.amenities_ok) return { key: 'buyerCheckIn_step1_pick' }
       if (
         form.amenities_ok === 'no' &&
         (!String(form.amenities_comment || '').trim() || !form.amenities_photos?.length)
       )
-        return false
-      return true
+        return { key: 'buyerCheckIn_step1_noDetails' }
+      return null
     case 2:
-      if (!form.defects_state) return false
+      if (!form.defects_state) return { key: 'buyerCheckIn_step2_pick' }
       if (
         form.defects_state === 'issues' &&
         (!String(form.defects_comment || '').trim() || !form.defects_photos?.length)
       )
-        return false
-      return true
+        return { key: 'buyerCheckIn_step2_issuesDetails' }
+      return null
     case 3:
-      if (!form.ready_to_stay) return false
-      if (form.ready_to_stay === 'no' && !String(form.ready_to_stay_comment || '').trim()) return false
-      return true
+      if (!form.ready_to_stay) return { key: 'buyerCheckIn_step3_pick' }
+      if (form.ready_to_stay === 'no' && !String(form.ready_to_stay_comment || '').trim())
+        return { key: 'buyerCheckIn_step3_noComment' }
+      return null
     default:
-      return true
+      return null
   }
+}
+
+function isStepValid(step, form) {
+  return getStepBlockReason(step, form) === null
 }
 
 function canNavigateToStep(target, form) {
@@ -81,9 +98,9 @@ function canSubmitForm(form) {
 }
 
 /**
- * @param {{ open: boolean, bookingId: string | number | null, onClose: () => void, onSuccess?: () => void }} props
+ * @param {{ open: boolean, bookingId?: string | number | null, surveyToken?: string | null, onClose: () => void, onSuccess?: () => void }} props
  */
-export default function TestDriveCheckInModal({ open, bookingId, onClose, onSuccess }) {
+export default function TestDriveCheckInModal({ open, bookingId, surveyToken, onClose, onSuccess }) {
   const { t } = useTranslation()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -100,7 +117,38 @@ export default function TestDriveCheckInModal({ open, bookingId, onClose, onSucc
   }, [])
 
   useEffect(() => {
-    if (!open || bookingId == null || bookingId === '') {
+    if (!open) return
+    if (surveyToken) {
+      reset()
+      let cancelled = false
+      ;(async () => {
+        try {
+          const base = await getApiBaseUrl()
+          const res = await fetch(
+            `${String(base).replace(/\/$/, '')}/test-drive-survey/${encodeURIComponent(String(surveyToken))}/detail`,
+          )
+          const data = await res.json()
+          if (cancelled) return
+          if (!res.ok || !data.success) {
+            showNotification(data.error || t('buyerCheckIn_loadError'), 'error')
+            onClose()
+            return
+          }
+          setDetail(data.data)
+        } catch {
+          if (!cancelled) {
+            showNotification(t('buyerCheckIn_networkError'), 'error')
+            onClose()
+          }
+        } finally {
+          if (!cancelled) setLoading(false)
+        }
+      })()
+      return () => {
+        cancelled = true
+      }
+    }
+    if (bookingId == null || bookingId === '') {
       return
     }
     reset()
@@ -137,7 +185,7 @@ export default function TestDriveCheckInModal({ open, bookingId, onClose, onSucc
     return () => {
       cancelled = true
     }
-  }, [open, bookingId, onClose, reset, t])
+  }, [open, bookingId, surveyToken, onClose, reset, t])
 
   useEffect(() => {
     if (!open) return
@@ -150,8 +198,13 @@ export default function TestDriveCheckInModal({ open, bookingId, onClose, onSucc
 
   const canSubmit = useMemo(() => canSubmitForm(form), [form])
 
-  const goNext = () => {
-    if (!isStepValid(activeStep, form)) return
+  const tryGoNext = () => {
+    if (loading || !detail) return
+    const reason = getStepBlockReason(activeStep, form)
+    if (reason) {
+      showNotification(t(reason.key, reason.params || {}), 'warning')
+      return
+    }
     setActiveStep((s) => Math.min(s + 1, STEP_COUNT - 1))
   }
 
@@ -160,26 +213,41 @@ export default function TestDriveCheckInModal({ open, bookingId, onClose, onSucc
   }
 
   const handleSubmit = async () => {
-    if (!canSubmit || !bookingId) return
+    if (!canSubmit) return
     const uid = localStorage.getItem('userId')
-    if (!uid || !/^\d+$/.test(uid)) return
+    if (!surveyToken && (!uid || !/^\d+$/.test(uid))) return
     setSaving(true)
     try {
       const base = await getApiBaseUrl()
-      const res = await fetch(
-        `${String(base).replace(/\/$/, '')}/test-drive-bookings/${bookingId}/check-in-report`,
-        {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            user_id: parseInt(uid, 10),
-            report: {
-              ...form,
-              submitted_at: new Date().toISOString(),
-            },
-          }),
-        },
-      )
+      const reportPayload = {
+        ...form,
+        submitted_at: new Date().toISOString(),
+      }
+      let res
+      if (surveyToken) {
+        res = await fetch(
+          `${String(base).replace(/\/$/, '')}/test-drive-survey/${encodeURIComponent(String(surveyToken))}/report`,
+          {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              report: reportPayload,
+            }),
+          },
+        )
+      } else {
+        res = await fetch(
+          `${String(base).replace(/\/$/, '')}/test-drive-bookings/${bookingId}/check-in-report`,
+          {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              user_id: parseInt(uid, 10),
+              report: reportPayload,
+            }),
+          },
+        )
+      }
       const data = await res.json().catch(() => ({}))
       if (!res.ok || !data.success) {
         showNotification(data.error || t('buyerCheckIn_saveError'), 'error')
@@ -195,7 +263,8 @@ export default function TestDriveCheckInModal({ open, bookingId, onClose, onSucc
     }
   }
 
-  if (!open || bookingId == null || bookingId === '') return null
+  if (!open) return null
+  if (!surveyToken && (bookingId == null || bookingId === '')) return null
 
   const navKeys = [
     'buyerCheckIn_step1Nav',
@@ -214,33 +283,47 @@ export default function TestDriveCheckInModal({ open, bookingId, onClose, onSucc
     const { property } = detail
 
     if (activeStep === 0) {
+      const expOpts = [
+        { value: 'exceeded', key: 'buyerCheckIn_property_exceeded' },
+        { value: 'matched', key: 'buyerCheckIn_property_matched' },
+        { value: 'partially', key: 'buyerCheckIn_property_partially' },
+        { value: 'below', key: 'buyerCheckIn_property_below' },
+      ]
       return (
         <div className="td-checkin-modal__section">
-          <h3>{t('buyerCheckIn_q_enter_title')}</h3>
-          <div className="td-checkin-modal__options">
-            <button
-              type="button"
-              className={`td-checkin-modal__opt${form.entered_object === 'yes' ? ' td-checkin-modal__opt--active' : ''}`}
-              onClick={() => setForm((s) => ({ ...s, entered_object: 'yes' }))}
-            >
-              {t('buyerCheckIn_yes')}
-            </button>
-            <button
-              type="button"
-              className={`td-checkin-modal__opt${form.entered_object === 'no' ? ' td-checkin-modal__opt--active' : ''}`}
-              onClick={() => setForm((s) => ({ ...s, entered_object: 'no' }))}
-            >
-              {t('buyerCheckIn_no')}
-            </button>
+          <h3>{t('buyerCheckIn_q_property_title')}</h3>
+          <p className="td-checkin-modal__hint-text">{t('buyerCheckIn_q_property_intro')}</p>
+          <div className="td-checkin-modal__options td-checkin-modal__options--radio td-checkin-modal__options--stack">
+            {expOpts.map(({ value, key }) => (
+              <label
+                key={value}
+                className={`td-checkin-modal__opt td-checkin-modal__opt--radio${form.property_expectations === value ? ' td-checkin-modal__opt--active' : ''}`}
+              >
+                <input
+                  type="radio"
+                  name="td_property_expectations"
+                  value={value}
+                  checked={form.property_expectations === value}
+                  onChange={() => setForm((s) => ({ ...s, property_expectations: value }))}
+                />
+                <span>{t(key)}</span>
+              </label>
+            ))}
           </div>
-          {form.entered_object === 'no' ? (
-            <textarea
-              className="td-checkin-modal__textarea"
-              value={form.entered_object_comment}
-              onChange={(e) => setForm((s) => ({ ...s, entered_object_comment: e.target.value }))}
-              placeholder={t('buyerCheckIn_enterCommentPh')}
-            />
-          ) : null}
+          <label className="td-checkin-modal__feedback-label" htmlFor="td-property-feedback">
+            {t('buyerCheckIn_property_feedback_label')}
+          </label>
+          <textarea
+            id="td-property-feedback"
+            className="td-checkin-modal__textarea"
+            value={form.property_feedback}
+            onChange={(e) => setForm((s) => ({ ...s, property_feedback: e.target.value }))}
+            placeholder={t('buyerCheckIn_property_feedback_ph')}
+            rows={5}
+          />
+          <p className="td-checkin-modal__hint-text td-checkin-modal__hint-text--muted">
+            {t('buyerCheckIn_property_feedback_hint')}
+          </p>
         </div>
       )
     }
@@ -266,21 +349,31 @@ export default function TestDriveCheckInModal({ open, bookingId, onClose, onSucc
               <p className="td-checkin-modal__amenities-empty">{t('buyerCheckIn_amenitiesEmpty')}</p>
             )}
           </div>
-          <div className="td-checkin-modal__options">
-            <button
-              type="button"
-              className={`td-checkin-modal__opt${form.amenities_ok === 'yes' ? ' td-checkin-modal__opt--active' : ''}`}
-              onClick={() => setForm((s) => ({ ...s, amenities_ok: 'yes' }))}
+          <div className="td-checkin-modal__options td-checkin-modal__options--radio">
+            <label
+              className={`td-checkin-modal__opt td-checkin-modal__opt--radio${form.amenities_ok === 'yes' ? ' td-checkin-modal__opt--active' : ''}`}
             >
-              {t('buyerCheckIn_yes')}
-            </button>
-            <button
-              type="button"
-              className={`td-checkin-modal__opt${form.amenities_ok === 'no' ? ' td-checkin-modal__opt--active' : ''}`}
-              onClick={() => setForm((s) => ({ ...s, amenities_ok: 'no' }))}
+              <input
+                type="radio"
+                name="td_amenities_ok"
+                value="yes"
+                checked={form.amenities_ok === 'yes'}
+                onChange={() => setForm((s) => ({ ...s, amenities_ok: 'yes' }))}
+              />
+              <span>{t('buyerCheckIn_yes')}</span>
+            </label>
+            <label
+              className={`td-checkin-modal__opt td-checkin-modal__opt--radio${form.amenities_ok === 'no' ? ' td-checkin-modal__opt--active' : ''}`}
             >
-              {t('buyerCheckIn_no')}
-            </button>
+              <input
+                type="radio"
+                name="td_amenities_ok"
+                value="no"
+                checked={form.amenities_ok === 'no'}
+                onChange={() => setForm((s) => ({ ...s, amenities_ok: 'no' }))}
+              />
+              <span>{t('buyerCheckIn_no')}</span>
+            </label>
           </div>
           {form.amenities_ok === 'no' ? (
             <>
@@ -313,21 +406,31 @@ export default function TestDriveCheckInModal({ open, bookingId, onClose, onSucc
       return (
         <div className="td-checkin-modal__section">
           <h3>{t('buyerCheckIn_q_defects_title')}</h3>
-          <div className="td-checkin-modal__options">
-            <button
-              type="button"
-              className={`td-checkin-modal__opt${form.defects_state === 'ok' ? ' td-checkin-modal__opt--active' : ''}`}
-              onClick={() => setForm((s) => ({ ...s, defects_state: 'ok' }))}
+          <div className="td-checkin-modal__options td-checkin-modal__options--radio">
+            <label
+              className={`td-checkin-modal__opt td-checkin-modal__opt--radio${form.defects_state === 'ok' ? ' td-checkin-modal__opt--active' : ''}`}
             >
-              {t('buyerCheckIn_defects_ok')}
-            </button>
-            <button
-              type="button"
-              className={`td-checkin-modal__opt${form.defects_state === 'issues' ? ' td-checkin-modal__opt--active' : ''}`}
-              onClick={() => setForm((s) => ({ ...s, defects_state: 'issues' }))}
+              <input
+                type="radio"
+                name="td_defects_state"
+                value="ok"
+                checked={form.defects_state === 'ok'}
+                onChange={() => setForm((s) => ({ ...s, defects_state: 'ok' }))}
+              />
+              <span>{t('buyerCheckIn_defects_ok')}</span>
+            </label>
+            <label
+              className={`td-checkin-modal__opt td-checkin-modal__opt--radio${form.defects_state === 'issues' ? ' td-checkin-modal__opt--active' : ''}`}
             >
-              {t('buyerCheckIn_defects_issues')}
-            </button>
+              <input
+                type="radio"
+                name="td_defects_state"
+                value="issues"
+                checked={form.defects_state === 'issues'}
+                onChange={() => setForm((s) => ({ ...s, defects_state: 'issues' }))}
+              />
+              <span>{t('buyerCheckIn_defects_issues')}</span>
+            </label>
           </div>
           {form.defects_state === 'issues' ? (
             <>
@@ -360,21 +463,32 @@ export default function TestDriveCheckInModal({ open, bookingId, onClose, onSucc
       return (
         <div className="td-checkin-modal__section">
           <h3>{t('buyerCheckIn_q_ready_title')}</h3>
-          <div className="td-checkin-modal__options">
-            <button
-              type="button"
-              className={`td-checkin-modal__opt${form.ready_to_stay === 'yes' ? ' td-checkin-modal__opt--active' : ''}`}
-              onClick={() => setForm((s) => ({ ...s, ready_to_stay: 'yes' }))}
+          <p className="td-checkin-modal__hint-text">{t('buyerCheckIn_q_ready_intro')}</p>
+          <div className="td-checkin-modal__options td-checkin-modal__options--radio">
+            <label
+              className={`td-checkin-modal__opt td-checkin-modal__opt--radio${form.ready_to_stay === 'yes' ? ' td-checkin-modal__opt--active' : ''}`}
             >
-              {t('buyerCheckIn_yes')}
-            </button>
-            <button
-              type="button"
-              className={`td-checkin-modal__opt${form.ready_to_stay === 'no' ? ' td-checkin-modal__opt--active' : ''}`}
-              onClick={() => setForm((s) => ({ ...s, ready_to_stay: 'no' }))}
+              <input
+                type="radio"
+                name="td_ready_to_stay"
+                value="yes"
+                checked={form.ready_to_stay === 'yes'}
+                onChange={() => setForm((s) => ({ ...s, ready_to_stay: 'yes' }))}
+              />
+              <span>{t('buyerCheckIn_stay_yes')}</span>
+            </label>
+            <label
+              className={`td-checkin-modal__opt td-checkin-modal__opt--radio${form.ready_to_stay === 'no' ? ' td-checkin-modal__opt--active' : ''}`}
             >
-              {t('buyerCheckIn_no')}
-            </button>
+              <input
+                type="radio"
+                name="td_ready_to_stay"
+                value="no"
+                checked={form.ready_to_stay === 'no'}
+                onChange={() => setForm((s) => ({ ...s, ready_to_stay: 'no' }))}
+              />
+              <span>{t('buyerCheckIn_stay_no')}</span>
+            </label>
           </div>
           {form.ready_to_stay === 'no' ? (
             <textarea
@@ -393,9 +507,14 @@ export default function TestDriveCheckInModal({ open, bookingId, onClose, onSucc
         <h3>{t('buyerCheckIn_reviewTitle')}</h3>
         <div className="td-checkin-modal__review">
           <div>
-            <strong>{t('buyerCheckIn_q_enter_title')}</strong>: {form.entered_object || '—'}
-            {form.entered_object === 'no' && form.entered_object_comment ? (
-              <div style={{ marginTop: 6 }}>{form.entered_object_comment}</div>
+            <strong>{t('buyerCheckIn_q_property_title')}</strong>
+            <div style={{ marginTop: 6 }}>
+              {form.property_expectations
+                ? t(`buyerCheckIn_property_${form.property_expectations}`)
+                : '—'}
+            </div>
+            {form.property_feedback ? (
+              <div style={{ marginTop: 10, whiteSpace: 'pre-wrap' }}>{form.property_feedback}</div>
             ) : null}
           </div>
           <div style={{ marginTop: 10 }}>
@@ -405,7 +524,15 @@ export default function TestDriveCheckInModal({ open, bookingId, onClose, onSucc
             <strong>{t('buyerCheckIn_q_defects_title')}</strong>: {form.defects_state || '—'}
           </div>
           <div style={{ marginTop: 10 }}>
-            <strong>{t('buyerCheckIn_q_ready_title')}</strong>: {form.ready_to_stay || '—'}
+            <strong>{t('buyerCheckIn_q_ready_title')}</strong>:{' '}
+            {form.ready_to_stay === 'yes'
+              ? t('buyerCheckIn_stay_yes')
+              : form.ready_to_stay === 'no'
+                ? t('buyerCheckIn_stay_no')
+                : '—'}
+            {form.ready_to_stay === 'no' && form.ready_to_stay_comment ? (
+              <div style={{ marginTop: 6, whiteSpace: 'pre-wrap' }}>{form.ready_to_stay_comment}</div>
+            ) : null}
           </div>
         </div>
         <button
@@ -441,15 +568,22 @@ export default function TestDriveCheckInModal({ open, bookingId, onClose, onSucc
           <div className="td-checkin-modal__title-block">
             <h2 id="td-checkin-modal-title">{t('buyerCheckIn_title')}</h2>
             {!loading && detail ? (
-              <p>
-                <strong>{titleText}</strong>
-                {rangeText ? (
-                  <>
-                    <br />
-                    {rangeText}
-                  </>
+              <>
+                {detail.buyer?.first_name ? (
+                  <p className="td-checkin-modal__welcome">
+                    Здравствуйте, <strong>{detail.buyer.first_name}</strong>!
+                  </p>
                 ) : null}
-              </p>
+                <p>
+                  <strong>{titleText}</strong>
+                  {rangeText ? (
+                    <>
+                      <br />
+                      {rangeText}
+                    </>
+                  ) : null}
+                </p>
+              </>
             ) : (
               <p>{t('buyerCheckIn_loading')}</p>
             )}
@@ -512,8 +646,8 @@ export default function TestDriveCheckInModal({ open, bookingId, onClose, onSucc
             <button
               type="button"
               className="td-checkin-modal__btn td-checkin-modal__btn--primary"
-              disabled={!isStepValid(activeStep, form)}
-              onClick={goNext}
+              disabled={loading || !detail}
+              onClick={tryGoNext}
             >
               {t('buyerCheckIn_next')}
             </button>

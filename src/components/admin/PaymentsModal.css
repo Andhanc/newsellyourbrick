@@ -208,6 +208,32 @@
   max-width: 200px;
 }
 
+.payments-modal__pill {
+  display: inline-block;
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+}
+
+.payments-modal__pill--ok {
+  background: #d1fae5;
+  color: #047857;
+}
+
+.payments-modal__pill--wait {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.payments-modal__survey-email {
+  display: block;
+  margin-top: 0.25rem;
+  color: #64748b;
+  font-size: 0.75rem;
+  line-height: 1.35;
+}
+
 @media (max-width: 768px) {
   .payments-modal__table th,
   .payments-modal__table td {

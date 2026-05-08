@@ -1,4 +1,5 @@
 import Stripe from 'stripe';
+import crypto from 'crypto';
 import {
   stripeSubscriptionQueries,
   propertyQueries,
@@ -7,6 +8,7 @@ import {
   sharePurchaseQueries,
   reservationSignatureQueries,
   notificationQueries,
+  testDriveBookingQueries,
 } from './database/database.js';
 import { getPrisma } from './database/prismaClient.js';
 
@@ -90,6 +92,16 @@ function calcDayCountInclusive(startYmd, endYmd) {
   const e = new Date(`${endYmd}T12:00:00`);
   if (Number.isNaN(s.getTime()) || Number.isNaN(e.getTime()) || e < s) return null;
   return Math.round((e - s) / (24 * 60 * 60 * 1000)) + 1;
+}
+
+const TEST_DRIVE_CONTACT_CHANNELS = new Set(['telegram', 'whatsapp', 'email']);
+
+function normalizeTestDriveContactChannel(raw) {
+  const v = String(raw || '')
+    .trim()
+    .toLowerCase();
+  if (TEST_DRIVE_CONTACT_CHANNELS.has(v)) return v;
+  return '';
 }
 
 const SHARE_PURCHASE_POLICY_VERSION = 'share_policy_test_v1';
@@ -312,6 +324,17 @@ export async function processSharePurchasePaidSession(stripe, session) {
 /** Списание 3000 EUR с кошелька депозита при оплате резерва (только с EUR-объявлениями). */
 const WALLET_DEPOSIT_OFFSET_EUR = 3000;
 const fxRateCache = new Map();
+
+function scheduledSurveyWhatsAppAtIso(startYmd) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(startYmd || '').trim());
+  if (!m) return new Date().toISOString();
+  const y = Number(m[1]);
+  const mo = Number(m[2]) - 1;
+  const d = Number(m[3]);
+  const dt = new Date(Date.UTC(y, mo, d, 9, 0, 0, 0));
+  dt.setUTCDate(dt.getUTCDate() + 3);
+  return dt.toISOString();
+}
 
 function roundMoneyMajor(amount) {
   return Math.round((Number(amount) || 0) * 100) / 100;
@@ -777,6 +800,8 @@ export async function processTestDriveBookingPaidSession(stripe, session) {
     piObj?.status === 'succeeded';
   if (!paidOk) return { ok: false, error: 'not_paid' };
 
+  await testDriveBookingQueries.ensureTable();
+
   const userId = parseInt(sess.metadata?.app_user_id || '', 10);
   const propertyId = parseInt(sess.metadata?.property_id || '', 10);
   const startDate = String(sess.metadata?.start_date || '');
@@ -793,7 +818,7 @@ export async function processTestDriveBookingPaidSession(stripe, session) {
   if (!isValidYmd(startDate) || !isValidYmd(endDate)) {
     return { ok: false, error: 'bad_dates' };
   }
-  if (!Number.isFinite(dayCount) || dayCount < 2 || dayCount > 5) {
+  if (!Number.isFinite(dayCount) || dayCount < 5 || dayCount > 21) {
     return { ok: false, error: 'bad_day_count' };
   }
 
@@ -808,9 +833,14 @@ export async function processTestDriveBookingPaidSession(stripe, session) {
 
   const tableResolved = property.source_table || propertyTable || 'properties_apartments';
   const quote = parseTestDrivePricing(property);
-  const quoteTotalMajor = roundMoneyMajor((Number(quote.dailyPrice) || 0) * dayCount);
-  if (!(quoteTotalMajor > 0)) return { ok: false, error: 'invalid_test_drive_price' };
-  const computedTotalCents = majorToStripeMinor(quoteTotalMajor, sess.currency || property.currency || 'usd');
+  const stayMajor = roundMoneyMajor((Number(quote.dailyPrice) || 0) * dayCount);
+  const depMajor = roundMoneyMajor(Number(quote.insuranceDeposit) || 0);
+  const totalMajorCombined = roundMoneyMajor(stayMajor + depMajor);
+  if (!(stayMajor > 0)) return { ok: false, error: 'invalid_test_drive_price' };
+  const curNorm = String(sess.currency || property.currency || 'usd').toLowerCase();
+  const computedStayCents = majorToStripeMinor(stayMajor, curNorm);
+  const computedDepCents = depMajor > 0 ? majorToStripeMinor(depMajor, curNorm) : 0;
+  const computedTotalCents = computedStayCents + computedDepCents;
   if (Number.isFinite(expectedTotalCents) && Math.abs(expectedTotalCents - computedTotalCents) > 2) {
     console.warn('[Stripe] test-drive amount mismatch', {
       expectedTotalCents,
@@ -872,6 +902,7 @@ export async function processTestDriveBookingPaidSession(stripe, session) {
     return { ok: false, error: 'already_requested' };
   }
 
+  const contactCh = normalizeTestDriveContactChannel(sess.metadata?.buyer_contact_channel);
   const bookingRow = await getPrisma().test_drive_bookings.create({
     data: {
       property_id: Number(propertyId),
@@ -880,8 +911,19 @@ export async function processTestDriveBookingPaidSession(stripe, session) {
       start_date: startDate,
       end_date: endDate,
       status: 'paid',
+      ...(contactCh ? { buyer_contact_channel: contactCh } : {}),
     },
   });
+
+  try {
+    await testDriveBookingQueries.ensureTable();
+    const surveyTok = crypto.randomBytes(24).toString('hex');
+    const schedIso = scheduledSurveyWhatsAppAtIso(startDate);
+    await testDriveBookingQueries.setSurveyBroadcastAfterPayment(bookingRow.id, surveyTok, schedIso);
+    await testDriveBookingQueries.initializeExitFeedbackAfterPayment(bookingRow.id, endDate);
+  } catch (e) {
+    console.warn('[Stripe] test-drive survey token init:', e?.message || e);
+  }
 
   const billingPayload = {
     type: 'test_drive_booking',
@@ -894,7 +936,9 @@ export async function processTestDriveBookingPaidSession(stripe, session) {
     days_count: dayCount,
     daily_price: Number(dailyPrice) || quote.dailyPrice,
     insurance_deposit: Number(insuranceDeposit) || quote.insuranceDeposit || 0,
-    total_major: quoteTotalMajor,
+    stay_major: stayMajor,
+    total_major: totalMajorCombined,
+    buyer_contact_channel: normalizeTestDriveContactChannel(sess.metadata?.buyer_contact_channel),
     currency: String(sess.currency || property.currency || 'usd').toLowerCase(),
   };
   await stripeSubscriptionQueries.insertPayment({
@@ -923,9 +967,12 @@ export async function processTestDriveBookingPaidSession(stripe, session) {
       buyer?.email ||
       `Пользователь #${userId}`;
     const title = 'Запрос на тест-драйв';
+    const prefCh = normalizeTestDriveContactChannel(sess.metadata?.buyer_contact_channel);
+    const prefLabel =
+      prefCh === 'telegram' ? 'Telegram' : prefCh === 'whatsapp' ? 'WhatsApp' : prefCh === 'email' ? 'почта' : '';
     const message = `${buyerName} оплатил тест-драйв объекта «${
       property.title || `Объект #${propertyId}`
-    }» с ${startDate} по ${endDate}. Подтвердите и добавьте комментарий по заселению (ключи, время заезда).`;
+    }» с ${startDate} по ${endDate}.${prefLabel ? ` Предпочтительная связь: ${prefLabel}.` : ''} Подтвердите и добавьте комментарий по заселению (ключи, время заезда).`;
     const notifRun = await notificationQueries.create({
       user_id: Number(property.user_id),
       type: 'test_drive_request',
@@ -1822,6 +1869,7 @@ export function registerStripeBillingRoutes(app) {
       if (!stripe) {
         return res.status(503).json({ success: false, error: 'Платежи не настроены' });
       }
+      await testDriveBookingQueries.ensureTable();
       const userId = parseInt(String(req.body?.userId || '').trim(), 10);
       const propertyId = parseInt(String(req.body?.propertyId || '').trim(), 10);
       const propertyType =
@@ -1829,6 +1877,9 @@ export function registerStripeBillingRoutes(app) {
       const startDate = String(req.body?.startDate || '');
       const endDate = String(req.body?.endDate || '');
       const propertyTable = String(req.body?.propertyTable || 'properties_apartments');
+      const buyerContactChannel = normalizeTestDriveContactChannel(
+        req.body?.contactChannel ?? req.body?.buyer_contact_channel
+      );
       const customerEmail =
         typeof req.body?.customerEmail === 'string' ? req.body.customerEmail.trim().slice(0, 320) : '';
       const returnPath =
@@ -1836,6 +1887,12 @@ export function registerStripeBillingRoutes(app) {
           ? req.body.returnPath.split('?')[0].slice(0, 200)
           : `/property/${propertyId}/test-drive`;
 
+      if (!buyerContactChannel) {
+        return res.status(400).json({
+          success: false,
+          error: 'Выберите способ связи: Telegram, WhatsApp или почта',
+        });
+      }
       if (!Number.isFinite(userId) || !Number.isFinite(propertyId)) {
         return res.status(400).json({ success: false, error: 'Укажите userId и propertyId' });
       }
@@ -1843,8 +1900,8 @@ export function registerStripeBillingRoutes(app) {
         return res.status(400).json({ success: false, error: 'Некорректные даты' });
       }
       const dayCount = calcDayCountInclusive(startDate, endDate);
-      if (!Number.isFinite(dayCount) || dayCount < 2 || dayCount > 5) {
-        return res.status(400).json({ success: false, error: 'Выберите от 2 до 5 дней' });
+      if (!Number.isFinite(dayCount) || dayCount < 5 || dayCount > 21) {
+        return res.status(400).json({ success: false, error: 'Выберите от 5 до 21 дня подряд' });
       }
       const property = await propertyQueries.getById(propertyId, propertyType || null);
       if (!property) return res.status(404).json({ success: false, error: 'Объект не найден' });
@@ -1863,30 +1920,78 @@ export function registerStripeBillingRoutes(app) {
       const curNorm = normalizeStripeCurrency(property.currency || 'usd');
       if (!curNorm.ok) return res.status(400).json({ success: false, error: curNorm.error });
       const currency = curNorm.currency;
-      const totalMajor = roundMoneyMajor(dailyPrice * dayCount);
-      const unitAmount = majorToStripeMinor(totalMajor, currency);
-      if (unitAmount < minStripeUnitAmount(currency)) {
+      const stayMajor = roundMoneyMajor(dailyPrice * dayCount);
+      const depMajor = roundMoneyMajor(insuranceDeposit || 0);
+      const stayCents = majorToStripeMinor(stayMajor, currency);
+      const depCents = depMajor > 0 ? majorToStripeMinor(depMajor, currency) : 0;
+      const minU = minStripeUnitAmount(currency);
+      if (stayCents < minU) {
         return res.status(400).json({ success: false, error: 'Сумма слишком мала для Stripe' });
       }
       const titleShort = (property.title || `Объект #${propertyId}`).slice(0, 80);
+      let lineItems;
+      if (depCents > 0 && depCents < minU) {
+        const combinedCents = stayCents + depCents;
+        if (combinedCents < minU) {
+          return res.status(400).json({ success: false, error: 'Сумма слишком мала для Stripe' });
+        }
+        lineItems = [
+          {
+            quantity: 1,
+            price_data: {
+              currency,
+              unit_amount: combinedCents,
+              product_data: {
+                name: `Тест-драйв (${dayCount} дн.) + страховой депозит — ${titleShort}`,
+                description:
+                  `Проживание и депозит, ${startDate} — ${endDate}. Депозит при отсутствии нарушений возвращается на карту в течение недели после проживания.`.slice(
+                    0,
+                    500
+                  ),
+              },
+            },
+          },
+        ];
+      } else {
+        lineItems = [
+          {
+            quantity: 1,
+            price_data: {
+              currency,
+              unit_amount: stayCents,
+              product_data: {
+                name: `Тест-драйв: проживание (${dayCount} дн.) — ${titleShort}`,
+                description: `Проживание ${startDate} — ${endDate}`.slice(0, 500),
+              },
+            },
+          },
+        ];
+        if (depCents > 0) {
+          lineItems.push({
+            quantity: 1,
+            price_data: {
+              currency,
+              unit_amount: depCents,
+              product_data: {
+                name: `Страховой депозит — ${titleShort}`,
+                description:
+                  'Депозит удерживается на время проживания; при отсутствии нарушений возвращается на карту в течение недели после выезда.'.slice(
+                    0,
+                    500
+                  ),
+              },
+            },
+          });
+        }
+      }
+      const totalMajorOut = roundMoneyMajor(stayMajor + depMajor);
+      const totalCentsOut = stayCents + depCents;
       const successUrl = `${frontendBase}${returnPath}?test_drive_checkout=success&session_id={CHECKOUT_SESSION_ID}`;
       const cancelUrl = `${frontendBase}${returnPath}?test_drive_checkout=canceled`;
       const session = await stripe.checkout.sessions.create({
         mode: 'payment',
         payment_method_types: ['card'],
-        line_items: [
-          {
-            quantity: 1,
-            price_data: {
-              currency,
-              unit_amount: unitAmount,
-              product_data: {
-                name: `Тест-драйв (${dayCount} дн.) — ${titleShort}`,
-                description: `Оплата тест-драйва объекта #${propertyId} (${startDate} - ${endDate})`.slice(0, 500),
-              },
-            },
-          },
-        ],
+        line_items: lineItems,
         success_url: successUrl,
         cancel_url: cancelUrl,
         metadata: {
@@ -1900,8 +2005,11 @@ export function registerStripeBillingRoutes(app) {
           days_count: String(dayCount),
           daily_price: String(dailyPrice),
           insurance_deposit: String(insuranceDeposit || 0),
-          total_cents: String(unitAmount),
-          total_major: String(totalMajor),
+          stay_cents: String(stayCents),
+          deposit_cents: String(depCents),
+          total_cents: String(totalCentsOut),
+          total_major: String(totalMajorOut),
+          buyer_contact_channel: buyerContactChannel,
         },
         ...(customerEmail && customerEmail.includes('@') ? { customer_email: customerEmail } : {}),
       });
@@ -1912,7 +2020,8 @@ export function registerStripeBillingRoutes(app) {
           daily_price: dailyPrice,
           insurance_deposit: insuranceDeposit || 0,
           day_count: dayCount,
-          total_major: totalMajor,
+          stay_major: stayMajor,
+          total_major: totalMajorOut,
           currency: currency.toUpperCase(),
         },
       });

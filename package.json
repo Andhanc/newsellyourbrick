@@ -27,7 +27,8 @@
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
     "db:status": "prisma migrate status",
-    "load:test": "node scripts/load-test.js"
+    "load:test": "node scripts/load-test.js",
+    "puppeteer:install": "npx puppeteer browsers install chrome"
   },
   "dependencies": {
     "@clerk/clerk-react": "^5.59.2",

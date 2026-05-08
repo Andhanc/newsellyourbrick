@@ -1,15 +1,42 @@
 /**
  * Модуль 3: запросы на покупку и бронирования тест-драйва — PostgreSQL через Prisma.
  */
+import crypto from 'crypto';
 import { getPrisma } from './prismaClient.js';
 import prismaPkg from '@prisma/client';
 
 const { Prisma } = prismaPkg;
 
+/** +3 календарных дня от заезда, 09:00 UTC — как в Stripe после оплаты. */
+function computeSurveyScheduledAtIso(startYmd) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(startYmd || '').trim());
+  if (!m) return new Date().toISOString();
+  const y = Number(m[1]);
+  const mo = Number(m[2]) - 1;
+  const d = Number(m[3]);
+  const dt = new Date(Date.UTC(y, mo, d, 9, 0, 0, 0));
+  dt.setUTCDate(dt.getUTCDate() + 3);
+  return dt.toISOString();
+}
+
+/** Утро после выезда: end_date + 1 календарный день, 09:00 UTC — рассылка «как прошло». */
+function computeExitFeedbackScheduledAtIso(endYmd) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(endYmd || '').trim());
+  if (!m) return new Date().toISOString();
+  const y = Number(m[1]);
+  const mo = Number(m[2]) - 1;
+  const d = Number(m[3]);
+  const dt = new Date(Date.UTC(y, mo, d, 9, 0, 0, 0));
+  dt.setUTCDate(dt.getUTCDate() + 1);
+  return dt.toISOString();
+}
+
 function bookingToPlain(row) {
   if (!row) return null;
   const o = { ...row };
-  if (o.created_at instanceof Date) o.created_at = o.created_at.toISOString();
+  for (const k of Object.keys(o)) {
+    if (o[k] instanceof Date) o[k] = o[k].toISOString();
+  }
   return o;
 }
 
@@ -174,6 +201,46 @@ export const testDriveBookingQueries = {
       'ALTER TABLE test_drive_bookings ADD COLUMN IF NOT EXISTS cancelled_at TIMESTAMP'
     );
     await prisma.$executeRawUnsafe(
+      'ALTER TABLE test_drive_bookings ADD COLUMN IF NOT EXISTS buyer_contact_channel TEXT'
+    );
+    await prisma.$executeRawUnsafe(
+      'ALTER TABLE test_drive_bookings ADD COLUMN IF NOT EXISTS survey_token TEXT'
+    );
+    await prisma.$executeRawUnsafe(
+      'ALTER TABLE test_drive_bookings ADD COLUMN IF NOT EXISTS survey_whatsapp_status TEXT'
+    );
+    await prisma.$executeRawUnsafe(
+      'ALTER TABLE test_drive_bookings ADD COLUMN IF NOT EXISTS survey_whatsapp_sent_at TIMESTAMP'
+    );
+    await prisma.$executeRawUnsafe(
+      'ALTER TABLE test_drive_bookings ADD COLUMN IF NOT EXISTS survey_scheduled_at TIMESTAMP'
+    );
+    await prisma.$executeRawUnsafe(
+      'ALTER TABLE test_drive_bookings ADD COLUMN IF NOT EXISTS exit_feedback_token TEXT'
+    );
+    await prisma.$executeRawUnsafe(
+      'ALTER TABLE test_drive_bookings ADD COLUMN IF NOT EXISTS exit_feedback_whatsapp_status TEXT'
+    );
+    await prisma.$executeRawUnsafe(
+      'ALTER TABLE test_drive_bookings ADD COLUMN IF NOT EXISTS exit_feedback_whatsapp_sent_at TIMESTAMP'
+    );
+    await prisma.$executeRawUnsafe(
+      'ALTER TABLE test_drive_bookings ADD COLUMN IF NOT EXISTS exit_feedback_scheduled_at TIMESTAMP'
+    );
+    await prisma.$executeRawUnsafe(
+      'ALTER TABLE test_drive_bookings ADD COLUMN IF NOT EXISTS exit_feedback_report TEXT'
+    );
+    await prisma.$executeRawUnsafe(
+      `CREATE UNIQUE INDEX IF NOT EXISTS idx_test_drive_bookings_survey_token
+       ON test_drive_bookings (survey_token)
+       WHERE survey_token IS NOT NULL AND survey_token <> ''`
+    );
+    await prisma.$executeRawUnsafe(
+      `CREATE UNIQUE INDEX IF NOT EXISTS idx_test_drive_bookings_exit_feedback_token
+       ON test_drive_bookings (exit_feedback_token)
+       WHERE exit_feedback_token IS NOT NULL AND exit_feedback_token <> ''`
+    );
+    await prisma.$executeRawUnsafe(
       `UPDATE test_drive_bookings
        SET cancelled_at = COALESCE(cancelled_at, created_at)
        WHERE LOWER(TRIM(COALESCE(status, ''))) = 'cancelled'
@@ -324,5 +391,222 @@ export const testDriveBookingQueries = {
       `
     );
     return { changes: Number(updated || 0) };
+  },
+
+  /** После оплаты Stripe: токен опроса и дата авторассылки WhatsApp (+3 календарных дня от заезда). */
+  setSurveyBroadcastAfterPayment: async (bookingId, surveyToken, scheduledAtIso) => {
+    const prisma = getPrisma();
+    const sid = Number(bookingId);
+    const tok = String(surveyToken || '').trim();
+    if (!sid || !tok) return { changes: 0 };
+    const when = scheduledAtIso ? new Date(scheduledAtIso) : new Date();
+    await prisma.$executeRaw(
+      Prisma.sql`
+        UPDATE test_drive_bookings
+        SET survey_token = ${tok},
+            survey_whatsapp_status = 'pending',
+            survey_scheduled_at = ${when}
+        WHERE id = ${sid}
+      `
+    );
+    return { changes: 1 };
+  },
+
+  getBySurveyToken: async (token) => {
+    const prisma = getPrisma();
+    const t = String(token || '').trim();
+    if (!t || t.length < 16) return null;
+    const rows = await prisma.$queryRaw(
+      Prisma.sql`SELECT * FROM test_drive_bookings WHERE survey_token = ${t} LIMIT 1`
+    );
+    return bookingToPlain(Array.isArray(rows) ? rows[0] : null);
+  },
+
+  markSurveyWhatsAppSent: async (bookingId) => {
+    const prisma = getPrisma();
+    await prisma.$executeRaw(
+      Prisma.sql`
+        UPDATE test_drive_bookings
+        SET survey_whatsapp_status = 'sent',
+            survey_whatsapp_sent_at = NOW()
+        WHERE id = ${Number(bookingId)}
+      `
+    );
+    return { changes: 1 };
+  },
+
+  /**
+   * Если у подтверждённой/оплаченной брони ещё нет токена опроса — создаём (ссылка WA и опрос).
+   */
+  ensureSurveyBroadcastTokenIfMissing: async (bookingId) => {
+    await testDriveBookingQueries.ensureTable();
+    const row = await testDriveBookingQueries.getById(bookingId);
+    if (!row) return { ok: false, reason: 'not_found' };
+    const st = String(row.status || '').toLowerCase();
+    if (st === 'cancelled' || st === 'rejected') return { ok: false, reason: 'bad_status' };
+    if (String(row.survey_token || '').trim()) return { ok: true, existed: true };
+    if (st !== 'approved' && st !== 'paid') return { ok: false, reason: 'not_ready' };
+    const tok = crypto.randomBytes(24).toString('hex');
+    const schedIso = computeSurveyScheduledAtIso(row.start_date);
+    await testDriveBookingQueries.setSurveyBroadcastAfterPayment(bookingId, tok, schedIso);
+    return { ok: true, existed: false };
+  },
+
+  /** Очередь авторассылки: pending и время наступило. */
+  listDueSurveyWhatsApp: async (limit = 30) => {
+    const prisma = getPrisma();
+    const lim = Math.min(Math.max(parseInt(String(limit), 10) || 30, 1), 100);
+    const rows = await prisma.$queryRaw`
+      SELECT t.id
+      FROM test_drive_bookings t
+      WHERE t.survey_whatsapp_status = 'pending'
+        AND t.survey_token IS NOT NULL
+        AND TRIM(t.survey_token) <> ''
+        AND t.survey_scheduled_at IS NOT NULL
+        AND t.survey_scheduled_at <= NOW()
+        AND LOWER(COALESCE(t.status, '')) NOT IN ('cancelled')
+      ORDER BY t.survey_scheduled_at ASC
+      LIMIT ${lim}
+    `;
+    return (Array.isArray(rows) ? rows : []).map((r) => Number(r.id)).filter((id) => Number.isFinite(id));
+  },
+
+  /** После оплаты: отдельный токен и план WA «после выезда». */
+  setExitFeedbackBroadcastAfterPayment: async (bookingId, exitToken, scheduledAtIso) => {
+    const prisma = getPrisma();
+    const sid = Number(bookingId);
+    const tok = String(exitToken || '').trim();
+    if (!sid || !tok) return { changes: 0 };
+    const when = scheduledAtIso ? new Date(scheduledAtIso) : new Date();
+    await prisma.$executeRaw(
+      Prisma.sql`
+        UPDATE test_drive_bookings
+        SET exit_feedback_token = ${tok},
+            exit_feedback_whatsapp_status = 'pending',
+            exit_feedback_scheduled_at = ${when}
+        WHERE id = ${sid}
+      `
+    );
+    return { changes: 1 };
+  },
+
+  initializeExitFeedbackAfterPayment: async (bookingId, endDateYmd) => {
+    const sid = Number(bookingId);
+    if (!sid) return { changes: 0 };
+    const tok = crypto.randomBytes(24).toString('hex');
+    const schedIso = computeExitFeedbackScheduledAtIso(endDateYmd);
+    return testDriveBookingQueries.setExitFeedbackBroadcastAfterPayment(sid, tok, schedIso);
+  },
+
+  getByExitFeedbackToken: async (token) => {
+    const prisma = getPrisma();
+    const t = String(token || '').trim();
+    if (!t || t.length < 16) return null;
+    const rows = await prisma.$queryRaw(
+      Prisma.sql`SELECT * FROM test_drive_bookings WHERE exit_feedback_token = ${t} LIMIT 1`
+    );
+    return bookingToPlain(Array.isArray(rows) ? rows[0] : null);
+  },
+
+  markExitFeedbackWhatsAppSent: async (bookingId) => {
+    const prisma = getPrisma();
+    await prisma.$executeRaw(
+      Prisma.sql`
+        UPDATE test_drive_bookings
+        SET exit_feedback_whatsapp_status = 'sent',
+            exit_feedback_whatsapp_sent_at = NOW()
+        WHERE id = ${Number(bookingId)}
+      `
+    );
+    return { changes: 1 };
+  },
+
+  saveExitFeedbackReport: async (bookingId, reportJson) => {
+    const prisma = getPrisma();
+    await prisma.$executeRaw(
+      Prisma.sql`
+        UPDATE test_drive_bookings
+        SET exit_feedback_report = ${String(reportJson || '{}')}
+        WHERE id = ${Number(bookingId)}
+      `
+    );
+    return { changes: 1 };
+  },
+
+  /**
+   * Если у оплаченной/подтверждённой брони нет токена пост-отзыва — создаём (ссылка WA после выезда).
+   */
+  ensureExitFeedbackTokenIfMissing: async (bookingId) => {
+    await testDriveBookingQueries.ensureTable();
+    const row = await testDriveBookingQueries.getById(bookingId);
+    if (!row) return { ok: false, reason: 'not_found' };
+    const st = String(row.status || '').toLowerCase();
+    if (st === 'cancelled' || st === 'rejected') return { ok: false, reason: 'bad_status' };
+    if (String(row.exit_feedback_token || '').trim()) return { ok: true, existed: true };
+    if (st !== 'approved' && st !== 'paid') return { ok: false, reason: 'not_ready' };
+    await testDriveBookingQueries.initializeExitFeedbackAfterPayment(bookingId, row.end_date);
+    return { ok: true, existed: false };
+  },
+
+  /** Очередь WA «после выезда»: pending и время наступило. */
+  listDueExitFeedbackWhatsApp: async (limit = 30) => {
+    const prisma = getPrisma();
+    const lim = Math.min(Math.max(parseInt(String(limit), 10) || 30, 1), 100);
+    const rows = await prisma.$queryRaw`
+      SELECT t.id
+      FROM test_drive_bookings t
+      WHERE LOWER(COALESCE(t.exit_feedback_whatsapp_status, '')) = 'pending'
+        AND t.exit_feedback_token IS NOT NULL
+        AND TRIM(t.exit_feedback_token) <> ''
+        AND t.exit_feedback_scheduled_at IS NOT NULL
+        AND t.exit_feedback_scheduled_at <= NOW()
+        AND LOWER(COALESCE(t.status, '')) NOT IN ('cancelled', 'rejected')
+        AND LOWER(COALESCE(t.status, '')) IN ('paid', 'approved')
+      ORDER BY t.exit_feedback_scheduled_at ASC
+      LIMIT ${lim}
+    `;
+    return (Array.isArray(rows) ? rows : []).map((r) => Number(r.id)).filter((id) => Number.isFinite(id));
+  },
+
+  /** Брони для админки «Объявления»: только подтверждённые владельцем (approved). Токен опроса подставляем при отсутствии. */
+  listSurveyBroadcastBookings: async (limit = 200) => {
+    const prisma = getPrisma();
+    const lim = Math.min(Math.max(parseInt(String(limit), 10) || 200, 1), 500);
+    const rows = await prisma.$queryRaw`
+      SELECT t.*,
+             u.first_name AS buyer_first_name,
+             u.last_name AS buyer_last_name,
+             u.phone_number AS buyer_phone,
+             u.email AS buyer_email
+      FROM test_drive_bookings t
+      INNER JOIN users u ON u.id = t.user_id
+      WHERE LOWER(COALESCE(t.status, '')) = 'approved'
+      ORDER BY t.created_at DESC NULLS LAST
+      LIMIT ${lim}
+    `;
+    const plains = (Array.isArray(rows) ? rows : []).map((r) => {
+      const plain = bookingToPlain(r);
+      if (plain) {
+        plain.buyer_first_name = r.buyer_first_name ?? null;
+        plain.buyer_last_name = r.buyer_last_name ?? null;
+        plain.buyer_phone = r.buyer_phone ?? null;
+        plain.buyer_email = r.buyer_email ?? null;
+      }
+      return plain;
+    });
+    for (const plain of plains) {
+      if (!plain?.id) continue;
+      if (!String(plain.survey_token || '').trim()) {
+        await testDriveBookingQueries.ensureSurveyBroadcastTokenIfMissing(plain.id);
+        const upd = await testDriveBookingQueries.getById(plain.id);
+        if (upd) {
+          plain.survey_token = upd.survey_token;
+          plain.survey_whatsapp_status = upd.survey_whatsapp_status;
+          plain.survey_scheduled_at = upd.survey_scheduled_at;
+          plain.survey_whatsapp_sent_at = upd.survey_whatsapp_sent_at;
+        }
+      }
+    }
+    return plains;
   },
 };

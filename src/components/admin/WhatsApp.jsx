@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { FiSearch, FiSend, FiUsers, FiFilter, FiCheck, FiX, FiRefreshCw } from 'react-icons/fi';
-import { getApiBaseUrl } from '../../utils/apiConfig';
+import { getApiBaseUrl, getApiBaseUrlSync } from '../../utils/apiConfig';
 import './WhatsApp.css';
 
 // Функция для получения названия языка по коду
@@ -44,10 +44,25 @@ const WhatsApp = () => {
   const [error, setError] = useState(null);
   const [sending, setSending] = useState(false);
   const [sendResult, setSendResult] = useState(null);
-  const [whatsappStatus, setWhatsappStatus] = useState({ ready: false, state: 'UNKNOWN' });
+  const [whatsappStatus, setWhatsappStatus] = useState({
+    ready: false,
+    state: 'UNKNOWN',
+    hasQr: false,
+    canRestartPairing: false,
+    pairingResetRequiresSecret: false,
+    waDiag: null,
+    pairingCodeRaw: null,
+  });
+  const [pairingSecret, setPairingSecret] = useState('');
+  const [pairingResetBusy, setPairingResetBusy] = useState(false);
+  const [pairingNotice, setPairingNotice] = useState(null);
   const [qrTimestamp, setQrTimestamp] = useState(Date.now());
-  const [qrAvailable, setQrAvailable] = useState(false);
+  /** Пока грузится PNG после того как статус сообщил, что QR уже есть */
+  const [qrImageLoading, setQrImageLoading] = useState(false);
   const qrRefreshRef = useRef(null);
+  const whatsappStatusRef = useRef(whatsappStatus);
+  const prevHasQrRef = useRef(false);
+  whatsappStatusRef.current = whatsappStatus;
 
   // Загрузка WhatsApp пользователей с сервера
   useEffect(() => {
@@ -68,44 +83,142 @@ const WhatsApp = () => {
     if (qrRefreshRef.current) clearInterval(qrRefreshRef.current);
 
     if (!whatsappStatus.ready) {
-      checkQrAvailability();
+      void checkWhatsAppStatus();
       qrRefreshRef.current = setInterval(() => {
         setQrTimestamp(Date.now());
-        checkQrAvailability();
-      }, 20000);
+        void checkWhatsAppStatus();
+      }, 5000);
     } else {
-      setQrAvailable(false);
+      setQrImageLoading(false);
     }
   }, [whatsappStatus.ready]);
 
-  const checkQrAvailability = async () => {
-    try {
-      const res = await fetch('/api/whatsapp/qr', { method: 'HEAD' });
-      setQrAvailable(res.ok);
-    } catch {
-      setQrAvailable(false);
+  /** Первый раз, когда API сообщил hasQr — показать лоадер поверх до img.onLoad (не дублировать при каждом poll). */
+  useEffect(() => {
+    if (whatsappStatus.ready) {
+      prevHasQrRef.current = whatsappStatus.hasQr;
+      return;
     }
-  };
+    const had = prevHasQrRef.current;
+    const has = whatsappStatus.hasQr;
+    if (has && !had) {
+      setQrImageLoading(true);
+    }
+    prevHasQrRef.current = has;
+  }, [whatsappStatus.hasQr, whatsappStatus.ready]);
+
+  /** Если onLoad не сработал (редко), не блокируем UI бесконечно */
+  useEffect(() => {
+    if (!whatsappStatus.hasQr || !qrImageLoading) return undefined;
+    const timer = window.setTimeout(() => setQrImageLoading(false), 12000);
+    return () => window.clearTimeout(timer);
+  }, [whatsappStatus.hasQr, qrImageLoading, qrTimestamp]);
 
   const checkWhatsAppStatus = async () => {
     try {
-      const response = await fetch('/api/whatsapp/status');
-      const data = await response.json();
-      if (data.success) {
+      const API_BASE_URL = await getApiBaseUrl();
+      const response = await fetch(`${String(API_BASE_URL).replace(/\/$/, '')}/whatsapp/status`);
+      if (!response.ok) {
+        let hint =
+          response.status === 502 || response.status === 503
+            ? 'Backend недоступен. Запустите API: npm run server (порт 3000 или SERVER_PORT), либо npm run dev:all.'
+            : response.status === 404
+              ? 'Маршрут API не найден (404). Часто это vite preview без прокси — используйте npm run dev или npm run dev:all с запущенным server.'
+              : `Запрос статуса WhatsApp: HTTP ${response.status}`;
+        try {
+          const errBody = await response.json();
+          if (errBody?.error && typeof errBody.error === 'string') {
+            hint = errBody.error;
+          }
+        } catch {
+          /* ignore */
+        }
         setWhatsappStatus({
-          ready: data.ready,
-          state: data.state,
-          message: data.message
+          ready: false,
+          state: 'HTTP_ERROR',
+          message: hint,
+          hasQr: false,
+          canRestartPairing: false,
+          pairingResetRequiresSecret: false,
+          waDiag: null,
+          pairingCodeRaw: null,
         });
+        setQrImageLoading(false);
+        return;
+      }
+      const data = await response.json();
+      if (data.ready) {
+        setWhatsappStatus({
+          ready: true,
+          state: data.state || 'READY',
+          message: data.message || 'WhatsApp клиент готов к работе',
+          hasQr: Boolean(data.hasQr),
+          canRestartPairing: Boolean(data.canRestartPairing),
+          pairingResetRequiresSecret: Boolean(data.pairingResetRequiresSecret),
+          waDiag: data.waDiag ?? null,
+          pairingCodeRaw: data.pairingCodeRaw ?? null,
+        });
+        setQrImageLoading(false);
+      } else {
+        setWhatsappStatus({
+          ready: false,
+          state: data.state || 'NOT_READY',
+          message: data.message || 'WhatsApp клиент не готов',
+          hasQr: Boolean(data.hasQr),
+          canRestartPairing: Boolean(data.canRestartPairing),
+          pairingResetRequiresSecret: Boolean(data.pairingResetRequiresSecret),
+          waDiag: data.waDiag ?? null,
+          pairingCodeRaw: data.pairingCodeRaw ?? null,
+        });
+        const hasQr = Boolean(data.hasQr);
+        if (!hasQr) {
+          setQrImageLoading(false);
+        }
       }
     } catch (err) {
       console.error('Ошибка проверки статуса WhatsApp:', err);
+      setQrImageLoading(false);
     }
   };
 
   const handleRefreshQr = () => {
+    setQrImageLoading(true);
     setQrTimestamp(Date.now());
-    checkQrAvailability();
+    void checkWhatsAppStatus();
+  };
+
+  const handleRestartPairing = async () => {
+    if (!whatsappStatus.canRestartPairing) return;
+    if (whatsappStatus.pairingResetRequiresSecret && !pairingSecret.trim()) {
+      setPairingNotice({ type: 'error', text: 'Укажите секрет WA_PAIRING_RESET_SECRET в поле ниже.' });
+      return;
+    }
+    setPairingResetBusy(true);
+    setPairingNotice(null);
+    try {
+      const API_BASE_URL = await getApiBaseUrl();
+      const base = String(API_BASE_URL).replace(/\/$/, '');
+      const headers = { 'Content-Type': 'application/json' };
+      if (whatsappStatus.pairingResetRequiresSecret && pairingSecret.trim()) {
+        headers['X-WA-Pairing-Reset'] = pairingSecret.trim();
+      }
+      const res = await fetch(`${base}/whatsapp/restart-pairing`, {
+        method: 'POST',
+        headers,
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setPairingNotice({ type: 'error', text: data.error || `Ошибка ${res.status}` });
+        return;
+      }
+      setPairingNotice({ type: 'success', text: data.message || 'Сессия сброшена, ждём новый QR…' });
+      setQrImageLoading(true);
+      void checkWhatsAppStatus();
+    } catch (err) {
+      setPairingNotice({ type: 'error', text: err?.message || String(err) });
+    } finally {
+      setPairingResetBusy(false);
+    }
   };
 
   const loadUsers = async () => {
@@ -263,40 +376,201 @@ const WhatsApp = () => {
           <FiSend className="whatsapp-title-icon" />
           WhatsApp Рассылка
         </h2>
-        <p className="whatsapp-subtitle">Отправка сообщений выбранным пользователям</p>
+        <p className="whatsapp-subtitle">
+          Подключите номер, с которого уходят рассылки (в том числе опросы тест-драйва): отсканируйте QR ниже.
+        </p>
         {!whatsappStatus.ready && (
           <div className="whatsapp-status-warning">
             <div className="whatsapp-warning-top">
               <div>
-                <span style={{ color: '#ef4444', fontWeight: '600' }}>⚠️ WhatsApp клиент не подключён</span>
+                <span style={{ color: '#ef4444', fontWeight: '600' }}>⚠️ WhatsApp не подключён к серверу</span>
                 <p style={{ margin: '6px 0 0 0', fontSize: '0.9rem', color: '#6b7280' }}>
-                  {qrAvailable
-                    ? 'Отсканируйте QR-код телефоном через WhatsApp → Настройки → Связанные устройства → Привязать устройство'
-                    : (whatsappStatus.message || 'QR-код ещё генерируется, подождите...')}
+                  {whatsappStatus.hasQr
+                    ? 'Откройте WhatsApp на телефоне → Настройки → Связанные устройства → Привязать устройство — и наведите камеру на QR.'
+                    : whatsappStatus.message ||
+                      'Сервер запрашивает QR у WhatsApp Web… Это может занять до минуты после перезапуска backend.'}
                 </p>
+                {whatsappStatus.pairingResetRequiresSecret ? (
+                  <label style={{ display: 'block', marginTop: '10px', fontSize: '0.85rem', color: '#374151' }}>
+                    Секрет сброса (WA_PAIRING_RESET_SECRET):
+                    <input
+                      type="password"
+                      value={pairingSecret}
+                      onChange={(e) => setPairingSecret(e.target.value)}
+                      autoComplete="off"
+                      style={{
+                        display: 'block',
+                        marginTop: '4px',
+                        width: '100%',
+                        maxWidth: '320px',
+                        padding: '8px',
+                        border: '1px solid #d1d5db',
+                        borderRadius: '6px',
+                      }}
+                      placeholder="Только для сервера с переменной окружения"
+                    />
+                  </label>
+                ) : null}
+                {pairingNotice ? (
+                  <p
+                    style={{
+                      margin: '8px 0 0 0',
+                      fontSize: '0.85rem',
+                      color: pairingNotice.type === 'success' ? '#059669' : '#dc2626',
+                    }}
+                  >
+                    {pairingNotice.text}
+                  </p>
+                ) : null}
+                {!whatsappStatus.ready && whatsappStatus.waDiag ? (
+                  <div
+                    style={{
+                      marginTop: '12px',
+                      padding: '10px',
+                      fontSize: '0.78rem',
+                      lineHeight: 1.45,
+                      color: '#374151',
+                      background: '#f9fafb',
+                      borderRadius: '8px',
+                      border: '1px solid #e5e7eb',
+                      fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
+                    }}
+                  >
+                    <strong style={{ fontFamily: 'inherit' }}>Диагностика WhatsApp Web (с сервера)</strong>
+                    {whatsappStatus.waDiag.lastError ? (
+                      <div style={{ color: '#b91c1c', marginTop: '6px' }}>
+                        Ошибка: {whatsappStatus.waDiag.lastError}
+                      </div>
+                    ) : null}
+                    <div style={{ marginTop: '6px' }}>
+                      Состояние: {whatsappStatus.waDiag.connectionState ?? '—'} · Попыток init:{' '}
+                      {whatsappStatus.waDiag.initAttempts ?? '—'} · Длина кода пары:{' '}
+                      {whatsappStatus.waDiag.pairingCodeLength ?? 0}
+                    </div>
+                    <div style={{ marginTop: '4px' }}>
+                      Puppeteer:{' '}
+                      {whatsappStatus.waDiag.chromeExecutable
+                        ? whatsappStatus.waDiag.chromeExecutable
+                        : whatsappStatus.waDiag.puppeteerChannel
+                          ? `channel "${whatsappStatus.waDiag.puppeteerChannel}"`
+                          : 'встроенный Chrome из кэша (при ошибке: npm run puppeteer:install)'}
+                    </div>
+                    <div style={{ marginTop: '4px' }}>
+                      Папка сессии (.wwebjs_auth):{' '}
+                      {whatsappStatus.waDiag.sessionFolderExists ? 'есть' : 'нет'} · Кэш версии WA:{' '}
+                      {whatsappStatus.waDiag.remoteWebCache ?? '—'}
+                    </div>
+                    {whatsappStatus.waDiag.lastQrAt ? (
+                      <div style={{ marginTop: '4px', color: '#059669' }}>
+                        QR хотя бы раз приходил на сервер:{' '}
+                        {new Date(whatsappStatus.waDiag.lastQrAt).toLocaleString()}
+                      </div>
+                    ) : (
+                      <div style={{ marginTop: '6px', color: '#92400e' }}>
+                        Событие QR ещё не приходило на сервер — смотрите лог процесса{' '}
+                        <code style={{ fontSize: '0.85em' }}>npm run server</code>. Если долго пусто: удалите{' '}
+                        <code style={{ fontSize: '0.85em' }}>server/.wwebjs_auth</code>, перезапустите API; при
+                        конфликте с другим процессом задайте{' '}
+                        <code style={{ fontSize: '0.85em' }}>WHATSAPP_SKIP_BOT_STATUS=1</code>.
+                      </div>
+                    )}
+                  </div>
+                ) : null}
               </div>
               <div className="whatsapp-warning-actions">
-                <button onClick={handleRefreshQr} className="btn-qr-refresh" title="Обновить QR-код">
+                <button type="button" onClick={handleRefreshQr} className="btn-qr-refresh" title="Обновить QR-код">
                   <FiRefreshCw />
                   Обновить QR
                 </button>
-                <button onClick={checkWhatsAppStatus} className="btn-qr-refresh" title="Проверить статус">
+                <button type="button" onClick={() => void checkWhatsAppStatus()} className="btn-qr-refresh" title="Проверить статус">
                   <FiRefreshCw />
                   Проверить статус
                 </button>
+                {whatsappStatus.canRestartPairing ? (
+                  <button
+                    type="button"
+                    onClick={() => void handleRestartPairing()}
+                    className="btn-qr-refresh"
+                    disabled={pairingResetBusy}
+                    title="Сбросить сессию WhatsApp Web и запросить новый QR"
+                  >
+                    <FiRefreshCw style={pairingResetBusy ? { animation: 'spin 1s linear infinite' } : undefined} />
+                    Запросить новый QR
+                  </button>
+                ) : null}
               </div>
             </div>
-            {qrAvailable && (
-              <div className="whatsapp-qr-block">
-                <img
-                  src={`/api/whatsapp/qr?t=${qrTimestamp}`}
-                  alt="WhatsApp QR-код"
-                  className="whatsapp-qr-image"
-                  onError={() => setQrAvailable(false)}
-                />
-                <p className="whatsapp-qr-hint">QR-код обновляется автоматически каждые 20 секунд</p>
+            <div className="whatsapp-qr-block">
+              <div className="whatsapp-qr-frame">
+                {!whatsappStatus.hasQr ? (
+                  <div className="whatsapp-qr-loading" role="status" aria-live="polite">
+                    <div className="whatsapp-qr-spinner" aria-hidden />
+                    <p className="whatsapp-qr-loading-text">Генерируем QR-код…</p>
+                    <span className="whatsapp-qr-loading-hint">
+                      Дождитесь появления картинки и отсканируйте её одним сеансом.
+                      {whatsappStatus.canRestartPairing && !whatsappStatus.hasQr
+                        ? ' Если так висит дольше минуты — нажмите «Запросить новый QR» (или удалите папку сессии на сервере и перезапустите API).'
+                        : ''}
+                    </span>
+                  </div>
+                ) : (
+                  <>
+                    {qrImageLoading ? (
+                      <div className="whatsapp-qr-loading whatsapp-qr-loading--overlay" role="status" aria-live="polite">
+                        <div className="whatsapp-qr-spinner" aria-hidden />
+                        <p className="whatsapp-qr-loading-text">Загружаем QR…</p>
+                      </div>
+                    ) : null}
+                    <img
+                      src={`${String(getApiBaseUrlSync()).replace(/\/$/, '')}/whatsapp/qr?t=${qrTimestamp}`}
+                      alt="WhatsApp QR-код для привязки аккаунта рассылки"
+                      className={`whatsapp-qr-image ${qrImageLoading ? 'whatsapp-qr-image--hidden' : ''}`}
+                      decoding="async"
+                      onLoad={() => setQrImageLoading(false)}
+                      onError={() => {
+                        setQrImageLoading(false);
+                      }}
+                    />
+                  </>
+                )}
               </div>
-            )}
+              {whatsappStatus.pairingCodeRaw ? (
+                <div style={{ marginTop: '14px' }}>
+                  <label style={{ fontSize: '0.85rem', color: '#374151', fontWeight: 600 }}>
+                    Связать устройство вручную (если картинка не открывается — тот же код, что в QR):
+                  </label>
+                  <textarea
+                    readOnly
+                    value={whatsappStatus.pairingCodeRaw}
+                    rows={4}
+                    spellCheck={false}
+                    style={{
+                      width: '100%',
+                      marginTop: '8px',
+                      padding: '10px',
+                      fontFamily: 'ui-monospace, monospace',
+                      fontSize: '11px',
+                      lineHeight: 1.35,
+                      border: '1px solid #d1d5db',
+                      borderRadius: '8px',
+                      resize: 'vertical',
+                      boxSizing: 'border-box',
+                    }}
+                  />
+                  <button
+                    type="button"
+                    className="btn-qr-refresh"
+                    style={{ marginTop: '8px' }}
+                    onClick={() => {
+                      void navigator.clipboard?.writeText(whatsappStatus.pairingCodeRaw || '');
+                    }}
+                  >
+                    Копировать код
+                  </button>
+                </div>
+              ) : null}
+              <p className="whatsapp-qr-hint">Пока аккаунт не подключён, статус обновляется каждые ~5 секунд (можно «Обновить QR»).</p>
+            </div>
           </div>
         )}
         {whatsappStatus.ready && (

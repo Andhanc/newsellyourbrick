@@ -680,16 +680,26 @@ model stripe_wallet_deposit_credits {
 }
 
 model test_drive_bookings {
-  id                    Int       @id @default(autoincrement())
-  property_id           Int
-  property_table        String    @default("properties_apartments")
-  user_id               Int
-  start_date            String
-  end_date              String
-  status                String    @default("pending")
-  owner_notification_id Int?
-  created_at            DateTime? @default(now())
-  users                 users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  id                      Int       @id @default(autoincrement())
+  property_id             Int
+  property_table          String    @default("properties_apartments")
+  user_id                 Int
+  start_date              String
+  end_date                String
+  status                  String    @default("pending")
+  owner_notification_id   Int?
+  buyer_contact_channel   String?
+  survey_token            String?
+  survey_whatsapp_status  String?
+  survey_whatsapp_sent_at DateTime?
+  survey_scheduled_at     DateTime?
+  exit_feedback_token            String?
+  exit_feedback_whatsapp_status  String?
+  exit_feedback_whatsapp_sent_at DateTime?
+  exit_feedback_scheduled_at     DateTime?
+  exit_feedback_report           String?
+  created_at              DateTime? @default(now())
+  users                   users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@index([status], map: "idx_tdb_status")
   @@index([user_id], map: "idx_tdb_user")

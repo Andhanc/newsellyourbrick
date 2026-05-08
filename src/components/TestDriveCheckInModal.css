@@ -352,6 +352,40 @@
   margin-bottom: 16px;
 }
 
+.td-checkin-modal__options--stack {
+  flex-direction: column;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  gap: 8px;
+}
+
+.td-checkin-modal__options--stack .td-checkin-modal__opt {
+  min-width: 0;
+  width: 100%;
+}
+
+.td-checkin-modal__hint-text {
+  margin: 0 0 12px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--td-checkin-muted);
+}
+
+.td-checkin-modal__hint-text--muted {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.45;
+  color: #94a3b8;
+}
+
+.td-checkin-modal__feedback-label {
+  display: block;
+  margin: 4px 0 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--td-checkin-ink);
+}
+
 .td-checkin-modal__opt {
   flex: 1;
   min-width: calc(50% - 6px);
@@ -384,6 +418,30 @@
   background: linear-gradient(180deg, #ecfdf5 0%, #d1fae5 100%);
   color: #0f766e;
   box-shadow: 0 4px 16px rgba(13, 148, 136, 0.18);
+}
+
+.td-checkin-modal__welcome {
+  margin: 0 0 10px;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--td-checkin-ink);
+  letter-spacing: -0.02em;
+}
+
+.td-checkin-modal__options--radio .td-checkin-modal__opt--radio {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin: 0;
+}
+
+.td-checkin-modal__opt--radio input[type='radio'] {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+  pointer-events: none;
 }
 
 .td-checkin-modal__textarea {
@@ -504,6 +562,13 @@
 
 .td-checkin-modal__btn--primary:hover:not(:disabled) {
   box-shadow: 0 6px 22px rgba(13, 148, 136, 0.42);
+}
+
+.td-checkin-modal__btn--primary:disabled {
+  opacity: 0.42;
+  filter: grayscale(0.35);
+  box-shadow: none;
+  cursor: not-allowed;
 }
 
 /* ——— Телефон: bottom sheet ——— */

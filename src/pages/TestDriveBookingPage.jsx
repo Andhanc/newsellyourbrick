@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { FiArrowLeft } from 'react-icons/fi'
+import { FiArrowLeft, FiMail } from 'react-icons/fi'
+import { SiTelegram, SiWhatsapp } from 'react-icons/si'
 import Header from '../components/Header'
 import { TestDriveRangeCalendar } from '@/components/ui/calendar'
 import { getApiBaseUrlSync } from '../utils/apiConfig'
@@ -10,6 +11,27 @@ import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
 import './TestDriveBookingPage.css'
 
 let API_BASE_URL = getApiBaseUrlSync()
+
+const CONTACT_OPTIONS = [
+  {
+    id: 'telegram',
+    label: 'Telegram',
+    hint: 'Напишем вам в Telegram',
+    Icon: SiTelegram,
+  },
+  {
+    id: 'whatsapp',
+    label: 'WhatsApp',
+    hint: 'Свяжемся через WhatsApp',
+    Icon: SiWhatsapp,
+  },
+  {
+    id: 'email',
+    label: 'Почта',
+    hint: 'Отправим письмо на email',
+    Icon: FiMail,
+  },
+]
 
 export default function TestDriveBookingPage() {
   const { id } = useParams()
@@ -31,6 +53,8 @@ export default function TestDriveBookingPage() {
   const [isMobile, setIsMobile] = useState(
     typeof window !== 'undefined' ? window.innerWidth <= 768 : false
   )
+  const [contactChannel, setContactChannel] = useState(null)
+  const [contactPickerOpen, setContactPickerOpen] = useState(false)
 
   const currencyFmt = (amount, currency) => {
     try {
@@ -114,11 +138,37 @@ export default function TestDriveBookingPage() {
 
   const handleRangeSelected = (range) => {
     setPendingRange(range)
+    if (range) {
+      setContactChannel(null)
+      setContactPickerOpen(true)
+      setPaymentOpen(false)
+      setPaymentStep(1)
+      setQuoteData(null)
+    } else {
+      setContactChannel(null)
+      setContactPickerOpen(false)
+      setPaymentOpen(false)
+      setPaymentStep(1)
+      setQuoteData(null)
+    }
   }
 
   const handleCancelSelection = () => {
     setPendingRange(null)
+    setContactChannel(null)
+    setContactPickerOpen(false)
+    setPaymentOpen(false)
+    setPaymentStep(1)
+    setQuoteData(null)
     setCalendarResetKey((k) => k + 1)
+  }
+
+  const selectContactChannel = (channelId) => {
+    setContactChannel(channelId)
+    setContactPickerOpen(false)
+    setQuoteData(null)
+    setPaymentStep(1)
+    setPaymentOpen(true)
   }
 
   const fetchQuote = async () => {
@@ -137,14 +187,14 @@ export default function TestDriveBookingPage() {
 
   const handleOpenPayment = async () => {
     if (!pendingRange) return
-    const uid = localStorage.getItem('userId')
-    if (!uid || !/^\d+$/.test(uid)) {
-      requestOpenLoginModal({ wizard: true })
+    if (!contactChannel) {
+      showToast('Выберите способ связи: Telegram, WhatsApp или почту', 'error')
+      setContactPickerOpen(true)
       return
     }
-    setPaymentOpen(true)
-    setPaymentStep(1)
     setQuoteData(null)
+    setPaymentStep(1)
+    setPaymentOpen(true)
   }
 
   const handleContinueToStep2 = async () => {
@@ -161,7 +211,7 @@ export default function TestDriveBookingPage() {
   }
 
   const handlePay = async () => {
-    if (!pendingRange) return
+    if (!pendingRange || !contactChannel) return
     const uid = localStorage.getItem('userId')
     if (!uid || !/^\d+$/.test(uid)) {
       requestOpenLoginModal({ wizard: true })
@@ -180,6 +230,7 @@ export default function TestDriveBookingPage() {
           propertyTable,
           startDate: pendingRange.start,
           endDate: pendingRange.end,
+          contactChannel,
           customerEmail,
           returnPath: `/property/${id}/test-drive`,
         }),
@@ -217,8 +268,8 @@ export default function TestDriveBookingPage() {
           Тест-драйв: {propertyTitle}
         </motion.h1>
         <p className="test-drive-page__subtitle">
-          Выберите от 2 до 5 дней подряд, затем отправьте заявку кнопкой ниже.
-          Занятые даты видны всем пользователям.
+          Выберите от 5 до 21 дня подряд и способ связи — сразу откроется инструкция. Кнопка ниже —
+          если вы закрыли окно. Занятые даты видны всем пользователям.
         </p>
       </div>
 
@@ -242,6 +293,21 @@ export default function TestDriveBookingPage() {
                 Выбрано: <strong>{pendingRange.start}</strong> —{' '}
                 <strong>{pendingRange.end}</strong>
               </p>
+              {contactChannel ? (
+                <p className="test-drive-page__contact-picked">
+                  Связь:{' '}
+                  <strong>
+                    {CONTACT_OPTIONS.find((c) => c.id === contactChannel)?.label || contactChannel}
+                  </strong>
+                  <button
+                    type="button"
+                    className="test-drive-page__contact-change"
+                    onClick={() => setContactPickerOpen(true)}
+                  >
+                    Изменить
+                  </button>
+                </p>
+              ) : null}
               <div className="test-drive-page__action-buttons">
                 <button
                   type="button"
@@ -254,7 +320,7 @@ export default function TestDriveBookingPage() {
                 <button
                   type="button"
                   className="test-drive-page__btn test-drive-page__btn--primary"
-                  disabled={saving}
+                  disabled={saving || !contactChannel}
                   onClick={handleOpenPayment}
                 >
                   Запросить тест-драйв
@@ -285,7 +351,7 @@ export default function TestDriveBookingPage() {
           >
             <h3>Проживание</h3>
             <p>
-              Количество ночей совпадает с выбранным диапазоном (от 2 до 5
+              Количество ночей совпадает с выбранным диапазоном (от 5 до 21
               суток подряд).
             </p>
           </motion.div>
@@ -309,68 +375,191 @@ export default function TestDriveBookingPage() {
           >
             <h3>Занятые даты</h3>
             <p>
-              Зелёным — ваши заявки, оранжевым — другие пользователи. После выбора
-              дней нажмите «Запросить тест-драйв» — только тогда заявка уходит
-              владельцу. «Отменить» сбрасывает выбор.
+              Зелёным — ваши заявки, оранжевым — другие пользователи. После дат выберите связь —
+              откроется инструкция. «Отменить» сбрасывает выбор.
             </p>
           </motion.div>
         </aside>
       </div>
-      {paymentOpen && pendingRange && (
-        <div className="test-drive-pay-overlay" onClick={() => setPaymentOpen(false)}>
-          <div
-            className={`test-drive-pay-sheet${isMobile ? ' test-drive-pay-sheet--mobile' : ''}`}
+      {contactPickerOpen && pendingRange && (
+        <div
+          className={`test-drive-pay-overlay${isMobile ? ' test-drive-contact-overlay--drawer' : ''}`}
+          onClick={() => setContactPickerOpen(false)}
+        >
+          <motion.div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="test-drive-contact-title"
+            initial={
+              isMobile
+                ? { y: '100%' }
+                : { opacity: 0, y: 22, scale: 0.97 }
+            }
+            animate={
+              isMobile
+                ? { y: 0, opacity: 1 }
+                : { opacity: 1, y: 0, scale: 1 }
+            }
+            transition={
+              isMobile
+                ? { type: 'spring', damping: 33, stiffness: 400, mass: 0.65 }
+                : { type: 'spring', stiffness: 380, damping: 32 }
+            }
+            className={`test-drive-contact-sheet${isMobile ? ' test-drive-contact-sheet--drawer' : ''}`}
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 className="test-drive-pay-sheet__title">
+            {isMobile ? (
+              <div className="test-drive-contact-drawer__handle-wrap" aria-hidden>
+                <span className="test-drive-contact-drawer__handle" />
+              </div>
+            ) : null}
+            <h3 id="test-drive-contact-title" className="test-drive-contact-sheet__title">
+              Как с вами связаться?
+            </h3>
+            <p className="test-drive-contact-sheet__subtitle">
+              Выберите удобный канал — так владелец поймёт, куда писать или звонить для согласования заезда.
+            </p>
+            <div
+              className={`test-drive-contact-grid${isMobile ? ' test-drive-contact-grid--drawer' : ''}`}
+            >
+              {CONTACT_OPTIONS.map(({ id, label, hint, Icon }) => (
+                <button
+                  key={id}
+                  type="button"
+                  className={`test-drive-contact-card${isMobile ? ' test-drive-contact-card--drawer' : ''}${
+                    contactChannel === id ? ' test-drive-contact-card--active' : ''
+                  }`}
+                  onClick={() => selectContactChannel(id)}
+                >
+                  <span className="test-drive-contact-card__icon" aria-hidden>
+                    <Icon size={26} />
+                  </span>
+                  <span className="test-drive-contact-card__body">
+                    <span className="test-drive-contact-card__label">{label}</span>
+                    <span className="test-drive-contact-card__hint">{hint}</span>
+                  </span>
+                </button>
+              ))}
+            </div>
+            <button
+              type="button"
+              className="test-drive-page__btn test-drive-page__btn--ghost test-drive-contact-sheet__close"
+              onClick={() => setContactPickerOpen(false)}
+            >
+              Закрыть
+            </button>
+          </motion.div>
+        </div>
+      )}
+      {paymentOpen && pendingRange && (
+        <div
+          className={`test-drive-pay-overlay${isMobile ? ' test-drive-pay-overlay--drawer' : ''}`}
+          onClick={() => setPaymentOpen(false)}
+        >
+          <motion.div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="test-drive-pay-title"
+            initial={
+              isMobile
+                ? { y: '100%' }
+                : { opacity: 0, y: 18, scale: 0.98 }
+            }
+            animate={
+              isMobile
+                ? { y: 0, opacity: 1 }
+                : { opacity: 1, y: 0, scale: 1 }
+            }
+            transition={
+              isMobile
+                ? { type: 'spring', damping: 33, stiffness: 400, mass: 0.65 }
+                : { type: 'spring', stiffness: 380, damping: 32 }
+            }
+            className={`test-drive-pay-sheet${isMobile ? ' test-drive-pay-sheet--drawer' : ''}`}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {isMobile ? (
+              <div className="test-drive-contact-drawer__handle-wrap" aria-hidden>
+                <span className="test-drive-contact-drawer__handle" />
+              </div>
+            ) : null}
+            <h3 id="test-drive-pay-title" className="test-drive-pay-sheet__title">
               {paymentStep === 1 ? 'Инструкция и правила тест-драйва' : 'Шаг 2: оплата тест-драйва'}
             </h3>
-            {paymentStep === 1 ? (
-              <>
-                <p className="test-drive-pay-sheet__text">
-                  После оплаты бронирование сразу попадёт в ваши бронирования, в мои продажи продавца и в админ-панель.
-                  В назначенные даты вы заселяетесь по согласованию с владельцем.
-                </p>
-                <ul className="test-drive-pay-sheet__rules">
-                  <li>Заезд в первый день с 15:00, выезд в последний день до 12:00.</li>
-                  <li>Соблюдайте правила объекта и сохранность имущества.</li>
-                  <li>Страховой депозит возвращается по условиям продавца.</li>
-                </ul>
+            <div className="test-drive-pay-sheet__scroll">
+              {paymentStep === 1 ? (
+                <>
+                  <p className="test-drive-pay-sheet__text">
+                    Оплата проходит одним платежом: отдельно сумма за выбранные сутки проживания и страховой депозит
+                    (если он задан для объекта). После оплаты бронирование сразу отобразится у вас, у продавца и в
+                    админ-панели.
+                  </p>
+                  <ul className="test-drive-pay-sheet__rules">
+                    <li>Заезд в первый день с 15:00, выезд в последний день до 12:00.</li>
+                    <li>Соблюдайте правила объекта и бережно относитесь к имуществу.</li>
+                    <li>
+                      Страховой депозит: при отсутствии нарушений после проживания он возвращается на вашу карту в
+                      течение одной недели с момента выезда (срок зачисления может зависеть от банка).
+                    </li>
+                  </ul>
+                </>
+              ) : (
+                <>
+                  <p className="test-drive-pay-sheet__text">
+                    Выбрано: <strong>{pendingRange.start}</strong> — <strong>{pendingRange.end}</strong>
+                  </p>
+                  {quoteData ? (
+                    <div className="test-drive-pay-sheet__summary">
+                      <p>Суток: <strong>{quoteData.day_count}</strong></p>
+                      <p>Стоимость за сутки: <strong>{currencyFmt(quoteData.daily_price, quoteData.currency)}</strong></p>
+                      <p>
+                        Проживание:{' '}
+                        <strong>
+                          {currencyFmt(
+                            quoteData.stay_total ?? quoteData.day_count * quoteData.daily_price,
+                            quoteData.currency
+                          )}
+                        </strong>
+                      </p>
+                      <p>Страховой депозит: <strong>{currencyFmt(quoteData.insurance_deposit, quoteData.currency)}</strong></p>
+                      {Number(quoteData.insurance_deposit) > 0 ? (
+                        <p className="test-drive-pay-sheet__deposit-note">
+                          Депозит удерживается вместе с оплатой суток. Если правила проживания не нарушались, в течение
+                          недели после выезда сумма депозита возвращается на ту же карту.
+                        </p>
+                      ) : null}
+                      <p className="test-drive-pay-sheet__total-line">
+                        Итого к оплате: <strong>{currencyFmt(quoteData.total_amount, quoteData.currency)}</strong>
+                      </p>
+                    </div>
+                  ) : (
+                    <p className="test-drive-pay-sheet__text">Расчет суммы...</p>
+                  )}
+                </>
+              )}
+            </div>
+            <div className={`test-drive-pay-sheet__actions${isMobile ? ' test-drive-pay-sheet__actions--drawer' : ''}`}>
+              {paymentStep === 1 ? (
                 <button
                   type="button"
-                  className="test-drive-page__btn test-drive-page__btn--primary"
+                  className="test-drive-page__btn test-drive-page__btn--primary test-drive-pay-sheet__action-btn"
                   disabled={saving}
                   onClick={handleContinueToStep2}
                 >
                   Перейти к оплате
                 </button>
-              </>
-            ) : (
-              <>
-                <p className="test-drive-pay-sheet__text">
-                  Выбрано: <strong>{pendingRange.start}</strong> — <strong>{pendingRange.end}</strong>
-                </p>
-                {quoteData ? (
-                  <div className="test-drive-pay-sheet__summary">
-                    <p>Суток: <strong>{quoteData.day_count}</strong></p>
-                    <p>Стоимость за сутки: <strong>{currencyFmt(quoteData.daily_price, quoteData.currency)}</strong></p>
-                    <p>Страховой депозит: <strong>{currencyFmt(quoteData.insurance_deposit, quoteData.currency)}</strong></p>
-                    <p>К оплате за тест-драйв: <strong>{currencyFmt(quoteData.total_amount, quoteData.currency)}</strong></p>
-                  </div>
-                ) : (
-                  <p>Расчет суммы...</p>
-                )}
+              ) : (
                 <button
                   type="button"
-                  className="test-drive-page__btn test-drive-page__btn--primary"
+                  className="test-drive-page__btn test-drive-page__btn--primary test-drive-pay-sheet__action-btn"
                   disabled={checkoutLoading || !quoteData}
                   onClick={handlePay}
                 >
                   {checkoutLoading ? 'Переход к оплате...' : 'Оплатить'}
                 </button>
-              </>
-            )}
-          </div>
+              )}
+            </div>
+          </motion.div>
         </div>
       )}
     </div>

@@ -14,6 +14,7 @@ import fs from 'fs';
 const { readFileSync } = fs;
 import crypto from 'crypto';
 import qrcode from 'qrcode-terminal';
+import QRCodePNG from 'qrcode';
 import whatsappPkg from 'whatsapp-web.js';
 import { calculatePropertyPrice } from './services/propertyParser.js';
 import { SPAIN_CITIES, DISTRICTS_BY_CITY, getDistrictOptions } from './data/propertyCalculatorLocations.js';
@@ -786,6 +787,10 @@ try {
 // ========== НАСТРОЙКА WHATSAPP WEB КЛИЕНТА ==========
 let waClientReady = false;
 let currentQRCode = null; // Сохраняем текущий QR-код для отображения в футере
+/** Диагностика для GET /api/whatsapp/status (waDiag) */
+let waLastQrAt = null;
+let waLastInitError = null;
+let waConnectionState = null;
 
 // ========== СИСТЕМА ОТСЛЕЖИВАНИЯ ОБЪЕКТОВ БЕЗ СТАВОК ==========
 // Map для хранения таймеров объектов: propertyId -> timeoutId
@@ -794,13 +799,92 @@ const propertyTimers = new Map();
 const notifiedProperties = new Set();
 // ========== КОНЕЦ СИСТЕМЫ ОТСЛЕЖИВАНИЯ ==========
 
+/** Явный URL кэша версии WA Web (перекрывает значение по умолчанию). */
 const waRemoteVersionPath = String(process.env.WA_WEB_VERSION_REMOTE_PATH || '').trim();
+/** Отключить remote cache полностью: WA_DISABLE_REMOTE_WEB_VERSION=1 */
+const waDisableRemoteWebVersion = process.env.WA_DISABLE_REMOTE_WEB_VERSION === '1';
+/**
+ * Без remote webVersionCache WhatsApp Web часто не доходит до события qr (устаревший скрипт в бандле).
+ * По умолчанию включаем remote cache wwebjs; при проблемах с DNS задайте WA_DISABLE_REMOTE_WEB_VERSION=1
+ * или свой WA_WEB_VERSION_REMOTE_PATH.
+ */
+const waDefaultRemoteCacheUrl =
+  'https://raw.githubusercontent.com/wwebjs-bot/whatsapp-web.js/main/web-cache/version.json';
+
+/**
+ * Chrome/Chromium для whatsapp-web.js (Puppeteer). Иначе: "Could not find Chrome" — см. npm run puppeteer:install
+ * Переопределение: PUPPETEER_EXECUTABLE_PATH=/path/to/chrome
+ */
+function resolvePuppeteerExecutablePath() {
+  const envPath = String(process.env.PUPPETEER_EXECUTABLE_PATH || '').trim();
+  if (envPath && fs.existsSync(envPath)) return envPath;
+
+  if (process.platform === 'darwin') {
+    const mac = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
+    if (fs.existsSync(mac)) return mac;
+    const brave = '/Applications/Brave Browser.app/Contents/MacOS/Brave Browser';
+    if (fs.existsSync(brave)) return brave;
+  }
+  if (process.platform === 'linux') {
+    const candidates = [
+      '/usr/bin/google-chrome-stable',
+      '/usr/bin/google-chrome',
+      '/snap/bin/chromium',
+      '/usr/bin/chromium-browser',
+      '/usr/bin/chromium',
+    ];
+    for (const c of candidates) {
+      if (fs.existsSync(c)) return c;
+    }
+  }
+  if (process.platform === 'win32') {
+    const win = [
+      'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+      'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
+    ];
+    for (const c of win) {
+      if (fs.existsSync(c)) return c;
+    }
+  }
+  return undefined;
+}
+
+/** Результат: executablePath ИЛИ channel (без кэша Puppeteer часто нужен channel: 'chrome'). */
+function resolvePuppeteerLaunchOptions() {
+  const envPath = String(process.env.PUPPETEER_EXECUTABLE_PATH || '').trim();
+  if (envPath && fs.existsSync(envPath)) {
+    return { mode: 'executablePath', executablePath: envPath };
+  }
+
+  const resolved = resolvePuppeteerExecutablePath();
+  if (resolved) {
+    return { mode: 'executablePath', executablePath: resolved };
+  }
+
+  if (process.env.WA_PUPPETEER_CHANNEL_DISABLE === '1') {
+    return { mode: 'bundled' };
+  }
+
+  const ch = String(process.env.PUPPETEER_CHANNEL || 'chrome').trim();
+  if (!ch || ch === 'none') {
+    return { mode: 'bundled' };
+  }
+
+  return { mode: 'channel', channel: ch };
+}
+
+const waPuppeteerLaunch = resolvePuppeteerLaunchOptions();
 
 const waClientOptions = {
   authStrategy: new LocalAuth({
     dataPath: join(__dirname, '.wwebjs_auth')
   }),
   puppeteer: {
+    ...(waPuppeteerLaunch.mode === 'executablePath'
+      ? { executablePath: waPuppeteerLaunch.executablePath }
+      : waPuppeteerLaunch.mode === 'channel'
+        ? { channel: waPuppeteerLaunch.channel }
+        : {}),
     headless: true,
     args: [
       '--no-sandbox',
@@ -823,26 +907,51 @@ const waClientOptions = {
     // Игнорируем ошибки HTTPS (если есть проблемы с сертификатами)
     ignoreHTTPSErrors: true
   },
-  // По умолчанию не привязываем сервер к GitHub remote cache,
-  // чтобы при проблемах DNS (ENOTFOUND raw.githubusercontent.com)
-  // WhatsApp-клиент не шумел ошибками на старте.
-  // При необходимости можно явно включить remote cache через env:
-  // WA_WEB_VERSION_REMOTE_PATH=https://...
-  ...(waRemoteVersionPath
+  ...(!waDisableRemoteWebVersion
     ? {
-      webVersionCache: {
-        type: 'remote',
-        remotePath: waRemoteVersionPath
+        webVersionCache: {
+          type: 'remote',
+          remotePath: waRemoteVersionPath || waDefaultRemoteCacheUrl,
+        },
       }
-    }
     : {})
 };
 
 const waClient = new Client(waClientOptions);
 
+if (waPuppeteerLaunch.mode === 'executablePath') {
+  console.log('[WA] Puppeteer → executablePath:', waPuppeteerLaunch.executablePath);
+} else if (waPuppeteerLaunch.mode === 'channel') {
+  console.log(
+    `[WA] Puppeteer → channel: "${waPuppeteerLaunch.channel}" (системный Chrome; отключить: WA_PUPPETEER_CHANNEL_DISABLE=1)`
+  );
+} else {
+  console.log(
+    '[WA] Puppeteer → встроенный Chrome из кэша. Если «Could not find Chrome»: npm run puppeteer:install или установите Google Chrome / задайте PUPPETEER_EXECUTABLE_PATH'
+  );
+}
+
+waClient.on('loading_screen', (percent, message) => {
+  const p = Number(percent);
+  if (p === 0 || p >= 99 || p % 20 === 0) {
+    console.log(`[WA] Загрузка WhatsApp Web: ${p}% ${message ? String(message) : ''}`);
+  }
+});
+
+waClient.on('change_state', (state) => {
+  waConnectionState = state != null ? String(state) : null;
+  console.log('[WA] Состояние:', state);
+});
+
+waClient.on('error', (err) => {
+  waLastInitError = err?.message || String(err);
+  console.error('[WA] Ошибка клиента:', waLastInitError);
+});
+
 waClient.on('qr', (qr) => {
   // Сохраняем QR-код для отображения в футере
   currentQRCode = qr;
+  waLastQrAt = Date.now();
   
   // Выводим компактный QR-код
   console.log('\n📲 WhatsApp QR-код для сканирования:');
@@ -992,6 +1101,68 @@ async function trySendWhatsAppDigits(rawPhoneDigits, messageText) {
   }
 }
 
+function getFrontendBaseUrl() {
+  return (process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/$/, '');
+}
+
+/** Рассылка WhatsApp с ссылкой на опрос проживания (тест-драйв). */
+async function sendTestDriveSurveyWhatsAppForBooking(bookingId, options = {}) {
+  const manual = Boolean(options.manual);
+  await testDriveBookingQueries.ensureTable();
+  const booking = await testDriveBookingQueries.getById(bookingId);
+  if (!booking || !booking.survey_token) {
+    return { ok: false, error: 'no_booking_or_token' };
+  }
+  const st = String(booking.status || '').toLowerCase();
+  if (st === 'cancelled') return { ok: false, error: 'cancelled' };
+  const sentAlready = String(booking.survey_whatsapp_status || '').toLowerCase() === 'sent';
+  if (sentAlready && !manual) return { ok: true, already: true };
+
+  const user = await userQueries.getById(booking.user_id);
+  const phone = user?.phone_number || '';
+  const digits = String(phone).replace(/\D/g, '');
+  if (!digits) return { ok: false, error: 'no_phone' };
+
+  const url = `${getFrontendBaseUrl()}/test-drive/survey/${booking.survey_token}`;
+  const hello = user?.first_name ? `Здравствуйте, ${user.first_name}! ` : '';
+  const text = `${hello}Как проходит проживание? Пройдите короткий опрос: ${url}`;
+
+  const wa = await trySendWhatsAppDigits(digits, text);
+  if (!wa.ok) return { ok: false, error: wa.error || 'wa_failed' };
+
+  await testDriveBookingQueries.markSurveyWhatsAppSent(bookingId);
+  return { ok: true };
+}
+
+/** Рассылка WhatsApp после выезда — оценка объекта (звёзды). */
+async function sendTestDriveExitFeedbackWhatsAppForBooking(bookingId, options = {}) {
+  const manual = Boolean(options.manual);
+  await testDriveBookingQueries.ensureTable();
+  const booking = await testDriveBookingQueries.getById(bookingId);
+  if (!booking || !String(booking.exit_feedback_token || '').trim()) {
+    return { ok: false, error: 'no_booking_or_token' };
+  }
+  const st = String(booking.status || '').toLowerCase();
+  if (st === 'cancelled' || st === 'rejected') return { ok: false, error: 'cancelled' };
+  const sentAlready = String(booking.exit_feedback_whatsapp_status || '').toLowerCase() === 'sent';
+  if (sentAlready && !manual) return { ok: true, already: true };
+
+  const user = await userQueries.getById(booking.user_id);
+  const phone = user?.phone_number || '';
+  const digits = String(phone).replace(/\D/g, '');
+  if (!digits) return { ok: false, error: 'no_phone' };
+
+  const url = `${getFrontendBaseUrl()}/test-drive/feedback/${booking.exit_feedback_token}`;
+  const hello = user?.first_name ? `Здравствуйте, ${user.first_name}! ` : '';
+  const text = `${hello}Как всё прошло после проживания? Оцените объект по ссылке: ${url}`;
+
+  const wa = await trySendWhatsAppDigits(digits, text);
+  if (!wa.ok) return { ok: false, error: wa.error || 'wa_failed' };
+
+  await testDriveBookingQueries.markExitFeedbackWhatsAppSent(bookingId);
+  return { ok: true };
+}
+
 waClient.on('ready', async () => {
   waClientReady = true;
   // Очищаем QR-код после готовности клиента
@@ -1004,6 +1175,7 @@ waClient.on('ready', async () => {
 
 waClient.on('auth_failure', (msg) => {
   waClientReady = false;
+  waLastInitError = typeof msg === 'string' ? msg : JSON.stringify(msg);
   console.error('❌ Ошибка авторизации WhatsApp:', msg);
 });
 
@@ -1060,6 +1232,23 @@ let waInitAttempts = 0;
 const MAX_WA_INIT_ATTEMPTS = 3;
 const WA_INIT_RETRY_DELAY = 30000; // 30 секунд между попытками
 
+function buildWaDiag() {
+  const authPath = join(__dirname, '.wwebjs_auth');
+  return {
+    lastQrAt: waLastQrAt,
+    lastError: waLastInitError,
+    connectionState: waConnectionState,
+    initAttempts: waInitAttempts,
+    sessionFolderExists: fs.existsSync(authPath),
+    remoteWebCache: waDisableRemoteWebVersion ? 'off' : 'remote',
+    remoteCacheUrl: waDisableRemoteWebVersion ? null : waRemoteVersionPath || waDefaultRemoteCacheUrl,
+    pairingCodeLength: currentQRCode ? currentQRCode.length : 0,
+    chromeExecutable:
+      waPuppeteerLaunch.mode === 'executablePath' ? waPuppeteerLaunch.executablePath : null,
+    puppeteerChannel: waPuppeteerLaunch.mode === 'channel' ? waPuppeteerLaunch.channel : null,
+  };
+}
+
 const initializeWhatsApp = () => {
   waInitAttempts++;
   console.log(`🔄 Попытка инициализации WhatsApp (${waInitAttempts}/${MAX_WA_INIT_ATTEMPTS})...`);
@@ -1071,10 +1260,17 @@ const initializeWhatsApp = () => {
         checkClientState();
       }, 2000); // 2 секунды задержка для завершения инициализации
     }).catch((error) => {
+      waLastInitError = error?.message || String(error);
       console.error('❌ Ошибка при инициализации WhatsApp клиента:', error.message);
       
+      const msg = error?.message || '';
+      const chromeMissing =
+        msg.includes('Could not find Chrome') ||
+        msg.includes('Could not find browser') ||
+        msg.includes('Browser was not found');
+
       // Специальная обработка для timeout ошибок
-      if (error.message.includes('timed out') || error.message.includes('timeout')) {
+      if (msg.includes('timed out') || msg.includes('timeout')) {
         console.warn('⚠️ Таймаут при инициализации WhatsApp (это нормально на Railway).');
         
         // Повторная попытка через некоторое время, если не превышен лимит
@@ -1091,9 +1287,16 @@ const initializeWhatsApp = () => {
           console.log('   1. Перезапустить сервис на Railway');
           console.log('   2. Проверить логи через несколько минут (инициализация может занять время)');
         }
-      } else if (error.message.includes('libglib') || error.message.includes('shared libraries')) {
+      } else if (msg.includes('libglib') || msg.includes('shared libraries')) {
         console.warn('⚠️ Не хватает системных библиотек для Chrome/Puppeteer.');
         console.warn('   WhatsApp функциональность будет недоступна, но сервер продолжит работу.');
+      } else if (chromeMissing) {
+        console.error('[WA] Не найден браузер для Puppeteer.');
+        console.error('   Вариант 1 (рекомендуется): npm run puppeteer:install');
+        console.error(
+          '   Вариант 2: установите Google Chrome; на macOS путь подставится автоматически после перезапуска сервера.'
+        );
+        console.error('   Вариант 3: переменная окружения PUPPETEER_EXECUTABLE_PATH=/полный/путь/к/chrome');
       } else {
         console.log('💡 Это нормально, если WhatsApp Web еще не авторизован.');
         console.log('   Отсканируйте QR-код, который появится в консоли, чтобы подключить WhatsApp.');
@@ -1105,6 +1308,7 @@ const initializeWhatsApp = () => {
       }
     });
   } catch (error) {
+    waLastInitError = error?.message || String(error);
     console.error('❌ Критическая ошибка при инициализации WhatsApp:', error.message);
     console.log('⚠️ WhatsApp клиент будет недоступен до перезапуска сервера.');
   }
@@ -5422,11 +5626,79 @@ app.post('/api/whatsapp/users/lead-type', async (req, res) => {
 // URL бота для рассылки
 const BOT_URL = process.env.BOT_URL || 'http://localhost:3001';
 
+const PAIRING_RESET_SECRET = String(process.env.WA_PAIRING_RESET_SECRET || '').trim();
+
+function canShowWhatsAppPairingReset(req) {
+  if (PAIRING_RESET_SECRET) return true;
+  const ip = String(req.socket?.remoteAddress || '');
+  const local = ip === '127.0.0.1' || ip === '::1' || ip === '::ffff:127.0.0.1';
+  return Boolean(local && process.env.NODE_ENV !== 'production');
+}
+
+function assertWhatsAppPairingReset(req) {
+  if (PAIRING_RESET_SECRET) {
+    const h = String(req.headers['x-wa-pairing-reset'] || '').trim();
+    return h === PAIRING_RESET_SECRET;
+  }
+  const ip = String(req.socket?.remoteAddress || '');
+  const local = ip === '127.0.0.1' || ip === '::1' || ip === '::ffff:127.0.0.1';
+  return Boolean(local && process.env.NODE_ENV !== 'production');
+}
+
+async function restartWhatsAppPairingRequest() {
+  waClientReady = false;
+  currentQRCode = null;
+  try {
+    await waClient.logout();
+  } catch (e) {
+    console.warn('[WA] logout:', e?.message || e);
+  }
+  try {
+    await waClient.initialize();
+  } catch (e) {
+    console.error('[WA] initialize after pairing reset:', e?.message || e);
+    throw e;
+  }
+}
+
+/**
+ * POST /api/whatsapp/restart-pairing — сброс сессии LocalAuth и повторный запрос QR (для админки).
+ * Локально: разрешено с 127.0.0.1 в NODE_ENV!=production. В production: WA_PAIRING_RESET_SECRET + заголовок X-WA-Pairing-Reset.
+ */
+app.post('/api/whatsapp/restart-pairing', async (req, res) => {
+  try {
+    if (!assertWhatsAppPairingReset(req)) {
+      return res.status(403).json({
+        success: false,
+        error:
+          'Сброс сессии отклонён. Для production задайте WA_PAIRING_RESET_SECRET и заголовок X-WA-Pairing-Reset. Локально: только с localhost в development.',
+      });
+    }
+    await restartWhatsAppPairingRequest();
+    return res.json({
+      success: true,
+      message:
+        'Сессия сброшена, запущена повторная инициализация. Через несколько секунд обновите страницу или нажмите «Проверить статус».',
+    });
+  } catch (e) {
+    return res.status(500).json({ success: false, error: e?.message || String(e) });
+  }
+});
+
 /**
  * GET /api/whatsapp/status - Проверка статуса WhatsApp клиента
  */
 app.get('/api/whatsapp/status', async (req, res) => {
   try {
+    const diag = {
+      hasQr: Boolean(currentQRCode),
+      pairingResetRequiresSecret: Boolean(PAIRING_RESET_SECRET),
+      canRestartPairing: canShowWhatsAppPairingReset(req),
+      webVersionCache: waDisableRemoteWebVersion ? 'off' : 'remote',
+      waDiag: buildWaDiag(),
+      /** Строка для связки «устройство вручную», пока не отсканировали QR (тот же источник, что и PNG). */
+      pairingCodeRaw: currentQRCode || null,
+    };
     // Сначала проверяем локальное состояние клиента
     let localReady = waClientReady;
     let clientInfo = null;
@@ -5453,6 +5725,7 @@ app.get('/api/whatsapp/status', async (req, res) => {
     // Если локальный клиент готов, возвращаем его статус
     if (localReady) {
       return res.json({
+        ...diag,
         success: true,
         ready: true,
         state: 'READY',
@@ -5461,28 +5734,40 @@ app.get('/api/whatsapp/status', async (req, res) => {
       });
     }
     
-    // Если локальный клиент не готов, проверяем через бот (если доступен)
-    try {
-      const botResponse = await axios.get(`${BOT_URL}/api/status`, {
-        timeout: 5000
-      }).catch(() => null);
+    // Опционально: не подмешивать статус «бота» с BOT_URL (частая путаница с другим процессом на :3001)
+    const skipBotStatus = process.env.WHATSAPP_SKIP_BOT_STATUS === '1';
 
-      if (botResponse && botResponse.data) {
-        const botData = botResponse.data;
-        return res.json({
-          success: true,
-          ready: botData.ready,
-          state: botData.ready ? 'READY' : 'NOT_READY',
-          message: botData.message || (botData.ready ? 'WhatsApp клиент готов к работе' : 'WhatsApp клиент не готов'),
-          source: 'bot'
-        });
+    // Если локальный клиент не готов, проверяем через бот (если включено и доступен)
+    if (!skipBotStatus) {
+      try {
+        const botResponse = await axios.get(`${BOT_URL}/api/status`, {
+          timeout: 5000
+        }).catch(() => null);
+
+        const botData = botResponse && botResponse.data;
+        const botReadyOk =
+          botData &&
+          typeof botData === 'object' &&
+          typeof botData.ready === 'boolean';
+
+        if (botReadyOk) {
+          return res.json({
+            ...diag,
+            success: true,
+            ready: botData.ready,
+            state: botData.ready ? 'READY' : 'NOT_READY',
+            message: botData.message || (botData.ready ? 'WhatsApp клиент готов к работе' : 'WhatsApp клиент не готов'),
+            source: 'bot'
+          });
+        }
+      } catch (botError) {
+        // Игнорируем ошибки бота
       }
-    } catch (botError) {
-      // Игнорируем ошибки бота
     }
-    
+
     // Если ни локальный клиент, ни бот не готовы
     return res.json({
+      ...diag,
       success: false,
       ready: false,
       state: 'NOT_READY',
@@ -5494,13 +5779,29 @@ app.get('/api/whatsapp/status', async (req, res) => {
       success: false,
       ready: false,
       state: 'ERROR',
-      error: error.message
+      error: error.message,
+      hasQr: Boolean(currentQRCode),
+      pairingResetRequiresSecret: Boolean(PAIRING_RESET_SECRET),
+      canRestartPairing: canShowWhatsAppPairingReset(req),
+      webVersionCache: waDisableRemoteWebVersion ? 'off' : 'remote',
+      waDiag: buildWaDiag(),
     });
   }
 });
 
 /**
- * GET /api/whatsapp/qr - Получить QR-код WhatsApp для отображения в футере
+ * HEAD /api/whatsapp/qr — только проверка наличия QR (без генерации PNG; для опроса из админки).
+ */
+app.head('/api/whatsapp/qr', (req, res) => {
+  if (!currentQRCode) {
+    return res.status(404).end();
+  }
+  res.setHeader('Cache-Control', 'no-store');
+  return res.status(200).end();
+});
+
+/**
+ * GET /api/whatsapp/qr - Получить QR-код WhatsApp для отображения в админке / футере
  */
 app.get('/api/whatsapp/qr', async (req, res) => {
   try {
@@ -5513,8 +5814,7 @@ app.get('/api/whatsapp/qr', async (req, res) => {
 
     // Пытаемся использовать библиотеку qrcode для генерации изображения
     try {
-      const QRCode = await import('qrcode');
-      const qrImageBuffer = await QRCode.toBuffer(currentQRCode, {
+      const qrImageBuffer = await QRCodePNG.toBuffer(currentQRCode, {
         type: 'png',
         width: 300,
         margin: 2,
@@ -5523,13 +5823,14 @@ app.get('/api/whatsapp/qr', async (req, res) => {
           light: '#FFFFFF'
         }
       });
-      
+
       res.setHeader('Content-Type', 'image/png');
       res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
       res.setHeader('Pragma', 'no-cache');
       res.setHeader('Expires', '0');
       return res.send(qrImageBuffer);
     } catch (importError) {
+      console.error('[WA] QR PNG (qrcode package):', importError?.message || importError);
       // Если библиотека qrcode не установлена, возвращаем SVG
       // Генерируем простой SVG QR-код
       const qrDataUrl = `data:image/svg+xml;base64,${Buffer.from(`
@@ -9489,20 +9790,23 @@ app.get('/api/properties/:id/test-drive/quote', async (req, res) => {
       return res.status(400).json({ success: false, error: 'Некорректный диапазон дат' });
     }
     const dayCount = Math.round((e - s) / (24 * 60 * 60 * 1000)) + 1;
-    if (dayCount < 2 || dayCount > 5) {
-      return res.status(400).json({ success: false, error: 'Выберите от 2 до 5 дней подряд' });
+    if (dayCount < 5 || dayCount > 21) {
+      return res.status(400).json({ success: false, error: 'Выберите от 5 до 21 дня подряд' });
     }
     const pricing = parseTestDrivePricingFromProperty(property);
     if (!(pricing.daily_price > 0)) {
       return res.status(400).json({ success: false, error: 'Продавец не настроил цену за сутки' });
     }
+    const stayTotal = Number((pricing.daily_price * dayCount).toFixed(2));
+    const deposit = Number((pricing.insurance_deposit || 0).toFixed(2));
     return res.json({
       success: true,
       data: {
         day_count: dayCount,
         daily_price: pricing.daily_price,
         insurance_deposit: pricing.insurance_deposit,
-        total_amount: Number((pricing.daily_price * dayCount).toFixed(2)),
+        stay_total: stayTotal,
+        total_amount: Number((stayTotal + deposit).toFixed(2)),
         currency: (property.currency || 'USD').toUpperCase(),
       },
     });
@@ -9568,8 +9872,8 @@ app.post('/api/properties/:id/test-drive/request', async (req, res) => {
       return res.status(400).json({ success: false, error: 'Некорректный диапазон дат' });
     }
     const dayCount = Math.round((e - s) / (24 * 60 * 60 * 1000)) + 1;
-    if (dayCount < 2 || dayCount > 5) {
-      return res.status(400).json({ success: false, error: 'Выберите от 2 до 5 дней подряд' });
+    if (dayCount < 5 || dayCount > 21) {
+      return res.status(400).json({ success: false, error: 'Выберите от 5 до 21 дня подряд' });
     }
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -9673,6 +9977,12 @@ app.put('/api/test-drive-bookings/:bookingId/respond', async (req, res) => {
         });
       }
       await testDriveBookingQueries.approveWithOwnerComment(bookingId, ownerComment);
+      try {
+        await testDriveBookingQueries.ensureSurveyBroadcastTokenIfMissing(bookingId);
+        await testDriveBookingQueries.ensureExitFeedbackTokenIfMissing(bookingId);
+      } catch (e) {
+        console.warn('[test-drive] ensure survey token after approve:', e?.message || e);
+      }
     } else {
       await testDriveBookingQueries.updateStatus(bookingId, newStatus);
     }
@@ -10021,6 +10331,16 @@ app.get('/api/admin/test-drive/property-bookings', async (req, res) => {
         t.check_in_enabled,
         t.check_in_report,
         t.check_in_status,
+        t.buyer_contact_channel,
+        t.survey_token,
+        t.survey_whatsapp_status,
+        t.survey_whatsapp_sent_at,
+        t.survey_scheduled_at,
+        t.exit_feedback_token,
+        t.exit_feedback_whatsapp_status,
+        t.exit_feedback_whatsapp_sent_at,
+        t.exit_feedback_scheduled_at,
+        t.exit_feedback_report,
         t.created_at,
         u.first_name AS buyer_first_name,
         u.last_name AS buyer_last_name,
@@ -10048,6 +10368,26 @@ app.get('/api/admin/test-drive/property-bookings', async (req, res) => {
       check_in_enabled: row.check_in_enabled ?? null,
       check_in_report: row.check_in_report ?? null,
       check_in_status: row.check_in_status ?? null,
+      buyer_contact_channel: row.buyer_contact_channel ?? null,
+      survey_token: row.survey_token ?? null,
+      survey_whatsapp_status: row.survey_whatsapp_status ?? null,
+      survey_whatsapp_sent_at:
+        row.survey_whatsapp_sent_at instanceof Date
+          ? row.survey_whatsapp_sent_at.toISOString()
+          : row.survey_whatsapp_sent_at,
+      survey_scheduled_at:
+        row.survey_scheduled_at instanceof Date ? row.survey_scheduled_at.toISOString() : row.survey_scheduled_at,
+      exit_feedback_token: row.exit_feedback_token ?? null,
+      exit_feedback_whatsapp_status: row.exit_feedback_whatsapp_status ?? null,
+      exit_feedback_whatsapp_sent_at:
+        row.exit_feedback_whatsapp_sent_at instanceof Date
+          ? row.exit_feedback_whatsapp_sent_at.toISOString()
+          : row.exit_feedback_whatsapp_sent_at,
+      exit_feedback_scheduled_at:
+        row.exit_feedback_scheduled_at instanceof Date
+          ? row.exit_feedback_scheduled_at.toISOString()
+          : row.exit_feedback_scheduled_at,
+      exit_feedback_report: row.exit_feedback_report ?? null,
       created_at: row.created_at instanceof Date ? row.created_at.toISOString() : row.created_at,
       buyer: {
         id: row.user_id,
@@ -10058,9 +10398,203 @@ app.get('/api/admin/test-drive/property-bookings', async (req, res) => {
         role: row.buyer_role,
       },
     }));
+    for (let i = 0; i < data.length; i += 1) {
+      const st = String(data[i].status || '').toLowerCase();
+      if (st !== 'paid' && st !== 'approved') continue;
+      try {
+        const ens = await testDriveBookingQueries.ensureExitFeedbackTokenIfMissing(data[i].id);
+        if (ens?.ok && ens.existed === false) {
+          const fresh = await testDriveBookingQueries.getById(data[i].id);
+          if (fresh) {
+            data[i].exit_feedback_token = fresh.exit_feedback_token ?? null;
+            data[i].exit_feedback_whatsapp_status = fresh.exit_feedback_whatsapp_status ?? null;
+            data[i].exit_feedback_whatsapp_sent_at =
+              fresh.exit_feedback_whatsapp_sent_at instanceof Date
+                ? fresh.exit_feedback_whatsapp_sent_at.toISOString()
+                : fresh.exit_feedback_whatsapp_sent_at ?? null;
+            data[i].exit_feedback_scheduled_at =
+              fresh.exit_feedback_scheduled_at instanceof Date
+                ? fresh.exit_feedback_scheduled_at.toISOString()
+                : fresh.exit_feedback_scheduled_at ?? null;
+          }
+        }
+      } catch {
+        /* ignore ensure errors */
+      }
+    }
     return res.json({ success: true, data });
   } catch (error) {
     console.error('GET /api/admin/test-drive/property-bookings:', error);
+    return res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * GET /api/admin/test-drive/broadcasts — карточки рассылки опроса WhatsApp (после оплаты)
+ */
+app.get('/api/admin/test-drive/broadcasts', async (req, res) => {
+  try {
+    await testDriveBookingQueries.ensureTable();
+    const rows = await testDriveBookingQueries.listSurveyBroadcastBookings(350);
+    const data = await Promise.all(
+      rows.map(async (b) => enrichTestDriveBookingWithPropertyTitle(b))
+    );
+    return res.json({ success: true, data });
+  } catch (error) {
+    console.error('GET /api/admin/test-drive/broadcasts:', error);
+    return res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * POST /api/admin/test-drive/broadcasts/:bookingId/send — отправить сообщение WhatsApp сейчас
+ */
+app.post('/api/admin/test-drive/broadcasts/:bookingId/send', async (req, res) => {
+  try {
+    await testDriveBookingQueries.ensureTable();
+    const bookingId = parseInt(req.params.bookingId, 10);
+    if (!Number.isFinite(bookingId) || bookingId <= 0) {
+      return res.status(400).json({ success: false, error: 'Некорректный bookingId' });
+    }
+    const result = await sendTestDriveSurveyWhatsAppForBooking(bookingId, { manual: true });
+    if (!result.ok && result.error === 'no_phone') {
+      return res.status(400).json({
+        success: false,
+        error: 'У пользователя не указан телефон в профиле',
+      });
+    }
+    if (!result.ok && result.error === 'wa_failed') {
+      return res.status(503).json({
+        success: false,
+        error: 'Не удалось отправить WhatsApp (клиент не готов или ошибка сети)',
+      });
+    }
+    if (!result.ok) {
+      return res.status(400).json({ success: false, error: result.error || 'send_failed' });
+    }
+    return res.json({ success: true, data: { sent: true, already: Boolean(result.already) } });
+  } catch (error) {
+    console.error('POST /api/admin/test-drive/broadcasts/send:', error);
+    return res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * POST /api/admin/test-drive/exit-feedback-broadcasts/:bookingId/send — WA «после выезда» сейчас
+ */
+app.post('/api/admin/test-drive/exit-feedback-broadcasts/:bookingId/send', async (req, res) => {
+  try {
+    await testDriveBookingQueries.ensureTable();
+    const bookingId = parseInt(req.params.bookingId, 10);
+    if (!Number.isFinite(bookingId) || bookingId <= 0) {
+      return res.status(400).json({ success: false, error: 'Некорректный bookingId' });
+    }
+    const row = await testDriveBookingQueries.getById(bookingId);
+    if (row && !String(row.exit_feedback_token || '').trim()) {
+      await testDriveBookingQueries.ensureExitFeedbackTokenIfMissing(bookingId);
+    }
+    const result = await sendTestDriveExitFeedbackWhatsAppForBooking(bookingId, { manual: true });
+    if (!result.ok && result.error === 'no_phone') {
+      return res.status(400).json({
+        success: false,
+        error: 'У пользователя не указан телефон в профиле',
+      });
+    }
+    if (!result.ok && result.error === 'wa_failed') {
+      return res.status(503).json({
+        success: false,
+        error: 'Не удалось отправить WhatsApp (клиент не готов или ошибка сети)',
+      });
+    }
+    if (!result.ok) {
+      return res.status(400).json({ success: false, error: result.error || 'send_failed' });
+    }
+    return res.json({ success: true, data: { sent: true, already: Boolean(result.already) } });
+  } catch (error) {
+    console.error('POST /api/admin/test-drive/exit-feedback-broadcasts/send:', error);
+    return res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * GET /api/admin/test-drive/survey-financial — опросы тест-драйва для финконтроля (Stripe + ответы)
+ */
+app.get('/api/admin/test-drive/survey-financial', async (req, res) => {
+  try {
+    await testDriveBookingQueries.ensureTable();
+    const pays = await stripeSubscriptionQueries.listAllPaymentsWithUsers(2500);
+    const list = Array.isArray(pays) ? pays : [];
+    const td = list.filter((p) => String(p.plan_key || '') === 'test_drive_booking');
+    const rows = [];
+    for (const p of td) {
+      let bid = null;
+      try {
+        const j = JSON.parse(p.billing_reason || '{}');
+        bid = Number(j.booking_id);
+      } catch {
+        /* ignore */
+      }
+      if (!Number.isFinite(bid)) continue;
+      const booking = await testDriveBookingQueries.getById(bid);
+      if (!booking) continue;
+      let summary = '—';
+      try {
+        const rep = parseJsonSafe(booking.check_in_report, null);
+        if (rep && typeof rep === 'object') {
+          const expLabel =
+            rep.property_expectations &&
+            {
+              exceeded: 'превзошёл ожидания',
+              matched: 'совпал с ожиданиями',
+              partially: 'частично',
+              below: 'ниже ожиданий',
+            }[String(rep.property_expectations)];
+          const parts = [
+            expLabel ? `Объект (ожидания): ${expLabel}` : '',
+            rep.property_feedback
+              ? `Отзыв: ${String(rep.property_feedback).slice(0, 200)}${String(rep.property_feedback).length > 200 ? '…' : ''}`
+              : '',
+            rep.amenities_ok ? `Удобства: ${rep.amenities_ok}` : '',
+            rep.defects_state ? `Дефекты: ${rep.defects_state}` : '',
+            rep.ready_to_stay
+              ? `Проживание сейчас: ${
+                  {
+                    yes: 'устраивает',
+                    no: 'есть замечания',
+                  }[String(rep.ready_to_stay).toLowerCase()] || rep.ready_to_stay
+                }`
+              : '',
+          ].filter(Boolean);
+          summary = parts.length ? parts.join(' · ') : '—';
+        }
+      } catch {
+        /* ignore */
+      }
+      rows.push({
+        booking_id: bid,
+        property_id: booking.property_id,
+        property_table: booking.property_table,
+        survey_whatsapp_status: booking.survey_whatsapp_status || null,
+        survey_whatsapp_sent_at: booking.survey_whatsapp_sent_at || null,
+        survey_completed: Boolean(booking.check_in_report && String(booking.check_in_report).trim() && String(booking.check_in_report).trim() !== '{}'),
+        answers_summary: summary,
+        paid_at: p.paid_at,
+        amount_cents: p.amount_cents,
+        currency: p.currency,
+        user_id: p.user_id,
+        first_name: p.first_name,
+        last_name: p.last_name,
+        email: p.email || p.customer_email,
+      });
+    }
+    rows.sort((a, b) => {
+      const ta = a.paid_at ? Date.parse(a.paid_at) : 0;
+      const tb = b.paid_at ? Date.parse(b.paid_at) : 0;
+      return tb - ta;
+    });
+    return res.json({ success: true, data: rows });
+  } catch (error) {
+    console.error('GET /api/admin/test-drive/survey-financial:', error);
     return res.status(500).json({ success: false, error: error.message });
   }
 });
@@ -10239,6 +10773,82 @@ app.get('/api/test-drive-bookings/:bookingId/detail', async (req, res) => {
       }
     }
     const amenities = amenitiesRaw.map(mapAmenityCodeToRuLabel);
+    let buyerFirst = '';
+    let buyerLast = '';
+    try {
+      const bu = await userQueries.getById(userId);
+      if (bu) {
+        buyerFirst = bu.first_name || '';
+        buyerLast = bu.last_name || '';
+      }
+    } catch {
+      /* ignore */
+    }
+    return res.json({
+      success: true,
+      data: {
+        booking: {
+          id: booking.id,
+          property_id: booking.property_id,
+          property_table: booking.property_table,
+          start_date: booking.start_date,
+          end_date: booking.end_date,
+          status: booking.status,
+          owner_comment: booking.owner_comment || '',
+          check_in_status: booking.check_in_status || 'pending_checkin',
+          check_in_report: parseJsonSafe(booking.check_in_report, null),
+          survey_token: booking.survey_token || null,
+        },
+        buyer: {
+          first_name: buyerFirst,
+          last_name: buyerLast,
+        },
+        property: {
+          id: property.id,
+          title: property.title || `Объект #${property.id}`,
+          location: property.location || '',
+          amenities,
+        },
+      },
+    });
+  } catch (error) {
+    console.error('GET test-drive-bookings/:bookingId/detail:', error);
+    return res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * GET /api/test-drive-survey/:token/detail — публичная страница опроса по секретной ссылке
+ */
+app.get('/api/test-drive-survey/:token/detail', async (req, res) => {
+  try {
+    await testDriveBookingQueries.ensureTable();
+    const token = String(req.params.token || '').trim();
+    const booking = await testDriveBookingQueries.getBySurveyToken(token);
+    if (!booking) {
+      return res.status(404).json({ success: false, error: 'Ссылка недействительна или устарела' });
+    }
+    const st = String(booking.status || '').toLowerCase();
+    if (st === 'cancelled') {
+      return res.status(400).json({ success: false, error: 'Бронирование отменено' });
+    }
+    if (!['paid', 'approved'].includes(st)) {
+      return res.status(400).json({ success: false, error: 'Опрос пока недоступен' });
+    }
+    const property = await propertyQueries.getById(String(booking.property_id), null);
+    if (!property) return res.status(404).json({ success: false, error: 'Объект не найден' });
+    let amenitiesRaw = [];
+    if (Array.isArray(property.amenities)) amenitiesRaw = property.amenities;
+    else if (typeof property.amenities === 'string') {
+      try {
+        const parsed = JSON.parse(property.amenities);
+        amenitiesRaw = Array.isArray(parsed) ? parsed : [];
+      } catch {
+        amenitiesRaw = [];
+      }
+    }
+    const amenities = amenitiesRaw.map(mapAmenityCodeToRuLabel);
+    const buyer = await userQueries.getById(booking.user_id);
     return res.json({
       success: true,
       data: {
@@ -10253,6 +10863,10 @@ app.get('/api/test-drive-bookings/:bookingId/detail', async (req, res) => {
           check_in_status: booking.check_in_status || 'pending_checkin',
           check_in_report: parseJsonSafe(booking.check_in_report, null),
         },
+        buyer: {
+          first_name: buyer?.first_name || '',
+          last_name: buyer?.last_name || '',
+        },
         property: {
           id: property.id,
           title: property.title || `Объект #${property.id}`,
@@ -10262,7 +10876,142 @@ app.get('/api/test-drive-bookings/:bookingId/detail', async (req, res) => {
       },
     });
   } catch (error) {
-    console.error('GET test-drive-bookings/:bookingId/detail:', error);
+    console.error('GET test-drive-survey/:token/detail:', error);
+    return res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * PUT /api/test-drive-survey/:token/report — отправка опроса по ссылке (без входа в аккаунт)
+ */
+app.put('/api/test-drive-survey/:token/report', async (req, res) => {
+  try {
+    await testDriveBookingQueries.ensureTable();
+    const token = String(req.params.token || '').trim();
+    const report = req.body?.report || null;
+    const booking = await testDriveBookingQueries.getBySurveyToken(token);
+    if (!booking) {
+      return res.status(404).json({ success: false, error: 'Ссылка недействительна' });
+    }
+    if (!report || typeof report !== 'object') {
+      return res.status(400).json({ success: false, error: 'report обязателен' });
+    }
+    const st = String(booking.status || '').toLowerCase();
+    if (st === 'cancelled') {
+      return res.status(400).json({ success: false, error: 'Бронирование отменено' });
+    }
+    if (!['paid', 'approved'].includes(st)) {
+      return res.status(400).json({ success: false, error: 'Опрос недоступен' });
+    }
+    const ready = String(report.ready_to_stay || '').toLowerCase() === 'yes';
+    const checkInStatus = ready ? 'checked_in' : 'issues_reported';
+    await testDriveBookingQueries.saveCheckInReport(
+      booking.id,
+      JSON.stringify(report),
+      checkInStatus
+    );
+    return res.json({ success: true, data: { booking_id: booking.id, check_in_status: checkInStatus } });
+  } catch (error) {
+    console.error('PUT test-drive-survey/:token/report:', error);
+    return res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * GET /api/test-drive-feedback/:token/detail — оценка после проживания (публичная ссылка)
+ */
+app.get('/api/test-drive-feedback/:token/detail', async (req, res) => {
+  try {
+    await testDriveBookingQueries.ensureTable();
+    const token = String(req.params.token || '').trim();
+    const booking = await testDriveBookingQueries.getByExitFeedbackToken(token);
+    if (!booking) {
+      return res.status(404).json({ success: false, error: 'Ссылка недействительна или устарела' });
+    }
+    const st = String(booking.status || '').toLowerCase();
+    if (st === 'cancelled') {
+      return res.status(400).json({ success: false, error: 'Бронирование отменено' });
+    }
+    if (!['paid', 'approved'].includes(st)) {
+      return res.status(400).json({ success: false, error: 'Оценка пока недоступна' });
+    }
+    const property = await propertyQueries.getById(String(booking.property_id), null);
+    if (!property) return res.status(404).json({ success: false, error: 'Объект не найден' });
+    const buyer = await userQueries.getById(booking.user_id);
+    const prev = parseJsonSafe(booking.exit_feedback_report, null);
+    return res.json({
+      success: true,
+      data: {
+        booking: {
+          id: booking.id,
+          start_date: booking.start_date,
+          end_date: booking.end_date,
+          status: booking.status,
+        },
+        buyer: {
+          first_name: buyer?.first_name || '',
+          last_name: buyer?.last_name || '',
+        },
+        property: {
+          id: property.id,
+          title: property.title || `Объект #${property.id}`,
+          location: property.location || '',
+        },
+        already_submitted: Boolean(prev && prev.submitted_at && Number(prev.rating) >= 1),
+      },
+    });
+  } catch (error) {
+    console.error('GET test-drive-feedback/:token/detail:', error);
+    return res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * PUT /api/test-drive-feedback/:token/report — сохранить оценку и текст после проживания
+ */
+app.put('/api/test-drive-feedback/:token/report', async (req, res) => {
+  try {
+    await testDriveBookingQueries.ensureTable();
+    const token = String(req.params.token || '').trim();
+    const report = req.body?.report || null;
+    const booking = await testDriveBookingQueries.getByExitFeedbackToken(token);
+    if (!booking) {
+      return res.status(404).json({ success: false, error: 'Ссылка недействительна' });
+    }
+    if (!report || typeof report !== 'object') {
+      return res.status(400).json({ success: false, error: 'report обязателен' });
+    }
+    const st = String(booking.status || '').toLowerCase();
+    if (st === 'cancelled') {
+      return res.status(400).json({ success: false, error: 'Бронирование отменено' });
+    }
+    if (!['paid', 'approved'].includes(st)) {
+      return res.status(400).json({ success: false, error: 'Оценка недоступна' });
+    }
+    const prev = parseJsonSafe(booking.exit_feedback_report, null);
+    if (prev && prev.submitted_at) {
+      return res.status(409).json({ success: false, error: 'Ответ уже отправлен' });
+    }
+    const rating = Number(report.rating);
+    if (!Number.isFinite(rating) || rating < 1 || rating > 5) {
+      return res.status(400).json({ success: false, error: 'Укажите оценку от 1 до 5' });
+    }
+    const comment = String(report.comment || '').trim();
+    if (comment.length < 10) {
+      return res.status(400).json({
+        success: false,
+        error: 'Опишите впечатление не короче 10 символов',
+      });
+    }
+    const payload = {
+      rating: Math.round(rating),
+      comment,
+      submitted_at: new Date().toISOString(),
+    };
+    await testDriveBookingQueries.saveExitFeedbackReport(booking.id, JSON.stringify(payload));
+    return res.json({ success: true, data: { booking_id: booking.id } });
+  } catch (error) {
+    console.error('PUT test-drive-feedback/:token/report:', error);
     return res.status(500).json({ success: false, error: error.message });
   }
 });
@@ -10287,8 +11036,12 @@ app.put('/api/test-drive-bookings/:bookingId/check-in-report', async (req, res) 
     if (Number(booking.user_id) !== userId) {
       return res.status(403).json({ success: false, error: 'Доступ запрещен' });
     }
-    if (String(booking.status || '').toLowerCase() !== 'approved') {
-      return res.status(400).json({ success: false, error: 'Заселение доступно только для подтвержденной брони' });
+    const bookingStatus = String(booking.status || '').toLowerCase();
+    if (!['approved', 'paid'].includes(bookingStatus)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Опрос доступен только для оплаченной или подтверждённой брони',
+      });
     }
     const ready = String(report.ready_to_stay || '').toLowerCase() === 'yes';
     const checkInStatus = ready ? 'checked_in' : 'issues_reported';
@@ -14336,6 +15089,23 @@ const server = app.listen(PORT, '0.0.0.0', () => {
   setInterval(() => {
     tickAuctionReminders().catch((e) => console.error('[auction-reminder]', e));
   }, 60 * 1000);
+  setInterval(() => {
+    (async () => {
+      try {
+        await testDriveBookingQueries.ensureTable();
+        const ids = await testDriveBookingQueries.listDueSurveyWhatsApp(25);
+        for (const bid of ids) {
+          await sendTestDriveSurveyWhatsAppForBooking(bid, { manual: false });
+        }
+        const idsExit = await testDriveBookingQueries.listDueExitFeedbackWhatsApp(25);
+        for (const bid of idsExit) {
+          await sendTestDriveExitFeedbackWhatsAppForBooking(bid, { manual: false });
+        }
+      } catch (e) {
+        console.warn('[test-drive-survey-wa]', e?.message || e);
+      }
+    })();
+  }, 5 * 60 * 1000);
   setTimeout(() => {
     tickAuctionReminders().catch((e) => console.error('[auction-reminder]', e));
   }, 15 * 1000);

@@ -288,6 +288,13 @@ export default function MyBookingsPage() {
                         ),
                       })
                     : null
+                const surveyToken = b.survey_token ? String(b.survey_token).trim() : ''
+                const showSurveyCta =
+                  Boolean(surveyToken) && ['paid', 'approved'].includes(statusKey)
+                const showLegacyCheckIn =
+                  String(b.status || '').toLowerCase() === 'approved' &&
+                  (b.owner_comment || Number(b.check_in_enabled) === 1) &&
+                  !surveyToken
                 const canBuyerCancel = ['pending', 'paid', 'approved'].includes(statusKey)
                 const cancelReason =
                   b.cancellation_reason ||
@@ -360,8 +367,19 @@ export default function MyBookingsPage() {
                         </div>
                       ) : null}
                       <div className="my-bookings-card__footer">
-                        {String(b.status || '').toLowerCase() === 'approved' &&
-                        (b.owner_comment || Number(b.check_in_enabled) === 1) ? (
+                        {showSurveyCta ? (
+                          <button
+                            type="button"
+                            className="my-bookings-card__cta"
+                            onClick={() =>
+                              navigate(`/test-drive/survey/${encodeURIComponent(surveyToken)}`)
+                            }
+                          >
+                            <span>{t('buyerBookings_surveyCta')}</span>
+                            <FiArrowRight size={18} aria-hidden />
+                          </button>
+                        ) : null}
+                        {showLegacyCheckIn ? (
                           <button
                             type="button"
                             className="my-bookings-card__cta"

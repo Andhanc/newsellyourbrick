@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { FiExternalLink, FiCalendar, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
+import { FiExternalLink, FiCalendar, FiChevronLeft, FiChevronRight, FiSend } from 'react-icons/fi';
 import { getApiBaseUrlSync } from '../../utils/apiConfig';
 import './AdminTestDrive.css';
 
@@ -21,11 +21,30 @@ const MONTH_LABELS = [
   'Декабрь',
 ];
 const QUALITY_QUESTION_LABELS = {
-  entered_object: 'Удалось попасть в объект?',
+  property_expectations: 'Объект vs ожидания покупателя',
+  property_feedback: 'Развёрнутый отзыв об объекте',
   amenities_ok: 'Удобства в объекте соответствуют описанию?',
   defects_state: 'Есть ли дефекты/проблемы в объекте?',
-  ready_to_stay: 'Готовы заселиться прямо сейчас?',
+  ready_to_stay: 'Устраивает ли проживание сейчас?',
 };
+
+/** В анкете поля комментариев названы не как `${вопрос}_comment` — маппинг для админки */
+const COMMENT_STORAGE_KEY = {
+  amenities_ok: 'amenities_comment',
+  defects_state: 'defects_comment',
+  ready_to_stay: 'ready_to_stay_comment',
+};
+
+const BUYER_CONTACT_LABELS = {
+  telegram: 'Telegram',
+  whatsapp: 'WhatsApp',
+  email: 'Почта',
+};
+
+function formatBuyerContactChannel(ch) {
+  const k = String(ch || '').toLowerCase();
+  return BUYER_CONTACT_LABELS[k] || (ch ? String(ch) : '—');
+}
 
 function adminCancelSeenStorageKey(sel) {
   if (!sel?.property_id || !sel?.property_table) return null;
@@ -79,32 +98,93 @@ function statusTone(st) {
 }
 
 function parseCheckInReport(raw) {
-  if (!raw) return null;
-  if (typeof raw === 'object') return raw;
-  if (typeof raw !== 'string') return null;
+  if (raw == null || raw === '') return null;
+  let payload = raw;
+  if (typeof Buffer !== 'undefined' && Buffer.isBuffer && Buffer.isBuffer(payload)) {
+    payload = payload.toString('utf8');
+  }
+  if (typeof payload === 'object' && payload !== null && !Array.isArray(payload)) {
+    return payload;
+  }
+  if (typeof payload !== 'string') return null;
   try {
-    const parsed = JSON.parse(raw);
+    const parsed = JSON.parse(payload);
     return parsed && typeof parsed === 'object' ? parsed : null;
   } catch {
     return null;
   }
 }
 
+/** Есть ли сохранённые ответы опроса (не пустой объект из БД) */
+function surveyReportHasContent(report) {
+  if (!report || typeof report !== 'object') return false;
+  if (report.submitted_at) return true;
+  const keys = [
+    'property_expectations',
+    'property_feedback',
+    'amenities_ok',
+    'defects_state',
+    'ready_to_stay',
+  ];
+  return keys.some((k) => {
+    const v = report[k];
+    if (v == null) return false;
+    return typeof v !== 'string' || v.trim() !== '';
+  });
+}
+
+/** Оценка 1–5 после выезда (exit_feedback_report JSON) */
+function exitFeedbackReportHasContent(report) {
+  if (!report || typeof report !== 'object') return false;
+  const r = Number(report.rating);
+  return Number.isFinite(r) && r >= 1 && r <= 5 && Boolean(report.submitted_at);
+}
+
 function answerTone(value, key) {
   const v = String(value || '').toLowerCase();
+  if (key === 'property_expectations') {
+    if (v === 'exceeded' || v === 'matched') return 'positive';
+    if (v === 'below') return 'negative';
+    if (v === 'partially') return 'neutral';
+    return 'neutral';
+  }
   if (v === 'yes' || v === 'ok') return 'positive';
   if (v === 'no' || v === 'issues') return 'negative';
   if (key === 'defects_state' && v) return v === 'ok' ? 'positive' : 'negative';
+  if (key === 'property_feedback') return 'neutral';
   return 'neutral';
 }
 
-function formatAnswer(value) {
+function formatAnswer(value, key) {
   const v = String(value || '').toLowerCase();
+  if (key === 'ready_to_stay') {
+    if (v === 'yes') return 'Проживание устраивает';
+    if (v === 'no') return 'Есть замечания по проживанию';
+  }
+  if (v === 'exceeded') return 'Превзошёл ожидания';
+  if (v === 'matched') return 'Совпал с ожиданиями';
+  if (v === 'partially') return 'Частично совпал';
+  if (v === 'below') return 'Ниже ожиданий';
   if (v === 'yes') return 'Да';
   if (v === 'no') return 'Нет';
   if (v === 'ok') return 'Все в порядке';
   if (v === 'issues') return 'Есть проблемы';
   return value ? String(value) : '—';
+}
+
+function formatBroadcastDt(iso) {
+  if (!iso) return '—';
+  try {
+    return new Date(iso).toLocaleString('ru-RU', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  } catch {
+    return String(iso);
+  }
 }
 
 export default function AdminTestDrive() {
@@ -123,6 +203,12 @@ export default function AdminTestDrive() {
     const d = new Date();
     return new Date(d.getFullYear(), d.getMonth(), 1);
   });
+  const [broadcastBookings, setBroadcastBookings] = useState([]);
+  const [broadcastLoading, setBroadcastLoading] = useState(false);
+  const [broadcastError, setBroadcastError] = useState(null);
+  const [broadcastSendBusy, setBroadcastSendBusy] = useState(null);
+  const [broadcastSubTab, setBroadcastSubTab] = useState('survey');
+  const [exitSendBusy, setExitSendBusy] = useState(null);
 
   const loadList = useCallback(async () => {
     setListLoading(true);
@@ -164,7 +250,33 @@ export default function AdminTestDrive() {
 
   useEffect(() => {
     setActiveTab('calendar');
+    setBroadcastSubTab('survey');
   }, [selected?.property_id, selected?.property_table]);
+
+  const loadPropertyBookings = useCallback(async () => {
+    if (!selected) return;
+    setBookLoading(true);
+    setBookError(null);
+    try {
+      const q = new URLSearchParams({
+        property_id: String(selected.property_id),
+        property_table: String(selected.property_table),
+      });
+      const res = await fetch(`${API_BASE_URL}/admin/test-drive/property-bookings?${q.toString()}`);
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok || !json.success) {
+        setBookError(json.error || 'Не удалось загрузить бронирования');
+        setBookings([]);
+        return;
+      }
+      setBookings(Array.isArray(json.data) ? json.data : []);
+    } catch (e) {
+      setBookError(e.message || 'Сеть недоступна');
+      setBookings([]);
+    } finally {
+      setBookLoading(false);
+    }
+  }, [selected]);
 
   useEffect(() => {
     if (!selected) {
@@ -173,37 +285,8 @@ export default function AdminTestDrive() {
       setOwnerContact(null);
       return;
     }
-    let cancelled = false;
-    ;(async () => {
-      setBookLoading(true);
-      setBookError(null);
-      try {
-        const q = new URLSearchParams({
-          property_id: String(selected.property_id),
-          property_table: String(selected.property_table),
-        });
-        const res = await fetch(`${API_BASE_URL}/admin/test-drive/property-bookings?${q.toString()}`);
-        const json = await res.json().catch(() => ({}));
-        if (cancelled) return;
-        if (!res.ok || !json.success) {
-          setBookError(json.error || 'Не удалось загрузить бронирования');
-          setBookings([]);
-          return;
-        }
-        setBookings(Array.isArray(json.data) ? json.data : []);
-      } catch (e) {
-        if (!cancelled) {
-          setBookError(e.message || 'Сеть недоступна');
-          setBookings([]);
-        }
-      } finally {
-        if (!cancelled) setBookLoading(false);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [selected]);
+    void loadPropertyBookings();
+  }, [selected, loadPropertyBookings]);
 
   useEffect(() => {
     if (!selected?.owner_user_id) {
@@ -305,11 +388,12 @@ export default function AdminTestDrive() {
           .map(([key, label]) => {
             const value = report?.[key];
             const tone = answerTone(value, key);
-            const comment = report?.[`${key}_comment`];
+            const commentKey = COMMENT_STORAGE_KEY[key] || `${key}_comment`;
+            const comment = report?.[commentKey];
             return {
               key,
               label,
-              value: formatAnswer(value),
+              value: formatAnswer(value, key),
               rawValue: value,
               tone,
               comment: typeof comment === 'string' ? comment.trim() : '',
@@ -320,10 +404,17 @@ export default function AdminTestDrive() {
         const positiveCount = answers.filter((a) => a.tone === 'positive').length;
         const negativeCount = answers.filter((a) => a.tone === 'negative').length;
         const hasNegative = negativeCount > 0;
+        const amenitiesPhotoCount = Array.isArray(report?.amenities_photos)
+          ? report.amenities_photos.length
+          : 0;
+        const defectsPhotoCount = Array.isArray(report?.defects_photos) ? report.defects_photos.length : 0;
         return {
           bookingId: b.id,
           buyer: b.buyer || null,
           buyerDisplayName: buyerName(b.buyer),
+          buyerEmail: b.buyer?.email || '',
+          buyerPhone: b.buyer?.phone_number || '',
+          buyerContactChannel: b.buyer_contact_channel ?? null,
           hasSellerRole,
           checkInStatus: b.check_in_status || '—',
           submittedAt: report?.submitted_at || b.created_at || null,
@@ -331,10 +422,35 @@ export default function AdminTestDrive() {
           positiveCount,
           negativeCount,
           hasNegative,
-          hasReport: Boolean(report),
+          amenitiesPhotoCount,
+          defectsPhotoCount,
+          hasReport: surveyReportHasContent(report),
         };
       })
       .filter((card) => card.hasReport);
+  }, [bookings]);
+
+  const exitFeedbackCards = useMemo(() => {
+    return bookings
+      .map((b) => {
+        const report = parseCheckInReport(b.exit_feedback_report);
+        if (!exitFeedbackReportHasContent(report)) return null;
+        return {
+          bookingId: b.id,
+          buyerDisplayName: buyerName(b.buyer),
+          buyerEmail: b.buyer?.email || '',
+          buyerPhone: b.buyer?.phone_number || '',
+          rating: Number(report.rating),
+          comment: String(report.comment || '').trim(),
+          submittedAt: report.submitted_at || null,
+        };
+      })
+      .filter(Boolean)
+      .sort((a, b) => {
+        const ta = a.submittedAt ? Date.parse(a.submittedAt) : 0;
+        const tb = b.submittedAt ? Date.parse(b.submittedAt) : 0;
+        return tb - ta;
+      });
   }, [bookings]);
 
   const cancelCards = useMemo(() => {
@@ -394,6 +510,108 @@ export default function AdminTestDrive() {
       // ignore storage errors
     }
   };
+
+  const propertyBroadcasts = useMemo(() => {
+    if (!selected) return [];
+    const pid = Number(selected.property_id);
+    const pt = String(selected.property_table || '');
+    return broadcastBookings.filter(
+      (b) => Number(b.property_id) === pid && String(b.property_table || '') === pt,
+    );
+  }, [broadcastBookings, selected]);
+
+  /** Рассылка WA после выезда по броням текущего объекта (токен создан при оплате/из админки). */
+  const propertyExitBroadcasts = useMemo(() => {
+    if (!selected) return [];
+    const pid = Number(selected.property_id);
+    const pt = String(selected.property_table || '');
+    return bookings.filter(
+      (b) =>
+        Number(b.property_id) === pid &&
+        String(b.property_table || '') === pt &&
+        ['paid', 'approved'].includes(String(b.status || '').toLowerCase()) &&
+        String(b.exit_feedback_token || '').trim(),
+    );
+  }, [bookings, selected]);
+
+  useEffect(() => {
+    if (!selected || activeTab !== 'broadcasts') return;
+    let cancelled = false;
+    void (async () => {
+      setBroadcastLoading(true);
+      setBroadcastError(null);
+      try {
+        const res = await fetch(`${API_BASE_URL}/admin/test-drive/broadcasts`);
+        const json = await res.json().catch(() => ({}));
+        if (cancelled) return;
+        if (!res.ok || !json.success) {
+          setBroadcastError(json.error || 'Не удалось загрузить объявления');
+          setBroadcastBookings([]);
+          return;
+        }
+        setBroadcastBookings(Array.isArray(json.data) ? json.data : []);
+      } catch (e) {
+        if (!cancelled) {
+          setBroadcastError(e.message || 'Сеть недоступна');
+          setBroadcastBookings([]);
+        }
+      } finally {
+        if (!cancelled) setBroadcastLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [selected, activeTab]);
+
+  const sendSurveyBroadcastNow = useCallback(async (bookingId) => {
+    const id = Number(bookingId);
+    if (!Number.isFinite(id) || id <= 0) return;
+    setBroadcastSendBusy(id);
+    try {
+      const res = await fetch(`${API_BASE_URL}/admin/test-drive/broadcasts/${id}/send`, {
+        method: 'POST',
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok || !json.success) {
+        window.alert(json.error || 'Не удалось отправить');
+        return;
+      }
+      const r2 = await fetch(`${API_BASE_URL}/admin/test-drive/broadcasts`);
+      const j2 = await r2.json().catch(() => ({}));
+      if (r2.ok && j2.success && Array.isArray(j2.data)) {
+        setBroadcastBookings(j2.data);
+      }
+    } catch (e) {
+      window.alert(e.message || 'Ошибка сети');
+    } finally {
+      setBroadcastSendBusy(null);
+    }
+  }, []);
+
+  const sendExitBroadcastNow = useCallback(
+    async (bookingId) => {
+      const id = Number(bookingId);
+      if (!Number.isFinite(id) || id <= 0) return;
+      setExitSendBusy(id);
+      try {
+        const res = await fetch(`${API_BASE_URL}/admin/test-drive/exit-feedback-broadcasts/${id}/send`, {
+          method: 'POST',
+        });
+        const json = await res.json().catch(() => ({}));
+        if (!res.ok || !json.success) {
+          window.alert(json.error || 'Не удалось отправить');
+          return;
+        }
+        await loadPropertyBookings();
+      } catch (e) {
+        window.alert(e.message || 'Ошибка сети');
+      } finally {
+        setExitSendBusy(null);
+      }
+    },
+    [loadPropertyBookings],
+  );
 
   return (
     <div className="admin-test-drive">
@@ -522,6 +740,15 @@ export default function AdminTestDrive() {
                   </button>
                   <button
                     type="button"
+                    className={`admin-test-drive__tab-btn${activeTab === 'broadcasts' ? ' admin-test-drive__tab-btn--active' : ''}`}
+                    role="tab"
+                    aria-selected={activeTab === 'broadcasts'}
+                    onClick={() => setActiveTab('broadcasts')}
+                  >
+                    Объявления
+                  </button>
+                  <button
+                    type="button"
                     className={`admin-test-drive__tab-btn${activeTab === 'cancellations' ? ' admin-test-drive__tab-btn--active' : ''}`}
                     role="tab"
                     aria-selected={activeTab === 'cancellations'}
@@ -605,65 +832,321 @@ export default function AdminTestDrive() {
                     </div>
                   </>
                 ) : activeTab === 'quality' ? (
-                  <div className="admin-test-drive__quality">
+                  <div className="admin-test-drive__quality admin-test-drive__quality--split">
                     {bookLoading ? (
                       <div className="admin-test-drive__loading">Загрузка анкет качества…</div>
-                    ) : qualityCards.length === 0 ? (
-                      <div className="admin-test-drive__detail-empty">
-                        Пока нет заполненных анкет проверки качества по этому объекту.
-                      </div>
                     ) : (
-                      qualityCards.map((card) => (
-                        <details
-                          key={`quality-${card.bookingId}`}
-                          className={`admin-test-drive__quality-card${card.hasNegative ? ' admin-test-drive__quality-card--alert' : ''}`}
-                        >
-                          <summary className="admin-test-drive__quality-summary">
-                            <div className="admin-test-drive__quality-head">
-                              <div className="admin-test-drive__quality-name">
-                                user #{card.buyer?.id}: {card.buyerDisplayName}
-                              </div>
-                              <div className="admin-test-drive__quality-meta">
-                                <span className="admin-test-drive__quality-badge">Покупатель</span>
-                                <span
-                                  className={`admin-test-drive__quality-badge${card.hasSellerRole ? '' : ' admin-test-drive__quality-badge--muted'}`}
-                                >
-                                  Продавец
-                                </span>
-                                <span className="admin-test-drive__quality-booking">Бронь #{card.bookingId}</span>
-                              </div>
-                            </div>
-                            <div className="admin-test-drive__quality-stats">
-                              <span className="admin-test-drive__quality-chip admin-test-drive__quality-chip--positive">
-                                Положительных: {card.positiveCount}
-                              </span>
-                              <span className="admin-test-drive__quality-chip admin-test-drive__quality-chip--negative">
-                                Отрицательных: {card.negativeCount}
-                              </span>
-                            </div>
-                          </summary>
-                          <div className="admin-test-drive__quality-body">
-                            <div className="admin-test-drive__quality-subhead">
-                              Статус check-in: {card.checkInStatus} · отправлено: {card.submittedAt || '—'}
-                            </div>
-                            <div className="admin-test-drive__quality-list">
-                              {card.answers.map((a) => (
-                                <div key={`${card.bookingId}-${a.key}`} className="admin-test-drive__quality-item">
-                                  <div className="admin-test-drive__quality-question">{a.label}</div>
-                                  <div
-                                    className={`admin-test-drive__quality-answer admin-test-drive__quality-answer--${a.tone}`}
-                                  >
-                                    {a.value}
-                                  </div>
-                                  {a.comment ? (
-                                    <div className="admin-test-drive__quality-comment">{a.comment}</div>
-                                  ) : null}
-                                </div>
-                              ))}
-                            </div>
+                      <>
+                        <h4 className="admin-test-drive__quality-section-title">Анкета при проживании</h4>
+                        {qualityCards.length === 0 ? (
+                          <div className="admin-test-drive__detail-empty admin-test-drive__detail-empty--tight">
+                            Нет заполненных анкет по этому объекту.
                           </div>
-                        </details>
-                      ))
+                        ) : (
+                          qualityCards.map((card) => (
+                            <details
+                              key={`quality-${card.bookingId}`}
+                              className={`admin-test-drive__quality-card${card.hasNegative ? ' admin-test-drive__quality-card--alert' : ''}`}
+                            >
+                              <summary className="admin-test-drive__quality-summary">
+                                <div className="admin-test-drive__quality-head">
+                                  <div className="admin-test-drive__quality-name">
+                                    user #{card.buyer?.id}: {card.buyerDisplayName}
+                                  </div>
+                                  <div className="admin-test-drive__quality-meta">
+                                    <span className="admin-test-drive__quality-badge">Покупатель</span>
+                                    <span
+                                      className={`admin-test-drive__quality-badge${card.hasSellerRole ? '' : ' admin-test-drive__quality-badge--muted'}`}
+                                    >
+                                      Продавец
+                                    </span>
+                                    <span className="admin-test-drive__quality-booking">Бронь #{card.bookingId}</span>
+                                  </div>
+                                </div>
+                                <div className="admin-test-drive__quality-stats">
+                                  <span className="admin-test-drive__quality-chip admin-test-drive__quality-chip--positive">
+                                    Положительных: {card.positiveCount}
+                                  </span>
+                                  <span className="admin-test-drive__quality-chip admin-test-drive__quality-chip--negative">
+                                    Отрицательных: {card.negativeCount}
+                                  </span>
+                                </div>
+                              </summary>
+                              <div className="admin-test-drive__quality-body">
+                                <div className="admin-test-drive__quality-subhead">
+                                  Статус check-in: {card.checkInStatus} · отправлено: {card.submittedAt || '—'}
+                                </div>
+                                <div className="admin-test-drive__quality-contact">
+                                  <div className="admin-test-drive__quality-contact-title">Связь с покупателем</div>
+                                  <div className="admin-test-drive__quality-contact-row">
+                                    <span className="admin-test-drive__muted">Предпочтительный канал:</span>{' '}
+                                    {formatBuyerContactChannel(card.buyerContactChannel)}
+                                  </div>
+                                  <div className="admin-test-drive__quality-contact-row">
+                                    <span className="admin-test-drive__muted">Email:</span>{' '}
+                                    {card.buyerEmail ? (
+                                      <a href={`mailto:${card.buyerEmail}`}>{card.buyerEmail}</a>
+                                    ) : (
+                                      '—'
+                                    )}
+                                  </div>
+                                  <div className="admin-test-drive__quality-contact-row">
+                                    <span className="admin-test-drive__muted">Телефон:</span>{' '}
+                                    {card.buyerPhone ? (
+                                      <a href={`tel:${String(card.buyerPhone).replace(/\s+/g, '')}`}>
+                                        {card.buyerPhone}
+                                      </a>
+                                    ) : (
+                                      '—'
+                                    )}
+                                  </div>
+                                </div>
+                                {card.amenitiesPhotoCount > 0 || card.defectsPhotoCount > 0 ? (
+                                  <div className="admin-test-drive__quality-photos-note">
+                                    {card.amenitiesPhotoCount > 0 ? (
+                                      <span>
+                                        Фото по удобствам: <strong>{card.amenitiesPhotoCount}</strong>
+                                      </span>
+                                    ) : null}
+                                    {card.amenitiesPhotoCount > 0 && card.defectsPhotoCount > 0 ? ' · ' : null}
+                                    {card.defectsPhotoCount > 0 ? (
+                                      <span>
+                                        Фото по дефектам: <strong>{card.defectsPhotoCount}</strong>
+                                      </span>
+                                    ) : null}
+                                  </div>
+                                ) : null}
+                                <div className="admin-test-drive__quality-list">
+                                  {card.answers.map((a) => (
+                                    <div key={`${card.bookingId}-${a.key}`} className="admin-test-drive__quality-item">
+                                      <div className="admin-test-drive__quality-question">{a.label}</div>
+                                      <div
+                                        className={`admin-test-drive__quality-answer admin-test-drive__quality-answer--${a.tone}`}
+                                      >
+                                        {a.value}
+                                      </div>
+                                      {a.comment ? (
+                                        <div className="admin-test-drive__quality-comment">{a.comment}</div>
+                                      ) : null}
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            </details>
+                          ))
+                        )}
+                        <h4 className="admin-test-drive__quality-section-title">После проживания (оценка звёздами)</h4>
+                        {exitFeedbackCards.length === 0 ? (
+                          <div className="admin-test-drive__detail-empty admin-test-drive__detail-empty--tight">
+                            Пока нет оценок после выезда по этому объекту.
+                          </div>
+                        ) : (
+                          exitFeedbackCards.map((ef) => {
+                            const stars = Math.min(5, Math.max(1, Math.round(Number(ef.rating) || 1)));
+                            return (
+                            <details key={`exit-feedback-${ef.bookingId}`} className="admin-test-drive__quality-card">
+                              <summary className="admin-test-drive__quality-summary">
+                                <div className="admin-test-drive__quality-head">
+                                  <div className="admin-test-drive__quality-name">
+                                    Бронь #{ef.bookingId}: {ef.buyerDisplayName}
+                                  </div>
+                                  <div className="admin-test-drive__quality-meta">
+                                    <span className="admin-test-drive__quality-booking">
+                                      {'★'.repeat(stars)}
+                                      {'☆'.repeat(5 - stars)}
+                                    </span>
+                                  </div>
+                                </div>
+                              </summary>
+                              <div className="admin-test-drive__quality-body">
+                                <div className="admin-test-drive__quality-subhead">
+                                  Отправлено: {ef.submittedAt ? formatBroadcastDt(ef.submittedAt) : '—'}
+                                </div>
+                                <div className="admin-test-drive__quality-contact">
+                                  <div className="admin-test-drive__quality-contact-title">Связь с покупателем</div>
+                                  <div className="admin-test-drive__quality-contact-row">
+                                    <span className="admin-test-drive__muted">Email:</span>{' '}
+                                    {ef.buyerEmail ? (
+                                      <a href={`mailto:${ef.buyerEmail}`}>{ef.buyerEmail}</a>
+                                    ) : (
+                                      '—'
+                                    )}
+                                  </div>
+                                  <div className="admin-test-drive__quality-contact-row">
+                                    <span className="admin-test-drive__muted">Телефон:</span>{' '}
+                                    {ef.buyerPhone ? (
+                                      <a href={`tel:${String(ef.buyerPhone).replace(/\s+/g, '')}`}>{ef.buyerPhone}</a>
+                                    ) : (
+                                      '—'
+                                    )}
+                                  </div>
+                                </div>
+                                <div className="admin-test-drive__quality-item">
+                                  <div className="admin-test-drive__quality-question">Комментарий</div>
+                                  <div className="admin-test-drive__quality-comment" style={{ marginTop: 6 }}>
+                                    {ef.comment}
+                                  </div>
+                                </div>
+                              </div>
+                            </details>
+                            );
+                          })
+                        )}
+                      </>
+                    )}
+                  </div>
+                ) : activeTab === 'broadcasts' ? (
+                  <div className="admin-test-drive__broadcasts">
+                    <div className="admin-test-drive__broadcast-subtabs" role="tablist" aria-label="Рассылки объявлений">
+                      <button
+                        type="button"
+                        role="tab"
+                        className={`admin-test-drive__broadcast-subtab${broadcastSubTab === 'survey' ? ' admin-test-drive__broadcast-subtab--active' : ''}`}
+                        aria-selected={broadcastSubTab === 'survey'}
+                        onClick={() => setBroadcastSubTab('survey')}
+                      >
+                        Опрос при проживании
+                      </button>
+                      <button
+                        type="button"
+                        role="tab"
+                        className={`admin-test-drive__broadcast-subtab${broadcastSubTab === 'exit' ? ' admin-test-drive__broadcast-subtab--active' : ''}`}
+                        aria-selected={broadcastSubTab === 'exit'}
+                        onClick={() => setBroadcastSubTab('exit')}
+                      >
+                        Завершение брони
+                      </button>
+                    </div>
+                    {broadcastSubTab === 'survey' ? (
+                      <>
+                        {broadcastLoading ? (
+                          <div className="admin-test-drive__loading">Загрузка рассылок…</div>
+                        ) : broadcastError ? (
+                          <div className="admin-test-drive__error">{broadcastError}</div>
+                        ) : propertyBroadcasts.length === 0 ? (
+                          <div className="admin-test-drive__detail-empty">
+                            Нет подтверждённых броней с рассылкой опроса по этому объекту (статус «Подтверждено» у
+                            владельца).
+                          </div>
+                        ) : (
+                          <div className="admin-test-drive__broadcast-list">
+                            {propertyBroadcasts.map((br) => {
+                              const sent = String(br.survey_whatsapp_status || '').toLowerCase() === 'sent';
+                              const buyerLabel = [br.buyer_first_name, br.buyer_last_name]
+                                .filter(Boolean)
+                                .join(' ')
+                                .trim();
+                              return (
+                                <div key={br.id} className="admin-test-drive__broadcast-card">
+                                  <div className="admin-test-drive__broadcast-card-head">
+                                    <div>
+                                      <div className="admin-test-drive__broadcast-title">
+                                        Бронь #{br.id} · {br.start_date} — {br.end_date}
+                                      </div>
+                                      <div className="admin-test-drive__muted">
+                                        {buyerLabel || `user #${br.user_id}`}
+                                        {br.buyer_phone ? ` · ${br.buyer_phone}` : ''}
+                                      </div>
+                                    </div>
+                                    <span
+                                      className={`admin-test-drive__broadcast-status${
+                                        sent ? ' admin-test-drive__broadcast-status--sent' : ''
+                                      }`}
+                                    >
+                                      {sent ? 'Отправлено' : 'Ожидает'}
+                                    </span>
+                                  </div>
+                                  <div className="admin-test-drive__broadcast-meta">
+                                    <span>Автоотправка (план): {formatBroadcastDt(br.survey_scheduled_at)}</span>
+                                    <span>
+                                      Факт WA: {sent ? formatBroadcastDt(br.survey_whatsapp_sent_at) : '—'}
+                                    </span>
+                                  </div>
+                                  {!sent ? (
+                                    <button
+                                      type="button"
+                                      className="admin-test-drive__broadcast-send"
+                                      disabled={broadcastSendBusy === Number(br.id)}
+                                      onClick={() => sendSurveyBroadcastNow(br.id)}
+                                    >
+                                      <FiSend size={16} aria-hidden />
+                                      {broadcastSendBusy === Number(br.id) ? 'Отправка…' : 'Отправить сейчас'}
+                                    </button>
+                                  ) : (
+                                    <p className="admin-test-drive__muted admin-test-drive__broadcast-note">
+                                      Сообщение с ссылкой на опрос уже отправлено в WhatsApp.
+                                    </p>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        {bookLoading ? (
+                          <div className="admin-test-drive__loading">Загрузка броней…</div>
+                        ) : propertyExitBroadcasts.length === 0 ? (
+                          <div className="admin-test-drive__detail-empty">
+                            Нет броней с токеном пост-отзыва по этому объекту (оплаченные / подтверждённые появятся после
+                            синхронизации).
+                          </div>
+                        ) : (
+                          <div className="admin-test-drive__broadcast-list">
+                            {propertyExitBroadcasts.map((br) => {
+                              const sent = String(br.exit_feedback_whatsapp_status || '').toLowerCase() === 'sent';
+                              const buyerLabel = [br.buyer?.first_name, br.buyer?.last_name]
+                                .filter(Boolean)
+                                .join(' ')
+                                .trim();
+                              return (
+                                <div key={`exit-br-${br.id}`} className="admin-test-drive__broadcast-card">
+                                  <div className="admin-test-drive__broadcast-card-head">
+                                    <div>
+                                      <div className="admin-test-drive__broadcast-title">
+                                        Бронь #{br.id} · выезд {br.end_date}
+                                      </div>
+                                      <div className="admin-test-drive__muted">
+                                        {buyerLabel || `user #${br.user_id}`}
+                                        {br.buyer?.phone_number ? ` · ${br.buyer.phone_number}` : ''}
+                                      </div>
+                                    </div>
+                                    <span
+                                      className={`admin-test-drive__broadcast-status${
+                                        sent ? ' admin-test-drive__broadcast-status--sent' : ''
+                                      }`}
+                                    >
+                                      {sent ? 'Отправлено' : 'Ожидает'}
+                                    </span>
+                                  </div>
+                                  <div className="admin-test-drive__broadcast-meta">
+                                    <span>План WA после выезда: {formatBroadcastDt(br.exit_feedback_scheduled_at)}</span>
+                                    <span>
+                                      Факт WA: {sent ? formatBroadcastDt(br.exit_feedback_whatsapp_sent_at) : '—'}
+                                    </span>
+                                  </div>
+                                  {!sent ? (
+                                    <button
+                                      type="button"
+                                      className="admin-test-drive__broadcast-send"
+                                      disabled={exitSendBusy === Number(br.id)}
+                                      onClick={() => sendExitBroadcastNow(br.id)}
+                                    >
+                                      <FiSend size={16} aria-hidden />
+                                      {exitSendBusy === Number(br.id) ? 'Отправка…' : 'Отправить сейчас'}
+                                    </button>
+                                  ) : (
+                                    <p className="admin-test-drive__muted admin-test-drive__broadcast-note">
+                                      Сообщение с ссылкой на оценку после проживания уже отправлено в WhatsApp.
+                                    </p>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </>
                     )}
                   </div>
                 ) : (
@@ -757,6 +1240,7 @@ export default function AdminTestDrive() {
                         <th>Период</th>
                         <th>Статус</th>
                         <th>Покупатель</th>
+                        <th>Предпочт. связь</th>
                         <th>Контакты</th>
                         <th>Заселение</th>
                         <th>Отмена</th>
@@ -766,7 +1250,7 @@ export default function AdminTestDrive() {
                     <tbody>
                       {bookings.length === 0 ? (
                         <tr>
-                          <td colSpan={8} className="admin-test-drive__muted" style={{ textAlign: 'center', padding: '1.25rem' }}>
+                          <td colSpan={9} className="admin-test-drive__muted" style={{ textAlign: 'center', padding: '1.25rem' }}>
                             Нет бронирований.
                           </td>
                         </tr>
@@ -787,6 +1271,7 @@ export default function AdminTestDrive() {
                               user #{b.buyer?.id}: {buyerName(b.buyer)}
                               <div className="admin-test-drive__muted">{b.buyer?.role || ''}</div>
                             </td>
+                            <td>{formatBuyerContactChannel(b.buyer_contact_channel)}</td>
                             <td>
                               {b.buyer?.email || '—'}
                               <br />

@@ -225,7 +225,7 @@ export interface TestDriveRangeCalendarProps {
   /** Подмножество: дни текущего пользователя — подсветка зелёная */
   myBookedDates?: string[];
   locale?: "ru" | "en";
-  /** Вызывается, когда выбран допустимый диапазон 2–5 дней, или null при сбросе выбора */
+  /** Вызывается, когда выбран допустимый диапазон 5–21 дня, или null при сбросе выбора */
   onRangeSelected?: (
     range: { start: string; end: string } | null
   ) => void;
@@ -359,11 +359,11 @@ export const TestDriveRangeCalendar: React.FC<TestDriveRangeCalendarProps> = ({
 
     setRangeEnd(d);
     const n = daysInclusive(anchor, d);
-    if (n < 2 || n > 5) {
+    if (n < 5 || n > 21) {
       setError(
         locale === "ru"
-          ? "Выберите подряд от 2 до 5 дней (первая и последняя дата)"
-          : "Pick 2 to 5 consecutive days (first and last day)"
+          ? "Выберите подряд от 5 до 21 дня (первая и последняя дата)"
+          : "Pick 5 to 21 consecutive days (first and last day)"
       );
       setAnchor(d);
       setRangeEnd(d);
