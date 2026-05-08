@@ -47,6 +47,7 @@ import PricingCards from '../components/ui/PricingCards'
 import { SUBSCRIPTION_BILLING_UPDATED_EVENT } from '../hooks/useCabinetOverviewData'
 import { startProSubscriptionCheckout, confirmCheckoutSession } from '../utils/subscriptionCheckout'
 import DirectionSummaryCard from '../components/ui/direction-summary-card'
+import { BuyerCabinetHeroSkeleton, BuyerCabinetBelowSkeleton } from '../components/BuyerCabinetOverviewSkeleton'
 import PassportRecognitionModal from '../components/PassportRecognitionModal'
 import { countries as countryList } from '../components/CountrySelect'
 import { COUNTRY_CODES as phoneCountryCodes } from '../components/PhoneInput'
@@ -556,6 +557,11 @@ function TestPage() {
 
   /** State из хука может отставать от localStorage на первом кадре — для онбординга и % нужен синхронный id. */
   const resolvedNumericUserId = numericUserId ?? getStoredNumericUserId()
+
+  const showBuyerCabinetSkeleton = useMemo(
+    () => !isLoaded || (resolvedNumericUserId != null && historyLoading),
+    [isLoaded, resolvedNumericUserId, historyLoading],
+  )
 
   const [dataSheetOpen, setDataSheetOpen] = useState(false)
   const [historySheetOpen, setHistorySheetOpen] = useState(false)
@@ -2042,228 +2048,241 @@ function TestPage() {
       </div>
 
       <div className="test-page__inner">
-        <section className="test-hero-pro" aria-labelledby="test-hero-heading">
-          <div className="test-hero-pro__identity">
-            <div className="test-hero-pro__avatar-wrap">
-              {avatarUrl ? (
-                <img src={avatarUrl} alt="" className="test-hero-pro__avatar-img" />
-              ) : (
-                <span className="test-hero-pro__avatar-fallback" aria-hidden="true">
-                  {initials || 'U'}
-                </span>
-              )}
-            </div>
-            <div className="test-hero-pro__who">
-              <h2 id="test-hero-heading" className="test-hero-pro__name">
-                {fullName}
-              </h2>
-              {email ? (
-                <p className="test-hero-pro__email">
-                  <FiMail size={14} aria-hidden />
-                  {email}
-                </p>
-              ) : null}
-              <div className="test-hero-pro__chips">
-                <span className="test-chip">
-                  <FiHash size={13} aria-hidden />
-                  ID {idForChip}
-                </span>
-                <span className="test-chip">
-                  <FiShield size={13} aria-hidden />
-                  {roleLabel}
-                </span>
-                {verified ? (
-                  <span className="test-chip test-chip--ok">
-                    <FiCheckCircle size={13} aria-hidden />
-                    {t('buyerCabinet_emailVerified')}
-                  </span>
+        <section
+          className="test-hero-pro"
+          aria-labelledby={showBuyerCabinetSkeleton ? undefined : 'test-hero-heading'}
+          aria-busy={showBuyerCabinetSkeleton || undefined}
+        >
+          {showBuyerCabinetSkeleton ? (
+            <BuyerCabinetHeroSkeleton sectionsLabel={t('buyerCabinet_sectionsLabel')} />
+          ) : (
+            <>
+              <div className="test-hero-pro__identity">
+                <div className="test-hero-pro__avatar-wrap">
+                  {avatarUrl ? (
+                    <img src={avatarUrl} alt="" className="test-hero-pro__avatar-img" />
+                  ) : (
+                    <span className="test-hero-pro__avatar-fallback" aria-hidden="true">
+                      {initials || 'U'}
+                    </span>
+                  )}
+                </div>
+                <div className="test-hero-pro__who">
+                  <h2 id="test-hero-heading" className="test-hero-pro__name">
+                    {fullName}
+                  </h2>
+                  {email ? (
+                    <p className="test-hero-pro__email">
+                      <FiMail size={14} aria-hidden />
+                      {email}
+                    </p>
+                  ) : null}
+                  <div className="test-hero-pro__chips">
+                    <span className="test-chip">
+                      <FiHash size={13} aria-hidden />
+                      ID {idForChip}
+                    </span>
+                    <span className="test-chip">
+                      <FiShield size={13} aria-hidden />
+                      {roleLabel}
+                    </span>
+                    {verified ? (
+                      <span className="test-chip test-chip--ok">
+                        <FiCheckCircle size={13} aria-hidden />
+                        {t('buyerCabinet_emailVerified')}
+                      </span>
+                    ) : null}
+                  </div>
+                </div>
+                {isProfileFullyCompleted ? (
+                  <Link to="/" className="test-hero-pro__home-btn">
+                    <span>{t('buyerCabinet_home')}</span>
+                    <FiArrowRight size={15} aria-hidden />
+                  </Link>
                 ) : null}
               </div>
-            </div>
-            {isProfileFullyCompleted ? (
-              <Link to="/" className="test-hero-pro__home-btn">
-                <span>{t('buyerCabinet_home')}</span>
-                <FiArrowRight size={15} aria-hidden />
-              </Link>
-            ) : null}
-          </div>
 
-          <nav className="test-hero-pro__shortcuts" aria-label={t('buyerCabinet_sectionsAria')}>
-            <p className="test-hero-pro__shortcuts-label">{t('buyerCabinet_sectionsLabel')}</p>
-            <div className="test-hero-icon-grid">
-              {mainCards.map((card) => {
-                const Icon = card.icon
-                const isHistory = card.to === '/history'
-                const isSubscriptions = card.sheet === 'subscriptions'
-                const isBookings = card.sheet === 'bookings'
-                const isManagerChat = card.action === 'managerChat'
-                const isData = card.to === '/data'
-                const cardTitle = card.title
-                const cardDescription = card.description
-                const showHistoryCount = isHistory && !historyLoading && historyCount > 0
-                const showBookingsCount =
-                  isBookings && !bookingsSheetLoading && visibleBookingsSheetRows.length > 0
-                const planLabel = subscriptionPlanLabel || 'Starter'
-                const historyAria = showHistoryCount
-                  ? t('buyerCabinet_historyAria', { title: cardTitle, count: historyCount })
-                  : undefined
-                const subscriptionsAria = isSubscriptions
-                  ? t('buyerCabinet_subscriptionsAria', { title: cardTitle, plan: planLabel })
-                  : undefined
-                const bookingsAria = showBookingsCount
-                  ? t('buyerCabinet_bookingsAria', { title: cardTitle, count: visibleBookingsSheetRows.length })
-                  : undefined
-                const ariaLabel = historyAria ?? subscriptionsAria ?? bookingsAria
-                const tileClass = `test-hero-icon-tile test-hero-icon-tile--${card.accent}${
-                  isData && dataSheetOpen ? ' test-hero-icon-tile--active' : ''
-                }${isData && onboardingGateUiLocked ? ' test-hero-icon-tile--gate-data' : ''}${
-                  isHistory && historySheetOpen ? ' test-hero-icon-tile--active' : ''
-                }${isSubscriptions && subscriptionSheetOpen ? ' test-hero-icon-tile--active' : ''}${
-                  isBookings && bookingsSheetOpen ? ' test-hero-icon-tile--active' : ''
-                }`
-                const iconInner = (
-                  <>
-                    <span className="test-hero-icon-tile__icon">
-                      <Icon size={18} strokeWidth={2} aria-hidden />
-                      {showHistoryCount ? (
-                        <span className="test-hero-icon-tile__count-badge" aria-hidden="true">
-                          {historyCount > 99 ? '99+' : historyCount}
+              <nav className="test-hero-pro__shortcuts" aria-label={t('buyerCabinet_sectionsAria')}>
+                <p className="test-hero-pro__shortcuts-label">{t('buyerCabinet_sectionsLabel')}</p>
+                <div className="test-hero-icon-grid">
+                  {mainCards.map((card) => {
+                    const Icon = card.icon
+                    const isHistory = card.to === '/history'
+                    const isSubscriptions = card.sheet === 'subscriptions'
+                    const isBookings = card.sheet === 'bookings'
+                    const isManagerChat = card.action === 'managerChat'
+                    const isData = card.to === '/data'
+                    const cardTitle = card.title
+                    const cardDescription = card.description
+                    const showHistoryCount = isHistory && !historyLoading && historyCount > 0
+                    const showBookingsCount =
+                      isBookings && !bookingsSheetLoading && visibleBookingsSheetRows.length > 0
+                    const planLabel = subscriptionPlanLabel || 'Starter'
+                    const historyAria = showHistoryCount
+                      ? t('buyerCabinet_historyAria', { title: cardTitle, count: historyCount })
+                      : undefined
+                    const subscriptionsAria = isSubscriptions
+                      ? t('buyerCabinet_subscriptionsAria', { title: cardTitle, plan: planLabel })
+                      : undefined
+                    const bookingsAria = showBookingsCount
+                      ? t('buyerCabinet_bookingsAria', {
+                          title: cardTitle,
+                          count: visibleBookingsSheetRows.length,
+                        })
+                      : undefined
+                    const ariaLabel = historyAria ?? subscriptionsAria ?? bookingsAria
+                    const tileClass = `test-hero-icon-tile test-hero-icon-tile--${card.accent}${
+                      isData && dataSheetOpen ? ' test-hero-icon-tile--active' : ''
+                    }${isData && onboardingGateUiLocked ? ' test-hero-icon-tile--gate-data' : ''}${
+                      isHistory && historySheetOpen ? ' test-hero-icon-tile--active' : ''
+                    }${isSubscriptions && subscriptionSheetOpen ? ' test-hero-icon-tile--active' : ''}${
+                      isBookings && bookingsSheetOpen ? ' test-hero-icon-tile--active' : ''
+                    }`
+                    const iconInner = (
+                      <>
+                        <span className="test-hero-icon-tile__icon">
+                          <Icon size={18} strokeWidth={2} aria-hidden />
+                          {showHistoryCount ? (
+                            <span className="test-hero-icon-tile__count-badge" aria-hidden="true">
+                              {historyCount > 99 ? '99+' : historyCount}
+                            </span>
+                          ) : null}
+                          {showBookingsCount ? (
+                            <span className="test-hero-icon-tile__count-badge" aria-hidden="true">
+                              {visibleBookingsSheetRows.length > 99 ? '99+' : visibleBookingsSheetRows.length}
+                            </span>
+                          ) : null}
+                          {isSubscriptions ? (
+                            <span className="test-hero-icon-tile__plan-badge">{planLabel}</span>
+                          ) : null}
                         </span>
-                      ) : null}
-                      {showBookingsCount ? (
-                        <span className="test-hero-icon-tile__count-badge" aria-hidden="true">
-                          {visibleBookingsSheetRows.length > 99 ? '99+' : visibleBookingsSheetRows.length}
-                        </span>
-                      ) : null}
-                      {isSubscriptions ? (
-                        <span className="test-hero-icon-tile__plan-badge">{planLabel}</span>
-                      ) : null}
-                    </span>
-                    <span className="test-hero-icon-tile__label">{cardTitle}</span>
-                  </>
-                )
-                if (isData) {
-                  return (
-                    <button
-                      ref={dataTileRef}
-                      key={card.title}
-                      type="button"
-                      className={tileClass}
-                      title={cardDescription}
-                      aria-label={cardTitle}
-                      aria-pressed={dataSheetOpen}
-                      onClick={() => {
-                        const openDataForOnboarding =
-                          !dataSheetOpen && Boolean(resolvedNumericUserId) && needsProfileOnboarding
-                        setHistorySheetOpen(false)
-                        setSubscriptionSheetOpen(false)
-                        setBookingsSheetOpen(false)
-                        if (openDataForOnboarding) {
-                          setDataSheetOpen(true)
-                        } else {
-                          setDataSheetOpen((open) => !open)
-                        }
-                      }}
-                    >
-                      {iconInner}
-                    </button>
-                  )
-                }
-                if (isHistory) {
-                  return (
-                    <button
-                      key={card.title}
-                      type="button"
-                      className={tileClass}
-                      title={cardDescription}
-                      aria-label={ariaLabel ?? cardTitle}
-                      aria-pressed={historySheetOpen}
-                      onClick={() => {
-                        setDataSheetOpen(false)
-                        setSubscriptionSheetOpen(false)
-                        setBookingsSheetOpen(false)
-                        setHistorySheetOpen((open) => !open)
-                      }}
-                    >
-                      {iconInner}
-                    </button>
-                  )
-                }
-                if (isSubscriptions) {
-                  return (
-                    <button
-                      key={card.title}
-                      type="button"
-                      className={tileClass}
-                      title={cardDescription}
-                      aria-label={ariaLabel ?? cardTitle}
-                      aria-pressed={subscriptionSheetOpen}
-                      onClick={() => {
-                        setDataSheetOpen(false)
-                        setHistorySheetOpen(false)
-                        setBookingsSheetOpen(false)
-                        setSubscriptionSheetOpen((open) => !open)
-                      }}
-                    >
-                      {iconInner}
-                    </button>
-                  )
-                }
-                if (isBookings) {
-                  return (
-                    <button
-                      key={card.title}
-                      type="button"
-                      className={tileClass}
-                      title={cardDescription}
-                      aria-label={ariaLabel ?? cardTitle}
-                      aria-pressed={bookingsSheetOpen}
-                      onClick={() => {
-                        setDataSheetOpen(false)
-                        setHistorySheetOpen(false)
-                        setSubscriptionSheetOpen(false)
-                        setBookingsSheetOpen((open) => !open)
-                      }}
-                    >
-                      {iconInner}
-                    </button>
-                  )
-                }
-                if (isManagerChat) {
-                  return (
-                    <button
-                      key={card.title}
-                      type="button"
-                      className={tileClass}
-                      title={cardDescription}
-                      aria-label={cardTitle}
-                      aria-pressed={isManagerChatOpen}
-                      onClick={() => {
-                        setDataSheetOpen(false)
-                        setHistorySheetOpen(false)
-                        setSubscriptionSheetOpen(false)
-                        setBookingsSheetOpen(false)
-                        void openManagerChatModal()
-                      }}
-                    >
-                      {iconInner}
-                    </button>
-                  )
-                }
-                return (
-                  <Link
-                    key={card.title}
-                    to={card.to}
-                    className={tileClass}
-                    title={cardDescription}
-                    aria-label={ariaLabel}
-                  >
-                    {iconInner}
-                  </Link>
-                )
-              })}
-            </div>
-          </nav>
+                        <span className="test-hero-icon-tile__label">{cardTitle}</span>
+                      </>
+                    )
+                    if (isData) {
+                      return (
+                        <button
+                          ref={dataTileRef}
+                          key={card.title}
+                          type="button"
+                          className={tileClass}
+                          title={cardDescription}
+                          aria-label={cardTitle}
+                          aria-pressed={dataSheetOpen}
+                          onClick={() => {
+                            const openDataForOnboarding =
+                              !dataSheetOpen && Boolean(resolvedNumericUserId) && needsProfileOnboarding
+                            setHistorySheetOpen(false)
+                            setSubscriptionSheetOpen(false)
+                            setBookingsSheetOpen(false)
+                            if (openDataForOnboarding) {
+                              setDataSheetOpen(true)
+                            } else {
+                              setDataSheetOpen((open) => !open)
+                            }
+                          }}
+                        >
+                          {iconInner}
+                        </button>
+                      )
+                    }
+                    if (isHistory) {
+                      return (
+                        <button
+                          key={card.title}
+                          type="button"
+                          className={tileClass}
+                          title={cardDescription}
+                          aria-label={ariaLabel ?? cardTitle}
+                          aria-pressed={historySheetOpen}
+                          onClick={() => {
+                            setDataSheetOpen(false)
+                            setSubscriptionSheetOpen(false)
+                            setBookingsSheetOpen(false)
+                            setHistorySheetOpen((open) => !open)
+                          }}
+                        >
+                          {iconInner}
+                        </button>
+                      )
+                    }
+                    if (isSubscriptions) {
+                      return (
+                        <button
+                          key={card.title}
+                          type="button"
+                          className={tileClass}
+                          title={cardDescription}
+                          aria-label={ariaLabel ?? cardTitle}
+                          aria-pressed={subscriptionSheetOpen}
+                          onClick={() => {
+                            setDataSheetOpen(false)
+                            setHistorySheetOpen(false)
+                            setBookingsSheetOpen(false)
+                            setSubscriptionSheetOpen((open) => !open)
+                          }}
+                        >
+                          {iconInner}
+                        </button>
+                      )
+                    }
+                    if (isBookings) {
+                      return (
+                        <button
+                          key={card.title}
+                          type="button"
+                          className={tileClass}
+                          title={cardDescription}
+                          aria-label={ariaLabel ?? cardTitle}
+                          aria-pressed={bookingsSheetOpen}
+                          onClick={() => {
+                            setDataSheetOpen(false)
+                            setHistorySheetOpen(false)
+                            setSubscriptionSheetOpen(false)
+                            setBookingsSheetOpen((open) => !open)
+                          }}
+                        >
+                          {iconInner}
+                        </button>
+                      )
+                    }
+                    if (isManagerChat) {
+                      return (
+                        <button
+                          key={card.title}
+                          type="button"
+                          className={tileClass}
+                          title={cardDescription}
+                          aria-label={cardTitle}
+                          aria-pressed={isManagerChatOpen}
+                          onClick={() => {
+                            setDataSheetOpen(false)
+                            setHistorySheetOpen(false)
+                            setSubscriptionSheetOpen(false)
+                            setBookingsSheetOpen(false)
+                            void openManagerChatModal()
+                          }}
+                        >
+                          {iconInner}
+                        </button>
+                      )
+                    }
+                    return (
+                      <Link
+                        key={card.title}
+                        to={card.to}
+                        className={tileClass}
+                        title={cardDescription}
+                        aria-label={ariaLabel}
+                      >
+                        {iconInner}
+                      </Link>
+                    )
+                  })}
+                </div>
+              </nav>
+            </>
+          )}
 
           <div
             data-profile-sheet="data"
@@ -2952,10 +2971,18 @@ function TestPage() {
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.32, ease: [0.4, 0, 0.2, 1] }}
             >
-              <section
-                className="test-direction-summaries"
-                aria-label="Ключевые направления: доли, аукцион и долги"
-              >
+              {showBuyerCabinetSkeleton ? (
+                <BuyerCabinetBelowSkeleton
+                  directionsTitle={t('buyerCabinet_directionsTitle')}
+                  directionsSubtitle={t('buyerCabinet_directionsSubtitle')}
+                  docsTitle={t('buyerCabinet_docsTitle')}
+                />
+              ) : (
+                <>
+                  <section
+                    className="test-direction-summaries"
+                    aria-label="Ключевые направления: доли, аукцион и долги"
+                  >
                 <div className="test-direction-summaries__grid">
                   {directionSummaries.map((item) => {
                     const dirRef =
@@ -3151,6 +3178,8 @@ function TestPage() {
                   </section>
                 </aside>
               </div>
+                </>
+              )}
             </motion.div>
           ) : null}
         </AnimatePresence>
