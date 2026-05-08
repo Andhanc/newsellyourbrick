@@ -10,7 +10,8 @@ import { hasBuyNowOption } from '../utils/hasBuyNowOption'
 import PropertyTimer from './PropertyTimer'
 import CircularTimer from './CircularTimer'
 import PropertySearchModal from './PropertySearchModal'
-import AnimatedLoadingSkeleton from './ui/AnimatedLoadingSkeleton'
+import { PropertyListingSkeletonGrid } from './PropertyListingSkeletonGrid'
+import { AuctionMobileListingSkeleton, readAuctionMobileViewMode } from './AuctionMobileListingSkeleton'
 import AuctionMobileLayout from './ui/AuctionMobileLayout'
 import { ensureCanOpenProperty } from '../utils/propertyAccessGuard'
 import { showNotification } from '../utils/toastHelper'
@@ -443,7 +444,23 @@ const PropertyList = ({
         </div>
 
         {loading ? (
-          <AnimatedLoadingSkeleton />
+          isMobile && isAuctionPage ? (
+            <div
+              id="properties-grid"
+              className="properties-grid properties-grid--mobile-auction"
+              aria-busy="true"
+            >
+              <AuctionMobileListingSkeleton viewMode={readAuctionMobileViewMode()} />
+            </div>
+          ) : (
+            <div
+              id="properties-grid"
+              className={`properties-grid${isMobile && isAuctionPage ? ' properties-grid--mobile-auction' : ''}`}
+              aria-busy="true"
+            >
+              <PropertyListingSkeletonGrid count={isMobile ? 6 : 9} />
+            </div>
+          )
         ) : filteredProperties.length === 0 ? (
           <div className="no-results">
             <div className="no-results-icon">🔍</div>

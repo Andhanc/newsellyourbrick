@@ -11,10 +11,45 @@ import { ensureCanOpenProperty } from '../utils/propertyAccessGuard'
 import { useFavoriteAuctionItems } from '../hooks/useFavoriteAuctionItems'
 import { getPropertyCardImage } from '../utils/propertyImage'
 
+const FAVORITES_CARD_SKELETON_COUNT = 4
+
+/** Плейсхолдер карточки аукциона, пока грузятся каталог и избранное с сервера */
+function FavoriteCardSkeleton() {
+  return (
+    <div className="favorite-card favorite-card--skeleton" aria-hidden="true">
+      <div className="favorite-card-link favorite-card-link--skeleton">
+        <div className="favorite-card-image">
+          <div className="favorite-card-skel-shimmer favorite-card-skel-shimmer--media" />
+          <span className="favorite-card-heart-skel" />
+        </div>
+        <div className="favorite-card-content">
+          <div className="favorite-card-timer">
+            <span className="favorite-card-skel-pill" />
+          </div>
+          <div className="favorite-card-skel-line favorite-card-skel-line--title" />
+          <div className="favorite-card-skel-line favorite-card-skel-line--title-narrow" />
+          <div className="favorite-card-skel-line favorite-card-skel-line--loc" />
+          <div className="favorite-card-details favorite-card-details--skeleton">
+            <span className="favorite-card-skel-pill-sm" />
+            <span className="favorite-card-skel-pill-sm" />
+            <span className="favorite-card-skel-pill-sm favorite-card-skel-pill-sm--grow" />
+          </div>
+          <div className="favorite-card-price favorite-card-price--skeleton">
+            <span className="favorite-card-skel-line favorite-card-skel-line--label" />
+            <span className="favorite-card-skel-line favorite-card-skel-line--value" />
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 const Favorites = () => {
   const navigate = useNavigate()
-  const { toggleFavorite } = usePropertyFavorites()
-  const { favoriteAuctions } = useFavoriteAuctionItems()
+  const { toggleFavorite, favoritesLoading } = usePropertyFavorites()
+  const { favoriteAuctions, catalogLoading } = useFavoriteAuctionItems()
+
+  const listLoading = catalogLoading || favoritesLoading
 
   const formatPrice = (price) => {
     const n = Number(price)
@@ -57,7 +92,13 @@ const Favorites = () => {
           </Link>
         </div>
 
-        {favoriteAuctions.length > 0 ? (
+        {listLoading ? (
+          <div className="favorites-grid favorites-grid--skeleton" aria-busy="true">
+            {Array.from({ length: FAVORITES_CARD_SKELETON_COUNT }, (_, i) => (
+              <FavoriteCardSkeleton key={`favorite-skel-${i}`} />
+            ))}
+          </div>
+        ) : favoriteAuctions.length > 0 ? (
           <div className="favorites-grid">
             {favoriteAuctions.map((item) => {
               const auction = item.property

@@ -22,11 +22,9 @@ import { LayoutScrollRefContext } from './context/LayoutScrollContext'
 import { scrollMainTo } from './utils/mainScroll'
 import { lazyWithRetry } from './utils/lazyWithRetry'
 import RouteErrorBoundary from './components/RouteErrorBoundary'
-import DebtsRouteSkeleton from './pages/DebtsRouteSkeleton'
 import MainPage from './pages/MainPage'
 
 // Ленивая загрузка страниц — чанк грузится только при переходе на маршрут
-const Home = lazyWithRetry(() => import('./pages/Home'))
 const PropertyDetailPage = lazyWithRetry(() => import('./pages/PropertyDetailPage'))
 const TestDriveBookingPage = lazyWithRetry(() => import('./pages/TestDriveBookingPage'))
 const TestDriveCheckInRoute = lazyWithRetry(() => import('./pages/TestDriveCheckInRoute'))
@@ -51,22 +49,27 @@ const InvestmentCalculator = lazyWithRetry(() => import('./pages/InvestmentCalcu
 const JetonPage = lazyWithRetry(() => import('./pages/JetonPage'))
 const TestPage = lazyWithRetry(() => import('./pages/TestPage'))
 const BlockedUserModal = lazyWithRetry(() => import('./components/BlockedUserModal'))
-const DebtsPage = lazyWithRetry(() => import('./pages/Debts'))
 const LazyShares = lazyWithRetry(() => import('./pages/Shares'))
 const LazyShareDetailPage = lazyWithRetry(() => import('./pages/ShareDetailPage'))
 const LazyOAuthBridgePage = lazyWithRetry(() => import('./pages/OAuthBridgePage'))
 const LazyFooter = lazyWithRetry(() => import('./components/Footer'))
+const Home = lazyWithRetry(() => import('./pages/Home'))
+const DebtsPage = lazyWithRetry(() => import('./pages/Debts'))
 
 const PageFallback = () => (
   <div
-    className="app-page-fallback"
-    style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+    className="app-page-fallback app-page-fallback--instant"
     role="status"
     aria-live="polite"
   >
-    Загрузка…
+    <span className="app-page-fallback__sr">Загрузка</span>
   </div>
 )
+
+/** Только lazy-чанки; без этого общий Suspense вокруг Routes подменял весь экран при любом suspend. Fallback — однотонный кадр без «скелетона страницы», см. HeavyRouteChunksPrefetch. */
+function LazyPage({ children, fallback }) {
+  return <Suspense fallback={fallback ?? <PageFallback />}>{children}</Suspense>
+}
 
 // Компонент для валидации сессии при запуске приложения
 function SessionValidator({ onBlockedChange }) {
@@ -295,7 +298,64 @@ function ReferralCapture() {
 /** Сразу после гидрации подгружаем чанк нижней части главной (витрины и сетки). */
 function MainPageChunkPrefetch() {
   useEffect(() => {
-    void import('./pages/MainPageBelowFold')
+    let cancelled = false
+    const load = () => {
+      if (!cancelled) void import('./pages/MainPageBelowFold')
+    }
+    if (typeof window !== 'undefined' && typeof window.requestIdleCallback === 'function') {
+      const id = window.requestIdleCallback(load, { timeout: 1800 })
+      return () => {
+        cancelled = true
+        window.cancelIdleCallback(id)
+      }
+    }
+    const t = window.setTimeout(load, 0)
+    return () => {
+      cancelled = true
+      window.clearTimeout(t)
+    }
+  }, [])
+  return null
+}
+
+/** После первого кадра подгружаем тяжёлые чанки страниц в idle — реже виден однотонный fallback при переходе на /auction, /debts, /map. */
+function HeavyRouteChunksPrefetch() {
+  useEffect(() => {
+    let cancelled = false
+    let idleId = null
+    let timeoutId = null
+    const rafIds = []
+
+    const run = () => {
+      if (cancelled) return
+      void import('./pages/Home')
+      void import('./pages/Debts')
+      void import('./pages/MapPage')
+    }
+
+    const schedule = () => {
+      if (cancelled) return
+      if (typeof window !== 'undefined' && typeof window.requestIdleCallback === 'function') {
+        idleId = window.requestIdleCallback(run, { timeout: 600 })
+      } else {
+        timeoutId = window.setTimeout(run, 0)
+      }
+    }
+
+    rafIds.push(
+      requestAnimationFrame(() => {
+        rafIds.push(requestAnimationFrame(schedule))
+      }),
+    )
+
+    return () => {
+      cancelled = true
+      rafIds.forEach((id) => cancelAnimationFrame(id))
+      if (idleId != null && typeof window.cancelIdleCallback === 'function') {
+        window.cancelIdleCallback(idleId)
+      }
+      if (timeoutId != null) window.clearTimeout(timeoutId)
+    }
   }, [])
   return null
 }
@@ -369,6 +429,10 @@ function AdminSessionCleaner() {
 
 function App() {
   const appLayoutRef = useRef(null)
+
+  useEffect(() => {
+    void import('./styles/buyer-cabinet-scroll.css')
+  }, [])
 
   // Инициализируем состояние блокировки из localStorage сразу
   const [isBlocked, setIsBlocked] = useState(() => {
@@ -458,6 +522,7 @@ function App() {
       <ReferralCapture />
       <AuctionListPrefetch />
       <MainPageChunkPrefetch />
+      <HeavyRouteChunksPrefetch />
       <ReturningVisitorSiteTracking />
       <VisitorHeartbeat />
       <SessionValidator onBlockedChange={setIsBlocked} />
@@ -472,72 +537,266 @@ function App() {
       <div ref={appLayoutRef} className={`app-layout ${isBlocked ? 'app-layout--blocked' : ''}`}>
         <div className="app-layout__content">
           <RouteErrorBoundary>
-          <Suspense fallback={<PageFallback />}>
             <Routes>
               <Route path="/" element={<MainPage />} />
-              <Route path="/auction" element={<Home />} />
-              <Route path="/main" element={<Home />} />
-              <Route path="/property/:id/test-drive" element={<TestDriveBookingPage />} />
-              <Route path="/profile/bookings/:bookingId/check-in" element={<TestDriveCheckInRoute />} />
-              <Route path="/property/:id" element={<PropertyDetailPage />} />
-              <Route path="/search-results" element={<SearchResults />} />
-              <Route path="/map" element={<MapPage />} />
-              <Route path="/profile/bookings" element={<MyBookingsPage />} />
-              <Route path="/profile" element={<TestPage />} />
-              <Route path="/profile-legacy" element={<Profile />} />
+              <Route
+                path="/auction"
+                element={
+                  <LazyPage>
+                    <Home />
+                  </LazyPage>
+                }
+              />
+              <Route
+                path="/main"
+                element={
+                  <LazyPage>
+                    <Home />
+                  </LazyPage>
+                }
+              />
+              <Route
+                path="/property/:id/test-drive"
+                element={
+                  <LazyPage>
+                    <TestDriveBookingPage />
+                  </LazyPage>
+                }
+              />
+              <Route
+                path="/profile/bookings/:bookingId/check-in"
+                element={
+                  <LazyPage>
+                    <TestDriveCheckInRoute />
+                  </LazyPage>
+                }
+              />
+              <Route
+                path="/property/:id"
+                element={
+                  <LazyPage>
+                    <PropertyDetailPage />
+                  </LazyPage>
+                }
+              />
+              <Route
+                path="/search-results"
+                element={
+                  <LazyPage>
+                    <SearchResults />
+                  </LazyPage>
+                }
+              />
+              <Route
+                path="/map"
+                element={
+                  <LazyPage>
+                    <MapPage />
+                  </LazyPage>
+                }
+              />
+              <Route
+                path="/profile/bookings"
+                element={
+                  <LazyPage>
+                    <MyBookingsPage />
+                  </LazyPage>
+                }
+              />
+              <Route
+                path="/profile"
+                element={
+                  <LazyPage>
+                    <TestPage />
+                  </LazyPage>
+                }
+              />
+              <Route
+                path="/profile-legacy"
+                element={
+                  <LazyPage>
+                    <Profile />
+                  </LazyPage>
+                }
+              />
               <Route
                 path="/oauth-bridge"
                 element={
-                  <Suspense fallback={<PageFallback />}>
+                  <LazyPage>
                     <LazyOAuthBridgePage />
-                  </Suspense>
+                  </LazyPage>
                 }
               />
-              <Route path="/auth/telegram-callback" element={<TelegramAuthCallback />} />
-              <Route path="/data" element={<Data />} />
-              <Route path="/subscriptions" element={<Subscriptions />} />
-              <Route path="/history" element={<History />} />
-              <Route path="/chat" element={<Chat />} />
-              <Route path="/favorites" element={<Favorites />} />
-              <Route path="/compare" element={<Compare />} />
-              <Route path="/wallet" element={<Wallet />} />
-              <Route path="/deposit" element={<Wallet />} />
-              <Route path="/bonuses" element={<Bonuses />} />
+              <Route
+                path="/auth/telegram-callback"
+                element={
+                  <LazyPage>
+                    <TelegramAuthCallback />
+                  </LazyPage>
+                }
+              />
+              <Route
+                path="/data"
+                element={
+                  <LazyPage>
+                    <Data />
+                  </LazyPage>
+                }
+              />
+              <Route
+                path="/subscriptions"
+                element={
+                  <LazyPage>
+                    <Subscriptions />
+                  </LazyPage>
+                }
+              />
+              <Route
+                path="/history"
+                element={
+                  <LazyPage>
+                    <History />
+                  </LazyPage>
+                }
+              />
+              <Route
+                path="/chat"
+                element={
+                  <LazyPage>
+                    <Chat />
+                  </LazyPage>
+                }
+              />
+              <Route
+                path="/favorites"
+                element={
+                  <LazyPage>
+                    <Favorites />
+                  </LazyPage>
+                }
+              />
+              <Route
+                path="/compare"
+                element={
+                  <LazyPage>
+                    <Compare />
+                  </LazyPage>
+                }
+              />
+              <Route
+                path="/wallet"
+                element={
+                  <LazyPage>
+                    <Wallet />
+                  </LazyPage>
+                }
+              />
+              <Route
+                path="/deposit"
+                element={
+                  <LazyPage>
+                    <Wallet />
+                  </LazyPage>
+                }
+              />
+              <Route
+                path="/bonuses"
+                element={
+                  <LazyPage>
+                    <Bonuses />
+                  </LazyPage>
+                }
+              />
               <Route
                 path="/shares"
                 element={
-                  <Suspense fallback={<PageFallback />}>
+                  <LazyPage>
                     <LazyShares />
-                  </Suspense>
+                  </LazyPage>
                 }
               />
               <Route
                 path="/debts"
                 element={
-                  <Suspense fallback={<DebtsRouteSkeleton />}>
+                  <LazyPage>
                     <DebtsPage />
-                  </Suspense>
+                  </LazyPage>
                 }
               />
-              <Route path="/about" element={<About />} />
+              <Route
+                path="/about"
+                element={
+                  <LazyPage>
+                    <About />
+                  </LazyPage>
+                }
+              />
               <Route
                 path="/shares/:id"
                 element={
-                  <Suspense fallback={<PageFallback />}>
+                  <LazyPage>
                     <LazyShareDetailPage />
-                  </Suspense>
+                  </LazyPage>
                 }
               />
-              <Route path="/calculator" element={<InvestmentCalculator />} />
-              <Route path="/jeton" element={<JetonPage />} />
-              <Route path="/test" element={<TestPage />} />
-              <Route path="/owner" element={<OwnerDashboard />} />
-              <Route path="/owner/property/new" element={<AddProperty />} />
-              <Route path="/property/:id/edit" element={<AddProperty />} />
-              <Route path="/admin" element={<AdminPanelPage />} />
+              <Route
+                path="/calculator"
+                element={
+                  <LazyPage>
+                    <InvestmentCalculator />
+                  </LazyPage>
+                }
+              />
+              <Route
+                path="/jeton"
+                element={
+                  <LazyPage>
+                    <JetonPage />
+                  </LazyPage>
+                }
+              />
+              <Route
+                path="/test"
+                element={
+                  <LazyPage>
+                    <TestPage />
+                  </LazyPage>
+                }
+              />
+              <Route
+                path="/owner"
+                element={
+                  <LazyPage>
+                    <OwnerDashboard />
+                  </LazyPage>
+                }
+              />
+              <Route
+                path="/owner/property/new"
+                element={
+                  <LazyPage>
+                    <AddProperty />
+                  </LazyPage>
+                }
+              />
+              <Route
+                path="/property/:id/edit"
+                element={
+                  <LazyPage>
+                    <AddProperty />
+                  </LazyPage>
+                }
+              />
+              <Route
+                path="/admin"
+                element={
+                  <LazyPage>
+                    <AdminPanelPage />
+                  </LazyPage>
+                }
+              />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
-          </Suspense>
           </RouteErrorBoundary>
         </div>
         <Suspense

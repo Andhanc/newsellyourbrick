@@ -21,6 +21,31 @@ const SORT_OPTIONS = [
   { id: 'price', label: 'Сначала дешевле' }
 ]
 
+const MAP_LIST_SKELETON_COUNT = 5
+
+/** Пока грузится API — разметка как у .map-booking-card, без блокировки карты */
+function MapBookingCardSkeleton() {
+  return (
+    <article className="map-booking-card map-booking-card--skeleton" aria-hidden="true">
+      <div className="map-booking-card__media">
+        <div className="map-booking-card__img-wrap map-booking-card__img-wrap--skeleton">
+          <div className="map-card-skel-shimmer map-card-skel-shimmer--media" />
+          <span className="map-booking-card__fav-ring-skel" />
+        </div>
+      </div>
+      <div className="map-booking-card__body">
+        <div className="map-card-skel-line map-card-skel-line--title" />
+        <div className="map-card-skel-line map-card-skel-line--meta" />
+        <div className="map-card-skel-line map-card-skel-line--loc" />
+      </div>
+      <div className="map-booking-card__right">
+        <div className="map-card-skel-line map-card-skel-line--price" />
+        <div className="map-booking-card__show-btn-skel" />
+      </div>
+    </article>
+  )
+}
+
 function parseCoordinates(value) {
   if (value == null) return null
 
@@ -224,7 +249,8 @@ const MapPage = () => {
     const container = mapRef.current
     if (!container || mapInstanceRef.current) return
     let cancelled = false
-    const t = setTimeout(() => {
+    const rafIds = []
+    const startMap = () => {
       if (cancelled || !container.isConnected || mapInstanceRef.current) return
       try {
         const map = new maplibregl.Map({
@@ -249,10 +275,15 @@ const MapPage = () => {
       } catch (e) {
         console.error('Ошибка инициализации карты:', e)
       }
-    }, 200)
+    }
+    rafIds.push(
+      requestAnimationFrame(() => {
+        rafIds.push(requestAnimationFrame(startMap))
+      })
+    )
     return () => {
       cancelled = true
-      clearTimeout(t)
+      rafIds.forEach((id) => cancelAnimationFrame(id))
       if (mapInstanceRef.current) {
         try { mapInstanceRef.current.remove() } catch (_) {}
         mapInstanceRef.current = null
@@ -421,7 +452,20 @@ const MapPage = () => {
           <aside className="map-page-list">
             <header className="map-list-header">
               <p className="map-list-count map-list-count--secondary">
-                {loading ? 'Загрузка…' : <><strong>{sortedProperties.length}</strong> объектов</>}
+                {loading ? (
+                  <span
+                    className="map-list-count-skel"
+                    role="status"
+                    aria-busy="true"
+                    aria-label="Загрузка списка объектов"
+                  >
+                    <span className="map-list-count-skel__bar" />
+                  </span>
+                ) : (
+                  <>
+                    <strong>{sortedProperties.length}</strong> объектов
+                  </>
+                )}
               </p>
               <div className="map-sort-pills">
                 <button
@@ -446,12 +490,13 @@ const MapPage = () => {
               </div>
             </header>
 
-            <div className="map-list-scroll">
+            <div className="map-list-scroll" aria-busy={loading}>
               {loading ? (
-                <div className="map-list-loading">
-                  <div className="map-list-loading-spinner" aria-hidden />
-                  <p>Загрузка объектов…</p>
-                </div>
+                <>
+                  {Array.from({ length: MAP_LIST_SKELETON_COUNT }, (_, i) => (
+                    <MapBookingCardSkeleton key={`map-card-skel-${i}`} />
+                  ))}
+                </>
               ) : sortedProperties.length === 0 ? (
                 <div className="map-list-empty">
                   <p>

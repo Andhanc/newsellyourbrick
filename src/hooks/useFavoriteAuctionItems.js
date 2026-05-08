@@ -12,6 +12,8 @@ export function useFavoriteAuctionItems() {
   const [catalogByKey, setCatalogByKey] = useState(() => new Map())
   const [catalogVersion, setCatalogVersion] = useState(0)
   const [mockTick, setMockTick] = useState(0)
+  /** Первый запрос каталога с API — для скелетона карточек на «Понравилось» */
+  const [catalogLoading, setCatalogLoading] = useState(true)
 
   const loadCatalog = useCallback(async () => {
     try {
@@ -95,6 +97,8 @@ export function useFavoriteAuctionItems() {
       setCatalogVersion((v) => v + 1)
     } catch (e) {
       console.warn('useFavoriteAuctionItems loadCatalog:', e)
+    } finally {
+      setCatalogLoading(false)
     }
   }, [])
 
@@ -168,5 +172,5 @@ export function useFavoriteAuctionItems() {
     return out
   }, [favoriteRows, catalogByKey, catalogVersion, mockTick])
 
-  return { favoriteAuctions, loadCatalog }
+  return { favoriteAuctions, loadCatalog, catalogLoading }
 }

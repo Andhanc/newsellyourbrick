@@ -121,17 +121,133 @@
   text-align: center;
 }
 
-.map-list-loading-spinner {
-  width: 40px;
-  height: 40px;
-  border: 3px solid #e5e7eb;
-  border-top-color: #0abab5;
-  border-radius: 50%;
-  animation: map-spin 0.8s linear infinite;
+.map-list-count-skel {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 1.25em;
 }
 
-@keyframes map-spin {
-  to { transform: rotate(360deg); }
+.map-list-count-skel__bar {
+  display: block;
+  width: 132px;
+  height: 16px;
+  border-radius: 8px;
+  background: linear-gradient(
+    90deg,
+    #e8ebed 0%,
+    #f3f4f6 45%,
+    #e8ebed 90%
+  );
+  background-size: 200% 100%;
+  animation: map-card-skel-wave 1.15s ease-in-out infinite;
+}
+
+.map-booking-card.map-booking-card--skeleton {
+  pointer-events: none;
+  cursor: default;
+}
+
+.map-booking-card.map-booking-card--skeleton:hover {
+  background: #fff;
+}
+
+.map-booking-card__img-wrap.map-booking-card__img-wrap--skeleton {
+  background: #eef2f7;
+  overflow: hidden;
+}
+
+.map-card-skel-shimmer {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    105deg,
+    #e8edf2 0%,
+    #f1f5f9 42%,
+    rgba(232, 250, 248, 0.85) 50%,
+    #f1f5f9 58%,
+    #e8edf2 100%
+  );
+  background-size: 220% 100%;
+  animation: map-card-skel-wave 1.35s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+
+.map-booking-card__fav-ring-skel {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.75);
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+  z-index: 1;
+}
+
+.map-card-skel-line {
+  border-radius: 8px;
+  background: linear-gradient(
+    90deg,
+    #e8ebed 0%,
+    #f3f4f6 45%,
+    #e8ebed 90%
+  );
+  background-size: 200% 100%;
+  animation: map-card-skel-wave 1.15s ease-in-out infinite;
+}
+
+.map-card-skel-line--title {
+  height: 16px;
+  width: 72%;
+  max-width: 280px;
+  margin-bottom: 10px;
+}
+
+.map-card-skel-line--meta {
+  height: 13px;
+  width: 55%;
+  max-width: 200px;
+  margin-bottom: 10px;
+}
+
+.map-card-skel-line--loc {
+  height: 13px;
+  width: 88%;
+  max-width: 360px;
+}
+
+.map-card-skel-line--price {
+  height: 20px;
+  width: 96px;
+  margin-bottom: 4px;
+}
+
+.map-booking-card__show-btn-skel {
+  margin-top: 8px;
+  width: 118px;
+  height: 38px;
+  border-radius: 999px;
+  background: linear-gradient(
+    120deg,
+    #c5eee9 0%,
+    #d9f4f1 45%,
+    #c5eee9 90%
+  );
+  background-size: 200% 100%;
+  animation: map-card-skel-wave 1.15s ease-in-out infinite;
+}
+
+@keyframes map-card-skel-wave {
+  0%,
+  100% {
+    background-position: 0% 50%;
+    opacity: 1;
+  }
+  50% {
+    background-position: 100% 50%;
+    opacity: 0.88;
+  }
 }
 
 /* Верхняя панель с кнопкой «Назад» — одна на все экраны */

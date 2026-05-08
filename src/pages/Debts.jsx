@@ -16,6 +16,10 @@ import { fetchUserDeposit } from '../utils/depositApi'
 import { fetchDedupe } from '../utils/fetchDedupe'
 import { fetchNumericDbUserIdForApi, getStoredNumericUserId } from '../services/authService'
 import { PropertyListingSkeletonGrid } from '../components/PropertyListingSkeletonGrid'
+import {
+  AuctionMobileListingSkeleton,
+  readAuctionMobileViewMode,
+} from '../components/AuctionMobileListingSkeleton'
 import './Shares.css'
 import '../components/PropertyList.css'
 
@@ -283,14 +287,18 @@ const Debts = () => {
         <div className="shares-grid" aria-busy={loadingDebts}>
           {loadingDebts && (
             <div style={{ gridColumn: '1 / -1' }}>
-              <div
-                className={
-                  isMobile ? 'properties-grid properties-grid--mobile-auction' : 'properties-grid'
-                }
-                aria-hidden="true"
-              >
-                <PropertyListingSkeletonGrid count={isMobile ? 4 : 6} />
-              </div>
+              {isMobile ? (
+                <div
+                  className="properties-grid properties-grid--mobile-auction"
+                  aria-busy="true"
+                >
+                  <AuctionMobileListingSkeleton viewMode={readAuctionMobileViewMode()} />
+                </div>
+              ) : (
+                <div className="properties-grid" aria-hidden="true">
+                  <PropertyListingSkeletonGrid count={6} />
+                </div>
+              )}
             </div>
           )}
 

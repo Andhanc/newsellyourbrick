@@ -10,10 +10,37 @@ import { getComparisonGroupKey } from '../utils/propertyFavoriteKey'
 import { showNotification } from '../utils/toastHelper'
 import { askPropertyCompareAssistant } from '../services/aiService'
 import { getPropertyCardImage } from '../utils/propertyImage'
+import { usePropertyFavorites } from '../context/PropertyFavoritesContext'
 import './Compare.css'
 
 const PLACEHOLDER_IMG =
   'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=800&q=80'
+
+const COMPARE_PICK_SKELETON_COUNT = 4
+
+/** Плейсхолдер карточки выбора, пока каталог и избранное подгружаются */
+function ComparePickCardSkeleton() {
+  return (
+    <li>
+      <div className="compare-pick-card compare-pick-card--skeleton" aria-hidden="true">
+        <div className="compare-pick-card-image">
+          <div className="compare-skel-shimmer compare-skel-shimmer--media" />
+        </div>
+        <div className="compare-pick-card-body">
+          <span className="compare-skel-line compare-skel-line--type" />
+          <span className="compare-skel-line compare-skel-line--title" />
+          <span className="compare-skel-line compare-skel-line--title-narrow" />
+          <span className="compare-skel-line compare-skel-line--loc" />
+          <div className="compare-pick-meta compare-pick-meta--skeleton">
+            <span className="compare-skel-pill" />
+            <span className="compare-skel-pill" />
+            <span className="compare-skel-pill compare-skel-pill--grow" />
+          </div>
+        </div>
+      </div>
+    </li>
+  )
+}
 
 function formatTypeLabel(groupKey) {
   if (!groupKey) return 'Объект'
@@ -384,7 +411,10 @@ function buildRows(left, right) {
 
 const Compare = () => {
   const navigate = useNavigate()
-  const { favoriteAuctions } = useFavoriteAuctionItems()
+  const { favoritesLoading } = usePropertyFavorites()
+  const { favoriteAuctions, catalogLoading } = useFavoriteAuctionItems()
+
+  const listLoading = catalogLoading || favoritesLoading
   const [selectedKeys, setSelectedKeys] = useState(() => [])
   const [aiResult, setAiResult] = useState(null)
   const [aiLoading, setAiLoading] = useState(false)
@@ -499,7 +529,21 @@ const Compare = () => {
           </div>
         </div>
 
-        {favoriteAuctions.length === 0 ? (
+        {listLoading ? (
+          <section className="compare-pick-section" aria-busy="true">
+            <div className="compare-pick-toolbar">
+              <h2 className="compare-pick-heading">Объекты из избранного</h2>
+            </div>
+            <div className="compare-hint compare-hint--skeleton" aria-hidden="true">
+              <span className="compare-skel-line compare-skel-line--hint" />
+            </div>
+            <ul className="compare-pick-grid compare-pick-grid--skeleton">
+              {Array.from({ length: COMPARE_PICK_SKELETON_COUNT }, (_, i) => (
+                <ComparePickCardSkeleton key={`compare-pick-skel-${i}`} />
+              ))}
+            </ul>
+          </section>
+        ) : favoriteAuctions.length === 0 ? (
           <div className="compare-empty">
             <FiColumns size={56} className="compare-empty-icon" />
             <h2 className="compare-empty-title">Нечего сравнивать</h2>

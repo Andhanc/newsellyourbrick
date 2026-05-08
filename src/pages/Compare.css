@@ -289,6 +289,122 @@
   gap: 4px;
 }
 
+/* Скелетон карточек выбора — шапка страницы уже отрисована */
+.compare-pick-card.compare-pick-card--skeleton {
+  pointer-events: none;
+  cursor: default;
+}
+
+.compare-pick-card.compare-pick-card--skeleton:hover {
+  transform: none;
+  border-color: #e5e5e5;
+  box-shadow: none;
+}
+
+.compare-pick-card-image .compare-skel-shimmer--media {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    105deg,
+    #e8edf2 0%,
+    #f1f5f9 42%,
+    rgba(232, 250, 248, 0.85) 50%,
+    #f1f5f9 58%,
+    #e8edf2 100%
+  );
+  background-size: 220% 100%;
+  animation: compare-skel-wave 1.35s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+
+.compare-hint--skeleton {
+  min-height: 1.35em;
+  margin-bottom: 20px;
+}
+
+.compare-skel-line--hint {
+  display: block;
+  height: 14px;
+  width: min(100%, 420px);
+  border-radius: 8px;
+}
+
+.compare-skel-line {
+  display: block;
+  border-radius: 8px;
+  background: linear-gradient(
+    90deg,
+    #e8ebed 0%,
+    #f3f4f6 45%,
+    #e8ebed 90%
+  );
+  background-size: 200% 100%;
+  animation: compare-skel-wave 1.15s ease-in-out infinite;
+}
+
+.compare-skel-line--type {
+  height: 12px;
+  width: 88px;
+  margin-bottom: 10px;
+}
+
+.compare-skel-line--title {
+  height: 15px;
+  width: 94%;
+  margin-bottom: 8px;
+}
+
+.compare-skel-line--title-narrow {
+  height: 15px;
+  width: 72%;
+  margin-bottom: 10px;
+}
+
+.compare-skel-line--loc {
+  height: 13px;
+  width: 88%;
+  margin-bottom: 12px;
+}
+
+.compare-pick-meta--skeleton {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+  margin-top: auto;
+}
+
+.compare-skel-pill {
+  width: 40px;
+  height: 15px;
+  border-radius: 6px;
+  background: linear-gradient(
+    90deg,
+    #e8ebed 0%,
+    #f3f4f6 45%,
+    #e8ebed 90%
+  );
+  background-size: 200% 100%;
+  animation: compare-skel-wave 1.15s ease-in-out infinite;
+}
+
+.compare-skel-pill--grow {
+  flex: 1;
+  min-width: 56px;
+  max-width: 100px;
+}
+
+@keyframes compare-skel-wave {
+  0%,
+  100% {
+    background-position: 0% 50%;
+    opacity: 1;
+  }
+  50% {
+    background-position: 100% 50%;
+    opacity: 0.88;
+  }
+}
+
 .compare-table-section {
   margin-top: 8px;
 }

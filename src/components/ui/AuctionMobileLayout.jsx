@@ -25,10 +25,11 @@ import {
 } from '@/utils/auctionReminderBounds'
 import { getPropertyCardImage } from '@/utils/propertyImage'
 import { resolveAuctionCurrentBidValue } from '../../services/auctionListCache'
+import { AUCTION_MOBILE_VIEW_STORAGE_KEY } from '../../constants/auctionMobileViewStorage'
 import '../PropertyList.css'
 import './AuctionMobileLayout.css'
 
-const STORAGE_KEY = 'auction-mobile-view-mode'
+const STORAGE_KEY = AUCTION_MOBILE_VIEW_STORAGE_KEY
 
 const snappySpring = {
   type: 'spring',

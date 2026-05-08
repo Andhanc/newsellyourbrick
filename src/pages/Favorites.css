@@ -339,6 +339,151 @@
   color: #4A90E2;
 }
 
+/* Скелетон карточки — шапка страницы уже отрисована */
+.favorite-card.favorite-card--skeleton {
+  pointer-events: none;
+}
+
+.favorite-card.favorite-card--skeleton:hover {
+  transform: none;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  border-color: #e0e0e0;
+}
+
+.favorite-card-link--skeleton {
+  cursor: default;
+}
+
+.favorite-card-image .favorite-card-skel-shimmer--media {
+  position: absolute;
+  inset: 0;
+  border-radius: 0;
+  background: linear-gradient(
+    105deg,
+    #e8edf2 0%,
+    #f1f5f9 42%,
+    rgba(232, 250, 248, 0.85) 50%,
+    #f1f5f9 58%,
+    #e8edf2 100%
+  );
+  background-size: 220% 100%;
+  animation: favorites-skel-wave 1.35s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+
+.favorite-card-heart-skel {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(255, 255, 255, 0.75);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  z-index: 2;
+}
+
+.favorite-card-skel-pill {
+  display: inline-block;
+  height: 34px;
+  width: min(220px, 88%);
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    #dbecea 0%,
+    #e8f7f5 45%,
+    #dbecea 90%
+  );
+  background-size: 200% 100%;
+  animation: favorites-skel-wave 1.15s ease-in-out infinite;
+}
+
+.favorite-card-details--skeleton {
+  margin-bottom: 16px;
+}
+
+.favorite-card-skel-pill-sm {
+  width: 36px;
+  height: 16px;
+  border-radius: 6px;
+  background: linear-gradient(
+    90deg,
+    #e8ebed 0%,
+    #f3f4f6 45%,
+    #e8ebed 90%
+  );
+  background-size: 200% 100%;
+  animation: favorites-skel-wave 1.15s ease-in-out infinite;
+}
+
+.favorite-card-skel-pill-sm--grow {
+  flex: 1;
+  min-width: 72px;
+  max-width: 120px;
+}
+
+.favorite-card-skel-line {
+  border-radius: 8px;
+  background: linear-gradient(
+    90deg,
+    #e8ebed 0%,
+    #f3f4f6 45%,
+    #e8ebed 90%
+  );
+  background-size: 200% 100%;
+  animation: favorites-skel-wave 1.15s ease-in-out infinite;
+}
+
+.favorite-card-skel-line--title {
+  height: 16px;
+  width: 92%;
+  max-width: 100%;
+  margin-bottom: 10px;
+}
+
+.favorite-card-skel-line--title-narrow {
+  height: 16px;
+  width: 64%;
+  margin-bottom: 12px;
+}
+
+.favorite-card-skel-line--loc {
+  height: 14px;
+  width: 85%;
+  margin-bottom: 14px;
+}
+
+.favorite-card-price--skeleton {
+  padding-top: 12px;
+  border-top: 1px solid #f0f0f0;
+  gap: 8px;
+}
+
+.favorite-card-skel-line--label {
+  height: 11px;
+  width: 140px;
+  margin-bottom: 4px;
+  border-radius: 4px;
+}
+
+.favorite-card-skel-line--value {
+  height: 24px;
+  width: 112px;
+  border-radius: 8px;
+}
+
+@keyframes favorites-skel-wave {
+  0%,
+  100% {
+    background-position: 0% 50%;
+    opacity: 1;
+  }
+  50% {
+    background-position: 100% 50%;
+    opacity: 0.88;
+  }
+}
+
 .favorites-empty {
   display: flex;
   flex-direction: column;
