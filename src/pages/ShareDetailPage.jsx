@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useLayoutEffect } from 'react'
 import { useParams, useNavigate, useLocation, useSearchParams } from 'react-router-dom'
 import { FiPlus, FiArrowLeft } from 'react-icons/fi'
 import { useUser } from '@clerk/clerk-react'
@@ -11,8 +11,13 @@ import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
 import { fetchUserDeposit } from '../utils/depositApi'
 import { getPropertyCardImage } from '../utils/propertyImage'
 import './ShareDetailPage.css'
+import ShareDetailPageSkeleton from './ShareDetailPageSkeleton'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api'
+
+function isShareDbRouteId(routeId) {
+  return typeof routeId === 'string' && /^(apartment|commercial|house|villa)-(\d+)$/.test(routeId)
+}
 
 const DEMO_SHARE_OBJECTS = [
   {
@@ -72,7 +77,7 @@ const ShareDetailPage = () => {
     return DEMO_SHARE_OBJECTS.find((o) => o.id === id) || null
   })
   const [buyCount, setBuyCount] = useState(1)
-  const [loadingShare, setLoadingShare] = useState(false)
+  const [loadingShare, setLoadingShare] = useState(() => isShareDbRouteId(id))
   const [purchaseModalOpen, setPurchaseModalOpen] = useState(false)
   const [userId, setUserId] = useState(() => getStoredNumericUserId())
   const [userDeposit, setUserDeposit] = useState(0)
@@ -162,6 +167,10 @@ const ShareDetailPage = () => {
       })
       .catch(() => setShareObject(null))
       .finally(() => setLoadingShare(false))
+  }, [id])
+
+  useLayoutEffect(() => {
+    setLoadingShare(isShareDbRouteId(id))
   }, [id])
 
   useEffect(() => {
@@ -266,18 +275,8 @@ const ShareDetailPage = () => {
   const userEmail =
     user?.primaryEmailAddress?.emailAddress || user?.emailAddresses?.[0]?.emailAddress || getUserData()?.email || ''
 
-  if (loadingShare && !shareObject) {
-    return (
-      <div className="share-detail-page">
-        <Header />
-        <div className="share-detail-page__container">
-          <p>Загрузка...</p>
-          <button type="button" className="share-detail-page__back" onClick={() => navigate('/shares')}>
-            <FiArrowLeft size={20} /> Назад к долевым объектам
-          </button>
-        </div>
-      </div>
-    )
+  if (loadingShare) {
+    return <ShareDetailPageSkeleton />
   }
 
   if (!shareObject) {
@@ -351,10 +350,6 @@ const ShareDetailPage = () => {
         <button type="button" className="share-detail-page__back" onClick={() => navigate('/shares')}>
           <FiArrowLeft size={20} /> Назад к долевым объектам
         </button>
-
-        <div className={`share-detail__badge ${isSoldOut ? 'share-detail__badge--sold-out' : ''}`}>
-          {isSoldOut ? 'Sold out' : 'Доля'}
-        </div>
 
         <div className="share-detail__layout">
           <div className="share-detail__info">

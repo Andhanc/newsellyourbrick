@@ -26,6 +26,7 @@ import {
 } from '../utils/auctionReminderBounds'
 import { getPropertyCardImage } from '../utils/propertyImage'
 import { resolveAuctionCurrentBidValue } from '../services/auctionListCache'
+import { getPropertyDetailPath, auctionListingDedupeKey } from '../utils/propertyDetailUrl'
 import './PropertyList.css'
 
 const MOBILE_BREAKPOINT = 768
@@ -283,8 +284,8 @@ const PropertyList = ({
       )
       return
     }
-    navigate(`/property/${property.id}`, {
-      state: { property }
+    navigate(getPropertyDetailPath(property.id, { property }), {
+      state: { property },
     })
   }
 
@@ -578,7 +579,7 @@ const PropertyList = ({
 
                 return (
             <div 
-              key={property.id} 
+              key={auctionListingDedupeKey(property)} 
               className={`property-card${isAuctionEndedCard ? ' property-card--auction-ended' : ''}`}
               onClick={(e) => {
                 // Проверяем, что клик не по кнопке или ссылке

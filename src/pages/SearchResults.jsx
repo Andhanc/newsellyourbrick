@@ -8,6 +8,7 @@ import { ensureCanOpenProperty } from '../utils/propertyAccessGuard'
 import { getApiBaseUrl } from '../utils/apiConfig'
 import { fetchDedupe } from '../utils/fetchDedupe'
 import './SearchResults.css'
+import { getPropertyDetailPath } from '../utils/propertyDetailUrl'
 
 const SearchResults = () => {
   const { i18n } = useTranslation()
@@ -343,7 +344,7 @@ const SearchResults = () => {
                   className="search-results__card"
                   onClick={() => {
                     if (!ensureCanOpenProperty()) return
-                    navigate(`/property/${property.id}`, { state: { property } })
+                    navigate(getPropertyDetailPath(property.id, { property }), { state: { property } })
                   }}
                 >
                   <div className="search-results__card-image">

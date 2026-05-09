@@ -15,6 +15,7 @@ import { usePropertyFavorites } from '../context/PropertyFavoritesContext'
 import { hasDbBackedProperty } from '../utils/propertyFavoriteKey'
 import { getMainScrollEl, getMainScrollTop, scrollMainTo } from '../utils/mainScroll'
 import './MapPage.css'
+import { getPropertyDetailPath, auctionListingDedupeKey } from '../utils/propertyDetailUrl'
 
 const SORT_OPTIONS = [
   { id: 'popular', label: 'По популярности' },
@@ -433,7 +434,8 @@ const MapPage = () => {
   }, [])
 
   // ─── Прочие обработчики ──────────────────────────────────────────────────
-  const setCardImageIndex = (id, index) => setImageIndex((prev) => ({ ...prev, [id]: index }))
+  const setCardImageIndex = (cardKey, index) =>
+    setImageIndex((prev) => ({ ...prev, [cardKey]: index }))
 
   const toggleFavorite = async (e, property) => {
     e.stopPropagation()
@@ -533,8 +535,10 @@ const MapPage = () => {
                 </div>
               ) : sortedProperties.map((property) => {
                 const images = property.images || []
-                const currentImgIndex = imageIndex[property.id] ?? 0
-                const isSelected = selectedProperty?.id === property.id
+                const cardKey = auctionListingDedupeKey(property)
+                const currentImgIndex = imageIndex[cardKey] ?? 0
+                const isSelected =
+                  selectedProperty != null && auctionListingDedupeKey(selectedProperty) === cardKey
                 const priceDisplay = property.price ?? property.currentBid ?? 0
                 const metaParts = []
                 if (property.area) metaParts.push(`${property.area} м²`)
@@ -543,11 +547,11 @@ const MapPage = () => {
 
                 return (
                   <article
-                    key={property.id}
+                    key={cardKey}
                     className={`map-booking-card ${isSelected ? 'selected' : ''}`}
                     onClick={() => {
                       if (!ensureCanOpenProperty(user && userLoaded)) return
-                      navigate(`/property/${property.id}`)
+                      navigate(getPropertyDetailPath(property.id, { property }), { state: { property } })
                     }}
                   >
                     <div className="map-booking-card__media">
@@ -567,7 +571,10 @@ const MapPage = () => {
                               <span
                                 key={i}
                                 className={i === currentImgIndex ? 'active' : ''}
-                                onClick={(e) => { e.stopPropagation(); setCardImageIndex(property.id, i) }}
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  setCardImageIndex(cardKey, i)
+                                }}
                               />
                             ))}
                           </div>
@@ -660,7 +667,9 @@ const MapPage = () => {
                   className="map-open-hint__cta"
                   onClick={() => {
                     if (!ensureCanOpenProperty(user && userLoaded)) return
-                    navigate(`/property/${mapOpenHintProperty.id}`)
+                    navigate(getPropertyDetailPath(mapOpenHintProperty.id, {
+                      property: mapOpenHintProperty,
+                    }), { state: { property: mapOpenHintProperty } })
                   }}
                 >
                   Открыть объект

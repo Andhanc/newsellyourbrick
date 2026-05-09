@@ -1,8 +1,10 @@
 import { useState, useEffect, useMemo } from 'react'
+import { createPortal } from 'react-dom'
 import { FiX, FiHome, FiMapPin, FiDollarSign, FiLoader, FiLayers } from 'react-icons/fi'
 import { MdBed } from 'react-icons/md'
 import { BiArea } from 'react-icons/bi'
 import axios from 'axios'
+import { mapListingToCalculatorData } from '../utils/propertyCalculatorMapping'
 import './PropertyCalculatorModal.css'
 
 const DEFAULT_CITIES = [
@@ -10,65 +12,16 @@ const DEFAULT_CITIES = [
   { value: 'madrid', label: 'Мадрид', region: 'Мадрид' }
 ]
 
-function normalizeCityInput(value = '') {
-  return String(value)
-    .split(',')[0]
-    .trim()
-    .toLowerCase()
-}
-
-function mapListingToCalculatorData(source = {}) {
-  const rawPropertyType = String(source.propertyType || '').toLowerCase()
-  const propertyTypeMap = {
-    apartment: 'apartment',
-    apartamento: 'apartamento',
-    house: 'house',
-    villa: 'villa',
-    commercial: 'commercial',
-    land: 'land'
-  }
-
-  const propertyType = propertyTypeMap[rawPropertyType] || 'apartment'
-  const skipRooms = propertyType === 'land' || propertyType === 'commercial'
-  const area = source.area != null && source.area !== '' ? String(source.area) : ''
-  let rooms = 'studio'
-
-  if (!skipRooms) {
-    const rawRooms = source.rooms ?? source.bedrooms
-    const parsedRooms = parseInt(rawRooms, 10)
-    if (Number.isFinite(parsedRooms) && parsedRooms > 0) {
-      rooms = String(Math.min(parsedRooms, 5))
-    } else {
-      rooms = 'studio'
-    }
-  }
-
-  const cityAlias = {
-    madrid: 'madrid',
-    мадрид: 'madrid',
-    barcelona: 'barcelona',
-    барселона: 'barcelona'
-  }
-  const rawCity = normalizeCityInput(source.city)
-  const mappedCity = cityAlias[rawCity] || rawCity || 'barcelona'
-
-  return {
-    area,
-    rooms,
-    city: mappedCity,
-    district: 'all',
-    propertyType,
-    street: source.address || source.location || ''
-  }
-}
-
 const PropertyCalculatorModal = ({
   isOpen,
   onClose,
   initialPropertyData = null,
   onApplyRecommendedPrice,
-  lockFields = false
+  lockFields = false,
+  /** Встроенный режим шага мастера: без overlay/портала, карточка в потоке страницы */
+  variant = 'modal'
 }) => {
+  const isEmbedded = variant === 'embedded'
   const [formData, setFormData] = useState({
     area: '',
     rooms: 'studio',
@@ -85,6 +38,8 @@ const PropertyCalculatorModal = ({
   const [isDetectingDistrict, setIsDetectingDistrict] = useState(false)
   const [districtHint, setDistrictHint] = useState('')
   const [districtTouched, setDistrictTouched] = useState(false)
+  /** Ключ — property.link; если превью с внешнего сайта не загрузилось, показываем плейсхолдер. */
+  const [failedListingImages, setFailedListingImages] = useState({})
   const fieldsAreLocked = lockFields && !!initialPropertyData
   const initialMappedData = useMemo(
     () => mapListingToCalculatorData(initialPropertyData || {}),
@@ -211,8 +166,6 @@ const PropertyCalculatorModal = ({
     }
   }, [isOpen, formData.city, formData.street, initialPropertyData?.country, fieldsAreLocked, districtTouched])
 
-  if (!isOpen) return null
-
   const handleInputChange = (e) => {
     const { name, value } = e.target
     if (fieldsAreLocked && name !== 'district') return
@@ -244,6 +197,7 @@ const PropertyCalculatorModal = ({
     setIsLoading(true)
     setError(null)
     setResults(null)
+    setFailedListingImages({})
 
     const roomsPayload = skipRooms
       ? null
@@ -266,7 +220,7 @@ const PropertyCalculatorModal = ({
           minPrice: null
         },
         {
-          timeout: 120000
+          timeout: 480000
         }
       )
 
@@ -290,6 +244,13 @@ const PropertyCalculatorModal = ({
         sessionStorage.setItem('lastSearchId', searchId)
 
         setResults(data)
+
+        if (typeof onApplyRecommendedPrice === 'function' && data.recommendedPrice != null) {
+          const rp = Number(data.recommendedPrice)
+          if (Number.isFinite(rp) && rp > 0) {
+            onApplyRecommendedPrice(data.recommendedPrice)
+          }
+        }
       } else {
         setError(response.data.error || 'Ошибка при получении данных')
       }
@@ -316,6 +277,7 @@ const PropertyCalculatorModal = ({
       }))
       setResults(null)
       setError(null)
+      setFailedListingImages({})
       return
     }
 
@@ -329,6 +291,7 @@ const PropertyCalculatorModal = ({
     })
     setResults(null)
     setError(null)
+    setFailedListingImages({})
 
     const lastSearchId = sessionStorage.getItem('lastSearchId')
     if (lastSearchId) {
@@ -355,16 +318,23 @@ const PropertyCalculatorModal = ({
     return text
   }
 
-  return (
-    <div className="property-calculator-overlay" onClick={onClose}>
-      <div className="property-calculator-modal" onClick={(e) => e.stopPropagation()}>
-        <button
-          className="property-calculator-modal__close"
-          onClick={onClose}
-          aria-label="Закрыть"
-        >
-          <FiX size={24} />
-        </button>
+  if (!isOpen) return null
+
+  const modalCard = (
+    <div
+      className={`property-calculator-modal ${isEmbedded ? 'property-calculator-modal--embedded' : ''}`}
+      onClick={(e) => e.stopPropagation()}
+    >
+        {!isEmbedded && (
+          <button
+            type="button"
+            className="property-calculator-modal__close"
+            onClick={onClose}
+            aria-label="Закрыть"
+          >
+            <FiX size={24} />
+          </button>
+        )}
 
         <div className="property-calculator-modal__content">
           <div className="property-calculator-modal__hero">
@@ -589,18 +559,24 @@ const PropertyCalculatorModal = ({
                     Похожие объекты ({results.similarProperties.length})
                   </h4>
                   <div className="property-calculator-result__similar-list">
-                    {results.similarProperties.slice(0, 10).map((property, index) => (
-                      <div key={index} className="property-calculator-result__similar-item">
+                    {results.similarProperties.slice(0, 10).map((property, index) => {
+                      const listingImgKey = property.link || `similar-${index}`
+                      const showListingPhoto =
+                        Boolean(property.image) && !failedListingImages[listingImgKey]
+                      return (
+                      <div key={listingImgKey} className="property-calculator-result__similar-item">
                         <div className="property-calculator-result__similar-image">
-                          {property.image ? (
+                          {showListingPhoto ? (
                             <img
                               src={property.image}
                               alt=""
                               loading="lazy"
                               referrerPolicy="no-referrer"
-                              onError={(e) => {
-                                e.currentTarget.style.display = 'none'
-                              }}
+                              onError={() =>
+                                setFailedListingImages((prev) =>
+                                  prev[listingImgKey] ? prev : { ...prev, [listingImgKey]: true }
+                                )
+                              }
                             />
                           ) : (
                             <div className="property-calculator-result__similar-image-placeholder">
@@ -626,7 +602,8 @@ const PropertyCalculatorModal = ({
                           )}
                         </div>
                       </div>
-                    ))}
+                      )
+                    })}
                   </div>
                 </div>
               ) : (
@@ -640,25 +617,39 @@ const PropertyCalculatorModal = ({
                 </div>
               )}
 
-              <div className="property-calculator-result__actions">
+              <div className={`property-calculator-result__actions ${isEmbedded ? 'property-calculator-result__actions--embedded' : ''}`}>
                 <button
+                  type="button"
                   className="property-calculator-form__button property-calculator-form__button--liquid"
                   onClick={handleReset}
                 >
                   Новый расчет
                 </button>
-                <button
-                  className="property-calculator-form__button property-calculator-form__button--secondary"
-                  onClick={onClose}
-                >
-                  Закрыть
-                </button>
+                {!isEmbedded && (
+                  <button
+                    type="button"
+                    className="property-calculator-form__button property-calculator-form__button--secondary"
+                    onClick={onClose}
+                  >
+                    Закрыть
+                  </button>
+                )}
               </div>
             </div>
           )}
         </div>
       </div>
-    </div>
+  )
+
+  if (isEmbedded) {
+    return <div className="property-calculator-embedded">{modalCard}</div>
+  }
+
+  return createPortal(
+    <div className="property-calculator-overlay" onClick={onClose}>
+      {modalCard}
+    </div>,
+    document.body
   )
 }
 

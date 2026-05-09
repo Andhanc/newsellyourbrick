@@ -1168,6 +1168,8 @@
   "addPropertyPriceMinimumSaleLabel": "Minimum sale price",
   "addPropertyPriceMinimumSaleRequired": "Enter the minimum sale price",
   "addPropertyPriceMinimumSaleExceedsBuyNow": "Minimum sale price cannot be higher than the “Buy now” price",
+  "addPropertyPriceMinimumSaleExceedsBuyNowPercent": "Minimum sale price cannot exceed 90% of the “Buy now” price.",
+  "addPropertyCalculatorAppliedFromRecommended": "Amounts filled from the recommended price (you can edit them).",
   "addPropertyPriceSectionLead": "On the left, set the auction dates. On the right, enter the three amounts one step at a time: first the minimum sale price, then (if your listing mode includes it) Buy now, then the starting bid. Each step has a short explanation.",
   "addPropertyPriceStepIndicator": "Amounts: step {{current}} of {{total}}",
   "addPropertyPriceStepMinTitle": "Minimum sale price",

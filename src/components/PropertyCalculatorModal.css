@@ -4,12 +4,13 @@
   left: 0;
   right: 0;
   bottom: 0;
+  /* inset + высокий z-index: портал в document.body, поверх #site-footer (z-index 12 у siblings в .app-layout) */
   background: rgba(0, 0, 0, 0.6);
   backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: 10050;
   padding: 20px;
   animation: fadeIn 0.3s ease-out;
 }
@@ -23,19 +24,168 @@
   }
 }
 
+.property-calculator-embedded {
+  width: 100%;
+  max-width: min(560px, 100%);
+  margin: 0 auto;
+  overflow: visible;
+}
+
+/* Встроенный шаг мастера / single-page: без внутренней полосы прокрутки у карточки */
+.property-calculator-modal--embedded {
+  max-height: none;
+  overflow-y: visible;
+  overflow-x: hidden;
+  box-shadow:
+    0 12px 40px -16px rgba(15, 23, 42, 0.12),
+    0 0 0 1px rgba(15, 23, 42, 0.06);
+}
+
+.property-calculator-modal--embedded .property-calculator-modal__content {
+  padding: 18px 18px 20px;
+}
+
+.property-calculator-modal--embedded .property-calculator-modal__hero {
+  gap: 12px;
+  margin-bottom: 14px;
+  padding-bottom: 14px;
+}
+
+.property-calculator-modal--embedded .property-calculator-modal__hero-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+}
+
+.property-calculator-modal--embedded .property-calculator-modal__hero-icon svg {
+  width: 22px;
+  height: 22px;
+}
+
+.property-calculator-modal--embedded .property-calculator-modal__eyebrow {
+  font-size: 10px;
+  margin-bottom: 4px;
+}
+
+.property-calculator-modal--embedded .property-calculator-modal__title {
+  font-size: 19px;
+  margin-bottom: 6px;
+}
+
+.property-calculator-modal--embedded .property-calculator-modal__subtitle {
+  font-size: 13px;
+  line-height: 1.42;
+}
+
+.property-calculator-modal--embedded .property-calculator-form {
+  gap: 14px;
+}
+
+.property-calculator-modal--embedded .property-calculator-form__panel {
+  padding: 14px 14px 16px;
+  border-radius: 14px;
+}
+
+.property-calculator-modal--embedded .property-calculator-form__panel-title {
+  font-size: 14px;
+  margin-bottom: 10px;
+}
+
+.property-calculator-modal--embedded .property-calculator-form__panel-separator {
+  margin-bottom: 12px;
+}
+
+.property-calculator-modal--embedded .property-calculator-form__grid {
+  grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
+}
+
+.property-calculator-modal--embedded .property-calculator-form__grid,
+.property-calculator-modal--embedded .property-calculator-form__grid--top {
+  gap: 10px;
+}
+
+.property-calculator-modal--embedded .property-calculator-form__field {
+  gap: 4px;
+}
+
+.property-calculator-modal--embedded .property-calculator-form__label {
+  font-size: 13px;
+}
+
+.property-calculator-modal--embedded .property-calculator-form__input,
+.property-calculator-modal--embedded .property-calculator-form__select {
+  padding: 9px 12px;
+  font-size: 14px;
+  min-height: 40px;
+}
+
+.property-calculator-modal--embedded .property-calculator-form__actions {
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.property-calculator-modal--embedded .property-calculator-loader {
+  padding: 28px 16px;
+}
+
+.property-calculator-modal--embedded .property-calculator-loader__title {
+  font-size: 18px;
+}
+
+.property-calculator-modal--embedded .property-calculator-loader__subtitle {
+  font-size: 14px;
+}
+
+.property-calculator-modal--embedded .property-calculator-result {
+  padding: 8px 0 12px;
+  text-align: left;
+}
+
+.property-calculator-modal--embedded .property-calculator-result__header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.property-calculator-modal--embedded .property-calculator-result__similar {
+  margin-top: 20px;
+}
+
+.property-calculator-modal--embedded .property-calculator-result__similar-list {
+  gap: 12px;
+}
+
+.property-calculator-modal--embedded .property-calculator-result__similar-title {
+  font-size: 17px;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+}
+
+.property-calculator-modal--embedded .property-calculator-result__similar-item {
+  padding: 12px;
+}
+
+.property-calculator-result__actions--embedded {
+  justify-content: center;
+}
+
+/* Общая карточка: и модалка в портале, и встроенный шаг 10 */
 .property-calculator-modal {
   background: #fafafa;
   border-radius: 24px;
   max-width: 520px;
   width: 100%;
-  max-height: 90vh;
-  overflow-y: auto;
-  overflow-x: hidden;
   position: relative;
   box-shadow:
     0 25px 50px -12px rgba(15, 23, 42, 0.25),
     0 0 0 1px rgba(15, 23, 42, 0.06);
   animation: slideUp 0.3s ease-out;
+}
+
+/* Внутренний скролл только у оверлея; встроенная карточка растягивается под контент шага */
+.property-calculator-modal:not(.property-calculator-modal--embedded) {
+  max-height: 90vh;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .property-calculator-modal::before {
@@ -543,9 +693,10 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
-  max-height: 400px;
-  overflow-y: auto;
-  padding-right: 8px;
+  /* Без внутреннего скролла: список раскрывается целиком, прокрутка — у модалки / страницы */
+  max-height: none;
+  overflow: visible;
+  padding-right: 0;
 }
 
 .property-calculator-result__similar-item {
@@ -639,7 +790,7 @@
 
 /* Адаптивность */
 @media (max-width: 768px) {
-  .property-calculator-modal {
+  .property-calculator-modal:not(.property-calculator-modal--embedded) {
     max-width: 100%;
     border-radius: 20px 20px 0 0;
     margin-top: auto;
@@ -698,5 +849,18 @@
   .property-calculator-result__similar-details {
     flex-direction: column;
     gap: 4px;
+  }
+
+  /* Встроенный калькулятор: не превращать в bottom-sheet, не ограничивать 95vh */
+  .property-calculator-modal.property-calculator-modal--embedded {
+    max-width: 100%;
+    max-height: none;
+    margin-top: 0;
+    border-radius: 24px;
+    overflow-y: visible;
+  }
+
+  .property-calculator-modal--embedded .property-calculator-modal__content {
+    padding: 16px 14px 18px;
   }
 }

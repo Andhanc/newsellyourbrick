@@ -1,0 +1,190 @@
+/* Скелетон детальной страницы доли — использует классы верстки из ShareDetailPage.css */
+
+@keyframes share-skel-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.share-detail-page--skeleton .share-skel-block,
+.share-detail-page--skeleton .share-skel-line,
+.share-detail-page--skeleton .share-skel-pie,
+.share-detail-page--skeleton .share-skel-mini,
+.share-detail-page--skeleton .share-skel-cta {
+  background: linear-gradient(
+    90deg,
+    #dfe6ee 0%,
+    #f4f7fb 48%,
+    #dfe6ee 92%
+  );
+  background-size: 200% 100%;
+  animation: share-skel-shimmer 1.35s ease-in-out infinite;
+}
+
+/* Как у загруженной <img>: заполняем весь блок с aspect-ratio — иначе плейсхолдер может визуально «съезжать» по ширине */
+.share-detail-page--skeleton .share-detail__hero .share-detail__image-wrap {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+}
+
+.share-detail-page--skeleton .share-detail__hero .share-skel-hero,
+.share-detail-page--skeleton .share-detail__hero .share-skel-block.share-skel-hero {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  min-height: 100%;
+  border-radius: 0;
+  box-sizing: border-box;
+}
+
+.share-skel-lines {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.share-skel-lines--pad-title {
+  padding: 28px 28px 0;
+}
+
+.share-skel-lines--pad-text {
+  padding: 4px 28px 0;
+}
+
+.share-skel-line {
+  height: 12px;
+  border-radius: 8px;
+  max-width: 100%;
+}
+
+.share-skel-line--title {
+  height: 28px;
+  width: 82%;
+}
+
+.share-skel-line--location {
+  width: 58%;
+}
+
+.share-skel-line--90 {
+  width: 90%;
+}
+
+.share-skel-line--70 {
+  width: 70%;
+}
+
+.share-skel-line--specs {
+  width: 40%;
+}
+
+.share-skel-line--chart-title {
+  width: 55%;
+  height: 17px;
+  margin-bottom: 20px;
+  border-radius: 8px;
+}
+
+.share-skel-pie {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+}
+
+.share-detail-page--skeleton .share-skel-chart-wrap-static {
+  position: relative;
+  width: 220px;
+  height: 220px;
+  margin: 0 auto 24px;
+}
+
+.share-skel-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.share-skel-line--legend {
+  width: 88%;
+}
+
+.share-skel-line--legend-short {
+  width: 62%;
+}
+
+.share-skel-prices-block {
+  pointer-events: none;
+  background: linear-gradient(135deg, rgba(226, 232, 240, 0.65) 0%, rgba(241, 245, 249, 0.92) 100%) !important;
+  border-color: rgba(148, 163, 184, 0.35) !important;
+}
+
+.share-skel-line--price-row {
+  height: 15px;
+  width: 100%;
+}
+
+.share-skel-line--price-row-short {
+  height: 15px;
+  width: 72%;
+}
+
+.share-skel-buy .share-skel-buy-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.share-skel-line--label {
+  width: 44%;
+  height: 14px;
+}
+
+.share-skel-steppers {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.share-skel-mini {
+  width: 52px;
+  height: 48px;
+  border-radius: 12px;
+}
+
+.share-skel-line--count {
+  width: 44px;
+  height: 28px;
+}
+
+.share-skel-line--hint {
+  width: 48%;
+  height: 14px;
+  margin-bottom: 18px;
+}
+
+.share-skel-cta {
+  width: 100%;
+  height: 54px;
+  border-radius: 16px;
+}
+
+@media (max-width: 640px) {
+  .share-skel-lines--pad-title,
+  .share-skel-lines--pad-text {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+
+  .share-detail-page--skeleton .share-skel-chart-wrap-static {
+    width: 200px;
+    height: 200px;
+  }
+}

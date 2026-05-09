@@ -9,6 +9,8 @@
 
 .auction-mobile-layout {
   width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
   --am-teal: #0abab5;
   --am-teal-dark: #089a95;
   --am-teal-soft: rgba(10, 186, 181, 0.08);

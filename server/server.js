@@ -7537,10 +7537,10 @@ app.post('/api/properties', upload.fields([
         })
       }
       const minS = propertyData.minimum_sale_price
-      if (minS != null && minS > 0 && bn != null && bn > 0 && minS > bn + 1e-9) {
+      if (minS != null && minS > 0 && bn != null && bn > 0 && minS > bn * 0.9 + 1e-9) {
         return res.status(400).json({
           success: false,
-          error: 'Минимальная цена продажи не может быть выше цены «Купить сейчас».'
+          error: 'Минимальная цена продажи не может превышать 90% от цены «Купить сейчас».'
         })
       }
     }
@@ -8367,11 +8367,11 @@ app.put('/api/properties/:id', upload.fields([
         effectiveMinSale != null &&
         effectiveMinSale > 0 &&
         effectiveBuyNow &&
-        effectiveMinSale > effectiveBuyNow + 1e-9
+        effectiveMinSale > effectiveBuyNow * 0.9 + 1e-9
       ) {
         return res.status(400).json({
           success: false,
-          error: 'Минимальная цена продажи не может быть выше цены «Купить сейчас».'
+          error: 'Минимальная цена продажи не может превышать 90% от цены «Купить сейчас».'
         })
       }
       
@@ -8913,6 +8913,19 @@ async function formatOneAuctionPropertyForApi(prop) {
   return formatted;
 }
 
+/** id уникален только внутри таблицы квартир/домов — нельзя схлопывать строки только по числовому id. */
+function auctionListRowDedupeKey(p) {
+  if (!p || p.id == null) return `unknown:${Math.random().toString(36).slice(2)}`;
+  const idPart = String(p.id).trim();
+  const st = String(p.source_table || '').toLowerCase();
+  if (st.includes('house')) return `houses:${idPart}`;
+  if (st.includes('apartment') || st === 'apt') return `apartments:${idPart}`;
+  const pt = String(p.property_type || '').toLowerCase();
+  if (pt === 'house' || pt === 'villa') return `houses:${idPart}`;
+  if (pt === 'apartment' || pt === 'commercial') return `apartments:${idPart}`;
+  return `id:${idPart}`;
+}
+
 /**
  * GET /api/properties/auctions - Получить одобренные объявления с аукционом
  * ВАЖНО: Этот маршрут должен быть ПЕРЕД /api/properties/:id, иначе он будет перехвачен
@@ -8971,6 +8984,10 @@ app.get('/api/properties/auctions', async (req, res) => {
     
     const apartmentsWithUser = apartmentsWithTestTimer.map((p) => ({
       ...p,
+      source_table:
+        p.source_table != null && String(p.source_table).trim() !== ''
+          ? p.source_table
+          : 'apartments',
       first_name: p.users?.first_name || null,
       last_name: p.users?.last_name || null,
       email: p.users?.email || null,
@@ -8979,6 +8996,10 @@ app.get('/api/properties/auctions', async (req, res) => {
     }));
     const housesWithUser = housesWithTestTimer.map((p) => ({
       ...p,
+      source_table:
+        p.source_table != null && String(p.source_table).trim() !== ''
+          ? p.source_table
+          : 'houses',
       first_name: p.users?.first_name || null,
       last_name: p.users?.last_name || null,
       email: p.users?.email || null,
@@ -8988,10 +9009,9 @@ app.get('/api/properties/auctions', async (req, res) => {
     // Объединяем аукционы и тестовые таймеры
     const allProperties = [...properties, ...apartmentsWithUser, ...housesWithUser];
     
-    // Удаляем дубликаты по ID и сортируем
-    properties = Array.from(
-      new Map(allProperties.map(p => [p.id, p])).values()
-    ).sort((a, b) => {
+    // Удаляем дубликаты одной и той же строки из разных выборок, не смешивая разные таблицы с общим numeric id.
+    properties = Array.from(new Map(allProperties.map((pr) => [auctionListRowDedupeKey(pr), pr])).values()).sort(
+      (a, b) => {
       const aDate = a.test_timer_end_date || a.auction_end_date || '';
       const bDate = b.test_timer_end_date || b.auction_end_date || '';
       return new Date(aDate) - new Date(bDate);
@@ -14318,21 +14338,23 @@ function resolveCalculatorCity(rawCity = '') {
   );
 }
 
-function detectDistrictByAddress({ cityValue, addressText, nominatimAddress = {} }) {
+function detectDistrictByAddress({ cityValue, addressText, nominatimAddress }) {
+  const nom =
+    nominatimAddress != null && typeof nominatimAddress === 'object' ? nominatimAddress : {};
   const districtOptions = getDistrictOptions(cityValue);
   if (!Array.isArray(districtOptions) || districtOptions.length <= 1) {
     return districtOptions?.[0] || { value: 'all', label: 'Весь город' };
   }
 
   const candidates = [
-    nominatimAddress.suburb,
-    nominatimAddress.city_district,
-    nominatimAddress.district,
-    nominatimAddress.neighbourhood,
-    nominatimAddress.quarter,
-    nominatimAddress.borough,
-    nominatimAddress.residential,
-    nominatimAddress.county,
+    nom.suburb,
+    nom.city_district,
+    nom.district,
+    nom.neighbourhood,
+    nom.quarter,
+    nom.borough,
+    nom.residential,
+    nom.county,
     addressText
   ]
     .filter(Boolean)

@@ -37,6 +37,7 @@ import { fetchUserDeposit } from '../utils/depositApi'
 import { getManagerContactButtons } from '../services/liveChatApi'
 import { getEffectiveAuctionEndTime } from '../utils/auctionReminderBounds'
 import { useManagerLiveChat } from '../hooks/useManagerLiveChat'
+import { getPropertyDetailPath } from '../utils/propertyDetailUrl'
 
 function formatPropertyForList(prop, isAuction) {
   return {
@@ -895,13 +896,13 @@ function Home() {
                         return (
                           <a
                             key={recId}
-                            href={`/property/${recId}`}
+                            href={getPropertyDetailPath(recId, { property })}
                             className="chat-widget__recommendation-link"
                             onClick={(e) => {
                               e.preventDefault()
                               if (!ensureCanOpenProperty()) return
-                              navigate(`/property/${recId}`, { 
-                                state: { property: property }
+                              navigate(getPropertyDetailPath(recId, { property }), {
+                                state: { property: property },
                               })
                               setIsChatOpen(false)
                             }}

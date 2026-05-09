@@ -53,7 +53,88 @@ export const SPAIN_CITIES = [
   { value: 'alcorcon', label: 'Алькоркон', region: 'Мадрид и регион', fotocasa: 'alcorcon', idealista: 'madrid', pisos: 'alcorcon' },
   { value: 'fuenlabrada', label: 'Фуэнлабрада', region: 'Мадрид и регион', fotocasa: 'fuenlabrada', idealista: 'madrid', pisos: 'fuenlabrada' },
   { value: 'getafe', label: 'Хетафе', region: 'Мадрид и регион', fotocasa: 'getafe', idealista: 'madrid', pisos: 'getafe' },
-  { value: 'leganes', label: 'Леганес', region: 'Мадрид и регион', fotocasa: 'leganes', idealista: 'madrid', pisos: 'leganes' }
+  { value: 'leganes', label: 'Леганес', region: 'Мадрид и регион', fotocasa: 'leganes', idealista: 'madrid', pisos: 'leganes' },
+  // Канарские острова — основные рынки вторички (муниципалитеты = slug’и порталов)
+  {
+    value: 'adeje',
+    label: 'Адехе (Costa Adeje)',
+    region: 'Канарские острова',
+    fotocasa: 'adeje',
+    idealista: 'adeje-santa-cruz-de-tenerife',
+    pisos: 'adeje'
+  },
+  {
+    value: 'arona',
+    label: 'Арона (Playa de las Américas, Los Cristianos)',
+    region: 'Канарские острова',
+    fotocasa: 'arona',
+    idealista: 'arona-santa-cruz-de-tenerife',
+    pisos: 'arona'
+  },
+  {
+    value: 'santa-cruz-de-tenerife',
+    label: 'Санта-Крус-де-Тенерифе',
+    region: 'Канарские острова',
+    fotocasa: 'santa-cruz-de-tenerife',
+    idealista: 'santa-cruz-de-tenerife-santa-cruz-de-tenerife',
+    pisos: 'santa-cruz-de-tenerife'
+  },
+  {
+    value: 'la-laguna',
+    label: 'Ла-Лагуна (San Cristóbal de La Laguna)',
+    region: 'Канарские острова',
+    fotocasa: 'la-laguna',
+    idealista: 'la-laguna-santa-cruz-de-tenerife',
+    pisos: 'la-laguna'
+  },
+  {
+    value: 'puerto-de-la-cruz',
+    label: 'Пуэрто-де-ла-Крус',
+    region: 'Канарские острова',
+    fotocasa: 'puerto-de-la-cruz',
+    idealista: 'puerto-de-la-cruz-santa-cruz-de-tenerife',
+    pisos: 'puerto-de-la-cruz-de-tenerife'
+  },
+  {
+    value: 'las-palmas-de-gran-canaria',
+    label: 'Лас-Пальмас-де-Гран-Канария',
+    region: 'Канарские острова',
+    fotocasa: 'las-palmas-de-gran-canaria',
+    idealista: 'las-palmas-de-gran-canaria-las-palmas',
+    pisos: 'las_palmas_de_gran_canaria'
+  },
+  {
+    value: 'san-bartolome-de-tirajana',
+    label: 'Сан-Бартоломе-де-Тирахана (Maspalomas, Playa del Inglés)',
+    region: 'Канарские острова',
+    fotocasa: 'san-bartolome-de-tirajana',
+    idealista: 'san-bartolome-de-tirajana-las-palmas',
+    pisos: 'san_bartolome_de_tirajana'
+  },
+  {
+    value: 'telde',
+    label: 'Тельде',
+    region: 'Канарские острова',
+    fotocasa: 'telde',
+    idealista: 'telde-las-palmas',
+    pisos: 'telde'
+  },
+  {
+    value: 'arrecife',
+    label: 'Арресифе (Лансароте)',
+    region: 'Канарские острова',
+    fotocasa: 'arrecife',
+    idealista: 'arrecife-las-palmas',
+    pisos: 'arrecife'
+  },
+  {
+    value: 'corralejo',
+    label: 'Корральехо (Фуэртевентура)',
+    region: 'Канарские острова',
+    fotocasa: 'corralejo',
+    idealista: 'corralejo-las-palmas',
+    pisos: 'corralejo'
+  }
 ]
 
 /** Ключевые слова для фильтрации по городу (адрес объявления) */
@@ -107,7 +188,58 @@ export const CITY_KEYWORDS = {
   alcorcon: ['alcorcón', 'alcorcon', 'алькоркон'],
   fuenlabrada: ['fuenlabrada', 'фуэнлабрада'],
   getafe: ['getafe', 'хетафе'],
-  leganes: ['leganés', 'leganes', 'леганес']
+  leganes: ['leganés', 'leganes', 'леганес'],
+  adeje: [
+    'adeje',
+    'адехе',
+    'costa adeje',
+    'коста адехе',
+    'costa de adeje'
+  ],
+  arona: [
+    'arona',
+    'арона',
+    'playa de las americas',
+    'playas de las americas',
+    'las americas',
+    'los cristianos',
+    'кристианос',
+    'америкас',
+    'тенерифе',
+    'tenerife',
+    'тенерифы'
+  ],
+  'santa-cruz-de-tenerife': [
+    'santa cruz',
+    'santa cruz de tenerife',
+    'санта-крус',
+    'санта крус'
+  ],
+  'la-laguna': ['la laguna', 'ла лагуна', 'лагуна', 'laguna', 'san cristobal de la laguna'],
+  'puerto-de-la-cruz': ['puerto de la cruz', 'пуэрто', 'puerto', 'port of the cross'],
+  'las-palmas-de-gran-canaria': [
+    'las palmas',
+    'las palmas de gran canaria',
+    'лас пальмас',
+    'лас-пальмас',
+    'gran canaria',
+    'гран канария',
+    'гран-канария',
+    'grancanaria'
+  ],
+  'san-bartolome-de-tirajana': [
+    'san bartolome',
+    'san bartolomé',
+    'maspalomas',
+    'playa del ingles',
+    'playa del inglés',
+    'маспаломас',
+    'инглес',
+    'сан бартоломе'
+  ],
+  telde: ['telde', 'тельде'],
+  arrecife: ['arrecife', 'арресифе', 'lanzarote', 'лансароте'],
+  corralejo: ['corralejo', 'корральехо', 'fuerteventura', 'фуэртевентура']
 }
 
 /**

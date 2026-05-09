@@ -133,8 +133,8 @@ export default defineConfig(({ mode }) => {
       changeOrigin: true,
       secure: false,
       family: 4,
-      timeout: 120000,
-      proxyTimeout: 120000,
+      timeout: 540000,
+      proxyTimeout: 540000,
       configure: proxyConfigure,
     },
     '/health': {

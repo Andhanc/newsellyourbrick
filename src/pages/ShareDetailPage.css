@@ -21,11 +21,13 @@
 
 .share-detail-page__container {
   flex: 1;
-  max-width: 1100px;
+  width: 100%;
+  max-width: 1320px;
   margin: 0 auto 56px;
   padding: 28px 24px 64px;
   position: relative;
   z-index: 1;
+  box-sizing: border-box;
   font-family: 'Montserrat', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
@@ -102,20 +104,21 @@
   pointer-events: none;
 }
 
-.share-detail__badge--sold-out {
-  background: linear-gradient(135deg, #64748b 0%, #475569 100%);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
-}
-
 /* Двухколоночный layout: слева — информация, справа — график и покупка */
 .share-detail__layout {
   display: grid;
-  grid-template-columns: 1fr 380px;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 380px);
   gap: 32px;
   align-items: start;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .share-detail__info {
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
@@ -165,6 +168,14 @@
   display: flex;
   flex-direction: column;
   gap: 24px;
+  min-width: 0;
+  width: 100%;
+}
+
+@media (min-width: 901px) {
+  .share-detail__sidebar {
+    max-width: 380px;
+  }
 }
 
 .share-detail__title {

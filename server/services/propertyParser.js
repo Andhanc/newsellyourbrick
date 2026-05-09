@@ -11,18 +11,28 @@ puppeteer.use(StealthPlugin());
 
 const CALCULATOR_CACHE_TTL_MS = 20 * 60 * 1000;
 const CALCULATOR_CACHE_MAX_ITEMS = 200;
-const CALCULATOR_PIPELINE_VERSION = 'v7-es-5src-pagination-strict-loc';
+const CALCULATOR_PIPELINE_VERSION = 'v13-plausible-sale-total-floor';
 const TARGET_MIN_SOURCE_COVERAGE = 2;
-const TARGET_MIN_SIMILAR_COUNT = 4;
+/** Минимум похожих объявлений в ответе для «полной» оценки */
+const TARGET_MIN_SIMILAR_COUNT = 6;
+const SIMILAR_UI_MIN = 6;
+const SIMILAR_UI_MAX = 8;
 const ENABLE_REGIONAL_FALLBACK = false;
 const propertyPriceCache = new Map();
 const SCRAPE_NAV_TIMEOUT_MS = 22000;
 const SCRAPE_SETTLE_MS = 1200;
-const SCRAPE_SITE_TIMEOUT_MS = 95000;
+/** На одну площадку: больше страниц = полнее выборка, но дольше ответ API */
+const SCRAPE_SITE_TIMEOUT_MS = 240000;
 /** Сколько страниц листинга обходим на каждой площадке (защита от бесконечного цикла и таймаутов). */
-const LISTING_MAX_PAGES_PER_SITE = 16;
-const LISTING_INTER_PAGE_DELAY_MS = 550;
-const LISTING_MAX_CARDS_PER_EVAL = 120;
+const LISTING_MAX_PAGES_PER_SITE = 48;
+const LISTING_INTER_PAGE_DELAY_MS = 450;
+/** Карточек с одной страницы листинга (крупные города отдают много DOM-карточек). */
+const LISTING_MAX_CARDS_PER_EVAL = 280;
+/** Pisos: максимум уникальных ссылок за один проход merge JSON-LD + DOM */
+const LISTING_PISOS_MERGED_CAP = 1400;
+/** Сколько объявлений догружаем по detail-URL (цена/м² с карточки часто пустые) */
+const ENRICH_DETAIL_MAX_LINKS = 120;
+const ENRICH_DETAIL_CONCURRENCY = 8;
 
 const CITY_BENCHMARK_EUR_PER_M2 = {
   madrid: 4300,
@@ -31,7 +41,18 @@ const CITY_BENCHMARK_EUR_PER_M2 = {
   sevilla: 2200,
   malaga: 3000,
   alicante: 2400,
-  bilbao: 3400
+  bilbao: 3400,
+  // Канарские острова — ориентиры €/м² для фолбэка при малом числе аналогов
+  adeje: 4500,
+  arona: 4300,
+  'santa-cruz-de-tenerife': 2400,
+  'la-laguna': 2200,
+  'puerto-de-la-cruz': 2100,
+  'las-palmas-de-gran-canaria': 2700,
+  'san-bartolome-de-tirajana': 3600,
+  telde: 2100,
+  arrecife: 2600,
+  corralejo: 4000
 };
 
 /**
@@ -314,8 +335,24 @@ async function parsePisosOnce(page, url) {
             const area = areaMatch ? parseInt(areaMatch[1], 10) : null;
             const rooms = roomsMatch ? parseInt(roomsMatch[1], 10) : null;
             const address = node?.address?.streetAddress || node?.address?.addressLocality || '';
+            let imageLd = '';
+            const im = node?.image;
+            if (typeof im === 'string') imageLd = toAbs(im);
+            else if (im?.url) imageLd = toAbs(im.url);
+            else if (Array.isArray(im) && im.length) {
+              const first = im[0];
+              imageLd = toAbs(typeof first === 'string' ? first : first?.url || '');
+            }
             if (link && price && price > 10000) {
-              results.push({ price, area, rooms, address, link, image: null, source: 'Pisos.com' });
+              results.push({
+                price,
+                area,
+                rooms,
+                address,
+                link,
+                image: imageLd || null,
+                source: 'Pisos.com'
+              });
             }
           }
         }
@@ -328,7 +365,95 @@ async function parsePisosOnce(page, url) {
 
   if (jsonLdItems.length >= 5) {
     console.log(`DEBUG: Pisos JSON-LD parsed items=${jsonLdItems.length}`);
-    return jsonLdItems;
+    const hydratedLd = await page.evaluate((items) => {
+      const normalizeKey = (href) => {
+        try {
+          const u = new URL(href, location.href);
+          return `${u.hostname}${u.pathname}`.toLowerCase().replace(/\/+$/, '');
+        } catch {
+          return String(href || '')
+            .split('?')[0]
+            .toLowerCase();
+        }
+      };
+      const pickImgFromCard = (root) => {
+        if (!root) return '';
+        const imgs = Array.from(root.querySelectorAll('img'));
+        for (const img of imgs) {
+          const raw =
+            img.getAttribute('data-src') ||
+            img.getAttribute('data-lazy-src') ||
+            img.getAttribute('data-original') ||
+            img.getAttribute('data-delayed-url') ||
+            img.currentSrc ||
+            img.getAttribute('src');
+          let cand = raw;
+          const ss = img.getAttribute('srcset') || img.getAttribute('data-srcset');
+          if (ss && (!cand || String(cand).startsWith('data:'))) {
+            const part = ss.split(',')[0]?.trim()?.split(/\s+/)[0];
+            if (part) cand = part;
+          }
+          if (!cand || String(cand).startsWith('data:image')) continue;
+          try {
+            return new URL(cand, location.href).href;
+          } catch {
+            continue;
+          }
+        }
+        return '';
+      };
+      const imgMap = new Map();
+      for (const a of document.querySelectorAll('a[href]')) {
+        const href = a.getAttribute('href');
+        if (!href) continue;
+        let pathname = '';
+        try {
+          pathname = new URL(href, location.href).pathname.toLowerCase();
+        } catch {
+          continue;
+        }
+        if (
+          !pathname.includes('/comprar/') &&
+          !pathname.includes('/inmueble/') &&
+          !pathname.includes('/vivienda/') &&
+          !pathname.includes('/propiedad/') &&
+          !pathname.includes('/piso')
+        ) {
+          continue;
+        }
+        let abs = '';
+        try {
+          abs = new URL(href, location.href).href;
+        } catch {
+          continue;
+        }
+        const key = normalizeKey(abs);
+        if (imgMap.has(key)) continue;
+        const card =
+          a.closest('article') ||
+          a.closest('[class*="card"]') ||
+          a.closest('[class*="Card"]') ||
+          a.closest('li') ||
+          a.closest('[data-card]');
+        const img = pickImgFromCard(card || a.parentElement);
+        if (img) imgMap.set(key, img);
+      }
+      return items.map((it) => {
+        if (it.image) return it;
+        const k = normalizeKey(it.link);
+        let img = imgMap.get(k);
+        if (!img) {
+          for (const [mk, url] of imgMap) {
+            if (k === mk || k.endsWith(mk) || mk.endsWith(k)) {
+              img = url;
+              break;
+            }
+          }
+        }
+        return { ...it, image: img || it.image || null };
+      });
+    }, jsonLdItems);
+    return hydratedLd;
   }
 
   // Pisos.com часто рендерит карточки иначе, поэтому fallback начинаем со ссылок.
@@ -352,6 +477,33 @@ async function parsePisosOnce(page, url) {
       for (const m of normalized.matchAll(/\b(\d{5,8})\b/g)) pushCandidate(m?.[1]);
       if (candidates.length > 0) return Math.max(...candidates);
 
+      return null;
+    };
+
+    const pickImgFromCard = (root) => {
+      if (!root) return null;
+      const imgs = Array.from(root.querySelectorAll('img'));
+      for (const img of imgs) {
+        const raw =
+          img.getAttribute('data-src') ||
+          img.getAttribute('data-lazy-src') ||
+          img.getAttribute('data-original') ||
+          img.getAttribute('data-delayed-url') ||
+          img.currentSrc ||
+          img.getAttribute('src');
+        let cand = raw;
+        const ss = img.getAttribute('srcset') || img.getAttribute('data-srcset');
+        if (ss && (!cand || String(cand).startsWith('data:'))) {
+          const part = ss.split(',')[0]?.trim()?.split(/\s+/)[0];
+          if (part) cand = part;
+        }
+        if (!cand || String(cand).startsWith('data:image')) continue;
+        try {
+          return new URL(cand, location.href).href;
+        } catch {
+          continue;
+        }
+      }
       return null;
     };
 
@@ -401,7 +553,14 @@ async function parsePisosOnce(page, url) {
       const item = uniq[i];
       const a = item.a;
       const link = item.link;
-      const card = a ? (a.closest('article') || a.closest('div') || a.parentElement) : null;
+      const card =
+        a?.closest('article') ||
+        a?.closest('[class*="card"]') ||
+        a?.closest('[class*="Card"]') ||
+        a?.closest('li') ||
+        a?.closest('div') ||
+        a?.parentElement ||
+        null;
       const text = (card?.innerText || a?.innerText || '').replace(/\s+/g, ' ').trim();
 
       // Цена часто лежит в отдельных узлах карточки; текстом берем как fallback.
@@ -420,9 +579,7 @@ async function parsePisosOnce(page, url) {
         text.match(/(?:hab\.?\s*)(\d+)/i);
       const rooms = roomsMatch ? parseInt(roomsMatch[1], 10) : null;
 
-      // Изображение (не критично)
-      const imgEl = card ? card.querySelector('img[src], img[data-src]') : null;
-      const image = imgEl ? (imgEl.getAttribute('data-src') || imgEl.getAttribute('src')) : null;
+      const image = pickImgFromCard(card);
 
       // Адрес часто не достаётся надёжно — оставим пустым, если не нашли
       const addressMatch = text.match(/(?:Dirección|Calle|calle|Distrito|barrio)\s*[:\-]?\s*([^|•,]+?)(?:,|•|\|)/i);
@@ -464,7 +621,7 @@ async function parsePisosOnce(page, url) {
     if (!p?.link || seen.has(p.link)) continue;
     seen.add(p.link);
     deduped.push(p);
-    if (deduped.length >= 600) break;
+    if (deduped.length >= LISTING_PISOS_MERGED_CAP) break;
   }
   return deduped;
 }
@@ -634,9 +791,9 @@ async function parseThinkSpain(page, firstUrl, cityToken = '') {
 }
 
 async function parseGenericInternational(page, url, siteName, expectedCity = '', opts = {}) {
-  const maxReturn = opts.maxReturn ?? 40;
-  const maxCardScan = opts.maxCardScan ?? 220;
-  const jsonLdCap = opts.jsonLdCap ?? 60;
+  const maxReturn = opts.maxReturn ?? 100;
+  const maxCardScan = opts.maxCardScan ?? 380;
+  const jsonLdCap = opts.jsonLdCap ?? 100;
   console.log(`🌍 Парсим ${siteName}: ${url}`);
   await page.goto(url, { waitUntil: 'domcontentloaded', timeout: SCRAPE_NAV_TIMEOUT_MS });
   await new Promise((resolve) => setTimeout(resolve, SCRAPE_SETTLE_MS));
@@ -703,7 +860,7 @@ async function parseGenericInternational(page, url, siteName, expectedCity = '',
             const price = Number(node?.offers?.price) || parsePrice(String(node?.offers?.price || ''));
             const area = Number(node?.floorSize?.value) || parseArea(String(node?.description || ''));
             const rooms = Number(node?.numberOfRooms) || parseRooms(String(node?.description || ''));
-            if (link && price) {
+            if (link && price && price >= 10000) {
               if (cityNeedle) {
                 const hay = `${address || ''} ${title || ''} ${link}`.toLowerCase();
                 if (!hay.includes(cityNeedle)) continue;
@@ -725,7 +882,7 @@ async function parseGenericInternational(page, url, siteName, expectedCity = '',
       const txt = (card.textContent || '').replace(/\s+/g, ' ').trim();
       if (!txt || txt.length < 20) return;
       const price = parsePrice(txt);
-      if (!price) return;
+      if (!price || price < 10000) return;
 
       const linkEl = card.querySelector('a[href]');
       if (!linkEl) return;
@@ -764,9 +921,9 @@ async function parseGenericInternational(page, url, siteName, expectedCity = '',
 async function parseKyeroPaginated(page, baseUrl, cityLabel) {
   const parseOnce = (pg, url) =>
     parseGenericInternational(pg, url, 'Kyero', cityLabel, {
-      maxReturn: 120,
-      maxCardScan: 320,
-      jsonLdCap: 120
+      maxReturn: 220,
+      maxCardScan: 520,
+      jsonLdCap: 220
     });
   return mergePagedScrape(
     page,
@@ -799,7 +956,17 @@ const cityMapLegacy = {
   villajoyosa: ['виллахойоса', 'villajoyosa', 'la villajoyosa'],
   gandia: ['гандия', 'gandia', 'gandía'],
   oliva: ['олива', 'oliva'],
-  piles: ['пилес', 'piles']
+  piles: ['пилес', 'piles'],
+  adeje: ['адехе', 'adeje', 'costa adeje', 'коста адехе'],
+  arona: ['арона', 'arona', 'tenerife', 'тенерифе', 'los cristianos', 'playa de las americas'],
+  'santa-cruz-de-tenerife': ['santa cruz', 'санта-крус', 'санта крус'],
+  'la-laguna': ['la laguna', 'ла лагуна', 'laguna'],
+  'puerto-de-la-cruz': ['puerto de la cruz', 'пуэрто'],
+  'las-palmas-de-gran-canaria': ['las palmas', 'gran canaria', 'гран канария'],
+  'san-bartolome-de-tirajana': ['maspalomas', 'playa del ingles', 'сан бартоломе', 'маспаломас'],
+  telde: ['тельде', 'telde'],
+  arrecife: ['арресифе', 'lanzarote', 'лансароте'],
+  corralejo: ['корральехо', 'fuerteventura']
 };
 
 function getCityVariants(cityName) {
@@ -1185,25 +1352,39 @@ function extractDetailFromJsonLd(pageData = {}) {
 }
 
 async function enrichPropertiesFromDetails(browser, items = []) {
-  const candidates = items.filter((p) => {
-    if (!p?.link) return false;
-    // Не тратим время на image-only enrich: для расчета важнее price/area/rooms.
-    return !p.price || (!p.area && p.rooms == null);
-  });
+  const priorityNeed = (p) =>
+    (!p?.price ? 100 : 0) +
+    (!p?.area && p?.rooms == null ? 20 : 0) +
+    (!p?.image ? 5 : 0);
+
+  const candidates = items
+    .filter((p) => {
+      if (!p?.link) return false;
+      return !p.price || (!p.area && p?.rooms == null) || !p.image;
+    })
+    .sort((a, b) => priorityNeed(b) - priorityNeed(a));
+
   if (!candidates.length) return items;
 
-  const maxToEnrich = Math.min(candidates.length, 32);
-  const targetLinks = new Set(candidates.slice(0, maxToEnrich).map((p) => p.link));
-  if (!targetLinks.size) return items;
+  const seenLinks = new Set();
+  const targetLinks = [];
+  for (const p of candidates) {
+    if (!p.link || seenLinks.has(p.link)) continue;
+    seenLinks.add(p.link);
+    targetLinks.push(p.link);
+    if (targetLinks.length >= ENRICH_DETAIL_MAX_LINKS) break;
+  }
+  if (!targetLinks.length) return items;
 
   const updates = new Map();
-  for (const link of targetLinks) {
+
+  const fetchOneDetail = async (link) => {
     let page = null;
     try {
       page = await browser.newPage();
       await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
-      await page.goto(link, { waitUntil: 'domcontentloaded', timeout: 9000 });
-      await new Promise((resolve) => setTimeout(resolve, 700));
+      await page.goto(link, { waitUntil: 'domcontentloaded', timeout: 12000 });
+      await new Promise((resolve) => setTimeout(resolve, 500));
 
       const detail = await page.evaluate(() => {
         const toAbs = (url) => {
@@ -1274,6 +1455,11 @@ async function enrichPropertiesFromDetails(browser, items = []) {
     } finally {
       if (page) await page.close().catch(() => {});
     }
+  };
+
+  for (let i = 0; i < targetLinks.length; i += ENRICH_DETAIL_CONCURRENCY) {
+    const chunk = targetLinks.slice(i, i + ENRICH_DETAIL_CONCURRENCY);
+    await Promise.all(chunk.map((lnk) => fetchOneDetail(lnk)));
   }
 
   if (!updates.size) return items;
@@ -1473,6 +1659,22 @@ function pisosListingSegment(propertyType) {
   }
 }
 
+/**
+ * Минимальная правдоподобная цена **продажи** целиком (€).
+ * Ниже — почти всегда аренда/м²/ошибка парсера (напр. 6768 вместо полной суммы).
+ */
+const MIN_PLAUSIBLE_RESIDENTIAL_SALE_EUR = 20000;
+const MIN_PLAUSIBLE_COMMERCIAL_SALE_EUR = 12000;
+const MIN_PLAUSIBLE_LAND_SALE_EUR = 4000;
+
+function passesPlausibleTotalSalePrice(price, propertyType = 'apartment') {
+  if (!Number.isFinite(price) || price <= 0) return false;
+  const pt = propertyType || 'apartment';
+  if (pt === 'land') return price >= MIN_PLAUSIBLE_LAND_SALE_EUR;
+  if (pt === 'commercial') return price >= MIN_PLAUSIBLE_COMMERCIAL_SALE_EUR;
+  return price >= MIN_PLAUSIBLE_RESIDENTIAL_SALE_EUR;
+}
+
 /** Устойчивая оценка: медиана с отсечением крайних 10 % при n ≥ 8 */
 function robustMedian(prices) {
   const arr = prices.filter((p) => p > 0).map(Number).sort((a, b) => a - b);
@@ -1489,8 +1691,10 @@ function robustMedian(prices) {
   return m % 2 ? slice[mid] : Math.round((slice[mid - 1] + slice[mid]) / 2);
 }
 
-function filterOutlierPrices(items = [], { areaValue, benchmarkPerSqm }) {
-  const clean = (items || []).filter((p) => p?.price && p.price > 0);
+function filterOutlierPrices(items = [], { areaValue, benchmarkPerSqm, propertyType }) {
+  const clean = (items || []).filter(
+    (p) => p?.price && p.price > 0 && passesPlausibleTotalSalePrice(p.price, propertyType)
+  );
   if (clean.length < 3 || !benchmarkPerSqm) return clean;
 
   const withPpsqm = clean.map((p) => {
@@ -1502,10 +1706,34 @@ function filterOutlierPrices(items = [], { areaValue, benchmarkPerSqm }) {
 
   const filtered = withPpsqm.filter((p) => {
     if (!p._ppsqm || !Number.isFinite(p._ppsqm)) return true;
-    return p._ppsqm >= benchmarkPerSqm * 0.35 && p._ppsqm <= benchmarkPerSqm * 2.6;
+    return p._ppsqm >= benchmarkPerSqm * 0.4 && p._ppsqm <= benchmarkPerSqm * 2.35;
   });
 
   return filtered.length >= 3 ? filtered.map(({ _ppsqm, ...rest }) => rest) : clean;
+}
+
+/** Узкий слой: отсекает объявления из другого ценового сегмента (медиана €/м² по когорте). */
+function filterPricePerSqmCluster(items = [], { minItems = 6 } = {}) {
+  const priced = (items || []).filter((p) => p?.price > 0 && p?.area > 12);
+  if (priced.length < minItems) return items;
+
+  const ratios = priced.map((p) => p.price / p.area).sort((a, b) => a - b);
+  const mid = Math.floor(ratios.length / 2);
+  const medianPps =
+    ratios.length % 2 === 1 ? ratios[mid] : (ratios[mid - 1] + ratios[mid]) / 2;
+  if (!Number.isFinite(medianPps) || medianPps <= 0) return items;
+
+  const low = medianPps * 0.52;
+  const high = medianPps * 1.88;
+
+  const filtered = (items || []).filter((p) => {
+    if (!p?.price || !p?.area || p.area <= 12) return true;
+    const x = p.price / p.area;
+    return x >= low && x <= high;
+  });
+
+  const keepFraction = Math.max(4, Math.floor(priced.length * 0.35));
+  return filtered.length >= keepFraction ? filtered : items;
 }
 
 function pickDiverseSimilar(items = [], max = 15) {
@@ -1602,64 +1830,101 @@ function collectSourceSeeds(items = [], perSource = 2) {
   return out;
 }
 
-function buildSimilarMultiSource(primaryItems = [], fallbackItems = [], max = 15, minTarget = TARGET_MIN_SIMILAR_COUNT) {
-  const pool = mergeUniqueByLink(primaryItems, fallbackItems, 200);
+function buildSimilarMultiSource(primaryItems = [], fallbackItems = [], options = {}) {
+  const resolved =
+    typeof options === 'number'
+      ? { max: options, minTarget: TARGET_MIN_SIMILAR_COUNT, scoreCtx: null }
+      : {
+          max: options.max ?? SIMILAR_UI_MAX,
+          minTarget: options.minTarget ?? SIMILAR_UI_MIN,
+          scoreCtx: options.scoreCtx ?? null
+        };
+
+  const { max, minTarget, scoreCtx } = resolved;
+
+  const pool = mergeUniqueByLink(primaryItems, fallbackItems, 400);
   if (!pool.length) return [];
 
+  const ranked = scoreCtx
+    ? pool
+        .map((p) => ({
+          ...p,
+          _compareScore: scoreComparableProperty(p, scoreCtx)
+        }))
+        .sort((a, b) => (b._compareScore || 0) - (a._compareScore || 0))
+    : [...pool];
+
   const bySource = new Map();
-  for (const item of pool) {
-    const key = normalizeSourceKey(item?.source);
-    if (!bySource.has(key)) bySource.set(key, []);
-    bySource.get(key).push(item);
+  for (const item of ranked) {
+    const sk = normalizeSourceKey(item?.source);
+    if (!bySource.has(sk)) bySource.set(sk, []);
+    bySource.get(sk).push(item);
   }
 
-  const buckets = Array.from(bySource.entries()).map(([sourceKey, items]) => ({ sourceKey, items }));
+  const maxPerSource = maxListingsPerSourceForUi(bySource.size);
+
+  const sourcesOrdered = [...bySource.entries()].sort(
+    (a, b) =>
+      (b[1][0]?._compareScore ?? 0) - (a[1][0]?._compareScore ?? 0)
+  );
+
+  const srcBuckets = sourcesOrdered.map(([, arr]) => [...arr]);
+
   const picked = [];
   const used = new Set();
   const perSourceCount = {};
-  const maxPerSource = buckets.length <= 1 ? max : Math.max(2, Math.floor(max * 0.35));
 
-  // Сначала берем минимум по одной карточке из каждого источника.
-  for (const bucket of buckets) {
-    const first = bucket.items.shift();
-    const key = normalizePropertyLink(first?.link);
-    if (!first || !key || used.has(key)) continue;
-    const src = normalizeSourceKey(first?.source);
-    if ((perSourceCount[src] || 0) >= maxPerSource) continue;
-    used.add(key);
-    perSourceCount[src] = (perSourceCount[src] || 0) + 1;
-    picked.push(first);
-    if (picked.length >= max) return picked;
+  // Сначала по одному лучшему объявлению с каждого источника (порядок источников по силе топ-карточки).
+  for (const bucket of srcBuckets) {
+    if (picked.length >= max) break;
+    while (bucket.length) {
+      const item = bucket.shift();
+      const k = normalizePropertyLink(item?.link);
+      if (!k || used.has(k)) continue;
+      used.add(k);
+      const src = normalizeSourceKey(item.source);
+      perSourceCount[src] = (perSourceCount[src] || 0) + 1;
+      picked.push(stripComparableScores(item));
+      break;
+    }
   }
 
-  // Затем добираем round-robin, чтобы сохранить баланс источников.
+  const queues = srcBuckets.map((b) => [...b]);
   let cursor = 0;
-  while (picked.length < max && buckets.some((b) => b.items.length > 0)) {
-    const bucket = buckets[cursor % buckets.length];
-    const next = bucket.items.shift();
+  while (picked.length < max && queues.some((q) => q.length)) {
+    let progressed = false;
+    for (let i = 0; i < queues.length && picked.length < max; i++) {
+      const idx = (cursor + i) % queues.length;
+      const q = queues[idx];
+      while (q.length) {
+        const cand = q[0];
+        const src = normalizeSourceKey(cand.source);
+        if ((perSourceCount[src] || 0) >= maxPerSource) {
+          q.length = 0;
+          break;
+        }
+        q.shift();
+        const k = normalizePropertyLink(cand.link);
+        if (!k || used.has(k)) continue;
+        used.add(k);
+        perSourceCount[src] = (perSourceCount[src] || 0) + 1;
+        picked.push(stripComparableScores(cand));
+        progressed = true;
+        break;
+      }
+    }
     cursor += 1;
-    if (!next) continue;
-    const src = normalizeSourceKey(next?.source);
-    if ((perSourceCount[src] || 0) >= maxPerSource) continue;
-    const key = normalizePropertyLink(next.link);
-    if (!key || used.has(key)) continue;
-    used.add(key);
-    perSourceCount[src] = (perSourceCount[src] || 0) + 1;
-    picked.push(next);
+    if (!progressed) break;
   }
 
-  if (picked.length >= minTarget) return picked.slice(0, max);
-
-  // Если после round-robin не добрали минимум, добираем из общего пула.
-  for (const item of pool) {
-    if (picked.length >= Math.min(max, minTarget)) break;
-    const src = normalizeSourceKey(item?.source);
-    if ((perSourceCount[src] || 0) >= maxPerSource) continue;
-    const key = normalizePropertyLink(item?.link);
-    if (!key || used.has(key)) continue;
-    used.add(key);
-    perSourceCount[src] = (perSourceCount[src] || 0) + 1;
-    picked.push(item);
+  if (picked.length < minTarget) {
+    for (const item of ranked) {
+      if (picked.length >= minTarget) break;
+      const k = normalizePropertyLink(item.link);
+      if (!k || used.has(k)) continue;
+      used.add(k);
+      picked.push(stripComparableScores(item));
+    }
   }
 
   return picked.slice(0, max);
@@ -1690,7 +1955,8 @@ function matchesRoomsWithTolerance(property, roomsValue, noRoomsType, tolerance)
 
 function matchesAreaWithTolerance(property, areaValue, ratioMin, ratioMax) {
   if (!areaValue) return true;
-  if (!property.area) return true;
+  /* Без м² на карточке не подгоняем объявление под запрос по площади — иначе в выборку попадают любые метры */
+  if (!property.area || property.area < 12) return false;
   return property.area >= areaValue * ratioMin && property.area <= areaValue * ratioMax;
 }
 
@@ -1711,19 +1977,20 @@ function hasStreetMatch(property = {}, streetTokens = []) {
 function isReasonableComparable(property, { areaValue, roomsValue, noRoomsType }) {
   if (!property) return false;
 
-  if (areaValue && property.area) {
-    const minArea = areaValue * 0.45;
-    const maxArea = areaValue * 2.2;
+  if (areaValue) {
+    if (!property.area || property.area < 12) return false;
+    const minArea = areaValue * 0.55;
+    const maxArea = areaValue * 1.52;
     if (property.area < minArea || property.area > maxArea) return false;
   }
 
   if (!noRoomsType && roomsValue !== 'studio' && Number.isFinite(roomsValue) && property.rooms != null) {
-    const minRooms = Math.max(0, roomsValue - 3);
-    const maxRooms = roomsValue + 4;
+    const minRooms = Math.max(0, roomsValue - 2);
+    const maxRooms = roomsValue + 2;
     if (property.rooms < minRooms || property.rooms > maxRooms) return false;
   }
 
-  if (!noRoomsType && roomsValue === 'studio' && property.rooms != null && property.rooms > 3) return false;
+  if (!noRoomsType && roomsValue === 'studio' && property.rooms != null && property.rooms > 2) return false;
 
   return true;
 }
@@ -1779,7 +2046,7 @@ function buildStrictUiCandidates({
       if (!matchesRoomsWithTolerance(p, roomsValue, noRoomsType, 0)) return false;
     }
     if (areaValue && p.area) {
-      if (p.area < areaValue * 0.65 || p.area > areaValue * 1.45) return false;
+      if (p.area < areaValue * 0.76 || p.area > areaValue * 1.28) return false;
     }
     return true;
   });
@@ -1859,25 +2126,44 @@ function selectComparablesByPriority({
     cityFiltered
   ];
 
+  const cityPoolSize = cityFiltered.length;
+  const locationMinStrict = cityPoolSize >= 35 ? 5 : 3;
   let locationPool =
-    locationStages.find((s) => s.length >= 3) || locationStages.find((s) => s.length > 0) || [];
+    locationStages.find((s) => s.length >= locationMinStrict) ||
+    locationStages.find((s) => s.length >= 3) ||
+    locationStages.find((s) => s.length > 0) ||
+    [];
 
   const roomTolerances = noRoomsType ? [0] : [0, 1, 2];
   const roomStages = roomTolerances.map((tol) => locationPool.filter((p) => matchesRoomsWithTolerance(p, roomsValue, noRoomsType, tol)));
-  let roomsPool = roomStages.find((s) => s.length >= 3) || roomStages.find((s) => s.length > 0) || locationPool;
+  const roomsMinStrict = locationPool.length >= 30 ? 5 : 3;
+  let roomsPool =
+    roomStages.find((s) => s.length >= roomsMinStrict) ||
+    roomStages.find((s) => s.length >= 3) ||
+    roomStages.find((s) => s.length > 0) ||
+    locationPool;
 
   const areaStages = [
-    roomsPool.filter((p) => matchesAreaWithTolerance(p, areaValue, 0.85, 1.15)),
-    roomsPool.filter((p) => matchesAreaWithTolerance(p, areaValue, 0.75, 1.25)),
-    roomsPool.filter((p) => matchesAreaWithTolerance(p, areaValue, 0.65, 1.35))
+    roomsPool.filter((p) => matchesAreaWithTolerance(p, areaValue, 0.88, 1.12)),
+    roomsPool.filter((p) => matchesAreaWithTolerance(p, areaValue, 0.83, 1.18)),
+    roomsPool.filter((p) => matchesAreaWithTolerance(p, areaValue, 0.77, 1.26)),
+    roomsPool.filter((p) => matchesAreaWithTolerance(p, areaValue, 0.72, 1.32)),
+    roomsPool.filter((p) => matchesAreaWithTolerance(p, areaValue, 0.66, 1.38))
   ];
-  let areaPool = areaStages.find((s) => s.length >= 3) || areaStages.find((s) => s.length > 0) || roomsPool;
+  const areaMinStrict = roomsPool.length >= 28 ? 5 : 3;
+  const softAreaPool = roomsPool.filter((p) => matchesAreaWithTolerance(p, areaValue, 0.62, 1.38));
+  let areaPool =
+    areaStages.find((s) => s.length >= areaMinStrict) ||
+    areaStages.find((s) => s.length >= 3) ||
+    areaStages.find((s) => s.length > 0) ||
+    (softAreaPool.length ? softAreaPool : roomsPool);
 
-  let similar = pickDiverseSimilar(rank(areaPool), 15);
-  if (similar.length < 5) similar = mergeUniqueByLink(similar, pickDiverseSimilar(rank(roomsPool), 15), 15);
-  if (similar.length < 5) similar = mergeUniqueByLink(similar, pickDiverseSimilar(rank(locationPool), 15), 15);
-  if (similar.length < 5) similar = mergeUniqueByLink(similar, pickDiverseSimilar(rank(cityFiltered), 15), 15);
-  if (similar.length < 5) similar = mergeUniqueByLink(similar, pickDiverseSimilar(rank(nonFallback), 15), 15);
+  const SIM_PICK = SIMILAR_UI_MAX;
+  let similar = pickDiverseSimilar(rank(areaPool), SIM_PICK);
+  if (similar.length < 6) similar = mergeUniqueByLink(similar, pickDiverseSimilar(rank(roomsPool), SIM_PICK), SIM_PICK);
+  if (similar.length < 6) similar = mergeUniqueByLink(similar, pickDiverseSimilar(rank(locationPool), SIM_PICK), SIM_PICK);
+  if (similar.length < 6) similar = mergeUniqueByLink(similar, pickDiverseSimilar(rank(cityFiltered), SIM_PICK), SIM_PICK);
+  if (similar.length < 6) similar = mergeUniqueByLink(similar, pickDiverseSimilar(rank(nonFallback), SIM_PICK), SIM_PICK);
 
   return {
     cityFiltered,
@@ -1960,6 +2246,88 @@ function classifyPropertyByText(property = {}) {
   return 'apartment';
 }
 
+function scoreComparableProperty(p, ctx) {
+  const {
+    areaValue,
+    roomsValue,
+    noRoomsType,
+    cityToken,
+    isSpainCountry,
+    cityCfg,
+    pType,
+    districtRecord,
+    streetTokens = []
+  } = ctx;
+
+  let score = 0;
+
+  const cityMatch = isSpainCountry
+    ? ((p.address && addressMatchesCity(p.address, cityCfg?.value || cityToken)) ||
+      linkMatchesCity(p.link, cityCfg?.value || cityToken, cityCfg))
+    : cityMatchesLoose(p, cityToken);
+  if (cityMatch) score += 30;
+
+  if (p.area && areaValue) {
+    const delta = Math.abs(p.area - areaValue) / Math.max(areaValue, 1);
+    if (delta <= 0.12) score += 34;
+    else if (delta <= 0.15) score += 30;
+    else if (delta <= 0.28) score += 20;
+    else if (delta <= 0.35) score += 18;
+    else if (delta <= 0.6) score += 8;
+  } else {
+    score += 4;
+  }
+
+  if (!noRoomsType && (p.rooms != null || p.isStudio === true)) {
+    if (roomsValue === 'studio') {
+      if (p.isStudio === true || p.rooms === 0 || p.rooms === 1) score += 22;
+    } else if (p.rooms != null) {
+      const d = Math.abs(p.rooms - roomsValue);
+      if (d === 0) score += 22;
+      else if (d === 1) score += 14;
+      else if (d === 2) score += 6;
+    }
+  } else {
+    score += 4;
+  }
+
+  if (pType !== 'land' && pType !== 'commercial') {
+    const detected = classifyPropertyByText(p);
+    const typeMatch =
+      (pType === 'villa' && (detected === 'villa' || detected === 'house')) ||
+      (pType === 'house' && (detected === 'house' || detected === 'villa')) ||
+      (pType === 'apartamento' && (detected === 'apartamento' || detected === 'apartment')) ||
+      (pType === 'apartment' && (detected === 'apartment' || detected === 'apartamento'));
+    if (typeMatch) score += 16;
+  }
+
+  if (isSpainCountry && districtRecord?.keywords?.length) {
+    if (addressMatchesDistrict(p.address || '', districtRecord)) score += 16;
+  }
+
+  if (streetTokens.length) {
+    const haystack = `${p.address || ''} ${p.title || ''}`.toLowerCase();
+    const streetMatches = streetTokens.filter((token) => haystack.includes(token)).length;
+    if (streetMatches > 0) score += Math.min(12, streetMatches * 4);
+  }
+
+  return score;
+}
+
+function stripComparableScores(item) {
+  if (!item || typeof item !== 'object') return item;
+  const { _score, _compareScore, ...rest } = item;
+  return rest;
+}
+
+/** Лимит карточек с одного портала при нескольких источниках — чтобы не было 4+4 с двух сайтов. */
+function maxListingsPerSourceForUi(numDistinctSources) {
+  if (numDistinctSources <= 1) return SIMILAR_UI_MAX;
+  if (numDistinctSources === 2) return 3;
+  if (numDistinctSources === 3) return 3;
+  return 2;
+}
+
 function buildRelaxedSimilarProperties({
   items,
   areaValue,
@@ -1970,7 +2338,8 @@ function buildRelaxedSimilarProperties({
   cityCfg,
   pType,
   districtRecord,
-  streetQuery
+  streetQuery,
+  sliceLimit = 30
 }) {
   const streetTokens = String(streetQuery || '')
     .toLowerCase()
@@ -1978,64 +2347,26 @@ function buildRelaxedSimilarProperties({
     .map((s) => s.trim())
     .filter((s) => s.length > 3);
 
-  const withScores = (items || []).map((p) => {
-    let score = 0;
+  const ctx = {
+    areaValue,
+    roomsValue,
+    noRoomsType,
+    cityToken,
+    isSpainCountry,
+    cityCfg,
+    pType,
+    districtRecord,
+    streetTokens
+  };
 
-    const cityMatch = isSpainCountry
-      ? ((p.address && addressMatchesCity(p.address, cityCfg?.value || cityToken)) ||
-        linkMatchesCity(p.link, cityCfg?.value || cityToken, cityCfg))
-      : cityMatchesLoose(p, cityToken);
-    if (cityMatch) score += 30;
+  const withScores = (items || []).map((p) => ({
+    ...p,
+    _score: scoreComparableProperty(p, ctx)
+  }));
 
-    if (p.area && areaValue) {
-      const delta = Math.abs(p.area - areaValue) / Math.max(areaValue, 1);
-      if (delta <= 0.15) score += 30;
-      else if (delta <= 0.35) score += 18;
-      else if (delta <= 0.6) score += 8;
-    } else {
-      score += 4;
-    }
-
-    if (!noRoomsType && (p.rooms != null || p.isStudio === true)) {
-      if (roomsValue === 'studio') {
-        if (p.isStudio === true || p.rooms === 0 || p.rooms === 1) score += 22;
-      } else if (p.rooms != null) {
-        const d = Math.abs(p.rooms - roomsValue);
-        if (d === 0) score += 22;
-        else if (d === 1) score += 14;
-        else if (d === 2) score += 6;
-      }
-    } else {
-      score += 4;
-    }
-
-    if (pType !== 'land' && pType !== 'commercial') {
-      const detected = classifyPropertyByText(p);
-      const typeMatch =
-        (pType === 'villa' && (detected === 'villa' || detected === 'house')) ||
-        (pType === 'house' && (detected === 'house' || detected === 'villa')) ||
-        (pType === 'apartamento' && (detected === 'apartamento' || detected === 'apartment')) ||
-        (pType === 'apartment' && (detected === 'apartment' || detected === 'apartamento'));
-      if (typeMatch) score += 16;
-    }
-
-    if (isSpainCountry && districtRecord?.keywords?.length) {
-      if (addressMatchesDistrict(p.address || '', districtRecord)) score += 16;
-    }
-
-    if (streetTokens.length) {
-      const haystack = `${p.address || ''} ${p.title || ''}`.toLowerCase();
-      const streetMatches = streetTokens.filter((token) => haystack.includes(token)).length;
-      if (streetMatches > 0) score += Math.min(12, streetMatches * 4);
-    }
-
-    return { ...p, _score: score };
-  });
-
-  return withScores
-    .sort((a, b) => b._score - a._score)
-    .slice(0, 30)
-    .map(({ _score, ...rest }) => rest);
+  const sorted = withScores.sort((a, b) => b._score - a._score);
+  const sliced = sliceLimit == null ? sorted : sorted.slice(0, sliceLimit);
+  return sliced.map(({ _score, ...rest }) => rest);
 }
 
 /**
@@ -2084,7 +2415,24 @@ export async function calculatePropertyPrice({
   const pType = propertyType || 'apartment';
   const noRoomsType = pType === 'land' || pType === 'commercial';
 
-  const cityCfg = isSpainCountry ? resolveCityConfigLoose(rawCity) : null;
+  let cityCfg = isSpainCountry ? resolveCityConfigLoose(rawCity) : null;
+  /** Нет в каталоге — пробуем slug из ввода (любой муниципалитет ES + Канары, пока порталы используют те же slug) */
+  let provisionalSpainFromSlug = false;
+  if (isSpainCountry && !cityCfg) {
+    const slug = normalizeSlug(getPrimaryCityToken(rawCity));
+    if (slug.length >= 4 && slug.length <= 52) {
+      cityCfg = {
+        value: slug,
+        label: getPrimaryCityToken(rawCity).trim() || slug,
+        region: 'Испания',
+        fotocasa: slug,
+        idealista: slug,
+        pisos: slug
+      };
+      provisionalSpainFromSlug = true;
+    }
+  }
+
   const cityName = cityCfg?.value || cityToken.toLowerCase();
   if (!cityToken) {
     return {
@@ -2108,7 +2456,8 @@ export async function calculatePropertyPrice({
   }
 
   if (isSpainCountry && !cityCfg) {
-    const note = 'Город не найден в испанском каталоге. Укажите крупный город Испании из списка калькулятора.';
+    const note =
+      'Город не распознан. Укажите название муниципалитета (латиницей, как на Fotocasa), либо выберите город из списка калькулятора.';
 
     return {
       recommendedPrice: null,
@@ -2258,7 +2607,10 @@ export async function calculatePropertyPrice({
 
     // Если после primary/fallback покрытие по источникам низкое, добираем дополнительными площадками.
     const sourceCoverageAfterPrimary = countEffectiveSources(merged);
-    if (isSpainCountry && sourceCoverageAfterPrimary < TARGET_MIN_SOURCE_COVERAGE) {
+    /** Доп. площадки — если мало источников или узкая первичная выборка (типично малые города / Канары) */
+    const needsSupplementalSpain =
+      sourceCoverageAfterPrimary < TARGET_MIN_SOURCE_COVERAGE || merged.length < 160;
+    if (isSpainCountry && needsSupplementalSpain) {
       const supplementalSites = buildSpainSupplementalSites({ cityCfg });
       if (supplementalSites.length > 0) {
         await scrapeSites(supplementalSites, 'supplemental');
@@ -2276,7 +2628,9 @@ export async function calculatePropertyPrice({
 
     merged = dedupeByLink(merged);
 
-    const baseCandidates = merged.filter((p) => p.price && p.price > 0 && p.link);
+    const baseCandidates = merged.filter(
+      (p) => p.price && p.price > 0 && p.link && passesPlausibleTotalSalePrice(p.price, pType)
+    );
     let valid = [...baseCandidates];
     console.log(`DEBUG: merged(after dedupe)=${merged.length}, valid(price/link)=${valid.length}`);
 
@@ -2301,10 +2655,17 @@ export async function calculatePropertyPrice({
       propertyType: pType
     });
     const beforeOutliers = valid.length;
-    valid = filterOutlierPrices(valid, { areaValue, benchmarkPerSqm: benchmarkPerSqmForFilter });
+    valid = filterOutlierPrices(valid, {
+      areaValue,
+      benchmarkPerSqm: benchmarkPerSqmForFilter,
+      propertyType: pType
+    });
     console.log(`DEBUG: after outlier filter=${valid.length} (before=${beforeOutliers})`);
+    const beforeCluster = valid.length;
+    valid = filterPricePerSqmCluster(valid, { minItems: 6 });
+    console.log(`DEBUG: after ppsqm cluster=${valid.length} (before=${beforeCluster})`);
     const validSourcesBeforeCap = new Set(valid.map((p) => normalizeSourceKey(p?.source))).size;
-    valid = limitItemsPerSource(valid, { maxPerSource: 90, maxTotal: 450 });
+    valid = limitItemsPerSource(valid, { maxPerSource: 220, maxTotal: 3200 });
     const validSourcesAfterCap = new Set(valid.map((p) => normalizeSourceKey(p?.source))).size;
     console.log(`DEBUG: after per-source cap=${valid.length}, sources(before=${validSourcesBeforeCap}, after=${validSourcesAfterCap})`);
     const prioritySelection = selectComparablesByPriority({
@@ -2335,18 +2696,113 @@ export async function calculatePropertyPrice({
       q.rawValid = sourceRawCounts[src] || 0;
     }
 
-    const prices = valid.map((p) => p.price);
-    const sourceBalancedRecommendation = buildSourceBalancedRecommendation(valid.length ? valid : validBeforePriority);
+    const strictUiItemsStreetDistrict = buildStrictUiCandidates({
+      items: validBeforePriority,
+      areaValue,
+      roomsValue,
+      noRoomsType,
+      cityToken,
+      isSpainCountry,
+      cityCfg,
+      pType,
+      districtRecord,
+      streetQuery: street
+    });
+    const strictUiItemsDistrictOnly = buildStrictUiCandidates({
+      items: validBeforePriority,
+      areaValue,
+      roomsValue,
+      noRoomsType,
+      cityToken,
+      isSpainCountry,
+      cityCfg,
+      pType,
+      districtRecord,
+      streetQuery: ''
+    });
+    const strictUiItemsCityOnly = buildStrictUiCandidates({
+      items: validBeforePriority,
+      areaValue,
+      roomsValue,
+      noRoomsType,
+      cityToken,
+      isSpainCountry,
+      cityCfg,
+      pType,
+      districtRecord: null,
+      streetQuery: ''
+    });
+    const strictUiItems = mergeUniqueByLink(
+      strictUiItemsStreetDistrict,
+      mergeUniqueByLink(strictUiItemsDistrictOnly, strictUiItemsCityOnly, 120),
+      120
+    );
+    const relaxedAllRanked = buildRelaxedSimilarProperties({
+      items: strictUiItems,
+      areaValue,
+      roomsValue,
+      noRoomsType,
+      cityToken,
+      isSpainCountry,
+      cityCfg,
+      pType,
+      districtRecord,
+      streetQuery: street
+    });
+    const multiSourceSeeds = collectSourceSeeds(relaxedAllRanked, 1);
+    const similarFallbackPool = mergeUniqueByLink(
+      strictUiItems,
+      mergeUniqueByLink(prioritySelection.similar, multiSourceSeeds, 120),
+      120
+    );
+    const similarScoreCtx = {
+      areaValue,
+      roomsValue,
+      noRoomsType,
+      cityToken,
+      isSpainCountry,
+      cityCfg,
+      pType,
+      districtRecord,
+      streetTokens: String(street || '')
+        .toLowerCase()
+        .split(/[,\s]+/)
+        .map((s) => s.trim())
+        .filter((s) => s.length > 3)
+    };
+    const similarForUi = buildSimilarMultiSource(
+      prioritySelection.similar.filter((p) =>
+        strictUiItems.some((x) => normalizePropertyLink(x.link) === normalizePropertyLink(p.link))
+      ),
+      similarFallbackPool,
+      {
+        max: SIMILAR_UI_MAX,
+        minTarget: SIMILAR_UI_MIN,
+        scoreCtx: similarScoreCtx
+      }
+    );
+    const achievedSimilarSourceCoverage = countEffectiveSources(similarForUi);
+
+    const medianItems =
+      similarForUi.length > 0
+        ? similarForUi.filter((p) => p?.price && Number.isFinite(p.price) && p.price > 0)
+        : valid.filter((p) => p?.price && Number.isFinite(p.price) && p.price > 0);
+
+    const prices = medianItems.map((p) => p.price);
+    const sourceBalancedRecommendation = buildSourceBalancedRecommendation(
+      medianItems.length ? medianItems : valid.length ? valid : validBeforePriority
+    );
     let recommendedPrice = sourceBalancedRecommendation.recommendedPrice || robustMedian(prices);
     recommendedPrice = stabilizeRecommendedPrice({
       recommendedPrice,
-      validCount: valid.length,
+      validCount: medianItems.length,
       areaValue,
       cityCfg,
       cityToken,
       countryProfile,
       pType
     });
+    const hasStrictComparables = medianItems.length > 0;
     let recommendedPricePerSqm = null;
     let usedBenchmarkFallback = false;
     let districtFallbackUsed = false;
@@ -2402,74 +2858,6 @@ export async function calculatePropertyPrice({
     const uniqueSources = [...new Set(sourcesUsed)];
     const achievedSourceCoverage = countEffectiveSources(validBeforePriority);
 
-    const hasStrictComparables = valid.length > 0;
-    const strictUiItemsStreetDistrict = buildStrictUiCandidates({
-      items: validBeforePriority,
-      areaValue,
-      roomsValue,
-      noRoomsType,
-      cityToken,
-      isSpainCountry,
-      cityCfg,
-      pType,
-      districtRecord,
-      streetQuery: street
-    });
-    const strictUiItemsDistrictOnly = buildStrictUiCandidates({
-      items: validBeforePriority,
-      areaValue,
-      roomsValue,
-      noRoomsType,
-      cityToken,
-      isSpainCountry,
-      cityCfg,
-      pType,
-      districtRecord,
-      streetQuery: ''
-    });
-    const strictUiItemsCityOnly = buildStrictUiCandidates({
-      items: validBeforePriority,
-      areaValue,
-      roomsValue,
-      noRoomsType,
-      cityToken,
-      isSpainCountry,
-      cityCfg,
-      pType,
-      districtRecord: null,
-      streetQuery: ''
-    });
-    const strictUiItems = mergeUniqueByLink(
-      strictUiItemsStreetDistrict,
-      mergeUniqueByLink(strictUiItemsDistrictOnly, strictUiItemsCityOnly, 120),
-      120
-    );
-    const relaxedAllRanked = buildRelaxedSimilarProperties({
-      items: strictUiItems,
-      areaValue,
-      roomsValue,
-      noRoomsType,
-      cityToken,
-      isSpainCountry,
-      cityCfg,
-      pType,
-      districtRecord,
-      streetQuery: street
-    });
-    const multiSourceSeeds = collectSourceSeeds(relaxedAllRanked, 2);
-    const similarFallbackPool = mergeUniqueByLink(
-      strictUiItems,
-      mergeUniqueByLink(prioritySelection.similar, multiSourceSeeds, 120),
-      120
-    );
-    const similarForUi = buildSimilarMultiSource(
-      prioritySelection.similar.filter((p) => strictUiItems.some((x) => normalizePropertyLink(x.link) === normalizePropertyLink(p.link))),
-      similarFallbackPool,
-      15,
-      TARGET_MIN_SIMILAR_COUNT
-    );
-    const achievedSimilarSourceCoverage = countEffectiveSources(similarForUi);
-
     const response = {
       recommendedPrice: recommendedPrice || null,
       recommendedPricePerSqm,
@@ -2481,7 +2869,8 @@ export async function calculatePropertyPrice({
         country: countryProfile.code,
         district: district || 'all',
         propertyType: pType,
-        searchLevel: valid.length > 0 ? 'parsed' : 'no_results',
+        searchLevel:
+          medianItems.length > 0 || similarForUi.length > 0 || valid.length > 0 ? 'parsed' : 'no_results',
         sources: uniqueSources,
         method: usedBenchmarkFallback
           ? 'benchmark_fallback'
@@ -2489,7 +2878,7 @@ export async function calculatePropertyPrice({
             ? 'district_median_fallback'
             : (sourceBalancedRecommendation.sourceCount >= 2
               ? 'source_balanced_median'
-              : (valid.length >= 8 ? 'trimmed_median' : 'median'))),
+              : (medianItems.length >= 8 ? 'trimmed_median' : 'median'))),
         cache: 'miss',
         sourceQuality,
         sourceBalanced: sourceBalancedRecommendation.sourceCount >= 2,
@@ -2499,30 +2888,51 @@ export async function calculatePropertyPrice({
         sourceCoverageAchieved: achievedSourceCoverage,
         similarSourceCoverageAchieved: achievedSimilarSourceCoverage,
         minSimilarTarget: TARGET_MIN_SIMILAR_COUNT,
+        similarUiRange: `${SIMILAR_UI_MIN}-${SIMILAR_UI_MAX}`,
         benchmarkFallback: usedBenchmarkFallback,
         districtFallbackUsed,
         comparablesFallbackUsed: prioritySelection.fallbackMode === true,
         relaxedSimilarUsed: !hasStrictComparables && similarForUi.length > 0,
-        similarCount: similarForUi.length
+        similarCount: similarForUi.length,
+        provisionalSpainFromSlug,
+        scrapeProfile: {
+          maxPagesPerSite: LISTING_MAX_PAGES_PER_SITE,
+          maxCardsPerListingPage: LISTING_MAX_CARDS_PER_EVAL,
+          enrichDetailLinks: ENRICH_DETAIL_MAX_LINKS,
+          comparablePoolCap: 3200
+        }
       },
-      note: valid.length > 0
-        ? (isSpainCountry
-          ? `Оценка по ${valid.length} объявлениям с ${uniqueSources.join(', ')}. Район: ${districtRecord?.label || 'весь город'}.`
-          : `Оценка по ${valid.length} объявлениям с ${uniqueSources.join(', ')} для ${cityToken}, ${rawCountry || 'международный режим'}.`)
-        : ((!hasStrictComparables && similarForUi.length > 0)
-          ? (prioritySelection.fallbackMode
+      note: (() => {
+        const est = medianItems.length;
+        const shown = similarForUi.length;
+        if (est > 0) {
+          const districtLbl = districtRecord?.label || 'весь город';
+          if (est === shown) {
+            return isSpainCountry
+              ? `Оценка по ${est} объявлениям с ${uniqueSources.join(', ')}. Район: ${districtLbl}.`
+              : `Оценка по ${est} объявлениям с ${uniqueSources.join(', ')} для ${cityToken}, ${rawCountry || 'международный режим'}.`;
+          }
+          return isSpainCountry
+            ? `Медиана по ${est} отобранным объявлениям; ниже для примера ${shown} похожих (${uniqueSources.join(', ')}). Район: ${districtLbl}.`
+            : `Медиана по ${est} отобранным объявлениям; ниже для примера ${shown} похожих (${uniqueSources.join(', ')}) для ${cityToken}.`;
+        }
+        if (!hasStrictComparables && similarForUi.length > 0) {
+          return prioritySelection.fallbackMode
             ? `Точных аналогов в выбранном районе/городе мало, поэтому показаны ближайшие похожие объявления из расширенного пула (включая резервные источники).`
-            : `Точных аналогов по строгим фильтрам мало, поэтому показаны ближайшие похожие объявления (расширенный поиск по локации и параметрам) и ориентир по бенчмарку.`)
-          : (usedBenchmarkFallback
-          ? `Точных аналогов сейчас мало, поэтому показан ориентир по €/м² с учетом выбранной локации (${districtRecord?.label || cityToken}).`
-          : (isSpainCountry
-            ? `Мало подходящих объявлений после фильтров. Попробуйте «Весь город», другой тип жилья или площадь ±15–20 %.`
-            : `Мало совпадений по ${cityToken}. Попробуйте ближайший крупный город, другой тип жилья или площадь ±20 %.`)))
+            : `Точных аналогов по строгим фильтрам мало, поэтому показаны ближайшие похожие объявления (расширенный поиск по локации и параметрам) и ориентир по бенчмарку.`;
+        }
+        if (usedBenchmarkFallback) {
+          return `Точных аналогов сейчас мало, поэтому показан ориентир по €/м² с учетом выбранной локации (${districtRecord?.label || cityToken}).`;
+        }
+        return isSpainCountry
+          ? `Мало подходящих объявлений после фильтров. Попробуйте «Весь город», другой тип жилья или площадь ±15–20 %.`
+          : `Мало совпадений по ${cityToken}. Попробуйте ближайший крупный город, другой тип жилья или площадь ±20 %.`;
+      })(),
     };
 
     // Жесткий контроль только при критически малом объеме данных.
     if (similarForUi.length < TARGET_MIN_SIMILAR_COUNT) {
-      if (similarForUi.length >= 3 && recommendedPrice && Number.isFinite(recommendedPrice)) {
+      if (similarForUi.length >= 4 && recommendedPrice && Number.isFinite(recommendedPrice)) {
         return {
           ...response,
           searchParams: {

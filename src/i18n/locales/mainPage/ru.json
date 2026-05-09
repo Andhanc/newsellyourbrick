@@ -1170,6 +1170,8 @@
   "addPropertyPriceMinimumSaleLabel": "Минимальная цена продажи",
   "addPropertyPriceMinimumSaleRequired": "Укажите минимальную цену продажи",
   "addPropertyPriceMinimumSaleExceedsBuyNow": "Минимальная цена продажи не может быть выше цены «Продать сейчас»",
+  "addPropertyPriceMinimumSaleExceedsBuyNowPercent": "Минимальная цена продажи не может превышать 90% от цены «Продать сейчас».",
+  "addPropertyCalculatorAppliedFromRecommended": "Подставлены суммы по рекомендованной цене (можно отредактировать).",
   "addPropertyPriceSectionLead": "Слева выберите даты аукциона. Справа три суммы вводятся по шагам: сначала минимальная цена продажи, затем при выбранном формате — «Продать сейчас», затем стартовая ставка. Под каждым полем — кратко, зачем оно нужно.",
   "addPropertyPriceStepIndicator": "Суммы: шаг {{current}} из {{total}}",
   "addPropertyPriceStepMinTitle": "Минимальная цена продажи",

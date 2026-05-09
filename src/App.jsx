@@ -23,9 +23,12 @@ import { scrollMainTo } from './utils/mainScroll'
 import { lazyWithRetry } from './utils/lazyWithRetry'
 import RouteErrorBoundary from './components/RouteErrorBoundary'
 import MainPage from './pages/MainPage'
+import Home from './pages/Home'
+import DebtsPage from './pages/Debts'
+import SearchResults from './pages/SearchResults'
+import PropertyDetailPage from './pages/PropertyDetailPage'
 
 // Ленивая загрузка страниц — чанк грузится только при переходе на маршрут
-const PropertyDetailPage = lazyWithRetry(() => import('./pages/PropertyDetailPage'))
 const TestDriveBookingPage = lazyWithRetry(() => import('./pages/TestDriveBookingPage'))
 const TestDriveCheckInRoute = lazyWithRetry(() => import('./pages/TestDriveCheckInRoute'))
 const TestDriveSurveyPage = lazyWithRetry(() => import('./pages/TestDriveSurveyPage'))
@@ -44,7 +47,6 @@ const OwnerDashboard = lazyWithRetry(() => import('./pages/OwnerDashboard'))
 const TelegramAuthCallback = lazyWithRetry(() => import('./pages/TelegramAuthCallback'))
 const AddProperty = lazyWithRetry(() => import('./pages/AddProperty'))
 const Wallet = lazyWithRetry(() => import('./pages/Wallet'))
-const SearchResults = lazyWithRetry(() => import('./pages/SearchResults'))
 const AdminPanelPage = lazyWithRetry(() => import('./admin/AdminPanelPage'))
 const About = lazyWithRetry(() => import('./pages/About'))
 const SectionsPage = lazyWithRetry(() => import('./pages/SectionsPage'))
@@ -52,13 +54,10 @@ const InvestmentCalculator = lazyWithRetry(() => import('./pages/InvestmentCalcu
 const JetonPage = lazyWithRetry(() => import('./pages/JetonPage'))
 const TestPage = lazyWithRetry(() => import('./pages/TestPage'))
 const BlockedUserModal = lazyWithRetry(() => import('./components/BlockedUserModal'))
-const LazyShares = lazyWithRetry(() => import('./pages/Shares'))
-const LazyShareDetailPage = lazyWithRetry(() => import('./pages/ShareDetailPage'))
 const LazyOAuthBridgePage = lazyWithRetry(() => import('./pages/OAuthBridgePage'))
 const LazyFooter = lazyWithRetry(() => import('./components/Footer'))
-const Home = lazyWithRetry(() => import('./pages/Home'))
-const DebtsPage = lazyWithRetry(() => import('./pages/Debts'))
-
+const LazyShares = lazyWithRetry(() => import('./pages/Shares'))
+const LazyShareDetailPage = lazyWithRetry(() => import('./pages/ShareDetailPage'))
 const PageFallback = () => (
   <div
     className="app-page-fallback app-page-fallback--instant"
@@ -69,9 +68,30 @@ const PageFallback = () => (
   </div>
 )
 
-/** Только lazy-чанки; без этого общий Suspense вокруг Routes подменял весь экран при любом suspend. Fallback — однотонный кадр без «скелетона страницы», см. HeavyRouteChunksPrefetch. */
+/** Только lazy-чанки; без отдельного Suspense вокруг маршрута — при suspend подставлялся бы общий fallback роутера. Здесь fallback — короткий однотонный кадр до появления страницы. */
 function LazyPage({ children, fallback }) {
   return <Suspense fallback={fallback ?? <PageFallback />}>{children}</Suspense>
+}
+
+function AppLayoutFrame({ isBlocked, appLayoutRef, children }) {
+  const { pathname } = useLocation()
+
+  const addPropertySingleScroll =
+    pathname === '/owner/property/new' || /^\/property\/[^/]+\/edit$/.test(pathname)
+  const calculatorSingleScroll = pathname === '/calculator'
+
+  const routeClass = addPropertySingleScroll
+    ? 'app-layout--add-property-single-scroll'
+    : (calculatorSingleScroll ? 'app-layout--calculator-single-scroll' : '')
+
+  return (
+    <div
+      ref={appLayoutRef}
+      className={`app-layout ${isBlocked ? 'app-layout--blocked' : ''}${routeClass ? ` ${routeClass}` : ''}`}
+    >
+      {children}
+    </div>
+  )
 }
 
 // Компонент для валидации сессии при запуске приложения
@@ -321,7 +341,7 @@ function MainPageChunkPrefetch() {
   return null
 }
 
-/** После первого кадра подгружаем тяжёлые чанки страниц в idle — реже виден однотонный fallback при переходе на /auction, /debts, /map. */
+/** После первого кадра подгружаем чанк карты в idle — реже однотонный fallback при первом заходе на /map. */
 function HeavyRouteChunksPrefetch() {
   useEffect(() => {
     let cancelled = false
@@ -331,8 +351,6 @@ function HeavyRouteChunksPrefetch() {
 
     const run = () => {
       if (cancelled) return
-      void import('./pages/Home')
-      void import('./pages/Debts')
       void import('./pages/MapPage')
     }
 
@@ -537,27 +555,13 @@ function App() {
       <ClerkAuthHandler />
       <GlassFilterDefs />
       <LayoutScrollRefContext.Provider value={appLayoutRef}>
-      <div ref={appLayoutRef} className={`app-layout ${isBlocked ? 'app-layout--blocked' : ''}`}>
+      <AppLayoutFrame appLayoutRef={appLayoutRef} isBlocked={isBlocked}>
         <div className="app-layout__content">
           <RouteErrorBoundary>
             <Routes>
               <Route path="/" element={<MainPage />} />
-              <Route
-                path="/auction"
-                element={
-                  <LazyPage>
-                    <Home />
-                  </LazyPage>
-                }
-              />
-              <Route
-                path="/main"
-                element={
-                  <LazyPage>
-                    <Home />
-                  </LazyPage>
-                }
-              />
+              <Route path="/auction" element={<Home />} />
+              <Route path="/main" element={<Home />} />
               <Route
                 path="/property/:id/test-drive"
                 element={
@@ -590,22 +594,8 @@ function App() {
                   </LazyPage>
                 }
               />
-              <Route
-                path="/property/:id"
-                element={
-                  <LazyPage>
-                    <PropertyDetailPage />
-                  </LazyPage>
-                }
-              />
-              <Route
-                path="/search-results"
-                element={
-                  <LazyPage>
-                    <SearchResults />
-                  </LazyPage>
-                }
-              />
+              <Route path="/property/:id" element={<PropertyDetailPage />} />
+              <Route path="/search-results" element={<SearchResults />} />
               <Route
                 path="/map"
                 element={
@@ -734,14 +724,7 @@ function App() {
                   </LazyPage>
                 }
               />
-              <Route
-                path="/debts"
-                element={
-                  <LazyPage>
-                    <DebtsPage />
-                  </LazyPage>
-                }
-              />
+              <Route path="/debts" element={<DebtsPage />} />
               <Route
                 path="/about"
                 element={
@@ -842,7 +825,7 @@ function App() {
         >
           <LazyFooter />
         </Suspense>
-      </div>
+      </AppLayoutFrame>
       </LayoutScrollRefContext.Provider>
       {isBlocked && (
         <Suspense fallback={null}>

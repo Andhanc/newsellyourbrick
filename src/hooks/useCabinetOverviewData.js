@@ -8,6 +8,7 @@ import {
 } from '../services/authService'
 import { fetchUserById } from '../utils/usersApi'
 import { getPropertyCardImage } from '../utils/propertyImage'
+import { getPropertyDetailPath } from '../utils/propertyDetailUrl'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
 const CABINET_JSON_CACHE = new Map()
@@ -167,7 +168,8 @@ function buildHistoryData(winners, reservations, shares, bidsRaw) {
     const sort = new Date(date || 0).getTime()
     const pid = winner.property_id ?? prop.id
     const img = firstPhotoFromProperty(prop) || HISTORY_THUMB_PLACEHOLDER
-    const href = pid != null ? `/property/${pid}` : null
+    const href =
+      pid != null ? getPropertyDetailPath(pid, { property: Object.keys(prop).length ? prop : { id: pid } }) : null
     const loc = pickLocationFromProperty(prop)
     events.push({
       sort,
@@ -199,7 +201,11 @@ function buildHistoryData(winners, reservations, shares, bidsRaw) {
     const paid = (row.amount_cents || 0) / 100
     const pid = row.billing?.property_id
     const img = sharePurchaseImageSrc(row.property_image)
-    const href = pid != null ? `/property/${pid}` : null
+    const reserveProp =
+      pid != null
+        ? { id: pid, property_type: row.property_type || row.billing?.property_type }
+        : null
+    const href = pid != null ? getPropertyDetailPath(pid, { property: reserveProp }) : null
     const loc = String(row.property_location || row.property_address || '').trim()
     events.push({
       sort,
@@ -276,7 +282,7 @@ function buildHistoryData(winners, reservations, shares, bidsRaw) {
     const title = latest.title || prop.title || `Объект #${pid}`
     const sort = new Date(latest.created_at).getTime()
     const img = firstPhotoFromProperty(prop) || HISTORY_THUMB_PLACEHOLDER
-    const href = `/property/${pid}`
+    const href = getPropertyDetailPath(pid, { property: Object.keys(prop).length ? prop : { id: Number(pid) } })
     const loc = pickLocationFromProperty(prop)
     const bidDate = latest.created_at
     events.push({

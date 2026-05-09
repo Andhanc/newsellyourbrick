@@ -233,7 +233,12 @@ export function passesApprovedFilters(p) {
 
 export function passesAuctionFilters(p) {
   const a = p.is_auction;
-  const auctionOn = a === 1 || a === '1' || String(a) === '1';
+  const auctionOn =
+    a === 1 ||
+    a === '1' ||
+    String(a) === '1' ||
+    a === true ||
+    a === 'true';
   if (!auctionOn) return false;
   const hasEnd = p.auction_end_date != null && String(p.auction_end_date).trim() !== '';
   const hasStartPrice = p.auction_starting_price != null;

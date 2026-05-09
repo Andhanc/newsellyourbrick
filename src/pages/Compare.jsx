@@ -1,7 +1,9 @@
 import { useMemo, useState, useCallback, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import axios from 'axios'
 import Header from '../components/Header'
-import { FiArrowRight, FiColumns, FiMapPin, FiRefreshCw } from 'react-icons/fi'
+import { mapListingToCalculatorData, pickCityForAuctionCalculator } from '../utils/propertyCalculatorMapping'
+import { FiArrowRight, FiBarChart2, FiColumns, FiMapPin, FiRefreshCw, FiLoader } from 'react-icons/fi'
 import { MdBed, MdOutlineBathtub } from 'react-icons/md'
 import { BiArea } from 'react-icons/bi'
 import { HiOutlineSparkles } from 'react-icons/hi'
@@ -256,6 +258,111 @@ function scoreAiInfrastructure(rows) {
   return { left, right, tie }
 }
 
+/** Данные карточки аукциона → формат `initialPropertyData` калькулятора */
+function mapAuctionCardToCalculatorSource(property) {
+  const pt = String(property.property_type || property.propertyType || '').toLowerCase()
+  let propertyType = 'apartment'
+  if (pt === 'house') propertyType = 'house'
+  else if (pt === 'villa') propertyType = 'villa'
+  else if (pt === 'commercial') propertyType = 'commercial'
+  else if (pt === 'land') propertyType = 'land'
+
+  const areaRaw = property.sqft ?? property.area
+  const area = areaRaw != null && areaRaw !== '' ? String(areaRaw) : ''
+
+  const rooms = property.beds ?? property.rooms ?? property.bedrooms
+  const city = pickCityForAuctionCalculator(property)
+
+  return {
+    propertyType,
+    area,
+    rooms,
+    bedrooms: property.bedrooms,
+    city,
+    country: property.country ?? null,
+    address: property.address != null ? String(property.address) : '',
+    location: property.location != null ? String(property.location) : '',
+  }
+}
+
+async function estimateMarketPrice(initialSource) {
+  const mapped = mapListingToCalculatorData(initialSource)
+  const areaNum = parseInt(mapped.area, 10)
+  if (!mapped.area || !Number.isFinite(areaNum) || areaNum < 1) {
+    throw new Error('Нужна площадь объекта для расчёта')
+  }
+  if (!String(mapped.city || '').trim()) {
+    throw new Error('Нужны город или населённый пункт в карточке')
+  }
+
+  let district = mapped.district || 'all'
+  const streetForDetect =
+    mapped.street ||
+    sanitizeCalcAddress(initialSource.address) ||
+    sanitizeCalcAddress(initialSource.location) ||
+    ''
+
+  if (streetForDetect) {
+    try {
+      const d = await axios.post('/api/properties/detect-district', {
+        address: streetForDetect,
+        city: mapped.city,
+        country: initialSource.country ?? null,
+      })
+      if (d.data?.success && d.data?.data?.district) {
+        district = d.data.data.district
+      }
+    } catch (_) {
+      /* ок — считаем с «Весь город» */
+    }
+  }
+
+  const skipRooms = mapped.propertyType === 'land' || mapped.propertyType === 'commercial'
+  const roomsPayload =
+    skipRooms ? null : mapped.rooms === 'studio' ? 'studio' : parseInt(mapped.rooms, 10)
+
+  const response = await axios.post(
+    '/api/properties/calculate-price',
+    {
+      area: areaNum,
+      rooms: roomsPayload,
+      city: mapped.city,
+      country: initialSource.country ?? null,
+      street: streetForDetect || null,
+      district: district || 'all',
+      propertyType: mapped.propertyType,
+      maxPrice: null,
+      minPrice: null,
+    },
+    { timeout: 480000 }
+  )
+
+  if (!response.data?.success) {
+    throw new Error(response.data?.error || 'Ошибка при расчёте')
+  }
+  return response.data.data
+}
+
+function sanitizeCalcAddress(value = '') {
+  const text = String(value || '').replace(/\s+/g, ' ').trim()
+  if (!text) return ''
+  if (/cerca de mi ubicaci[oó]n actual/i.test(text)) return ''
+  if (/near my current location/i.test(text)) return ''
+  return text
+}
+
+function formatCalcEur(price) {
+  if (price == null || price === '') return '—'
+  const n = Number(price)
+  if (!Number.isFinite(n)) return '—'
+  return new Intl.NumberFormat('es-ES', {
+    style: 'currency',
+    currency: 'EUR',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(n)
+}
+
 function buildRows(left, right) {
   const pL = effectivePrice(left)
   const pR = effectivePrice(right)
@@ -420,6 +527,9 @@ const Compare = () => {
   const [aiLoading, setAiLoading] = useState(false)
   const [aiError, setAiError] = useState(null)
   const [aiRefreshKey, setAiRefreshKey] = useState(0)
+  const [calcLoading, setCalcLoading] = useState(false)
+  const [calcData, setCalcData] = useState(() => ({ left: null, right: null }))
+  const [calcError, setCalcError] = useState(() => ({ left: null, right: null }))
 
   const firstKey = selectedKeys[0] ?? null
   const firstItem = useMemo(
@@ -504,6 +614,78 @@ const Compare = () => {
 
     return () => ac.abort()
   }, [pair?.left?.key, pair?.right?.key, aiRefreshKey])
+
+  useEffect(() => {
+    setCalcData({ left: null, right: null })
+    setCalcError({ left: null, right: null })
+    setCalcLoading(false)
+  }, [pair?.left?.key, pair?.right?.key])
+
+  const canRunCompareCalculator = useMemo(() => {
+    if (!pair) return false
+    for (const side of ['left', 'right']) {
+      const p = pair[side].property
+      const a = Number(p.sqft ?? p.area ?? 0)
+      const cityGuess = pickCityForAuctionCalculator(p)
+      if (!Number.isFinite(a) || a < 1 || !String(cityGuess || '').trim()) return false
+    }
+    return true
+  }, [pair])
+
+  const showInvestorPanelCta = useMemo(() => {
+    if (calcLoading) return false
+    return Boolean(
+      calcData.left != null ||
+        calcData.right != null ||
+        calcError.left ||
+        calcError.right
+    )
+  }, [
+    calcLoading,
+    calcData.left,
+    calcData.right,
+    calcError.left,
+    calcError.right,
+  ])
+
+  const runCompareCalculator = useCallback(async () => {
+    if (!pair) return
+    setCalcLoading(true)
+    setCalcData({ left: null, right: null })
+    setCalcError({ left: null, right: null })
+
+    const leftSrc = mapAuctionCardToCalculatorSource(pair.left.property)
+    const rightSrc = mapAuctionCardToCalculatorSource(pair.right.property)
+
+    const nextErr = { left: null, right: null }
+
+    try {
+      // По очереди: два параллельных calculate-price грузят два Puppeteer — сервер часто падает (502 / ECONNRESET).
+      try {
+        const leftVal = await estimateMarketPrice(leftSrc)
+        setCalcData((prev) => ({ ...prev, left: leftVal }))
+      } catch (e) {
+        nextErr.left = e?.message || 'Не удалось рассчитать для первого объекта'
+        setCalcError((prev) => ({ ...prev, left: nextErr.left }))
+      }
+
+      try {
+        const rightVal = await estimateMarketPrice(rightSrc)
+        setCalcData((prev) => ({ ...prev, right: rightVal }))
+      } catch (e) {
+        nextErr.right = e?.message || 'Не удалось рассчитать для второго объекта'
+        setCalcError((prev) => ({ ...prev, right: nextErr.right }))
+      }
+
+      if (nextErr.left && nextErr.right) {
+        showNotification(nextErr.left, 'error')
+      } else if (nextErr.left || nextErr.right) {
+        showNotification('Расчёт выполнен частично: проверьте подсказки под колонками', 'warning')
+      }
+    } finally {
+      setCalcLoading(false)
+    }
+  }, [pair])
 
   const refreshAiAnalysis = useCallback(() => {
     setAiRefreshKey((k) => k + 1)
@@ -705,6 +887,202 @@ const Compare = () => {
                     </tbody>
                   </table>
                 </div>
+
+                <div className="compare-calculator-actions">
+                  <button
+                    type="button"
+                    className="compare-calculator-btn compare-calculator-btn--liquid compare-calculator-trigger"
+                    onClick={runCompareCalculator}
+                    disabled={calcLoading || !canRunCompareCalculator}
+                  >
+                    {calcLoading ? (
+                      <>
+                        <FiLoader size={18} className="compare-calculator-trigger-spin" aria-hidden />
+                        Расчёт…
+                      </>
+                    ) : (
+                      'Рассчитать стоимость объектов'
+                    )}
+                  </button>
+                  {!canRunCompareCalculator && (
+                    <p className="compare-calculator-hint">
+                      Для расчёта нужны площадь и понятная локация (город в поле, в адресе или в названии объявления) у
+                      обеих карточек.
+                    </p>
+                  )}
+                </div>
+
+                {(calcLoading || calcData.left || calcData.right || calcError.left || calcError.right) && (
+                  <div className="compare-calculator-results" aria-live="polite">
+                    <h3 className="compare-calculator-results-title">Оценка рынка (калькулятор)</h3>
+                    <div className="compare-table-wrap compare-calculator-results-wrap">
+                      <table className="compare-table">
+                        <thead>
+                          <tr>
+                            <th scope="col" className="compare-table-param">
+                              Показатель
+                            </th>
+                            <th scope="col" className="compare-table-col">
+                              <span className="compare-table-col-head">
+                                {pair.left.property.name || pair.left.property.title}
+                              </span>
+                            </th>
+                            <th scope="col" className="compare-table-col">
+                              <span className="compare-table-col-head">
+                                {pair.right.property.name || pair.right.property.title}
+                              </span>
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr>
+                            <th scope="row" className="compare-table-param">
+                              Рекомендуемая цена
+                            </th>
+                            <td className="compare-table-cell compare-calculator-result-cell">
+                              {calcLoading && !calcData.left ? (
+                                <span className="compare-calculator-pending">
+                                  <FiLoader size={16} className="compare-calculator-trigger-spin" aria-hidden />
+                                  Считаем…
+                                </span>
+                              ) : calcError.left ? (
+                                <span className="compare-calculator-cell-error">{calcError.left}</span>
+                              ) : (
+                                formatCalcEur(calcData.left?.recommendedPrice)
+                              )}
+                            </td>
+                            <td className="compare-table-cell compare-calculator-result-cell">
+                              {calcLoading && !calcData.right ? (
+                                <span className="compare-calculator-pending">
+                                  <FiLoader size={16} className="compare-calculator-trigger-spin" aria-hidden />
+                                  Считаем…
+                                </span>
+                              ) : calcError.right ? (
+                                <span className="compare-calculator-cell-error">{calcError.right}</span>
+                              ) : (
+                                formatCalcEur(calcData.right?.recommendedPrice)
+                              )}
+                            </td>
+                          </tr>
+                          <tr>
+                            <th scope="row" className="compare-table-param">
+                              Ориентир за м²
+                            </th>
+                            <td className="compare-table-cell">{formatCalcEur(calcData.left?.recommendedPricePerSqm)}</td>
+                            <td className="compare-table-cell">{formatCalcEur(calcData.right?.recommendedPricePerSqm)}</td>
+                          </tr>
+                          <tr>
+                            <th scope="row" className="compare-table-param">
+                              Источники данных
+                            </th>
+                            <td className="compare-table-cell compare-calculator-meta">
+                              {calcData.left?.searchParams?.sources?.length
+                                ? calcData.left.searchParams.sources.join(', ')
+                                : '—'}
+                            </td>
+                            <td className="compare-table-cell compare-calculator-meta">
+                              {calcData.right?.searchParams?.sources?.length
+                                ? calcData.right.searchParams.sources.join(', ')
+                                : '—'}
+                            </td>
+                          </tr>
+                          <tr>
+                            <th scope="row" className="compare-table-param">
+                              Примечание
+                            </th>
+                            <td className="compare-table-cell compare-calculator-note">{calcData.left?.note || '—'}</td>
+                            <td className="compare-table-cell compare-calculator-note">{calcData.right?.note || '—'}</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+
+                    <div className="compare-calculator-similar-grid">
+                      <div className="compare-calculator-similar-col">
+                        <h4 className="compare-calculator-similar-heading">Похожие объявления (слева)</h4>
+                        {calcData.left?.similarProperties?.length ? (
+                          <ul className="compare-calculator-similar-list">
+                            {calcData.left.similarProperties.slice(0, 6).map((prop, idx) => {
+                              const key = prop.link || `L-${idx}`
+                              return (
+                                <li key={key} className="compare-calculator-similar-item">
+                                  <span className="compare-calculator-similar-price">
+                                    {formatCalcEur(prop.price)}
+                                    {prop.source ? (
+                                      <span className="compare-calculator-similar-source"> · {prop.source}</span>
+                                    ) : null}
+                                  </span>
+                                  <span className="compare-calculator-similar-dims">
+                                    {prop.area ? `${prop.area} м²` : ''}
+                                    {prop.rooms != null ? `${prop.area ? ' · ' : ''}${prop.rooms} комн.` : ''}
+                                  </span>
+                                </li>
+                              )
+                            })}
+                          </ul>
+                        ) : calcData.left && !calcError.left ? (
+                          <p className="compare-calculator-similar-empty">Объявлений мало или нет</p>
+                        ) : (
+                          !calcLoading && <p className="compare-calculator-similar-empty">—</p>
+                        )}
+                      </div>
+                      <div className="compare-calculator-similar-col">
+                        <h4 className="compare-calculator-similar-heading">Похожие объявления (справа)</h4>
+                        {calcData.right?.similarProperties?.length ? (
+                          <ul className="compare-calculator-similar-list">
+                            {calcData.right.similarProperties.slice(0, 6).map((prop, idx) => {
+                              const key = prop.link || `R-${idx}`
+                              return (
+                                <li key={key} className="compare-calculator-similar-item">
+                                  <span className="compare-calculator-similar-price">
+                                    {formatCalcEur(prop.price)}
+                                    {prop.source ? (
+                                      <span className="compare-calculator-similar-source"> · {prop.source}</span>
+                                    ) : null}
+                                  </span>
+                                  <span className="compare-calculator-similar-dims">
+                                    {prop.area ? `${prop.area} м²` : ''}
+                                    {prop.rooms != null ? `${prop.area ? ' · ' : ''}${prop.rooms} комн.` : ''}
+                                  </span>
+                                </li>
+                              )
+                            })}
+                          </ul>
+                        ) : calcData.right && !calcError.right ? (
+                          <p className="compare-calculator-similar-empty">Объявлений мало или нет</p>
+                        ) : (
+                          !calcLoading && <p className="compare-calculator-similar-empty">—</p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {showInvestorPanelCta && (
+                  <section className="compare-investor-cta" aria-labelledby="compare-investor-cta-heading">
+                    <div className="compare-investor-cta-inner">
+                      <div className="compare-investor-cta-copy">
+                        <h2 id="compare-investor-cta-heading" className="compare-investor-cta-title">
+                          <FiBarChart2 className="compare-investor-cta-title-icon" aria-hidden />
+                          Умная панель инвестора
+                        </h2>
+                        <p className="compare-investor-cta-text">
+                          Сравнили котировку — загляните в панель: стратегия (аренда, перепродажа, доли),
+                          прогноз потоков и понятнее, какой объект ближе к вашим целям. Часть сценариев и
+                          сохранённая аналитика открывается по подписке — там же можно спокойно довести выбор до
+                          сделки.
+                        </p>
+                      </div>
+                      <Link
+                        to="/calculator"
+                        className="compare-investor-cta-link"
+                      >
+                        Открыть Умную панель инвестора
+                        <FiArrowRight size={18} className="compare-investor-cta-link-arrow" aria-hidden />
+                      </Link>
+                    </div>
+                  </section>
+                )}
 
                 <section className="compare-ai-section" aria-labelledby="compare-ai-heading">
                   <div className="compare-ai-head">

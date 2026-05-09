@@ -78,6 +78,7 @@ import { usePropertyFavorites } from '../context/PropertyFavoritesContext'
 import { useLayoutScrollRef } from '../context/LayoutScrollContext'
 import { UI_LANGUAGES } from '../constants/uiLanguages'
 import { isAuctionListingEnded } from '../utils/auctionReminderBounds'
+import { getPropertyDetailPath } from '../utils/propertyDetailUrl'
 import { lazyWithRetry } from '../utils/lazyWithRetry'
 import { MainPageDeferredContext } from './mainPageDeferredContext'
 import { MainPageSuspenseFallback } from '../components/MainPageSuspenseFallback'
@@ -2364,11 +2365,14 @@ function MainPage() {
     
     // Все объекты переходят на страницу объекта
     // PropertyDetailPage сама определит, какую страницу показывать (аукционную или классическую)
-    const search = isClassic ? '?classic=1' : ''
+    const path = getPropertyDetailPath(propertyId, {
+      property: propertyToNavigate,
+      classic: isClassic,
+    })
     if (propertyToNavigate) {
-      navigate(`/property/${propertyId}${search}`, { state: { property: propertyToNavigate } })
+      navigate(path, { state: { property: propertyToNavigate } })
     } else {
-      navigate(`/property/${propertyId}${search}`)
+      navigate(path)
     }
   }
 
@@ -3538,12 +3542,12 @@ function MainPage() {
                         return (
                           <a
                             key={recId}
-                            href={`/property/${recId}`}
+                            href={getPropertyDetailPath(recId, { property })}
                             className="chat-widget__recommendation-link"
                             onClick={(e) => {
                               e.preventDefault()
-                              navigate(`/property/${recId}`, { 
-                                state: { property: property }
+                              navigate(getPropertyDetailPath(recId, { property }), {
+                                state: { property: property },
                               })
                               setIsChatOpen(false)
                             }}

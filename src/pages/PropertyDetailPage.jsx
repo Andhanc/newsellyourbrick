@@ -1,5 +1,5 @@
 import { useParams, useLocation, useNavigate } from 'react-router-dom'
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { properties } from '../data/properties'
 import PropertyDetailClassic from './PropertyDetailClassic'
@@ -12,6 +12,11 @@ import {
   setPropertyEntryFrom,
 } from '../utils/propertyNavigation'
 import { normalizePropertyMediaFields } from '../utils/propertyImage'
+import PropertyDetailClassicSkeleton from './PropertyDetailClassicSkeleton'
+import {
+  normalizePropertyTypeForDetailQuery,
+  normalizePropertyTypeQueryParam,
+} from '../utils/propertyDetailUrl'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
 
@@ -47,9 +52,29 @@ const PropertyDetailPage = () => {
   const [error, setError] = useState(null)
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
 
-  // Получаем объект из state (если передан из MainPage)
-  const propertyFromState = location.state?.property
+  /** При совпадающих numeric id в properties_apartments и properties_houses API должен получить property_type. */
+  const disambigPropertyType = useMemo(() => {
+    const qs = new URLSearchParams(location.search || '')
+    const fromUrl = normalizePropertyTypeQueryParam(qs.get('property_type'))
+    if (fromUrl) return fromUrl
+    const sp = location.state?.property
+    if (sp != null && id != null && String(sp.id) === String(id)) {
+      return normalizePropertyTypeForDetailQuery(sp)
+    }
+    return ''
+  }, [location.search, location.state?.property, id])
+
+  const propertyFromState =
+    location.state?.property != null &&
+    id != null &&
+    String(location.state.property.id) === String(id)
+      ? location.state.property
+      : null
   const initializedFromStateRef = useRef(false)
+
+  useEffect(() => {
+    initializedFromStateRef.current = false
+  }, [id])
 
   useEffect(() => {
     const fromState = location.state?.from
@@ -77,13 +102,15 @@ const PropertyDetailPage = () => {
         })
         initializedFromStateRef.current = true
       }
- 
+
       // Загружаем из API (всегда загружаем актуальные данные, включая резервацию)
       if (id) {
         try {
           setIsLoading(true)
           const lang = (i18n.language || 'ru').split('-')[0]
-          const response = await fetch(`${API_BASE_URL}/properties/${id}?lang=${lang}`, {
+          const params = new URLSearchParams({ lang })
+          if (disambigPropertyType) params.set('property_type', disambigPropertyType)
+          const response = await fetch(`${API_BASE_URL}/properties/${id}?${params.toString()}`, {
             signal: abortController.signal,
           })
           if (response.ok) {
@@ -302,14 +329,10 @@ const PropertyDetailPage = () => {
       isActive = false
       abortController.abort()
     }
-  }, [id, propertyFromState, i18n.language])
+  }, [id, propertyFromState, i18n.language, disambigPropertyType])
 
-  if (isLoading) {
-    return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
-        <p>Загрузка...</p>
-      </div>
-    )
+  if (isLoading && !error) {
+    return <PropertyDetailClassicSkeleton />
   }
 
   if (error || !property) {

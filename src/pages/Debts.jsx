@@ -22,6 +22,7 @@ import {
 } from '../components/AuctionMobileListingSkeleton'
 import './Shares.css'
 import '../components/PropertyList.css'
+import { getPropertyDetailPath, auctionListingDedupeKey } from '../utils/propertyDetailUrl'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api'
 const MOBILE_BREAKPOINT = 768
@@ -365,12 +366,12 @@ const Debts = () => {
 
                       return (
                         <div
-                          key={property.id}
+                          key={auctionListingDedupeKey(property)}
                           className="property-card"
                           onClick={(e) => {
                             if (e.target.closest('button') || e.target.closest('a')) return
                             if (!ensureCanOpenProperty()) return
-                            navigate(`/property/${property.id}`, { state: { property } })
+                            navigate(getPropertyDetailPath(property.id, { property }), { state: { property } })
                           }}
                           style={{ cursor: 'pointer' }}
                         >
@@ -421,7 +422,7 @@ const Debts = () => {
                                       e.preventDefault()
                                       e.stopPropagation()
                                       if (!ensureCanOpenProperty()) return
-                                      navigate(`/property/${property.id}`, { state: { property } })
+                                      navigate(getPropertyDetailPath(property.id, { property }), { state: { property } })
                                     }}
                                     disabled={isReserved}
                                     style={{
@@ -439,7 +440,7 @@ const Debts = () => {
                                         e.preventDefault()
                                         e.stopPropagation()
                                         if (!ensureCanOpenProperty()) return
-                                        navigate(`/property/${property.id}`, { state: { property } })
+                                        navigate(getPropertyDetailPath(property.id, { property }), { state: { property } })
                                       }}
                                       disabled={isReserved}
                                       style={{

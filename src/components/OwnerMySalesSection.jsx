@@ -6,6 +6,7 @@ import { getPropertyCardImage } from '../utils/propertyImage'
 import { showToast } from './ToastContainer'
 import OwnerTestDriveRequestModal from './OwnerTestDriveRequestModal'
 import './OwnerMySalesSection.css'
+import { getPropertyDetailPath } from '../utils/propertyDetailUrl'
 
 const FALLBACK_IMG =
   'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=800&q=80'
@@ -115,15 +116,12 @@ export default function OwnerMySalesSection({ userId, apiBaseUrl }) {
   }, [userId])
 
   const openCard = (item) => {
-    navigate(`/property/${item.id}`, {
-      state: {
-        property: {
-          id: item.id,
-          property_type: item.property_type,
-          source_table: item.source_table,
-        },
-      },
-    })
+    const property = {
+      id: item.id,
+      property_type: item.property_type,
+      source_table: item.source_table,
+    }
+    navigate(getPropertyDetailPath(item.id, { property }), { state: { property } })
   }
 
   const handleCancelBooking = async (item, e) => {

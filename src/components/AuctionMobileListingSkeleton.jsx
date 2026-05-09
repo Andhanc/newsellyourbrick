@@ -14,7 +14,7 @@ export function AuctionMobileListingSkeleton({ viewMode = 'list' }) {
   const itemCount = isCard ? 6 : 4
 
   return (
-    <div className="auction-mobile-layout w-full max-w-xl mx-auto px-3 pb-2 sm:px-4" aria-busy="true">
+    <div className="auction-mobile-layout w-full max-w-none px-3 pb-2 sm:px-4" aria-busy="true">
       <div className="auction-mobile-tabs">
         <button
           type="button"

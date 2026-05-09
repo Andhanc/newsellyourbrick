@@ -318,6 +318,16 @@ const SINGLE_PAGE_SECTION_HELP = {
     ],
     recommend: 'Если не уверены, начните с «Аукцион + Продать сейчас»: это самый гибкий формат с балансом скорости и доходности.',
   },
+  calculator: {
+    title: 'Оценка рынка',
+    lead: 'Запустите калькулятор по параметрам объекта и адресу — получите ориентир по цене и похожие объявления. Суммы затем подставятся в блок цен, их можно изменить.',
+    tips: [
+      'Чем точнее адрес и район, тем ближе выборка к вашему объекту',
+      'Если мало объявлений — попробуйте «Весь город» или соседний район',
+      'Расчёт может занять до минуты: собираются данные с нескольких площадок',
+    ],
+    recommend: 'После расчёта откройте следующий шаг и при необходимости скорректируйте минимальную цену, «Продать сейчас» и старт торгов.',
+  },
   price: {
     title: 'Цена и сроки аукциона',
     lead: 'Суммы вводятся по шагам справа: сначала минимальная цена продажи, затем при необходимости «Продать сейчас», затем стартовая ставка. Слева укажите даты аукциона.',
@@ -833,6 +843,8 @@ const AddProperty = ({
   const [photosMediaIndex, setPhotosMediaIndex] = useState(0) // Индекс для карусели на странице загрузки фотографий
   const [showVerificationModal, setShowVerificationModal] = useState(false)
   const [isCalculatorModalOpen, setIsCalculatorModalOpen] = useState(false)
+  /** Ориентировочные суммы из калькулятора подставлены в поля цены; показываем подсказки на шаге расчёта и на шаге сумм */
+  const [calculatorGuidanceApplied, setCalculatorGuidanceApplied] = useState(false)
   const [showListingFeeModal, setShowListingFeeModal] = useState(false)
   const [showPromoInputInFeeModal, setShowPromoInputInFeeModal] = useState(false)
   const [listingFeePromoCode, setListingFeePromoCode] = useState('')
@@ -917,6 +929,7 @@ const AddProperty = ({
   const listingModeScrollRef = useRef(null)
   const listingModeWheelAccumulatorRef = useRef(0)
   const singlePagePriceSectionRef = useRef(null)
+  const singlePageCalculatorSectionRef = useRef(null)
   const handleResetAll = () => {
     const confirmed = window.confirm('Сбросить всю заполненную информацию? Это действие нельзя отменить.')
     if (!confirmed) return
@@ -956,6 +969,7 @@ const AddProperty = ({
       return init
     })
     clearDraft(draftKey)
+    setCalculatorGuidanceApplied(false)
     showNotification('Все поля формы очищены', 'success')
   }
 
@@ -1267,12 +1281,16 @@ const AddProperty = ({
     return null
   }, [t])
 
-  /** Минимальная цена продажи не выше цены «Продать сейчас», если обе заданы. */
+  /**
+   * Если задана цена «Продать сейчас»: минимальная цена продажи не выше этой суммы
+   * и не выше 90% от неё.
+   */
   const getMinimumSaleVsBuyNowError = useCallback((minRaw, buyNowRaw) => {
     const min = Number(removeCommas(String(minRaw ?? '')))
     const buyNow = Number(removeCommas(String(buyNowRaw ?? '')))
     if (!buyNow || buyNow <= 0 || !min || min <= 0) return null
     if (min > buyNow + 1e-9) return t('addPropertyPriceMinimumSaleExceedsBuyNow')
+    if (min > buyNow * 0.9 + 1e-9) return t('addPropertyPriceMinimumSaleExceedsBuyNowPercent')
     return null
   }, [t])
 
@@ -1711,7 +1729,7 @@ const AddProperty = ({
         }
       }
 
-      // Минимальная цена продажи не выше «Продать сейчас», если обе указаны (все аукционные режимы)
+      // Минимальная цена продажи не выше «Продать сейчас» и не выше 90% от неё (если задана)
       if (!isShare && isAuctionMode) {
         const publishMinErr = getMinimumSaleVsBuyNowError(formData.minimumSalePrice, formData.price)
         if (publishMinErr) {
@@ -3029,7 +3047,7 @@ const AddProperty = ({
     }))
     setShowListingModePicker(false)
     if (!skipStepTransition) {
-      setCurrentStep('price')
+      setCurrentStep('price-calculator')
       return
     }
 
@@ -4938,25 +4956,63 @@ const AddProperty = ({
   }
 
   const handleApplyCalculatedPrice = useCallback((recommendedPrice) => {
-    const normalized = Math.max(0, Math.round(Number(recommendedPrice) || 0))
-    if (!normalized) return
+    const rec = Math.max(0, Math.round(Number(recommendedPrice) || 0))
+    if (!rec) return
+
+    /** От рекомендации: −15% → «Продать сейчас»; от неё −10% → минимум; старт ≤30% от «Продать сейчас». */
+    const buyNowFromRec = Math.round(rec * 0.85)
+    const minSaleFromRec = Math.round(buyNowFromRec * 0.9)
+    const startingFromRec = Math.round(buyNowFromRec * 0.3)
 
     setFormData((prev) => {
-      const next = {
-        ...prev,
-        auctionStartingPrice: String(normalized)
+      const mode = prev.listingMode || 'auction'
+
+      if (mode === 'shares') {
+        return { ...prev, price: String(rec) }
+      }
+      if (mode === 'debt') {
+        return { ...prev, debtAmount: String(rec) }
       }
 
+      if (mode === 'auction_buy_now' || mode === 'debt_auction') {
+        return {
+          ...prev,
+          price: String(buyNowFromRec),
+          minimumSalePrice: String(minSaleFromRec),
+          auctionStartingPrice: String(startingFromRec)
+        }
+      }
+
+      if (mode === 'auction') {
+        return {
+          ...prev,
+          minimumSalePrice: String(minSaleFromRec),
+          auctionStartingPrice: String(startingFromRec)
+        }
+      }
+
+      const next = { ...prev, auctionStartingPrice: String(startingFromRec) }
       if (!prev.price || Number(removeCommas(String(prev.price))) <= 0) {
-        next.price = String(normalized)
+        next.price = String(buyNowFromRec || rec)
       }
-
       return next
     })
 
-    setIsCalculatorModalOpen(false)
-    showNotification('Рекомендованная цена применена к вашему объекту', 'success')
-  }, [])
+    setValidationErrors((prev) => {
+      const next = { ...prev }
+      delete next.minimumSalePrice
+      delete next.auctionStartingPrice
+      delete next.price
+      return next
+    })
+
+    // Не закрываем модалку: пользователь видит рекомендацию, похожие объявления и источники; закрытие — «Закрыть» / крестик.
+    setCalculatorGuidanceApplied(true)
+    showNotification(t('addPropertyCalculatorAppliedFromRecommended'), 'success')
+  }, [t])
+
+  /** Single-page: шаг «Оценка» — расчёт или уже введённые суммы (чтобы прогресс не блокировался) */
+  const hasPriceCalculatorStepDone = calculatorGuidanceApplied || hasPrice
 
   const singlePageSections = [
     hasType,
@@ -4968,6 +5024,7 @@ const AddProperty = ({
     hasDocuments,
     hasTestDrive,
     hasListingType,
+    hasPriceCalculatorStepDone,
     hasPrice,
   ]
   const completedSinglePageSections = singlePageSections.filter(Boolean).length
@@ -4982,6 +5039,7 @@ const AddProperty = ({
     { id: 'documents', label: 'Документы' },
     { id: 'test-drive-question', label: 'Тест-драйв' },
     { id: 'listing-type', label: 'Размещение' },
+    { id: 'price-calculator', label: 'Оценка' },
     { id: 'price', label: 'Цена' },
   ]
   const currentStepForProgress = wizardRenderStep === 'test-drive-pricing' ? 'test-drive-question' : wizardRenderStep
@@ -5000,12 +5058,14 @@ const AddProperty = ({
     'documents': hasDocuments,
     'test-drive-question': hasTestDrive,
     'listing-type': hasListingType,
+    'price-calculator': hasPriceCalculatorStepDone,
     'price': hasPrice,
   }
 
   const applyListingModeFromSinglePage = (mode) => {
     setExpandedListingModeId(null)
     setSpAuctionAmountStepIndex(0)
+    setCalculatorGuidanceApplied(false)
     setFormData((prev) => ({
       ...prev,
       listingMode: mode,
@@ -5135,8 +5195,10 @@ const AddProperty = ({
                   } else {
                     setCurrentStep('photos')
                   }
-                } else if (currentStep === 'price') {
+                } else if (currentStep === 'price-calculator') {
                   setCurrentStep('listing-type')
+                } else if (currentStep === 'price') {
+                  setCurrentStep('price-calculator')
                 } else if (currentStep === 'form') {
                   setCurrentStep('price')
                 } else {
@@ -6066,9 +6128,44 @@ const AddProperty = ({
                 )}
 
                 {hasListingType && (
-                  <section ref={singlePagePriceSectionRef} data-sp-section="price" className="sp-card sp-card--enter sp-card--price">
+                  <section
+                    ref={singlePageCalculatorSectionRef}
+                    data-sp-section="calculator"
+                    className="sp-card sp-card--enter sp-card--calculator"
+                  >
                     <header className="sp-card__head">
                       <span className="sp-card__step">Шаг 10</span>
+                      <h3 className="sp-card__title">Автоматический расчёт стоимости</h3>
+                      <p className="sp-card__lead">{SINGLE_PAGE_SECTION_HELP.calculator.lead}</p>
+                    </header>
+                    <div className="sp-calculator-embed">
+                      <PropertyCalculatorModal
+                        isOpen
+                        variant="embedded"
+                        onClose={() =>
+                          singlePagePriceSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                        }
+                        lockFields
+                        initialPropertyData={{
+                          propertyType: formData.propertyType,
+                          area: formData.area,
+                          rooms: formData.rooms,
+                          bedrooms: formData.bedrooms,
+                          city: formData.city,
+                          country: formData.country,
+                          address: formData.address,
+                          location: formData.location
+                        }}
+                        onApplyRecommendedPrice={handleApplyCalculatedPrice}
+                      />
+                    </div>
+                  </section>
+                )}
+
+                {hasListingType && (
+                  <section ref={singlePagePriceSectionRef} data-sp-section="price" className="sp-card sp-card--enter sp-card--price">
+                    <header className="sp-card__head">
+                      <span className="sp-card__step">Шаг 11</span>
                       <h3 className="sp-card__title">Цена, долги и сроки аукциона</h3>
                       <p className="sp-card__lead">{t('addPropertyPriceSectionLead')}</p>
                     </header>
@@ -6337,13 +6434,6 @@ const AddProperty = ({
                     <div className="sp-submit-row">
                       <button type="button" className="sp-btn sp-btn--primary sp-btn--wide" disabled={!hasPrice || isSubmitting} onClick={handlePriceContinue}>
                         {isSubmitting ? 'Отправка...' : 'Оплата и верификация'}
-                      </button>
-                      <button
-                        type="button"
-                        className="sp-btn sp-btn--ghost sp-btn--wide"
-                        onClick={() => setIsCalculatorModalOpen(true)}
-                      >
-                        Расчет стоимости объекта
                       </button>
                     </div>
                   </section>
@@ -9069,7 +9159,9 @@ const AddProperty = ({
             <div className="listing-mode-stage__glow listing-mode-stage__glow--left" aria-hidden="true" />
             <div className="listing-mode-stage__glow listing-mode-stage__glow--right" aria-hidden="true" />
             <div className="listing-mode-stage__hero">
-              <span className="listing-mode-stage__pill">Шаг 8 из 9</span>
+              <span className="listing-mode-stage__pill">
+                Шаг {stepFlow.findIndex((s) => s.id === 'listing-type') + 1} из {stepFlow.length}
+              </span>
               <h2>Выберите тип размещения</h2>
               <p>
                 Откройте «Инструкцию» у формата, чтобы увидеть, как проходит продажа, кому он подходит и какие у него
@@ -9140,6 +9232,50 @@ const AddProperty = ({
               >
                 <FiChevronLeft size={16} />
                 {t('addPropertyBack')}
+              </button>
+            </div>
+          </div>
+        ) : wizardRenderStep === 'price-calculator' ? (
+          <div className="add-property-price-calculator-step">
+            <div className="add-property-price-calculator-step__header">
+              <span className="add-property-price-calculator-step__eyebrow">Шаг {currentStepIndex + 1} из {stepFlow.length}</span>
+              <h2 className="add-property-price-calculator-step__title">Автоматический расчёт стоимости</h2>
+              <p className="add-property-price-calculator-step__lead">
+                Оценка по похожим объявлениям с площадок. После расчёта ориентировочные суммы можно скорректировать на следующем шаге.
+              </p>
+            </div>
+            <PropertyCalculatorModal
+              isOpen
+              variant="embedded"
+              onClose={() => setCurrentStep('listing-type')}
+              lockFields
+              initialPropertyData={{
+                propertyType: formData.propertyType,
+                area: formData.area,
+                rooms: formData.rooms,
+                bedrooms: formData.bedrooms,
+                city: formData.city,
+                country: formData.country,
+                address: formData.address,
+                location: formData.location
+              }}
+              onApplyRecommendedPrice={handleApplyCalculatedPrice}
+            />
+            <div className="property-price-actions add-property-price-calculator-step__actions">
+              <button
+                type="button"
+                className="property-price-back-btn"
+                onClick={() => setCurrentStep('listing-type')}
+              >
+                <FiChevronLeft size={16} />
+                {t('addPropertyBack')}
+              </button>
+              <button
+                type="button"
+                className="property-price-continue-btn"
+                onClick={() => setCurrentStep('price')}
+              >
+                {t('addPropertyTypeContinue')}
               </button>
             </div>
           </div>
@@ -9482,7 +9618,7 @@ const AddProperty = ({
                 <button
                   type="button"
                   className="property-price-back-btn"
-                  onClick={() => setCurrentStep('listing-type')}
+                  onClick={() => setCurrentStep('price-calculator')}
                 >
                   <FiChevronLeft size={16} />
                   {t('addPropertyBack')}
@@ -9728,7 +9864,7 @@ const AddProperty = ({
       )}
 
       <PropertyCalculatorModal
-        isOpen={isCalculatorModalOpen}
+        isOpen={isCalculatorModalOpen && wizardRenderStep !== 'price-calculator'}
         onClose={() => setIsCalculatorModalOpen(false)}
         lockFields={true}
         initialPropertyData={{

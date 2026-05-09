@@ -1164,6 +1164,8 @@
   "addPropertyPriceMinimumSaleLabel": "Precio mínimo de venta",
   "addPropertyPriceMinimumSaleRequired": "Indique el precio mínimo de venta",
   "addPropertyPriceMinimumSaleExceedsBuyNow": "El precio mínimo de venta no puede ser superior al precio «Comprar ahora»",
+  "addPropertyPriceMinimumSaleExceedsBuyNowPercent": "El precio mínimo de venta no puede superar el 90% del precio «Comprar ahora».",
+  "addPropertyCalculatorAppliedFromRecommended": "Importes rellenados según el precio recomendado (puede editarlos).",
   "addPropertyPriceSectionLead": "A la izquierda, las fechas de la subasta. A la derecha, tres importes paso a paso: primero el precio mínimo de venta, luego (según el formato) «Comprar ahora» y por último la puja inicial. Cada paso incluye una breve explicación.",
   "addPropertyPriceStepIndicator": "Importes: paso {{current}} de {{total}}",
   "addPropertyPriceStepMinTitle": "Precio mínimo de venta",

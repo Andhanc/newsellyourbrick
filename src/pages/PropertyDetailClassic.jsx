@@ -3119,7 +3119,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
             <div className="property-detail-map-mobile">
               <div className="property-detail-sidebar__map">
                 <h2 className="property-detail-sidebar__map-title">
-                  {displayProperty.location || t('locationTitle') || 'Местоположение'}
+                  {displayProperty.location || t('location') || 'Местоположение'}
                 </h2>
                 <div className="property-detail-sidebar__map-container">
                   {typeof window !== 'undefined' && (
@@ -3783,7 +3783,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
               {/* Карта */}
               <div className="property-detail-sidebar__map">
                 <h2 className="property-detail-sidebar__map-title">
-                  {displayProperty.location || t('locationTitle') || 'Местоположение'}
+                  {displayProperty.location || t('location') || 'Местоположение'}
                 </h2>
                 <div className="property-detail-sidebar__map-container">
                   {typeof window !== 'undefined' && (

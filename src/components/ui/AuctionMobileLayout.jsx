@@ -25,6 +25,7 @@ import {
 } from '@/utils/auctionReminderBounds'
 import { getPropertyCardImage } from '@/utils/propertyImage'
 import { resolveAuctionCurrentBidValue } from '../../services/auctionListCache'
+import { getPropertyDetailPath, auctionListingDedupeKey } from '../../utils/propertyDetailUrl'
 import { AUCTION_MOBILE_VIEW_STORAGE_KEY } from '../../constants/auctionMobileViewStorage'
 import '../PropertyList.css'
 import './AuctionMobileLayout.css'
@@ -61,7 +62,7 @@ export default function AuctionMobileLayout({
   }, [view])
 
   return (
-    <div className="auction-mobile-layout w-full max-w-xl mx-auto px-3 pb-2 sm:px-4">
+    <div className="auction-mobile-layout w-full max-w-none px-3 pb-2 sm:px-4">
       <div className="auction-mobile-tabs">
         <ViewTab
           active={view === 'list'}
@@ -90,7 +91,7 @@ export default function AuctionMobileLayout({
           >
             {properties.map((property) => (
               <AuctionMobileItem
-                key={property.id}
+                key={auctionListingDedupeKey(property)}
                 property={property}
                 view={view}
                 formatPrice={formatPrice}
@@ -421,7 +422,7 @@ function AuctionMobileItem({
       )
       return
     }
-    navigate(`/property/${property.id}`, { state: { property } })
+    navigate(getPropertyDetailPath(property.id, { property }), { state: { property } })
   }
 
   const openProperty = (e) => {

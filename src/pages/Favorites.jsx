@@ -10,6 +10,7 @@ import { hasDbBackedProperty } from '../utils/propertyFavoriteKey'
 import { ensureCanOpenProperty } from '../utils/propertyAccessGuard'
 import { useFavoriteAuctionItems } from '../hooks/useFavoriteAuctionItems'
 import { getPropertyCardImage } from '../utils/propertyImage'
+import { getPropertyDetailPath } from '../utils/propertyDetailUrl'
 
 const FAVORITES_CARD_SKELETON_COUNT = 4
 
@@ -69,9 +70,7 @@ const Favorites = () => {
     )
   }
 
-  const getPropertyRoute = (auction) => {
-    return `/property/${auction.id}`
-  }
+  const getPropertyRoute = (auction) => getPropertyDetailPath(auction.id, { property: auction })
 
   return (
     <div className="favorites-page">

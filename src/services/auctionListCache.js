@@ -8,6 +8,7 @@ import { getApiBaseUrlSync } from '../utils/apiConfig'
 import { fetchDedupe } from '../utils/fetchDedupe'
 import { getEffectiveAuctionEndTime } from '../utils/auctionReminderBounds'
 import { normalizePropertyMediaFields } from '../utils/propertyImage'
+import { auctionListingDedupeKey } from '../utils/propertyDetailUrl'
 
 const BID_OVERRIDES_STORAGE_KEY = 'syb_auction_bid_overrides_v1'
 
@@ -122,12 +123,11 @@ function mergeFormattedAuctionListItems(existing, incoming) {
   }
 }
 
-function dedupeAuctionListById(items) {
+function dedupeAuctionListMergedSources(items) {
   const map = new Map()
   for (const p of items) {
     if (p?.id == null) continue
-    const n = Number(p.id)
-    const key = Number.isFinite(n) ? n : String(p.id)
+    const key = auctionListingDedupeKey(p)
     const prev = map.get(key)
     map.set(key, prev ? mergeFormattedAuctionListItems(prev, p) : p)
   }
@@ -356,7 +356,7 @@ export async function fetchAuctionList() {
     }
   } catch (_) {}
 
-  const baseList = dedupeAuctionListById([
+  const baseList = dedupeAuctionListMergedSources([
     ...allTestProperties.map(p => formatPropertyForList(p, true)),
     ...allAuctionProperties.map(p => formatPropertyForList(p, true)),
     ...allNonAuctionProperties.map(p => formatPropertyForList(p, false)),
