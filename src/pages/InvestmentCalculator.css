@@ -1786,3 +1786,18 @@ select.parameter-input option {
 .calc-sub-gate-btn--ghost:hover {
   background: rgba(255, 255, 255, 0.1);
 }
+
+/* Мобильный: верхнее меню остаётся в зоне видимости при прокрутке (.app-layout — общий скролл) */
+@media (max-width: 768px) {
+  .investment-calculator-page > .new-header {
+    position: sticky;
+    top: env(safe-area-inset-top, 0px);
+    z-index: 1000;
+    /* Перекрываем глобальное mobile position: relative из MainPage.css */
+    margin: 0;
+  }
+
+  .investment-calculator-page > .new-header.new-header--menu-open {
+    z-index: 10001 !important;
+  }
+}

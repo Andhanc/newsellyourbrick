@@ -230,6 +230,10 @@ const InvestmentCalculator = () => {
     fetchMarketData();
   }, []);
 
+  useEffect(() => {
+    scrollMainTo(0, 0, 'instant')
+  }, [wizardStep]);
+
   // На странице калькулятора должен работать только один глобальный скролл (.app-layout).
   useEffect(() => {
     const appLayoutEl = document.querySelector('.app-layout');
