@@ -17,25 +17,28 @@ const ProjectCard = forwardRef(
       totalCount,
       onClick,
       isSelected,
+      /** На главном слайдере папок (≤768): иначе 421–768px даёт размах −100px и «большой воздух» не убирается padding-top. */
+      landingSliderSpread = false,
     },
     ref
   ) => {
     const middleIndex = (totalCount - 1) / 2;
     const factor = totalCount > 1 ? (index - middleIndex) / middleIndex : 0;
     const compact = typeof window !== 'undefined' ? window.innerWidth <= 420 : false;
+    const tightSpread = compact || landingSliderSpread;
     const rotation = factor * 25;
-    const translationX = factor * (compact ? 55 : 85);
-    const translationY = Math.abs(factor) * (compact ? 9 : 12);
-    const translateBaseY = compact ? -80 : -100;
-    const cardLeft = compact ? '-28px' : '-40px';
-    const cardTop = compact ? '-44px' : '-56px';
+    const translationX = factor * (tightSpread ? 55 : 85);
+    const translationY = Math.abs(factor) * (tightSpread ? 9 : 12);
+    const translateBaseY = tightSpread ? -80 : -100;
+    const cardLeft = tightSpread ? '-28px' : '-40px';
+    const cardTop = tightSpread ? '-44px' : '-56px';
 
     return (
       <div
         ref={ref}
         className={cn(
           'absolute cursor-pointer group/card',
-          compact ? 'w-14 h-20' : 'w-20 h-28',
+          tightSpread ? 'w-14 h-20' : 'w-20 h-28',
           isSelected && 'opacity-0'
         )}
         style={{
@@ -586,6 +589,7 @@ function AnimatedFolder({
                 totalCount={previewProjects.length}
                 onClick={() => handleProjectClick(project, index)}
                 isSelected={hiddenCardId === project.id}
+                landingSliderSpread={landingSliderMobile}
               />
             ))}
           </div>

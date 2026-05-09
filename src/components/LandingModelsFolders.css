@@ -39,17 +39,27 @@
 }
 
 @media (max-width: 768px) {
-  .landing-models__folders-viewport {
+  /* Небольшой зазор: веер превью выходит вверх; overflow-y: hidden иначе режет картинки. */
+  .landing-models__folders-root {
+    position: relative;
+    z-index: 1;
+  }
+
+  /* #landing-models — выше специфичность, чтобы padding не «терялся» из‑за порядка CSS в бандле */
+  #landing-models .landing-models__folders-viewport {
     overflow-x: auto;
     overflow-y: hidden;
     scroll-snap-type: x mandatory;
     scroll-padding-inline: max(14px, env(safe-area-inset-left));
     -webkit-overflow-scrolling: touch;
     scrollbar-width: none;
+    padding-top: clamp(8px, 2vw, 24px);
     padding-bottom: 0;
+    touch-action: pan-x;
+    box-sizing: border-box;
   }
 
-  .landing-models__folders-viewport::-webkit-scrollbar {
+  #landing-models .landing-models__folders-viewport::-webkit-scrollbar {
     display: none;
   }
 

@@ -408,6 +408,7 @@ export const apartmentQueries = {
       debt_third_party: propertyData.debt_third_party ? 1 : 0,
       debt_other: propertyData.debt_other ?? null,
       debt_amount: propertyData.debt_amount != null ? propertyData.debt_amount : null,
+      debt_severity: propertyData.debt_severity ?? null,
     };
     const created = await prisma.properties_apartments.create({ data });
     return { lastInsertRowid: created.id, changes: 1 };
@@ -624,6 +625,7 @@ export const houseQueries = {
       debt_third_party: propertyData.debt_third_party ? 1 : 0,
       debt_other: propertyData.debt_other ?? null,
       debt_amount: propertyData.debt_amount != null ? propertyData.debt_amount : null,
+      debt_severity: propertyData.debt_severity ?? null,
     };
     const created = await prisma.properties_houses.create({ data });
     return { lastInsertRowid: created.id, changes: 1 };
