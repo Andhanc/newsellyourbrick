@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useUser, useClerk } from '@clerk/clerk-react'
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
+import { motion, useReducedMotion } from 'framer-motion'
 import { AsYouType } from 'libphonenumber-js'
 import {
   UserRound,
@@ -318,6 +318,131 @@ function formatPhoneForDisplayByCountry(phone, countryName) {
 
 function emptyProfileForm() {
   return Object.fromEntries(PROFILE_FIELDS_META.map((f) => [f.key, '']))
+}
+
+/** Avatar URL из Clerk (OAuth может отдавать картинку только в связанном аккаунте или в legacy-поле). */
+function resolveClerkAvatarUrl(clerkUser) {
+  if (!clerkUser) return ''
+  const candidates = []
+  const push = (u) => {
+    if (typeof u === 'string' && u.trim()) candidates.push(u.trim())
+  }
+  push(clerkUser.imageUrl)
+  push(clerkUser.profileImageUrl)
+  const accounts = clerkUser.externalAccounts
+  if (Array.isArray(accounts)) {
+    for (const acc of accounts) {
+      if (!acc || typeof acc !== 'object') continue
+      push(acc.imageUrl)
+      push(acc.avatarUrl)
+      push(acc.picture)
+    }
+  }
+  return candidates[0] ?? ''
+}
+
+/** В дропдауннах профиля: макет интерфейса до прихода ответа API */
+function TestSheetSkeletonData() {
+  return (
+    <div className="test-sheet-skel test-sheet-skel--data" aria-busy="true" aria-live="polite">
+      <div className="test-sheet-skel__section">
+        <span className="buyer-cab-skel-line test-sheet-skel__fake-h4" aria-hidden />
+        <div className="test-data-panel__grid">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={`m-${String(i)}`} className="test-sheet-skel__field-shell">
+              <span className="buyer-cab-skel-line test-sheet-skel__lbl" aria-hidden />
+              <span className="buyer-cab-skel-line test-sheet-skel__inp" aria-hidden />
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="test-sheet-skel__section">
+        <span className="buyer-cab-skel-line test-sheet-skel__fake-h4 test-sheet-skel__fake-h4--narrow" aria-hidden />
+        <div className="test-data-panel__grid">
+          {Array.from({ length: 2 }).map((_, i) => (
+            <div key={`p-${String(i)}`} className="test-sheet-skel__field-shell">
+              <span className="buyer-cab-skel-line test-sheet-skel__lbl" aria-hidden />
+              <span className="buyer-cab-skel-line test-sheet-skel__inp" aria-hidden />
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function TestSheetSkeletonHistory() {
+  return (
+    <div className="test-sheet-skel test-sheet-skel--history" aria-busy="true" aria-live="polite">
+      <div className="test-sheet-skel-history-toolbar" aria-hidden>
+        <span className="buyer-cab-skel-line test-sheet-skel-history-toolbar__pill" />
+      </div>
+      {Array.from({ length: 2 }).map((_, si) => (
+        <div key={`hs-${String(si)}`} className="test-sheet-skel-history-block">
+          <div className="test-sheet-skel-history-block__head">
+            <span className="buyer-cab-skel-line test-sheet-skel-history-block__title" aria-hidden />
+            <span className="buyer-cab-skel-line test-sheet-skel-history-block__badge" aria-hidden />
+          </div>
+          <div className="test-sheet-skel-history-cards">
+            {Array.from({ length: 2 }).map((_, ci) => (
+              <div key={`hc-${String(si)}-${String(ci)}`} className="test-sheet-skel-history-card">
+                <span className="buyer-cab-skel-line test-sheet-skel-history-card__thumb" aria-hidden />
+                <div className="test-sheet-skel-history-card__text">
+                  <span className="buyer-cab-skel-line test-sheet-skel-history-card__line1" aria-hidden />
+                  <span className="buyer-cab-skel-line test-sheet-skel-history-card__line2" aria-hidden />
+                  <span className="buyer-cab-skel-line test-sheet-skel-history-card__line3" aria-hidden />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function TestSheetSkeletonSubscription() {
+  return (
+    <div className="test-sheet-skel test-sheet-skel--subscription" aria-busy="true" aria-live="polite">
+      <div className="test-sheet-skel-subs-toolbar" aria-hidden>
+        <span className="buyer-cab-skel-line test-sheet-skel-subs-toolbar__pill" />
+        <span className="buyer-cab-skel-line test-sheet-skel-subs-toolbar__pill" />
+      </div>
+      <div className="test-sheet-skel-pricing-cards">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <div key={`pc-${String(i)}`} className="test-sheet-skel-pr-card">
+            <span className="buyer-cab-skel-line test-sheet-skel-pr-card__title" aria-hidden />
+            <span className="buyer-cab-skel-line test-sheet-skel-pr-card__price" aria-hidden />
+            <span className="buyer-cab-skel-line test-sheet-skel-pr-card__feat" aria-hidden />
+            <span className="buyer-cab-skel-line test-sheet-skel-pr-card__feat test-sheet-skel-pr-card__feat--short" aria-hidden />
+            <span className="buyer-cab-skel-line test-sheet-skel-pr-card__cta" aria-hidden />
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function TestSheetSkeletonBookings() {
+  return (
+    <div className="test-sheet-skel test-sheet-skel--bookings" aria-busy="true" aria-live="polite">
+      <div className="test-booking-dropbox__list">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={`bk-${String(i)}`} className="test-booking-mini-wrap">
+            <div className="test-sheet-skel-booking" aria-hidden>
+              <span className="buyer-cab-skel-line test-sheet-skel-booking__media" />
+              <div className="test-sheet-skel-booking__body">
+                <span className="buyer-cab-skel-line test-sheet-skel-booking__badge" />
+                <span className="buyer-cab-skel-line test-sheet-skel-booking__title" />
+                <span className="buyer-cab-skel-line test-sheet-skel-booking__line" />
+                <span className="buyer-cab-skel-line test-sheet-skel-booking__line test-sheet-skel-booking__line--short" />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
 }
 
 function buildProfileFormFromRow(row, clerkUser, fallbackEmail) {
@@ -1089,12 +1214,6 @@ function TestPage() {
     if (!bookingsSheetOpen) return
     void refetchBookingsSheetRows()
   }, [bookingsSheetOpen, refetchBookingsSheetRows])
-
-  useEffect(() => {
-    if (dataSheetOpen || historySheetOpen || subscriptionSheetOpen || bookingsSheetOpen) {
-      scrollMainTo(0, 0, 'smooth')
-    }
-  }, [dataSheetOpen, historySheetOpen, subscriptionSheetOpen, bookingsSheetOpen])
 
   useEffect(() => {
     if (
@@ -1956,7 +2075,18 @@ function TestPage() {
   const reduceMotionUi = useReducedMotion()
 
   const verified = user?.primaryEmailAddress?.verification?.status === 'verified'
-  const avatarUrl = user?.imageUrl
+
+  const avatarUrl = useMemo(() => {
+    const fromClerk = resolveClerkAvatarUrl(user)
+    if (fromClerk) return fromClerk
+    try {
+      const p = getUserData()?.picture
+      if (typeof p === 'string' && p.trim()) return p.trim()
+    } catch {
+      /* ignore */
+    }
+    return ''
+  }, [user])
 
   const initials = fullName
     .split(' ')
@@ -2016,6 +2146,9 @@ function TestPage() {
     dataSheetOpen &&
     showProfileCompletionToast &&
     !readToastGuideFieldNavDone(resolvedNumericUserId)
+
+  const cabinetOverviewHiddenBehindSheet =
+    dataSheetOpen || historySheetOpen || subscriptionSheetOpen || bookingsSheetOpen
 
   return (
     <div
@@ -2151,7 +2284,12 @@ function TestPage() {
               <div className="test-hero-pro__identity">
                 <div className="test-hero-pro__avatar-wrap">
                   {avatarUrl ? (
-                    <img src={avatarUrl} alt="" className="test-hero-pro__avatar-img" />
+                    <img
+                      src={avatarUrl}
+                      alt=""
+                      className="test-hero-pro__avatar-img"
+                      referrerPolicy="no-referrer"
+                    />
                   ) : (
                     <span className="test-hero-pro__avatar-fallback" aria-hidden="true">
                       {initials || 'U'}
@@ -2407,7 +2545,7 @@ function TestPage() {
                   {t('buyerData_profileAutosaveHint')}
                 </p>
                 {dbUserLoading ? (
-                  <p className="test-data-panel__loading">{t('buyerCabinet_billingLoading')}</p>
+                  <TestSheetSkeletonData />
                 ) : !resolvedNumericUserId ? (
                   <p className="test-data-panel__hint">
                     {t('buyerData_profileNotResolved')}
@@ -2729,7 +2867,7 @@ function TestPage() {
                   </label>
                 ) : null}
                 {historyLoading ? (
-                  <p className="test-data-panel__loading">{t('buyerCabinet_billingLoading')}</p>
+                  <TestSheetSkeletonHistory />
                 ) : historySections.length === 0 ? (
                   <p className="test-history-dropbox__empty">
                     {t('buyerCabinet_historyEmpty')}
@@ -2907,7 +3045,7 @@ function TestPage() {
                   <span className="test-data-panel__toolbar-spacer" aria-hidden />
                 </div>
                 {subscriptionSheetLoading ? (
-                  <p className="test-data-panel__loading">{t('buyerCabinet_billingLoading')}</p>
+                  <TestSheetSkeletonSubscription />
                 ) : (
                   <div className="test-subscription-pricing-wrap">
                     <div className="test-subscription-pricing-scroll">
@@ -2951,7 +3089,7 @@ function TestPage() {
                   {t('buyerCabinet_bookingsSheetHint')}
                 </p>
                 {bookingsSheetLoading ? (
-                  <p className="test-data-panel__loading">{t('buyerCabinet_billingLoading')}</p>
+                  <TestSheetSkeletonBookings />
                 ) : visibleBookingsSheetRows.length === 0 ? (
                   <p className="test-history-dropbox__empty">
                     {t('buyerCabinet_bookingsEmpty')}
@@ -3134,15 +3272,13 @@ function TestPage() {
           </div>
         </section>
 
-        <AnimatePresence>
-          {!dataSheetOpen && !historySheetOpen && !subscriptionSheetOpen && !bookingsSheetOpen ? (
-            <motion.div
-              key="cabinet-overview-below"
-              className="test-page__below-hero"
-              initial={false}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.32, ease: [0.4, 0, 0.2, 1] }}
-            >
+        <div
+          className={`test-page__below-hero${
+            cabinetOverviewHiddenBehindSheet ? ' test-page__below-hero--hidden-with-sheet' : ''
+          }`}
+          aria-hidden={cabinetOverviewHiddenBehindSheet || undefined}
+          {...(cabinetOverviewHiddenBehindSheet ? { inert: '' } : {})}
+        >
               {showBuyerCabinetSkeleton ? (
                 <BuyerCabinetBelowSkeleton
                   directionsTitle={t('buyerCabinet_directionsTitle')}
@@ -3318,7 +3454,7 @@ function TestPage() {
                           setSubscriptionSheetOpen(false)
                           setBookingsSheetOpen(false)
                           setDataSheetOpen(true)
-                          scrollMainTo(0, 0, 'smooth')
+                          scrollMainTo(0, 0, 'instant')
                         }}
                       >
                         <FiFileText size={18} aria-hidden />
@@ -3336,7 +3472,7 @@ function TestPage() {
                           setSubscriptionSheetOpen(false)
                           setBookingsSheetOpen(false)
                           setDataSheetOpen(true)
-                          scrollMainTo(0, 0, 'smooth')
+                          scrollMainTo(0, 0, 'instant')
                         }}
                       >
                         <FiBookOpen size={18} aria-hidden />
@@ -3352,9 +3488,7 @@ function TestPage() {
               </div>
                 </>
               )}
-            </motion.div>
-          ) : null}
-        </AnimatePresence>
+        </div>
       </div>
 
       <PassportRecognitionModal

@@ -18,6 +18,8 @@
   isolation: isolate;
   overflow-x: clip;
   overflow-y: visible;
+  /* Браузер не «подстраивает» scroll при смене высоты (скрытие блока под героем + раскрытие панели) */
+  overflow-anchor: none;
   min-height: calc(100vh - 120px);
   padding: 28px 18px 72px;
   color: var(--test-ink);
@@ -91,6 +93,20 @@
   display: flex;
   flex-direction: column;
   gap: 22px;
+  box-sizing: border-box;
+  max-height: 12000px;
+  opacity: 1;
+  overflow: clip;
+  transition:
+    max-height 0.22s cubic-bezier(0.25, 0.82, 0.3, 1),
+    opacity 0.2s ease,
+    margin-block 0.22s cubic-bezier(0.25, 0.82, 0.3, 1);
+}
+
+@supports not (overflow: clip) {
+  .test-page__below-hero {
+    overflow: hidden;
+  }
 }
 
 /* Hero */
@@ -106,6 +122,7 @@
   box-shadow: var(--test-shadow), inset 0 1px 0 rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
+  overflow-anchor: none;
 }
 
 /* Главная: в одной строке с аватаром, выравнивание по правому краю шапки */
@@ -331,11 +348,22 @@
   border-color: rgba(10, 186, 181, 0.28);
 }
 
-/* Плавный «дропбокс» под разделами кабинета (0fr → 1fr) */
+/* Сворачиваем тем же темпом, что дропбокс (без резкого display:none — меньше скачков раскладки) */
+.test-page__below-hero--hidden-with-sheet {
+  max-height: 0 !important;
+  opacity: 0;
+  margin-top: -22px !important;
+  margin-bottom: 0 !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  pointer-events: none;
+}
+
+/* «Дропбокс» разделов: 0fr → 1fr — одна короткая кривая на всех экранах, без скачка «0 → резко» на телефоне */
 .test-data-dropbox {
   display: grid;
   grid-template-rows: 0fr;
-  transition: grid-template-rows 0.45s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: grid-template-rows 0.22s cubic-bezier(0.25, 0.82, 0.3, 1);
 }
 
 .test-data-dropbox--open {
@@ -345,6 +373,9 @@
 .test-data-dropbox__measure {
   min-height: 0;
   overflow: hidden;
+  /* Стабилизирует слой при анимации высоты */
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }
 
 .test-data-dropbox:not(.test-data-dropbox--open) .test-data-dropbox__measure {
@@ -1574,6 +1605,269 @@
   margin: 12px 0;
   font-size: 14px;
   color: var(--test-muted);
+}
+
+/* Скелетоны внутри дропдауннов /profile пока едут сетевые ответы */
+.test-sheet-skel {
+  margin: 8px 0 4px;
+  pointer-events: none;
+}
+
+.test-sheet-skel__section {
+  margin-bottom: 22px;
+}
+
+.test-sheet-skel__section:last-child {
+  margin-bottom: 0;
+}
+
+.test-sheet-skel__fake-h4 {
+  display: block;
+  height: 14px;
+  width: min(220px, 55%);
+  margin: 4px 0 14px;
+  border-radius: 8px;
+}
+
+.test-sheet-skel__fake-h4--narrow {
+  width: min(260px, 72%);
+}
+
+.test-sheet-skel__field-shell {
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(248, 250, 252, 0.9);
+  border: 1px solid rgba(15, 23, 42, 0.05);
+}
+
+.test-sheet-skel__lbl {
+  display: block;
+  height: 10px;
+  width: 42%;
+  margin-bottom: 10px;
+  border-radius: 6px;
+}
+
+.test-sheet-skel__inp {
+  display: block;
+  height: 40px;
+  width: 100%;
+  border-radius: 10px;
+}
+
+/* История */
+.test-sheet-skel-history-toolbar {
+  margin: 10px 0 6px;
+}
+
+.test-sheet-skel-history-toolbar__pill {
+  display: block;
+  height: 40px;
+  width: 100%;
+  border-radius: 12px;
+  max-width: 100%;
+}
+
+.test-sheet-skel-history-block {
+  margin-top: 18px;
+}
+
+.test-sheet-skel-history-block:first-of-type {
+  margin-top: 4px;
+}
+
+.test-sheet-skel-history-block__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.test-sheet-skel-history-block__title {
+  height: 16px;
+  width: min(140px, 42%);
+  border-radius: 8px;
+}
+
+.test-sheet-skel-history-block__badge {
+  height: 22px;
+  width: 72px;
+  border-radius: 999px;
+}
+
+.test-sheet-skel-history-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.test-sheet-skel-history-card {
+  display: flex;
+  gap: 14px;
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid rgba(15, 23, 42, 0.07);
+  background: rgba(255, 255, 255, 0.75);
+}
+
+.test-sheet-skel-history-card__thumb {
+  flex-shrink: 0;
+  width: 100px;
+  height: 78px;
+  border-radius: 10px;
+}
+
+.test-sheet-skel-history-card__text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 4px;
+}
+
+.test-sheet-skel-history-card__line1 {
+  height: 14px;
+  width: min(92%, 280px);
+  border-radius: 6px;
+}
+
+.test-sheet-skel-history-card__line2 {
+  height: 12px;
+  width: min(72%, 200px);
+  border-radius: 6px;
+}
+
+.test-sheet-skel-history-card__line3 {
+  height: 11px;
+  width: min(54%, 160px);
+  border-radius: 6px;
+}
+
+/* Подписки — три карточки */
+.test-sheet-skel-subs-toolbar {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin: 4px auto 14px;
+  flex-wrap: wrap;
+}
+
+.test-sheet-skel-subs-toolbar__pill {
+  height: 40px;
+  width: min(164px, 46vw);
+  border-radius: 999px;
+}
+
+.test-sheet-skel-pricing-cards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  align-items: stretch;
+}
+
+@media (max-width: 900px) {
+  .test-sheet-skel-pricing-cards {
+    grid-template-columns: 1fr;
+  }
+}
+
+.test-sheet-skel-pr-card {
+  padding: 18px 16px;
+  border-radius: 18px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: rgba(255, 255, 255, 0.9);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-height: 200px;
+}
+
+.test-sheet-skel-pr-card:nth-child(2) {
+  min-height: 240px;
+  box-shadow: 0 12px 32px rgba(10, 186, 181, 0.12);
+  border-color: rgba(10, 186, 181, 0.25);
+}
+
+.test-sheet-skel-pr-card__title {
+  height: 18px;
+  width: 56%;
+  border-radius: 8px;
+}
+
+.test-sheet-skel-pr-card__price {
+  height: 36px;
+  width: min(140px, 70%);
+  border-radius: 8px;
+}
+
+.test-sheet-skel-pr-card__feat {
+  height: 12px;
+  width: 88%;
+  border-radius: 6px;
+}
+
+.test-sheet-skel-pr-card__feat--short {
+  width: 62%;
+}
+
+.test-sheet-skel-pr-card__cta {
+  margin-top: auto;
+  height: 44px;
+  width: 100%;
+  border-radius: 12px;
+}
+
+/* Бронирования */
+.test-sheet-skel-booking {
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  align-items: flex-start;
+  border-radius: 16px;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: rgba(255, 255, 255, 0.92);
+  min-height: 104px;
+}
+
+.test-sheet-skel-booking__media {
+  flex-shrink: 0;
+  width: 96px;
+  height: 80px;
+  border-radius: 12px;
+}
+
+.test-sheet-skel-booking__body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 2px;
+}
+
+.test-sheet-skel-booking__badge {
+  height: 20px;
+  width: 88px;
+  border-radius: 999px;
+  align-self: flex-start;
+}
+
+.test-sheet-skel-booking__title {
+  height: 15px;
+  width: min(94%, 240px);
+  border-radius: 6px;
+}
+
+.test-sheet-skel-booking__line {
+  height: 12px;
+  width: min(82%, 200px);
+  border-radius: 6px;
+}
+
+.test-sheet-skel-booking__line--short {
+  width: min(54%, 140px);
 }
 
 .test-data-panel__grid {
@@ -3263,6 +3557,55 @@ button.test-hero-icon-tile {
   }
 }
 
+/* Крупнее текст только у трёх карточек направлений: Доли / Аукцион / Долги */
+.test-direction-card--shares .test-direction-card__eyebrow,
+.test-direction-card--auction .test-direction-card__eyebrow,
+.test-direction-card--debts .test-direction-card__eyebrow {
+  font-size: 11px;
+}
+
+@media (min-width: 640px) {
+  .test-direction-card--shares .test-direction-card__eyebrow,
+  .test-direction-card--auction .test-direction-card__eyebrow,
+  .test-direction-card--debts .test-direction-card__eyebrow {
+    font-size: 12px;
+  }
+}
+
+.test-direction-card--shares .test-direction-card__title,
+.test-direction-card--auction .test-direction-card__title,
+.test-direction-card--debts .test-direction-card__title {
+  font-size: clamp(1.88rem, 2.75vw, 2.22rem);
+}
+
+.test-direction-card--shares .test-direction-card__subtitle,
+.test-direction-card--auction .test-direction-card__subtitle,
+.test-direction-card--debts .test-direction-card__subtitle {
+  font-size: 17px;
+}
+
+@media (min-width: 640px) {
+  .test-direction-card--shares .test-direction-card__subtitle,
+  .test-direction-card--auction .test-direction-card__subtitle,
+  .test-direction-card--debts .test-direction-card__subtitle {
+    font-size: 1.125rem;
+  }
+}
+
+.test-direction-card--shares .test-direction-card__desc,
+.test-direction-card--auction .test-direction-card__desc,
+.test-direction-card--debts .test-direction-card__desc {
+  font-size: 14px;
+}
+
+@media (min-width: 640px) {
+  .test-direction-card--shares .test-direction-card__desc,
+  .test-direction-card--auction .test-direction-card__desc,
+  .test-direction-card--debts .test-direction-card__desc {
+    font-size: 0.9375rem;
+  }
+}
+
 .test-direction-card__arrow-wrap {
   display: flex;
   width: 2.75rem;
@@ -3588,6 +3931,30 @@ button.test-hero-icon-tile {
     height: 1.22rem;
     font-size: 9px;
     border-width: 1px;
+  }
+}
+
+/* Поверх общих мобильных правил — крупнее заголовки и подзаголовки у Доли / Аукцион / Долги */
+@media (max-width: 640px) {
+  .test-direction-card--shares .test-direction-card__eyebrow,
+  .test-direction-card--auction .test-direction-card__eyebrow,
+  .test-direction-card--debts .test-direction-card__eyebrow {
+    font-size: 10px;
+    letter-spacing: 0.12em;
+  }
+
+  .test-direction-card--shares .test-direction-card__title,
+  .test-direction-card--auction .test-direction-card__title,
+  .test-direction-card--debts .test-direction-card__title {
+    font-size: clamp(1.2rem, 5.5vw, 1.55rem);
+    line-height: 1.08;
+  }
+
+  .test-direction-card--shares .test-direction-card__subtitle,
+  .test-direction-card--auction .test-direction-card__subtitle,
+  .test-direction-card--debts .test-direction-card__subtitle {
+    font-size: 13px;
+    letter-spacing: -0.015em;
   }
 }
 
@@ -3941,6 +4308,18 @@ button.test-doc-row {
 
   .test-data-dropbox {
     transition: none;
+  }
+
+  .test-page__below-hero {
+    transition: none;
+  }
+
+  .test-page__below-hero--hidden-with-sheet {
+    margin-top: -22px !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    opacity: 0;
+    max-height: 0 !important;
   }
 
   .test-data-dropbox--open {
