@@ -196,3 +196,14 @@ body.auction-mobile-lock-x .new-header-spacer {
 .route-error-boundary__btn:hover {
   background: #1d4ed8;
 }
+
+/* Открыто бургер-меню (Header / MainPage): убираем плавающую кнопку AI под панелью */
+html.site-nav-drawer-open .home-auction-floats > button.ai-button,
+html.site-nav-drawer-open .shares-floats > button.ai-button,
+html.site-nav-drawer-open .ai-assistant-dock > button.ai-button,
+html.site-nav-drawer-open .property-list-header .ai-button {
+  visibility: hidden !important;
+  pointer-events: none !important;
+  opacity: 0 !important;
+  transition: opacity 0.18s ease;
+}

@@ -65,6 +65,8 @@ import { getUserData, clearUserData, isAuthenticated } from '../services/authSer
 import { syncAssistantLead } from '../services/assistantLeadService'
 import { getManagerContactButtons } from '../services/liveChatApi'
 import { NotificationsBell } from '../context/SiteNotificationsContext'
+import SiteNavDrawer from '../components/SiteNavDrawer'
+import { setSiteNavDrawerOpen } from '../utils/siteNavDrawerDocumentFlag'
 import { fetchUserById } from '../utils/usersApi'
 
 import { getApiBaseUrl, getApiBaseUrlSync } from '../utils/apiConfig'
@@ -1506,6 +1508,10 @@ function MainPage() {
     }
   }, [isMenuOpen])
 
+  useEffect(() => {
+    setSiteNavDrawerOpen(isMenuOpen)
+    return () => setSiteNavDrawerOpen(false)
+  }, [isMenuOpen])
 
   const headerLangCode = (i18n.language || 'ru').split('-')[0]
   const currentHeaderLanguage =
@@ -1565,6 +1571,43 @@ function MainPage() {
     window.addEventListener('openManagerChat', onOpenManager)
     return () => window.removeEventListener('openManagerChat', onOpenManager)
   }, [openManagerChatDock])
+
+  useEffect(() => {
+    const onOpenAI = () => {
+      setIsChatOpen(true)
+      setIsManagerChatOpen(false)
+      pauseManagerPolling()
+    }
+    window.addEventListener('openAIChat', onOpenAI)
+    return () => window.removeEventListener('openAIChat', onOpenAI)
+  }, [pauseManagerPolling])
+
+  const openDrawerLoginOrNavigate = (path, closeMenu = false) => {
+    if (!isMainSiteUserLoggedIn()) {
+      setMainLoginModalAuthEntry('header_wizard')
+      setIsLoginModalOpen(true)
+      if (closeMenu) setIsMenuOpen(false)
+      return
+    }
+    if (path === '/chat?manager=1' || String(path).startsWith('/chat?manager=')) {
+      void openManagerChatDock()
+      if (closeMenu) setIsMenuOpen(false)
+      return
+    }
+    navigate(path)
+    if (closeMenu) setIsMenuOpen(false)
+  }
+
+  const openDrawerWalletFromMenu = (closeMenu = false) => {
+    if (!isMainSiteUserLoggedIn()) {
+      setMainLoginModalAuthEntry('header_wizard')
+      setIsLoginModalOpen(true)
+      if (closeMenu) setIsMenuOpen(false)
+      return
+    }
+    navigateToWallet(navigate, location.pathname)
+    if (closeMenu) setIsMenuOpen(false)
+  }
 
   const goMapOrChatIfAuthed = (path) => {
     if (!isMainSiteUserLoggedIn()) {
@@ -2176,204 +2219,23 @@ function MainPage() {
             <span>{t('menu')}</span>
           </button>
         </div>
-        
-        {/* Модальное окно меню рендерится вне menu-wrapper */}
-        {(isMenuOpen || isMenuClosing) && (
-          <>
-            <div 
-              className={`menu-backdrop ${isMenuClosing ? 'menu-backdrop--closing' : ''}`}
-              onClick={(e) => {
-                // Закрываем меню при клике на backdrop
-                // Проверяем, что клик не по кнопке меню или самому меню
-                const menuBtn = menuRef.current?.querySelector('.new-header__menu-btn')
-                const menuDropdown = document.querySelector('.menu-dropdown')
-                
-                if (menuBtn && menuBtn.contains(e.target)) {
-                  // Клик по кнопке меню - не закрываем, кнопка сама переключит состояние
-                  return
-                }
-                
-                if (menuDropdown && menuDropdown.contains(e.target)) {
-                  // Клик по меню - не закрываем
-                  return
-                }
-                
-                // Клик по backdrop - закрываем меню с анимацией
-                setIsMenuClosing(true)
-                setTimeout(() => {
-                  setIsMenuOpen(false)
-                  setIsMenuClosing(false)
-                }, 300)
-              }}
-            />
-            <div 
-              className={`menu-dropdown ${isMenuClosing ? 'menu-dropdown--closing' : ''}`}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="menu-dropdown__content">
-                <button
-                  type="button"
-                  className="menu-dropdown__close-btn"
-                  aria-label="Закрыть меню"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    setIsMenuClosing(true)
-                    setTimeout(() => {
-                      setIsMenuOpen(false)
-                      setIsMenuClosing(false)
-                    }, 300)
-                  }}
-                >
-                  <FiX size={22} />
-                </button>
-                <div className="menu-dropdown__columns">
-                  <div className="menu-dropdown__column">
-                    <h3 className="menu-dropdown__column-title">{t('navSiteTitle')}</h3>
-                    <div className="menu-dropdown__column-items">
-                      <button 
-                        className="menu-dropdown__item"
-                        onClick={() => {
-                          navigate('/')
-                          setIsMenuOpen(false)
-                        }}
-                      >
-                        <span>{t('home')}</span>
-                      </button>
-                      <button 
-                        className="menu-dropdown__item"
-                        onClick={() => {
-                          navigate('/auction')
-                          setIsMenuOpen(false)
-                        }}
-                      >
-                        <span>{t('auction')}</span>
-                      </button>
-                      <button 
-                        className="menu-dropdown__item"
-                        onClick={() => {
-                          goMapOrChatIfAuthed('/map')
-                          setIsMenuOpen(false)
-                        }}
-                      >
-                        <span>{t('map')}</span>
-                      </button>
-                      <button 
-                        className="menu-dropdown__item"
-                        onClick={() => {
-                          navigate('/debts')
-                          setIsMenuOpen(false)
-                        }}
-                      >
-                        <span>Долги</span>
-                      </button>
-                      <button 
-                        className="menu-dropdown__item"
-                        onClick={() => {
-                          navigate('/favorites')
-                          setIsMenuOpen(false)
-                        }}
-                      >
-                        <span>{t('favorites')}</span>
-                      </button>
-                      <button 
-                        className="menu-dropdown__item"
-                        onClick={() => {
-                          navigate('/shares')
-                          setIsMenuOpen(false)
-                        }}
-                      >
-                        <span>Доли</span>
-                      </button>
-                      <button 
-                        className="menu-dropdown__item"
-                        onClick={() => {
-                          goMapOrChatIfAuthed('/chat?manager=1')
-                          setIsMenuOpen(false)
-                        }}
-                      >
-                        <span>{t('chat')}</span>
-                      </button>
-                      <button 
-                        className="menu-dropdown__item"
-                        onClick={() => {
-                          goMapOrChatIfAuthed('/bonuses')
-                          setIsMenuOpen(false)
-                        }}
-                      >
-                        <span>Бонусы</span>
-                      </button>
-                      <button 
-                        className="menu-dropdown__item"
-                        onClick={() => {
-                          goMapOrChatIfAuthed('/calculator')
-                          setIsMenuOpen(false)
-                        }}
-                      >
-                        <span>{t('calculator')}</span>
-                      </button>
-                    </div>
-                  </div>
-                  <div className="menu-dropdown__column">
-                    <h3 className="menu-dropdown__column-title">{t('profile')}</h3>
-                    <div className="menu-dropdown__column-items">
-                      {isLoggedIn ? (
-                        <>
-                          <button 
-                            className="menu-dropdown__item"
-                            onClick={() => {
-                              goMapOrChatIfAuthed('/profile')
-                              setIsMenuOpen(false)
-                            }}
-                          >
-                            <span>Профиль</span>
-                          </button>
-                          <button 
-                            className="menu-dropdown__item"
-                            onClick={() => {
-                              goWalletIfAuthed()
-                              setIsMenuOpen(false)
-                            }}
-                          >
-                            <span>Кошелек</span>
-                          </button>
-                          <button 
-                            className="menu-dropdown__item"
-                            onClick={() => {
-                              navigate('/subscriptions')
-                              setIsMenuOpen(false)
-                            }}
-                          >
-                            <span>Подписки</span>
-                          </button>
-                          <button 
-                            className="menu-dropdown__item"
-                            onClick={() => {
-                              navigate('/data')
-                              setIsMenuOpen(false)
-                            }}
-                          >
-                            <span>Данные</span>
-                          </button>
-                        </>
-                      ) : (
-                        <button 
-                          className="menu-dropdown__item"
-                          onClick={() => {
-                            setMainLoginModalAuthEntry('header_wizard')
-                            setIsLoginModalOpen(true)
-                            setIsMenuOpen(false)
-                          }}
-                        >
-                          <span>Войти</span>
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </>
-        )}
+        <SiteNavDrawer
+          menuRef={menuRef}
+          isMenuOpen={isMenuOpen}
+          isMenuClosing={isMenuClosing}
+          setIsMenuOpen={setIsMenuOpen}
+          setIsMenuClosing={setIsMenuClosing}
+          isLoggedIn={isLoggedIn}
+          isManagerChatOpen={isManagerChatOpen}
+          aiConsultantOpen={isChatOpen}
+          openLoginOrNavigate={openDrawerLoginOrNavigate}
+          openWalletFromMenu={openDrawerWalletFromMenu}
+          onOpenLoginWizard={() => {
+            setMainLoginModalAuthEntry('header_wizard')
+            setIsLoginModalOpen(true)
+            setIsMenuOpen(false)
+          }}
+        />
         </div>
 
           <div className="new-header__filters">
