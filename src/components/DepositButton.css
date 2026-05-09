@@ -228,6 +228,93 @@
   }
 }
 
+/* --- Skeleton (тот же fixed layout, что у кнопки) --- */
+
+.deposit-button--skeleton {
+  pointer-events: none;
+  cursor: default;
+}
+
+.deposit-button__glow--skeleton {
+  animation: none;
+  opacity: 0.35;
+}
+
+.deposit-button__content-wrapper--skeleton {
+  background: linear-gradient(
+    135deg,
+    rgba(10, 186, 181, 0.42),
+    rgba(8, 154, 149, 0.42)
+  );
+  border-color: rgba(255, 255, 255, 0.15);
+  box-shadow: 0 8px 32px rgba(10, 186, 181, 0.22);
+}
+
+.deposit-button__content-wrapper--skeleton::before {
+  display: none;
+}
+
+@keyframes depositButtonSkeletonShimmer {
+  0% {
+    background-position: 120% 0;
+  }
+  100% {
+    background-position: -120% 0;
+  }
+}
+
+.deposit-button__skeleton-icon,
+.deposit-button__skeleton-arrow,
+.deposit-button__skeleton-line {
+  position: relative;
+  overflow: hidden;
+  border-radius: 12px;
+  background: linear-gradient(
+    100deg,
+    rgba(255, 255, 255, 0.08) 0%,
+    rgba(255, 255, 255, 0.22) 45%,
+    rgba(255, 255, 255, 0.08) 90%
+  );
+  background-size: 240% 100%;
+  animation: depositButtonSkeletonShimmer 1.35s ease-in-out infinite;
+}
+
+.deposit-button__skeleton-icon {
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+}
+
+.deposit-button__skeleton-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+.deposit-button__skeleton-line--sm {
+  width: 52%;
+  max-width: 100px;
+  height: 11px;
+  border-radius: 6px;
+}
+
+.deposit-button__skeleton-line--lg {
+  width: 88%;
+  max-width: 160px;
+  height: 22px;
+  border-radius: 8px;
+}
+
+.deposit-button__skeleton-arrow {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+}
+
 @media (max-width: 768px) {
   .deposit-button {
     bottom: 20px !important;
@@ -262,5 +349,23 @@
     width: 28px;
     height: 28px;
     font-size: 12px;
+  }
+
+  .deposit-button__skeleton-icon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .deposit-button__skeleton-line--sm {
+    height: 10px;
+  }
+
+  .deposit-button__skeleton-line--lg {
+    height: 18px;
+  }
+
+  .deposit-button__skeleton-arrow {
+    width: 28px;
+    height: 28px;
   }
 }

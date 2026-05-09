@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { FiSearch } from 'react-icons/fi'
 import Header from '../components/Header'
 import DepositButton from '../components/DepositButton'
+import DepositButtonSkeleton from '../components/DepositButtonSkeleton'
 import { AnimatedMarqueeHero } from '../components/ui/hero-3'
 import { fetchUserDeposit } from '../utils/depositApi'
 import { fetchNumericDbUserIdForApi, getStoredNumericUserId } from '../services/authService'
@@ -78,6 +79,7 @@ const Shares = () => {
   const [compactShareCards, setCompactShareCards] = useState(false)
   const [dbUserId, setDbUserId] = useState(() => getStoredNumericUserId())
   const [userDeposit, setUserDeposit] = useState(0)
+  const [depositLoading, setDepositLoading] = useState(() => Boolean(getStoredNumericUserId()))
 
   useEffect(() => {
     const mq = window.matchMedia('(max-width: 768px)')
@@ -99,18 +101,30 @@ const Shares = () => {
   }, [])
 
   useEffect(() => {
-    if (!dbUserId) return
+    if (!dbUserId) {
+      setDepositLoading(false)
+      return
+    }
     let cancelled = false
+    setDepositLoading(true)
+
     ;(async () => {
       try {
         const deposit = await fetchUserDeposit(API_BASE, dbUserId, { ttlMs: 15000 })
-        if (!cancelled && deposit && typeof deposit.depositAmount === 'number') {
+        if (
+          !cancelled &&
+          deposit &&
+          typeof deposit.depositAmount === 'number'
+        ) {
           setUserDeposit(deposit.depositAmount || 0)
         }
       } catch {
         if (!cancelled) setUserDeposit(0)
+      } finally {
+        if (!cancelled) setDepositLoading(false)
       }
     })()
+
     return () => {
       cancelled = true
     }
@@ -275,7 +289,13 @@ const Shares = () => {
         </div>
       </main>
       <div className="shares-floats">
-        {dbUserId ? <DepositButton amount={userDeposit} /> : null}
+        {dbUserId ? (
+          depositLoading ? (
+            <DepositButtonSkeleton />
+          ) : (
+            <DepositButton amount={userDeposit} />
+          )
+        ) : null}
         <button
           type="button"
           className="ai-button"

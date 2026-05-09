@@ -6,6 +6,7 @@ import { FiSearch } from 'react-icons/fi'
 import { ShieldQuestionMark, ShieldAlert, ShieldCheck } from 'lucide-react'
 import Header from '../components/Header'
 import DepositButton from '../components/DepositButton'
+import DepositButtonSkeleton from '../components/DepositButtonSkeleton'
 import FlipCard from '../components/ui/FlipCard'
 import PropertyTimer from '../components/PropertyTimer'
 import CircularTimer from '../components/CircularTimer'
@@ -36,6 +37,7 @@ const Debts = () => {
   const [loadingDebts, setLoadingDebts] = useState(true)
   const [dbUserId, setDbUserId] = useState(() => getStoredNumericUserId())
   const [userDeposit, setUserDeposit] = useState(0)
+  const [depositLoading, setDepositLoading] = useState(() => Boolean(getStoredNumericUserId()))
   const [isMobile, setIsMobile] = useState(
     () => typeof window !== 'undefined' && window.innerWidth <= MOBILE_BREAKPOINT,
   )
@@ -80,16 +82,28 @@ const Debts = () => {
   }, [])
 
   useEffect(() => {
-    if (!dbUserId) return
+    if (!dbUserId) {
+      setDepositLoading(false)
+      return
+    }
+
     let cancelled = false
+    setDepositLoading(true)
+
     const run = async () => {
       try {
         const deposit = await fetchUserDeposit(API_BASE, dbUserId, { ttlMs: 15000 })
-        if (!cancelled && deposit && typeof deposit.depositAmount === 'number') {
+        if (
+          !cancelled &&
+          deposit &&
+          typeof deposit.depositAmount === 'number'
+        ) {
           setUserDeposit(deposit.depositAmount || 0)
         }
       } catch {
         if (!cancelled) setUserDeposit(0)
+      } finally {
+        if (!cancelled) setDepositLoading(false)
       }
     }
 
@@ -466,7 +480,13 @@ const Debts = () => {
         </div>
       </main>
       <div className="shares-floats">
-        {dbUserId ? <DepositButton amount={userDeposit} /> : null}
+        {dbUserId ? (
+          depositLoading ? (
+            <DepositButtonSkeleton />
+          ) : (
+            <DepositButton amount={userDeposit} />
+          )
+        ) : null}
         <button
           type="button"
           className="ai-button"

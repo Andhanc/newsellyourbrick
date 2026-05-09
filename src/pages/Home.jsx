@@ -10,6 +10,7 @@ import Hero from '../components/Hero'
 import PropertyList from '../components/PropertyList'
 import FAQ from '../components/FAQ'
 import DepositButton from '../components/DepositButton'
+import DepositButtonSkeleton from '../components/DepositButtonSkeleton'
 import {
   getUserData,
   isAuthenticated,
@@ -74,6 +75,7 @@ function Home() {
   const [auctionProperties, setAuctionProperties] = useState(() => getCachedList())
   const [loading, setLoading] = useState(() => !hasCachedList())
   const [userDeposit, setUserDeposit] = useState(0)
+  const [depositLoading, setDepositLoading] = useState(() => Boolean(getStoredNumericUserId()))
   const { user, isLoaded: userLoaded } = useUser()
   const { isSignedIn, isLoaded: authLoaded } = useAuth()
   const userData = getUserData()
@@ -296,31 +298,44 @@ function Home() {
 
   // Загружаем депозит пользователя
   useEffect(() => {
+    let cancelled = false
+
     const loadUserDeposit = async () => {
       if (!dbUserId) {
         // Не сбрасываем в 0 если пользователь залогинен — id ещё грузится
         if (!localStorage.getItem('isLoggedIn') || localStorage.getItem('isLoggedIn') !== 'true') {
           setUserDeposit(0)
         }
+        setDepositLoading(false)
         return
       }
-      
+
+      setDepositLoading(true)
       try {
         const API_BASE_URL = await getApiBaseUrl()
         const deposit = await fetchUserDeposit(API_BASE_URL, dbUserId, { ttlMs: 15000 })
-        if (deposit && typeof deposit.depositAmount === 'number') {
+        if (
+          !cancelled &&
+          deposit &&
+          typeof deposit.depositAmount === 'number'
+        ) {
           setUserDeposit(deposit.depositAmount || 0)
         }
       } catch (error) {
         console.error('Ошибка загрузки депозита:', error)
-        setUserDeposit(0)
+        if (!cancelled) setUserDeposit(0)
+      } finally {
+        if (!cancelled) setDepositLoading(false)
       }
     }
-    
-    loadUserDeposit()
-    const onFocus = () => loadUserDeposit()
+
+    void loadUserDeposit()
+    const onFocus = () => void loadUserDeposit()
     window.addEventListener('focus', onFocus)
-    return () => window.removeEventListener('focus', onFocus)
+    return () => {
+      cancelled = true
+      window.removeEventListener('focus', onFocus)
+    }
   }, [dbUserId])
 
   const isLoggedIn = isAuthenticated() || (user && userLoaded)
@@ -838,7 +853,12 @@ function Home() {
         className={`home-auction-floats${floatWidgetsHiddenByFooter ? ' home-auction-floats--footer-near' : ''}`}
         aria-hidden={floatWidgetsHiddenByFooter}
       >
-        {canShowDeposit() && <DepositButton amount={userDeposit} />}
+        {canShowDeposit() &&
+          (depositLoading ? (
+            <DepositButtonSkeleton />
+          ) : (
+            <DepositButton amount={userDeposit} />
+          ))}
         <button
           type="button"
           className="ai-button"
