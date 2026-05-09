@@ -5,18 +5,23 @@ import { useUser, useClerk } from '@clerk/clerk-react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { AsYouType } from 'libphonenumber-js'
 import {
+  UserRound,
+  History as LucideHistory,
+  CalendarDays,
+  Wallet,
+  Sparkles,
+  MessagesSquare,
+} from 'lucide-react'
+import {
   FiHash,
   FiShield,
-  FiDatabase,
-  FiClock,
   FiCalendar,
-  FiCreditCard,
-  FiLayers,
-  FiMessageCircle,
   FiAlertCircle,
   FiHome,
   FiHeart,
   FiMap,
+  FiMapPin,
+  FiSearch,
   FiFileText,
   FiBookOpen,
   FiArrowRight,
@@ -457,14 +462,14 @@ function buildMainCards(t) {
       title: t('buyerCabinet_cardDataTitle'),
       description: t('buyerCabinet_cardDataSubtitle'),
       to: '/data',
-      icon: FiDatabase,
+      icon: UserRound,
       accent: 'teal',
     },
     {
       title: t('buyerCabinet_cardHistoryTitle'),
       description: t('buyerCabinet_cardHistorySubtitle'),
       to: '/history',
-      icon: FiClock,
+      icon: LucideHistory,
       accent: 'ocean',
     },
     {
@@ -472,14 +477,14 @@ function buildMainCards(t) {
       description: t('buyerCabinet_cardBookingsSubtitle'),
       to: '/profile/bookings',
       sheet: 'bookings',
-      icon: FiCalendar,
+      icon: CalendarDays,
       accent: 'violet',
     },
     {
       title: t('buyerCabinet_tileDepositTitle'),
       description: t('buyerCabinet_tileDepositDescription'),
       to: '/deposit',
-      icon: FiCreditCard,
+      icon: Wallet,
       accent: 'amber',
     },
     {
@@ -487,14 +492,14 @@ function buildMainCards(t) {
       description: t('buyerCabinet_cardSubscriptionsSubtitle'),
       to: '/subscriptions',
       sheet: 'subscriptions',
-      icon: FiLayers,
+      icon: Sparkles,
       accent: 'rose',
     },
     {
       title: t('buyerCabinet_cardChatTitle'),
       description: t('buyerCabinet_cardChatSubtitle'),
       action: 'managerChat',
-      icon: FiMessageCircle,
+      icon: MessagesSquare,
       accent: 'jade',
     },
   ]
@@ -524,6 +529,21 @@ function formatDateRange(start, end, locale) {
   } catch {
     return `${start} — ${end}`
   }
+}
+
+/** Группирует элементы истории по календарному дню (уже отсортированы по дате убыв.). */
+function groupHistoryItemsByDay(items) {
+  const groups = []
+  for (const item of items) {
+    const dk = item.dayKey != null && item.dayKey !== undefined ? String(item.dayKey) : ''
+    const last = groups[groups.length - 1]
+    if (!last || last.dayKey !== dk) {
+      groups.push({ dayKey: dk, items: [item] })
+    } else {
+      last.items.push(item)
+    }
+  }
+  return groups
 }
 
 function TestPage() {
@@ -565,6 +585,7 @@ function TestPage() {
 
   const [dataSheetOpen, setDataSheetOpen] = useState(false)
   const [historySheetOpen, setHistorySheetOpen] = useState(false)
+  const [historySearchQuery, setHistorySearchQuery] = useState('')
   const [subscriptionSheetOpen, setSubscriptionSheetOpen] = useState(false)
   const [bookingsSheetOpen, setBookingsSheetOpen] = useState(false)
   const [isManagerChatOpen, setIsManagerChatOpen] = useState(false)
@@ -775,6 +796,57 @@ function TestPage() {
     return ''
   }, [])
 
+  const filteredHistorySections = useMemo(() => {
+    const q = historySearchQuery.trim().toLowerCase()
+    if (!q) return historySections
+    return historySections
+      .map((sec) => ({
+        ...sec,
+        items: sec.items.filter((item) => {
+          const hay = `${item.title || ''} ${item.subtitle || ''} ${item.location || ''}`.toLowerCase()
+          return hay.includes(q)
+        }),
+      }))
+      .filter((sec) => sec.items.length > 0)
+  }, [historySections, historySearchQuery])
+
+  const formatHistoryDayLabel = useCallback(
+    (dayKey) => {
+      if (!dayKey || !String(dayKey).trim()) {
+        return t('buyerCabinet_historyDateUnknown')
+      }
+      const d = new Date(`${dayKey}T12:00:00`)
+      if (!Number.isFinite(d.getTime())) {
+        return t('buyerCabinet_historyDateUnknown')
+      }
+      return d.toLocaleDateString(locale, {
+        weekday: 'short',
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+      })
+    },
+    [locale, t],
+  )
+
+  const historyTypeBadgeLabel = useCallback(
+    (sectionKey) => {
+      switch (sectionKey) {
+        case 'auction':
+          return t('buyerCabinet_historyBadgeAuction')
+        case 'reserve':
+          return t('buyerCabinet_historyBadgeReserve')
+        case 'shares':
+          return t('buyerCabinet_historyBadgeShares')
+        case 'bids':
+          return t('buyerCabinet_historyBadgeBids')
+        default:
+          return ''
+      }
+    },
+    [t],
+  )
+
   const handleSellObjectPromptConfirm = useCallback(async () => {
     setIsSellObjectPromptOpen(false)
     await handleSellObjectFromHistory()
@@ -808,6 +880,12 @@ function TestPage() {
       document.removeEventListener('touchstart', onPointerDownOutside)
     }
   }, [countryDropdownOpen])
+
+  useEffect(() => {
+    if (!historySheetOpen) {
+      setHistorySearchQuery('')
+    }
+  }, [historySheetOpen])
 
   useEffect(() => {
     if (!dataSheetOpen) {
@@ -2054,7 +2132,20 @@ function TestPage() {
           aria-busy={showBuyerCabinetSkeleton || undefined}
         >
           {showBuyerCabinetSkeleton ? (
-            <BuyerCabinetHeroSkeleton sectionsLabel={t('buyerCabinet_sectionsLabel')} />
+            <>
+              <div className="test-hero-pro__top-bar">
+                <Link
+                  to="/"
+                  className="test-hero-pro__home-corner"
+                  aria-label={t('buyerCabinet_home')}
+                >
+                  <span className="test-hero-pro__home-corner-glow" aria-hidden />
+                  <FiHome className="test-hero-pro__home-corner-icon" size={17} aria-hidden />
+                  <span>{t('buyerCabinet_home')}</span>
+                </Link>
+              </div>
+              <BuyerCabinetHeroSkeleton sectionsLabel={t('buyerCabinet_sectionsLabel')} />
+            </>
           ) : (
             <>
               <div className="test-hero-pro__identity">
@@ -2068,9 +2159,20 @@ function TestPage() {
                   )}
                 </div>
                 <div className="test-hero-pro__who">
-                  <h2 id="test-hero-heading" className="test-hero-pro__name">
-                    {fullName}
-                  </h2>
+                  <div className="test-hero-pro__who-head">
+                    <h2 id="test-hero-heading" className="test-hero-pro__name">
+                      {fullName}
+                    </h2>
+                    <Link
+                      to="/"
+                      className="test-hero-pro__home-corner"
+                      aria-label={t('buyerCabinet_home')}
+                    >
+                      <span className="test-hero-pro__home-corner-glow" aria-hidden />
+                      <FiHome className="test-hero-pro__home-corner-icon" size={17} aria-hidden />
+                      <span>{t('buyerCabinet_home')}</span>
+                    </Link>
+                  </div>
                   {email ? (
                     <p className="test-hero-pro__email">
                       <FiMail size={14} aria-hidden />
@@ -2094,12 +2196,6 @@ function TestPage() {
                     ) : null}
                   </div>
                 </div>
-                {isProfileFullyCompleted ? (
-                  <Link to="/" className="test-hero-pro__home-btn">
-                    <span>{t('buyerCabinet_home')}</span>
-                    <FiArrowRight size={15} aria-hidden />
-                  </Link>
-                ) : null}
               </div>
 
               <nav className="test-hero-pro__shortcuts" aria-label={t('buyerCabinet_sectionsAria')}>
@@ -2141,7 +2237,7 @@ function TestPage() {
                     const iconInner = (
                       <>
                         <span className="test-hero-icon-tile__icon">
-                          <Icon size={18} strokeWidth={2} aria-hidden />
+                          <Icon size={17} strokeWidth={1.85} aria-hidden />
                           {showHistoryCount ? (
                             <span className="test-hero-icon-tile__count-badge" aria-hidden="true">
                               {historyCount > 99 ? '99+' : historyCount}
@@ -2616,21 +2712,35 @@ function TestPage() {
                 <p className="test-data-panel__hint">
                   {t('buyerCabinet_historySheetHint')}
                 </p>
-                <div className="test-history-dropbox__summary">
-                  <span className="test-history-dropbox__summary-label">{t('buyerCabinet_historyEventsLabel')}</span>
-                  <span className="test-history-dropbox__summary-value">
-                    {historyLoading ? '…' : historyCount}
-                  </span>
-                </div>
+                {!historyLoading && historySections.length > 0 ? (
+                  <label className="test-history-dropbox__search">
+                    <FiSearch className="test-history-dropbox__search-icon" size={18} aria-hidden />
+                    <input
+                      type="search"
+                      className="test-history-dropbox__search-input"
+                      value={historySearchQuery}
+                      onChange={(e) => setHistorySearchQuery(e.target.value)}
+                      placeholder={t('buyerCabinet_historySearchPlaceholder')}
+                      aria-label={t('buyerCabinet_historySearchPlaceholder')}
+                      autoComplete="off"
+                      spellCheck={false}
+                      enterKeyHint="search"
+                    />
+                  </label>
+                ) : null}
                 {historyLoading ? (
                   <p className="test-data-panel__loading">{t('buyerCabinet_billingLoading')}</p>
                 ) : historySections.length === 0 ? (
                   <p className="test-history-dropbox__empty">
                     {t('buyerCabinet_historyEmpty')}
                   </p>
+                ) : filteredHistorySections.length === 0 ? (
+                  <p className="test-history-dropbox__empty test-history-dropbox__empty--muted">
+                    {t('buyerCabinet_historySearchNoResults')}
+                  </p>
                 ) : (
                   <div className="test-history-dropbox__scroll">
-                    {historySections.map((section) => (
+                    {filteredHistorySections.map((section) => (
                       <section
                         key={section.key}
                         className="test-history-section"
@@ -2640,70 +2750,133 @@ function TestPage() {
                           <h4 id={`hist-sec-${section.key}`} className="test-history-section__title">
                             {section.key === 'reserve' ? t('buyNowTitle') : section.title}
                           </h4>
-                          {['auction', 'reserve', 'shares'].includes(section.key) ? (
+                          {['auction', 'reserve', 'shares', 'bids'].includes(section.key) ? (
                             <span className="test-history-section__pill">
                               {section.key === 'auction'
                                 ? t('buyerCabinet_historyPillAuction')
                                 : section.key === 'reserve'
                                   ? t('buyerCabinet_historyPillReserve')
-                                  : t('buyerCabinet_historyPillShares')}
+                                  : section.key === 'shares'
+                                    ? t('buyerCabinet_historyPillShares')
+                                    : t('buyerCabinet_historyPillBids')}
                             </span>
                           ) : null}
                         </div>
-                        <div className="test-history-section__grid">
-                          {section.items.map((item) => {
-                            const isPurchasedSection = ['auction', 'reserve', 'shares'].includes(section.key)
-                            const termsText = isPurchasedSection ? historyPurchaseTermsBySection(section.key) : ''
-                            const cardBody = (
-                              <>
-                                <div className="test-history-mini-card__thumb">
-                                  <img
-                                    src={item.imageSrc}
-                                    alt=""
-                                    loading="lazy"
-                                    decoding="async"
-                                  />
-                                </div>
-                                <div className="test-history-mini-card__text">
-                                  <span className="test-history-mini-card__title">{item.title}</span>
-                                  <span className="test-history-mini-card__sub">{item.subtitle}</span>
-                                  <div className="test-history-mini-card__meta">
-                                    <span className="test-history-mini-card__meta-item">
-                                      <b>{t('buyerCabinet_amountLabel')}</b> {item.amount || '—'}
-                                    </span>
-                                    <span className="test-history-mini-card__meta-item">
-                                      <b>{t('buyerCabinet_dateLabel')}</b> {item.purchaseDate || '—'}
-                                    </span>
+                        {groupHistoryItemsByDay(section.items).map((dayGroup, dayGroupIdx) => (
+                          <div
+                            key={`${section.key}-day-${dayGroupIdx}-${dayGroup.dayKey || 'na'}`}
+                            className="test-history-day-group"
+                          >
+                            <div
+                              className="test-history-day-divider"
+                              role="separator"
+                              aria-label={formatHistoryDayLabel(dayGroup.dayKey)}
+                            >
+                              <span className="test-history-day-divider__line" aria-hidden />
+                              <time
+                                className="test-history-day-divider__label"
+                                dateTime={dayGroup.dayKey || undefined}
+                              >
+                                {formatHistoryDayLabel(dayGroup.dayKey)}
+                              </time>
+                              <span className="test-history-day-divider__line" aria-hidden />
+                            </div>
+                            <div className="test-history-section__grid">
+                              {dayGroup.items.map((item) => {
+                                const isPurchasedSection = ['auction', 'reserve', 'shares'].includes(section.key)
+                                const termsText = isPurchasedSection
+                                  ? historyPurchaseTermsBySection(section.key)
+                                  : ''
+                                const typeBadge = historyTypeBadgeLabel(section.key)
+                                const cardBody = (
+                                  <>
+                                    <div className="test-history-mini-card__body">
+                                      <div className="test-history-mini-card__thumb">
+                                        <span
+                                          className={`test-history-mini-card__type-badge test-history-mini-card__type-badge--${section.key}`}
+                                        >
+                                          {typeBadge}
+                                        </span>
+                                        <img
+                                          src={item.imageSrc}
+                                          alt=""
+                                          loading="lazy"
+                                          decoding="async"
+                                        />
+                                      </div>
+                                      <div className="test-history-mini-card__text">
+                                        <div className="test-history-mini-card__head">
+                                          <div className="test-history-mini-card__titles">
+                                            <span className="test-history-mini-card__title">{item.title}</span>
+                                            {(item.location || '').trim() ? (
+                                              <span className="test-history-mini-card__loc">
+                                                <FiMapPin
+                                                  size={14}
+                                                  className="test-history-mini-card__loc-icon"
+                                                  aria-hidden
+                                                />
+                                                <span className="test-history-mini-card__loc-text">
+                                                  {item.location}
+                                                </span>
+                                              </span>
+                                            ) : null}
+                                            {item.subtitle ? (
+                                              <span className="test-history-mini-card__sub">{item.subtitle}</span>
+                                            ) : null}
+                                          </div>
+                                          <div
+                                            className="test-history-mini-card__price"
+                                            title={`${t('buyerCabinet_amountLabel')}: ${item.amount || '—'}`}
+                                          >
+                                            <span className="test-history-mini-card__price-label">
+                                              {t('buyerCabinet_amountLabel')}
+                                            </span>
+                                            <span className="test-history-mini-card__price-value">
+                                              {item.amount || '—'}
+                                            </span>
+                                          </div>
+                                        </div>
+                                        {termsText ? (
+                                          <span className="test-history-mini-card__terms">{termsText}</span>
+                                        ) : null}
+                                        <div className="test-history-mini-card__actions">
+                                          {item.href ? (
+                                            <Link
+                                              to={item.href}
+                                              className="test-history-mini-card__action-btn test-history-mini-card__action-btn--primary"
+                                              onClick={() => setHistorySheetOpen(false)}
+                                            >
+                                              <span>{t('buyerCabinet_openProperty')}</span>
+                                              <FiArrowRight
+                                                size={16}
+                                                className="test-history-mini-card__action-chevron"
+                                                aria-hidden
+                                              />
+                                            </Link>
+                                          ) : null}
+                                          {isPurchasedSection ? (
+                                            <button
+                                              type="button"
+                                              className="test-history-mini-card__action-btn test-history-mini-card__action-btn--sell"
+                                              onClick={() => setIsSellObjectPromptOpen(true)}
+                                            >
+                                              {t('buyerCabinet_sellProperty')}
+                                            </button>
+                                          ) : null}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </>
+                                )
+                                return (
+                                  <div key={item.id} className="test-history-mini-card">
+                                    {cardBody}
                                   </div>
-                                  {termsText ? (
-                                    <span className="test-history-mini-card__terms">{termsText}</span>
-                                  ) : null}
-                                  <div className="test-history-mini-card__actions">
-                                    {item.href ? (
-                                      <Link
-                                        to={item.href}
-                                        className="test-history-mini-card__action-btn"
-                                        onClick={() => setHistorySheetOpen(false)}
-                                      >
-                                        {t('buyerCabinet_openProperty')}
-                                      </Link>
-                                    ) : null}
-                                    {isPurchasedSection ? (
-                                      <button
-                                        type="button"
-                                        className="test-history-mini-card__action-btn test-history-mini-card__action-btn--sell"
-                                        onClick={() => setIsSellObjectPromptOpen(true)}
-                                      >
-                                        {t('buyerCabinet_sellProperty')}
-                                      </button>
-                                    ) : null}
-                                  </div>
-                                </div>
-                              </>
-                            )
-                            return <div key={item.id} className="test-history-mini-card">{cardBody}</div>
-                          })}
-                        </div>
+                                )
+                              })}
+                            </div>
+                          </div>
+                        ))}
                       </section>
                     ))}
                   </div>
@@ -2852,7 +3025,7 @@ function TestPage() {
                                 count: ownerCommentNotificationsCount,
                               })}
                             >
-                              <FiBell size={14} aria-hidden />
+                              <FiBell size={19} aria-hidden />
                               <span className="test-booking-mini__owner-note-count">
                                 {ownerCommentNotificationsCount > 99
                                   ? '99+'
@@ -2887,7 +3060,7 @@ function TestPage() {
                                 />
                               ) : null}
                               <div className="test-booking-mini__media-fallback" aria-hidden>
-                                <FiHome size={22} strokeWidth={1.35} aria-hidden />
+                                <FiHome size={16} strokeWidth={1.35} aria-hidden />
                               </div>
                             </div>
                             <div className="test-booking-mini__body">
@@ -2906,20 +3079,20 @@ function TestPage() {
                               ) : null}
                               <span className="test-booking-mini__meta">
                                 <span className="test-booking-mini__meta-icon-wrap" aria-hidden>
-                                  <FiCalendar size={15} className="test-booking-mini__meta-icon" />
+                                  <FiCalendar size={14} className="test-booking-mini__meta-icon" />
                                 </span>
                                 {formatDateRange(b.start_date, b.end_date, locale)}
                               </span>
                               <span className="test-booking-mini__mobile-cta">
                                 {t('buyerBookings_cta')}
                                 <span className="test-booking-mini__mobile-cta-ring" aria-hidden>
-                                  <FiArrowRight size={15} aria-hidden />
+                                  <FiArrowRight size={12} aria-hidden />
                                 </span>
                               </span>
                             </div>
                             <div className="test-booking-mini__cta">
                               <span className="test-booking-mini__cta-label">{t('buyerBookings_cta')}</span>
-                              <FiArrowRight size={18} className="test-booking-mini__cta-arrow" aria-hidden />
+                              <FiArrowRight size={16} className="test-booking-mini__cta-arrow" aria-hidden />
                             </div>
                           </Link>
                           {canCheckIn ? (
@@ -2932,7 +3105,7 @@ function TestPage() {
                               }}
                             >
                               {t('buyerBookings_checkInCta')}
-                              <FiArrowRight size={16} aria-hidden />
+                              <FiArrowRight size={17} aria-hidden />
                             </button>
                           ) : null}
                           {canCancel ? (

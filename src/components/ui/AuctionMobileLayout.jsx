@@ -455,9 +455,6 @@ function AuctionMobileItem({
       </div>
     ) : null
 
-  /** Две кнопки в один ряд и в списке, и в сетке карточек */
-  const dualActionsRow = showBuyNow && !isAuctionListingEnded(property)
-
   const handleFavoriteClick = (e) => {
     e.preventDefault()
     e.stopPropagation()
@@ -514,6 +511,25 @@ function AuctionMobileItem({
         <div className="auction-mobile-item__media">
           <div className="auction-mobile-image-wrap">
             <img src={propertyImage} alt={propertyTitle} className="rounded-[inherit]" />
+            <button
+              ref={favoriteBtnRef}
+              type="button"
+              className={cn(
+                'auction-mobile-favorite-btn auction-mobile-favorite-btn--media',
+                isFav && 'auction-mobile-favorite-btn--active',
+              )}
+              onClick={handleFavoriteClick}
+              aria-label="favorite"
+            >
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <path
+                  d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  fill={isFav ? 'currentColor' : 'none'}
+                />
+              </svg>
+            </button>
             {isReserved && (
               <div className="auction-mobile-reserved">
                 <span className="text-lg">🔒</span>
@@ -583,8 +599,8 @@ function AuctionMobileItem({
             <div className="auction-mobile-body-circular-timer auction-mobile-body-circular-timer--overlap">
               <CircularTimer
                 endTime={property.test_timer_end_date}
-                size={62}
-                strokeWidth={5}
+                size={54}
+                strokeWidth={4}
                 originalDuration={normalizedTestTimerDuration}
                 progressKey={`auction-mobile:${property.id}`}
                 auctionEndedLabel={t('auctionCircularEndedShort')}
@@ -595,33 +611,14 @@ function AuctionMobileItem({
             <div className="auction-mobile-body-circular-timer auction-mobile-body-circular-timer--overlap">
               <CircularTimer
                 endTime={property.buy_now_completed_at}
-                size={62}
-                strokeWidth={5}
+                size={54}
+                strokeWidth={4}
                 auctionEndedLabel={t('auctionCircularEndedShort')}
               />
             </div>
           )}
           <div className="auction-mobile-head">
             <h3 className="auction-mobile-card-title">{propertyTitle}</h3>
-            <button
-              ref={favoriteBtnRef}
-              type="button"
-              className={cn(
-                'auction-mobile-favorite-btn',
-                isFav && 'auction-mobile-favorite-btn--active',
-              )}
-              onClick={handleFavoriteClick}
-              aria-label="favorite"
-            >
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                <path
-                  d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  fill={isFav ? 'currentColor' : 'none'}
-                />
-              </svg>
-            </button>
           </div>
 
           {property.location ? (
@@ -670,10 +667,7 @@ function AuctionMobileItem({
           )}
 
           <div
-            className={cn(
-              'property-actions auction-mobile-actions',
-              dualActionsRow && 'auction-mobile-actions--list-row',
-            )}
+            className={cn('property-actions auction-mobile-actions')}
             onClick={(e) => e.stopPropagation()}
           >
             {!isAuctionEndedCard ? (

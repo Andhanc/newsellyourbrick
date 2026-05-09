@@ -4,7 +4,7 @@ import { showNotification } from '../utils/toastHelper'
 import maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import { useNavigate } from 'react-router-dom'
-import { FiHeart, FiMapPin, FiChevronLeft, FiX } from 'react-icons/fi'
+import { FiHeart, FiMapPin, FiChevronLeft, FiX, FiArrowUp } from 'react-icons/fi'
 import { HiOutlineArrowsExpand } from 'react-icons/hi'
 import { getApiBaseUrl } from '../utils/apiConfig'
 import { SATELLITE_MAP_STYLE, SATELLITE_MAP_MAX_ZOOM } from '../utils/mapStyles'
@@ -13,6 +13,7 @@ import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
 import { isSiteUserSignedIn } from '../utils/siteAuthGate'
 import { usePropertyFavorites } from '../context/PropertyFavoritesContext'
 import { hasDbBackedProperty } from '../utils/propertyFavoriteKey'
+import { getMainScrollEl, getMainScrollTop, scrollMainTo } from '../utils/mainScroll'
 import './MapPage.css'
 
 const SORT_OPTIONS = [
@@ -157,6 +158,7 @@ const MapPage = () => {
   const [mapExpanded, setMapExpanded] = useState(false)
   /** Подсказка сверху карты после тапа по маркеру / «Показать» */
   const [mapOpenHintProperty, setMapOpenHintProperty] = useState(null)
+  const [showScrollToTop, setShowScrollToTop] = useState(false)
 
   const formatPrice = (n) => '$' + new Intl.NumberFormat('en-US').format(Number(n) || 0)
 
@@ -406,6 +408,30 @@ const MapPage = () => {
     }
   }, [mapExpanded])
 
+  // ─── Кнопка «вверх» на мобильных ─────────────────────────────────────────
+  useEffect(() => {
+    const el = getMainScrollEl()
+    const target = el || window
+    let raf = 0
+
+    const update = () => {
+      const y = getMainScrollTop()
+      setShowScrollToTop(y > 240)
+    }
+
+    const onScroll = () => {
+      if (raf) cancelAnimationFrame(raf)
+      raf = requestAnimationFrame(update)
+    }
+
+    update()
+    target.addEventListener('scroll', onScroll, { passive: true })
+    return () => {
+      if (raf) cancelAnimationFrame(raf)
+      target.removeEventListener('scroll', onScroll)
+    }
+  }, [])
+
   // ─── Прочие обработчики ──────────────────────────────────────────────────
   const setCardImageIndex = (id, index) => setImageIndex((prev) => ({ ...prev, [id]: index }))
 
@@ -439,7 +465,7 @@ const MapPage = () => {
 
   // ─── Рендер ──────────────────────────────────────────────────────────────
   return (
-    <div className="map-page-root">
+    <div className={`map-page-root${mapExpanded ? ' map-page-root--fs-map' : ''}`}>
       <div className="map-page-booking">
         <header className="map-page-back-bar">
           <button type="button" className="map-page-back-btn" onClick={() => navigate(-1)} aria-label="Назад">
@@ -655,6 +681,15 @@ const MapPage = () => {
           </div>
         </div>
       </div>
+
+      <button
+        type="button"
+        className={`map-scroll-top-btn ${showScrollToTop && !mapExpanded ? 'map-scroll-top-btn--visible' : ''}`}
+        onClick={() => scrollMainTo(0, 0, 'smooth')}
+        aria-label="Наверх"
+      >
+        <FiArrowUp size={24} strokeWidth={2.25} aria-hidden />
+      </button>
     </div>
   )
 }

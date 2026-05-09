@@ -8,7 +8,7 @@ import { scrollMainTo } from '@/utils/mainScroll';
 
 const sampleMediaContent = {
   video: {
-    src: 'https://videos.pexels.com/video-files/3571097/3571097-sd_540_960_25fps.mp4',
+    src: 'https://www.youtube.com/watch?v=p9sz9FtGDcE&t=2807s',
     poster:
       'https://images.unsplash.com/photo-1613490493576-7fde63acd811?q=80&w=1280&auto=format&fit=crop',
     background:

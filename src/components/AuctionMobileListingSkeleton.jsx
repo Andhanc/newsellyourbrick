@@ -76,12 +76,12 @@ function AuctionMobileSkeletonItem({ variant }) {
         <div className="auction-mobile-item__media">
           <div className="auction-mobile-image-wrap">
             <div className="auction-mobile-skeleton__media-fill" aria-hidden />
+            <span className="auction-mobile-skeleton__fav" aria-hidden />
           </div>
         </div>
         <div className="auction-mobile-item__body">
           <div className="auction-mobile-head">
             <div className="auction-mobile-skeleton__title-line" />
-            <span className="auction-mobile-skeleton__fav" aria-hidden />
           </div>
           <div className="auction-mobile-skeleton__loc" />
           {!isCard ? <div className="auction-mobile-skeleton__timer-slot" aria-hidden /> : null}
@@ -94,7 +94,7 @@ function AuctionMobileSkeletonItem({ variant }) {
             <span className="auction-mobile-skeleton__pill" />
             <span className="auction-mobile-skeleton__pill auction-mobile-skeleton__pill--grow" />
           </div>
-          <div className="property-actions auction-mobile-actions auction-mobile-actions--list-row auction-mobile-skeleton__actions">
+          <div className="property-actions auction-mobile-actions auction-mobile-skeleton__actions">
             <div className="auction-mobile-skeleton__btn" aria-hidden />
             <div className="auction-mobile-skeleton__btn auction-mobile-skeleton__btn--accent" aria-hidden />
           </div>

@@ -190,14 +190,15 @@
 }
 
 .property-search-modal__button--search {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+  background: linear-gradient(135deg, #0abab5 0%, #089a95 100%);
+  color: #ffffff;
+  box-shadow: 0 4px 16px rgba(10, 186, 181, 0.38);
 }
 
 .property-search-modal__button--search:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+  background: linear-gradient(135deg, #09ada8 0%, #078a86 100%);
+  box-shadow: 0 6px 22px rgba(8, 122, 118, 0.45);
 }
 
 .property-search-modal__button--search:active {

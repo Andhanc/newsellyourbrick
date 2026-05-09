@@ -403,6 +403,8 @@ function AnimatedFolder({
   gradient,
   linkLabel,
   linkHref,
+  /** Мобильный слайдер на лендинге: без белой карточки, крупнее 3D */
+  variant = 'default',
 }) {
   const { t } = useTranslation();
   const [isHovered, setIsHovered] = useState(false);
@@ -456,16 +458,28 @@ function AnimatedFolder({
   const isMobile = viewportWidth <= 768
   const isXs = viewportWidth <= 360
   const isSm = viewportWidth > 360 && viewportWidth <= 420
+  const landingSliderMobile = variant === 'landingSlider' && isMobile
+  const lmScale = landingSliderMobile ? 1.48 : 1
 
-  // Размеры карточки "папки" под сетку 2x2 на мобильных
-  const minWidth = isMobile ? (isXs ? 104 : isSm ? 112 : 124) : 280
-  const minHeight = isMobile ? (isXs ? 204 : isSm ? 214 : 224) : 240
+  const round = (v) => Math.round(v)
 
-  const centerW = isMobile ? (isXs ? 92 : isSm ? 98 : 112) : 172
-  const centerH = isMobile ? (isXs ? 84 : isSm ? 90 : 100) : 136
+  const minWidthBase = isMobile ? (isXs ? 104 : isSm ? 112 : 124) : 280
+  const minHeightBase = isMobile ? (isXs ? 204 : isSm ? 214 : 224) : 240
 
-  const backW = isMobile ? (isXs ? 56 : isSm ? 60 : 68) : 110
-  const backH = isMobile ? (isXs ? 40 : isSm ? 42 : 48) : 82
+  const minWidth = isMobile ? round(minWidthBase * lmScale) : minWidthBase
+  const minHeight = isMobile ? round(minHeightBase * lmScale) : minHeightBase
+
+  const centerWBase = isMobile ? (isXs ? 92 : isSm ? 98 : 112) : 172
+  const centerHBase = isMobile ? (isXs ? 84 : isSm ? 90 : 100) : 136
+
+  const centerW = isMobile ? round(centerWBase * lmScale) : centerWBase
+  const centerH = isMobile ? round(centerHBase * lmScale) : centerHBase
+
+  const backWBase = isMobile ? (isXs ? 56 : isSm ? 60 : 68) : 110
+  const backHBase = isMobile ? (isXs ? 40 : isSm ? 42 : 48) : 82
+
+  const backW = isMobile ? round(backWBase * lmScale) : backWBase
+  const backH = isMobile ? round(backHBase * lmScale) : backHBase
 
   const frontYOffset = isMobile ? Math.max(2, Math.round(4 * (backH / 96))) : 4
 
@@ -477,18 +491,26 @@ function AnimatedFolder({
     <>
       <div
         className={cn(
-          'relative flex flex-col items-center p-8 rounded-2xl cursor-pointer bg-white border border-gray-200 transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] hover:shadow-2xl hover:shadow-teal-500/20 hover:border-teal-500/40 group',
-          'justify-start',
+          'relative flex flex-col items-center rounded-2xl cursor-pointer transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] group justify-start',
+          landingSliderMobile
+            ? 'bg-transparent shadow-none outline-none ring-0 border-transparent hover:border-transparent hover:shadow-none'
+            : 'p-8 bg-white border border-gray-200 hover:shadow-2xl hover:shadow-teal-500/20 hover:border-teal-500/40',
+          !landingSliderMobile && 'p-8',
           className
         )}
         style={{
           minWidth: `${minWidth}px`,
-          minHeight: `${minHeight}px`,
-          // Tailwind `p-8` (32px) на телефонах слишком много — уменьшаем внутренний отступ
-          padding: isMobile ? (isXs ? '12px' : '13px') : '18px 16px 12px',
+          ...(landingSliderMobile
+            ? { minHeight: 'auto' }
+            : { minHeight: `${minHeight}px` }),
+          padding: landingSliderMobile
+            ? (isXs ? '8px 4px 6px' : '10px 6px 8px')
+            : isMobile
+              ? (isXs ? '12px' : '13px')
+              : '18px 16px 12px',
           perspective: '1200px',
           transform: isHovered
-            ? `scale(${isMobile ? 1.02 : 1.04}) rotate(-1.5deg)`
+            ? `scale(${isMobile ? (landingSliderMobile ? 1.03 : 1.02) : 1.04}) rotate(-1.5deg)`
             : 'scale(1) rotate(0deg)',
         }}
         onMouseEnter={() => setIsHovered(true)}
@@ -508,7 +530,7 @@ function AnimatedFolder({
           style={{
             height: `${centerH}px`,
             width: `${centerW}px`,
-            marginBottom: isMobile ? '8px' : undefined,
+            marginBottom: isMobile ? (landingSliderMobile ? '4px' : '8px') : undefined,
           }}
         >
           <div
@@ -600,38 +622,51 @@ function AnimatedFolder({
           />
         </div>
         <div className="w-full min-w-0 flex flex-col text-center mt-0">
-          <h3
-            className={cn(
-              'font-bold text-gray-900 transition-all duration-500 break-words hyphens-auto',
-              isMobile ? 'mt-1 text-[13px] leading-tight' : 'mt-0.5 text-[14px] leading-tight'
-            )}
-            style={{
-              transform: isHovered ? 'translateY(2px)' : 'translateY(0)',
-              letterSpacing: isHovered ? '-0.01em' : '0',
-            }}
-          >
-            {title}
-          </h3>
+          <div className="relative w-full">
+            {linkHref ? (
+              <a
+                href={linkHref}
+                className={cn(
+                  'absolute right-0 top-0 z-10 inline-flex items-center justify-center rounded-lg text-teal-600 hover:bg-teal-600/10 hover:text-teal-700 transition-colors',
+                  landingSliderMobile ? 'p-1' : 'p-1.5',
+                  '-mr-0.5 -mt-0.5'
+                )}
+                aria-label={linkLabel || t('folderNavigateAria')}
+              >
+                <ExternalLink
+                  className={
+                    landingSliderMobile
+                      ? 'w-[17px] h-[17px]'
+                      : 'w-[18px] h-[18px]'
+                  }
+                  strokeWidth={2.25}
+                  aria-hidden
+                />
+              </a>
+            ) : null}
+            <h3
+              className={cn(
+                'font-bold text-gray-900 transition-all duration-500 break-words hyphens-auto',
+                linkHref && 'px-7',
+                isMobile ? (landingSliderMobile ? 'mt-1.5 text-[14px] leading-snug' : 'mt-1 text-[13px] leading-tight') : 'mt-0.5 text-[14px] leading-tight'
+              )}
+              style={{
+                transform: isHovered ? 'translateY(2px)' : 'translateY(0)',
+                letterSpacing: isHovered ? '-0.01em' : '0',
+              }}
+            >
+              {title}
+            </h3>
+          </div>
           <p
             className={cn(
               'font-medium text-gray-500 transition-all duration-500',
-              isMobile ? 'text-[11px] mt-0.5' : 'text-[12px] mt-0.5'
+              isMobile ? (landingSliderMobile ? 'text-[12px] mt-1' : 'text-[11px] mt-0.5') : 'text-[12px] mt-0.5'
             )}
             style={{ opacity: isHovered ? 0.8 : 1 }}
           >
             {t('folderDirectionsCount', { count: projects.length })}
           </p>
-          {linkLabel && linkHref && (
-            <a
-              href={linkHref}
-              className={cn(
-                'inline-block font-semibold text-teal-600 hover:text-teal-700 transition-colors break-words',
-                isMobile ? 'mt-1 text-[11px]' : 'mt-1 text-sm leading-snug'
-              )}
-            >
-              {linkLabel} →
-            </a>
-          )}
           <div
             className={cn(
               'mt-1 flex justify-center items-center gap-1.5 font-semibold uppercase tracking-wide text-gray-400 transition-all duration-500 shrink-0',

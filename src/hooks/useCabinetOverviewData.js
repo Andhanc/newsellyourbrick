@@ -87,6 +87,22 @@ function firstPhotoFromProperty(prop) {
   return getPropertyCardImage(prop, null)
 }
 
+function pickLocationFromProperty(prop) {
+  if (!prop || typeof prop !== 'object') return ''
+  return String(prop.location || prop.address || '').trim()
+}
+
+/** Ключ календарного дня в локальной зоне (группировка в UI). */
+function dayKeyFromRawDate(raw) {
+  if (!raw) return ''
+  const d = new Date(raw)
+  if (!Number.isFinite(d.getTime())) return ''
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
 /** Для обзора кабинета: без подписки и пустой plan_key считаем Starter (не Pro). */
 export function normalizeSubscriptionPlanVisual(sub) {
   if (!sub) return 'starter'
@@ -152,6 +168,7 @@ function buildHistoryData(winners, reservations, shares, bidsRaw) {
     const pid = winner.property_id ?? prop.id
     const img = firstPhotoFromProperty(prop) || HISTORY_THUMB_PLACEHOLDER
     const href = pid != null ? `/property/${pid}` : null
+    const loc = pickLocationFromProperty(prop)
     events.push({
       sort,
       id: `aw-${winner.id}`,
@@ -168,6 +185,8 @@ function buildHistoryData(winners, reservations, shares, bidsRaw) {
       imageSrc: img,
       href,
       sort,
+      location: loc,
+      dayKey: dayKeyFromRawDate(date),
     })
   }
 
@@ -181,6 +200,7 @@ function buildHistoryData(winners, reservations, shares, bidsRaw) {
     const pid = row.billing?.property_id
     const img = sharePurchaseImageSrc(row.property_image)
     const href = pid != null ? `/property/${pid}` : null
+    const loc = String(row.property_location || row.property_address || '').trim()
     events.push({
       sort,
       id: `rv-${row.id ?? row.dedupe_key}`,
@@ -197,13 +217,15 @@ function buildHistoryData(winners, reservations, shares, bidsRaw) {
       imageSrc: img,
       href,
       sort,
+      location: loc,
+      dayKey: dayKeyFromRawDate(date),
     })
   }
 
   const sArr = Array.isArray(shares) ? shares : []
   for (const row of sArr) {
     const title = row.property_title || 'Покупка доли'
-    const date = row.paid_at || row.created_at
+    const date = row.purchase_date || row.paid_at || row.created_at
     const sort = new Date(date || 0).getTime()
     const cur = (row.currency || 'EUR').toString().toUpperCase()
     const line =
@@ -217,6 +239,7 @@ function buildHistoryData(winners, reservations, shares, bidsRaw) {
     const pid = row.property_id
     const href =
       pid != null ? `/shares/${pt}-${pid}` : null
+    const loc = String(row.property_location || '').trim()
     events.push({
       sort,
       id: `sp-${row.id}`,
@@ -233,6 +256,8 @@ function buildHistoryData(winners, reservations, shares, bidsRaw) {
       imageSrc: img,
       href,
       sort,
+      location: loc,
+      dayKey: dayKeyFromRawDate(date),
     })
   }
 
@@ -252,6 +277,8 @@ function buildHistoryData(winners, reservations, shares, bidsRaw) {
     const sort = new Date(latest.created_at).getTime()
     const img = firstPhotoFromProperty(prop) || HISTORY_THUMB_PLACEHOLDER
     const href = `/property/${pid}`
+    const loc = pickLocationFromProperty(prop)
+    const bidDate = latest.created_at
     events.push({
       sort,
       id: `bid-${pid}`,
@@ -262,12 +289,14 @@ function buildHistoryData(winners, reservations, shares, bidsRaw) {
     sectionBids.push({
       id: `bid-${pid}`,
       title,
-      subtitle: `${formatMoney(latest.bid_amount, latest.currency)} · ${formatShortDate(latest.created_at)}`,
+      subtitle: 'Ставка в аукционе',
       amount: formatMoney(latest.bid_amount, latest.currency),
       purchaseDate: formatShortDate(latest.created_at),
       imageSrc: img,
       href,
       sort,
+      location: loc,
+      dayKey: dayKeyFromRawDate(bidDate),
     })
   }
 

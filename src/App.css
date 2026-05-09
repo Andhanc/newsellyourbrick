@@ -121,6 +121,12 @@ body.auction-mobile-lock-x {
   overflow-x: hidden;
 }
 
+/* Мобильный аукцион: контент не должен прятаться под фиксированным хедером */
+html.auction-mobile-lock-x .new-header-spacer,
+body.auction-mobile-lock-x .new-header-spacer {
+  height: calc(104px + env(safe-area-inset-top, 0px));
+}
+
 @supports (overflow: clip) {
   html.auction-mobile-lock-x,
   body.auction-mobile-lock-x {

@@ -53,7 +53,7 @@ import {
   PiWarehouse,
 } from 'react-icons/pi'
 import PropertySearchBlock from '../components/PropertySearchBlock'
-import AnimatedFolder from '../components/ui/3d-folder'
+import LandingModelsFolders from '../components/LandingModelsFolders'
 import { FrostedGlassCard } from '../components/ui/interactive-frosted-glass-card'
 import { showToast } from '../components/ToastContainer'
 import { showNotification } from '../utils/toastHelper'
@@ -390,16 +390,13 @@ function MainPage() {
   const [isLanguageOpen, setIsLanguageOpen] = useState(false)
   const [propertyMode, setPropertyMode] = useState('buy') // 'rent' для аренды, 'buy' для покупки
   const [activeNav, setActiveNav] = useState('home')
-  const [contactForm, setContactForm] = useState({
-    email: '',
-    fullName: '',
-    message: '',
-  })
   const [isChatOpen, setIsChatOpen] = useState(false)
   const [isManagerChatOpen, setIsManagerChatOpen] = useState(false)
   const [managerChatInput, setManagerChatInput] = useState('')
   const [aiAssistantHiddenByFooter, setAiAssistantHiddenByFooter] = useState(false)
   const layoutScrollRef = useLayoutScrollRef()
+  /** Совпадает с hero @media (max-width: 768px): в ряд две CTA — короткая подпись на обеих */
+  const [isHeroCtaAdaptive, setIsHeroCtaAdaptive] = useState(false)
   const [chatMessages, setChatMessages] = useState([])
   const [chatInput, setChatInput] = useState('')
   const [isLoadingAI, setIsLoadingAI] = useState(false)
@@ -472,6 +469,14 @@ function MainPage() {
     pauseManagerPolling,
     sendManagerMessage,
   } = useManagerLiveChat(getChatUserId, t)
+
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 768px)')
+    const update = () => setIsHeroCtaAdaptive(mq.matches)
+    update()
+    mq.addEventListener('change', update)
+    return () => mq.removeEventListener('change', update)
+  }, [])
 
   // Загружаем историю чата из localStorage при монтировании компонента или изменении пользователя
   const lastChatUserIdRef = useRef(null)
@@ -1843,24 +1848,6 @@ function MainPage() {
     setIsLanguageOpen(false)
   }
 
-  const handleContactFormChange = (e) => {
-    const { name, value } = e.target
-    setContactForm((prev) => ({
-      ...prev,
-      [name]: value,
-    }))
-  }
-
-  const handleContactFormSubmit = (e) => {
-    e.preventDefault()
-    setContactForm({
-      email: '',
-      fullName: '',
-      message: '',
-    })
-    showNotification(t('thankYouMessage'))
-  }
-
   const toggleChat = () => {
     setIsChatOpen((prev) => {
       const next = !prev
@@ -3061,6 +3048,7 @@ function MainPage() {
       </header>
 
         <div className="hero-section__inner">
+        <div className="hero-section__col1">
         <div className="hero-section__content">
           {/* Старый хедер для мобильной версии */}
           <header className="header">
@@ -3319,26 +3307,17 @@ function MainPage() {
               </button>
             </div>
           </header>
+        </div>
 
-          {/* Hero headline — Saleyourbrick */}
+          <p className="hero-headline__brand hero-headline__brand--mobile">Saleyourbrick</p>
+
           <div className="hero-headline">
             <span className="hero-headline__accent" aria-hidden="true" />
-            <p className="hero-headline__brand">Saleyourbrick</p>
+            <p className="hero-headline__brand hero-headline__brand--desktop">Saleyourbrick</p>
             <h1 className="hero-headline__title">{t('heroTitle')}</h1>
             <p className="hero-headline__subtitle">
               {t('heroSubtitle')}
             </p>
-            <a
-              href="#landing-models"
-              className="hero-headline__cta"
-              onClick={(e) => {
-                e.preventDefault()
-                document.getElementById('landing-models')?.scrollIntoView({ behavior: 'smooth' })
-              }}
-            >
-              {t('heroCta')}
-              <FiArrowRight size={18} aria-hidden="true" />
-            </a>
           </div>
         </div>
 
@@ -3368,7 +3347,6 @@ function MainPage() {
             </div>
           </section>
 
-          {/* CTA-карточки справа на фото hero (glassmorphism + 3D tilt) */}
           <div className="hero-section__cta">
             <FrostedGlassCard
               variant="investor"
@@ -3381,7 +3359,7 @@ function MainPage() {
             <FrostedGlassCard
               variant="seller"
               title={t('becomeSeller')}
-              buttonText={t('listProperty')}
+              buttonText={isHeroCtaAdaptive ? t('startBtn') : t('listProperty')}
               onButtonClick={handleHeroSellerCardClick}
             >
               {t('sellerCardText')}
@@ -3394,22 +3372,16 @@ function MainPage() {
       <section id="landing-models" className="landing-models">
         <div className="landing-models__container">
           <h2 className="landing-models__title">
-            {t('landingModelsTitle')}
+            <span className="landing-models__title-mark">
+              <span className="landing-models__title-mark-text">{t('landingModelsTitleMark')}</span>
+            </span>{' '}
+            {t('landingModelsTitleRest')}
           </h2>
           <p className="landing-models__subtitle">{t('landingModelsSubtitle')}</p>
-          <div className="landing-models__grid landing-models__grid--folders">
-            {landingFolderData.map((folder) => (
-              <AnimatedFolder
-                key={folder.title}
-                title={folder.title}
-                projects={folder.projects}
-                gradient={folder.gradient}
-                linkLabel={folder.linkLabel}
-                linkHref={folder.linkHref}
-                className="landing-models__folder"
-              />
-            ))}
-          </div>
+          <LandingModelsFolders
+            folders={landingFolderData}
+            ariaLabel={t('landingFoldersCarouselAria')}
+          />
         </div>
       </section>
 
@@ -3441,9 +3413,6 @@ function MainPage() {
           showPropertyAuthRequiredToast,
           landingStatsRef,
           statsScrollProgress,
-          contactForm,
-          handleContactFormChange,
-          handleContactFormSubmit,
           getPropertyTypes,
           activeCategory,
           handleCategoryClick,

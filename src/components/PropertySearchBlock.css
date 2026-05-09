@@ -88,26 +88,56 @@
   }
 
   .property-search-block__content {
-    flex-direction: column;
-    text-align: center;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    grid-template-areas:
+      'icon title'
+      'desc desc'
+      'btn btn';
+    column-gap: 12px;
+    row-gap: 14px;
+    align-items: center;
     padding: 22px 20px;
-    gap: 20px;
+    text-align: center;
+  }
+
+  /* h2 и абзац участвуют в сетке как прямые дети */
+  .property-search-block__text {
+    display: contents;
   }
 
   .property-search-block__icon {
-    width: 64px;
-    height: 64px;
+    grid-area: icon;
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    box-shadow: 0 4px 14px rgba(10, 186, 181, 0.35);
+    justify-self: end;
+    align-self: center;
+  }
+
+  .property-search-block__icon svg {
+    width: 20px !important;
+    height: 20px !important;
   }
 
   .property-search-block__title {
-    font-size: 20px;
+    grid-area: title;
+    font-size: clamp(17px, 4.5vw, 20px);
+    margin: 0;
+    text-align: left;
+    line-height: 1.25;
+    align-self: center;
   }
 
   .property-search-block__description {
+    grid-area: desc;
     font-size: 13px;
+    text-align: center;
   }
 
   .property-search-block__button {
+    grid-area: btn;
     width: 100%;
     justify-content: center;
     padding: 12px 20px;

@@ -283,7 +283,7 @@
 
 @media (max-width: 768px) {
   .hero {
-    padding: 32px 12px;
+    padding: 20px 12px;
   }
 
   /* Три блока в один ряд, все видны сразу, без слайд-бара */
@@ -291,7 +291,7 @@
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 10px;
-    margin-bottom: 32px;
+    margin-bottom: 14px;
   }
 
   .hero-feature-card {
@@ -338,12 +338,12 @@
 
 @media (max-width: 480px) {
   .hero {
-    padding: 24px 8px;
+    padding: 16px 8px;
   }
 
   .hero-features {
     gap: 6px;
-    margin-bottom: 24px;
+    margin-bottom: 12px;
   }
 
   .hero-feature-image {

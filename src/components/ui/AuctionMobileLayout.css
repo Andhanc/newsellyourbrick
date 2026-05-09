@@ -196,11 +196,11 @@
   align-items: start;
 }
 
-/* Сетка: фото 4:3 — ближе к стандартным listing-карточкам */
+/* Сетка «Карточки»: превью 3:2 — ниже карточка на телефоне, без «вытянутого» 4:3 */
 .auction-mobile-item--card .auction-mobile-item__media {
   width: 100%;
-  aspect-ratio: 4 / 3;
-  min-height: 112px;
+  aspect-ratio: 3 / 2;
+  min-height: 96px;
   max-height: none;
   flex-shrink: 0;
   border-radius: var(--am-radius) var(--am-radius) 0 0;
@@ -583,6 +583,10 @@
   margin: 0 0 6px;
 }
 
+.auction-mobile-item--card .auction-mobile-body-timer {
+  margin: 0 0 4px;
+}
+
 /* Круглый таймер в режиме «Карточки»: под фото, над заголовком (как зелёная полоса на десктопе) */
 .auction-mobile-body-circular-timer {
   display: flex;
@@ -592,10 +596,10 @@
   pointer-events: none;
 }
 
-/* Чуть крупнее и с заходом на нижний край превью (только сетка «Карточки») */
+/* Заход на нижний край превью (только сетка «Карточки») — поджато под более низкое 3:2 */
 .auction-mobile-item--card .auction-mobile-body-circular-timer--overlap {
-  margin-top: -20px;
-  margin-bottom: 4px;
+  margin-top: -14px;
+  margin-bottom: 2px;
   position: relative;
   z-index: 4;
 }
@@ -759,25 +763,25 @@
 }
 
 .auction-mobile-item--card .auction-mobile-item__body {
-  padding: 10px 10px 11px;
+  padding: 8px 8px 9px;
   flex: 1;
 }
 
 .auction-mobile-item--card .auction-mobile-head {
-  margin-bottom: 3px;
+  margin-bottom: 2px;
 }
 
 .auction-mobile-item--card .auction-mobile-card-title {
-  font-size: 12.5px;
-  line-height: 1.28;
+  font-size: 12px;
+  line-height: 1.25;
   -webkit-line-clamp: 2;
 }
 
 .auction-mobile-item--card .auction-mobile-loc {
-  margin-bottom: 5px;
+  margin-bottom: 4px;
   font-size: 10px;
   align-items: flex-start;
-  min-height: 2.7em;
+  min-height: 2.35em;
 }
 
 .auction-mobile-item--card .auction-mobile-loc span {
@@ -788,18 +792,18 @@
 }
 
 .auction-mobile-item--card .auction-mobile-price-row {
-  margin-bottom: 6px;
-  padding: 6px 8px;
+  margin-bottom: 5px;
+  padding: 5px 7px;
 }
 
 .auction-mobile-item--card .auction-mobile-price-row__value {
-  font-size: 15px;
+  font-size: 14px;
 }
 
 .auction-mobile-item--card .auction-mobile-meta {
-  margin-bottom: 5px;
-  font-size: 10px;
-  gap: 4px;
+  margin-bottom: 4px;
+  font-size: 9.5px;
+  gap: 3px;
   flex-wrap: nowrap;
   justify-content: center;
   overflow: visible;
@@ -821,16 +825,21 @@
 
 .auction-mobile-item--card .auction-mobile-actions.property-actions {
   margin-top: auto;
-  padding-top: 4px;
-  gap: 6px;
+  padding-top: 3px;
+  gap: 5px;
 }
 
-.auction-mobile-item--card .auction-mobile-favorite-btn {
+.auction-mobile-item--card .auction-mobile-buy-now-winner {
+  margin: 0 0 5px;
+  font-size: 10.5px;
+}
+
+.auction-mobile-item--card .auction-mobile-image-wrap .auction-mobile-favorite-btn {
   width: 34px;
   height: 34px;
 }
 
-.auction-mobile-item--card .auction-mobile-favorite-btn svg {
+.auction-mobile-item--card .auction-mobile-image-wrap .auction-mobile-favorite-btn svg {
   width: 16px;
   height: 16px;
 }
@@ -877,6 +886,16 @@
     box-shadow 0.2s,
     transform 0.15s ease;
   touch-action: manipulation;
+}
+
+.auction-mobile-favorite-btn--media {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 6;
+  box-shadow:
+    0 1px 3px rgba(15, 23, 42, 0.12),
+    0 0 0 1px rgba(255, 255, 255, 0.55);
 }
 
 .auction-mobile-favorite-btn:active {
@@ -1108,7 +1127,7 @@
 .auction-mobile-stack--grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
+  gap: 10px;
   align-items: stretch;
 }
 
@@ -1138,6 +1157,14 @@
 }
 
 /* Читаемые кнопки на аукционе: перебиваем ужатые брейкпоинты PropertyList.css */
+.properties-grid--mobile-auction .auction-mobile-actions:not(.auction-mobile-actions--list-row) .btn.btn-liquid-glass,
+.properties-grid--mobile-auction .auction-mobile-actions:not(.auction-mobile-actions--list-row) .btn.btn-liquid-glass-buy {
+  /* PropertyList @media 768px задаёт flex: 1 1 100% — в column вторая кнопка уезжает под overflow карточки */
+  flex: 0 0 auto !important;
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
 .properties-grid--mobile-auction .auction-mobile-actions .btn.btn-liquid-glass,
 .properties-grid--mobile-auction .auction-mobile-actions .btn.btn-liquid-glass-buy {
   font-size: 12px !important;
@@ -1152,8 +1179,8 @@
 .properties-grid--mobile-auction .auction-mobile-stack--grid .auction-mobile-actions .btn.btn-liquid-glass,
 .properties-grid--mobile-auction .auction-mobile-stack--grid .auction-mobile-actions .btn.btn-liquid-glass-buy {
   font-size: 11px !important;
-  padding: 10px 8px !important;
-  min-height: 42px !important;
+  padding: 9px 7px !important;
+  min-height: 40px !important;
 }
 
 /* В сетке две кнопки в ряд — компактнее подпись */
@@ -1247,6 +1274,10 @@
 }
 
 .auction-mobile-skeleton__fav {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 2;
   width: 34px;
   height: 34px;
   border-radius: 50%;
@@ -1368,7 +1399,8 @@
 }
 
 .auction-mobile-skeleton__btn {
-  flex: 1 1 0;
+  flex: 0 0 auto;
+  width: 100%;
   min-width: 0;
   min-height: 44px;
   border-radius: var(--am-radius-sm);

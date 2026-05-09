@@ -1,0 +1,173 @@
+/* FAQ: заголовок у левого края, аккордеон в правой части (~2/3), как референс */
+.landing-faq {
+  padding: clamp(44px, 7vw, 80px) 0 clamp(40px, 6vw, 64px);
+  background: #ffffff;
+}
+
+.landing-faq__inner {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 clamp(20px, 5vw, 48px);
+  display: grid;
+  grid-template-columns: minmax(0, 30%) minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  column-gap: clamp(24px, 5vw, 56px);
+  row-gap: clamp(32px, 5vw, 56px);
+  align-items: start;
+}
+
+/* Заголовок — отдельный верхний ряд, выше блока вопросов */
+.landing-faq__title {
+  grid-column: 1 / -1;
+  grid-row: 1;
+  justify-self: start;
+  margin: 0;
+  padding: 0;
+  font-family:
+    'Montserrat',
+    system-ui,
+    -apple-system,
+    sans-serif;
+  font-size: clamp(2.125rem, 3.2vw + 1rem, 3.125rem);
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  color: #000000;
+  line-height: 1.08;
+  max-width: min(12em, 92vw);
+}
+
+/* Правая «рельса» — ниже заголовка, ~2/3 ширины */
+.landing-faq__rail {
+  grid-column: 2;
+  grid-row: 2;
+  min-width: 0;
+}
+
+.landing-faq__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid #e5e7eb;
+}
+
+.landing-faq__item {
+  margin: 0;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.landing-faq__item-heading {
+  margin: 0;
+  font-size: inherit;
+  font-weight: inherit;
+}
+
+.landing-faq__trigger {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: clamp(16px, 3vw, 28px);
+  padding: clamp(22px, 3.2vw, 30px) 0;
+  margin: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  text-align: left;
+  font-family:
+    'Montserrat',
+    system-ui,
+    -apple-system,
+    sans-serif;
+  font-size: clamp(1.05rem, 0.5vw + 0.95rem, 1.2rem);
+  font-weight: 500;
+  color: #000000;
+  line-height: 1.35;
+  -webkit-tap-highlight-color: transparent;
+  transition: color 0.15s ease;
+}
+
+.landing-faq__trigger:hover {
+  color: #0f172a;
+}
+
+.landing-faq__trigger:focus {
+  outline: none;
+}
+
+.landing-faq__trigger:focus-visible {
+  outline: 2px solid #0abab5;
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+.landing-faq__question {
+  flex: 1;
+  min-width: 0;
+}
+
+.landing-faq__icon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  color: #000000;
+}
+
+.landing-faq__icon-svg {
+  display: block;
+}
+
+.landing-faq__panel:not([hidden]) {
+  animation: landing-faq-open 0.2s ease;
+}
+
+@keyframes landing-faq-open {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+.landing-faq__answer {
+  padding: 0 0 clamp(20px, 3vw, 28px);
+  margin-top: -8px;
+  max-width: 100%;
+}
+
+.landing-faq__answer p {
+  margin: 0;
+  font-family:
+    'Montserrat',
+    system-ui,
+    -apple-system,
+    sans-serif;
+  font-size: clamp(0.95rem, 0.28vw + 0.88rem, 1.05rem);
+  font-weight: 400;
+  line-height: 1.65;
+  color: #475569;
+}
+
+/* Мобила: заголовок сверху, список ниже на полную ширину */
+@media (max-width: 719px) {
+  .landing-faq__inner {
+    display: flex;
+    flex-direction: column;
+    gap: clamp(28px, 5vw, 40px);
+    padding: 0 clamp(18px, 4.5vw, 24px);
+  }
+
+  .landing-faq__title {
+    max-width: none;
+  }
+
+  .landing-faq__rail {
+    width: 100%;
+  }
+}
