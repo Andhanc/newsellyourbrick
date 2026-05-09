@@ -231,16 +231,13 @@
 
 .notification-backdrop {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  inset: 0;
   width: 100%;
   height: 100%;
-  background: rgba(17, 24, 39, 0.5);
+  background: rgba(15, 23, 42, 0.55);
   backdrop-filter: blur(4px);
-  z-index: 199;
-  animation: backdropFadeIn 0.3s ease-out;
+  z-index: 13090;
+  animation: backdropFadeIn 0.28s ease-out both;
 }
 
 @keyframes backdropFadeIn {
@@ -254,46 +251,133 @@
 
 .notification-panel {
   position: fixed;
-  top: 12px;
-  bottom: 12px;
+  top: 0;
   left: 0;
   right: 0;
+  bottom: auto;
   width: 100%;
-  z-index: 200;
-  animation: notificationSlideDown 0.3s ease-out;
-  padding: 0 18px;
+  z-index: 13100;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: max(16px, env(safe-area-inset-top, 0px)) 20px 0;
+  padding-left: max(20px, env(safe-area-inset-left, 0px));
+  padding-right: max(20px, env(safe-area-inset-right, 0px));
   box-sizing: border-box;
-  overflow: hidden;
+  overflow: visible;
+  pointer-events: none;
+  animation: notification-top-drawer-slide 0.38s cubic-bezier(0.22, 1, 0.32, 1) both;
 }
 
-@keyframes notificationSlideDown {
-  from {
-    opacity: 0;
-    transform: translateY(-100%);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+.notification-panel > * {
+  pointer-events: auto;
 }
 
 .notification-panel__content {
   background: #ffffff;
+  width: 100%;
+  max-width: min(560px, 100%);
+  margin: 0 auto;
   border-radius: 0 0 24px 24px;
   padding: 20px;
-  box-shadow: 
+  box-shadow:
     0 8px 32px -12px rgba(17, 24, 39, 0.3),
     0 4px 16px -8px rgba(17, 24, 39, 0.2);
   display: flex;
   flex-direction: column;
   gap: 16px;
-  /* Ограничиваем высоту модалки в пределах экрана;
-     список уведомлений прокручивается внутри .notification-panel__list */
-  max-height: calc(100dvh - 24px);
+  min-height: 0;
+  max-height: min(88dvh, calc(100dvh - max(16px, env(safe-area-inset-top, 0px)) - 8px));
   overflow: hidden;
 }
 
+/* Ручка снизу листа (аналог нижнего drawer у покупки долей, только панель открыта сверху) */
+.notification-panel__sheet-handle {
+  display: none;
+  justify-content: center;
+  flex-shrink: 0;
+  padding: 10px 0 4px;
+}
+
+.notification-panel__sheet-pill {
+  display: block;
+  width: 40px;
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.55);
+  box-shadow: 0 1px 2px rgba(255, 255, 255, 0.65) inset;
+}
+
+@keyframes notification-top-drawer-slide {
+  from {
+    transform: translate3d(0, -100%, 0);
+  }
+  to {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@media (max-width: 768px) {
+  .notification-panel {
+    padding: 0;
+    padding-top: env(safe-area-inset-top, 0px);
+    animation: notification-top-drawer-slide 0.38s cubic-bezier(0.22, 1, 0.32, 1) both;
+  }
+
+  .notification-panel__content {
+    max-width: none;
+    border-radius: 0 0 22px 22px;
+    padding: 16px 18px;
+    gap: 0;
+    min-height: 0;
+    max-height: min(92dvh, calc(100dvh - env(safe-area-inset-top, 0px)));
+    box-shadow:
+      0 12px 40px rgba(15, 23, 42, 0.12),
+      0 28px 64px rgba(15, 23, 42, 0.1);
+    padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .notification-panel__sheet-handle {
+    display: flex;
+    order: 3;
+    padding: 14px 0 2px;
+  }
+
+  .notification-panel__header {
+    flex-shrink: 0;
+    order: 1;
+    padding: 12px 0 14px;
+    border-bottom: 1px solid #e8ecf4;
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.9) inset;
+  }
+
+  .notification-panel__list {
+    flex: 1 1 0%;
+    order: 2;
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-gutter: stable;
+    padding-right: max(10px, env(safe-area-inset-right, 0px));
+    margin-top: 12px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .notification-backdrop {
+    animation: none;
+  }
+
+  .notification-panel {
+    animation: none !important;
+    transform: none !important;
+  }
+}
+
 .notification-panel__header {
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -334,18 +418,49 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
-  flex: 1 1 auto;
+  flex: 1 1 0%;
   min-height: 0;
+  overflow-x: hidden;
   overflow-y: auto;
-  padding-right: 4px;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(100, 116, 139, 0.75) rgba(241, 245, 249, 0.95);
+  padding-right: max(10px, env(safe-area-inset-right, 0px));
+  margin-inline-end: 2px;
+}
+
+.notification-panel__list::-webkit-scrollbar {
+  width: 9px;
+}
+
+.notification-panel__list::-webkit-scrollbar-track {
+  margin: 4px 0;
+  border-radius: 999px;
+  background: rgba(226, 232, 240, 0.9);
+}
+
+.notification-panel__list::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(100, 116, 139, 0.55);
+  border: 2px solid rgba(226, 232, 240, 0.9);
+  min-height: 36px;
+}
+
+.notification-panel__list::-webkit-scrollbar-thumb:hover {
+  background: rgba(71, 85, 105, 0.72);
 }
 
 .notification-item {
+  box-sizing: border-box;
   background: #ffffff;
   border: 1px solid rgba(17, 24, 39, 0.12);
   border-radius: 16px;
-  overflow: hidden;
-  transition: all 0.2s ease;
+  /* visible: строки текста и хвосты букв не обрезаются из-за border-radius-клипа */
+  overflow: visible;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  min-width: 0;
 }
 
 .notification-item:hover {
@@ -355,29 +470,39 @@
 
 .notification-item__content {
   padding: 16px;
+  padding-bottom: 18px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
+  min-width: 0;
 }
 
 .notification-item__title {
-  font-size: 16px;
+  font-size: clamp(15px, 3.8vw, 16px);
   font-weight: 600;
   color: #111827;
   margin: 0;
+  padding: 2px 0 1px;
   font-family: 'Montserrat', sans-serif;
+  line-height: 1.42;
+  overflow-wrap: break-word;
+  word-break: normal;
+  hyphens: none;
 }
 
 .notification-item__property {
   display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
   gap: 12px;
   align-items: flex-start;
+  min-width: 0;
 }
 
 .notification-item__image {
-  width: 100px;
-  min-width: 100px;
-  height: 100px;
+  width: 88px;
+  min-width: 88px;
+  height: 88px;
   border-radius: 12px;
   overflow: hidden;
   background: #f9fafb;
@@ -398,21 +523,30 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
+  min-width: 0;
 }
 
 .notification-item__property-name {
-  font-size: 16px;
+  font-size: clamp(14px, 3.4vw, 16px);
   font-weight: 600;
   color: #111827;
   margin: 0;
   font-family: 'Montserrat', sans-serif;
+  line-height: 1.42;
+  overflow-wrap: break-word;
+  word-break: normal;
+  hyphens: none;
 }
 
 .notification-item__property-location {
-  font-size: 13px;
+  font-size: clamp(12px, 3.1vw, 13px);
   color: #6b7280;
   margin: 0;
   font-family: 'Montserrat', sans-serif;
+  line-height: 1.46;
+  overflow-wrap: break-word;
+  word-break: normal;
+  hyphens: none;
 }
 
 .notification-item__button {
@@ -431,7 +565,11 @@
   justify-content: center;
   gap: 6px;
   align-self: flex-start;
+  flex-shrink: 0;
   margin-top: 4px;
+  max-width: 100%;
+  box-sizing: border-box;
+  text-align: center;
 }
 
 .notification-item__button:hover {
@@ -477,6 +615,14 @@
   color: #059669;
 }
 
+.notification-item--success .notification-item__message {
+  color: #3f6212;
+}
+
+.notification-item--success .notification-item__property-name {
+  color: #14532d;
+}
+
 .notification-item--error {
   background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
   border-color: #ef4444;
@@ -484,6 +630,10 @@
 
 .notification-item--error .notification-item__title {
   color: #dc2626;
+}
+
+.notification-item--error .notification-item__message {
+  color: #7f1d1d;
 }
 
 .notification-item--warning {
@@ -495,12 +645,20 @@
   color: #d97706;
 }
 
+.notification-item--warning .notification-item__message {
+  color: #854d0e;
+}
+
 .notification-item__message {
-  font-size: 14px;
-  color: #6b7280;
+  font-size: clamp(13px, 3.25vw, 14px);
+  color: #4b5563;
   margin: 0;
+  padding: 2px 0 6px;
   font-family: 'Montserrat', sans-serif;
-  line-height: 1.5;
+  line-height: 1.56;
+  overflow-wrap: break-word;
+  word-break: normal;
+  hyphens: none;
 }
 
 .notification-item__button svg {
@@ -511,31 +669,40 @@
   transform: translateX(2px);
 }
 
-@media (min-width: 480px) {
-  .notification-panel {
-    padding: 0 24px;
+@media (max-width: 440px) {
+  .notification-item__property {
+    flex-direction: column;
+    align-items: stretch;
   }
-  
-  .notification-panel__content {
-    padding: 24px;
-    border-radius: 0 0 28px 28px;
-  }
-  
+
   .notification-item__image {
-    width: 120px;
-    min-width: 120px;
-    height: 120px;
-  }
-  
-  .notification-item__property-name {
-    font-size: 18px;
+    width: 100%;
+    min-width: 0;
+    height: clamp(132px, 38vw, 200px);
   }
 }
 
-@media (min-width: 768px) {
+@media (min-width: 480px) {
+  .notification-item__image {
+    width: 108px;
+    min-width: 108px;
+    height: 108px;
+  }
+
+  .notification-item__property-name {
+    font-size: clamp(15px, 2.8vw, 17px);
+  }
+}
+
+@media (min-width: 769px) {
+  .notification-panel {
+    padding: max(18px, env(safe-area-inset-top, 0px)) clamp(20px, 4vw, 32px) 0;
+  }
+
   .notification-panel__content {
-    max-width: 800px;
-    margin: 0 auto;
+    max-width: min(580px, 100%);
+    padding: 22px 24px;
+    border-radius: 0 0 26px 26px;
   }
 }
 
@@ -5761,6 +5928,30 @@
     padding: 0;
   }
 
+  /* Лендинг: шапка внутри hero — фиксированная при скролле (по поведению как аукцион / .home-page) */
+  .hero-section > .new-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    padding-top: max(12px, env(safe-area-inset-top, 0px));
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    box-sizing: border-box;
+  }
+
+  .hero-section > .new-header.new-header--menu-open {
+    z-index: 10001 !important;
+  }
+
+  /* Резервируем место под фиксированный хедер + отступ сверху */
+  .hero-section > .new-header-spacer {
+    height: calc(max(12px, env(safe-area-inset-top, 0px)) + 58px + 14px);
+    width: 100%;
+    flex-shrink: 0;
+  }
+
   /* Как на странице Аукцион, чуть шире */
   .new-header__container {
     display: flex;
@@ -5776,6 +5967,10 @@
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06);
     border: 1px solid rgba(0, 0, 0, 0.05);
     box-sizing: border-box;
+  }
+
+  .hero-section > .new-header .new-header__container {
+    margin: 0 auto;
   }
 
   /* На мобильной версии кнопки поиска и уведомлений без подсветки фона */

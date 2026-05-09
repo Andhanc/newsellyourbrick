@@ -34,10 +34,6 @@ export default function PropertyDetailClassicSkeleton() {
           <div className="pds-header-left">
             <SkelBlock h={34} r={10} style={{ width: 110 }} />
           </div>
-          <div className="property-detail-header__info" style={{ minWidth: 0 }}>
-            <SkelLine w="38%" h={12} />
-            <SkelLine w="62%" h={12} style={{ marginTop: 8 }} />
-          </div>
         </div>
       </div>
 

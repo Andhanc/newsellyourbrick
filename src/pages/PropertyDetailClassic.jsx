@@ -2550,17 +2550,11 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
             type="button"
             className="property-detail-header__back"
             onClick={handleBackClick}
+            aria-label={t('back')}
           >
-            <FiArrowLeft size={20} />
-            <span>{t('back') || 'Назад'}</span>
+            <FiArrowLeft size={20} aria-hidden />
+            <span>{t('back')}</span>
           </button>
-          <div className="property-detail-header__info">
-            <span className="property-detail-header__path">
-              {t('searchResults') || 'Результаты поиска'}
-            </span>
-            <span className="property-detail-header__separator">/</span>
-            <span className="property-detail-header__property">{propertyInfo}</span>
-          </div>
         </div>
       </div>
 

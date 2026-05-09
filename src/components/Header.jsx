@@ -20,6 +20,7 @@ import {
   fetchUserNotifications,
   invalidateUserNotificationsCache,
 } from '../utils/notificationsApi'
+import { getNotificationItemClass } from '../utils/notificationItemClass'
 /** Стили шапки (new-header*, меню, поиск и т.д.) определены в MainPage.css — импорт намеренно общий для визуального паритета. */
 import '../pages/MainPage.css'
 import { MenuToggleIcon } from '@/components/ui/menu-toggle-icon'
@@ -132,6 +133,16 @@ const Header = () => {
     window.addEventListener('managerChatStateChange', onManager)
     return () => window.removeEventListener('managerChatStateChange', onManager)
   }, [])
+
+  useEffect(() => {
+    if (!isNotificationOpen) return
+    if (typeof window === 'undefined' || !window.matchMedia('(max-width: 768px)').matches) return
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = prev
+    }
+  }, [isNotificationOpen])
 
   // Открываем модальное окно регистрации/входа принудительно (например после OAuth)
   useEffect(() => {
@@ -527,20 +538,6 @@ const Header = () => {
   }, [searchQuery, isSearchOpen])
 
   const unreadNotificationsCount = notifications.filter((n) => n.view_count === 0).length
-
-  const getNotificationClass = (notification) => {
-    if (notification.type === 'verification_success') return 'notification-item--success'
-    if (notification.type === 'verification_rejected') return 'notification-item--error'
-    if (notification.type === 'bid_outbid') return 'notification-item--warning'
-    if (notification.type === 'buy_now_approved') return 'notification-item--success'
-    if (notification.type === 'buy_now_rejected') return 'notification-item--error'
-    if (notification.type === 'auction_won') return 'notification-item--success'
-    if (notification.type === 'auction_lost') return 'notification-item--warning'
-    if (notification.type === 'payment_deadline') return 'notification-item--warning'
-    if (notification.type === 'test_drive_request') return 'notification-item--warning'
-    if (notification.type === 'test_drive_result') return 'notification-item--success'
-    return 'notification-item--property'
-  }
 
   const handleNotificationView = async (notificationId) => {
     try {
@@ -1067,7 +1064,7 @@ const Header = () => {
               </div>
             ) : (
               <>
-                {location.pathname === '/auction' ? (
+                {location.pathname !== '/' ? (
                   <>
                     <button 
                       className="new-header__search-btn"
@@ -1247,7 +1244,7 @@ const Header = () => {
                         notifications.map((notification) => (
                           <div
                             key={notification.id}
-                            className={`notification-item ${getNotificationClass(notification)}`}
+                            className={`notification-item ${getNotificationItemClass(notification)}`}
                             onClick={() => {
                               if (notification.type === 'test_drive_request') return
                               handleNotificationView(notification.id)
@@ -1300,6 +1297,9 @@ const Header = () => {
                           </div>
                         ))
                       )}
+                    </div>
+                    <div className="notification-panel__sheet-handle" aria-hidden="true">
+                      <span className="notification-panel__sheet-pill" />
                     </div>
                   </div>
                 </div>

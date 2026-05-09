@@ -48,6 +48,7 @@ import OwnerSaleCelebrationModal from '../components/OwnerSaleCelebrationModal'
 import { getDismissedCelebrationIds, dismissCelebration } from '../utils/ownerSaleCelebrationStorage'
 import CountrySelect, { countries as countryList } from '../components/CountrySelect'
 import { getUserData, saveUserData, logout, clearUserData, CLERK_DB_USER_SYNCED } from '../services/authService'
+import { getNotificationItemClass } from '../utils/notificationItemClass'
 import { showNotification } from '../utils/toastHelper'
 import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
 import { showToast } from '../components/ToastContainer'
@@ -232,6 +233,16 @@ const OwnerDashboard = () => {
   const [interestCount, setInterestCount] = useState(0) // Количество уникальных заинтересованных пользователей
   const [showProfileFieldsModal, setShowProfileFieldsModal] = useState(false)
   const [missingFields, setMissingFields] = useState([])
+
+  useEffect(() => {
+    if (!ownerNotifOpen) return
+    if (typeof window === 'undefined' || !window.matchMedia('(max-width: 768px)').matches) return
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = prev
+    }
+  }, [ownerNotifOpen])
 
   useEffect(() => {
     // Проверяем, авторизован ли владелец
@@ -1705,22 +1716,10 @@ const OwnerDashboard = () => {
                   </div>
                 ) : (
                   ownerNotifications.map((notification) => {
-                    let notificationClass = 'notification-item--property'
-                    if (notification.type === 'verification_success') {
-                      notificationClass = 'notification-item--success'
-                    } else if (notification.type === 'verification_rejected') {
-                      notificationClass = 'notification-item--error'
-                    } else if (notification.type === 'bid_outbid') {
-                      notificationClass = 'notification-item--warning'
-                    } else if (notification.type === 'test_drive_request') {
-                      notificationClass = 'notification-item--warning'
-                    } else if (notification.type === 'test_drive_result') {
-                      notificationClass = 'notification-item--success'
-                    }
                     return (
                       <div
                         key={notification.id}
-                        className={`notification-item ${notificationClass}`}
+                        className={`notification-item ${getNotificationItemClass(notification)}`}
                         onClick={() => {
                           if (notification.type === 'test_drive_request') return
                           handleOwnerNotificationView(notification.id)
@@ -1786,6 +1785,9 @@ const OwnerDashboard = () => {
                     )
                   })
                 )}
+              </div>
+              <div className="notification-panel__sheet-handle" aria-hidden="true">
+                <span className="notification-panel__sheet-pill" />
               </div>
             </div>
           </div>

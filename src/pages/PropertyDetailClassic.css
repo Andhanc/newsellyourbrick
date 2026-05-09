@@ -408,7 +408,7 @@
   gap: 8px;
   background: none;
   border: none;
-  color: #2563eb;
+  color: #0abab5;
   font-size: 14px;
   font-weight: 500;
   font-family: 'Montserrat', sans-serif;
@@ -418,29 +418,13 @@
 }
 
 .property-detail-header__back:hover {
-  color: #1d4ed8;
+  color: #089a95;
 }
 
-.property-detail-header__info {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 14px;
-  color: #6b7280;
-  font-family: 'Montserrat', sans-serif;
-}
-
-.property-detail-header__path {
-  color: #6b7280;
-}
-
-.property-detail-header__separator {
-  color: #9ca3af;
-}
-
-.property-detail-header__property {
-  color: #111827;
-  font-weight: 500;
+.property-detail-header__back:focus-visible {
+  outline: 2px solid rgba(10, 186, 181, 0.45);
+  outline-offset: 3px;
+  border-radius: 8px;
 }
 
 /* Основной контент */

@@ -69,6 +69,7 @@ import {
   fetchUserNotifications,
   invalidateUserNotificationsCache,
 } from '../utils/notificationsApi'
+import { getNotificationItemClass } from '../utils/notificationItemClass'
 import { fetchUserById } from '../utils/usersApi'
 
 import { getApiBaseUrl, getApiBaseUrlSync } from '../utils/apiConfig'
@@ -478,6 +479,16 @@ function MainPage() {
     mq.addEventListener('change', update)
     return () => mq.removeEventListener('change', update)
   }, [])
+
+  useEffect(() => {
+    if (!isNotificationOpen) return
+    if (typeof window === 'undefined' || !window.matchMedia('(max-width: 768px)').matches) return
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = prev
+    }
+  }, [isNotificationOpen])
 
   // Загружаем историю чата из localStorage при монтировании компонента или изменении пользователя
   const lastChatUserIdRef = useRef(null)
@@ -2926,24 +2937,11 @@ function MainPage() {
                   <div style={{ padding: '20px', textAlign: 'center', color: '#6b7280' }}>{t('noNotifications')}</div>
                 ) : (
                   notifications.map((notification) => {
-                    let notificationClass = 'notification-item--property';
-                    if (notification.type === 'verification_success') {
-                      notificationClass = 'notification-item--success';
-                    } else if (notification.type === 'verification_rejected') {
-                      notificationClass = 'notification-item--error';
-                    } else if (notification.type === 'bid_outbid') {
-                      notificationClass = 'notification-item--warning';
-                    } else if (notification.type === 'test_drive_request') {
-                      notificationClass = 'notification-item--warning';
-                    } else if (notification.type === 'test_drive_result') {
-                      notificationClass = 'notification-item--success';
-                    }
-                    
                     const propertyMeta = getNotificationPropertyMeta(notification)
                     return (
                     <div 
                       key={notification.id} 
-                      className={`notification-item ${notificationClass}`}
+                      className={`notification-item ${getNotificationItemClass(notification)}`}
                       onClick={() => {
                         if (notification.type === 'test_drive_request') return
                         handleNotificationView(notification.id)
@@ -3041,6 +3039,9 @@ function MainPage() {
                   })
                 )}
               </div>
+              <div className="notification-panel__sheet-handle" aria-hidden="true">
+                <span className="notification-panel__sheet-pill" />
+              </div>
             </div>
           </div>
           </>
@@ -3133,24 +3134,11 @@ function MainPage() {
                           <div style={{ padding: '20px', textAlign: 'center', color: '#6b7280' }}>{t('noNotifications')}</div>
                         ) : (
                           notifications.map((notification) => {
-                            let notificationClass = 'notification-item--property';
-                            if (notification.type === 'verification_success') {
-                              notificationClass = 'notification-item--success';
-                            } else if (notification.type === 'verification_rejected') {
-                              notificationClass = 'notification-item--error';
-                            } else if (notification.type === 'bid_outbid') {
-                              notificationClass = 'notification-item--warning';
-                            } else if (notification.type === 'test_drive_request') {
-                              notificationClass = 'notification-item--warning';
-                            } else if (notification.type === 'test_drive_result') {
-                              notificationClass = 'notification-item--success';
-                            }
-                            
                             const propertyMeta = getNotificationPropertyMeta(notification)
                             return (
                             <div 
                               key={notification.id} 
-                              className={`notification-item ${notificationClass}`}
+                              className={`notification-item ${getNotificationItemClass(notification)}`}
                               onClick={() => {
                                 if (notification.type === 'test_drive_request') return
                                 handleNotificationView(notification.id)
@@ -3247,6 +3235,9 @@ function MainPage() {
                             );
                           })
                         )}
+                      </div>
+                      <div className="notification-panel__sheet-handle" aria-hidden="true">
+                        <span className="notification-panel__sheet-pill" />
                       </div>
                     </div>
                   </div>

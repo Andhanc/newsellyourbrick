@@ -2575,9 +2575,9 @@
 
 /* Панель уведомлений поверх кабинета продавца */
 .owner-dashboard .notification-backdrop {
-  z-index: 9998;
+  z-index: 13094;
 }
 
 .owner-dashboard .notification-panel {
-  z-index: 9999;
+  z-index: 13102;
 }
