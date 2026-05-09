@@ -108,15 +108,7 @@
   -webkit-backdrop-filter: blur(16px);
 }
 
-.test-hero-pro__top-bar {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  width: 100%;
-  margin: -6px 0 2px;
-}
-
-/* Главная: закреплённая справа вверху карточки кабинета */
+/* Главная: в одной строке с аватаром, выравнивание по правому краю шапки */
 .test-hero-pro__home-corner {
   position: relative;
   display: inline-flex;
@@ -187,11 +179,68 @@
   transform: translateY(0);
 }
 
+/* Ширина «компьютера» / планшета: аватар слева, ФИО и чипы справа от него, «Главная» у правого края */
 .test-hero-pro__identity {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-rows: auto;
+  column-gap: 20px;
+  row-gap: 0;
   align-items: center;
-  gap: 20px;
   min-width: 0;
+}
+
+.test-hero-pro__identity > .test-hero-pro__avatar-wrap,
+.test-hero-pro__identity > .buyer-cab-skel-avatar {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.test-hero-pro__identity > .test-hero-pro__home-corner {
+  grid-column: 3;
+  grid-row: 1;
+  justify-self: end;
+  align-self: center;
+  margin-top: 0;
+  white-space: nowrap;
+}
+
+.test-hero-pro__identity > .test-hero-pro__who,
+.test-hero-pro__identity > .buyer-cab-skel-who {
+  grid-column: 2;
+  grid-row: 1;
+  min-width: 0;
+  align-self: center;
+}
+
+@media (max-width: 560px) {
+  .test-hero-pro__identity {
+    grid-template-columns: auto 1fr;
+    grid-template-rows: auto auto;
+    align-items: start;
+    row-gap: 12px;
+  }
+
+  .test-hero-pro__identity > .test-hero-pro__avatar-wrap,
+  .test-hero-pro__identity > .buyer-cab-skel-avatar {
+    grid-column: 1;
+    grid-row: 1;
+    align-self: center;
+  }
+
+  .test-hero-pro__identity > .test-hero-pro__home-corner {
+    grid-column: 2;
+    grid-row: 1;
+    justify-self: end;
+    align-self: center;
+  }
+
+  .test-hero-pro__identity > .test-hero-pro__who,
+  .test-hero-pro__identity > .buyer-cab-skel-who {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    align-self: start;
+  }
 }
 
 .test-hero-pro__avatar-wrap {
@@ -237,32 +286,6 @@
   color: var(--test-ink-soft);
 }
 
-.test-hero-pro__who {
-  min-width: 0;
-  flex: 1;
-}
-
-.test-hero-pro__who-head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 10px 16px;
-  min-width: 0;
-  width: 100%;
-}
-
-.test-hero-pro__who-head .test-hero-pro__name {
-  flex: 1;
-  min-width: 0;
-  word-break: break-word;
-}
-
-.test-hero-pro__who-head .test-hero-pro__home-corner {
-  flex-shrink: 0;
-  margin-top: 0.2em;
-  white-space: nowrap;
-}
-
 .test-hero-pro__name {
   font-family: var(--test-font-display);
   font-size: clamp(1.35rem, 2.4vw, 1.75rem);
@@ -270,6 +293,7 @@
   letter-spacing: -0.02em;
   margin: 0 0 8px;
   color: var(--test-ink);
+  word-break: break-word;
 }
 
 .test-hero-pro__email {
@@ -1071,6 +1095,45 @@
   color: var(--test-ink);
 }
 
+/* Панель «Данные» на телефоне: заголовок в одну строку рядом с «Свернуть» */
+@media (max-width: 560px) {
+  .test-hero-pro__data-panel--sheet-data .test-data-panel__toolbar {
+    flex-wrap: nowrap;
+    gap: 8px 10px;
+  }
+
+  .test-hero-pro__data-panel--sheet-data .test-data-panel__back {
+    flex-shrink: 0;
+    padding: 7px 10px;
+    gap: 6px;
+    font-size: 12px;
+  }
+
+  .test-hero-pro__data-panel--sheet-data .test-data-panel__back svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .test-hero-pro__data-panel--sheet-data .test-data-panel__title {
+    flex: 1;
+    min-width: 0;
+    white-space: nowrap;
+    letter-spacing: -0.035em;
+    font-size: clamp(0.75rem, 2.85vw + 0.42rem, 1.05rem);
+  }
+
+  /* Совсем узко: текст «Свернуть» скрыт (есть aria-label на кнопке) */
+  @media (max-width: 380px) {
+    .test-hero-pro__data-panel--sheet-data .test-data-panel__back {
+      padding: 8px 10px;
+    }
+
+    .test-hero-pro__data-panel--sheet-data .test-data-panel__back-label {
+      display: none;
+    }
+  }
+}
+
 .test-data-panel__full-link {
   display: inline-flex;
   align-items: center;
@@ -1866,10 +1929,6 @@
 }
 
 @media (max-width: 560px) {
-  .test-hero-pro__identity {
-    flex-wrap: wrap;
-  }
-
   .test-hero-pro__home-corner {
     padding: 8px 14px 8px 12px;
     font-size: 12px;
@@ -3836,11 +3895,6 @@ button.test-doc-row {
     padding: 18px 16px;
   }
 
-  .test-hero-pro__identity {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
   .test-hero-icon-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 7px;
@@ -3948,13 +4002,6 @@ button.test-doc-row {
   animation: buyer-cab-skel-wave 1.15s ease-in-out infinite;
 }
 
-.buyer-cab-skel-identity {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-  min-width: 0;
-}
-
 .buyer-cab-skel-avatar {
   position: relative;
   flex-shrink: 0;
@@ -3968,7 +4015,6 @@ button.test-doc-row {
 
 .buyer-cab-skel-who {
   min-width: 0;
-  flex: 1;
 }
 
 .buyer-cab-skel-line--name {
@@ -4487,11 +4533,6 @@ button.test-doc-row {
 }
 
 @media (max-width: 560px) {
-  .buyer-cab-skel-identity {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
   .buyer-cab-skel-tile {
     padding: 8px 3px 9px;
     border-radius: 13px;

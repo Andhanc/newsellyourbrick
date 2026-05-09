@@ -1,14 +1,15 @@
 /**
  * Плейсхолдеры блоков личного кабинета покупателя на /profile — шапка страницы и фон уже видны.
  */
-export function BuyerCabinetHeroSkeleton({ sectionsLabel }) {
+export function BuyerCabinetHeroSkeleton({ sectionsLabel, homeLink = null }) {
   return (
     <>
-      <div className="buyer-cab-skel-identity" aria-hidden="true">
-        <div className="buyer-cab-skel-avatar">
+      <div className="test-hero-pro__identity">
+        <div className="buyer-cab-skel-avatar" aria-hidden="true">
           <span className="buyer-cab-skel-shimmer buyer-cab-skel-shimmer--circle" />
         </div>
-        <div className="buyer-cab-skel-who">
+        {homeLink}
+        <div className="buyer-cab-skel-who" aria-hidden="true">
           <span className="buyer-cab-skel-line buyer-cab-skel-line--name" />
           <span className="buyer-cab-skel-line buyer-cab-skel-line--email" />
           <div className="buyer-cab-skel-chips">

@@ -2132,8 +2132,9 @@ function TestPage() {
           aria-busy={showBuyerCabinetSkeleton || undefined}
         >
           {showBuyerCabinetSkeleton ? (
-            <>
-              <div className="test-hero-pro__top-bar">
+            <BuyerCabinetHeroSkeleton
+              sectionsLabel={t('buyerCabinet_sectionsLabel')}
+              homeLink={
                 <Link
                   to="/"
                   className="test-hero-pro__home-corner"
@@ -2143,9 +2144,8 @@ function TestPage() {
                   <FiHome className="test-hero-pro__home-corner-icon" size={17} aria-hidden />
                   <span>{t('buyerCabinet_home')}</span>
                 </Link>
-              </div>
-              <BuyerCabinetHeroSkeleton sectionsLabel={t('buyerCabinet_sectionsLabel')} />
-            </>
+              }
+            />
           ) : (
             <>
               <div className="test-hero-pro__identity">
@@ -2158,21 +2158,19 @@ function TestPage() {
                     </span>
                   )}
                 </div>
+                <Link
+                  to="/"
+                  className="test-hero-pro__home-corner"
+                  aria-label={t('buyerCabinet_home')}
+                >
+                  <span className="test-hero-pro__home-corner-glow" aria-hidden />
+                  <FiHome className="test-hero-pro__home-corner-icon" size={17} aria-hidden />
+                  <span>{t('buyerCabinet_home')}</span>
+                </Link>
                 <div className="test-hero-pro__who">
-                  <div className="test-hero-pro__who-head">
-                    <h2 id="test-hero-heading" className="test-hero-pro__name">
-                      {fullName}
-                    </h2>
-                    <Link
-                      to="/"
-                      className="test-hero-pro__home-corner"
-                      aria-label={t('buyerCabinet_home')}
-                    >
-                      <span className="test-hero-pro__home-corner-glow" aria-hidden />
-                      <FiHome className="test-hero-pro__home-corner-icon" size={17} aria-hidden />
-                      <span>{t('buyerCabinet_home')}</span>
-                    </Link>
-                  </div>
+                  <h2 id="test-hero-heading" className="test-hero-pro__name">
+                    {fullName}
+                  </h2>
                   {email ? (
                     <p className="test-hero-pro__email">
                       <FiMail size={14} aria-hidden />
@@ -2386,15 +2384,19 @@ function TestPage() {
             aria-hidden={!dataSheetOpen}
           >
             <div className="test-data-dropbox__measure">
-              <div className="test-hero-pro__data-panel" aria-labelledby="test-data-panel-title">
+              <div
+                className="test-hero-pro__data-panel test-hero-pro__data-panel--sheet-data"
+                aria-labelledby="test-data-panel-title"
+              >
                 <div className="test-data-panel__toolbar">
                   <button
                     type="button"
                     className="test-data-panel__back"
+                    aria-label={t('buyerCabinet_collapse')}
                     onClick={() => setDataSheetOpen(false)}
                   >
                     <FiArrowLeft size={18} aria-hidden />
-                    {t('buyerCabinet_collapse')}
+                    <span className="test-data-panel__back-label">{t('buyerCabinet_collapse')}</span>
                   </button>
                   <h3 id="test-data-panel-title" className="test-data-panel__title">
                     {t('buyerData_profilePanelTitle')}
@@ -2696,18 +2698,16 @@ function TestPage() {
                   <button
                     type="button"
                     className="test-data-panel__back"
+                    aria-label={t('buyerCabinet_collapse')}
                     onClick={() => setHistorySheetOpen(false)}
                   >
                     <FiArrowLeft size={18} aria-hidden />
-                    {t('buyerCabinet_collapse')}
+                    <span className="test-data-panel__back-label">{t('buyerCabinet_collapse')}</span>
                   </button>
                   <h3 id="test-history-panel-title" className="test-data-panel__title">
                     {t('buyerHistory_title')}
                   </h3>
-                  <Link to="/history" className="test-data-panel__full-link">
-                    {t('buyerCabinet_allHistory')}
-                    <FiArrowRight size={15} aria-hidden />
-                  </Link>
+                  <span className="test-data-panel__toolbar-spacer" aria-hidden />
                 </div>
                 <p className="test-data-panel__hint">
                   {t('buyerCabinet_historySheetHint')}
@@ -2895,10 +2895,11 @@ function TestPage() {
                   <button
                     type="button"
                     className="test-data-panel__back"
+                    aria-label={t('buyerCabinet_collapse')}
                     onClick={() => setSubscriptionSheetOpen(false)}
                   >
                     <FiArrowLeft size={18} aria-hidden />
-                    {t('buyerCabinet_collapse')}
+                    <span className="test-data-panel__back-label">{t('buyerCabinet_collapse')}</span>
                   </button>
                   <h3 id="test-subscription-panel-title" className="test-data-panel__title">
                     {t('buyerCabinet_cardSubscriptionsTitle')}
@@ -2935,18 +2936,16 @@ function TestPage() {
                   <button
                     type="button"
                     className="test-data-panel__back"
+                    aria-label={t('buyerCabinet_collapse')}
                     onClick={() => setBookingsSheetOpen(false)}
                   >
                     <FiArrowLeft size={18} aria-hidden />
-                    {t('buyerCabinet_collapse')}
+                    <span className="test-data-panel__back-label">{t('buyerCabinet_collapse')}</span>
                   </button>
                   <h3 id="test-bookings-panel-title" className="test-data-panel__title">
                     {t('buyerCabinet_cardBookingsTitle')}
                   </h3>
-                  <Link to="/profile/bookings" className="test-data-panel__full-link">
-                    {t('buyerCabinet_allBookings')}
-                    <FiArrowRight size={15} aria-hidden />
-                  </Link>
+                  <span className="test-data-panel__toolbar-spacer" aria-hidden />
                 </div>
                 <p className="test-data-panel__hint">
                   {t('buyerCabinet_bookingsSheetHint')}

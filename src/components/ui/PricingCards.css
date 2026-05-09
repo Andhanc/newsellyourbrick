@@ -4,39 +4,16 @@
   width: 100%;
 }
 
-/* Период оплаты: текст + переключатель над карточками */
+/* Переключатель Месяц / Год над карточками */
 .pricing-cards__billing {
   width: 100%;
   max-width: min(640px, 100%);
-  margin: 0 auto 28px;
+  margin: 0 auto 22px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 18px;
+  gap: 0;
   box-sizing: border-box;
-}
-
-.pricing-cards__billing-copy {
-  width: 100%;
-  text-align: center;
-}
-
-.pricing-cards__billing-title {
-  margin: 0 0 8px;
-  font-size: 0.8125rem;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: #64748b;
-}
-
-.pricing-cards__billing-body {
-  margin: 0 auto;
-  max-width: 52ch;
-  font-size: 0.9375rem;
-  line-height: 1.55;
-  font-weight: 500;
-  color: #475569;
 }
 
 .pricing-cards__billing-controls {
@@ -100,15 +77,6 @@
   box-shadow:
     0 6px 18px rgba(5, 80, 76, 0.35),
     inset 0 1px 0 rgba(255, 255, 255, 0.22);
-}
-
-.pricing-cards__billing--creative .pricing-cards__billing-title {
-  color: rgba(15, 23, 42, 0.72);
-}
-
-.pricing-cards__billing--creative .pricing-cards__billing-body {
-  color: rgba(15, 23, 42, 0.88);
-  font-weight: 600;
 }
 
 .pricing-card--starter,
@@ -812,6 +780,21 @@
   display: flex;
   align-items: baseline;
   flex-wrap: wrap;
+  gap: 10px 14px;
+  margin-bottom: 28px;
+}
+
+.pricing-card__price-main-group {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  flex-wrap: nowrap;
+}
+
+.pricing-card--starter .pricing-card__price-row .pricing-card__price,
+.pricing-card--pro .pricing-card__price-row > .pricing-card__price-main-group .pricing-card__price,
+.pricing-card--vip .pricing-card__price-row > .pricing-card__price-main-group .pricing-card__price {
+  margin-bottom: 0;
 }
 
 /* Кабинет покупателя (профиль): на мобиле — колонка, читаемая типографика и удобные зоны нажатия */

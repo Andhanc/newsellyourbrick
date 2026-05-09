@@ -123,12 +123,9 @@ export default function PricingCards({
   }
 
   const perMonth = t('buyerPricing_perMonth')
-  const perYear = t('buyerPricing_perYear')
 
-  const proYearPrice = yearlyPrice(PRO_MONTHLY_PRICE)
-  const vipYearPrice = yearlyPrice(VIP_MONTHLY_PRICE)
-  const proMonthlyEquivalent = Math.round(proYearPrice / 12)
-  const vipMonthlyEquivalent = Math.round(vipYearPrice / 12)
+  const proMonthlyEquivalent = Math.round(yearlyPrice(PRO_MONTHLY_PRICE) / 12)
+  const vipMonthlyEquivalent = Math.round(yearlyPrice(VIP_MONTHLY_PRICE) / 12)
 
   const starterCurrent = cur === 'starter'
   const starterBelow = tierBelow('starter', cur)
@@ -173,17 +170,6 @@ export default function PricingCards({
 
   const billingSwitch = (
     <div className={`pricing-cards__billing${useCreative ? ' pricing-cards__billing--creative' : ''}`}>
-      <div className="pricing-cards__billing-copy">
-        <h3 className="pricing-cards__billing-title">{t('buyerPricing_billingTitle')}</h3>
-        <p className="pricing-cards__billing-body">
-          {isYearly
-            ? t('buyerPricing_billingBodyYearly', {
-                proEq: `€${formatEuro(proMonthlyEquivalent)}`,
-                vipEq: `€${formatEuro(vipMonthlyEquivalent)}`,
-              })
-            : t('buyerPricing_billingBodyMonthly')}
-        </p>
-      </div>
       <div className="pricing-cards__billing-controls" role="group" aria-label={t('buyerPricing_billingGroupAria')}>
         <div className="pricing-cards__billing-tabs">
           <button
@@ -315,8 +301,12 @@ export default function PricingCards({
                 ) : null}
               </div>
               <div className="pricing-card__price-row">
-                <span className="pricing-card__price">€{formatEuro(isYearly ? proYearPrice : PRO_MONTHLY_PRICE)}</span>
-                <span className="pricing-card__price-unit">{isYearly ? perYear : perMonth}</span>
+                <span className="pricing-card__price-main-group">
+                  <span className="pricing-card__price">
+                    €{formatEuro(isYearly ? proMonthlyEquivalent : PRO_MONTHLY_PRICE)}
+                  </span>
+                  <span className="pricing-card__price-unit">{perMonth}</span>
+                </span>
               </div>
               {useCreative ? proFeaturesGrid : null}
               {proCurrent ? (
@@ -373,8 +363,12 @@ export default function PricingCards({
                 </div>
               </div>
               <div className="pricing-card__price-row">
-                <span className="pricing-card__price">€{formatEuro(isYearly ? vipYearPrice : VIP_MONTHLY_PRICE)}</span>
-                <span className="pricing-card__price-unit">{isYearly ? perYear : perMonth}</span>
+                <span className="pricing-card__price-main-group">
+                  <span className="pricing-card__price">
+                    €{formatEuro(isYearly ? vipMonthlyEquivalent : VIP_MONTHLY_PRICE)}
+                  </span>
+                  <span className="pricing-card__price-unit">{perMonth}</span>
+                </span>
               </div>
               {useCreative ? vipFeaturesGrid : null}
               {vipCurrent ? (
