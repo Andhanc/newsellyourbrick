@@ -34,6 +34,10 @@ import {
 import { sendCrmEmailViaEmailJS, resolveBuyerEmailForPurchaseRequest } from './emailJsCrmSend.js';
 import { registerIntelligenceIoProxy, getIntelligenceIoKeyFromEnv } from './intelligenceIoProxy.js';
 import { publicPropertyListsCache } from './middleware/publicPropertyListsCache.js';
+import {
+  applyListingPhotosToFormatted,
+  normalizePhotosListInput,
+} from './utils/normalizeListingPhotos.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -7359,6 +7363,8 @@ app.post('/api/properties', upload.fields([
       console.warn('⚠️ Ошибка парсинга JSON для медиа:', parseError.message);
     }
 
+    parsedPhotos = normalizePhotosListInput(parsedPhotos);
+
     if (!user_id || !property_type || !title) {
       return res.status(400).json({ 
         success: false, 
@@ -8146,6 +8152,8 @@ app.put('/api/properties/:id', upload.fields([
     } catch (parseError) {
       console.warn('⚠️ Ошибка парсинга JSON для медиа:', parseError.message);
     }
+
+    parsedPhotos = normalizePhotosListInput(parsedPhotos);
     
     // Обрабатываем координаты
     let coordinatesStr = null;
@@ -8580,6 +8588,8 @@ app.get('/api/properties/pending', async (req, res) => {
           formatted.test_drive_data = null;
         }
       }
+      formatted.name = formatted.title || formatted.name || '';
+      applyListingPhotosToFormatted(formatted);
       return formatted;
     });
 
@@ -8710,10 +8720,7 @@ app.get('/api/properties/approved', async (req, res) => {
       
       // Добавляем дополнительные поля для обратной совместимости
       formatted.name = formatted.title;
-      formatted.image = formatted.photos && formatted.photos.length > 0 
-        ? formatted.photos[0] 
-        : 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=800&q=80';
-      formatted.images = formatted.photos || [];
+      applyListingPhotosToFormatted(formatted);
       formatted.owner = {
         firstName: formatted.first_name || '',
         lastName: formatted.last_name || '',
@@ -8815,10 +8822,7 @@ app.get('/api/properties/debts', async (req, res) => {
 
       // Обратная совместимость
       formatted.name = formatted.title;
-      formatted.image = formatted.photos && formatted.photos.length > 0
-        ? formatted.photos[0]
-        : 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=800&q=80';
-      formatted.images = formatted.photos || [];
+      applyListingPhotosToFormatted(formatted);
 
       return formatted;
     });
@@ -8872,8 +8876,7 @@ async function formatOneAuctionPropertyForApi(prop) {
     try { formatted.test_drive_data = JSON.parse(formatted.test_drive_data); } catch (e) { formatted.test_drive_data = null; }
   }
   formatted.name = formatted.title;
-  formatted.image = formatted.photos && formatted.photos.length > 0 ? formatted.photos[0] : 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=800&q=80';
-  formatted.images = formatted.photos || [];
+  applyListingPhotosToFormatted(formatted);
   formatted.owner = { firstName: formatted.first_name || '', lastName: formatted.last_name || '', email: formatted.email || '' };
   if (formatted.property_type === 'house' || formatted.property_type === 'villa') {
     formatted.beds = formatted.bedrooms || 0;
@@ -9122,10 +9125,7 @@ app.get('/api/properties/auctions', async (req, res) => {
       
       // Добавляем дополнительные поля для обратной совместимости
       formatted.name = formatted.title;
-      formatted.image = formatted.photos && formatted.photos.length > 0 
-        ? formatted.photos[0] 
-        : 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=800&q=80';
-      formatted.images = formatted.photos || [];
+      applyListingPhotosToFormatted(formatted);
       formatted.owner = {
         firstName: formatted.first_name || '',
         lastName: formatted.last_name || '',
@@ -9288,6 +9288,7 @@ app.get('/api/properties/test-timers', async (req, res) => {
         }
       }
       
+      const photosNorm = normalizePhotosListInput(photos);
       return {
         id: prop.id,
         name: prop.title || prop.name || '',
@@ -9306,8 +9307,11 @@ app.get('/api/properties/test-timers', async (req, res) => {
           lastName: prop.last_name || '',
           email: prop.email || ''
         },
-        image: photos && photos.length > 0 ? photos[0] : 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=800&q=80',
-        images: photos || [],
+        image:
+          photosNorm[0] ||
+          'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=800&q=80',
+        images: photosNorm,
+        photos: photosNorm,
         videos: videos || [],
         hasSamolyot: false,
         isAuction: true,
@@ -9500,20 +9504,37 @@ app.get('/api/properties/shares', async (req, res) => {
     const properties = await propertyQueries.getShares(limit, offset);
     // Нормализуем для карточек: id, property_type, title, location, image (первое фото), price, total_shares, shares_sold, area, rooms
     const list = properties.map((p) => {
-      const photos = (p.photos && (Array.isArray(p.photos) ? p.photos : (typeof p.photos === 'string' ? (() => { try { return JSON.parse(p.photos); } catch (e) { return []; } })() : []))) || [];
-      const firstPhoto = photos[0];
-      const image = typeof firstPhoto === 'string' ? firstPhoto : (firstPhoto && firstPhoto.url) ? firstPhoto.url : null;
+      const photosRaw =
+        (p.photos &&
+          (Array.isArray(p.photos)
+            ? p.photos
+            : typeof p.photos === 'string'
+              ? (() => {
+                  try {
+                    return JSON.parse(p.photos);
+                  } catch (e) {
+                    return [];
+                  }
+                })()
+            : [])) || [];
+      const photosNorm = normalizePhotosListInput(photosRaw);
       const totalShares = p.total_shares != null ? Number(p.total_shares) : 0;
       const sharesSold = p.shares_sold != null ? Number(p.shares_sold) : 0;
       const price = p.price != null ? Number(p.price) : 0;
+      const img =
+        photosNorm[0] ||
+        'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=800&q=80';
       return {
+        ...p,
+        photos: photosNorm,
+        images: photosNorm,
         id: p.id,
         property_type: p.property_type,
         shareId: `${p.property_type}-${p.id}`,
         title: p.title,
         location: p.location || '',
         description: p.description || '',
-        image: image || (photos[0] || null),
+        image: img,
         totalPrice: price,
         pricePerShare: totalShares > 0 ? price / totalShares : 0,
         totalShares,
@@ -9522,7 +9543,6 @@ app.get('/api/properties/shares', async (req, res) => {
         area: p.area,
         rooms: p.rooms,
         bedrooms: p.bedrooms,
-        ...p
       };
     });
     res.json({ success: true, data: list });
@@ -11402,6 +11422,8 @@ app.get('/api/properties/:id', async (req, res) => {
       reserved_by: formatted.reserved_by,
       reservation_time_remaining: formatted.reservation_time_remaining
     });
+    formatted.name = formatted.title || formatted.name || '';
+    applyListingPhotosToFormatted(formatted);
     res.json({ success: true, data: formatted });
   } catch (error) {
     console.error('Ошибка при получении объявления:', error);
@@ -11543,6 +11565,9 @@ app.get('/api/properties/user/:userId', async (req, res) => {
         // Убеждаемся, что bedrooms передается для домов/вилл (сохраняем 0 как валидное значение)
         formatted.bedrooms = (formatted.bedrooms !== undefined && formatted.bedrooms !== null && formatted.bedrooms !== '') ? formatted.bedrooms : null;
       }
+
+      formatted.name = formatted.title || formatted.name || '';
+      applyListingPhotosToFormatted(formatted);
       
       return formatted;
     });
@@ -13691,6 +13716,7 @@ app.get('/api/bids/user/:id', async (req, res) => {
         try { photos = JSON.parse(photos); } catch (_) { photos = []; }
       }
       if (!Array.isArray(photos)) photos = [];
+      photos = normalizePhotosListInput(photos);
       return {
         title: property.title || null,
         location: property.location || property.address || null,

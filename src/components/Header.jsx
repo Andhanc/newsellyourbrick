@@ -3,7 +3,6 @@ import { useTranslation } from 'react-i18next'
 import { useNavigate, useLocation, Link, NavLink } from 'react-router-dom'
 import { useUser } from '@clerk/clerk-react'
 import {
-  FiBell,
   FiSearch,
   FiChevronDown,
   FiX,
@@ -16,13 +15,9 @@ import { getApiBaseUrl } from '../utils/apiConfig'
 import { navigateToWallet } from '../utils/walletNavigation'
 import { isSiteUserSignedIn } from '../utils/siteAuthGate'
 import { fetchUserById } from '../utils/usersApi'
-import {
-  fetchUserNotifications,
-  invalidateUserNotificationsCache,
-} from '../utils/notificationsApi'
-import { getNotificationItemClass } from '../utils/notificationItemClass'
 /** Стили шапки (new-header*, меню, поиск и т.д.) определены в MainPage.css — импорт намеренно общий для визуального паритета. */
 import '../pages/MainPage.css'
+import { NotificationsBell } from '../context/SiteNotificationsContext'
 import { MenuToggleIcon } from '@/components/ui/menu-toggle-icon'
 import { UI_LANGUAGES } from '../constants/uiLanguages'
 
@@ -32,7 +27,6 @@ const Header = () => {
   const { t, i18n } = useTranslation()
   const { user, isLoaded: userLoaded } = useUser()
   const [isLanguageOpen, setIsLanguageOpen] = useState(false)
-  const [isNotificationOpen, setIsNotificationOpen] = useState(false)
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isMenuClosing, setIsMenuClosing] = useState(false)
   const [isSearchOpen, setIsSearchOpen] = useState(false)
@@ -46,10 +40,7 @@ const Header = () => {
   const [hasIncompleteProfile, setHasIncompleteProfile] = useState(false)
   const [isAIChatOpen, setIsAIChatOpen] = useState(false) // Состояние AI чата для страницы аукцион
   const [isManagerChatOpen, setIsManagerChatOpen] = useState(false)
-  const [notifications, setNotifications] = useState([])
-  const [notificationsLoading, setNotificationsLoading] = useState(false)
   const languageDropdownRef = useRef(null)
-  const notificationRef = useRef(null)
   const menuRef = useRef(null)
   const searchInputRef = useRef(null)
   const searchWrapperRef = useRef(null)
@@ -74,9 +65,6 @@ const Header = () => {
     function handleClickOutside(event) {
       if (languageDropdownRef.current && !languageDropdownRef.current.contains(event.target)) {
         setIsLanguageOpen(false)
-      }
-      if (notificationRef.current && !notificationRef.current.contains(event.target)) {
-        setIsNotificationOpen(false)
       }
       if (searchWrapperRef.current && !searchWrapperRef.current.contains(event.target) && isSearchOpen) {
         // Не закрываем поиск при клике вне, только если это не клик на другие элементы хедера
@@ -133,16 +121,6 @@ const Header = () => {
     window.addEventListener('managerChatStateChange', onManager)
     return () => window.removeEventListener('managerChatStateChange', onManager)
   }, [])
-
-  useEffect(() => {
-    if (!isNotificationOpen) return
-    if (typeof window === 'undefined' || !window.matchMedia('(max-width: 768px)').matches) return
-    const prev = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
-    return () => {
-      document.body.style.overflow = prev
-    }
-  }, [isNotificationOpen])
 
   // Открываем модальное окно регистрации/входа принудительно (например после OAuth)
   useEffect(() => {
@@ -537,80 +515,6 @@ const Header = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchQuery, isSearchOpen])
 
-  const unreadNotificationsCount = notifications.filter((n) => n.view_count === 0).length
-
-  const handleNotificationView = async (notificationId) => {
-    try {
-      await fetch(`${await getApiBaseUrl()}/notifications/${notificationId}/view`, {
-        method: 'PUT'
-      })
-      const dbUserId = localStorage.getItem('userId')
-      if (dbUserId && /^\d+$/.test(String(dbUserId).trim())) {
-        invalidateUserNotificationsCache(dbUserId)
-      }
-      setNotifications((prev) =>
-        prev.map((notification) =>
-          notification.id === notificationId
-            ? { ...notification, view_count: Math.max(1, notification.view_count || 0) }
-            : notification
-        )
-      )
-    } catch (error) {
-      console.error('Ошибка при просмотре уведомления:', error)
-    }
-  }
-
-  useEffect(() => {
-    const loadNotifications = async (options = {}) => {
-      const { force = false } = options
-      if (!isLoggedIn) {
-        setNotifications([])
-        return
-      }
-
-      const dbUserId = localStorage.getItem('userId')
-      if (!dbUserId || !/^\d+$/.test(String(dbUserId).trim())) {
-        setNotifications([])
-        return
-      }
-
-      setNotificationsLoading(true)
-      try {
-        const parsedNotifications = await fetchUserNotifications(dbUserId, {
-          ttlMs: force ? 0 : 15000,
-          force,
-        })
-        setNotifications(parsedNotifications || [])
-      } catch (error) {
-        console.error('Ошибка загрузки уведомлений:', error)
-        setNotifications([])
-      } finally {
-        setNotificationsLoading(false)
-      }
-    }
-
-    loadNotifications()
-    if (!isLoggedIn) return
-
-    const handleFocus = () => loadNotifications()
-    const handleSseRefresh = () => loadNotifications({ force: true })
-    window.addEventListener('focus', handleFocus)
-    window.addEventListener('owner-notifications-refresh', handleSseRefresh)
-    window.addEventListener('verification-status-update', handleSseRefresh)
-    const pollId = setInterval(() => {
-      if (document.visibilityState === 'visible') {
-        loadNotifications()
-      }
-    }, 120000)
-
-    return () => {
-      window.removeEventListener('focus', handleFocus)
-      window.removeEventListener('owner-notifications-refresh', handleSseRefresh)
-      window.removeEventListener('verification-status-update', handleSseRefresh)
-      clearInterval(pollId)
-    }
-  }, [isLoggedIn])
-
   const drawerMenuActive = useMemo(() => {
     const pathname = location.pathname
     const managerQ = new URLSearchParams(location.search).get('manager')
@@ -993,7 +897,7 @@ const Header = () => {
             </button>
           </div>
 
-          <div className="new-header__right" ref={notificationRef}>
+          <div className="new-header__right">
             {isSearchOpen ? (
               <div className="new-header__search-wrapper" ref={searchWrapperRef}>
                 <div className="new-header__search-field">
@@ -1203,106 +1107,7 @@ const Header = () => {
                     <span className="new-header__profile-indicator" />
                   )}
                 </button>
-                <button 
-                  type="button" 
-                  className="new-header__notification-btn"
-                  onClick={() => setIsNotificationOpen((prev) => !prev)}
-                  aria-expanded={isNotificationOpen}
-                >
-                  <FiBell size={20} />
-                  {unreadNotificationsCount > 0 && <span className="new-header__notification-indicator" />}
-                </button>
-              </>
-            )}
-            {isNotificationOpen && (
-              <>
-                <div 
-                  className="notification-backdrop"
-                  onClick={() => setIsNotificationOpen(false)}
-                />
-                <div className="notification-panel">
-                  <div className="notification-panel__content">
-                    <div className="notification-panel__header">
-                      <h3 className="notification-panel__title">{t('notifications')}</h3>
-                      <button 
-                        type="button" 
-                        className="notification-panel__close"
-                        onClick={() => setIsNotificationOpen(false)}
-                        aria-label={t('closeNotifications')}
-                      >
-                        <FiX size={20} />
-                      </button>
-                    </div>
-                    <div className="notification-panel__list">
-                      {notificationsLoading ? (
-                        <div style={{ padding: '20px', textAlign: 'center' }}>{t('loading')}</div>
-                      ) : notifications.length === 0 ? (
-                        <div style={{ padding: '20px', textAlign: 'center', color: '#6b7280' }}>
-                          {t('noNotifications')}
-                        </div>
-                      ) : (
-                        notifications.map((notification) => (
-                          <div
-                            key={notification.id}
-                            className={`notification-item ${getNotificationItemClass(notification)}`}
-                            onClick={() => {
-                              if (notification.type === 'test_drive_request') return
-                              handleNotificationView(notification.id)
-                            }}
-                          >
-                            <div className="notification-item__content">
-                              <h4 className="notification-item__title">{notification.title}</h4>
-                              {notification.message && (
-                                <p className="notification-item__message">{notification.message}</p>
-                              )}
-                              {notification.data?.property_id && (
-                                <div className="notification-item__property">
-                                  <div className="notification-item__info">
-                                    <button
-                                      type="button"
-                                      className="notification-item__button"
-                                      onClick={(e) => {
-                                        e.stopPropagation()
-                                        setIsNotificationOpen(false)
-                                        handleNotificationView(notification.id)
-                                        navigate(`/property/${notification.data.property_id}`)
-                                      }}
-                                    >
-                                      {t('goTo') || 'Перейти'}
-                                      <FiChevronDown size={18} style={{ transform: 'rotate(-90deg)' }} />
-                                    </button>
-                                  </div>
-                                </div>
-                              )}
-                              {!notification.data?.property_id && notification.type === 'buy_now_approved' && (
-                                <div className="notification-item__property">
-                                  <div className="notification-item__info">
-                                    <button
-                                      type="button"
-                                      className="notification-item__button"
-                                      onClick={(e) => {
-                                        e.stopPropagation()
-                                        setIsNotificationOpen(false)
-                                        handleNotificationView(notification.id)
-                                        navigate('/history')
-                                      }}
-                                    >
-                                      {t('goTo') || 'Перейти'}
-                                      <FiChevronDown size={18} style={{ transform: 'rotate(-90deg)' }} />
-                                    </button>
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        ))
-                      )}
-                    </div>
-                    <div className="notification-panel__sheet-handle" aria-hidden="true">
-                      <span className="notification-panel__sheet-pill" />
-                    </div>
-                  </div>
-                </div>
+                <NotificationsBell />
               </>
             )}
           </div>

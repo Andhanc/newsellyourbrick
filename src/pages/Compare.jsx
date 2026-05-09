@@ -888,6 +888,156 @@ const Compare = () => {
                   </table>
                 </div>
 
+                {showInvestorPanelCta && (
+                  <section className="compare-investor-cta" aria-labelledby="compare-investor-cta-heading">
+                    <div className="compare-investor-cta-inner">
+                      <div className="compare-investor-cta-copy">
+                        <h2 id="compare-investor-cta-heading" className="compare-investor-cta-title">
+                          <FiBarChart2 className="compare-investor-cta-title-icon" aria-hidden />
+                          Умная панель инвестора
+                        </h2>
+                        <p className="compare-investor-cta-text">
+                          Сравнили котировку — загляните в панель: стратегия (аренда, перепродажа, доли),
+                          прогноз потоков и понятнее, какой объект ближе к вашим целям. Часть сценариев и
+                          сохранённая аналитика открывается по подписке — там же можно спокойно довести выбор до
+                          сделки.
+                        </p>
+                      </div>
+                      <Link
+                        to="/calculator"
+                        className="compare-investor-cta-link"
+                      >
+                        Открыть Умную панель инвестора
+                        <FiArrowRight size={18} className="compare-investor-cta-link-arrow" aria-hidden />
+                      </Link>
+                    </div>
+                  </section>
+                )}
+
+                <section className="compare-ai-section" aria-labelledby="compare-ai-heading">
+                  <div className="compare-ai-head">
+                    <h2 id="compare-ai-heading" className="compare-ai-title">
+                      <HiOutlineSparkles className="compare-ai-title-icon" aria-hidden />
+                      Рекомендация и инфраструктура (ИИ)
+                    </h2>
+                    <button
+                      type="button"
+                      className="compare-ai-refresh"
+                      onClick={refreshAiAnalysis}
+                      disabled={aiLoading}
+                    >
+                      <FiRefreshCw size={18} className={aiLoading ? 'compare-ai-spin' : ''} aria-hidden />
+                      Обновить анализ
+                    </button>
+                  </div>
+                  <p className="compare-ai-disclaimer">
+                    ИИ опирается на адрес и описание объектов и общеизвестные сведения о локациях. Перед сделкой
+                    проверьте расстояния на карте и актуальную инфраструктуру.
+                  </p>
+
+                  {aiLoading && (
+                    <div className="compare-ai-loading">
+                      <span className="compare-ai-loading-dot" />
+                      Запрашиваем анализ у умного помощника…
+                    </div>
+                  )}
+
+                  {aiError && !aiLoading && (
+                    <div className="compare-ai-error">
+                      {aiError}
+                      <button type="button" className="compare-ai-retry" onClick={refreshAiAnalysis}>
+                        Повторить
+                      </button>
+                    </div>
+                  )}
+
+                  {!aiLoading && aiResult?.summary && (
+                    <div className="compare-ai-summary">
+                      <p>{aiResult.summary}</p>
+                    </div>
+                  )}
+
+                  {!aiLoading && aiResult?.rows?.length > 0 && (
+                    <div className="compare-table-wrap compare-ai-table-wrap">
+                      <table className="compare-table compare-ai-table">
+                        <thead>
+                          <tr>
+                            <th scope="col" className="compare-table-param">
+                              Инфраструктура и окружение
+                            </th>
+                            <th scope="col" className="compare-table-col">
+                              <span className="compare-table-col-head">
+                                {pair.left.property.name || pair.left.property.title}
+                              </span>
+                            </th>
+                            <th scope="col" className="compare-table-col">
+                              <span className="compare-table-col-head">
+                                {pair.right.property.name || pair.right.property.title}
+                              </span>
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {aiResult.rows.map((row, idx) => (
+                            <tr key={`${row.aspect}-${idx}`}>
+                              <th scope="row" className="compare-table-param">
+                                {row.aspect}
+                              </th>
+                              <td
+                                className={[
+                                  'compare-table-cell',
+                                  row.winner === 'left' && 'compare-table-cell--win',
+                                  row.winner === 'tie' && 'compare-table-cell--tie',
+                                  row.winner === 'unknown' && 'compare-table-cell--plain',
+                                ]
+                                  .filter(Boolean)
+                                  .join(' ')}
+                              >
+                                {row.left}
+                                {row.winner === 'left' && <span className="compare-win-tag">лучше</span>}
+                              </td>
+                              <td
+                                className={[
+                                  'compare-table-cell',
+                                  row.winner === 'right' && 'compare-table-cell--win',
+                                  row.winner === 'tie' && 'compare-table-cell--tie',
+                                  row.winner === 'unknown' && 'compare-table-cell--plain',
+                                ]
+                                  .filter(Boolean)
+                                  .join(' ')}
+                              >
+                                {row.right}
+                                {row.winner === 'right' && <span className="compare-win-tag">лучше</span>}
+                              </td>
+                            </tr>
+                          ))}
+                          {aiScores && (
+                            <tr className="compare-table-summary-row">
+                              <th scope="row" className="compare-table-param">
+                                Итог по строкам ИИ
+                              </th>
+                              <td colSpan={2} className="compare-table-summary compare-table-summary--tie">
+                                <strong>
+                                  Преимуществ по оценке ИИ: первый объект — {aiScores.left}, второй —{' '}
+                                  {aiScores.right}
+                                  {aiScores.tie > 0 ? `, паритет — ${aiScores.tie}` : ''}
+                                </strong>
+                              </td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+
+                  {!aiLoading && aiResult && !aiResult.rows?.length && aiResult.summary && (
+                    <p className="compare-ai-note">
+                      Таблица не разобралась из ответа модели — ориентируйтесь на текст выше или нажмите
+                      «Обновить анализ».
+                    </p>
+                  )}
+                </section>
+
                 <div className="compare-calculator-actions">
                   <button
                     type="button"
@@ -1057,156 +1207,6 @@ const Compare = () => {
                     </div>
                   </div>
                 )}
-
-                {showInvestorPanelCta && (
-                  <section className="compare-investor-cta" aria-labelledby="compare-investor-cta-heading">
-                    <div className="compare-investor-cta-inner">
-                      <div className="compare-investor-cta-copy">
-                        <h2 id="compare-investor-cta-heading" className="compare-investor-cta-title">
-                          <FiBarChart2 className="compare-investor-cta-title-icon" aria-hidden />
-                          Умная панель инвестора
-                        </h2>
-                        <p className="compare-investor-cta-text">
-                          Сравнили котировку — загляните в панель: стратегия (аренда, перепродажа, доли),
-                          прогноз потоков и понятнее, какой объект ближе к вашим целям. Часть сценариев и
-                          сохранённая аналитика открывается по подписке — там же можно спокойно довести выбор до
-                          сделки.
-                        </p>
-                      </div>
-                      <Link
-                        to="/calculator"
-                        className="compare-investor-cta-link"
-                      >
-                        Открыть Умную панель инвестора
-                        <FiArrowRight size={18} className="compare-investor-cta-link-arrow" aria-hidden />
-                      </Link>
-                    </div>
-                  </section>
-                )}
-
-                <section className="compare-ai-section" aria-labelledby="compare-ai-heading">
-                  <div className="compare-ai-head">
-                    <h2 id="compare-ai-heading" className="compare-ai-title">
-                      <HiOutlineSparkles className="compare-ai-title-icon" aria-hidden />
-                      Рекомендация и инфраструктура (ИИ)
-                    </h2>
-                    <button
-                      type="button"
-                      className="compare-ai-refresh"
-                      onClick={refreshAiAnalysis}
-                      disabled={aiLoading}
-                    >
-                      <FiRefreshCw size={18} className={aiLoading ? 'compare-ai-spin' : ''} aria-hidden />
-                      Обновить анализ
-                    </button>
-                  </div>
-                  <p className="compare-ai-disclaimer">
-                    ИИ опирается на адрес и описание объектов и общеизвестные сведения о локациях. Перед сделкой
-                    проверьте расстояния на карте и актуальную инфраструктуру.
-                  </p>
-
-                  {aiLoading && (
-                    <div className="compare-ai-loading">
-                      <span className="compare-ai-loading-dot" />
-                      Запрашиваем анализ у умного помощника…
-                    </div>
-                  )}
-
-                  {aiError && !aiLoading && (
-                    <div className="compare-ai-error">
-                      {aiError}
-                      <button type="button" className="compare-ai-retry" onClick={refreshAiAnalysis}>
-                        Повторить
-                      </button>
-                    </div>
-                  )}
-
-                  {!aiLoading && aiResult?.summary && (
-                    <div className="compare-ai-summary">
-                      <p>{aiResult.summary}</p>
-                    </div>
-                  )}
-
-                  {!aiLoading && aiResult?.rows?.length > 0 && (
-                    <div className="compare-table-wrap compare-ai-table-wrap">
-                      <table className="compare-table compare-ai-table">
-                        <thead>
-                          <tr>
-                            <th scope="col" className="compare-table-param">
-                              Инфраструктура и окружение
-                            </th>
-                            <th scope="col" className="compare-table-col">
-                              <span className="compare-table-col-head">
-                                {pair.left.property.name || pair.left.property.title}
-                              </span>
-                            </th>
-                            <th scope="col" className="compare-table-col">
-                              <span className="compare-table-col-head">
-                                {pair.right.property.name || pair.right.property.title}
-                              </span>
-                            </th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {aiResult.rows.map((row, idx) => (
-                            <tr key={`${row.aspect}-${idx}`}>
-                              <th scope="row" className="compare-table-param">
-                                {row.aspect}
-                              </th>
-                              <td
-                                className={[
-                                  'compare-table-cell',
-                                  row.winner === 'left' && 'compare-table-cell--win',
-                                  row.winner === 'tie' && 'compare-table-cell--tie',
-                                  row.winner === 'unknown' && 'compare-table-cell--plain',
-                                ]
-                                  .filter(Boolean)
-                                  .join(' ')}
-                              >
-                                {row.left}
-                                {row.winner === 'left' && <span className="compare-win-tag">лучше</span>}
-                              </td>
-                              <td
-                                className={[
-                                  'compare-table-cell',
-                                  row.winner === 'right' && 'compare-table-cell--win',
-                                  row.winner === 'tie' && 'compare-table-cell--tie',
-                                  row.winner === 'unknown' && 'compare-table-cell--plain',
-                                ]
-                                  .filter(Boolean)
-                                  .join(' ')}
-                              >
-                                {row.right}
-                                {row.winner === 'right' && <span className="compare-win-tag">лучше</span>}
-                              </td>
-                            </tr>
-                          ))}
-                          {aiScores && (
-                            <tr className="compare-table-summary-row">
-                              <th scope="row" className="compare-table-param">
-                                Итог по строкам ИИ
-                              </th>
-                              <td colSpan={2} className="compare-table-summary compare-table-summary--tie">
-                                <strong>
-                                  Преимуществ по оценке ИИ: первый объект — {aiScores.left}, второй —{' '}
-                                  {aiScores.right}
-                                  {aiScores.tie > 0 ? `, паритет — ${aiScores.tie}` : ''}
-                                </strong>
-                              </td>
-                            </tr>
-                          )}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
-
-                  {!aiLoading && aiResult && !aiResult.rows?.length && aiResult.summary && (
-                    <p className="compare-ai-note">
-                      Таблица не разобралась из ответа модели — ориентируйтесь на текст выше или нажмите
-                      «Обновить анализ».
-                    </p>
-                  )}
-                </section>
               </section>
             )}
           </>

@@ -24,6 +24,7 @@ import { lazyWithRetry } from './utils/lazyWithRetry'
 import RouteErrorBoundary from './components/RouteErrorBoundary'
 import MainPage from './pages/MainPage'
 import Home from './pages/Home'
+import SiteNotificationsProvider from './context/SiteNotificationsContext'
 import DebtsPage from './pages/Debts'
 import SearchResults from './pages/SearchResults'
 import PropertyDetailPage from './pages/PropertyDetailPage'
@@ -533,6 +534,7 @@ function App() {
   return (
     <div className="app-root-fill">
     <Router>
+      <SiteNotificationsProvider>
       <div className="app-shell">
       <PropertyFavoritesProvider>
       <RouteHistoryTracker />
@@ -835,6 +837,7 @@ function App() {
       <ToastContainer />
       </PropertyFavoritesProvider>
       </div>
+      </SiteNotificationsProvider>
     </Router>
     </div>
   )

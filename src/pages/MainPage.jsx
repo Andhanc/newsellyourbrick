@@ -8,7 +8,6 @@ import './MainPage.css'
 const HERO_BACKGROUND_URL =
   'https://www.magazindomov.ru/wp-content/uploads/2020/07/Villa-Palazzetta-1.jpg'
 import {
-  FiBell,
   FiSearch,
   FiSliders,
   FiHeart,
@@ -65,11 +64,7 @@ import { askPropertyAssistant, detectManagerContactIntent, filterPropertiesByLoc
 import { getUserData, clearUserData, isAuthenticated } from '../services/authService'
 import { syncAssistantLead } from '../services/assistantLeadService'
 import { getManagerContactButtons } from '../services/liveChatApi'
-import {
-  fetchUserNotifications,
-  invalidateUserNotificationsCache,
-} from '../utils/notificationsApi'
-import { getNotificationItemClass } from '../utils/notificationItemClass'
+import { NotificationsBell } from '../context/SiteNotificationsContext'
 import { fetchUserById } from '../utils/usersApi'
 
 import { getApiBaseUrl, getApiBaseUrlSync } from '../utils/apiConfig'
@@ -408,12 +403,6 @@ function MainPage() {
   const [userPhoto, setUserPhoto] = useState(null) // Фотография пользователя
   const [isLoggedIn, setIsLoggedIn] = useState(false) // Статус авторизации
   const [hasIncompleteProfile, setHasIncompleteProfile] = useState(false) // Есть незаполненные поля профиля
-  const [isNotificationOpen, setIsNotificationOpen] = useState(false)
-  const [notifications, setNotifications] = useState([])
-  const [notificationsLoading, setNotificationsLoading] = useState(false)
-  const [notificationProperties, setNotificationProperties] = useState({})
-  const previousNotificationIds = useRef(new Set())
-  const isFirstNotificationsLoadRef = useRef(true)
   const [userPreferences, setUserPreferences] = useState({
     purpose: null, // 'для себя', 'под сдачу', 'инвестиции'
     budget: null,
@@ -479,16 +468,6 @@ function MainPage() {
     mq.addEventListener('change', update)
     return () => mq.removeEventListener('change', update)
   }, [])
-
-  useEffect(() => {
-    if (!isNotificationOpen) return
-    if (typeof window === 'undefined' || !window.matchMedia('(max-width: 768px)').matches) return
-    const prev = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
-    return () => {
-      document.body.style.overflow = prev
-    }
-  }, [isNotificationOpen])
 
   // Загружаем историю чата из localStorage при монтировании компонента или изменении пользователя
   const lastChatUserIdRef = useRef(null)
@@ -727,321 +706,6 @@ function MainPage() {
     }
   }, [user, userLoaded, location.pathname]) // Обновляем при изменении маршрута
 
-  // Загрузка уведомлений
-  useEffect(() => {
-    const loadNotifications = async (options = {}) => {
-      const { force = false } = options
-      const userData = getUserData()
-      if (!userData) {
-        return
-      }
-
-      // Числовой id из БД (ставки, тест-драйв) хранится в userId; parsed.id может быть Clerk — не подставлять его в API уведомлений
-      let dbUserId = null
-      const storedDbId = localStorage.getItem('userId')
-      if (storedDbId && /^\d+$/.test(String(storedDbId).trim())) {
-        dbUserId = String(storedDbId).trim()
-      } else {
-        const rawId = userData.id
-        if (rawId && /^\d+$/.test(String(rawId).trim())) {
-          dbUserId = String(rawId).trim()
-        }
-      }
-
-      // Если ID не найден, пробуем найти пользователя по email или phone
-      if (!dbUserId && (userData.email || userData.phone)) {
-        try {
-          const searchUrl = userData.email 
-            ? `${API_BASE_URL}/users/email/${encodeURIComponent(userData.email)}`
-            : `${API_BASE_URL}/users/phone/${encodeURIComponent(userData.phone)}`;
-          const userResponse = await fetch(searchUrl);
-          if (userResponse.ok) {
-            const userResult = await userResponse.json();
-            if (userResult.success && userResult.data) {
-              dbUserId = userResult.data.id;
-            }
-          }
-        } catch (error) {
-          console.warn('⚠️ Не удалось найти пользователя в БД:', error);
-        }
-      }
-
-      if (!dbUserId) {
-        return
-      }
-      setNotificationsLoading(true)
-      try {
-        const notificationsList = await fetchUserNotifications(dbUserId, {
-          ttlMs: force ? 0 : 15000,
-          force,
-        })
-
-        // Проверяем новые уведомления о перебитой ставке и тест-драйве.
-        // Первый успешный ответ после монтирования только заполняет previousNotificationIds — без toast,
-        // иначе после F5 одни и те же непрочитанные снова показывались бы как «новые».
-        const currentNotificationIds = new Set(notificationsList.map((n) => n.id))
-        if (!isFirstNotificationsLoadRef.current) {
-          const newBidOutbidNotifications = notificationsList.filter(
-            (n) =>
-              n.type === 'bid_outbid' &&
-              !previousNotificationIds.current.has(n.id) &&
-              n.view_count === 0
-          )
-
-          if (newBidOutbidNotifications.length > 0) {
-            newBidOutbidNotifications.forEach((notif) => {
-              const message = notif.message || notif.title || 'Вашу ставку перебили!'
-              showToast(message, 'warning', 5000)
-            })
-          }
-
-          const newTestDriveResult = notificationsList.filter(
-            (n) =>
-              n.type === 'test_drive_result' &&
-              !previousNotificationIds.current.has(n.id) &&
-              n.view_count === 0
-          )
-          if (newTestDriveResult.length > 0) {
-            newTestDriveResult.forEach((notif) => {
-              const message = notif.message || notif.title || 'Обновление по тест-драйву'
-              showToast(message, notif.title?.includes('отклон') ? 'warning' : 'success', 6000)
-            })
-          }
-        } else {
-          isFirstNotificationsLoadRef.current = false
-        }
-
-        // Обновляем множество ID предыдущих уведомлений
-        previousNotificationIds.current = currentNotificationIds
-        setNotifications(notificationsList)
-      } catch (error) {
-        console.error('❌ Ошибка загрузки уведомлений:', error)
-        setNotifications([])
-      } finally {
-        setNotificationsLoading(false)
-      }
-    }
-
-    if (isLoggedIn) {
-      loadNotifications()
-      const handleFocus = () => loadNotifications()
-      const handleSseNotificationsRefresh = () => loadNotifications({ force: true })
-      window.addEventListener('focus', handleFocus)
-      window.addEventListener('owner-notifications-refresh', handleSseNotificationsRefresh)
-      window.addEventListener('verification-status-update', handleSseNotificationsRefresh)
-      const pollId = setInterval(() => {
-        if (document.visibilityState === 'visible') {
-          loadNotifications()
-        }
-      }, 120000)
-      return () => {
-        window.removeEventListener('focus', handleFocus)
-        window.removeEventListener('owner-notifications-refresh', handleSseNotificationsRefresh)
-        window.removeEventListener('verification-status-update', handleSseNotificationsRefresh)
-        clearInterval(pollId)
-      }
-    }
-  }, [user, userLoaded, isLoggedIn])
-
-  useEffect(() => {
-    const propertyIds = Array.from(
-      new Set(
-        notifications
-          .map((n) => {
-            const payload =
-              typeof n?.data === 'string'
-                ? (() => {
-                    try {
-                      return JSON.parse(n.data)
-                    } catch {
-                      return null
-                    }
-                  })()
-                : n?.data
-            const id = payload?.property_id
-            return id != null ? Number(id) : null
-          })
-          .filter((id) => Number.isFinite(id) && !notificationProperties[id])
-      )
-    )
-
-    if (propertyIds.length === 0) return
-
-    let cancelled = false
-    const lang = i18n.language || 'ru'
-
-    const loadNotificationProperties = async () => {
-      const results = await Promise.all(
-        propertyIds.map(async (propertyId) => {
-          try {
-            const response = await fetch(`${API_BASE_URL}/properties/${propertyId}?lang=${lang}`)
-            if (!response.ok) return null
-
-            const json = await response.json().catch(() => null)
-            const data = json?.data
-            if (!data || !data.id) return null
-
-            const firstPhoto = getPropertyCardImage(data, null)
-            return [
-              Number(propertyId),
-              {
-                id: Number(data.id),
-                name: data.title || data.name || null,
-                location: data.location || data.address || null,
-                image: firstPhoto || null,
-              },
-            ]
-          } catch {
-            return null
-          }
-        })
-      )
-
-      if (cancelled) return
-
-      const updates = results.filter(Boolean)
-      if (updates.length === 0) return
-
-      setNotificationProperties((prev) => {
-        const next = { ...prev }
-        updates.forEach(([id, value]) => {
-          next[id] = value
-        })
-        return next
-      })
-    }
-
-    loadNotificationProperties()
-    return () => {
-      cancelled = true
-    }
-  }, [notifications, i18n.language, notificationProperties])
-
-  const getNotificationPropertyMeta = (notification) => {
-    let payload = notification?.data
-    if (typeof payload === 'string') {
-      try {
-        payload = JSON.parse(payload)
-      } catch {
-        payload = null
-      }
-    }
-
-    const propertyId = payload?.property_id != null ? Number(payload.property_id) : null
-    const cached = propertyId != null ? notificationProperties[propertyId] : null
-
-    return {
-      id: propertyId,
-      name:
-        cached?.name ||
-        payload?.property_title ||
-        payload?.property_name ||
-        notification?.property_title ||
-        t('listingDefault'),
-      location:
-        cached?.location ||
-        payload?.property_location ||
-        payload?.location ||
-        payload?.address ||
-        notification?.property_location ||
-        '',
-      image:
-        cached?.image ||
-        payload?.property_image ||
-        payload?.image ||
-        payload?.photo ||
-        'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=400&q=80',
-    }
-  }
-
-  const respondTestDriveRequest = async (notification, action) => {
-    let payload = notification?.data
-    if (typeof payload === 'string') {
-      try {
-        payload = JSON.parse(payload)
-      } catch {
-        payload = null
-      }
-    }
-    if (!payload?.booking_id) {
-      showToast('Не удалось прочитать заявку. Обновите страницу.', 'error')
-      return
-    }
-    const storedDbId = localStorage.getItem('userId')
-    const dbUserId =
-      storedDbId && /^\d+$/.test(String(storedDbId).trim())
-        ? String(storedDbId).trim()
-        : null
-    if (!dbUserId) {
-      requestOpenLoginModal({ wizard: true })
-      return
-    }
-    try {
-      let ownerComment = ''
-      if (action === 'approve') {
-        ownerComment =
-          window.prompt(
-            'Добавьте комментарий для покупателя: время заезда, получение ключей и т.д.'
-          ) || ''
-        if (!ownerComment.trim()) {
-          showToast('Комментарий обязателен при подтверждении', 'warning')
-          return
-        }
-      }
-      const res = await fetch(
-        `${API_BASE_URL}/test-drive-bookings/${payload.booking_id}/respond`,
-        {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            user_id: parseInt(dbUserId, 10),
-            action,
-            owner_comment: action === 'approve' ? ownerComment : undefined,
-          }),
-        }
-      )
-      const json = await res.json().catch(() => ({}))
-      if (!res.ok || !json.success) {
-        showToast(json.error || 'Не удалось выполнить действие', 'error')
-        return
-      }
-      showToast(
-        action === 'approve' ? 'Тест-драйв подтверждён' : 'Заявка отклонена',
-        'success',
-        4000
-      )
-      const r = await fetch(`${API_BASE_URL}/notifications/user/${dbUserId}`)
-      if (r.ok) {
-        const d = await r.json()
-        if (d.success) setNotifications(d.data || [])
-      }
-    } catch (e) {
-      console.error('test-drive respond', e)
-      showToast('Ошибка сети', 'error')
-    }
-  }
-
-  // Обработчик просмотра уведомления
-  const handleNotificationView = async (notificationId) => {
-    try {
-      await fetch(`${API_BASE_URL}/notifications/${notificationId}/view`, {
-        method: 'PUT'
-      })
-      const dbUserId = localStorage.getItem('userId')
-      if (dbUserId && /^\d+$/.test(dbUserId)) {
-        invalidateUserNotificationsCache(dbUserId)
-      }
-      // Обновляем список уведомлений
-      // Используем числовой ID из БД (из localStorage), а не Clerk ID
-      if (dbUserId && /^\d+$/.test(dbUserId)) {
-        const refreshed = await fetchUserNotifications(dbUserId, { force: true, ttlMs: 0 })
-        setNotifications(refreshed || [])
-      }
-    } catch (error) {
-      console.error('Ошибка при просмотре уведомления:', error)
-    }
-  }
-
   const [selectedProperty, setSelectedProperty] = useState(null)
   const [showMap, setShowMap] = useState(false)
   const [selectedChat, setSelectedChat] = useState(null)
@@ -1066,7 +730,6 @@ function MainPage() {
   const searchWrapperRef = useRef(null)
   const chatMessagesRef = useRef(null)
   const lastMessageRef = useRef(null)
-  const notificationRef = useRef(null)
   const menuRef = useRef(null)
   const landingStatsRef = useRef(null)
   const auctionShowcaseScrollerRef = useRef(null)
@@ -1809,9 +1472,6 @@ function MainPage() {
       const inLangMobile = languageDropdownMobileRef.current?.contains(event.target)
       if (!inLangDesktop && !inLangMobile) {
         setIsLanguageOpen(false)
-      }
-      if (notificationRef.current && !notificationRef.current.contains(event.target)) {
-        setIsNotificationOpen(false)
       }
     }
 
@@ -2749,7 +2409,7 @@ function MainPage() {
             </button>
           </div>
 
-        <div className="new-header__right" ref={notificationRef}>
+        <div className="new-header__right">
         {isSearchOpen ? (
           <div className="new-header__search-wrapper" ref={searchWrapperRef}>
             <div className="new-header__search-field">
@@ -2902,150 +2562,7 @@ function MainPage() {
             <span className="new-header__profile-indicator" />
           )}
         </button>
-        <button 
-          type="button" 
-          className="new-header__notification-btn"
-          onClick={() => setIsNotificationOpen((prev) => !prev)}
-          aria-expanded={isNotificationOpen}
-        >
-          <FiBell size={20} />
-          <span className="new-header__notification-indicator" />
-        </button>
-        {isNotificationOpen && (
-          <>
-            <div 
-              className="notification-backdrop"
-              onClick={() => setIsNotificationOpen(false)}
-            />
-            <div className="notification-panel">
-              <div className="notification-panel__content">
-              <div className="notification-panel__header">
-<h3 className="notification-panel__title">{t('notifications')}</h3>
-                  <button 
-                    type="button" 
-                    className="notification-panel__close"
-                    onClick={() => setIsNotificationOpen(false)}
-                    aria-label={t('closeNotifications')}
-                >
-                  <FiX size={20} />
-                </button>
-              </div>
-              <div className="notification-panel__list">
-                {notificationsLoading ? (
-<div style={{ padding: '20px', textAlign: 'center' }}>{t('loading')}</div>
-                  ) : notifications.length === 0 ? (
-                  <div style={{ padding: '20px', textAlign: 'center', color: '#6b7280' }}>{t('noNotifications')}</div>
-                ) : (
-                  notifications.map((notification) => {
-                    const propertyMeta = getNotificationPropertyMeta(notification)
-                    return (
-                    <div 
-                      key={notification.id} 
-                      className={`notification-item ${getNotificationItemClass(notification)}`}
-                      onClick={() => {
-                        if (notification.type === 'test_drive_request') return
-                        handleNotificationView(notification.id)
-                      }}
-                    >
-                      <div className="notification-item__content">
-                        <h4 className="notification-item__title">{notification.title}</h4>
-                        {notification.message && (
-                          <p className="notification-item__message">{notification.message}</p>
-                        )}
-                        {notification.type === 'test_drive_request' && notification.data?.booking_id ? (
-                          <div
-                            className="notification-item__test-drive-actions"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <button
-                              type="button"
-                              className="notification-item__button notification-item__button--approve"
-                              onClick={() => respondTestDriveRequest(notification, 'approve')}
-                            >
-                              Подтвердить
-                            </button>
-                            <button
-                              type="button"
-                              className="notification-item__button notification-item__button--reject"
-                              onClick={() => respondTestDriveRequest(notification, 'reject')}
-                            >
-                              Отклонить
-                            </button>
-                          </div>
-                        ) : notification.type === 'test_drive_result' && notification.data?.booking_id != null ? (
-                          <div
-                            className="notification-item__test-drive-actions"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <button
-                              type="button"
-                              className="notification-item__button"
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                setIsNotificationOpen(false)
-                                handleNotificationView(notification.id)
-                                const bid = notification.data.booking_id
-                                navigate(`/profile/bookings${bid != null ? `?booking=${bid}` : ''}`)
-                              }}
-                            >
-                              Перейти
-                              <FiArrowRight size={18} />
-                            </button>
-                          </div>
-                        ) : propertyMeta.id != null ? (
-                          <div className="notification-item__property">
-                            <div className="notification-item__image">
-                              <img loading="lazy" 
-                                src={propertyMeta.image}
-                                alt={propertyMeta.name || 'Property'}
-                                onError={(e) => {
-                                  e.target.src = 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=400&q=80'
-                                }}
-                              />
-                            </div>
-                            <div className="notification-item__info">
-                              <p className="notification-item__property-name">{propertyMeta.name}</p>
-                              <p className="notification-item__property-location">{propertyMeta.location || ' '}</p>
-                              <button 
-                                type="button" 
-                                className="notification-item__button"
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  setIsNotificationOpen(false)
-                                  handlePropertyClick('recommended', propertyMeta.id, false)
-                                }}
-                              >
-                                Перейти
-                                <FiArrowRight size={18} />
-                              </button>
-                            </div>
-                          </div>
-                        ) : null}
-                        {!notification.data && (
-                          <button 
-                            type="button" 
-                            className="notification-item__button"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              setIsNotificationOpen(false)
-                            }}
-                          >
-                            Закрыть
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                    );
-                  })
-                )}
-              </div>
-              <div className="notification-panel__sheet-handle" aria-hidden="true">
-                <span className="notification-panel__sheet-pill" />
-              </div>
-            </div>
-          </div>
-          </>
-        )}
+        <NotificationsBell />
           </>
         )}
         </div>
@@ -3098,151 +2615,8 @@ function MainPage() {
               </div>
             </div>
 
-            <div className="header__actions" ref={notificationRef}>
-              <button 
-                type="button" 
-                className="header__action-btn"
-                onClick={() => setIsNotificationOpen((prev) => !prev)}
-                aria-expanded={isNotificationOpen}
-              >
-                <FiBell size={18} />
-                <span className="header__action-indicator" />
-              </button>
-              {isNotificationOpen && (
-                <>
-                  <div 
-                    className="notification-backdrop"
-                    onClick={() => setIsNotificationOpen(false)}
-                  />
-                  <div className="notification-panel">
-                    <div className="notification-panel__content">
-                      <div className="notification-panel__header">
-                        <h3 className="notification-panel__title">{t('notifications')}</h3>
-                        <button 
-                          type="button" 
-                          className="notification-panel__close"
-                          onClick={() => setIsNotificationOpen(false)}
-                          aria-label={t('closeNotifications')}
-                        >
-                          <FiX size={20} />
-                        </button>
-                      </div>
-                      <div className="notification-panel__list">
-                        {notificationsLoading ? (
-                          <div style={{ padding: '20px', textAlign: 'center' }}>{t('loading')}</div>
-                        ) : notifications.length === 0 ? (
-                          <div style={{ padding: '20px', textAlign: 'center', color: '#6b7280' }}>{t('noNotifications')}</div>
-                        ) : (
-                          notifications.map((notification) => {
-                            const propertyMeta = getNotificationPropertyMeta(notification)
-                            return (
-                            <div 
-                              key={notification.id} 
-                              className={`notification-item ${getNotificationItemClass(notification)}`}
-                              onClick={() => {
-                                if (notification.type === 'test_drive_request') return
-                                handleNotificationView(notification.id)
-                              }}
-                            >
-                              <div className="notification-item__content">
-                                <h4 className="notification-item__title">{notification.title}</h4>
-                                {notification.message && (
-                                  <p className="notification-item__message">{notification.message}</p>
-                                )}
-                                {notification.type === 'test_drive_request' && notification.data?.booking_id ? (
-                                  <div
-                                    className="notification-item__test-drive-actions"
-                                    onClick={(e) => e.stopPropagation()}
-                                  >
-                                    <button
-                                      type="button"
-                                      className="notification-item__button notification-item__button--approve"
-                                      onClick={() => respondTestDriveRequest(notification, 'approve')}
-                                    >
-                                      Подтвердить
-                                    </button>
-                                    <button
-                                      type="button"
-                                      className="notification-item__button notification-item__button--reject"
-                                      onClick={() => respondTestDriveRequest(notification, 'reject')}
-                                    >
-                                      Отклонить
-                                    </button>
-                                  </div>
-                                ) : notification.type === 'test_drive_result' && notification.data?.booking_id != null ? (
-                                  <div
-                                    className="notification-item__test-drive-actions"
-                                    onClick={(e) => e.stopPropagation()}
-                                  >
-                                    <button
-                                      type="button"
-                                      className="notification-item__button"
-                                      onClick={(e) => {
-                                        e.stopPropagation()
-                                        setIsNotificationOpen(false)
-                                        handleNotificationView(notification.id)
-                                        const bid = notification.data.booking_id
-                                        navigate(`/profile/bookings${bid != null ? `?booking=${bid}` : ''}`)
-                                      }}
-                                    >
-                                      {t('goTo')}
-                                      <FiArrowRight size={18} />
-                                    </button>
-                                  </div>
-                                ) : propertyMeta.id != null ? (
-                                  <div className="notification-item__property">
-                                    <div className="notification-item__image">
-                                      <img loading="lazy" 
-                                        src={propertyMeta.image}
-                                        alt={propertyMeta.name || 'Property'}
-                                        onError={(e) => {
-                                          e.target.src = 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=400&q=80'
-                                        }}
-                                      />
-                                    </div>
-                                    <div className="notification-item__info">
-                                      <p className="notification-item__property-name">{propertyMeta.name}</p>
-                                      <p className="notification-item__property-location">{propertyMeta.location || ' '}</p>
-                                      <button 
-                                        type="button" 
-                                        className="notification-item__button"
-                                        onClick={(e) => {
-                                          e.stopPropagation()
-                                          setIsNotificationOpen(false)
-                                          handlePropertyClick('recommended', propertyMeta.id, false)
-                                        }}
-                                      >
-                                        {t('goTo')}
-                                        <FiArrowRight size={18} />
-                                      </button>
-                                    </div>
-                                  </div>
-                                ) : null}
-                                {!notification.data && (
-                                  <button 
-                                    type="button" 
-                                    className="notification-item__button"
-                                    onClick={(e) => {
-                                      e.stopPropagation()
-                                      setIsNotificationOpen(false)
-                                    }}
-                                  >
-                                    {t('close')}
-                                  </button>
-                                )}
-                              </div>
-                            </div>
-                            );
-                          })
-                        )}
-                      </div>
-                      <div className="notification-panel__sheet-handle" aria-hidden="true">
-                        <span className="notification-panel__sheet-pill" />
-                      </div>
-                    </div>
-                  </div>
-                </>
-              )}
+            <div className="header__actions">
+              <NotificationsBell variant="mobile" />
               <button 
                 type="button" 
                 className={`header__action-btn ${isLoggedIn ? 'header__action-btn--avatar' : ''}`}

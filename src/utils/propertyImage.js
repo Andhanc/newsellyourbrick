@@ -114,11 +114,11 @@ function normalizeImageUrl(raw, baseOrigin) {
     .replace(/^['"]+|['"]+$/g, '')
     .replace(/\\/g, '/')
   if (!value) return ''
+  if (value.startsWith('blob:')) return ''
   const normalizedBase = (baseOrigin || '').replace(/\/$/, '')
 
   if (
     value.startsWith('data:') ||
-    value.startsWith('blob:') ||
     value.startsWith('http://') ||
     value.startsWith('https://')
   ) {
