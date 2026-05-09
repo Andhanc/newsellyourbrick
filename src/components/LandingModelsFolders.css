@@ -55,7 +55,8 @@
     scrollbar-width: none;
     padding-top: clamp(8px, 2vw, 24px);
     padding-bottom: 0;
-    touch-action: pan-x;
+    /* pan-x alone блокирует вертикальный скролл страницы при касании карусели */
+    touch-action: pan-x pan-y;
     box-sizing: border-box;
   }
 
