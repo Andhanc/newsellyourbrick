@@ -458,28 +458,37 @@ const ShareDetailPage = () => {
                 <div className="share-detail__buy-block">
                   <div className="share-detail__buy-controls">
                     <label className="share-detail__buy-label">Количество долей:</label>
-                    <div className="share-detail__buy-stepper">
-                      <button
-                        type="button"
-                        className="share-detail__stepper-btn"
-                        onClick={() => setBuyCount((c) => Math.max(1, c - 1))}
-                        disabled={buyCount <= 1}
+                    <div className="share-detail__buy-stepper-row">
+                      <div className="share-detail__buy-stepper">
+                        <button
+                          type="button"
+                          className="share-detail__stepper-btn"
+                          onClick={() => setBuyCount((c) => Math.max(1, c - 1))}
+                          disabled={buyCount <= 1}
+                        >
+                          −
+                        </button>
+                        <span className="share-detail__buy-count">{buyCount}</span>
+                        <button
+                          type="button"
+                          className="share-detail__stepper-btn"
+                          onClick={() => setBuyCount((c) => Math.min(availableToBuy, c + 1))}
+                          disabled={buyCount >= availableToBuy}
+                        >
+                          +
+                        </button>
+                      </div>
+                      <span
+                        className="share-detail__buy-hint"
+                        role="group"
+                        aria-label={`Итого: ${formatPrice(shareObject.pricePerShare * buyCount)}`}
                       >
-                        −
-                      </button>
-                      <span className="share-detail__buy-count">{buyCount}</span>
-                      <button
-                        type="button"
-                        className="share-detail__stepper-btn"
-                        onClick={() => setBuyCount((c) => Math.min(availableToBuy, c + 1))}
-                        disabled={buyCount >= availableToBuy}
-                      >
-                        +
-                      </button>
+                        <span className="share-detail__buy-hint-label">Итого</span>
+                        <span className="share-detail__buy-hint-value">
+                          {formatPrice(shareObject.pricePerShare * buyCount)}
+                        </span>
+                      </span>
                     </div>
-                    <span className="share-detail__buy-hint">
-                      Итого: {formatPrice(shareObject.pricePerShare * buyCount)}
-                    </span>
                   </div>
                   <button
                     type="button"

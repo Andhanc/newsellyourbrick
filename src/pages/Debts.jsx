@@ -205,7 +205,7 @@ const Debts = () => {
   }
 
   return (
-    <div className="shares-page">
+    <div className="shares-page shares-page--debts">
       <Header />
       <div className="shares-page__bg" />
       <main className="shares-container">

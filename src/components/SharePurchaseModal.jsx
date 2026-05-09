@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { FiX, FiExternalLink, FiTrash2 } from 'react-icons/fi'
+import { FiX, FiExternalLink, FiTrash2, FiChevronLeft } from 'react-icons/fi'
 import ShareSignaturePad from './ShareSignaturePad'
 import { fetchUserDeposit } from '../utils/depositApi'
 import { showNotification } from '../utils/toastHelper'
@@ -9,6 +9,20 @@ import { navigateToStripeCheckout } from '../utils/subscriptionCheckout'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api'
 const WALLET_OFFSET_EUR = 3000
+const STEP_PRICE = 1
+const STEP_AGREEMENT = 2
+
+/** Склонение для «N доля/доли/долей» на русском */
+function russianSharesWord(n) {
+  const abs = Number(n)
+  if (!Number.isFinite(abs) || abs < 0) return 'долей'
+  const d10 = abs % 10
+  const d100 = abs % 100
+  if (d100 >= 11 && d100 <= 14) return 'долей'
+  if (d10 === 1) return 'доля'
+  if (d10 >= 2 && d10 <= 4) return 'доли'
+  return 'долей'
+}
 
 const SharePurchaseModal = ({
   isOpen,
@@ -27,16 +41,28 @@ const SharePurchaseModal = ({
   const [error, setError] = useState(null)
   const [walletBalanceEur, setWalletBalanceEur] = useState(null)
   const [useWalletDeposit, setUseWalletDeposit] = useState(false)
+  const [step, setStep] = useState(STEP_PRICE)
   const signaturePadRef = useRef(null)
 
   useEffect(() => {
     if (!isOpen) {
+      setStep(STEP_PRICE)
       setPdfOpened(false)
       setIsPdfViewerOpen(false)
       setAgreed(false)
       setSubmitting(false)
       setError(null)
       setUseWalletDeposit(false)
+    }
+  }, [isOpen])
+
+  useEffect(() => {
+    if (!isOpen) return
+    if (typeof window === 'undefined' || !window.matchMedia('(max-width: 768px)').matches) return
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = prev
     }
   }, [isOpen])
 
@@ -171,103 +197,153 @@ const SharePurchaseModal = ({
         role="dialog"
         aria-modal="true"
         aria-labelledby="share-purchase-modal-title"
+        aria-describedby="share-purchase-modal-step"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="share-purchase-modal__header">
-          <h2 id="share-purchase-modal-title">Покупка долей</h2>
-          <button type="button" className="share-purchase-modal__close" onClick={onClose} aria-label="Закрыть">
-            <FiX size={22} />
-          </button>
+        <div className="share-purchase-modal__drawer-handle" aria-hidden>
+          <span className="share-purchase-modal__drawer-pill" />
         </div>
-
-        <div className="share-purchase-modal__body">
-          <div className="share-purchase-modal__summary">
-            <div className="share-purchase-modal__row">
-              <span>Объект</span>
-              <strong>{shareObject.title}</strong>
-            </div>
-            <div className="share-purchase-modal__row">
-              <span>Количество долей</span>
-              <strong>{buyCount}</strong>
-            </div>
-            <div className="share-purchase-modal__row">
-              <span>Цена одной доли</span>
-              <strong>{formatPrice(pricePerShare)}</strong>
-            </div>
-            <div className="share-purchase-modal__row share-purchase-modal__row--total">
-              <span>К оплате</span>
-              <strong>{formatPrice(totalToPay)}</strong>
-            </div>
-          </div>
-
-          {isEur && (
-            <label className="share-purchase-modal__wallet-toggle">
-              <input
-                type="checkbox"
-                checked={useWalletDeposit}
-                onChange={(e) => setUseWalletDeposit(e.target.checked)}
-                disabled={!canUseWallet}
-              />
-              <span>Использовать депозит 3000 € в счет покупки долей</span>
-            </label>
-          )}
-          {isEur && !canUseWallet && (
-            <p className="share-purchase-modal__wallet-hint">
-              Для списания депозита нужно минимум 3000 € на балансе и сумма покупки выше 3000 €.
-            </p>
-          )}
-
-          <div className="share-purchase-modal__policy">
-            <p className="share-purchase-modal__policy-intro">
-              Перед покупкой ознакомьтесь с условиями долевого участия. Документ откроется в окне поверх этой
-              формы.
-            </p>
-            <button type="button" className="share-purchase-modal__pdf-btn" onClick={openPdf}>
-              <FiExternalLink size={18} />
-              Открыть политику (PDF)
-            </button>
-          </div>
-
-          <label
-            className={`share-purchase-modal__check ${!pdfOpened ? 'share-purchase-modal__check--disabled' : ''}`}
-          >
-            <input
-              type="checkbox"
-              checked={agreed}
-              disabled={!pdfOpened}
-              onChange={(e) => setAgreed(e.target.checked)}
-            />
-            <span>Я прочитал(а) политику и согласен(на) с условиями покупки доли</span>
-          </label>
-          {!pdfOpened && (
-            <p className="share-purchase-modal__hint">Сначала откройте PDF — после этого можно отметить согласие.</p>
-          )}
-
-          {agreed && (
-            <div className="share-purchase-modal__signature-block">
-              <div className="share-purchase-modal__signature-head">
-                <label>Подпись согласия</label>
-                <button type="button" className="share-purchase-modal__clear-sig" onClick={clearSignature}>
-                  <FiTrash2 size={16} />
-                  Очистить
+        <div className="share-purchase-modal__scroll">
+          <div className="share-purchase-modal__header">
+            <div className="share-purchase-modal__header-leading">
+              {step === STEP_AGREEMENT && (
+                <button
+                  type="button"
+                  className="share-purchase-modal__header-back"
+                  onClick={() => {
+                    setStep(STEP_PRICE)
+                    setError(null)
+                  }}
+                  aria-label="Назад: цена и параметры"
+                >
+                  <FiChevronLeft size={22} />
                 </button>
+              )}
+              <div className="share-purchase-modal__header-text">
+                <h2 id="share-purchase-modal-title">
+                  {step === STEP_PRICE ? 'Цена и параметры' : 'Согласие и оплата'}
+                </h2>
+                <p id="share-purchase-modal-step" className="share-purchase-modal__step-meta">
+                  Шаг {step} из 2 · {step === STEP_PRICE ? 'проверьте сумму' : 'документы и подпись'}
+                </p>
               </div>
-              <ShareSignaturePad ref={signaturePadRef} active={agreed && isOpen} />
             </div>
-          )}
-
-          {error && <p className="share-purchase-modal__error">{error}</p>}
-
-          {agreed && (
-            <button
-              type="button"
-              className="share-purchase-modal__pay-btn"
-              disabled={submitting}
-              onClick={handlePay}
-            >
-              {submitting ? 'Переход к оплате…' : `Оплатить в Stripe (${formatPrice(totalToPay)})`}
+            <button type="button" className="share-purchase-modal__close" onClick={onClose} aria-label="Закрыть">
+              <FiX size={22} />
             </button>
-          )}
+          </div>
+
+          <div className="share-purchase-modal__body">
+            {step === STEP_PRICE && (
+              <>
+                <div className="share-purchase-modal__summary">
+                  <div className="share-purchase-modal__row">
+                    <span>Объект</span>
+                    <strong>{shareObject.title}</strong>
+                  </div>
+                  <div className="share-purchase-modal__row">
+                    <span>Количество долей</span>
+                    <strong>{buyCount}</strong>
+                  </div>
+                  <div className="share-purchase-modal__row">
+                    <span>Цена одной доли</span>
+                    <strong>{formatPrice(pricePerShare)}</strong>
+                  </div>
+                  <div className="share-purchase-modal__row share-purchase-modal__row--total">
+                    <span>К оплате</span>
+                    <strong>{formatPrice(totalToPay)}</strong>
+                  </div>
+                </div>
+
+                {isEur && (
+                  <label className="share-purchase-modal__wallet-toggle">
+                    <input
+                      type="checkbox"
+                      checked={useWalletDeposit}
+                      onChange={(e) => setUseWalletDeposit(e.target.checked)}
+                      disabled={!canUseWallet}
+                    />
+                    <span>Использовать депозит 3000 € в счет покупки долей</span>
+                  </label>
+                )}
+                {isEur && !canUseWallet && (
+                  <p className="share-purchase-modal__wallet-hint">
+                    Для списания депозита нужно минимум 3000 € на балансе и сумма покупки выше 3000 €.
+                  </p>
+                )}
+
+                <button type="button" className="share-purchase-modal__pay-btn" onClick={() => setStep(STEP_AGREEMENT)}>
+                  Далее: согласие и оплата
+                </button>
+              </>
+            )}
+
+            {step === STEP_AGREEMENT && (
+              <>
+                <div className="share-purchase-modal__recap" aria-live="polite">
+                  <span className="share-purchase-modal__recap-label">К оплате</span>
+                  <strong className="share-purchase-modal__recap-value">{formatPrice(totalToPay)}</strong>
+                  <span className="share-purchase-modal__recap-muted">
+                    {buyCount} {russianSharesWord(buyCount)}
+                  </span>
+                </div>
+
+                <div className="share-purchase-modal__policy">
+                  <p className="share-purchase-modal__policy-intro">
+                    Перед покупкой ознакомьтесь с условиями долевого участия. Документ откроется в окне поверх этой
+                    формы.
+                  </p>
+                  <button type="button" className="share-purchase-modal__pdf-btn" onClick={openPdf}>
+                    <FiExternalLink size={18} />
+                    Открыть политику (PDF)
+                  </button>
+                </div>
+
+                <label
+                  className={`share-purchase-modal__check ${!pdfOpened ? 'share-purchase-modal__check--disabled' : ''}`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={agreed}
+                    disabled={!pdfOpened}
+                    onChange={(e) => setAgreed(e.target.checked)}
+                  />
+                  <span>Я прочитал(а) политику и согласен(на) с условиями покупки доли</span>
+                </label>
+                {!pdfOpened && (
+                  <p className="share-purchase-modal__hint">
+                    Сначала откройте PDF — после этого можно отметить согласие.
+                  </p>
+                )}
+
+                {agreed && (
+                  <div className="share-purchase-modal__signature-block">
+                    <div className="share-purchase-modal__signature-head">
+                      <label>Подпись согласия</label>
+                      <button type="button" className="share-purchase-modal__clear-sig" onClick={clearSignature}>
+                        <FiTrash2 size={16} />
+                        Очистить
+                      </button>
+                    </div>
+                    <ShareSignaturePad ref={signaturePadRef} active={agreed && isOpen && step === STEP_AGREEMENT} />
+                  </div>
+                )}
+
+                {error && <p className="share-purchase-modal__error">{error}</p>}
+
+                {agreed && (
+                  <button
+                    type="button"
+                    className="share-purchase-modal__pay-btn"
+                    disabled={submitting}
+                    onClick={handlePay}
+                  >
+                    {submitting ? 'Переход к оплате…' : `Оплатить в Stripe (${formatPrice(totalToPay)})`}
+                  </button>
+                )}
+              </>
+            )}
+          </div>
         </div>
       </div>
 

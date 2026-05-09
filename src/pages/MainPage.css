@@ -1,5 +1,5 @@
 
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&family=Neucha&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&display=swap');
 
 .app {
   font-family: 'Montserrat', sans-serif;
@@ -6784,12 +6784,12 @@
   min-width: 0;
 }
 
-/* Заголовки витрин: рукописный «маркерный» стиль (Neucha + кириллица) */
+/* Заголовки витрин — основной шрифт сайта */
 .auction-showcase__title {
   margin: 0;
-  font-family: 'Neucha', 'Segoe Print', 'Segoe Script', cursive;
+  font-family: 'Montserrat', system-ui, sans-serif;
   font-size: clamp(32px, 4.2vw, 46px);
-  font-weight: 400;
+  font-weight: 700;
   color: #0a0a0a;
   letter-spacing: 0.06em;
   text-transform: uppercase;

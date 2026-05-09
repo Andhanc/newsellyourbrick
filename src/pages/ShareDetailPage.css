@@ -26,7 +26,7 @@
   padding: 28px 24px 64px;
   position: relative;
   z-index: 1;
-  font-family: 'Neucha', 'Segoe Print', 'Segoe Script', cursive;
+  font-family: 'Montserrat', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -63,6 +63,12 @@
   color: #fff;
   margin-bottom: 20px;
   box-shadow: 0 4px 20px rgba(10, 186, 181, 0.4);
+}
+
+@media (max-width: 768px) {
+  .share-detail__badge {
+    display: none;
+  }
 }
 
 .share-detail__hero {
@@ -163,7 +169,8 @@
 
 .share-detail__title {
   font-size: 26px;
-  font-weight: 400;
+  font-weight: 700;
+  font-style: normal;
   color: #0f172a;
   margin: 0 0 8px;
   letter-spacing: 0.06em;
@@ -467,6 +474,15 @@
   margin-bottom: 20px;
 }
 
+.share-detail__buy-stepper-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 20px;
+  flex-wrap: wrap;
+}
+
 .share-detail__buy-label {
   display: block;
   font-size: 14px;
@@ -518,11 +534,41 @@
 }
 
 .share-detail__buy-hint {
-  display: block;
-  margin-top: 14px;
-  font-size: 15px;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 4px;
+  margin: 0;
+  flex-shrink: 0;
+  padding: 10px 16px;
+  min-height: 52px;
+  box-sizing: border-box;
+  border-radius: 14px;
+  background: linear-gradient(145deg, rgba(10, 186, 181, 0.14) 0%, rgba(10, 186, 181, 0.05) 55%, rgba(255, 255, 255, 0.6) 100%);
+  border: 1px solid rgba(10, 186, 181, 0.32);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.75) inset,
+    0 4px 16px rgba(10, 186, 181, 0.12),
+    0 0 0 1px rgba(0, 0, 0, 0.02);
+}
+
+.share-detail__buy-hint-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
   color: #0d9488;
-  font-weight: 600;
+  line-height: 1;
+}
+
+.share-detail__buy-hint-value {
+  font-size: 19px;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  line-height: 1.15;
+  color: #0f172a;
+  font-variant-numeric: tabular-nums;
 }
 
 .share-detail__buy-btn {
@@ -567,6 +613,14 @@
   }
   .share-detail__sidebar {
     position: static;
+  }
+
+  /* Телефон / узкая колонка: сначала покупка, ниже диаграмма распределения */
+  .share-detail__sidebar .share-detail__buy-block {
+    order: 1;
+  }
+  .share-detail__sidebar .share-detail__chart-section {
+    order: 2;
   }
 }
 
@@ -617,5 +671,15 @@
   .share-detail__buy-count {
     min-width: 48px;
     font-size: 18px;
+  }
+
+  .share-detail__buy-hint {
+    min-height: 48px;
+    padding: 8px 14px;
+    border-radius: 12px;
+  }
+
+  .share-detail__buy-hint-value {
+    font-size: 17px;
   }
 }

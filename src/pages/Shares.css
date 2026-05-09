@@ -111,13 +111,24 @@
   pointer-events: none;
 }
 
+/* Страница Доли: hero под фиксированной шапкой — заголовок и лид не уходят под плавающий бар */
+.shares-page .animated-marquee-hero {
+  padding-top: calc(env(safe-area-inset-top, 0px) + 108px) !important;
+}
+
+@media (min-width: 768px) {
+  .shares-page .animated-marquee-hero {
+    padding-top: calc(env(safe-area-inset-top, 0px) + 118px) !important;
+  }
+}
+
 /*
-  Зазор между текстом hero и бегущей строкой на телефоне.
+  Зазор между текстом hero и бегущей строкой на телефоне (раньше 5.5rem — слишком много воздуха).
   Явное правило: глобальный сброс * { padding:0 } и слои Tailwind иначе «съедали» утилиты pb-*.
 */
 @media (max-width: 767px) {
   .shares-page .animated-marquee-hero .animated-marquee-hero__copy {
-    padding-bottom: 5.5rem !important;
+    padding-bottom: 1.75rem !important;
   }
 
   .shares-page .animated-marquee-hero .animated-marquee-hero__title {
@@ -136,9 +147,8 @@
   font-weight: 700;
 }
 
-/* Вторая строка («для каждого»): Neucha — тот же характер, что заголовок «Аукцион» на главной */
 .shares-page .animated-marquee-hero .shares-hero__title-marker {
-  font-family: 'Neucha', 'Segoe Print', 'Segoe Script', cursive;
+  font-family: 'Montserrat', system-ui, sans-serif;
   font-weight: 700;
   letter-spacing: 0.06em;
   line-height: 1.12;
@@ -165,6 +175,17 @@
   position: relative;
   z-index: 1;
   box-sizing: border-box;
+}
+
+/* Долги: нет hero под шапкой — карточки риска не должны уходить под fixed header */
+.shares-page--debts .shares-container {
+  padding-top: calc(env(safe-area-inset-top, 0px) + 112px);
+}
+
+@media (max-width: 768px) {
+  .shares-page--debts .shares-container {
+    padding-top: calc(env(safe-area-inset-top, 0px) + 108px);
+  }
 }
 
 /* Блок карточек описания доли — широкий и выразительный */
@@ -585,7 +606,7 @@
   background: rgba(255, 255, 255, 0.8);
   border-radius: 20px;
   border: 1px dashed rgba(0, 0, 0, 0.12);
-  font-family: 'Neucha', 'Segoe Print', 'Segoe Script', cursive;
+  font-family: 'Montserrat', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -605,7 +626,7 @@
   position: relative;
   display: flex;
   flex-direction: column;
-  font-family: 'Neucha', 'Segoe Print', 'Segoe Script', cursive;
+  font-family: 'Montserrat', system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -804,7 +825,9 @@
 
 .share-card__title {
   font-size: 18px;
-  font-weight: 400;
+  font-weight: 700;
+  font-family: 'Montserrat', system-ui, sans-serif;
+  font-style: normal;
   color: #0f172a;
   margin: 0 0 8px;
   line-height: 1.12;
@@ -973,7 +996,9 @@
 
   .share-card__title {
     font-size: 12px;
-    font-weight: 400;
+    font-weight: 700;
+    font-family: 'Montserrat', system-ui, sans-serif;
+    font-style: normal;
     margin: 0 0 4px;
     line-height: 1.28;
     display: -webkit-box;
