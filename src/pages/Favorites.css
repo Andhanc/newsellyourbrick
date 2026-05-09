@@ -189,8 +189,8 @@
 
 @media (max-width: 768px) {
   .favorites-grid {
-    grid-template-columns: 1fr;
-    gap: 20px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
   }
 }
 
@@ -218,7 +218,7 @@
 .favorite-card-image {
   position: relative;
   width: 100%;
-  height: 240px;
+  height: 200px;
   overflow: hidden;
   background: #f0f0f0;
 }
@@ -235,7 +235,7 @@
 }
 
 .favorite-card-timer {
-  margin-bottom: 12px;
+  margin-bottom: 10px;
   display: flex;
   justify-content: flex-start;
 }
@@ -274,7 +274,7 @@
 }
 
 .favorite-card-content {
-  padding: 20px;
+  padding: 16px;
 }
 
 .favorite-card-title {
@@ -295,14 +295,14 @@
   gap: 6px;
   font-size: 14px;
   color: #666;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
 }
 
 .favorite-card-details {
   display: flex;
   align-items: center;
   gap: 16px;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
   flex-wrap: wrap;
 }
 
@@ -321,8 +321,8 @@
 .favorite-card-price {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  padding-top: 12px;
+  gap: 3px;
+  padding-top: 10px;
   border-top: 1px solid #f0f0f0;
 }
 
@@ -334,9 +334,9 @@
 }
 
 .favorite-card-price-value {
-  font-size: 22px;
+  font-size: 20px;
   font-weight: 700;
-  color: #4A90E2;
+  color: #0abab5;
 }
 
 /* Скелетон карточки — шапка страницы уже отрисована */
@@ -399,7 +399,7 @@
 }
 
 .favorite-card-details--skeleton {
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 }
 
 .favorite-card-skel-pill-sm {
@@ -454,9 +454,9 @@
 }
 
 .favorite-card-price--skeleton {
-  padding-top: 12px;
+  padding-top: 10px;
   border-top: 1px solid #f0f0f0;
-  gap: 8px;
+  gap: 6px;
 }
 
 .favorite-card-skel-line--label {
@@ -543,6 +543,10 @@
     padding: 24px 16px;
   }
 
+  .favorite-card {
+    min-width: 0;
+  }
+
   .favorites-title {
     font-size: 28px;
   }
@@ -552,11 +556,16 @@
   }
 
   .favorite-card-image {
-    height: 200px;
+    height: 140px;
   }
 
   .favorite-card-content {
-    padding: 16px;
+    padding: 10px;
+  }
+
+  .favorite-card-details {
+    gap: 8px;
+    margin-bottom: 8px;
   }
 
   .favorite-card-title {
@@ -564,13 +573,17 @@
   }
 
   .favorite-card-price-value {
-    font-size: 20px;
+    font-size: 18px;
   }
 }
 
 @media (max-width: 480px) {
   .favorites-container {
     padding: 20px 12px;
+  }
+
+  .favorites-grid {
+    gap: 10px;
   }
 
   .favorites-title {
@@ -582,11 +595,25 @@
   }
 
   .favorite-card-image {
-    height: 180px;
+    height: 118px;
   }
 
   .favorite-card-content {
-    padding: 14px;
+    padding: 8px;
+  }
+
+  .favorite-card-location {
+    font-size: 12px;
+    margin-bottom: 6px;
+  }
+
+  .favorite-card-details {
+    gap: 6px;
+    margin-bottom: 8px;
+  }
+
+  .favorite-card-detail {
+    font-size: 12px;
   }
 
   .favorite-card-title {
@@ -594,7 +621,11 @@
   }
 
   .favorite-card-price-value {
-    font-size: 18px;
+    font-size: 16px;
+  }
+
+  .favorite-card-price {
+    padding-top: 6px;
   }
 
   .favorites-empty {
