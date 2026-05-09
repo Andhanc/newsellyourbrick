@@ -1,0 +1,401 @@
+/* Единый фон страницы и карточная сетка разделов */
+.sections-page {
+  --sections-bg: #ececee;
+  --sections-card-radius: 18px;
+  /* оттенок Tiffany blue для акцентов */
+  --sections-tiffany: #7dd8d5;
+  --sections-tiffany-mid: #5ec9c4;
+  --sections-tiffany-deep: #3aada7;
+  --sections-tiffany-soft: rgba(94, 201, 196, 0.22);
+  --sections-card-border: rgba(15, 23, 42, 0.088);
+  min-height: 100%;
+  min-height: 100dvh;
+  background: var(--sections-bg);
+  color: #0a0a0a;
+}
+
+.sections-page__main {
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 0 20px 56px;
+}
+
+/* Hero без отдельного цвета — тот же фон, нижний отступ акцентирует блок */
+.sections-page__hero {
+  background: var(--sections-bg);
+  margin: 0 -20px 24px;
+  padding: 32px 20px 28px;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+}
+
+@media (min-width: 760px) {
+  .sections-page__hero {
+    margin-left: calc(50% - 50vw);
+    margin-right: calc(50% - 50vw);
+    padding-left: max(20px, calc(50vw - 520px));
+    padding-right: max(20px, calc(50vw - 520px));
+  }
+}
+
+.sections-page__hero-inner {
+  max-width: 1040px;
+  margin: 0 auto;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.sections-page__title {
+  margin: 0;
+  line-height: 1.05;
+  font-weight: 800;
+  color: #0a0a0a;
+}
+
+.sections-page__title-script {
+  font-family: Caveat, cursive;
+  font-size: clamp(2.25rem, 6vw, 3rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-right: 0.12em;
+}
+
+.sections-page__title-sans {
+  font-family: Montserrat, 'Plus Jakarta Sans', system-ui, sans-serif;
+  font-size: clamp(1.5rem, 3.8vw, 2rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+.sections-page__about-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  color: #0a0a0a;
+  font-family: Montserrat, 'Plus Jakarta Sans', system-ui, sans-serif;
+  font-size: 0.875rem;
+  font-weight: 500;
+  padding: 6px 0;
+  flex-shrink: 0;
+}
+
+.sections-page__about-link:hover {
+  opacity: 0.75;
+}
+
+.sections-page__about-link-text {
+  text-transform: lowercase;
+}
+
+.sections-page__about-link-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 1.5px solid #0a0a0a;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.sections-page__body {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+/* Переключатель не на всю ширину — проще сканировать на десктопе */
+.sections-page__segment-wrap {
+  width: 100%;
+  max-width: 400px;
+}
+
+.sections-page__segment {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: stretch;
+  gap: 0;
+  padding: 4px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px solid var(--sections-tiffany-soft);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.85),
+    0 0 0 1px rgba(255, 255, 255, 0.4);
+}
+
+.sections-page__segment-thumb {
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  left: 4px;
+  width: calc(50% - 4px);
+  border-radius: 999px;
+  background: linear-gradient(
+    155deg,
+    var(--sections-tiffany) 0%,
+    var(--sections-tiffany-mid) 48%,
+    var(--sections-tiffany-deep) 100%
+  );
+  border: 1px solid color-mix(in srgb, var(--sections-tiffany-deep) 55%, transparent);
+  box-shadow:
+    0 2px 6px rgba(15, 23, 42, 0.12),
+    0 10px 28px var(--sections-tiffany-soft),
+    inset 0 1px 0 rgba(255, 255, 255, 0.45);
+  transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+}
+
+.sections-page__segment-thumb[data-active='seller'] {
+  transform: translateX(100%);
+}
+
+.sections-page__segment-btn {
+  position: relative;
+  z-index: 1;
+  border: none;
+  background: transparent;
+  padding: 12px 16px;
+  font-family: Montserrat, 'Plus Jakarta Sans', system-ui, sans-serif;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #64748b;
+  cursor: pointer;
+  border-radius: 999px;
+  transition: color 0.2s ease;
+}
+
+.sections-page__segment-btn--active {
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(15, 42, 41, 0.35);
+}
+
+.sections-page__segment-btn:focus-visible {
+  outline: 2px solid var(--sections-tiffany-deep);
+  outline-offset: 2px;
+}
+
+.sections-page__lead {
+  margin: 0;
+  font-family: Montserrat, 'Plus Jakarta Sans', system-ui, sans-serif;
+  font-size: 0.9375rem;
+  line-height: 1.55;
+  color: #475569;
+  max-width: 52ch;
+}
+
+/* Группы разделов */
+.sections-page__panels {
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+}
+
+.sections-page__block {
+  margin: 0;
+}
+
+/* Заголовок группы: без ALL CAPS (лучше для RU/EN), акцент слева */
+.sections-page__block-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 16px;
+  padding: 0 0 12px;
+  font-family: Montserrat, 'Plus Jakarta Sans', system-ui, sans-serif;
+  font-size: clamp(1rem, 2.2vw, 1.125rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  color: #0f172a;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.sections-page__block-title::before {
+  content: '';
+  flex-shrink: 0;
+  width: 4px;
+  height: 1.1em;
+  border-radius: 4px;
+  background: linear-gradient(
+    180deg,
+    var(--sections-tiffany) 0%,
+    var(--sections-tiffany-deep) 100%
+  );
+  box-shadow: 0 1px 4px var(--sections-tiffany-soft);
+}
+
+/* Сетка карточек */
+.sections-page__grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  align-items: stretch;
+}
+
+@media (min-width: 560px) {
+  .sections-page__grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+  }
+}
+
+@media (min-width: 900px) {
+  .sections-page__grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 16px;
+  }
+}
+
+.sections-page__grid-cell {
+  min-width: 0;
+}
+
+.sections-page__card {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  height: 100%;
+  min-height: 84px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 12px 14px;
+  border: 1px solid var(--sections-card-border);
+  border-radius: var(--sections-card-radius);
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  cursor: pointer;
+  text-align: left;
+  transition:
+    transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.22s cubic-bezier(0.4, 0, 0.2, 1),
+    border-color 0.22s ease;
+}
+
+/* Мягкий градиентный акцент: «свет» сверху + лёгкий угол Tiffany */
+.sections-page__card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0.88;
+  background:
+    radial-gradient(
+      ellipse 108% 78% at 50% -12%,
+      rgba(125, 216, 213, 0.35) 0%,
+      rgba(94, 201, 196, 0.1) 42%,
+      transparent 70%
+    ),
+    linear-gradient(
+      152deg,
+      rgba(58, 173, 167, 0.11) 0%,
+      rgba(125, 216, 213, 0.05) 26%,
+      rgba(255, 255, 255, 0) 55%
+    );
+  transition: opacity 0.24s ease;
+}
+
+.sections-page__card:hover::before {
+  opacity: 1;
+}
+
+.sections-page__card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(58, 173, 167, 0.28);
+  box-shadow:
+    0 6px 20px rgba(15, 23, 42, 0.07),
+    0 0 0 1px rgba(94, 201, 196, 0.16);
+}
+
+.sections-page__card:active {
+  transform: translateY(-1px);
+}
+
+.sections-page__card:focus-visible {
+  outline: 2px solid var(--sections-tiffany-deep);
+  outline-offset: 3px;
+}
+
+.sections-page__card-title {
+  position: relative;
+  z-index: 1;
+  font-family: Montserrat, 'Plus Jakarta Sans', system-ui, sans-serif;
+  font-size: clamp(0.9375rem, 2.5vw, 1.0625rem);
+  font-weight: 650;
+  line-height: 1.3;
+  color: #111827;
+  letter-spacing: -0.02em;
+}
+
+.sections-page__card-footer {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.sections-page__card-arrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  color: var(--sections-tiffany-deep);
+  background: rgba(125, 216, 213, 0.12);
+  border: 1px solid rgba(58, 173, 167, 0.15);
+  transition:
+    background 0.2s ease,
+    transform 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.sections-page__card:hover .sections-page__card-arrow {
+  background: rgba(94, 201, 196, 0.2);
+  border-color: rgba(58, 173, 167, 0.28);
+  color: #084240;
+  transform: translateX(2px);
+}
+
+/* Лид-блок с главной: отступы под фон страницы разделов */
+.sections-page__lead-gen-slot {
+  margin-top: clamp(28px, 5vw, 44px);
+  padding-bottom: clamp(8px, 2vw, 20px);
+}
+
+.sections-page__lead-gen-slot .lead-gen {
+  padding-top: clamp(8px, 2vw, 16px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sections-page__segment-thumb,
+  .sections-page__segment-btn,
+  .sections-page__card,
+  .sections-page__card::before,
+  .sections-page__card-arrow {
+    transition-duration: 0.01ms !important;
+  }
+
+  .sections-page__card:hover,
+  .sections-page__card:active {
+    transform: none;
+  }
+
+  .sections-page__card:hover .sections-page__card-arrow {
+    transform: none;
+  }
+}

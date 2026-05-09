@@ -47,6 +47,7 @@ const Wallet = lazyWithRetry(() => import('./pages/Wallet'))
 const SearchResults = lazyWithRetry(() => import('./pages/SearchResults'))
 const AdminPanelPage = lazyWithRetry(() => import('./admin/AdminPanelPage'))
 const About = lazyWithRetry(() => import('./pages/About'))
+const SectionsPage = lazyWithRetry(() => import('./pages/SectionsPage'))
 const InvestmentCalculator = lazyWithRetry(() => import('./pages/InvestmentCalculator'))
 const JetonPage = lazyWithRetry(() => import('./pages/JetonPage'))
 const TestPage = lazyWithRetry(() => import('./pages/TestPage'))
@@ -746,6 +747,14 @@ function App() {
                 element={
                   <LazyPage>
                     <About />
+                  </LazyPage>
+                }
+              />
+              <Route
+                path="/sections"
+                element={
+                  <LazyPage>
+                    <SectionsPage />
                   </LazyPage>
                 }
               />

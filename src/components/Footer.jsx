@@ -120,6 +120,7 @@ const Footer = () => {
   const desktopColumns = [
     [
       { to: '/', label: t('home') },
+      { to: '/sections', label: t('footerAllSections') },
       { to: '/auction', label: t('auction') },
       { to: '/auction?filter=buy_now', label: t('buyNowSectionTitle') },
       { to: '/shares', label: t('shares') },
