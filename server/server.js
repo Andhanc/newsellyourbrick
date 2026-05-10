@@ -833,6 +833,7 @@ function resolvePuppeteerExecutablePath() {
     const candidates = [
       '/usr/bin/google-chrome-stable',
       '/usr/bin/google-chrome',
+      '/opt/google/chrome/chrome',
       '/snap/bin/chromium',
       '/usr/bin/chromium-browser',
       '/usr/bin/chromium',
@@ -853,7 +854,13 @@ function resolvePuppeteerExecutablePath() {
   return undefined;
 }
 
-/** Результат: executablePath ИЛИ channel (без кэша Puppeteer часто нужен channel: 'chrome'). */
+/**
+ * Результат: executablePath | channel | bundled.
+ * Раньше по умолчанию был channel "chrome" → на Linux без .deb Chrome мгновенно падало с
+ * "Could not find Google Chrome ... /opt/google/chrome/chrome". Встроенный Chromium
+ * надёжнее на Docker/minimal-серверах; системный Chrome — через PUPPETEER_EXECUTABLE_PATH
+ * или явный PUPPETEER_CHANNEL=chrome.
+ */
 function resolvePuppeteerLaunchOptions() {
   const envPath = String(process.env.PUPPETEER_EXECUTABLE_PATH || '').trim();
   if (envPath && fs.existsSync(envPath)) {
@@ -869,7 +876,7 @@ function resolvePuppeteerLaunchOptions() {
     return { mode: 'bundled' };
   }
 
-  const ch = String(process.env.PUPPETEER_CHANNEL || 'chrome').trim();
+  const ch = String(process.env.PUPPETEER_CHANNEL || '').trim();
   if (!ch || ch === 'none') {
     return { mode: 'bundled' };
   }
@@ -927,11 +934,11 @@ if (waPuppeteerLaunch.mode === 'executablePath') {
   console.log('[WA] Puppeteer → executablePath:', waPuppeteerLaunch.executablePath);
 } else if (waPuppeteerLaunch.mode === 'channel') {
   console.log(
-    `[WA] Puppeteer → channel: "${waPuppeteerLaunch.channel}" (системный Chrome; отключить: WA_PUPPETEER_CHANNEL_DISABLE=1)`
+    `[WA] Puppeteer → channel: "${waPuppeteerLaunch.channel}" (явный PUPPETEER_CHANNEL; иначе по умолчанию — встроенный Chromium)`
   );
 } else {
   console.log(
-    '[WA] Puppeteer → встроенный Chrome из кэша. Если «Could not find Chrome»: npm run puppeteer:install или установите Google Chrome / задайте PUPPETEER_EXECUTABLE_PATH'
+    '[WA] Puppeteer → встроенный Chromium (кэш Puppeteer). При ошибке запуска: npm run puppeteer:install или PUPPETEER_EXECUTABLE_PATH к Chrome/Chromium'
   );
 }
 

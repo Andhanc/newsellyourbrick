@@ -37,6 +37,9 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci --legacy-peer-deps --ignore-scripts
 
+# whatsapp-web.js: Chromium для Puppeteer (npm ci --ignore-scripts пропускает скачивание браузеров).
+RUN npx puppeteer browsers install chrome
+
 # Затем исходники.
 COPY . .
 
