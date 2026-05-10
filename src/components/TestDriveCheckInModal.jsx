@@ -322,7 +322,7 @@ export default function TestDriveCheckInModal({ open, bookingId, surveyToken, on
             rows={5}
           />
           <p className="td-checkin-modal__hint-text td-checkin-modal__hint-text--muted">
-            {t('buyerCheckIn_property_feedback_hint')}
+            {t('buyerCheckIn_property_feedback_hint', { min: MIN_PROPERTY_FEEDBACK_LEN })}
           </p>
         </div>
       )
@@ -571,7 +571,7 @@ export default function TestDriveCheckInModal({ open, bookingId, surveyToken, on
               <>
                 {detail.buyer?.first_name ? (
                   <p className="td-checkin-modal__welcome">
-                    Здравствуйте, <strong>{detail.buyer.first_name}</strong>!
+                    {t('buyerCheckIn_hello', { name: detail.buyer.first_name })}
                   </p>
                 ) : null}
                 <p>
