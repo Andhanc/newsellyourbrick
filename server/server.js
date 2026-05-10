@@ -10603,14 +10603,21 @@ app.get('/api/admin/test-drive/survey-financial', async (req, res) => {
               : '',
             rep.amenities_ok ? `Удобства: ${rep.amenities_ok}` : '',
             rep.defects_state ? `Дефекты: ${rep.defects_state}` : '',
-            rep.ready_to_stay
-              ? `Проживание сейчас: ${
+            rep.listing_info_clear
+              ? `Цена/объявление: ${
                   {
-                    yes: 'устраивает',
-                    no: 'есть замечания',
-                  }[String(rep.ready_to_stay).toLowerCase()] || rep.ready_to_stay
+                    yes: 'понятно',
+                    no: 'неясно',
+                  }[String(rep.listing_info_clear).toLowerCase()] || rep.listing_info_clear
                 }`
-              : '',
+              : rep.ready_to_stay
+                ? `Проживание (старый опрос): ${
+                    {
+                      yes: 'устраивает',
+                      no: 'есть замечания',
+                    }[String(rep.ready_to_stay).toLowerCase()] || rep.ready_to_stay
+                  }`
+                : '',
           ].filter(Boolean);
           summary = parts.length ? parts.join(' · ') : '—';
         }
@@ -10928,6 +10935,14 @@ app.get('/api/test-drive-survey/:token/detail', async (req, res) => {
   }
 });
 
+/** Новые отчёты: listing_info_clear; старые: ready_to_stay — для статуса «всё ок» в анкете. */
+function testDriveCheckInSurveyPositive(report) {
+  if (!report || typeof report !== 'object') return false;
+  const li = String(report.listing_info_clear ?? '').trim().toLowerCase();
+  if (li === 'yes' || li === 'no') return li === 'yes';
+  return String(report.ready_to_stay ?? '').trim().toLowerCase() === 'yes';
+}
+
 /**
  * PUT /api/test-drive-survey/:token/report — отправка опроса по ссылке (без входа в аккаунт)
  */
@@ -10950,7 +10965,7 @@ app.put('/api/test-drive-survey/:token/report', async (req, res) => {
     if (!['paid', 'approved'].includes(st)) {
       return res.status(400).json({ success: false, error: 'Опрос недоступен' });
     }
-    const ready = String(report.ready_to_stay || '').toLowerCase() === 'yes';
+    const ready = testDriveCheckInSurveyPositive(report);
     const checkInStatus = ready ? 'checked_in' : 'issues_reported';
     await testDriveBookingQueries.saveCheckInReport(
       booking.id,
@@ -11090,7 +11105,7 @@ app.put('/api/test-drive-bookings/:bookingId/check-in-report', async (req, res) 
         error: 'Опрос доступен только для оплаченной или подтверждённой брони',
       });
     }
-    const ready = String(report.ready_to_stay || '').toLowerCase() === 'yes';
+    const ready = testDriveCheckInSurveyPositive(report);
     const checkInStatus = ready ? 'checked_in' : 'issues_reported';
     await testDriveBookingQueries.saveCheckInReport(
       bookingId,

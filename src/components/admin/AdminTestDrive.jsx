@@ -25,13 +25,15 @@ const QUALITY_QUESTION_LABELS = {
   property_feedback: 'Развёрнутый отзыв об объекте',
   amenities_ok: 'Удобства в объекте соответствуют описанию?',
   defects_state: 'Есть ли дефекты/проблемы в объекте?',
-  ready_to_stay: 'Устраивает ли проживание сейчас?',
+  listing_info_clear: 'Понятны ли из объявления цена и информация об объекте?',
+  ready_to_stay: 'Готовность к проживанию (старая версия опроса)',
 };
 
 /** В анкете поля комментариев названы не как `${вопрос}_comment` — маппинг для админки */
 const COMMENT_STORAGE_KEY = {
   amenities_ok: 'amenities_comment',
   defects_state: 'defects_comment',
+  listing_info_clear: 'listing_info_comment',
   ready_to_stay: 'ready_to_stay_comment',
 };
 
@@ -124,6 +126,7 @@ function surveyReportHasContent(report) {
     'property_feedback',
     'amenities_ok',
     'defects_state',
+    'listing_info_clear',
     'ready_to_stay',
   ];
   return keys.some((k) => {
@@ -157,9 +160,13 @@ function answerTone(value, key) {
 
 function formatAnswer(value, key) {
   const v = String(value || '').toLowerCase();
+  if (key === 'listing_info_clear') {
+    if (v === 'yes') return 'Цена и объявление: понятно';
+    if (v === 'no') return 'Цена и объявление: неясно';
+  }
   if (key === 'ready_to_stay') {
-    if (v === 'yes') return 'Проживание устраивает';
-    if (v === 'no') return 'Есть замечания по проживанию';
+    if (v === 'yes') return 'Проживание устраивает (старый опрос)';
+    if (v === 'no') return 'Есть замечания по проживанию (старый опрос)';
   }
   if (v === 'exceeded') return 'Превзошёл ожидания';
   if (v === 'matched') return 'Совпал с ожиданиями';
