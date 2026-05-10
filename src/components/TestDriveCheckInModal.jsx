@@ -21,9 +21,9 @@ const initialForm = () => ({
   defects_state: '',
   defects_comment: '',
   defects_photos: [],
-  /** yes | no — понятны ли из объявления цена и информация об объекте */
-  listing_info_clear: '',
-  listing_info_comment: '',
+  /** yes | no — приемлема ли цена за этот объект */
+  price_acceptable: '',
+  price_acceptable_comment: '',
 })
 
 function toDataUrls(files) {
@@ -70,8 +70,8 @@ function getStepBlockReason(step, form) {
         return { key: 'buyerCheckIn_step2_issuesDetails' }
       return null
     case 3:
-      if (!form.listing_info_clear) return { key: 'buyerCheckIn_step3_pick' }
-      if (form.listing_info_clear === 'no' && !String(form.listing_info_comment || '').trim())
+      if (!form.price_acceptable) return { key: 'buyerCheckIn_step3_pick' }
+      if (form.price_acceptable === 'no' && !String(form.price_acceptable_comment || '').trim())
         return { key: 'buyerCheckIn_step3_noComment' }
       return null
     default:
@@ -463,40 +463,40 @@ export default function TestDriveCheckInModal({ open, bookingId, surveyToken, on
     if (activeStep === 3) {
       return (
         <div className="td-checkin-modal__section">
-          <h3>{t('buyerCheckIn_q_listing_info_title')}</h3>
-          <p className="td-checkin-modal__hint-text">{t('buyerCheckIn_q_listing_info_intro')}</p>
+          <h3>{t('buyerCheckIn_q_price_title')}</h3>
+          <p className="td-checkin-modal__hint-text">{t('buyerCheckIn_q_price_intro')}</p>
           <div className="td-checkin-modal__options td-checkin-modal__options--radio">
             <label
-              className={`td-checkin-modal__opt td-checkin-modal__opt--radio${form.listing_info_clear === 'yes' ? ' td-checkin-modal__opt--active' : ''}`}
+              className={`td-checkin-modal__opt td-checkin-modal__opt--radio${form.price_acceptable === 'yes' ? ' td-checkin-modal__opt--active' : ''}`}
             >
               <input
                 type="radio"
-                name="td_listing_info_clear"
+                name="td_price_acceptable"
                 value="yes"
-                checked={form.listing_info_clear === 'yes'}
-                onChange={() => setForm((s) => ({ ...s, listing_info_clear: 'yes' }))}
+                checked={form.price_acceptable === 'yes'}
+                onChange={() => setForm((s) => ({ ...s, price_acceptable: 'yes' }))}
               />
-              <span>{t('buyerCheckIn_listing_info_yes')}</span>
+              <span>{t('buyerCheckIn_price_yes')}</span>
             </label>
             <label
-              className={`td-checkin-modal__opt td-checkin-modal__opt--radio${form.listing_info_clear === 'no' ? ' td-checkin-modal__opt--active' : ''}`}
+              className={`td-checkin-modal__opt td-checkin-modal__opt--radio${form.price_acceptable === 'no' ? ' td-checkin-modal__opt--active' : ''}`}
             >
               <input
                 type="radio"
-                name="td_listing_info_clear"
+                name="td_price_acceptable"
                 value="no"
-                checked={form.listing_info_clear === 'no'}
-                onChange={() => setForm((s) => ({ ...s, listing_info_clear: 'no' }))}
+                checked={form.price_acceptable === 'no'}
+                onChange={() => setForm((s) => ({ ...s, price_acceptable: 'no' }))}
               />
-              <span>{t('buyerCheckIn_listing_info_no')}</span>
+              <span>{t('buyerCheckIn_price_no')}</span>
             </label>
           </div>
-          {form.listing_info_clear === 'no' ? (
+          {form.price_acceptable === 'no' ? (
             <textarea
               className="td-checkin-modal__textarea"
-              value={form.listing_info_comment}
-              onChange={(e) => setForm((s) => ({ ...s, listing_info_comment: e.target.value }))}
-              placeholder={t('buyerCheckIn_listing_info_comment_ph')}
+              value={form.price_acceptable_comment}
+              onChange={(e) => setForm((s) => ({ ...s, price_acceptable_comment: e.target.value }))}
+              placeholder={t('buyerCheckIn_price_comment_ph')}
             />
           ) : null}
         </div>
@@ -525,14 +525,14 @@ export default function TestDriveCheckInModal({ open, bookingId, surveyToken, on
             <strong>{t('buyerCheckIn_q_defects_title')}</strong>: {form.defects_state || '—'}
           </div>
           <div style={{ marginTop: 10 }}>
-            <strong>{t('buyerCheckIn_q_listing_info_title')}</strong>:{' '}
-            {form.listing_info_clear === 'yes'
-              ? t('buyerCheckIn_listing_info_yes')
-              : form.listing_info_clear === 'no'
-                ? t('buyerCheckIn_listing_info_no')
+            <strong>{t('buyerCheckIn_q_price_title')}</strong>:{' '}
+            {form.price_acceptable === 'yes'
+              ? t('buyerCheckIn_price_yes')
+              : form.price_acceptable === 'no'
+                ? t('buyerCheckIn_price_no')
                 : '—'}
-            {form.listing_info_clear === 'no' && form.listing_info_comment ? (
-              <div style={{ marginTop: 6, whiteSpace: 'pre-wrap' }}>{form.listing_info_comment}</div>
+            {form.price_acceptable === 'no' && form.price_acceptable_comment ? (
+              <div style={{ marginTop: 6, whiteSpace: 'pre-wrap' }}>{form.price_acceptable_comment}</div>
             ) : null}
           </div>
         </div>

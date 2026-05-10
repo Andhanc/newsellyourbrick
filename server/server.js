@@ -10603,21 +10603,28 @@ app.get('/api/admin/test-drive/survey-financial', async (req, res) => {
               : '',
             rep.amenities_ok ? `Удобства: ${rep.amenities_ok}` : '',
             rep.defects_state ? `Дефекты: ${rep.defects_state}` : '',
-            rep.listing_info_clear
-              ? `Цена/объявление: ${
+            rep.price_acceptable
+              ? `Цена за объект: ${
                   {
-                    yes: 'понятно',
-                    no: 'неясно',
-                  }[String(rep.listing_info_clear).toLowerCase()] || rep.listing_info_clear
+                    yes: 'приемлема',
+                    no: 'не приемлема',
+                  }[String(rep.price_acceptable).toLowerCase()] || rep.price_acceptable
                 }`
-              : rep.ready_to_stay
-                ? `Проживание (старый опрос): ${
+              : rep.listing_info_clear
+                ? `Объявление/цена (старый вопрос): ${
                     {
-                      yes: 'устраивает',
-                      no: 'есть замечания',
-                    }[String(rep.ready_to_stay).toLowerCase()] || rep.ready_to_stay
+                      yes: 'понятно',
+                      no: 'неясно',
+                    }[String(rep.listing_info_clear).toLowerCase()] || rep.listing_info_clear
                   }`
-                : '',
+                : rep.ready_to_stay
+                  ? `Проживание (старый опрос): ${
+                      {
+                        yes: 'устраивает',
+                        no: 'есть замечания',
+                      }[String(rep.ready_to_stay).toLowerCase()] || rep.ready_to_stay
+                    }`
+                  : '',
           ].filter(Boolean);
           summary = parts.length ? parts.join(' · ') : '—';
         }
@@ -10935,9 +10942,11 @@ app.get('/api/test-drive-survey/:token/detail', async (req, res) => {
   }
 });
 
-/** Новые отчёты: listing_info_clear; старые: ready_to_stay — для статуса «всё ок» в анкете. */
+/** Новые отчёты: price_acceptable; ранее listing_info_clear; ещё раньше ready_to_stay. */
 function testDriveCheckInSurveyPositive(report) {
   if (!report || typeof report !== 'object') return false;
+  const pa = String(report.price_acceptable ?? '').trim().toLowerCase();
+  if (pa === 'yes' || pa === 'no') return pa === 'yes';
   const li = String(report.listing_info_clear ?? '').trim().toLowerCase();
   if (li === 'yes' || li === 'no') return li === 'yes';
   return String(report.ready_to_stay ?? '').trim().toLowerCase() === 'yes';

@@ -25,7 +25,8 @@ const QUALITY_QUESTION_LABELS = {
   property_feedback: 'Развёрнутый отзыв об объекте',
   amenities_ok: 'Удобства в объекте соответствуют описанию?',
   defects_state: 'Есть ли дефекты/проблемы в объекте?',
-  listing_info_clear: 'Понятны ли из объявления цена и информация об объекте?',
+  price_acceptable: 'Приемлема ли цена за этот объект?',
+  listing_info_clear: 'Объявление и цена (старая версия вопроса)',
   ready_to_stay: 'Готовность к проживанию (старая версия опроса)',
 };
 
@@ -34,6 +35,7 @@ const COMMENT_STORAGE_KEY = {
   amenities_ok: 'amenities_comment',
   defects_state: 'defects_comment',
   listing_info_clear: 'listing_info_comment',
+  price_acceptable: 'price_acceptable_comment',
   ready_to_stay: 'ready_to_stay_comment',
 };
 
@@ -126,6 +128,7 @@ function surveyReportHasContent(report) {
     'property_feedback',
     'amenities_ok',
     'defects_state',
+    'price_acceptable',
     'listing_info_clear',
     'ready_to_stay',
   ];
@@ -160,9 +163,13 @@ function answerTone(value, key) {
 
 function formatAnswer(value, key) {
   const v = String(value || '').toLowerCase();
+  if (key === 'price_acceptable') {
+    if (v === 'yes') return 'Цена приемлема';
+    if (v === 'no') return 'Цена не приемлема';
+  }
   if (key === 'listing_info_clear') {
-    if (v === 'yes') return 'Цена и объявление: понятно';
-    if (v === 'no') return 'Цена и объявление: неясно';
+    if (v === 'yes') return 'Объявление: понятно (старый вопрос)';
+    if (v === 'no') return 'Объявление: неясно (старый вопрос)';
   }
   if (key === 'ready_to_stay') {
     if (v === 'yes') return 'Проживание устраивает (старый опрос)';
