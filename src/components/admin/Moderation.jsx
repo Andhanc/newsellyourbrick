@@ -568,7 +568,7 @@ const Moderation = () => {
     });
   }, [activeTab, searchQuery, pendingProperties, requestTypeFilter]);
 
-  const handleApprove = async (type, id, debtSeverity = null, propertyTypeOverride = null) => {
+  const handleApprove = async (type, id, debtSeverity = null, propertyTypeOverride = null, privateClubOnly = false) => {
     try {
       // Проверяем, является ли это элементом из localStorage
       if (typeof id === 'string' && id.startsWith('local_')) {
@@ -789,7 +789,8 @@ const Moderation = () => {
             reviewed_by: adminId,
             moderation_status: 'approved', // Явно указываем статус одобрения
             property_type: propertyType, // Отправляем тип для правильного определения таблицы
-            debt_severity: debtSeverity || null
+            debt_severity: debtSeverity || null,
+            private_club_only: privateClubOnly ? 1 : 0,
           })
         });
 
@@ -1086,12 +1087,13 @@ const Moderation = () => {
       <ModerationPropertyDetail
         property={selectedProperty}
         onBack={() => setSelectedProperty(null)}
-        onApprove={(id, severity) =>
+        onApprove={(id, severity, privateClubOnly) =>
           handleApprove(
             'properties',
             id,
             severity,
-            selectedProperty?.property_type || selectedProperty?.propertyType || null
+            selectedProperty?.property_type || selectedProperty?.propertyType || null,
+            Boolean(privateClubOnly)
           )
         }
         onReject={(reason) => handleReject('properties', selectedProperty.id, reason)}

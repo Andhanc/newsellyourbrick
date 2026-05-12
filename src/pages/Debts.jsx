@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { FiSearch } from 'react-icons/fi'
 import { ShieldQuestionMark, ShieldAlert, ShieldCheck } from 'lucide-react'
 import Header from '../components/Header'
+import PageBreadcrumbs from '../components/PageBreadcrumbs'
 import DepositButton from '../components/DepositButton'
 import DepositButtonSkeleton from '../components/DepositButtonSkeleton'
 import FlipCard from '../components/ui/FlipCard'
@@ -224,6 +225,10 @@ const Debts = () => {
       <Header />
       <div className="shares-page__bg" />
       <main className="shares-container">
+        <div className="page-context-heading page-context-heading--debts">
+          <PageBreadcrumbs currentLabel={t('debtsTitle')} />
+          <h1 className="page-context-heading__title">{t('debtsTitle')}</h1>
+        </div>
         <div className="shares-flip-cards shares-flip-cards--debts">
           <FlipCard
             color="#DC2626"

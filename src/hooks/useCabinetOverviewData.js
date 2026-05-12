@@ -50,6 +50,9 @@ async function fetchJsonCached(url, { ttlMs = 20000, force = false } = {}) {
 /** После оплаты / синхронизации Stripe — перечитать тариф в превью кабинета. */
 export const SUBSCRIPTION_BILLING_UPDATED_EVENT = 'subscription-billing-updated'
 
+/** Модератор снял доступ закрытого клуба по БД — показать модальное окно (слушатель в PrivateClubKickModal). */
+export const PRIVATE_CLUB_KICKED_MODAL_EVENT = 'private-club-kicked-modal'
+
 function formatShortDate(iso) {
   if (!iso) return '—'
   const d = new Date(iso)
@@ -130,6 +133,18 @@ export function effectivePurchasedTier(sub) {
   const st = String(sub.status || '').toLowerCase()
   if (SUBSCRIPTION_UI_INACTIVE_STATUSES.has(st)) return 'starter'
   return normalizeSubscriptionPlanVisual(sub)
+}
+
+/** VIP: активная подписка Stripe VIP или закрытый клуб (vip_until в БД). */
+export function userHasVipAccess({ subscription, vipClub }) {
+  if (vipClub && typeof vipClub === 'object' && vipClub.active) return true
+  return effectivePurchasedTier(subscription) === 'vip'
+}
+
+/** Тариф для карточек: учитывает VIP закрытого клуба (vip_until). */
+export function effectiveDisplayTier(subscription, vipClub) {
+  if (userHasVipAccess({ subscription, vipClub })) return 'vip'
+  return effectivePurchasedTier(subscription)
 }
 
 function subscriptionPlanBadgeLabel(visual) {
@@ -347,6 +362,8 @@ export function useCabinetOverviewData() {
   const [historySections, setHistorySections] = useState([])
   const [historyLoading, setHistoryLoading] = useState(true)
   const [subscriptionPlanLabel, setSubscriptionPlanLabel] = useState('Starter')
+  const [cabinetSubscriptionTier, setCabinetSubscriptionTier] = useState('starter')
+  const [cabinetVipActive, setCabinetVipActive] = useState(false)
 
   useEffect(() => {
     const applyFromStorage = () => {
@@ -501,6 +518,8 @@ export function useCabinetOverviewData() {
     const uid = numericUserId ?? getStoredNumericUserId()
     if (!uid) {
       setSubscriptionPlanLabel('Starter')
+      setCabinetSubscriptionTier('starter')
+      setCabinetVipActive(false)
       return
     }
     let cancelled = false
@@ -511,17 +530,27 @@ export function useCabinetOverviewData() {
           ttlMs: SUBSCRIPTION_CACHE_TTL_MS,
         })
         if (cancelled) return
-        const sub = json?.success && json?.data ? json.data.subscription : null
-        const visual = normalizeSubscriptionPlanVisual(sub)
+        const data = json?.success && json?.data ? json.data : null
+        const sub = data?.subscription ?? null
+        const vipClub = data?.vipClub
+        const visual = effectiveDisplayTier(sub, vipClub)
         setSubscriptionPlanLabel(subscriptionPlanBadgeLabel(visual))
+        setCabinetSubscriptionTier(visual)
+        setCabinetVipActive(userHasVipAccess({ subscription: sub, vipClub }))
       } catch {
-        if (!cancelled) setSubscriptionPlanLabel('Starter')
+        if (!cancelled) {
+          setSubscriptionPlanLabel('Starter')
+          setCabinetSubscriptionTier('starter')
+          setCabinetVipActive(false)
+        }
       }
     }
 
     void loadSubscriptionPlanLabel()
 
     const onBillingUpdated = () => {
+      const u = numericUserId ?? getStoredNumericUserId()
+      if (u) CABINET_JSON_CACHE.delete(`${API_BASE_URL}/users/${u}/subscription-billing`)
       void loadSubscriptionPlanLabel()
     }
     window.addEventListener(SUBSCRIPTION_BILLING_UPDATED_EVENT, onBillingUpdated)
@@ -539,5 +568,7 @@ export function useCabinetOverviewData() {
     historySections,
     historyLoading,
     subscriptionPlanLabel,
+    cabinetSubscriptionTier,
+    cabinetVipActive,
   }
 }

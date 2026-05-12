@@ -17,6 +17,8 @@ function userToPlain(u) {
   const o = { ...u };
   if (o.created_at instanceof Date) o.created_at = o.created_at.toISOString();
   if (o.updated_at instanceof Date) o.updated_at = o.updated_at.toISOString();
+  if (o.vip_until instanceof Date) o.vip_until = o.vip_until.toISOString();
+  if (o.vip_granted_at instanceof Date) o.vip_granted_at = o.vip_granted_at.toISOString();
   return o;
 }
 
@@ -171,6 +173,131 @@ export const userQueries = {
     const prisma = getPrisma();
     const u = await prisma.users.findFirst({ where: { telegram_id: String(telegramId) } });
     return userToPlain(u);
+  },
+
+  /** +30 дней VIP закрытого клуба от промокода (наращивает от текущего vip_until, если ещё активен). */
+  grantVipClubPromoMonth: async (userId) => {
+    const prisma = getPrisma();
+    const id = Number(userId);
+    if (!Number.isFinite(id) || id < 1) return null;
+    const row = await prisma.users.findUnique({ where: { id }, select: { vip_until: true } });
+    const now = new Date();
+    const base =
+      row?.vip_until && new Date(row.vip_until) > now ? new Date(row.vip_until) : now;
+    const until = new Date(base.getTime());
+    until.setUTCDate(until.getUTCDate() + 30);
+    const u = await prisma.users.update({
+      where: { id },
+      data: { vip_until: until, vip_granted_at: now, updated_at: now },
+    });
+    return userToPlain(u);
+  },
+
+  /** Синхронизация срока VIP из подписки Stripe (конец оплаченного периода). */
+  syncVipClubFromStripePeriodEnd: async (userId, periodEndIso) => {
+    const prisma = getPrisma();
+    const id = Number(userId);
+    if (!Number.isFinite(id) || id < 1) return null;
+    const end = periodEndIso ? new Date(String(periodEndIso)) : null;
+    if (!end || !Number.isFinite(end.getTime())) return null;
+    const now = new Date();
+    const u = await prisma.users.update({
+      where: { id },
+      data: { vip_until: end, vip_granted_at: now, updated_at: now },
+    });
+    return userToPlain(u);
+  },
+
+  /** Активный VIP закрытого клуба: vip_until в будущем или активная подписка Stripe с plan_key vip. */
+  hasPrivateClubVipAccess: async (userId) => {
+    const id = Number(userId);
+    if (!Number.isFinite(id) || id < 1) return false;
+    const prisma = getPrisma();
+    const now = new Date();
+    const inactiveSubStatuses = ['canceled', 'unpaid', 'incomplete_expired', 'incomplete'];
+    const row = await prisma.users.findUnique({
+      where: { id },
+      select: {
+        vip_until: true,
+        stripe_subscription_state: { select: { plan_key: true, status: true } },
+      },
+    });
+    if (!row) return false;
+    const vipUntilMs = row.vip_until ? new Date(row.vip_until).getTime() : 0;
+    if (vipUntilMs && vipUntilMs > now.getTime()) return true;
+    const sub = row.stripe_subscription_state;
+    const st = sub?.status ? String(sub.status).toLowerCase() : '';
+    const pk = sub?.plan_key ? String(sub.plan_key).toLowerCase() : '';
+    return pk === 'vip' && st !== '' && !inactiveSubStatuses.includes(st);
+  },
+
+  /** Участники закрытого клуба: активный срок vip_until или активная подписка Stripe VIP. */
+  listPrivateClubParticipants: async () => {
+    const prisma = getPrisma();
+    const now = new Date();
+    const inactiveSubStatuses = ['canceled', 'unpaid', 'incomplete_expired', 'incomplete'];
+    const rows = await prisma.users.findMany({
+      where: {
+        OR: [
+          { vip_until: { gt: now } },
+          {
+            stripe_subscription_state: {
+              plan_key: 'vip',
+              status: { notIn: inactiveSubStatuses },
+            },
+          },
+        ],
+      },
+      include: {
+        stripe_subscription_state: {
+          select: { plan_key: true, status: true, current_period_end: true },
+        },
+      },
+      orderBy: { id: 'desc' },
+      take: 500,
+    });
+    const nowMs = now.getTime();
+    return rows.map((r) => {
+      const vipUntilMs = r.vip_until ? new Date(r.vip_until).getTime() : 0;
+      const dbClubActive = Boolean(vipUntilMs && vipUntilMs > nowMs);
+      const sub = r.stripe_subscription_state;
+      const st = sub?.status ? String(sub.status).toLowerCase() : '';
+      const pk = sub?.plan_key ? String(sub.plan_key).toLowerCase() : '';
+      const stripeVipActive = pk === 'vip' && st !== '' && !inactiveSubStatuses.includes(st);
+      return {
+        id: r.id,
+        first_name: r.first_name,
+        last_name: r.last_name,
+        email: r.email,
+        phone_number: r.phone_number,
+        user_id_number: r.user_id_number,
+        vip_until: r.vip_until ? new Date(r.vip_until).toISOString() : null,
+        vip_granted_at: r.vip_granted_at ? new Date(r.vip_granted_at).toISOString() : null,
+        stripe_plan_key: sub?.plan_key ?? null,
+        stripe_status: sub?.status ?? null,
+        stripe_period_end: sub?.current_period_end ?? null,
+        db_club_active: dbClubActive,
+        stripe_vip_active: stripeVipActive,
+        can_revoke_db: dbClubActive,
+      };
+    });
+  },
+
+  /** Снять доступ по vip_until / vip_granted_at (промо и синхронизация из Stripe в эти поля). */
+  revokePrivateClubDbVip: async (userId) => {
+    const prisma = getPrisma();
+    const id = Number(userId);
+    if (!Number.isFinite(id) || id < 1) return null;
+    try {
+      const u = await prisma.users.update({
+        where: { id },
+        data: { vip_until: null, vip_granted_at: null, updated_at: new Date() },
+      });
+      return userToPlain(u);
+    } catch (e) {
+      if (e && e.code === 'P2025') return null;
+      throw e;
+    }
   },
 
   update: async (id, userData) => {

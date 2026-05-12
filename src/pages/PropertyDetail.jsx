@@ -78,7 +78,23 @@ const PropertyDetail = () => {
     
     try {
       const lang = (i18n.language || 'ru').split('-')[0]
-      const response = await fetch(`${API_BASE_URL}/properties/${propertyId}?lang=${lang}`)
+      let viewerQ = ''
+      try {
+        const uid = localStorage.getItem('userId')
+        if (uid && /^\d+$/.test(String(uid).trim())) {
+          viewerQ = `&viewer_user_id=${encodeURIComponent(String(uid).trim())}`
+        }
+      } catch (_) {
+        /* ignore */
+      }
+      const response = await fetch(`${API_BASE_URL}/properties/${propertyId}?lang=${lang}${viewerQ}`)
+      if (response.status === 403) {
+        const errJson = await response.json().catch(() => ({}))
+        if (errJson?.code === 'PRIVATE_CLUB_ONLY') {
+          return { __privateClubBlocked: true }
+        }
+        return null
+      }
       if (response.ok) {
         const result = await response.json()
         if (result.success && result.data) {
@@ -255,6 +271,11 @@ const PropertyDetail = () => {
           setIsLoading(true)
           console.log(`🔍 PropertyDetail: Загрузка данных объекта ID=${id}`);
           const prop = await loadPropertyData(id)
+          if (prop?.__privateClubBlocked) {
+            showNotification(t('auctionPrivateClubLotTooltip'))
+            navigate('/subscriptions')
+            return
+          }
           if (prop) {
             console.log(`🔍 PropertyDetail: Данные объекта получены:`, {
               id: prop.id,
@@ -405,7 +426,7 @@ const PropertyDetail = () => {
               })
               // Обновляем минимальную ставку
               const prop = await loadPropertyData(normalizedProperty.id)
-              if (prop) {
+              if (prop && !prop.__privateClubBlocked) {
                 const newMinBid = prop.auction_minimum_bid || (maxBid + (maxBid * 0.05))
                 setMinimumBid(newMinBid)
               }
@@ -697,7 +718,7 @@ const PropertyDetail = () => {
         // Перезагружаем данные объекта с сервера для получения актуальной информации
         try {
           const prop = await loadPropertyData(normalizedProperty.id)
-          if (prop) {
+          if (prop && !prop.__privateClubBlocked) {
             await processPropertyData(prop)
             console.log('✅ Данные объекта обновлены')
           }
@@ -715,7 +736,7 @@ const PropertyDetail = () => {
         setTimeout(async () => {
           try {
             const prop = await loadPropertyData(normalizedProperty.id)
-            if (prop) {
+            if (prop && !prop.__privateClubBlocked) {
               await processPropertyData(prop)
             }
             // Еще раз обновляем историю

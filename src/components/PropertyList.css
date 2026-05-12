@@ -359,6 +359,231 @@
   border-radius: 12px 12px 0 0;
 }
 
+.property-vip-club-badge {
+  position: absolute;
+  left: 10px;
+  right: auto;
+  top: 10px;
+  z-index: 8;
+  padding: 0.28rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #ccfbf1;
+  background: linear-gradient(145deg, #1e293b 0%, #0f172a 48%, #020617 100%);
+  box-shadow:
+    0 2px 12px rgba(0, 0, 0, 0.45),
+    0 0 0 1px rgba(10, 186, 181, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(10, 186, 181, 0.42);
+  pointer-events: auto;
+  cursor: default;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.property-card--auction-ended .property-vip-club-badge {
+  opacity: 0.85;
+}
+
+/* Мобильный аукцион: VIP «закрытый клуб» — тёмно-серый/чёрный + акцент тиффани (#0ABAB5), перелив + «Перейти». */
+.property-club-mobile-hero {
+  position: absolute;
+  left: 8px;
+  right: 48px;
+  top: 8px;
+  z-index: 8;
+  border-radius: 12px;
+  overflow: hidden;
+  background: linear-gradient(
+    125deg,
+    rgba(15, 23, 42, 0.97) 0%,
+    rgba(30, 41, 59, 0.96) 28%,
+    rgba(13, 116, 110, 0.72) 52%,
+    rgba(15, 23, 42, 0.97) 72%,
+    rgba(2, 6, 23, 0.98) 100%
+  );
+  background-size: 200% 200%;
+  animation: propertyClubMobileHeroBg 5s ease-in-out infinite;
+  border: 1px solid rgba(10, 186, 181, 0.35);
+  box-shadow:
+    0 4px 22px rgba(0, 0, 0, 0.42),
+    0 0 0 1px rgba(10, 186, 181, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  pointer-events: auto;
+  -webkit-tap-highlight-color: transparent;
+}
+
+@keyframes propertyClubMobileHeroBg {
+  0%,
+  100% {
+    background-position: 0% 40%;
+  }
+  50% {
+    background-position: 100% 60%;
+  }
+}
+
+.property-club-mobile-hero__shine {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  border-radius: inherit;
+}
+
+.property-club-mobile-hero__shine::after {
+  content: '';
+  position: absolute;
+  top: -40%;
+  left: -30%;
+  width: 45%;
+  height: 180%;
+  background: linear-gradient(
+    105deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0) 32%,
+    rgba(204, 251, 241, 0.35) 48%,
+    rgba(255, 255, 255, 0.45) 52%,
+    rgba(255, 255, 255, 0) 68%,
+    transparent 100%
+  );
+  transform: translateX(-120%) rotate(12deg);
+  animation: propertyClubMobileShimmer 2.4s ease-in-out infinite;
+}
+
+@keyframes propertyClubMobileShimmer {
+  0% {
+    transform: translateX(-140%) rotate(12deg);
+  }
+  100% {
+    transform: translateX(320%) rotate(12deg);
+  }
+}
+
+.property-club-mobile-hero__inner {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  padding: 10px 10px 10px 12px;
+}
+
+.property-club-mobile-hero__titles {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 10px;
+}
+
+.property-club-mobile-hero__vip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.2rem 0.48rem;
+  border-radius: 999px;
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #042f2e;
+  background: linear-gradient(145deg, #99f6e4 0%, #5eead4 28%, #0ABAB5 62%, #0f766e 100%);
+  box-shadow:
+    0 2px 10px rgba(0, 0, 0, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.45);
+  border: 1px solid rgba(6, 78, 74, 0.35);
+}
+
+.property-club-mobile-hero__label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: rgba(226, 232, 240, 0.96);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  line-height: 1.2;
+}
+
+.property-club-mobile-hero__btn {
+  align-self: center;
+  margin-top: 2px;
+  padding: 8px 18px;
+  border: none;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  color: #f8fafc;
+  background: linear-gradient(180deg, #14b8a6 0%, #0ABAB5 38%, #0d9488 100%);
+  box-shadow:
+    0 2px 12px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.28);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.property-club-mobile-hero__btn:active {
+  transform: scale(0.97);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .property-club-mobile-hero {
+    animation: none;
+    background: linear-gradient(125deg, #0f172a 0%, #1e293b 42%, #134e4a 100%);
+  }
+
+  .property-club-mobile-hero__shine::after {
+    animation: none;
+    opacity: 0;
+  }
+}
+
+/* Десктоп аукцион: тот же VIP-блок в теле карточки (после названия) */
+.property-content .property-club-mobile-hero.property-club-desktop-hero {
+  position: relative;
+  left: auto;
+  right: auto;
+  top: auto;
+  width: 100%;
+  max-width: 100%;
+  margin: 8px 0 16px;
+  border-radius: 14px;
+  box-sizing: border-box;
+}
+
+.property-club-desktop-hero .property-club-mobile-hero__inner {
+  padding: 14px 18px 16px 18px;
+  gap: 12px;
+}
+
+.property-club-desktop-hero .property-club-mobile-hero__vip {
+  font-size: 0.7rem;
+  padding: 0.26rem 0.55rem;
+}
+
+.property-club-desktop-hero .property-club-mobile-hero__label {
+  font-size: 0.92rem;
+  line-height: 1.28;
+}
+
+.property-club-desktop-hero .property-club-mobile-hero__btn {
+  padding: 10px 26px;
+  font-size: 0.88rem;
+  max-width: 320px;
+}
+
+.property-bid-info.property-bid-info--after-club-desktop {
+  margin-top: 2px;
+  margin-bottom: 10px;
+}
+
+.property-price.property-price--after-club-desktop {
+  margin-top: 4px;
+  margin-bottom: 12px;
+  font-weight: 700;
+}
+
 .property-image {
   width: 100%;
   height: 100%;
@@ -1210,14 +1435,19 @@
   flex-shrink: 0;
 }
 
-/* Обертка для данных, которые должны быть закреплены снизу */
-.property-content-bottom {
-  margin-top: auto;
+/* Обертка для данных, которые должны быть закреплены снизу.
+   Селектор с .properties-grid перебивает дубликат в MainPage.css, иначе снова margin-top:auto на всех карточках. */
+.properties-grid .property-content-bottom {
+  margin-top: 0;
   display: flex;
   flex-direction: column;
   gap: 6px;
   padding-top: 6px;
   flex-shrink: 0;
+}
+
+.properties-grid .property-content-bottom.property-content-bottom--with-actions {
+  margin-top: auto;
 }
 
 .btn {
@@ -1497,6 +1727,9 @@
     overflow-x: clip;
     max-width: 100%;
     min-width: 0;
+    /* Узкий стык крошки → строка поиска (общий .property-list здесь даёт padding-top: 28px) */
+    padding-top: 10px;
+    padding-bottom: 28px;
   }
 
   .property-list.property-list--auction-mobile-page .property-list-container {
@@ -1835,11 +2068,15 @@
     flex-shrink: 0;
   }
 
-  .property-content-bottom {
+  .properties-grid .property-content-bottom {
     gap: 8px;
     padding-top: 8px;
-    margin-top: auto;
+    margin-top: 0;
     flex-shrink: 0;
+  }
+
+  .properties-grid .property-content-bottom.property-content-bottom--with-actions {
+    margin-top: auto;
   }
 
   /* Кнопки в карточках: адаптив */

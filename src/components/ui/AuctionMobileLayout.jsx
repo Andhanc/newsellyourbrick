@@ -26,6 +26,7 @@ import {
 import { getPropertyCardImage } from '@/utils/propertyImage'
 import { resolveAuctionCurrentBidValue } from '../../services/auctionListCache'
 import { getPropertyDetailPath, auctionListingDedupeKey } from '../../utils/propertyDetailUrl'
+import { isPrivateClubAuctionLot } from '../../utils/isPrivateClubAuctionLot'
 import { AUCTION_MOBILE_VIEW_STORAGE_KEY } from '../../constants/auctionMobileViewStorage'
 import '../PropertyList.css'
 import './AuctionMobileLayout.css'
@@ -44,6 +45,7 @@ export default function AuctionMobileLayout({
   formatPrice,
   isFavorite,
   onFavoriteToggle,
+  viewerHasVip = false,
 }) {
   const { t } = useTranslation()
   const navigate = useNavigate()
@@ -99,6 +101,7 @@ export default function AuctionMobileLayout({
                 navigate={navigate}
                 isFavorite={isFavorite}
                 onFavoriteToggle={onFavoriteToggle}
+                viewerHasVip={viewerHasVip}
               />
             ))}
           </motion.div>
@@ -324,6 +327,40 @@ function AuctionPhotoHint({ type, tooltipKey, onGo }) {
   )
 }
 
+function AuctionPrivateClubMobileHero({ t, layout, onGo }) {
+  return (
+    <div
+      className={cn(
+        'property-club-mobile-hero',
+        layout === 'inline' && 'property-club-mobile-hero--auction-mobile-list',
+        layout === 'cardBody' && 'property-club-mobile-hero--auction-mobile-card-body',
+      )}
+      role="group"
+      aria-label={t('auctionPrivateClubLotTooltip')}
+      onClick={(e) => e.stopPropagation()}
+    >
+      <div className="property-club-mobile-hero__shine" aria-hidden="true" />
+      <div className="property-club-mobile-hero__inner">
+        <div className="property-club-mobile-hero__titles">
+          <span className="property-club-mobile-hero__vip">{t('auctionPrivateClubVipBadge')}</span>
+          <span className="property-club-mobile-hero__label">{t('auctionPrivateClubMobileLabel')}</span>
+        </div>
+        <button
+          type="button"
+          className="property-club-mobile-hero__btn"
+          onClick={(e) => {
+            e.preventDefault()
+            e.stopPropagation()
+            onGo()
+          }}
+        >
+          {t('auctionPrivateClubGoCta')}
+        </button>
+      </div>
+    </div>
+  )
+}
+
 function AuctionMobileItem({
   property,
   view,
@@ -332,6 +369,7 @@ function AuctionMobileItem({
   navigate,
   isFavorite,
   onFavoriteToggle,
+  viewerHasVip = false,
 }) {
   const { user, isLoaded: clerkUserLoaded } = useUser()
   const buyNowEmailOk = useMemo(
@@ -384,6 +422,13 @@ function AuctionMobileItem({
   const isTimerExpired = isEffectiveAuctionTimerExpired(property)
   const isAuctionEndedCard = isTimerExpired && hasTimer
   const buyNowWinnerId = property.buy_now_winner_user_id
+
+  const showMobilePrivateClubHero =
+    Boolean(viewerHasVip) &&
+    isPrivateClubAuctionLot(property) &&
+    !isAuctionListingEnded(property) &&
+    !isAuctionEndedCard &&
+    !isReserved
 
   const greenOnImage =
     hasTimer && !isReserved && !showCircularOnCard && effectiveAuctionEnd
@@ -470,6 +515,60 @@ function AuctionMobileItem({
     })
   }
 
+  const privateClubCard = showMobilePrivateClubHero && view === 'card'
+
+  const greenCardTimerEl =
+    greenOnImage && view === 'card' ? (
+      <div className="auction-mobile-body-timer">
+        <PropertyTimer
+          endTime={effectiveAuctionEnd}
+          compact
+          className="property-timer--auction-mobile property-timer--auction-mobile-inline"
+          auctionEndedLabel={t('propertyDetailAuctionCompleted')}
+        />
+      </div>
+    ) : null
+
+  const redCardTimerEl =
+    view === 'card' && redOnImage ? (
+      <div className="auction-mobile-body-circular-timer auction-mobile-body-circular-timer--overlap">
+        <CircularTimer
+          endTime={property.test_timer_end_date}
+          size={54}
+          strokeWidth={4}
+          originalDuration={normalizedTestTimerDuration}
+          progressKey={`auction-mobile:${property.id}`}
+          auctionEndedLabel={t('auctionCircularEndedShort')}
+        />
+      </div>
+    ) : null
+
+  const buyEndedCardTimerEl =
+    view === 'card' && buyNowEndedSealOnImage ? (
+      <div className="auction-mobile-body-circular-timer auction-mobile-body-circular-timer--overlap">
+        <CircularTimer
+          endTime={property.buy_now_completed_at}
+          size={54}
+          strokeWidth={4}
+          auctionEndedLabel={t('auctionCircularEndedShort')}
+        />
+      </div>
+    ) : null
+
+  const locationEl = property.location ? (
+    <p className="auction-mobile-loc">
+      <MapPin size={14} strokeWidth={2} />
+      <span>{property.location}</span>
+    </p>
+  ) : null
+
+  const buyNowWinnerEl =
+    buyNowWinnerId != null && !isAuctionListingEnded(property) ? (
+      <p className="auction-mobile-buy-now-winner" role="status">
+        {t('propertyCardBuyNowWinner', { id: buyNowWinnerId })}
+      </p>
+    ) : null
+
   return (
     <div className="auction-mobile-item-wrap">
       {likeBurst ? (
@@ -487,6 +586,7 @@ function AuctionMobileItem({
           view === 'list' && 'auction-mobile-item--list auction-mobile--list',
           view === 'card' && 'auction-mobile-item--card auction-mobile--card',
           isAuctionEndedCard && 'auction-mobile-item--ended',
+          privateClubCard && 'auction-mobile-item--private-club-card',
         )}
         onClick={openProperty}
         style={{ cursor: 'pointer' }}
@@ -531,13 +631,31 @@ function AuctionMobileItem({
                 />
               </svg>
             </button>
+            {viewerHasVip &&
+            isPrivateClubAuctionLot(property) &&
+            !isAuctionListingEnded(property) &&
+            !isAuctionEndedCard &&
+            (view === 'list' || !showMobilePrivateClubHero) ? (
+              <span
+                className="property-vip-club-badge auction-mobile-vip-club-badge"
+                role="img"
+                aria-label={t('auctionPrivateClubLotTooltip')}
+                title={t('auctionPrivateClubLotTooltip')}
+                onClick={(e) => e.stopPropagation()}
+              >
+                {t('auctionPrivateClubVipBadge')}
+              </span>
+            ) : null}
             {isReserved && (
               <div className="auction-mobile-reserved">
                 <span className="text-lg">🔒</span>
                 <span>{t('reserved')}</span>
               </div>
             )}
-            {!isReserved && (showBuyNow || hasTestDrive) && !isAuctionListingEnded(property) && (
+            {!isReserved &&
+            !showMobilePrivateClubHero &&
+            (showBuyNow || hasTestDrive) &&
+            !isAuctionListingEnded(property) && (
               <div
                 className="auction-mobile-photo-icons"
                 onClick={(e) => e.stopPropagation()}
@@ -586,54 +704,25 @@ function AuctionMobileItem({
         </div>
 
         <div className="auction-mobile-item__body">
-          {greenOnImage && view === 'card' && (
-            <div className="auction-mobile-body-timer">
-              <PropertyTimer
-                endTime={effectiveAuctionEnd}
-                compact
-                className="property-timer--auction-mobile property-timer--auction-mobile-inline"
-                auctionEndedLabel={t('propertyDetailAuctionCompleted')}
-              />
-            </div>
-          )}
-          {view === 'card' && redOnImage && (
-            <div className="auction-mobile-body-circular-timer auction-mobile-body-circular-timer--overlap">
-              <CircularTimer
-                endTime={property.test_timer_end_date}
-                size={54}
-                strokeWidth={4}
-                originalDuration={normalizedTestTimerDuration}
-                progressKey={`auction-mobile:${property.id}`}
-                auctionEndedLabel={t('auctionCircularEndedShort')}
-              />
-            </div>
-          )}
-          {view === 'card' && buyNowEndedSealOnImage && (
-            <div className="auction-mobile-body-circular-timer auction-mobile-body-circular-timer--overlap">
-              <CircularTimer
-                endTime={property.buy_now_completed_at}
-                size={54}
-                strokeWidth={4}
-                auctionEndedLabel={t('auctionCircularEndedShort')}
-              />
-            </div>
-          )}
+          {!privateClubCard && greenCardTimerEl}
+          {!privateClubCard && redCardTimerEl}
+          {!privateClubCard && buyEndedCardTimerEl}
+
           <div className="auction-mobile-head">
             <h3 className="auction-mobile-card-title">{propertyTitle}</h3>
           </div>
 
-          {property.location ? (
-            <p className="auction-mobile-loc">
-              <MapPin size={14} strokeWidth={2} />
-              <span>{property.location}</span>
-            </p>
+          {privateClubCard ? (
+            <div
+              className="auction-mobile-private-club-card-slot"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <AuctionPrivateClubMobileHero t={t} layout="cardBody" onGo={goDetail} />
+            </div>
           ) : null}
 
-          {buyNowWinnerId != null && !isAuctionListingEnded(property) && (
-            <p className="auction-mobile-buy-now-winner" role="status">
-              {t('propertyCardBuyNowWinner', { id: buyNowWinnerId })}
-            </p>
-          )}
+          {!privateClubCard ? locationEl : null}
+          {!privateClubCard ? buyNowWinnerEl : null}
 
           {isDebtProperty && property.debt_amount != null && property.debt_amount !== '' && !Number.isNaN(Number(property.debt_amount)) ? (
             <>
@@ -659,6 +748,13 @@ function AuctionMobileItem({
             </div>
           )}
 
+          {privateClubCard ? locationEl : null}
+          {privateClubCard ? buyNowWinnerEl : null}
+
+          {privateClubCard && greenCardTimerEl}
+          {privateClubCard && redCardTimerEl}
+          {privateClubCard && buyEndedCardTimerEl}
+
           {view === 'list' ? (
             metaRow ?? (
               <div className="auction-mobile-meta auction-mobile-meta--placeholder" aria-hidden />
@@ -667,59 +763,65 @@ function AuctionMobileItem({
             metaRow
           )}
 
-          <div
-            className={cn('property-actions auction-mobile-actions')}
-            onClick={(e) => e.stopPropagation()}
-          >
-            {!isAuctionEndedCard ? (
-              <button
-                type="button"
-                className={cn(
-                  'btn btn-primary btn-liquid-glass',
-                )}
-                onClick={(e) => {
-                  e.preventDefault()
-                  e.stopPropagation()
-                  goDetail()
-                }}
-                disabled={isReserved}
-                style={{
-                  opacity: isReserved ? 0.5 : 1,
-                  cursor: isReserved ? 'not-allowed' : 'pointer',
-                }}
-              >
-                {isReserved ? t('objectReserved') : t('placeBid')}
-              </button>
-            ) : null}
-            {showBuyNow && !isAuctionListingEnded(property) && (
-              <button
-                type="button"
-                className="btn btn-buy-now btn-liquid-glass-buy"
-                onClick={(e) => {
-                  e.preventDefault()
-                  e.stopPropagation()
-                  if (isReserved) {
-                    showNotification(t('objectReservedNotification'))
-                    return
-                  }
-                  if (!buyNowEmailOk) {
-                    showNotification(t('buyNowEmailRequired'))
-                    return
-                  }
-                  goDetail()
-                }}
-                disabled={isReserved || !buyNowEmailOk}
-                title={!buyNowEmailOk ? t('buyNowEmailRequired') : undefined}
-                style={{
-                  opacity: isReserved || !buyNowEmailOk ? 0.45 : 1,
-                  cursor:
-                    isReserved || !buyNowEmailOk ? 'not-allowed' : 'pointer',
-                }}
-              >
-                {isReserved ? t('objectReserved') : t('buyNowSectionTitle')}
-              </button>
-            )}
-          </div>
+          {showMobilePrivateClubHero && view === 'card' ? null : (
+            <div
+              className={cn('property-actions auction-mobile-actions')}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {showMobilePrivateClubHero && view === 'list' ? (
+                <AuctionPrivateClubMobileHero t={t} layout="inline" onGo={goDetail} />
+              ) : (
+                <>
+                  {!isAuctionEndedCard ? (
+                    <button
+                      type="button"
+                      className={cn('btn btn-primary btn-liquid-glass')}
+                      onClick={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        goDetail()
+                      }}
+                      disabled={isReserved}
+                      style={{
+                        opacity: isReserved ? 0.5 : 1,
+                        cursor: isReserved ? 'not-allowed' : 'pointer',
+                      }}
+                    >
+                      {isReserved ? t('objectReserved') : t('placeBid')}
+                    </button>
+                  ) : null}
+                  {showBuyNow && !isAuctionListingEnded(property) && (
+                    <button
+                      type="button"
+                      className="btn btn-buy-now btn-liquid-glass-buy"
+                      onClick={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        if (isReserved) {
+                          showNotification(t('objectReservedNotification'))
+                          return
+                        }
+                        if (!buyNowEmailOk) {
+                          showNotification(t('buyNowEmailRequired'))
+                          return
+                        }
+                        goDetail()
+                      }}
+                      disabled={isReserved || !buyNowEmailOk}
+                      title={!buyNowEmailOk ? t('buyNowEmailRequired') : undefined}
+                      style={{
+                        opacity: isReserved || !buyNowEmailOk ? 0.45 : 1,
+                        cursor:
+                          isReserved || !buyNowEmailOk ? 'not-allowed' : 'pointer',
+                      }}
+                    >
+                      {isReserved ? t('objectReserved') : t('buyNowSectionTitle')}
+                    </button>
+                  )}
+                </>
+              )}
+            </div>
+          )}
         </div>
       </motion.div>
     </div>

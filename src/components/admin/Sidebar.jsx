@@ -1,6 +1,17 @@
 import React from 'react';
-import { FaChartBar, FaUsers, FaShieldAlt, FaComment, FaBuilding, FaSignOutAlt, FaKey, FaWhatsapp, FaAddressBook, FaShoppingCart, FaFlask, FaTimes, FaGift, FaRobot, FaFileInvoiceDollar, FaFileAlt, FaWarehouse, FaPlusSquare, FaCar, FaGavel } from 'react-icons/fa';
+import { FaChartBar, FaUsers, FaShieldAlt, FaComment, FaBuilding, FaSignOutAlt, FaKey, FaWhatsapp, FaAddressBook, FaShoppingCart, FaFlask, FaTimes, FaGift, FaRobot, FaFileInvoiceDollar, FaFileAlt, FaWarehouse, FaPlusSquare, FaCar, FaGavel, FaGem } from 'react-icons/fa';
 import './Sidebar.css';
+
+const BADGE_SECTION_IDS = new Set(['test_drive', 'moderation', 'chat', 'purchase_requests', 'bonuses']);
+
+/** Красные бейджи: тест-драйв, запросы на покупку, чат */
+const BADGE_TONE_RED_IDS = new Set(['test_drive', 'purchase_requests', 'chat']);
+
+function sidebarBadgeToneClass(sectionId) {
+  return BADGE_TONE_RED_IDS.has(sectionId)
+    ? 'menu-item__badge menu-item__badge--tone-red'
+    : 'menu-item__badge menu-item__badge--tone-orange';
+}
 
 const Sidebar = ({
   activeSection,
@@ -10,6 +21,7 @@ const Sidebar = ({
   crmLayout = false,
   crmMenuOpen = false,
   onCrmMenuClose,
+  sectionBadges = {},
 }) => {
   // Получаем права доступа из localStorage или пропсов
   const permissions = adminPermissions || JSON.parse(localStorage.getItem('adminPermissions') || '{}');
@@ -18,6 +30,7 @@ const Sidebar = ({
   const allMenuItems = [
     { id: 'statistics', icon: FaChartBar, label: 'Статистика', permission: 'can_access_statistics' },
     { id: 'users', icon: FaUsers, label: 'Пользователи', permission: 'can_access_users' },
+    { id: 'private_club', icon: FaGem, label: 'Закрытый клуб', permission: 'can_access_users' },
     { id: 'moderation', icon: FaShieldAlt, label: 'Модерация', permission: 'can_access_moderation' },
     { id: 'chat', icon: FaComment, label: 'Чат', permission: 'can_access_chat' },
     { id: 'smart_assistant', icon: FaRobot, label: 'Умный помощник', permission: 'can_access_chat' },
@@ -90,14 +103,25 @@ const Sidebar = ({
       <div className="sidebar-menu">
         {menuItems.map(item => {
           const IconComponent = item.icon;
+          const rawBadge = BADGE_SECTION_IDS.has(item.id) ? Number(sectionBadges[item.id]) || 0 : 0;
+          const badge =
+            rawBadge > 99 ? '99+' : rawBadge > 0 ? String(rawBadge) : null;
           return (
             <div
               key={item.id}
-              className={`menu-item ${activeSection === item.id ? 'active' : ''}`}
+              className={['menu-item', activeSection === item.id ? 'active' : ''].filter(Boolean).join(' ')}
               onClick={() => onSectionChange(item.id)}
             >
               <IconComponent size={20} />
-              <span>{item.label}</span>
+              <span className="menu-item__label">{item.label}</span>
+              {badge ? (
+                <span
+                  className={sidebarBadgeToneClass(item.id)}
+                  aria-label={`Необработано: ${rawBadge}`}
+                >
+                  {badge}
+                </span>
+              ) : null}
             </div>
           );
         })}
@@ -111,7 +135,7 @@ const Sidebar = ({
           }}
         >
           <FaSignOutAlt size={20} />
-          <span>Выйти</span>
+          <span className="menu-item__label">Выйти</span>
         </div>
       </div>
     </div>

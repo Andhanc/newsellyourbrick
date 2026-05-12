@@ -8,6 +8,7 @@ import {
   fetchAdminLiveChatSessions,
   sendAdminLiveChatMessage,
 } from '../../services/liveChatApi';
+import { markLiveChatAllViewed } from '../../utils/adminSidebarBadges';
 
 function resolveClientAvatarUrl(row) {
   if (!row) return null;
@@ -89,7 +90,7 @@ function liveRowToChatItem(s) {
   };
 }
 
-const AdminChat = () => {
+const AdminChat = ({ onAdminSectionBadgeRefresh }) => {
   const [selectedChat, setSelectedChat] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [inputMessage, setInputMessage] = useState('');
@@ -440,7 +441,19 @@ const AdminChat = () => {
       <div className="admin-chat__sidebar">
         <div className="admin-chat__header">
           <h2 className="admin-chat__title">Чаты</h2>
-          <span className="admin-chat__live-badge">Live</span>
+          <div className="admin-chat__header-actions">
+            <button
+              type="button"
+              className="admin-chat__mark-read-btn"
+              onClick={() => {
+                markLiveChatAllViewed();
+                void onAdminSectionBadgeRefresh?.();
+              }}
+            >
+              Всё просмотрено
+            </button>
+            <span className="admin-chat__live-badge">Live</span>
+          </div>
         </div>
 
         <div className="admin-chat__search">

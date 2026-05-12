@@ -1,3 +1,5 @@
+import { getStoredNumericUserId } from '../services/authService'
+
 /** Тип для GET /api/properties/:id?property_type= — снимает неоднозначность при одинаковых id в двух таблицах. */
 const DISAMBIG_PROPERTY_TYPES = new Set(['apartment', 'commercial', 'house', 'villa'])
 
@@ -27,6 +29,17 @@ export function getPropertyDetailPath(propertyId, options = {}) {
   if (propertyId == null || propertyId === '') return '/'
   const search = buildPropertyDetailSearch(options)
   return `/property/${propertyId}${search}`
+}
+
+/**
+ * Добавляет viewer_user_id к URL GET /api/properties/:id (доступ к лотам «только VIP»).
+ */
+export function appendViewerUserIdToPropertyApiUrl(url) {
+  if (typeof url !== 'string' || !url) return url
+  const uid = getStoredNumericUserId()
+  if (uid == null) return url
+  const sep = url.includes('?') ? '&' : '?'
+  return `${url}${sep}viewer_user_id=${encodeURIComponent(String(uid))}`
 }
 
 /**

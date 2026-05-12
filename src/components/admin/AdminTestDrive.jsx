@@ -1,6 +1,11 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { FiExternalLink, FiCalendar, FiChevronLeft, FiChevronRight, FiSend } from 'react-icons/fi';
 import { getApiBaseUrlSync } from '../../utils/apiConfig';
+import {
+  markTestDriveAllCancellationsViewed,
+  testDriveMergedCancelSeenMs,
+  testDrivePerPropertySeenKey,
+} from '../../utils/adminSidebarBadges';
 import './AdminTestDrive.css';
 
 const API_BASE_URL = getApiBaseUrlSync();
@@ -52,7 +57,7 @@ function formatBuyerContactChannel(ch) {
 
 function adminCancelSeenStorageKey(sel) {
   if (!sel?.property_id || !sel?.property_table) return null;
-  return `admin_test_drive_cancel_seen_at:${sel.property_table}:${sel.property_id}`;
+  return testDrivePerPropertySeenKey(sel.property_table, sel.property_id);
 }
 
 function parseYmdLocal(ymd) {
@@ -201,7 +206,12 @@ function formatBroadcastDt(iso) {
   }
 }
 
-export default function AdminTestDrive() {
+export default function AdminTestDrive({
+  adminBadgeTick = 0,
+  onAdminSectionBadgeRefresh,
+  testDriveMenuBadge = 0,
+  testDriveTotalCancelledInDb = null,
+}) {
   const [rows, setRows] = useState([]);
   const [listLoading, setListLoading] = useState(true);
   const [listError, setListError] = useState(null);
@@ -223,6 +233,7 @@ export default function AdminTestDrive() {
   const [broadcastSendBusy, setBroadcastSendBusy] = useState(null);
   const [broadcastSubTab, setBroadcastSubTab] = useState('survey');
   const [exitSendBusy, setExitSendBusy] = useState(null);
+  const [allCancelsSeenTick, setAllCancelsSeenTick] = useState(0);
 
   const loadList = useCallback(async () => {
     setListLoading(true);
@@ -488,9 +499,9 @@ export default function AdminTestDrive() {
   }, [bookings]);
 
   const unseenCancelCount = useMemo(() => {
-    if (!cancelCards.length) return 0;
-    const rawSeen = (cancelSeenAt || '').trim();
-    const seenMs = rawSeen ? Date.parse(rawSeen) : NaN;
+    if (!cancelCards.length || !selected) return 0;
+    const mergedSeen = testDriveMergedCancelSeenMs(selected.property_table, selected.property_id);
+    const seenMs = Number.isFinite(mergedSeen) ? mergedSeen : NaN;
     const hasWatermark = Number.isFinite(seenMs);
 
     const cancelEventMs = (c) => {
@@ -511,7 +522,7 @@ export default function AdminTestDrive() {
       if (!Number.isFinite(t)) return true;
       return t > seenMs;
     }).length;
-  }, [cancelCards, cancelSeenAt]);
+  }, [cancelCards, selected, cancelSeenAt, adminBadgeTick, allCancelsSeenTick]);
 
   const markCancelsAsViewed = () => {
     const k = adminCancelSeenStorageKey(selected);
@@ -523,6 +534,13 @@ export default function AdminTestDrive() {
     } catch {
       // ignore storage errors
     }
+    void onAdminSectionBadgeRefresh?.();
+  };
+
+  const markAllTestDriveCancellationsViewed = () => {
+    markTestDriveAllCancellationsViewed();
+    setAllCancelsSeenTick((x) => x + 1);
+    void onAdminSectionBadgeRefresh?.();
   };
 
   const propertyBroadcasts = useMemo(() => {
@@ -629,10 +647,36 @@ export default function AdminTestDrive() {
 
   return (
     <div className="admin-test-drive">
-      <p className="admin-test-drive__intro">
-        Объекты с активным тест-драйвом и объекты, по которым есть бронирования. Выберите строку —
-        календарь и таблица с данными бронирующих.
-      </p>
+      <div className="admin-test-drive__intro-row">
+        <div className="admin-test-drive__intro-stack">
+          <p className="admin-test-drive__intro">
+            Объекты с активным тест-драйвом и объекты, по которым есть бронирования. Выберите строку —
+            календарь и таблица с данными бронирующих.
+          </p>
+          <p className="admin-test-drive__intro-note">
+            <strong>В левом меню</strong> — сколько отмен бронирования ещё не отмечены как просмотренные
+            (кнопка «Всё просмотрено» или «Просмотрено» во вкладке «Отмены» у объекта). Сейчас:{' '}
+            <strong>{testDriveMenuBadge}</strong>
+            {typeof testDriveTotalCancelledInDb === 'number' ? (
+              <>
+                {' '}
+                из <strong>{testDriveTotalCancelledInDb}</strong> отменённых броней в базе.
+              </>
+            ) : (
+              '.'
+            )}{' '}
+            <strong>Число справа у объекта в списке</strong> — всего бронирований (любой статус), не только
+            отмены.
+          </p>
+        </div>
+        <button
+          type="button"
+          className="admin-test-drive__mark-all-read"
+          onClick={markAllTestDriveCancellationsViewed}
+        >
+          Всё просмотрено
+        </button>
+      </div>
 
       <div className="admin-test-drive__layout">
         <section className="admin-test-drive__panel">
@@ -683,6 +727,7 @@ export default function AdminTestDrive() {
                       </div>
                       <span
                         className={`admin-test-drive__badge${r.booking_count ? '' : ' admin-test-drive__badge--muted'}`}
+                        title="Всего записей бронирования (любой статус: ожидание, оплачено, отмена и т.д.)"
                       >
                         {r.booking_count || 0}
                       </span>

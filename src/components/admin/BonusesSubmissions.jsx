@@ -12,7 +12,7 @@ const TASK_LABELS = {
   4: 'Ссылка в посте в Instagram',
 };
 
-const BonusesSubmissions = () => {
+const BonusesSubmissions = ({ onAdminSectionBadgeRefresh }) => {
   const [list, setList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [actionId, setActionId] = useState(null);
@@ -25,6 +25,7 @@ const BonusesSubmissions = () => {
       const data = await res.json();
       if (data.success && data.data) {
         setList(data.data);
+        void onAdminSectionBadgeRefresh?.();
       }
     } catch (e) {
       console.error(e);

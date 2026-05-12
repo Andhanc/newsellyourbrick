@@ -3,10 +3,11 @@ import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { FiSearch, FiShoppingCart, FiCheck, FiX, FiClock, FiFileText, FiExternalLink } from 'react-icons/fi';
 import { getApiBaseUrl } from '../../utils/apiConfig';
+import { markPurchaseRequestsViewed } from '../../utils/adminSidebarBadges';
 import { showNotification } from '../../utils/toastHelper';
 import './PurchaseRequests.css';
 
-const PurchaseRequests = () => {
+const PurchaseRequests = ({ onAdminSectionBadgeRefresh }) => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -248,6 +249,18 @@ const PurchaseRequests = () => {
 
   return (
     <div className="purchase-requests-container">
+      <div className="purchase-requests-toolbar">
+        <button
+          type="button"
+          className="purchase-requests-toolbar__btn"
+          onClick={() => {
+            markPurchaseRequestsViewed();
+            void onAdminSectionBadgeRefresh?.();
+          }}
+        >
+          Просмотрено
+        </button>
+      </div>
       <div className="purchase-requests-filter">
         <div className="filter-search">
           <FiSearch className="search-icon" size={20} />

@@ -23,8 +23,17 @@ import DebtDocuments from '../components/admin/DebtDocuments';
 import AdminAddition from '../components/admin/AdminAddition';
 import AdminTestDrive from '../components/admin/AdminTestDrive';
 import AdminAuctions from '../components/admin/AdminAuctions';
+import AdminPrivateClub from '../components/admin/AdminPrivateClub';
 import { mockBusinessInfo } from '../data/mockData';
 import { clearUserData, clearUserDataWithoutAdmin } from '../services/authService';
+import { getApiBaseUrl } from '../utils/apiConfig';
+import {
+  countUnseenPurchasePending,
+  countUnseenTestDriveCancellations,
+  readAdminLs,
+  LS_LIVE_CHAT_ALL_READ,
+} from '../utils/adminSidebarBadges';
+import { subscribeBonusSubmissionsChanged } from '../utils/bonusSubmissionsSync';
 import { showNotification } from '../utils/toastHelper';
 import '../styles/admin/global.css';
 import './AdminPanelPage.css';
@@ -35,6 +44,17 @@ const AdminPanelPage = () => {
   const [showUsersModal, setShowUsersModal] = useState(false);
   const [adminPermissions, setAdminPermissions] = useState(null);
   const [clientsMenuOpen, setClientsMenuOpen] = useState(false);
+  const [sidebarBadges, setSidebarBadges] = useState({
+    test_drive: 0,
+    moderation: 0,
+    chat: 0,
+    purchase_requests: 0,
+    bonuses: 0,
+  });
+  const [testDriveCancelStats, setTestDriveCancelStats] = useState({
+    totalCancelledInDb: null,
+  });
+  const [adminBadgeTick, setAdminBadgeTick] = useState(0);
   const mainContentRef = useRef(null);
 
   const isClientsSection = activeSection === 'clients';
@@ -78,6 +98,7 @@ const AdminPanelPage = () => {
   const sectionTitles = {
     statistics: 'Статистика',
     users: 'Пользователи',
+    private_club: 'Закрытый клуб',
     moderation: 'Модерация',
     chat: 'Чат',
     smart_assistant: 'Умный помощник',
@@ -106,6 +127,7 @@ const AdminPanelPage = () => {
     const accessMap = {
       statistics: adminPermissions.can_access_statistics,
       users: adminPermissions.can_access_users,
+      private_club: adminPermissions.can_access_users,
       moderation: adminPermissions.can_access_moderation,
       chat: adminPermissions.can_access_chat,
       smart_assistant: adminPermissions.can_access_chat,
@@ -167,6 +189,118 @@ const AdminPanelPage = () => {
     window.scrollTo({ top: 0, behavior: 'auto' });
   }, [activeSection]);
 
+  const refreshSidebarBadges = useCallback(async () => {
+    const base = await getApiBaseUrl();
+    const [test_drive, moderation, chat, purchase_requests, bonuses] = await Promise.all([
+      (async () => {
+        try {
+          const r = await fetch(`${base}/admin/test-drive/cancellations-badge`);
+          const j = await r.json();
+          if (j.success && Array.isArray(j.data)) {
+            const total =
+              j.meta && typeof j.meta.total_cancelled === 'number'
+                ? j.meta.total_cancelled
+                : j.data.length;
+            setTestDriveCancelStats({ totalCancelledInDb: total });
+            return countUnseenTestDriveCancellations(j.data);
+          }
+        } catch {
+          /* ignore */
+        }
+        return 0;
+      })(),
+      (async () => {
+        try {
+          const [r1, r2] = await Promise.all([
+            fetch(`${base}/documents/pending`),
+            fetch(`${base}/properties/pending`),
+          ]);
+          let usersN = 0;
+          let propsN = 0;
+          if (r1.ok) {
+            const j1 = await r1.json();
+            if (j1.success && Array.isArray(j1.data)) {
+              const ids = new Set();
+              for (const doc of j1.data) {
+                if ((doc.verification_status || 'pending') === 'pending') {
+                  ids.add(doc.user_id);
+                }
+              }
+              usersN = ids.size;
+            }
+          }
+          if (r2.ok) {
+            const j2 = await r2.json();
+            if (j2.success && Array.isArray(j2.data)) {
+              propsN = j2.data.filter((p) => {
+                const st = p.moderation_status || p.moderationStatus;
+                return st === 'pending' || st == null || st === undefined;
+              }).length;
+            }
+          }
+          return usersN + propsN;
+        } catch {
+          return 0;
+        }
+      })(),
+      (async () => {
+        try {
+          const sinceRaw = readAdminLs(LS_LIVE_CHAT_ALL_READ);
+          const since = sinceRaw || '1970-01-01T00:00:00.000Z';
+          const r = await fetch(
+            `${base}/admin/live-chat/user-messages-since?since=${encodeURIComponent(since)}`,
+          );
+          const j = await r.json();
+          if (j.success && j.data && typeof j.data.count === 'number') {
+            return j.data.count;
+          }
+        } catch {
+          /* ignore */
+        }
+        return 0;
+      })(),
+      (async () => {
+        try {
+          const r = await fetch(`${base}/purchase-requests?limit=1000`);
+          if (!r.ok) return 0;
+          const j = await r.json();
+          if (j.success && Array.isArray(j.data)) {
+            return countUnseenPurchasePending(j.data);
+          }
+        } catch {
+          /* ignore */
+        }
+        return 0;
+      })(),
+      (async () => {
+        try {
+          const r = await fetch(`${base}/bonus-submissions/pending`);
+          const j = await r.json();
+          if (j.success && Array.isArray(j.data)) {
+            return j.data.length;
+          }
+        } catch {
+          /* ignore */
+        }
+        return 0;
+      })(),
+    ]);
+    setSidebarBadges({ test_drive, moderation, chat, purchase_requests, bonuses });
+    setAdminBadgeTick((t) => t + 1);
+  }, []);
+
+  useEffect(() => {
+    void refreshSidebarBadges();
+    const id = setInterval(() => void refreshSidebarBadges(), 90000);
+    return () => clearInterval(id);
+  }, [activeSection, refreshSidebarBadges]);
+
+  useEffect(() => {
+    return subscribeBonusSubmissionsChanged(() => {
+      void refreshSidebarBadges();
+    });
+  }, [refreshSidebarBadges]);
+
   const renderContent = () => {
     // Проверяем права доступа перед рендерингом
     if (!hasAccess(activeSection)) {
@@ -183,10 +317,12 @@ const AdminPanelPage = () => {
         return <Statistics businessInfo={mockBusinessInfo} onShowUsers={() => setShowUsersModal(true)} />;
       case 'users':
         return <UsersList />;
+      case 'private_club':
+        return <AdminPrivateClub />;
       case 'moderation':
         return <Moderation />;
       case 'chat':
-        return <AdminChat />;
+        return <AdminChat onAdminSectionBadgeRefresh={refreshSidebarBadges} />;
       case 'smart_assistant':
         return <SmartAssistant />;
       case 'addition':
@@ -194,7 +330,14 @@ const AdminPanelPage = () => {
       case 'objects':
         return <ObjectsList />;
       case 'test_drive':
-        return <AdminTestDrive />;
+        return (
+          <AdminTestDrive
+            adminBadgeTick={adminBadgeTick}
+            onAdminSectionBadgeRefresh={refreshSidebarBadges}
+            testDriveMenuBadge={sidebarBadges.test_drive}
+            testDriveTotalCancelledInDb={testDriveCancelStats.totalCancelledInDb}
+          />
+        );
       case 'debt_reasons':
         return <DebtReasons />;
       case 'debt_documents':
@@ -204,9 +347,11 @@ const AdminPanelPage = () => {
       case 'clients':
         return <Clients onOpenAdminNav={() => setClientsMenuOpen(true)} />;
       case 'purchase_requests':
-        return <PurchaseRequests />;
+        return <PurchaseRequests onAdminSectionBadgeRefresh={refreshSidebarBadges} />;
       case 'bonuses':
-        return <BonusesSubmissions />;
+        return (
+          <BonusesSubmissions onAdminSectionBadgeRefresh={refreshSidebarBadges} />
+        );
       case 'testing':
         return <Testing />;
       case 'access_management':
@@ -231,6 +376,7 @@ const AdminPanelPage = () => {
         crmLayout={isClientsSection}
         crmMenuOpen={clientsMenuOpen}
         onCrmMenuClose={closeClientsAdminMenu}
+        sectionBadges={sidebarBadges}
       />
       <div ref={mainContentRef} className="main-content">
         <Header 

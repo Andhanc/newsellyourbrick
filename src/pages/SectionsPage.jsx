@@ -40,6 +40,7 @@ const INVESTOR_SECTIONS = [
     items: [
       { titleKey: 'subscriptions', path: '/subscriptions', requiresAuth: true },
       { titleKey: 'bonuses', path: '/bonuses', requiresAuth: true },
+      { titleKey: 'privateClubPageTitle', path: '/private-club', requiresAuth: false },
     ],
   },
   {
@@ -88,6 +89,7 @@ const SELLER_SECTIONS = [
     items: [
       { titleKey: 'bonuses', path: '/bonuses?tab=seller', requiresAuth: true },
       { titleKey: 'subscriptions', path: '/subscriptions', requiresAuth: true },
+      { titleKey: 'privateClubPageTitle', path: '/private-club', requiresAuth: false },
       { titleKey: 'wallet', path: '/wallet', requiresAuth: true, wallet: true },
     ],
   },

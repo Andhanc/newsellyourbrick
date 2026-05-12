@@ -40,6 +40,7 @@ import TestDriveSection from '../components/TestDriveSection'
 import { getAuctionMinBidStep } from '../utils/auctionBidStep'
 import { navigateToWallet } from '../utils/walletNavigation'
 import { getPropertyEntryFrom } from '../utils/propertyNavigation'
+import { appendViewerUserIdToPropertyApiUrl } from '../utils/propertyDetailUrl'
 import { hasDbBackedProperty } from '../utils/propertyFavoriteKey'
 import { patchCachedAuctionPropertyBid } from '../services/auctionListCache'
 import { usePropertyFavorites } from '../context/PropertyFavoritesContext'
@@ -867,7 +868,9 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                 : null
             const pid = displayProperty?.id || (fromPath ? parseInt(fromPath[1], 10) : null)
             if (pid) {
-              const propResponse = await fetch(`${base}/properties/${pid}?lang=${currentLang}`)
+              const propResponse = await fetch(
+                appendViewerUserIdToPropertyApiUrl(`${base}/properties/${pid}?lang=${currentLang}`)
+              )
               if (propResponse.ok) {
                 const propData = await propResponse.json()
                 if (propData.success && propData.data) {
@@ -1379,7 +1382,11 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
 
     const updatePropertyData = async () => {
       try {
-        const propResponse = await fetch(`${API_BASE_URL}/properties/${displayProperty.id}?lang=${currentLang}`);
+        const propResponse = await fetch(
+          appendViewerUserIdToPropertyApiUrl(
+            `${API_BASE_URL}/properties/${displayProperty.id}?lang=${currentLang}`
+          )
+        );
         if (propResponse.ok) {
           const propData = await propResponse.json();
           if (propData.success && propData.data) {
@@ -1606,7 +1613,11 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
         } else {
           // Если property_type не определен, пытаемся получить из API
           try {
-            const propResponse = await fetch(`${API_BASE_URL}/properties/${displayProperty.id}?lang=${currentLang}`);
+            const propResponse = await fetch(
+              appendViewerUserIdToPropertyApiUrl(
+                `${API_BASE_URL}/properties/${displayProperty.id}?lang=${currentLang}`
+              )
+            )
             if (propResponse.ok) {
               const propData = await propResponse.json();
               const apiPropertyType = propData.data?.property_type;
@@ -2189,7 +2200,9 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
               if (!resetData.success) return
               setTimerExpired(false)
               try {
-                const propResponse = await fetch(`${API_BASE_URL}/properties/${pid}?lang=${lang}`)
+                const propResponse = await fetch(
+                  appendViewerUserIdToPropertyApiUrl(`${API_BASE_URL}/properties/${pid}?lang=${lang}`)
+                )
                 if (!propResponse.ok) return
                 const propData = await propResponse.json()
                 if (propData.success && propData.data) {

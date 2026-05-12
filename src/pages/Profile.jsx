@@ -1,4 +1,5 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useMemo } from 'react'
+import { FiAward } from 'react-icons/fi'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useUser, useClerk, useAuth } from '@clerk/clerk-react'
@@ -16,7 +17,7 @@ import { fetchVerificationStatus } from '../utils/verificationStatusApi'
 import { fetchUserById } from '../utils/usersApi'
 import BuyerCabinetSidebar from '../components/BuyerCabinetSidebar'
 import { useChainedAppLayoutScroll } from '../hooks/useChainedAppLayoutScroll'
-import { effectivePurchasedTier } from '../hooks/useCabinetOverviewData'
+import { effectiveDisplayTier, userHasVipAccess, SUBSCRIPTION_BILLING_UPDATED_EVENT } from '../hooks/useCabinetOverviewData'
 import './Profile.css'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
@@ -47,7 +48,9 @@ const Profile = () => {
     passportNumber: '',
     identificationNumber: '',
     userIdNumber: '',
-    role: 'buyer'
+    role: 'buyer',
+    vipUntil: null,
+    vipActive: false,
   })
   const profilePageRef = useRef(null)
   const profileMainScrollRef = useRef(null)
@@ -99,6 +102,20 @@ const Profile = () => {
       cancelled = true
     }
   }, [userId, API_BASE_URL])
+
+  useEffect(() => {
+    if (!userId) return
+    const onBilling = () => {
+      fetch(`${API_BASE_URL}/users/${userId}/subscription-billing`)
+        .then((r) => r.json())
+        .then((json) => {
+          if (json.success && json.data) setSubscriptionBilling(json.data)
+        })
+        .catch(() => {})
+    }
+    window.addEventListener(SUBSCRIPTION_BILLING_UPDATED_EVENT, onBilling)
+    return () => window.removeEventListener(SUBSCRIPTION_BILLING_UPDATED_EVENT, onBilling)
+  }, [userId, API_BASE_URL])
   
   // Загрузка данных пользователя из БД
   const loadUserDataFromDB = async (userId) => {
@@ -138,6 +155,10 @@ const Profile = () => {
           }
           
           // Обновляем profileData данными из БД
+          const vipUntilRaw = user.vip_until || null
+          const vipUntilMs = vipUntilRaw ? new Date(vipUntilRaw).getTime() : 0
+          const vipActive = Boolean(vipUntilMs && vipUntilMs > Date.now())
+
           setProfileData(prev => ({
             ...prev,
             firstName: user.first_name || '',
@@ -151,7 +172,9 @@ const Profile = () => {
             identificationNumber: user.identification_number || '',
             userIdNumber: user.user_id_number || '',
             name: `${user.first_name || ''} ${user.last_name || ''}`.trim() || prev.name,
-            role: user.role || prev.role || 'buyer'
+            role: user.role || prev.role || 'buyer',
+            vipUntil: vipUntilRaw,
+            vipActive,
           }))
 
           const roleNorm = user.role === 'seller' || user.role === 'owner' ? 'seller' : 'buyer'
@@ -889,6 +912,16 @@ const Profile = () => {
     window.location.assign('/')
   }
 
+  const profileShowsVip = useMemo(() => {
+    const untilMs = profileData.vipUntil ? new Date(profileData.vipUntil).getTime() : 0
+    const fromDb = Boolean(untilMs && untilMs > Date.now())
+    const fromBilling = userHasVipAccess({
+      subscription: subscriptionBilling?.subscription,
+      vipClub: subscriptionBilling?.vipClub,
+    })
+    return fromDb || fromBilling
+  }, [profileData.vipUntil, subscriptionBilling])
+
   // Показываем индикатор загрузки, пока данные не загружены
   if (isLoading || !userLoaded) {
     return (
@@ -945,9 +978,7 @@ const Profile = () => {
           <div className="profile-header">
             <div className="profile-header-top">
               <div className="profile-avatar-wrapper">
-                <div 
-                  className="profile-avatar"
-                >
+                <div className="profile-avatar">
                   {profileData.avatar ? (
                     <img src={profileData.avatar} alt="Avatar" className="avatar-image" />
                   ) : (
@@ -964,6 +995,16 @@ const Profile = () => {
                     </svg>
                   )}
                 </div>
+                {profileShowsVip && (
+                  <span
+                    className="profile-vip-badge"
+                    title={t('profileVipBadgeTitle')}
+                    aria-label={t('profileVipBadgeTitle')}
+                  >
+                    <FiAward className="profile-vip-badge__icon" aria-hidden />
+                    <span className="profile-vip-badge__text">VIP</span>
+                  </span>
+                )}
               </div>
               <div className="profile-info">
                 <div className="profile-name">
@@ -1110,9 +1151,15 @@ const Profile = () => {
                 <PricingCards
                   compact
                   mobileTwoColumn
-                  currentPlanVisual={effectivePurchasedTier(subscriptionBilling?.subscription)}
+                  currentPlanVisual={effectiveDisplayTier(
+                    subscriptionBilling?.subscription,
+                    subscriptionBilling?.vipClub
+                  )}
                   onBookCall={async (plan, billingCycle = 'monthly') => {
-                    const tier = effectivePurchasedTier(subscriptionBilling?.subscription)
+                    const tier = effectiveDisplayTier(
+                      subscriptionBilling?.subscription,
+                      subscriptionBilling?.vipClub
+                    )
                     if (plan === 'starter') {
                       showNotification(t('buyerCabinet_toastStarter'), 'info')
                       return

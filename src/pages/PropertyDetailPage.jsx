@@ -1,10 +1,11 @@
 import { useParams, useLocation, useNavigate } from 'react-router-dom'
 import { useState, useEffect, useRef, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
+import { showNotification } from '../utils/toastHelper'
 import { properties } from '../data/properties'
 import PropertyDetailClassic from './PropertyDetailClassic'
 import LoginModal from '../components/LoginModal'
-import { isAuthenticated, getUserData } from '../services/authService'
+import { isAuthenticated, getUserData, getStoredNumericUserId } from '../services/authService'
 import { getEffectiveAuctionEndTime } from '../utils/auctionReminderBounds'
 import {
   getPreviousInternalRoutePath,
@@ -46,7 +47,7 @@ const PropertyDetailPage = () => {
   const { id } = useParams()
   const location = useLocation()
   const navigate = useNavigate()
-  const { i18n } = useTranslation()
+  const { i18n, t } = useTranslation()
   const [property, setProperty] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -110,9 +111,26 @@ const PropertyDetailPage = () => {
           const lang = (i18n.language || 'ru').split('-')[0]
           const params = new URLSearchParams({ lang })
           if (disambigPropertyType) params.set('property_type', disambigPropertyType)
+          const viewerId = getStoredNumericUserId()
+          if (viewerId != null) params.set('viewer_user_id', String(viewerId))
           const response = await fetch(`${API_BASE_URL}/properties/${id}?${params.toString()}`, {
             signal: abortController.signal,
           })
+          if (response.status === 403) {
+            let payload = null
+            try {
+              payload = await response.json()
+            } catch {
+              /* ignore */
+            }
+            if (payload?.code === 'PRIVATE_CLUB_ONLY' && isActive) {
+              showNotification(t('auctionPrivateClubLotTooltip'))
+              navigate('/subscriptions', { replace: true })
+              return
+            }
+            if (isActive) setError('Ошибка при загрузке объявления')
+            return
+          }
           if (response.ok) {
             const result = await response.json()
             if (result.success && result.data) {
@@ -329,7 +347,7 @@ const PropertyDetailPage = () => {
       isActive = false
       abortController.abort()
     }
-  }, [id, propertyFromState, i18n.language, disambigPropertyType])
+  }, [id, propertyFromState, i18n.language, disambigPropertyType, navigate, t])
 
   if (isLoading && !error) {
     return <PropertyDetailClassicSkeleton />

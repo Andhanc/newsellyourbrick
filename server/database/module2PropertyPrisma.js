@@ -288,7 +288,8 @@ function approvedBuyNowPrismaWhere(propertyType = null) {
   return w;
 }
 
-function auctionListPrismaWhere(propertyType = null) {
+function auctionListPrismaWhere(propertyType = null, options = {}) {
+  const { hidePrivateClubOnly = false } = options;
   const w = {
     moderation_status: 'approved',
     is_auction: 1,
@@ -309,6 +310,11 @@ function auctionListPrismaWhere(propertyType = null) {
       },
     ],
   };
+  if (hidePrivateClubOnly) {
+    w.AND.push({
+      OR: [{ private_club_only: null }, { private_club_only: 0 }],
+    });
+  }
   if (propertyType) w.property_type = propertyType;
   return w;
 }
@@ -1264,9 +1270,9 @@ export const propertyQueries = {
     return all;
   },
 
-  getAuctions: async (propertyType = null) => {
+  getAuctions: async (propertyType = null, options = {}) => {
     const prisma = getPrisma();
-    const where = auctionListPrismaWhere(propertyType || null);
+    const where = auctionListPrismaWhere(propertyType || null, options);
     const [aptRows, houseRows] = await Promise.all([
       prisma.properties_apartments.findMany({
         where,
@@ -1281,10 +1287,14 @@ export const propertyQueries = {
     ]);
     const apartments = mapListWithUserParse(aptRows, 'apt').filter((p) => p && passesAuctionFilters(p));
     const houses = mapListWithUserParse(houseRows, 'house').filter((p) => p && passesAuctionFilters(p));
-    const all = [...apartments, ...houses].sort(
-      (a, b) => new Date(a.auction_end_date) - new Date(b.auction_end_date)
-    );
-    return all;
+    const all = [...apartments, ...houses].sort((a, b) => {
+      const rank = (p) =>
+        p?.private_club_only === 1 || p?.private_club_only === true || p?.private_club_only === '1' ? 1 : 0
+      const d = rank(b) - rank(a)
+      if (d !== 0) return d
+      return new Date(a.auction_end_date) - new Date(b.auction_end_date)
+    })
+    return all
   },
 
   getDebts: async (propertyType = null) => {

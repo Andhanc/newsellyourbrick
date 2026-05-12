@@ -6,6 +6,7 @@ import { FiX, FiSend, FiPhone, FiMail, FiMessageCircle } from 'react-icons/fi'
 import { FaWhatsapp } from 'react-icons/fa'
 import { FaTelegram } from 'react-icons/fa6'
 import Header from '../components/Header'
+import PageBreadcrumbs from '../components/PageBreadcrumbs'
 import Hero from '../components/Hero'
 import PropertyList from '../components/PropertyList'
 import FAQ from '../components/FAQ'
@@ -39,6 +40,7 @@ import { getManagerContactButtons } from '../services/liveChatApi'
 import { getEffectiveAuctionEndTime } from '../utils/auctionReminderBounds'
 import { useManagerLiveChat } from '../hooks/useManagerLiveChat'
 import { getPropertyDetailPath } from '../utils/propertyDetailUrl'
+import { useCabinetOverviewData } from '../hooks/useCabinetOverviewData'
 
 function formatPropertyForList(prop, isAuction) {
   return {
@@ -83,6 +85,8 @@ function Home() {
   const navigate = useNavigate()
   const location = useLocation()
   const isAuctionRoute = location.pathname === '/auction'
+  const { cabinetVipActive, numericUserId } = useCabinetOverviewData()
+  const cabinetVipRef = useRef(false)
   
   // Состояния для чата AI
   const [isChatOpen, setIsChatOpen] = useState(false)
@@ -109,18 +113,23 @@ function Home() {
     preferredContact: null
   })
 
+  useEffect(() => {
+    cabinetVipRef.current = cabinetVipActive
+  }, [cabinetVipActive])
+
   // Загрузка объявлений: при наличии кэша — только фоновое обновление (без "Загрузка объявлений...")
   const loadProperties = useCallback(async (backgroundRefresh = false) => {
     if (!backgroundRefresh) setLoading(true)
     try {
-      const list = await fetchAuctionList()
+      const viewerId = numericUserId ?? getStoredNumericUserId()
+      const list = await fetchAuctionList(viewerId ?? undefined)
       setAuctionProperties(list)
     } catch (error) {
       console.error('❌ Ошибка загрузки объявлений:', error)
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [numericUserId])
 
   const homeListRef = useRef(null)
 
@@ -188,9 +197,27 @@ function Home() {
           const newFormatted = data.properties.map(p => formatPropertyForList(p, true))
           setAuctionProperties((prev) => {
             const prevIds = new Set(prev.map((x) => Number(x.id)))
-            const toAdd = newFormatted.filter((p) => p.id != null && !prevIds.has(Number(p.id)))
+            const toAdd = newFormatted.filter((p) => {
+              if (p.id == null || prevIds.has(Number(p.id))) return false
+              const pc = p.private_club_only === 1 || p.private_club_only === true || p.private_club_only === '1'
+              if (pc && !cabinetVipRef.current) return false
+              return true
+            })
             if (toAdd.length === 0) return prev
-            return [...toAdd, ...prev]
+            const rankPc = (p) =>
+              p.private_club_only === 1 || p.private_club_only === true || p.private_club_only === '1' ? 1 : 0
+            const endKey = (p) => {
+              const raw = p.endTime || p.auction_end_date || p.test_timer_end_date || ''
+              const t = raw ? new Date(raw).getTime() : 0
+              return Number.isFinite(t) ? t : 0
+            }
+            const merged = [...toAdd, ...prev]
+            merged.sort((a, b) => {
+              const d = rankPc(b) - rankPc(a)
+              if (d !== 0) return d
+              return endKey(a) - endKey(b)
+            })
+            return merged
           })
         } catch (_) {}
       }
@@ -1129,12 +1156,28 @@ function Home() {
 
       <Header />
       <Hero />
+      {isAuctionRoute && (
+        <div className="page-context-heading page-context-heading--home-auction">
+          <div className="page-context-heading--home-auction-inner">
+            <h1 className="page-context-heading__title page-context-heading__title--auction-script">
+              {t('auction')}
+            </h1>
+            <PageBreadcrumbs
+              currentLabel={t('auction')}
+              variant="tiffany"
+              className="page-breadcrumbs--auction-strip"
+              separator="›"
+            />
+          </div>
+        </div>
+      )}
       <div ref={homeListRef} className="home-list-wrap">
         <PropertyList
           auctionProperties={auctionProperties}
           onOpenAIChat={toggleChat}
           loading={loading}
           floatWidgetsHiddenByFooter={floatWidgetsHiddenByFooter}
+          viewerHasVip={cabinetVipActive}
         />
       </div>
       <FAQ />
