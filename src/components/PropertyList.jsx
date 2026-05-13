@@ -6,7 +6,7 @@ import { BiArea } from 'react-icons/bi'
 import { properties } from '../data/properties'
 import { usePropertyFavorites } from '../context/PropertyFavoritesContext'
 import { hasDbBackedProperty } from '../utils/propertyFavoriteKey'
-import { hasBuyNowOption } from '../utils/hasBuyNowOption'
+import { hasBuyNowOption, hasAuctionBuyNowListingForm } from '../utils/hasBuyNowOption'
 import PropertyTimer from './PropertyTimer'
 import CircularTimer from './CircularTimer'
 import PropertySearchModal from './PropertySearchModal'
@@ -513,6 +513,7 @@ const PropertyList = ({
                   property.has_debt === true
                 const hasTestDrive =
                   !isDebtProperty &&
+                  hasAuctionBuyNowListingForm(property) &&
                   (property.test_drive === 1 || property.testDrive === true || property.test_drive === true)
                 const reservedUntilDate = property.reserved_until ? new Date(property.reserved_until) : null
                 const isReserved =

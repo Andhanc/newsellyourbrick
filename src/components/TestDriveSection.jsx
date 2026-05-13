@@ -6,7 +6,7 @@ import { getApiBaseUrlSync } from '../utils/apiConfig'
 let API_BASE_URL = getApiBaseUrlSync()
 
 /**
- * Блок «Тест-драйв» под удобствами: условия (депозит + ставка), кнопка перехода к календарю.
+ * Блок «Тест-драйв»: единственное условие для записи — депозит на платформе больше нуля.
  */
 export default function TestDriveSection({
   propertyId,
@@ -18,7 +18,6 @@ export default function TestDriveSection({
   const [loading, setLoading] = useState(true)
   const [eligibility, setEligibility] = useState({
     has_deposit: false,
-    has_bid: false,
     can_request: false,
   })
 
@@ -28,7 +27,7 @@ export default function TestDriveSection({
       API_BASE_URL = await getApiBaseUrl()
       const uid = localStorage.getItem('userId')
       if (!uid || !/^\d+$/.test(uid)) {
-        setEligibility({ has_deposit: false, has_bid: false, can_request: false })
+        setEligibility({ has_deposit: false, can_request: false })
         setLoading(false)
         return
       }
@@ -43,7 +42,6 @@ export default function TestDriveSection({
       if (json.success && json.data) {
         setEligibility({
           has_deposit: !!json.data.has_deposit,
-          has_bid: !!json.data.has_bid,
           can_request: !!json.data.can_request,
         })
       }
@@ -85,8 +83,8 @@ export default function TestDriveSection({
       </h3>
       <p className="property-detail-test-drive__intro">
         {ru
-          ? 'Тест-драйв — это возможность опробовать недвижимость. Выберите удобное время, и вы сможете проживать в ней до 5 дней подряд.'
-          : 'Test drive lets you try the property. Pick dates and stay up to 5 consecutive days.'}
+          ? 'Тест-драйв — возможность прожить в объекте перед сделкой. Выберите от 5 до 21 календарного дня подряд, согласуйте заезд с владельцем и оплатите проживание.'
+          : 'Test drive lets you stay in the property before you buy. Pick 5–21 consecutive calendar days, coordinate with the owner, and pay for the stay.'}
       </p>
 
       <ul className="property-detail-test-drive__conditions">
@@ -98,20 +96,8 @@ export default function TestDriveSection({
           )}
           <span>
             {ru
-              ? 'На депозите есть средства (баланс больше нуля)'
-              : 'You have funds on deposit (balance above zero)'}
-          </span>
-        </li>
-        <li className={eligibility.has_bid ? 'is-done' : ''}>
-          {eligibility.has_bid ? (
-            <Check className="property-detail-test-drive__check" size={18} />
-          ) : (
-            <Circle className="property-detail-test-drive__circle" size={18} />
-          )}
-          <span>
-            {ru
-              ? 'Сделана ставка именно на этот объект'
-              : 'You placed a bid on this listing'}
+              ? 'Депозит на платформе пополнен: баланс депозита больше нуля'
+              : 'Your platform deposit is funded: deposit balance is above zero'}
           </span>
         </li>
       </ul>
@@ -136,8 +122,8 @@ export default function TestDriveSection({
       {!allDone && !loading && (
         <p className="property-detail-test-drive__hint">
           {ru
-            ? 'Выполните оба условия, чтобы активировать кнопку.'
-            : 'Complete both requirements to enable the button.'}
+            ? 'Пополните депозит на платформе, чтобы активировать кнопку.'
+            : 'Top up your platform deposit to enable the button.'}
         </p>
       )}
     </div>

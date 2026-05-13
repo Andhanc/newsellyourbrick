@@ -38,6 +38,7 @@ import FlipCard from '../components/ui/FlipCard'
 import { Awards } from '@/components/ui/award'
 import TestDriveSection from '../components/TestDriveSection'
 import { getAuctionMinBidStep } from '../utils/auctionBidStep'
+import { hasAuctionBuyNowListingForm } from '../utils/hasBuyNowOption'
 import { navigateToWallet } from '../utils/walletNavigation'
 import { getPropertyEntryFrom } from '../utils/propertyNavigation'
 import { appendViewerUserIdToPropertyApiUrl } from '../utils/propertyDetailUrl'
@@ -2838,7 +2839,11 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                           <span className="property-detail-info-value">
                             {(() => {
                               const testDriveValue = displayProperty.test_drive;
-                              const isTestDrive = testDriveValue === 1 || testDriveValue === true || displayProperty.testDrive === true;
+                              const isTestDrive =
+                                hasAuctionBuyNowListingForm(displayProperty) &&
+                                (testDriveValue === 1 ||
+                                  testDriveValue === true ||
+                                  displayProperty.testDrive === true);
                               return isTestDrive ? t('propertyDetailYes') : t('propertyDetailNo');
                             })()}
                           </span>
@@ -2913,7 +2918,11 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                           <span className="property-detail-info-value">
                             {(() => {
                               const testDriveValue = displayProperty.test_drive;
-                              const isTestDrive = testDriveValue === 1 || testDriveValue === true || displayProperty.testDrive === true;
+                              const isTestDrive =
+                                hasAuctionBuyNowListingForm(displayProperty) &&
+                                (testDriveValue === 1 ||
+                                  testDriveValue === true ||
+                                  displayProperty.testDrive === true);
                               return isTestDrive ? t('propertyDetailYes') : t('propertyDetailNo');
                             })()}
                           </span>
@@ -3094,6 +3103,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
               })()}
 
               {!isDebtProperty &&
+                hasAuctionBuyNowListingForm(displayProperty) &&
                 (property.test_drive === 1 ||
                   property.test_drive === true ||
                   property.test_drive === '1') && (

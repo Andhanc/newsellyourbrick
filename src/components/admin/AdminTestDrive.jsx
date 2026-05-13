@@ -128,6 +128,10 @@ function parseCheckInReport(raw) {
 function surveyReportHasContent(report) {
   if (!report || typeof report !== 'object') return false;
   if (report.submitted_at) return true;
+  if (Number(report.survey_version) === 2) return true;
+  const v2Keys = ['first_impression', 'comfort', 'price_impression', 'purchase_intent'];
+  if (v2Keys.some((k) => report[k] != null && String(report[k]).trim() !== '')) return true;
+  if (Array.isArray(report.highlights) && report.highlights.length > 0) return true;
   const keys = [
     'property_expectations',
     'property_feedback',
@@ -204,6 +208,139 @@ function formatBroadcastDt(iso) {
   } catch {
     return String(iso);
   }
+}
+
+function isLikelySurveyImageUrl(s) {
+  const t = String(s || '').trim();
+  return t.startsWith('data:image/') || /^https?:\/\//i.test(t);
+}
+
+/** Группы фото из анкеты (v1: удобства/дефекты; v2: comfort_photos). */
+function collectSurveyPhotoGroups(report) {
+  if (!report || typeof report !== 'object') return [];
+  const out = [];
+  const add = (title, arr) => {
+    if (!Array.isArray(arr)) return;
+    const urls = arr.filter(isLikelySurveyImageUrl);
+    if (urls.length) out.push({ title, urls });
+  };
+  add('Фото к удобствам', report.amenities_photos);
+  add('Фото к дефектам', report.defects_photos);
+  add('Фото (комфорт)', report.comfort_photos);
+  return out;
+}
+
+function isSurveyReportV2(report) {
+  return Boolean(
+    report &&
+      typeof report === 'object' &&
+      (Number(report.survey_version) === 2 || String(report.first_impression || '').trim()),
+  );
+}
+
+const V2_HIGHLIGHT_LABELS = {
+  interior: 'Интерьер и атмосфера',
+  bed: 'Кровать и спальные принадлежности',
+  price: 'Цена',
+  kitchen: 'Кухня и техника',
+  location: 'Местоположение и вид',
+};
+
+function buildV2QualityAnswers(report) {
+  const answers = [];
+  const push = (key, label, displayValue, tone, extraComment) => {
+    const val = String(displayValue || '').trim();
+    if (!val) return;
+    const com = typeof extraComment === 'string' ? extraComment.trim() : '';
+    const valueVariant = val.length > 100 || val.includes('\n') ? 'text' : 'pill';
+    answers.push({
+      key,
+      label,
+      value: val,
+      rawValue: displayValue,
+      tone: tone || 'neutral',
+      comment: com,
+      valueVariant,
+    });
+  };
+
+  const fi = String(report.first_impression || '').trim().toLowerCase();
+  const fiLabel = {
+    better: '🎉 Даже лучше, чем думал',
+    as_photos: '👍 Всё хорошо, как на фото',
+    slightly_off: '🤔 Немного не совпало',
+  }[fi];
+  const fiTone = fi === 'slightly_off' ? 'negative' : 'positive';
+  if (fiLabel) push('v2_fi', 'Первое впечатление: как объект?', fiLabel, fiTone, report.first_impression_comment);
+
+  const cm = String(report.comfort || '').trim().toLowerCase();
+  const cmLabel = {
+    great: '✅ Да, всё отлично',
+    mostly_but_missing: '⚠️ В целом да, но кое-чего не хватало',
+  }[cm];
+  const cmTone = cm === 'mostly_but_missing' ? 'negative' : 'positive';
+  if (cmLabel) push('v2_comfort', 'Комфорт и удобства', cmLabel, cmTone, report.comfort_missing_comment);
+
+  const hl = Array.isArray(report.highlights) ? report.highlights.map(String) : [];
+  if (hl.length) {
+    const lines = hl.map((k) => V2_HIGHLIGHT_LABELS[k] || k).join(', ');
+    push('v2_hl', 'Что понравилось больше всего', lines, 'positive', report.highlights_comment);
+  } else if (String(report.highlights_comment || '').trim()) {
+    push('v2_hl', 'Что понравилось больше всего', '—', 'neutral', report.highlights_comment);
+  }
+
+  const pi = String(report.price_impression || '').trim().toLowerCase();
+  const piLabel = {
+    great_value: '💎 Лучшее соотношение цены и качества',
+    fair: '⚖️ Адекватно, ожидаемо',
+    expensive: '💸 Дороговато за такое',
+  }[pi];
+  const piTone = pi === 'expensive' ? 'negative' : 'positive';
+  if (piLabel) push('v2_price', 'Впечатление от цены', piLabel, piTone, report.price_improve_comment);
+
+  const pur = String(report.purchase_intent || '').trim().toLowerCase();
+  const purLabel = {
+    definitely_yes: '❤️ Да, однозначно',
+    rather_yes: '🙂 Скорее да',
+    rather_no: '😐 Скорее нет',
+  }[pur];
+  const purTone = pur === 'rather_no' ? 'negative' : pur === 'definitely_yes' ? 'positive' : 'neutral';
+  if (purLabel) push('v2_pur', 'Планируете приобрести объект?', purLabel, purTone, report.purchase_comment);
+
+  return answers;
+}
+
+function buildLegacyQualityAnswers(report) {
+  return Object.entries(QUALITY_QUESTION_LABELS)
+    .map(([key, label]) => {
+      const value = report?.[key];
+      if (value == null || (typeof value === 'string' && value.trim() === '')) return null;
+      const tone = answerTone(value, key);
+      const commentKey = COMMENT_STORAGE_KEY[key] || `${key}_comment`;
+      const comment = report?.[commentKey];
+      const displayVal = formatAnswer(value, key);
+      const valueVariant =
+        key === 'property_feedback' ||
+        String(displayVal).length > 100 ||
+        String(displayVal).includes('\n')
+          ? 'text'
+          : 'pill';
+      return {
+        key,
+        label,
+        value: displayVal,
+        rawValue: value,
+        tone,
+        comment: typeof comment === 'string' ? comment.trim() : '',
+        valueVariant,
+      };
+    })
+    .filter(Boolean);
+}
+
+function buildCheckInQualityAnswers(report) {
+  if (isSurveyReportV2(report)) return buildV2QualityAnswers(report);
+  return buildLegacyQualityAnswers(report);
 }
 
 export default function AdminTestDrive({
@@ -409,30 +546,13 @@ export default function AdminTestDrive({
         const report = parseCheckInReport(b.check_in_report);
         const roleRaw = String(b.buyer?.role || '').toLowerCase();
         const hasSellerRole = /(owner|seller|admin|agent|manager|moderator)/.test(roleRaw);
-        const answers = Object.entries(QUALITY_QUESTION_LABELS)
-          .map(([key, label]) => {
-            const value = report?.[key];
-            const tone = answerTone(value, key);
-            const commentKey = COMMENT_STORAGE_KEY[key] || `${key}_comment`;
-            const comment = report?.[commentKey];
-            return {
-              key,
-              label,
-              value: formatAnswer(value, key),
-              rawValue: value,
-              tone,
-              comment: typeof comment === 'string' ? comment.trim() : '',
-            };
-          })
-          .filter((item) => item.rawValue != null && String(item.rawValue).trim() !== '');
+        const answers = buildCheckInQualityAnswers(report);
+        const photoGroups = collectSurveyPhotoGroups(report);
+        const photoTotal = photoGroups.reduce((acc, g) => acc + g.urls.length, 0);
 
         const positiveCount = answers.filter((a) => a.tone === 'positive').length;
         const negativeCount = answers.filter((a) => a.tone === 'negative').length;
         const hasNegative = negativeCount > 0;
-        const amenitiesPhotoCount = Array.isArray(report?.amenities_photos)
-          ? report.amenities_photos.length
-          : 0;
-        const defectsPhotoCount = Array.isArray(report?.defects_photos) ? report.defects_photos.length : 0;
         return {
           bookingId: b.id,
           buyer: b.buyer || null,
@@ -444,11 +564,11 @@ export default function AdminTestDrive({
           checkInStatus: b.check_in_status || '—',
           submittedAt: report?.submitted_at || b.created_at || null,
           answers,
+          photoGroups,
+          photoTotal,
           positiveCount,
           negativeCount,
           hasNegative,
-          amenitiesPhotoCount,
-          defectsPhotoCount,
           hasReport: surveyReportHasContent(report),
         };
       })
@@ -933,7 +1053,14 @@ export default function AdminTestDrive({
                               </summary>
                               <div className="admin-test-drive__quality-body">
                                 <div className="admin-test-drive__quality-subhead">
-                                  Статус check-in: {card.checkInStatus} · отправлено: {card.submittedAt || '—'}
+                                  Статус check-in: {card.checkInStatus} · отправлено:{' '}
+                                  {card.submittedAt ? formatBroadcastDt(card.submittedAt) : '—'}
+                                  {card.photoTotal > 0 ? (
+                                    <>
+                                      {' '}
+                                      · вложено фото: <strong>{card.photoTotal}</strong>
+                                    </>
+                                  ) : null}
                                 </div>
                                 <div className="admin-test-drive__quality-contact">
                                   <div className="admin-test-drive__quality-contact-title">Связь с покупателем</div>
@@ -960,30 +1087,50 @@ export default function AdminTestDrive({
                                     )}
                                   </div>
                                 </div>
-                                {card.amenitiesPhotoCount > 0 || card.defectsPhotoCount > 0 ? (
-                                  <div className="admin-test-drive__quality-photos-note">
-                                    {card.amenitiesPhotoCount > 0 ? (
-                                      <span>
-                                        Фото по удобствам: <strong>{card.amenitiesPhotoCount}</strong>
-                                      </span>
-                                    ) : null}
-                                    {card.amenitiesPhotoCount > 0 && card.defectsPhotoCount > 0 ? ' · ' : null}
-                                    {card.defectsPhotoCount > 0 ? (
-                                      <span>
-                                        Фото по дефектам: <strong>{card.defectsPhotoCount}</strong>
-                                      </span>
-                                    ) : null}
+                                {card.photoGroups?.length ? (
+                                  <div className="admin-test-drive__quality-photo-sections">
+                                    {card.photoGroups.map((g, gi) => (
+                                      <div key={`${card.bookingId}-ph-${gi}`} className="admin-test-drive__quality-photo-section">
+                                        <div className="admin-test-drive__quality-photo-section-title">{g.title}</div>
+                                        <div className="admin-test-drive__quality-photo-grid">
+                                          {g.urls.map((src, i) => (
+                                            <a
+                                              key={`${card.bookingId}-img-${gi}-${i}`}
+                                              href={src}
+                                              target="_blank"
+                                              rel="noopener noreferrer"
+                                              className="admin-test-drive__quality-photo-link"
+                                            >
+                                              <img
+                                                src={src}
+                                                alt=""
+                                                className="admin-test-drive__quality-photo-thumb"
+                                                loading="lazy"
+                                              />
+                                            </a>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    ))}
                                   </div>
                                 ) : null}
                                 <div className="admin-test-drive__quality-list">
                                   {card.answers.map((a) => (
                                     <div key={`${card.bookingId}-${a.key}`} className="admin-test-drive__quality-item">
                                       <div className="admin-test-drive__quality-question">{a.label}</div>
-                                      <div
-                                        className={`admin-test-drive__quality-answer admin-test-drive__quality-answer--${a.tone}`}
-                                      >
-                                        {a.value}
-                                      </div>
+                                      {a.valueVariant === 'text' ? (
+                                        <div
+                                          className={`admin-test-drive__quality-answer-text admin-test-drive__quality-answer-text--${a.tone}`}
+                                        >
+                                          {a.value}
+                                        </div>
+                                      ) : (
+                                        <div
+                                          className={`admin-test-drive__quality-answer admin-test-drive__quality-answer--${a.tone}`}
+                                        >
+                                          {a.value}
+                                        </div>
+                                      )}
                                       {a.comment ? (
                                         <div className="admin-test-drive__quality-comment">{a.comment}</div>
                                       ) : null}

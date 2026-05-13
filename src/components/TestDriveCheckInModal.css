@@ -73,6 +73,14 @@
   line-height: 1.22;
 }
 
+.td-checkin-modal__step-eyebrow {
+  margin: 0 0 6px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #64748b;
+  letter-spacing: 0.01em;
+}
+
 .td-checkin-modal__title-block p {
   margin: 0;
   font-size: 13px;
@@ -437,6 +445,14 @@
 }
 
 .td-checkin-modal__opt--radio input[type='radio'] {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+  pointer-events: none;
+}
+
+.td-checkin-modal__opt--radio input[type='checkbox'] {
   position: absolute;
   opacity: 0;
   width: 1px;

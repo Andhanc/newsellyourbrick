@@ -11,6 +11,7 @@ import {
   testDriveBookingQueries,
 } from './database/database.js';
 import { getPrisma } from './database/prismaClient.js';
+import { propertyRowAllowsTestDriveListing } from './testDriveListingRules.js';
 
 /**
  * Stripe Checkout + webhook + синхронизация подписки Pro.
@@ -831,6 +832,7 @@ export async function processTestDriveBookingPaidSession(stripe, session) {
   const testDriveEnabled =
     property.test_drive === 1 || property.test_drive === true || property.test_drive === '1';
   if (!testDriveEnabled) return { ok: false, error: 'test_drive_disabled' };
+  if (!propertyRowAllowsTestDriveListing(property)) return { ok: false, error: 'test_drive_disabled' };
 
   const tableResolved = property.source_table || propertyTable || 'properties_apartments';
   const quote = parseTestDrivePricing(property);
@@ -1999,6 +2001,9 @@ export function registerStripeBillingRoutes(app) {
       const testDriveEnabled =
         property.test_drive === 1 || property.test_drive === true || property.test_drive === '1';
       if (!testDriveEnabled) {
+        return res.status(400).json({ success: false, error: 'Тест-драйв недоступен' });
+      }
+      if (!propertyRowAllowsTestDriveListing(property)) {
         return res.status(400).json({ success: false, error: 'Тест-драйв недоступен' });
       }
       const { dailyPrice, insuranceDeposit } = parseTestDrivePricing(property);

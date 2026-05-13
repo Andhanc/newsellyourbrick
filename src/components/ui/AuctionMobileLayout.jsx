@@ -13,7 +13,7 @@ import CircularTimer from '../CircularTimer'
 import { showNotification } from '@/utils/toastHelper'
 import { ensureCanOpenProperty } from '@/utils/propertyAccessGuard'
 import { requestOpenLoginModal } from '@/utils/requestOpenLoginModal'
-import { hasBuyNowOption } from '@/utils/hasBuyNowOption'
+import { hasBuyNowOption, hasAuctionBuyNowListingForm } from '@/utils/hasBuyNowOption'
 import { hasEmailForBuyNowFlow } from '@/utils/buyNowEmailGate'
 import {
   getEffectiveAuctionEndTime,
@@ -405,6 +405,7 @@ function AuctionMobileItem({
     property.has_debt === true
   const hasTestDrive =
     !isDebtProperty &&
+    hasAuctionBuyNowListingForm(property) &&
     (property.test_drive === 1 ||
       property.testDrive === true ||
       property.test_drive === true)

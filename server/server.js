@@ -38,6 +38,7 @@ import {
   applyListingPhotosToFormatted,
   normalizePhotosListInput,
 } from './utils/normalizeListingPhotos.js';
+import { propertyRowAllowsTestDriveListing } from './testDriveListingRules.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -680,7 +681,8 @@ app.use(cors({
 }));
 // Stripe webhook требует сырой body для проверки подписи
 app.post('/api/webhooks/stripe', express.raw({ type: 'application/json' }), createStripeWebhookHandler());
-app.use(express.json());
+/** Опрос тест-драйва может содержать base64-фото; дефолтный лимит 100kb рвёт такие запросы. */
+app.use(express.json({ limit: '18mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(publicPropertyListsCache);
 
@@ -7675,6 +7677,14 @@ app.post('/api/properties', upload.fields([
       }
     }
 
+    if (normalizedTestDrive === 1 && !propertyRowAllowsTestDriveListing(propertyData)) {
+      return res.status(400).json({
+        success: false,
+        error:
+          'Тест-драйв доступен только в формате «Аукцион + Продать сейчас»: укажите старт торгов и цену мгновенной покупки выше старта.',
+      });
+    }
+
     // Проверяем обязательные поля
     if (!user_id) {
       return res.status(400).json({ 
@@ -8506,7 +8516,34 @@ app.put('/api/properties/:id', upload.fields([
           error: 'Минимальная цена продажи не может превышать 90% от цены «Купить сейчас».'
         })
       }
-      
+
+      const candidateTestDrive =
+        normalizedTestDriveEdit !== undefined
+          ? normalizedTestDriveEdit
+          : (originalProperty.test_drive !== undefined && originalProperty.test_drive !== null
+              ? originalProperty.test_drive
+              : 0);
+      const testDriveOn =
+        candidateTestDrive === 1 ||
+        candidateTestDrive === true ||
+        candidateTestDrive === '1';
+      const tdListingRow = {
+        sale_type: originalProperty.sale_type,
+        is_debt: originalProperty.is_debt,
+        has_debt: originalProperty.has_debt,
+        is_shared_ownership: originalProperty.is_shared_ownership,
+        is_auction: normalizedIsAuction,
+        price: effectiveBuyNow,
+        auction_starting_price: effectiveStarting,
+      };
+      if (testDriveOn && !propertyRowAllowsTestDriveListing(tdListingRow)) {
+        return res.status(400).json({
+          success: false,
+          error:
+            'Тест-драйв доступен только в формате «Аукцион + Продать сейчас»: цена мгновенной покупки должна быть выше стартовой ставки.',
+        });
+      }
+
       const created = await prisma.properties.create({
         data: {
           user_id: values[0],
@@ -9823,7 +9860,7 @@ function parseJsonSafe(value, fallback = null) {
 }
 
 /**
- * GET /api/properties/:id/test-drive/eligibility — депозит, ставка, флаги для UI
+ * GET /api/properties/:id/test-drive/eligibility — депозит для UI (тест-драйв только при «аукцион + продать сейчас»)
  */
 app.get('/api/properties/:id/test-drive/eligibility', async (req, res) => {
   try {
@@ -9837,35 +9874,30 @@ app.get('/api/properties/:id/test-drive/eligibility', async (req, res) => {
     if (!property) {
       return res.status(404).json({ success: false, error: 'Объект не найден' });
     }
-    // Таблица из БД важнее query-параметра: иначе клиентский дефолт properties_apartments
-    // ломает проверку ставки для домов/вилл (bids.property_table = properties_houses).
     const table = property.source_table || propertyTable || 'properties_apartments';
     const td =
       property.test_drive === 1 ||
       property.test_drive === true ||
       property.test_drive === '1';
-    if (!td) {
+    const listingOk = propertyRowAllowsTestDriveListing(property);
+    if (!td || !listingOk) {
       return res.json({
         success: true,
-        data: { test_drive_enabled: false, has_deposit: false, has_bid: false, can_request: false },
+        data: {
+          test_drive_enabled: false,
+          has_deposit: false,
+          has_bid: false,
+          can_request: false,
+          property_table: table,
+        },
       });
     }
     let hasDeposit = false;
-    let hasBid = false;
     if (userId && !Number.isNaN(userId)) {
       const user = await userQueries.getById(userId);
       if (user) {
         const dep = user.deposit_amount != null ? parseFloat(user.deposit_amount) : 0;
         hasDeposit = dep > 0;
-      }
-      try {
-        const row = await getPrisma().bids.findFirst({
-          where: { user_id: Number(userId), property_id: Number(propertyId) },
-          select: { id: true },
-        });
-        hasBid = !!row;
-      } catch (e) {
-        console.warn('test-drive eligibility bids:', e.message);
       }
     }
     return res.json({
@@ -9874,8 +9906,8 @@ app.get('/api/properties/:id/test-drive/eligibility', async (req, res) => {
         test_drive_enabled: true,
         property_table: table,
         has_deposit: hasDeposit,
-        has_bid: hasBid,
-        can_request: !!(hasDeposit && hasBid),
+        has_bid: false,
+        can_request: !!hasDeposit,
       },
     });
   } catch (error) {
@@ -9964,6 +9996,9 @@ app.get('/api/properties/:id/test-drive/quote', async (req, res) => {
     if (!td) {
       return res.status(400).json({ success: false, error: 'Тест-драйв для этого объекта недоступен' });
     }
+    if (!propertyRowAllowsTestDriveListing(property)) {
+      return res.status(400).json({ success: false, error: 'Тест-драйв для этого объекта недоступен' });
+    }
     const s = new Date(start_date + 'T12:00:00');
     const e = new Date(end_date + 'T12:00:00');
     if (Number.isNaN(s.getTime()) || Number.isNaN(e.getTime()) || e < s) {
@@ -10022,6 +10057,9 @@ app.post('/api/properties/:id/test-drive/request', async (req, res) => {
     if (!td) {
       return res.status(400).json({ success: false, error: 'Тест-драйв для этого объекта недоступен' });
     }
+    if (!propertyRowAllowsTestDriveListing(property)) {
+      return res.status(400).json({ success: false, error: 'Тест-драйв для этого объекта недоступен' });
+    }
     const user = await userQueries.getById(userId);
     if (!user) {
       return res.status(404).json({ success: false, error: 'Пользователь не найден' });
@@ -10029,19 +10067,6 @@ app.post('/api/properties/:id/test-drive/request', async (req, res) => {
     const dep = user.deposit_amount != null ? parseFloat(user.deposit_amount) : 0;
     if (dep <= 0) {
       return res.status(400).json({ success: false, error: 'Необходим депозит' });
-    }
-    let hasBid = false;
-    try {
-      const row = await getPrisma().bids.findFirst({
-        where: { user_id: Number(userId), property_id: Number(propertyId) },
-        select: { id: true },
-      });
-      hasBid = !!row;
-    } catch (e) {
-      console.warn('test-drive request bids:', e.message);
-    }
-    if (!hasBid) {
-      return res.status(400).json({ success: false, error: 'Необходима ставка по объекту' });
     }
     if (await testDriveBookingQueries.countPendingForUserProperty(userId, propertyId, table) > 0) {
       return res.status(400).json({ success: false, error: 'У вас уже есть активная заявка на этот объект' });
@@ -10758,45 +10783,73 @@ app.get('/api/admin/test-drive/survey-financial', async (req, res) => {
       try {
         const rep = parseJsonSafe(booking.check_in_report, null);
         if (rep && typeof rep === 'object') {
-          const expLabel =
-            rep.property_expectations &&
-            {
-              exceeded: 'превзошёл ожидания',
-              matched: 'совпал с ожиданиями',
-              partially: 'частично',
-              below: 'ниже ожиданий',
-            }[String(rep.property_expectations)];
-          const parts = [
-            expLabel ? `Объект (ожидания): ${expLabel}` : '',
-            rep.property_feedback
-              ? `Отзыв: ${String(rep.property_feedback).slice(0, 200)}${String(rep.property_feedback).length > 200 ? '…' : ''}`
-              : '',
-            rep.amenities_ok ? `Удобства: ${rep.amenities_ok}` : '',
-            rep.defects_state ? `Дефекты: ${rep.defects_state}` : '',
-            rep.price_acceptable
-              ? `Цена за объект: ${
-                  {
-                    yes: 'приемлема',
-                    no: 'не приемлема',
-                  }[String(rep.price_acceptable).toLowerCase()] || rep.price_acceptable
-                }`
-              : rep.listing_info_clear
-                ? `Объявление/цена (старый вопрос): ${
+          if (Number(rep.survey_version) === 2 || String(rep.first_impression || '').trim()) {
+            const fi = {
+              better: 'лучше ожиданий',
+              as_photos: 'как на фото',
+              slightly_off: 'немного не совпало',
+            }[String(rep.first_impression)];
+            const cm = { great: 'комфортно', mostly_but_missing: 'не хватало мелочей' }[String(rep.comfort)];
+            const pi = {
+              great_value: 'цена/качество отлично',
+              fair: 'цена адекватна',
+              expensive: 'дороговато',
+            }[String(rep.price_impression)];
+            const pur = {
+              definitely_yes: 'покупка: да',
+              rather_yes: 'покупка: скорее да',
+              rather_no: 'покупка: скорее нет',
+            }[String(rep.purchase_intent)];
+            const hi = Array.isArray(rep.highlights) ? rep.highlights.filter(Boolean).join(', ') : '';
+            const parts = [
+              fi ? `Первое впечатление: ${fi}` : '',
+              cm ? `Комфорт: ${cm}` : '',
+              hi ? `Запомнилось: ${hi}` : '',
+              pi ? `Цена: ${pi}` : '',
+              pur ? pur : '',
+            ].filter(Boolean);
+            summary = parts.length ? parts.join(' · ') : '—';
+          } else {
+            const expLabel =
+              rep.property_expectations &&
+              {
+                exceeded: 'превзошёл ожидания',
+                matched: 'совпал с ожиданиями',
+                partially: 'частично',
+                below: 'ниже ожиданий',
+              }[String(rep.property_expectations)];
+            const parts = [
+              expLabel ? `Объект (ожидания): ${expLabel}` : '',
+              rep.property_feedback
+                ? `Отзыв: ${String(rep.property_feedback).slice(0, 200)}${String(rep.property_feedback).length > 200 ? '…' : ''}`
+                : '',
+              rep.amenities_ok ? `Удобства: ${rep.amenities_ok}` : '',
+              rep.defects_state ? `Дефекты: ${rep.defects_state}` : '',
+              rep.price_acceptable
+                ? `Цена за объект: ${
                     {
-                      yes: 'понятно',
-                      no: 'неясно',
-                    }[String(rep.listing_info_clear).toLowerCase()] || rep.listing_info_clear
+                      yes: 'приемлема',
+                      no: 'не приемлема',
+                    }[String(rep.price_acceptable).toLowerCase()] || rep.price_acceptable
                   }`
-                : rep.ready_to_stay
-                  ? `Проживание (старый опрос): ${
+                : rep.listing_info_clear
+                  ? `Объявление/цена (старый вопрос): ${
                       {
-                        yes: 'устраивает',
-                        no: 'есть замечания',
-                      }[String(rep.ready_to_stay).toLowerCase()] || rep.ready_to_stay
+                        yes: 'понятно',
+                        no: 'неясно',
+                      }[String(rep.listing_info_clear).toLowerCase()] || rep.listing_info_clear
                     }`
-                  : '',
-          ].filter(Boolean);
-          summary = parts.length ? parts.join(' · ') : '—';
+                  : rep.ready_to_stay
+                    ? `Проживание (старый опрос): ${
+                        {
+                          yes: 'устраивает',
+                          no: 'есть замечания',
+                        }[String(rep.ready_to_stay).toLowerCase()] || rep.ready_to_stay
+                      }`
+                    : '',
+            ].filter(Boolean);
+            summary = parts.length ? parts.join(' · ') : '—';
+          }
         }
       } catch {
         /* ignore */
@@ -11115,6 +11168,15 @@ app.get('/api/test-drive-survey/:token/detail', async (req, res) => {
 /** Новые отчёты: price_acceptable; ранее listing_info_clear; ещё раньше ready_to_stay. */
 function testDriveCheckInSurveyPositive(report) {
   if (!report || typeof report !== 'object') return false;
+  if (Number(report.survey_version) === 2 || String(report.first_impression || '').trim()) {
+    const fi = String(report.first_impression ?? '').trim().toLowerCase();
+    const cm = String(report.comfort ?? '').trim().toLowerCase();
+    const pi = String(report.price_impression ?? '').trim().toLowerCase();
+    if (fi === 'slightly_off') return false;
+    if (cm === 'mostly_but_missing') return false;
+    if (pi === 'expensive') return false;
+    return true;
+  }
   const pa = String(report.price_acceptable ?? '').trim().toLowerCase();
   if (pa === 'yes' || pa === 'no') return pa === 'yes';
   const li = String(report.listing_info_clear ?? '').trim().toLowerCase();

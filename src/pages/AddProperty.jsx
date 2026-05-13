@@ -3045,7 +3045,10 @@ const AddProperty = ({
       isShareProperty: mode === 'shares',
       isDebtProperty: mode === 'debt' || mode === 'debt_auction',
       isAuction: mode === 'auction' || mode === 'auction_buy_now' || mode === 'debt_auction',
-      testDrive: (mode === 'shares' || mode === 'debt' || mode === 'debt_auction') ? false : prev.testDrive,
+      testDrive:
+        mode === 'shares' || mode === 'debt' || mode === 'debt_auction' || mode === 'auction'
+          ? false
+          : prev.testDrive,
     }))
     setShowListingModePicker(false)
     if (!skipStepTransition) {
@@ -3087,7 +3090,18 @@ const AddProperty = ({
   const handleTestDriveAnswer = (answer) => {
     console.log('🔍 handleTestDriveAnswer вызван с answer:', answer, 'тип:', typeof answer)
     setFormData(prev => {
-      const newData = { ...prev, testDrive: answer }
+      const newData = {
+        ...prev,
+        testDrive: answer,
+        ...(answer
+          ? {
+              listingMode: 'auction_buy_now',
+              isShareProperty: false,
+              isDebtProperty: false,
+              isAuction: true,
+            }
+          : {}),
+      }
       console.log('🔍 Обновленный formData.testDrive:', newData.testDrive)
       return newData
     })
@@ -4837,6 +4851,13 @@ const AddProperty = ({
     getValidCoordsForPreview(mapCenter) ||
     getValidCoordsForPreview(formData.coordinates)
   const hasTestDrive = formData.testDrive === false || (formData.testDrive === true && Number(formData.testDrivePricePerDay) > 0)
+  const listingModeOptionsForForm = useMemo(
+    () =>
+      formData.testDrive === true
+        ? LISTING_MODE_OPTIONS.filter((m) => m.id === 'auction_buy_now')
+        : LISTING_MODE_OPTIONS,
+    [formData.testDrive]
+  )
   const hasListingType = !!formData.listingMode
   const hasPrice = (() => {
     const mode = formData.listingMode || 'auction'
@@ -5117,7 +5138,9 @@ const AddProperty = ({
       isDebtProperty: mode === 'debt' || mode === 'debt_auction',
       isAuction: mode === 'auction' || mode === 'auction_buy_now' || mode === 'debt_auction',
       testDrive:
-        mode === 'shares' || mode === 'debt' || mode === 'debt_auction' ? false : prev.testDrive,
+        mode === 'shares' || mode === 'debt' || mode === 'debt_auction' || mode === 'auction'
+          ? false
+          : prev.testDrive,
     }))
     setShowListingModePicker(false)
   }
@@ -6152,15 +6175,41 @@ const AddProperty = ({
                       <p className="sp-card__lead">{SINGLE_PAGE_SECTION_HELP.testdrive.lead}</p>
                     </header>
                     <div className="single-page-add-flow__chips sp-chips">
-                      <button type="button" className={`single-page-add-flow__chip ${formData.testDrive === true ? 'active' : ''}`} onClick={() => setFormData((prev) => ({ ...prev, testDrive: true }))}>
+                      <button
+                        type="button"
+                        className={`single-page-add-flow__chip ${formData.testDrive === true ? 'active' : ''}`}
+                        onClick={() =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            testDrive: true,
+                            listingMode: 'auction_buy_now',
+                            isShareProperty: false,
+                            isDebtProperty: false,
+                            isAuction: true,
+                          }))
+                        }
+                      >
                         Да
                       </button>
-                      <button type="button" className={`single-page-add-flow__chip ${formData.testDrive === false ? 'active' : ''}`} onClick={() => setFormData((prev) => ({ ...prev, testDrive: false }))}>
+                      <button
+                        type="button"
+                        className={`single-page-add-flow__chip ${formData.testDrive === false ? 'active' : ''}`}
+                        onClick={() => setFormData((prev) => ({ ...prev, testDrive: false }))}
+                      >
                         Нет
                       </button>
                     </div>
                     {formData.testDrive === true && (
-                      <div className="single-page-add-flow__grid">
+                      <>
+                        <div className="sp-test-drive-listing-note" role="note">
+                          <strong>Формат продажи</strong>
+                          <p>
+                            Тест-драйв сочетается только с вариантом «Аукцион + Продать сейчас»: покупатель видит
+                            торги и отдельную цену мгновенной сделки. Ниже в шаге «Формат продажи» доступен только этот
+                            вариант.
+                          </p>
+                        </div>
+                        <div className="single-page-add-flow__grid">
                         <input
                           type="number"
                           className="property-name-input"
@@ -6176,6 +6225,7 @@ const AddProperty = ({
                           onChange={(e) => setFormData((prev) => ({ ...prev, testDriveInsuranceDeposit: e.target.value }))}
                         />
                       </div>
+                      </>
                     )}
                   </section>
                 )}
@@ -6188,7 +6238,7 @@ const AddProperty = ({
                       <p className="sp-card__lead">{SINGLE_PAGE_SECTION_HELP.listing.lead}</p>
                     </header>
                     <div className="sp-listing-mode-stack" role="radiogroup" aria-label="Тип размещения">
-                      {LISTING_MODE_OPTIONS.map((mode) => {
+                      {listingModeOptionsForForm.map((mode) => {
                         const isOpen = expandedListingModeId === mode.id
                         return (
                           <div
@@ -6726,6 +6776,10 @@ const AddProperty = ({
               </h2>
               <p className="test-drive-question-description">
                 {t('addPropertyTestDriveSubtitle')}
+              </p>
+              <p className="test-drive-question-listing-hint">
+                Если выберете «Да», объявление можно будет опубликовать только в формате «Аукцион + Продать сейчас» —
+                с торгами и отдельной ценой мгновенной покупки.
               </p>
               <div className="test-drive-buttons">
                 <button
@@ -9292,7 +9346,7 @@ const AddProperty = ({
               onWheel={handleListingModeThemeWheel}
             >
               <div className="listing-mode-stage__cards">
-                {LISTING_MODE_OPTIONS.map((mode, index) => {
+                {listingModeOptionsForForm.map((mode, index) => {
                   const isOpen = expandedListingModeId === mode.id
                   return (
                     <div key={mode.id} className="listing-mode-stage__card-wrap" style={{ animationDelay: `${index * 70}ms` }}>
