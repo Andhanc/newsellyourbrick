@@ -17,6 +17,7 @@ import { getPrisma } from './database/prismaClient.js';
  * STRIPE_SECRET_KEY, STRIPE_PRICE_ID_PRO, STRIPE_PRICE_ID_PRO_YEAR, FRONTEND_URL;
  * STRIPE_PRICE_ID_PRO — Price ID (price_...) с валютой EUR в Stripe Dashboard (Checkout берёт валюту из цены);
  * STRIPE_PRICE_ID_PRO_YEAR — Price ID (price_...) для годовой подписки Pro (обычно со скидкой);
+ * STRIPE_PRICE_ID_VIP / STRIPE_PRICE_ID_VIP_YEAR — подписка VIP (закрытый клуб), EUR;
  * STRIPE_PRICE_ID_DEPOSIT — price_... или prod_... (для prod подставится активная recurring-цена);
  * опционально STRIPE_WEBHOOK_SECRET для POST /api/webhooks/stripe
  * опционально STRIPE_LISTING_PUBLICATION_FEE_EUR (по умолчанию 29) — оплата публикации объявления
@@ -1073,6 +1074,21 @@ function isoFromUnix(sec) {
   return new Date(sec * 1000).toISOString();
 }
 
+/** Pro / VIP из metadata подписки или сопоставления Price ID с .env */
+function planKeyFromStripeSubscription(subscription) {
+  const m = String(subscription?.metadata?.plan_key || '').toLowerCase();
+  if (m === 'vip' || m === 'pro') return m;
+  const priceIdPro = (process.env.STRIPE_PRICE_ID_PRO || '').trim();
+  const priceIdProYear = (process.env.STRIPE_PRICE_ID_PRO_YEAR || '').trim();
+  const priceIdVip = (process.env.STRIPE_PRICE_ID_VIP || '').trim();
+  const priceIdVipYear = (process.env.STRIPE_PRICE_ID_VIP_YEAR || '').trim();
+  const pid = subscription?.items?.data?.[0]?.price?.id;
+  const p = String(pid || '');
+  if (p && (p === priceIdVip || p === priceIdVipYear)) return 'vip';
+  if (p && (p === priceIdPro || p === priceIdProYear)) return 'pro';
+  return 'pro';
+}
+
 /** Для Checkout нужен Price ID; в .env можно указать prod_... — подставим первую активную recurring-цену. */
 async function resolveDepositLinePriceId(stripe, configured) {
   const raw = (configured || '').trim();
@@ -1242,8 +1258,12 @@ export async function syncCheckoutSessionToDatabase(stripe, sessionId) {
     return { ok: false, error: 'no_app_user_id' };
   }
 
-  const sub = await stripe.subscriptions.retrieve(subscriptionId);
+  const sub = await stripe.subscriptions.retrieve(subscriptionId, { expand: ['items.data.price'] });
   const customerId = typeof session.customer === 'string' ? session.customer : session.customer?.id;
+
+  const sessionPlan = String(session.metadata?.plan_key || '').toLowerCase();
+  const planKey =
+    sessionPlan === 'vip' || sessionPlan === 'pro' ? sessionPlan : planKeyFromStripeSubscription(sub);
 
   let invoiceId = null;
   if (session.invoice) {
@@ -1261,12 +1281,23 @@ export async function syncCheckoutSessionToDatabase(stripe, sessionId) {
     user_id: uid,
     stripe_customer_id: customerId,
     stripe_subscription_id: subscriptionId,
-    plan_key: 'pro',
+    plan_key: planKey,
     status: sub.status,
     current_period_start: isoFromUnix(sub.current_period_start),
     current_period_end: isoFromUnix(sub.current_period_end),
     cancel_at_period_end: !!sub.cancel_at_period_end,
   });
+
+  if (planKey === 'vip') {
+    const st = String(sub.status || '').toLowerCase();
+    if (['active', 'trialing', 'past_due', 'paused'].includes(st)) {
+      try {
+        await userQueries.syncVipClubFromStripePeriodEnd(uid, isoFromUnix(sub.current_period_end));
+      } catch (e) {
+        console.warn('[Stripe] sync vip_until (checkout):', e?.message || e);
+      }
+    }
+  }
 
   const amount = session.amount_total ?? 0;
   const currency = (session.currency || 'eur').toLowerCase();
@@ -1283,7 +1314,7 @@ export async function syncCheckoutSessionToDatabase(stripe, sessionId) {
     amount_cents: amount,
     currency,
     status: 'paid',
-    plan_key: 'pro',
+    plan_key: planKey,
     billing_reason: 'subscription_create',
     paid_at: paidAt,
     period_start: isoFromUnix(sub.current_period_start),
@@ -1301,7 +1332,7 @@ async function persistInvoicePaid(stripe, invoice) {
     typeof invoice.subscription === 'string' ? invoice.subscription : invoice.subscription?.id;
   if (!subscriptionId) return;
 
-  const sub = await stripe.subscriptions.retrieve(subscriptionId);
+  const sub = await stripe.subscriptions.retrieve(subscriptionId, { expand: ['items.data.price'] });
   if (sub.metadata?.checkout_purpose === 'wallet_deposit') {
     const r = await creditWalletDepositFromPaidInvoice(invoice, sub);
     if (r.ok && r.credited) {
@@ -1315,6 +1346,8 @@ async function persistInvoicePaid(stripe, invoice) {
   let userId = await stripeSubscriptionQueries.getUserIdBySubscriptionId(subscriptionId);
   const customerId = typeof invoice.customer === 'string' ? invoice.customer : invoice.customer?.id;
 
+  const planKey = planKeyFromStripeSubscription(sub);
+
   if (!userId) {
     userId = parseInt(sub.metadata?.app_user_id || '', 10);
     if (!Number.isFinite(userId)) {
@@ -1325,7 +1358,7 @@ async function persistInvoicePaid(stripe, invoice) {
       user_id: userId,
       stripe_customer_id: customerId,
       stripe_subscription_id: subscriptionId,
-      plan_key: 'pro',
+      plan_key: planKey,
       status: sub.status,
       current_period_start: isoFromUnix(sub.current_period_start),
       current_period_end: isoFromUnix(sub.current_period_end),
@@ -1343,7 +1376,7 @@ async function persistInvoicePaid(stripe, invoice) {
     amount_cents: invoice.amount_paid,
     currency: (invoice.currency || 'eur').toLowerCase(),
     status: 'paid',
-    plan_key: 'pro',
+    plan_key: planKey,
     billing_reason: invoice.billing_reason || null,
     paid_at: invoice.status_transitions?.paid_at
       ? new Date(invoice.status_transitions.paid_at * 1000).toISOString()
@@ -1352,6 +1385,14 @@ async function persistInvoicePaid(stripe, invoice) {
     period_end: isoFromUnix(invoice.period_end),
     customer_email: invoice.customer_email || null,
   });
+
+  if (planKey === 'vip' && Number.isFinite(userId)) {
+    try {
+      await userQueries.syncVipClubFromStripePeriodEnd(userId, isoFromUnix(sub.current_period_end));
+    } catch (e) {
+      console.warn('[Stripe] sync vip_until (invoice):', e?.message || e);
+    }
+  }
 }
 
 async function handleSubscriptionUpdated(subscription) {
@@ -1368,16 +1409,32 @@ async function handleSubscriptionUpdated(subscription) {
   const customerId =
     typeof subscription.customer === 'string' ? subscription.customer : subscription.customer?.id;
 
+  const planKey = planKeyFromStripeSubscription(subscription);
+
   await stripeSubscriptionQueries.upsertState({
     user_id: userId,
     stripe_customer_id: customerId,
     stripe_subscription_id: subId,
-    plan_key: 'pro',
+    plan_key: planKey,
     status: subscription.status,
     current_period_start: isoFromUnix(subscription.current_period_start),
     current_period_end: isoFromUnix(subscription.current_period_end),
     cancel_at_period_end: !!subscription.cancel_at_period_end,
   });
+
+  if (planKey === 'vip') {
+    const st = String(subscription.status || '').toLowerCase();
+    if (['active', 'trialing', 'past_due', 'paused'].includes(st)) {
+      try {
+        await userQueries.syncVipClubFromStripePeriodEnd(
+          userId,
+          isoFromUnix(subscription.current_period_end)
+        );
+      } catch (e) {
+        console.warn('[Stripe] sync vip_until (subscription.updated):', e?.message || e);
+      }
+    }
+  }
 }
 
 /**
@@ -1463,10 +1520,20 @@ function userHasActivePaidCabinetSubscription(state) {
   return pk === 'pro' || pk === 'vip';
 }
 
+/** Активная подписка именно VIP в Stripe (для повторного Checkout VIP). */
+function userHasActiveStripeVipPlan(state) {
+  if (!state) return false;
+  const st = String(state.status || '').toLowerCase();
+  if (!['active', 'trialing', 'past_due', 'paused'].includes(st)) return false;
+  return String(state.plan_key || '').toLowerCase() === 'vip';
+}
+
 export function registerStripeBillingRoutes(app) {
   const stripe = getStripe();
   const priceIdPro = (process.env.STRIPE_PRICE_ID_PRO || '').trim();
   const priceIdProYear = (process.env.STRIPE_PRICE_ID_PRO_YEAR || '').trim();
+  const priceIdVip = (process.env.STRIPE_PRICE_ID_VIP || '').trim();
+  const priceIdVipYear = (process.env.STRIPE_PRICE_ID_VIP_YEAR || '').trim();
   const priceIdDeposit = (process.env.STRIPE_PRICE_ID_DEPOSIT || '').trim();
   const frontendBase = (process.env.FRONTEND_URL || 'http://localhost:5173').replace(/\/$/, '');
 
@@ -1530,47 +1597,68 @@ export function registerStripeBillingRoutes(app) {
         return res.json({ success: true, url: session.url });
       }
 
-      if (plan !== 'pro') {
+      if (plan !== 'pro' && plan !== 'vip') {
         return res.status(400).json({
           success: false,
-          error: 'Неизвестный план. Доступны: pro, deposit',
+          error: 'Неизвестный план. Доступны: pro, vip, deposit',
         });
       }
-      const selectedProPriceId = billingCycle === 'yearly' ? priceIdProYear : priceIdPro;
-      if (!selectedProPriceId) {
+
+      const isVip = plan === 'vip';
+      const selectedPriceId = isVip
+        ? billingCycle === 'yearly'
+          ? priceIdVipYear
+          : priceIdVip
+        : billingCycle === 'yearly'
+          ? priceIdProYear
+          : priceIdPro;
+
+      if (!selectedPriceId) {
         return res.status(503).json({
           success: false,
-          error:
-            billingCycle === 'yearly'
+          error: isVip
+            ? billingCycle === 'yearly'
+              ? 'Не задан STRIPE_PRICE_ID_VIP_YEAR (ID годовой цены VIP из Stripe)'
+              : 'Не задан STRIPE_PRICE_ID_VIP (ID месячной цены VIP из Stripe)'
+            : billingCycle === 'yearly'
               ? 'Не задан STRIPE_PRICE_ID_PRO_YEAR (ID годовой цены Pro из Stripe)'
               : 'Не задан STRIPE_PRICE_ID_PRO (ID месячной цены Pro из Stripe)',
         });
       }
 
-      let proPrice;
+      let tierPrice;
       try {
-        proPrice = await stripe.prices.retrieve(selectedProPriceId);
+        tierPrice = await stripe.prices.retrieve(selectedPriceId);
       } catch (priceErr) {
-        console.error('[Stripe] retrieve Pro price:', priceErr?.message || priceErr);
+        console.error('[Stripe] retrieve subscription price:', priceErr?.message || priceErr);
         return res.status(503).json({
           success: false,
           error:
             priceErr?.message ||
-            `Не удалось загрузить ${billingCycle === 'yearly' ? 'годовую' : 'месячную'} цену Pro из Stripe.`,
+            `Не удалось загрузить ${billingCycle === 'yearly' ? 'годовую' : 'месячную'} цену из Stripe.`,
         });
       }
-      const proCurrency = String(proPrice?.currency || '').toLowerCase();
-      if (proCurrency !== 'eur') {
+      const tierCurrency = String(tierPrice?.currency || '').toLowerCase();
+      if (tierCurrency !== 'eur') {
         return res.status(503).json({
           success: false,
-          error: `Подписка Pro должна быть в EUR в Stripe (указанная цена в ${proCurrency.toUpperCase() || '?'}). Создайте цену в евро и обновите ENV для Pro в .env.`,
+          error: `Подписка ${isVip ? 'VIP' : 'Pro'} должна быть в EUR в Stripe (указанная цена в ${
+            tierCurrency.toUpperCase() || '?'
+          }). Создайте цену в евро и обновите ENV в .env.`,
         });
       }
 
-      const uidPro = parseInt(userId, 10);
-      if (Number.isFinite(uidPro)) {
-        const existingSub = await stripeSubscriptionQueries.getStateByUserId(uidPro);
-        if (userHasActivePaidCabinetSubscription(existingSub)) {
+      const uidCheckout = parseInt(userId, 10);
+      if (Number.isFinite(uidCheckout)) {
+        const existingSub = await stripeSubscriptionQueries.getStateByUserId(uidCheckout);
+        if (isVip) {
+          if (userHasActiveStripeVipPlan(existingSub)) {
+            return res.status(409).json({
+              success: false,
+              error: 'already_subscribed_vip',
+            });
+          }
+        } else if (userHasActivePaidCabinetSubscription(existingSub)) {
           return res.status(409).json({
             success: false,
             error: 'already_subscribed_pro',
@@ -1578,16 +1666,19 @@ export function registerStripeBillingRoutes(app) {
         }
       }
 
+      const planKeyMeta = isVip ? 'vip' : 'pro';
       const session = await stripe.checkout.sessions.create({
         mode: 'subscription',
         payment_method_types: ['card'],
-        line_items: [{ price: selectedProPriceId, quantity: 1 }],
-        success_url: `${frontendBase}/profile?subscription_checkout=success&session_id={CHECKOUT_SESSION_ID}`,
+        line_items: [{ price: selectedPriceId, quantity: 1 }],
+        success_url: `${frontendBase}/profile?subscription_checkout=success&session_id={CHECKOUT_SESSION_ID}${isVip ? '&vip_club=1' : ''}`,
         cancel_url: `${frontendBase}/profile`,
-        metadata: userId ? { app_user_id: userId, billing_cycle: billingCycle } : { billing_cycle: billingCycle },
+        metadata: userId
+          ? { app_user_id: userId, billing_cycle: billingCycle, plan_key: planKeyMeta }
+          : { billing_cycle: billingCycle, plan_key: planKeyMeta },
         subscription_data: userId
-          ? { metadata: { app_user_id: userId, billing_cycle: billingCycle } }
-          : { metadata: { billing_cycle: billingCycle } },
+          ? { metadata: { app_user_id: userId, billing_cycle: billingCycle, plan_key: planKeyMeta } }
+          : { metadata: { billing_cycle: billingCycle, plan_key: planKeyMeta } },
         ...(customerEmail && customerEmail.includes('@') ? { customer_email: customerEmail } : {}),
       });
 
@@ -2698,11 +2789,20 @@ export function registerStripeBillingRoutes(app) {
       }
       const state = await stripeSubscriptionQueries.getStateByUserId(userId);
       const payments = await stripeSubscriptionQueries.listPaymentsByUserId(userId, 50);
+      const userRow = await userQueries.getById(userId);
+      const nowMs = Date.now();
+      const untilMs = userRow?.vip_until ? new Date(userRow.vip_until).getTime() : 0;
+      const vipClub = {
+        active: Boolean(untilMs && untilMs > nowMs),
+        until: userRow?.vip_until || null,
+        grantedAt: userRow?.vip_granted_at || null,
+      };
       return res.json({
         success: true,
         data: {
           subscription: state,
           payments,
+          vipClub,
         },
       });
     } catch (err) {

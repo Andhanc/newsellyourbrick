@@ -2,6 +2,36 @@
   padding: 0;
 }
 
+.purchase-requests-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem 1rem;
+  background: white;
+  padding: 0.85rem 1.25rem;
+  border-radius: 12px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  margin-bottom: 1rem;
+}
+
+.purchase-requests-toolbar__btn {
+  flex-shrink: 0;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #fff;
+  background: linear-gradient(135deg, #0abab5, #089a96);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.purchase-requests-toolbar__btn:hover {
+  opacity: 0.92;
+}
+
 .purchase-requests-filter {
   background: white;
   padding: 1.5rem;

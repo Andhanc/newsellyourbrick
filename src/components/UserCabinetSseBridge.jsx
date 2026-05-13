@@ -4,6 +4,10 @@ import { getApiBaseUrl } from '../utils/apiConfig'
 import { CLERK_DB_USER_SYNCED } from '../services/authService'
 import { showNotification } from '../utils/toastHelper'
 import i18n from '../i18n/config'
+import {
+  PRIVATE_CLUB_KICKED_MODAL_EVENT,
+  SUBSCRIPTION_BILLING_UPDATED_EVENT,
+} from '../hooks/useCabinetOverviewData'
 
 /**
  * Одно SSE-подключение на вкладку для push из админки (без polling):
@@ -74,6 +78,10 @@ export default function UserCabinetSseBridge() {
           }
           if (data.type === 'notifications_refresh') {
             window.dispatchEvent(new CustomEvent('owner-notifications-refresh'))
+          }
+          if (data.type === 'private_club_removed') {
+            window.dispatchEvent(new CustomEvent(SUBSCRIPTION_BILLING_UPDATED_EVENT))
+            window.dispatchEvent(new CustomEvent(PRIVATE_CLUB_KICKED_MODAL_EVENT))
           }
         } catch (_) {}
       }

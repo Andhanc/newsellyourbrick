@@ -48,6 +48,7 @@ const ModerationPropertyDetail = ({ property, onBack, onApprove, onReject }) => 
       property.has_debt === true
     );
   const [debtSeverity, setDebtSeverity] = useState(property.debt_severity || null);
+  const [approveAsPrivateClub, setApproveAsPrivateClub] = useState(false);
   const [debtDocuments, setDebtDocuments] = useState(property.debt_documents || []);
   const [isTranslating, setIsTranslating] = useState(false);
   const [translationsByLang, setTranslationsByLang] = useState({});
@@ -442,7 +443,7 @@ const ModerationPropertyDetail = ({ property, onBack, onApprove, onReject }) => 
 
   const handleApproveClick = () => {
     if (window.confirm('Вы уверены, что хотите одобрить этот объект недвижимости?')) {
-      onApprove(property.id, debtSeverity);
+      onApprove(property.id, debtSeverity, approveAsPrivateClub);
     }
   };
 
@@ -981,7 +982,18 @@ const ModerationPropertyDetail = ({ property, onBack, onApprove, onReject }) => 
             )}
           </div>
 
-          <div className="moderation-property-detail__actions">
+          <div className="moderation-property-detail__actions-wrap">
+            {!isDebtProperty && (
+              <label className="moderation-property-detail__private-club">
+                <input
+                  type="checkbox"
+                  checked={approveAsPrivateClub}
+                  onChange={(e) => setApproveAsPrivateClub(e.target.checked)}
+                />
+                <span>Только закрытый клуб (VIP)</span>
+              </label>
+            )}
+            <div className="moderation-property-detail__actions">
             {requestType === 'edit' && (
               <button
                 className={`moderation-property-detail__btn moderation-property-detail__btn--view-changes ${!originalProperty || loadingOriginal ? 'disabled' : ''}`}
@@ -1014,6 +1026,7 @@ const ModerationPropertyDetail = ({ property, onBack, onApprove, onReject }) => 
               <FiXCircle size={20} />
               Отклонить
             </button>
+          </div>
           </div>
         </div>
       </div>

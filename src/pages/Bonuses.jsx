@@ -6,6 +6,7 @@ import { FiChevronDown, FiCheck, FiGift, FiExternalLink, FiCopy, FiShoppingCart,
 import { FaInstagram, FaTiktok, FaGift, FaStar } from 'react-icons/fa'
 import { MdCardGiftcard } from 'react-icons/md'
 import Header from '../components/Header'
+import PageBreadcrumbs from '../components/PageBreadcrumbs'
 import { getUserData } from '../services/authService'
 import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
 import { isSiteUserSignedIn } from '../utils/siteAuthGate'
@@ -232,6 +233,9 @@ const Bonuses = () => {
         <FaStar className="bonuses-page__float bonuses-page__float--26" />
       </div>
       <main className={`bonuses-container ${bonusMode === 'seller' ? 'bonuses-container--seller' : ''}`}>
+        <div className="page-context-heading page-context-heading--bonuses">
+          <PageBreadcrumbs currentLabel={t('bonuses')} />
+        </div>
         <div className="bonuses-header">
           <div className="bonuses-header__icon-row">
             <div className="bonuses-header__deco bonuses-header__deco--left">

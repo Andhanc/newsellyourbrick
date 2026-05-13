@@ -287,6 +287,8 @@ model properties {
   additional_amenities   String?
   test_timer_end_date    String?
   auction_minimum_bid    Float?
+  /// Только участники закрытого клуба (VIP) видят лот в аукционе.
+  private_club_only      Int?      @default(0)
   users                  users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@index([user_id, moderation_status], map: "idx_properties_user_status")
@@ -374,6 +376,8 @@ model properties_apartments {
   debt_severity          String?
   test_timer_end_date    String?
   test_timer_duration    Int?
+  /// Только участники закрытого клуба (VIP) видят лот в аукционе.
+  private_club_only      Int?    @default(0)
   users                  users   @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@index([country], map: "idx_apartments_country")
@@ -460,6 +464,8 @@ model properties_houses {
   debt_severity          String?
   test_timer_end_date    String?
   test_timer_duration    Int?
+  /// Только участники закрытого клуба (VIP) видят лот в аукционе.
+  private_club_only      Int?    @default(0)
   users                  users   @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@index([country], map: "idx_houses_country")
@@ -749,6 +755,8 @@ model users {
   telegram_id                   String?
   telegram_username             String?
   telegram_photo_url            String?
+  vip_until                       DateTime?
+  vip_granted_at                  DateTime?
   assistant_leads               assistant_leads[]
   live_chat_sessions            live_chat_sessions[]
   auction_winners               auction_winners[]

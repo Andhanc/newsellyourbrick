@@ -286,6 +286,29 @@
   font-weight: 600;
 }
 
+.moderation-property-detail__actions-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.moderation-property-detail__private-club {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  color: #374151;
+  cursor: pointer;
+  user-select: none;
+}
+
+.moderation-property-detail__private-club input {
+  width: 1.1rem;
+  height: 1.1rem;
+  accent-color: #0d9488;
+}
+
 .moderation-property-detail__actions {
   display: flex;
   gap: 1rem;

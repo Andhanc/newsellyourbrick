@@ -5,11 +5,11 @@ import { getUserData } from '../services/authService'
 import { FiArrowLeft } from 'react-icons/fi'
 import VerificationToast from '../components/VerificationToast'
 import PricingCards from '../components/ui/PricingCards'
-import { startProSubscriptionCheckout, confirmCheckoutSession } from '../utils/subscriptionCheckout'
+import { startProSubscriptionCheckout, confirmCheckoutSession, startVipSubscriptionCheckout } from '../utils/subscriptionCheckout'
 import { showNotification } from '../utils/toastHelper'
 import './Subscriptions.css'
 import { useChainedAppLayoutScroll } from '../hooks/useChainedAppLayoutScroll'
-import { effectivePurchasedTier } from '../hooks/useCabinetOverviewData'
+import { effectiveDisplayTier, effectivePurchasedTier, userHasVipAccess } from '../hooks/useCabinetOverviewData'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api'
 
@@ -125,7 +125,26 @@ const Subscriptions = () => {
       return
     }
     if (plan === 'vip') {
-      showNotification(t('buyerCabinet_toastVipSoon'), 'info')
+      if (userHasVipAccess({ subscription: subscriptionBilling?.subscription, vipClub: subscriptionBilling?.vipClub })) {
+        showNotification(t('privateClubVipAlready'), 'info')
+        return
+      }
+      const userData = getUserData()
+      const uid = userData?.id ?? localStorage.getItem('userId')
+      const result = await startVipSubscriptionCheckout({
+        userId: uid,
+        customerEmail: userData?.email,
+        billingCycle,
+      })
+      if (!result.ok) {
+        const msg =
+          result.error === 'already_subscribed_vip'
+            ? t('privateClubVipAlready')
+            : result.error === 'already_subscribed_pro'
+              ? t('buyerCabinet_toastDuplicateSubscription')
+              : result.error || t('buyerCabinet_checkoutError')
+        showNotification(msg, result.error === 'already_subscribed_vip' ? 'info' : 'error')
+      }
       return
     }
   }
@@ -159,7 +178,10 @@ const Subscriptions = () => {
             creative
             onBookCall={handleBookCall}
             mobileTwoColumn
-            currentPlanVisual={effectivePurchasedTier(subscriptionBilling?.subscription)}
+            currentPlanVisual={effectiveDisplayTier(
+              subscriptionBilling?.subscription,
+              subscriptionBilling?.vipClub
+            )}
           />
         </div>
       </div>

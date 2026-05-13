@@ -6,6 +6,7 @@
 
 import { getApiBaseUrlSync } from '../utils/apiConfig'
 import { fetchDedupe } from '../utils/fetchDedupe'
+import { getStoredNumericUserId } from '../services/authService'
 import { getEffectiveAuctionEndTime } from '../utils/auctionReminderBounds'
 import { normalizePropertyMediaFields } from '../utils/propertyImage'
 import { auctionListingDedupeKey } from '../utils/propertyDetailUrl'
@@ -249,8 +250,30 @@ async function fetchMaxBidsBatch(apiBaseUrl, propertyIds) {
   }
 }
 
-/** Параллельные вызовы fetchAuctionList (prefetch в App + mount Home) сливаем в один промис. */
-let fetchAuctionListInFlight = null
+/** Параллельные вызовы fetchAuctionList с одинаковым viewer_user_id сливаем в один промис. */
+const fetchAuctionListInFlightByKey = new Map()
+
+function isPrivateClubLotForAuctionSort(p) {
+  const v = p?.private_club_only
+  return v === 1 || v === true || v === '1'
+}
+
+function auctionListEndSortKey(p) {
+  const raw = p?.endTime ?? p?.test_timer_end_date ?? p?.auction_end_date ?? ''
+  const t = raw ? new Date(raw).getTime() : 0
+  return Number.isFinite(t) ? t : 0
+}
+
+/** VIP-лоты закрытого клуба — в начале списка, далее по дате окончания аукциона. */
+function sortAuctionListPrivateClubFirst(list) {
+  if (!Array.isArray(list) || list.length <= 1) return list
+  return [...list].sort((a, b) => {
+    const d =
+      (isPrivateClubLotForAuctionSort(b) ? 1 : 0) - (isPrivateClubLotForAuctionSort(a) ? 1 : 0)
+    if (d !== 0) return d
+    return auctionListEndSortKey(a) - auctionListEndSortKey(b)
+  })
+}
 
 async function enrichAuctionListWithMaxBids(apiBaseUrl, list) {
   if (!Array.isArray(list) || list.length === 0) return list
@@ -301,12 +324,23 @@ async function enrichAuctionListWithMaxBids(apiBaseUrl, list) {
 
 /**
  * Загружает список объявлений для /auction.
- * Один параллельный батч (GET без type уже отдаёт все типы на бэкенде; повторные запросы по type были лишними).
+ * @param {number|string|null|undefined} explicitViewerUserId — id в БД для VIP-лотов; по умолчанию из localStorage.
  */
-export async function fetchAuctionList() {
-  if (fetchAuctionListInFlight) return fetchAuctionListInFlight
+export async function fetchAuctionList(explicitViewerUserId) {
+  const resolved =
+    explicitViewerUserId !== undefined ? explicitViewerUserId : getStoredNumericUserId()
+  const viewerKey =
+    resolved != null &&
+    String(resolved).trim() !== '' &&
+    Number.isFinite(Number(resolved)) &&
+    Number(resolved) >= 1
+      ? String(Number(resolved))
+      : ''
 
-  fetchAuctionListInFlight = (async () => {
+  const existing = fetchAuctionListInFlightByKey.get(viewerKey)
+  if (existing) return existing
+
+  const promise = (async () => {
   const API_BASE_URL = getApiBaseUrlSync()
   const lang = (() => {
     try {
@@ -324,11 +358,12 @@ export async function fetchAuctionList() {
   let allTestProperties = []
 
   const langQ = encodeURIComponent(lang)
+  const viewerQ = viewerKey ? `&viewer_user_id=${encodeURIComponent(viewerKey)}` : ''
   try {
     /** test-timers не использует lang на бэкенде — без query для лучшего попадания в серверный кэш */
     const [testRes, auctionAllRes, approvedAllRes, debtsRes] = await Promise.all([
       fetchDedupe(`${API_BASE_URL}/properties/test-timers`),
-      fetchDedupe(`${API_BASE_URL}/properties/auctions?lang=${langQ}`),
+      fetchDedupe(`${API_BASE_URL}/properties/auctions?lang=${langQ}${viewerQ}`),
       fetchDedupe(`${API_BASE_URL}/properties/approved?lang=${langQ}`),
       fetchDedupe(`${API_BASE_URL}/properties/debts`),
     ])
@@ -368,16 +403,19 @@ export async function fetchAuctionList() {
     ))
   ])
 
-  const allProperties = await enrichAuctionListWithMaxBids(API_BASE_URL, baseList)
+  const allProperties = sortAuctionListPrivateClubFirst(
+    await enrichAuctionListWithMaxBids(API_BASE_URL, baseList)
+  )
 
   setCachedList(allProperties)
   return allProperties
   })()
 
+  fetchAuctionListInFlightByKey.set(viewerKey, promise)
   try {
-    return await fetchAuctionListInFlight
+    return await promise
   } finally {
-    fetchAuctionListInFlight = null
+    fetchAuctionListInFlightByKey.delete(viewerKey)
   }
 }
 

@@ -121,6 +121,7 @@ const Footer = () => {
     [
       { to: '/', label: t('home') },
       { to: '/sections', label: t('footerAllSections') },
+      { to: '/private-club', label: t('privateClubPageTitle') },
       { to: '/auction', label: t('auction') },
       { to: '/auction?filter=buy_now', label: t('buyNowSectionTitle') },
       { to: '/shares', label: t('shares') },

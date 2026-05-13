@@ -80,6 +80,8 @@
   transition: all 0.3s;
   display: flex;
   align-items: center;
+  gap: 0.4rem;
+  min-width: 0;
   margin: 0.25rem 0;
   position: relative;
   color: rgba(255, 255, 255, 0.8);
@@ -109,11 +111,44 @@
 
 .menu-item svg,
 .menu-item i {
-  margin-right: 12px;
+  margin-right: 0;
   font-size: 1.1rem;
   width: 24px;
   text-align: center;
   flex-shrink: 0;
+}
+
+.menu-item__label {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.menu-item__badge {
+  flex-shrink: 0;
+  min-width: 1.35rem;
+  height: 1.35rem;
+  padding: 0 0.35rem;
+  margin-left: 0.35rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  line-height: 1.35rem;
+  text-align: center;
+}
+
+.menu-item__badge--tone-red {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: #fff;
+  box-shadow: 0 1px 2px rgba(220, 38, 38, 0.35);
+}
+
+.menu-item__badge--tone-orange {
+  background: linear-gradient(135deg, #fb923c, #ea580c);
+  color: #fff;
+  box-shadow: 0 1px 2px rgba(234, 88, 12, 0.35);
 }
 
 .menu-item--logout {

@@ -27,6 +27,7 @@ import {
 import { getPropertyCardImage } from '../utils/propertyImage'
 import { resolveAuctionCurrentBidValue } from '../services/auctionListCache'
 import { getPropertyDetailPath, auctionListingDedupeKey } from '../utils/propertyDetailUrl'
+import { isPrivateClubAuctionLot } from '../utils/isPrivateClubAuctionLot'
 import './PropertyList.css'
 
 const MOBILE_BREAKPOINT = 768
@@ -46,6 +47,7 @@ const PropertyList = ({
   onOpenAIChat,
   loading = false,
   floatWidgetsHiddenByFooter = false,
+  viewerHasVip = false,
 }) => {
   const { t } = useTranslation()
   const navigate = useNavigate()
@@ -234,6 +236,10 @@ const PropertyList = ({
     const auctionTimerEnded = (p) => isAuctionListingEnded(p)
 
     return [...list].sort((a, b) => {
+      const rankPc = (p) =>
+        p?.private_club_only === 1 || p?.private_club_only === true || p?.private_club_only === '1' ? 1 : 0
+      const pc = rankPc(b) - rankPc(a)
+      if (pc !== 0) return pc
       const ea = auctionTimerEnded(a)
       const eb = auctionTimerEnded(b)
       if (ea === eb) return 0
@@ -477,6 +483,7 @@ const PropertyList = ({
                   formatPrice={formatPrice}
                   isFavorite={isPropertyLiked}
                   onFavoriteToggle={handleFavoriteToggle}
+                  viewerHasVip={viewerHasVip}
                 />
               </div>
             ) : (
@@ -524,6 +531,19 @@ const PropertyList = ({
                 const isTimerExpired = isEffectiveAuctionTimerExpired(property)
                 const isAuctionEndedCard = isTimerExpired && hasTimer
                 const buyNowWinnerId = property.buy_now_winner_user_id
+                const showPrivateClubAuctionHero =
+                  location.pathname === '/auction' &&
+                  viewerHasVip &&
+                  isPrivateClubAuctionLot(property) &&
+                  !isAuctionListingEnded(property)
+
+                /** Оверлей на фото — только мобильная сетка карточек (не табы AuctionMobileLayout) */
+                const showPrivateClubHeroOnImage =
+                  isMobile && showPrivateClubAuctionHero && !isReserved
+
+                /** Десктоп: тот же переливающийся блок в теле карточки */
+                const showPrivateClubHeroDesktop =
+                  !isMobile && showPrivateClubAuctionHero && !isReserved
 
                 // Зеленый линейный таймер (PropertyTimer) — преаукцион, пока не началась фаза кругового таймера
                 const greenTimerBlock =
@@ -621,7 +641,9 @@ const PropertyList = ({
                       <div className="reserved-overlay-text">Забронировано</div>
                     </div>
                   )}
-                  {(hasBuyNowPrice || hasTestDrive) && !isAuctionListingEnded(property) && (
+                  {(hasBuyNowPrice || hasTestDrive) &&
+                    !isAuctionListingEnded(property) &&
+                    !showPrivateClubAuctionHero && (
                     <div className="property-badges-center">
                       {hasBuyNowPrice && (
                         <div 
@@ -669,6 +691,68 @@ const PropertyList = ({
                       )}
                     </div>
                   )}
+                  {showPrivateClubHeroOnImage ? (
+                    <div
+                      className="property-club-mobile-hero"
+                      role="group"
+                      aria-label={t('auctionPrivateClubLotTooltip')}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <div className="property-club-mobile-hero__shine" aria-hidden="true" />
+                      <div className="property-club-mobile-hero__inner">
+                        <div className="property-club-mobile-hero__titles">
+                          <span className="property-club-mobile-hero__vip">{t('auctionPrivateClubVipBadge')}</span>
+                          <span className="property-club-mobile-hero__label">{t('auctionPrivateClubMobileLabel')}</span>
+                        </div>
+                        <button
+                          type="button"
+                          className="property-club-mobile-hero__btn"
+                          onClick={(e) => {
+                            e.preventDefault()
+                            e.stopPropagation()
+                            openProperty(property)
+                          }}
+                        >
+                          {t('auctionPrivateClubGoCta')}
+                        </button>
+                      </div>
+                    </div>
+                  ) : null}
+                  {showPrivateClubAuctionHero && !isMobile && isReserved ? (
+                    <span
+                      className="property-vip-club-badge"
+                      role="img"
+                      aria-label={t('auctionPrivateClubLotTooltip')}
+                      title={t('auctionPrivateClubLotTooltip')}
+                      onMouseEnter={(e) => {
+                        const rect = e.currentTarget.getBoundingClientRect()
+                        setTooltip({
+                          show: true,
+                          text: t('auctionPrivateClubLotTooltip'),
+                          x: rect.left + rect.width / 2,
+                          y: rect.top - 10,
+                        })
+                      }}
+                      onMouseLeave={() => setTooltip({ show: false, text: '', x: 0, y: 0 })}
+                      onTouchStart={(e) => {
+                        const rect = e.currentTarget.getBoundingClientRect()
+                        setTooltip({
+                          show: true,
+                          text: t('auctionPrivateClubLotTooltip'),
+                          x: rect.left + rect.width / 2,
+                          y: rect.top - 10,
+                        })
+                      }}
+                      onTouchEnd={() => {
+                        window.setTimeout(() => {
+                          setTooltip({ show: false, text: '', x: 0, y: 0 })
+                        }, 2200)
+                      }}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {t('auctionPrivateClubVipBadge')}
+                    </span>
+                  ) : null}
                   <button 
                     className={`property-favorite ${isPropertyLiked(property) ? 'active' : ''}`}
                     onClick={(e) => handleFavoriteToggle(property, e)}
@@ -691,6 +775,48 @@ const PropertyList = ({
                       <h3 className="property-title">{propertyTitle}</h3>
                       {redTimerBlock}
                     </>
+                  ) : showPrivateClubHeroDesktop ? (
+                    <>
+                      {greenTimerBlock}
+                      {redTimerBlock}
+                      {buyNowCompletedEndedSeal}
+                      <h3 className="property-title">{propertyTitle}</h3>
+                      <div
+                        className="property-club-mobile-hero property-club-desktop-hero"
+                        role="group"
+                        aria-label={t('auctionPrivateClubLotTooltip')}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <div className="property-club-mobile-hero__shine" aria-hidden="true" />
+                        <div className="property-club-mobile-hero__inner">
+                          <div className="property-club-mobile-hero__titles">
+                            <span className="property-club-mobile-hero__vip">{t('auctionPrivateClubVipBadge')}</span>
+                            <span className="property-club-mobile-hero__label">{t('auctionPrivateClubMobileLabel')}</span>
+                          </div>
+                          <button
+                            type="button"
+                            className="property-club-mobile-hero__btn"
+                            onClick={(e) => {
+                              e.preventDefault()
+                              e.stopPropagation()
+                              openProperty(property)
+                            }}
+                          >
+                            {t('auctionPrivateClubGoCta')}
+                          </button>
+                        </div>
+                      </div>
+                      {hasTimer ? (
+                        <div className="property-bid-info property-bid-info--after-club-desktop">
+                          <span className="bid-label">{t('currentBid')}</span>
+                          <span className="bid-value">{formatPrice(resolveAuctionCurrentBidValue(property))}</span>
+                        </div>
+                      ) : (
+                        <div className="property-price property-price--after-club-desktop">
+                          {formatPrice(property.price || 0)}
+                        </div>
+                      )}
+                    </>
                   ) : (
                     <>
                       {greenTimerBlock}
@@ -699,9 +825,9 @@ const PropertyList = ({
                       <h3 className="property-title">{propertyTitle}</h3>
                     </>
                   )}
-                  {!hasTimer && property.description && (
+                  {property.description ? (
                     <p className="property-description">{property.description}</p>
-                  )}
+                  ) : null}
                   <p className="property-location">{property.location || ''}</p>
                   {buyNowWinnerId != null && !isAuctionListingEnded(property) && (
                     <p className="property-card-buy-now-winner" role="status">
@@ -709,61 +835,119 @@ const PropertyList = ({
                     </p>
                   )}
 
-                  {/* Обертка для данных, закрепленных снизу */}
-                  <div className="property-content-bottom">
-                    {/* Основные характеристики для аукционных карточек - в стиле личного кабинета продавца */}
-                    {hasTimer && (
-                      <div className="property-card-owner__info">
-                        <div className="property-card-owner__info-row">
-                          {(property.area || property.sqft) && (
-                            <div className="property-card-owner__info-item">
-                              <BiArea size={16} />
-                              <span>{property.area || property.sqft} {t('squareMeters')}</span>
+                  {/* Обертка для данных, закрепленных снизу; margin-top:auto только если есть кнопки — иначе пустой блок растягивает карточку */}
+                  <div
+                    className={`property-content-bottom${!showPrivateClubHeroDesktop ? ' property-content-bottom--with-actions' : ''}`}
+                  >
+                    {showPrivateClubHeroDesktop ? (
+                      <>
+                        {hasTimer && (
+                          <div className="property-card-owner__info">
+                            <div className="property-card-owner__info-row">
+                              {(property.area || property.sqft) && (
+                                <div className="property-card-owner__info-item">
+                                  <BiArea size={16} />
+                                  <span>
+                                    {property.area || property.sqft} {t('squareMeters')}
+                                  </span>
+                                </div>
+                              )}
+                              {(property.rooms || property.beds || property.bedrooms) && (
+                                <div className="property-card-owner__info-item">
+                                  <MdBed size={16} />
+                                  <span>{property.rooms || property.beds || property.bedrooms}</span>
+                                </div>
+                              )}
+                              {property.bathrooms && (
+                                <div className="property-card-owner__info-item">
+                                  <MdOutlineBathtub size={16} />
+                                  <span>{property.bathrooms}</span>
+                                </div>
+                              )}
                             </div>
-                          )}
-                          {(property.rooms || property.beds || property.bedrooms) && (
-                            <div className="property-card-owner__info-item">
-                              <MdBed size={16} />
-                              <span>{property.rooms || property.beds || property.bedrooms}</span>
-                            </div>
-                          )}
-                          {property.bathrooms && (
-                            <div className="property-card-owner__info-item">
-                              <MdOutlineBathtub size={16} />
-                              <span>{property.bathrooms}</span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                    
-                    {hasTimer ? (
-                      <div className="property-bid-info">
-                        <span className="bid-label">{t('currentBid')}</span>
-                        <span className="bid-value">{formatPrice(resolveAuctionCurrentBidValue(property))}</span>
-                      </div>
+                          </div>
+                        )}
+                        {!hasTimer && (
+                          <div className="property-specs">
+                            {(property.rooms || property.beds) && (
+                              <div className="spec-item">
+                                <MdBed size={18} />
+                                <span>{property.rooms || property.beds}</span>
+                              </div>
+                            )}
+                            {(property.area || property.sqft) && (
+                              <div className="spec-item">
+                                <BiArea size={18} />
+                                <span>
+                                  {property.area || property.sqft} {t('squareMeters')}
+                                </span>
+                              </div>
+                            )}
+                            {property.floor && (
+                              <span className="spec-item">
+                                {property.floor} {t('floor')}
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </>
                     ) : (
                       <>
-                        <div className="property-price">{formatPrice(property.price || 0)}</div>
-                        <div className="property-specs">
-                        {(property.rooms || property.beds) && (
-                          <div className="spec-item">
-                            <MdBed size={18} />
-                            <span>{property.rooms || property.beds}</span>
+                        {hasTimer && (
+                          <div className="property-card-owner__info">
+                            <div className="property-card-owner__info-row">
+                              {(property.area || property.sqft) && (
+                                <div className="property-card-owner__info-item">
+                                  <BiArea size={16} />
+                                  <span>{property.area || property.sqft} {t('squareMeters')}</span>
+                                </div>
+                              )}
+                              {(property.rooms || property.beds || property.bedrooms) && (
+                                <div className="property-card-owner__info-item">
+                                  <MdBed size={16} />
+                                  <span>{property.rooms || property.beds || property.bedrooms}</span>
+                                </div>
+                              )}
+                              {property.bathrooms && (
+                                <div className="property-card-owner__info-item">
+                                  <MdOutlineBathtub size={16} />
+                                  <span>{property.bathrooms}</span>
+                                </div>
+                              )}
+                            </div>
                           </div>
                         )}
-                        {(property.area || property.sqft) && (
-                          <div className="spec-item">
-                            <BiArea size={18} />
-                            <span>{property.area || property.sqft} {t('squareMeters')}</span>
+                    
+                        {hasTimer ? (
+                          <div className="property-bid-info">
+                            <span className="bid-label">{t('currentBid')}</span>
+                            <span className="bid-value">{formatPrice(resolveAuctionCurrentBidValue(property))}</span>
                           </div>
+                        ) : (
+                          <>
+                            <div className="property-price">{formatPrice(property.price || 0)}</div>
+                            <div className="property-specs">
+                            {(property.rooms || property.beds) && (
+                              <div className="spec-item">
+                                <MdBed size={18} />
+                                <span>{property.rooms || property.beds}</span>
+                              </div>
+                            )}
+                            {(property.area || property.sqft) && (
+                              <div className="spec-item">
+                                <BiArea size={18} />
+                                <span>{property.area || property.sqft} {t('squareMeters')}</span>
+                              </div>
+                            )}
+                            {property.floor && (
+                              <span className="spec-item">{property.floor} {t('floor')}</span>
+                            )}
+                            </div>
+                          </>
                         )}
-                        {property.floor && (
-                          <span className="spec-item">{property.floor} {t('floor')}</span>
-                        )}
-                        </div>
                       </>
                     )}
+                    {!showPrivateClubHeroDesktop && (
                     <div className="property-actions" onClick={(e) => e.stopPropagation()}>
                       {!isAuctionEndedCard ? (
                         <button 
@@ -804,6 +988,7 @@ const PropertyList = ({
                         </button>
                       )}
                     </div>
+                    )}
                   </div>
                 </div>
               </div>

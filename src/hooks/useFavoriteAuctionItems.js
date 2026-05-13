@@ -26,9 +26,14 @@ export function useFavoriteAuctionItems() {
           return 'ru'
         }
       })()
+      const uidRaw = typeof window !== 'undefined' ? localStorage.getItem('userId') : null
+      const viewerQ =
+        uidRaw && /^\d+$/.test(String(uidRaw).trim())
+          ? `&viewer_user_id=${encodeURIComponent(String(uidRaw).trim())}`
+          : ''
       const [approvedRes, auctionsRes, debtsRes] = await Promise.all([
         fetch(`${apiBase}/properties/approved?lang=${lang}`),
-        fetch(`${apiBase}/properties/auctions?lang=${lang}`),
+        fetch(`${apiBase}/properties/auctions?lang=${lang}${viewerQ}`),
         fetch(`${apiBase}/properties/debts`),
       ])
       let approved = []

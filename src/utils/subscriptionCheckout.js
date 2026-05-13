@@ -103,6 +103,30 @@ export async function startProSubscriptionCheckout({ userId, customerEmail, bill
   return { ok: false, error: 'Сервер не вернул ссылку на оплату' }
 }
 
+/** Stripe Checkout: подписка VIP (нужны STRIPE_PRICE_ID_VIP в .env на сервере). */
+export async function startVipSubscriptionCheckout({ userId, customerEmail, billingCycle = 'monthly' } = {}) {
+  const normalizedBillingCycle = billingCycle === 'yearly' ? 'yearly' : 'monthly'
+  const res = await fetch(`${API_BASE}/billing/create-checkout-session`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      plan: 'vip',
+      billingCycle: normalizedBillingCycle,
+      userId: userId != null ? String(userId) : undefined,
+      customerEmail: customerEmail || undefined,
+    }),
+  })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) {
+    return { ok: false, error: data.error || 'Не удалось создать сессию оплаты' }
+  }
+  if (data.url) {
+    navigateToStripeCheckout(data.url)
+    return { ok: true }
+  }
+  return { ok: false, error: 'Сервер не вернул ссылку на оплату' }
+}
+
 /**
  * Резерв 10% (Stripe Checkout, сумма считается на сервере по объекту).
  */

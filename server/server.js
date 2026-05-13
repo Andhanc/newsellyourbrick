@@ -1382,6 +1382,99 @@ app.get('/api/users/:id', async (req, res) => {
 });
 
 /**
+ * POST /api/users/:userId/private-club/redeem-promo
+ * body: { code: string } — промокод VIP закрытого клуба (+30 дней). Список кодов: env VIP_CLUB_PROMO_CODES (по умолчанию ADMIN).
+ */
+app.post('/api/users/:userId/private-club/redeem-promo', async (req, res) => {
+  try {
+    const userId = parseInt(req.params.userId, 10);
+    if (!Number.isFinite(userId) || userId < 1) {
+      return res.status(400).json({ success: false, error: 'Некорректный user id' });
+    }
+    if (!(await userQueries.getById(userId))) {
+      return res.status(404).json({ success: false, error: 'Пользователь не найден' });
+    }
+    const code = typeof req.body?.code === 'string' ? req.body.code.trim() : '';
+    if (!code) {
+      return res.status(400).json({ success: false, error: 'Укажите промокод' });
+    }
+    const envCodes = (process.env.VIP_CLUB_PROMO_CODES || 'ADMIN')
+      .split(/[\s,;]+/)
+      .map((s) => s.trim().toUpperCase())
+      .filter(Boolean);
+    const normalized = code.toUpperCase();
+    if (!envCodes.includes(normalized)) {
+      return res.status(400).json({ success: false, error: 'invalid_promo' });
+    }
+    const updated = await userQueries.grantVipClubPromoMonth(userId);
+    return res.json({
+      success: true,
+      data: {
+        vip_until: updated?.vip_until || null,
+        vip_granted_at: updated?.vip_granted_at || null,
+      },
+    });
+  } catch (error) {
+    console.error('POST /api/users/:userId/private-club/redeem-promo:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * GET /api/admin/private-club/members — участники закрытого клуба (VIP в БД или активная подписка Stripe VIP).
+ */
+app.get('/api/admin/private-club/members', async (req, res) => {
+  try {
+    const data = await userQueries.listPrivateClubParticipants();
+    return res.json({ success: true, data });
+  } catch (error) {
+    console.error('GET /api/admin/private-club/members:', error);
+    return res.status(500).json({ success: false, error: error.message || 'Ошибка сервера' });
+  }
+});
+
+/**
+ * POST /api/admin/private-club/members/:userId/revoke — обнулить vip_until и vip_granted_at.
+ * Push в кабинет (SSE), если после этого у пользователя больше нет VIP-доступа.
+ */
+app.post('/api/admin/private-club/members/:userId/revoke', async (req, res) => {
+  try {
+    const userId = parseInt(String(req.params.userId), 10);
+    if (!Number.isFinite(userId) || userId < 1) {
+      return res.status(400).json({ success: false, error: 'Некорректный user id' });
+    }
+    const before = await userQueries.getById(userId);
+    if (!before) {
+      return res.status(404).json({ success: false, error: 'Пользователь не найден' });
+    }
+    const hadDbVip = Boolean(before.vip_until && new Date(before.vip_until).getTime() > Date.now());
+    await userQueries.revokePrivateClubDbVip(userId);
+    const userRow = await userQueries.getById(userId);
+    const subState = await stripeSubscriptionQueries.getStateByUserId(userId);
+    const inactive = new Set(['canceled', 'unpaid', 'incomplete_expired', 'incomplete']);
+    const st = subState?.status ? String(subState.status).toLowerCase() : '';
+    const pk = subState?.plan_key ? String(subState.plan_key).toLowerCase() : '';
+    const stripeVip = pk === 'vip' && st !== '' && !inactive.has(st);
+    const untilMs = userRow?.vip_until ? new Date(userRow.vip_until).getTime() : 0;
+    const dbVipActive = Boolean(untilMs && untilMs > Date.now());
+    const stillHasVipAccess = dbVipActive || stripeVip;
+    if (hadDbVip && !stillHasVipAccess) {
+      broadcastUserCabinetEvent(userId, { type: 'private_club_removed' });
+    }
+    return res.json({
+      success: true,
+      data: {
+        revoked_db_fields: hadDbVip,
+        still_has_vip_access: stillHasVipAccess,
+      },
+    });
+  } catch (error) {
+    console.error('POST /api/admin/private-club/members/:userId/revoke:', error);
+    return res.status(500).json({ success: false, error: error.message || 'Ошибка сервера' });
+  }
+});
+
+/**
  * GET /api/users/:userId/favorites — список избранных объектов (property_id + property_table)
  */
 app.get('/api/users/:userId/favorites', async (req, res) => {
@@ -4375,6 +4468,30 @@ app.post('/api/admin/live-chat/sessions/:id/messages', async (req, res) => {
     return res.json({ success: true, data: row });
   } catch (error) {
     console.error('❌ POST admin live-chat message:', error);
+    return res.status(500).json({ success: false, error: error.message || 'Ошибка сервера' });
+  }
+});
+
+/**
+ * GET /api/admin/live-chat/user-messages-since?since=ISO — число сообщений от посетителя после метки «просмотрено»
+ */
+app.get('/api/admin/live-chat/user-messages-since', async (req, res) => {
+  try {
+    const raw = req.query && req.query.since != null ? String(req.query.since).trim() : '';
+    const since = raw ? new Date(raw) : new Date(0);
+    if (Number.isNaN(since.getTime())) {
+      return res.status(400).json({ success: false, error: 'Некорректный since' });
+    }
+    const prisma = getPrisma();
+    const count = await prisma.live_chat_messages.count({
+      where: {
+        created_at: { gt: since },
+        sender_role: { in: ['user', 'client', 'visitor'] },
+      },
+    });
+    return res.json({ success: true, data: { count } });
+  } catch (error) {
+    console.error('❌ GET /api/admin/live-chat/user-messages-since:', error);
     return res.status(500).json({ success: false, error: error.message || 'Ошибка сервера' });
   }
 });
@@ -8943,9 +9060,16 @@ function auctionListRowDedupeKey(p) {
 app.get('/api/properties/auctions', async (req, res) => {
   try {
     const { type } = req.query; // Опциональный фильтр по типу
-    
+    const viewerRaw = req.query.viewer_user_id;
+    const viewerId = viewerRaw != null && String(viewerRaw).trim() !== '' ? Number(viewerRaw) : NaN;
+    const includePrivateClubListings =
+      Number.isFinite(viewerId) &&
+      viewerId >= 1 &&
+      (await userQueries.hasPrivateClubVipAccess(viewerId));
+    const hidePrivateClubOnly = !includePrivateClubListings;
+
     // Используем функцию из propertyQueries, которая работает с новыми таблицами
-    let properties = await propertyQueries.getAuctions(type || null);
+    let properties = await propertyQueries.getAuctions(type || null, { hidePrivateClubOnly });
 
     if (VERBOSE_HTTP) {
       console.log(`✅ Получено аукционных объявлений: ${properties.length}`);
@@ -8962,6 +9086,11 @@ app.get('/api/properties/auctions', async (req, res) => {
         { OR: [{ has_debt: null }, { has_debt: 0 }] },
       ],
     };
+    if (hidePrivateClubOnly) {
+      timerWhereBase.AND.push({
+        OR: [{ private_club_only: null }, { private_club_only: 0 }],
+      });
+    }
     const timerWhereApartments = { ...timerWhereBase };
     const timerWhereHouses = { ...timerWhereBase };
     if (type) {
@@ -9022,6 +9151,10 @@ app.get('/api/properties/auctions', async (req, res) => {
     // Удаляем дубликаты одной и той же строки из разных выборок, не смешивая разные таблицы с общим numeric id.
     properties = Array.from(new Map(allProperties.map((pr) => [auctionListRowDedupeKey(pr), pr])).values()).sort(
       (a, b) => {
+      const rank = (p) =>
+        p?.private_club_only === 1 || p?.private_club_only === true || p?.private_club_only === '1' ? 1 : 0
+      const d = rank(b) - rank(a)
+      if (d !== 0) return d
       const aDate = a.test_timer_end_date || a.auction_end_date || '';
       const bDate = b.test_timer_end_date || b.auction_end_date || '';
       return new Date(aDate) - new Date(bDate);
@@ -10477,6 +10610,43 @@ app.get('/api/admin/test-drive/property-bookings', async (req, res) => {
 });
 
 /**
+ * GET /api/admin/test-drive/cancellations-badge — отменённые брони (для счётчика «непросмотрено» в админке)
+ */
+app.get('/api/admin/test-drive/cancellations-badge', async (req, res) => {
+  try {
+    await testDriveBookingQueries.ensureTable();
+    const prisma = getPrisma();
+    const sql = `
+      SELECT property_id, property_table, cancelled_at, created_at
+      FROM test_drive_bookings
+      WHERE LOWER(TRIM(COALESCE(status, ''))) = 'cancelled'
+      ORDER BY id DESC
+      LIMIT 5000
+    `;
+    const rows = await prisma.$queryRawUnsafe(sql);
+    const data = (Array.isArray(rows) ? rows : []).map((row) => ({
+      property_id: row.property_id,
+      property_table: row.property_table,
+      cancelled_at:
+        row.cancelled_at instanceof Date ? row.cancelled_at.toISOString() : row.cancelled_at ?? null,
+      created_at: row.created_at instanceof Date ? row.created_at.toISOString() : row.created_at ?? null,
+    }));
+    const cntRows = await prisma.$queryRawUnsafe(`
+      SELECT COUNT(*) AS c
+      FROM test_drive_bookings
+      WHERE LOWER(TRIM(COALESCE(status, ''))) = 'cancelled'
+    `);
+    const rawC = Array.isArray(cntRows) && cntRows[0] != null ? cntRows[0].c : data.length;
+    const totalCancelled =
+      typeof rawC === 'bigint' ? Number(rawC) : Number(rawC == null ? data.length : rawC);
+    return res.json({ success: true, data, meta: { total_cancelled: totalCancelled } });
+  } catch (error) {
+    console.error('GET /api/admin/test-drive/cancellations-badge:', error);
+    return res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
  * GET /api/admin/test-drive/broadcasts — карточки рассылки опроса WhatsApp (после оплаты)
  */
 app.get('/api/admin/test-drive/broadcasts', async (req, res) => {
@@ -11453,6 +11623,30 @@ app.get('/api/properties/:id', async (req, res) => {
       reserved_by: formatted.reserved_by,
       reservation_time_remaining: formatted.reservation_time_remaining
     });
+    const pcOnly =
+      formatted.private_club_only === 1 ||
+      formatted.private_club_only === true ||
+      formatted.private_club_only === '1';
+    if (pcOnly && String(formatted.moderation_status || '').toLowerCase() === 'approved') {
+      const viewerRaw = req.query.viewer_user_id;
+      const viewerId =
+        viewerRaw != null && String(viewerRaw).trim() !== '' ? Number(viewerRaw) : NaN;
+      const ownerId = Number(formatted.user_id);
+      const isOwner =
+        Number.isFinite(viewerId) && Number.isFinite(ownerId) && viewerId === ownerId;
+      const vipOk =
+        Number.isFinite(viewerId) &&
+        viewerId >= 1 &&
+        (await userQueries.hasPrivateClubVipAccess(viewerId));
+      if (!isOwner && !vipOk) {
+        return res.status(403).json({
+          success: false,
+          error: 'Объект доступен только участникам VIP',
+          code: 'PRIVATE_CLUB_ONLY',
+        });
+      }
+    }
+
     formatted.name = formatted.title || formatted.name || '';
     applyListingPhotosToFormatted(formatted);
     res.json({ success: true, data: formatted });
@@ -12130,7 +12324,14 @@ app.put('/api/properties/:id/approve', async (req, res) => {
   try {
     const prisma = getPrisma();
     const { id } = req.params;
-    const { reviewed_by, property_type: requestedPropertyType, debt_severity } = req.body;
+    const {
+      reviewed_by,
+      property_type: requestedPropertyType,
+      debt_severity,
+      private_club_only: privateClubOnlyBody,
+    } = req.body;
+    const privateClubOnly =
+      privateClubOnlyBody === true || privateClubOnlyBody === 1 || privateClubOnlyBody === '1';
 
     // ВАЖНО: Если property_type передан в запросе, используем его для получения правильного объекта
     // Это предотвращает получение объекта из неправильной таблицы при дубликатах ID
@@ -12365,6 +12566,7 @@ app.put('/api/properties/:id/approve', async (req, res) => {
         no_debts_document: property.no_debts_document,
         test_drive: property.test_drive !== undefined && property.test_drive !== null ? property.test_drive : 0,
         test_drive_data: property.test_drive_data,
+        private_club_only: privateClubOnly ? 1 : 0,
         moderation_status: 'approved',
         rejection_reason: null,
         updated_at: new Date().toISOString(),
@@ -12579,6 +12781,31 @@ app.put('/api/properties/:id/approve', async (req, res) => {
         } catch (e) {
           console.warn('⚠️ debt: не удалось обновить флаги долга:', e.message);
         }
+      }
+
+      // «Только закрытый клуб» — лот в аукционе видят только VIP (и владелец в кабинете).
+      try {
+        const prismaPc = getPrisma();
+        const pcVal = privateClubOnly ? 1 : 0;
+        const isHouseRow = property.property_type === 'house' || property.property_type === 'villa';
+        if (isHouseRow) {
+          await prismaPc.properties_houses.update({
+            where: { id: Number(id) },
+            data: { private_club_only: pcVal, updated_at: new Date().toISOString() },
+          });
+        } else if (property.property_type === 'apartment' || property.property_type === 'commercial') {
+          await prismaPc.properties_apartments.update({
+            where: { id: Number(id) },
+            data: { private_club_only: pcVal, updated_at: new Date().toISOString() },
+          });
+        } else if (property.source_table === 'properties') {
+          await prismaPc.properties.update({
+            where: { id: Number(id) },
+            data: { private_club_only: pcVal, updated_at: new Date() },
+          });
+        }
+      } catch (pcErr) {
+        console.warn('private_club_only (approve):', pcErr?.message || pcErr);
       }
       
       // После updateModerationStatus читаем из той же таблицы, что и одобряли (не из типа запроса клиента).

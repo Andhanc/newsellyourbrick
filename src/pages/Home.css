@@ -9,6 +9,47 @@
   position: relative;
 }
 
+/* Аукцион: чуть плотнее стык Hero → заголовок (ниже карточек) */
+.home-page--auction .hero {
+  padding: 60px 20px 44px;
+}
+
+.home-page--auction .hero-features {
+  margin-bottom: 44px;
+}
+
+/* Аукцион: та же колонка, что у Hero — без двойного max-width+padding у .page-context-heading */
+.home-page--auction .page-context-heading.page-context-heading--home-auction {
+  max-width: none;
+  width: 100%;
+  margin: 0;
+  padding: 0 20px 28px;
+  background: #f5f5f5;
+  box-sizing: border-box;
+}
+
+.home-page--auction .page-context-heading--home-auction-inner {
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
+  text-align: left;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.home-page--auction .page-context-heading__title--auction-script {
+  font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
+  font-weight: 700;
+  font-style: italic;
+  font-size: clamp(2.35rem, 5.2vw, 3.35rem);
+  line-height: 1.12;
+  color: #0f172a;
+  margin: 0.35rem 0 0.55rem;
+  letter-spacing: 0.03em;
+  text-align: left;
+  font-synthesis: none;
+}
+
 @media (max-width: 768px) {
   .home-page.home-page--auction {
     overflow-x: clip;
@@ -19,6 +60,10 @@
     overflow-x: clip;
     max-width: 100%;
     min-width: 0;
+  }
+
+  .home-page--auction .page-context-heading.page-context-heading--home-auction {
+    padding-bottom: 12px;
   }
 }
 

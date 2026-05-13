@@ -7,6 +7,7 @@ import ToastContainer from './components/ToastContainer'
 import GlobalVerificationSuccessGate from './components/GlobalVerificationSuccessGate'
 import VisitorHeartbeat from './components/VisitorHeartbeat'
 import UserCabinetSseBridge from './components/UserCabinetSseBridge'
+import PrivateClubKickModal from './components/PrivateClubKickModal'
 
 import VerificationRejectedGate from './components/VerificationRejectedGate'
 import { validateSession, getUserData, ensureLocalUserIdFromSession } from './services/authService'
@@ -44,6 +45,7 @@ const Chat = lazyWithRetry(() => import('./pages/Chat'))
 const Favorites = lazyWithRetry(() => import('./pages/Favorites'))
 const Compare = lazyWithRetry(() => import('./pages/Compare'))
 const Bonuses = lazyWithRetry(() => import('./pages/Bonuses'))
+const PrivateClub = lazyWithRetry(() => import('./pages/PrivateClub'))
 const OwnerDashboard = lazyWithRetry(() => import('./pages/OwnerDashboard'))
 const TelegramAuthCallback = lazyWithRetry(() => import('./pages/TelegramAuthCallback'))
 const AddProperty = lazyWithRetry(() => import('./pages/AddProperty'))
@@ -550,6 +552,7 @@ function App() {
       <VisitorHeartbeat />
       <SessionValidator onBlockedChange={setIsBlocked} />
       <UserCabinetSseBridge />
+      <PrivateClubKickModal />
       <GlobalVerificationSuccessGate />
       <VerificationRejectedGate blockedUser={isBlocked} />
       <AdminSessionCleaner />
@@ -727,6 +730,14 @@ function App() {
                 }
               />
               <Route path="/debts" element={<DebtsPage />} />
+              <Route
+                path="/private-club"
+                element={
+                  <LazyPage>
+                    <PrivateClub />
+                  </LazyPage>
+                }
+              />
               <Route
                 path="/about"
                 element={

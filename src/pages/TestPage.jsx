@@ -39,6 +39,7 @@ import {
   FiCopy,
   FiUserPlus,
   FiGift,
+  FiAward,
 } from 'react-icons/fi'
 import { getStoredNumericUserId, getUserData, logout } from '../services/authService'
 import { fetchUserById, invalidateUserByIdCache } from '../utils/usersApi'
@@ -47,10 +48,13 @@ import Confetti from 'react-confetti'
 import { scrollMainTo } from '../utils/mainScroll'
 import { isSiteUserSignedIn } from '../utils/siteAuthGate'
 import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
-import { useCabinetOverviewData, effectivePurchasedTier } from '../hooks/useCabinetOverviewData'
+import {
+  useCabinetOverviewData,
+  effectivePurchasedTier,
+  SUBSCRIPTION_BILLING_UPDATED_EVENT,
+} from '../hooks/useCabinetOverviewData'
 import PricingCards from '../components/ui/PricingCards'
-import { SUBSCRIPTION_BILLING_UPDATED_EVENT } from '../hooks/useCabinetOverviewData'
-import { startProSubscriptionCheckout, confirmCheckoutSession } from '../utils/subscriptionCheckout'
+import { startProSubscriptionCheckout, startVipSubscriptionCheckout, confirmCheckoutSession } from '../utils/subscriptionCheckout'
 import DirectionSummaryCard from '../components/ui/direction-summary-card'
 import { BuyerCabinetHeroSkeleton, BuyerCabinetBelowSkeleton } from '../components/BuyerCabinetOverviewSkeleton'
 import PassportRecognitionModal from '../components/PassportRecognitionModal'
@@ -67,6 +71,12 @@ import { evaluatePassportText, validatePassportImageFile } from '../utils/passpo
 import './TestPage.css'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
+
+/** Поддержка в WhatsApp (как в Footer). */
+const WHATSAPP_SUPPORT_HREF = 'https://wa.me/447700183959'
+
+/** Конфетти на модалке поздравления: генерация новых частиц только эти миллисекунды. */
+const SUBSCRIPTION_CONFETTI_ACTIVE_MS = 5000
 
 const PROFILE_SAVE_DEBOUNCE_MS = 500
 
@@ -685,6 +695,8 @@ function TestPage() {
     historySections,
     historyLoading,
     subscriptionPlanLabel,
+    cabinetSubscriptionTier,
+    cabinetVipActive,
   } = useCabinetOverviewData()
   const directionSummaries = useMemo(() => buildDirectionSummaries(t), [t])
   const mainCards = useMemo(() => buildMainCards(t), [t])
@@ -756,6 +768,9 @@ function TestPage() {
   const [profileCompletionToastDismissedForInput, setProfileCompletionToastDismissedForInput] = useState(false)
   const [showProfileCompleteCelebration, setShowProfileCompleteCelebration] = useState(false)
   const [subscriptionCheckoutCelebration, setSubscriptionCheckoutCelebration] = useState(false)
+  const [vipClubCheckoutCelebration, setVipClubCheckoutCelebration] = useState(false)
+  /** Конфетти на поздравлении: ~5 с генерации, потом только долёт существующих частиц. */
+  const [subscriptionConfettiRecycle, setSubscriptionConfettiRecycle] = useState(true)
   const [showServiceQuickLinksTour, setShowServiceQuickLinksTour] = useState(false)
   const [serviceTourAcknowledged, setServiceTourAcknowledged] = useState(false)
   const [isSellObjectPromptOpen, setIsSellObjectPromptOpen] = useState(false)
@@ -1140,6 +1155,7 @@ function TestPage() {
 
     if (celebrationFlag) {
       void refetchSubscriptionBillingState()
+      setVipClubCheckoutCelebration(false)
       setSubscriptionCheckoutCelebration(true)
       navigate('/profile', { replace: true })
       return
@@ -1147,13 +1163,18 @@ function TestPage() {
 
     if (checkout !== 'success' || !sessionId || !sessionId.startsWith('cs_')) return
 
+    const wantsVipClubCelebration = searchParams.get('vip_club') === '1'
+
     let cancelled = false
     void (async () => {
       const r = await confirmCheckoutSession(sessionId)
       if (cancelled) return
       if (r.ok) {
         await refetchSubscriptionBillingState()
-        if (!cancelled) setSubscriptionCheckoutCelebration(true)
+        if (!cancelled) {
+          setVipClubCheckoutCelebration(wantsVipClubCelebration)
+          setSubscriptionCheckoutCelebration(true)
+        }
       } else {
         showNotification(
           r.error === 'no_app_user_id'
@@ -1316,11 +1337,8 @@ function TestPage() {
 
   const subscriptionProfileVisual = useMemo(() => {
     if (subscriptionSheetState) return effectivePurchasedTier(subscriptionSheetState)
-    const s = String(subscriptionPlanLabel || '').toLowerCase()
-    if (s.includes('vip')) return 'vip'
-    if (s.includes('pro')) return 'pro'
-    return 'starter'
-  }, [subscriptionSheetState, subscriptionPlanLabel])
+    return cabinetSubscriptionTier
+  }, [subscriptionSheetState, cabinetSubscriptionTier])
 
   const handleSubscriptionPlanSubscribe = useCallback(async (plan, billingCycle = 'monthly') => {
     if (plan === 'starter') {
@@ -1355,7 +1373,31 @@ function TestPage() {
       return
     }
     if (plan === 'vip') {
-      showNotification(t('buyerCabinet_toastVipSoon'), 'info')
+      if (subscriptionProfileVisual === 'vip') {
+        showNotification(t('privateClubVipAlready'), 'info')
+        return
+      }
+      setSubscriptionUpgradeLoading(true)
+      try {
+        const ud = getUserData()
+        const uid = ud?.id ?? localStorage.getItem('userId')
+        const result = await startVipSubscriptionCheckout({
+          userId: uid,
+          customerEmail: ud?.email,
+          billingCycle,
+        })
+        if (!result.ok) {
+          const msg =
+            result.error === 'already_subscribed_vip'
+              ? t('privateClubVipAlready')
+              : result.error === 'already_subscribed_pro'
+                ? t('buyerCabinet_toastDuplicateSubscription')
+                : result.error || t('buyerCabinet_checkoutError')
+          showNotification(msg, result.error === 'already_subscribed_vip' ? 'info' : 'error')
+        }
+      } finally {
+        setSubscriptionUpgradeLoading(false)
+      }
     }
   }, [subscriptionProfileVisual, t])
 
@@ -1990,6 +2032,18 @@ function TestPage() {
 
   const handleSubscriptionCheckoutCelebrationGo = useCallback(() => {
     setSubscriptionCheckoutCelebration(false)
+    setVipClubCheckoutCelebration(false)
+    scrollMainTo(0, 0, 'smooth')
+  }, [])
+
+  const handleVipClubCheckoutCelebrationWhatsApp = useCallback(() => {
+    try {
+      window.open(WHATSAPP_SUPPORT_HREF, '_blank', 'noopener,noreferrer')
+    } catch {
+      /* ignore */
+    }
+    setSubscriptionCheckoutCelebration(false)
+    setVipClubCheckoutCelebration(false)
     scrollMainTo(0, 0, 'smooth')
   }, [])
 
@@ -2029,6 +2083,17 @@ function TestPage() {
   }, [resolvedNumericUserId])
 
   useEffect(() => {
+    const active = showProfileCompleteCelebration || subscriptionCheckoutCelebration
+    if (!active) {
+      setSubscriptionConfettiRecycle(true)
+      return undefined
+    }
+    setSubscriptionConfettiRecycle(true)
+    const id = window.setTimeout(() => setSubscriptionConfettiRecycle(false), SUBSCRIPTION_CONFETTI_ACTIVE_MS)
+    return () => window.clearTimeout(id)
+  }, [showProfileCompleteCelebration, subscriptionCheckoutCelebration])
+
+  useEffect(() => {
     if (!showProfileCompleteCelebration && !subscriptionCheckoutCelebration) return
     const onKeyDown = (e) => {
       if (e.key === 'Escape') {
@@ -2038,7 +2103,7 @@ function TestPage() {
     }
     window.addEventListener('keydown', onKeyDown, true)
     return () => window.removeEventListener('keydown', onKeyDown, true)
-  }, [showProfileCompleteCelebration, subscriptionCheckoutCelebration])
+  }, [showProfileCompleteCelebration, subscriptionCheckoutCelebration, vipClubCheckoutCelebration])
 
   /**
    * Через 1 с после открытия «Данные» (<78%) — подсказка на тост.
@@ -2295,6 +2360,16 @@ function TestPage() {
                       {initials || 'U'}
                     </span>
                   )}
+                  {cabinetVipActive ? (
+                    <span
+                      className="test-hero-pro__vip-badge"
+                      title={t('profileVipBadgeTitle')}
+                      aria-label={t('profileVipBadgeTitle')}
+                    >
+                      <FiAward className="test-hero-pro__vip-badge-icon" aria-hidden />
+                      <span className="test-hero-pro__vip-badge-text">VIP</span>
+                    </span>
+                  ) : null}
                 </div>
                 <Link
                   to="/"
@@ -3520,63 +3595,128 @@ function TestPage() {
         <>
           <div className="test-profile-complete-confetti" aria-hidden>
             {!reduceMotionUi ? (
-              <Confetti
-                width={windowSize.width}
-                height={windowSize.height}
-                recycle
-                numberOfPieces={500}
-                gravity={0.1}
-                wind={0.02}
-                colors={[
-                  '#10b981',
-                  '#f59e0b',
-                  '#3b82f6',
-                  '#ef4444',
-                  '#8b5cf6',
-                  '#ec4899',
-                  '#06b6d4',
-                  '#f97316',
-                  '#14b8a6',
-                  '#fbbf24',
-                ]}
-                confettiSource={{
-                  x: 0,
-                  y: 0,
-                  w: windowSize.width,
-                  h: 0,
-                }}
-                initialVelocityX={4}
-                initialVelocityY={6}
-                tweenDuration={10000}
-              />
+              <>
+                <Confetti
+                  width={windowSize.width}
+                  height={windowSize.height}
+                  recycle={subscriptionConfettiRecycle}
+                  numberOfPieces={
+                    vipClubCheckoutCelebration && !showProfileCompleteCelebration ? 820 : 520
+                  }
+                  gravity={vipClubCheckoutCelebration && !showProfileCompleteCelebration ? 0.11 : 0.1}
+                  wind={vipClubCheckoutCelebration && !showProfileCompleteCelebration ? 0.03 : 0.02}
+                  colors={[
+                    '#10b981',
+                    '#0abab5',
+                    '#14b8a6',
+                    '#a78bfa',
+                    '#8b5cf6',
+                    '#f59e0b',
+                    '#ec4899',
+                    '#3b82f6',
+                    '#ef4444',
+                    '#06b6d4',
+                    '#f97316',
+                    '#fbbf24',
+                  ]}
+                  confettiSource={{
+                    x: 0,
+                    y: 0,
+                    w: windowSize.width,
+                    h: 0,
+                  }}
+                  initialVelocityX={vipClubCheckoutCelebration && !showProfileCompleteCelebration ? 5 : 4}
+                  initialVelocityY={vipClubCheckoutCelebration && !showProfileCompleteCelebration ? 8 : 6}
+                  tweenDuration={11000}
+                />
+                {vipClubCheckoutCelebration && !showProfileCompleteCelebration ? (
+                  <Confetti
+                    width={windowSize.width}
+                    height={windowSize.height}
+                    recycle={subscriptionConfettiRecycle}
+                    numberOfPieces={420}
+                    gravity={0.14}
+                    wind={-0.025}
+                    colors={['#a78bfa', '#8b5cf6', '#0abab5', '#34d399', '#fbbf24', '#f472b6']}
+                    confettiSource={{
+                      x: Math.max(0, windowSize.width * 0.15),
+                      y: windowSize.height * 0.85,
+                      w: windowSize.width * 0.7,
+                      h: 0,
+                    }}
+                    initialVelocityX={3}
+                    initialVelocityY={-10}
+                    tweenDuration={12000}
+                  />
+                ) : null}
+              </>
             ) : null}
           </div>
-          <div className="test-profile-complete-modal-root">
+          <div
+            className={[
+              'test-profile-complete-modal-root',
+              vipClubCheckoutCelebration && !showProfileCompleteCelebration ? 'test-profile-complete-modal-root--vipclub' : '',
+            ]
+              .filter(Boolean)
+              .join(' ')}
+          >
             <div
               className="test-profile-complete-modal"
               role="dialog"
               aria-modal="true"
               aria-labelledby="test-profile-complete-title"
             >
-              <h2 id="test-profile-complete-title" className="test-profile-complete-modal__title">
-                {showProfileCompleteCelebration ? 'Поздравляем!' : t('buyerSubs_celebrationTitle')}
-              </h2>
-              <p className="test-profile-complete-modal__text">
-                {showProfileCompleteCelebration
-                  ? 'Вы успешно зарегистрировали профиль.'
-                  : t('buyerSubs_celebrationBody')}
-              </p>
-              <button
-                type="button"
-                className="test-profile-complete-modal__btn"
-                onClick={
-                  showProfileCompleteCelebration
-                    ? handleProfileCompleteCelebrationGo
-                    : handleSubscriptionCheckoutCelebrationGo
-                }
-              >
-                {showProfileCompleteCelebration ? 'Перейти' : t('buyerSubs_celebrationCta')}
-              </button>
+              {showProfileCompleteCelebration ? (
+                <>
+                  <h2 id="test-profile-complete-title" className="test-profile-complete-modal__title">
+                    Поздравляем!
+                  </h2>
+                  <p className="test-profile-complete-modal__text">Вы успешно зарегистрировали профиль.</p>
+                  <button
+                    type="button"
+                    className="test-profile-complete-modal__btn"
+                    onClick={handleProfileCompleteCelebrationGo}
+                  >
+                    Перейти
+                  </button>
+                </>
+              ) : vipClubCheckoutCelebration ? (
+                <>
+                  <h2
+                    id="test-profile-complete-title"
+                    className="test-profile-complete-modal__title test-profile-complete-modal__title--vipclub"
+                  >
+                    {t('privateClubVipCelebrationTitle')}
+                  </h2>
+                  <p className="test-profile-complete-modal__text">{t('privateClubVipCelebrationBody')}</p>
+                  <div className="test-profile-complete-modal__vip-actions">
+                    <button
+                      type="button"
+                      className="test-profile-complete-modal__btn"
+                      onClick={handleSubscriptionCheckoutCelebrationGo}
+                    >
+                      {t('privateClubVipCelebrationCtaProfile')}
+                    </button>
+                    <button
+                      type="button"
+                      className="test-profile-complete-modal__btn test-profile-complete-modal__btn--whatsapp"
+                      onClick={handleVipClubCheckoutCelebrationWhatsApp}
+                    >
+                      {t('privateClubVipCelebrationCtaWhatsApp')}
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <h2 id="test-profile-complete-title" className="test-profile-complete-modal__title">
+                    {t('buyerSubs_celebrationTitle')}
+                  </h2>
+                  <p className="test-profile-complete-modal__text">{t('buyerSubs_celebrationBody')}</p>
+                  <button type="button" className="test-profile-complete-modal__btn" onClick={handleSubscriptionCheckoutCelebrationGo}>
+                    {t('buyerSubs_celebrationCta')}
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </>
