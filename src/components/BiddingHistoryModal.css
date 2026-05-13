@@ -73,6 +73,10 @@
   padding: 40px;
 }
 
+.bidding-history-modal__content--embedded {
+  padding: 0;
+}
+
 .bidding-history-modal__header {
   text-align: center;
   margin-bottom: 32px;

@@ -20,10 +20,7 @@ import {
   FiDollarSign as FiDollar,
   FiClock,
   FiAlertCircle,
-  FiLayers,
-  FiZap,
   FiCheck,
-  FiTag,
   FiMenu,
   FiBell,
   FiArrowRight,
@@ -39,7 +36,6 @@ import QuickAddCard from '../components/QuickAddCard'
 import FileUploadModal from '../components/FileUploadModal'
 import PropertyCalculatorModal from '../components/PropertyCalculatorModal'
 import OwnerPurchasedAssets from '../components/OwnerPurchasedAssets'
-import BiddingHistoryModal from '../components/BiddingHistoryModal'
 import OwnerModerationNoticeModal from '../components/OwnerModerationNoticeModal'
 import OwnerPropertyBidAnalyticsModal from '../components/OwnerPropertyBidAnalyticsModal'
 import OwnerTestDriveSection from '../components/OwnerTestDriveSection'
@@ -184,7 +180,6 @@ const OwnerDashboard = () => {
   const [analyticsSalesData, setAnalyticsSalesData] = useState(null)
   const [analyticsSalesLoading, setAnalyticsSalesLoading] = useState(false)
   const [isCalculatorModalOpen, setIsCalculatorModalOpen] = useState(false)
-  const [selectedPropertyForHistory, setSelectedPropertyForHistory] = useState(null)
   const [propertyForBidAnalytics, setPropertyForBidAnalytics] = useState(null)
   const [moderationNotice, setModerationNotice] = useState({
     open: false,
@@ -1664,25 +1659,28 @@ const OwnerDashboard = () => {
         {/* Переключатель вкладок */}
         <div className="owner-dashboard__tabs">
           <button
+            type="button"
             className={`owner-dashboard__tab ${activeTab === 'properties' ? 'owner-dashboard__tab--active' : ''}`}
             onClick={() => setActiveTab('properties')}
           >
-            <FiList size={20} />
-            <span>{t('ownerTabListings')}</span>
+            <FiList size={20} aria-hidden />
+            <span className="owner-dashboard__tab-text">{t('ownerTabListings')}</span>
           </button>
           <button
+            type="button"
             className={`owner-dashboard__tab ${activeTab === 'analytics' ? 'owner-dashboard__tab--active' : ''}`}
             onClick={() => setActiveTab('analytics')}
           >
-            <FiBarChart2 size={20} />
-            <span>{t('ownerTabAnalytics')}</span>
+            <FiBarChart2 size={20} aria-hidden />
+            <span className="owner-dashboard__tab-text">{t('ownerTabAnalytics')}</span>
           </button>
           <button
+            type="button"
             className={`owner-dashboard__tab ${activeTab === 'sales' ? 'owner-dashboard__tab--active' : ''}`}
             onClick={() => setActiveTab('sales')}
           >
-            <FiShoppingBag size={20} />
-            <span>{t('ownerTabMySales')}</span>
+            <FiShoppingBag size={20} aria-hidden />
+            <span className="owner-dashboard__tab-text">{t('ownerTabMySales')}</span>
           </button>
         </div>
       </header>
@@ -1998,6 +1996,11 @@ const OwnerDashboard = () => {
                       ? startNum
                       : null)
 
+                const priceNum = Number(property.price) || 0
+                const shouldShowPrice =
+                  (!property.isAuction || (property.isAuction && priceNum > 0)) && priceNum > 0
+                const showBidUnderPrice = showAuctionCurrentBid && currentBidValue != null
+
                 return (
                   <div key={property.id} className="property-card property-card-owner">
                     <div className="property-image-container property-card-owner__image">
@@ -2017,86 +2020,50 @@ const OwnerDashboard = () => {
                       <div className="property-card-owner__header">
                         <div className="property-card-owner__title-wrapper">
                           <h3 className="property-card-owner__title">{property.title}</h3>
-                          {(() => {
-                            const icon =
-                              kind.key === 'shares' ? (
-                                <FiLayers size={14} aria-hidden />
-                              ) : kind.key === 'debt' ? (
-                                <FiAlertCircle size={14} aria-hidden />
-                              ) : kind.key === 'auction' ? (
-                                <FiClock size={14} aria-hidden />
-                              ) : kind.key === 'auction_buy_now' ? (
-                                <FiZap size={14} aria-hidden />
-                              ) : (
-                                <FiTag size={14} aria-hidden />
-                              )
-                            return (
-                              <span
-                                className={`property-listing-kind property-listing-kind--${kind.classSuffix}`}
-                                title={kind.label}
-                              >
-                                {icon}
-                                <span className="property-listing-kind__text">{kind.label}</span>
+                          {showBidUnderPrice ? (
+                            <div
+                              className={`property-bid-info property-bid-info--owner${
+                                ownerBidPulseIds[property.id] ? ' property-bid-info--pulse' : ''
+                              }`}
+                            >
+                              <span className="bid-label">{t('ownerCardBidLabel')}</span>
+                              <span className="bid-value">
+                                {getCurrencySymbol()}
+                                {formatPrice(currentBidValue)}
+                                {ownerBidPulseIds[property.id] ? (
+                                  <FiArrowUp className="bid-value__arrow" size={18} aria-hidden />
+                                ) : null}
                               </span>
-                            )
-                          })()}
-                        </div>
-                        {/* Цена «купить сейчас» / фикс. + под ней текущая ставка для аукциона */}
-                        {(() => {
-                          const priceNum = Number(property.price) || 0
-                          const shouldShowPrice =
-                            (!property.isAuction || (property.isAuction && priceNum > 0)) && priceNum > 0
-                          const showBidUnderPrice =
-                            showAuctionCurrentBid && currentBidValue != null
-                          if (!shouldShowPrice && !showBidUnderPrice) return null
-                          return (
-                            <div className="property-card-owner__price-column">
-                              {shouldShowPrice ? (
-                                <div className="property-card-owner__price">
-                                  ${priceNum.toLocaleString('ru-RU')}
-                                </div>
-                              ) : null}
-                              {showBidUnderPrice ? (
-                                <div
-                                  className={`property-card-owner__current-bid ${
-                                    ownerBidPulseIds[property.id] ? 'property-card-owner__current-bid--pulse' : ''
-                                  }`}
-                                >
-                                  <span className="property-card-owner__current-bid-label">Текущая ставка</span>
-                                  <span className="property-card-owner__current-bid-value-row">
-                                    <span className="property-card-owner__current-bid-value">
-                                      {getCurrencySymbol()}
-                                      {formatPrice(currentBidValue)}
-                                    </span>
-                                    {ownerBidPulseIds[property.id] ? (
-                                      <FiArrowUp
-                                        className="property-card-owner__current-bid-arrow"
-                                        size={18}
-                                        aria-hidden
-                                      />
-                                    ) : null}
-                                  </span>
-                                </div>
-                              ) : null}
                             </div>
-                          )
-                        })()}
+                          ) : null}
+                        </div>
+                        {shouldShowPrice ? (
+                          <div className="property-card-owner__price-column">
+                            <div className="property-card-owner__price">
+                              ${priceNum.toLocaleString('ru-RU')}
+                            </div>
+                          </div>
+                        ) : null}
                       </div>
 
                       <p className="property-card-owner__location">{property.location}</p>
 
                       <div className="property-card-owner__info">
-                        <div className="property-card-owner__info-item">
-                          <MdBed size={16} />
-                          <span>{property.beds}</span>
-                        </div>
-                        <div className="property-card-owner__info-item">
-                          <MdOutlineBathtub size={16} />
-                          <span>{property.baths}</span>
-                        </div>
-                        <div className="property-card-owner__info-item">
-                          <BiArea size={16} />
-                          <span>{property.sqft} м²</span>
+                        <div className="property-card-owner__info-row">
+                          <div className="property-card-owner__info-item">
+                            <BiArea size={16} aria-hidden />
+                            <span>
+                              {property.sqft} {t('squareMeters')}
+                            </span>
+                          </div>
+                          <div className="property-card-owner__info-item">
+                            <MdBed size={16} aria-hidden />
+                            <span>{property.beds}</span>
+                          </div>
+                          <div className="property-card-owner__info-item">
+                            <MdOutlineBathtub size={16} aria-hidden />
+                            <span>{property.baths}</span>
+                          </div>
                         </div>
                       </div>
 
@@ -2110,20 +2077,34 @@ const OwnerDashboard = () => {
 
                       <div className="property-content-bottom">
                       <div className="property-card-owner__stats">
-                        <div className="property-card-owner__stat">
+                        <div className="property-card-owner__stats-primary">
+                        <div className="property-card-owner__stat property-card-owner__stat--likes">
                           <FiHeart size={14} aria-hidden />
-                          <span>
+                          <span className="property-card-owner__stat-text">
                             {ruCountWithNoun(property.likesCount ?? 0, 'лайк', 'лайка', 'лайков')}
                           </span>
                         </div>
-                        <div className="property-card-owner__stat">
+                        <div className="property-card-owner__stat property-card-owner__stat--bids">
                           <FiActivity size={14} aria-hidden />
-                          <span>
+                          <span className="property-card-owner__stat-text">
                             {ruCountWithNoun(property.bidsCount ?? 0, 'ставка', 'ставки', 'ставок')}
                           </span>
                         </div>
                         <div className="property-card-owner__stat property-card-owner__stat--status">
-                          <span>
+                          <span className="property-card-owner__status-icon" aria-hidden>
+                            {property.status === 'active' ? (
+                              <FiCheck size={14} />
+                            ) : property.status === 'pending' ? (
+                              <FiClock size={14} />
+                            ) : property.status === 'rejected' ? (
+                              <FiAlertCircle size={14} />
+                            ) : property.status === 'sold' ? (
+                              <FiShoppingBag size={14} />
+                            ) : (
+                              <FiActivity size={14} />
+                            )}
+                          </span>
+                          <span className="property-card-owner__stat-text property-card-owner__stat-text--status">
                             Статус:{' '}
                             {property.status === 'active'
                               ? 'Опубликован'
@@ -2135,6 +2116,7 @@ const OwnerDashboard = () => {
                                     ? 'Продано'
                                     : 'Не указано'}
                           </span>
+                        </div>
                         </div>
                         {property.rejectionReason && !property.rejectionReason.startsWith('EDIT:') && (
                           <div className="property-card-owner__stat" style={{ color: '#ef4444', fontWeight: 500 }}>
@@ -2154,20 +2136,11 @@ const OwnerDashboard = () => {
                       </div>
 
                       <div className="property-card-owner__actions">
-                        {property.status === 'active' && (
-                          <button
-                            className="action-btn action-btn--history"
-                            onClick={() => setSelectedPropertyForHistory(property)}
-                          >
-                            История
-                          </button>
-                        )}
                         <button
                           type="button"
                           className="action-btn action-btn--analytics"
                           onClick={() => handleOpenBidAnalytics(property)}
                         >
-                          <FiBarChart2 size={14} aria-hidden />
                           Аналитика
                         </button>
                         <button
@@ -2225,72 +2198,104 @@ const OwnerDashboard = () => {
                         <p>{t('ownerAnalyticsChartEmpty')}</p>
                       </div>
                     ) : (
-                      <>
-                        <svg
-                          className="owner-sales-dynamics-svg"
-                          viewBox="0 0 360 150"
-                          preserveAspectRatio="xMidYMid meet"
-                          role="img"
-                          aria-label={t('ownerAnalyticsSalesDynamics')}
-                        >
-                          <defs>
-                            <linearGradient id="ownerSalesAreaGrad" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="0%" stopColor="#6366f1" stopOpacity="0.45" />
-                              <stop offset="100%" stopColor="#6366f1" stopOpacity="0.02" />
-                            </linearGradient>
-                            <linearGradient id="ownerSalesLineGrad" x1="0" y1="0" x2="1" y2="0">
-                              <stop offset="0%" stopColor="#4f46e5" />
-                              <stop offset="100%" stopColor="#a855f7" />
-                            </linearGradient>
-                          </defs>
-                          {(() => {
-                            const months = salesDynamicsSeries.months
-                            const max = salesDynamicsSeries.max
-                            const w = 320
-                            const h = 88
-                            const padX = 16
-                            const padY = 8
-                            const n = months.length
-                            const pts = months.map((m, i) => {
-                              const x =
-                                n <= 1
-                                  ? padX + w / 2
-                                  : padX + (i / (n - 1)) * (w - 2 * padX)
-                              const ratio = max > 0 ? m.count / max : 0
-                              const y = padY + (1 - ratio) * (h - 2 * padY)
-                              return { x, y, ...m }
-                            })
-                            const baseline = padY + h - 2 * padY
-                            const lineD = pts
-                              .map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`)
-                              .join(' ')
-                            const areaD = `${lineD} L ${pts[pts.length - 1].x.toFixed(1)} ${baseline} L ${pts[0].x.toFixed(1)} ${baseline} Z`
-                            return (
-                              <>
-                                <path d={areaD} fill="url(#ownerSalesAreaGrad)" />
-                                <path
-                                  d={lineD}
-                                  fill="none"
-                                  stroke="url(#ownerSalesLineGrad)"
-                                  strokeWidth="2.5"
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                />
-                                {pts.map((p) => (
-                                  <circle key={p.key} cx={p.x} cy={p.y} r="4" fill="#fff" stroke="#4f46e5" strokeWidth="2" />
-                                ))}
-                              </>
-                            )
-                          })()}
-                        </svg>
-                        <div className="owner-sales-dynamics-labels">
-                          {salesDynamicsSeries.months.map((m) => (
-                            <span key={m.key} className="owner-sales-dynamics-labels__item">
-                              {m.label}
-                            </span>
-                          ))}
-                        </div>
-                      </>
+                      <svg
+                        className="owner-sales-dynamics-svg"
+                        viewBox="0 0 300 200"
+                        preserveAspectRatio="xMinYMid meet"
+                        role="img"
+                        aria-label={t('ownerAnalyticsSalesDynamics')}
+                      >
+                        <defs>
+                          <linearGradient id="ownerSalesAreaGrad" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="#6366f1" stopOpacity="0.45" />
+                            <stop offset="100%" stopColor="#6366f1" stopOpacity="0.02" />
+                          </linearGradient>
+                          <linearGradient id="ownerSalesLineGrad" x1="0" y1="0" x2="1" y2="0">
+                            <stop offset="0%" stopColor="#4f46e5" />
+                            <stop offset="100%" stopColor="#a855f7" />
+                          </linearGradient>
+                        </defs>
+                        {(() => {
+                          const months = salesDynamicsSeries.months
+                          const maxVal = salesDynamicsSeries.max
+                          const VB_W = 300
+                          const ml = 18
+                          const mr = 2
+                          const mt = 10
+                          const mb = 36
+                          const iw = VB_W - ml - mr
+                          const ih = 200 - mt - mb
+                          const n = months.length
+                          const pts = months.map((m, i) => {
+                            const x = n <= 1 ? ml + iw / 2 : ml + (i / (n - 1)) * iw
+                            const ratio = maxVal > 0 ? m.count / maxVal : 0
+                            const y = mt + (1 - ratio) * ih
+                            return { x, y, label: m.label, key: m.key, count: m.count }
+                          })
+                          const baseline = mt + ih
+                          const lineD = pts
+                            .map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`)
+                            .join(' ')
+                          const areaD = `${lineD} L ${pts[pts.length - 1].x.toFixed(1)} ${baseline} L ${pts[0].x.toFixed(1)} ${baseline} Z`
+                          const yTicks = [...new Set([maxVal, Math.round(maxVal / 2), 0])].sort((a, b) => b - a)
+                          const tickYs = yTicks.map((tick) => ({
+                            tick,
+                            y: mt + (1 - (maxVal > 0 ? tick / maxVal : 0)) * ih,
+                          }))
+                          return (
+                            <>
+                              {tickYs.map(({ tick, y }) => (
+                                <g key={`grid-${tick}`}>
+                                  <line
+                                    x1={ml}
+                                    y1={y}
+                                    x2={ml + iw}
+                                    y2={y}
+                                    stroke="#e2e8f0"
+                                    strokeWidth="1"
+                                    vectorEffect="non-scaling-stroke"
+                                  />
+                                  <text
+                                    x={ml - 4}
+                                    y={y + 4}
+                                    textAnchor="end"
+                                    fontSize="12"
+                                    fill="#64748b"
+                                    fontFamily="system-ui, -apple-system, sans-serif"
+                                  >
+                                    {tick}
+                                  </text>
+                                </g>
+                              ))}
+                              <path d={areaD} fill="url(#ownerSalesAreaGrad)" />
+                              <path
+                                d={lineD}
+                                fill="none"
+                                stroke="url(#ownerSalesLineGrad)"
+                                strokeWidth="3.2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              />
+                              {pts.map((p) => (
+                                <circle key={p.key} cx={p.x} cy={p.y} r="5.5" fill="#fff" stroke="#4f46e5" strokeWidth="2.5" />
+                              ))}
+                              {pts.map((p) => (
+                                <text
+                                  key={`lbl-${p.key}`}
+                                  x={p.x}
+                                  y={baseline + 20}
+                                  textAnchor="middle"
+                                  fontSize="11"
+                                  fill="#64748b"
+                                  fontFamily="system-ui, -apple-system, sans-serif"
+                                >
+                                  {p.label}
+                                </text>
+                              ))}
+                            </>
+                          )
+                        })()}
+                      </svg>
                     )}
                   </div>
                 </div>
@@ -2418,13 +2423,6 @@ const OwnerDashboard = () => {
       <PropertyCalculatorModal
         isOpen={isCalculatorModalOpen}
         onClose={() => setIsCalculatorModalOpen(false)}
-      />
-
-      {/* Модальное окно истории ставок */}
-      <BiddingHistoryModal
-        isOpen={!!selectedPropertyForHistory}
-        onClose={() => setSelectedPropertyForHistory(null)}
-        property={selectedPropertyForHistory}
       />
 
       <OwnerModerationNoticeModal

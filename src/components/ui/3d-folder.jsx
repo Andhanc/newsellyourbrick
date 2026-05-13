@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useLayoutEffect, useCallback, forwardRef } from 'react';
+import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { X, ExternalLink, ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -406,7 +407,7 @@ function AnimatedFolder({
   gradient,
   linkLabel,
   linkHref,
-  /** Мобильный слайдер на лендинге: без белой карточки, крупнее 3D */
+  /** Мобильная сетка лендинга 1+2+2: белая карточка с обводкой, единый масштаб 3D */
   variant = 'default',
 }) {
   const { t } = useTranslation();
@@ -462,7 +463,8 @@ function AnimatedFolder({
   const isXs = viewportWidth <= 360
   const isSm = viewportWidth > 360 && viewportWidth <= 420
   const landingSliderMobile = variant === 'landingSlider' && isMobile
-  const lmScale = landingSliderMobile ? 1.48 : 1
+  /** Компактнее карточки в мобильной сетке 1+2+2 */
+  const lmScale = landingSliderMobile ? 1.12 : 1
 
   const round = (v) => Math.round(v)
 
@@ -470,7 +472,10 @@ function AnimatedFolder({
   const minHeightBase = isMobile ? (isXs ? 204 : isSm ? 214 : 224) : 240
 
   const minWidth = isMobile ? round(minWidthBase * lmScale) : minWidthBase
-  const minHeight = isMobile ? round(minHeightBase * lmScale) : minHeightBase
+  let minHeight = isMobile ? round(minHeightBase * lmScale) : minHeightBase
+  if (landingSliderMobile) {
+    minHeight = round(minHeight * 0.78)
+  }
 
   const centerWBase = isMobile ? (isXs ? 92 : isSm ? 98 : 112) : 172
   const centerHBase = isMobile ? (isXs ? 84 : isSm ? 90 : 100) : 136
@@ -496,18 +501,18 @@ function AnimatedFolder({
         className={cn(
           'relative flex flex-col items-center rounded-2xl cursor-pointer transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] group justify-start',
           landingSliderMobile
-            ? 'bg-transparent shadow-none outline-none ring-0 border-transparent hover:border-transparent hover:shadow-none'
+            ? 'bg-white border border-gray-200 shadow-sm hover:shadow-lg hover:shadow-teal-500/15 hover:border-teal-500/40'
             : 'p-8 bg-white border border-gray-200 hover:shadow-2xl hover:shadow-teal-500/20 hover:border-teal-500/40',
           !landingSliderMobile && 'p-8',
           className
         )}
         style={{
-          minWidth: `${minWidth}px`,
           ...(landingSliderMobile
-            ? { minHeight: 'auto' }
-            : { minHeight: `${minHeight}px` }),
+            ? { minWidth: 0, width: '100%' }
+            : { minWidth: `${minWidth}px` }),
+          minHeight: `${minHeight}px`,
           padding: landingSliderMobile
-            ? (isXs ? '8px 4px 6px' : '10px 6px 8px')
+            ? (isXs ? '8px 8px 10px' : '10px 10px 12px')
             : isMobile
               ? (isXs ? '12px' : '13px')
               : '18px 16px 12px',
@@ -519,6 +524,23 @@ function AnimatedFolder({
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
+        {linkHref ? (
+          <Link
+            to={linkHref}
+            className={cn(
+              'absolute z-[50] inline-flex items-center justify-center rounded-lg text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors',
+              landingSliderMobile ? 'top-2.5 right-2.5 p-1.5' : 'top-3 right-3 p-1.5',
+            )}
+            aria-label={linkLabel || t('folderNavigateAria')}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <ExternalLink
+              className={landingSliderMobile ? 'w-[17px] h-[17px]' : 'w-5 h-5'}
+              strokeWidth={2.25}
+              aria-hidden
+            />
+          </Link>
+        ) : null}
         <div
           className="absolute inset-0 rounded-2xl transition-opacity duration-700"
           style={{
@@ -533,7 +555,7 @@ function AnimatedFolder({
           style={{
             height: `${centerH}px`,
             width: `${centerW}px`,
-            marginBottom: isMobile ? (landingSliderMobile ? '4px' : '8px') : undefined,
+            marginBottom: isMobile ? (landingSliderMobile ? '2px' : '8px') : undefined,
           }}
         >
           <div
@@ -627,32 +649,10 @@ function AnimatedFolder({
         </div>
         <div className="w-full min-w-0 flex flex-col text-center mt-0">
           <div className="relative w-full">
-            {linkHref ? (
-              <a
-                href={linkHref}
-                className={cn(
-                  'absolute right-0 top-0 z-10 inline-flex items-center justify-center rounded-lg text-teal-600 hover:bg-teal-600/10 hover:text-teal-700 transition-colors',
-                  landingSliderMobile ? 'p-1' : 'p-1.5',
-                  '-mr-0.5 -mt-0.5'
-                )}
-                aria-label={linkLabel || t('folderNavigateAria')}
-              >
-                <ExternalLink
-                  className={
-                    landingSliderMobile
-                      ? 'w-[17px] h-[17px]'
-                      : 'w-[18px] h-[18px]'
-                  }
-                  strokeWidth={2.25}
-                  aria-hidden
-                />
-              </a>
-            ) : null}
             <h3
               className={cn(
                 'font-bold text-gray-900 transition-all duration-500 break-words hyphens-auto',
-                linkHref && 'px-7',
-                isMobile ? (landingSliderMobile ? 'mt-1.5 text-[14px] leading-snug' : 'mt-1 text-[13px] leading-tight') : 'mt-0.5 text-[14px] leading-tight'
+                isMobile ? 'mt-1 text-[13px] leading-tight' : 'mt-0.5 text-[14px] leading-tight'
               )}
               style={{
                 transform: isHovered ? 'translateY(2px)' : 'translateY(0)',
@@ -665,7 +665,7 @@ function AnimatedFolder({
           <p
             className={cn(
               'font-medium text-gray-500 transition-all duration-500',
-              isMobile ? (landingSliderMobile ? 'text-[12px] mt-1' : 'text-[11px] mt-0.5') : 'text-[12px] mt-0.5'
+              isMobile ? 'text-[11px] mt-0.5' : 'text-[12px] mt-0.5'
             )}
             style={{ opacity: isHovered ? 0.8 : 1 }}
           >
@@ -674,7 +674,7 @@ function AnimatedFolder({
           <div
             className={cn(
               'mt-1 flex justify-center items-center gap-1.5 font-semibold uppercase tracking-wide text-gray-400 transition-all duration-500 shrink-0',
-              isMobile ? 'text-[9px]' : 'text-[10px]'
+              isMobile ? (landingSliderMobile ? 'text-[8px] mt-0.5' : 'text-[9px]') : 'text-[10px]'
             )}
             style={{
               opacity: isHovered ? 0 : 1,

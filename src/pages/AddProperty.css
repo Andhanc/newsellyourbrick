@@ -273,6 +273,12 @@
   margin-bottom: 10px;
 }
 
+@media (min-width: 769px) {
+  section[data-sp-section='details'] .single-page-add-flow__grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
 .single-page-add-flow__chips {
   display: flex;
   flex-wrap: wrap;
@@ -7762,6 +7768,66 @@ select.property-location-input {
   line-height: 1.6;
   color: #64748b;
   max-width: 62ch;
+}
+
+/* Single-page: свёрнутый блок после заполнения; раскрытие по клику на заголовок / стрелку */
+.sp-card__head--collapsible {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.sp-card__head--collapsible-chev-only {
+  cursor: default;
+}
+
+.sp-card__head-maincol {
+  flex: 1;
+  min-width: 0;
+}
+
+.sp-card__head-toggle {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  margin-top: 2px;
+  border-radius: 10px;
+  background: rgba(15, 23, 42, 0.06);
+  color: #475569;
+}
+
+.sp-card__head-toggle--btn {
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: rgba(15, 23, 42, 0.06);
+  cursor: pointer;
+  font: inherit;
+}
+
+.sp-card__head-toggle svg,
+.sp-card__head-toggle--btn svg {
+  transition: transform 0.22s ease;
+}
+
+.sp-card__head-toggle svg.is-expanded,
+.sp-card__head-toggle--btn svg.is-expanded {
+  transform: rotate(180deg);
+}
+
+.sp-card--section-collapsed .sp-card__head {
+  margin-bottom: 0;
+}
+
+.sp-card__collapsible-body {
+  padding-top: 2px;
 }
 
 .sp-card__head-row {

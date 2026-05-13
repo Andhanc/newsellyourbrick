@@ -21,6 +21,17 @@
   padding: 18px 22px;
 }
 
+.owner-test-drive--embedded .owner-test-drive__hero-main {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.owner-test-drive--embedded .owner-test-drive__hero-text {
+  width: 100%;
+  max-width: none;
+}
+
 .owner-test-drive__surface {
   background: #fff;
   border-radius: 16px;
@@ -277,6 +288,17 @@
   .owner-test-drive__hero {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .owner-test-drive__hero-main {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .owner-test-drive__hero-text {
+    width: 100%;
+    max-width: none;
   }
 }
 

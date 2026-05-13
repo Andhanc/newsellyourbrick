@@ -926,6 +926,8 @@ const AddProperty = ({
   const [listingModeThemeStage, setListingModeThemeStage] = useState(0)
   const [expandedListingModeId, setExpandedListingModeId] = useState(null)
   const [spActiveSection, setSpActiveSection] = useState('type')
+  /** Single-page: после заполнения секция сворачивается; развернуть — по заголовку или стрелке */
+  const [spSectionUserExpanded, setSpSectionUserExpanded] = useState({})
   const listingModeScrollRef = useRef(null)
   const listingModeWheelAccumulatorRef = useRef(0)
   const singlePagePriceSectionRef = useRef(null)
@@ -5062,6 +5064,48 @@ const AddProperty = ({
     'price': hasPrice,
   }
 
+  const singlePageSpSectionDone = useMemo(
+    () => ({
+      type: hasType,
+      'property-name': hasPropertyName,
+      address: hasAddress,
+      details: hasDetails,
+      amenities: hasAmenities,
+      media: hasMedia,
+      documents: hasDocuments,
+      testdrive: hasTestDrive,
+      listing: hasListingType,
+      calculator: hasPriceCalculatorStepDone,
+      price: hasPrice,
+    }),
+    [
+      hasType,
+      hasPropertyName,
+      hasAddress,
+      hasDetails,
+      hasAmenities,
+      hasMedia,
+      hasDocuments,
+      hasTestDrive,
+      hasListingType,
+      hasPriceCalculatorStepDone,
+      hasPrice,
+    ]
+  )
+
+  const isSpSectionBodyVisible = (sectionId) => {
+    if (!useSinglePageFlow) return true
+    const done = singlePageSpSectionDone[sectionId]
+    if (!done) return true
+    return spSectionUserExpanded[sectionId] === true
+  }
+
+  const toggleSpSectionCollapse = (sectionId) => {
+    if (!useSinglePageFlow) return
+    if (!singlePageSpSectionDone[sectionId]) return
+    setSpSectionUserExpanded((prev) => ({ ...prev, [sectionId]: !prev[sectionId] }))
+  }
+
   const applyListingModeFromSinglePage = (mode) => {
     setExpandedListingModeId(null)
     setSpAuctionAmountStepIndex(0)
@@ -5269,84 +5313,155 @@ const AddProperty = ({
                   </div>
                 </div>
 
-                <section data-sp-section="type" className="sp-card sp-card--enter">
-                  <header className="sp-card__head">
-                    <span className="sp-card__step">Шаг 1</span>
-                    <h3 className="sp-card__title">Тип недвижимости</h3>
-                    <p className="sp-card__lead">{SINGLE_PAGE_SECTION_HELP.type.lead}</p>
+                <section
+                  data-sp-section="type"
+                  className={`sp-card sp-card--enter${singlePageSpSectionDone.type && !isSpSectionBodyVisible('type') ? ' sp-card--section-collapsed' : ''}`}
+                >
+                  <header
+                    className={`sp-card__head${singlePageSpSectionDone.type ? ' sp-card__head--collapsible' : ''}`}
+                    onClick={singlePageSpSectionDone.type ? () => toggleSpSectionCollapse('type') : undefined}
+                  >
+                    <div className="sp-card__head-maincol">
+                      <span className="sp-card__step">Шаг 1</span>
+                      <h3 className="sp-card__title">Тип недвижимости</h3>
+                      {(!singlePageSpSectionDone.type || isSpSectionBodyVisible('type')) && (
+                        <p className="sp-card__lead">{SINGLE_PAGE_SECTION_HELP.type.lead}</p>
+                      )}
+                    </div>
+                    {singlePageSpSectionDone.type ? (
+                      <span className="sp-card__head-toggle" aria-hidden="true">
+                        <FiChevronDown className={isSpSectionBodyVisible('type') ? 'is-expanded' : ''} size={22} />
+                      </span>
+                    ) : null}
                   </header>
-                  <div className="sp-radio-stack" role="radiogroup" aria-label="Тип объекта">
-                    {PROPERTY_TYPE_OPTIONS.map((option) => (
-                      <label
-                        key={option.id}
-                        className={`sp-radio-row ${formData.propertyTypeUi === option.id ? 'is-selected' : ''}`}
-                      >
-                        <input
-                          type="radio"
-                          name="sp-property-type"
-                          checked={formData.propertyTypeUi === option.id}
-                          onChange={() => handlePropertyTypeSelect(option.id)}
-                        />
-                        <span className="sp-radio-row__icon" aria-hidden="true">{getPropertyTypeIcon(option.icon)}</span>
-                        <span className="sp-radio-row__text">
-                          <span className="sp-radio-row__title">{option.title}</span>
-                          <span className="sp-radio-row__desc">{option.description}</span>
-                        </span>
-                      </label>
-                    ))}
+                  <div
+                    className={`sp-card__collapsible-panel${isSpSectionBodyVisible('type') ? ' is-open' : ''}`}
+                    aria-hidden={!isSpSectionBodyVisible('type')}
+                  >
+                    <div className="sp-card__collapsible-body">
+                      <div className="sp-radio-stack" role="radiogroup" aria-label="Тип объекта">
+                        {PROPERTY_TYPE_OPTIONS.map((option) => (
+                          <label
+                            key={option.id}
+                            className={`sp-radio-row ${formData.propertyTypeUi === option.id ? 'is-selected' : ''}`}
+                          >
+                            <input
+                              type="radio"
+                              name="sp-property-type"
+                              checked={formData.propertyTypeUi === option.id}
+                              onChange={() => handlePropertyTypeSelect(option.id)}
+                            />
+                            <span className="sp-radio-row__icon" aria-hidden="true">{getPropertyTypeIcon(option.icon)}</span>
+                            <span className="sp-radio-row__text">
+                              <span className="sp-radio-row__title">{option.title}</span>
+                              <span className="sp-radio-row__desc">{option.description}</span>
+                            </span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
                   </div>
                 </section>
 
                 {hasType && (
-                  <section data-sp-section="property-name" className="sp-card sp-card--enter">
-                    <header className="sp-card__head">
-                      <span className="sp-card__step">Шаг 2</span>
-                      <h3 className="sp-card__title">Название и описание</h3>
-                      <p className="sp-card__lead">
-                        Создайте первое впечатление: лаконичное название и описание, которое подчеркивает ценность объекта. ИИ поможет сделать текст сильнее.
-                      </p>
+                  <section
+                    data-sp-section="property-name"
+                    className={`sp-card sp-card--enter${singlePageSpSectionDone['property-name'] && !isSpSectionBodyVisible('property-name') ? ' sp-card--section-collapsed' : ''}`}
+                  >
+                    <header
+                      className={`sp-card__head${singlePageSpSectionDone['property-name'] ? ' sp-card__head--collapsible' : ''}`}
+                      onClick={
+                        singlePageSpSectionDone['property-name']
+                          ? () => toggleSpSectionCollapse('property-name')
+                          : undefined
+                      }
+                    >
+                      <div className="sp-card__head-maincol">
+                        <span className="sp-card__step">Шаг 2</span>
+                        <h3 className="sp-card__title">Название и описание</h3>
+                        {(!singlePageSpSectionDone['property-name'] || isSpSectionBodyVisible('property-name')) && (
+                          <p className="sp-card__lead">
+                            Создайте первое впечатление: лаконичное название и описание, которое подчеркивает ценность объекта. ИИ поможет сделать текст сильнее.
+                          </p>
+                        )}
+                      </div>
+                      {singlePageSpSectionDone['property-name'] ? (
+                        <span className="sp-card__head-toggle" aria-hidden="true">
+                          <FiChevronDown
+                            className={isSpSectionBodyVisible('property-name') ? 'is-expanded' : ''}
+                            size={22}
+                          />
+                        </span>
+                      ) : null}
                     </header>
-                    <div className="sp-property-name-full-row">
-                      <input
-                        type="text"
-                        value={formData.title || ''}
-                        onChange={(e) => setFormData((prev) => ({ ...prev, title: e.target.value }))}
-                        className="property-name-input sp-property-name-full-input"
-                        placeholder={t(getAddPropertyNamePlaceholderKey(formData.propertyType || 'apartment'))}
-                      />
-                    </div>
-                    <div className="sp-property-name-full-row">
-                      <textarea
-                        value={formData.description || ''}
-                        onChange={(e) => setFormData((prev) => ({ ...prev, description: e.target.value }))}
-                        className="property-name-textarea sp-property-name-full-input"
-                        placeholder={t('addPropertyDescriptionPlaceholder')}
-                        rows={8}
-                      />
-                    </div>
-                    <div className="property-name-generate-row">
-                      <AnimatedGenerateButton
-                        labelIdle={t('addPropertyGenerateDescriptionButton')}
-                        labelActive={t('addPropertyGeneratingDescription')}
-                        generating={isGeneratingDescription}
-                        highlightHueDeg={210}
-                        onClick={handleGenerateDescription}
-                        disabled={isGeneratingDescription || !(formData.description || '').trim()}
-                        ariaLabel={t('addPropertyGenerateDescriptionButton')}
-                        className="property-name-generate-btn-wrap"
-                      />
+                    <div
+                      className={`sp-card__collapsible-panel${isSpSectionBodyVisible('property-name') ? ' is-open' : ''}`}
+                      aria-hidden={!isSpSectionBodyVisible('property-name')}
+                    >
+                      <div className="sp-card__collapsible-body">
+                        <div className="sp-property-name-full-row">
+                          <input
+                            type="text"
+                            value={formData.title || ''}
+                            onChange={(e) => setFormData((prev) => ({ ...prev, title: e.target.value }))}
+                            className="property-name-input sp-property-name-full-input"
+                            placeholder={t(getAddPropertyNamePlaceholderKey(formData.propertyType || 'apartment'))}
+                          />
+                        </div>
+                        <div className="sp-property-name-full-row">
+                          <textarea
+                            value={formData.description || ''}
+                            onChange={(e) => setFormData((prev) => ({ ...prev, description: e.target.value }))}
+                            className="property-name-textarea sp-property-name-full-input"
+                            placeholder={t('addPropertyDescriptionPlaceholder')}
+                            rows={8}
+                          />
+                        </div>
+                        <div className="property-name-generate-row">
+                          <AnimatedGenerateButton
+                            labelIdle={t('addPropertyGenerateDescriptionButton')}
+                            labelActive={t('addPropertyGeneratingDescription')}
+                            generating={isGeneratingDescription}
+                            highlightHueDeg={210}
+                            onClick={handleGenerateDescription}
+                            disabled={isGeneratingDescription || !(formData.description || '').trim()}
+                            ariaLabel={t('addPropertyGenerateDescriptionButton')}
+                            className="property-name-generate-btn-wrap"
+                          />
+                        </div>
+                      </div>
                     </div>
                   </section>
                 )}
 
                 {hasPropertyName && (
-                  <section data-sp-section="address" className="sp-card sp-card--enter sp-card--accent">
-                    <header className="sp-card__head">
-                      <span className="sp-card__step">Шаг 4</span>
-                      <h3 className="sp-card__title">Адрес и карта</h3>
-                      <p className="sp-card__lead">{SINGLE_PAGE_SECTION_HELP.address.lead}</p>
+                  <section
+                    data-sp-section="address"
+                    className={`sp-card sp-card--enter sp-card--accent${singlePageSpSectionDone.address && !isSpSectionBodyVisible('address') ? ' sp-card--section-collapsed' : ''}`}
+                  >
+                    <header
+                      className={`sp-card__head${singlePageSpSectionDone.address ? ' sp-card__head--collapsible' : ''}`}
+                      onClick={singlePageSpSectionDone.address ? () => toggleSpSectionCollapse('address') : undefined}
+                    >
+                      <div className="sp-card__head-maincol">
+                        <span className="sp-card__step">Шаг 4</span>
+                        <h3 className="sp-card__title">Адрес и карта</h3>
+                        {(!singlePageSpSectionDone.address || isSpSectionBodyVisible('address')) && (
+                          <p className="sp-card__lead">{SINGLE_PAGE_SECTION_HELP.address.lead}</p>
+                        )}
+                      </div>
+                      {singlePageSpSectionDone.address ? (
+                        <span className="sp-card__head-toggle" aria-hidden="true">
+                          <FiChevronDown className={isSpSectionBodyVisible('address') ? 'is-expanded' : ''} size={22} />
+                        </span>
+                      ) : null}
                     </header>
 
+                    <div
+                      className={`sp-card__collapsible-panel${isSpSectionBodyVisible('address') ? ' is-open' : ''}`}
+                      aria-hidden={!isSpSectionBodyVisible('address')}
+                    >
+                      <div className="sp-card__collapsible-body">
                     <div className="property-location-input-group">
                       <label className="property-location-label">{t('addPropertyLocationCountryLabel')}</label>
                       <CountrySelect
@@ -5589,6 +5704,8 @@ const AddProperty = ({
                         markerDraggable={!!singlePageMapCoords}
                         onMarkerDragEnd={handleSinglePageMarkerDragEnd}
                       />
+                    </div>
+                      </div>
                     </div>
                   </section>
                 )}

@@ -1,4 +1,4 @@
-/* 3D-папки блока моделей: сетка на планшетах и десктопе; слайдер + точки на телефоне */
+/* 3D-папки блока моделей: сетка на планшетах и десктопе; на телефоне — статическая сетка 1 + 2 + 2 */
 
 .landing-models__folders-root {
   width: 100%;
@@ -34,115 +34,53 @@
   max-width: 320px;
 }
 
-.landing-models__folders-dots {
-  display: none;
-}
-
 @media (max-width: 768px) {
-  /* Небольшой зазор: веер превью выходит вверх; overflow-y: hidden иначе режет картинки. */
+  /* Небольшой зазор: веер превью выходит вверх */
   .landing-models__folders-root {
     position: relative;
     z-index: 1;
   }
 
-  /* #landing-models — выше специфичность, чтобы padding не «терялся» из‑за порядка CSS в бандле */
   #landing-models .landing-models__folders-viewport {
-    overflow-x: auto;
-    overflow-y: hidden;
-    scroll-snap-type: x mandatory;
-    scroll-padding-inline: max(14px, env(safe-area-inset-left));
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
+    overflow: visible;
     padding-top: clamp(8px, 2vw, 24px);
     padding-bottom: 0;
-    /* pan-x alone блокирует вертикальный скролл страницы при касании карусели */
-    touch-action: pan-x pan-y;
     box-sizing: border-box;
-  }
-
-  #landing-models .landing-models__folders-viewport::-webkit-scrollbar {
-    display: none;
   }
 
   .landing-models__folders-track {
-    display: flex;
-    flex-direction: row;
-    flex-wrap: nowrap;
-    align-items: stretch;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
     gap: 12px;
-    justify-content: flex-start;
-    width: max-content;
-    min-width: 100%;
-    padding: 0 14px 0;
+    width: 100%;
+    min-width: 0;
+    padding: 0;
     box-sizing: border-box;
+    align-items: start;
   }
 
-  /* ~1.5 карточек в поле зрения: ширина ≈ viewport / 1.52 (минус отступы секции) */
   .landing-models__folders-slide {
-    flex: 0 0 clamp(220px, calc((100vw - 48px) / 1.52), 380px);
+    width: 100%;
+    min-width: 0;
     max-width: none;
-    width: clamp(220px, calc((100vw - 48px) / 1.52), 380px);
-    scroll-snap-align: center;
-    scroll-snap-stop: always;
-    align-items: flex-start;
+    display: flex;
+    justify-content: center;
+    align-items: stretch;
+  }
+
+  /* Пирамида 1 + 2 + 2: верхняя строка только «Аукционы», по центру, ширина как у одной колонки */
+  .landing-models__folders-slide:first-child {
+    grid-column: 1 / -1;
+    justify-self: center;
+    width: 100%;
+    max-width: calc((100% - 12px) / 2);
   }
 
   .landing-models__folders-track .landing-models__folder {
-    max-width: none;
+    max-width: 100%;
     width: 100%;
-    background: transparent !important;
-    box-shadow: none !important;
-    border-color: transparent !important;
-    border-width: 0 !important;
-  }
-
-  .landing-models__folders-track .landing-models__folder:hover {
-    box-shadow: none !important;
-    border-color: transparent !important;
-  }
-
-  .landing-models__folders-dots {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-top: 0;
-    padding: 0 8px;
-  }
-
-  .landing-models__folders-dot {
-    height: 8px;
-    min-width: 8px;
-    border-radius: 999px;
-    border: none;
-    padding: 0;
-    margin: 0;
-    background: rgba(17, 24, 39, 0.12);
-    cursor: pointer;
-    transition:
-      width 0.28s cubic-bezier(0.16, 1, 0.3, 1),
-      background 0.22s ease,
-      transform 0.2s ease;
-    flex-shrink: 0;
-    width: 8px;
+    height: 100%;
     box-sizing: border-box;
-  }
-
-  .landing-models__folders-dot:hover {
-    background: rgba(17, 24, 39, 0.22);
-    transform: scale(1.08);
-  }
-
-  .landing-models__folders-dot--active {
-    width: 26px;
-    background: linear-gradient(90deg, #0d9488 0%, #14b8a6 100%);
-    box-shadow: 0 2px 10px rgba(13, 148, 136, 0.35);
-  }
-
-  .landing-models__folders-dot:focus-visible {
-    outline: 2px solid #0f766e;
-    outline-offset: 3px;
   }
 }
 
