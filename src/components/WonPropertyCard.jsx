@@ -4,6 +4,8 @@ import { useTranslation } from 'react-i18next'
 import { FiChevronDown, FiChevronUp } from 'react-icons/fi'
 import { showNotification } from '../utils/toastHelper'
 import { ensureCanOpenProperty } from '../utils/propertyAccessGuard'
+import { buildResponsiveImageProps } from '../utils/responsiveImage'
+import ImageWithSkeleton from './ImageWithSkeleton'
 import BuyNowModal from './BuyNowModal'
 import './WonPropertyCard.css'
 
@@ -63,6 +65,13 @@ const WonPropertyCard = ({ purchase, formatPrice, formatDate, purchaseTerms, onS
     purchase?.purchasePrice ??
     purchase?.winnerData?.winning_bid_amount ??
     0
+  const imageProps = buildResponsiveImageProps(purchase.image, {
+    widths: [320, 480, 640],
+    sizes: '(max-width: 768px) 100vw, 420px',
+    fit: 'cover',
+    quality: 72,
+    format: 'webp',
+  })
 
   const minSalePriceForReserve =
     purchase?.winnerData?.property?.price ??
@@ -90,9 +99,10 @@ const WonPropertyCard = ({ purchase, formatPrice, formatDate, purchaseTerms, onS
       <div className="won-property-card__main">
         <div className="won-property-card__image-wrapper">
           <div className="won-property-card__image">
-            <img
-              src={purchase.image}
+            <ImageWithSkeleton
+              imgProps={imageProps}
               alt={purchase.propertyTitle || t('buyerHistory_fallbackProperty')}
+              containerClassName="won-property-card__image"
             />
             {/* Таймер на фото */}
             {!purchase.depositPaid && purchase.depositDueDate && !depositExpired && timeRemaining && (

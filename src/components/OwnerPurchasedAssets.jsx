@@ -4,6 +4,9 @@ import { useTranslation } from 'react-i18next'
 import { FiShoppingBag } from 'react-icons/fi'
 import i18n from '../i18n/config'
 import { ensureCanOpenProperty } from '../utils/propertyAccessGuard'
+import { getPropertyCardImage } from '../utils/propertyImage'
+import { buildResponsiveImageProps } from '../utils/responsiveImage'
+import ImageWithSkeleton from './ImageWithSkeleton'
 import './OwnerPurchasedAssets.css'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
@@ -232,10 +235,18 @@ export default function OwnerPurchasedAssets({ userId }) {
             <div className="owner-purchased__block">
               <h3 className="owner-purchased__block-title">{t('ownerPurchasedSectionAuctions')}</h3>
               <div className="owner-purchased__grid">
-                {purchaseHistory.map((purchase) => (
+                {purchaseHistory.map((purchase) => {
+                  const imageProps = buildResponsiveImageProps(purchase.image, {
+                    widths: [240, 360, 540],
+                    sizes: '(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw',
+                    fit: 'cover',
+                    quality: 72,
+                    format: 'webp',
+                  })
+                  return (
                   <article key={purchase.id} className="owner-purchased-card">
                     <div className="owner-purchased-card__image">
-                      <img src={purchase.image} alt="" />
+                      <ImageWithSkeleton imgProps={imageProps} alt="" />
                     </div>
                     <div className="owner-purchased-card__content">
                       <h4 className="owner-purchased-card__title">
@@ -268,7 +279,8 @@ export default function OwnerPurchasedAssets({ userId }) {
                       )}
                     </div>
                   </article>
-                ))}
+                  )
+                })}
               </div>
             </div>
           )}
@@ -294,11 +306,18 @@ export default function OwnerPurchasedAssets({ userId }) {
                       ? t('buyerHistory_propertyTitle', { id: pid })
                       : t('buyerHistory_propertyTitle', { id: '—' }))
                   const imgSrc = sharePurchaseImageSrc(row.property_image)
+                  const imageProps = buildResponsiveImageProps(imgSrc, {
+                    widths: [240, 360, 540],
+                    sizes: '(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw',
+                    fit: 'cover',
+                    quality: 72,
+                    format: 'webp',
+                  })
                   return (
                     <article key={row.id || row.dedupe_key} className="owner-purchased-card">
                       <div className="owner-purchased-card__image">
-                        <img
-                          src={imgSrc}
+                        <ImageWithSkeleton
+                          imgProps={imageProps}
                           alt=""
                           onError={(e) => {
                             e.currentTarget.onerror = null
@@ -367,11 +386,18 @@ export default function OwnerPurchasedAssets({ userId }) {
                   const title =
                     row.property_title || t('buyerHistory_propertyTitle', { id: row.property_id })
                   const imgSrc = sharePurchaseImageSrc(row.property_image)
+                  const imageProps = buildResponsiveImageProps(imgSrc, {
+                    widths: [240, 360, 540],
+                    sizes: '(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw',
+                    fit: 'cover',
+                    quality: 72,
+                    format: 'webp',
+                  })
                   return (
                     <article key={row.id} className="owner-purchased-card owner-purchased-card--share">
                       <div className="owner-purchased-card__image">
-                        <img
-                          src={imgSrc}
+                        <ImageWithSkeleton
+                          imgProps={imageProps}
                           alt=""
                           onError={(e) => {
                             e.currentTarget.onerror = null

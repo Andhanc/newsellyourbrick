@@ -1419,10 +1419,18 @@
 }
 
 .section__title {
-  font-size: 20px;
-  font-weight: 600;
-  color: #111827;
+  /* Как крупное «Аукцион» на /auction (Playfair Display italic, Home.css) */
+  font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
+  font-size: clamp(1.35rem, 2.4vw, 1.65rem);
+  font-weight: 700;
+  font-style: italic;
+  letter-spacing: 0.03em;
+  line-height: 1.12;
+  color: #0f172a;
   margin: 0;
+  text-transform: none;
+  font-synthesis: none;
+  -webkit-font-smoothing: antialiased;
 }
 
 .section__link {
@@ -2512,37 +2520,42 @@
   left: 0;
   width: 72px;
   height: 2px;
-  background: #111827;
+  background: #0f172a;
   border-radius: 2px;
 }
 
 .contact-form__title {
-  font-size: 28px;
-  font-weight: 600;
-  color: #111827;
+  font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
+  font-size: clamp(1.5rem, 2.6vw, 1.85rem);
+  font-weight: 700;
+  font-style: italic;
+  letter-spacing: 0.03em;
+  line-height: 1.12;
+  color: #0f172a;
   margin: 0;
-  line-height: 1.3;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 8px;
-  font-family: 'Montserrat', sans-serif;
-  text-shadow: 0 1px 2px rgba(17, 24, 39, 0.05);
-  letter-spacing: -0.3px;
+  text-shadow: none;
+  text-transform: none;
+  font-synthesis: none;
+  -webkit-font-smoothing: antialiased;
 }
 
 .contact-form__title-accent {
-  color: #111827;
+  color: #0f172a;
   font-weight: 700;
+  font-style: italic;
   position: relative;
 }
 
 .contact-form__arrow {
-  color: #111827;
+  color: #0f172a;
   margin-left: 4px;
   transition: all 0.3s ease;
   flex-shrink: 0;
-  filter: drop-shadow(0 1px 2px rgba(17, 24, 39, 0.1));
+  filter: drop-shadow(0 1px 2px rgba(15, 23, 42, 0.12));
 }
 
 .contact-form__header:hover .contact-form__arrow {
@@ -2744,7 +2757,7 @@
 
   .contact-form__title {
     font-size: 32px;
-    letter-spacing: -0.4px;
+    letter-spacing: 0.03em;
   }
 
   .contact-form__header::after {
@@ -6479,11 +6492,17 @@
 }
 
 .info-section__title {
-  font-size: 28px;
-  font-weight: 600;
-  color: #111827;
+  font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
+  font-size: clamp(1.45rem, 2.6vw, 1.85rem);
+  font-weight: 700;
+  font-style: italic;
+  letter-spacing: 0.03em;
+  line-height: 1.12;
+  color: #0f172a;
   margin: 0 0 20px;
-  font-family: 'Montserrat', sans-serif;
+  text-transform: none;
+  font-synthesis: none;
+  -webkit-font-smoothing: antialiased;
 }
 
 .info-section__cards {
@@ -7172,11 +7191,17 @@
 }
 
 .apartments-section__title {
-  font-size: 28px;
-  font-weight: 600;
-  color: #111827;
+  font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
+  font-size: clamp(1.45rem, 2.6vw, 1.85rem);
+  font-weight: 700;
+  font-style: italic;
+  letter-spacing: 0.03em;
+  line-height: 1.12;
+  color: #0f172a;
   margin: 0;
-  font-family: 'Montserrat', sans-serif;
+  text-transform: none;
+  font-synthesis: none;
+  -webkit-font-smoothing: antialiased;
 }
 
 .apartments-section__arrow {
@@ -7243,16 +7268,18 @@
   min-width: 0;
 }
 
-/* Заголовки витрин — основной шрифт сайта */
+/* Заголовки витрин — как крупное «Аукцион» на /auction (Playfair Display italic) */
 .auction-showcase__title {
   margin: 0;
-  font-family: 'Montserrat', system-ui, sans-serif;
-  font-size: clamp(32px, 4.2vw, 46px);
+  font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
+  font-size: clamp(1.55rem, 3.2vw, 2.35rem);
   font-weight: 700;
-  color: #0a0a0a;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  font-style: italic;
+  letter-spacing: 0.03em;
   line-height: 1.12;
+  color: #0f172a;
+  text-transform: none;
+  font-synthesis: none;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -8820,12 +8847,18 @@
 }
 
 .landing-models__title {
-  font-size: 22px;
+  font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
+  font-size: clamp(1.25rem, 2.2vw, 1.5rem);
   font-weight: 700;
-  color: #111827;
+  font-style: italic;
+  letter-spacing: 0.03em;
+  line-height: 1.12;
+  color: #0f172a;
   text-align: center;
   margin: 0 0 8px;
-  line-height: 1.35;
+  text-transform: none;
+  font-synthesis: none;
+  -webkit-font-smoothing: antialiased;
 }
 
 /* Tiffany «карандашная» засечка под первым фрагментом заголовка */
@@ -8837,7 +8870,8 @@
 .landing-models__title-mark-text {
   position: relative;
   z-index: 1;
-  font-weight: 900;
+  font-weight: 700;
+  font-style: italic;
 }
 
 .landing-models__title-mark::after {
@@ -8980,11 +9014,18 @@
 }
 
 .landing-security__title {
-  font-size: 22px;
+  font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
+  font-size: clamp(1.25rem, 2.2vw, 1.65rem);
   font-weight: 700;
+  font-style: italic;
+  letter-spacing: 0.03em;
+  line-height: 1.12;
+  color: #ffffff;
   text-align: center;
   margin: 0 0 16px;
-  line-height: 1.3;
+  text-transform: none;
+  font-synthesis: none;
+  -webkit-font-smoothing: antialiased;
 }
 
 .landing-security__tagline {
@@ -9103,9 +9144,12 @@
 
 .landing-stats__title {
   margin: 0 0 32px;
+  font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
   font-size: clamp(34px, 4.9vw, 52px);
   font-weight: 700;
-  line-height: 1.2;
+  font-style: italic;
+  letter-spacing: 0.03em;
+  line-height: 1.12;
   color: rgb(
     calc(255 * (1 - var(--stats-progress))),
     calc(255 * (1 - var(--stats-progress))),
@@ -9113,6 +9157,9 @@
   );
   text-align: center;
   text-shadow: 0 1px 2px rgba(0, 0, 0, calc(1 - var(--stats-progress)));
+  text-transform: none;
+  font-synthesis: none;
+  -webkit-font-smoothing: antialiased;
   transition: color 0.2s ease, text-shadow 0.2s ease;
 }
 
@@ -9430,5 +9477,68 @@
   .apartments-section .auction-showcase-card .auction-showcase-card__media {
     aspect-ratio: 1 / 1.1;
     flex-shrink: 0;
+  }
+}
+
+.global-ai-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 10040;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(2, 6, 23, 0.56);
+  backdrop-filter: blur(6px);
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+.global-ai-modal__panel {
+  width: min(1160px, 100%);
+  height: min(780px, calc(100vh - 32px));
+  position: relative;
+  border-radius: 22px;
+  overflow: hidden;
+  background: #ffffff;
+  box-shadow: 0 20px 60px rgba(2, 6, 23, 0.35);
+}
+
+.global-ai-modal__close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 2;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 9999px;
+  background: rgba(15, 23, 42, 0.62);
+  color: #ffffff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.global-ai-modal__close:hover {
+  background: rgba(15, 23, 42, 0.78);
+}
+
+.global-ai-modal__iframe {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  display: block;
+  background: #fff;
+}
+
+@media (max-width: 768px) {
+  .global-ai-modal {
+    padding: 10px;
+  }
+
+  .global-ai-modal__panel {
+    height: calc(100vh - 20px);
+    border-radius: 16px;
   }
 }

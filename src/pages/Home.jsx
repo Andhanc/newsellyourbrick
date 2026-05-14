@@ -1162,12 +1162,7 @@ function Home() {
             <h1 className="page-context-heading__title page-context-heading__title--auction-script">
               {t('auction')}
             </h1>
-            <PageBreadcrumbs
-              currentLabel={t('auction')}
-              variant="tiffany"
-              className="page-breadcrumbs--auction-strip"
-              separator="›"
-            />
+            <PageBreadcrumbs className="page-breadcrumbs--flat-club" separator=">" />
           </div>
         </div>
       )}

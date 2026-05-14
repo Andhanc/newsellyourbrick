@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { FiShoppingBag, FiInbox, FiCheckCircle, FiEye, FiX } from 'react-icons/fi'
 import { getPropertyCardImage } from '../utils/propertyImage'
+import { buildResponsiveImageProps } from '../utils/responsiveImage'
+import ImageWithSkeleton from './ImageWithSkeleton'
 import { showToast } from './ToastContainer'
 import OwnerTestDriveRequestModal from './OwnerTestDriveRequestModal'
 import './OwnerMySalesSection.css'
@@ -203,6 +205,13 @@ export default function OwnerMySalesSection({ userId, apiBaseUrl }) {
       FALLBACK_IMG
     )
     const key = `${item.property_table || 'x'}:${item.id}`
+    const imageProps = buildResponsiveImageProps(img, {
+      widths: [240, 360, 540],
+      sizes: '(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw',
+      fit: 'cover',
+      quality: 72,
+      format: 'webp',
+    })
     const bookingStatus = String(item.booking_status || '').toLowerCase()
     const ownerComment = String(item.owner_comment || '').trim()
     return (
@@ -221,7 +230,12 @@ export default function OwnerMySalesSection({ userId, apiBaseUrl }) {
       >
         <div className="property-link">
           <div className="property-image-container">
-            <img src={img} alt="" className="property-image" />
+            <ImageWithSkeleton
+              imgProps={imageProps}
+              alt=""
+              className="property-image"
+              containerClassName="property-image"
+            />
           </div>
           <div className="property-content">
             <h3 className="property-title">{item.title || '—'}</h3>

@@ -170,16 +170,27 @@ export function normalizePropertyMediaFields(prop) {
 
 export function getPropertyCardImage(property, fallbackUrl) {
   if (!property) return fallbackUrl
+  const baseOrigin = getBaseOrigin()
+  const preferredThumbCandidates = [
+    property.thumbnail,
+    property.preview,
+    property.thumb,
+    property.small_image,
+    property.smallImage,
+  ]
+  for (const candidate of preferredThumbCandidates) {
+    const normalized = normalizeImageUrl(candidate, baseOrigin)
+    if (normalized) return normalized
+  }
+
   const { image } = normalizePropertyMediaFields(property)
   if (image) return image
-  const baseOrigin = getBaseOrigin()
+
   const extras = [
     property.image_url,
     property.imageUrl,
     property.photo_url,
     property.photo,
-    property.thumbnail,
-    property.preview,
     property.cover_photo,
     property.main_photo,
     property.main_image,

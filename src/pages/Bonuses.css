@@ -78,6 +78,30 @@
   background: linear-gradient(160deg, #e8e7f5 0%, #f0eef8 40%, #e5e2f7 100%);
 }
 
+.bonuses-page__heading-strip {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  box-sizing: border-box;
+  padding-top: calc(env(safe-area-inset-top, 0px) + 92px);
+  padding-left: 16px;
+  padding-right: 16px;
+}
+
+@media (min-width: 768px) {
+  .bonuses-page__heading-strip {
+    padding-top: calc(env(safe-area-inset-top, 0px) + 102px);
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+}
+
+.bonuses-page__heading-strip .page-context-heading--strip-auction-style {
+  padding-left: 0;
+  padding-right: 0;
+  padding-bottom: 12px;
+}
+
 /* Плавающие декоративные иконки по странице */
 .bonuses-page__floats {
   position: fixed;

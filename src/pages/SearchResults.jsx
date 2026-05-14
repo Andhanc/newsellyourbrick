@@ -7,6 +7,7 @@ import { FiArrowLeft, FiAlertCircle } from 'react-icons/fi'
 import { ensureCanOpenProperty } from '../utils/propertyAccessGuard'
 import { getApiBaseUrl } from '../utils/apiConfig'
 import { fetchDedupe } from '../utils/fetchDedupe'
+import { buildResponsiveImageProps } from '../utils/responsiveImage'
 import './SearchResults.css'
 import { getPropertyDetailPath } from '../utils/propertyDetailUrl'
 
@@ -336,7 +337,13 @@ const SearchResults = () => {
         ) : (
           <div className="search-results__grid">
             {properties.map((property) => {
-              const propertyImage = property.image || property.images?.[0] || 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=800&q=80'
+              const propertyImageSafe = property.image || property.images?.[0] || 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=800&q=80'
+              const propertyImageProps = buildResponsiveImageProps(propertyImageSafe, {
+                widths: [320, 480, 640, 800],
+                sizes: '(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw',
+                quality: 72,
+                fit: 'crop',
+              })
               
               return (
                 <div
@@ -348,7 +355,7 @@ const SearchResults = () => {
                   }}
                 >
                   <div className="search-results__card-image">
-                    <img src={propertyImage} alt={property.title} />
+                    <img {...propertyImageProps} alt={property.title} />
                   </div>
                   <div className="search-results__card-content">
                     <h3 className="search-results__card-title">{property.title}</h3>

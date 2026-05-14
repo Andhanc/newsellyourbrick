@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import Confetti from 'react-confetti'
 import { FiX } from 'react-icons/fi'
 import { getPropertyCardImage } from '../utils/propertyImage'
+import { buildResponsiveImageProps } from '../utils/responsiveImage'
 import './OwnerSaleCelebrationModal.css'
 
 const FALLBACK_IMG =
@@ -43,6 +44,13 @@ export default function OwnerSaleCelebrationModal({ celebration, onClose, onGoTo
     },
     FALLBACK_IMG
   )
+  const imageProps = buildResponsiveImageProps(img, {
+    widths: [300, 450, 600],
+    sizes: '(max-width: 768px) 70vw, 320px',
+    fit: 'cover',
+    quality: 72,
+    format: 'webp',
+  })
 
   const amountStr = formatSaleAmount(celebration.sale_amount, celebration.currency, i18n.language)
   const channel = celebration.sale_channel || 'buy_now'
@@ -102,7 +110,7 @@ export default function OwnerSaleCelebrationModal({ celebration, onClose, onGoTo
             <p className="owner-sale-celebration-modal__subhead">{t('ownerSaleCelebrationSubhead')}</p>
 
             <div className="owner-sale-celebration-modal__thumb">
-              <img src={img} alt="" />
+              <img {...imageProps} alt="" />
             </div>
 
             {celebration.title ? (

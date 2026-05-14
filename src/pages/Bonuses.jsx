@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useNavigate, useSearchParams, useLocation } from 'react-router-dom'
 import { useUser } from '@clerk/clerk-react'
 import { useTranslation } from 'react-i18next'
@@ -31,7 +31,7 @@ const SELLER_TASKS = [
 ]
 
 const Bonuses = () => {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const navigate = useNavigate()
   const location = useLocation()
   const { user, isLoaded: userLoaded } = useUser()
@@ -200,6 +200,14 @@ const Bonuses = () => {
 
   const isLoggedIn = userId !== null && userId !== ''
 
+  const bonusesBreadcrumbTrail = useMemo(() => {
+    const home = { to: '/', label: t('home') }
+    if (bonusMode === 'seller') {
+      return [home, { to: '/bonuses', label: t('bonuses') }, { to: null, label: t('bonusesTitleSeller') }]
+    }
+    return [home, { to: null, label: t('bonuses') }]
+  }, [bonusMode, t, i18n.language])
+
   return (
     <div className={`bonuses-page ${bonusMode === 'seller' ? 'bonuses-page--seller' : ''}`}>
       <Header />
@@ -232,10 +240,21 @@ const Bonuses = () => {
         <FaGift className="bonuses-page__float bonuses-page__float--25" />
         <FaStar className="bonuses-page__float bonuses-page__float--26" />
       </div>
-      <main className={`bonuses-container ${bonusMode === 'seller' ? 'bonuses-container--seller' : ''}`}>
-        <div className="page-context-heading page-context-heading--bonuses">
-          <PageBreadcrumbs currentLabel={t('bonuses')} />
+      <div className="bonuses-page__heading-strip">
+        <div className="page-context-heading page-context-heading--strip-auction-style">
+          <div className="page-context-heading--strip-auction-inner page-context-heading--strip-auction-inner--bonuses-page-top">
+            <h1 className="page-context-heading__title page-context-heading__title--auction-serif page-context-heading__title--after-breadcrumbs">
+              {t('bonuses')}
+            </h1>
+            <PageBreadcrumbs
+              trail={bonusesBreadcrumbTrail}
+              className="page-breadcrumbs--flat-club"
+              separator=">"
+            />
+          </div>
         </div>
+      </div>
+      <main className={`bonuses-container ${bonusMode === 'seller' ? 'bonuses-container--seller' : ''}`}>
         <div className="bonuses-header">
           <div className="bonuses-header__icon-row">
             <div className="bonuses-header__deco bonuses-header__deco--left">
@@ -250,9 +269,9 @@ const Bonuses = () => {
               <FaStar size={20} />
             </div>
           </div>
-          <h1 className="bonuses-header__title">
+          <h2 className="bonuses-header__title">
             {bonusMode === 'seller' ? t('bonusesTitleSeller') : t('bonusesTitleBuyer')}
-          </h1>
+          </h2>
           <p className="bonuses-header__subtitle">
             {bonusMode === 'seller' ? t('bonusesSubtitleSeller') : t('bonusesSubtitleBuyer')}
           </p>

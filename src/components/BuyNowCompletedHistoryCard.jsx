@@ -1,6 +1,8 @@
 import { Link } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { ensureCanOpenProperty } from '../utils/propertyAccessGuard'
+import { buildResponsiveImageProps } from '../utils/responsiveImage'
+import ImageWithSkeleton from './ImageWithSkeleton'
 import './WonPropertyCard.css'
 
 /**
@@ -32,15 +34,23 @@ function BuyNowCompletedHistoryCard({
       ? t('buyerHistory_propertyTitle', { id: pid })
       : t('buyerHistory_propertyTitle', { id: '—' }))
   const imgSrc = sharePurchaseImageSrc(row.property_image)
+  const imageProps = buildResponsiveImageProps(imgSrc, {
+    widths: [320, 480, 640],
+    sizes: '(max-width: 768px) 100vw, 420px',
+    fit: 'cover',
+    quality: 72,
+    format: 'webp',
+  })
 
   return (
     <div className="won-property-card won-property-card--buy-now-completed">
       <div className="won-property-card__main">
         <div className="won-property-card__image-wrapper">
           <div className="won-property-card__image">
-            <img
-              src={imgSrc}
+            <ImageWithSkeleton
+              imgProps={imageProps}
               alt=""
+              containerClassName="won-property-card__image"
               onError={(e) => {
                 e.currentTarget.onerror = null
                 e.currentTarget.src = placeholderSrc

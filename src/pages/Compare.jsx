@@ -12,6 +12,8 @@ import { getComparisonGroupKey } from '../utils/propertyFavoriteKey'
 import { showNotification } from '../utils/toastHelper'
 import { askPropertyCompareAssistant } from '../services/aiService'
 import { getPropertyCardImage } from '../utils/propertyImage'
+import { buildResponsiveImageProps } from '../utils/responsiveImage'
+import ImageWithSkeleton from '../components/ImageWithSkeleton'
 import { usePropertyFavorites } from '../context/PropertyFavoritesContext'
 import './Compare.css'
 
@@ -764,6 +766,14 @@ const Compare = () => {
                   const pos = selectedKeys.indexOf(item.key)
                   const disabled =
                     selectedKeys.length === 1 && groupFilter != null && g !== groupFilter && !selected
+                  const imageSrc = getPropertyCardImage(item.property, PLACEHOLDER_IMG)
+                  const imageProps = buildResponsiveImageProps(imageSrc, {
+                    widths: [260, 420, 560],
+                    sizes: '(max-width: 768px) 100vw, 280px',
+                    fit: 'cover',
+                    quality: 72,
+                    format: 'webp',
+                  })
                   return (
                     <li key={item.key}>
                       <button
@@ -779,11 +789,12 @@ const Compare = () => {
                         onClick={() => toggleSelect(item)}
                       >
                         <div className="compare-pick-card-image">
-                          <img
-                            src={getPropertyCardImage(item.property, PLACEHOLDER_IMG)}
+                          <ImageWithSkeleton
+                            imgProps={imageProps}
                             alt=""
+                            containerClassName="compare-pick-card-image"
                             onError={(e) => {
-                              e.target.src = PLACEHOLDER_IMG
+                              e.currentTarget.src = PLACEHOLDER_IMG
                             }}
                           />
                           {selected && (

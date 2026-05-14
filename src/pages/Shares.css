@@ -111,14 +111,55 @@
   pointer-events: none;
 }
 
-/* Страница Доли: hero под фиксированной шапкой — заголовок и лид не уходят под плавающий бар */
-.shares-page .animated-marquee-hero {
-  padding-top: calc(env(safe-area-inset-top, 0px) + 108px) !important;
+/* Крошки + заголовок страницы — выше hero, отступ под фиксированную шапку (чуть плотнее к шапке) */
+.shares-page__heading-strip {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  box-sizing: border-box;
+  padding-top: calc(env(safe-area-inset-top, 0px) + 92px);
+  padding-left: 16px;
+  padding-right: 16px;
 }
 
 @media (min-width: 768px) {
-  .shares-page .animated-marquee-hero {
-    padding-top: calc(env(safe-area-inset-top, 0px) + 118px) !important;
+  .shares-page__heading-strip {
+    padding-top: calc(env(safe-area-inset-top, 0px) + 102px);
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+}
+
+.shares-page__heading-strip .page-context-heading--strip-auction-style {
+  padding-left: 0;
+  padding-right: 0;
+  padding-bottom: 12px;
+}
+
+/* Hero без центрального дубля заголовка — только описание и лента */
+.shares-page .animated-marquee-hero--shares-no-hero-title {
+  padding-top: 0.75rem !important;
+}
+
+@media (min-width: 768px) {
+  .shares-page .animated-marquee-hero--shares-no-hero-title {
+    padding-top: 1.25rem !important;
+    min-height: 52vh !important;
+  }
+}
+
+.shares-page .animated-marquee-hero--shares-no-hero-title .animated-marquee-hero__description {
+  margin-top: 0 !important;
+}
+
+/* Hero идёт сразу после полосы с крошками — верхний отступ только компактный */
+.shares-page__heading-strip + .animated-marquee-hero {
+  padding-top: 0.75rem !important;
+}
+
+@media (min-width: 768px) {
+  .shares-page__heading-strip + .animated-marquee-hero {
+    padding-top: 1rem !important;
   }
 }
 
@@ -177,14 +218,18 @@
   box-sizing: border-box;
 }
 
-/* Долги: нет hero под шапкой — карточки риска не должны уходить под fixed header */
+/* Долги: нет hero — чуть меньше зазор под шапкой, блок с крошками выше */
 .shares-page--debts .shares-container {
-  padding-top: calc(env(safe-area-inset-top, 0px) + 112px);
+  padding-top: calc(env(safe-area-inset-top, 0px) + 96px);
+}
+
+.shares-page--debts .page-context-heading--strip-auction-style {
+  padding-bottom: 12px;
 }
 
 @media (max-width: 768px) {
   .shares-page--debts .shares-container {
-    padding-top: calc(env(safe-area-inset-top, 0px) + 108px);
+    padding-top: calc(env(safe-area-inset-top, 0px) + 92px);
   }
 }
 

@@ -41,6 +41,7 @@ import OwnerPropertyBidAnalyticsModal from '../components/OwnerPropertyBidAnalyt
 import OwnerTestDriveSection from '../components/OwnerTestDriveSection'
 import OwnerMySalesSection from '../components/OwnerMySalesSection'
 import OwnerSaleCelebrationModal from '../components/OwnerSaleCelebrationModal'
+import ImageWithSkeleton from '../components/ImageWithSkeleton'
 import { getDismissedCelebrationIds, dismissCelebration } from '../utils/ownerSaleCelebrationStorage'
 import CountrySelect, { countries as countryList } from '../components/CountrySelect'
 import { getUserData, saveUserData, logout, clearUserData, CLERK_DB_USER_SYNCED } from '../services/authService'
@@ -52,6 +53,7 @@ import { fetchVerificationStatus } from '../utils/verificationStatusApi'
 import { fetchUserById } from '../utils/usersApi'
 import { getPropertyListingKind } from '../utils/propertyListingKind'
 import { getPropertyCardImage } from '../utils/propertyImage'
+import { buildResponsiveImageProps } from '../utils/responsiveImage'
 import '../components/PropertyList.css'
 import './MainPage.css'
 import './OwnerDashboard.css'
@@ -490,81 +492,18 @@ const OwnerDashboard = () => {
         if (result.success && result.data) {
           // Преобразуем данные из базы в формат для отображения
           const formattedProperties = result.data.map(prop => {
-            // Обрабатываем фотографии
-            let imageUrl = 'https://images.unsplash.com/photo-1568605114967-8130f3a36994?auto=format&fit=crop&w=800&q=80'
-            
-            // Проверяем и парсим photos, если это строка
+            const imageUrl = getPropertyCardImage(
+              prop,
+              'https://images.unsplash.com/photo-1568605114967-8130f3a36994?auto=format&fit=crop&w=800&q=80'
+            )
+
             let photosArray = prop.photos
             if (typeof photosArray === 'string') {
               try {
                 photosArray = JSON.parse(photosArray)
-              } catch (e) {
-                console.warn('Ошибка парсинга photos:', e)
+              } catch {
                 photosArray = []
               }
-            }
-            
-            // Если photos - массив и не пустой
-            if (Array.isArray(photosArray) && photosArray.length > 0) {
-              const firstPhoto = photosArray[0]
-              
-              // Получаем базовый URL без /api
-              const baseUrl = API_BASE_URL.replace('/api', '').replace(/\/$/, '')
-              
-              // Обрабатываем строку (URL)
-              if (typeof firstPhoto === 'string') {
-                const photoStr = firstPhoto.trim()
-                
-                // Data URL (base64) - используем как есть
-                if (photoStr.startsWith('data:')) {
-                  imageUrl = photoStr
-                }
-                // Полный HTTP/HTTPS URL - используем как есть
-                else if (photoStr.startsWith('http://') || photoStr.startsWith('https://')) {
-                  imageUrl = photoStr
-                }
-                // Путь начинается с /uploads/ - добавляем базовый URL
-                else if (photoStr.startsWith('/uploads/')) {
-                  imageUrl = `${baseUrl}${photoStr}`
-                }
-                // Путь начинается с uploads/ без слеша - добавляем / и базовый URL
-                else if (photoStr.startsWith('uploads/')) {
-                  imageUrl = `${baseUrl}/${photoStr}`
-                }
-                // Относительный путь - добавляем /uploads/
-                else {
-                  imageUrl = `${baseUrl}/uploads/${photoStr}`
-                }
-              } 
-              // Обрабатываем объект с полем url
-              else if (firstPhoto && typeof firstPhoto === 'object' && firstPhoto.url) {
-                const photoUrl = String(firstPhoto.url).trim()
-                
-                // Data URL (base64) - используем как есть
-                if (photoUrl.startsWith('data:')) {
-                  imageUrl = photoUrl
-                }
-                // Полный HTTP/HTTPS URL - используем как есть
-                else if (photoUrl.startsWith('http://') || photoUrl.startsWith('https://')) {
-                  imageUrl = photoUrl
-                }
-                // Путь начинается с /uploads/ - добавляем базовый URL
-                else if (photoUrl.startsWith('/uploads/')) {
-                  imageUrl = `${baseUrl}${photoUrl}`
-                }
-                // Путь начинается с uploads/ без слеша - добавляем / и базовый URL
-                else if (photoUrl.startsWith('uploads/')) {
-                  imageUrl = `${baseUrl}/${photoUrl}`
-                }
-                // Относительный путь - добавляем /uploads/
-                else {
-                  imageUrl = `${baseUrl}/uploads/${photoUrl}`
-                }
-              }
-              
-              console.log('🖼️ Обработано фото для объявления:', prop.id, 'URL длина:', imageUrl.length, 'начинается с:', imageUrl.substring(0, 50))
-            } else {
-              console.warn('⚠️ Нет фотографий для объявления:', prop.id, 'photos:', prop.photos, 'photosArray:', photosArray)
             }
             
             // Для домов/вилл используем bedrooms, для квартир/апартаментов - rooms
@@ -2000,17 +1939,25 @@ const OwnerDashboard = () => {
                 const shouldShowPrice =
                   (!property.isAuction || (property.isAuction && priceNum > 0)) && priceNum > 0
                 const showBidUnderPrice = showAuctionCurrentBid && currentBidValue != null
+                const cardImageProps = buildResponsiveImageProps(property.image, {
+                  widths: [320, 480, 640],
+                  sizes: '(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw',
+                  fit: 'cover',
+                  quality: 72,
+                  format: 'webp',
+                })
 
                 return (
                   <div key={property.id} className="property-card property-card-owner">
                     <div className="property-image-container property-card-owner__image">
-                      <img 
-                        src={property.image} 
+                      <ImageWithSkeleton
+                        imgProps={cardImageProps}
                         alt={property.title}
                         className="property-image"
+                        containerClassName="property-image"
                         onError={(e) => {
-                          // Если изображение не загрузилось, используем дефолтное
-                          e.target.src = 'https://images.unsplash.com/photo-1568605114967-8130f3a36994?auto=format&fit=crop&w=800&q=80'
+                          e.currentTarget.src =
+                            'https://images.unsplash.com/photo-1568605114967-8130f3a36994?auto=format&fit=crop&w=800&q=80'
                         }}
                       />
                       {getStatusBadge(property.status)}

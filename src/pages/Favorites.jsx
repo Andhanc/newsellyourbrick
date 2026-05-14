@@ -10,6 +10,8 @@ import { hasDbBackedProperty } from '../utils/propertyFavoriteKey'
 import { ensureCanOpenProperty } from '../utils/propertyAccessGuard'
 import { useFavoriteAuctionItems } from '../hooks/useFavoriteAuctionItems'
 import { getPropertyCardImage } from '../utils/propertyImage'
+import { buildResponsiveImageProps } from '../utils/responsiveImage'
+import ImageWithSkeleton from '../components/ImageWithSkeleton'
 import { getPropertyDetailPath } from '../utils/propertyDetailUrl'
 
 const FAVORITES_CARD_SKELETON_COUNT = 4
@@ -101,6 +103,17 @@ const Favorites = () => {
           <div className="favorites-grid">
             {favoriteAuctions.map((item) => {
               const auction = item.property
+              const imageSrc = getPropertyCardImage(
+                auction,
+                'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=800&q=80'
+              )
+              const imageProps = buildResponsiveImageProps(imageSrc, {
+                widths: [320, 480, 640],
+                sizes: '(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw',
+                fit: 'cover',
+                quality: 72,
+                format: 'webp',
+              })
               return (
                 <div key={item.key} className="favorite-card">
                   <Link
@@ -112,14 +125,12 @@ const Favorites = () => {
                     }}
                   >
                     <div className="favorite-card-image">
-                      <img
-                        src={getPropertyCardImage(
-                          auction,
-                          'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=800&q=80'
-                        )}
+                      <ImageWithSkeleton
+                        imgProps={imageProps}
                         alt={auction.name || auction.title}
+                        containerClassName="favorite-card-image"
                         onError={(e) => {
-                          e.target.src =
+                          e.currentTarget.src =
                             'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=800&q=80'
                         }}
                       />

@@ -105,6 +105,44 @@
   letter-spacing: 0.02em;
 }
 
+/* Плоские крошки как «Закрытый клуб»: без капсулы; «Главная» и «>» — светлый тил; текущая — тёмная, без жирного */
+.page-breadcrumbs.page-breadcrumbs--flat-club {
+  font-size: 15px;
+  line-height: 1.45;
+  font-style: normal;
+  font-weight: 400;
+  -webkit-font-smoothing: antialiased;
+}
+
+.page-breadcrumbs.page-breadcrumbs--flat-club .page-breadcrumbs__list {
+  gap: 0.28rem 0.42rem;
+}
+
+.page-breadcrumbs.page-breadcrumbs--flat-club .page-breadcrumbs__link {
+  color: #76c0bc;
+  font-weight: 400;
+  text-decoration: none;
+  transition: color 0.15s ease, text-decoration-color 0.15s ease;
+}
+
+.page-breadcrumbs.page-breadcrumbs--flat-club .page-breadcrumbs__link:hover {
+  color: #5fb0a3;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.page-breadcrumbs.page-breadcrumbs--flat-club .page-breadcrumbs__sep {
+  color: #76c0bc;
+  font-weight: 400;
+  opacity: 1;
+  user-select: none;
+}
+
+.page-breadcrumbs.page-breadcrumbs--flat-club .page-breadcrumbs__current {
+  color: #111827;
+  font-weight: 400;
+}
+
 .page-context-heading {
   max-width: 1200px;
   margin: 0 auto;
@@ -122,23 +160,53 @@
   line-height: 1.2;
 }
 
-.page-context-heading--debts {
+/* Заголовок + крошки в стиле /auction (страницы «Долги», «Доли» и др.) — без отдельного фона */
+.page-context-heading.page-context-heading--strip-auction-style {
+  max-width: none;
   width: 100%;
-  max-width: 1320px;
-  margin: 0 auto 1.25rem;
-  padding-left: 16px;
-  padding-right: 16px;
+  margin: 0;
+  padding: 0 20px 28px;
+  background: transparent;
+  box-sizing: border-box;
 }
 
-.page-context-heading--bonuses {
-  max-width: 720px;
-  margin: 0 auto 1rem;
-  padding-left: 20px;
-  padding-right: 20px;
+.page-context-heading--strip-auction-inner {
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
+  text-align: left;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.page-context-heading--strip-auction-inner--shares-top .page-breadcrumbs,
+.page-context-heading--strip-auction-inner--debts-top .page-breadcrumbs,
+.page-context-heading--strip-auction-inner--bonuses-page-top .page-breadcrumbs {
+  margin-bottom: 0;
+}
+
+.page-context-heading__title--auction-serif {
+  font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
+  font-weight: 700;
+  font-style: italic;
+  font-size: clamp(2.35rem, 5.2vw, 3.35rem);
+  line-height: 1.12;
+  color: #0f172a;
+  margin: 0.35rem 0 0.55rem;
+  letter-spacing: 0.03em;
+  text-align: left;
+  font-synthesis: none;
+}
+
+/* Заголовок над крошками: без отступа сверху, зазор перед цепочкой */
+.page-context-heading__title--auction-serif.page-context-heading__title--after-breadcrumbs {
+  margin-top: 0;
+  margin-bottom: 0.65rem;
 }
 
 @media (max-width: 768px) {
-  .page-context-heading--debts {
-    margin-bottom: 1rem;
+  .page-context-heading.page-context-heading--strip-auction-style {
+    padding-bottom: 12px;
   }
 }
+

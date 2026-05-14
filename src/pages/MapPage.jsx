@@ -14,6 +14,7 @@ import { isSiteUserSignedIn } from '../utils/siteAuthGate'
 import { usePropertyFavorites } from '../context/PropertyFavoritesContext'
 import { hasDbBackedProperty } from '../utils/propertyFavoriteKey'
 import { getMainScrollEl, getMainScrollTop, scrollMainTo } from '../utils/mainScroll'
+import { buildResponsiveImageProps } from '../utils/responsiveImage'
 import './MapPage.css'
 import { getPropertyDetailPath, auctionListingDedupeKey } from '../utils/propertyDetailUrl'
 
@@ -544,6 +545,13 @@ const MapPage = () => {
                 if (property.area) metaParts.push(`${property.area} м²`)
                 if (property.rooms) metaParts.push(`${property.rooms} комн.`)
                 if (property.floor) metaParts.push(`${property.floor} этаж`)
+                const listCardImageSrc = images[currentImgIndex] || images[0]
+                const listCardImageProps = buildResponsiveImageProps(listCardImageSrc, {
+                  widths: [320, 480, 640, 800],
+                  sizes: '(max-width: 768px) 100vw, 280px',
+                  quality: 72,
+                  fit: 'crop',
+                })
 
                 return (
                   <article
@@ -556,7 +564,7 @@ const MapPage = () => {
                   >
                     <div className="map-booking-card__media">
                       <div className="map-booking-card__img-wrap">
-                        <img src={images[currentImgIndex] || images[0]} alt={property.title} />
+                        <img {...listCardImageProps} alt={property.title} />
                         <button
                           type="button"
                           className={`map-booking-card__fav ${isFavorite(property, null) ? 'active' : ''}`}
@@ -648,10 +656,16 @@ const MapPage = () => {
                 </button>
                 <div className="map-open-hint__thumb">
                   <img
-                    src={
+                    {...buildResponsiveImageProps(
                       (Array.isArray(mapOpenHintProperty.images) && mapOpenHintProperty.images[0]) ||
-                      'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800'
-                    }
+                        'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800',
+                      {
+                        widths: [96, 160, 240],
+                        sizes: '48px',
+                        quality: 70,
+                        fit: 'crop',
+                      },
+                    )}
                     alt=""
                   />
                 </div>

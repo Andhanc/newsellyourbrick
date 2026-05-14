@@ -1,6 +1,7 @@
 {
   "home": "Hem",
   "breadcrumbAria": "Brödsmulor",
+  "breadcrumbFallback": "Sida",
   "favorites": "Favoriter",
   "auction": "Auktion",
   "auctionPrivateClubVipBadge": "VIP",

@@ -1,6 +1,7 @@
 {
   "home": "Inicio",
   "breadcrumbAria": "Migas de pan",
+  "breadcrumbFallback": "Página",
   "favorites": "Favoritos",
   "auction": "Subasta",
   "auctionPrivateClubVipBadge": "VIP",

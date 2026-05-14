@@ -33,6 +33,8 @@ import { ensureCanOpenProperty } from '../utils/propertyAccessGuard'
 import { isSiteUserSignedIn } from '../utils/siteAuthGate'
 import { hasEmailForBuyNowFlow } from '../utils/buyNowEmailGate'
 import { getPropertyCardImage } from '../utils/propertyImage'
+import { buildResponsiveImageProps } from '../utils/responsiveImage'
+import ImageWithSkeleton from '../components/ImageWithSkeleton'
 import {
   isSafeWalletFromPath,
   getWalletEntryFrom,
@@ -776,14 +778,22 @@ const WalletInner = () => {
               <div className="wallet-won-object__image-wrapper">
                 {(() => {
                   const photoUrl = getPropertyCardImage(wonProperty, null)
+                  const imageProps = buildResponsiveImageProps(photoUrl, {
+                    widths: [220, 320, 420],
+                    sizes: '220px',
+                    fit: 'cover',
+                    quality: 72,
+                    format: 'webp',
+                  })
                   
                   return photoUrl ? (
-                    <img 
-                      src={photoUrl}
+                    <ImageWithSkeleton
+                      imgProps={imageProps}
                       alt={wonProperty.title || 'Объект недвижимости'}
                       className="wallet-won-object__image"
+                      containerClassName="wallet-won-object__image"
                       onError={(e) => {
-                        e.target.style.display = 'none'
+                        e.currentTarget.style.display = 'none'
                       }}
                     />
                   ) : (
@@ -837,21 +847,28 @@ const WalletInner = () => {
             <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
               {(() => {
                 const photoUrl = getPropertyCardImage(userBid, null)
+                const imageProps = buildResponsiveImageProps(photoUrl, {
+                  widths: [100, 160, 220],
+                  sizes: '100px',
+                  fit: 'cover',
+                  quality: 72,
+                  format: 'webp',
+                })
                 
                 return photoUrl ? (
-                  <img 
-                    src={photoUrl}
+                  <ImageWithSkeleton
+                    imgProps={imageProps}
                     alt={userBid.title || 'Объект недвижимости'}
-                    style={{
+                    imgStyle={{
                       width: '100px',
                       height: '100px',
                       objectFit: 'cover',
                       borderRadius: '8px',
-                      border: '1px solid rgba(255, 255, 255, 0.1)'
+                      border: '1px solid rgba(255, 255, 255, 0.1)',
                     }}
                     onError={(e) => {
                       // Скрываем изображение при ошибке загрузки
-                      e.target.style.display = 'none'
+                      e.currentTarget.style.display = 'none'
                     }}
                   />
                 ) : (

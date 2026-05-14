@@ -41,6 +41,7 @@ export function AnimatedMarqueeHero({
           </motion.div>
         ) : null}
 
+        {title != null && title !== '' ? (
         <motion.h1
           initial="hidden"
           animate="show"
@@ -68,6 +69,7 @@ export function AnimatedMarqueeHero({
             title
           )}
         </motion.h1>
+        ) : null}
 
         <motion.p
           initial="hidden"

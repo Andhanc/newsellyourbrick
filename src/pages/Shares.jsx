@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { FiSearch } from 'react-icons/fi'
 import Header from '../components/Header'
+import PageBreadcrumbs from '../components/PageBreadcrumbs'
 import DepositButton from '../components/DepositButton'
 import DepositButtonSkeleton from '../components/DepositButtonSkeleton'
 import { AnimatedMarqueeHero } from '../components/ui/hero-3'
@@ -11,6 +12,7 @@ import { fetchNumericDbUserIdForApi, getStoredNumericUserId } from '../services/
 import './Shares.css'
 import { getPropertyCardImage } from '../utils/propertyImage'
 import { ShareCardSkeletonGrid } from '../components/ShareCardSkeletonGrid'
+import { buildResponsiveImageProps } from '../utils/responsiveImage'
 
 // Фотографии разных объектов недвижимости для бегущей строки
 const HERO_MARQUEE_IMAGES = [
@@ -169,16 +171,20 @@ const Shares = () => {
     <div className="shares-page">
       <Header />
       <div className="shares-page__bg" />
+      <div className="shares-page__heading-strip">
+        <div className="page-context-heading page-context-heading--strip-auction-style">
+          <div className="page-context-heading--strip-auction-inner page-context-heading--strip-auction-inner--shares-top">
+            <h1 className="page-context-heading__title page-context-heading__title--auction-serif page-context-heading__title--after-breadcrumbs">
+              {t('sharesTitle')}
+            </h1>
+            <PageBreadcrumbs className="page-breadcrumbs--flat-club" separator=">" />
+          </div>
+        </div>
+      </div>
       <AnimatedMarqueeHero
-        title={
-          <>
-            {t('sharesHeroTitleLine1')}
-            <br />
-            <span className="shares-hero__title-marker">{t('sharesHeroTitleLine2')}</span>
-          </>
-        }
         description={t('sharesHeroDescription')}
         images={HERO_MARQUEE_IMAGES}
+        className="animated-marquee-hero--shares-no-hero-title"
       />
       <main className="shares-container">
         <div className="shares-search-bar">
@@ -217,6 +223,13 @@ const Shares = () => {
               const total = Math.max(1, Number(obj.totalShares) || 1)
               const sold = Math.min(obj.sharesSold || 0, total)
               const remaining = Math.max(total - sold, 0)
+              const cardImage = getPropertyCardImage(obj, SHARE_CARD_FALLBACK)
+              const cardImageProps = buildResponsiveImageProps(cardImage, {
+                widths: [320, 480, 640, 800],
+                sizes: '(max-width: 768px) 50vw, (max-width: 1024px) 50vw, 33vw',
+                quality: 72,
+                fit: 'crop',
+              })
               return (
               <article
                 key={obj.id}
@@ -241,7 +254,7 @@ const Shares = () => {
                     </span>
                   </div>
                   <img
-                    src={getPropertyCardImage(obj, SHARE_CARD_FALLBACK)}
+                    {...cardImageProps}
                     alt={obj.title}
                     className="share-card__image"
                   />

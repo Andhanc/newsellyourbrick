@@ -11,6 +11,8 @@ import { ensureCanOpenProperty } from '../utils/propertyAccessGuard'
 import { fetchVerificationStatus } from '../utils/verificationStatusApi'
 import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
 import { getPropertyCardImage } from '../utils/propertyImage'
+import { buildResponsiveImageProps } from '../utils/responsiveImage'
+import ImageWithSkeleton from '../components/ImageWithSkeleton'
 import i18n from '../i18n/config'
 import './History.css'
 import './Profile.css'
@@ -782,6 +784,13 @@ const History = () => {
                           ? t('buyerHistory_propertyTitle', { id: pid })
                           : t('buyerHistory_propertyTitle', { id: '—' }))
                       const imgSrc = sharePurchaseImageSrc(row.property_image)
+                      const imageProps = buildResponsiveImageProps(imgSrc, {
+                        widths: [320, 480, 640],
+                        sizes: '(max-width: 768px) 100vw, 420px',
+                        fit: 'cover',
+                        quality: 72,
+                        format: 'webp',
+                      })
                       const sig = row.agreement_signature
                       return (
                         <div
@@ -790,9 +799,10 @@ const History = () => {
                           style={{ marginBottom: 16 }}
                         >
                           <div className="card-image history-reservation-card__image">
-                            <img
-                              src={imgSrc}
+                            <ImageWithSkeleton
+                              imgProps={imageProps}
                               alt={title}
+                              containerClassName="history-reservation-card__image"
                               onError={(e) => {
                                 e.currentTarget.onerror = null
                                 e.currentTarget.src = SHARE_PURCHASE_IMAGE_PLACEHOLDER
@@ -887,6 +897,13 @@ const History = () => {
                       const title =
                         row.property_title || t('buyerHistory_propertyTitle', { id: row.property_id })
                       const imgSrc = sharePurchaseImageSrc(row.property_image)
+                      const imageProps = buildResponsiveImageProps(imgSrc, {
+                        widths: [320, 480, 640],
+                        sizes: '(max-width: 768px) 100vw, 420px',
+                        fit: 'cover',
+                        quality: 72,
+                        format: 'webp',
+                      })
                       return (
                         <div
                           key={row.id}
@@ -894,9 +911,10 @@ const History = () => {
                           style={{ marginBottom: 16 }}
                         >
                           <div className="card-image history-share-purchase-card__image">
-                            <img
-                              src={imgSrc}
+                            <ImageWithSkeleton
+                              imgProps={imageProps}
                               alt={title}
+                              containerClassName="history-share-purchase-card__image"
                               onError={(e) => {
                                 e.currentTarget.onerror = null
                                 e.currentTarget.src = SHARE_PURCHASE_IMAGE_PLACEHOLDER

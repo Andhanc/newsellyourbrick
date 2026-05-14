@@ -20,6 +20,7 @@ import IncomeExpensesChart from '../components/IncomeExpensesChart';
 import BackgroundIcons from '../components/BackgroundIcons';
 import { getApiBaseUrlSync } from '../utils/apiConfig';
 import { getPropertyCardImage } from '../utils/propertyImage';
+import { buildResponsiveImageProps } from '../utils/responsiveImage';
 import { scrollMainTo } from '../utils/mainScroll';
 import { requestOpenLoginModal } from '../utils/requestOpenLoginModal';
 import { isSiteUserSignedIn } from '../utils/siteAuthGate';
@@ -65,6 +66,16 @@ function listingPriceEuros(property) {
 
 function listingThumb(property) {
   return getPropertyCardImage(property, PLACEHOLDER_IMG);
+}
+
+function listingThumbProps(property) {
+  return buildResponsiveImageProps(listingThumb(property), {
+    widths: [96, 144, 192],
+    sizes: '64px',
+    fit: 'cover',
+    quality: 72,
+    format: 'webp',
+  });
 }
 
 /** Доступ к инвестиционному калькулятору: активная подписка Pro или VIP */
@@ -879,7 +890,7 @@ const InvestmentCalculator = () => {
                         <>
                           <img
                             className="calc-fav-picker__thumb"
-                            src={listingThumb(selectedFavoriteItem.property)}
+                            {...listingThumbProps(selectedFavoriteItem.property)}
                             alt=""
                             onError={(e) => {
                               e.currentTarget.src = PLACEHOLDER_IMG;
@@ -917,7 +928,7 @@ const InvestmentCalculator = () => {
                             >
                               <img
                                 className="calc-fav-picker__thumb"
-                                src={listingThumb(item.property)}
+                                {...listingThumbProps(item.property)}
                                 alt=""
                                 onError={(e) => {
                                   e.currentTarget.src = PLACEHOLDER_IMG;
@@ -1165,7 +1176,7 @@ const InvestmentCalculator = () => {
                         <>
                           <img
                             className="calc-fav-picker__thumb"
-                            src={listingThumb(selectedFavoriteItem.property)}
+                            {...listingThumbProps(selectedFavoriteItem.property)}
                             alt=""
                             onError={(e) => {
                               e.currentTarget.src = PLACEHOLDER_IMG;
@@ -1200,7 +1211,7 @@ const InvestmentCalculator = () => {
                             >
                               <img
                                 className="calc-fav-picker__thumb"
-                                src={listingThumb(item.property)}
+                                {...listingThumbProps(item.property)}
                                 alt=""
                                 onError={(e) => {
                                   e.currentTarget.src = PLACEHOLDER_IMG;

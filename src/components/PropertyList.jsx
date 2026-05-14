@@ -13,6 +13,7 @@ import PropertySearchModal from './PropertySearchModal'
 import { PropertyListingSkeletonGrid } from './PropertyListingSkeletonGrid'
 import { AuctionMobileListingSkeleton, readAuctionMobileViewMode } from './AuctionMobileListingSkeleton'
 import AuctionMobileLayout from './ui/AuctionMobileLayout'
+import ImageWithSkeleton from './ImageWithSkeleton'
 import { ensureCanOpenProperty } from '../utils/propertyAccessGuard'
 import { showNotification } from '../utils/toastHelper'
 import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
@@ -28,6 +29,7 @@ import { getPropertyCardImage } from '../utils/propertyImage'
 import { resolveAuctionCurrentBidValue } from '../services/auctionListCache'
 import { getPropertyDetailPath, auctionListingDedupeKey } from '../utils/propertyDetailUrl'
 import { isPrivateClubAuctionLot } from '../utils/isPrivateClubAuctionLot'
+import { buildResponsiveImageProps } from '../utils/responsiveImage'
 import './PropertyList.css'
 
 const MOBILE_BREAKPOINT = 768
@@ -494,6 +496,12 @@ const PropertyList = ({
                   property,
                   'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=800&q=80'
                 )
+                const propertyImageProps = buildResponsiveImageProps(propertyImage, {
+                  widths: [320, 480, 640, 800],
+                  sizes: '(max-width: 500px) 50vw, (max-width: 768px) 50vw, (max-width: 1200px) 50vw, 33vw',
+                  quality: 72,
+                  fit: 'crop',
+                })
                 const buyNowPurchaseCompleted = isBuyNowPurchaseCompleted(property)
                 const effectiveAuctionEnd = getEffectiveAuctionEndTime(property)
                 const hasTestTimerRaw =
@@ -631,10 +639,11 @@ const PropertyList = ({
               ) : null}
               <div className="property-link">
                 <div className="property-image-container">
-                  <img 
-                    src={propertyImage} 
+                  <ImageWithSkeleton
+                    imgProps={propertyImageProps}
                     alt={propertyTitle}
                     className="property-image"
+                    containerClassName="property-image"
                   />
                   {isReserved && (
                     <div className="property-reserved-overlay">

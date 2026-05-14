@@ -19,7 +19,7 @@
 }
 
 .page-context-heading__breadcrumbs--private-club {
-  margin-top: 0.35rem;
+  margin-top: 0;
   margin-bottom: 0;
 }
 
@@ -30,7 +30,7 @@
   font-size: clamp(2.35rem, 5.2vw, 3.35rem);
   line-height: 1.12;
   color: #0f172a;
-  margin: 0 0 0.15rem;
+  margin: 0 0 0.65rem;
   letter-spacing: 0.03em;
   text-align: left;
   font-synthesis: none;

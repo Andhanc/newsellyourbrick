@@ -10,6 +10,7 @@ import { showNotification } from '../utils/toastHelper'
 import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
 import { fetchUserDeposit } from '../utils/depositApi'
 import { getPropertyCardImage } from '../utils/propertyImage'
+import { buildResponsiveImageProps } from '../utils/responsiveImage'
 import './ShareDetailPage.css'
 import ShareDetailPageSkeleton from './ShareDetailPageSkeleton'
 
@@ -307,6 +308,13 @@ const ShareDetailPage = () => {
   const pctOthers = totalShares > 0 ? (othersSold / totalShares) * 100 : 0
   const pctMyShares = totalShares > 0 ? (previewMyShares / totalShares) * 100 : 0
   const pctAvailable = totalShares > 0 ? (previewAvailable / totalShares) * 100 : 0
+  const heroImageProps = buildResponsiveImageProps(shareObject.image, {
+    widths: [480, 720, 960, 1280],
+    sizes: '(max-width: 1024px) 100vw, 58vw',
+    fit: 'cover',
+    quality: 74,
+    format: 'webp',
+  })
 
   const formatPrice = (n) => {
     if (n >= 1000000) return `$${(n / 1000000).toFixed(1)}M`
@@ -355,7 +363,11 @@ const ShareDetailPage = () => {
           <div className="share-detail__info">
             <div className="share-detail__hero">
               <div className="share-detail__image-wrap">
-                <img src={shareObject.image} alt={shareObject.title} className="share-detail__image" />
+                <img
+                  {...heroImageProps}
+                  alt={shareObject.title}
+                  className="share-detail__image"
+                />
                 {isSoldOut && <div className="share-detail__hero-sold-overlay" aria-hidden />}
               </div>
             </div>

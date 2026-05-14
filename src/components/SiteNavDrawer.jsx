@@ -207,16 +207,8 @@ export default function SiteNavDrawer({
                   className={`menu-dropdown__item${drawerMenuActive.aiAssistant ? ' menu-dropdown__item--active' : ''}`}
                   aria-current={drawerMenuActive.aiAssistant ? 'page' : undefined}
                   onClick={() => {
-                    if (
-                      location.pathname === '/' ||
-                      location.pathname === '/auction' ||
-                      location.pathname === '/main'
-                    ) {
-                      window.dispatchEvent(new CustomEvent('openAIChat'))
-                      closeAfterNav()
-                      return
-                    }
-                    openLoginOrNavigate('/chat', true)
+                    window.dispatchEvent(new CustomEvent('openAIChat'))
+                    closeAfterNav()
                   }}
                 >
                   <span>{t('aiAssistant')}</span>

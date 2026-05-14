@@ -1,6 +1,7 @@
 {
   "home": "Startseite",
   "breadcrumbAria": "Brotkrümel-Navigation",
+  "breadcrumbFallback": "Seite",
   "favorites": "Favoriten",
   "auction": "Auktion",
   "auctionPrivateClubVipBadge": "VIP",

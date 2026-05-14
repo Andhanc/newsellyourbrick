@@ -1,6 +1,7 @@
 {
   "home": "Главная",
   "breadcrumbAria": "Навигационная цепочка",
+  "breadcrumbFallback": "Страница",
   "favorites": "Понравились",
   "auction": "Аукцион",
   "auctionPrivateClubVipBadge": "VIP",

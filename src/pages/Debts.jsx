@@ -22,6 +22,7 @@ import {
   AuctionMobileListingSkeleton,
   readAuctionMobileViewMode,
 } from '../components/AuctionMobileListingSkeleton'
+import { buildResponsiveImageProps } from '../utils/responsiveImage'
 import './Shares.css'
 import '../components/PropertyList.css'
 import { getPropertyDetailPath, auctionListingDedupeKey } from '../utils/propertyDetailUrl'
@@ -225,9 +226,13 @@ const Debts = () => {
       <Header />
       <div className="shares-page__bg" />
       <main className="shares-container">
-        <div className="page-context-heading page-context-heading--debts">
-          <PageBreadcrumbs currentLabel={t('debtsTitle')} />
-          <h1 className="page-context-heading__title">{t('debtsTitle')}</h1>
+        <div className="page-context-heading page-context-heading--strip-auction-style">
+          <div className="page-context-heading--strip-auction-inner page-context-heading--strip-auction-inner--debts-top">
+            <h1 className="page-context-heading__title page-context-heading__title--auction-serif page-context-heading__title--after-breadcrumbs">
+              {t('debtsTitle')}
+            </h1>
+            <PageBreadcrumbs className="page-breadcrumbs--flat-club" separator=">" />
+          </div>
         </div>
         <div className="shares-flip-cards shares-flip-cards--debts">
           <FlipCard
@@ -350,6 +355,12 @@ const Debts = () => {
                       const propertyImage =
                         propertyImages[0] ||
                         'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=800&q=80'
+                      const propertyImageProps = buildResponsiveImageProps(propertyImage, {
+                        widths: [320, 480, 640, 800],
+                        sizes: '(max-width: 500px) 50vw, (max-width: 768px) 50vw, (max-width: 1200px) 50vw, 33vw',
+                        quality: 72,
+                        fit: 'crop',
+                      })
                       const hasTestTimer =
                         property.test_timer_end_date != null && property.test_timer_end_date !== ''
                       const hasTimer =
@@ -396,7 +407,7 @@ const Debts = () => {
                         >
                           <div className="property-link">
                             <div className="property-image-container">
-                              <img src={propertyImage} alt={propertyTitle} className="property-image" />
+                              <img {...propertyImageProps} alt={propertyTitle} className="property-image" />
                               {isReserved && (
                                 <div className="property-reserved-overlay">
                                   <div className="reserved-overlay-icon">🔒</div>

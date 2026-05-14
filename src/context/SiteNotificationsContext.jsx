@@ -20,6 +20,7 @@ import {
 import { getNotificationItemClass } from '../utils/notificationItemClass'
 import { getApiBaseUrlSync } from '../utils/apiConfig'
 import { getPropertyCardImage } from '../utils/propertyImage'
+import { buildResponsiveImageProps } from '../utils/responsiveImage'
 import { getPropertyDetailPath } from '../utils/propertyDetailUrl'
 import { ensureCanOpenProperty } from '../utils/propertyAccessGuard'
 import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
@@ -460,6 +461,13 @@ export function SiteNotificationsProvider({ children }) {
                 notifications.map((notification) => {
                   const propertyMeta = getNotificationPropertyMeta(notification)
                   const dataObj = parseNotificationData(notification?.data)
+                  const propertyImageProps = buildResponsiveImageProps(propertyMeta.image, {
+                    widths: [120, 180, 240],
+                    sizes: '72px',
+                    fit: 'cover',
+                    quality: 70,
+                    format: 'webp',
+                  })
 
                   return (
                     <div
@@ -532,8 +540,7 @@ export function SiteNotificationsProvider({ children }) {
                           <div className="notification-item__property">
                             <div className="notification-item__image">
                               <img
-                                loading="lazy"
-                                src={propertyMeta.image}
+                                {...propertyImageProps}
                                 alt={propertyMeta.name || 'Property'}
                                 onError={(e) => {
                                   e.target.src = LIST_FALLBACK_IMG

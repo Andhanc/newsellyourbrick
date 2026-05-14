@@ -1,6 +1,7 @@
 {
   "home": "Accueil",
   "breadcrumbAria": "Fil d'Ariane",
+  "breadcrumbFallback": "Page",
   "favorites": "Favoris",
   "auction": "Enchères",
   "auctionPrivateClubVipBadge": "VIP",

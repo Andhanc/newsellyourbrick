@@ -1,6 +1,7 @@
 {
   "home": "Home",
   "breadcrumbAria": "Breadcrumb navigation",
+  "breadcrumbFallback": "Page",
   "favorites": "Favorites",
   "auction": "Auction",
   "auctionPrivateClubVipBadge": "VIP",

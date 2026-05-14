@@ -3,12 +3,13 @@ import express from 'express';
 import compression from 'compression';
 import cors from 'cors';
 import axios from 'axios';
+import sharp from 'sharp';
 import { initDatabase, closeDatabase, schemaCache } from './database/database.js';
 import { userQueries, documentQueries, notificationQueries, testDriveBookingQueries, administratorQueries, debtReasonQueries, debtDocumentQueries, whatsappUserQueries, purchaseRequestQueries, assistantLeadQueries, liveChatQueries, apartmentQueries, houseQueries, propertyQueries, favoriteQueries, crmQueries, auctionReminderQueries, passesApprovedFilters, passesAuctionFilters, stripeSubscriptionQueries } from './database/database.js';
 import { getPrisma } from './database/prismaClient.js';
 import { mergePropertyTranslations, mergeReservationFields } from './propertyListBatch.js';
 import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
+import { dirname, join, resolve, sep } from 'path';
 import multer from 'multer';
 import fs from 'fs';
 const { readFileSync } = fs;
@@ -724,6 +725,100 @@ const uploadMemory = multer({
 
 // Статическая папка для загрузок
 app.use('/uploads', express.static(uploadsDir));
+
+const IMAGE_RESIZE_CACHE_SECONDS = 60 * 60 * 24 * 30;
+const ALLOWED_RESIZE_FITS = new Set(['cover', 'contain', 'fill', 'inside', 'outside']);
+const ALLOWED_RESIZE_FORMATS = new Set(['auto', 'webp', 'jpeg', 'jpg', 'png']);
+
+function asPositiveInt(value, max) {
+  const n = Number(value);
+  if (!Number.isFinite(n) || n <= 0) return null;
+  const rounded = Math.round(n);
+  if (max && rounded > max) return max;
+  return rounded;
+}
+
+/**
+ * GET /api/images/resize?src=/uploads/xxx.jpg&w=640&h=360&q=72&fit=cover
+ * Ресайзим только изображения из локальной uploads-папки.
+ */
+app.get('/api/images/resize', async (req, res) => {
+  try {
+    const rawSrc = String(req.query.src || '').trim();
+    if (!rawSrc) {
+      res.status(400).json({ success: false, error: 'Missing src query param' });
+      return;
+    }
+
+    let decodedSrc = rawSrc;
+    try {
+      decodedSrc = decodeURIComponent(rawSrc);
+    } catch {
+      decodedSrc = rawSrc;
+    }
+    const normalizedSrc = decodedSrc.replace(/\\/g, '/');
+    if (!normalizedSrc.startsWith('/uploads/')) {
+      res.status(400).json({ success: false, error: 'Only /uploads paths are allowed' });
+      return;
+    }
+
+    const relativePath = normalizedSrc.replace(/^\/uploads\//, '');
+    const uploadsRoot = resolve(uploadsDir);
+    const absolutePath = resolve(uploadsDir, relativePath);
+    if (!(absolutePath === uploadsRoot || absolutePath.startsWith(`${uploadsRoot}${sep}`))) {
+      res.status(400).json({ success: false, error: 'Invalid src path' });
+      return;
+    }
+    if (!fs.existsSync(absolutePath)) {
+      res.status(404).json({ success: false, error: 'Image not found' });
+      return;
+    }
+
+    const width = asPositiveInt(req.query.w, 2400);
+    const height = asPositiveInt(req.query.h, 2400);
+    const quality = asPositiveInt(req.query.q, 95) || 72;
+    const fitRaw = String(req.query.fit || 'cover').toLowerCase();
+    const fit = ALLOWED_RESIZE_FITS.has(fitRaw) ? fitRaw : 'cover';
+    const fmtRaw = String(req.query.fmt || 'webp').toLowerCase();
+    const fmt = ALLOWED_RESIZE_FORMATS.has(fmtRaw) ? fmtRaw : 'webp';
+
+    const source = sharp(absolutePath, { failOn: 'none' });
+    const metadata = await source.metadata();
+    const sourceFormat = String(metadata.format || '').toLowerCase();
+
+    const transformer = source.rotate();
+    if (width || height) {
+      transformer.resize({
+        width: width || undefined,
+        height: height || undefined,
+        fit,
+        withoutEnlargement: true,
+      });
+    }
+
+    const outputFormat =
+      fmt === 'auto'
+        ? (sourceFormat === 'png' ? 'png' : 'webp')
+        : (fmt === 'jpg' ? 'jpeg' : fmt);
+    if (outputFormat === 'png') {
+      transformer.png({ compressionLevel: 9, effort: 9 });
+      res.type('image/png');
+    } else if (outputFormat === 'jpeg') {
+      transformer.jpeg({ quality, mozjpeg: true });
+      res.type('image/jpeg');
+    } else {
+      transformer.webp({ quality, effort: 5 });
+      res.type('image/webp');
+    }
+
+    res.set('Cache-Control', `public, max-age=${IMAGE_RESIZE_CACHE_SECONDS}, immutable`);
+    const buffer = await transformer.toBuffer();
+    res.send(buffer);
+  } catch (error) {
+    console.error('GET /api/images/resize error:', error);
+    res.status(500).json({ success: false, error: 'Failed to resize image' });
+  }
+});
 
 // Middleware для логирования всех запросов и подсчета
 let requestCount = 0;

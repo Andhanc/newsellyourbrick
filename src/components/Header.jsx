@@ -42,6 +42,7 @@ const Header = () => {
   const [hasIncompleteProfile, setHasIncompleteProfile] = useState(false)
   const [isAIChatOpen, setIsAIChatOpen] = useState(false) // Состояние AI чата для страницы аукцион
   const [isManagerChatOpen, setIsManagerChatOpen] = useState(false)
+  const [isGlobalAiModalOpen, setIsGlobalAiModalOpen] = useState(false)
   const languageDropdownRef = useRef(null)
   const menuRef = useRef(null)
   const searchInputRef = useRef(null)
@@ -128,6 +129,27 @@ const Header = () => {
     window.addEventListener('managerChatStateChange', onManager)
     return () => window.removeEventListener('managerChatStateChange', onManager)
   }, [])
+
+  useEffect(() => {
+    const onOpenAIChat = () => {
+      const isInlineAiRoute =
+        location.pathname === '/' || location.pathname === '/auction' || location.pathname === '/main'
+      if (!isInlineAiRoute) {
+        setIsGlobalAiModalOpen(true)
+      }
+    }
+    window.addEventListener('openAIChat', onOpenAIChat)
+    return () => window.removeEventListener('openAIChat', onOpenAIChat)
+  }, [location.pathname])
+
+  useEffect(() => {
+    if (!isGlobalAiModalOpen) return undefined
+    const originalOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = originalOverflow
+    }
+  }, [isGlobalAiModalOpen])
 
   // Открываем модальное окно регистрации/входа принудительно (например после OAuth)
   useEffect(() => {
@@ -484,6 +506,10 @@ const Header = () => {
     if (closeMenu) setIsMenuOpen(false)
   }
 
+  const openAiAssistantFromHeader = () => {
+    window.dispatchEvent(new CustomEvent('openAIChat'))
+  }
+
   // Обработка выбора результата поиска
   const handleSearchResultClick = (page) => {
     const access = checkPageAccess(page)
@@ -633,11 +659,7 @@ const Header = () => {
               type="button"
               className={`new-header__filter-btn ${(location.pathname === '/auction' || location.pathname === '/main') ? (isAIChatOpen ? 'new-header__filter-btn--active' : '') : (location.pathname === '/chat' ? 'new-header__filter-btn--active' : '')}`}
               onClick={() => {
-                if (location.pathname === '/auction' || location.pathname === '/main') {
-                  window.dispatchEvent(new CustomEvent('openAIChat'))
-                } else {
-                  openLoginOrNavigate('/chat')
-                }
+                openAiAssistantFromHeader()
               }}
             >
               <span>{t('aiAssistant')}</span>
@@ -877,6 +899,26 @@ const Header = () => {
         }}
         authEntryVariant={loginModalEntry === 'wizard' ? 'header_wizard' : 'default'}
       />
+
+      {isGlobalAiModalOpen && (
+        <div className="global-ai-modal" role="dialog" aria-modal="true" aria-label={t('aiAssistant')}>
+          <div className="global-ai-modal__panel">
+            <button
+              type="button"
+              className="global-ai-modal__close"
+              onClick={() => setIsGlobalAiModalOpen(false)}
+              aria-label={t('closeChat')}
+            >
+              <FiX size={20} />
+            </button>
+            <iframe
+              title={t('aiAssistant')}
+              className="global-ai-modal__iframe"
+              src="/chat?assistant=1&embed=1"
+            />
+          </div>
+        </div>
+      )}
     </>
   )
 }

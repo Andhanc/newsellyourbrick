@@ -81,7 +81,7 @@ export default function PrivateClub() {
             {t('privateClubPageTitle')}
           </h1>
           <div className="page-context-heading__breadcrumbs page-context-heading__breadcrumbs--private-club">
-            <PageBreadcrumbs currentLabel={t('privateClubPageTitle')} />
+            <PageBreadcrumbs separator=">" className="page-breadcrumbs--flat-club" />
           </div>
           <p className="private-club-intro">{t('privateClubIntro')}</p>
         </div>

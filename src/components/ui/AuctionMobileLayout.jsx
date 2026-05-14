@@ -28,6 +28,8 @@ import { resolveAuctionCurrentBidValue } from '../../services/auctionListCache'
 import { getPropertyDetailPath, auctionListingDedupeKey } from '../../utils/propertyDetailUrl'
 import { isPrivateClubAuctionLot } from '../../utils/isPrivateClubAuctionLot'
 import { AUCTION_MOBILE_VIEW_STORAGE_KEY } from '../../constants/auctionMobileViewStorage'
+import { buildResponsiveImageProps } from '../../utils/responsiveImage'
+import ImageWithSkeleton from '../ImageWithSkeleton'
 import '../PropertyList.css'
 import './AuctionMobileLayout.css'
 
@@ -384,6 +386,12 @@ function AuctionMobileItem({
     property,
     'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=800&q=80'
   )
+  const propertyImageProps = buildResponsiveImageProps(propertyImage, {
+    widths: [240, 320, 480, 640],
+    sizes: view === 'card' ? '50vw' : '42vw',
+    quality: 72,
+    fit: 'crop',
+  })
 
   const buyNowPurchaseCompleted = isBuyNowPurchaseCompleted(property)
   const effectiveAuctionEnd = getEffectiveAuctionEndTime(property)
@@ -612,7 +620,12 @@ function AuctionMobileItem({
         ) : null}
         <div className="auction-mobile-item__media">
           <div className="auction-mobile-image-wrap">
-            <img src={propertyImage} alt={propertyTitle} className="rounded-[inherit]" />
+            <ImageWithSkeleton
+              imgProps={propertyImageProps}
+              alt={propertyTitle}
+              className="rounded-[inherit]"
+              containerClassName="rounded-[inherit]"
+            />
             <button
               ref={favoriteBtnRef}
               type="button"
