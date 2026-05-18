@@ -8,6 +8,7 @@ import {
 } from '../services/authService'
 import { fetchUserById } from '../utils/usersApi'
 import { getPropertyCardImage } from '../utils/propertyImage'
+import { getCurrencySymbol } from '../utils/currency'
 import { getPropertyDetailPath } from '../utils/propertyDetailUrl'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
@@ -64,7 +65,7 @@ function formatMoney(amount, currency = 'EUR') {
   if (amount == null || Number.isNaN(Number(amount))) return '—'
   const n = Number(amount)
   const c = (currency || 'EUR').toString().toUpperCase()
-  const sym = c === 'USD' ? '$' : c === 'EUR' ? '€' : c === 'BYN' ? 'Br' : `${c} `
+  const sym = getCurrencySymbol(c)
   return `${sym}${n.toLocaleString('ru-RU', { maximumFractionDigits: 0 })}`
 }
 

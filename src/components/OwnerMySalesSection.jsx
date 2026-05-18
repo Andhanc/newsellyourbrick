@@ -8,6 +8,7 @@ import ImageWithSkeleton from './ImageWithSkeleton'
 import { showToast } from './ToastContainer'
 import OwnerTestDriveRequestModal from './OwnerTestDriveRequestModal'
 import './OwnerMySalesSection.css'
+import { getCurrencySymbol } from '../utils/currency'
 import { getPropertyDetailPath } from '../utils/propertyDetailUrl'
 
 const FALLBACK_IMG =
@@ -19,7 +20,7 @@ function formatSaleAmount(amount, currency) {
   const n = Number(amount)
   if (!Number.isFinite(n)) return '—'
   const cur = (currency || 'USD').toUpperCase()
-  const sym = cur === 'EUR' ? '€' : cur === 'BYN' ? 'Br' : '$'
+  const sym = getCurrencySymbol(cur)
   return `${sym}${n.toLocaleString('ru-RU')}`
 }
 

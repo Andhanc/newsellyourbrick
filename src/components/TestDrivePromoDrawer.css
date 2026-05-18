@@ -1,0 +1,202 @@
+/* Промо drawer тест-драйва — выезжает сверху (как панель уведомлений) */
+
+.test-drive-promo-drawer__backdrop {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(4px);
+  z-index: 13290;
+  animation: test-drive-promo-backdrop-in 0.28s ease-out both;
+}
+
+@keyframes test-drive-promo-backdrop-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.test-drive-promo-drawer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: auto;
+  width: 100%;
+  z-index: 13300;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: max(12px, env(safe-area-inset-top, 0px)) 16px 0;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  box-sizing: border-box;
+  overflow: visible;
+  pointer-events: none;
+  animation: test-drive-promo-slide-down 0.38s cubic-bezier(0.22, 1, 0.32, 1) both;
+}
+
+.test-drive-promo-drawer > * {
+  pointer-events: auto;
+}
+
+@keyframes test-drive-promo-slide-down {
+  from {
+    transform: translate3d(0, -100%, 0);
+  }
+  to {
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.test-drive-promo-drawer__content {
+  position: relative;
+  background: #ffffff;
+  width: 100%;
+  max-width: min(480px, 100%);
+  margin: 0 auto;
+  border-radius: 0 0 24px 24px;
+  padding: 18px 22px 10px;
+  box-shadow:
+    0 8px 32px -12px rgba(17, 24, 39, 0.3),
+    0 4px 16px -8px rgba(17, 24, 39, 0.2);
+}
+
+.test-drive-promo-drawer__sheet-handle {
+  display: flex;
+  justify-content: center;
+  flex-shrink: 0;
+  padding: 10px 0 4px;
+}
+
+.test-drive-promo-drawer__sheet-pill {
+  display: block;
+  width: 40px;
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.55);
+  box-shadow: 0 1px 2px rgba(255, 255, 255, 0.65) inset;
+}
+
+.test-drive-promo-drawer__body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 4px 4px 8px;
+}
+
+.test-drive-promo-drawer__icon-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  margin-bottom: 16px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, rgba(10, 186, 181, 0.14) 0%, rgba(13, 148, 136, 0.08) 100%);
+  border: 1px solid rgba(10, 186, 181, 0.28);
+  box-shadow: 0 8px 24px rgba(10, 186, 181, 0.12);
+}
+
+.test-drive-promo-drawer__icon {
+  color: #0d9488;
+}
+
+.test-drive-promo-drawer__title {
+  margin: 0 0 10px;
+  font-family: 'Montserrat', system-ui, -apple-system, sans-serif;
+  font-size: clamp(1.25rem, 4vw, 1.5rem);
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+  color: #0f172a;
+}
+
+.test-drive-promo-drawer__text {
+  margin: 0 0 22px;
+  max-width: 34ch;
+  font-family: 'Montserrat', system-ui, -apple-system, sans-serif;
+  font-size: 15px;
+  line-height: 1.5;
+  color: #64748b;
+}
+
+.test-drive-promo-drawer__cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  max-width: 320px;
+  padding: 15px 20px;
+  border: none;
+  border-radius: 14px;
+  font-family: 'Montserrat', system-ui, -apple-system, sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  color: #ffffff;
+  cursor: pointer;
+  background: linear-gradient(135deg, #53d8d3 0%, #0abab5 52%, #089d98 100%);
+  box-shadow: 0 10px 28px rgba(10, 186, 181, 0.35);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.test-drive-promo-drawer__cta:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 32px rgba(10, 186, 181, 0.42);
+}
+
+.test-drive-promo-drawer__cta:active {
+  transform: translateY(0);
+}
+
+.test-drive-promo-drawer__close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(17, 24, 39, 0.08);
+  color: #111827;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.test-drive-promo-drawer__close:hover {
+  background: rgba(17, 24, 39, 0.14);
+  transform: scale(1.06);
+}
+
+@media (max-width: 768px) {
+  .test-drive-promo-drawer {
+    padding: env(safe-area-inset-top, 0px) 0 0;
+  }
+
+  .test-drive-promo-drawer__content {
+    max-width: none;
+    border-radius: 0 0 22px 22px;
+    padding: 16px 18px 8px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .test-drive-promo-drawer,
+  .test-drive-promo-drawer__backdrop {
+    animation: none;
+  }
+
+  .test-drive-promo-drawer__cta,
+  .test-drive-promo-drawer__close {
+    transition: none;
+  }
+}

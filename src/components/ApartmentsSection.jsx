@@ -10,6 +10,7 @@ import { isAuthenticated } from '../services/authService'
 import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
 import PropertyTimer from './PropertyTimer'
 import './PropertyList.css'
+import { formatPropertyPrice } from '../utils/currency'
 
 const apartmentsData = [
   {
@@ -104,12 +105,8 @@ function ApartmentsSection() {
     return initialFavorites
   })
 
-  const formatPrice = (price) => {
-    if (price >= 1000000) {
-      return `$${(price / 1000000).toFixed(1)}M`
-    }
-    return `$${price.toLocaleString('en-US')}`
-  }
+  const formatPrice = (price, currency = 'USD') =>
+    formatPropertyPrice(price, currency, { compact: true })
 
   const toggleFavorite = (propertyId) => {
     // Проверяем авторизацию через Clerk или старую систему
@@ -212,12 +209,12 @@ function ApartmentsSection() {
                 <div className="property-content">
                   <h3 className="property-title">{apartment.title}</h3>
                   <p className="property-location">{apartment.location}</p>
-                  <div className="property-price">{formatPrice(apartment.price)}</div>
+                  <div className="property-price">{formatPrice(apartment.price, apartment.currency)}</div>
                   {apartment.endTime ? (
                     apartment.currentBid && (
                       <div className="property-bid-info">
                         <span className="bid-label">Текущая ставка:</span>
-                        <span className="bid-value">{formatPrice(apartment.currentBid)}</span>
+                        <span className="bid-value">{formatPrice(apartment.currentBid, apartment.currency)}</span>
                       </div>
                     )
                   ) : (

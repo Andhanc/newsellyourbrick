@@ -12,6 +12,7 @@ import { fetchUserDeposit } from '../utils/depositApi'
 import { getPropertyCardImage } from '../utils/propertyImage'
 import { buildResponsiveImageProps } from '../utils/responsiveImage'
 import './ShareDetailPage.css'
+import { formatPropertyPrice } from '../utils/currency'
 import ShareDetailPageSkeleton from './ShareDetailPageSkeleton'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api'
@@ -316,10 +317,7 @@ const ShareDetailPage = () => {
     format: 'webp',
   })
 
-  const formatPrice = (n) => {
-    if (n >= 1000000) return `$${(n / 1000000).toFixed(1)}M`
-    return `$${Number(n).toLocaleString('en-US')}`
-  }
+  const formatPrice = (n) => formatPropertyPrice(n, shareObject.currency, { compact: true })
 
   const openPurchaseModal = async () => {
     const isClerkAuth = user && userLoaded

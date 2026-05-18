@@ -26,6 +26,7 @@ import { ensureCanOpenProperty } from '../utils/propertyAccessGuard'
 import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
 import { getUserData } from '../services/authService'
 import { showToast } from '../components/ToastContainer'
+import { useDrawerDismiss } from '../hooks/useDrawerDismiss'
 
 const SiteNotificationsContext = createContext(null)
 
@@ -106,6 +107,7 @@ export function SiteNotificationsProvider({ children }) {
   const [notificationsLoading, setNotificationsLoading] = useState(false)
   const [notificationProperties, setNotificationProperties] = useState({})
   const [isOpen, setIsOpen] = useState(false)
+  const { visible, isClosing, requestClose } = useDrawerDismiss(isOpen, () => setIsOpen(false))
 
   const panelRef = useRef(null)
   const isFirstNotificationsLoadRef = useRef(true)
@@ -121,7 +123,7 @@ export function SiteNotificationsProvider({ children }) {
   const API_BASE_URL = getApiBaseUrlSync()
 
   const toggle = useCallback(() => setIsOpen((prev) => !prev), [])
-  const closePanel = useCallback(() => setIsOpen(false), [])
+  const closePanel = requestClose
 
   const getNotificationPropertyMeta = useCallback(
     (notification) => {
@@ -393,11 +395,11 @@ export function SiteNotificationsProvider({ children }) {
     const onDoc = (e) => {
       if (panelRef.current?.contains(e.target)) return
       if (e.target?.closest?.('[data-site-notifications-bell]')) return
-      setIsOpen(false)
+      requestClose()
     }
     document.addEventListener('mousedown', onDoc)
     return () => document.removeEventListener('mousedown', onDoc)
-  }, [isOpen])
+  }, [isOpen, requestClose])
 
   useEffect(() => {
     if (!isOpen) return
@@ -423,17 +425,20 @@ export function SiteNotificationsProvider({ children }) {
     [unreadCount, isOpen, toggle, closePanel]
   )
 
+  const closingTop = isClosing ? ' drawer-dismiss-from-top--closing' : ''
+  const closingBackdrop = isClosing ? ' drawer-dismiss-backdrop--closing' : ''
+
   const portal =
-    isOpen &&
+    visible &&
     typeof document !== 'undefined' &&
     createPortal(
       <>
         <div
           role="presentation"
-          className="notification-backdrop"
+          className={`notification-backdrop${closingBackdrop}`}
           onClick={closePanel}
         />
-        <div className="notification-panel" ref={panelRef}>
+        <div className={`notification-panel${closingTop}`} ref={panelRef}>
           <div className="notification-panel__content">
             <div className="notification-panel__header">
               <h3 className="notification-panel__title">{t('notifications')}</h3>

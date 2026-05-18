@@ -138,29 +138,33 @@
 
 /* Hero без центрального дубля заголовка — только описание и лента */
 .shares-page .animated-marquee-hero--shares-no-hero-title {
-  padding-top: 0.75rem !important;
+  padding-top: calc(env(safe-area-inset-top, 0px) + 92px) !important;
 }
 
 @media (min-width: 768px) {
   .shares-page .animated-marquee-hero--shares-no-hero-title {
-    padding-top: 1.25rem !important;
-    min-height: 52vh !important;
+    padding-top: calc(env(safe-area-inset-top, 0px) + 102px) !important;
+    min-height: 42vh !important;
   }
 }
 
-.shares-page .animated-marquee-hero--shares-no-hero-title .animated-marquee-hero__description {
-  margin-top: 0 !important;
+.shares-page .animated-marquee-hero--shares-no-hero-title .animated-marquee-hero__copy {
+  display: none !important;
 }
 
-/* Hero идёт сразу после полосы с крошками — верхний отступ только компактный */
-.shares-page__heading-strip + .animated-marquee-hero {
-  padding-top: 0.75rem !important;
+/* Заголовок/крошки/текст — под лентой */
+.shares-page__heading-strip--after-hero {
+  padding-top: 0;
+  margin-top: 8px;
 }
 
-@media (min-width: 768px) {
-  .shares-page__heading-strip + .animated-marquee-hero {
-    padding-top: 1rem !important;
-  }
+.shares-page__sublead {
+  margin: 0.6rem 0 0;
+  max-width: 46rem;
+  font-family: 'Montserrat', system-ui, -apple-system, sans-serif;
+  font-size: clamp(0.95rem, 1.85vw, 1.15rem);
+  line-height: 1.55;
+  color: #6b7280;
 }
 
 /*
@@ -168,43 +172,63 @@
   Явное правило: глобальный сброс * { padding:0 } и слои Tailwind иначе «съедали» утилиты pb-*.
 */
 @media (max-width: 767px) {
-  .shares-page .animated-marquee-hero .animated-marquee-hero__copy {
-    padding-bottom: 1.75rem !important;
-  }
-
-  .shares-page .animated-marquee-hero .animated-marquee-hero__title {
-    margin-top: 0.75rem !important;
+  .shares-page .animated-marquee-hero--shares-no-hero-title {
+    min-height: 220px !important;
   }
 }
 
 @media (min-width: 768px) {
-  .shares-page .animated-marquee-hero .animated-marquee-hero__title {
-    margin-top: 1rem !important;
+  .shares-page__heading-strip--after-hero {
+    margin-top: 12px;
   }
+}
+
+/* Hero «Доли»: отступ под фиксированную шапку */
+.shares-page .animated-marquee-hero--shares {
+  padding-top: calc(env(safe-area-inset-top, 0px) + 72px) !important;
+}
+
+@media (min-width: 768px) {
+  .shares-page .animated-marquee-hero--shares {
+    padding-top: calc(env(safe-area-inset-top, 0px) + 76px) !important;
+  }
+}
+
+.shares-page .animated-marquee-hero--shares .animated-marquee-hero__copy {
+  margin-top: 0;
+  margin-bottom: 0.75rem;
+}
+
+@media (min-width: 768px) {
+  .shares-page .animated-marquee-hero--shares .animated-marquee-hero__copy {
+    margin-bottom: 1rem;
+  }
+}
+
+/* Крошки под каруселью hero */
+.shares-page__breadcrumbs-strip {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: 4px;
+  padding: 0 16px 8px;
+}
+
+@media (min-width: 768px) {
+  .shares-page__breadcrumbs-strip {
+    margin-top: 8px;
+    padding: 0 20px 12px;
+  }
+}
+
+.shares-page__breadcrumbs-strip .page-context-heading--strip-auction-style {
+  padding: 0;
 }
 
 /* Hero-заголовок: обе строки жирные (явно, на случай конфликта с утилитами) */
 .shares-page .animated-marquee-hero .animated-marquee-hero__title {
   font-weight: 700;
-}
-
-.shares-page .animated-marquee-hero .shares-hero__title-marker {
-  font-family: 'Montserrat', system-ui, sans-serif;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  line-height: 1.12;
-  -webkit-font-smoothing: antialiased;
-}
-
-/* Описание под заголовком — чуть ниже */
-.shares-page .animated-marquee-hero .animated-marquee-hero__description {
-  margin-top: 1.625rem !important;
-}
-
-@media (min-width: 768px) {
-  .shares-page .animated-marquee-hero .animated-marquee-hero__description {
-    margin-top: 2.25rem !important;
-  }
 }
 
 .shares-container {
@@ -223,8 +247,17 @@
   padding-top: calc(env(safe-area-inset-top, 0px) + 96px);
 }
 
-.shares-page--debts .page-context-heading--strip-auction-style {
+/* Заголовок и крошки — в одну колонку с поиском (без доп. padding у strip) */
+.shares-page--debts .page-context-heading.page-context-heading--strip-auction-style {
+  padding-left: 0;
+  padding-right: 0;
   padding-bottom: 12px;
+}
+
+.shares-page--debts .page-context-heading--strip-auction-inner {
+  max-width: none;
+  margin-left: 0;
+  margin-right: 0;
 }
 
 @media (max-width: 768px) {

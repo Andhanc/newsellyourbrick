@@ -66,6 +66,7 @@ import { syncAssistantLead } from '../services/assistantLeadService'
 import { getManagerContactButtons } from '../services/liveChatApi'
 import { NotificationsBell } from '../context/SiteNotificationsContext'
 import SiteNavDrawer from '../components/SiteNavDrawer'
+import CookieConsentDrawer, { readCookieConsentChoice } from '../components/CookieConsentDrawer'
 import { setSiteNavDrawerOpen } from '../utils/siteNavDrawerDocumentFlag'
 import { fetchUserById } from '../utils/usersApi'
 
@@ -77,6 +78,7 @@ import { useLayoutScrollRef } from '../context/LayoutScrollContext'
 import { UI_LANGUAGES } from '../constants/uiLanguages'
 import { isAuctionListingEnded } from '../utils/auctionReminderBounds'
 import { getPropertyDetailPath } from '../utils/propertyDetailUrl'
+import { hasBuyNowOption } from '../utils/hasBuyNowOption'
 import { lazyWithRetry } from '../utils/lazyWithRetry'
 import { MainPageDeferredContext } from './mainPageDeferredContext'
 import { MainPageSuspenseFallback } from '../components/MainPageSuspenseFallback'
@@ -88,6 +90,37 @@ let API_BASE_URL = getApiBaseUrlSync()
 
 const LISTING_IMAGE_FALLBACK =
   'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=800&q=80'
+
+function asFiniteNumberOrNull(value) {
+  if (value == null || value === '') return null
+  const n = Number(value)
+  return Number.isFinite(n) ? n : null
+}
+
+async function fetchMaxBidsBatch(apiBaseUrl, propertyIds) {
+  const ids = [...new Set(propertyIds.map((x) => Number(x)).filter((n) => Number.isFinite(n)))]
+  if (ids.length === 0) return new Map()
+  const base = String(apiBaseUrl || '').replace(/\/$/, '')
+  try {
+    const response = await fetch(`${base}/bids/max-amounts`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids }),
+    })
+    if (!response.ok) return null
+    const payload = await response.json().catch(() => null)
+    if (!payload?.success || payload.data == null || typeof payload.data !== 'object') return null
+    const m = new Map()
+    for (const [k, v] of Object.entries(payload.data)) {
+      const id = Number(k)
+      const max = asFiniteNumberOrNull(v)
+      if (Number.isFinite(id) && max != null) m.set(id, max)
+    }
+    return m
+  } catch {
+    return null
+  }
+}
 
 // Базовые данные для 4 блоков 3D-папок (заголовки переводятся в компоненте через useMemo)
 const landingFolderDataBase = [
@@ -719,6 +752,17 @@ function MainPage() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isMenuClosing, setIsMenuClosing] = useState(false)
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
+  const [cookieConsentOpen, setCookieConsentOpen] = useState(
+    () => location.pathname === '/' && readCookieConsentChoice() == null,
+  )
+
+  useEffect(() => {
+    if (location.pathname === '/' && readCookieConsentChoice() == null) {
+      setCookieConsentOpen(true)
+    } else if (location.pathname !== '/') {
+      setCookieConsentOpen(false)
+    }
+  }, [location.pathname])
   /** Вариант входа в LoginModal: с главной hero — default (шаг 2 формы), иначе как в шапке — мастер */
   const [mainLoginModalAuthEntry, setMainLoginModalAuthEntry] = useState('header_wizard')
   /** Модалка «стать продавцом» / «стать покупателем» для залогиненных с другой ролью */
@@ -1188,9 +1232,14 @@ function MainPage() {
     try {
       const apiBase = await getApiBaseUrl()
       const lang = (i18n.language || 'ru').split('-')[0]
+      const viewerRaw = localStorage.getItem('userId')
+      const viewerQ =
+        viewerRaw && /^\d+$/.test(String(viewerRaw).trim())
+          ? `&viewer_user_id=${encodeURIComponent(String(viewerRaw).trim())}`
+          : ''
       const [approvedRes, auctionsRes, debtsRes] = await Promise.all([
         fetch(`${apiBase}/properties/approved?lang=${lang}`),
-        fetch(`${apiBase}/properties/auctions?lang=${lang}`),
+        fetch(`${apiBase}/properties/auctions?lang=${lang}${viewerQ}`),
         fetch(`${apiBase}/properties/debts`)
       ])
       let approved = []
@@ -1249,7 +1298,27 @@ function MainPage() {
       approved.map((p) => normalizeProperty(p)).forEach((p) => { if (p && p.id != null) byId.set(p.id, p) })
       auctions.map((p) => normalizeProperty(p, { forceAuction: true })).forEach((p) => { if (p && p.id != null) byId.set(p.id, p) })
       debts.map((p) => normalizeProperty(p)).forEach((p) => { if (p && p.id != null) byId.set(p.id, p) })
-      setHomeProperties(Array.from(byId.values()))
+      let merged = Array.from(byId.values())
+      const auctionIds = merged
+        .filter((item) => item && (item.isAuction === true || item.is_auction === 1 || item.is_auction === true))
+        .map((item) => Number(item.id))
+        .filter((id) => Number.isFinite(id))
+
+      const bidById = await fetchMaxBidsBatch(apiBase, auctionIds)
+      if (bidById && bidById.size > 0) {
+        merged = merged.map((item) => {
+          const idNum = Number(item?.id)
+          const maxBid = bidById.get(idNum)
+          if (!Number.isFinite(idNum) || maxBid == null) return item
+          const currentBid = asFiniteNumberOrNull(item.currentBid) || 0
+          return {
+            ...item,
+            currentBid: Math.max(currentBid, maxBid),
+          }
+        })
+      }
+
+      setHomeProperties(merged)
     } catch (error) {
       console.error('❌ Ошибка загрузки объектов для главной страницы:', error)
     } finally {
@@ -1327,13 +1396,8 @@ function MainPage() {
         p.has_debt === true
       if (isDebt) return false
 
-      const price = p.price || 0
-      const start = p.auction_starting_price || 0
-
-      // Если нет цены или она равна стартовой — считаем чистым аукционом
-      if (!price) return true
-      if (!start) return true
-      return Number(price) <= Number(start)
+      // Если у лота реально доступна опция "Купить сейчас", это не "чистый" аукцион.
+      return !hasBuyNowOption(p)
     }).filter((p) => !isAuctionListingEnded(p))
 
     return filterBySearch(base).slice(0, 8)
@@ -1352,10 +1416,7 @@ function MainPage() {
         p.has_debt === 1 ||
         p.has_debt === true
       if (isDebt) return false
-      const price = p.price || 0
-      const start = p.auction_starting_price || 0
-      if (!price || !start) return false
-      return Number(price) > Number(start)
+      return hasBuyNowOption(p)
     }).filter((p) => !isAuctionListingEnded(p))
 
     return filterBySearch(base).slice(0, 8)
@@ -3009,6 +3070,11 @@ function MainPage() {
         isOpen={isLoginModalOpen}
         onClose={closeLoginModalMain}
         authEntryVariant={mainLoginModalAuthEntry}
+      />
+
+      <CookieConsentDrawer
+        open={cookieConsentOpen}
+        onClose={() => setCookieConsentOpen(false)}
       />
     </div>
   )

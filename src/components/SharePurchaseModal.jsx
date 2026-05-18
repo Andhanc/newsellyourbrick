@@ -6,6 +6,8 @@ import { showNotification } from '../utils/toastHelper'
 import './SharePurchaseModal.css'
 import { RESERVE_TERMS_PDF_URL as POLICY_PDF_URL } from '../utils/reserveTermsPdfUrl'
 import { navigateToStripeCheckout } from '../utils/subscriptionCheckout'
+import { formatPropertyPrice } from '../utils/currency'
+import { useDrawerDismiss, DRAWER_DISMISS_MS } from '../hooks/useDrawerDismiss'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api'
 const WALLET_OFFSET_EUR = 3000
@@ -43,6 +45,9 @@ const SharePurchaseModal = ({
   const [useWalletDeposit, setUseWalletDeposit] = useState(false)
   const [step, setStep] = useState(STEP_PRICE)
   const signaturePadRef = useRef(null)
+  const { visible, isClosing, requestClose } = useDrawerDismiss(isOpen, onClose, {
+    duration: DRAWER_DISMISS_MS.spring,
+  })
 
   useEffect(() => {
     if (!isOpen) {
@@ -82,7 +87,12 @@ const SharePurchaseModal = ({
     }
   }, [isOpen, userId, userDeposit])
 
-  if (!isOpen || !shareObject) return null
+  if (!visible || !shareObject) return null
+
+  const closingBackdrop = isClosing ? ' drawer-dismiss-backdrop--closing' : ''
+  const closingPanel = isClosing
+    ? ' drawer-dismiss-from-bottom--closing drawer-dismiss-modal--closing'
+    : ''
 
   const pricePerShare = Number(shareObject.pricePerShare) || 0
   const total = pricePerShare * buyCount
@@ -95,10 +105,7 @@ const SharePurchaseModal = ({
   const propertyId = shareObject.id
   const propertyType = shareObject.property_type
 
-  const formatPrice = (n) => {
-    if (n >= 1000000) return `$${(n / 1000000).toFixed(1)}M`
-    return `$${Number(n).toLocaleString('en-US')}`
-  }
+  const formatPrice = (n) => formatPropertyPrice(n, currency, { compact: true })
 
   const openPdf = async () => {
     try {
@@ -191,9 +198,13 @@ const SharePurchaseModal = ({
   }
 
   return (
-    <div className="share-purchase-modal-overlay" role="presentation" onClick={onClose}>
+    <div
+      className={`share-purchase-modal-overlay${closingBackdrop}`}
+      role="presentation"
+      onClick={() => requestClose()}
+    >
       <div
-        className="share-purchase-modal"
+        className={`share-purchase-modal${closingPanel}`}
         role="dialog"
         aria-modal="true"
         aria-labelledby="share-purchase-modal-title"
@@ -228,7 +239,7 @@ const SharePurchaseModal = ({
                 </p>
               </div>
             </div>
-            <button type="button" className="share-purchase-modal__close" onClick={onClose} aria-label="Закрыть">
+            <button type="button" className="share-purchase-modal__close" onClick={() => requestClose()} aria-label="Закрыть">
               <FiX size={22} />
             </button>
           </div>

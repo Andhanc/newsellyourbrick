@@ -15,6 +15,7 @@ import '../components/PropertyList.css'
 import './MainPage.css'
 import LeadGenCta from '../components/LeadGenCta'
 import { useMainPageDeferred } from './mainPageDeferredContext'
+import { formatPropertyPrice } from '../utils/currency'
 
 export default function MainPageBelowFold() {
   const {
@@ -51,6 +52,9 @@ export default function MainPageBelowFold() {
     filteredNearby,
     propertyMode,
   } = useMainPageDeferred()
+
+  const formatListingPrice = (price, currency = 'USD') =>
+    formatPropertyPrice(price ?? 0, currency, { compact: true })
 
   return (
     <>
@@ -89,14 +93,6 @@ export default function MainPageBelowFold() {
               <AuctionShowcaseSkeletonCards />
             ) : (
             auctionSection.map((apartment) => {
-              const formatPrice = (price) => {
-                if (!price) return '$0'
-                if (price >= 1000000) {
-                  return `$${(price / 1000000).toFixed(1)}M`
-                }
-                return `$${price.toLocaleString('en-US')}`
-              }
-
               const hasTimer =
                 apartment.isAuction === true &&
                 apartment.endTime != null &&
@@ -177,7 +173,7 @@ export default function MainPageBelowFold() {
                         <p className="auction-showcase-card__bid">
                           <span className="auction-showcase-card__bid-label">{t('currentBid')}</span>
                           <span className="auction-showcase-card__bid-value">
-                            {formatPrice(currentBidValue)}
+                            {formatListingPrice(currentBidValue, apartment.currency)}
                           </span>
                         </p>
                       </div>
@@ -246,14 +242,6 @@ export default function MainPageBelowFold() {
               <AuctionShowcaseSkeletonCards />
             ) : (
             buyNowSection.map((villa) => {
-              const formatPrice = (price) => {
-                if (!price) return '$0'
-                if (price >= 1000000) {
-                  return `$${(price / 1000000).toFixed(1)}M`
-                }
-                return `$${price.toLocaleString('en-US')}`
-              }
-
               const isAuctionEndedCard = isAuctionListingEnded(villa)
 
               return (
@@ -324,7 +312,7 @@ export default function MainPageBelowFold() {
                             {t('buyNowShowcasePriceLabel')}
                           </span>
                           <span className="auction-showcase-card__bid-value">
-                            {formatPrice(villa.price)}
+                            {formatListingPrice(villa.price, villa.currency)}
                           </span>
                         </p>
                       </div>
@@ -392,12 +380,6 @@ export default function MainPageBelowFold() {
                 <AuctionShowcaseSkeletonCards />
               ) : (
               debtsSection.map((flat) => {
-                const formatPrice = (price) => {
-                  if (price >= 1000000) {
-                    return `$${(price / 1000000).toFixed(1)}M`
-                  }
-                  return `$${price.toLocaleString('en-US')}`
-                }
                 const hasTimer =
                   flat.isAuction === true && flat.endTime != null && flat.endTime !== ''
                 const bidVal = flat.currentBid != null
@@ -461,7 +443,7 @@ export default function MainPageBelowFold() {
                                 {t('debtsDebtAmount')}
                               </span>
                               <span className="auction-showcase-card__bid-value">
-                                {formatPrice(debtVal)}
+                                {formatListingPrice(debtVal, flat.currency)}
                               </span>
                             </p>
                           ) : null}
@@ -470,7 +452,7 @@ export default function MainPageBelowFold() {
                               {t('currentBid')}
                             </span>
                             <span className="auction-showcase-card__bid-value">
-                              {formatPrice(bidVal)}
+                              {formatListingPrice(bidVal, flat.currency)}
                             </span>
                           </p>
                         </div>
@@ -543,12 +525,6 @@ export default function MainPageBelowFold() {
                 <AuctionShowcaseSkeletonCards />
               ) : (
               sharesSection.map((townhouse) => {
-                const formatPrice = (price) => {
-                  if (price >= 1000000) {
-                    return `$${(price / 1000000).toFixed(1)}M`
-                  }
-                  return `$${price.toLocaleString('en-US')}`
-                }
                 const totalShares = Math.max(
                   1,
                   Number(
@@ -653,7 +629,7 @@ export default function MainPageBelowFold() {
                               {t('sharesPerShare')}
                             </span>
                             <span className="auction-showcase-card__bid-value">
-                              {formatPrice(pricePerShare)}
+                              {formatListingPrice(pricePerShare, townhouse.currency)}
                             </span>
                           </p>
                           <p className="auction-showcase-card__bid auction-showcase-card__bid--secondary">
@@ -661,7 +637,7 @@ export default function MainPageBelowFold() {
                               {t('sharesTotalCost')}
                             </span>
                             <span className="auction-showcase-card__bid-value auction-showcase-card__bid-value--muted">
-                              {formatPrice(totalPrice)}
+                              {formatListingPrice(totalPrice, townhouse.currency)}
                             </span>
                           </p>
                         </div>
@@ -768,13 +744,6 @@ export default function MainPageBelowFold() {
             <PropertyListingSkeletonGrid count={6} />
           ) : (
           (filteredProperties?.recommended || filteredRecommended).map((property, index) => {
-            const formatPrice = (price) => {
-              if (price >= 1000000) {
-                return `$${(price / 1000000).toFixed(1)}M`
-              }
-              return `$${price.toLocaleString('en-US')}`
-            }
-            
             return (
               <div key={property.id} className="property-card">
                 <div 
@@ -825,12 +794,12 @@ export default function MainPageBelowFold() {
                       property.currentBid && (
                         <div className="property-bid-info">
                           <span className="bid-label">{t('currentBid')}</span>
-                          <span className="bid-value">{formatPrice(property.currentBid)}</span>
+                          <span className="bid-value">{formatListingPrice(property.currentBid, property.currency)}</span>
                         </div>
                       )
                     ) : (
                       <>
-                        <div className="property-price">{formatPrice(propertyMode === 'rent' ? property.price : property.price * 240)}</div>
+                        <div className="property-price">{formatListingPrice(propertyMode === 'rent' ? property.price : property.price * 240, property.currency)}</div>
                         <div className="property-specs">
                           {property.beds && (
                             <div className="spec-item">
@@ -872,13 +841,6 @@ export default function MainPageBelowFold() {
             <PropertyListingSkeletonGrid count={6} />
           ) : (
           (filteredProperties?.nearby || filteredNearby).map((property, index) => {
-            const formatPrice = (price) => {
-              if (price >= 1000000) {
-                return `$${(price / 1000000).toFixed(1)}M`
-              }
-              return `$${price.toLocaleString('en-US')}`
-            }
-            
             return (
               <div key={property.id} className="property-card">
                 <div 
@@ -932,12 +894,12 @@ export default function MainPageBelowFold() {
                       property.currentBid && (
                         <div className="property-bid-info">
                           <span className="bid-label">{t('currentBid')}</span>
-                          <span className="bid-value">{formatPrice(property.currentBid)}</span>
+                          <span className="bid-value">{formatListingPrice(property.currentBid, property.currency)}</span>
                         </div>
                       )
                     ) : (
                       <>
-                        <div className="property-price">{formatPrice(propertyMode === 'rent' ? property.price : property.price * 240)}</div>
+                        <div className="property-price">{formatListingPrice(propertyMode === 'rent' ? property.price : property.price * 240, property.currency)}</div>
                         <div className="property-specs">
                           {property.beds && (
                             <div className="spec-item">

@@ -13,6 +13,7 @@ import './Shares.css'
 import { getPropertyCardImage } from '../utils/propertyImage'
 import { ShareCardSkeletonGrid } from '../components/ShareCardSkeletonGrid'
 import { buildResponsiveImageProps } from '../utils/responsiveImage'
+import { formatPropertyPrice } from '../utils/currency'
 
 // Фотографии разных объектов недвижимости для бегущей строки
 const HERO_MARQUEE_IMAGES = [
@@ -162,30 +163,32 @@ const Shares = () => {
       (obj.location || '').toLowerCase().includes(searchQuery.toLowerCase())
   )
 
-  const formatPrice = (n) => {
-    if (n >= 1000000) return `$${(n / 1000000).toFixed(1)}M`
-    return `$${Number(n).toLocaleString('en-US')}`
-  }
+  const formatPrice = (n, currency = 'USD') =>
+    formatPropertyPrice(n, currency, { compact: true })
 
   return (
     <div className="shares-page">
       <Header />
       <div className="shares-page__bg" />
-      <div className="shares-page__heading-strip">
+      <AnimatedMarqueeHero
+        title={
+          <>
+            {t('sharesHeroTitleLine1')}
+            <br />
+            <span className="shares-hero__title-marker">{t('sharesHeroTitleLine2')}</span>
+          </>
+        }
+        description={t('sharesHeroDescription')}
+        images={HERO_MARQUEE_IMAGES}
+        className="animated-marquee-hero--shares"
+      />
+      <div className="shares-page__breadcrumbs-strip">
         <div className="page-context-heading page-context-heading--strip-auction-style">
           <div className="page-context-heading--strip-auction-inner page-context-heading--strip-auction-inner--shares-top">
-            <h1 className="page-context-heading__title page-context-heading__title--auction-serif page-context-heading__title--after-breadcrumbs">
-              {t('sharesTitle')}
-            </h1>
             <PageBreadcrumbs className="page-breadcrumbs--flat-club" separator=">" />
           </div>
         </div>
       </div>
-      <AnimatedMarqueeHero
-        description={t('sharesHeroDescription')}
-        images={HERO_MARQUEE_IMAGES}
-        className="animated-marquee-hero--shares-no-hero-title"
-      />
       <main className="shares-container">
         <div className="shares-search-bar">
           <FiSearch className="shares-search-bar__icon" size={20} />
@@ -283,10 +286,10 @@ const Shares = () => {
                   )}
                   <div className="share-card__prices">
                     <div className="share-card__price-total">
-                      {t('sharesTotalCost')} <strong>{formatPrice(obj.totalPrice)}</strong>
+                      {t('sharesTotalCost')} <strong>{formatPrice(obj.totalPrice, obj.currency)}</strong>
                     </div>
                     <div className="share-card__price-per-share">
-                      {t('sharesPerShare')} <strong>{formatPrice(obj.pricePerShare)}</strong>
+                      {t('sharesPerShare')} <strong>{formatPrice(obj.pricePerShare, obj.currency)}</strong>
                     </div>
                   </div>
                   <div className="share-card__footer">

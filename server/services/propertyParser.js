@@ -14,8 +14,8 @@ const CALCULATOR_CACHE_MAX_ITEMS = 200;
 const CALCULATOR_PIPELINE_VERSION = 'v13-plausible-sale-total-floor';
 const TARGET_MIN_SOURCE_COVERAGE = 2;
 /** Минимум похожих объявлений в ответе для «полной» оценки */
-const TARGET_MIN_SIMILAR_COUNT = 6;
-const SIMILAR_UI_MIN = 6;
+const TARGET_MIN_SIMILAR_COUNT = 5;
+const SIMILAR_UI_MIN = 5;
 const SIMILAR_UI_MAX = 8;
 const ENABLE_REGIONAL_FALLBACK = false;
 const propertyPriceCache = new Map();
@@ -1691,6 +1691,13 @@ function robustMedian(prices) {
   return m % 2 ? slice[mid] : Math.round((slice[mid - 1] + slice[mid]) / 2);
 }
 
+function averagePrice(prices = []) {
+  const arr = (prices || []).filter((p) => Number.isFinite(p) && p > 0).map(Number);
+  if (!arr.length) return null;
+  const sum = arr.reduce((acc, p) => acc + p, 0);
+  return Math.round(sum / arr.length);
+}
+
 function filterOutlierPrices(items = [], { areaValue, benchmarkPerSqm, propertyType }) {
   const clean = (items || []).filter(
     (p) => p?.price && p.price > 0 && passesPlausibleTotalSalePrice(p.price, propertyType)
@@ -1734,6 +1741,199 @@ function filterPricePerSqmCluster(items = [], { minItems = 6 } = {}) {
 
   const keepFraction = Math.max(4, Math.floor(priced.length * 0.35));
   return filtered.length >= keepFraction ? filtered : items;
+}
+
+/**
+ * Узкий слой по абсолютной цене: убирает редкие «чужие» ценовые сегменты
+ * (когда основная масса, например, 200–250k, а единичные лоты 450k+).
+ * Работает только при достаточном объеме данных и аккуратно откатывается,
+ * если после отсечения осталось слишком мало карточек.
+ */
+function filterTotalPriceCluster(items = [], { minItems = 6 } = {}) {
+  const priced = (items || []).filter((p) => p?.price > 0);
+  if (priced.length < minItems) return items;
+
+  const prices = priced.map((p) => Number(p.price)).sort((a, b) => a - b);
+  const n = prices.length;
+  const q1 = prices[Math.floor((n - 1) * 0.25)];
+  const q3 = prices[Math.floor((n - 1) * 0.75)];
+  const iqr = q3 - q1;
+  const median = robustMedian(prices);
+  if (!Number.isFinite(median) || median <= 0) return items;
+
+  // Базовый пояс вокруг медианы + IQR-границы, берем пересечение «мягких» условий.
+  const ratioLow = median * 0.62;
+  const ratioHigh = median * 1.58;
+  const iqrLow = Number.isFinite(iqr) && iqr > 0 ? q1 - iqr * 1.2 : ratioLow;
+  const iqrHigh = Number.isFinite(iqr) && iqr > 0 ? q3 + iqr * 1.2 : ratioHigh;
+  const low = Math.max(0, Math.min(ratioLow, iqrLow));
+  const high = Math.max(ratioHigh, iqrHigh);
+
+  const filtered = (items || []).filter((p) => {
+    if (!p?.price || !Number.isFinite(p.price) || p.price <= 0) return true;
+    return p.price >= low && p.price <= high;
+  });
+
+  // Не даем «пережать» выборку.
+  const keepFraction = Math.max(4, Math.floor(priced.length * 0.5));
+  return filtered.length >= keepFraction ? filtered : items;
+}
+
+/**
+ * Для UI: выбираем самый плотный кластер по абсолютной цене с ограничением окна.
+ * Цель — не смешивать объявления из разных сегментов внутри одного расчета.
+ */
+function filterUiPriceWindow(items = [], { minItems = 6, maxWindow = 130000, preferWindow = 90000 } = {}) {
+  const priced = (items || [])
+    .filter((p) => p?.price && Number.isFinite(p.price) && p.price > 0)
+    .slice()
+    .sort((a, b) => a.price - b.price);
+  if (priced.length < minItems) return items;
+
+  const buildWindow = (windowSize) => {
+    let bestStart = 0;
+    let bestEnd = 0;
+    let j = 0;
+    for (let i = 0; i < priced.length; i += 1) {
+      while (j < priced.length && (priced[j].price - priced[i].price) <= windowSize) j += 1;
+      if ((j - i) > (bestEnd - bestStart)) {
+        bestStart = i;
+        bestEnd = j;
+      }
+    }
+    return { start: bestStart, end: bestEnd, count: bestEnd - bestStart };
+  };
+
+  const preferred = buildWindow(preferWindow);
+  const expanded = buildWindow(maxWindow);
+  const chosen = preferred.count >= Math.max(minItems, Math.floor(priced.length * 0.55))
+    ? preferred
+    : expanded;
+
+  let cluster = priced.slice(chosen.start, chosen.end);
+  if (cluster.length < minItems) {
+    // Даже при малом числе данных возвращаем максимально плотный кластер,
+    // чтобы не смешивать разные ценовые сегменты.
+    cluster = priced.slice(expanded.start, expanded.end);
+    if (cluster.length === 0) return items;
+  }
+
+  const clusterLinks = new Set(cluster.map((p) => normalizePropertyLink(p.link)).filter(Boolean));
+  let filtered = (items || []).filter((p) => {
+    const key = normalizePropertyLink(p?.link);
+    // Элементы без цены/ссылки не должны исчезать бесследно — оставляем как есть.
+    if (!key || !p?.price || !Number.isFinite(p.price) || p.price <= 0) return true;
+    return clusterLinks.has(key);
+  });
+
+  const filteredPriced = filtered.filter((p) => p?.price && Number.isFinite(p.price) && p.price > 0);
+  if (filteredPriced.length < minItems && priced.length >= minItems) {
+    // Если в жесткое окно попало мало карточек, берем самый плотный непрерывный блок из minItems.
+    let bestStart = 0;
+    let bestSpread = Number.POSITIVE_INFINITY;
+    for (let i = 0; i <= priced.length - minItems; i += 1) {
+      const localSpread = priced[i + minItems - 1].price - priced[i].price;
+      if (localSpread < bestSpread) {
+        bestSpread = localSpread;
+        bestStart = i;
+      }
+    }
+    const tightBlock = priced.slice(bestStart, bestStart + minItems);
+    const tightLinks = new Set(tightBlock.map((p) => normalizePropertyLink(p.link)).filter(Boolean));
+    filtered = (items || []).filter((p) => {
+      const key = normalizePropertyLink(p?.link);
+      if (!key || !p?.price || !Number.isFinite(p.price) || p.price <= 0) return true;
+      return tightLinks.has(key);
+    });
+  }
+
+  // Больше не откатываемся к исходному массиву — иначе снова появляется большой разброс.
+  return filtered;
+}
+
+/**
+ * Финальный выбор похожих объявлений: берем среднюю цену по пулу
+ * и оставляем лоты максимально близко к этому среднему.
+ */
+function selectUiComparablesAroundAverage(
+  items = [],
+  {
+    max = SIMILAR_UI_MAX,
+    minTargetPreferred = SIMILAR_UI_MIN,
+    minTargetFloor = 3,
+    maxSpread = 150000
+  } = {}
+) {
+  const priced = (items || [])
+    .filter((p) => p?.price && Number.isFinite(p.price) && p.price > 0)
+    .slice();
+  if (!priced.length) return items;
+
+  const avg = averagePrice(priced.map((p) => p.price));
+  if (!avg || !Number.isFinite(avg)) return items;
+
+  const ranked = priced
+    .map((p) => ({ ...p, _avgDistance: Math.abs(Number(p.price) - avg) }))
+    .sort((a, b) => a._avgDistance - b._avgDistance);
+
+  let selected = ranked.slice(0, Math.min(max, ranked.length));
+
+  // Держим диапазон внутри maxSpread, выкидывая самые дальние от среднего.
+  const spread = (arr) => {
+    if (!arr.length) return 0;
+    const prices = arr.map((p) => Number(p.price)).sort((x, y) => x - y);
+    return prices[prices.length - 1] - prices[0];
+  };
+  while (selected.length > minTargetFloor && spread(selected) > maxSpread) {
+    selected = selected.slice(0, -1);
+  }
+
+  // Если даже после сжатия диапазон большой — берем самый плотный блок минимального размера.
+  if (selected.length >= minTargetFloor && spread(selected) > maxSpread && ranked.length >= minTargetFloor) {
+    const byPrice = ranked.slice().sort((a, b) => Number(a.price) - Number(b.price));
+    let bestWindow = byPrice.slice(0, minTargetFloor);
+    let bestSpread = spread(bestWindow);
+    for (let i = 1; i <= byPrice.length - minTargetFloor; i += 1) {
+      const window = byPrice.slice(i, i + minTargetFloor);
+      const s = spread(window);
+      if (s < bestSpread) {
+        bestSpread = s;
+        bestWindow = window;
+      }
+    }
+    selected = bestWindow;
+  }
+
+  // Если объявлений меньше max и диапазон все еще широкий — тоже ужимаем в плотное окно.
+  if (selected.length > minTargetFloor && spread(selected) > maxSpread) {
+    const byPrice = selected.slice().sort((a, b) => Number(a.price) - Number(b.price));
+    let bestWindow = byPrice.slice(0, minTargetFloor);
+    let bestSpread = spread(bestWindow);
+    for (let i = 1; i <= byPrice.length - minTargetFloor; i += 1) {
+      const window = byPrice.slice(i, i + minTargetFloor);
+      const s = spread(window);
+      if (s < bestSpread) {
+        bestSpread = s;
+        bestWindow = window;
+      }
+    }
+    selected = bestWindow;
+  }
+
+  // Пытаемся расширить до предпочтительного минимума, не нарушая maxSpread.
+  if (selected.length < minTargetPreferred) {
+    const selectedLinks = new Set(selected.map((p) => normalizePropertyLink(p.link)).filter(Boolean));
+    const remaining = ranked.filter((p) => !selectedLinks.has(normalizePropertyLink(p.link)));
+    for (const candidate of remaining) {
+      if (selected.length >= minTargetPreferred) break;
+      const next = [...selected, candidate];
+      if (spread(next) <= maxSpread) {
+        selected = next;
+      }
+    }
+  }
+
+  return selected.map(({ _avgDistance, ...rest }) => rest);
 }
 
 function pickDiverseSimilar(items = [], max = 15) {
@@ -2770,7 +2970,7 @@ export async function calculatePropertyPrice({
         .map((s) => s.trim())
         .filter((s) => s.length > 3)
     };
-    const similarForUi = buildSimilarMultiSource(
+    let similarForUi = buildSimilarMultiSource(
       prioritySelection.similar.filter((p) =>
         strictUiItems.some((x) => normalizePropertyLink(x.link) === normalizePropertyLink(p.link))
       ),
@@ -2781,6 +2981,24 @@ export async function calculatePropertyPrice({
         scoreCtx: similarScoreCtx
       }
     );
+    const beforeTotalCluster = similarForUi.length;
+    similarForUi = filterTotalPriceCluster(similarForUi, { minItems: 6 });
+    const afterTotalCluster = similarForUi.length;
+    similarForUi = filterUiPriceWindow(similarForUi, {
+      minItems: TARGET_MIN_SIMILAR_COUNT,
+      maxWindow: 130000,
+      preferWindow: 90000
+    });
+    const afterUiWindow = similarForUi.length;
+    similarForUi = selectUiComparablesAroundAverage(similarForUi, {
+      max: SIMILAR_UI_MAX,
+      minTargetPreferred: SIMILAR_UI_MIN,
+      minTargetFloor: 3,
+      maxSpread: 150000
+    });
+    console.log(
+      `DEBUG: similar total-price cluster=${afterTotalCluster} (before=${beforeTotalCluster}), ui price window=${afterUiWindow}, around-average=${similarForUi.length}`
+    );
     const achievedSimilarSourceCoverage = countEffectiveSources(similarForUi);
 
     const medianItems =
@@ -2789,10 +3007,14 @@ export async function calculatePropertyPrice({
         : valid.filter((p) => p?.price && Number.isFinite(p.price) && p.price > 0);
 
     const prices = medianItems.map((p) => p.price);
+    const averageRecommendation = averagePrice(prices);
     const sourceBalancedRecommendation = buildSourceBalancedRecommendation(
       medianItems.length ? medianItems : valid.length ? valid : validBeforePriority
     );
-    let recommendedPrice = sourceBalancedRecommendation.recommendedPrice || robustMedian(prices);
+    let recommendedPrice =
+      averageRecommendation ||
+      sourceBalancedRecommendation.recommendedPrice ||
+      robustMedian(prices);
     recommendedPrice = stabilizeRecommendedPrice({
       recommendedPrice,
       validCount: medianItems.length,
@@ -2876,9 +3098,11 @@ export async function calculatePropertyPrice({
           ? 'benchmark_fallback'
           : (districtFallbackUsed
             ? 'district_median_fallback'
+            : (averageRecommendation
+              ? 'average_cluster'
             : (sourceBalancedRecommendation.sourceCount >= 2
               ? 'source_balanced_median'
-              : (medianItems.length >= 8 ? 'trimmed_median' : 'median'))),
+              : (medianItems.length >= 8 ? 'trimmed_median' : 'median')))),
         cache: 'miss',
         sourceQuality,
         sourceBalanced: sourceBalancedRecommendation.sourceCount >= 2,
@@ -2932,7 +3156,7 @@ export async function calculatePropertyPrice({
 
     // Жесткий контроль только при критически малом объеме данных.
     if (similarForUi.length < TARGET_MIN_SIMILAR_COUNT) {
-      if (similarForUi.length >= 4 && recommendedPrice && Number.isFinite(recommendedPrice)) {
+      if (similarForUi.length >= 3 && recommendedPrice && Number.isFinite(recommendedPrice)) {
         return {
           ...response,
           searchParams: {

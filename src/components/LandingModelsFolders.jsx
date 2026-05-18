@@ -17,13 +17,14 @@ export default function LandingModelsFolders({ folders, ariaLabel }) {
         aria-label={label}
       >
         <div className="landing-models__folders-track">
-          {folders.map((folder) => (
+          {folders.map((folder, index) => (
             <div
               key={folder.titleKey}
-              className="landing-models__folders-slide"
+              className={`landing-models__folders-slide${index === 0 ? ' landing-models__folders-slide--featured' : ''}`}
             >
               <AnimatedFolder
                 variant="landingSlider"
+                featured={index === 0}
                 title={folder.title}
                 projects={folder.projects}
                 gradient={folder.gradient}

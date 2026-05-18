@@ -552,8 +552,8 @@
   object-fit: cover;
 }
 
-/* Скрываем все дочерние элементы изображения, кроме img, статус-бейджа и минимальной цены */
-.property-card-owner__image > *:not(img):not(.status-badge):not(.owner-min-price-badge) {
+/* Скрываем служебные оверлеи, но оставляем img и обертку скелетона */
+.property-card-owner__image > *:not(img):not(.image-with-skeleton):not(.status-badge):not(.owner-min-price-badge) {
   display: none !important;
 }
 

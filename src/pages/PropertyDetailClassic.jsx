@@ -37,6 +37,9 @@ import { flagEmojiForStoredCountry } from '../utils/countryFlagFromStored'
 import FlipCard from '../components/ui/FlipCard'
 import { Awards } from '@/components/ui/award'
 import TestDriveSection from '../components/TestDriveSection'
+import PageBackButton from '../components/PageBackButton'
+import TestDrivePromoDrawer from '../components/TestDrivePromoDrawer'
+import { propertyBlocksTestDrivePromo, propertyShowsTestDrive } from '../utils/propertyShowsTestDrive'
 import { getAuctionMinBidStep } from '../utils/auctionBidStep'
 import { hasAuctionBuyNowListingForm } from '../utils/hasBuyNowOption'
 import { navigateToWallet } from '../utils/walletNavigation'
@@ -53,6 +56,9 @@ import {
 import { roleSkipsAuctionKyc } from '../utils/buyerAuctionKyc'
 import { confirmPropertyReservationSession } from '../utils/subscriptionCheckout'
 import { hasEmailForBuyNowFlow } from '../utils/buyNowEmailGate'
+import { usePropertyDisplayCurrency } from '../hooks/usePropertyDisplayCurrency'
+import PropertyCurrencySelector from '../components/PropertyCurrencySelector'
+import '../components/PropertyCurrencySelector.css'
 import { ShieldQuestionMark, ShieldAlert, ShieldCheck, Bell } from 'lucide-react'
 
 // Используем синхронную версию для инициализации, затем обновим при загрузке
@@ -118,6 +124,8 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
   const [hadCircularTimerAuction, setHadCircularTimerAuction] = useState(false)
   const shownLeaderInfoRef = useRef(null) // Ref для отслеживания, какому лидеру уже показывали информацию
   const reservationCheckoutHandledRef = useRef(null)
+  const [isTestDrivePromoOpen, setIsTestDrivePromoOpen] = useState(false)
+  const testDrivePromoDismissedRef = useRef(false)
   /** После окончания аукциона не даём сбросить timerExpired, если сервер подставил другую дату окончания */
   const auctionFinishedLatchRef = useRef(false)
   /** Последняя известная дата кругового таймера (если API убрал test_timer_end_date) */
@@ -576,6 +584,10 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
     debt_severity: property.debt_severity || null,
   }
 
+  const priceLocale = currentLang === 'ru' ? 'ru-RU' : 'en-US'
+  const currencyView = usePropertyDisplayCurrency(displayProperty.currency)
+  const fmtPrice = (amount) => currencyView.formatMoney(amount, priceLocale)
+
   const isReservedActive =
     displayProperty.is_reserved &&
     displayProperty.reserved_until &&
@@ -587,6 +599,35 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
     displayProperty.is_debt === true ||
     displayProperty.has_debt === 1 ||
     displayProperty.has_debt === true;
+
+  const showsTestDriveSection =
+    propertyShowsTestDrive(displayProperty) &&
+    (property.test_drive === 1 ||
+      property.test_drive === true ||
+      property.test_drive === '1')
+
+  useEffect(() => {
+    testDrivePromoDismissedRef.current = false
+    setIsTestDrivePromoOpen(false)
+  }, [displayProperty.id])
+
+  const dismissTestDrivePromo = () => {
+    testDrivePromoDismissedRef.current = true
+    setIsTestDrivePromoOpen(false)
+  }
+
+  const scrollToTestDriveSection = () => {
+    testDrivePromoDismissedRef.current = true
+    window.setTimeout(() => {
+      const section = document.getElementById('property-test-drive-section')
+      if (!section) return
+      section.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      section.classList.add('property-detail-test-drive--highlight')
+      window.setTimeout(() => {
+        section.classList.remove('property-detail-test-drive--highlight')
+      }, 2400)
+    }, 400)
+  }
   
   // Логируем данные о резервации для отладки
   console.log('🔍 PropertyDetailClassic - Данные о резервации:', {
@@ -693,6 +734,26 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
     hadCircularTimerAuction
 
   const auctionEndTime = getEffectiveAuctionEndTime(displayProperty)
+  const testDrivePromoBlocked = propertyBlocksTestDrivePromo(displayProperty, { timerExpired })
+  const shouldShowTestDrivePromo = showsTestDriveSection && !testDrivePromoBlocked
+
+  useEffect(() => {
+    if (!shouldShowTestDrivePromo) {
+      setIsTestDrivePromoOpen(false)
+      return undefined
+    }
+    if (testDrivePromoDismissedRef.current) {
+      setIsTestDrivePromoOpen(false)
+      return undefined
+    }
+    const timer = window.setTimeout(() => {
+      if (!testDrivePromoDismissedRef.current && shouldShowTestDrivePromo) {
+        setIsTestDrivePromoOpen(true)
+      }
+    }, 750)
+    return () => window.clearTimeout(timer)
+  }, [displayProperty.id, shouldShowTestDrivePromo])
+
   const favoriteProperty = useMemo(() => {
     const sourceTable =
       displayProperty.source_table ||
@@ -2560,15 +2621,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
       {/* Заголовок */}
       <div className="property-detail-header">
         <div className="property-detail-header__container">
-          <button
-            type="button"
-            className="property-detail-header__back"
-            onClick={handleBackClick}
-            aria-label={t('back')}
-          >
-            <FiArrowLeft size={20} aria-hidden />
-            <span>{t('back')}</span>
-          </button>
+          <PageBackButton onClick={handleBackClick} />
         </div>
       </div>
 
@@ -2646,10 +2699,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                     <div className="price-overlay__content">
                       <div className="price-overlay__label">Новая ставка</div>
                       <div className="price-overlay__value-wrapper">
-                        <span className="price-overlay__value">
-                          {displayProperty.currency === 'USD' ? '$' : displayProperty.currency === 'EUR' ? '€' : displayProperty.currency === 'BYN' ? 'Br' : ''}
-                          {currentBid.toLocaleString('ru-RU')}
-                        </span>
+                        <span className="price-overlay__value">{fmtPrice(currentBid)}</span>
                         <FiArrowUp className="price-overlay__arrow" size={24} />
                       </div>
                     </div>
@@ -3192,6 +3242,15 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
               {/* Название */}
               <h1 className="property-detail-sidebar__title">{propertyInfo}</h1>
 
+              <PropertyCurrencySelector
+                baseCurrency={currencyView.baseCurrency}
+                displayCurrency={currencyView.displayCurrency}
+                onChange={currencyView.setDisplayCurrency}
+                options={currencyView.options}
+                loading={currencyView.loading}
+                isConverted={currencyView.isConverted}
+              />
+
               {/* Минимальная цена продажи для аукционных объектов */}
               {(() => {
                 const buyNowPrice = displayProperty.price ? Number(displayProperty.price) : 0;
@@ -3216,10 +3275,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                   <>
                     <div className="property-detail-sidebar__current-bid">
                       <span className="current-bid-label">{t('propertyDetailMinSellingPrice')}</span>
-                      <span className="current-bid-value">
-                        {displayProperty.currency === 'USD' ? '$' : displayProperty.currency === 'EUR' ? '€' : displayProperty.currency === 'BYN' ? 'Br' : ''}
-                        {displayProperty.price.toLocaleString('ru-RU')}
-                      </span>
+                      <span className="current-bid-value">{fmtPrice(displayProperty.price)}</span>
                     </div>
                     <button
                       type="button"
@@ -3258,12 +3314,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                 <>
                   <div className="property-detail-sidebar__price-block">
                     <span className="price-label">{t('propertyDetailPrice')}</span>
-                    <span
-                      className="price-value"
-                    >
-                      {displayProperty.currency === 'USD' ? '$' : displayProperty.currency === 'EUR' ? '€' : displayProperty.currency === 'BYN' ? 'Br' : ''}
-                      {displayProperty.price.toLocaleString('ru-RU')}
-                    </span>
+                    <span className="price-value">{fmtPrice(displayProperty.price)}</span>
                   </div>
                   <button
                     type="button"
@@ -3336,7 +3387,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                   displayProperty.debt_third_party && 'Долги перед третьими лицами',
                   displayProperty.debt_other && displayProperty.debt_other,
                   displayProperty.debt_amount
-                    ? `Сумма долга: $${Number(displayProperty.debt_amount).toLocaleString('en-US')}`
+                    ? `Сумма долга: ${fmtPrice(displayProperty.debt_amount)}`
                     : null,
                 ].filter(Boolean)
 
@@ -3373,10 +3424,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                   {isDebtProperty && displayProperty.debt_amount != null && displayProperty.debt_amount !== '' && !Number.isNaN(Number(displayProperty.debt_amount)) && (
                     <div className="property-detail-sidebar__current-bid" style={{ marginBottom: 12 }}>
                       <span className="current-bid-label">{t('debtsDebtAmount')}</span>
-                      <span className="current-bid-value">
-                        {displayProperty.currency === 'USD' ? '$' : displayProperty.currency === 'EUR' ? '€' : displayProperty.currency === 'BYN' ? 'Br' : ''}
-                        {Number(displayProperty.debt_amount).toLocaleString('ru-RU')}
-                      </span>
+                      <span className="current-bid-value">{fmtPrice(displayProperty.debt_amount)}</span>
                     </div>
                   )}
 
@@ -3421,9 +3469,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                             {t('propertyDetailWinnerUserId', { id: displayEndedAuctionPlayerId ?? resolvedWinnerUserId })}
                           </div>
                           <div className="auction-winner-bid">
-                            {t('propertyDetailWinningBid')}{' '}
-                            {displayProperty.currency === 'USD' ? '$' : displayProperty.currency === 'EUR' ? '€' : displayProperty.currency === 'BYN' ? 'Br' : ''}
-                            {resolvedWinningBid.toLocaleString('ru-RU')}
+                            {t('propertyDetailWinningBid')} {fmtPrice(resolvedWinningBid)}
                           </div>
                         </div>
                       )}
@@ -3458,8 +3504,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                             </span>
                           </div>
                           <div className="auction-leader-bid">
-                            {t('propertyDetailBid')} {displayProperty.currency === 'USD' ? '$' : displayProperty.currency === 'EUR' ? '€' : displayProperty.currency === 'BYN' ? 'Br' : ''}
-                            {previousLeader.bidAmount.toLocaleString('ru-RU')}
+                            {t('propertyDetailBid')} {fmtPrice(previousLeader.bidAmount)}
                           </div>
                         </div>
                       )}
@@ -3478,15 +3523,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                             className={`auction-leader-bid ${priceAnimation ? 'auction-leader-bid--price-up' : ''}`}
                           >
                             <span className="auction-leader-bid__amount">
-                              {t('propertyDetailBid')}{' '}
-                              {displayProperty.currency === 'USD'
-                                ? '$'
-                                : displayProperty.currency === 'EUR'
-                                  ? '€'
-                                  : displayProperty.currency === 'BYN'
-                                    ? 'Br'
-                                    : ''}
-                              {currentLeader.bidAmount.toLocaleString('ru-RU')}
+                              {t('propertyDetailBid')} {fmtPrice(currentLeader.bidAmount)}
                             </span>
                             {priceAnimation && (
                               <FiArrowUp className="auction-leader-bid__arrow-up" size={18} aria-hidden />
@@ -3510,8 +3547,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                             </span>
                           </div>
                           <div className="auction-leader-bid">
-                            {t('propertyDetailBid')} {displayProperty.currency === 'USD' ? '$' : displayProperty.currency === 'EUR' ? '€' : displayProperty.currency === 'BYN' ? 'Br' : ''}
-                            {previousLeader.bidAmount.toLocaleString('ru-RU')}
+                            {t('propertyDetailBid')} {fmtPrice(previousLeader.bidAmount)}
                           </div>
                         </div>
                       )}
@@ -3530,15 +3566,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                             className={`auction-leader-bid ${priceAnimation ? 'auction-leader-bid--price-up' : ''}`}
                           >
                             <span className="auction-leader-bid__amount">
-                              {t('propertyDetailBid')}{' '}
-                              {displayProperty.currency === 'USD'
-                                ? '$'
-                                : displayProperty.currency === 'EUR'
-                                  ? '€'
-                                  : displayProperty.currency === 'BYN'
-                                    ? 'Br'
-                                    : ''}
-                              {currentLeader.bidAmount.toLocaleString('ru-RU')}
+                              {t('propertyDetailBid')} {fmtPrice(currentLeader.bidAmount)}
                             </span>
                             {priceAnimation && (
                               <FiArrowUp className="auction-leader-bid__arrow-up" size={18} aria-hidden />
@@ -3566,15 +3594,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                         className={`auction-leader-bid ${priceAnimation ? 'auction-leader-bid--price-up' : ''}`}
                       >
                         <span className="auction-leader-bid__amount">
-                          {t('propertyDetailBid')}{' '}
-                          {displayProperty.currency === 'USD'
-                            ? '$'
-                            : displayProperty.currency === 'EUR'
-                              ? '€'
-                              : displayProperty.currency === 'BYN'
-                                ? 'Br'
-                                : ''}
-                          {currentLeader.bidAmount.toLocaleString('ru-RU')}
+                          {t('propertyDetailBid')} {fmtPrice(currentLeader.bidAmount)}
                         </span>
                         {priceAnimation && (
                           <FiArrowUp className="auction-leader-bid__arrow-up" size={18} aria-hidden />
@@ -3603,8 +3623,13 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                       </span>
                       <div className={`current-bid-value-wrapper ${priceAnimation ? 'current-bid-value-wrapper--animated' : ''}`}>
                         <span className="current-bid-value">
-                          {displayProperty.currency === 'USD' ? '$' : displayProperty.currency === 'EUR' ? '€' : displayProperty.currency === 'BYN' ? 'Br' : ''}
-                          {(currentBid !== null ? currentBid : (isAuctionProperty ? (displayProperty.auction_starting_price || 0) : (displayProperty.price || 0))).toLocaleString('ru-RU')}
+                          {fmtPrice(
+                            currentBid !== null
+                              ? currentBid
+                              : isAuctionProperty
+                                ? displayProperty.auction_starting_price || 0
+                                : displayProperty.price || 0,
+                          )}
                         </span>
                         {priceAnimation && (
                           <span className="current-bid-arrow">
@@ -3618,6 +3643,11 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                   {/* Функционал ставки - скрываем когда таймер истек или сделка «купить сейчас» завершена */}
                   {(!isAuctionProperty || !auctionEndedForSidebar) && (
                   <div className="property-detail-sidebar__bidding-section">
+                    {currencyView.isConverted ? (
+                      <p className="property-detail-sidebar__bids-currency-note" role="note">
+                        {t('propertyDetailBidsListingCurrency', { currency: currencyView.baseCurrency })}
+                      </p>
+                    ) : null}
                     {isReservedActive && (
                       <div style={{
                         background: 'rgba(245, 158, 11, 0.1)',
@@ -3677,32 +3707,21 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                           currentBid !== null ? currentBid : (displayProperty.currentBid || startingPrice)
                         const step = getAuctionMinBidStep(effectiveCurrentBid)
                         const minBid = effectiveCurrentBid + step
-                        const curSym =
-                          displayProperty.currency === 'USD'
-                            ? '$'
-                            : displayProperty.currency === 'EUR'
-                              ? '€'
-                              : displayProperty.currency === 'BYN'
-                                ? 'Br'
-                                : '$'
-                        const locale = currentLang === 'ru' ? 'ru-RU' : 'en-US'
                         return (
                           <p
                             className="bidding-section__min-hint"
                             style={{ fontSize: '12px', opacity: 0.88, margin: '6px 0 10px', lineHeight: 1.35 }}
                           >
                             {t('propertyDetailMinBidHint', {
-                              min: `${curSym}${minBid.toLocaleString(locale)}`,
-                              step: `${curSym}${step.toLocaleString(locale)}`,
+                              min: fmtPrice(minBid),
+                              step: fmtPrice(step),
                             })}
                           </p>
                         )
                       })()}
                     
                     <div className="bidding-section__input-wrapper">
-                      <span className="bidding-section__currency">
-                        {displayProperty.currency === 'USD' ? '$' : displayProperty.currency === 'EUR' ? '€' : displayProperty.currency === 'BYN' ? 'Br' : '$'}
-                      </span>
+                      <span className="bidding-section__currency">{currencyView.baseSymbol}</span>
                       <input
                         type="text"
                         className="bidding-section__input"
@@ -3764,10 +3783,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                                   )}
                                 </div>
                                 <div className="recent-bid-item__info">
-                                  <div className="recent-bid-item__amount">
-                                    {displayProperty.currency === 'USD' ? '$' : displayProperty.currency === 'EUR' ? '€' : displayProperty.currency === 'BYN' ? 'Br' : '$'}
-                                    {bid.bid_amount.toLocaleString('ru-RU')}
-                                  </div>
+                                  <div className="recent-bid-item__amount">{fmtPrice(bid.bid_amount)}</div>
                                   <div className="recent-bid-item__time">
                                     <FiClock size={12} />
                                     {new Date(bid.created_at).toLocaleString('ru-RU', {
@@ -3954,6 +3970,12 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
           setIsDepositRequiredOpen(false)
           navigateToWallet(navigate, '/auction')
         }}
+      />
+
+      <TestDrivePromoDrawer
+        isOpen={isTestDrivePromoOpen && shouldShowTestDrivePromo}
+        onClose={dismissTestDrivePromo}
+        onGoToSection={scrollToTestDriveSection}
       />
 
       {/* Модальное окно для просмотра документа */}

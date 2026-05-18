@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { FiX } from 'react-icons/fi'
 import { getApiBaseUrl } from '../utils/apiConfig'
 import { showNotification } from '../utils/toastHelper'
+import { useDrawerDismiss } from '../hooks/useDrawerDismiss'
 import './TestDriveExitFeedbackModal.css'
 
 const MIN_COMMENT_LEN = 10
@@ -14,6 +15,7 @@ const MIN_COMMENT_LEN = 10
  */
 export default function TestDriveExitFeedbackModal({ open, feedbackToken, onClose, onSuccess }) {
   const { t } = useTranslation()
+  const { visible, isClosing, requestClose } = useDrawerDismiss(open, onClose)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [detail, setDetail] = useState(null)
@@ -66,11 +68,11 @@ export default function TestDriveExitFeedbackModal({ open, feedbackToken, onClos
   useEffect(() => {
     if (!open) return
     const onKey = (e) => {
-      if (e.key === 'Escape') onClose()
+      if (e.key === 'Escape') requestClose()
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [open, onClose])
+  }, [open, requestClose])
 
   const canSubmit =
     Number.isFinite(Number(rating)) &&
@@ -120,7 +122,12 @@ export default function TestDriveExitFeedbackModal({ open, feedbackToken, onClos
     }
   }
 
-  if (!open || !feedbackToken) return null
+  if (!visible || !feedbackToken) return null
+
+  const closingPanel = isClosing
+    ? ' drawer-dismiss-from-bottom--closing drawer-dismiss-modal--closing'
+    : ''
+  const closingBackdrop = isClosing ? ' drawer-dismiss-backdrop--closing' : ''
 
   const { booking, buyer, property } = detail || {}
   const titleText = property?.title || t('exitFeedback_title')
@@ -131,13 +138,18 @@ export default function TestDriveExitFeedbackModal({ open, feedbackToken, onClos
 
   return (
     <div
-      className="td-exit-feedback-overlay"
+      className={`td-exit-feedback-overlay${closingBackdrop}`}
       role="presentation"
       onMouseDown={(e) => {
-        if (e.target === e.currentTarget) onClose()
+        if (e.target === e.currentTarget) requestClose()
       }}
     >
-      <div className="td-exit-feedback" role="dialog" aria-modal="true" aria-labelledby="td-exit-feedback-title">
+      <div
+        className={`td-exit-feedback${closingPanel}`}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="td-exit-feedback-title"
+      >
         <div className="td-exit-feedback__top">
           <div>
             <h2 id="td-exit-feedback-title">{t('exitFeedback_title')}</h2>
@@ -162,7 +174,7 @@ export default function TestDriveExitFeedbackModal({ open, feedbackToken, onClos
               <p>{t('exitFeedback_loading')}</p>
             )}
           </div>
-          <button type="button" className="td-exit-feedback__close" onClick={onClose} aria-label={t('exitFeedback_close')}>
+          <button type="button" className="td-exit-feedback__close" onClick={() => requestClose()} aria-label={t('exitFeedback_close')}>
             <FiX size={22} aria-hidden />
           </button>
         </div>
@@ -216,7 +228,7 @@ export default function TestDriveExitFeedbackModal({ open, feedbackToken, onClos
 
         {!loading && !alreadyDone ? (
           <div className="td-exit-feedback__footer">
-            <button type="button" className="td-exit-feedback__btn" onClick={onClose}>
+            <button type="button" className="td-exit-feedback__btn" onClick={() => requestClose()}>
               {t('exitFeedback_close')}
             </button>
             <button

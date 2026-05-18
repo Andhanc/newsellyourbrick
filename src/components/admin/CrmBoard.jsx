@@ -3,6 +3,7 @@ import { FiMail, FiPlus, FiRefreshCw, FiUserPlus } from 'react-icons/fi';
 import { getApiBaseUrl } from '../../utils/apiConfig';
 import { sendCrmEmailFromBrowser } from '../../utils/crmClientEmail';
 import { showNotification } from '../../utils/toastHelper';
+import { useDrawerDismiss } from '../../hooks/useDrawerDismiss';
 import './CrmBoard.css';
 
 function adminLabel() {
@@ -69,6 +70,9 @@ export default function CrmBoard() {
   const skipCardClickRef = useRef(false);
 
   const [drawerLeadId, setDrawerLeadId] = useState(null);
+  const isDrawerOpen = Boolean(drawerLeadId);
+  const { visible: drawerVisible, isClosing: drawerClosing, requestClose: closeDrawer } =
+    useDrawerDismiss(isDrawerOpen, () => setDrawerLeadId(null));
   const [detail, setDetail] = useState(null);
   const [activities, setActivities] = useState([]);
   const [detailLoading, setDetailLoading] = useState(false);
@@ -588,9 +592,17 @@ export default function CrmBoard() {
         </div>
       )}
 
-      {drawerLeadId && (
-        <div className="crm-board__overlay" role="presentation" onClick={() => setDrawerLeadId(null)}>
-          <div className="crm-board__drawer" role="dialog" onClick={(e) => e.stopPropagation()}>
+      {drawerVisible && (
+        <div
+          className={`crm-board__overlay${drawerClosing ? ' drawer-dismiss-backdrop--closing' : ''}`}
+          role="presentation"
+          onClick={() => closeDrawer()}
+        >
+          <div
+            className={`crm-board__drawer${drawerClosing ? ' drawer-dismiss-from-right--closing' : ''}`}
+            role="dialog"
+            onClick={(e) => e.stopPropagation()}
+          >
             {detailLoading && <p>Загрузка…</p>}
             {!detailLoading && lead && (
               <>
@@ -606,7 +618,7 @@ export default function CrmBoard() {
                       </span>
                     </div>
                   </div>
-                  <button type="button" className="crm-board__drawer-close" onClick={() => setDrawerLeadId(null)}>
+                  <button type="button" className="crm-board__drawer-close" onClick={() => closeDrawer()}>
                     ×
                   </button>
                 </div>

@@ -5,6 +5,7 @@ import CountdownTimer from './CountdownTimer'
 import { getApiBaseUrl, getApiBaseUrlSync } from '../utils/apiConfig'
 import { flagEmojiForStoredCountry } from '../utils/countryFlagFromStored'
 import './BiddingHistoryModal.css'
+import { getCurrencySymbol } from '../utils/currency'
 
 let API_BASE_URL = getApiBaseUrlSync()
 
@@ -123,7 +124,7 @@ export default function BiddingHistoryPanel({
   const formatPrice = (price) => {
     const num = Number(price)
     if (!num || Number.isNaN(num)) return '—'
-    return `$${num.toLocaleString('ru-RU')}`
+    return `${getCurrencySymbol(property?.currency)}${num.toLocaleString('ru-RU')}`
   }
 
   const formatDate = (date) => {

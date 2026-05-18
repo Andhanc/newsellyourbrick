@@ -8,6 +8,7 @@ import { GoogleOAuthProvider } from '@react-oauth/google'
 import { ClerkProvider } from '@clerk/clerk-react'
 import App from './App'
 import './index.css'
+import './styles/drawerDismiss.css'
 import './i18n/config'
 import { getClerkPublishableKey, getGoogleClientId } from './utils/env'
 

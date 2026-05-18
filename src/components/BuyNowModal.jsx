@@ -11,6 +11,7 @@ import { hasEmailForBuyNowFlow } from '../utils/buyNowEmailGate'
 import ShareSignaturePad from './ShareSignaturePad'
 import './BuyNowModal.css'
 import { RESERVE_TERMS_PDF_URL as POLICY_PDF_URL } from '../utils/reserveTermsPdfUrl'
+import { getCurrencySymbol } from '../utils/currency'
 
 const DEPOSIT_FRACTION = 0.1
 const WALLET_OFFSET_EUR = 3000
@@ -127,8 +128,7 @@ const BuyNowModal = ({
 
   const propertyTitle = property?.title || property?.name || t('listingDefault')
   const currency = (property?.currency || 'USD').toUpperCase()
-  const currencySymbol =
-    currency === 'USD' ? '$' : currency === 'EUR' ? '€' : currency === 'BYN' ? 'Br' : ''
+  const currencySymbol = getCurrencySymbol(currency)
 
   const minSalePriceRaw =
     Number(property?.price) ||
@@ -160,7 +160,7 @@ const BuyNowModal = ({
       reserveDisplayCurrency = 'EUR'
     }
   }
-  const reserveDisplaySymbol = reserveDisplayCurrency === 'USD' ? '$' : reserveDisplayCurrency === 'EUR' ? '€' : ''
+  const reserveDisplaySymbol = getCurrencySymbol(reserveDisplayCurrency)
 
   const winningBidNum =
     isAuctionWinner && winningBidAmount != null ? Math.round(Number(winningBidAmount) * 100) / 100 : null

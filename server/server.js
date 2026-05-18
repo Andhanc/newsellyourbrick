@@ -25,6 +25,7 @@ import { getMarketData, getMortgageRates, getRentalYieldByRegion } from './servi
 import { translatePropertyToAllLanguages } from './services/aiPropertyTranslate.js';
 import { buildDatabaseSnapshot } from './services/storageSnapshot.js';
 import { buildOwnerSaleCelebrations } from './ownerSaleCelebrations.js';
+import { buildPropertySearchOptionsWithBids } from './services/propertySearchOptions.js';
 import { getAuctionMinBidStep } from '../src/utils/auctionBidStep.js';
 import {
   registerStripeBillingRoutes,
@@ -35,6 +36,7 @@ import {
 import { sendCrmEmailViaEmailJS, resolveBuyerEmailForPurchaseRequest } from './emailJsCrmSend.js';
 import { registerIntelligenceIoProxy, getIntelligenceIoKeyFromEnv } from './intelligenceIoProxy.js';
 import { publicPropertyListsCache } from './middleware/publicPropertyListsCache.js';
+import { getCurrencySymbol } from './utils/currency.js';
 import {
   applyListingPhotosToFormatted,
   normalizePhotosListInput,
@@ -578,6 +580,40 @@ app.get('/api/health', (req, res) => {
 });
 
 // API endpoint для получения конфигурации клиента (runtime переменные)
+/**
+ * Страна посетителя по заголовкам CDN / прокси (для локали после cookie consent).
+ * GET /api/geo/country → { success, country: "DE" | null }
+ */
+function resolveVisitorCountryCode(req) {
+  const candidates = [
+    req.headers['cf-ipcountry'],
+    req.headers['x-vercel-ip-country'],
+    req.headers['x-country-code'],
+    req.headers['cloudfront-viewer-country'],
+    req.headers['x-appengine-country'],
+  ];
+  for (const raw of candidates) {
+    if (!raw || typeof raw !== 'string') continue;
+    const code = raw.trim().toUpperCase();
+    if (code === 'XX' || code === 'T1') continue;
+    if (/^[A-Z]{2}$/.test(code)) return code;
+  }
+  return null;
+}
+
+app.get('/api/geo/country', (req, res) => {
+  let country = resolveVisitorCountryCode(req);
+  if (!country && process.env.GEO_COUNTRY_DEV) {
+    const dev = String(process.env.GEO_COUNTRY_DEV).trim().toUpperCase();
+    if (/^[A-Z]{2}$/.test(dev)) country = dev;
+  }
+  res.setHeader('Cache-Control', 'private, no-store');
+  res.json({
+    success: true,
+    country,
+  });
+});
+
 app.get('/api/config', async (req, res) => {
   res.setHeader(
     'Cache-Control',
@@ -4132,9 +4168,7 @@ app.put('/api/purchase-requests/:id/status', async (req, res) => {
         const paymentAccount = process.env.PAYMENT_ACCOUNT_NUMBER || 'BY36ALFA30122345678901234567';
         
         // Формируем сообщение для покупателя
-        const currencySymbol = request.property_currency === 'USD' ? '$' : 
-                              request.property_currency === 'EUR' ? '€' : 
-                              request.property_currency || '';
+        const currencySymbol = getCurrencySymbol(request.property_currency);
         const propertyPrice = request.property_price ? 
           `${currencySymbol}${parseFloat(request.property_price).toLocaleString('ru-RU')}` : 
           'не указана';
@@ -9092,6 +9126,31 @@ app.get('/api/properties/debts', async (req, res) => {
 });
 
 /**
+ * GET /api/properties/search-options — страны/регионы и диапазон цен по реальным объявлениям
+ */
+app.get('/api/properties/search-options', async (req, res) => {
+  try {
+    const [approved, auctions, debts, shares] = await Promise.all([
+      propertyQueries.getApproved(),
+      propertyQueries.getAuctions(),
+      propertyQueries.getDebts(),
+      propertyQueries.getShares(10000, 0),
+    ]);
+    const data = await buildPropertySearchOptionsWithBids([
+      ...approved,
+      ...auctions,
+      ...debts,
+      ...shares,
+    ]);
+    res.setHeader('Cache-Control', 'private, no-cache, no-store, must-revalidate');
+    res.json({ success: true, data });
+  } catch (error) {
+    console.error('Ошибка search-options:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
  * Форматирует один объект аукциона в формат API (для SSE broadcast и повторного использования).
  */
 async function formatOneAuctionPropertyForApi(prop) {
@@ -9201,7 +9260,10 @@ app.get('/api/properties/auctions', async (req, res) => {
     const hidePrivateClubOnly = !includePrivateClubListings;
 
     // Используем функцию из propertyQueries, которая работает с новыми таблицами
-    let properties = await propertyQueries.getAuctions(type || null, { hidePrivateClubOnly });
+    let properties = await propertyQueries.getAuctions(type || null, {
+      hidePrivateClubOnly,
+      viewerUserId: Number.isFinite(viewerId) && viewerId >= 1 ? viewerId : null,
+    });
 
     if (VERBOSE_HTTP) {
       console.log(`✅ Получено аукционных объявлений: ${properties.length}`);
@@ -9219,9 +9281,15 @@ app.get('/api/properties/auctions', async (req, res) => {
       ],
     };
     if (hidePrivateClubOnly) {
-      timerWhereBase.AND.push({
-        OR: [{ private_club_only: null }, { private_club_only: 0 }],
-      });
+      if (Number.isFinite(viewerId) && viewerId >= 1) {
+        timerWhereBase.AND.push({
+          OR: [{ private_club_only: null }, { private_club_only: 0 }, { user_id: viewerId }],
+        });
+      } else {
+        timerWhereBase.AND.push({
+          OR: [{ private_club_only: null }, { private_club_only: 0 }],
+        });
+      }
     }
     const timerWhereApartments = { ...timerWhereBase };
     const timerWhereHouses = { ...timerWhereBase };
@@ -11514,7 +11582,7 @@ app.get('/api/properties/:id', async (req, res) => {
   }
 
   // Игнорируем специальные пути, которые должны обрабатываться другими маршрутами
-  if (id === 'test-timers' || id === 'pending' || id === 'approved' || id === 'auctions' || id === 'user' || id === 'shares') {
+  if (id === 'test-timers' || id === 'pending' || id === 'approved' || id === 'auctions' || id === 'user' || id === 'shares' || id === 'search-options') {
     console.log('⚠️ GET /api/properties/:id - Игнорируем специальный путь:', id);
     return res.status(404).json({ success: false, error: 'Маршрут не найден' });
   }

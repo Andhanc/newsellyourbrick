@@ -215,20 +215,33 @@ export const userQueries = {
     const prisma = getPrisma();
     const now = new Date();
     const inactiveSubStatuses = ['canceled', 'unpaid', 'incomplete_expired', 'incomplete'];
-    const row = await prisma.users.findUnique({
-      where: { id },
-      select: {
-        vip_until: true,
-        stripe_subscription_state: { select: { plan_key: true, status: true } },
-      },
-    });
-    if (!row) return false;
-    const vipUntilMs = row.vip_until ? new Date(row.vip_until).getTime() : 0;
-    if (vipUntilMs && vipUntilMs > now.getTime()) return true;
-    const sub = row.stripe_subscription_state;
-    const st = sub?.status ? String(sub.status).toLowerCase() : '';
-    const pk = sub?.plan_key ? String(sub.plan_key).toLowerCase() : '';
-    return pk === 'vip' && st !== '' && !inactiveSubStatuses.includes(st);
+    const stripeVipActive = (sub) => {
+      const st = sub?.status ? String(sub.status).toLowerCase() : '';
+      const pk = sub?.plan_key ? String(sub.plan_key).toLowerCase() : '';
+      return pk === 'vip' && st !== '' && !inactiveSubStatuses.includes(st);
+    };
+    try {
+      const row = await prisma.users.findUnique({
+        where: { id },
+        select: {
+          vip_until: true,
+          stripe_subscription_state: { select: { plan_key: true, status: true } },
+        },
+      });
+      if (!row) return false;
+      const vipUntilMs = row.vip_until ? new Date(row.vip_until).getTime() : 0;
+      if (vipUntilMs && vipUntilMs > now.getTime()) return true;
+      return stripeVipActive(row.stripe_subscription_state);
+    } catch (err) {
+      if (String(err?.name || '') !== 'PrismaClientValidationError') throw err;
+      const row = await prisma.users.findUnique({
+        where: { id },
+        select: {
+          stripe_subscription_state: { select: { plan_key: true, status: true } },
+        },
+      });
+      return stripeVipActive(row?.stripe_subscription_state);
+    }
   },
 
   /** Участники закрытого клуба: активный срок vip_until или активная подписка Stripe VIP. */

@@ -289,7 +289,7 @@ function approvedBuyNowPrismaWhere(propertyType = null) {
 }
 
 function auctionListPrismaWhere(propertyType = null, options = {}) {
-  const { hidePrivateClubOnly = false } = options;
+  const { hidePrivateClubOnly = false, viewerUserId = null } = options;
   const w = {
     moderation_status: 'approved',
     is_auction: 1,
@@ -311,9 +311,20 @@ function auctionListPrismaWhere(propertyType = null, options = {}) {
     ],
   };
   if (hidePrivateClubOnly) {
-    w.AND.push({
-      OR: [{ private_club_only: null }, { private_club_only: 0 }],
-    });
+    const viewerId = Number(viewerUserId);
+    if (Number.isFinite(viewerId) && viewerId >= 1) {
+      w.AND.push({
+        OR: [
+          { private_club_only: null },
+          { private_club_only: 0 },
+          { user_id: viewerId },
+        ],
+      });
+    } else {
+      w.AND.push({
+        OR: [{ private_club_only: null }, { private_club_only: 0 }],
+      });
+    }
   }
   if (propertyType) w.property_type = propertyType;
   return w;

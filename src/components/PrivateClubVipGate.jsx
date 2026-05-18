@@ -6,6 +6,7 @@ import { getUserData } from '../services/authService'
 import { startVipSubscriptionCheckout } from '../utils/subscriptionCheckout'
 import { showNotification } from '../utils/toastHelper'
 import { SUBSCRIPTION_BILLING_UPDATED_EVENT } from '../hooks/useCabinetOverviewData'
+import { useDrawerDismiss } from '../hooks/useDrawerDismiss'
 import './PrivateClubVipGate.css'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api'
@@ -13,6 +14,7 @@ const MOBILE_MAX = 767
 
 export default function PrivateClubVipGate({ open, onClose, userId, onPrivateClubActivated }) {
   const { t } = useTranslation()
+  const { visible, isClosing, requestClose } = useDrawerDismiss(open, onClose)
   const [promo, setPromo] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [isMobile, setIsMobile] = useState(
@@ -34,7 +36,7 @@ export default function PrivateClubVipGate({ open, onClose, userId, onPrivateClu
       return
     }
     const onKey = (e) => {
-      if (e.key === 'Escape') onClose?.()
+      if (e.key === 'Escape') requestClose()
     }
     document.addEventListener('keydown', onKey)
     const prev = document.body.style.overflow
@@ -43,7 +45,7 @@ export default function PrivateClubVipGate({ open, onClose, userId, onPrivateClu
       document.removeEventListener('keydown', onKey)
       document.body.style.overflow = prev
     }
-  }, [open, onClose])
+  }, [open, requestClose])
 
   const onVipCheckout = useCallback(async () => {
     const uid = userId ?? getUserData()?.id ?? localStorage.getItem('userId')
@@ -103,7 +105,7 @@ export default function PrivateClubVipGate({ open, onClose, userId, onPrivateClu
           onPrivateClubActivated()
         } else {
           showNotification(t('privateClubVipPromoSuccess'), 'success')
-          onClose?.()
+          requestClose()
         }
       } catch {
         showNotification(t('privateClubVipPromoError'), 'error')
@@ -114,16 +116,32 @@ export default function PrivateClubVipGate({ open, onClose, userId, onPrivateClu
     [userId, promo, t, onClose, onPrivateClubActivated]
   )
 
-  if (!open || typeof document === 'undefined') return null
+  if (!visible || typeof document === 'undefined') return null
 
   const shellClass = isMobile ? 'private-club-vip private-club-vip--drawer' : 'private-club-vip private-club-vip--modal'
+  const closingBackdrop = isClosing ? ' drawer-dismiss-backdrop--closing' : ''
+  const closingShell = isClosing
+    ? isMobile
+      ? ' drawer-dismiss-from-bottom--closing'
+      : ' drawer-dismiss-modal--closing'
+    : ''
 
   return createPortal(
     <div className="private-club-vip-root" role="presentation">
-      <button type="button" className="private-club-vip__backdrop" aria-label={t('close')} onClick={onClose} />
-      <div className={shellClass} role="dialog" aria-modal="true" aria-labelledby="private-club-vip-title">
+      <button
+        type="button"
+        className={`private-club-vip__backdrop${closingBackdrop}`}
+        aria-label={t('close')}
+        onClick={() => requestClose()}
+      />
+      <div
+        className={`${shellClass}${closingShell}`}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="private-club-vip-title"
+      >
         <div className="private-club-vip__handle" aria-hidden={!isMobile} />
-        <button type="button" className="private-club-vip__close" onClick={onClose} aria-label={t('close')}>
+        <button type="button" className="private-club-vip__close" onClick={() => requestClose()} aria-label={t('close')}>
           <FiX size={22} />
         </button>
         <h2 id="private-club-vip-title" className="private-club-vip__title">

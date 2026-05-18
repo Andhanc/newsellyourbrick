@@ -4,6 +4,13 @@
  */
 
 const MAX_AGE_MS = 21 * 86400 * 1000;
+const VIP_CLUB_PUBLICATION_FEE_MAJOR = (() => {
+  const raw = Number(String(process.env.VIP_CLUB_PUBLICATION_FEE_MAJOR || '299').trim());
+  return Number.isFinite(raw) && raw > 0 ? raw : 299;
+})();
+const VIP_CLUB_PUBLICATION_FEE_CURRENCY = String(
+  process.env.STRIPE_SUBSCRIPTION_CURRENCY || process.env.STRIPE_BILLING_CURRENCY || 'EUR'
+).toUpperCase();
 
 function parsePhotosField(raw) {
   if (!raw) return [];
@@ -61,6 +68,14 @@ function hadCircularAuctionRow(p) {
 
 function isAuctionRow(p) {
   return p && (p.is_auction === 1 || p.is_auction === true || p.is_auction === '1' || p.is_auction === 'true');
+}
+
+function isApprovedRow(p) {
+  return String(p?.moderation_status || '').toLowerCase() === 'approved';
+}
+
+function isPrivateClubOnlyRow(p) {
+  return p && (p.private_club_only === 1 || p.private_club_only === true || p.private_club_only === '1');
 }
 
 function occurredMs(iso) {
@@ -249,6 +264,29 @@ export async function buildOwnerSaleCelebrations(prisma, uid) {
     } else {
       events.push({ ...common, sale_channel: 'buy_now' });
     }
+  }
+
+  for (const p of ownerProps) {
+    if (!isApprovedRow(p) || !isPrivateClubOnlyRow(p)) continue;
+    const occurred_at = String(p.reviewed_at || p.updated_at || p.created_at || '').trim();
+    if (!isFresh(occurred_at)) continue;
+    events.push({
+      event_id: `pc:${p.property_table}:${Number(p.id)}:${occurredMs(occurred_at)}`,
+      sale_channel: 'vip_club_featured',
+      property_id: p.id,
+      property_type: p.property_type,
+      property_table: p.property_table,
+      source_table: p.source_table,
+      title: p.title || '',
+      location: p.location || '',
+      currency: p.currency || 'USD',
+      sale_amount: Number(p.price) || 0,
+      cover_url: p.cover_url || null,
+      photos: p.photos,
+      occurred_at,
+      vip_fee_amount: VIP_CLUB_PUBLICATION_FEE_MAJOR,
+      vip_fee_currency: VIP_CLUB_PUBLICATION_FEE_CURRENCY,
+    });
   }
 
   events.sort((a, b) => occurredMs(b.occurred_at) - occurredMs(a.occurred_at));

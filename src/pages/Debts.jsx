@@ -13,6 +13,7 @@ import PropertyTimer from '../components/PropertyTimer'
 import CircularTimer from '../components/CircularTimer'
 import AuctionMobileLayout from '../components/ui/AuctionMobileLayout'
 import { hasBuyNowOption } from '../utils/hasBuyNowOption'
+import { formatPropertyPrice } from '../utils/currency'
 import { getPropertyCardImage } from '../utils/propertyImage'
 import { fetchUserDeposit } from '../utils/depositApi'
 import { fetchDedupe } from '../utils/fetchDedupe'
@@ -215,10 +216,9 @@ const Debts = () => {
       (obj.location || '').toLowerCase().includes(searchQuery.toLowerCase())
   )
 
-  const formatPrice = (n) => {
+  const formatPrice = (n, currency = 'USD') => {
     if (!n || Number.isNaN(Number(n))) return '—'
-    if (n >= 1000000) return `$${(n / 1000000).toFixed(1)}M`
-    return `$${Number(n).toLocaleString('en-US')}`
+    return formatPropertyPrice(n, currency, { compact: true })
   }
 
   return (
@@ -226,14 +226,6 @@ const Debts = () => {
       <Header />
       <div className="shares-page__bg" />
       <main className="shares-container">
-        <div className="page-context-heading page-context-heading--strip-auction-style">
-          <div className="page-context-heading--strip-auction-inner page-context-heading--strip-auction-inner--debts-top">
-            <h1 className="page-context-heading__title page-context-heading__title--auction-serif page-context-heading__title--after-breadcrumbs">
-              {t('debtsTitle')}
-            </h1>
-            <PageBreadcrumbs className="page-breadcrumbs--flat-club" separator=">" />
-          </div>
-        </div>
         <div className="shares-flip-cards shares-flip-cards--debts">
           <FlipCard
             color="#DC2626"
@@ -286,6 +278,14 @@ const Debts = () => {
             isFlipped={openRiskCard === 'low'}
             onFlipChange={(next) => setOpenRiskCard(next ? 'low' : null)}
           />
+        </div>
+        <div className="page-context-heading page-context-heading--strip-auction-style">
+          <div className="page-context-heading--strip-auction-inner page-context-heading--strip-auction-inner--debts-top">
+            <h1 className="page-context-heading__title page-context-heading__title--auction-serif page-context-heading__title--after-breadcrumbs">
+              {t('debtsTitle')}
+            </h1>
+            <PageBreadcrumbs className="page-breadcrumbs--flat-club" separator=">" />
+          </div>
         </div>
 
         <div className="shares-search-bar">
@@ -433,13 +433,13 @@ const Debts = () => {
                                   {hasDebtAmount && (
                                     <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10 }}>
                                       <span className="bid-label">{t('debtsDebtAmount')}</span>
-                                      <span className="bid-value">{formatPrice(property.debt_amount)}</span>
+                                      <span className="bid-value">{formatPrice(property.debt_amount, property.currency)}</span>
                                     </div>
                                   )}
                                   <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10 }}>
                                     <span className="bid-label">{t('currentBid')}</span>
                                     <span className="bid-value">
-                                      {formatPrice(property.currentBid || property.price || 0)}
+                                      {formatPrice(property.currentBid || property.price || 0, property.currency)}
                                     </span>
                                   </div>
                                 </div>

@@ -8,6 +8,7 @@ import { getPropertyCardImage } from '../utils/propertyImage'
 import { buildResponsiveImageProps } from '../utils/responsiveImage'
 import ImageWithSkeleton from './ImageWithSkeleton'
 import './OwnerPurchasedAssets.css'
+import { getCurrencySymbol } from '../utils/currency'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
 
@@ -188,7 +189,7 @@ export default function OwnerPurchasedAssets({ userId }) {
 
   const formatPrice = (price, currency = 'USD') => {
     const symbol =
-      currency === 'USD' ? '$' : currency === 'EUR' ? '€' : currency === 'BYN' ? 'Br' : '$'
+      getCurrencySymbol(currency)
     const n = Number(price)
     if (!Number.isFinite(n)) return '—'
     if (n >= 1000000) {

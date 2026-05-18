@@ -14,6 +14,7 @@ import { getPropertyCardImage } from '../utils/propertyImage'
 import { buildResponsiveImageProps } from '../utils/responsiveImage'
 import ImageWithSkeleton from '../components/ImageWithSkeleton'
 import i18n from '../i18n/config'
+import { getCurrencySymbol } from '../utils/currency'
 import './History.css'
 import './Profile.css'
 import { useChainedAppLayoutScroll } from '../hooks/useChainedAppLayoutScroll'
@@ -612,7 +613,7 @@ const History = () => {
   }
 
   const formatPrice = (price, currency = 'USD') => {
-    const symbol = currency === 'USD' ? '$' : currency === 'EUR' ? '€' : currency === 'BYN' ? 'Br' : '$'
+    const symbol = getCurrencySymbol(currency)
     if (price >= 1000000) {
       return `${symbol}${(price / 1000000).toFixed(1)}M`
     }

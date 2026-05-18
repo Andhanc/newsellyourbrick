@@ -7,15 +7,12 @@ import { PropertyBidAnalyticsChart } from './ui/property-bid-analytics-chart'
 import BiddingHistoryPanel from './BiddingHistoryPanel'
 import './ui/property-bid-analytics-chart.css'
 import './OwnerPropertyBidAnalyticsModal.css'
+import { getCurrencySymbol as getCurrencySymbolByCode } from '../utils/currency'
 
 let API_BASE_URL = getApiBaseUrlSync()
 
 function getCurrencySymbol(property) {
-  const currency = property?.currency || 'USD'
-  if (currency === 'EUR') return '€'
-  if (currency === 'BYN') return 'Br'
-  if (currency === 'USD') return '$'
-  return '$'
+  return getCurrencySymbolByCode(property?.currency || 'USD')
 }
 
 function bidsToChartData(bids) {

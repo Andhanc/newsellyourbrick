@@ -477,6 +477,18 @@
   }
 }
 
+@media (min-width: 769px) {
+  .share-purchase-modal.drawer-dismiss-from-bottom--closing {
+    animation: drawer-dismiss-modal-out 0.28s ease-out both !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .share-purchase-modal.drawer-dismiss-modal--closing {
+    animation: drawer-dismiss-from-bottom-out 0.4s cubic-bezier(0.22, 1, 0.32, 1) both !important;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .share-purchase-modal-overlay {
     animation: none;

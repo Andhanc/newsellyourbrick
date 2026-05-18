@@ -68,12 +68,19 @@
     align-items: stretch;
   }
 
-  /* Пирамида 1 + 2 + 2: верхняя строка только «Аукционы», по центру, ширина как у одной колонки */
+  /* Пирамида 1 + 2 + 2: «Аукционы» на всю ширину сетки (боковые отступы — у секции) */
+  .landing-models__folders-slide--featured,
   .landing-models__folders-slide:first-child {
     grid-column: 1 / -1;
-    justify-self: center;
+    justify-self: stretch;
     width: 100%;
-    max-width: calc((100% - 12px) / 2);
+    max-width: 100%;
+  }
+
+  .landing-models__folders-slide--featured .landing-models__folder {
+    max-width: 100%;
+    width: 100%;
+    box-sizing: border-box;
   }
 
   .landing-models__folders-track .landing-models__folder {
@@ -81,6 +88,20 @@
     width: 100%;
     height: 100%;
     box-sizing: border-box;
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1199px) {
+  .landing-models__folders-slide--featured {
+    grid-column: 1 / -1;
+    justify-self: stretch;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .landing-models__folders-slide--featured .landing-models__folder {
+    max-width: 100%;
+    width: 100%;
   }
 }
 

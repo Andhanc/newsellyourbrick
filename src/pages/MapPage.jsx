@@ -4,7 +4,9 @@ import { showNotification } from '../utils/toastHelper'
 import maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import { useNavigate } from 'react-router-dom'
-import { FiHeart, FiMapPin, FiChevronLeft, FiX, FiArrowUp } from 'react-icons/fi'
+import { FiHeart, FiMapPin, FiX, FiArrowUp, FiSearch } from 'react-icons/fi'
+import PageBackButton from '../components/PageBackButton'
+import { useTranslation } from 'react-i18next'
 import { HiOutlineArrowsExpand } from 'react-icons/hi'
 import { getApiBaseUrl } from '../utils/apiConfig'
 import { SATELLITE_MAP_STYLE, SATELLITE_MAP_MAX_ZOOM } from '../utils/mapStyles'
@@ -15,6 +17,7 @@ import { usePropertyFavorites } from '../context/PropertyFavoritesContext'
 import { hasDbBackedProperty } from '../utils/propertyFavoriteKey'
 import { getMainScrollEl, getMainScrollTop, scrollMainTo } from '../utils/mainScroll'
 import { buildResponsiveImageProps } from '../utils/responsiveImage'
+import { formatPropertyPrice } from '../utils/currency'
 import './MapPage.css'
 import { getPropertyDetailPath, auctionListingDedupeKey } from '../utils/propertyDetailUrl'
 
@@ -141,12 +144,14 @@ async function geocodeAddress(address) {
 
 
 const MapPage = () => {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const { user, isLoaded: userLoaded } = useUser()
   const { isFavorite, toggleFavorite: toggleFavoriteGlobal } = usePropertyFavorites()
   const [propertiesList, setPropertiesList] = useState([])
   const [loading, setLoading] = useState(true)
   const [sortBy, setSortBy] = useState('popular')
+  const [searchQuery, setSearchQuery] = useState('')
   const [showLikedOnly, setShowLikedOnly] = useState(false)
   const [selectedProperty, setSelectedProperty] = useState(null)
   const [imageIndex, setImageIndex] = useState({})
@@ -162,7 +167,8 @@ const MapPage = () => {
   const [mapOpenHintProperty, setMapOpenHintProperty] = useState(null)
   const [showScrollToTop, setShowScrollToTop] = useState(false)
 
-  const formatPrice = (n) => '$' + new Intl.NumberFormat('en-US').format(Number(n) || 0)
+  const formatPrice = (n, currency = 'USD') =>
+    formatPropertyPrice(n, currency, { locale: 'en-US' })
 
   const getPropertyCoordinates = (property) => {
     if (property?.coordinates && Array.isArray(property.coordinates) && property.coordinates.length >= 2) {
@@ -231,12 +237,22 @@ const MapPage = () => {
     return () => { cancelled = true }
   }, [propertiesList])
 
-  // ─── Фильтр «понравившиеся» и сортировка ─────────────────────────────────
+  // ─── Поиск, фильтр «понравившиеся» и сортировка ─────────────────────────
+  const searchNormalized = searchQuery.trim().toLowerCase()
+
   const filteredProperties = showLikedOnly
     ? propertiesList.filter((p) => isFavorite(p, null))
     : propertiesList
 
-  const sortedProperties = [...filteredProperties].sort((a, b) => {
+  const searchFilteredProperties = searchNormalized
+    ? filteredProperties.filter((p) => {
+        const title = String(p.title || '').toLowerCase()
+        const location = String(p.location || '').toLowerCase()
+        return title.includes(searchNormalized) || location.includes(searchNormalized)
+      })
+    : filteredProperties
+
+  const sortedProperties = [...searchFilteredProperties].sort((a, b) => {
     if (sortBy === 'price') return (a.price || a.currentBid || 0) - (b.price || b.currentBid || 0)
     if (sortBy === 'rating') return ((b.id || 0) % 10) - ((a.id || 0) % 10)
     return 0
@@ -315,7 +331,7 @@ const MapPage = () => {
       const lngLat = [coords[1], coords[0]]
       const isSelected =
         selectedProperty != null && String(selectedProperty.id) === String(property.id)
-      const priceStr = formatPrice(property.price ?? property.currentBid ?? 0)
+      const priceStr = formatPrice(property.price ?? property.currentBid ?? 0, property.currency)
       const thumbSrc =
         (Array.isArray(property.images) && property.images[0]) ||
         'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800'
@@ -471,14 +487,35 @@ const MapPage = () => {
     <div className={`map-page-root${mapExpanded ? ' map-page-root--fs-map' : ''}`}>
       <div className="map-page-booking">
         <header className="map-page-back-bar">
-          <button type="button" className="map-page-back-btn" onClick={() => navigate(-1)} aria-label="Назад">
-            <FiChevronLeft size={20} />
-            <span>Назад</span>
-          </button>
+          <PageBackButton onClick={() => navigate(-1)} />
         </header>
 
         <div className="map-page-main">
           <aside className="map-page-list">
+            <div className="map-list-search-bar">
+              <div className="map-page-search-box">
+                <FiSearch className="map-page-search-box__icon" size={20} aria-hidden />
+                <input
+                  type="search"
+                  className="map-page-search-box__input"
+                  placeholder={t('searchPlaceholderLong')}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  autoComplete="off"
+                  spellCheck={false}
+                />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    className="map-page-search-box__clear"
+                    onClick={() => setSearchQuery('')}
+                    aria-label={t('clearSearch')}
+                  >
+                    ×
+                  </button>
+                )}
+              </div>
+            </div>
             <header className="map-list-header">
               <p className="map-list-count map-list-count--secondary">
                 {loading ? (
@@ -529,9 +566,11 @@ const MapPage = () => {
               ) : sortedProperties.length === 0 ? (
                 <div className="map-list-empty">
                   <p>
-                    {showLikedOnly
-                      ? 'Пока нет понравившихся объектов на карте. Добавьте сердечком из списка.'
-                      : 'Нет объектов для отображения'}
+                    {searchNormalized
+                      ? t('noResultsHint')
+                      : showLikedOnly
+                        ? 'Пока нет понравившихся объектов на карте. Добавьте сердечком из списка.'
+                        : 'Нет объектов для отображения'}
                   </p>
                 </div>
               ) : sortedProperties.map((property) => {
@@ -607,7 +646,7 @@ const MapPage = () => {
 
                     <div className="map-booking-card__right">
                       <div className="map-booking-card__price-block">
-                        <p className="map-booking-card__price">{formatPrice(priceDisplay)}</p>
+                        <p className="map-booking-card__price">{formatPrice(priceDisplay, property.currency)}</p>
                       </div>
                       <button
                         type="button"
@@ -673,7 +712,10 @@ const MapPage = () => {
                   <p className="map-open-hint__label">Объект на карте</p>
                   <p className="map-open-hint__title">{mapOpenHintProperty.title}</p>
                   <p className="map-open-hint__price">
-                    {formatPrice(mapOpenHintProperty.price ?? mapOpenHintProperty.currentBid ?? 0)}
+                    {formatPrice(
+                      mapOpenHintProperty.price ?? mapOpenHintProperty.currentBid ?? 0,
+                      mapOpenHintProperty.currency,
+                    )}
                   </p>
                 </div>
                 <button
@@ -691,15 +733,10 @@ const MapPage = () => {
               </div>
             )}
             {mapExpanded && (
-              <button
-                type="button"
-                className="map-fullscreen-back"
+              <PageBackButton
+                className="page-back-button--floating"
                 onClick={() => setMapExpanded(false)}
-                aria-label="Назад, закрыть карту"
-              >
-                <FiX size={20} strokeWidth={2.25} aria-hidden />
-                <span>Назад</span>
-              </button>
+              />
             )}
           </div>
         </div>

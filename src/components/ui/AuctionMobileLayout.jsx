@@ -743,13 +743,13 @@ function AuctionMobileItem({
               <div className="auction-mobile-price-row auction-mobile-price-row--debt-inline">
                 <span className="auction-mobile-price-row__label">{t('debtsDebtAmount')}</span>
                 <span className="auction-mobile-price-row__value">
-                  {formatPrice(Number(property.debt_amount))}
+                  {formatPrice(Number(property.debt_amount), property.currency)}
                 </span>
               </div>
               <div className="auction-mobile-price-row auction-mobile-price-row--debt-inline">
                 <span className="auction-mobile-price-row__label">{t('currentBid')}</span>
                 <span className="auction-mobile-price-row__value">
-                  {formatPrice(resolveAuctionCurrentBidValue(property))}
+                  {formatPrice(resolveAuctionCurrentBidValue(property), property.currency)}
                 </span>
               </div>
             </>
@@ -758,7 +758,7 @@ function AuctionMobileItem({
               <span className="auction-mobile-price-row__label">
                 {hasTimer ? t('currentBid') : t('auctionAskingPrice')}
               </span>
-              <span className="auction-mobile-price-row__value">{formatPrice(displayPriceValue)}</span>
+              <span className="auction-mobile-price-row__value">{formatPrice(displayPriceValue, property.currency)}</span>
             </div>
           )}
 

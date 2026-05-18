@@ -16,6 +16,7 @@ import { buildResponsiveImageProps } from '../utils/responsiveImage'
 import ImageWithSkeleton from '../components/ImageWithSkeleton'
 import { usePropertyFavorites } from '../context/PropertyFavoritesContext'
 import './Compare.css'
+import { formatPropertyPrice } from '../utils/currency'
 
 const PLACEHOLDER_IMG =
   'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=800&q=80'
@@ -68,11 +69,9 @@ function formatTypeLabel(groupKey) {
   return groupKey
 }
 
-function formatPrice(price) {
-  const n = Number(price)
-  if (price == null || price === '' || Number.isNaN(n)) return '—'
-  if (n >= 1000000) return `$${(n / 1000000).toFixed(1)}M`
-  return `$${n.toLocaleString('en-US')}`
+function formatPrice(price, currency = 'USD') {
+  if (price == null || price === '') return '—'
+  return formatPropertyPrice(price, currency, { compact: true })
 }
 
 function toPositiveNumber(value) {
@@ -377,8 +376,8 @@ function buildRows(left, right) {
   rows.push({
     id: 'price',
     label: isAuc ? 'Текущая ставка / цена сделки' : 'Цена',
-    left: pL != null ? formatPrice(pL) : '—',
-    right: pR != null ? formatPrice(pR) : '—',
+    left: pL != null ? formatPrice(pL, left?.currency) : '—',
+    right: pR != null ? formatPrice(pR, right?.currency) : '—',
     winner: compareMetric(pL, pR, 'lower'),
   })
 
@@ -386,8 +385,8 @@ function buildRows(left, right) {
     rows.push({
       id: 'auction_start',
       label: 'Стартовая цена аукциона',
-      left: startL != null ? formatPrice(startL) : '—',
-      right: startR != null ? formatPrice(startR) : '—',
+      left: startL != null ? formatPrice(startL, left?.currency) : '—',
+      right: startR != null ? formatPrice(startR, right?.currency) : '—',
       winner: compareMetric(startL, startR, 'lower'),
     })
   }
@@ -401,8 +400,8 @@ function buildRows(left, right) {
   rows.push({
     id: 'ppm',
     label: 'Цена за м² (по текущей цене)',
-    left: ppmL != null ? formatPrice(ppmL) : '—',
-    right: ppmR != null ? formatPrice(ppmR) : '—',
+    left: ppmL != null ? formatPrice(ppmL, left?.currency) : '—',
+    right: ppmR != null ? formatPrice(ppmR, right?.currency) : '—',
     winner: compareMetric(ppmL, ppmR, 'lower'),
   })
 

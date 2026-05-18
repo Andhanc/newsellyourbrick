@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
+import { useState, useRef, useEffect, useLayoutEffect, useCallback, useMemo } from 'react'
 import { useNavigate, useParams, useLocation, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import {
@@ -523,7 +523,7 @@ import { generateListingDescription } from '../services/aiService'
 import { showNotification } from '../utils/toastHelper'
 import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
 import { notifyBonusSubmissionsChanged } from '../utils/bonusSubmissionsSync'
-import { scrollMainTo } from '../utils/mainScroll'
+import { scrollMainTo, getMainScrollEl } from '../utils/mainScroll'
 import {
   confirmListingPublicationFeeSession,
   startListingPublicationCheckout,
@@ -704,6 +704,32 @@ function clearDraft(draftKey = DRAFT_KEY) {
   } catch {
     // ignore
   }
+}
+
+const SINGLE_PAGE_SP_MAIN_SELECTOR = '.single-page-add-flow__main'
+
+/** Линия «фокуса»: когда верх *следующей* карточки доходит сюда, тело *текущей* сворачивается (только геометрия, не «заполнено»). */
+const SP_ACTIVATION_LINE_RATIO = 0.4
+
+/** Сколько wheel-дельты нужно накопить, чтобы свернуть/развернуть секцию */
+const SP_WHEEL_FOLD_TRIGGER = 52
+/** Насколько близко к низу viewport должен быть конец шага, чтобы разрешить автосворачивание вниз */
+const SP_WHEEL_COLLAPSE_BOTTOM_GAP_PX = 56
+
+/** Секция «в фокусе» по линии в viewport — без скачков intersectionRatio между соседями */
+function pickSinglePageSectionIdFromAnchor() {
+  if (typeof document === 'undefined') return 'type'
+  const root = document.querySelector(SINGLE_PAGE_SP_MAIN_SELECTOR)
+  if (!root) return 'type'
+  const nodes = root.querySelectorAll('[data-sp-section]')
+  if (!nodes.length) return 'type'
+  const anchorY = typeof window !== 'undefined' ? window.innerHeight * SP_ACTIVATION_LINE_RATIO : 400
+  let target = nodes[0].getAttribute('data-sp-section') || 'type'
+  nodes.forEach((el) => {
+    const r = el.getBoundingClientRect()
+    if (r.top <= anchorY) target = el.getAttribute('data-sp-section') || target
+  })
+  return target
 }
 
 const AddProperty = ({
@@ -926,8 +952,15 @@ const AddProperty = ({
   const [listingModeThemeStage, setListingModeThemeStage] = useState(0)
   const [expandedListingModeId, setExpandedListingModeId] = useState(null)
   const [spActiveSection, setSpActiveSection] = useState('type')
-  /** Single-page: после заполнения секция сворачивается; развернуть — по заголовку или стрелке */
-  const [spSectionUserExpanded, setSpSectionUserExpanded] = useState({})
+  const spActiveSectionRef = useRef('type')
+  const spOrderedSectionIdsRef = useRef([])
+  const prevSpOrderedIdsKeyRef = useRef('')
+  const [spSectionListRev, setSpSectionListRev] = useState(0)
+  const spFoldByIdRef = useRef({})
+  const prevSpFoldKeyRef = useRef('')
+  const [spFoldRev, setSpFoldRev] = useState(0)
+  const spWheelFoldAccumulatorRef = useRef(0)
+  spActiveSectionRef.current = spActiveSection
   const listingModeScrollRef = useRef(null)
   const listingModeWheelAccumulatorRef = useRef(0)
   const singlePagePriceSectionRef = useRef(null)
@@ -972,16 +1005,28 @@ const AddProperty = ({
     })
     clearDraft(draftKey)
     setCalculatorGuidanceApplied(false)
+    setSpActiveSection('type')
+    spActiveSectionRef.current = 'type'
+    prevSpOrderedIdsKeyRef.current = ''
+    spOrderedSectionIdsRef.current = []
+    setSpSectionListRev(0)
+    spFoldByIdRef.current = {}
+    prevSpFoldKeyRef.current = ''
+    spWheelFoldAccumulatorRef.current = 0
+    setSpFoldRev(0)
     showNotification('Все поля формы очищены', 'success')
   }
 
   const currencies = [
     { code: 'USD', symbol: '$', name: 'Доллар США' },
     { code: 'EUR', symbol: '€', name: 'Евро' },
+    { code: 'GBP', symbol: '£', name: 'Фунт стерлингов' },
+    { code: 'AED', symbol: 'د.إ', name: 'Дирхам ОАЭ' },
     { code: 'RUB', symbol: '₽', name: 'Российский рубль' },
-    { code: 'GBP', symbol: '£', name: 'Фунт стерлингов' }
   ]
-  const quickCurrencies = currencies.filter((curr) => ['USD', 'EUR', 'GBP'].includes(curr.code))
+  const quickCurrencies = currencies.filter((curr) =>
+    ['USD', 'EUR', 'GBP', 'AED'].includes(curr.code),
+  )
   
   const [formData, setFormData] = useState(INITIAL_FORM_DATA)
 
@@ -5084,8 +5129,7 @@ const AddProperty = ({
     'price-calculator': hasPriceCalculatorStepDone,
     'price': hasPrice,
   }
-
-  const singlePageSpSectionDone = useMemo(
+  const singlePageSectionDoneMap = useMemo(
     () => ({
       type: hasType,
       'property-name': hasPropertyName,
@@ -5111,20 +5155,58 @@ const AddProperty = ({
       hasListingType,
       hasPriceCalculatorStepDone,
       hasPrice,
-    ]
+    ],
   )
+
+  const applySinglePageFoldState = useCallback((nextFold, nodesFromCaller = null) => {
+    const nodes = nodesFromCaller || (() => {
+      const root = document.querySelector(SINGLE_PAGE_SP_MAIN_SELECTOR)
+      return root ? [...root.querySelectorAll('[data-sp-section]')] : []
+    })()
+    const ids = nodes.map((n) => n.getAttribute('data-sp-section')).filter(Boolean)
+    const foldKey = ids.map((id) => `${id}:${nextFold[id] ? 1 : 0}`).join(',')
+    if (foldKey === prevSpFoldKeyRef.current) return false
+    prevSpFoldKeyRef.current = foldKey
+    spFoldByIdRef.current = nextFold
+    setSpFoldRev((x) => x + 1)
+    return true
+  }, [])
 
   const isSpSectionBodyVisible = (sectionId) => {
     if (!useSinglePageFlow) return true
-    const done = singlePageSpSectionDone[sectionId]
-    if (!done) return true
-    return spSectionUserExpanded[sectionId] === true
+    void spFoldRev
+    void spSectionListRev
+    return spFoldByIdRef.current[sectionId] !== true
   }
 
-  const toggleSpSectionCollapse = (sectionId) => {
+  const scrollSpSectionIntoView = (sectionId) => {
     if (!useSinglePageFlow) return
-    if (!singlePageSpSectionDone[sectionId]) return
-    setSpSectionUserExpanded((prev) => ({ ...prev, [sectionId]: !prev[sectionId] }))
+    const root = document.querySelector(SINGLE_PAGE_SP_MAIN_SELECTOR)
+    const nodes = root ? [...root.querySelectorAll('[data-sp-section]')] : []
+    const idx = nodes.findIndex((n) => n.getAttribute('data-sp-section') === sectionId)
+    const nextFold = { ...spFoldByIdRef.current }
+    if (idx >= 0) {
+      for (let i = 0; i < idx; i++) {
+        const sid = nodes[i].getAttribute('data-sp-section')
+        if (sid) nextFold[sid] = true
+      }
+      for (let i = idx; i < nodes.length; i++) {
+        const sid = nodes[i].getAttribute('data-sp-section')
+        if (sid) nextFold[sid] = false
+      }
+    }
+    applySinglePageFoldState(nextFold, nodes)
+
+    spActiveSectionRef.current = sectionId
+    setSpActiveSection(sectionId)
+    const el = document.querySelector(`[data-sp-section="${sectionId}"]`)
+    if (el) {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        })
+      })
+    }
   }
 
   const applyListingModeFromSinglePage = (mode) => {
@@ -5150,44 +5232,123 @@ const AddProperty = ({
 
   useEffect(() => {
     if (!useSinglePageFlow) return
-    let observer
-    const timer = window.setTimeout(() => {
-      const sections = document.querySelectorAll('[data-sp-section]')
-      if (!sections.length) return
-      observer = new IntersectionObserver(
-        (entries) => {
-          const visible = entries
-            .filter((e) => e.isIntersecting && e.intersectionRatio >= 0.18)
-            .sort((a, b) => b.intersectionRatio - a.intersectionRatio)
-          const id = visible[0]?.target?.getAttribute('data-sp-section')
-          if (id) setSpActiveSection(id)
-        },
-        { root: null, threshold: [0.18, 0.35, 0.55], rootMargin: '-10% 0px -38% 0px' }
-      )
-      sections.forEach((el) => observer.observe(el))
-    }, 80)
+    const main = getMainScrollEl() || window
+    let raf = 0
+
+    const run = () => {
+      const root = document.querySelector(SINGLE_PAGE_SP_MAIN_SELECTOR)
+      const nodes = root ? [...root.querySelectorAll('[data-sp-section]')] : []
+      const ids = nodes.map((n) => n.getAttribute('data-sp-section')).filter(Boolean)
+      spOrderedSectionIdsRef.current = ids
+      const idsKey = ids.join('|')
+      const listChanged = idsKey !== prevSpOrderedIdsKeyRef.current
+      if (listChanged) prevSpOrderedIdsKeyRef.current = idsKey
+
+      const targetId = pickSinglePageSectionIdFromAnchor()
+      const anchorChanged = targetId !== spActiveSectionRef.current
+      if (anchorChanged) {
+        spActiveSectionRef.current = targetId
+        setSpActiveSection(targetId)
+      } else if (listChanged) {
+        setSpSectionListRev((x) => x + 1)
+      }
+    }
+
+    const schedule = () => {
+      if (raf) return
+      raf = window.requestAnimationFrame(() => {
+        raf = 0
+        run()
+      })
+    }
+
+    const pickFoldTargetFromWheel = (direction, anchorId) => {
+      if (!anchorId) return null
+      const isCollapsed = spFoldByIdRef.current[anchorId] === true
+      const isDone = singlePageSectionDoneMap[anchorId] === true
+      if (direction > 0) {
+        // Вниз: сворачиваем только текущий шаг, если он уже заполнен.
+        return isDone && !isCollapsed ? anchorId : null
+      }
+      // Вверх: раскрываем только текущий шаг, если он свернут.
+      return isCollapsed ? anchorId : null
+    }
+
+    const canCollapseSectionOnWheelDown = (sectionId) => {
+      if (!sectionId) return false
+      const sectionEl = document.querySelector(`[data-sp-section="${sectionId}"]`)
+      if (!sectionEl) return false
+      const rect = sectionEl.getBoundingClientRect()
+      const viewportBottom =
+        main === window ? window.innerHeight : main.getBoundingClientRect().bottom
+      // Закрываем вниз только когда пользователь почти дошел до конца текущего шага.
+      return rect.bottom <= viewportBottom - SP_WHEEL_COLLAPSE_BOTTOM_GAP_PX
+    }
+
+    const handleWheel = (event) => {
+      if (event.ctrlKey) return
+      if (!Number.isFinite(event.deltaY) || Math.abs(event.deltaY) < 0.5) return
+      const root = document.querySelector(SINGLE_PAGE_SP_MAIN_SELECTOR)
+      const nodes = root ? [...root.querySelectorAll('[data-sp-section]')] : []
+      if (!nodes.length) return
+      const ids = nodes.map((n) => n.getAttribute('data-sp-section')).filter(Boolean)
+      if (!ids.length) return
+      spOrderedSectionIdsRef.current = ids
+
+      const anchorId = pickSinglePageSectionIdFromAnchor()
+      const direction = event.deltaY > 0 ? 1 : -1
+      const targetId = pickFoldTargetFromWheel(direction, anchorId)
+      if (!targetId) {
+        spWheelFoldAccumulatorRef.current = 0
+        return
+      }
+      if (direction > 0 && !canCollapseSectionOnWheelDown(targetId)) {
+        spWheelFoldAccumulatorRef.current = 0
+        return
+      }
+
+      event.preventDefault()
+      const prevAccum = spWheelFoldAccumulatorRef.current
+      const sameDirection = prevAccum === 0 || Math.sign(prevAccum) === Math.sign(event.deltaY)
+      const nextAccum = (sameDirection ? prevAccum : 0) + event.deltaY
+      spWheelFoldAccumulatorRef.current = nextAccum
+      if (Math.abs(nextAccum) < SP_WHEEL_FOLD_TRIGGER) return
+
+      spWheelFoldAccumulatorRef.current = 0
+      const nextFold = {
+        ...spFoldByIdRef.current,
+        [targetId]: direction > 0,
+      }
+      const changed = applySinglePageFoldState(nextFold, nodes)
+      if (changed) {
+        spActiveSectionRef.current = targetId
+        setSpActiveSection(targetId)
+        schedule()
+      }
+    }
+
+    main.addEventListener('wheel', handleWheel, { passive: false })
+    main.addEventListener('scroll', schedule, { passive: true })
+    window.addEventListener('resize', schedule, { passive: true })
+    const t = window.setTimeout(schedule, 120)
+
     return () => {
-      window.clearTimeout(timer)
-      if (observer) observer.disconnect()
+      window.clearTimeout(t)
+      main.removeEventListener('wheel', handleWheel)
+      main.removeEventListener('scroll', schedule)
+      window.removeEventListener('resize', schedule)
+      if (raf) window.cancelAnimationFrame(raf)
     }
   }, [
     useSinglePageFlow,
-    formData.propertyType,
-    formData.listingMode,
-    formData.city,
-    hasType,
-    hasAddress,
-    hasDetails,
-    hasAmenities,
-    hasMedia,
-    hasDocuments,
-    hasTestDrive,
-    hasListingType,
+    applySinglePageFoldState,
+    singlePageSectionDoneMap,
   ])
 
   // Чтобы при переходе между шагами страница/контейнер начинались сверху,
   // а не с позиции скролла, на которой пользователь выбрал прошлый пункт.
   useEffect(() => {
+    if (useSinglePageFlow) return
     if (typeof window !== 'undefined') {
       try {
         scrollMainTo(0, 0, 'auto')
@@ -5207,7 +5368,7 @@ const AddProperty = ({
     } catch {
       // ignore
     }
-  }, [wizardRenderStep])
+  }, [wizardRenderStep, useSinglePageFlow])
 
   return (
     <div className="add-property-page">
@@ -5338,24 +5499,22 @@ const AddProperty = ({
 
                 <section
                   data-sp-section="type"
-                  className={`sp-card sp-card--enter${singlePageSpSectionDone.type && !isSpSectionBodyVisible('type') ? ' sp-card--section-collapsed' : ''}`}
+                  className={`sp-card sp-card--enter${!isSpSectionBodyVisible('type') ? ' sp-card--section-collapsed' : ''}`}
                 >
                   <header
-                    className={`sp-card__head${singlePageSpSectionDone.type ? ' sp-card__head--collapsible' : ''}`}
-                    onClick={singlePageSpSectionDone.type ? () => toggleSpSectionCollapse('type') : undefined}
+                    className="sp-card__head sp-card__head--collapsible"
+                    onClick={() => scrollSpSectionIntoView('type')}
                   >
                     <div className="sp-card__head-maincol">
                       <span className="sp-card__step">Шаг 1</span>
                       <h3 className="sp-card__title">Тип недвижимости</h3>
-                      {(!singlePageSpSectionDone.type || isSpSectionBodyVisible('type')) && (
+                      {isSpSectionBodyVisible('type') && (
                         <p className="sp-card__lead">{SINGLE_PAGE_SECTION_HELP.type.lead}</p>
                       )}
                     </div>
-                    {singlePageSpSectionDone.type ? (
-                      <span className="sp-card__head-toggle" aria-hidden="true">
+                    <span className="sp-card__head-toggle" aria-hidden="true">
                         <FiChevronDown className={isSpSectionBodyVisible('type') ? 'is-expanded' : ''} size={22} />
                       </span>
-                    ) : null}
                   </header>
                   <div
                     className={`sp-card__collapsible-panel${isSpSectionBodyVisible('type') ? ' is-open' : ''}`}
@@ -5389,33 +5548,27 @@ const AddProperty = ({
                 {hasType && (
                   <section
                     data-sp-section="property-name"
-                    className={`sp-card sp-card--enter${singlePageSpSectionDone['property-name'] && !isSpSectionBodyVisible('property-name') ? ' sp-card--section-collapsed' : ''}`}
+                    className={`sp-card sp-card--enter${!isSpSectionBodyVisible('property-name') ? ' sp-card--section-collapsed' : ''}`}
                   >
                     <header
-                      className={`sp-card__head${singlePageSpSectionDone['property-name'] ? ' sp-card__head--collapsible' : ''}`}
-                      onClick={
-                        singlePageSpSectionDone['property-name']
-                          ? () => toggleSpSectionCollapse('property-name')
-                          : undefined
-                      }
+                      className="sp-card__head sp-card__head--collapsible"
+                      onClick={() => scrollSpSectionIntoView('property-name')}
                     >
                       <div className="sp-card__head-maincol">
                         <span className="sp-card__step">Шаг 2</span>
                         <h3 className="sp-card__title">Название и описание</h3>
-                        {(!singlePageSpSectionDone['property-name'] || isSpSectionBodyVisible('property-name')) && (
+                        {isSpSectionBodyVisible('property-name') && (
                           <p className="sp-card__lead">
                             Создайте первое впечатление: лаконичное название и описание, которое подчеркивает ценность объекта. ИИ поможет сделать текст сильнее.
                           </p>
                         )}
                       </div>
-                      {singlePageSpSectionDone['property-name'] ? (
-                        <span className="sp-card__head-toggle" aria-hidden="true">
+                      <span className="sp-card__head-toggle" aria-hidden="true">
                           <FiChevronDown
                             className={isSpSectionBodyVisible('property-name') ? 'is-expanded' : ''}
                             size={22}
                           />
                         </span>
-                      ) : null}
                     </header>
                     <div
                       className={`sp-card__collapsible-panel${isSpSectionBodyVisible('property-name') ? ' is-open' : ''}`}
@@ -5460,24 +5613,22 @@ const AddProperty = ({
                 {hasPropertyName && (
                   <section
                     data-sp-section="address"
-                    className={`sp-card sp-card--enter sp-card--accent${singlePageSpSectionDone.address && !isSpSectionBodyVisible('address') ? ' sp-card--section-collapsed' : ''}`}
+                    className={`sp-card sp-card--enter sp-card--accent${!isSpSectionBodyVisible('address') ? ' sp-card--section-collapsed' : ''}`}
                   >
                     <header
-                      className={`sp-card__head${singlePageSpSectionDone.address ? ' sp-card__head--collapsible' : ''}`}
-                      onClick={singlePageSpSectionDone.address ? () => toggleSpSectionCollapse('address') : undefined}
+                      className="sp-card__head sp-card__head--collapsible"
+                      onClick={() => scrollSpSectionIntoView('address')}
                     >
                       <div className="sp-card__head-maincol">
                         <span className="sp-card__step">Шаг 4</span>
                         <h3 className="sp-card__title">Адрес и карта</h3>
-                        {(!singlePageSpSectionDone.address || isSpSectionBodyVisible('address')) && (
+                        {isSpSectionBodyVisible('address') && (
                           <p className="sp-card__lead">{SINGLE_PAGE_SECTION_HELP.address.lead}</p>
                         )}
                       </div>
-                      {singlePageSpSectionDone.address ? (
-                        <span className="sp-card__head-toggle" aria-hidden="true">
+                      <span className="sp-card__head-toggle" aria-hidden="true">
                           <FiChevronDown className={isSpSectionBodyVisible('address') ? 'is-expanded' : ''} size={22} />
                         </span>
-                      ) : null}
                     </header>
 
                     <div
@@ -5734,12 +5885,30 @@ const AddProperty = ({
                 )}
 
                 {hasAddress && (
-                  <section data-sp-section="details" className="sp-card sp-card--enter">
-                    <header className="sp-card__head">
-                      <span className="sp-card__step">Шаг 3</span>
-                      <h3 className="sp-card__title">Параметры</h3>
-                      <p className="sp-card__lead">{SINGLE_PAGE_SECTION_HELP.details.lead}</p>
+                  <section
+                    data-sp-section="details"
+                    className={`sp-card sp-card--enter${!isSpSectionBodyVisible('details') ? ' sp-card--section-collapsed' : ''}`}
+                  >
+                    <header
+                      className="sp-card__head sp-card__head--collapsible"
+                      onClick={() => scrollSpSectionIntoView('details')}
+                    >
+                      <div className="sp-card__head-maincol">
+                        <span className="sp-card__step">Шаг 3</span>
+                        <h3 className="sp-card__title">Параметры</h3>
+                        {isSpSectionBodyVisible('details') && (
+                          <p className="sp-card__lead">{SINGLE_PAGE_SECTION_HELP.details.lead}</p>
+                        )}
+                      </div>
+                      <span className="sp-card__head-toggle" aria-hidden="true">
+                          <FiChevronDown className={isSpSectionBodyVisible('details') ? 'is-expanded' : ''} size={22} />
+                        </span>
                     </header>
+                    <div
+                      className={`sp-card__collapsible-panel${isSpSectionBodyVisible('details') ? ' is-open' : ''}`}
+                      aria-hidden={!isSpSectionBodyVisible('details')}
+                    >
+                      <div className="sp-card__collapsible-body">
                     <div className="single-page-add-flow__grid">
                       {(singlePageTypeProfile === 'apartment' || singlePageTypeProfile === 'apartments') && (
                         <>
@@ -5965,16 +6134,36 @@ const AddProperty = ({
                         </>
                       )}
                     </div>
+                      </div>
+                    </div>
                   </section>
                 )}
 
                 {hasDetails && (
-                  <section data-sp-section="amenities" className="sp-card sp-card--enter">
-                    <header className="sp-card__head">
-                      <span className="sp-card__step">Шаг 5</span>
-                      <h3 className="sp-card__title">Описание и удобства</h3>
-                      <p className="sp-card__lead">{SINGLE_PAGE_SECTION_HELP.amenities.lead}</p>
+                  <section
+                    data-sp-section="amenities"
+                    className={`sp-card sp-card--enter${!isSpSectionBodyVisible('amenities') ? ' sp-card--section-collapsed' : ''}`}
+                  >
+                    <header
+                      className="sp-card__head sp-card__head--collapsible"
+                      onClick={() => scrollSpSectionIntoView('amenities')}
+                    >
+                      <div className="sp-card__head-maincol">
+                        <span className="sp-card__step">Шаг 5</span>
+                        <h3 className="sp-card__title">Описание и удобства</h3>
+                        {isSpSectionBodyVisible('amenities') && (
+                          <p className="sp-card__lead">{SINGLE_PAGE_SECTION_HELP.amenities.lead}</p>
+                        )}
+                      </div>
+                      <span className="sp-card__head-toggle" aria-hidden="true">
+                          <FiChevronDown className={isSpSectionBodyVisible('amenities') ? 'is-expanded' : ''} size={22} />
+                        </span>
                     </header>
+                    <div
+                      className={`sp-card__collapsible-panel${isSpSectionBodyVisible('amenities') ? ' is-open' : ''}`}
+                      aria-hidden={!isSpSectionBodyVisible('amenities')}
+                    >
+                      <div className="sp-card__collapsible-body">
                     <div className="sp-amenity-desc">
                       <label className="sp-amenity-desc__label" htmlFor="sp-additional-amenities">
                         {t('addPropertyAmenitiesOtherLabel')}
@@ -6008,16 +6197,36 @@ const AddProperty = ({
                         </div>
                       ))}
                     </div>
+                      </div>
+                    </div>
                   </section>
                 )}
 
                 {hasAmenities && (
-                  <section data-sp-section="media" className="sp-card sp-card--enter">
-                    <header className="sp-card__head">
-                      <span className="sp-card__step">Шаг 6</span>
-                      <h3 className="sp-card__title">Фото и видео</h3>
-                      <p className="sp-card__lead">{SINGLE_PAGE_SECTION_HELP.media.lead}</p>
+                  <section
+                    data-sp-section="media"
+                    className={`sp-card sp-card--enter${!isSpSectionBodyVisible('media') ? ' sp-card--section-collapsed' : ''}`}
+                  >
+                    <header
+                      className="sp-card__head sp-card__head--collapsible"
+                      onClick={() => scrollSpSectionIntoView('media')}
+                    >
+                      <div className="sp-card__head-maincol">
+                        <span className="sp-card__step">Шаг 6</span>
+                        <h3 className="sp-card__title">Фото и видео</h3>
+                        {isSpSectionBodyVisible('media') && (
+                          <p className="sp-card__lead">{SINGLE_PAGE_SECTION_HELP.media.lead}</p>
+                        )}
+                      </div>
+                      <span className="sp-card__head-toggle" aria-hidden="true">
+                          <FiChevronDown className={isSpSectionBodyVisible('media') ? 'is-expanded' : ''} size={22} />
+                        </span>
                     </header>
+                    <div
+                      className={`sp-card__collapsible-panel${isSpSectionBodyVisible('media') ? ' is-open' : ''}`}
+                      aria-hidden={!isSpSectionBodyVisible('media')}
+                    >
+                      <div className="sp-card__collapsible-body">
                     <div className="single-page-add-flow__stats sp-stats">
                       <span>Фото: {photos.length}/10</span>
                       <span>Видео: {videos.length}/3</span>
@@ -6057,16 +6266,36 @@ const AddProperty = ({
                         ))}
                       </div>
                     )}
+                      </div>
+                    </div>
                   </section>
                 )}
 
                 {hasMedia && (
-                  <section data-sp-section="documents" className="sp-card sp-card--enter">
-                    <header className="sp-card__head">
-                      <span className="sp-card__step">Шаг 7</span>
-                      <h3 className="sp-card__title">Документы</h3>
-                      <p className="sp-card__lead">{SINGLE_PAGE_SECTION_HELP.documents.lead}</p>
+                  <section
+                    data-sp-section="documents"
+                    className={`sp-card sp-card--enter${!isSpSectionBodyVisible('documents') ? ' sp-card--section-collapsed' : ''}`}
+                  >
+                    <header
+                      className="sp-card__head sp-card__head--collapsible"
+                      onClick={() => scrollSpSectionIntoView('documents')}
+                    >
+                      <div className="sp-card__head-maincol">
+                        <span className="sp-card__step">Шаг 7</span>
+                        <h3 className="sp-card__title">Документы</h3>
+                        {isSpSectionBodyVisible('documents') && (
+                          <p className="sp-card__lead">{SINGLE_PAGE_SECTION_HELP.documents.lead}</p>
+                        )}
+                      </div>
+                      <span className="sp-card__head-toggle" aria-hidden="true">
+                          <FiChevronDown className={isSpSectionBodyVisible('documents') ? 'is-expanded' : ''} size={22} />
+                        </span>
                     </header>
+                    <div
+                      className={`sp-card__collapsible-panel${isSpSectionBodyVisible('documents') ? ' is-open' : ''}`}
+                      aria-hidden={!isSpSectionBodyVisible('documents')}
+                    >
+                      <div className="sp-card__collapsible-body">
                     <div className="sp-doc-actions-simple">
                       <div className="sp-doc-action-card">
                         <button
@@ -6155,25 +6384,48 @@ const AddProperty = ({
                         )}
                       </div>
                     </div>
+                      </div>
+                    </div>
                   </section>
                 )}
 
                 {hasDocuments && (
-                  <section data-sp-section="testdrive" className="sp-card sp-card--enter">
-                    <header className="sp-card__head">
-                      <span className="sp-card__step">Шаг 8</span>
-                      <div className="sp-card__head-row">
-                        <h3 className="sp-card__title">Тест-драйв</h3>
-                        <button
-                          type="button"
-                          className="sp-head-info-btn"
-                          onClick={() => setShowTestDriveInfoModal(true)}
-                        >
-                          Подробнее
-                        </button>
+                  <section
+                    data-sp-section="testdrive"
+                    className={`sp-card sp-card--enter${!isSpSectionBodyVisible('testdrive') ? ' sp-card--section-collapsed' : ''}`}
+                  >
+                    <header
+                      className="sp-card__head sp-card__head--collapsible"
+                      onClick={() => scrollSpSectionIntoView('testdrive')}
+                    >
+                      <div className="sp-card__head-maincol">
+                        <span className="sp-card__step">Шаг 8</span>
+                        <div className="sp-card__head-row">
+                          <h3 className="sp-card__title">Тест-драйв</h3>
+                          <button
+                            type="button"
+                            className="sp-head-info-btn"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setShowTestDriveInfoModal(true)
+                            }}
+                          >
+                            Подробнее
+                          </button>
+                        </div>
+                        {isSpSectionBodyVisible('testdrive') && (
+                          <p className="sp-card__lead">{SINGLE_PAGE_SECTION_HELP.testdrive.lead}</p>
+                        )}
                       </div>
-                      <p className="sp-card__lead">{SINGLE_PAGE_SECTION_HELP.testdrive.lead}</p>
+                      <span className="sp-card__head-toggle" aria-hidden="true">
+                          <FiChevronDown className={isSpSectionBodyVisible('testdrive') ? 'is-expanded' : ''} size={22} />
+                        </span>
                     </header>
+                    <div
+                      className={`sp-card__collapsible-panel${isSpSectionBodyVisible('testdrive') ? ' is-open' : ''}`}
+                      aria-hidden={!isSpSectionBodyVisible('testdrive')}
+                    >
+                      <div className="sp-card__collapsible-body">
                     <div className="single-page-add-flow__chips sp-chips">
                       <button
                         type="button"
@@ -6227,16 +6479,36 @@ const AddProperty = ({
                       </div>
                       </>
                     )}
+                      </div>
+                    </div>
                   </section>
                 )}
 
                 {hasTestDrive && (
-                  <section data-sp-section="listing" className="sp-card sp-card--enter">
-                    <header className="sp-card__head">
-                      <span className="sp-card__step">Шаг 9</span>
-                      <h3 className="sp-card__title">Формат продажи</h3>
-                      <p className="sp-card__lead">{SINGLE_PAGE_SECTION_HELP.listing.lead}</p>
+                  <section
+                    data-sp-section="listing"
+                    className={`sp-card sp-card--enter${!isSpSectionBodyVisible('listing') ? ' sp-card--section-collapsed' : ''}`}
+                  >
+                    <header
+                      className="sp-card__head sp-card__head--collapsible"
+                      onClick={() => scrollSpSectionIntoView('listing')}
+                    >
+                      <div className="sp-card__head-maincol">
+                        <span className="sp-card__step">Шаг 9</span>
+                        <h3 className="sp-card__title">Формат продажи</h3>
+                        {isSpSectionBodyVisible('listing') && (
+                          <p className="sp-card__lead">{SINGLE_PAGE_SECTION_HELP.listing.lead}</p>
+                        )}
+                      </div>
+                      <span className="sp-card__head-toggle" aria-hidden="true">
+                          <FiChevronDown className={isSpSectionBodyVisible('listing') ? 'is-expanded' : ''} size={22} />
+                        </span>
                     </header>
+                    <div
+                      className={`sp-card__collapsible-panel${isSpSectionBodyVisible('listing') ? ' is-open' : ''}`}
+                      aria-hidden={!isSpSectionBodyVisible('listing')}
+                    >
+                      <div className="sp-card__collapsible-body">
                     <div className="sp-listing-mode-stack" role="radiogroup" aria-label="Тип размещения">
                       {listingModeOptionsForForm.map((mode) => {
                         const isOpen = expandedListingModeId === mode.id
@@ -6291,6 +6563,8 @@ const AddProperty = ({
                         )
                       })}
                     </div>
+                      </div>
+                    </div>
                   </section>
                 )}
 
@@ -6298,13 +6572,28 @@ const AddProperty = ({
                   <section
                     ref={singlePageCalculatorSectionRef}
                     data-sp-section="calculator"
-                    className="sp-card sp-card--enter sp-card--calculator"
+                    className={`sp-card sp-card--enter sp-card--calculator${!isSpSectionBodyVisible('calculator') ? ' sp-card--section-collapsed' : ''}`}
                   >
-                    <header className="sp-card__head">
-                      <span className="sp-card__step">Шаг 10</span>
-                      <h3 className="sp-card__title">Автоматический расчёт стоимости</h3>
-                      <p className="sp-card__lead">{SINGLE_PAGE_SECTION_HELP.calculator.lead}</p>
+                    <header
+                      className="sp-card__head sp-card__head--collapsible"
+                      onClick={() => scrollSpSectionIntoView('calculator')}
+                    >
+                      <div className="sp-card__head-maincol">
+                        <span className="sp-card__step">Шаг 10</span>
+                        <h3 className="sp-card__title">Автоматический расчёт стоимости</h3>
+                        {isSpSectionBodyVisible('calculator') && (
+                          <p className="sp-card__lead">{SINGLE_PAGE_SECTION_HELP.calculator.lead}</p>
+                        )}
+                      </div>
+                      <span className="sp-card__head-toggle" aria-hidden="true">
+                          <FiChevronDown className={isSpSectionBodyVisible('calculator') ? 'is-expanded' : ''} size={22} />
+                        </span>
                     </header>
+                    <div
+                      className={`sp-card__collapsible-panel${isSpSectionBodyVisible('calculator') ? ' is-open' : ''}`}
+                      aria-hidden={!isSpSectionBodyVisible('calculator')}
+                    >
+                      <div className="sp-card__collapsible-body">
                     <div className="sp-calculator-embed">
                       <PropertyCalculatorModal
                         isOpen
@@ -6326,16 +6615,37 @@ const AddProperty = ({
                         onApplyRecommendedPrice={handleApplyCalculatedPrice}
                       />
                     </div>
+                      </div>
+                    </div>
                   </section>
                 )}
 
                 {hasListingType && (
-                  <section ref={singlePagePriceSectionRef} data-sp-section="price" className="sp-card sp-card--enter sp-card--price">
-                    <header className="sp-card__head">
-                      <span className="sp-card__step">Шаг 11</span>
-                      <h3 className="sp-card__title">Цена, долги и сроки аукциона</h3>
-                      <p className="sp-card__lead">{t('addPropertyPriceSectionLead')}</p>
+                  <section
+                    ref={singlePagePriceSectionRef}
+                    data-sp-section="price"
+                    className={`sp-card sp-card--enter sp-card--price${!isSpSectionBodyVisible('price') ? ' sp-card--section-collapsed' : ''}`}
+                  >
+                    <header
+                      className="sp-card__head sp-card__head--collapsible"
+                      onClick={() => scrollSpSectionIntoView('price')}
+                    >
+                      <div className="sp-card__head-maincol">
+                        <span className="sp-card__step">Шаг 11</span>
+                        <h3 className="sp-card__title">Цена, долги и сроки аукциона</h3>
+                        {isSpSectionBodyVisible('price') && (
+                          <p className="sp-card__lead">{t('addPropertyPriceSectionLead')}</p>
+                        )}
+                      </div>
+                      <span className="sp-card__head-toggle" aria-hidden="true">
+                          <FiChevronDown className={isSpSectionBodyVisible('price') ? 'is-expanded' : ''} size={22} />
+                        </span>
                     </header>
+                    <div
+                      className={`sp-card__collapsible-panel${isSpSectionBodyVisible('price') ? ' is-open' : ''}`}
+                      aria-hidden={!isSpSectionBodyVisible('price')}
+                    >
+                      <div className="sp-card__collapsible-body">
 
                     {formData.listingMode === 'shares' && (
                       <div className="single-page-add-flow__grid sp-price-block">
@@ -6602,6 +6912,8 @@ const AddProperty = ({
                       <button type="button" className="sp-btn sp-btn--primary sp-btn--wide" disabled={!hasPrice || isSubmitting} onClick={handlePriceContinue}>
                         {isSubmitting ? 'Отправка...' : 'Оплата и верификация'}
                       </button>
+                    </div>
+                      </div>
                     </div>
                   </section>
                 )}

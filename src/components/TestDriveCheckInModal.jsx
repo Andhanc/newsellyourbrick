@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { FiArrowLeft, FiCheckCircle, FiUpload, FiX } from 'react-icons/fi'
 import { getApiBaseUrl } from '../utils/apiConfig'
 import { showNotification } from '../utils/toastHelper'
+import { useDrawerDismiss } from '../hooks/useDrawerDismiss'
 import './TestDriveCheckInModal.css'
 
 const STEP_COUNT = 6
@@ -98,6 +99,7 @@ function canSubmitForm(form) {
  */
 export default function TestDriveCheckInModal({ open, bookingId, surveyToken, onClose, onSuccess }) {
   const { t } = useTranslation()
+  const { visible, isClosing, requestClose } = useDrawerDismiss(open, onClose)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [detail, setDetail] = useState(null)
@@ -186,11 +188,11 @@ export default function TestDriveCheckInModal({ open, bookingId, surveyToken, on
   useEffect(() => {
     if (!open) return
     const onKey = (e) => {
-      if (e.key === 'Escape') onClose()
+      if (e.key === 'Escape') requestClose()
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [open, onClose])
+  }, [open, requestClose])
 
   const canSubmit = useMemo(() => canSubmitForm(form), [form])
 
@@ -276,7 +278,12 @@ export default function TestDriveCheckInModal({ open, bookingId, surveyToken, on
     }
   }
 
-  if (!open) return null
+  if (!visible) return null
+
+  const closingPanel = isClosing
+    ? ' drawer-dismiss-from-bottom--closing drawer-dismiss-modal--closing'
+    : ''
+  const closingBackdrop = isClosing ? ' drawer-dismiss-backdrop--closing' : ''
   if (!surveyToken && (bookingId == null || bookingId === '')) return null
 
   const navKeys = [
@@ -611,13 +618,18 @@ export default function TestDriveCheckInModal({ open, bookingId, surveyToken, on
 
   return (
     <div
-      className="td-checkin-modal-overlay"
+      className={`td-checkin-modal-overlay${closingBackdrop}`}
       role="presentation"
       onMouseDown={(e) => {
-        if (e.target === e.currentTarget) onClose()
+        if (e.target === e.currentTarget) requestClose()
       }}
     >
-      <div className="td-checkin-modal" role="dialog" aria-modal="true" aria-labelledby="td-checkin-modal-title">
+      <div
+        className={`td-checkin-modal${closingPanel}`}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="td-checkin-modal-title"
+      >
         <div className="td-checkin-modal__top">
           <div className="td-checkin-modal__title-block">
             <h2 id="td-checkin-modal-title">{t('tdSurvey_title')}</h2>
@@ -642,7 +654,7 @@ export default function TestDriveCheckInModal({ open, bookingId, surveyToken, on
               <p>{t('buyerCheckIn_loading')}</p>
             )}
           </div>
-          <button type="button" className="td-checkin-modal__close" onClick={onClose} aria-label={t('buyerCheckIn_close')}>
+          <button type="button" className="td-checkin-modal__close" onClick={() => requestClose()} aria-label={t('buyerCheckIn_close')}>
             <FiX size={22} aria-hidden />
           </button>
         </div>
@@ -683,7 +695,7 @@ export default function TestDriveCheckInModal({ open, bookingId, surveyToken, on
         </div>
 
         <div className="td-checkin-modal__footer">
-          <button type="button" className="td-checkin-modal__btn" onClick={activeStep === 0 ? onClose : goBack}>
+          <button type="button" className="td-checkin-modal__btn" onClick={activeStep === 0 ? () => requestClose() : goBack}>
             {activeStep === 0 ? (
               <>
                 <FiX size={16} aria-hidden />

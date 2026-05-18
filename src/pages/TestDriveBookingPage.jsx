@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
-import { motion } from 'framer-motion'
+import { AnimatePresence, motion } from 'framer-motion'
 import { FiArrowLeft, FiMail } from 'react-icons/fi'
 import { SiTelegram, SiWhatsapp } from 'react-icons/si'
 import Header from '../components/Header'
@@ -381,33 +381,44 @@ export default function TestDriveBookingPage() {
           </motion.div>
         </aside>
       </div>
-      {contactPickerOpen && pendingRange && (
-        <div
-          className={`test-drive-pay-overlay${isMobile ? ' test-drive-contact-overlay--drawer' : ''}`}
-          onClick={() => setContactPickerOpen(false)}
-        >
+      <AnimatePresence>
+        {contactPickerOpen && pendingRange && (
           <motion.div
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="test-drive-contact-title"
-            initial={
-              isMobile
-                ? { y: '100%' }
-                : { opacity: 0, y: 22, scale: 0.97 }
-            }
-            animate={
-              isMobile
-                ? { y: 0, opacity: 1 }
-                : { opacity: 1, y: 0, scale: 1 }
-            }
-            transition={
-              isMobile
-                ? { type: 'spring', damping: 33, stiffness: 400, mass: 0.65 }
-                : { type: 'spring', stiffness: 380, damping: 32 }
-            }
-            className={`test-drive-contact-sheet${isMobile ? ' test-drive-contact-sheet--drawer' : ''}`}
-            onClick={(e) => e.stopPropagation()}
+            key="test-drive-contact-overlay"
+            className={`test-drive-pay-overlay${isMobile ? ' test-drive-contact-overlay--drawer' : ''}`}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.28 }}
+            onClick={() => setContactPickerOpen(false)}
           >
+            <motion.div
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="test-drive-contact-title"
+              initial={
+                isMobile
+                  ? { y: '100%' }
+                  : { opacity: 0, y: 22, scale: 0.97 }
+              }
+              animate={
+                isMobile
+                  ? { y: 0, opacity: 1 }
+                  : { opacity: 1, y: 0, scale: 1 }
+              }
+              exit={
+                isMobile
+                  ? { y: '100%', opacity: 1 }
+                  : { opacity: 0, y: 22, scale: 0.97 }
+              }
+              transition={
+                isMobile
+                  ? { type: 'spring', damping: 33, stiffness: 400, mass: 0.65 }
+                  : { type: 'spring', stiffness: 380, damping: 32 }
+              }
+              className={`test-drive-contact-sheet${isMobile ? ' test-drive-contact-sheet--drawer' : ''}`}
+              onClick={(e) => e.stopPropagation()}
+            >
             {isMobile ? (
               <div className="test-drive-contact-drawer__handle-wrap" aria-hidden>
                 <span className="test-drive-contact-drawer__handle" />
@@ -448,36 +459,48 @@ export default function TestDriveBookingPage() {
             >
               Закрыть
             </button>
+            </motion.div>
           </motion.div>
-        </div>
-      )}
-      {paymentOpen && pendingRange && (
-        <div
-          className={`test-drive-pay-overlay${isMobile ? ' test-drive-pay-overlay--drawer' : ''}`}
-          onClick={() => setPaymentOpen(false)}
-        >
+        )}
+      </AnimatePresence>
+      <AnimatePresence>
+        {paymentOpen && pendingRange && (
           <motion.div
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="test-drive-pay-title"
-            initial={
-              isMobile
-                ? { y: '100%' }
-                : { opacity: 0, y: 18, scale: 0.98 }
-            }
-            animate={
-              isMobile
-                ? { y: 0, opacity: 1 }
-                : { opacity: 1, y: 0, scale: 1 }
-            }
-            transition={
-              isMobile
-                ? { type: 'spring', damping: 33, stiffness: 400, mass: 0.65 }
-                : { type: 'spring', stiffness: 380, damping: 32 }
-            }
-            className={`test-drive-pay-sheet${isMobile ? ' test-drive-pay-sheet--drawer' : ''}`}
-            onClick={(e) => e.stopPropagation()}
+            key="test-drive-pay-overlay"
+            className={`test-drive-pay-overlay${isMobile ? ' test-drive-pay-overlay--drawer' : ''}`}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.28 }}
+            onClick={() => setPaymentOpen(false)}
           >
+            <motion.div
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="test-drive-pay-title"
+              initial={
+                isMobile
+                  ? { y: '100%' }
+                  : { opacity: 0, y: 18, scale: 0.98 }
+              }
+              animate={
+                isMobile
+                  ? { y: 0, opacity: 1 }
+                  : { opacity: 1, y: 0, scale: 1 }
+              }
+              exit={
+                isMobile
+                  ? { y: '100%', opacity: 1 }
+                  : { opacity: 0, y: 18, scale: 0.98 }
+              }
+              transition={
+                isMobile
+                  ? { type: 'spring', damping: 33, stiffness: 400, mass: 0.65 }
+                  : { type: 'spring', stiffness: 380, damping: 32 }
+              }
+              className={`test-drive-pay-sheet${isMobile ? ' test-drive-pay-sheet--drawer' : ''}`}
+              onClick={(e) => e.stopPropagation()}
+            >
             {isMobile ? (
               <div className="test-drive-contact-drawer__handle-wrap" aria-hidden>
                 <span className="test-drive-contact-drawer__handle" />
@@ -560,8 +583,9 @@ export default function TestDriveBookingPage() {
               )}
             </div>
           </motion.div>
-        </div>
-      )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

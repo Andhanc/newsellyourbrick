@@ -21,6 +21,7 @@ import { MdBed, MdOutlineBathtub } from 'react-icons/md'
 import { BiArea } from 'react-icons/bi'
 import LocationMap from '../components/LocationMap'
 import './PropertyDetail.css'
+import { formatPropertyPrice, getCurrencySymbol } from '../utils/currency'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
 
@@ -593,12 +594,8 @@ const PropertyDetail = () => {
     )
   }
 
-  const formatPrice = (price) => {
-    if (price >= 1000000) {
-      return `$${(price / 1000000).toFixed(1)}M`
-    }
-    return `$${price.toLocaleString('en-US')}`
-  }
+  const formatPrice = (price) =>
+    formatPropertyPrice(price, normalizedProperty.currency, { compact: true })
 
   const handleBid = async (e) => {
     e.preventDefault()
@@ -993,9 +990,7 @@ const PropertyDetail = () => {
                   <div className="detail-price">
                     <span className="detail-price-label">Цена:</span>
                     <span className="detail-price-value">
-                      {normalizedProperty.currency === 'EUR' ? '€' : 
-                       normalizedProperty.currency === 'USD' ? '$' : 
-                       normalizedProperty.currency === 'BYN' ? 'Br' : ''}
+                      {getCurrencySymbol(normalizedProperty.currency)}
                       {normalizedProperty.price.toLocaleString('ru-RU')}
                     </span>
                   </div>

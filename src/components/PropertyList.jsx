@@ -15,6 +15,7 @@ import { AuctionMobileListingSkeleton, readAuctionMobileViewMode } from './Aucti
 import AuctionMobileLayout from './ui/AuctionMobileLayout'
 import ImageWithSkeleton from './ImageWithSkeleton'
 import { ensureCanOpenProperty } from '../utils/propertyAccessGuard'
+import { formatPropertyPrice } from '../utils/currency'
 import { showNotification } from '../utils/toastHelper'
 import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
 import {
@@ -137,12 +138,8 @@ const PropertyList = ({
   const isPropertyLiked = (property) =>
     isFavorite(property, hasDbBackedProperty(property) ? undefined : 'property')
 
-  const formatPrice = (price) => {
-    if (price >= 1000000) {
-      return `$${(price / 1000000).toFixed(1)}M`
-    }
-    return `$${price.toLocaleString('en-US')}`
-  }
+  const formatPrice = (price, currency = 'USD') =>
+    formatPropertyPrice(price, currency, { compact: true })
 
   const isAuctionEnded = (property) => isAuctionListingEnded(property)
 
@@ -819,11 +816,11 @@ const PropertyList = ({
                       {hasTimer ? (
                         <div className="property-bid-info property-bid-info--after-club-desktop">
                           <span className="bid-label">{t('currentBid')}</span>
-                          <span className="bid-value">{formatPrice(resolveAuctionCurrentBidValue(property))}</span>
+                          <span className="bid-value">{formatPrice(resolveAuctionCurrentBidValue(property), property.currency)}</span>
                         </div>
                       ) : (
                         <div className="property-price property-price--after-club-desktop">
-                          {formatPrice(property.price || 0)}
+                          {formatPrice(property.price || 0, property.currency)}
                         </div>
                       )}
                     </>
@@ -931,11 +928,11 @@ const PropertyList = ({
                         {hasTimer ? (
                           <div className="property-bid-info">
                             <span className="bid-label">{t('currentBid')}</span>
-                            <span className="bid-value">{formatPrice(resolveAuctionCurrentBidValue(property))}</span>
+                            <span className="bid-value">{formatPrice(resolveAuctionCurrentBidValue(property), property.currency)}</span>
                           </div>
                         ) : (
                           <>
-                            <div className="property-price">{formatPrice(property.price || 0)}</div>
+                            <div className="property-price">{formatPrice(property.price || 0, property.currency)}</div>
                             <div className="property-specs">
                             {(property.rooms || property.beds) && (
                               <div className="spec-item">

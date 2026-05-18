@@ -71,15 +71,17 @@ export function AnimatedMarqueeHero({
         </motion.h1>
         ) : null}
 
-        <motion.p
-          initial="hidden"
-          animate="show"
-          variants={FADE_IN_ANIMATION_VARIANTS}
-          transition={{ delay: 0.5 }}
-          className="animated-marquee-hero__description mt-4 max-w-xl text-base text-gray-600 md:mt-6 md:text-lg"
-        >
-          {description}
-        </motion.p>
+        {description != null && description !== '' ? (
+          <motion.p
+            initial="hidden"
+            animate="show"
+            variants={FADE_IN_ANIMATION_VARIANTS}
+            transition={{ delay: 0.5 }}
+            className="animated-marquee-hero__description mt-4 max-w-xl text-base text-gray-600 md:mt-6 md:text-lg"
+          >
+            {description}
+          </motion.p>
+        ) : null}
       </div>
 
       {/* Мобилка: лента сразу под текстом (без «дыры» от min-height + absolute). Десктоп: внизу секции */}

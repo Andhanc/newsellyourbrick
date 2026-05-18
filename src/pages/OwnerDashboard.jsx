@@ -49,11 +49,13 @@ import { getNotificationItemClass } from '../utils/notificationItemClass'
 import { showNotification } from '../utils/toastHelper'
 import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
 import { showToast } from '../components/ToastContainer'
+import { useDrawerDismiss } from '../hooks/useDrawerDismiss'
 import { fetchVerificationStatus } from '../utils/verificationStatusApi'
 import { fetchUserById } from '../utils/usersApi'
 import { getPropertyListingKind } from '../utils/propertyListingKind'
 import { getPropertyCardImage } from '../utils/propertyImage'
 import { buildResponsiveImageProps } from '../utils/responsiveImage'
+import { getCurrencySymbol as getListingCurrencySymbol } from '../utils/currency'
 import '../components/PropertyList.css'
 import './MainPage.css'
 import './OwnerDashboard.css'
@@ -216,6 +218,11 @@ const OwnerDashboard = () => {
   const [saleCelebration, setSaleCelebration] = useState(null)
   const saleCelebrationRef = useRef(null)
   const [ownerNotifOpen, setOwnerNotifOpen] = useState(false)
+  const {
+    visible: ownerNotifVisible,
+    isClosing: ownerNotifClosing,
+    requestClose: closeOwnerNotif,
+  } = useDrawerDismiss(ownerNotifOpen, () => setOwnerNotifOpen(false))
   const [ownerNotifications, setOwnerNotifications] = useState([])
   const [ownerNotifLoading, setOwnerNotifLoading] = useState(false)
   const [userDocuments, setUserDocuments] = useState({ passport: null, passportWithFace: null })
@@ -1624,21 +1631,21 @@ const OwnerDashboard = () => {
         </div>
       </header>
 
-      {ownerNotifOpen && (
+      {ownerNotifVisible && (
         <>
           <div
-            className="notification-backdrop"
-            onClick={() => setOwnerNotifOpen(false)}
+            className={`notification-backdrop${ownerNotifClosing ? ' drawer-dismiss-backdrop--closing' : ''}`}
+            onClick={() => closeOwnerNotif()}
             role="presentation"
           />
-          <div className="notification-panel">
+          <div className={`notification-panel${ownerNotifClosing ? ' drawer-dismiss-from-top--closing' : ''}`}>
             <div className="notification-panel__content">
               <div className="notification-panel__header">
                 <h3 className="notification-panel__title">{t('notifications')}</h3>
                 <button
                   type="button"
                   className="notification-panel__close"
-                  onClick={() => setOwnerNotifOpen(false)}
+                  onClick={() => closeOwnerNotif()}
                   aria-label={t('closeNotifications') || 'Закрыть'}
                 >
                   <FiX size={20} />
@@ -1913,13 +1920,7 @@ const OwnerDashboard = () => {
                   return num.toLocaleString('ru-RU')
                 }
 
-                const getCurrencySymbol = () => {
-                  const currency = property.currency || 'USD'
-                  if (currency === 'EUR') return '€'
-                  if (currency === 'BYN') return 'Br'
-                  if (currency === 'USD') return '$'
-                  return '$'
-                }
+                const propertyCurrencySymbol = getListingCurrencySymbol(property.currency)
 
                 const minSalePriceNum = Number(property.price) || 0
                 const hasMinSalePrice = property.isAuction && minSalePriceNum > 0
@@ -1975,7 +1976,7 @@ const OwnerDashboard = () => {
                             >
                               <span className="bid-label">{t('ownerCardBidLabel')}</span>
                               <span className="bid-value">
-                                {getCurrencySymbol()}
+                                {propertyCurrencySymbol}
                                 {formatPrice(currentBidValue)}
                                 {ownerBidPulseIds[property.id] ? (
                                   <FiArrowUp className="bid-value__arrow" size={18} aria-hidden />

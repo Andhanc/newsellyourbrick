@@ -6,6 +6,7 @@ import { getApiBaseUrl } from '../../utils/apiConfig';
 import { markPurchaseRequestsViewed } from '../../utils/adminSidebarBadges';
 import { showNotification } from '../../utils/toastHelper';
 import './PurchaseRequests.css';
+import { getCurrencySymbol } from '../../utils/currency';
 
 const PurchaseRequests = ({ onAdminSectionBadgeRefresh }) => {
   const navigate = useNavigate();
@@ -243,7 +244,7 @@ const PurchaseRequests = ({ onAdminSectionBadgeRefresh }) => {
 
   const formatPrice = (price, currency) => {
     if (!price) return 'Не указано';
-    const currencySymbol = currency === 'USD' ? '$' : currency === 'EUR' ? '€' : currency || '';
+    const currencySymbol = getCurrencySymbol(currency);
     return `${currencySymbol}${price.toLocaleString('ru-RU')}`;
   };
 

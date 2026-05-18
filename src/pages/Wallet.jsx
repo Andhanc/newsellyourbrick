@@ -22,6 +22,7 @@ import BuyNowModal from '../components/BuyNowModal'
 import DepositTopUpPicker from '../components/DepositTopUpPicker'
 import SellerVerificationModal from '../components/SellerVerificationModal'
 import { showNotification } from '../utils/toastHelper'
+import { getCurrencySymbol } from '../utils/currency'
 import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
 import {
   startDepositWalletCheckout,
@@ -811,7 +812,7 @@ const WalletInner = () => {
                 <div className="wallet-won-object__bid-info">
                   <span className="wallet-won-object__bid-label">Выигрышная ставка:</span>
                   <span className="wallet-won-object__bid-amount">
-                    {wonProperty.currency === 'USD' ? '$' : wonProperty.currency === 'EUR' ? '€' : wonProperty.currency === 'BYN' ? 'Br' : ''}
+                    {getCurrencySymbol(wonProperty.currency)}
                     {wonProperty.bid_amount.toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </span>
                 </div>

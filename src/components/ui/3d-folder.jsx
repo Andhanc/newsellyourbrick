@@ -409,6 +409,8 @@ function AnimatedFolder({
   linkHref,
   /** Мобильная сетка лендинга 1+2+2: белая карточка с обводкой, единый масштаб 3D */
   variant = 'default',
+  /** Верхняя папка «Аукционы» — на всю ширину, чуть крупнее остальных */
+  featured = false,
 }) {
   const { t } = useTranslation();
   const [isHovered, setIsHovered] = useState(false);
@@ -463,8 +465,9 @@ function AnimatedFolder({
   const isXs = viewportWidth <= 360
   const isSm = viewportWidth > 360 && viewportWidth <= 420
   const landingSliderMobile = variant === 'landingSlider' && isMobile
-  /** Компактнее карточки в мобильной сетке 1+2+2 */
-  const lmScale = landingSliderMobile ? 1.12 : 1
+  const landingSliderFeatured = landingSliderMobile && featured
+  /** Компактнее карточки в мобильной сетке 1+2+2; featured — на всю ширину, ниже по высоте */
+  const lmScale = landingSliderMobile ? (featured ? 1.08 : 1.12) : 1
 
   const round = (v) => Math.round(v)
 
@@ -474,7 +477,7 @@ function AnimatedFolder({
   const minWidth = isMobile ? round(minWidthBase * lmScale) : minWidthBase
   let minHeight = isMobile ? round(minHeightBase * lmScale) : minHeightBase
   if (landingSliderMobile) {
-    minHeight = round(minHeight * 0.78)
+    minHeight = round(minHeight * (featured ? 0.68 : 0.78))
   }
 
   const centerWBase = isMobile ? (isXs ? 92 : isSm ? 98 : 112) : 172
@@ -512,7 +515,7 @@ function AnimatedFolder({
             : { minWidth: `${minWidth}px` }),
           minHeight: `${minHeight}px`,
           padding: landingSliderMobile
-            ? (isXs ? '8px 8px 10px' : '10px 10px 12px')
+            ? (isXs ? '8px 8px 10px' : '10px 10px 11px')
             : isMobile
               ? (isXs ? '12px' : '13px')
               : '18px 16px 12px',
@@ -555,7 +558,13 @@ function AnimatedFolder({
           style={{
             height: `${centerH}px`,
             width: `${centerW}px`,
-            marginBottom: isMobile ? (landingSliderMobile ? '2px' : '8px') : undefined,
+            marginBottom: isMobile
+              ? landingSliderFeatured
+                ? '0px'
+                : landingSliderMobile
+                  ? '2px'
+                  : '8px'
+              : undefined,
           }}
         >
           <div

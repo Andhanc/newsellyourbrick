@@ -13,6 +13,7 @@ import { getPropertyCardImage } from '../utils/propertyImage'
 import { buildResponsiveImageProps } from '../utils/responsiveImage'
 import ImageWithSkeleton from '../components/ImageWithSkeleton'
 import { getPropertyDetailPath } from '../utils/propertyDetailUrl'
+import { formatPropertyPrice } from '../utils/currency'
 
 const FAVORITES_CARD_SKELETON_COUNT = 4
 
@@ -53,17 +54,6 @@ const Favorites = () => {
   const { favoriteAuctions, catalogLoading } = useFavoriteAuctionItems()
 
   const listLoading = catalogLoading || favoritesLoading
-
-  const formatPrice = (price) => {
-    const n = Number(price)
-    if (price == null || price === '' || Number.isNaN(n)) {
-      return '$0'
-    }
-    if (n >= 1000000) {
-      return `$${(n / 1000000).toFixed(1)}M`
-    }
-    return `$${n.toLocaleString('en-US')}`
-  }
 
   const removeFavorite = (item) => {
     toggleFavorite(
@@ -195,12 +185,12 @@ const Favorites = () => {
                         {auction.isAuction && auction.currentBid ? (
                           <>
                             <span className="favorite-card-price-label">Текущая ставка:</span>
-                            <span className="favorite-card-price-value">{formatPrice(auction.currentBid)}</span>
+                            <span className="favorite-card-price-value">{formatPropertyPrice(auction.currentBid, auction.currency, { compact: true })}</span>
                           </>
                         ) : (
                           <>
                             <span className="favorite-card-price-label">Цена:</span>
-                            <span className="favorite-card-price-value">{formatPrice(auction.price)}</span>
+                            <span className="favorite-card-price-value">{formatPropertyPrice(auction.price, auction.currency, { compact: true })}</span>
                           </>
                         )}
                       </div>

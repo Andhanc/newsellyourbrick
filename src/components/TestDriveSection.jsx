@@ -77,7 +77,7 @@ export default function TestDriveSection({
   const allDone = eligibility.can_request
 
   return (
-    <div className="property-detail-test-drive">
+    <div id="property-test-drive-section" className="property-detail-test-drive">
       <h3 className="property-detail-info-block__title">
         {ru ? 'Тест-драйв' : 'Test drive'}
       </h3>

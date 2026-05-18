@@ -288,4 +288,14 @@
       transform: translate3d(0, 0, 0);
     }
   }
+
+  .td-exit-feedback.drawer-dismiss-modal--closing {
+    animation: drawer-dismiss-from-bottom-out 0.38s cubic-bezier(0.22, 1, 0.32, 1) both !important;
+  }
+}
+
+@media (min-width: 641px) {
+  .td-exit-feedback.drawer-dismiss-from-bottom--closing {
+    animation: drawer-dismiss-modal-out 0.28s ease-out both !important;
+  }
 }

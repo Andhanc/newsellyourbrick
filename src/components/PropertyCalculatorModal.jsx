@@ -347,7 +347,7 @@ const PropertyCalculatorModal = ({
                 Калькулятор стоимости
               </h2>
               <p className="property-calculator-modal__subtitle">
-                Тип жилья, город и район — ориентир по цене на основе объявлений с нескольких площадок
+                Тип жилья, город и район — ориентир по цене на основе похожих объявлений
               </p>
             </div>
           </div>
@@ -357,7 +357,7 @@ const PropertyCalculatorModal = ({
               {isLoading ? (
                 <div className="property-calculator-loader">
                   <FiLoader className="property-calculator-loader__icon" size={48} />
-                  <h3 className="property-calculator-loader__title">Сбор объявлений с нескольких порталов...</h3>
+                  <h3 className="property-calculator-loader__title">Сбор похожих объявлений...</h3>
                   <p className="property-calculator-loader__subtitle">
                     Это может занять до минуты: запрашиваем похожие лоты и считаем устойчивую медиану.
                   </p>
@@ -541,16 +541,10 @@ const PropertyCalculatorModal = ({
                     Ориентир: {formatPrice(results.recommendedPricePerSqm)} / м²
                   </p>
                 )}
-                {results.searchParams?.sources?.length > 0 && (
-                  <p className="property-calculator-result__note">
-                    Источники: {results.searchParams.sources.join(', ')}
-                  </p>
-                )}
-                {results.note && (
-                  <div className="property-calculator-result__warning">
-                    {results.note}
-                  </div>
-                )}
+                <div className="property-calculator-result__warning">
+                  Все расчёты носят ориентировочный характер и отражают текущую рыночную ситуацию.
+                  Финальную стоимость вы устанавливаете самостоятельно, опираясь на эту оценку.
+                </div>
               </div>
 
               {results.similarProperties && results.similarProperties.length > 0 ? (
@@ -587,9 +581,6 @@ const PropertyCalculatorModal = ({
                         <div className="property-calculator-result__similar-content">
                           <div className="property-calculator-result__similar-price">
                             {formatPrice(property.price)}
-                            {property.source && (
-                              <span className="property-calculator-result__source"> · {property.source}</span>
-                            )}
                           </div>
                           <div className="property-calculator-result__similar-details">
                             {property.area && <span>{property.area} м²</span>}

@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { FiSearch, FiHome } from 'react-icons/fi'
 import PropertySearchModal from './PropertySearchModal'
@@ -6,11 +7,29 @@ import './PropertySearchBlock.css'
 
 const PropertySearchBlock = () => {
   const { t } = useTranslation()
+  const location = useLocation()
+  const navigate = useNavigate()
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [restoreFromSession, setRestoreFromSession] = useState(false)
+
+  useEffect(() => {
+    if (location.state?.openPropertySearch) {
+      setRestoreFromSession(true)
+      setIsModalOpen(true)
+      navigate(
+        {
+          pathname: location.pathname,
+          search: location.search,
+          hash: location.hash,
+        },
+        { replace: true, state: {} }
+      )
+    }
+  }, [location.hash, location.pathname, location.search, location.state, navigate])
 
   return (
     <>
-      <section className="property-search-block">
+      <section id="landing-property-search" className="property-search-block">
         <div className="property-search-block__container">
           <div className="property-search-block__content">
             <div className="property-search-block__icon">
@@ -24,7 +43,10 @@ const PropertySearchBlock = () => {
             </div>
             <button 
               className="property-search-block__button"
-              onClick={() => setIsModalOpen(true)}
+              onClick={() => {
+                setRestoreFromSession(false)
+                setIsModalOpen(true)
+              }}
             >
               <FiSearch size={20} />
               <span>{t('findProperty')}</span>
@@ -37,6 +59,7 @@ const PropertySearchBlock = () => {
         <PropertySearchModal 
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
+          restoreFromSession={restoreFromSession}
         />
       )}
     </>

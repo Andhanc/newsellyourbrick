@@ -87,6 +87,7 @@ function Home() {
   const isAuctionRoute = location.pathname === '/auction'
   const { cabinetVipActive, numericUserId } = useCabinetOverviewData()
   const cabinetVipRef = useRef(false)
+  const viewerUserIdRef = useRef(null)
   
   // Состояния для чата AI
   const [isChatOpen, setIsChatOpen] = useState(false)
@@ -116,6 +117,11 @@ function Home() {
   useEffect(() => {
     cabinetVipRef.current = cabinetVipActive
   }, [cabinetVipActive])
+
+  useEffect(() => {
+    viewerUserIdRef.current =
+      Number.isFinite(Number(numericUserId)) && Number(numericUserId) >= 1 ? Number(numericUserId) : null
+  }, [numericUserId])
 
   // Загрузка объявлений: при наличии кэша — только фоновое обновление (без "Загрузка объявлений...")
   const loadProperties = useCallback(async (backgroundRefresh = false) => {
@@ -200,7 +206,12 @@ function Home() {
             const toAdd = newFormatted.filter((p) => {
               if (p.id == null || prevIds.has(Number(p.id))) return false
               const pc = p.private_club_only === 1 || p.private_club_only === true || p.private_club_only === '1'
-              if (pc && !cabinetVipRef.current) return false
+              const ownerId = Number(p.user_id)
+              const isOwnLot =
+                Number.isFinite(ownerId) &&
+                Number.isFinite(viewerUserIdRef.current) &&
+                ownerId === viewerUserIdRef.current
+              if (pc && !cabinetVipRef.current && !isOwnLot) return false
               return true
             })
             if (toAdd.length === 0) return prev

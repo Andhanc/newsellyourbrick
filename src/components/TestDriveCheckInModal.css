@@ -700,6 +700,18 @@
   }
 }
 
+@media (max-width: 640px) {
+  .td-checkin-modal.drawer-dismiss-modal--closing {
+    animation: drawer-dismiss-from-bottom-out 0.38s cubic-bezier(0.32, 0.72, 0, 1) both !important;
+  }
+}
+
+@media (min-width: 641px) {
+  .td-checkin-modal.drawer-dismiss-from-bottom--closing {
+    animation: drawer-dismiss-modal-out 0.28s ease-out both !important;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .td-checkin-modal-overlay,
   .td-checkin-modal {
