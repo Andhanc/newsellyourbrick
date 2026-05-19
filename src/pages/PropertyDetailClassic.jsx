@@ -3643,11 +3643,6 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                   {/* Функционал ставки - скрываем когда таймер истек или сделка «купить сейчас» завершена */}
                   {(!isAuctionProperty || !auctionEndedForSidebar) && (
                   <div className="property-detail-sidebar__bidding-section">
-                    {currencyView.isConverted ? (
-                      <p className="property-detail-sidebar__bids-currency-note" role="note">
-                        {t('propertyDetailBidsListingCurrency', { currency: currencyView.baseCurrency })}
-                      </p>
-                    ) : null}
                     {isReservedActive && (
                       <div style={{
                         background: 'rgba(245, 158, 11, 0.1)',

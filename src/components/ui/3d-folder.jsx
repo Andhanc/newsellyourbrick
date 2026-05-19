@@ -465,9 +465,8 @@ function AnimatedFolder({
   const isXs = viewportWidth <= 360
   const isSm = viewportWidth > 360 && viewportWidth <= 420
   const landingSliderMobile = variant === 'landingSlider' && isMobile
-  const landingSliderFeatured = landingSliderMobile && featured
-  /** Компактнее карточки в мобильной сетке 1+2+2; featured — на всю ширину, ниже по высоте */
-  const lmScale = landingSliderMobile ? (featured ? 1.08 : 1.12) : 1
+  /** Единый размер карточек в мобильной сетке моделей */
+  const lmScale = landingSliderMobile ? 1.12 : 1
 
   const round = (v) => Math.round(v)
 
@@ -477,7 +476,7 @@ function AnimatedFolder({
   const minWidth = isMobile ? round(minWidthBase * lmScale) : minWidthBase
   let minHeight = isMobile ? round(minHeightBase * lmScale) : minHeightBase
   if (landingSliderMobile) {
-    minHeight = round(minHeight * (featured ? 0.68 : 0.78))
+    minHeight = round(minHeight * 0.78)
   }
 
   const centerWBase = isMobile ? (isXs ? 92 : isSm ? 98 : 112) : 172
@@ -554,107 +553,112 @@ function AnimatedFolder({
           }}
         />
         <div
-          className="relative flex items-center justify-center mb-1.5"
+          className="w-full mb-1.5 flex items-center justify-center"
           style={{
-            height: `${centerH}px`,
-            width: `${centerW}px`,
             marginBottom: isMobile
-              ? landingSliderFeatured
-                ? '0px'
-                : landingSliderMobile
-                  ? '2px'
-                  : '8px'
+              ? landingSliderMobile
+                ? '2px'
+                : '8px'
               : undefined,
           }}
         >
           <div
-            className="absolute rounded-lg shadow-md border border-white/10"
+            className="relative flex items-center justify-center"
             style={{
-              background: backBg,
-              filter: gradient ? 'brightness(0.9)' : 'none',
-              width: `${backW}px`,
-              height: `${backH}px`,
-              transformOrigin: 'bottom center',
-              transform: isHovered ? 'rotateX(-20deg) scaleY(1.05)' : 'rotateX(0deg) scaleY(1)',
-              transition: 'transform 700ms cubic-bezier(0.16, 1, 0.3, 1)',
-              zIndex: 10,
-            }}
-          />
-          <div
-            className="absolute rounded-t-md border-t border-x border-white/10"
-            style={{
-              background: tabBg,
-              filter: gradient ? 'brightness(0.85)' : 'none',
-              width: `${tabW}px`,
-              height: `${tabH}px`,
-              top: `calc(50% - ${backH / 2}px - ${tabH / 2}px)`,
-              left: `calc(50% - ${backW / 2}px + ${tabOffsetX}px)`,
-              transformOrigin: 'bottom center',
-              transform: isHovered
-                ? 'rotateX(-30deg) translateY(-3px)'
-                : 'rotateX(0deg) translateY(0)',
-              transition: 'transform 700ms cubic-bezier(0.16, 1, 0.3, 1)',
-              zIndex: 10,
-            }}
-          />
-          <div
-            className="absolute"
-            style={{
-              top: '50%',
-              left: '50%',
-              transform: 'translate(-50%, -50%)',
-              zIndex: 20,
+              height: `${centerH}px`,
+              width: `${centerW}px`,
+              flexShrink: 0,
             }}
           >
-            {previewProjects.map((project, index) => (
-              <ProjectCard
-                key={project.id}
-                ref={(el) => {
-                  cardRefs.current[index] = el;
-                }}
-                image={project.image}
-                title={project.title}
-                delay={index * 50}
-                isVisible={isHovered}
-                index={index}
-                totalCount={previewProjects.length}
-                onClick={() => handleProjectClick(project, index)}
-                isSelected={hiddenCardId === project.id}
-                landingSliderSpread={landingSliderMobile}
-              />
-            ))}
+            <div
+              className="absolute rounded-lg shadow-md border border-white/10"
+              style={{
+                background: backBg,
+                filter: gradient ? 'brightness(0.9)' : 'none',
+                width: `${backW}px`,
+                height: `${backH}px`,
+                transformOrigin: 'bottom center',
+                transform: isHovered ? 'rotateX(-20deg) scaleY(1.05)' : 'rotateX(0deg) scaleY(1)',
+                transition: 'transform 700ms cubic-bezier(0.16, 1, 0.3, 1)',
+                zIndex: 10,
+              }}
+            />
+            <div
+              className="absolute rounded-t-md border-t border-x border-white/10"
+              style={{
+                background: tabBg,
+                filter: gradient ? 'brightness(0.85)' : 'none',
+                width: `${tabW}px`,
+                height: `${tabH}px`,
+                top: `calc(50% - ${backH / 2}px - ${tabH / 2}px)`,
+                left: `calc(50% - ${backW / 2}px + ${tabOffsetX}px)`,
+                transformOrigin: 'bottom center',
+                transform: isHovered
+                  ? 'rotateX(-30deg) translateY(-3px)'
+                  : 'rotateX(0deg) translateY(0)',
+                transition: 'transform 700ms cubic-bezier(0.16, 1, 0.3, 1)',
+                zIndex: 10,
+              }}
+            />
+            <div
+              className="absolute"
+              style={{
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+                zIndex: 20,
+              }}
+            >
+              {previewProjects.map((project, index) => (
+                <ProjectCard
+                  key={project.id}
+                  ref={(el) => {
+                    cardRefs.current[index] = el;
+                  }}
+                  image={project.image}
+                  title={project.title}
+                  delay={index * 50}
+                  isVisible={isHovered}
+                  index={index}
+                  totalCount={previewProjects.length}
+                  onClick={() => handleProjectClick(project, index)}
+                  isSelected={hiddenCardId === project.id}
+                  landingSliderSpread={landingSliderMobile}
+                />
+              ))}
+            </div>
+            <div
+              className="absolute rounded-lg shadow-lg border border-white/20"
+              style={{
+                background: frontBg,
+                width: `${backW}px`,
+                height: `${backH}px`,
+                top: `calc(50% - ${backH / 2}px + ${frontYOffset}px)`,
+                transformOrigin: 'bottom center',
+                transform: isHovered
+                  ? 'rotateX(35deg) translateY(12px)'
+                  : 'rotateX(0deg) translateY(0)',
+                transition: 'transform 700ms cubic-bezier(0.16, 1, 0.3, 1)',
+                zIndex: 30,
+              }}
+            />
+            <div
+              className="absolute rounded-lg overflow-hidden pointer-events-none"
+              style={{
+                width: `${backW}px`,
+                height: `${backH}px`,
+                top: `calc(50% - ${backH / 2}px + ${frontYOffset}px)`,
+                background:
+                  'linear-gradient(135deg, rgba(255,255,255,0.4) 0%, transparent 60%)',
+                transformOrigin: 'bottom center',
+                transform: isHovered
+                  ? 'rotateX(35deg) translateY(12px)'
+                  : 'rotateX(0deg) translateY(0)',
+                transition: 'transform 700ms cubic-bezier(0.16, 1, 0.3, 1)',
+                zIndex: 31,
+              }}
+            />
           </div>
-          <div
-            className="absolute rounded-lg shadow-lg border border-white/20"
-            style={{
-              background: frontBg,
-              width: `${backW}px`,
-              height: `${backH}px`,
-              top: `calc(50% - ${backH / 2}px + ${frontYOffset}px)`,
-              transformOrigin: 'bottom center',
-              transform: isHovered
-                ? 'rotateX(35deg) translateY(12px)'
-                : 'rotateX(0deg) translateY(0)',
-              transition: 'transform 700ms cubic-bezier(0.16, 1, 0.3, 1)',
-              zIndex: 30,
-            }}
-          />
-          <div
-            className="absolute rounded-lg overflow-hidden pointer-events-none"
-            style={{
-              width: `${backW}px`,
-              height: `${backH}px`,
-              top: `calc(50% - ${backH / 2}px + ${frontYOffset}px)`,
-              background:
-                'linear-gradient(135deg, rgba(255,255,255,0.4) 0%, transparent 60%)',
-              transformOrigin: 'bottom center',
-              transform: isHovered
-                ? 'rotateX(35deg) translateY(12px)'
-                : 'rotateX(0deg) translateY(0)',
-              transition: 'transform 700ms cubic-bezier(0.16, 1, 0.3, 1)',
-              zIndex: 31,
-            }}
-          />
         </div>
         <div className="w-full min-w-0 flex flex-col text-center mt-0">
           <div className="relative w-full">

@@ -56,14 +56,41 @@
     max-width: 100%;
   }
 
-  .home-page.home-page--auction .home-list-wrap {
+  /* Плавающие виджеты не участвуют в потоке колонки */
+  .home-page--auction > .home-auction-floats {
+    order: -1;
+  }
+
+  /* Заголовок и крошки — сразу под шапкой, выше карточек Hero */
+  .home-page--auction > .page-context-heading.page-context-heading--home-auction {
+    order: 1;
+    padding: 0 16px 6px;
+  }
+
+  .home-page--auction > .hero {
+    order: 2;
+    padding-top: 6px;
+    padding-bottom: 10px;
+  }
+
+  .home-page--auction > .home-list-wrap {
+    order: 3;
     overflow-x: clip;
     max-width: 100%;
     min-width: 0;
   }
 
-  .home-page--auction .page-context-heading.page-context-heading--home-auction {
-    padding-bottom: 12px;
+  .home-page--auction > .faq {
+    order: 4;
+  }
+
+  .home-page--auction .page-context-heading__title--auction-script {
+    margin: 0 0 0.3rem;
+    font-size: clamp(2rem, 8vw, 2.5rem);
+  }
+
+  .home-page--auction .hero-features {
+    margin-bottom: 8px;
   }
 }
 

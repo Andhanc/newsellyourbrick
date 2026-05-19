@@ -1727,8 +1727,8 @@
     overflow-x: clip;
     max-width: 100%;
     min-width: 0;
-    /* Узкий стык крошки → строка поиска (общий .property-list здесь даёт padding-top: 28px) */
-    padding-top: 10px;
+    /* Узкий стык hero/крошки → строка поиска */
+    padding-top: 4px;
     padding-bottom: 28px;
   }
 

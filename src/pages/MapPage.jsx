@@ -496,8 +496,10 @@ const MapPage = () => {
               <div className="map-page-search-box">
                 <FiSearch className="map-page-search-box__icon" size={20} aria-hidden />
                 <input
-                  type="search"
+                  type="text"
                   className="map-page-search-box__input"
+                  inputMode="search"
+                  enterKeyHint="search"
                   placeholder={t('searchPlaceholderLong')}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
@@ -511,7 +513,7 @@ const MapPage = () => {
                     onClick={() => setSearchQuery('')}
                     aria-label={t('clearSearch')}
                   >
-                    ×
+                    <FiX size={22} aria-hidden />
                   </button>
                 )}
               </div>

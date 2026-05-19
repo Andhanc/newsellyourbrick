@@ -183,14 +183,14 @@
   }
 }
 
-/* Hero «Доли»: отступ под фиксированную шапку */
+/* Hero «Доли»: отступ сверху — крошки уже учитывают шапку */
 .shares-page .animated-marquee-hero--shares {
-  padding-top: calc(env(safe-area-inset-top, 0px) + 72px) !important;
+  padding-top: 0.5rem !important;
 }
 
 @media (min-width: 768px) {
   .shares-page .animated-marquee-hero--shares {
-    padding-top: calc(env(safe-area-inset-top, 0px) + 76px) !important;
+    padding-top: 0.75rem !important;
   }
 }
 
@@ -205,20 +205,18 @@
   }
 }
 
-/* Крошки под каруселью hero */
+/* Крошки между шапкой и hero-заголовком (отступ под шапку даёт new-header-spacer в Header) */
 .shares-page__breadcrumbs-strip {
   position: relative;
   z-index: 1;
   width: 100%;
   box-sizing: border-box;
-  margin-top: 4px;
-  padding: 0 16px 8px;
+  padding: 14px 16px 4px;
 }
 
 @media (min-width: 768px) {
   .shares-page__breadcrumbs-strip {
-    margin-top: 8px;
-    padding: 0 20px 12px;
+    padding: 18px 20px 8px;
   }
 }
 

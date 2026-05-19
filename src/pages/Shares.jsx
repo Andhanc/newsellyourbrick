@@ -170,6 +170,13 @@ const Shares = () => {
     <div className="shares-page">
       <Header />
       <div className="shares-page__bg" />
+      <div className="shares-page__breadcrumbs-strip">
+        <div className="page-context-heading page-context-heading--strip-auction-style">
+          <div className="page-context-heading--strip-auction-inner page-context-heading--strip-auction-inner--shares-top">
+            <PageBreadcrumbs className="page-breadcrumbs--flat-club" separator=">" />
+          </div>
+        </div>
+      </div>
       <AnimatedMarqueeHero
         title={
           <>
@@ -182,13 +189,6 @@ const Shares = () => {
         images={HERO_MARQUEE_IMAGES}
         className="animated-marquee-hero--shares"
       />
-      <div className="shares-page__breadcrumbs-strip">
-        <div className="page-context-heading page-context-heading--strip-auction-style">
-          <div className="page-context-heading--strip-auction-inner page-context-heading--strip-auction-inner--shares-top">
-            <PageBreadcrumbs className="page-breadcrumbs--flat-club" separator=">" />
-          </div>
-        </div>
-      </div>
       <main className="shares-container">
         <div className="shares-search-bar">
           <FiSearch className="shares-search-bar__icon" size={20} />
