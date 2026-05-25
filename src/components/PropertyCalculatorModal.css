@@ -4,7 +4,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  /* inset + высокий z-index: портал в document.body, поверх #site-footer (z-index 12 у siblings в .app-layout) */
+  /* inset + высокий z-index: портал в document.body, поверх #site-footer в .app-layout */
   background: rgba(0, 0, 0, 0.6);
   backdrop-filter: blur(4px);
   display: flex;

@@ -84,17 +84,86 @@
     grid-row: 1;
   }
 
+  /* На телефоне вместо квадратной папки Active Bidding — баннер «Готовы к аукциону?» */
   .landing-models__folders-slide--pos-1 {
-    grid-column: 1 / 2;
-    grid-row: 1;
+    display: none;
+  }
+
+  .landing-models__folders-cta-frame {
+    position: relative;
+    width: 100%;
+    border-radius: 24px;
+    overflow: hidden;
+    box-sizing: border-box;
+    isolation: isolate;
+  }
+
+  .landing-models__folders-cta-frame::before,
+  .landing-models__folders-cta-frame::after {
+    content: '';
+    position: absolute;
+    inset: -130%;
+    z-index: 0;
+    pointer-events: none;
+    background: conic-gradient(
+      from 0deg,
+      transparent 0deg 286deg,
+      rgba(10, 186, 181, 0.5) 296deg,
+      #08a8a3 308deg,
+      #0abab5 318deg,
+      #d8fffd 330deg,
+      #0abab5 342deg,
+      rgba(10, 186, 181, 0.4) 352deg,
+      transparent 360deg
+    );
+    filter: drop-shadow(0 0 6px rgba(10, 186, 181, 0.35));
+    animation: landing-models-cta-snake-spin 3.6s linear infinite;
+  }
+
+  /* Вторая «змея» — та же орбита по часовой, старт с противоположной половины периметра */
+  .landing-models__folders-cta-frame::after {
+    background: conic-gradient(
+      from 0deg,
+      transparent 0deg 286deg,
+      rgba(13, 148, 136, 0.48) 296deg,
+      #0d9488 308deg,
+      #14b8a6 318deg,
+      #7ef0eb 330deg,
+      #14b8a6 342deg,
+      rgba(13, 148, 136, 0.38) 352deg,
+      transparent 360deg
+    );
+    filter: drop-shadow(0 0 5px rgba(20, 184, 166, 0.3));
+    animation-name: landing-models-cta-snake-spin-offset;
+  }
+
+  @keyframes landing-models-cta-snake-spin {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @keyframes landing-models-cta-snake-spin-offset {
+    from {
+      transform: rotate(180deg);
+    }
+    to {
+      transform: rotate(540deg);
+    }
   }
 
   .landing-models__folders-cta-shell {
-    width: 100%;
+    position: relative;
+    z-index: 1;
+    width: calc(100% - 6px);
     min-height: 176px;
-    border-radius: 22px;
+    margin: 3px;
+    border-radius: 20px;
     background: #ffffff;
-    border: 1px solid #e6edf3;
+    border: 1px solid rgba(230, 237, 243, 0.85);
     color: #0f172a;
     box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
     padding: 12px 12px 13px;
@@ -102,7 +171,6 @@
     align-items: center;
     gap: 14px;
     box-sizing: border-box;
-    position: relative;
   }
 
   .landing-models__folders-cta-corner-link {
@@ -354,5 +422,21 @@
 
   .landing-models__folders-track .landing-models__folder p {
     font-size: 11px !important;
+  }
+}
+
+@media (max-width: 768px) and (prefers-reduced-motion: reduce) {
+  .landing-models__folders-cta-frame::before,
+  .landing-models__folders-cta-frame::after {
+    animation: none;
+    opacity: 0;
+  }
+
+  .landing-models__folders-cta-shell {
+    border-color: rgba(10, 186, 181, 0.45);
+  }
+
+  .landing-models__folders-cta-button::after {
+    animation: none;
   }
 }

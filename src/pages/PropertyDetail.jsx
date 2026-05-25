@@ -10,6 +10,7 @@ import { getUserData, isAuthenticated } from '../services/authService'
 import { showNotification } from '../utils/toastHelper'
 import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
 import { roleSkipsAuctionKyc } from '../utils/buyerAuctionKyc'
+import { isAuctionDepositSufficient } from '../utils/auctionDeposit'
 import { fetchUserDeposit } from '../utils/depositApi'
 import { navigateToWallet } from '../utils/walletNavigation'
 import { getPropertyEntryFrom } from '../utils/propertyNavigation'
@@ -22,6 +23,7 @@ import { BiArea } from 'react-icons/bi'
 import LocationMap from '../components/LocationMap'
 import './PropertyDetail.css'
 import { formatPropertyPrice, getCurrencySymbol } from '../utils/currency'
+import { resolvePropertySourceTable, propertyBidsApiQuery } from '../utils/propertySourceTable'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
 
@@ -167,7 +169,10 @@ const PropertyDetail = () => {
       
       // Загружаем ставки для этого объекта, чтобы получить актуальную максимальную ставку
       try {
-        const bidsResponse = await fetch(`${API_BASE_URL}/bids/property/${prop.id}`)
+        const bidsTable = resolvePropertySourceTable(prop)
+        const bidsResponse = await fetch(
+          `${API_BASE_URL}/bids/property/${prop.id}?${propertyBidsApiQuery(prop.id, bidsTable)}`,
+        )
         if (bidsResponse.ok) {
           const bidsData = await bidsResponse.json()
           if (bidsData.success && bidsData.data && bidsData.data.length > 0) {
@@ -414,7 +419,10 @@ const PropertyDetail = () => {
     const updateBids = async () => {
       try {
         // Загружаем актуальные ставки
-        const bidsResponse = await fetch(`${API_BASE_URL}/bids/property/${normalizedProperty.id}`)
+        const bidsTable = resolvePropertySourceTable(normalizedProperty)
+        const bidsResponse = await fetch(
+          `${API_BASE_URL}/bids/property/${normalizedProperty.id}?${propertyBidsApiQuery(normalizedProperty.id, bidsTable)}`,
+        )
         if (bidsResponse.ok) {
           const bidsData = await bidsResponse.json()
           if (bidsData.success && bidsData.data && bidsData.data.length > 0) {
@@ -638,8 +646,8 @@ const PropertyDetail = () => {
     
     const roleForBid = userData?.role || 'buyer'
     if (normalizedProperty?.is_auction && !roleSkipsAuctionKyc(roleForBid)) {
-      if (userDeposit <= 0) {
-        setBidError('Необходимо внести депозит для участия в аукционе')
+      if (!isAuctionDepositSufficient(userDeposit)) {
+        setBidError(t('propertyDetailBidDepositRequired'))
         setIsDepositRequiredOpen(true)
         return
       }
@@ -656,7 +664,9 @@ const PropertyDetail = () => {
     const requestData = {
       user_id: parseInt(userId),
       property_id: parseInt(normalizedProperty.id),
-      bid_amount: parseFloat(bidAmountNum)
+      property_table: resolvePropertySourceTable(normalizedProperty),
+      property_type: normalizedProperty.property_type || undefined,
+      bid_amount: parseFloat(bidAmountNum),
     }
     
     console.log('📤 Отправка ставки:', requestData)
@@ -766,7 +776,7 @@ const PropertyDetail = () => {
   const auctionKycRequiredUi =
     Boolean(normalizedProperty?.is_auction) && !roleSkipsAuctionKyc(roleForBidUi)
   const kycBidBlocked =
-    auctionKycRequiredUi && userDeposit > 0 && auctionKycVerified === false
+    auctionKycRequiredUi && isAuctionDepositSufficient(userDeposit) && auctionKycVerified === false
   const disableBidFields = reservedBlocksBid || kycBidBlocked
   const handleBackClick = () => {
     const from = getPropertyEntryFrom()

@@ -64,8 +64,8 @@
   scrollbar-width: none; 
   -ms-overflow-style: none; 
   /*
-   * Футер (#site-footer) имеет z-index: 10 — без слоя у контента фиксированные модалки
-   * внутри страницы оказываются ниже футера и не затемняют его.
+   * Слой контента выше футера: fixed-хедер, бургер-меню и оверлеи внутри страницы
+   * не уходят под #site-footer при скролле вниз.
    */
   position: relative;
   z-index: 11;
@@ -74,7 +74,7 @@
 .app-layout > footer {
   flex-shrink: 0;
   position: relative;
-  z-index: 12;
+  z-index: 1;
 }
 
 .app-layout__content::-webkit-scrollbar {
@@ -207,3 +207,34 @@ html.site-nav-drawer-open .property-list-header .ai-button {
   opacity: 0 !important;
   transition: opacity 0.18s ease;
 }
+
+/*
+ * У футера на мобилке: всегда убираем FAB AI (и депозит), чтобы не перекрывать языки.
+ * Открытая панель чата / AI (.chat-dock-active) остаётся на экране.
+ */
+@media (max-width: 768px) {
+  html.site-footer-near button.ai-button,
+  html.site-footer-near .ai-assistant-dock > button.ai-button,
+  html.site-footer-near .home-auction-floats > button.ai-button,
+  html.site-footer-near .shares-floats > button.ai-button,
+  html.site-footer-near .property-list-header button.ai-button {
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+    transform: translate3d(calc(100vw + 64px), 0, 0) scale(0.96) !important;
+  }
+
+  html.site-footer-near .home-auction-floats .deposit-button {
+    opacity: 0 !important;
+    pointer-events: none !important;
+    transform: translate3d(calc(100vw + 64px), 0, 0) scale(0.96) !important;
+  }
+
+  html.site-footer-near.chat-dock-active .chat-widget {
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+    transform: none !important;
+  }
+}
+

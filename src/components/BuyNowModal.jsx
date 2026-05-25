@@ -10,7 +10,7 @@ import { startPropertyReservationCheckout } from '../utils/subscriptionCheckout'
 import { hasEmailForBuyNowFlow } from '../utils/buyNowEmailGate'
 import ShareSignaturePad from './ShareSignaturePad'
 import './BuyNowModal.css'
-import { RESERVE_TERMS_PDF_URL as POLICY_PDF_URL } from '../utils/reserveTermsPdfUrl'
+import { openReserveTermsPdf } from '../utils/reserveTermsPdfUrl'
 import { getCurrencySymbol } from '../utils/currency'
 
 const DEPOSIT_FRACTION = 0.1
@@ -33,6 +33,7 @@ const BuyNowModal = ({
   const [useWalletDeposit, setUseWalletDeposit] = useState(false)
   const [reserveInEur, setReserveInEur] = useState(null)
   const [pdfOpened, setPdfOpened] = useState(false)
+  const [pdfViewerUrl, setPdfViewerUrl] = useState('')
   const [isPdfViewerOpen, setIsPdfViewerOpen] = useState(false)
   const [agreed, setAgreed] = useState(false)
   const signaturePadRef = useRef(null)
@@ -114,6 +115,7 @@ const BuyNowModal = ({
     if (!isOpen) {
       setUseWalletDeposit(false)
       setPdfOpened(false)
+      setPdfViewerUrl('')
       setIsPdfViewerOpen(false)
       setAgreed(false)
     }
@@ -206,14 +208,16 @@ const BuyNowModal = ({
 
   const openPdf = async () => {
     try {
-      const resp = await fetch(POLICY_PDF_URL, { method: 'HEAD' })
-      const contentType = resp.headers.get('content-type') || ''
-      if (!resp.ok || !contentType.toLowerCase().includes('pdf')) {
-        showNotification('Файл условий не найден. Добавьте public/documents/Document.pdf', 'error')
-        return
-      }
+      const { url, found } = await openReserveTermsPdf()
+      setPdfViewerUrl(url)
       setIsPdfViewerOpen(true)
       setPdfOpened(true)
+      if (!found) {
+        showNotification(
+          'Не удалось проверить файл условий. Если документ не открылся, обновите страницу или обратитесь в поддержку.',
+          'error'
+        )
+      }
     } catch {
       showNotification('Не удалось открыть файл условий', 'error')
     }
@@ -517,7 +521,7 @@ const BuyNowModal = ({
               </div>
               <iframe
                 title="Reserve terms PDF"
-                src={POLICY_PDF_URL}
+                src={pdfViewerUrl}
                 className="buy-now-modal__pdf-viewer-frame"
               />
             </div>

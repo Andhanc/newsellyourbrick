@@ -1,25 +1,27 @@
 import { useNavigate, useLocation } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { navigateToWallet } from '../utils/walletNavigation'
 import { useState } from 'react'
 import { FaWallet, FaArrowRight } from 'react-icons/fa'
 import './DepositButton.css'
 
 const DepositButton = ({ amount = 0 }) => {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const location = useLocation()
   const [isHovered, setIsHovered] = useState(false)
 
-  const formatAmount = (amount) => {
-    if (amount === 0) {
-      return '0 - Пополните депозит'
+  const formatAmount = (value) => {
+    if (value === 0) {
+      return t('depositButton_topUpZero')
     }
-    if (amount >= 1000000) {
-      return `€${(amount / 1000000).toFixed(2)}M`
+    if (value >= 1000000) {
+      return `€${(value / 1000000).toFixed(2)}M`
     }
-    if (amount >= 1000) {
-      return `€${(amount / 1000).toFixed(2)}K`
+    if (value >= 1000) {
+      return `€${(value / 1000).toFixed(2)}K`
     }
-    return `€${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+    return `€${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
   }
 
   return (
@@ -28,7 +30,7 @@ const DepositButton = ({ amount = 0 }) => {
       onClick={() => navigateToWallet(navigate, location.pathname)}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      aria-label="Открыть депозит"
+      aria-label={t('depositButton_ariaOpen')}
     >
       <div className="deposit-button__glow"></div>
       <div className="deposit-button__content-wrapper">
@@ -37,7 +39,7 @@ const DepositButton = ({ amount = 0 }) => {
           <FaWallet className="deposit-button__icon" />
         </div>
         <div className="deposit-button__content">
-          <div className="deposit-button__label">Депозит</div>
+          <div className="deposit-button__label">{t('depositButton_label')}</div>
           <div className="deposit-button__amount">{formatAmount(amount)}</div>
         </div>
         <div className={`deposit-button__arrow ${isHovered ? 'hovered' : ''}`}>
@@ -54,4 +56,3 @@ const DepositButton = ({ amount = 0 }) => {
 }
 
 export default DepositButton
-

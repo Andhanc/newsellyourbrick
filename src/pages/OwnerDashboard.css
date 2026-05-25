@@ -1397,6 +1397,9 @@
 /* Вкладки шапки: совпадает с isMobileViewport (<=768px) */
 @media (max-width: 768px) {
   .owner-dashboard__tabs {
+    position: sticky;
+    top: 0;
+    z-index: 120;
     justify-content: stretch;
     gap: 4px;
     margin: 12px 12px 14px;

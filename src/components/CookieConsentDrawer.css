@@ -1,31 +1,12 @@
-/* Cookie consent — модальное окно снизу по центру (главная) */
-
-.cookie-consent-modal__backdrop {
-  position: fixed;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(15, 23, 42, 0.45);
-  backdrop-filter: blur(3px);
-  z-index: 13480;
-  animation: cookie-consent-backdrop-in 0.28s ease-out both;
-}
-
-@keyframes cookie-consent-backdrop-in {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
+/* Cookie consent — баннер снизу по центру, без затемнения и блокировки скролла */
 
 .cookie-consent-modal__stage {
   position: fixed;
-  inset: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   z-index: 13490;
   display: flex;
-  align-items: flex-end;
   justify-content: center;
   padding: 0 16px calc(24px + env(safe-area-inset-bottom, 0px));
   padding-left: max(16px, env(safe-area-inset-left, 0px));
@@ -156,7 +137,6 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .cookie-consent-modal__backdrop,
   .cookie-consent-modal__panel {
     animation: none;
   }

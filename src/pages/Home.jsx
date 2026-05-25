@@ -254,7 +254,7 @@ function Home() {
   }, [])
 
   useEffect(() => {
-    const applyBidToState = (propertyId, bid) => {
+    const applyBidToState = (propertyId, bid, sourceTable) => {
       if (!Number.isFinite(propertyId) || !Number.isFinite(bid)) return
       setAuctionProperties((prev) =>
         prev.map((item) => {
@@ -265,13 +265,21 @@ function Home() {
           }
         })
       )
-      patchCachedAuctionPropertyBid(propertyId, bid)
+      patchCachedAuctionPropertyBid(propertyId, bid, sourceTable)
     }
 
-    const syncActualBidFromApi = async (propertyId) => {
+    const syncActualBidFromApi = async (propertyId, sourceTable) => {
       try {
         const apiBase = await getApiBaseUrl()
-        const response = await fetch(`${apiBase}/bids/property/${propertyId}`)
+        const table =
+          sourceTable ??
+          auctionProperties.find((p) => Number(p?.id) === propertyId)?.source_table ??
+          auctionProperties.find((p) => Number(p?.id) === propertyId)?.sourceTable
+        const q =
+          table != null
+            ? `?property_table=${encodeURIComponent(String(table))}`
+            : ''
+        const response = await fetch(`${apiBase}/bids/property/${propertyId}${q}`)
         if (!response.ok) return
         const payload = await response.json()
         const bids = payload?.success && Array.isArray(payload?.data) ? payload.data : []
@@ -282,7 +290,7 @@ function Home() {
             .filter((n) => Number.isFinite(n))
         )
         if (Number.isFinite(maxBid)) {
-          applyBidToState(propertyId, maxBid)
+          applyBidToState(propertyId, maxBid, table)
         }
       } catch {
         // ignore network sync errors
@@ -292,9 +300,10 @@ function Home() {
     const handleBidSync = (event) => {
       const propertyId = Number(event?.detail?.propertyId)
       const bid = Number(event?.detail?.currentBid)
+      const propertyTable = event?.detail?.property_table
       if (!Number.isFinite(propertyId)) return
-      if (Number.isFinite(bid)) applyBidToState(propertyId, bid)
-      void syncActualBidFromApi(propertyId)
+      if (Number.isFinite(bid)) applyBidToState(propertyId, bid, propertyTable)
+      void syncActualBidFromApi(propertyId, propertyTable)
     }
 
     window.addEventListener('syb-auction-current-bid-updated', handleBidSync)
@@ -889,7 +898,7 @@ function Home() {
     <div className={isAuctionRoute ? 'home-page home-page--auction' : 'home-page'}>
       <div
         className={`home-auction-floats${floatWidgetsHiddenByFooter ? ' home-auction-floats--footer-near' : ''}`}
-        aria-hidden={floatWidgetsHiddenByFooter}
+        aria-hidden={floatWidgetsHiddenByFooter && !isChatOpen && !isManagerChatOpen}
       >
         {canShowDeposit() &&
           (depositLoading ? (

@@ -1,21 +1,45 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { MdBed, MdOutlineBathtub } from 'react-icons/md'
-import { BiArea } from 'react-icons/bi'
 import { FiAlertCircle } from 'react-icons/fi'
 import PageBackButton from '../components/PageBackButton'
+import PropertyListingCard from '../components/PropertyListingCard'
 import { ensureCanOpenProperty } from '../utils/propertyAccessGuard'
 import { getApiBaseUrl } from '../utils/apiConfig'
-import { buildResponsiveImageProps } from '../utils/responsiveImage'
 import './SearchResults.css'
-import { getPropertyDetailPath } from '../utils/propertyDetailUrl'
-import { getPropertyListPrice } from '../utils/propertySearchLocation'
+import '../components/PropertyListingGrid.css'
+import { getPropertyDetailPath, auctionListingDedupeKey } from '../utils/propertyDetailUrl'
+import { formatPropertyForListingCard } from '../utils/formatPropertyListingCard'
 import { fetchSearchCatalogProperties } from '../utils/propertySearchCatalog'
 import {
   filterPropertiesStrict,
   normalizeSearchPriceFilters,
 } from '../utils/propertySearchFilters'
-import { formatPropertyPrice } from '../utils/currency'
+import {
+  hasPropertyListingTimer,
+  isPropertyListingSoldOut,
+} from '../utils/auctionReminderBounds'
+
+function isHiddenSoldListing(property) {
+  if (!property) return true
+  if (property.status === 'sold') return true
+  return isPropertyListingSoldOut(property)
+}
+
+function SearchResultsGrid({ properties, onOpen }) {
+  return (
+    <div className="properties-grid property-listing-grid search-results__grid">
+      {properties.map((property) => (
+        <PropertyListingCard
+          key={auctionListingDedupeKey(property)}
+          property={property}
+          onOpen={onOpen}
+          showActions={false}
+          pinFooter
+        />
+      ))}
+    </div>
+  )
+}
 
 const SearchResults = () => {
   const navigate = useNavigate()
@@ -37,40 +61,48 @@ const SearchResults = () => {
       const API_BASE_URL = await getApiBaseUrl()
       const catalog = await fetchSearchCatalogProperties(API_BASE_URL)
 
-      const formattedProperties = catalog.map((prop) => {
-        const price = getPropertyListPrice(prop)
-        return {
-          ...prop,
-          title: prop.title || prop.name || '',
-          location: prop.location || '',
-          price,
-          rooms: prop.rooms || prop.beds || prop.bedrooms || 0,
-          bedrooms: prop.bedrooms || prop.rooms || prop.beds || 0,
-          bathrooms: prop.bathrooms || 0,
-          area: prop.area || prop.sqft || 0,
-          sqft: prop.area || prop.sqft || 0,
-          property_type: prop.property_type || '',
-          images: prop.images || (prop.image ? [prop.image] : []),
-          image: prop.image || (prop.images && prop.images[0] ? prop.images[0] : null),
-        }
-      })
+      const formattedProperties = catalog.map((prop) => formatPropertyForListingCard(prop))
 
       const priceBounds = {
         min: Number(searchFilters._priceBoundMin) || 1,
         max: Number(searchFilters._priceBoundMax) || 1_000_000,
       }
-      setProperties(
-        filterPropertiesStrict(
-          formattedProperties,
-          normalizeSearchPriceFilters(searchFilters, priceBounds)
-        )
-      )
+      const filtered = filterPropertiesStrict(
+        formattedProperties,
+        normalizeSearchPriceFilters(searchFilters, priceBounds)
+      ).filter((property) => !isHiddenSoldListing(property))
+
+      setProperties(filtered)
     } catch (error) {
       console.error('Ошибка поиска:', error)
       setProperties([])
     } finally {
       setLoading(false)
     }
+  }
+
+  const { withTimer, withoutTimer, splitByTimer } = useMemo(() => {
+    const timerList = []
+    const noTimerList = []
+    for (const property of properties) {
+      if (hasPropertyListingTimer(property)) {
+        timerList.push(property)
+      } else {
+        noTimerList.push(property)
+      }
+    }
+    return {
+      withTimer: timerList,
+      withoutTimer: noTimerList,
+      splitByTimer: timerList.length > 0 && noTimerList.length > 0,
+    }
+  }, [properties])
+
+  const openProperty = (property) => {
+    if (!ensureCanOpenProperty()) return
+    navigate(getPropertyDetailPath(property.id, { property }), {
+      state: { property },
+    })
   }
 
   if (loading) {
@@ -112,66 +144,14 @@ const SearchResults = () => {
               Вернуться на главную
             </button>
           </div>
-        ) : (
-          <div className="search-results__grid">
-            {properties.map((property) => {
-              const propertyImageSafe =
-                property.image ||
-                property.images?.[0] ||
-                'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=800&q=80'
-              const propertyImageProps = buildResponsiveImageProps(propertyImageSafe, {
-                widths: [320, 480, 640, 800],
-                sizes: '(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw',
-                quality: 72,
-                fit: 'crop',
-              })
-              const displayPrice = getPropertyListPrice(property) || property.price || 0
-
-              return (
-                <div
-                  key={`${property.property_type || 'p'}-${property.id}`}
-                  className="search-results__card"
-                  onClick={() => {
-                    if (!ensureCanOpenProperty()) return
-                    navigate(getPropertyDetailPath(property.id, { property }), {
-                      state: { property },
-                    })
-                  }}
-                >
-                  <div className="search-results__card-image">
-                    <img {...propertyImageProps} alt={property.title} />
-                  </div>
-                  <div className="search-results__card-content">
-                    <h3 className="search-results__card-title">{property.title}</h3>
-                    <p className="search-results__card-location">{property.location}</p>
-                    <div className="search-results__card-specs">
-                      {property.rooms > 0 && (
-                        <div className="search-results__card-spec">
-                          <MdBed size={18} />
-                          <span>{property.rooms}</span>
-                        </div>
-                      )}
-                      {property.bathrooms > 0 && (
-                        <div className="search-results__card-spec">
-                          <MdOutlineBathtub size={18} />
-                          <span>{property.bathrooms}</span>
-                        </div>
-                      )}
-                      {property.area > 0 && (
-                        <div className="search-results__card-spec">
-                          <BiArea size={18} />
-                          <span>{property.area} м²</span>
-                        </div>
-                      )}
-                    </div>
-                    <div className="search-results__card-price">
-                      {formatPropertyPrice(displayPrice, property.currency, { locale: 'ru-RU' })}
-                    </div>
-                  </div>
-                </div>
-              )
-            })}
+        ) : splitByTimer ? (
+          <div className="search-results__sections property-listing-grid-sections">
+            <SearchResultsGrid properties={withTimer} onOpen={openProperty} />
+            <div className="property-listing-grid-divider" role="separator" aria-hidden="true" />
+            <SearchResultsGrid properties={withoutTimer} onOpen={openProperty} />
           </div>
+        ) : (
+          <SearchResultsGrid properties={properties} onOpen={openProperty} />
         )}
       </div>
     </div>

@@ -7,9 +7,11 @@
 import { getApiBaseUrlSync } from '../utils/apiConfig'
 import { fetchDedupe } from '../utils/fetchDedupe'
 import { getStoredNumericUserId } from '../services/authService'
+import { compositeBidAmountKey, propertyBidsApiQuery, resolvePropertySourceTable } from '../utils/propertySourceTable'
+import { fetchAuctionMaxBidsBatch, getMaxBidForProperty } from '../utils/fetchAuctionMaxBids'
+import { auctionListingDedupeKey } from '../utils/propertyDetailUrl'
 import { getEffectiveAuctionEndTime } from '../utils/auctionReminderBounds'
 import { normalizePropertyMediaFields } from '../utils/propertyImage'
-import { auctionListingDedupeKey } from '../utils/propertyDetailUrl'
 
 const BID_OVERRIDES_STORAGE_KEY = 'syb_auction_bid_overrides_v1'
 
@@ -64,20 +66,24 @@ function persistBidOverrides() {
 
 function getBidOverrideForProperty(prop) {
   ensureBidOverridesLoaded()
-  const id = Number(prop?.id)
-  if (!Number.isFinite(id)) return null
-  const value = bidOverrides.get(id)
+  const key = compositeBidAmountKey(prop?.id, resolvePropertySourceTable(prop))
+  const value = bidOverrides.get(key)
   return value != null ? value : null
 }
 
-function setBidOverride(propertyId, bidAmount) {
+function setBidOverride(propertyOrId, bidAmount, sourceTable) {
   ensureBidOverridesLoaded()
-  const id = Number(propertyId)
+  const id = typeof propertyOrId === 'object' ? Number(propertyOrId?.id) : Number(propertyOrId)
+  const table =
+    typeof propertyOrId === 'object'
+      ? resolvePropertySourceTable(propertyOrId)
+      : resolvePropertySourceTable({ source_table: sourceTable })
+  const key = compositeBidAmountKey(id, table)
   const bid = asFiniteNumberOrNull(bidAmount)
   if (!Number.isFinite(id) || bid == null) return false
-  const prev = bidOverrides.get(id)
+  const prev = bidOverrides.get(key)
   const next = prev == null ? bid : Math.max(prev, bid)
-  bidOverrides.set(id, next)
+  bidOverrides.set(key, next)
   persistBidOverrides()
   return true
 }
@@ -178,16 +184,18 @@ export function setCachedList(list) {
   cacheTimestamp = Date.now()
 }
 
-export function patchCachedAuctionPropertyBid(propertyId, bidAmount) {
+export function patchCachedAuctionPropertyBid(propertyId, bidAmount, sourceTable) {
   const id = Number(propertyId)
   const nextBid = asFiniteNumberOrNull(bidAmount)
   if (!Number.isFinite(id) || nextBid == null) return false
-  setBidOverride(id, nextBid)
+  const table = resolvePropertySourceTable({ source_table: sourceTable })
+  const matchKey = compositeBidAmountKey(id, table)
+  setBidOverride(id, nextBid, table)
   if (!Array.isArray(cachedList) || cachedList.length === 0) return true
 
   let updated = false
   cachedList = cachedList.map((item) => {
-    if (Number(item?.id) !== id) return item
+    if (compositeBidAmountKey(item.id, resolvePropertySourceTable(item)) !== matchKey) return item
     updated = true
     const current = resolveAuctionCurrentBidValue(item)
     return {
@@ -204,11 +212,14 @@ export function hasCachedList() {
   return cachedList.length > 0
 }
 
-async function fetchMaxBidForProperty(apiBaseUrl, propertyId) {
+async function fetchMaxBidForProperty(apiBaseUrl, propertyId, sourceTable) {
   const id = Number(propertyId)
   if (!Number.isFinite(id)) return null
+  const table = resolvePropertySourceTable({ source_table: sourceTable })
   try {
-    const response = await fetch(`${apiBaseUrl}/bids/property/${id}`)
+    const response = await fetch(
+      `${apiBaseUrl}/bids/property/${id}?${propertyBidsApiQuery(id, table)}`,
+    )
     if (!response.ok) return null
     const payload = await response.json()
     const bids = payload?.success && Array.isArray(payload?.data) ? payload.data : []
@@ -219,32 +230,6 @@ async function fetchMaxBidForProperty(apiBaseUrl, propertyId) {
         .filter((v) => v != null)
     )
     return Number.isFinite(max) ? max : null
-  } catch {
-    return null
-  }
-}
-
-/** Map propertyId -> max bid; при ошибке null (fallback на поштучные запросы). */
-async function fetchMaxBidsBatch(apiBaseUrl, propertyIds) {
-  const ids = [...new Set(propertyIds.map((x) => Number(x)).filter((n) => Number.isFinite(n)))]
-  if (ids.length === 0) return new Map()
-  const base = String(apiBaseUrl || '').replace(/\/$/, '')
-  try {
-    const response = await fetch(`${base}/bids/max-amounts`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ids }),
-    })
-    if (!response.ok) return null
-    const payload = await response.json().catch(() => null)
-    if (!payload?.success || payload.data == null || typeof payload.data !== 'object') return null
-    const m = new Map()
-    for (const [k, v] of Object.entries(payload.data)) {
-      const id = Number(k)
-      const max = asFiniteNumberOrNull(v)
-      if (Number.isFinite(id) && max != null) m.set(id, max)
-    }
-    return m
   } catch {
     return null
   }
@@ -288,33 +273,38 @@ async function enrichAuctionListWithMaxBids(apiBaseUrl, list) {
   })
   if (auctionItems.length === 0) return list
 
-  const auctionIds = auctionItems.map((item) => Number(item.id)).filter((id) => Number.isFinite(id))
-  let bidById = await fetchMaxBidsBatch(apiBaseUrl, auctionIds)
+  let bidByKey = await fetchAuctionMaxBidsBatch(apiBaseUrl, auctionItems)
 
-  if (bidById == null) {
+  if (bidByKey.size === 0) {
     const bidEntries = await Promise.all(
       auctionItems.map(async (item) => {
-        const maxBid = await fetchMaxBidForProperty(apiBaseUrl, item.id)
-        return { id: Number(item.id), maxBid }
-      })
+        const maxBid = await fetchMaxBidForProperty(
+          apiBaseUrl,
+          item.id,
+          item.source_table ?? item.sourceTable,
+        )
+        return {
+          key: compositeBidAmountKey(item.id, resolvePropertySourceTable(item)),
+          maxBid,
+        }
+      }),
     )
-    bidById = new Map()
+    bidByKey = new Map()
     bidEntries.forEach((entry) => {
-      if (!Number.isFinite(entry.id) || entry.maxBid == null) return
-      const prev = bidById.get(entry.id)
-      bidById.set(entry.id, prev == null ? entry.maxBid : Math.max(prev, entry.maxBid))
+      if (!entry.key || entry.maxBid == null) return
+      const prev = bidByKey.get(entry.key)
+      bidByKey.set(entry.key, prev == null ? entry.maxBid : Math.max(prev, entry.maxBid))
     })
   }
 
-  if (bidById.size === 0) return list
+  if (bidByKey.size === 0) return list
 
   return list.map((item) => {
-    const id = Number(item?.id)
-    const maxBid = bidById.get(id)
-    if (!Number.isFinite(id) || maxBid == null) return item
+    const maxBid = getMaxBidForProperty(bidByKey, item)
+    if (maxBid == null) return item
     const current = resolveAuctionCurrentBidValue(item)
     const nextBid = Math.max(current, maxBid)
-    setBidOverride(id, nextBid)
+    setBidOverride(item, nextBid)
     return {
       ...item,
       currentBid: nextBid,

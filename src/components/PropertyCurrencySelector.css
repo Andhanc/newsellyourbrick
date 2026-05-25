@@ -127,6 +127,15 @@
   }
 }
 
+.property-currency-selector__hint {
+  margin: 0;
+  font-family: 'Montserrat', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  color: #64748b;
+  line-height: 1.35;
+}
+
 .property-detail-sidebar__bids-currency-note {
   margin: 0 0 12px;
   padding: 10px 12px;

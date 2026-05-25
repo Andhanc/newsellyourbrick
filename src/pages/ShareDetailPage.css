@@ -8,7 +8,8 @@
 }
 
 .share-detail-page__bg {
-  position: fixed;
+  /* absolute, не fixed: fixed перекрывал #site-footer (контент .app-layout__content z-index: 11) */
+  position: absolute;
   inset: 0;
   background:
     radial-gradient(ellipse 120% 80% at 50% -20%, rgba(10, 186, 181, 0.12) 0%, transparent 50%),
@@ -73,35 +74,13 @@
   }
 }
 
-.share-detail__hero {
-  border-radius: 20px;
-  overflow: hidden;
-  margin-bottom: 28px;
-  border: 1px solid rgba(0, 0, 0, 0.06);
-  box-shadow:
-    0 0 0 1px rgba(0, 0, 0, 0.04),
-    0 24px 48px -12px rgba(0, 0, 0, 0.1),
-    0 0 80px -20px rgba(10, 186, 181, 0.08);
-}
-
-.share-detail__image-wrap {
-  position: relative;
-  aspect-ratio: 16 / 10;
-  background: #e2e8f0;
-}
-
-.share-detail__image {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-/* Sold out: затемнение фото на детальной странице */
+/* Sold out: затемнение фото в галерее */
 .share-detail__hero-sold-overlay {
   position: absolute;
   inset: 0;
   background: rgba(0, 0, 0, 0.5);
   pointer-events: none;
+  z-index: 3;
 }
 
 /* Двухколоночный layout: слева — информация, справа — график и покупка */
@@ -109,57 +88,113 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(280px, 380px);
   gap: 32px;
-  align-items: start;
+  align-items: stretch;
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
 }
 
-.share-detail__info {
+.share-detail__left-column {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
   min-width: 0;
   width: 100%;
-  max-width: 100%;
+}
+
+.share-detail__meta-card {
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border-radius: 20px;
-  overflow: hidden;
   border: 1px solid rgba(0, 0, 0, 0.06);
   box-shadow: 0 24px 48px -16px rgba(0, 0, 0, 0.08);
 }
 
-.share-detail__info .share-detail__hero {
-  margin: 0 0 24px 0;
-  border-radius: 0;
-  border: none;
-  box-shadow: none;
+.share-detail__gallery-wrap {
+  width: 100%;
+  min-width: 0;
 }
 
-.share-detail__info .share-detail__hero .share-detail__image-wrap {
-  border-radius: 0;
+.share-detail__meta-card {
+  padding: 28px;
 }
 
-.share-detail__info .share-detail__title,
-.share-detail__info .share-detail__location,
-.share-detail__info .share-detail__description,
-.share-detail__info .share-detail__specs,
-.share-detail__info .share-detail__prices-block {
-  padding-left: 28px;
-  padding-right: 28px;
+.share-detail__meta-card .share-detail__title {
+  margin-bottom: 12px;
 }
 
-.share-detail__info .share-detail__title {
-  padding-top: 28px;
+.share-detail__meta-card .share-detail__description {
+  margin-bottom: 0;
 }
 
-.share-detail__info .share-detail__prices-block {
-  margin-left: 28px;
-  margin-right: 28px;
-  margin-bottom: 28px;
+.share-detail__meta-card--sidebar {
+  flex-shrink: 0;
+  padding: 22px 24px;
 }
 
-.share-detail__info {
-  padding: 0 0 32px 0;
+.share-detail__meta-card--sidebar .share-detail__title {
+  font-size: 22px;
+  letter-spacing: 0.04em;
+  line-height: 1.2;
+  text-transform: none;
+}
+
+.share-detail__meta-card--sidebar .share-detail__description {
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.share-detail__map-card {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 20px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 24px 48px -16px rgba(0, 0, 0, 0.08);
+  padding: 20px 24px 24px;
+}
+
+.share-detail__map-card .property-detail-sidebar__map {
+  margin-top: 0;
+}
+
+.share-detail__map-card .property-detail-sidebar__map-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #0f172a;
+  margin-bottom: 12px;
+}
+
+@media (min-width: 901px) {
+  .share-detail__sidebar {
+    align-self: stretch;
+    min-height: 100%;
+  }
+
+  .share-detail__meta-card--sidebar,
+  .share-detail__chart-section,
+  .share-detail__buy-block,
+  .share-detail__sold-out-block,
+  .share-detail__map-card {
+    flex-shrink: 0;
+  }
+}
+
+.property-detail-map__geocoding-hint {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(255, 255, 255, 0.95);
+  padding: 12px 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  font-size: 14px;
+  color: #4b5563;
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 500;
 }
 
 .share-detail__sidebar {
@@ -621,17 +656,29 @@
   .share-detail__layout {
     grid-template-columns: 1fr;
     gap: 24px;
+    align-items: start;
   }
   .share-detail__sidebar {
     position: static;
+    align-self: auto;
+    min-height: 0;
   }
 
-  /* Телефон / узкая колонка: сначала покупка, ниже диаграмма распределения */
+  /* Телефон: название → покупка → диаграмма → карта */
+  .share-detail__sidebar .share-detail__meta-card--sidebar {
+    order: 0;
+  }
   .share-detail__sidebar .share-detail__buy-block {
     order: 1;
   }
   .share-detail__sidebar .share-detail__chart-section {
     order: 2;
+  }
+  .share-detail__sidebar .share-detail__sold-out-block {
+    order: 2;
+  }
+  .share-detail__sidebar .share-detail__map-card {
+    order: 3;
   }
 }
 
@@ -639,20 +686,11 @@
   .share-detail-page__container {
     padding: 20px 16px 48px;
   }
-  .share-detail__info {
-    padding: 0 0 24px 0;
+  .share-detail__meta-card {
+    padding: 20px;
   }
-  .share-detail__info .share-detail__title,
-  .share-detail__info .share-detail__location,
-  .share-detail__info .share-detail__description,
-  .share-detail__info .share-detail__specs,
-  .share-detail__info .share-detail__prices-block {
-    padding-left: 20px;
-    padding-right: 20px;
-  }
-  .share-detail__info .share-detail__prices-block {
-    margin-left: 20px;
-    margin-right: 20px;
+  .share-detail__map-card {
+    padding: 16px 20px 20px;
   }
   .share-detail__title {
     font-size: 22px;

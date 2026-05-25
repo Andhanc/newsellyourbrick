@@ -644,6 +644,21 @@
   gap: 24px;
 }
 
+/* Паспортные поля: на десктопе всегда в одну строку */
+.data-grid--passport {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+@media (max-width: 560px) {
+  .data-grid--passport.data-grid--passport-stacked {
+    grid-template-columns: 1fr;
+  }
+
+  .data-grid--passport.data-grid--passport-stacked .data-field {
+    grid-column: 1 / -1;
+  }
+}
+
 .data-field {
   position: relative;
 }
@@ -979,6 +994,10 @@
 
   .data-grid {
     grid-template-columns: 1fr;
+  }
+
+  .data-grid--passport {
+    grid-template-columns: repeat(2, 1fr);
   }
 
   .data-header {

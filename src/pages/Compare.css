@@ -153,69 +153,46 @@
   line-height: 1.45;
 }
 
-.compare-pick-grid {
+.compare-pick-grid,
+.compare-pick-grid--listing {
   list-style: none;
   margin: 0;
   padding: 0;
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 20px;
+  align-items: stretch;
 }
 
-.compare-pick-grid > li {
-  display: flex;
-  min-width: 0;
-}
-
-.compare-pick-card {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  min-width: 0;
-  height: 100%;
-  text-align: left;
-  padding: 0;
-  border: 2px solid #e5e5e5;
-  border-radius: 16px;
-  overflow: hidden;
-  background: #fff;
-  cursor: pointer;
-  transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
-}
-
-.compare-pick-card:hover:not(:disabled) {
-  border-color: #4a90e2;
-  box-shadow: 0 8px 24px rgba(74, 144, 226, 0.15);
-  transform: translateY(-2px);
-}
-
-.compare-pick-card--selected {
-  border-color: #4a90e2;
-  box-shadow: 0 4px 16px rgba(74, 144, 226, 0.2);
-}
-
-.compare-pick-card--disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-  transform: none;
-}
-
-.compare-pick-card--disabled:hover {
-  border-color: #e5e5e5;
-  box-shadow: none;
-}
-
-.compare-pick-card-image {
+.compare-pick-grid-item {
   position: relative;
-  aspect-ratio: 16 / 10;
-  background: #eee;
+  display: flex;
+  min-width: 0;
+  width: 100%;
 }
 
-.compare-pick-card-image img {
+.compare-pick-grid-item .property-card {
   width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
+}
+
+.compare-pick-grid-item:not(.compare-pick-grid-item--disabled) .property-card:hover {
+  transform: translateY(-4px);
+}
+
+.property-card--compare-selected {
+  outline: 2px solid #4a90e2;
+  outline-offset: 0;
+  box-shadow: 0 4px 16px rgba(74, 144, 226, 0.22);
+}
+
+.property-card--compare-disabled {
+  opacity: 0.45;
+  cursor: not-allowed !important;
+}
+
+.property-card--compare-disabled:hover {
+  transform: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .compare-pick-badge {
@@ -233,35 +210,8 @@
   align-items: center;
   justify-content: center;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-}
-
-.compare-pick-card-body {
-  padding: 14px 16px 16px;
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-}
-
-.compare-pick-type {
-  display: inline-block;
-  font-size: 12px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-  color: #888;
-  margin-bottom: 6px;
-}
-
-.compare-pick-title {
-  font-size: 16px;
-  font-weight: 700;
-  color: #222;
-  margin: 0 0 8px;
-  line-height: 1.35;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+  z-index: 9;
+  pointer-events: none;
 }
 
 .compare-pick-loc {

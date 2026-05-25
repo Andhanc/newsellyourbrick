@@ -9,10 +9,10 @@
 
 .favorites-container {
   flex: 1;
-  max-width: 1400px;
+  max-width: 1200px;
   margin: 0 auto;
   width: 100%;
-  padding: 40px 24px;
+  padding: 40px 20px;
   background: #F5F5F5;
 }
 
@@ -180,308 +180,79 @@
   }
 }
 
-.favorites-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 30px;
+/* Сетка карточек — как на /search-results и /auction (PropertyList.css) */
+.favorites-page__sections {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
   margin-bottom: 40px;
 }
 
-@media (max-width: 768px) {
-  .favorites-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 12px;
-  }
-}
-
-.favorite-card {
-  background: #fff;
-  border-radius: 16px;
-  overflow: hidden;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  border: 1px solid #e0e0e0;
-}
-
-.favorite-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-  border-color: #4A90E2;
-}
-
-.favorite-card-link {
-  display: block;
-  color: inherit;
-  text-decoration: none;
-}
-
-.favorite-card-image {
-  position: relative;
+.favorites-page__grid {
   width: 100%;
-  height: 200px;
-  overflow: hidden;
-  background: #f0f0f0;
 }
 
-.favorite-card-image img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: transform 0.3s;
-}
-
-.favorite-card:hover .favorite-card-image img {
-  transform: scale(1.05);
-}
-
-.favorite-card-timer {
-  margin-bottom: 10px;
-  display: flex;
-  justify-content: flex-start;
-}
-
-.favorite-card-heart {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  background: rgba(255, 255, 255, 0.95);
-  border: none;
-  border-radius: 50%;
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s;
-  z-index: 3;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.favorite-card-heart:hover {
-  background: #fff;
-  transform: scale(1.1);
-}
-
-.favorite-card-heart svg {
-  color: #ff4444;
-  transition: all 0.2s;
-}
-
-.favorite-card-heart.active svg {
-  color: #ff4444;
-  fill: #ff4444;
-}
-
-.favorite-card-content {
-  padding: 16px;
-}
-
-.favorite-card-title {
-  font-size: 18px;
-  font-weight: 600;
-  margin-bottom: 8px;
-  color: #333;
-  line-height: 1.4;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.favorite-card-location {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 14px;
-  color: #666;
-  margin-bottom: 10px;
-}
-
-.favorite-card-details {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  margin-bottom: 12px;
-  flex-wrap: wrap;
-}
-
-.favorite-card-detail {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 14px;
-  color: #666;
-}
-
-.favorite-card-detail svg {
-  color: #999;
-}
-
-.favorite-card-price {
+.favorites-page__grid .property-content-meta {
   display: flex;
   flex-direction: column;
-  gap: 3px;
-  padding-top: 10px;
-  border-top: 1px solid #f0f0f0;
+  gap: 4px;
+  flex: 0 0 auto;
 }
 
-.favorite-card-price-label {
-  font-size: 12px;
-  color: #999;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+.favorites-page__grid .property-content-meta .property-title,
+.favorites-page__grid .property-content-meta .property-description,
+.favorites-page__grid .property-content-meta .property-description--empty,
+.favorites-page__grid .property-content-meta .property-location {
+  margin: 0;
+  flex-shrink: 0;
 }
 
-.favorite-card-price-value {
-  font-size: 20px;
-  font-weight: 700;
-  color: #0abab5;
+.favorites-page__grid .property-content-meta .property-title {
+  line-height: 1.25;
+  height: 2.5em;
+  min-height: 2.5em;
+  max-height: 2.5em;
 }
 
-/* Скелетон карточки — шапка страницы уже отрисована */
-.favorite-card.favorite-card--skeleton {
-  pointer-events: none;
+.favorites-page__grid .property-content-meta .property-description,
+.favorites-page__grid .property-content-meta .property-description--empty {
+  line-height: 1.3;
+  height: 2.6em;
+  min-height: 2.6em;
+  max-height: 2.6em;
 }
 
-.favorite-card.favorite-card--skeleton:hover {
-  transform: none;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-  border-color: #e0e0e0;
+.favorites-page__grid .property-content-meta .property-location {
+  line-height: 1.3;
+  height: 2.6em;
+  min-height: 2.6em;
+  max-height: 2.6em;
 }
 
-.favorite-card-link--skeleton {
-  cursor: default;
+.favorites-page__grid .property-content-meta .property-card-buy-now-winner {
+  margin: 0;
 }
 
-.favorite-card-image .favorite-card-skel-shimmer--media {
-  position: absolute;
-  inset: 0;
-  border-radius: 0;
-  background: linear-gradient(
-    105deg,
-    #e8edf2 0%,
-    #f1f5f9 42%,
-    rgba(232, 250, 248, 0.85) 50%,
-    #f1f5f9 58%,
-    #e8edf2 100%
-  );
-  background-size: 220% 100%;
-  animation: favorites-skel-wave 1.35s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+.favorites-page__grid .property-content-body-gap {
+  flex: 1 1 auto;
+  min-height: 0;
 }
 
-.favorite-card-heart-skel {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.94);
-  border: 1px solid rgba(255, 255, 255, 0.75);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  z-index: 2;
+.favorites-page__grid .property-content-bottom.property-content-bottom--pin-footer {
+  margin-top: 0;
+  padding-top: 4px;
 }
 
-.favorite-card-skel-pill {
-  display: inline-block;
-  height: 34px;
-  width: min(220px, 88%);
-  border-radius: 999px;
-  background: linear-gradient(
-    90deg,
-    #dbecea 0%,
-    #e8f7f5 45%,
-    #dbecea 90%
-  );
-  background-size: 200% 100%;
-  animation: favorites-skel-wave 1.15s ease-in-out infinite;
+.favorites-page__grid .property-card-owner__info {
+  margin-top: 0;
+  margin-bottom: 6px;
 }
 
-.favorite-card-details--skeleton {
-  margin-bottom: 12px;
-}
-
-.favorite-card-skel-pill-sm {
-  width: 36px;
-  height: 16px;
-  border-radius: 6px;
-  background: linear-gradient(
-    90deg,
-    #e8ebed 0%,
-    #f3f4f6 45%,
-    #e8ebed 90%
-  );
-  background-size: 200% 100%;
-  animation: favorites-skel-wave 1.15s ease-in-out infinite;
-}
-
-.favorite-card-skel-pill-sm--grow {
-  flex: 1;
-  min-width: 72px;
-  max-width: 120px;
-}
-
-.favorite-card-skel-line {
-  border-radius: 8px;
-  background: linear-gradient(
-    90deg,
-    #e8ebed 0%,
-    #f3f4f6 45%,
-    #e8ebed 90%
-  );
-  background-size: 200% 100%;
-  animation: favorites-skel-wave 1.15s ease-in-out infinite;
-}
-
-.favorite-card-skel-line--title {
-  height: 16px;
-  width: 92%;
-  max-width: 100%;
-  margin-bottom: 10px;
-}
-
-.favorite-card-skel-line--title-narrow {
-  height: 16px;
-  width: 64%;
-  margin-bottom: 12px;
-}
-
-.favorite-card-skel-line--loc {
-  height: 14px;
-  width: 85%;
-  margin-bottom: 14px;
-}
-
-.favorite-card-price--skeleton {
-  padding-top: 10px;
-  border-top: 1px solid #f0f0f0;
-  gap: 6px;
-}
-
-.favorite-card-skel-line--label {
-  height: 11px;
-  width: 140px;
-  margin-bottom: 4px;
-  border-radius: 4px;
-}
-
-.favorite-card-skel-line--value {
-  height: 24px;
-  width: 112px;
-  border-radius: 8px;
-}
-
-@keyframes favorites-skel-wave {
-  0%,
-  100% {
-    background-position: 0% 50%;
-    opacity: 1;
-  }
-  50% {
-    background-position: 100% 50%;
-    opacity: 0.88;
-  }
+.favorites-page__divider {
+  margin: 40px 0 36px;
+  height: 1px;
+  background: #d8d8d8;
+  border: none;
 }
 
 .favorites-empty {
@@ -543,10 +314,6 @@
     padding: 24px 16px;
   }
 
-  .favorite-card {
-    min-width: 0;
-  }
-
   .favorites-title {
     font-size: 28px;
   }
@@ -555,25 +322,8 @@
     font-size: 14px;
   }
 
-  .favorite-card-image {
-    height: 140px;
-  }
-
-  .favorite-card-content {
-    padding: 10px;
-  }
-
-  .favorite-card-details {
-    gap: 8px;
-    margin-bottom: 8px;
-  }
-
-  .favorite-card-title {
-    font-size: 16px;
-  }
-
-  .favorite-card-price-value {
-    font-size: 18px;
+  .favorites-page__divider {
+    margin: 28px 0 24px;
   }
 }
 
@@ -582,50 +332,12 @@
     padding: 20px 12px;
   }
 
-  .favorites-grid {
-    gap: 10px;
-  }
-
   .favorites-title {
     font-size: 24px;
   }
 
   .favorites-subtitle {
     font-size: 13px;
-  }
-
-  .favorite-card-image {
-    height: 118px;
-  }
-
-  .favorite-card-content {
-    padding: 8px;
-  }
-
-  .favorite-card-location {
-    font-size: 12px;
-    margin-bottom: 6px;
-  }
-
-  .favorite-card-details {
-    gap: 6px;
-    margin-bottom: 8px;
-  }
-
-  .favorite-card-detail {
-    font-size: 12px;
-  }
-
-  .favorite-card-title {
-    font-size: 15px;
-  }
-
-  .favorite-card-price-value {
-    font-size: 16px;
-  }
-
-  .favorite-card-price {
-    padding-top: 6px;
   }
 
   .favorites-empty {

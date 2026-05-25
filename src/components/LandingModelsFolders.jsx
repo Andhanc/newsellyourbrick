@@ -1,6 +1,7 @@
 import AnimatedFolder from './ui/3d-folder';
 import { Fragment } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { ExternalLink } from 'lucide-react';
 import './LandingModelsFolders.css';
 
@@ -8,6 +9,7 @@ import './LandingModelsFolders.css';
  * Инвестиционные модели (3D-папки): на десктопе — сетка; на телефоне — статическая сетка 1 + 2 + 2.
  */
 export default function LandingModelsFolders({ folders, ariaLabel }) {
+  const { t } = useTranslation();
   const label = ariaLabel || 'Investment models';
 
   if (!folders?.length) return null;
@@ -38,27 +40,27 @@ export default function LandingModelsFolders({ folders, ariaLabel }) {
                   </div>
                   {folder.linkHref ? (
                     <div className="landing-models__folders-cta">
-                      <div className="landing-models__folders-cta-shell">
-                        <Link
-                          to={folder.linkHref}
-                          className="landing-models__folders-cta-corner-link"
-                          aria-label={folder.linkLabel || 'Перейти к аукциону'}
-                        >
-                          <ExternalLink className="landing-models__folders-cta-corner-icon" aria-hidden />
-                        </Link>
-                        <div className="landing-models__folders-cta-folder" aria-hidden="true">
-                          <span className="landing-models__folders-cta-folder-tab" />
-                          <span className="landing-models__folders-cta-folder-back" />
-                          <span className="landing-models__folders-cta-folder-front" />
-                        </div>
-                        <div className="landing-models__folders-cta-content">
-                          <p className="landing-models__folders-cta-title">Готовы к аукциону?</p>
-                          <p className="landing-models__folders-cta-copy">
-                            Запустите торги по объекту и получите максимум интереса от покупателей.
-                          </p>
-                          <Link to={folder.linkHref} className="landing-models__folders-cta-button">
-                            Перейти к аукциону
+                      <div className="landing-models__folders-cta-frame">
+                        <div className="landing-models__folders-cta-shell">
+                          <Link
+                            to={folder.linkHref}
+                            className="landing-models__folders-cta-corner-link"
+                            aria-label={t('landingAuctionCtaButton')}
+                          >
+                            <ExternalLink className="landing-models__folders-cta-corner-icon" aria-hidden />
                           </Link>
+                          <div className="landing-models__folders-cta-folder" aria-hidden="true">
+                            <span className="landing-models__folders-cta-folder-tab" />
+                            <span className="landing-models__folders-cta-folder-back" />
+                            <span className="landing-models__folders-cta-folder-front" />
+                          </div>
+                          <div className="landing-models__folders-cta-content">
+                            <p className="landing-models__folders-cta-title">{t('landingAuctionCtaTitle')}</p>
+                            <p className="landing-models__folders-cta-copy">{t('landingAuctionCtaBody')}</p>
+                            <Link to={folder.linkHref} className="landing-models__folders-cta-button">
+                              {t('landingAuctionCtaButton')}
+                            </Link>
+                          </div>
                         </div>
                       </div>
                     </div>

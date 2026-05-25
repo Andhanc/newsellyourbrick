@@ -11,7 +11,6 @@ export default function PropertyCurrencySelector({
   isConverted = false,
 }) {
   const { t } = useTranslation()
-  void isConverted
 
   return (
     <div className="property-currency-selector" role="group" aria-label={t('propertyDetailCurrencyGroupLabel')}>
@@ -42,6 +41,9 @@ export default function PropertyCurrencySelector({
           </span>
         ) : null}
       </div>
+      {isConverted && !loading ? (
+        <p className="property-currency-selector__hint">{t('propertyDetailCurrencyApprox')}</p>
+      ) : null}
     </div>
   )
 }

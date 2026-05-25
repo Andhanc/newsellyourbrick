@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { FiCreditCard } from 'react-icons/fi'
 import './DepositTopUpPicker.css'
 
@@ -22,6 +23,7 @@ const DepositTopUpPicker = ({
   tonPaymentSuccess,
   shortenAddress
 }) => {
+  const { t } = useTranslation()
   const [view, setView] = useState('choice') // 'choice' | 'crypto'
 
   const handleClose = () => {
@@ -38,7 +40,7 @@ const DepositTopUpPicker = ({
   return (
     <div className="deposit-picker-overlay" onClick={handleClose}>
       <div className="deposit-picker" onClick={e => e.stopPropagation()}>
-        <button type="button" className="deposit-picker__close" onClick={handleClose} aria-label="Закрыть">
+        <button type="button" className="deposit-picker__close" onClick={handleClose} aria-label={t('depositPicker_closeAria')}>
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M18 6L6 18M6 6l12 12" />
           </svg>
@@ -46,8 +48,8 @@ const DepositTopUpPicker = ({
 
         {view === 'choice' && (
           <>
-            <h2 className="deposit-picker__title">Способ пополнения</h2>
-            <p className="deposit-picker__subtitle">Выберите способ пополнения депозита (продукт Deposit в Stripe)</p>
+            <h2 className="deposit-picker__title">{t('depositPicker_title')}</h2>
+            <p className="deposit-picker__subtitle">{t('depositPicker_subtitle')}</p>
             <div className="deposit-picker__options">
               <button
                 type="button"
@@ -61,8 +63,8 @@ const DepositTopUpPicker = ({
                 <span className="deposit-picker__option-icon">
                   <FiCreditCard size={32} />
                 </span>
-                <span className="deposit-picker__option-label">Карта (Stripe)</span>
-                <span className="deposit-picker__option-desc">Безопасная оплата на стороне Stripe</span>
+                <span className="deposit-picker__option-label">{t('depositPicker_cardLabel')}</span>
+                <span className="deposit-picker__option-desc">{t('depositPicker_cardDesc')}</span>
               </button>
               <button
                 type="button"
@@ -75,8 +77,8 @@ const DepositTopUpPicker = ({
                     <path d="M37.56 15.027H18.44c-.577 0-.866.32-1.01.96L14.028 35.46c-.144.64.072 1.04.577 1.2l5.34 1.44c.577.16.865-.08 1.01-.72l2.017-8.4c.144-.64.721-1.2 1.298-1.2h4.392c5.772 0 9.063-2.88 10.11-8.64l.433-2.4c.144-.72-.217-1.04-.721-1.12l-4.68-.64c-.576-.08-.864-.4-.72-1.04l.288-1.2c.144-.64.576-.96 1.153-.96h2.88c.576 0 .864-.32.72-.96l-.576-2.4c-.145-.64-.433-.96-1.01-.96z" fill="#fff"/>
                   </svg>
                 </span>
-                <span className="deposit-picker__option-label">Криптовалюта USDT</span>
-                <span className="deposit-picker__option-desc">TON</span>
+                <span className="deposit-picker__option-label">{t('depositPicker_cryptoLabel')}</span>
+                <span className="deposit-picker__option-desc">{t('depositPicker_cryptoDesc')}</span>
               </button>
             </div>
           </>
@@ -88,14 +90,14 @@ const DepositTopUpPicker = ({
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M19 12H5M12 19l-7-7 7-7" />
               </svg>
-              Назад
+              {t('depositPicker_back')}
             </button>
             <div className="deposit-picker__crypto-block crypto-wallet-block deposit-picker__crypto-block--in-picker">
               <div className="crypto-wallet-block__header">
                 <span className="crypto-wallet-block__icon crypto-wallet-block__icon--ton">
                   {TON_ICON_SVG}
                 </span>
-                <span className="crypto-wallet-block__title">Криптокошелёк</span>
+                <span className="crypto-wallet-block__title">{t('depositPicker_cryptoWalletTitle')}</span>
               </div>
               {tonWallet && tonAddress ? (
                 <div className="crypto-wallet-card crypto-wallet-card--connected">
@@ -104,18 +106,18 @@ const DepositTopUpPicker = ({
                       <img src={tonWallet.icon} alt="" className="crypto-wallet-card__wallet-icon" />
                     )}
                     <div className="crypto-wallet-card__wallet-details">
-                      <span className="crypto-wallet-card__wallet-name">{tonWallet.name || 'TON кошелёк'}</span>
+                      <span className="crypto-wallet-card__wallet-name">{tonWallet.name || t('depositPicker_tonWalletDefaultName')}</span>
                       <span className="crypto-wallet-card__address" title={tonAddress}>
                         {shortenAddress ? shortenAddress(tonAddress) : `${tonAddress?.slice(0, 6)}…${tonAddress?.slice(-4)}`}
                       </span>
                     </div>
                   </div>
                   <div className="crypto-wallet-card__pay-section">
-                    <p className="crypto-wallet-card__pay-hint">Оплатите 0.01 USDT для пополнения депозита</p>
+                    <p className="crypto-wallet-card__pay-hint">{t('depositPicker_payHint')}</p>
                     {tonPaymentSuccess ? (
                       <div className="crypto-wallet-card__success">
                         <span className="crypto-wallet-card__success-icon">✓</span>
-                        <span>Оплата успешна</span>
+                        <span>{t('depositPicker_paymentSuccess')}</span>
                       </div>
                     ) : (
                       <>
@@ -128,19 +130,19 @@ const DepositTopUpPicker = ({
                           {tonPaymentLoading ? (
                             <>
                               <span className="crypto-wallet-card__pay-btn-spinner" />
-                              Ожидаем подтверждения…
+                              {t('depositPicker_payWaiting')}
                             </>
                           ) : (
-                            'Оплатить 0.01 USDT'
+                            t('depositPicker_payButton')
                           )}
                         </button>
                         {tonPaymentLoading && (
                           <p className="crypto-wallet-card__pay-phone-hint">
-                            Подтвердите перевод <strong>на телефоне</strong>: откройте приложение кошелька (Tonkeeper и т.п.) — там появится запрос на оплату 0.01 USDT.
+                            {t('depositPicker_payPhoneHint')}
                           </p>
                         )}
                         <p className="crypto-wallet-card__pay-cross-device-note">
-                          Кошелёк подключён с телефона → окно «Подтвердить» откроется в приложении на телефоне.
+                          {t('depositPicker_payCrossDevice')}
                         </p>
                       </>
                     )}
@@ -151,20 +153,20 @@ const DepositTopUpPicker = ({
                       className="crypto-wallet-card__btn crypto-wallet-card__btn--change"
                       onClick={() => tonConnectUI?.openModal?.()}
                     >
-                      Изменить
+                      {t('depositPicker_changeWallet')}
                     </button>
                     <button
                       type="button"
                       className="crypto-wallet-card__btn crypto-wallet-card__btn--disconnect"
                       onClick={() => tonConnectUI?.disconnect?.()}
                     >
-                      Отключить
+                      {t('depositPicker_disconnectWallet')}
                     </button>
                   </div>
                 </div>
               ) : (
                 <div className="crypto-wallet-card crypto-wallet-card--disconnected">
-                  <p className="crypto-wallet-card__hint">Подключите кошелёк для пополнения депозита в USDT</p>
+                  <p className="crypto-wallet-card__hint">{t('depositPicker_connectHint')}</p>
                   <button
                     type="button"
                     className="crypto-wallet-card__connect-btn"
@@ -176,7 +178,7 @@ const DepositTopUpPicker = ({
                         <path d="M37.56 15.027H18.44c-.577 0-.866.32-1.01.96L14.028 35.46c-.144.64.072 1.04.577 1.2l5.34 1.44c.577.16.865-.08 1.01-.72l2.017-8.4c.144-.64.721-1.2 1.298-1.2h4.392c5.772 0 9.063-2.88 10.11-8.64l.433-2.4c.144-.72-.217-1.04-.721-1.12l-4.68-.64c-.576-.08-.864-.4-.72-1.04l.288-1.2c.144-.64.576-.96 1.153-.96h2.88c.576 0 .864-.32.72-.96l-.576-2.4c-.145-.64-.433-.96-1.01-.96z" fill="#fff"/>
                       </svg>
                     </span>
-                    Подключить кошелёк
+                    {t('depositPicker_connectWallet')}
                   </button>
                 </div>
               )}

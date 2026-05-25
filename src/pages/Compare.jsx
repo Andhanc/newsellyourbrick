@@ -3,23 +3,19 @@ import { Link, useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import Header from '../components/Header'
 import { mapListingToCalculatorData, pickCityForAuctionCalculator } from '../utils/propertyCalculatorMapping'
-import { FiArrowRight, FiBarChart2, FiColumns, FiMapPin, FiRefreshCw, FiLoader } from 'react-icons/fi'
-import { MdBed, MdOutlineBathtub } from 'react-icons/md'
-import { BiArea } from 'react-icons/bi'
+import { FiArrowRight, FiBarChart2, FiColumns, FiRefreshCw, FiLoader } from 'react-icons/fi'
 import { HiOutlineSparkles } from 'react-icons/hi'
+import PropertyListingCard from '../components/PropertyListingCard'
 import { useFavoriteAuctionItems } from '../hooks/useFavoriteAuctionItems'
 import { getComparisonGroupKey } from '../utils/propertyFavoriteKey'
 import { showNotification } from '../utils/toastHelper'
 import { askPropertyCompareAssistant } from '../services/aiService'
-import { getPropertyCardImage } from '../utils/propertyImage'
-import { buildResponsiveImageProps } from '../utils/responsiveImage'
-import ImageWithSkeleton from '../components/ImageWithSkeleton'
 import { usePropertyFavorites } from '../context/PropertyFavoritesContext'
+import { formatPropertyForListingCard } from '../utils/formatPropertyListingCard'
+import { hasPropertyListingTimer } from '../utils/auctionReminderBounds'
 import './Compare.css'
+import '../components/PropertyListingGrid.css'
 import { formatPropertyPrice } from '../utils/currency'
-
-const PLACEHOLDER_IMG =
-  'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=800&q=80'
 
 const COMPARE_PICK_SKELETON_COUNT = 4
 
@@ -517,6 +513,84 @@ function buildRows(left, right) {
   return rows
 }
 
+function ComparePickListingGrid({ items, selectedKeys, groupFilter, onToggleSelect }) {
+  const { withTimer, withoutTimer, splitByTimer } = useMemo(() => {
+    const timerList = []
+    const noTimerList = []
+    for (const item of items) {
+      if (hasPropertyListingTimer(formatPropertyForListingCard(item.property))) {
+        timerList.push(item)
+      } else {
+        noTimerList.push(item)
+      }
+    }
+    return {
+      withTimer: timerList,
+      withoutTimer: noTimerList,
+      splitByTimer: timerList.length > 0 && noTimerList.length > 0,
+    }
+  }, [items])
+
+  const gridClassName =
+    'compare-pick-grid compare-pick-grid--listing properties-grid property-listing-grid'
+
+  const renderItem = (item) => {
+    const g = getComparisonGroupKey(item.property, item.mockCategory)
+    const selected = selectedKeys.includes(item.key)
+    const pos = selectedKeys.indexOf(item.key)
+    const disabled =
+      selectedKeys.length === 1 && groupFilter != null && g !== groupFilter && !selected
+    const property = formatPropertyForListingCard(item.property)
+
+    return (
+      <li
+        key={item.key}
+        className={[
+          'compare-pick-grid-item',
+          selected && 'compare-pick-grid-item--selected',
+          disabled && 'compare-pick-grid-item--disabled',
+        ]
+          .filter(Boolean)
+          .join(' ')}
+      >
+        {selected ? (
+          <span className="compare-pick-badge compare-pick-badge--listing">
+            {pos === 0 ? '1' : '2'}
+          </span>
+        ) : null}
+        <PropertyListingCard
+          property={property}
+          onOpen={() => {
+            if (!disabled) onToggleSelect(item)
+          }}
+          showActions={false}
+          showFavorite={false}
+          pinFooter
+          favoriteMockCategory={item.mockCategory}
+          className={[
+            selected && 'property-card--compare-selected',
+            disabled && 'property-card--compare-disabled',
+          ]
+            .filter(Boolean)
+            .join(' ')}
+        />
+      </li>
+    )
+  }
+
+  if (splitByTimer) {
+    return (
+      <div className="property-listing-grid-sections">
+        <ul className={gridClassName}>{withTimer.map(renderItem)}</ul>
+        <div className="property-listing-grid-divider" role="separator" aria-hidden="true" />
+        <ul className={gridClassName}>{withoutTimer.map(renderItem)}</ul>
+      </div>
+    )
+  }
+
+  return <ul className={gridClassName}>{items.map(renderItem)}</ul>
+}
+
 const Compare = () => {
   const navigate = useNavigate()
   const { favoritesLoading } = usePropertyFavorites()
@@ -758,78 +832,12 @@ const Compare = () => {
                   'Выберите второй объект того же типа. Остальные карточки недоступны.'}
                 {selectedKeys.length === 2 && 'Ниже — таблица сравнения. Можно сменить выбор кнопкой «Сбросить».'}
               </p>
-              <ul className="compare-pick-grid">
-                {favoriteAuctions.map((item) => {
-                  const g = getComparisonGroupKey(item.property, item.mockCategory)
-                  const selected = selectedKeys.includes(item.key)
-                  const pos = selectedKeys.indexOf(item.key)
-                  const disabled =
-                    selectedKeys.length === 1 && groupFilter != null && g !== groupFilter && !selected
-                  const imageSrc = getPropertyCardImage(item.property, PLACEHOLDER_IMG)
-                  const imageProps = buildResponsiveImageProps(imageSrc, {
-                    widths: [260, 420, 560],
-                    sizes: '(max-width: 768px) 100vw, 280px',
-                    fit: 'cover',
-                    quality: 72,
-                    format: 'webp',
-                  })
-                  return (
-                    <li key={item.key}>
-                      <button
-                        type="button"
-                        className={[
-                          'compare-pick-card',
-                          selected && 'compare-pick-card--selected',
-                          disabled && 'compare-pick-card--disabled',
-                        ]
-                          .filter(Boolean)
-                          .join(' ')}
-                        disabled={disabled}
-                        onClick={() => toggleSelect(item)}
-                      >
-                        <div className="compare-pick-card-image">
-                          <ImageWithSkeleton
-                            imgProps={imageProps}
-                            alt=""
-                            containerClassName="compare-pick-card-image"
-                            onError={(e) => {
-                              e.currentTarget.src = PLACEHOLDER_IMG
-                            }}
-                          />
-                          {selected && (
-                            <span className="compare-pick-badge">{pos === 0 ? '1' : '2'}</span>
-                          )}
-                        </div>
-                        <div className="compare-pick-card-body">
-                          <span className="compare-pick-type">{formatTypeLabel(g)}</span>
-                          <h3 className="compare-pick-title">{item.property.name || item.property.title}</h3>
-                          <p className="compare-pick-loc">
-                            <FiMapPin size={14} aria-hidden />
-                            {item.property.location || '—'}
-                          </p>
-                          <div className="compare-pick-meta">
-                            {Boolean(item.property.beds || item.property.rooms) && (
-                              <span>
-                                <MdBed size={16} /> {item.property.beds || item.property.rooms}
-                              </span>
-                            )}
-                            {Boolean(item.property.baths) && (
-                              <span>
-                                <MdOutlineBathtub size={16} /> {item.property.baths}
-                              </span>
-                            )}
-                            {Boolean(item.property.sqft || item.property.area) && (
-                              <span>
-                                <BiArea size={16} /> {item.property.sqft || item.property.area} м²
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </button>
-                    </li>
-                  )
-                })}
-              </ul>
+              <ComparePickListingGrid
+                items={favoriteAuctions}
+                selectedKeys={selectedKeys}
+                groupFilter={groupFilter}
+                onToggleSelect={toggleSelect}
+              />
             </section>
 
             {pair && (

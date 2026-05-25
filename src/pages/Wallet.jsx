@@ -1,5 +1,7 @@
 import { useNavigate, Link, useSearchParams, useLocation } from 'react-router-dom'
 import { useState, useEffect, useRef, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
+import { AUCTION_DEPOSIT_MIN_EUR } from '../utils/auctionDeposit'
 import { FaArrowLeft, FaArrowUp, FaArrowDown } from 'react-icons/fa'
 import { FiClock } from 'react-icons/fi'
 import { useUser, useAuth } from '@clerk/clerk-react'
@@ -33,9 +35,16 @@ import { getUsdtJettonWalletAddress, buildUsdtTransferTransaction } from '../uti
 import { ensureCanOpenProperty } from '../utils/propertyAccessGuard'
 import { isSiteUserSignedIn } from '../utils/siteAuthGate'
 import { hasEmailForBuyNowFlow } from '../utils/buyNowEmailGate'
+import PropertyListingCard from '../components/PropertyListingCard'
+import { formatPropertyForListingCard } from '../utils/formatPropertyListingCard'
+import { enrichBidsWithPropertySpecs } from '../utils/enrichBidsWithPropertySpecs'
+import { isAuctionListingEnded } from '../utils/auctionReminderBounds'
+import { getPropertyDetailPath } from '../utils/propertyDetailUrl'
 import { getPropertyCardImage } from '../utils/propertyImage'
 import { buildResponsiveImageProps } from '../utils/responsiveImage'
 import ImageWithSkeleton from '../components/ImageWithSkeleton'
+import '../components/PropertyListingGrid.css'
+import '../components/PropertyList.css'
 import {
   isSafeWalletFromPath,
   getWalletEntryFrom,
@@ -85,11 +94,85 @@ const isSameBid = (prev, next) => {
     prev.bid_amount === next.bid_amount &&
     prev.created_at === next.created_at &&
     prev.auction_end_date === next.auction_end_date &&
-    prev.is_auction === next.is_auction
+    prev.is_auction === next.is_auction &&
+    prev.area === next.area &&
+    prev.rooms === next.rooms &&
+    prev.bedrooms === next.bedrooms &&
+    prev.bathrooms === next.bathrooms
   )
 }
 
+const bidPropertyKey = (bid) =>
+  `${bid.property_table || 'properties'}:${bid.property_id}`
+
+/** API отдаёт все записи ставок по убыванию created_at — берём последнюю на каждый объект. */
+const dedupeLatestBidPerProperty = (bids) => {
+  const seen = new Set()
+  const result = []
+  for (const bid of bids) {
+    const key = bidPropertyKey(bid)
+    if (seen.has(key)) continue
+    seen.add(key)
+    result.push(bid)
+  }
+  return result
+}
+
+/** Активная ставка на депозите — аукцион ещё не завершён (как на странице аукциона). */
+const isDepositPageActiveBid = (bid) => {
+  const property = formatPropertyForListingCard({
+    ...bid,
+    id: bid.property_id,
+    endTime: bid.endTime ?? bid.auction_end_date ?? null,
+  })
+  return !isAuctionListingEnded(property)
+}
+
+const isSameBidList = (prev = [], next = []) => {
+  if (prev === next) return true
+  if (!Array.isArray(prev) || !Array.isArray(next)) return false
+  if (prev.length !== next.length) return false
+  for (let i = 0; i < prev.length; i += 1) {
+    if (!isSameBid(prev[i], next[i])) return false
+  }
+  return true
+}
+
+const formatBidAsListingProperty = (bid) =>
+  formatPropertyForListingCard({
+    ...bid,
+    id: bid.property_id,
+    description: '',
+    current_bid: bid.bid_amount,
+    auction_current_bid: bid.bid_amount,
+    currentBid: bid.bid_amount,
+  })
+
+const resolveWonPropertyFromBid = async (bid, dbUserId, apiBase) => {
+  if (!bid.is_auction || !bid.auction_end_date) return null
+  if (new Date(bid.auction_end_date).getTime() > Date.now()) return null
+  try {
+    const propertyBidsRes = await fetch(`${apiBase}/bids/property/${bid.property_id}`)
+    if (!propertyBidsRes.ok) return null
+    const propertyBidsData = await propertyBidsRes.json()
+    if (!propertyBidsData.success || !propertyBidsData.data?.length) return null
+    const maxBid = Math.max(...propertyBidsData.data.map((b) => b.bid_amount))
+    const userBidsOnProperty = propertyBidsData.data.filter((b) => b.user_id === dbUserId)
+    const userMaxBid =
+      userBidsOnProperty.length > 0
+        ? Math.max(...userBidsOnProperty.map((b) => b.bid_amount))
+        : 0
+    const isWinner = userMaxBid === maxBid && userMaxBid > 0
+    if (!isWinner) return null
+    return { ...bid, bid_amount: userMaxBid }
+  } catch (error) {
+    console.error('Ошибка проверки выигранного объекта:', error)
+    return null
+  }
+}
+
 const WalletInner = () => {
+  const { t, i18n } = useTranslation()
   const navigate = useNavigate()
   const location = useLocation()
   const [searchParams, setSearchParams] = useSearchParams()
@@ -151,7 +234,8 @@ const WalletInner = () => {
     totalDeposit: 0,
     totalWithdrawal: 0
   })
-  const [userBid, setUserBid] = useState(null)
+  const [userBids, setUserBids] = useState([])
+  const [bidForHistory, setBidForHistory] = useState(null)
   const [showBidHistory, setShowBidHistory] = useState(false)
   const [wonProperty, setWonProperty] = useState(null) // Выигранный объект
   const [isBuyNowModalOpen, setIsBuyNowModalOpen] = useState(false)
@@ -177,7 +261,7 @@ const WalletInner = () => {
       const apiBase = typeof API_BASE_URL === 'string' ? API_BASE_URL : ''
       const senderJettonWallet = await getUsdtJettonWalletAddress(tonAddress, apiBase)
       if (!senderJettonWallet) {
-        showNotification('Не удалось определить USDT-кошелёк. Убедитесь, что у вас есть USDT в TON.', 'error')
+        showNotification(t('walletPage_tonUsdtWalletError'), 'error')
         setTonPaymentLoading(false)
         return
       }
@@ -187,26 +271,23 @@ const WalletInner = () => {
         tonAddress
       )
       if (!transaction) {
-        showNotification('Ошибка формирования транзакции USDT', 'error')
+        showNotification(t('walletPage_tonTxBuildError'), 'error')
         setTonPaymentLoading(false)
         return
       }
       await tonConnectUI.sendTransaction(transaction)
       setTonPaymentSuccess(true)
-      showNotification('Оплата 0.01 USDT успешно отправлена!')
+      showNotification(t('walletPage_tonPaymentSuccess'))
     } catch (err) {
       const message = String(err?.message || '')
       const isRejected = /reject|cancel|denied/i.test(message)
       const isNotSent = /transaction was not sent|not sent/i.test(message)
       if (isRejected) return
       if (isNotSent) {
-        showNotification(
-          'Транзакция не была отправлена. Проверьте баланс USDT и TON (на комиссию) и подтвердите перевод в кошельке.',
-          'error'
-        )
+        showNotification(t('walletPage_tonTxNotSent'), 'error')
         return
       }
-      showNotification(message || 'Не удалось отправить транзакцию', 'error')
+      showNotification(message || t('walletPage_tonTxFailed'), 'error')
     } finally {
       setTonPaymentLoading(false)
     }
@@ -371,72 +452,36 @@ const WalletInner = () => {
         }
       }
 
-      // Загружаем ставки пользователя
+      // Загружаем ставки пользователя (по одному объекту — последняя ставка)
       if (bidsRes && bidsRes.ok) {
         const bidsData = await bidsRes.json()
         if (bidsData.success && bidsData.data && bidsData.data.length > 0) {
-          const newUserBid = bidsData.data[0]
-          setUserBid(prev => {
-            if (!isSameBid(prev, newUserBid)) {
-              return newUserBid
-            }
-            return prev
+          const latestPerProperty = dedupeLatestBidPerProperty(bidsData.data)
+          const wonChecks = await Promise.all(
+            latestPerProperty.map((bid) =>
+              resolveWonPropertyFromBid(bid, dbUserId, API_BASE_URL)
+            )
+          )
+          const won = wonChecks.find(Boolean) ?? null
+          const activeBids = latestPerProperty.filter((bid, index) => {
+            if (wonChecks[index]) return false
+            return isDepositPageActiveBid(bid)
           })
-          
-          // Проверяем, выиграл ли пользователь объект
-          if (newUserBid.is_auction && newUserBid.auction_end_date) {
-            const now = new Date().getTime()
-            const endTime = new Date(newUserBid.auction_end_date).getTime()
-            const isExpired = endTime <= now
-            
-            if (isExpired) {
-              // Проверяем, является ли пользователь лидером
-              try {
-                const propertyBidsRes = await fetch(`${API_BASE_URL}/bids/property/${newUserBid.property_id}`)
-                if (propertyBidsRes.ok) {
-                  const propertyBidsData = await propertyBidsRes.json()
-                  if (propertyBidsData.success && propertyBidsData.data && propertyBidsData.data.length > 0) {
-                    // Находим максимальную ставку среди всех ставок
-                    const maxBid = Math.max(...propertyBidsData.data.map(b => b.bid_amount))
-                    // Находим максимальную ставку пользователя
-                    const userBids = propertyBidsData.data.filter(b => b.user_id === dbUserId)
-                    const userMaxBid = userBids.length > 0 ? Math.max(...userBids.map(b => b.bid_amount)) : 0
-                    // Проверяем, является ли пользователь лидером (его максимальная ставка равна максимальной ставке всех)
-                    const isWinner = userMaxBid === maxBid && userMaxBid > 0
-                    
-                    if (isWinner) {
-                      // Создаем объект выигранного объекта с максимальной ставкой пользователя
-                      const wonPropertyData = {
-                        ...newUserBid,
-                        bid_amount: userMaxBid
-                      }
-                      setWonProperty(wonPropertyData)
-                    } else {
-                      setWonProperty(null)
-                    }
-                  } else {
-                    setWonProperty(null)
-                  }
-                } else {
-                  setWonProperty(null)
-                }
-              } catch (error) {
-                console.error('Ошибка проверки выигранного объекта:', error)
-                setWonProperty(null)
-              }
-            } else {
-              setWonProperty(null)
-            }
-          } else {
-            setWonProperty(null)
-          }
+          const activeBidsWithSpecs = await enrichBidsWithPropertySpecs(
+            activeBids,
+            API_BASE_URL,
+          )
+          setUserBids((prev) =>
+            isSameBidList(prev, activeBidsWithSpecs) ? prev : activeBidsWithSpecs,
+          )
+          setWonProperty((prev) => {
+            if (!won && !prev) return prev
+            if (won && prev && isSameBid(prev, won)) return prev
+            if (!won) return null
+            return won
+          })
         } else {
-          setUserBid(prev => {
-            if (prev !== null) {
-              return null
-            }
-            return prev
-          })
+          setUserBids((prev) => (prev.length === 0 ? prev : []))
           setWonProperty(null)
         }
       } else {
@@ -472,7 +517,7 @@ const WalletInner = () => {
         const result = await confirmWalletDepositSession(sessionId, dbUserId)
         if (result.ok) {
           if (result.data?.credited && typeof result.data.amountEur === 'number') {
-            showNotification(`Оплата прошла (тест или бой). Зачислено ${formatAmount(result.data.amountEur)}`)
+            showNotification(t('walletPage_paymentCredited', { amount: formatAmount(result.data.amountEur) }))
             try {
               const resV = await fetch(`${API_BASE_URL}/users/${dbUserId}/verification-status`)
               if (resV.ok) {
@@ -487,14 +532,14 @@ const WalletInner = () => {
               setShowVerificationAfterTopUp(true)
             }
           } else if (result.data?.already) {
-            showNotification('Платёж уже был учтён ранее.')
+            showNotification(t('walletPage_paymentAlreadyRecorded'))
           }
           await loadUserData(false)
         } else {
-          showNotification(result.error || 'Не удалось подтвердить оплату', 'error')
+          showNotification(result.error || t('walletPage_paymentConfirmError'), 'error')
         }
       } catch (e) {
-        showNotification(e?.message || 'Ошибка сети', 'error')
+        showNotification(e?.message || t('walletPage_networkError'), 'error')
       } finally {
         const next = new URLSearchParams(searchParams)
         next.delete('deposit_checkout')
@@ -519,18 +564,16 @@ const WalletInner = () => {
         const result = await confirmPropertyReservationSession(sessionId, dbUserId)
         if (result.ok) {
           if (result.data?.already) {
-            showNotification('Резерв уже был учтён ранее.')
+            showNotification(t('walletPage_reservationAlreadyRecorded'))
           } else {
-            showNotification(
-              'Оплата резерва получена. Объект зарезервирован, менеджер свяжется с вами.'
-            )
+            showNotification(t('walletPage_reservationSuccess'))
           }
           await loadUserData(false)
         } else {
-          showNotification(result.error || 'Не удалось подтвердить резерв', 'error')
+          showNotification(result.error || t('walletPage_reservationConfirmError'), 'error')
         }
       } catch (e) {
-        showNotification(e?.message || 'Ошибка сети', 'error')
+        showNotification(e?.message || t('walletPage_networkError'), 'error')
       } finally {
         const next = new URLSearchParams(searchParams)
         next.delete('reservation_checkout')
@@ -558,7 +601,7 @@ const WalletInner = () => {
         customerEmail,
       })
       if (!result.ok) {
-        showNotification(result.error || 'Не удалось открыть оплату', 'error')
+        showNotification(result.error || t('walletPage_stripeCheckoutError'), 'error')
       }
     } finally {
       setStripeCheckoutLoading(false)
@@ -566,7 +609,7 @@ const WalletInner = () => {
   }
 
   const handleWithdraw = async () => {
-    const amount = prompt('Введите сумму для вывода (евро):')
+    const amount = prompt(t('walletPage_withdrawPrompt'))
     if (!amount || parseFloat(amount) <= 0) {
       return
     }
@@ -584,13 +627,13 @@ const WalletInner = () => {
       if (data.success) {
         setDepositAmount(data.data.depositAmount)
         await loadUserData()
-        showNotification(`Выведено ${amount} евро!`)
+        showNotification(t('walletPage_withdrawSuccess', { amount }))
       } else {
-        showNotification(data.error || 'Ошибка при выводе средств')
+        showNotification(data.error || t('walletPage_withdrawError'))
       }
     } catch (error) {
       console.error('Ошибка вывода:', error)
-      showNotification('Ошибка при выводе средств')
+      showNotification(t('walletPage_withdrawError'))
     }
   }
 
@@ -623,14 +666,12 @@ const WalletInner = () => {
     // Проверяем, что пользователь не является продавцом
     const userRole = userData?.role || 'buyer'
     if (userRole === 'seller' || userRole === 'owner') {
-      showNotification('Продавцы не могут покупать объекты')
+      showNotification(t('walletPage_sellersCannotBuy'))
       return
     }
 
     if (!buyNowEmailOk) {
-      showNotification(
-        'Укажите email в аккаунте или профиле — он нужен для оформления покупки и писем от сервиса.'
-      )
+      showNotification(t('walletPage_emailRequiredBuy'))
       return
     }
     
@@ -674,11 +715,11 @@ const WalletInner = () => {
                     fontWeight: '600'
                   }}
                 >
-                  Обновить страницу
+                  {t('walletPage_reloadPage')}
                 </button>
               </>
             ) : (
-              !dbUserId ? 'Получение данных пользователя...' : 'Загрузка...'
+              !dbUserId ? t('walletPage_loadingUser') : t('walletPage_loading')
             )}
           </div>
         </div>
@@ -698,23 +739,23 @@ const WalletInner = () => {
         <div className="wallet-header">
           <button type="button" onClick={handleWalletBack} className="wallet-back-button">
             <FaArrowLeft />
-            <span>Назад</span>
+            <span>{t('walletPage_back')}</span>
           </button>
-          <h1 className="wallet-title">Депозит</h1>
+          <h1 className="wallet-title">{t('walletPage_title')}</h1>
         </div>
 
         {/* Инструкция о депозите */}
         <div className="deposit-instruction">
           <div className="deposit-instruction__content">
-            <h2>Что такое депозит?</h2>
-            <p>Депозит — это 3000 евро, которые вы вносите для участия в аукционе. Депозит можно вернуть в любой момент.</p>
+            <h2>{t('walletPage_whatIsDepositTitle')}</h2>
+            <p>{t('walletPage_whatIsDepositText', { amount: AUCTION_DEPOSIT_MIN_EUR })}</p>
           </div>
         </div>
 
         {/* Блок депозита и пополнения — карта скрыта, пополнение через Picker */}
         <div className="wallet-card-section deposit-main-block">
           <div className="deposit-info-block">
-            <div className="deposit-info-label">Депозит</div>
+            <div className="deposit-info-label">{t('walletPage_depositLabel')}</div>
             <div className="deposit-info-amount">{formatAmount(depositAmount)}</div>
           </div>
           <div className="wallet-actions">
@@ -725,7 +766,7 @@ const WalletInner = () => {
               <div className="wallet-action-icon-wrapper">
                 <FaArrowUp className="wallet-action-icon" />
               </div>
-              <span>Пополнить</span>
+              <span>{t('walletPage_topUp')}</span>
             </button>
             <button
               className="wallet-action-btn withdraw-action"
@@ -734,7 +775,7 @@ const WalletInner = () => {
               <div className="wallet-action-icon-wrapper">
                 <FaArrowDown className="wallet-action-icon" />
               </div>
-              <span>Вывести</span>
+              <span>{t('walletPage_withdraw')}</span>
             </button>
           </div>
         </div>
@@ -759,8 +800,8 @@ const WalletInner = () => {
             onClose={() => setShowVerificationAfterTopUp(false)}
             userId={dbUserId}
             required
-            title="Чтобы продолжить, пройдите верификацию"
-            subtitle="Загрузите фото паспорта, селфи и селфи с паспортом"
+            title={t('walletPage_verificationTitle')}
+            subtitle={t('walletPage_verificationSubtitle')}
             onComplete={async () => {
               setShowVerificationAfterTopUp(false)
               return true
@@ -773,7 +814,7 @@ const WalletInner = () => {
           <div className="wallet-won-object">
             <div className="wallet-won-object__badge">
               <span className="wallet-won-object__badge-icon">🏆</span>
-              <span className="wallet-won-object__badge-text">Вы выиграли аукцион!</span>
+              <span className="wallet-won-object__badge-text">{t('walletPage_wonAuctionBadge')}</span>
             </div>
             <div className="wallet-won-object__content">
               <div className="wallet-won-object__image-wrapper">
@@ -790,7 +831,7 @@ const WalletInner = () => {
                   return photoUrl ? (
                     <ImageWithSkeleton
                       imgProps={imageProps}
-                      alt={wonProperty.title || 'Объект недвижимости'}
+                      alt={wonProperty.title || t('walletPage_propertyAlt')}
                       className="wallet-won-object__image"
                       containerClassName="wallet-won-object__image"
                       onError={(e) => {
@@ -799,7 +840,7 @@ const WalletInner = () => {
                     />
                   ) : (
                     <div className="wallet-won-object__image-placeholder">
-                      Нет фото
+                      {t('walletPage_noPhoto')}
                     </div>
                   )
                 })()}
@@ -810,162 +851,99 @@ const WalletInner = () => {
                   <p className="wallet-won-object__location">{wonProperty.location}</p>
                 )}
                 <div className="wallet-won-object__bid-info">
-                  <span className="wallet-won-object__bid-label">Выигрышная ставка:</span>
+                  <span className="wallet-won-object__bid-label">{t('walletPage_winningBidLabel')}</span>
                   <span className="wallet-won-object__bid-amount">
                     {getCurrencySymbol(wonProperty.currency)}
-                    {wonProperty.bid_amount.toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    {wonProperty.bid_amount.toLocaleString(i18n.language, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </span>
                 </div>
                 <button
                   className="wallet-won-object__buy-btn"
                   onClick={handleBookNow}
                   disabled={!buyNowEmailOk}
-                  title={!buyNowEmailOk ? 'Укажите email в профиле' : undefined}
+                  title={!buyNowEmailOk ? t('walletPage_emailRequiredTitle') : undefined}
                   style={{
                     opacity: !buyNowEmailOk ? 0.5 : 1,
                     cursor: !buyNowEmailOk ? 'not-allowed' : 'pointer',
                   }}
                 >
-                  Перейти к покупке
+                  {t('walletPage_goToPurchase')}
                 </button>
               </div>
             </div>
           </div>
         )}
 
-        {/* Объект с активной ставкой */}
-        {userBid && !wonProperty && (
-          <div className="wallet-bid-object" style={{
-            background: 'rgba(255, 255, 255, 0.05)',
-            borderRadius: '16px',
-            padding: '20px',
-            marginBottom: '20px',
-            border: '1px solid rgba(255, 255, 255, 0.1)'
-          }}>
-            <h3 style={{ color: 'white', marginBottom: '15px', fontSize: '18px' }}>
-              Ваш объект с активной ставкой
+        {/* Объекты с активными ставками */}
+        {userBids.length > 0 && !wonProperty && (
+          <div className="wallet-bid-object">
+            <h3 className="wallet-bid-object__heading">
+              {userBids.length > 1
+                ? t('walletPage_activeBidsHeading')
+                : t('walletPage_activeBidHeading')}
             </h3>
-            <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
-              {(() => {
-                const photoUrl = getPropertyCardImage(userBid, null)
-                const imageProps = buildResponsiveImageProps(photoUrl, {
-                  widths: [100, 160, 220],
-                  sizes: '100px',
-                  fit: 'cover',
-                  quality: 72,
-                  format: 'webp',
-                })
-                
-                return photoUrl ? (
-                  <ImageWithSkeleton
-                    imgProps={imageProps}
-                    alt={userBid.title || 'Объект недвижимости'}
-                    imgStyle={{
-                      width: '100px',
-                      height: '100px',
-                      objectFit: 'cover',
-                      borderRadius: '8px',
-                      border: '1px solid rgba(255, 255, 255, 0.1)',
-                    }}
-                    onError={(e) => {
-                      // Скрываем изображение при ошибке загрузки
-                      e.currentTarget.style.display = 'none'
-                    }}
-                  />
-                ) : (
-                  <div style={{
-                    width: '100px',
-                    height: '100px',
-                    background: 'rgba(255, 255, 255, 0.1)',
-                    borderRadius: '8px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: 'rgba(255, 255, 255, 0.5)',
-                    fontSize: '12px',
-                    textAlign: 'center',
-                    padding: '8px'
-                  }}>
-                    Нет фото
-                  </div>
-                )
-              })()}
-              <div style={{ flex: 1 }}>
-                <h4 style={{ color: 'white', marginBottom: '8px', fontSize: '16px' }}>
-                  {userBid.title}
-                </h4>
-                {userBid.location && (
-                  <p style={{ color: 'rgba(255, 255, 255, 0.7)', marginBottom: '8px', fontSize: '14px' }}>
-                    {userBid.location}
-                  </p>
-                )}
-                <div style={{ display: 'flex', gap: '15px', marginBottom: '10px' }}>
-                  <div>
-                    <span style={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: '12px' }}>Ваша ставка:</span>
-                    <div style={{ color: 'white', fontSize: '18px', fontWeight: 'bold' }}>
-                      {formatAmount(userBid.bid_amount)}
+            <div className="wallet-bid-objects properties-grid property-listing-grid">
+              {userBids.map((bid) => {
+                const listingProperty = formatBidAsListingProperty(bid)
+                return (
+                  <div key={bidPropertyKey(bid)} className="wallet-bid-object__panel">
+                    <PropertyListingCard
+                      property={listingProperty}
+                      onOpen={() => {
+                        if (!ensureCanOpenProperty()) return
+                        navigate(
+                          getPropertyDetailPath(bid.property_id, { property: listingProperty }),
+                          { state: { property: listingProperty } }
+                        )
+                      }}
+                      showFavorite={false}
+                      showDescription={false}
+                      showTimer={false}
+                      showActions={false}
+                      pinFooter
+                      bidInfoLabel={t('walletPage_yourBidLabel')}
+                      bidInfoAmount={bid.bid_amount}
+                    />
+                    <div className="wallet-bid-object__actions">
+                      <button
+                        type="button"
+                        className="wallet-bid-object__btn wallet-bid-object__btn--secondary"
+                        onClick={() => {
+                          setBidForHistory(bid)
+                          setShowBidHistory(true)
+                        }}
+                      >
+                        <FiClock size={16} aria-hidden />
+                        {t('walletPage_history')}
+                      </button>
+                      <Link
+                        to={getPropertyDetailPath(bid.property_id, { property: listingProperty })}
+                        className="wallet-bid-object__btn wallet-bid-object__btn--primary"
+                        onClick={(e) => {
+                          if (!ensureCanOpenProperty()) {
+                            e.preventDefault()
+                          }
+                        }}
+                      >
+                        {t('walletPage_goToProperty')}
+                      </Link>
                     </div>
                   </div>
-                </div>
-                <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                  <button
-                    onClick={() => setShowBidHistory(true)}
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                      padding: '8px 16px',
-                      background: 'rgba(255, 255, 255, 0.1)',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '8px',
-                      fontSize: '14px',
-                      cursor: 'pointer',
-                      transition: 'background 0.2s',
-                      fontFamily: 'inherit'
-                    }}
-                    onMouseEnter={(e) => e.target.style.background = 'rgba(255, 255, 255, 0.2)'}
-                    onMouseLeave={(e) => e.target.style.background = 'rgba(255, 255, 255, 0.1)'}
-                  >
-                    <FiClock size={16} />
-                    История
-                  </button>
-                  <Link 
-                    to={`/property/${userBid.property_id}`}
-                    onClick={(e) => {
-                      if (ensureCanOpenProperty()) return
-                      e.preventDefault()
-                    }}
-                    style={{
-                      display: 'inline-block',
-                      padding: '8px 16px',
-                      background: 'rgba(255, 255, 255, 0.1)',
-                      color: 'white',
-                      textDecoration: 'none',
-                      borderRadius: '8px',
-                      fontSize: '14px',
-                      transition: 'background 0.2s'
-                    }}
-                    onMouseEnter={(e) => e.target.style.background = 'rgba(255, 255, 255, 0.2)'}
-                    onMouseLeave={(e) => e.target.style.background = 'rgba(255, 255, 255, 0.1)'}
-                  >
-                    Перейти к объекту →
-                  </Link>
-                </div>
-              </div>
+                )
+              })}
             </div>
           </div>
         )}
 
         {/* Модальное окно истории ставок */}
-        {userBid && (
+        {bidForHistory && (
           <UserBidHistoryModal
             isOpen={showBidHistory}
             onClose={() => setShowBidHistory(false)}
             property={{
-              id: userBid.property_id,
-              title: userBid.title,
-              location: userBid.location
+              id: bidForHistory.property_id,
+              title: bidForHistory.title,
+              location: bidForHistory.location,
             }}
             userId={dbUserId}
           />
@@ -975,11 +953,11 @@ const WalletInner = () => {
         <div className="wallet-stats-transactions">
           {/* Аналитика */}
           <div className="wallet-analytics-block">
-            <h2 className="wallet-analytics-title">Аналитика</h2>
+            <h2 className="wallet-analytics-title">{t('walletPage_analyticsTitle')}</h2>
             <div className="wallet-stats">
               <div className="wallet-stat-card">
                 <div className="wallet-stat-header">
-                  <div className="wallet-stat-label">Всего выведено</div>
+                  <div className="wallet-stat-label">{t('walletPage_totalWithdrawn')}</div>
                   <div className="wallet-stat-icon">
                     <FaArrowDown />
                   </div>
@@ -988,7 +966,7 @@ const WalletInner = () => {
               </div>
               <div className="wallet-stat-card">
                 <div className="wallet-stat-header">
-                  <div className="wallet-stat-label">Всего пополнено</div>
+                  <div className="wallet-stat-label">{t('walletPage_totalDeposited')}</div>
                   <div className="wallet-stat-icon">
                     <FaArrowUp />
                   </div>
@@ -1001,19 +979,19 @@ const WalletInner = () => {
           {/* Транзакции */}
           <div className="wallet-transactions-block">
             <div className="wallet-transactions-header">
-              <h3 className="wallet-transactions-title">Транзакции</h3>
+              <h3 className="wallet-transactions-title">{t('walletPage_transactionsTitle')}</h3>
             </div>
             
             <div className="wallet-transactions-list">
               {transactions.length === 0 ? (
-                <div className="wallet-transaction-empty">Нет транзакций</div>
+                <div className="wallet-transaction-empty">{t('walletPage_noTransactions')}</div>
               ) : (
                 transactions.map((transaction, index) => (
                   <div key={transaction.id || index} className="wallet-transaction-item">
                     <div className="wallet-transaction-info">
                       <div className="wallet-transaction-name">{transaction.description || transaction.type}</div>
                       <div className="wallet-transaction-time">
-                        {new Date(transaction.created_at).toLocaleString('ru-RU')}
+                        {new Date(transaction.created_at).toLocaleString(i18n.language)}
                       </div>
                     </div>
                     <div className="wallet-transaction-right">
@@ -1021,7 +999,7 @@ const WalletInner = () => {
                         {transaction.amount > 0 ? '+' : ''}{formatAmount(Math.abs(transaction.amount))}
                       </div>
                       <div className="wallet-transaction-type">
-                        {transaction.type === 'deposit' ? 'Пополнение' : 'Вывод'}
+                        {transaction.type === 'deposit' ? t('walletPage_txDeposit') : t('walletPage_txWithdrawal')}
                       </div>
                     </div>
                   </div>

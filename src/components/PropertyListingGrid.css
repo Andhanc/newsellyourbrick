@@ -1,0 +1,84 @@
+/**
+ * Общая вёрстка сетки PropertyListingCard (pinFooter): поиск, сравнение и др.
+ */
+.property-listing-grid .property-content-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+
+.property-listing-grid .property-content-meta .property-title,
+.property-listing-grid .property-content-meta .property-description,
+.property-listing-grid .property-content-meta .property-description--empty,
+.property-listing-grid .property-content-meta .property-location {
+  margin: 0;
+  flex-shrink: 0;
+}
+
+.property-listing-grid .property-content-meta .property-title {
+  line-height: 1.25;
+  height: 2.5em;
+  min-height: 2.5em;
+  max-height: 2.5em;
+}
+
+.property-listing-grid .property-content-meta .property-description,
+.property-listing-grid .property-content-meta .property-description--empty {
+  line-height: 1.3;
+  height: 2.6em;
+  min-height: 2.6em;
+  max-height: 2.6em;
+}
+
+.property-listing-grid .property-content-meta .property-location {
+  line-height: 1.3;
+  height: 2.6em;
+  min-height: 2.6em;
+  max-height: 2.6em;
+}
+
+/* Только название + адрес (депозит и др.) */
+.property-listing-grid .property-content-meta--compact .property-title {
+  height: 2.5em;
+  min-height: 2.5em;
+  max-height: 2.5em;
+}
+
+.property-listing-grid .property-content-meta .property-card-buy-now-winner {
+  margin: 0;
+}
+
+.property-listing-grid .property-content-body-gap {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.property-listing-grid .property-content-bottom.property-content-bottom--pin-footer {
+  margin-top: 0;
+  padding-top: 4px;
+}
+
+.property-listing-grid .property-card-owner__info {
+  margin-top: 0;
+  margin-bottom: 6px;
+}
+
+.property-listing-grid-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.property-listing-grid-divider {
+  margin: 40px 0 36px;
+  height: 1px;
+  background: #d8d8d8;
+  border: none;
+}
+
+@media (max-width: 768px) {
+  .property-listing-grid-divider {
+    margin: 28px 0 24px;
+  }
+}

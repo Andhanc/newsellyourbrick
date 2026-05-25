@@ -255,13 +255,6 @@
   transition-delay: 0.07s;
 }
 
-.home-auction-floats--footer-near .chat-widget {
-  opacity: 0 !important;
-  transform: translate3d(calc(100vw + 64px), 0, 0) scale(0.96) !important;
-  pointer-events: none !important;
-  transition-delay: 0.12s;
-}
-
 /* Чат с менеджером — док справа как у AI; при двух открытых панелях — менеджер выше */
 .chat-widget--manager-dock {
   z-index: 11001;
@@ -805,6 +798,35 @@
 @media (min-width: 768px) {
   .home-page--auction .chat-widget {
     bottom: 202px;
+  }
+}
+
+/* Аукцион, мобилка: вплотную под шапку, низ выше FAB AI (112px + 56px) */
+@media (max-width: 767px) {
+  .home-page--auction .home-auction-floats:has(.chat-widget) > .ai-button {
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+  }
+
+  .home-page--auction .chat-widget {
+    /* низ видимой pill-шапки, не spacer 104px — иначе зазор и низкая панель */
+    --auction-chat-top: calc(env(safe-area-inset-top, 0px) + 4px + 38px);
+    /* FAB скрыт при открытом чате */
+    --auction-chat-bottom: calc(112px + 56px + 2px);
+    top: var(--auction-chat-top);
+    bottom: var(--auction-chat-bottom);
+    height: auto;
+    min-height: min(555px, calc(100dvh - var(--auction-chat-top) - var(--auction-chat-bottom)));
+    max-height: calc(100dvh - var(--auction-chat-top) - var(--auction-chat-bottom));
+  }
+
+  .home-page--auction .chat-widget--stacked-above-ai {
+    top: auto;
+    bottom: calc(100dvh - var(--auction-chat-top) + 10px);
+    height: min(400px, 44dvh);
+    max-height: min(400px, 44dvh);
+    min-height: 0;
   }
 }
 

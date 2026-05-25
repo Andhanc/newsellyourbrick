@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { FiArrowRight, FiChevronLeft, FiShield, FiX } from 'react-icons/fi'
 import './DepositRequiredModal.css'
 
@@ -6,11 +7,17 @@ const DepositRequiredModal = ({
   isOpen,
   onClose,
   onGoToDeposit,
-  title = 'Необходимо внести депозит',
-  message = 'Для участия в аукционе нужно пополнить депозит.',
-  actionText = 'Перейти',
+  title,
+  message,
+  actionText,
 }) => {
+  const { t } = useTranslation()
   const [showDepositInfo, setShowDepositInfo] = useState(false)
+
+  const resolvedTitle = title ?? t('depositModal_title')
+  const resolvedMessage = message ?? t('depositModal_message')
+  const resolvedAction = actionText ?? t('depositModal_action')
+  const amountLabel = t('depositModal_infoAmountStrong')
 
   useEffect(() => {
     if (!isOpen) setShowDepositInfo(false)
@@ -31,7 +38,7 @@ const DepositRequiredModal = ({
           type="button"
           className="deposit-required-modal__close"
           onClick={onClose}
-          aria-label="Закрыть"
+          aria-label={t('depositModal_closeAria')}
         >
           <FiX size={20} />
         </button>
@@ -42,15 +49,15 @@ const DepositRequiredModal = ({
           </div>
           {!showDepositInfo ? (
             <>
-              <h2 className="deposit-required-modal__title">{title}</h2>
-              <p className="deposit-required-modal__message">{message}</p>
+              <h2 className="deposit-required-modal__title">{resolvedTitle}</h2>
+              <p className="deposit-required-modal__message">{resolvedMessage}</p>
 
               <button
                 type="button"
                 className="deposit-required-modal__action"
                 onClick={onGoToDeposit}
               >
-                {actionText}
+                {resolvedAction}
                 <FiArrowRight size={18} />
               </button>
 
@@ -59,21 +66,20 @@ const DepositRequiredModal = ({
                 className="deposit-required-modal__link"
                 onClick={() => setShowDepositInfo(true)}
               >
-                Что такое депозит?
+                {t('depositModal_whatIsLink')}
               </button>
             </>
           ) : (
             <div className="deposit-required-modal__details">
-              <h2 className="deposit-required-modal__title">Что такое депозит?</h2>
+              <h2 className="deposit-required-modal__title">{t('depositModal_infoTitle')}</h2>
               <p className="deposit-required-modal__detail-text">
-                Депозит составляет <strong>3000 евро</strong> и подтверждает вашу платежеспособность для участия в аукционе.
+                {t('depositModal_infoParagraph1', { amount: amountLabel })}
               </p>
               <p className="deposit-required-modal__detail-text">
-                Это не штраф и не скрытая комиссия: деньги остаются вашими. После завершения участия депозит можно
-                <strong> вернуть обратно</strong> на ваш баланс.
+                {t('depositModal_infoParagraph2')}
               </p>
               <p className="deposit-required-modal__detail-text">
-                Если вы приобретаете объект, депозит можно <strong>зачесть в сумму покупки</strong>, чтобы уменьшить итоговый платеж.
+                {t('depositModal_infoParagraph3')}
               </p>
 
               <div className="deposit-required-modal__detail-actions">
@@ -83,14 +89,14 @@ const DepositRequiredModal = ({
                   onClick={() => setShowDepositInfo(false)}
                 >
                   <FiChevronLeft size={16} />
-                  Назад
+                  {t('depositModal_back')}
                 </button>
                 <button
                   type="button"
                   className="deposit-required-modal__action"
                   onClick={onGoToDeposit}
                 >
-                  {actionText}
+                  {resolvedAction}
                   <FiArrowRight size={18} />
                 </button>
               </div>

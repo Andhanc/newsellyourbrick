@@ -123,6 +123,13 @@ const PROFILE_PASSPORT_FIELDS = [
 
 const PROFILE_FIELDS_META = [...PROFILE_MAIN_FIELDS, ...PROFILE_PASSPORT_FIELDS]
 
+/** На узком экране — в одну строку с соседним полем; остальные на всю ширину. */
+const PROFILE_FIELD_FULL_WIDTH_KEYS = new Set(['email', 'phone', 'country', 'address'])
+
+function getProfileFieldLayoutClass(key) {
+  return PROFILE_FIELD_FULL_WIDTH_KEYS.has(key) ? ' test-data-field--span-full' : ''
+}
+
 const PROFILE_FIELD_I18N = {
   first_name: 'buyerData_labelFirstName',
   last_name: 'buyerData_labelLastName',
@@ -2637,7 +2644,7 @@ function TestPage() {
                           <div
                             key={key}
                             id={`test-profile-field-wrap-${key}`}
-                            className={`test-data-field${
+                            className={`test-data-field${getProfileFieldLayoutClass(key)}${
                               savingField === key ? ' test-data-field--saving' : ''
                             }`}
                           >
@@ -2720,7 +2727,7 @@ function TestPage() {
                                 <textarea
                                   id={`profile-field-${key}`}
                                   className="test-data-field__input test-data-field__input--textarea"
-                                  rows={3}
+                                  rows={1}
                                   value={profileForm[key] ?? ''}
                                   onChange={handleProfileChange(key)}
                                   onBlur={handleProfileBlur(key)}
@@ -2820,12 +2827,18 @@ function TestPage() {
                           ))}
                         </div>
                       )}
-                      <div className="test-data-panel__grid">
+                      <div
+                        className={`test-data-panel__grid test-data-panel__grid--passport${
+                          isSpainCountry(profileForm.country)
+                            ? ''
+                            : ' test-data-panel__grid--passport-stacked'
+                        }`}
+                      >
                         {PROFILE_PASSPORT_FIELDS.map(({ key, labelKey, type, autoComplete }) => (
                           <div
                             key={key}
                             id={`test-profile-field-wrap-${key}`}
-                            className={`test-data-field${
+                            className={`test-data-field${getProfileFieldLayoutClass(key)}${
                               savingField === key ? ' test-data-field--saving' : ''
                             }`}
                           >

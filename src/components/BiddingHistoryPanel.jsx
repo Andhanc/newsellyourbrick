@@ -6,6 +6,7 @@ import { getApiBaseUrl, getApiBaseUrlSync } from '../utils/apiConfig'
 import { flagEmojiForStoredCountry } from '../utils/countryFlagFromStored'
 import './BiddingHistoryModal.css'
 import { getCurrencySymbol } from '../utils/currency'
+import { propertyBidsApiQuery, resolvePropertySourceTable } from '../utils/propertySourceTable'
 
 let API_BASE_URL = getApiBaseUrlSync()
 
@@ -62,7 +63,10 @@ export default function BiddingHistoryPanel({
     }
 
     try {
-      const response = await fetch(`${API_BASE_URL}/bids/property/${property.id}`)
+      const table = resolvePropertySourceTable(property)
+      const response = await fetch(
+        `${API_BASE_URL}/bids/property/${property.id}?${propertyBidsApiQuery(property.id, table)}`,
+      )
       if (response.ok) {
         const data = await response.json()
         if (data.success) {

@@ -18,24 +18,13 @@ import {
   normalizePropertyTypeForDetailQuery,
   normalizePropertyTypeQueryParam,
 } from '../utils/propertyDetailUrl'
+import { resolvePropertySourceTable as resolveSourceTableForDetail } from '../utils/propertySourceTable'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
 
 function normalizePropertyDetailType(prop) {
   if (!prop) return 'apartment'
   return prop.property_type || prop.propertyType || 'apartment'
-}
-
-/** Для напоминаний об аукционе и избранного: всегда непустой source_table */
-function resolveSourceTableForDetail(prop) {
-  if (!prop) return 'properties_apartments'
-  const raw =
-    prop.source_table != null && String(prop.source_table).trim() !== ''
-      ? String(prop.source_table).trim()
-      : null
-  if (raw) return raw
-  const pt = normalizePropertyDetailType(prop)
-  return pt === 'house' || pt === 'villa' ? 'properties_houses' : 'properties_apartments'
 }
 
 // Обёртка над страницей объекта:

@@ -1903,23 +1903,54 @@
 
 .test-data-panel__grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px 20px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px 16px;
   margin: 0;
+  width: 100%;
+}
+
+/* Паспортные поля: на десктопе всегда в одну строку */
+.test-data-panel__grid--passport {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+/* На десктопе все поля участвуют в сетке 3×2; span-full только на узком экране */
+.test-data-field--span-full {
+  grid-column: auto;
 }
 
 @media (max-width: 560px) {
+  .test-hero-pro__data-panel {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+
   .test-data-panel__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px 8px;
+  }
+
+  /* Мобильный: не Испания — поля в две строки */
+  .test-data-panel__grid--passport.test-data-panel__grid--passport-stacked {
     grid-template-columns: 1fr;
+  }
+
+  .test-data-panel__grid--passport.test-data-panel__grid--passport-stacked .test-data-field {
+    grid-column: 1 / -1;
+  }
+
+  .test-data-field--span-full {
+    grid-column: 1 / -1;
   }
 }
 
 .test-data-field {
   margin: 0;
-  padding: 12px 14px;
-  border-radius: 12px;
-  background: rgba(248, 250, 252, 0.9);
-  border: 1px solid rgba(15, 23, 42, 0.06);
+  padding: 0;
+  min-width: 0;
+  background: transparent;
+  border: none;
+  border-radius: 0;
 }
 
 .test-data-field__label {
@@ -1984,15 +2015,16 @@
   width: 100%;
   box-sizing: border-box;
   margin: 0;
-  padding: 9px 11px;
+  padding: 10px 12px;
+  min-height: 44px;
   font-size: 15px;
   font-weight: 600;
   line-height: 1.35;
   font-family: inherit;
   color: var(--test-ink);
-  background: rgba(255, 255, 255, 0.92);
-  border: 1px solid rgba(15, 23, 42, 0.1);
-  border-radius: 9px;
+  background: #fff;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  border-radius: 10px;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
@@ -2008,7 +2040,7 @@
 
 .test-data-field__input--textarea {
   resize: vertical;
-  min-height: 72px;
+  min-height: 44px;
 }
 
 .test-country-select {
@@ -2116,22 +2148,17 @@
 }
 
 .test-data-field__saving {
-  display: block;
-  margin-top: 6px;
-  min-height: 14px;
+  display: none;
+  margin-top: 4px;
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--test-teal-dark);
-  visibility: hidden;
-  opacity: 0;
-  transition: opacity 0.15s ease;
 }
 
 .test-data-field__saving--visible {
-  visibility: visible;
-  opacity: 1;
+  display: block;
 }
 
 .test-data-panel__sections {
@@ -2271,6 +2298,57 @@
 
   .test-recognize-passport-btn {
     width: 100%;
+  }
+
+  .test-data-panel__hint {
+    margin-bottom: 12px;
+    font-size: 12px;
+  }
+
+  .test-data-panel__sections {
+    gap: 2px;
+  }
+
+  .test-data-panel__section--passport {
+    margin-top: 2px;
+    padding-top: 12px;
+  }
+
+  .test-data-panel__section-title {
+    margin-bottom: 4px;
+    font-size: 12px;
+  }
+
+  .test-data-panel__section-head {
+    margin-bottom: 8px;
+    gap: 8px;
+  }
+
+  .test-data-field__label {
+    margin-bottom: 4px;
+    font-size: 10px;
+    letter-spacing: 0.05em;
+  }
+
+  .test-data-field__input {
+    padding: 9px 10px;
+    min-height: 42px;
+    font-size: 14px;
+    border-radius: 9px;
+  }
+
+  .test-country-select__value {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .test-data-field__input--textarea {
+    min-height: 42px;
+  }
+
+  .test-country-select__chevron {
+    margin-right: 20px;
   }
 }
 

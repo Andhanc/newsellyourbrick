@@ -3356,13 +3356,6 @@
   transition-delay: 0s;
 }
 
-.ai-assistant-dock--footer-near .chat-widget {
-  opacity: 0 !important;
-  transform: translate3d(calc(100vw + 64px), 0, 0) scale(0.96) !important;
-  pointer-events: none !important;
-  transition-delay: 0.08s;
-}
-
 /* Чат с менеджером — тот же док справа, без блюра (как AI). Если открыты оба — панель менеджера выше */
 .chat-widget--manager-dock {
   z-index: 11001;
@@ -7476,8 +7469,11 @@
   color: #0f172a;
   line-height: 1.32;
   letter-spacing: -0.01em;
+  /* Резерв под 2 строки — карточки в ряду одной высоты */
+  min-height: calc(1.32em * 2);
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -7563,8 +7559,8 @@
   margin-bottom: 0;
 }
 
-@media (max-width: 1100px) and (min-width: 621px) {
-  /* Уже карточки — в зоне видимости ~4 шт. (делитель > 4 даёт край следующей) */
+@media (max-width: 1100px) and (min-width: 769px) {
+  /* Планшет: уже карточки — в зоне видимости ~4 шт. (делитель > 4 даёт край следующей) */
   .auction-showcase-card {
     flex: 0 0 calc((100% - 3 * var(--showcase-gap)) / 4.05);
     width: calc((100% - 3 * var(--showcase-gap)) / 4.05);
@@ -7572,7 +7568,7 @@
   }
 }
 
-@media (max-width: 620px) {
+@media (max-width: 768px) {
   .apartments-section--auction-showcase.apartments-section,
   .apartments-section--buy-now-showcase.apartments-section,
   .apartments-section--debts-showcase.apartments-section,
@@ -7587,7 +7583,7 @@
     --showcase-pad-right: clamp(24px, 6vw, 40px);
   }
 
-  /* Смартфон: шире карточка в ленте (множители только здесь — десктоп без них) */
+  /* Мобильная лента: широкие карточки (~2 в видимой зоне) */
   .apartments-section .auction-showcase-card {
     flex: 0 0 calc((100% - var(--showcase-gap)) / 1.9 * 1.15 * 1.07 * 1.1 * 1.1);
     width: calc((100% - var(--showcase-gap)) / 1.9 * 1.15 * 1.07 * 1.1 * 1.1);
@@ -9452,8 +9448,8 @@
   }
 }
 
-/* Витрина: телефон — выше превью; планшет/узкий экран — без растягивания по ряду */
-@media (max-width: 1100px) {
+/* Витрина: планшет (769–1100) — без растягивания по ряду */
+@media (max-width: 1100px) and (min-width: 769px) {
   .apartments-section .auction-showcase__scroller {
     align-items: flex-start;
   }
@@ -9463,16 +9459,39 @@
     height: auto;
     min-height: 0;
   }
-}
 
-@media (max-width: 1100px) and (min-width: 621px) {
   .apartments-section .auction-showcase-card .auction-showcase-card__media {
     aspect-ratio: 3 / 2;
     flex-shrink: 0;
   }
 }
 
-@media (max-width: 620px) {
+/* Витрина: мобильная (≤768) — одинаковая высота карточек во всех разделах */
+@media (max-width: 768px) {
+  .apartments-section .auction-showcase__scroller {
+    align-items: stretch;
+  }
+
+  .apartments-section .auction-showcase-card__link,
+  .apartments-section .auction-showcase-card__surface {
+    height: 100%;
+  }
+
+  .apartments-section .auction-showcase-card__surface {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .apartments-section .auction-showcase-card__caption {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .apartments-section .auction-showcase-card__bid {
+    margin-top: auto;
+  }
+
   .apartments-section .auction-showcase-card .auction-showcase-card__media {
     aspect-ratio: 1 / 1.1;
     flex-shrink: 0;

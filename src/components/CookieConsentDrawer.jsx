@@ -34,7 +34,6 @@ export default function CookieConsentDrawer({ open, onClose }) {
   if (!visible || typeof document === 'undefined') return null
 
   const closingModal = isClosing ? ' drawer-dismiss-modal--closing' : ''
-  const closingBackdrop = isClosing ? ' drawer-dismiss-backdrop--closing' : ''
   const busy = resolving || isClosing
 
   const complete = (choice) => {
@@ -78,17 +77,11 @@ export default function CookieConsentDrawer({ open, onClose }) {
   }
 
   return createPortal(
-    <>
-      <div
-        role="presentation"
-        className={`cookie-consent-modal__backdrop${closingBackdrop}`}
-        onClick={() => handleDecline()}
-      />
-      <div className="cookie-consent-modal__stage">
+    <div className="cookie-consent-modal__stage">
         <div
           className={`cookie-consent-modal__panel${closingModal}`}
           role="dialog"
-          aria-modal="true"
+          aria-modal="false"
           aria-labelledby="cookie-consent-modal-title"
           aria-describedby="cookie-consent-modal-text"
           aria-busy={resolving}
@@ -119,8 +112,7 @@ export default function CookieConsentDrawer({ open, onClose }) {
             </button>
           </div>
         </div>
-      </div>
-    </>,
+    </div>,
     document.body,
   )
 }

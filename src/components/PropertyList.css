@@ -1276,6 +1276,13 @@
   -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;
+  min-height: 3em;
+  flex-shrink: 0;
+}
+
+.property-description--empty {
+  visibility: hidden;
+  margin-bottom: 8px;
 }
 
 .property-location {
@@ -1446,7 +1453,8 @@
   flex-shrink: 0;
 }
 
-.properties-grid .property-content-bottom.property-content-bottom--with-actions {
+.properties-grid .property-content-bottom.property-content-bottom--with-actions,
+.properties-grid .property-content-bottom.property-content-bottom--pin-footer {
   margin-top: auto;
 }
 
@@ -2075,7 +2083,8 @@
     flex-shrink: 0;
   }
 
-  .properties-grid .property-content-bottom.property-content-bottom--with-actions {
+  .properties-grid .property-content-bottom.property-content-bottom--with-actions,
+  .properties-grid .property-content-bottom.property-content-bottom--pin-footer {
     margin-top: auto;
   }
 

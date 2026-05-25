@@ -746,13 +746,35 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+  min-width: 0;
 }
 
 .property-detail-info-block__content--horizontal {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 40px;
+  row-gap: 12px;
   flex-wrap: unset;
+  position: relative;
+}
+
+.property-detail-info-block__content--horizontal::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 2px;
+  bottom: 2px;
+  width: 1px;
+  transform: translateX(-50%);
+  background: linear-gradient(
+    180deg,
+    rgba(209, 213, 219, 0) 0%,
+    #d1d5db 12%,
+    #cbd5e1 50%,
+    #d1d5db 88%,
+    rgba(209, 213, 219, 0) 100%
+  );
+  pointer-events: none;
 }
 
 /* Блок документов в сайдбаре - отдельный блок */
@@ -833,9 +855,15 @@
 
 /* Адаптивные стили для подробной информации и мобильного хедера */
 @media (max-width: 768px) {
-  .property-detail-info-block__content--grid {
+  .property-detail-info-block__content--grid,
+  .property-detail-info-block__content--horizontal {
     grid-template-columns: 1fr;
-    gap: 12px;
+    column-gap: 0;
+    row-gap: 12px;
+  }
+
+  .property-detail-info-block__content--horizontal::before {
+    display: none;
   }
 
   .property-detail-info-block__content--amenities {
@@ -1881,7 +1909,8 @@
 
 .bidding-section__quick-btn {
   flex: 1;
-  padding: 10px 16px;
+  min-width: 0;
+  padding: 10px 8px;
   border-radius: 8px;
   border: 1px solid rgba(255, 255, 255, 0.3);
   background: linear-gradient(135deg, rgba(10, 186, 181, 0.85) 0%, rgba(8, 154, 149, 0.85) 100%);
@@ -1890,7 +1919,9 @@
   color: #ffffff;
   font-weight: 600;
   font-family: 'Montserrat', sans-serif;
-  font-size: 14px;
+  font-size: clamp(11px, 2.9vw, 14px);
+  line-height: 1.2;
+  white-space: nowrap;
   cursor: pointer;
   transition: all 0.3s ease;
   position: relative;
@@ -1919,6 +1950,42 @@
   opacity: 0.5;
   cursor: not-allowed;
   transform: none;
+}
+
+.bidding-section__quick-btn--preview {
+  opacity: 0.78;
+  cursor: not-allowed !important;
+  transform: none !important;
+  box-shadow:
+    0 2px 10px rgba(10, 186, 181, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.22);
+}
+
+.bidding-section__quick-btn--preview:hover,
+.bidding-section__quick-btn--preview:active {
+  transform: none !important;
+  opacity: 0.78;
+}
+
+.bidding-section__submit-btn--preview {
+  opacity: 0.78;
+  cursor: not-allowed !important;
+  filter: saturate(0.92);
+}
+
+.bidding-section__input-wrapper--preview {
+  cursor: not-allowed;
+}
+
+.bidding-section__input-wrapper--preview .bidding-section__input {
+  pointer-events: none;
+}
+
+.property-detail-sidebar__buy-now-btn--currency-preview,
+.property-detail-sidebar__buy-btn--currency-preview.property-detail-sidebar__buy-now-btn--currency-preview {
+  opacity: 0.78;
+  cursor: not-allowed !important;
+  filter: saturate(0.94);
 }
 
 .bidding-section__input-wrapper {
@@ -2243,6 +2310,10 @@
   /* В мобильной версии убираем миниатюры под основной картинкой */
   .property-detail-gallery__thumbnails-wrapper {
     display: none;
+  }
+
+  .property-detail-gallery__main {
+    touch-action: pan-y;
   }
 
   .property-detail-sidebar {

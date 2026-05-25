@@ -77,7 +77,9 @@ import { usePropertyFavorites } from '../context/PropertyFavoritesContext'
 import { useLayoutScrollRef } from '../context/LayoutScrollContext'
 import { UI_LANGUAGES } from '../constants/uiLanguages'
 import { isAuctionListingEnded } from '../utils/auctionReminderBounds'
-import { getPropertyDetailPath } from '../utils/propertyDetailUrl'
+import { auctionListingDedupeKey, getPropertyDetailPath } from '../utils/propertyDetailUrl'
+import { fetchAuctionMaxBidsBatch, getMaxBidForProperty } from '../utils/fetchAuctionMaxBids'
+import { resolvePropertySourceTable } from '../utils/propertySourceTable'
 import { hasBuyNowOption } from '../utils/hasBuyNowOption'
 import { lazyWithRetry } from '../utils/lazyWithRetry'
 import { MainPageDeferredContext } from './mainPageDeferredContext'
@@ -97,30 +99,6 @@ function asFiniteNumberOrNull(value) {
   return Number.isFinite(n) ? n : null
 }
 
-async function fetchMaxBidsBatch(apiBaseUrl, propertyIds) {
-  const ids = [...new Set(propertyIds.map((x) => Number(x)).filter((n) => Number.isFinite(n)))]
-  if (ids.length === 0) return new Map()
-  const base = String(apiBaseUrl || '').replace(/\/$/, '')
-  try {
-    const response = await fetch(`${base}/bids/max-amounts`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ids }),
-    })
-    if (!response.ok) return null
-    const payload = await response.json().catch(() => null)
-    if (!payload?.success || payload.data == null || typeof payload.data !== 'object') return null
-    const m = new Map()
-    for (const [k, v] of Object.entries(payload.data)) {
-      const id = Number(k)
-      const max = asFiniteNumberOrNull(v)
-      if (Number.isFinite(id) && max != null) m.set(id, max)
-    }
-    return m
-  } catch {
-    return null
-  }
-}
 
 // Базовые данные для 4 блоков 3D-папок (заголовки переводятся в компоненте через useMemo)
 const landingFolderDataBase = [
@@ -1275,7 +1253,11 @@ function MainPage() {
           images: normalizedImages.length > 0 ? normalizedImages : normalizedImage ? [normalizedImage] : [],
           price: priceNumber,
           auction_starting_price: auctionStartingPrice,
-          currentBid: prop.currentBid || prop.auction_current_bid || prop.auctionCurrentBid || null,
+          source_table:
+            prop.source_table ||
+            prop.sourceTable ||
+            resolvePropertySourceTable(prop),
+          currentBid: prop.currentBid || prop.current_bid || prop.auction_current_bid || prop.auctionCurrentBid || null,
           endTime:
             prop.endTime ||
             prop.auction_end_time ||
@@ -1294,22 +1276,27 @@ function MainPage() {
           area: prop.area || prop.sqft || 0,
         }
       }
-      const byId = new Map()
-      approved.map((p) => normalizeProperty(p)).forEach((p) => { if (p && p.id != null) byId.set(p.id, p) })
-      auctions.map((p) => normalizeProperty(p, { forceAuction: true })).forEach((p) => { if (p && p.id != null) byId.set(p.id, p) })
-      debts.map((p) => normalizeProperty(p)).forEach((p) => { if (p && p.id != null) byId.set(p.id, p) })
-      let merged = Array.from(byId.values())
-      const auctionIds = merged
-        .filter((item) => item && (item.isAuction === true || item.is_auction === 1 || item.is_auction === true))
-        .map((item) => Number(item.id))
-        .filter((id) => Number.isFinite(id))
-
-      const bidById = await fetchMaxBidsBatch(apiBase, auctionIds)
-      if (bidById && bidById.size > 0) {
+      const byKey = new Map()
+      const put = (p) => {
+        if (p?.id == null) return
+        const k = auctionListingDedupeKey(p)
+        const prev = byKey.get(k)
+        byKey.set(k, prev ? { ...prev, ...p, isAuction: prev.isAuction || p.isAuction } : p)
+      }
+      approved.map((p) => normalizeProperty(p)).forEach(put)
+      auctions.map((p) => normalizeProperty(p, { forceAuction: true })).forEach(put)
+      debts.map((p) => normalizeProperty(p)).forEach(put)
+      let merged = Array.from(byKey.values())
+      const auctionItems = merged.filter(
+        (item) =>
+          item &&
+          (item.isAuction === true || item.is_auction === 1 || item.is_auction === true),
+      )
+      const bidByKey = await fetchAuctionMaxBidsBatch(apiBase, auctionItems)
+      if (bidByKey.size > 0) {
         merged = merged.map((item) => {
-          const idNum = Number(item?.id)
-          const maxBid = bidById.get(idNum)
-          if (!Number.isFinite(idNum) || maxBid == null) return item
+          const maxBid = getMaxBidForProperty(bidByKey, item)
+          if (maxBid == null) return item
           const currentBid = asFiniteNumberOrNull(item.currentBid) || 0
           return {
             ...item,
@@ -1964,6 +1951,12 @@ function MainPage() {
       chatMessagesRef.current.scrollTop = chatMessagesRef.current.scrollHeight
     }
   }, [chatMessages, isChatOpen])
+
+  useEffect(() => {
+    window.dispatchEvent(
+      new CustomEvent('aiChatStateChange', { detail: { isOpen: isChatOpen } })
+    )
+  }, [isChatOpen])
 
   useEffect(() => {
     const footer = document.getElementById('site-footer')
@@ -2771,7 +2764,7 @@ function MainPage() {
 
       <div
         className={`ai-assistant-dock${aiAssistantHiddenByFooter ? ' ai-assistant-dock--footer-near' : ''}`}
-        aria-hidden={aiAssistantHiddenByFooter}
+        aria-hidden={aiAssistantHiddenByFooter && !isChatOpen && !isManagerChatOpen}
       >
       <button
         type="button"

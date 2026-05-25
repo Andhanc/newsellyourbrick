@@ -1,16 +1,24 @@
-import { useState, useEffect, useCallback, useLayoutEffect } from 'react'
+import { useState, useEffect, useCallback, useLayoutEffect, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useParams, useNavigate, useLocation, useSearchParams } from 'react-router-dom'
 import { FiPlus, FiArrowLeft } from 'react-icons/fi'
 import { useUser } from '@clerk/clerk-react'
 import Header from '../components/Header'
 import SharePurchaseModal from '../components/SharePurchaseModal'
 import DepositRequiredModal from '../components/DepositRequiredModal'
+import PropertyDetailGallery from '../components/property-detail/PropertyDetailGallery'
+import PropertyDetailInfoSection from '../components/property-detail/PropertyDetailInfoSection'
+import PropertyDetailMap from '../components/property-detail/PropertyDetailMap'
+import { usePropertyFavorites } from '../context/PropertyFavoritesContext'
 import { getUserData, isAuthenticated, getStoredNumericUserId, CLERK_DB_USER_SYNCED } from '../services/authService'
 import { showNotification } from '../utils/toastHelper'
 import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
 import { fetchUserDeposit } from '../utils/depositApi'
-import { getPropertyCardImage } from '../utils/propertyImage'
-import { buildResponsiveImageProps } from '../utils/responsiveImage'
+import { isAuctionDepositSufficient } from '../utils/auctionDeposit'
+import { getPropertyCardImage, normalizePropertyMediaFields } from '../utils/propertyImage'
+import { buildDisplayProperty } from '../utils/buildDisplayProperty'
+import { hasDbBackedProperty } from '../utils/propertyFavoriteKey'
+import './PropertyDetailClassic.css'
 import './ShareDetailPage.css'
 import { formatPropertyPrice } from '../utils/currency'
 import ShareDetailPageSkeleton from './ShareDetailPageSkeleton'
@@ -28,6 +36,11 @@ const DEMO_SHARE_OBJECTS = [
     location: 'Минск, ул. Примерная, 10',
     description: 'Уютная двухкомнатная квартира в центре города. Ремонт, балкон, паркинг во дворе.',
     image: 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=800&q=80',
+    images: [
+      'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=800&q=80',
+    ],
     totalPrice: 120000,
     pricePerShare: 6000,
     totalShares: 20,
@@ -42,6 +55,11 @@ const DEMO_SHARE_OBJECTS = [
     location: 'Барселона, Eixample',
     description: 'Просторные апартаменты с панорамным видом. Терраса, консьерж.',
     image: 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=800&q=80',
+    images: [
+      'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1493809842364-78817add7ffb?auto=format&fit=crop&w=800&q=80',
+    ],
     totalPrice: 250000,
     pricePerShare: 12500,
     totalShares: 20,
@@ -56,6 +74,10 @@ const DEMO_SHARE_OBJECTS = [
     location: 'Вена, 1-й район',
     description: 'Компактная студия в самом центре Вены. Полная меблировка, вид во двор.',
     image: 'https://images.unsplash.com/photo-1502672023488-70e25813eb80?auto=format&fit=crop&w=800&q=80',
+    images: [
+      'https://images.unsplash.com/photo-1502672023488-70e25813eb80?auto=format&fit=crop&w=800&q=80',
+      'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=800&q=80',
+    ],
     totalPrice: 180000,
     pricePerShare: 9000,
     totalShares: 20,
@@ -67,6 +89,7 @@ const DEMO_SHARE_OBJECTS = [
 ]
 
 const ShareDetailPage = () => {
+  const { t } = useTranslation()
   const { id } = useParams()
   const navigate = useNavigate()
   const location = useLocation()
@@ -85,8 +108,43 @@ const ShareDetailPage = () => {
   const [userDeposit, setUserDeposit] = useState(0)
   const [isDepositRequiredOpen, setIsDepositRequiredOpen] = useState(false)
   const [mySharesOwned, setMySharesOwned] = useState(0)
+  const { isFavorite: isFavoriteInStore, toggleFavorite } = usePropertyFavorites()
 
   const isDbShare = shareObject && typeof shareObject.id === 'number' && shareObject.property_type
+
+  const displayProperty = useMemo(
+    () => (shareObject ? buildDisplayProperty(shareObject) : null),
+    [shareObject],
+  )
+
+  const galleryImages = useMemo(() => {
+    if (!shareObject) return []
+    const { images } = normalizePropertyMediaFields(shareObject)
+    if (images.length > 0) return images
+    if (Array.isArray(shareObject.images) && shareObject.images.length > 0) return shareObject.images
+    if (shareObject.image) return [shareObject.image]
+    return []
+  }, [shareObject])
+
+  const favoriteProperty = useMemo(() => {
+    if (!shareObject) return null
+    const sourceTable =
+      shareObject.source_table ||
+      (shareObject.property_type === 'house' || shareObject.property_type === 'villa'
+        ? 'properties_houses'
+        : 'properties_apartments')
+    return {
+      ...shareObject,
+      source_table: sourceTable,
+    }
+  }, [shareObject])
+
+  const isFavorite = favoriteProperty
+    ? isFavoriteInStore(
+        favoriteProperty,
+        hasDbBackedProperty(favoriteProperty) ? undefined : 'property',
+      )
+    : false
 
   useEffect(() => {
     const apply = () => {
@@ -144,17 +202,25 @@ const ShareDetailPage = () => {
       .then((res) => (res.ok ? res.json() : Promise.reject(new Error('Not found'))))
       .then((json) => {
         const p = json.data || json
-        const image = getPropertyCardImage(p, null)
+        const { image, images } = normalizePropertyMediaFields(p)
+        const cardImage = getPropertyCardImage(p, null) || image
         const totalShares = p.total_shares != null ? Number(p.total_shares) : 20
         const sharesSold = p.shares_sold != null ? Number(p.shares_sold) : 0
         const price = p.price != null ? Number(p.price) : 0
+        const sourceTable =
+          p.source_table ||
+          (p.property_type === 'house' || p.property_type === 'villa'
+            ? 'properties_houses'
+            : 'properties_apartments')
         setShareObject({
           id: p.id,
           shareId: `${p.property_type}-${p.id}`,
           title: p.title,
           location: p.location || '',
           description: p.description || '',
-          image: image || null,
+          image: cardImage || null,
+          images: images.length > 0 ? images : cardImage ? [cardImage] : [],
+          source_table: sourceTable,
           totalPrice: price,
           pricePerShare: totalShares > 0 ? price / totalShares : 0,
           totalShares,
@@ -309,15 +375,33 @@ const ShareDetailPage = () => {
   const pctOthers = totalShares > 0 ? (othersSold / totalShares) * 100 : 0
   const pctMyShares = totalShares > 0 ? (previewMyShares / totalShares) * 100 : 0
   const pctAvailable = totalShares > 0 ? (previewAvailable / totalShares) * 100 : 0
-  const heroImageProps = buildResponsiveImageProps(shareObject.image, {
-    widths: [480, 720, 960, 1280],
-    sizes: '(max-width: 1024px) 100vw, 58vw',
-    fit: 'cover',
-    quality: 74,
-    format: 'webp',
-  })
 
   const formatPrice = (n) => formatPropertyPrice(n, shareObject.currency, { compact: true })
+
+  const handleShare = () => {
+    if (!shareObject || !navigator.share) return
+    navigator
+      .share({
+        title: shareObject.title,
+        text: shareObject.description,
+        url: window.location.href,
+      })
+      .catch(() => {})
+  }
+
+  const handleToggleFavorite = async () => {
+    if (!favoriteProperty) return
+    const isClerkAuth = user && userLoaded
+    const isOldAuth = isAuthenticated()
+    if (!isFavorite && !isClerkAuth && !isOldAuth) {
+      requestOpenLoginModal({ wizard: true })
+      return
+    }
+    await toggleFavorite(
+      favoriteProperty,
+      hasDbBackedProperty(favoriteProperty) ? undefined : 'property',
+    )
+  }
 
   const openPurchaseModal = async () => {
     const isClerkAuth = user && userLoaded
@@ -340,7 +424,7 @@ const ShareDetailPage = () => {
     const freshDeposit = await fetchUserDeposit(API_BASE, userId, { force: true, ttlMs: 0 })
     const depositAmount = Number(freshDeposit?.depositAmount) || 0
     setUserDeposit(depositAmount)
-    if (depositAmount <= 0) {
+    if (!isAuctionDepositSufficient(depositAmount)) {
       setIsDepositRequiredOpen(true)
       return
     }
@@ -358,44 +442,37 @@ const ShareDetailPage = () => {
         </button>
 
         <div className="share-detail__layout">
-          <div className="share-detail__info">
-            <div className="share-detail__hero">
-              <div className="share-detail__image-wrap">
-                <img
-                  {...heroImageProps}
-                  alt={shareObject.title}
-                  className="share-detail__image"
-                />
-                {isSoldOut && <div className="share-detail__hero-sold-overlay" aria-hidden />}
-              </div>
+          <div className="share-detail__left-column">
+            <div className="share-detail__gallery-wrap">
+              <PropertyDetailGallery
+                images={galleryImages}
+                title={shareObject.title}
+                onShare={handleShare}
+                onToggleFavorite={handleToggleFavorite}
+                isFavorite={isFavorite}
+                alwaysShowNav
+                overlay={
+                  isSoldOut ? <div className="share-detail__hero-sold-overlay" aria-hidden /> : null
+                }
+              />
             </div>
-            <h1 className="share-detail__title">{shareObject.title}</h1>
-            <p className="share-detail__location">{shareObject.location}</p>
-            {shareObject.description && <p className="share-detail__description">{shareObject.description}</p>}
-            {shareObject.area && (
-              <p className="share-detail__specs">
-                {shareObject.area} м² · {shareObject.rooms} комн.
-              </p>
+
+            {displayProperty && (
+              <PropertyDetailInfoSection
+                displayProperty={displayProperty}
+                property={shareObject}
+              />
             )}
-            <div className="share-detail__prices-block">
-              <div className="share-detail__price-row">
-                Общая стоимость: <strong>{formatPrice(shareObject.totalPrice)}</strong>
-              </div>
-              <div className="share-detail__price-row">
-                Цена за 1 долю: <strong>{formatPrice(shareObject.pricePerShare)}</strong>
-              </div>
-              {totalShares > 0 && (
-                <div className="share-detail__price-row">
-                  Куплено долей:{' '}
-                  <strong>
-                    {sharesSold} из {totalShares} ({Math.round((sharesSold / totalShares) * 100)}%)
-                  </strong>
-                </div>
-              )}
-            </div>
           </div>
 
           <div className="share-detail__sidebar">
+            <div className="share-detail__meta-card share-detail__meta-card--sidebar">
+              <h1 className="share-detail__title">{shareObject.title}</h1>
+              {shareObject.description && (
+                <p className="share-detail__description">{shareObject.description}</p>
+              )}
+            </div>
+
             {isSoldOut ? (
               <div className="share-detail__sold-out-block">
                 <div className="share-detail__sold-out-icon" aria-hidden>
@@ -413,7 +490,9 @@ const ShareDetailPage = () => {
                   Смотреть другие объекты
                 </button>
               </div>
-            ) : (
+            ) : null}
+
+            {!isSoldOut ? (
               <>
                 <div className="share-detail__chart-section">
                   <h3 className="share-detail__chart-title">Распределение долей</h3>
@@ -505,7 +584,11 @@ const ShareDetailPage = () => {
                   </button>
                 </div>
               </>
-            )}
+            ) : null}
+
+            <div className="share-detail__map-card">
+              <PropertyDetailMap property={shareObject} />
+            </div>
           </div>
         </div>
       </div>
@@ -524,6 +607,7 @@ const ShareDetailPage = () => {
       <DepositRequiredModal
         isOpen={isDepositRequiredOpen}
         onClose={() => setIsDepositRequiredOpen(false)}
+        message={t('depositModal_messageShares')}
         onGoToDeposit={() => {
           setIsDepositRequiredOpen(false)
           navigate('/deposit')

@@ -106,6 +106,31 @@ export function isAuctionListingEnded(property) {
   return isEffectiveAuctionTimerExpired(property)
 }
 
+/**
+ * На карточке листинга показывается таймер (линейный или круговой).
+ * @param {Record<string, unknown> | null | undefined} property
+ */
+export function hasPropertyListingTimer(property) {
+  if (!property) return false
+  const buyNowPurchaseCompleted = isBuyNowPurchaseCompleted(property)
+  const effectiveAuctionEnd = getEffectiveAuctionEndTime(property)
+  const hasTestTimerRaw = !buyNowPurchaseCompleted && hasTestTimerDateString(property)
+  return (
+    (property.isAuction === true &&
+      (buyNowPurchaseCompleted ||
+        (effectiveAuctionEnd != null && String(effectiveAuctionEnd).trim() !== ''))) ||
+    hasTestTimerRaw
+  )
+}
+
+/**
+ * Карточка листинга с оверлеем SOLD OUT (таймер истёк или сделка «купить сейчас» закрыта).
+ * @param {Record<string, unknown> | null | undefined} property
+ */
+export function isPropertyListingSoldOut(property) {
+  return hasPropertyListingTimer(property) && isEffectiveAuctionTimerExpired(property)
+}
+
 const STEP_MS = 30 * 60 * 1000
 
 /**

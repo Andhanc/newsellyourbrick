@@ -81,6 +81,17 @@ export function usePropertyDisplayCurrency(listingCurrency) {
     [displayCurrency, baseCurrency, rate],
   )
 
+  const convertToBase = useCallback(
+    (amount) => {
+      const n = Number(amount)
+      if (!Number.isFinite(n)) return null
+      if (displayCurrency === baseCurrency) return n
+      if (!Number.isFinite(rate) || rate <= 0) return null
+      return n / rate
+    },
+    [displayCurrency, baseCurrency, rate],
+  )
+
   const formatMoney = useCallback(
     (amount, locale = 'ru-RU') => {
       const n = Number(amount)
@@ -113,6 +124,8 @@ export function usePropertyDisplayCurrency(listingCurrency) {
     symbol: getCurrencySymbol(displayCurrency),
     baseSymbol: getCurrencySymbol(baseCurrency),
     convert,
+    convertToBase,
+    rate,
     formatMoney,
     isConverted,
     loading,

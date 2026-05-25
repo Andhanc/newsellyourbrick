@@ -151,6 +151,12 @@ const Header = () => {
     }
   }, [isGlobalAiModalOpen])
 
+  useEffect(() => {
+    window.dispatchEvent(
+      new CustomEvent('globalAiModalStateChange', { detail: { isOpen: isGlobalAiModalOpen } })
+    )
+  }, [isGlobalAiModalOpen])
+
   // Открываем модальное окно регистрации/входа принудительно (например после OAuth)
   useEffect(() => {
     const forceOpen = sessionStorage.getItem('login_modal_force_open')

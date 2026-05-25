@@ -1743,7 +1743,11 @@ const Data = () => {
                   ))}
                 </div>
               )}
-              <div className="data-grid">
+              <div
+                className={`data-grid data-grid--passport${
+                  isSpainCountry(userData.country) ? '' : ' data-grid--passport-stacked'
+                }`}
+              >
                 <div id="data-field-passportNumber" className="data-field">
                   <label>{t('buyerData_labelPassportNumber')}</label>
                   {isEditing ? (
@@ -1758,7 +1762,7 @@ const Data = () => {
                   )}
                 </div>
 
-                <div id="data-field-identificationNumber" className="data-field data-field-full">
+                <div id="data-field-identificationNumber" className="data-field">
                   <label>{t(identificationLabelKey)}</label>
                   {isEditing ? (
                     <input

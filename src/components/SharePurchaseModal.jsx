@@ -4,7 +4,7 @@ import ShareSignaturePad from './ShareSignaturePad'
 import { fetchUserDeposit } from '../utils/depositApi'
 import { showNotification } from '../utils/toastHelper'
 import './SharePurchaseModal.css'
-import { RESERVE_TERMS_PDF_URL as POLICY_PDF_URL } from '../utils/reserveTermsPdfUrl'
+import { openReserveTermsPdf } from '../utils/reserveTermsPdfUrl'
 import { navigateToStripeCheckout } from '../utils/subscriptionCheckout'
 import { formatPropertyPrice } from '../utils/currency'
 import { useDrawerDismiss, DRAWER_DISMISS_MS } from '../hooks/useDrawerDismiss'
@@ -37,6 +37,7 @@ const SharePurchaseModal = ({
   returnPath,
 }) => {
   const [pdfOpened, setPdfOpened] = useState(false)
+  const [pdfViewerUrl, setPdfViewerUrl] = useState('')
   const [isPdfViewerOpen, setIsPdfViewerOpen] = useState(false)
   const [agreed, setAgreed] = useState(false)
   const [submitting, setSubmitting] = useState(false)
@@ -53,6 +54,7 @@ const SharePurchaseModal = ({
     if (!isOpen) {
       setStep(STEP_PRICE)
       setPdfOpened(false)
+      setPdfViewerUrl('')
       setIsPdfViewerOpen(false)
       setAgreed(false)
       setSubmitting(false)
@@ -109,14 +111,16 @@ const SharePurchaseModal = ({
 
   const openPdf = async () => {
     try {
-      const resp = await fetch(POLICY_PDF_URL, { method: 'HEAD' })
-      const contentType = resp.headers.get('content-type') || ''
-      if (!resp.ok || !contentType.toLowerCase().includes('pdf')) {
-        showNotification('Файл условий не найден. Добавьте public/documents/Document.pdf', 'error')
-        return
-      }
+      const { url, found } = await openReserveTermsPdf()
+      setPdfViewerUrl(url)
       setIsPdfViewerOpen(true)
       setPdfOpened(true)
+      if (!found) {
+        showNotification(
+          'Не удалось проверить файл условий. Если документ не открылся, обновите страницу или обратитесь в поддержку.',
+          'error'
+        )
+      }
     } catch {
       showNotification('Не удалось открыть файл условий', 'error')
     }
@@ -376,7 +380,7 @@ const SharePurchaseModal = ({
                 <FiX size={18} />
               </button>
             </div>
-            <iframe title="Условия покупки долей" src={POLICY_PDF_URL} className="share-purchase-modal__pdf-viewer-frame" />
+            <iframe title="Условия покупки долей" src={pdfViewerUrl} className="share-purchase-modal__pdf-viewer-frame" />
           </div>
         </div>
       )}

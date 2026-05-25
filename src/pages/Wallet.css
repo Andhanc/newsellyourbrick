@@ -1842,6 +1842,272 @@
 }
 
 /* Выигранный объект */
+/* Объект с активной ставкой (депозит) */
+.wallet-bid-object {
+  width: 100%;
+  margin-bottom: 24px;
+  animation: fadeInUp 0.5s ease-out 0.12s both;
+}
+
+.wallet-bid-object__heading {
+  margin: 0 0 16px;
+  font-family: 'Montserrat', system-ui, sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: -0.02em;
+}
+
+/* Сетка как на странице аукциона: 3 / 2 / 2 карточки в ряд (см. PropertyList.css) */
+.wallet-bid-objects.properties-grid {
+  width: 100%;
+  max-width: none;
+}
+
+/* Панель: полупрозрачный фон и обводка на тёмном фоне кошелька */
+.wallet-bid-object__panel {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  height: 100%;
+  padding: 0;
+  overflow: hidden;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-sizing: border-box;
+}
+
+.wallet-bid-object__panel .property-card {
+  flex: 1 1 auto;
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+.wallet-bid-object__panel .property-image-container {
+  border-radius: 16px 16px 0 0;
+}
+
+.wallet-bid-object__panel .property-card:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+.wallet-bid-object__panel .property-content {
+  background: transparent;
+  padding: 10px 12px;
+}
+
+.wallet-bid-object__panel .property-title {
+  color: #ffffff;
+}
+
+.wallet-bid-object__panel .property-location {
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.wallet-bid-object__panel .property-content-meta .property-location {
+  height: auto;
+  min-height: 0;
+  max-height: none;
+}
+
+.wallet-bid-object__panel .property-specs--meta {
+  margin: 0;
+  gap: 10px;
+  flex-wrap: nowrap;
+  min-width: 0;
+}
+
+.wallet-bid-object__panel .property-specs--meta .spec-item {
+  gap: 5px;
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.wallet-bid-object__panel .property-specs--meta .spec-item svg {
+  color: rgba(255, 255, 255, 0.55);
+  width: 16px;
+  height: 16px;
+}
+
+.wallet-bid-object__panel .property-specs--meta .spec-item span {
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.wallet-bid-objects.property-listing-grid .property-content-meta--compact {
+  gap: 6px;
+}
+
+.wallet-bid-object__panel .property-description,
+.wallet-bid-object__panel .property-description--empty {
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.wallet-bid-object__panel .property-bid-info {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.wallet-bid-object__panel .bid-label {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.wallet-bid-object__panel .bid-value {
+  color: #5eead4;
+}
+
+.wallet-bid-object__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
+  padding: 0 12px 12px;
+}
+
+.wallet-bid-object__btn {
+  flex: 1 1 auto;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 11px 18px;
+  border-radius: 10px;
+  font-family: 'Montserrat', system-ui, sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    background 0.2s ease,
+    border-color 0.2s ease;
+  border: 1px solid transparent;
+  box-sizing: border-box;
+}
+
+.wallet-bid-object__btn--secondary {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.14);
+  color: #ffffff;
+}
+
+.wallet-bid-object__btn--secondary:hover {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.22);
+  transform: translateY(-1px);
+}
+
+.wallet-bid-object__btn--primary {
+  background: linear-gradient(135deg, rgba(10, 186, 181, 0.92) 0%, rgba(8, 154, 149, 0.92) 100%);
+  border-color: rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+  box-shadow:
+    0 4px 16px rgba(10, 186, 181, 0.32),
+    inset 0 1px 0 rgba(255, 255, 255, 0.28);
+}
+
+.wallet-bid-object__btn--primary:hover {
+  transform: translateY(-1px);
+  box-shadow:
+    0 6px 20px rgba(10, 186, 181, 0.42),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+
+.wallet-bid-object__btn:active {
+  transform: translateY(0);
+}
+
+/* Депозит: активные ставки — компактнее отступы у текста и кнопок на узких экранах */
+@media (max-width: 768px) {
+  .wallet-bid-object__panel .property-content {
+    padding: 8px;
+  }
+
+  .wallet-bid-object__panel .property-specs--meta {
+    gap: 6px;
+    column-gap: 6px;
+    row-gap: 0;
+  }
+
+  .wallet-bid-object__panel .property-specs--meta .spec-item {
+    flex: 0 1 auto;
+    min-width: 0;
+    gap: 3px;
+    font-size: 11px;
+    line-height: 1.2;
+  }
+
+  .wallet-bid-object__panel .property-specs--meta .spec-item svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  .wallet-bid-object__panel .property-specs--meta .spec-item span {
+    font-size: 11px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .wallet-bid-object__actions {
+    margin-top: 10px;
+    padding: 0 8px 10px;
+  }
+}
+
+@media (max-width: 500px) {
+  .wallet-bid-object__panel .property-content {
+    padding: 6px;
+  }
+
+  .wallet-bid-object__panel .property-specs--meta {
+    gap: 4px;
+    column-gap: 4px;
+  }
+
+  .wallet-bid-object__panel .property-specs--meta .spec-item {
+    gap: 2px;
+    font-size: 10px;
+  }
+
+  .wallet-bid-object__panel .property-specs--meta .spec-item svg {
+    width: 12px;
+    height: 12px;
+  }
+
+  .wallet-bid-object__panel .property-specs--meta .spec-item span {
+    font-size: 10px;
+  }
+
+  .wallet-bid-object__actions {
+    padding: 0 6px 8px;
+    gap: 8px;
+  }
+
+  .wallet-bid-object__btn {
+    padding: 9px 12px;
+    font-size: 12px;
+    min-height: 40px;
+  }
+}
+
+@media (max-width: 480px) {
+  .wallet-bid-object__actions {
+    flex-direction: column;
+  }
+
+  .wallet-bid-object__btn {
+    width: 100%;
+  }
+}
+
 .wallet-won-object {
   background: linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(217, 119, 6, 0.1) 100%);
   border: 2px solid rgba(245, 158, 11, 0.4);

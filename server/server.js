@@ -42,6 +42,11 @@ import {
   normalizePhotosListInput,
 } from './utils/normalizeListingPhotos.js';
 import { propertyRowAllowsTestDriveListing } from './testDriveListingRules.js';
+import {
+  AUCTION_DEPOSIT_MIN_EUR,
+  isAuctionDepositSufficient,
+  userHasOpenAuctionParticipation,
+} from './utils/auctionDeposit.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -364,13 +369,153 @@ function engagementTableFromPropertyRow(p) {
   return 'properties_apartments';
 }
 
-async function fetchEngagementCountsForProperty(prisma, propertyId, propertyTable) {
+/** WHERE для bids: numeric property_id совпадает в разных таблицах — нужен property_table. */
+function buildBidWhereForProperty(propertyId, propertyTable) {
   const pid = Number(propertyId);
   const tbl = String(propertyTable || 'properties_apartments');
-  const bidWhere =
-    tbl === 'properties_apartments'
-      ? { property_id: pid, OR: [{ property_table: tbl }, { property_table: null }] }
-      : { property_id: pid, property_table: tbl };
+  if (tbl === 'properties_apartments') {
+    return { property_id: pid, OR: [{ property_table: tbl }, { property_table: null }] };
+  }
+  return { property_id: pid, property_table: tbl };
+}
+
+function normalizeBidPropertyTableQuery(raw) {
+  if (raw == null) return null;
+  const t = String(raw).trim();
+  if (!t) return null;
+  if (t === 'apartments') return 'properties_apartments';
+  if (t === 'houses') return 'properties_houses';
+  if (t === 'properties_apartments' || t === 'properties_houses' || t === 'properties') return t;
+  return null;
+}
+
+function bidAmountCompositeKey(propertyId, propertyTable) {
+  const tbl = normalizeBidPropertyTableQuery(propertyTable) || 'properties_apartments';
+  return `${tbl}:${Number(propertyId)}`;
+}
+
+function isAuctionListingRow(p) {
+  return (
+    p?.is_auction === 1 ||
+    p?.is_auction === true ||
+    p?.is_auction === '1' ||
+    p?.is_auction === 'true' ||
+    p?.isAuction === true ||
+    p?.isAuction === 1
+  );
+}
+
+/** Подставляет current_bid / currentBid по макс. ставке с учётом property_table. */
+function propertyTypeHintFromBidContext(propertyTable, propertyType) {
+  const pt = propertyType != null ? String(propertyType).trim().toLowerCase() : '';
+  if (pt === 'house' || pt === 'villa') return pt;
+  if (pt === 'apartment' || pt === 'commercial') return pt;
+  const tbl = normalizeBidPropertyTableQuery(propertyTable);
+  if (tbl === 'properties_houses') return 'house';
+  if (tbl === 'properties_apartments') return 'apartment';
+  return null;
+}
+
+/** Загрузка объекта для ставки: обязательно property_table / property_type с клиента при коллизии id. */
+async function loadPropertyForBid(propertyId, { property_table: propertyTableRaw, property_type: propertyTypeRaw } = {}) {
+  const nid = Number(propertyId);
+  if (!Number.isFinite(nid)) return { property: null, tableName: null };
+
+  const typeHint = propertyTypeHintFromBidContext(propertyTableRaw, propertyTypeRaw);
+  let tableName = normalizeBidPropertyTableQuery(propertyTableRaw);
+
+  if (typeHint === 'house' || typeHint === 'villa' || tableName === 'properties_houses') {
+    const row = await houseQueries.getById(nid);
+    if (row) {
+      row.source_table = 'properties_houses';
+      return { property: row, tableName: 'properties_houses' };
+    }
+    if (tableName === 'properties_houses') return { property: null, tableName: null };
+  }
+
+  if (typeHint === 'apartment' || typeHint === 'commercial' || tableName === 'properties_apartments') {
+    const row = await apartmentQueries.getById(nid);
+    if (row) {
+      row.source_table = 'properties_apartments';
+      return { property: row, tableName: 'properties_apartments' };
+    }
+    if (tableName === 'properties_apartments') return { property: null, tableName: null };
+  }
+
+  if (tableName === 'properties') {
+    const legacy = await getPrisma().properties.findUnique({ where: { id: nid } });
+    if (legacy) {
+      legacy.source_table = 'properties';
+      return { property: legacy, tableName: 'properties' };
+    }
+    return { property: null, tableName: null };
+  }
+
+  const property = await propertyQueries.getById(nid, typeHint);
+  if (!property) return { property: null, tableName: null };
+  tableName = engagementTableFromPropertyRow(property);
+  property.source_table = tableName;
+  return { property, tableName };
+}
+
+async function enrichListingPropertiesWithMaxBids(prisma, properties) {
+  if (!Array.isArray(properties) || properties.length === 0) return properties;
+  const orWhere = [];
+  const seen = new Set();
+  for (const p of properties) {
+    if (!isAuctionListingRow(p)) continue;
+    const id = Number(p.id);
+    if (!Number.isFinite(id)) continue;
+    const table = engagementTableFromPropertyRow(p);
+    const sk = `${id}\0${table}`;
+    if (seen.has(sk)) continue;
+    seen.add(sk);
+    orWhere.push(buildBidWhereForProperty(id, table));
+  }
+  if (orWhere.length === 0) return properties;
+
+  const bids = await prisma.bids.findMany({
+    where: { OR: orWhere },
+    select: { property_id: true, property_table: true, bid_amount: true },
+  });
+  const maxByPair = new Map();
+  for (const b of bids) {
+    const amount = Number(b.bid_amount);
+    if (!Number.isFinite(amount)) continue;
+    let tbl = b.property_table;
+    if (tbl == null || tbl === '') tbl = 'properties_apartments';
+    const key = `${b.property_id}\0${tbl}`;
+    const prev = maxByPair.get(key);
+    if (prev == null || amount > prev) maxByPair.set(key, amount);
+  }
+
+  return properties.map((p) => {
+    if (!isAuctionListingRow(p)) return p;
+    const id = Number(p.id);
+    const table = engagementTableFromPropertyRow(p);
+    const key = `${id}\0${table}`;
+    const maxBid = maxByPair.get(key);
+    const start =
+      p.auction_starting_price != null && p.auction_starting_price !== ''
+        ? Number(p.auction_starting_price)
+        : NaN;
+    const hasMax = maxBid != null && Number.isFinite(maxBid) && maxBid > 0;
+    const currentBid = hasMax
+      ? maxBid
+      : Number.isFinite(start) && start > 0
+        ? start
+        : null;
+    if (currentBid == null) return p;
+    return {
+      ...p,
+      current_bid: currentBid,
+      currentBid,
+    };
+  });
+}
+
+async function fetchEngagementCountsForProperty(prisma, propertyId, propertyTable) {
+  const bidWhere = buildBidWhereForProperty(propertyId, propertyTable);
   const [likes_count, bids_count] = await Promise.all([
     prisma.property_favorites.count({
       where: { property_id: pid, property_table: tbl },
@@ -404,11 +549,7 @@ async function notifyOwnerPropertyEngagement(prisma, propertyRow, propertyTableO
       propertyRow.is_auction === 'true';
     if (isAuc) {
       try {
-        const pid = Number(propertyRow.id);
-        const bidWhere =
-          tbl === 'properties_apartments'
-            ? { property_id: pid, OR: [{ property_table: tbl }, { property_table: null }] }
-            : { property_id: pid, property_table: tbl };
+        const bidWhere = buildBidWhereForProperty(propertyRow.id, tbl);
         const agg = await prisma.bids.aggregate({ where: bidWhere, _max: { bid_amount: true } });
         const maxBid = agg?._max?.bid_amount != null ? Number(agg._max.bid_amount) : null;
         const start =
@@ -9531,6 +9672,12 @@ app.get('/api/properties/auctions', async (req, res) => {
       });
     }
 
+    try {
+      formattedProperties = await enrichListingPropertiesWithMaxBids(prisma, formattedProperties);
+    } catch (bidEnrichErr) {
+      console.warn('GET /api/properties/auctions — max bids:', bidEnrichErr?.message || bidEnrichErr);
+    }
+
     const lang = req.query.lang && String(req.query.lang).trim().toLowerCase();
     if (lang && formattedProperties.length > 0) {
       try {
@@ -12108,31 +12255,10 @@ app.get('/api/properties/user/:userId', async (req, res) => {
       .map((p) => Number(p.id))
       .filter((id) => Number.isFinite(id));
 
-    if (auctionPropertyIds.length > 0) {
-      try {
-        const bidGroups = await prisma.bids.groupBy({
-          by: ['property_id'],
-          where: { property_id: { in: auctionPropertyIds } },
-          _max: { bid_amount: true },
-        });
-        const maxBidByPropertyId = new Map(
-          bidGroups.map((g) => [g.property_id, g._max.bid_amount != null ? Number(g._max.bid_amount) : null])
-        );
-        formattedProperties = formattedProperties.map((p) => {
-          if (!isAuctionRow(p)) return p;
-          const maxBid = maxBidByPropertyId.get(Number(p.id));
-          const start = p.auction_starting_price != null && p.auction_starting_price !== ''
-            ? Number(p.auction_starting_price)
-            : NaN;
-          const hasMaxBid = maxBid != null && Number.isFinite(maxBid) && maxBid > 0;
-          const currentBid = hasMaxBid
-            ? maxBid
-            : (Number.isFinite(start) && start > 0 ? start : null);
-          return { ...p, current_bid: currentBid };
-        });
-      } catch (bidAggErr) {
-        console.warn('GET /api/properties/user — агрегация ставок:', bidAggErr?.message || bidAggErr);
-      }
+    try {
+      formattedProperties = await enrichListingPropertiesWithMaxBids(prisma, formattedProperties);
+    } catch (bidAggErr) {
+      console.warn('GET /api/properties/user — агрегация ставок:', bidAggErr?.message || bidAggErr);
     }
 
     res.json({ success: true, data: formattedProperties });
@@ -13396,10 +13522,13 @@ app.get('/api/users/:id/deposit', async (req, res) => {
       return res.status(404).json({ success: false, error: 'Пользователь не найден' });
     }
     
+    const depositAmount = (user.deposit_amount !== undefined && user.deposit_amount !== null) ? parseFloat(user.deposit_amount) : 0;
     res.json({
       success: true,
       data: {
-        depositAmount: (user.deposit_amount !== undefined && user.deposit_amount !== null) ? parseFloat(user.deposit_amount) : 0,
+        depositAmount,
+        minAuctionDepositEur: AUCTION_DEPOSIT_MIN_EUR,
+        canParticipateInAuction: isAuctionDepositSufficient(depositAmount),
         hasCard: user.has_card === 1,
         cardType: user.card_type || null
       }
@@ -13491,6 +13620,17 @@ app.post('/api/users/:id/deposit/withdraw', async (req, res) => {
     }
     
     const newDeposit = currentDeposit - amount;
+    if (!isAuctionDepositSufficient(newDeposit)) {
+      const hasOpenAuctionBids = await userHasOpenAuctionParticipation(prisma, userId, schemaCache);
+      if (hasOpenAuctionBids) {
+        return res.status(400).json({
+          success: false,
+          code: 'WITHDRAW_BELOW_AUCTION_DEPOSIT',
+          error: `Нельзя вывести средства ниже ${AUCTION_DEPOSIT_MIN_EUR} €, пока у вас есть активные ставки на аукционе.`,
+        });
+      }
+    }
+
     await prisma.$transaction(async (tx) => {
       await tx.users.update({
         where: { id: Number(userId) },
@@ -13588,13 +13728,15 @@ app.get('/api/users/:id/analytics', async (req, res) => {
  */
 app.post('/api/bids', async (req, res) => {
   try {
-    const { user_id, property_id, bid_amount } = req.body;
+    const { user_id, property_id, bid_amount, property_table, property_type } = req.body;
     const prisma = getPrisma();
     
     console.log('📝 Создание ставки - полученные данные:', { 
       user_id, 
       property_id, 
       bid_amount,
+      property_table,
+      property_type,
       user_id_type: typeof user_id,
       property_id_type: typeof property_id,
       bid_amount_type: typeof bid_amount,
@@ -13665,20 +13807,25 @@ app.post('/api/bids', async (req, res) => {
     }
     console.log('✅ Пользователь найден:', { id: user.id, name: `${user.first_name} ${user.last_name}` });
     
-    let tableName = null;
-    const property = await propertyQueries.getById(propertyIdNum);
-    if (property) {
-      if (property.property_type === 'apartment' || property.property_type === 'commercial') tableName = 'properties_apartments';
-      else if (property.property_type === 'house' || property.property_type === 'villa') tableName = 'properties_houses';
-      else tableName = 'properties';
-    }
-    
+    const { property, tableName } = await loadPropertyForBid(propertyIdNum, {
+      property_table,
+      property_type,
+    });
+
     if (!property || !tableName) {
-      console.error(`❌ Объект недвижимости с ID ${propertyIdNum} не найден ни в одной таблице (properties_apartments, properties_houses, properties)`);
+      console.error(
+        `❌ Объект недвижимости с ID ${propertyIdNum} не найден (table=${property_table ?? 'auto'}, type=${property_type ?? 'auto'})`
+      );
       return res.status(404).json({ success: false, error: `Объект недвижимости с ID ${propertyIdNum} не найден` });
     }
-    
-    console.log('✅ Объект найден:', { id: property.id, title: property.title, is_auction: property.is_auction, table: tableName });
+
+    console.log('✅ Объект найден:', {
+      id: property.id,
+      title: property.title,
+      is_auction: property.is_auction,
+      table: tableName,
+      property_type: property.property_type,
+    });
     
     // Проверяем, что у пользователя есть депозит (только для аукционов)
     // Для обычных объектов депозит не требуется
@@ -13694,10 +13841,11 @@ app.post('/api/bids', async (req, res) => {
       }
       
       const depositAmount = (user.deposit_amount !== undefined && user.deposit_amount !== null) ? parseFloat(user.deposit_amount) : 0;
-      if (depositAmount <= 0) {
+      if (!isAuctionDepositSufficient(depositAmount)) {
         return res.status(400).json({ 
-          success: false, 
-          error: 'Для участия в аукционе необходим депозит. Пожалуйста, пополните депозит.' 
+          success: false,
+          code: 'INSUFFICIENT_AUCTION_DEPOSIT',
+          error: `Для участия в аукционе необходим депозит не менее ${AUCTION_DEPOSIT_MIN_EUR} €. Пожалуйста, пополните депозит.`,
         });
       }
 
@@ -13740,9 +13888,10 @@ app.post('/api/bids', async (req, res) => {
     const basePrice = property.is_auction === 1 
       ? (property.auction_starting_price || property.price || 0)
       : (property.price || 0);
+    const bidWhere = buildBidWhereForProperty(propertyIdNum, tableName);
     let currentMaxBid = basePrice;
     const maxBid = await prisma.bids.aggregate({
-      where: { property_id: propertyIdNum },
+      where: bidWhere,
       _max: { bid_amount: true },
     });
     if (maxBid?._max?.bid_amount) currentMaxBid = maxBid._max.bid_amount;
@@ -13768,7 +13917,7 @@ app.post('/api/bids', async (req, res) => {
     try {
       // Находим максимальную ставку среди всех ставок для этого объекта (ДО создания новой ставки)
       const maxBidResult = await prisma.bids.findFirst({
-        where: { property_id: propertyIdNum },
+        where: bidWhere,
         orderBy: [{ bid_amount: 'desc' }, { created_at: 'desc' }],
         select: { user_id: true, bid_amount: true },
       });
@@ -13807,99 +13956,9 @@ app.post('/api/bids', async (req, res) => {
     console.log(`✅ Ставка создана с ID: ${bidId}, user_id: ${user_id}, property_id: ${property_id}, amount: ${bidAmountNum}`);
     console.log(`📊 Результат INSERT: changes=${result.changes}, lastInsertRowid=${bidId}`);
     
-    // Отменяем таймер для объекта (появилась ставка)
     cancelPropertyTimer(propertyIdNum);
-    
-    // Сразу проверяем, что ставка сохранилась
-    const verifyBid = await prisma.bids.findUnique({ where: { id: bidId } });
-    if (!verifyBid) {
-      console.error(`❌ КРИТИЧЕСКАЯ ОШИБКА: Ставка не найдена в БД сразу после создания! ID: ${bidId}`);
-      return res.status(500).json({ 
-        success: false, 
-        error: 'Ставка не была сохранена в базу данных' 
-      });
-    }
-    
-    console.log(`✅ Ставка подтверждена в БД:`, verifyBid);
-    
-    // Отправляем уведомление предыдущему ставщику, если его ставку перебили
-    if (previousHighestBidder && previousHighestBidder.user_id !== userIdNum && bidAmountNum > previousHighestBidder.bid_amount) {
-      try {
-        const propertyTitle = property.title || 'объект';
-        const currency = property.currency || 'USD';
-        const formattedNewBid = new Intl.NumberFormat('ru-RU', {
-          style: 'currency',
-          currency: currency,
-          minimumFractionDigits: 0,
-          maximumFractionDigits: 0
-        }).format(bidAmountNum);
-        
-        const notificationData = {
-          user_id: previousHighestBidder.user_id,
-          type: 'bid_outbid',
-          title: 'Вашу ставку перебили',
-          message: `Ваша ставка на объект "${propertyTitle}" была перебита. Новая максимальная ставка: ${formattedNewBid}. Вы можете сделать новую ставку, чтобы вернуться в игру!`,
-          data: JSON.stringify({ 
-            property_id: propertyIdNum,
-            property_title: propertyTitle,
-            new_bid_amount: bidAmountNum,
-            previous_bid_amount: previousHighestBidder.bid_amount
-          }),
-          is_read: 0,
-          view_count: 0
-        };
-        
-        const notifResult = await notificationQueries.create(notificationData);
-        console.log(`📬 Уведомление отправлено предыдущему ставщику (user_id: ${previousHighestBidder.user_id}) о перебитой ставке. ID уведомления: ${notifResult.lastInsertRowid}`);
-        console.log(`📬 Данные уведомления:`, notificationData);
-      } catch (notifError) {
-        console.error('❌ Ошибка при отправке уведомления предыдущему ставщику:', notifError);
-        console.error('❌ Stack trace:', notifError.stack);
-        // Не прерываем выполнение, если уведомление не отправилось
-      }
-    } else {
-      if (!previousHighestBidder) {
-        console.log('📭 Предыдущего ставщика не найдено, уведомление не отправляется');
-      } else if (previousHighestBidder.user_id === userIdNum) {
-        console.log('📭 Текущий пользователь уже был лидером, уведомление не требуется');
-      } else if (bidAmountNum <= previousHighestBidder.bid_amount) {
-        console.log(`📭 Новая ставка (${bidAmountNum}) не больше предыдущей (${previousHighestBidder.bid_amount}), уведомление не отправляется`);
-      }
-    }
-    
-    // Проверяем общее количество ставок для этого объекта
-    const allBidsCount = await prisma.bids.count({ where: { property_id: propertyIdNum } });
-    const allBids = { count: allBidsCount };
-    console.log(`📊 Всего ставок для объекта ${property_id}: ${allBids.count}`);
-    
-    // Обновляем минимальную ставку для объекта
-    // Если ставка больше минимальной - обновляем минимальную на: наша ставка + 5%
-    const newMaxBid = bidAmountNum;
-    const newMinimumBid = newMaxBid + getAuctionMinBidStep(newMaxBid);
-    
-    // Обновляем только auction_minimum_bid, не трогая остальные поля объекта.
-    // Важно: propertyQueries.update ожидает полный payload и может обнулить данные при частичном апдейте.
-    try {
-      if (tableName === 'properties_apartments') {
-        await prisma.properties_apartments.update({
-          where: { id: propertyIdNum },
-          data: { auction_minimum_bid: newMinimumBid, updated_at: new Date().toISOString() },
-        });
-      } else if (tableName === 'properties_houses') {
-        await prisma.properties_houses.update({
-          where: { id: propertyIdNum },
-          data: { auction_minimum_bid: newMinimumBid, updated_at: new Date().toISOString() },
-        });
-      } else {
-        await prisma.properties.update({
-          where: { id: propertyIdNum },
-          data: { auction_minimum_bid: newMinimumBid, updated_at: new Date().toISOString() },
-        });
-      }
-      console.log(`✅ Обновлена минимальная ставка для объекта ${property_id}: ${newMinimumBid}`);
-    } catch (updateError) {
-      console.warn('Не удалось обновить auction_minimum_bid:', updateError.message);
-    }
+
+    const newMinimumBid = bidAmountNum + getAuctionMinBidStep(bidAmountNum);
 
     /** Тестовый круговой таймер: продлеваем на сервере сразу после ставки (как в POST /test-timer),
      * чтобы все клиенты получили новое время через SSE без задержки и гонки «ставка → отдельный POST». */
@@ -13940,30 +13999,9 @@ app.post('/api/bids', async (req, res) => {
           });
         }
         extendedTestTimer = { test_timer_end_date: iso, test_timer_duration: ttDur };
-        broadcastAuctionSseEvent({
-          type: 'test_timer_update',
-          property: {
-            id: propertyIdNum,
-            property_type: property.property_type ?? null,
-            test_timer_end_date: iso,
-            test_timer_duration: ttDur,
-          },
-        });
       }
     } catch (timerExtErr) {
       console.warn('⚠️ Продление тестового таймера после ставки не выполнено:', timerExtErr.message);
-    }
-
-    broadcastPropertyBidEvent(propertyIdNum, {
-      type: 'bid_placed',
-      property_id: propertyIdNum,
-      bid_amount: bidAmountNum,
-      minimum_bid: newMinimumBid,
-      ...(extendedTestTimer || {}),
-    });
-
-    if (property?.user_id) {
-      void notifyOwnerPropertyEngagement(prisma, property, tableName);
     }
 
     res.json({
@@ -13973,7 +14011,91 @@ app.post('/api/bids', async (req, res) => {
         bid_amount: parseFloat(bid_amount),
         minimum_bid: newMinimumBid,
         ...(extendedTestTimer ? extendedTestTimer : {}),
-      }
+      },
+    });
+
+    // Тяжёлые побочные эффекты — после ответа клиенту (быстрее «Отправка…» → успех).
+    setImmediate(() => {
+      void (async () => {
+        try {
+          if (
+            previousHighestBidder &&
+            previousHighestBidder.user_id !== userIdNum &&
+            bidAmountNum > previousHighestBidder.bid_amount
+          ) {
+            const propertyTitle = property.title || 'объект';
+            const currency = property.currency || 'USD';
+            const formattedNewBid = new Intl.NumberFormat('ru-RU', {
+              style: 'currency',
+              currency,
+              minimumFractionDigits: 0,
+              maximumFractionDigits: 0,
+            }).format(bidAmountNum);
+            await notificationQueries.create({
+              user_id: previousHighestBidder.user_id,
+              type: 'bid_outbid',
+              title: 'Вашу ставку перебили',
+              message: `Ваша ставка на объект "${propertyTitle}" была перебита. Новая максимальная ставка: ${formattedNewBid}. Вы можете сделать новую ставку, чтобы вернуться в игру!`,
+              data: JSON.stringify({
+                property_id: propertyIdNum,
+                property_title: propertyTitle,
+                new_bid_amount: bidAmountNum,
+                previous_bid_amount: previousHighestBidder.bid_amount,
+              }),
+              is_read: 0,
+              view_count: 0,
+            });
+          }
+        } catch (notifError) {
+          console.warn('Уведомление о перебитой ставке (фон):', notifError?.message || notifError);
+        }
+
+        try {
+          const updatedAt = new Date().toISOString();
+          if (tableName === 'properties_apartments') {
+            await prisma.properties_apartments.update({
+              where: { id: propertyIdNum },
+              data: { auction_minimum_bid: newMinimumBid, updated_at: updatedAt },
+            });
+          } else if (tableName === 'properties_houses') {
+            await prisma.properties_houses.update({
+              where: { id: propertyIdNum },
+              data: { auction_minimum_bid: newMinimumBid, updated_at: updatedAt },
+            });
+          } else {
+            await prisma.properties.update({
+              where: { id: propertyIdNum },
+              data: { auction_minimum_bid: newMinimumBid, updated_at: updatedAt },
+            });
+          }
+        } catch (updateError) {
+          console.warn('auction_minimum_bid (фон):', updateError.message);
+        }
+
+        if (extendedTestTimer) {
+          broadcastAuctionSseEvent({
+            type: 'test_timer_update',
+            property: {
+              id: propertyIdNum,
+              property_type: property.property_type ?? null,
+              test_timer_end_date: extendedTestTimer.test_timer_end_date,
+              test_timer_duration: extendedTestTimer.test_timer_duration,
+            },
+          });
+        }
+
+        broadcastPropertyBidEvent(propertyIdNum, {
+          type: 'bid_placed',
+          property_id: propertyIdNum,
+          bid_amount: bidAmountNum,
+          minimum_bid: newMinimumBid,
+          ...(extendedTestTimer || {}),
+        });
+
+        if (property?.user_id) {
+          void notifyOwnerPropertyEngagement(prisma, property, tableName);
+        }
+      })();
     });
   } catch (error) {
     console.error('❌ Ошибка при создании ставки:', error);
@@ -13986,24 +14108,54 @@ app.post('/api/bids', async (req, res) => {
 });
 
 /**
- * POST /api/bids/max-amounts — макс. ставка по каждому property_id (один запрос вместо N × GET /property/:id).
- * Body: { ids: number[] }
+ * POST /api/bids/max-amounts — макс. ставка по лотам.
+ * Body: { items: [{ id, property_table }] } — ключи ответа: "properties_apartments:5"
+ * Legacy: { ids: number[] } — только id (может смешать квартиру и дом с одним id).
  */
 app.post('/api/bids/max-amounts', async (req, res) => {
   try {
+    const prisma = getPrisma();
+    const rawItems = req.body?.items;
+    const data = {};
+
+    if (Array.isArray(rawItems) && rawItems.length > 0) {
+      const orWhere = [];
+      const seen = new Set();
+      for (const item of rawItems.slice(0, 400)) {
+        const id = Number(item?.id);
+        if (!Number.isFinite(id)) continue;
+        const table = normalizeBidPropertyTableQuery(item?.property_table) || 'properties_apartments';
+        const sk = `${table}:${id}`;
+        if (seen.has(sk)) continue;
+        seen.add(sk);
+        orWhere.push(buildBidWhereForProperty(id, table));
+      }
+      if (orWhere.length > 0) {
+        const bids = await prisma.bids.findMany({
+          where: { OR: orWhere },
+          select: { property_id: true, property_table: true, bid_amount: true },
+        });
+        for (const b of bids) {
+          const amount = Number(b.bid_amount);
+          if (!Number.isFinite(amount)) continue;
+          const ck = bidAmountCompositeKey(b.property_id, b.property_table);
+          if (data[ck] == null || amount > data[ck]) data[ck] = amount;
+        }
+      }
+      return res.json({ success: true, data });
+    }
+
     const raw = req.body?.ids;
     const ids = Array.isArray(raw) ? raw.map((x) => Number(x)).filter((n) => Number.isFinite(n)) : [];
     const unique = [...new Set(ids)].slice(0, 300);
     if (unique.length === 0) {
       return res.json({ success: true, data: {} });
     }
-    const prisma = getPrisma();
     const grouped = await prisma.bids.groupBy({
       by: ['property_id'],
       where: { property_id: { in: unique } },
       _max: { bid_amount: true },
     });
-    const data = {};
     for (const row of grouped) {
       const max = row._max.bid_amount;
       if (max != null && Number.isFinite(Number(max))) {
@@ -14024,11 +14176,36 @@ app.get('/api/bids/property/:id', async (req, res) => {
   try {
     const propertyId = req.params.id;
     const prisma = getPrisma();
-    
-    console.log(`📊 Запрос истории ставок для объекта ${propertyId}`);
-    
+    const pid = Number(propertyId);
+    let propertyTable = normalizeBidPropertyTableQuery(
+      req.query.property_table ?? req.query.table ?? req.query.source_table
+    );
+    if (!propertyTable) {
+      const ptRaw = req.query.property_type != null ? String(req.query.property_type).trim().toLowerCase() : '';
+      if (ptRaw === 'house' || ptRaw === 'villa') propertyTable = 'properties_houses';
+      else if (ptRaw === 'apartment' || ptRaw === 'commercial') propertyTable = 'properties_apartments';
+      else {
+        const [apt, house, legacy] = await Promise.all([
+          prisma.properties_apartments.findUnique({ where: { id: pid }, select: { id: true } }),
+          prisma.properties_houses.findUnique({ where: { id: pid }, select: { id: true } }),
+          prisma.properties.findUnique({ where: { id: pid }, select: { id: true } }),
+        ]);
+        const hits = [apt && 'properties_apartments', house && 'properties_houses', legacy && 'properties'].filter(Boolean);
+        if (hits.length === 1) propertyTable = hits[0];
+        else if (hits.length > 1) {
+          return res.status(400).json({
+            success: false,
+            error: 'Укажите property_table или property_type — id объекта неоднозначен',
+          });
+        } else propertyTable = 'properties_apartments';
+      }
+    }
+    const bidWhere = buildBidWhereForProperty(pid, propertyTable);
+
+    console.log(`📊 Запрос истории ставок для объекта ${propertyId} (${propertyTable})`);
+
     const bids = await prisma.bids.findMany({
-      where: { property_id: Number(propertyId) },
+      where: bidWhere,
       orderBy: [{ bid_amount: 'desc' }, { created_at: 'desc' }],
       include: { users: { select: { user_id_number: true, country: true } } },
     });
@@ -14193,13 +14370,37 @@ app.get('/api/bids/user/:id', async (req, res) => {
     }
     
     const formatProp = (property) => {
-      if (!property) return { title: null, location: null, price: null, auction_starting_price: null, auction_minimum_bid: null, photos: [], is_auction: 0, auction_end_date: null, currency: 'USD' };
+      if (!property) {
+        return {
+          title: null,
+          location: null,
+          price: null,
+          auction_starting_price: null,
+          auction_minimum_bid: null,
+          photos: [],
+          is_auction: 0,
+          auction_end_date: null,
+          test_timer_end_date: null,
+          test_timer_duration: null,
+          buy_now_winner_user_id: null,
+          buy_now_completed_at: null,
+          currency: 'USD',
+          area: null,
+          sqft: null,
+          bedrooms: null,
+          rooms: null,
+          bathrooms: null,
+        };
+      }
       let photos = property.photos;
       if (photos && typeof photos === 'string') {
         try { photos = JSON.parse(photos); } catch (_) { photos = []; }
       }
       if (!Array.isArray(photos)) photos = [];
       photos = normalizePhotosListInput(photos);
+      const area = property.area ?? property.living_area ?? property.sqft ?? null;
+      const bedrooms = property.bedrooms ?? property.rooms ?? null;
+      const bathrooms = property.bathrooms ?? property.baths ?? null;
       return {
         title: property.title || null,
         location: property.location || property.address || null,
@@ -14209,7 +14410,16 @@ app.get('/api/bids/user/:id', async (req, res) => {
         photos,
         is_auction: property.is_auction || 0,
         auction_end_date: property.auction_end_date || null,
-        currency: property.currency || 'USD'
+        test_timer_end_date: property.test_timer_end_date || null,
+        test_timer_duration: property.test_timer_duration ?? null,
+        buy_now_winner_user_id: property.buy_now_winner_user_id ?? null,
+        buy_now_completed_at: property.buy_now_completed_at || null,
+        currency: property.currency || 'USD',
+        area,
+        sqft: area,
+        bedrooms,
+        rooms: bedrooms,
+        bathrooms,
       };
     };
     
@@ -14233,6 +14443,10 @@ app.get('/api/bids/user/:id', async (req, res) => {
         photos: fp.photos,
         is_auction: fp.is_auction,
         auction_end_date: fp.auction_end_date,
+        test_timer_end_date: fp.test_timer_end_date,
+        test_timer_duration: fp.test_timer_duration,
+        buy_now_winner_user_id: fp.buy_now_winner_user_id,
+        buy_now_completed_at: fp.buy_now_completed_at,
         currency: fp.currency
       };
     });
@@ -14255,13 +14469,28 @@ app.get('/api/bids/user/:userId/property/:propertyId', async (req, res) => {
     
     console.log(`📊 Запрос истории ставок пользователя ${userId} по объекту ${propertyId}`);
     
+    const pid = Number(propertyId);
+    let propertyTable = normalizeBidPropertyTableQuery(
+      req.query.property_table ?? req.query.table ?? req.query.source_table
+    );
+    const pLegacy = await prisma.properties.findUnique({ where: { id: pid } });
+    const pApt = await prisma.properties_apartments.findUnique({ where: { id: pid } });
+    const pHouse = await prisma.properties_houses.findUnique({ where: { id: pid } });
+    if (!propertyTable) {
+      if (pApt) propertyTable = 'properties_apartments';
+      else if (pHouse) propertyTable = 'properties_houses';
+      else if (pLegacy) propertyTable = 'properties';
+      else propertyTable = 'properties_apartments';
+    }
+    const bidWhere = {
+      ...buildBidWhereForProperty(pid, propertyTable),
+      user_id: Number(userId),
+    };
     const bids = await prisma.bids.findMany({
-      where: { user_id: Number(userId), property_id: Number(propertyId) },
+      where: bidWhere,
       orderBy: { created_at: 'desc' },
     });
-    const pAny = (await prisma.properties.findUnique({ where: { id: Number(propertyId) } }))
-      || (await prisma.properties_apartments.findUnique({ where: { id: Number(propertyId) } }))
-      || (await prisma.properties_houses.findUnique({ where: { id: Number(propertyId) } }));
+    const pAny = pLegacy || pApt || pHouse;
     
     // Парсим JSON поля
     const formattedBids = bids.map(bid => {
@@ -15566,6 +15795,15 @@ if (process.env.NODE_ENV === 'production') {
         path: req.path,
         url: req.url
       });
+    }
+
+    // PDF/документы: не отдаём index.html (иначе HEAD/fetch видит text/html и условия «не открываются»)
+    if (/\.pdf$/i.test(req.path)) {
+      const docPath = join(distPath, req.path.replace(/^\//, ''));
+      if (fs.existsSync(docPath)) {
+        return res.sendFile(docPath);
+      }
+      return res.status(404).type('text/plain; charset=utf-8').send('Not found');
     }
     
     // Для всех остальных маршрутов отдаем index.html (SPA routing)

@@ -23,6 +23,8 @@ import { LayoutScrollRefContext } from './context/LayoutScrollContext'
 import { scrollMainTo } from './utils/mainScroll'
 import { lazyWithRetry } from './utils/lazyWithRetry'
 import RouteErrorBoundary from './components/RouteErrorBoundary'
+import SiteFooterNearObserver from './components/SiteFooterNearObserver'
+import ChatDockActiveBridge from './components/ChatDockActiveBridge'
 import MainPage from './pages/MainPage'
 import Home from './pages/Home'
 import SiteNotificationsProvider from './context/SiteNotificationsContext'
@@ -560,6 +562,8 @@ function App() {
       <ClerkAuthHandler />
       <GlassFilterDefs />
       <LayoutScrollRefContext.Provider value={appLayoutRef}>
+      <SiteFooterNearObserver />
+      <ChatDockActiveBridge />
       <AppLayoutFrame appLayoutRef={appLayoutRef} isBlocked={isBlocked}>
         <div className="app-layout__content">
           <RouteErrorBoundary>
