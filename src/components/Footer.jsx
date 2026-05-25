@@ -120,6 +120,7 @@ const Footer = () => {
   const desktopColumns = [
     [
       { to: '/', label: t('home') },
+      { to: '/news', label: t('news') },
       { to: '/sections', label: t('footerAllSections') },
       { to: '/private-club', label: t('privateClubPageTitle') },
       { to: '/auction', label: t('auction') },

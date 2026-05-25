@@ -1,51 +1,26 @@
 import { getApiBaseUrlSync } from '../utils/apiConfig'
 
-const AI_API_URL = "https://api.intelligence.io.solutions/api/v1/chat/completions";
-const AI_MODEL = "deepseek-ai/DeepSeek-V3.2";
-/** Запасной ключ из репозитория; провайдер может отозвать его — задайте ключ в .env или на сервере */
-const LEGACY_INTELLIGENCE_IO_API_KEY =
-  "io-v2-eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJvd25lciI6ImE5YzAwNjc4LTFjNzEtNDY5Ny1hY2NiLTliYTU0NTdhMWU4NSIsImV4cCI6NDkyMTI0NDg2NX0.E92VNc-ri_VH1bRLZfJ4seHnvr_hdL0vzgBbRC97WYDaENrvqU-jV1gYxqG128Tvyf8yfEczZ9hfpdKeZ2E0UA";
+/** Модель в теле запроса; на сервере подменяется на модель активного провайдера (Pollinations / OpenRouter / …). */
+const AI_MODEL = 'deepseek-ai/DeepSeek-V3.2'
 
-/** Убирает переносы/пробелы из ключа, префикс Bearer, лишние кавычки (частая ошибка в UI хостинга). */
-function normalizeIntelligenceIoKey(raw) {
-  if (raw == null) return ''
-  let s = String(raw).trim()
-  if ((s.startsWith('"') && s.endsWith('"')) || (s.startsWith("'") && s.endsWith("'"))) {
-    s = s.slice(1, -1).trim()
-  }
-  if (s.toLowerCase().startsWith('bearer ')) s = s.slice(7).trim()
-  s = s.replace(/\r\n/g, '').replace(/\n/g, '').replace(/\s/g, '')
-  return s
-}
-
-function getIntelligenceIoApiKey() {
-  const v = import.meta.env.VITE_INTELLIGENCE_IO_API_KEY
-  const trimmed = normalizeIntelligenceIoKey(v)
-  return trimmed || LEGACY_INTELLIGENCE_IO_API_KEY
-}
-
-/** В браузере запросы идут на POST /api/ai/intelligence-chat — ключ подставляет Node (runtime). */
-function useServerIntelligenceProxy() {
+/** В браузере запросы идут на POST /api/ai/intelligence-chat — ключ и провайдер на Node. */
+function useServerAiProxy() {
   return typeof window !== 'undefined'
 }
 
 function getChatCompletionsUrl() {
-  if (useServerIntelligenceProxy()) {
+  if (useServerAiProxy()) {
     return `${getApiBaseUrlSync()}/ai/intelligence-chat`
   }
-  return AI_API_URL
+  return `${getApiBaseUrlSync()}/ai/intelligence-chat`
 }
 
 function buildIntelligenceRequestHeaders() {
-  const h = { 'Content-Type': 'application/json' }
-  if (!useServerIntelligenceProxy()) {
-    h.Authorization = `Bearer ${getIntelligenceIoApiKey()}`
-  }
-  return h
+  return { 'Content-Type': 'application/json' }
 }
 
 function isIntelligenceProxyActive() {
-  return useServerIntelligenceProxy()
+  return useServerAiProxy()
 }
 
 async function postIntelligenceChat(payload, init = {}) {
@@ -363,9 +338,9 @@ ${JSON.stringify(userPreferences, null, 0)}
       console.error(`❌ API Error ${response.status}:`, errorText);
       
       if (response.status === 503) {
-        console.error('🔑 Intelligence.io: ключ не задан на сервере (прокси)')
+        console.error('🔑 AI: провайдер не настроен на сервере')
         return {
-          text: 'Ошибка: на сервере не задан ключ Intelligence.io. В переменных окружения Node укажите INTELLIGENCE_IO_API_KEY или VITE_INTELLIGENCE_IO_API_KEY и перезапустите сервер.',
+          text: 'Ошибка: AI на сервере не настроен. В .env укажите AI_PROVIDER=pollinations (без ключа) или OPENROUTER_API_KEY и перезапустите npm start.',
           buttons: null,
           needsMoreInfo: false,
           recommendations: null
@@ -376,8 +351,8 @@ ${JSON.stringify(userPreferences, null, 0)}
         console.error('🔑 Ошибка авторизации: API ключ недействителен или истек');
         return {
           text: isIntelligenceProxyActive()
-            ? 'Ошибка: ключ Intelligence.io отклонён провайдером или неверен. Проверьте значение INTELLIGENCE_IO_API_KEY / VITE_INTELLIGENCE_IO_API_KEY в переменных сервера (одна строка, без переносов и без слова Bearer), перезапустите сервер.'
-            : 'Ошибка: сервер AI отклонил ключ. Укажите актуальный ключ в VITE_INTELLIGENCE_IO_API_KEY (.env) и пересоберите фронт.',
+            ? 'Ошибка: ключ AI отклонён. Для тестов задайте AI_PROVIDER=pollinations в .env или получите ключ на openrouter.ai/keys (OPENROUTER_API_KEY). Перезапустите сервер.'
+            : 'Ошибка: сервер AI отклонил ключ. Проверьте OPENROUTER_API_KEY / GROQ_API_KEY в .env.',
           buttons: null,
           needsMoreInfo: false,
           recommendations: null

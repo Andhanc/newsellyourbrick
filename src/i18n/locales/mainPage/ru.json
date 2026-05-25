@@ -1909,6 +1909,7 @@
   "bonusesTaskUsage_many": "Можно использовать: {{count}} раз",
   "calcFinalValueYears_few": "Стоимость через {{count}} года",
   "calcFinalValueYears_many": "Стоимость через {{count}} лет",
+  "news": "Новости",
   "footerAllSections": "Все разделы",
   "sectionsNavTitle": "Разделы",
   "sectionsHeroScript": "Актуальное",

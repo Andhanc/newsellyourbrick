@@ -48,7 +48,7 @@ export default defineConfig(({ mode }) => {
     console.log('[VITE]      Service ID:', railwayEnv.REACT_APP_EMAILJS_SERVICE_ID || railwayEnv.VITE_EMAILJS_SERVICE_ID ? '✅ установлен' : '❌ не установлен');
     console.log('[VITE]      Template ID:', railwayEnv.REACT_APP_EMAILJS_TEMPLATE_ID || railwayEnv.VITE_EMAILJS_TEMPLATE_ID ? '✅ установлен' : '❌ не установлен');
     console.log('[VITE]      Public Key:', railwayEnv.REACT_APP_EMAILJS_PUBLIC_KEY || railwayEnv.VITE_EMAILJS_PUBLIC_KEY ? '✅ установлен' : '❌ не установлен');
-    console.log('[VITE]    VITE_INTELLIGENCE_IO_API_KEY (умный помощник / AI):', railwayEnv.VITE_INTELLIGENCE_IO_API_KEY ? '✅ установлен' : '❌ не установлен — используется запасной ключ из кода');
+    console.log('[VITE]    AI на сервере (AI_PROVIDER / OPENROUTER / Pollinations):', process.env.AI_PROVIDER || railwayEnv.AI_PROVIDER || 'pollinations по умолчанию на Node');
   }
   
   // ============================================================
@@ -264,6 +264,10 @@ export default defineConfig(({ mode }) => {
       hmr: actualMode === 'production' ? false : {
         clientPort: vitePort, // Для HMR в development
         overlay: false // Отключаем overlay для избежания ошибок esbuild на Railway
+      },
+      // JSON новостей и счётчики просмотров — не триггерить full reload при открытии статьи
+      watch: {
+        ignored: ['**/server/data/**'],
       },
       proxy: devProxy,
     },

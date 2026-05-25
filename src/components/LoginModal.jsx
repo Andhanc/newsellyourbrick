@@ -13,6 +13,7 @@ import { getApiBaseUrl } from '../utils/apiConfig'
 import { getClerkOAuthReturnUrl } from '../utils/clerkOAuth'
 import { showNotification } from '../utils/toastHelper'
 import { shouldDefaultLoginModalToLogin } from '../utils/visitorAuthDefault'
+import { marketerLogin } from '../services/newsApi'
 import AnimatedCharacters from './AnimatedCharacters'
 import './LoginModal.css'
 
@@ -259,6 +260,21 @@ const LoginModal = ({ isOpen, onClose, authEntryVariant = 'header_wizard' }) => 
         onClose()
         navigate('/profile')
         return
+      }
+
+      // Панель маркетолога (логин в поле Email — manager / manager)
+      if (formData.email.trim().toLowerCase() === 'manager') {
+        try {
+          await marketerLogin('manager', formData.password)
+          setIsLoading(false)
+          onClose()
+          navigate('/marketer')
+          return
+        } catch (err) {
+          setError(err?.message || 'Неверный логин или пароль')
+          setIsLoading(false)
+          return
+        }
       }
       
       // Обычный вход с email/username и паролем
