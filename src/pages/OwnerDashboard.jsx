@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { flushSync } from 'react-dom'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useClerk, useUser } from '@clerk/clerk-react'
 import { 
   FiHome, 
@@ -174,6 +174,7 @@ const mockOwnerProperties = [
 const OwnerDashboard = () => {
   const { t, i18n } = useTranslation()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const { signOut } = useClerk()
   const { user: clerkUser } = useUser()
   const [properties, setProperties] = useState([])
@@ -247,6 +248,27 @@ const OwnerDashboard = () => {
       document.body.style.overflow = prev
     }
   }, [ownerNotifOpen])
+
+  useEffect(() => {
+    if (searchParams.get('panel') !== 'profile') return
+    const highlight = searchParams.get('highlight')
+    setIsProfilePanelOpen(true)
+    const next = new URLSearchParams(searchParams)
+    next.delete('panel')
+    next.delete('highlight')
+    const qs = next.toString()
+    navigate({ pathname: '/owner', search: qs ? `?${qs}` : '' }, { replace: true })
+    if (highlight) {
+      window.setTimeout(() => {
+        const el = document.getElementById(`owner-profile-field-${highlight}`)
+        if (!el) return
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        el.classList.add('owner-profile-section--focus-hint')
+        window.setTimeout(() => el.classList.remove('owner-profile-section--focus-hint'), 2200)
+        el.querySelector('input, textarea, button')?.focus?.({ preventScroll: true })
+      }, 600)
+    }
+  }, [searchParams, navigate])
 
   useEffect(() => {
     // Проверяем, авторизован ли владелец
@@ -2777,7 +2799,7 @@ const OwnerDashboard = () => {
                   </div>
                 </div>
 
-                <div className="owner-profile-section">
+                <div className="owner-profile-section" id="owner-profile-field-firstName">
                   <h4 className="owner-profile-section__title">{t('ownerProfileFirstName')}</h4>
                   <input
                     type="text"
@@ -2788,7 +2810,7 @@ const OwnerDashboard = () => {
                     disabled={!isProfileEditing}
                   />
                 </div>
-                <div className="owner-profile-section">
+                <div className="owner-profile-section" id="owner-profile-field-lastName">
                   <h4 className="owner-profile-section__title">{t('ownerProfileLastName')}</h4>
                   <input
                     type="text"
@@ -2799,7 +2821,7 @@ const OwnerDashboard = () => {
                     disabled={!isProfileEditing}
                   />
                 </div>
-                <div className="owner-profile-section">
+                <div className="owner-profile-section" id="owner-profile-field-country">
                   <h4 className="owner-profile-section__title">{t('ownerProfileCountry')}</h4>
                   {isProfileEditing ? (
                     <CountrySelect
@@ -2844,7 +2866,7 @@ const OwnerDashboard = () => {
                   <p className="owner-profile-section__value">{t('ownerProfileSubscriptionBasic')}</p>
                   <button className="owner-profile-section__button">{t('ownerProfileChangeSubscription')}</button>
                 </div>
-                <div className="owner-profile-section">
+                <div className="owner-profile-section" id="owner-profile-field-emailOrPhone">
                   <h4 className="owner-profile-section__title">{t('ownerProfileEmail')}</h4>
                   <input
                     type="email"

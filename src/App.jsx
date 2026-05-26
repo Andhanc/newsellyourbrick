@@ -31,6 +31,7 @@ import SiteNotificationsProvider from './context/SiteNotificationsContext'
 import DebtsPage from './pages/Debts'
 import SearchResults from './pages/SearchResults'
 import PropertyDetailPage from './pages/PropertyDetailPage'
+import CabinetDataRedirect from './components/CabinetDataRedirect'
 
 // Ленивая загрузка страниц — чанк грузится только при переходе на маршрут
 const TestDriveBookingPage = lazyWithRetry(() => import('./pages/TestDriveBookingPage'))
@@ -40,7 +41,6 @@ const TestDriveExitFeedbackPage = lazyWithRetry(() => import('./pages/TestDriveE
 const MapPage = lazyWithRetry(() => import('./pages/MapPage'))
 const MyBookingsPage = lazyWithRetry(() => import('./pages/MyBookingsPage'))
 const Profile = lazyWithRetry(() => import('./pages/Profile'))
-const Data = lazyWithRetry(() => import('./pages/Data'))
 const Subscriptions = lazyWithRetry(() => import('./pages/Subscriptions'))
 const History = lazyWithRetry(() => import('./pages/History'))
 const Chat = lazyWithRetry(() => import('./pages/Chat'))
@@ -61,6 +61,7 @@ const SectionsPage = lazyWithRetry(() => import('./pages/SectionsPage'))
 const InvestmentCalculator = lazyWithRetry(() => import('./pages/InvestmentCalculator'))
 const JetonPage = lazyWithRetry(() => import('./pages/JetonPage'))
 const TestPage = lazyWithRetry(() => import('./pages/TestPage'))
+const CabinetProfileRoute = lazyWithRetry(() => import('./components/CabinetProfileRoute'))
 const BlockedUserModal = lazyWithRetry(() => import('./components/BlockedUserModal'))
 const LazyOAuthBridgePage = lazyWithRetry(() => import('./pages/OAuthBridgePage'))
 const LazyFooter = lazyWithRetry(() => import('./components/Footer'))
@@ -628,7 +629,7 @@ function App() {
                 path="/profile"
                 element={
                   <LazyPage>
-                    <TestPage />
+                    <CabinetProfileRoute />
                   </LazyPage>
                 }
               />
@@ -656,14 +657,7 @@ function App() {
                   </LazyPage>
                 }
               />
-              <Route
-                path="/data"
-                element={
-                  <LazyPage>
-                    <Data />
-                  </LazyPage>
-                }
-              />
+              <Route path="/data" element={<CabinetDataRedirect />} />
               <Route
                 path="/subscriptions"
                 element={

@@ -8,6 +8,7 @@ import { scrollMainTo } from '@/utils/mainScroll'
 import { isSiteUserSignedIn } from '@/utils/siteAuthGate'
 import { requestOpenLoginModal } from '@/utils/requestOpenLoginModal'
 import { navigateToWallet } from '@/utils/walletNavigation'
+import { getCabinetDataPath, getCabinetProfilePath } from '@/utils/cabinetRoutes'
 import LeadGenCta from '@/components/LeadGenCta'
 import './MainPage.css'
 import './SectionsPage.css'
@@ -133,7 +134,9 @@ export default function SectionsPage() {
         navigateToWallet(navigate, location.pathname)
         return
       }
-      const p = item.path.startsWith('/') ? item.path : `/${item.path}`
+      let p = item.path.startsWith('/') ? item.path : `/${item.path}`
+      if (item.titleKey === 'profile') p = getCabinetProfilePath()
+      if (item.titleKey === 'data') p = getCabinetDataPath()
       navigate(p)
     },
     [location.pathname, navigate, signedIn],

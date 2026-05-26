@@ -40,6 +40,10 @@ const PropertyListingCard = ({
   bidInfoAmount = null,
   /** Категория мок-объекта для избранного (страница «Понравилось» и т.п.) */
   favoriteMockCategory,
+  /** Кнопка/иконка в правом верхнем углу фото (например, история ставок на депозите) */
+  imageTopRightAction = null,
+  /** Действие в подвале рядом с полоской ставки (кнопка «К объекту» на депозите) */
+  footerAction = null,
 }) => {
   const { t } = useTranslation()
   const { isFavorite, toggleFavorite } = usePropertyFavorites()
@@ -293,6 +297,21 @@ const PropertyListingCard = ({
               </svg>
             </button>
           ) : null}
+          {imageTopRightAction ? (
+            <button
+              type="button"
+              className="property-image-corner-action"
+              aria-label={imageTopRightAction.ariaLabel}
+              title={imageTopRightAction.ariaLabel}
+              onClick={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                imageTopRightAction.onClick?.(e)
+              }}
+            >
+              {imageTopRightAction.icon}
+            </button>
+          ) : null}
         </div>
         <div className="property-content">
           {pinFooter ? (
@@ -386,15 +405,34 @@ const PropertyListingCard = ({
             )}
 
             {showAuctionBidFooter ? (
-              <div className="property-bid-info">
-                <span className="bid-label">{bidInfoLabel ?? t('currentBid')}</span>
-                <span className="bid-value">
-                  {formatPrice(
-                    bidInfoAmount != null ? bidInfoAmount : resolveAuctionCurrentBidValue(property),
-                    property.currency,
-                  )}
-                </span>
-              </div>
+              footerAction ? (
+                <div className="property-wallet-footer-row">
+                  <div className="property-bid-info">
+                    <span className="bid-label">{bidInfoLabel ?? t('currentBid')}</span>
+                    <span className="bid-value">
+                      {formatPrice(
+                        bidInfoAmount != null
+                          ? bidInfoAmount
+                          : resolveAuctionCurrentBidValue(property),
+                        property.currency,
+                      )}
+                    </span>
+                  </div>
+                  {footerAction}
+                </div>
+              ) : (
+                <div className="property-bid-info">
+                  <span className="bid-label">{bidInfoLabel ?? t('currentBid')}</span>
+                  <span className="bid-value">
+                    {formatPrice(
+                      bidInfoAmount != null
+                        ? bidInfoAmount
+                        : resolveAuctionCurrentBidValue(property),
+                      property.currency,
+                    )}
+                  </span>
+                </div>
+              )
             ) : (
               <>
                 <div className="property-price">

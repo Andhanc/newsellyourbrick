@@ -21,6 +21,7 @@ import {
 import { FrostedGlassCard } from '../components/ui/interactive-frosted-glass-card'
 import WarpShaderBackground from '../components/ui/warp-shader-background'
 import { getUserData, getStoredNumericUserId, logout } from '../services/authService'
+import { getCabinetDataPath, getCabinetProfilePath } from '../utils/cabinetRoutes'
 import { fetchUserById } from '../utils/usersApi'
 import { formatBillingReasonForUi } from '../utils/formatBillingReason'
 
@@ -271,10 +272,13 @@ export default function BuyerCabinetTestPage() {
     return { idDisplay, roleLabel }
   }, [userId, t, dbUserFields])
 
+  const cabinetDataPath = getCabinetDataPath()
+  const cabinetProfilePath = getCabinetProfilePath()
+
   const goBack = () => {
     const idx = window.history.state?.idx
     if (typeof idx === 'number' && idx > 0) navigate(-1)
-    else navigate('/profile')
+    else navigate(cabinetProfilePath)
   }
 
   const handleLogout = async () => {
@@ -388,7 +392,7 @@ export default function BuyerCabinetTestPage() {
               aria-hidden={!servicesMenuOpen}
             >
               <div className="bwt-actions bwt-actions--tiles bwt-actions--tiles-dock">
-                <Link to="/data" className="bwt-action bwt-action--tile" onClick={() => setServicesMenuOpen(false)}>
+                <Link to={cabinetDataPath} className="bwt-action bwt-action--tile" onClick={() => setServicesMenuOpen(false)}>
                   <span className="bwt-action-tile">
                     <span className="bwt-action-tile__icon" aria-hidden>
                       <IconNavData />
@@ -673,7 +677,7 @@ export default function BuyerCabinetTestPage() {
             <span className="bwt-legal-links__title">{t('buyerWalletTest_policyAgreement')}</span>
             <ArrowRight size={18} strokeWidth={2} aria-hidden className="bwt-legal-links__arrow" />
           </Link>
-          <Link to="/data" className="bwt-legal-links__card">
+          <Link to={cabinetDataPath} className="bwt-legal-links__card">
             <BookOpen size={22} strokeWidth={2} aria-hidden className="bwt-legal-links__icon" />
             <span className="bwt-legal-links__title">{t('buyerWalletTest_buyerDocumentation')}</span>
             <ArrowRight size={18} strokeWidth={2} aria-hidden className="bwt-legal-links__arrow" />

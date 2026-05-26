@@ -2309,6 +2309,21 @@
   padding-bottom: 0;
 }
 
+.owner-profile-section--focus-hint {
+  border-radius: 12px;
+  box-shadow: 0 0 0 3px rgba(10, 186, 181, 0.35);
+  animation: owner-profile-section-focus 1.8s ease-out;
+}
+
+@keyframes owner-profile-section-focus {
+  0% {
+    box-shadow: 0 0 0 0 rgba(10, 186, 181, 0.55);
+  }
+  100% {
+    box-shadow: 0 0 0 3px rgba(10, 186, 181, 0.35);
+  }
+}
+
 .owner-profile-section__title {
   font-size: 14px;
   font-weight: 600;

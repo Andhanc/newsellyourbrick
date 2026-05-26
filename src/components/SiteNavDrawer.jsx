@@ -2,6 +2,13 @@ import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { FiX } from 'react-icons/fi'
 import { useLocation, useNavigate } from 'react-router-dom'
+import {
+  getCabinetDataPath,
+  getCabinetProfilePath,
+  isCabinetDataPath,
+  isCabinetProfilePath,
+  isSellerCabinetRole,
+} from '../utils/cabinetRoutes'
 
 /**
  * Бургер-панель навигации (как на /auction). Для highlight «умный помощник» передайте
@@ -22,6 +29,8 @@ export function useSiteDrawerMenuActive(isManagerChatOpen, aiConsultantOpen) {
       isAiChatRoute ||
       ((pathname === '/auction' || pathname === '/' || pathname === '/main') && aiConsultantOpen)
 
+    const sellerCabinet = isSellerCabinetRole()
+
     return {
       home: pathname === '/',
       auction: starts('/auction') || pathname === '/main',
@@ -34,10 +43,10 @@ export function useSiteDrawerMenuActive(isManagerChatOpen, aiConsultantOpen) {
       calculator: starts('/calculator'),
       aiAssistant: aiAssistantHighlighted,
       moreSections: starts('/sections'),
-      profile: starts('/profile'),
+      profile: isCabinetProfilePath(pathname),
       wallet: pathname === '/deposit' || pathname === '/wallet',
       subscriptions: starts('/subscriptions'),
-      data: starts('/data'),
+      data: isCabinetDataPath(pathname, search),
     }
   }, [pathname, search, isManagerChatOpen, aiConsultantOpen])
 }
@@ -235,7 +244,7 @@ export default function SiteNavDrawer({
                       type="button"
                       className={`menu-dropdown__item${drawerMenuActive.profile ? ' menu-dropdown__item--active' : ''}`}
                       aria-current={drawerMenuActive.profile ? 'page' : undefined}
-                      onClick={() => openLoginOrNavigate('/profile', true)}
+                      onClick={() => openLoginOrNavigate(getCabinetProfilePath(), true)}
                     >
                       <span>{t('profile')}</span>
                     </button>
@@ -263,7 +272,7 @@ export default function SiteNavDrawer({
                       className={`menu-dropdown__item${drawerMenuActive.data ? ' menu-dropdown__item--active' : ''}`}
                       aria-current={drawerMenuActive.data ? 'page' : undefined}
                       onClick={() => {
-                        navigate('/data')
+                        navigate(getCabinetDataPath())
                         closeAfterNav()
                       }}
                     >

@@ -686,6 +686,9 @@ const WalletInner = () => {
           <div className="wallet-background__gradient"></div>
           <div className="wallet-background__pattern"></div>
         </div>
+        {location.pathname === '/deposit' ? (
+          <div className="wallet-page__footer-blend" aria-hidden />
+        ) : null}
         <div className="wallet-container">
           <div style={{ 
             textAlign: 'center', 
@@ -733,6 +736,9 @@ const WalletInner = () => {
         <div className="wallet-background__gradient"></div>
         <div className="wallet-background__pattern"></div>
       </div>
+      {location.pathname === '/deposit' ? (
+        <div className="wallet-page__footer-blend" aria-hidden />
+      ) : null}
 
       <div className="wallet-container">
         {/* Заголовок */}
@@ -903,31 +909,29 @@ const WalletInner = () => {
                       pinFooter
                       bidInfoLabel={t('walletPage_yourBidLabel')}
                       bidInfoAmount={bid.bid_amount}
-                    />
-                    <div className="wallet-bid-object__actions">
-                      <button
-                        type="button"
-                        className="wallet-bid-object__btn wallet-bid-object__btn--secondary"
-                        onClick={() => {
+                      imageTopRightAction={{
+                        ariaLabel: t('walletPage_history'),
+                        icon: <FiClock size={18} aria-hidden />,
+                        onClick: () => {
                           setBidForHistory(bid)
                           setShowBidHistory(true)
-                        }}
-                      >
-                        <FiClock size={16} aria-hidden />
-                        {t('walletPage_history')}
-                      </button>
-                      <Link
-                        to={getPropertyDetailPath(bid.property_id, { property: listingProperty })}
-                        className="wallet-bid-object__btn wallet-bid-object__btn--primary"
-                        onClick={(e) => {
-                          if (!ensureCanOpenProperty()) {
-                            e.preventDefault()
-                          }
-                        }}
-                      >
-                        {t('walletPage_goToProperty')}
-                      </Link>
-                    </div>
+                        },
+                      }}
+                      footerAction={
+                        <Link
+                          to={getPropertyDetailPath(bid.property_id, { property: listingProperty })}
+                          className="wallet-bid-object__btn wallet-bid-object__btn--primary"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            if (!ensureCanOpenProperty()) {
+                              e.preventDefault()
+                            }
+                          }}
+                        >
+                          {t('walletPage_goToProperty')}
+                        </Link>
+                      }
+                    />
                   </div>
                 )
               })}

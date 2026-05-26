@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { FiAlertCircle, FiCheck, FiX, FiChevronDown, FiChevronUp, FiChevronRight, FiFile, FiUser, FiMail, FiMapPin, FiCreditCard } from 'react-icons/fi';
-import { fetchVerificationStatus } from '../utils/verificationStatusApi';
+import { getCabinetDataFieldPath } from '../utils/cabinetRoutes';
 import './VerificationToast.css';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
@@ -45,7 +45,7 @@ const VerificationToast = ({ userId }) => {
   const [successDismissed, setSuccessDismissed] = useState(false);
 
   const handleFieldClick = (field) => {
-    navigate(`/data?highlight=${field}`);
+    navigate(getCabinetDataFieldPath(field));
   };
 
   const successAlreadyShown = () => {

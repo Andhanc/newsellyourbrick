@@ -19,7 +19,7 @@ import { fetchUserById } from '../utils/usersApi'
 import '../pages/MainPage.css'
 import { NotificationsBell } from '../context/SiteNotificationsContext'
 import { MenuToggleIcon } from '@/components/ui/menu-toggle-icon'
-import { UI_LANGUAGES } from '../constants/uiLanguages'
+import { getCabinetDataPath, getCabinetProfilePath, isSellerCabinetRole } from '../utils/cabinetRoutes'
 import SiteNavDrawer from './SiteNavDrawer'
 import { setSiteNavDrawerOpen } from '../utils/siteNavDrawerDocumentFlag'
 
@@ -337,6 +337,9 @@ const Header = () => {
   }
 
   // Определение страниц для поиска
+  const cabinetProfilePath = getCabinetProfilePath()
+  const cabinetDataPath = getCabinetDataPath()
+  const sellerCabinet = isSellerCabinetRole()
   const searchablePages = [
     { path: '/', keywords: ['главная', 'home', 'начало', 'старт'], titleKey: 'home', requiresAuth: false, allowedRoles: ['buyer', 'seller', 'owner', 'admin', 'client'] },
     {
@@ -350,7 +353,7 @@ const Header = () => {
     { path: '/map', keywords: ['карта', 'map', 'карты', 'локация', 'место'], titleKey: 'mapLink', requiresAuth: true, allowedRoles: ['buyer', 'seller', 'owner', 'admin', 'client'] },
     { path: '/calculator', keywords: ['калькулятор', 'calculator', 'доходность', 'рендита', 'profitability', 'доход', 'инвестиции'], titleKey: 'calculator', requiresAuth: false, allowedRoles: ['buyer', 'seller', 'owner', 'admin', 'client'] },
     { path: '/chat?manager=1', keywords: ['чат', 'chat', 'сообщения', 'messages', 'переписка'], titleKey: 'chat', requiresAuth: true, allowedRoles: ['buyer', 'seller', 'owner', 'admin', 'client'] },
-    { path: '/profile', keywords: ['профиль', 'profile', 'аккаунт', 'личный кабинет', 'настройки', 'settings'], titleKey: 'profile', requiresAuth: true, allowedRoles: ['buyer', 'client', 'admin'] },
+    { path: cabinetProfilePath, keywords: ['профиль', 'profile', 'аккаунт', 'личный кабинет', 'настройки', 'settings'], titleKey: 'profile', requiresAuth: true, allowedRoles: sellerCabinet ? ['seller', 'owner', 'admin'] : ['buyer', 'client', 'admin'] },
     { path: '/favorites', keywords: ['избранное', 'favorites', 'избранные', 'закладки', 'bookmarks'], titleKey: 'favorites', requiresAuth: true, allowedRoles: ['buyer', 'client', 'admin'] },
     {
       path: '/deposit',
@@ -359,7 +362,7 @@ const Header = () => {
       requiresAuth: true,
       allowedRoles: ['buyer', 'client', 'admin'],
     },
-    { path: '/data', keywords: ['данные', 'data', 'информация', 'information', 'персональные данные'], titleKey: 'data', requiresAuth: true, allowedRoles: ['buyer', 'client', 'admin'] },
+    { path: cabinetDataPath, keywords: ['данные', 'data', 'информация', 'information', 'персональные данные'], titleKey: 'data', requiresAuth: true, allowedRoles: sellerCabinet ? ['seller', 'owner', 'admin'] : ['buyer', 'client', 'admin'] },
     { path: '/subscriptions', keywords: ['подписки', 'subscriptions', 'подписка', 'subscription', 'тарифы', 'tariffs'], titleKey: 'subscriptions', requiresAuth: true, allowedRoles: ['buyer', 'client', 'admin'] },
     { path: '/history', keywords: ['история', 'history', 'история покупок', 'покупки', 'purchases'], titleKey: 'history', requiresAuth: true, allowedRoles: ['buyer', 'client', 'admin'] },
     { path: '/bonuses', keywords: ['бонусы', 'bonuses', 'промокод', 'промокоды', 'задания'], titleKey: 'bonuses', requiresAuth: true, allowedRoles: ['buyer', 'client', 'admin'] },
@@ -850,13 +853,13 @@ const Header = () => {
 
                     // Переходим в профиль, если Clerk привязан к записи в нашей БД
                     if (userLoaded && user && localHasDbUser) {
-                      navigate('/profile')
+                      navigate(getCabinetProfilePath())
                       return
                     }
 
                     // Локальная сессия (email, Telegram, WhatsApp и т.д.) — как на главной (MainPage), без Clerk
                     if (userData.isLoggedIn) {
-                      navigate('/profile')
+                      navigate(getCabinetProfilePath())
                       return
                     }
 

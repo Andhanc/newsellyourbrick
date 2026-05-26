@@ -20,18 +20,10 @@
   pointer-events: none;
 }
 
-.service-quick-links-tour__arrow-svg {
-  position: fixed;
-  inset: 0;
-  z-index: 2147483200;
-  pointer-events: none;
-  overflow: visible;
-}
-
-.service-quick-links-tour__arrow-stroke {
-  stroke: rgba(255, 255, 255, 0.93);
-  stroke-width: 3.25;
-  filter: drop-shadow(0 1px 1.5px rgba(0, 0, 0, 0.22));
+.service-quick-links-tour__ring {
+  stroke: rgba(10, 186, 181, 0.95);
+  stroke-width: 2.5;
+  filter: drop-shadow(0 0 6px rgba(10, 186, 181, 0.35));
 }
 
 .service-quick-links-tour__panel {

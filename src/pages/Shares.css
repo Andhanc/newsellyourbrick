@@ -5,6 +5,7 @@
   flex-direction: column;
   background: #f1f5f9;
   position: relative;
+  padding-bottom: 16px;
 }
 
 /* Доли/Долги: плавающие плашки AI и Депозит как на аукционе */
@@ -101,7 +102,7 @@
 }
 
 .shares-page__bg {
-  position: fixed;
+  position: absolute;
   inset: 0;
   background:
     radial-gradient(ellipse 100% 70% at 50% -10%, rgba(10, 186, 181, 0.12) 0%, transparent 45%),

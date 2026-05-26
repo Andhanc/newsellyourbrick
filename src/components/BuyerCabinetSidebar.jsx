@@ -1,6 +1,12 @@
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { getInterfaceLanguageNativeName } from '../utils/interfaceLanguages'
+import {
+  getCabinetDataPath,
+  getCabinetProfilePath,
+  isCabinetDataPath,
+  isCabinetProfilePath,
+} from '../utils/cabinetRoutes'
 
 const headerBtnStyle = {
   display: 'flex',
@@ -35,8 +41,10 @@ export default function BuyerCabinetSidebar({
 }) {
   const { t, i18n } = useTranslation()
   const navigate = useNavigate()
-  const { pathname } = useLocation()
+  const { pathname, search } = useLocation()
   const langName = getInterfaceLanguageNativeName(i18n.language)
+  const profilePath = getCabinetProfilePath()
+  const dataPath = getCabinetDataPath()
 
   const goBackFromCabinet = () => {
     // React Router (History API) кладёт в state.idx индекс записи; на первой странице сессии idx === 0
@@ -111,7 +119,10 @@ export default function BuyerCabinetSidebar({
         </button>
       </div>
       <nav className="sidebar-nav">
-        <Link to="/profile" className={navClass('/profile')}>
+        <Link
+          to={profilePath}
+          className={isCabinetProfilePath(pathname) ? 'nav-item active' : 'nav-item'}
+        >
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden>
             <path
               d="M10 10C12.7614 10 15 7.76142 15 5C15 2.23858 12.7614 0 10 0C7.23858 0 5 2.23858 5 5C5 7.76142 7.23858 10 10 10Z"
@@ -125,7 +136,10 @@ export default function BuyerCabinetSidebar({
           <span>{t('profile')}</span>
           {showProfileIndicator ? <span className="nav-item-indicator" /> : null}
         </Link>
-        <Link to="/data" className={navClass('/data')}>
+        <Link
+          to={dataPath}
+          className={isCabinetDataPath(pathname, search) ? 'nav-item active' : 'nav-item'}
+        >
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden>
             <rect x="2" y="4" width="16" height="12" rx="2" stroke="currentColor" strokeWidth="1.5" />
             <path d="M6 8H14M6 12H12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />

@@ -12,6 +12,7 @@ import { scrollMainTo } from '../utils/mainScroll'
 import { navigateToWallet } from '../utils/walletNavigation'
 import { isSiteUserSignedIn, routeRequiresSiteLogin } from '../utils/siteAuthGate'
 import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
+import { getCabinetDataPath, getCabinetProfilePath } from '../utils/cabinetRoutes'
 import { UI_LANGUAGES } from '../constants/uiLanguages'
 import { getUserData, logout } from '../services/authService'
 
@@ -79,6 +80,8 @@ const Footer = () => {
 
   const roleRaw = String(localStorage.getItem('userRole') || getUserData()?.role || '').toLowerCase()
   const isBuyerSignedIn = isSiteUserSignedIn(user, userLoaded) && roleRaw === 'buyer'
+  const cabinetProfilePath = getCabinetProfilePath()
+  const cabinetDataPath = getCabinetDataPath()
 
   const handleBecomeSellerRegister = useCallback(async () => {
     scrollToTop()
@@ -142,15 +145,15 @@ const Footer = () => {
     ],
     [
       { onClick: goWallet, label: t('wallet') },
-      { to: '/profile', label: t('profile') },
+      { to: cabinetProfilePath, label: t('profile') },
       { to: '/test', label: 'Тест' },
       { to: '/about#about-intro', label: t('footerForInvestors') },
       { to: '/about#about-intro', label: t('footerOurTeam') },
     ],
     [
       { to: '/subscriptions#subscriptions-pricing-section', label: t('tariffs') },
-      { to: '/data#data-section-main', label: t('footerPersonalData') },
-      { to: '/data#data-section-documents', label: t('footerDocumentsSection') },
+      { to: cabinetDataPath, label: t('footerPersonalData') },
+      { to: cabinetDataPath, label: t('footerDocumentsSection') },
       { to: '/chat?manager=1', label: t('footerTechSupport') },
     ],
   ]
@@ -195,7 +198,7 @@ const Footer = () => {
   }
 
   return (
-    <footer id="site-footer" className="footer">
+    <footer id="site-footer" className={`footer${location.pathname === '/deposit' ? ' footer--deposit' : ''}`}>
       <div className="footer__container">
         <div className="footer__upper">
           <div className="footer__upper-left">

@@ -1,29 +1,18 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
+import { getMainScrollEl } from '../utils/mainScroll'
 import './ServiceQuickLinksTour.css'
 
-const PAD = 8
-const TILE_RADIUS = 14
-
-function parseBorderRadiusPx(el) {
-  if (!el) return TILE_RADIUS
-  try {
-    const br = getComputedStyle(el).borderRadius
-    const n = parseFloat(String(br).split(/[\s/]/)[0])
-    return Number.isFinite(n) && n > 0 ? n : TILE_RADIUS
-  } catch {
-    return TILE_RADIUS
-  }
-}
+const PAD = 4
+const HOLE_RADIUS = 16
 
 function measureTarget(el) {
   if (!el) return null
   const r = el.getBoundingClientRect()
-  const baseR = parseBorderRadiusPx(el)
   const w = r.width + PAD * 2
   const h = r.height + PAD * 2
-  const rx = Math.min(baseR + PAD, w / 2 - 0.25, h / 2 - 0.25)
+  const rx = Math.min(HOLE_RADIUS, w / 2 - 0.25, h / 2 - 0.25)
   return {
     top: r.top - PAD,
     left: r.left - PAD,
@@ -52,113 +41,54 @@ function roundedRectPath(x, y, w, h, r) {
   ].join(' ')
 }
 
-function multiSpotlightDimPath(vw, vh, holes) {
+function spotlightDimPath(vw, vh, hole) {
   const outer = `M 0 0 H ${vw} V ${vh} H 0 Z`
-  const inners = holes.map((h) => roundedRectPath(h.left, h.top, h.width, h.height, h.rx)).join(' ')
-  return `${outer} ${inners}`
+  const inner = roundedRectPath(hole.left, hole.top, hole.width, hole.height, hole.rx)
+  return `${outer} ${inner}`
 }
 
-/** Затемнение вне объединения прямоугольников «дырок» (сортировка по left). */
-function buildHitSlabs(vw, vh, holes) {
-  if (!holes.length) return []
-  const sorted = [...holes].sort((a, b) => a.left - b.left)
-  const y0 = Math.min(...sorted.map((h) => h.top))
-  const y1 = Math.max(...sorted.map((h) => h.top + h.height))
-  const slabs = []
-  slabs.push({ left: 0, top: 0, width: vw, height: Math.max(0, y0) })
-  slabs.push({ left: 0, top: y1, width: vw, height: Math.max(0, vh - y1) })
-  let x = 0
-  for (const h of sorted) {
-    if (h.left > x) {
-      slabs.push({ left: x, top: y0, width: h.left - x, height: y1 - y0 })
-    }
-    x = h.left + h.width
-  }
-  if (x < vw) {
-    slabs.push({ left: x, top: y0, width: vw - x, height: y1 - y0 })
-  }
-  return slabs
-}
-
-function arrowStemAndHead(from, to) {
-  const dx = to.x - from.x
-  const dy = to.y - from.y
-  const lift = -Math.max(52, Math.abs(dy) * 0.42)
-  const c1 = { x: from.x + dx * 0.22, y: from.y + lift * 0.72 }
-  const c2 = { x: to.x - dx * 0.12, y: to.y - lift * 0.48 }
-  const stemPath = `M ${from.x} ${from.y} C ${c1.x} ${c1.y} ${c2.x} ${c2.y} ${to.x} ${to.y}`
-  const tip = to
-  let fx = tip.x - c2.x
-  let fy = tip.y - c2.y
-  let fl = Math.hypot(fx, fy)
-  if (fl < 1e-3) {
-    fx = dx
-    fy = dy
-    fl = Math.hypot(fx, fy) || 1
-  }
-  const ux = fx / fl
-  const uy = fy / fl
-  const headDepth = 13
-  const headHalf = 6.5
-  const perpX = -uy
-  const perpY = ux
-  const baseMid = { x: tip.x - ux * headDepth, y: tip.y - uy * headDepth }
-  const wingL = { x: baseMid.x + perpX * headHalf, y: baseMid.y + perpY * headHalf }
-  const wingR = { x: baseMid.x - perpX * headHalf, y: baseMid.y - perpY * headHalf }
-  const headPath = `M ${wingL.x} ${wingL.y} L ${tip.x} ${tip.y} M ${wingR.x} ${wingR.y} L ${tip.x} ${tip.y}`
-  return { stemPath, headPath }
+function buildHitSlabs(vw, vh, hole) {
+  const y0 = hole.top
+  const y1 = hole.top + hole.height
+  const x0 = hole.left
+  const x1 = hole.left + hole.width
+  return [
+    { left: 0, top: 0, width: vw, height: Math.max(0, y0) },
+    { left: 0, top: y1, width: vw, height: Math.max(0, vh - y1) },
+    { left: 0, top: y0, width: Math.max(0, x0), height: y1 - y0 },
+    { left: x1, top: y0, width: Math.max(0, vw - x1), height: y1 - y0 },
+  ].filter((s) => s.width > 0 && s.height > 0)
 }
 
 /**
- * Затемнение + три «окна» на карточках направлений (Доли / Аукцион / Долги), стрелки к подсказке внизу.
- * Проп `bonusesRef` — ref средней карточки (исторически «бонусы», сейчас аукцион).
+ * Затемнение + «окно» на блоке направлений (Доли / Аукцион / Долги) и подсказка внизу.
  */
-export function ServiceQuickLinksTour({ active, onDismiss, sharesRef, debtsRef, bonusesRef }) {
+export function ServiceQuickLinksTour({ active, onDismiss, groupRef }) {
   const reduceMotion = useReducedMotion()
   const panelRef = useRef(null)
+  const lockedScrollTopRef = useRef(0)
   const [viewport, setViewport] = useState(() =>
     typeof window !== 'undefined' ? { w: window.innerWidth, h: window.innerHeight } : { w: 0, h: 0 },
   )
-  const [holes, setHoles] = useState([])
-  const [panelBox, setPanelBox] = useState(null)
-  const lastHolesRef = useRef([])
+  const [hole, setHole] = useState(null)
+  const lastHoleRef = useRef(null)
 
   const update = useCallback(() => {
     if (!active || typeof window === 'undefined') return
     const w = window.innerWidth
     const h = window.innerHeight
     setViewport({ w, h })
-    const measured = [sharesRef?.current, bonusesRef?.current, debtsRef?.current]
-      .map((el) => measureTarget(el))
-      .filter(Boolean)
-    if (measured.length) {
-      lastHolesRef.current = measured
-      setHoles(measured)
+    const measured = measureTarget(groupRef?.current)
+    if (measured) {
+      lastHoleRef.current = measured
+      setHole(measured)
     }
-    const pr = panelRef.current?.getBoundingClientRect()
-    if (pr && pr.width > 0) {
-      setPanelBox({ top: pr.top, left: pr.left, width: pr.width, height: pr.height })
-    }
-  }, [active, sharesRef, bonusesRef, debtsRef])
+  }, [active, groupRef])
 
   useLayoutEffect(() => {
     if (!active) return
     update()
   }, [active, update])
-
-  useLayoutEffect(() => {
-    if (!active || typeof window === 'undefined') return
-    const el = bonusesRef?.current
-    if (!el) return
-    const id = window.setTimeout(() => {
-      try {
-        el.scrollIntoView({ block: 'center', behavior: reduceMotion ? 'auto' : 'smooth' })
-      } catch {
-        /* ignore */
-      }
-    }, 80)
-    return () => window.clearTimeout(id)
-  }, [active, bonusesRef, reduceMotion])
 
   useLayoutEffect(() => {
     if (!active) return
@@ -168,23 +98,75 @@ export function ServiceQuickLinksTour({ active, onDismiss, sharesRef, debtsRef, 
             window.requestAnimationFrame(update)
           })
         : null
-    const els = [sharesRef?.current, bonusesRef?.current, debtsRef?.current, panelRef.current].filter(Boolean)
+    const els = [groupRef?.current].filter(Boolean)
     els.forEach((el) => ro?.observe(el))
     window.addEventListener('resize', update)
-    window.addEventListener('scroll', update, true)
     return () => {
       els.forEach((el) => ro?.unobserve(el))
       ro?.disconnect()
       window.removeEventListener('resize', update)
-      window.removeEventListener('scroll', update, true)
     }
-  }, [active, sharesRef, bonusesRef, debtsRef, update])
+  }, [active, groupRef, update])
 
   useEffect(() => {
     if (!active) return
     const id = window.requestAnimationFrame(() => update())
     return () => window.cancelAnimationFrame(id)
   }, [active, update])
+
+  useEffect(() => {
+    if (!active || typeof window === 'undefined') return
+
+    const scrollEl = getMainScrollEl()
+    const grid = groupRef?.current
+
+    if (scrollEl && grid) {
+      const gridRect = grid.getBoundingClientRect()
+      const scrollRect = scrollEl.getBoundingClientRect()
+      const targetTop = Math.max(0, scrollEl.scrollTop + gridRect.top - scrollRect.top - 20)
+      scrollEl.scrollTop = targetTop
+      lockedScrollTopRef.current = targetTop
+      window.requestAnimationFrame(update)
+    } else {
+      lockedScrollTopRef.current = scrollEl?.scrollTop ?? window.scrollY
+    }
+
+    const prevBodyOverflow = document.body.style.overflow
+    const prevScrollOverflow = scrollEl?.style.overflow ?? ''
+    document.body.style.overflow = 'hidden'
+    if (scrollEl) scrollEl.style.overflow = 'hidden'
+
+    const lockScrollPosition = () => {
+      const top = lockedScrollTopRef.current
+      if (scrollEl) {
+        if (scrollEl.scrollTop !== top) scrollEl.scrollTop = top
+      } else if (window.scrollY !== top) {
+        window.scrollTo(0, top)
+      }
+    }
+
+    const blockScroll = (e) => {
+      e.preventDefault()
+      lockScrollPosition()
+    }
+
+    lockScrollPosition()
+    scrollEl?.addEventListener('scroll', lockScrollPosition, { passive: true })
+    scrollEl?.addEventListener('wheel', blockScroll, { passive: false })
+    scrollEl?.addEventListener('touchmove', blockScroll, { passive: false })
+    window.addEventListener('wheel', blockScroll, { passive: false })
+    window.addEventListener('touchmove', blockScroll, { passive: false })
+
+    return () => {
+      document.body.style.overflow = prevBodyOverflow
+      if (scrollEl) scrollEl.style.overflow = prevScrollOverflow
+      scrollEl?.removeEventListener('scroll', lockScrollPosition)
+      scrollEl?.removeEventListener('wheel', blockScroll)
+      scrollEl?.removeEventListener('touchmove', blockScroll)
+      window.removeEventListener('wheel', blockScroll)
+      window.removeEventListener('touchmove', blockScroll)
+    }
+  }, [active, groupRef, update])
 
   useEffect(() => {
     if (!active) return
@@ -201,37 +183,10 @@ export function ServiceQuickLinksTour({ active, onDismiss, sharesRef, debtsRef, 
   if (typeof document === 'undefined') return null
 
   const { w: vw, h: vh } = viewport
-  const list = holes.length ? holes : lastHolesRef.current
-  const dimPath = list.length && vw > 0 ? multiSpotlightDimPath(vw, vh, list) : ''
-  const slabs = list.length && vw > 0 ? buildHitSlabs(vw, vh, list) : []
-
-  const sorted = [...list].sort((a, b) => a.left - b.left)
-  let arrowSvg = null
-  if (panelBox && sorted.length > 0 && vw > 0) {
-    const panelTop = panelBox.top
-    const pl = panelBox.left
-    const pw = panelBox.width
-    const n = sorted.length
-    const paths = []
-    sorted.forEach((hole, i) => {
-      const cx = hole.left + hole.width / 2
-      const fromX = Math.max(pl + 16, Math.min(pl + pw - 16, pl + (pw * (i + 1)) / (n + 1)))
-      const from = { x: fromX, y: panelTop }
-      const to = { x: cx, y: hole.top + hole.height + 2 }
-      const { stemPath, headPath } = arrowStemAndHead(from, to)
-      paths.push(
-        <g key={`arr-${i}`}>
-          <path d={stemPath} fill="none" className="service-quick-links-tour__arrow-stroke" strokeLinecap="round" />
-          <path d={headPath} fill="none" className="service-quick-links-tour__arrow-stroke" strokeLinecap="round" />
-        </g>,
-      )
-    })
-    arrowSvg = (
-      <svg className="service-quick-links-tour__arrow-svg" width={vw} height={vh} viewBox={`0 0 ${vw} ${vh}`} aria-hidden>
-        {paths}
-      </svg>
-    )
-  }
+  const spot = hole ?? lastHoleRef.current
+  const dimPath = spot && vw > 0 ? spotlightDimPath(vw, vh, spot) : ''
+  const ringPath = spot ? roundedRectPath(spot.left, spot.top, spot.width, spot.height, spot.rx) : ''
+  const slabs = spot && vw > 0 ? buildHitSlabs(vw, vh, spot) : []
 
   const portal = (
     <AnimatePresence>
@@ -262,10 +217,23 @@ export function ServiceQuickLinksTour({ active, onDismiss, sharesRef, debtsRef, 
               aria-hidden
             >
               <path fill="rgba(15, 23, 42, 0.58)" fillRule="evenodd" d={dimPath} pointerEvents="none" />
+              {ringPath ? (
+                <path
+                  d={ringPath}
+                  fill="none"
+                  className="service-quick-links-tour__ring"
+                  pointerEvents="none"
+                />
+              ) : null}
             </svg>
           ) : null}
-          {arrowSvg}
-          <div ref={panelRef} className="service-quick-links-tour__panel" role="dialog" aria-modal="true" aria-labelledby="service-quick-links-tour-title">
+          <div
+            ref={panelRef}
+            className="service-quick-links-tour__panel"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="service-quick-links-tour-title"
+          >
             <p id="service-quick-links-tour-title" className="service-quick-links-tour__text">
               Начни изучать наш сервис уже сейчас. Покупай недвижимость легко.
             </p>

@@ -603,7 +603,7 @@ function buildMainCards(t) {
     {
       title: t('buyerCabinet_cardDataTitle'),
       description: t('buyerCabinet_cardDataSubtitle'),
-      to: '/data',
+      sheet: 'data',
       icon: UserRound,
       accent: 'teal',
     },
@@ -819,6 +819,7 @@ function TestPage() {
   const passportInputRef = useRef(null)
   const countryFieldRef = useRef(null)
   const serviceTourTimerRef = useRef(null)
+  const directionSummariesGridRef = useRef(null)
   const directionSharesRef = useRef(null)
   const directionAuctionRef = useRef(null)
   const directionDebtsRef = useRef(null)
@@ -1153,6 +1154,31 @@ function TestPage() {
       /* ignore */
     }
   }, [numericUserId])
+
+  useEffect(() => {
+    if (searchParams.get('data') !== '1') return
+    const highlight = searchParams.get('highlight')
+    setDataSheetOpen(true)
+    setHistorySheetOpen(false)
+    setSubscriptionSheetOpen(false)
+    setBookingsSheetOpen(false)
+    const next = new URLSearchParams(searchParams)
+    next.delete('data')
+    next.delete('highlight')
+    const qs = next.toString()
+    navigate({ pathname: '/profile', search: qs ? `?${qs}` : '' }, { replace: true })
+    if (highlight) {
+      window.setTimeout(() => {
+        const wrap = document.getElementById(`test-profile-field-wrap-${highlight}`)
+        const input = document.getElementById(`profile-field-${highlight}`)
+        if (!wrap) return
+        wrap.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        wrap.classList.add('test-data-field--focus-hint')
+        window.setTimeout(() => wrap.classList.remove('test-data-field--focus-hint'), 2200)
+        window.setTimeout(() => input?.focus?.({ preventScroll: true }), 450)
+      }, 600)
+    }
+  }, [searchParams, navigate])
 
   /** Возврат с Stripe Checkout Pro: подтверждение сессии и поздравление на профиле (как после верификации). */
   useEffect(() => {
@@ -2425,7 +2451,7 @@ function TestPage() {
                     const isSubscriptions = card.sheet === 'subscriptions'
                     const isBookings = card.sheet === 'bookings'
                     const isManagerChat = card.action === 'managerChat'
-                    const isData = card.to === '/data'
+                    const isData = card.sheet === 'data'
                     const cardTitle = card.title
                     const cardDescription = card.description
                     const showHistoryCount = isHistory && !historyLoading && historyCount > 0
@@ -2761,14 +2787,6 @@ function TestPage() {
                                 <FiCheck size={18} strokeWidth={2.5} aria-hidden />
                               </span>
                             </div>
-                            <span
-                              className={`test-data-field__saving${
-                                savingField === key ? ' test-data-field__saving--visible' : ''
-                              }`}
-                              aria-hidden={savingField !== key}
-                            >
-                              {t('buyerCabinet_fieldSaving')}
-                            </span>
                           </div>
                         ))}
                       </div>
@@ -2878,14 +2896,6 @@ function TestPage() {
                                 <FiCheck size={18} strokeWidth={2.5} aria-hidden />
                               </span>
                             </div>
-                            <span
-                              className={`test-data-field__saving${
-                                savingField === key ? ' test-data-field__saving--visible' : ''
-                              }`}
-                              aria-hidden={savingField !== key}
-                            >
-                              {t('buyerCabinet_fieldSaving')}
-                            </span>
                           </div>
                         ))}
                       </div>
@@ -3379,7 +3389,7 @@ function TestPage() {
                     className="test-direction-summaries"
                     aria-label="Ключевые направления: доли, аукцион и долги"
                   >
-                <div className="test-direction-summaries__grid">
+                <div ref={directionSummariesGridRef} className="test-direction-summaries__grid">
                   {directionSummaries.map((item) => {
                     const dirRef =
                       item.to === '/shares'
@@ -3738,9 +3748,7 @@ function TestPage() {
       <ServiceQuickLinksTour
         active={showServiceQuickLinksTour}
         onDismiss={handleServiceQuickLinksTourDismiss}
-        sharesRef={directionSharesRef}
-        bonusesRef={directionAuctionRef}
-        debtsRef={directionDebtsRef}
+        groupRef={directionSummariesGridRef}
       />
 
       {isManagerChatOpen ? (

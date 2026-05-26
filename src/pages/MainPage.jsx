@@ -62,6 +62,11 @@ import LoginModal from '../components/LoginModal'
 import HeroRolePitchModal from '../components/HeroRolePitchModal'
 import { askPropertyAssistant, detectManagerContactIntent, filterPropertiesByLocation } from '../services/aiService'
 import { getUserData, clearUserData, isAuthenticated } from '../services/authService'
+import {
+  getCabinetDataPath,
+  getCabinetProfilePath,
+  isSellerCabinetRole,
+} from '../utils/cabinetRoutes'
 import { syncAssistantLead } from '../services/assistantLeadService'
 import { getManagerContactButtons } from '../services/liveChatApi'
 import { NotificationsBell } from '../context/SiteNotificationsContext'
@@ -830,6 +835,9 @@ function MainPage() {
   }
 
   // Определение страниц для поиска
+  const cabinetProfilePath = getCabinetProfilePath()
+  const cabinetDataPath = getCabinetDataPath()
+  const sellerCabinet = isSellerCabinetRole()
   const searchablePages = [
     {
       path: '/',
@@ -860,11 +868,11 @@ function MainPage() {
       allowedRoles: ['buyer', 'seller', 'owner', 'admin', 'client']
     },
     {
-      path: '/profile',
+      path: cabinetProfilePath,
       keywords: ['профиль', 'profile', 'аккаунт', 'личный кабинет', 'личный', 'кабинет', 'настройки', 'settings'],
       title: 'Профиль',
       requiresAuth: true,
-      allowedRoles: ['buyer', 'client', 'admin'] // Только для покупателей и админов
+      allowedRoles: sellerCabinet ? ['seller', 'owner', 'admin'] : ['buyer', 'client', 'admin'],
     },
     {
       path: '/favorites',
@@ -892,11 +900,11 @@ function MainPage() {
       allowedRoles: ['buyer', 'client', 'admin'] // Только для покупателей и админов
     },
     {
-      path: '/data',
+      path: cabinetDataPath,
       keywords: ['данные', 'data', 'информация', 'information', 'персональные данные'],
       title: 'Данные',
       requiresAuth: true,
-      allowedRoles: ['buyer', 'client', 'admin'] // Только для покупателей и админов
+      allowedRoles: sellerCabinet ? ['seller', 'owner', 'admin'] : ['buyer', 'client', 'admin'],
     },
     {
       path: '/subscriptions',
@@ -988,7 +996,7 @@ function MainPage() {
       setHeroRolePitch('buyer')
       return
     }
-    navigate('/profile')
+    navigate(getCabinetProfilePath())
   }
 
   const handleHeroSellerCardClick = () => {
@@ -2443,9 +2451,9 @@ function MainPage() {
 
             // Дальше обычная логика профиля покупателя
             if (userLoaded && user) {
-              navigate('/profile')
+              navigate(getCabinetProfilePath())
             } else if (userData.isLoggedIn) {
-              navigate('/profile')
+              navigate(getCabinetProfilePath())
             } else {
               setMainLoginModalAuthEntry('header_wizard')
               setIsLoginModalOpen(true)
@@ -2555,9 +2563,9 @@ function MainPage() {
 
                   // Дальше обычная логика профиля покупателя
                   if (userLoaded && user) {
-                    navigate('/profile')
+                    navigate(getCabinetProfilePath())
                   } else if (userData.isLoggedIn) {
-                    navigate('/profile')
+                    navigate(getCabinetProfilePath())
                   } else {
                     setMainLoginModalAuthEntry('header_wizard')
                     setIsLoginModalOpen(true)
@@ -2724,7 +2732,7 @@ function MainPage() {
             if (id === 'favourite') return '/favorites'
             if (id === 'auction') return '/auction'
             if (id === 'chat') return '/chat?manager=1'
-            if (id === 'profile') return '/profile'
+            if (id === 'profile') return getCabinetProfilePath()
             return '/'
           }
           const route = getRoute(item.id)

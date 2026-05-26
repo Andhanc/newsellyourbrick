@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next'
 import { FiX, FiSearch, FiDollarSign, FiMapPin, FiHome, FiTag, FiChevronLeft } from 'react-icons/fi'
 import { getApiBaseUrl } from '../utils/apiConfig'
 import { fetchDedupe } from '../utils/fetchDedupe'
-import { useDrawerDismiss } from '../hooks/useDrawerDismiss'
+import { useDrawerDismiss, DRAWER_DISMISS_MS } from '../hooks/useDrawerDismiss'
 import './PropertySearchModal.css'
 
 const PROPERTY_TYPE_KEYS = ['propertyTypeFlat', 'propertyTypeApartment', 'propertyTypeVilla', 'propertyTypeHouse', 'propertyTypeTownhouse']
@@ -57,7 +57,9 @@ const DRAFT_FILTERS_KEY = 'propertySearchFiltersDraft'
 const PropertySearchModal = ({ isOpen, onClose, restoreFromSession = false }) => {
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const { visible, isClosing, requestClose } = useDrawerDismiss(isOpen, onClose)
+  const { visible, isClosing, requestClose } = useDrawerDismiss(isOpen, onClose, {
+    duration: DRAWER_DISMISS_MS.backdrop,
+  })
   const [filters, setFilters] = useState(EMPTY_FILTERS)
   const [locationOptions, setLocationOptions] = useState([])
   const [priceBounds, setPriceBounds] = useState(DEFAULT_PRICE_RANGE)
@@ -313,34 +315,31 @@ const PropertySearchModal = ({ isOpen, onClose, restoreFromSession = false }) =>
 
   if (!visible || typeof document === 'undefined') return null
 
-  const closingBottom = isClosing ? ' drawer-dismiss-from-bottom--closing' : ''
+  const closingModal = isClosing ? ' drawer-dismiss-modal--closing' : ''
   const closingBackdrop = isClosing ? ' drawer-dismiss-backdrop--closing' : ''
 
   return createPortal(
-    <>
-      <div
-        role="presentation"
-        className={`property-search-drawer-backdrop${closingBackdrop}`}
+    <div className="property-search-modal-root" role="presentation">
+      <button
+        type="button"
+        className={`property-search-modal__backdrop${closingBackdrop}`}
+        aria-label={t('closeAria')}
         onClick={() => requestClose()}
       />
       <div
-        className={`property-search-drawer${closingBottom}`}
+        className={`property-search-modal${closingModal}`}
         role="dialog"
         aria-modal="true"
-        aria-labelledby="property-search-drawer-title"
+        aria-labelledby="property-search-modal-title"
       >
-        <div className="property-search-drawer__content">
-          <div className="property-search-drawer__sheet-handle" aria-hidden="true">
-            <span className="property-search-drawer__sheet-pill" />
-          </div>
-
-          <div className="property-search-drawer__header">
-            <h2 id="property-search-drawer-title" className="property-search-drawer__title">
+        <div className="property-search-modal__content">
+          <div className="property-search-modal__header">
+            <h2 id="property-search-modal-title" className="property-search-modal__title">
               {t('propertySearchTitle')}
             </h2>
             <button
               type="button"
-              className="property-search-drawer__close"
+              className="property-search-modal__close"
               onClick={() => {
                 sessionStorage.setItem(
                   DRAFT_FILTERS_KEY,
@@ -357,27 +356,27 @@ const PropertySearchModal = ({ isOpen, onClose, restoreFromSession = false }) =>
             </button>
           </div>
 
-          <div className="property-search-drawer__body">
-            <div className="property-search-drawer__section">
-              <label className="property-search-drawer__label">
+          <div className="property-search-modal__body">
+            <div className="property-search-modal__section">
+              <label className="property-search-modal__label">
                 <FiMapPin size={20} />
                 {t('modalRegion')}
               </label>
 
               {!filters.country ? (
-                <div className="property-search-drawer__location-step">
-                  <p className="property-search-drawer__location-hint">{t('modalSelectCountry')}</p>
+                <div className="property-search-modal__location-step">
+                  <p className="property-search-modal__location-hint">{t('modalSelectCountry')}</p>
                   {optionsLoading ? (
-                    <p className="property-search-drawer__location-loading">{t('loading')}</p>
+                    <p className="property-search-modal__location-loading">{t('loading')}</p>
                   ) : locationOptions.length === 0 ? (
-                    <p className="property-search-drawer__location-empty">{t('modalNoLocations')}</p>
+                    <p className="property-search-modal__location-empty">{t('modalNoLocations')}</p>
                   ) : (
-                    <div className="property-search-drawer__location-grid">
+                    <div className="property-search-modal__location-grid">
                       {locationOptions.map((country) => (
                         <button
                           key={country.key}
                           type="button"
-                          className="property-search-drawer__location-chip"
+                          className="property-search-modal__location-chip"
                           onClick={() => handleCountrySelect(country.key)}
                         >
                           {country.label}
@@ -388,20 +387,20 @@ const PropertySearchModal = ({ isOpen, onClose, restoreFromSession = false }) =>
                   )}
                 </div>
               ) : (
-                <div className="property-search-drawer__location-step">
+                <div className="property-search-modal__location-step">
                   <button
                     type="button"
-                    className="property-search-drawer__location-back"
+                    className="property-search-modal__location-back"
                     onClick={handleCountryBack}
                   >
                     <FiChevronLeft size={18} aria-hidden />
                     {t('back')}
                   </button>
-                  <p className="property-search-drawer__location-hint">{t('modalSelectRegion')}</p>
-                  <div className="property-search-drawer__location-grid">
+                  <p className="property-search-modal__location-hint">{t('modalSelectRegion')}</p>
+                  <div className="property-search-modal__location-grid">
                     <button
                       type="button"
-                      className={`property-search-drawer__location-chip ${isAnyRegionExplicit ? 'is-active' : ''}`}
+                      className={`property-search-modal__location-chip ${isAnyRegionExplicit ? 'is-active' : ''}`}
                       onClick={() => handleRegionSelect('')}
                     >
                       {t('modalAnyRegion')}
@@ -410,7 +409,7 @@ const PropertySearchModal = ({ isOpen, onClose, restoreFromSession = false }) =>
                       <button
                         key={region.key}
                         type="button"
-                        className={`property-search-drawer__location-chip ${filters.region === region.key ? 'is-active' : ''}`}
+                        className={`property-search-modal__location-chip ${filters.region === region.key ? 'is-active' : ''}`}
                         onClick={() => handleRegionSelect(region.key)}
                       >
                         {region.label}
@@ -423,20 +422,20 @@ const PropertySearchModal = ({ isOpen, onClose, restoreFromSession = false }) =>
             </div>
 
             <div
-              className={`property-search-drawer__block ${!canUseFilters ? 'property-search-drawer__block--locked' : ''}`}
+              className={`property-search-modal__block ${!canUseFilters ? 'property-search-modal__block--locked' : ''}`}
               aria-disabled={!canUseFilters}
             >
               {!canUseFilters ? (
-                <p className="property-search-drawer__block-hint">{t('modalFillLocationFirst')}</p>
+                <p className="property-search-modal__block-hint">{t('modalFillLocationFirst')}</p>
               ) : null}
-            <div className="property-search-drawer__row">
-              <div className="property-search-drawer__section property-search-drawer__section--half">
-                <label className="property-search-drawer__label">
+            <div className="property-search-modal__row">
+              <div className="property-search-modal__section property-search-modal__section--half">
+                <label className="property-search-modal__label">
                   <FiHome size={18} />
                   {t('modalPropertyType')}
                 </label>
                 <select
-                  className="property-search-drawer__select"
+                  className="property-search-modal__select"
                   value={filters.propertyType}
                   disabled={!canUseFilters}
                   onChange={(e) => handleFilterChange('propertyType', e.target.value)}
@@ -450,13 +449,13 @@ const PropertySearchModal = ({ isOpen, onClose, restoreFromSession = false }) =>
                 </select>
               </div>
 
-              <div className="property-search-drawer__section property-search-drawer__section--half">
-                <label className="property-search-drawer__label">
+              <div className="property-search-modal__section property-search-modal__section--half">
+                <label className="property-search-modal__label">
                   <FiTag size={18} />
                   {t('modalPurchaseType')}
                 </label>
                 <select
-                  className="property-search-drawer__select"
+                  className="property-search-modal__select"
                   value={filters.purchaseType}
                   disabled={!canUseFilters}
                   onChange={(e) => handleFilterChange('purchaseType', e.target.value)}
@@ -470,11 +469,11 @@ const PropertySearchModal = ({ isOpen, onClose, restoreFromSession = false }) =>
               </div>
             </div>
 
-            <div className="property-search-drawer__row">
-              <div className="property-search-drawer__section property-search-drawer__section--half property-search-drawer__section--rooms">
-                <label className="property-search-drawer__label">{t('modalRooms')}</label>
+            <div className="property-search-modal__row">
+              <div className="property-search-modal__section property-search-modal__section--half property-search-modal__section--rooms">
+                <label className="property-search-modal__label">{t('modalRooms')}</label>
                 <div
-                  className="property-search-drawer__room-pills"
+                  className="property-search-modal__room-pills"
                   role="group"
                   aria-label={t('modalRooms')}
                 >
@@ -484,7 +483,7 @@ const PropertySearchModal = ({ isOpen, onClose, restoreFromSession = false }) =>
                       <button
                         key={opt.value}
                         type="button"
-                        className={`property-search-drawer__room-pill${isActive ? ' is-active' : ''}`}
+                        className={`property-search-modal__room-pill${isActive ? ' is-active' : ''}`}
                         disabled={!canUseFilters}
                         aria-pressed={isActive}
                         onClick={() =>
@@ -498,21 +497,21 @@ const PropertySearchModal = ({ isOpen, onClose, restoreFromSession = false }) =>
                 </div>
               </div>
 
-              <div className="property-search-drawer__section property-search-drawer__section--half">
-                <label className="property-search-drawer__label">{t('modalArea')}</label>
-                <div className="property-search-drawer__range property-search-drawer__range--compact">
+              <div className="property-search-modal__section property-search-modal__section--half">
+                <label className="property-search-modal__label">{t('modalArea')}</label>
+                <div className="property-search-modal__range property-search-modal__range--compact">
                   <input
                     type="number"
-                    className="property-search-drawer__input"
+                    className="property-search-modal__input"
                     placeholder={t('modalFrom')}
                     value={filters.minArea}
                     disabled={!canUseFilters}
                     onChange={(e) => handleFilterChange('minArea', e.target.value)}
                   />
-                  <span className="property-search-drawer__range-separator">—</span>
+                  <span className="property-search-modal__range-separator">—</span>
                   <input
                     type="number"
-                    className="property-search-drawer__input"
+                    className="property-search-modal__input"
                     placeholder={t('modalTo')}
                     value={filters.maxArea}
                     disabled={!canUseFilters}
@@ -522,15 +521,15 @@ const PropertySearchModal = ({ isOpen, onClose, restoreFromSession = false }) =>
               </div>
             </div>
 
-            <div className="property-search-drawer__section">
-              <label className="property-search-drawer__label">
+            <div className="property-search-modal__section">
+              <label className="property-search-modal__label">
                 <FiDollarSign size={20} />
                 {t('modalPriceLabel')}
               </label>
 
-              <div className="property-search-drawer__price-slider">
+              <div className="property-search-modal__price-slider">
                 <div
-                  className="property-search-drawer__price-slider-track"
+                  className="property-search-modal__price-slider-track"
                   style={{
                     '--range-left': `${sliderFillLeft}%`,
                     '--range-width': `${sliderFillWidth}%`,
@@ -538,7 +537,7 @@ const PropertySearchModal = ({ isOpen, onClose, restoreFromSession = false }) =>
                 >
                   <input
                     type="range"
-                    className="property-search-drawer__price-range property-search-drawer__price-range--min"
+                    className="property-search-modal__price-range property-search-modal__price-range--min"
                     min={priceBounds.min}
                     max={priceBounds.max}
                     step={1}
@@ -549,7 +548,7 @@ const PropertySearchModal = ({ isOpen, onClose, restoreFromSession = false }) =>
                   />
                   <input
                     type="range"
-                    className="property-search-drawer__price-range property-search-drawer__price-range--max"
+                    className="property-search-modal__price-range property-search-modal__price-range--max"
                     min={priceBounds.min}
                     max={priceBounds.max}
                     step={1}
@@ -561,10 +560,10 @@ const PropertySearchModal = ({ isOpen, onClose, restoreFromSession = false }) =>
                 </div>
               </div>
 
-              <div className="property-search-drawer__range property-search-drawer__range--price-inputs">
+              <div className="property-search-modal__range property-search-modal__range--price-inputs">
                 <input
                   type="number"
-                  className="property-search-drawer__input"
+                  className="property-search-modal__input"
                   placeholder={t('modalFrom')}
                   min={1}
                   inputMode="numeric"
@@ -572,10 +571,10 @@ const PropertySearchModal = ({ isOpen, onClose, restoreFromSession = false }) =>
                   disabled={!canUseFilters}
                   onChange={(e) => handleMinPriceInputChange(e.target.value)}
                 />
-                <span className="property-search-drawer__range-separator">—</span>
+                <span className="property-search-modal__range-separator">—</span>
                 <input
                   type="number"
-                  className="property-search-drawer__input"
+                  className="property-search-modal__input"
                   placeholder={t('modalTo')}
                   min={1}
                   inputMode="numeric"
@@ -588,17 +587,17 @@ const PropertySearchModal = ({ isOpen, onClose, restoreFromSession = false }) =>
             </div>
           </div>
 
-          <div className="property-search-drawer__footer">
+          <div className="property-search-modal__footer">
             <button
               type="button"
-              className="property-search-drawer__button property-search-drawer__button--reset"
+              className="property-search-modal__button property-search-modal__button--reset"
               onClick={handleReset}
             >
               {t('modalReset')}
             </button>
             <button
               type="button"
-              className="property-search-drawer__button property-search-drawer__button--search"
+              className="property-search-modal__button property-search-modal__button--search"
               disabled={!locationComplete}
               onClick={handleSearch}
             >
@@ -608,7 +607,7 @@ const PropertySearchModal = ({ isOpen, onClose, restoreFromSession = false }) =>
           </div>
         </div>
       </div>
-    </>,
+    </div>,
     document.body
   )
 }
