@@ -1,13 +1,13 @@
-.test-drive-promo-drawer__backdrop {
+.compare-investor-pro-drawer__backdrop {
   position: fixed;
   inset: 0;
-  z-index: 13290;
+  z-index: 13380;
   background: rgba(15, 23, 42, 0.52);
   backdrop-filter: blur(5px);
-  animation: test-drive-promo-backdrop-in 0.28s ease-out both;
+  animation: compare-investor-pro-backdrop-in 0.28s ease-out both;
 }
 
-@keyframes test-drive-promo-backdrop-in {
+@keyframes compare-investor-pro-backdrop-in {
   from {
     opacity: 0;
   }
@@ -16,66 +16,63 @@
   }
 }
 
-.test-drive-promo-drawer {
+.compare-investor-pro-drawer {
   position: fixed;
   left: 0;
   right: 0;
   bottom: 0;
-  z-index: 13300;
+  z-index: 13390;
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
   pointer-events: none;
 }
 
-.test-drive-promo-drawer__panel--entering {
-  animation: test-drive-promo-drawer-panel-in 0.44s cubic-bezier(0.22, 1, 0.32, 1) both;
-  will-change: transform, opacity;
+.compare-investor-pro-drawer:not(.compare-investor-pro-drawer--dragging) .compare-investor-pro-drawer__panel {
+  animation: compare-investor-pro-drawer-panel-in 0.4s cubic-bezier(0.22, 1, 0.32, 1) both;
 }
 
-.test-drive-promo-drawer--dragging .test-drive-promo-drawer__panel {
+.compare-investor-pro-drawer--dragging .compare-investor-pro-drawer__panel {
   animation: none !important;
 }
 
-.test-drive-promo-drawer__panel {
+.compare-investor-pro-drawer__panel {
   position: relative;
   width: 100%;
   max-width: none;
   box-sizing: border-box;
   pointer-events: auto;
   overflow: hidden;
-  background: linear-gradient(180deg, #ffffff 0%, #f0fdfa 100%);
+  background: linear-gradient(180deg, #ffffff 0%, #f5f3ff 100%);
   border-radius: 20px 20px 0 0;
   padding: 0;
   text-align: center;
   box-shadow: 0 -12px 48px rgba(15, 23, 42, 0.18);
   border: none;
-  border-top: 1px solid rgba(10, 186, 181, 0.22);
+  border-top: 1px solid rgba(139, 92, 246, 0.25);
   touch-action: pan-y;
 }
 
-.test-drive-promo-drawer__panel--closing {
+.compare-investor-pro-drawer__panel--closing {
   animation: drawer-dismiss-from-bottom-out 0.38s cubic-bezier(0.22, 1, 0.32, 1) both !important;
 }
 
-.test-drive-promo-drawer__panel--collapsed .test-drive-promo-drawer__body {
+.compare-investor-pro-drawer__panel--collapsed .compare-investor-pro-drawer__body {
   opacity: 0;
   pointer-events: none;
 }
 
-.test-drive-promo-drawer__panel--collapsed .test-drive-promo-drawer__close {
+.compare-investor-pro-drawer__panel--collapsed .compare-investor-pro-drawer__close {
   opacity: 0;
   pointer-events: none;
 }
 
-@keyframes test-drive-promo-drawer-panel-in {
+@keyframes compare-investor-pro-drawer-panel-in {
   from {
     transform: translate3d(0, 100%, 0);
-    opacity: 0.72;
   }
   to {
     transform: translate3d(0, 0, 0);
-    opacity: 1;
   }
 }
 
@@ -88,7 +85,7 @@
   }
 }
 
-.test-drive-promo-drawer__drag-zone {
+.compare-investor-pro-drawer__drag-zone {
   display: flex;
   justify-content: center;
   align-items: center;
@@ -100,18 +97,18 @@
   -webkit-user-select: none;
 }
 
-.test-drive-promo-drawer__drag-zone:active {
+.compare-investor-pro-drawer__drag-zone:active {
   cursor: grabbing;
 }
 
-.test-drive-promo-drawer__handle {
+.compare-investor-pro-drawer__handle {
   display: flex;
   justify-content: center;
   padding: 0;
   pointer-events: none;
 }
 
-.test-drive-promo-drawer__handle-pill {
+.compare-investor-pro-drawer__handle-pill {
   display: block;
   width: 44px;
   height: 5px;
@@ -119,7 +116,7 @@
   background: #cbd5e1;
 }
 
-.test-drive-promo-drawer__body {
+.compare-investor-pro-drawer__body {
   padding:
     0
     max(24px, env(safe-area-inset-right, 0px))
@@ -128,7 +125,7 @@
   transition: opacity 0.2s ease;
 }
 
-.test-drive-promo-drawer__close {
+.compare-investor-pro-drawer__close {
   position: absolute;
   top: 10px;
   right: max(14px, env(safe-area-inset-right, 0px));
@@ -146,19 +143,19 @@
   transition: opacity 0.2s ease, background 0.2s ease, transform 0.2s ease;
 }
 
-.test-drive-promo-drawer__close:hover {
+.compare-investor-pro-drawer__close:hover {
   background: rgba(17, 24, 39, 0.12);
   transform: scale(1.05);
 }
 
-.test-drive-promo-drawer__illustration {
+.compare-investor-pro-drawer__illustration {
   display: block;
   width: min(210px, 76vw);
   height: auto;
   margin: 0 auto 4px;
 }
 
-.test-drive-promo-drawer__badge {
+.compare-investor-pro-drawer__badge {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -166,12 +163,12 @@
   height: 32px;
   margin: 0 auto 10px;
   border-radius: 50%;
-  color: #0d9488;
-  background: linear-gradient(135deg, #ccfbf1 0%, #99f6e4 100%);
-  box-shadow: 0 4px 14px rgba(10, 186, 181, 0.25);
+  color: #6d28d9;
+  background: linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%);
+  box-shadow: 0 4px 14px rgba(124, 58, 237, 0.22);
 }
 
-.test-drive-promo-drawer__title {
+.compare-investor-pro-drawer__title {
   margin: 0 0 8px;
   font-family: 'Montserrat', system-ui, -apple-system, sans-serif;
   font-size: clamp(1.35rem, 4.5vw, 1.55rem);
@@ -180,18 +177,23 @@
   color: #0f172a;
 }
 
-.test-drive-promo-drawer__lead {
-  margin: 0 0 24px;
+.compare-investor-pro-drawer__lead {
+  margin: 0 0 8px;
   font-family: 'Montserrat', system-ui, -apple-system, sans-serif;
   font-size: 15px;
   line-height: 1.45;
   color: #475569;
-  max-width: 36ch;
-  margin-left: auto;
-  margin-right: auto;
 }
 
-.test-drive-promo-drawer__cta {
+.compare-investor-pro-drawer__hint {
+  margin: 0 0 24px;
+  font-family: 'Montserrat', system-ui, -apple-system, sans-serif;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #94a3b8;
+}
+
+.compare-investor-pro-drawer__cta {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -205,28 +207,28 @@
   font-weight: 700;
   color: #ffffff;
   cursor: pointer;
-  background: linear-gradient(135deg, #53d8d3 0%, #0abab5 52%, #089d98 100%);
-  box-shadow: 0 10px 28px rgba(10, 186, 181, 0.35);
+  background: linear-gradient(135deg, #a78bfa 0%, #8b5cf6 48%, #7c3aed 100%);
+  box-shadow: 0 10px 28px rgba(124, 58, 237, 0.32);
   transition: transform 0.18s ease, box-shadow 0.18s ease;
 }
 
-.test-drive-promo-drawer__cta:hover {
+.compare-investor-pro-drawer__cta:hover {
   transform: translateY(-1px);
-  box-shadow: 0 12px 32px rgba(10, 186, 181, 0.42);
+  box-shadow: 0 12px 32px rgba(124, 58, 237, 0.4);
 }
 
-.test-drive-promo-drawer__cta:active {
+.compare-investor-pro-drawer__cta:active {
   transform: translateY(0);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .test-drive-promo-drawer__backdrop,
-  .test-drive-promo-drawer__panel {
+  .compare-investor-pro-drawer__backdrop,
+  .compare-investor-pro-drawer__panel {
     animation: none;
   }
 
-  .test-drive-promo-drawer__cta,
-  .test-drive-promo-drawer__close {
+  .compare-investor-pro-drawer__cta,
+  .compare-investor-pro-drawer__close {
     transition: none;
   }
 }

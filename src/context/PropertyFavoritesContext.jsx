@@ -6,7 +6,10 @@ import {
   useMemo,
   useState,
 } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useUser } from '@clerk/clerk-react'
+import CompareFavoritesDrawer from '../components/CompareFavoritesDrawer'
+import FirstFavoriteDrawer from '../components/FirstFavoriteDrawer'
 import { isAuthenticated } from '../services/authService'
 import { getApiBaseUrl } from '../utils/apiConfig'
 import { fetchUserFavorites, invalidateUserFavoritesCache } from '../utils/favoritesApi'
@@ -74,12 +77,53 @@ function dispatchFavoritesChanged() {
   }
 }
 
+const MOBILE_FAVORITE_DRAWER_MQ = '(max-width: 768px)'
+
+function isMobileViewport() {
+  return (
+    typeof window !== 'undefined' && window.matchMedia(MOBILE_FAVORITE_DRAWER_MQ).matches
+  )
+}
+
+function maybeOpenFirstFavoriteDrawer(countBeforeAdd) {
+  return countBeforeAdd === 0 && isMobileViewport()
+}
+
+function maybeOpenCompareFavoritesDrawer(countBeforeAdd) {
+  return countBeforeAdd === 1 && isMobileViewport()
+}
+
+function PropertyFavoritesDrawersHost({
+  firstOpen,
+  compareOpen,
+  onCloseFirst,
+  onCloseCompare,
+}) {
+  const navigate = useNavigate()
+  return (
+    <>
+      <FirstFavoriteDrawer
+        isOpen={firstOpen}
+        onClose={onCloseFirst}
+        onGoToFavorites={() => navigate('/favorites')}
+      />
+      <CompareFavoritesDrawer
+        isOpen={compareOpen}
+        onClose={onCloseCompare}
+        onCompare={() => navigate('/compare')}
+      />
+    </>
+  )
+}
+
 export function PropertyFavoritesProvider({ children }) {
   const { user, isLoaded: userLoaded } = useUser()
   const [dbKeys, setDbKeys] = useState(() => new Set())
   const [favoriteRows, setFavoriteRows] = useState(() => [])
   const [mockMap, setMockMap] = useState(() => readMockFavoritesMap())
   const [loading, setLoading] = useState(false)
+  const [firstFavoriteDrawerOpen, setFirstFavoriteDrawerOpen] = useState(false)
+  const [compareFavoritesDrawerOpen, setCompareFavoritesDrawerOpen] = useState(false)
 
   const loadDbFavorites = useCallback(async () => {
     const uid = getDbUserId()
@@ -171,9 +215,11 @@ export function PropertyFavoritesProvider({ children }) {
           return false
         }
         const key = favoriteCompositeKey(property.id, property.source_table)
-        let wasLiked = false
+        const wasLiked = dbKeys.has(key)
+        const countBeforeAdd = dbKeys.size + mockMap.size
+        const showFirstFavoriteDrawer = !wasLiked && maybeOpenFirstFavoriteDrawer(countBeforeAdd)
+        const showCompareFavoritesDrawer = !wasLiked && maybeOpenCompareFavoritesDrawer(countBeforeAdd)
         setDbKeys((prev) => {
-          wasLiked = prev.has(key)
           const next = new Set(prev)
           if (wasLiked) next.delete(key)
           else next.add(key)
@@ -217,21 +263,28 @@ export function PropertyFavoritesProvider({ children }) {
           return false
         }
         dispatchFavoritesChanged()
+        if (showFirstFavoriteDrawer) setFirstFavoriteDrawerOpen(true)
+        else if (showCompareFavoritesDrawer) setCompareFavoritesDrawerOpen(true)
         return !wasLiked
       }
 
       if (!mockCategory) return false
       const mapKey = `${mockCategory}-${property.id}`
       const wasLiked = Boolean(mockMap.get(mapKey))
+      const countBeforeAdd = dbKeys.size + mockMap.size
+      const showFirstFavoriteDrawer = !wasLiked && maybeOpenFirstFavoriteDrawer(countBeforeAdd)
+      const showCompareFavoritesDrawer = !wasLiked && maybeOpenCompareFavoritesDrawer(countBeforeAdd)
       const nextMock = new Map(mockMap)
       if (wasLiked) nextMock.delete(mapKey)
       else nextMock.set(mapKey, true)
       setMockMap(nextMock)
       persistMockKey(mapKey, !wasLiked)
       dispatchFavoritesChanged()
+      if (showFirstFavoriteDrawer) setFirstFavoriteDrawerOpen(true)
+      else if (showCompareFavoritesDrawer) setCompareFavoritesDrawerOpen(true)
       return !wasLiked
     },
-    [user, userLoaded, mockMap]
+    [user, userLoaded, mockMap, dbKeys]
   )
 
   const value = useMemo(
@@ -247,7 +300,15 @@ export function PropertyFavoritesProvider({ children }) {
   )
 
   return (
-    <PropertyFavoritesContext.Provider value={value}>{children}</PropertyFavoritesContext.Provider>
+    <PropertyFavoritesContext.Provider value={value}>
+      {children}
+      <PropertyFavoritesDrawersHost
+        firstOpen={firstFavoriteDrawerOpen}
+        compareOpen={compareFavoritesDrawerOpen}
+        onCloseFirst={() => setFirstFavoriteDrawerOpen(false)}
+        onCloseCompare={() => setCompareFavoritesDrawerOpen(false)}
+      />
+    </PropertyFavoritesContext.Provider>
   )
 }
 

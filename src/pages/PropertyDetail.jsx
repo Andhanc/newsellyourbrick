@@ -1380,7 +1380,9 @@ const PropertyDetail = () => {
         onClose={() => setIsDepositRequiredOpen(false)}
         onGoToDeposit={() => {
           setIsDepositRequiredOpen(false)
-          navigateToWallet(navigate, '/auction')
+          const from =
+            typeof window !== 'undefined' ? window.location.pathname : '/auction'
+          navigateToWallet(navigate, from)
         }}
       />
     </div>

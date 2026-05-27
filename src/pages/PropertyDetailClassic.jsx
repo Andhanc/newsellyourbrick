@@ -14,6 +14,8 @@ import {
   FiArrowUp,
   FiXCircle,
   FiLock,
+  FiCheck,
+  FiPlay,
 } from 'react-icons/fi'
 import { FaHeart as FaHeartSolid } from 'react-icons/fa'
 import { IoLocationOutline } from 'react-icons/io5'
@@ -45,6 +47,9 @@ import { Awards } from '@/components/ui/award'
 import TestDriveSection from '../components/TestDriveSection'
 import PageBackButton from '../components/PageBackButton'
 import TestDrivePromoDrawer from '../components/TestDrivePromoDrawer'
+import AuctionBidDrawer from '../components/AuctionBidDrawer'
+import PropertyDetailAuctionBiddingForm from '../components/PropertyDetailAuctionBiddingForm'
+import PropertyDetailYieldPromo from '../components/PropertyDetailYieldPromo'
 import { propertyBlocksTestDrivePromo, propertyShowsTestDrive } from '../utils/propertyShowsTestDrive'
 import { getAuctionMinBidStep } from '../utils/auctionBidStep'
 import { hasAuctionBuyNowListingForm } from '../utils/hasBuyNowOption'
@@ -73,7 +78,7 @@ import {
 } from '../utils/moneyInputFormat'
 import PropertyCurrencySelector from '../components/PropertyCurrencySelector'
 import '../components/PropertyCurrencySelector.css'
-import { ShieldQuestionMark, ShieldAlert, ShieldCheck, Bell } from 'lucide-react'
+import { ShieldQuestionMark, ShieldAlert, ShieldCheck, Bell, Home, Crown } from 'lucide-react'
 
 // Используем синхронную версию для инициализации, затем обновим при загрузке
 let API_BASE_URL = getApiBaseUrlSync()
@@ -91,6 +96,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
   const [property, setProperty] = useState(initialProperty)
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
   const thumbnailScrollRef = useRef(null)
+  const mobileGalleryFilmstripRef = useRef(null)
   const [isBidHistoryOpen, setIsBidHistoryOpen] = useState(false)
   const [isBuyNowModalOpen, setIsBuyNowModalOpen] = useState(false)
   const [buyNowModalVariant, setBuyNowModalVariant] = useState('buyNow')
@@ -102,6 +108,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
   const [isSubmittingBid, setIsSubmittingBid] = useState(false)
   const [currentBid, setCurrentBid] = useState(null)
   const [recentBids, setRecentBids] = useState([])
+  const [auctionBidsList, setAuctionBidsList] = useState([])
   const [userLastBid, setUserLastBid] = useState(null) // Последняя ставка пользователя
   const [bidOutbidShown, setBidOutbidShown] = useState(false) // Флаг, что уведомление о перебитии уже показано
   const [previousLeaderId, setPreviousLeaderId] = useState(null) // ID предыдущего лидера (кто делал максимальную ставку)
@@ -144,6 +151,14 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
   const auctionFinishedLatchRef = useRef(false)
   /** Последняя известная дата кругового таймера (если API убрал test_timer_end_date) */
   const lastTestTimerEndRef = useRef(null)
+  const [auctionMobileTab, setAuctionMobileTab] = useState('about')
+  const [isBidDrawerOpen, setIsBidDrawerOpen] = useState(false)
+  const [mobileMainSpecsExpanded, setMobileMainSpecsExpanded] = useState(false)
+  const [propertyViewerCount, setPropertyViewerCount] = useState(null)
+
+  const MOBILE_MAIN_SPECS_INITIAL_COUNT = 6
+  const VISITOR_STORAGE_KEY = 'visitor_global_id'
+  const PROPERTY_VIEWER_HEARTBEAT_MS = 30 * 1000
 
   // Отслеживаем изменения currentBid и запускаем анимацию при росте
   useEffect(() => {
@@ -380,11 +395,6 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
   // Загружаем и обрабатываем документы
   useEffect(() => {
     const loadDocuments = async () => {
-      if (!onBack && !showDocuments) {
-        setProcessedDocuments([])
-        return
-      }
-
       const docs = []
       const isDebtProperty =
         displayProperty.sale_type === 'debt' ||
@@ -703,6 +713,10 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
     setIsTestDrivePromoOpen(false)
   }, [displayProperty.id])
 
+  useEffect(() => {
+    setMobileMainSpecsExpanded(false)
+  }, [displayProperty.id])
+
   const dismissTestDrivePromo = () => {
     testDrivePromoDismissedRef.current = true
     setIsTestDrivePromoOpen(false)
@@ -797,7 +811,19 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
         thumbnail.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' })
       }
     }
+    if (mobileGalleryFilmstripRef.current) {
+      const stripThumb = mobileGalleryFilmstripRef.current.children[index]
+      if (stripThumb) {
+        stripThumb.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' })
+      }
+    }
   }
+
+  useEffect(() => {
+    if (auctionMobileTab !== 'gallery' || !mobileGalleryFilmstripRef.current) return
+    const stripThumb = mobileGalleryFilmstripRef.current.children[currentImageIndex]
+    stripThumb?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' })
+  }, [currentImageIndex, auctionMobileTab])
 
   const gallerySwipeEnabled =
     galleryMedia.length > 1 && !isReservedActive
@@ -1482,6 +1508,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
             // Сохраняем последние две ставки (сортируем по дате для отображения последних)
             const sortedByDate = [...data.data].sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
             const newRecentBids = sortedByDate.slice(0, 3)
+            setAuctionBidsList(sortedByDate)
             setRecentBids(prev => {
               const prevStr = JSON.stringify(prev)
               const newStr = JSON.stringify(newRecentBids)
@@ -1507,6 +1534,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
               }
               return prev
             })
+            setAuctionBidsList([])
             // Сбрасываем лидера когда нет ставок
             setCurrentLeader(null)
             setCurrentLeaderId(null)
@@ -1530,6 +1558,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
           }
           return prev
         })
+        setAuctionBidsList([])
       }
     }
 
@@ -2340,6 +2369,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
           'success',
           4000,
         )
+        setIsBidDrawerOpen(false)
 
         void (async () => {
           try {
@@ -2352,6 +2382,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
             const sortedByDate = [...bidsData.data].sort(
               (a, b) => new Date(b.created_at) - new Date(a.created_at),
             )
+            setAuctionBidsList(sortedByDate)
             setRecentBids(sortedByDate.slice(0, 3))
           } catch (err) {
             console.warn('Фоновая синхронизация ставок:', err)
@@ -2432,8 +2463,1123 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
     ? 'ВЫ ЛИДЕР АУКЦИОНА'
     : t('propertyDetailAuctionLeader')
 
+  const auctionPropertyTypeLabel = useMemo(() => {
+    const type = displayProperty?.property_type || displayProperty?.propertyType
+    if (type === 'house') return t('propertyTypeHouse')
+    if (type === 'villa') return t('propertyTypeVilla')
+    if (type === 'commercial') return t('propertyTypeFlat')
+    return t('propertyTypeApartment')
+  }, [displayProperty?.property_type, displayProperty?.propertyType, t])
+
+  const auctionStickyPriceLabel =
+    currentBid !== null &&
+    currentBid !== (displayProperty?.auction_starting_price || 0)
+      ? t('propertyDetailCurrentMaxBid')
+      : t('propertyDetailStartingBidLabel')
+
+  const auctionStickyPriceValue = fmtBidPrice(
+    currentBid !== null
+      ? currentBid
+      : displayProperty?.auction_starting_price || 0,
+  )
+
+  const openInvestorPanelForProperty = useCallback(() => {
+    navigate('/calculator', {
+      state: {
+        calculatorFromProperty: {
+          ...displayProperty,
+          currentBid:
+            currentBid != null ? currentBid : displayProperty?.currentBid ?? null,
+        },
+        calculatorStrategy: 'rent',
+      },
+    })
+  }, [navigate, displayProperty, currentBid])
+
+  const auctionGalleryStripItems = useMemo(() => {
+    if (!galleryMedia.length) return []
+    const maxVisible = 5
+    if (galleryMedia.length <= maxVisible) {
+      return galleryMedia.map((media, index) => ({ media, index, moreCount: 0 }))
+    }
+    return galleryMedia.slice(0, maxVisible).map((media, index) => ({
+      media,
+      index,
+      moreCount: index === maxVisible - 1 ? galleryMedia.length - maxVisible : 0,
+    }))
+  }, [galleryMedia])
+
+  const renderAuctionLeaderCards = () => (
+    <>
+      {previousLeader && !auctionEndedForSidebar && isLeaderChanging && (
+        <div className="auction-leader-card auction-leader-card--exiting">
+          <div className="auction-leader-label">{t('propertyDetailAuctionLeader')}</div>
+          <div className="auction-leader-name">
+            {previousLeader.countryFlag && (
+              <span className="auction-leader-country-flag">{previousLeader.countryFlag}</span>
+            )}
+            <span className="auction-leader-id">
+              {previousLeader.userIdNumber ||
+                previousLeader.userId ||
+                previousLeader.id ||
+                t('propertyDetailUnknown')}
+            </span>
+          </div>
+          <div className="auction-leader-bid">
+            {t('propertyDetailBid')} {fmtBidPrice(previousLeader.bidAmount)}
+          </div>
+        </div>
+      )}
+      {currentLeader && !auctionEndedForSidebar && (
+        <div
+          className={`auction-leader-card ${isLeaderChanging ? 'auction-leader-card--entering' : ''}`}
+        >
+          <div className="auction-leader-label">{currentLeaderLabel}</div>
+          <div className="auction-leader-name">
+            {currentLeader.countryFlag && (
+              <span className="auction-leader-country-flag">{currentLeader.countryFlag}</span>
+            )}
+            <span className="auction-leader-id">
+              {currentLeader.userIdNumber || currentLeader.userId || currentLeader.id}
+            </span>
+          </div>
+          <div className={`auction-leader-bid ${priceAnimation ? 'auction-leader-bid--price-up' : ''}`}>
+            <span className="auction-leader-bid__amount">
+              {t('propertyDetailBid')} {fmtBidPrice(currentLeader.bidAmount)}
+            </span>
+            {priceAnimation && (
+              <FiArrowUp className="auction-leader-bid__arrow-up" size={18} aria-hidden />
+            )}
+          </div>
+        </div>
+      )}
+    </>
+  )
+
+  const renderPropertyBuildingTypeValue = () => {
+    const buildingType = displayProperty.building_type
+    if (!buildingType) return '—'
+    if (buildingType === 'monolithic') return t('addPropertyDetailsBuildingMonolithic')
+    if (buildingType === 'brick') return t('addPropertyDetailsBuildingBrick')
+    if (buildingType === 'panel') return t('addPropertyDetailsBuildingPanel')
+    if (buildingType === 'block') return t('addPropertyDetailsBuildingBlock')
+    if (buildingType === 'wood') return t('addPropertyDetailsBuildingWood')
+    if (buildingType === 'frame') return t('addPropertyDetailsBuildingFrame')
+    if (buildingType === 'aerated_concrete') return t('addPropertyDetailsBuildingAerated')
+    if (buildingType === 'foam_concrete') return t('addPropertyDetailsBuildingFoam')
+    if (buildingType === 'other') return t('addPropertyDetailsBuildingOther')
+    return buildingType
+  }
+
+  const getPropertyMainDetailItems = () => {
+    const isHouseOrVilla =
+      displayProperty.property_type === 'house' || displayProperty.property_type === 'villa'
+    const items = []
+
+    const pushItem = (label, value, wide = false) => {
+      items.push({ key: `${label}-${items.length}`, label, value, wide })
+    }
+
+    if (isHouseOrVilla) {
+      if (
+        displayProperty.land_area !== null &&
+        displayProperty.land_area !== undefined &&
+        displayProperty.land_area !== '' &&
+        Number(displayProperty.land_area) > 0
+      ) {
+        pushItem(t('addPropertyDetailsLandAreaLabel'), `${displayProperty.land_area} м²`)
+      }
+      pushItem(
+        t('addPropertyDetailsAreaLabel'),
+        displayProperty.area || displayProperty.sqft
+          ? `${displayProperty.area || displayProperty.sqft} м²`
+          : '—'
+      )
+      if (
+        displayProperty.living_area !== null &&
+        displayProperty.living_area !== undefined &&
+        displayProperty.living_area !== '' &&
+        Number(displayProperty.living_area) > 0
+      ) {
+        pushItem(t('addPropertyDetailsLivingAreaLabel'), `${displayProperty.living_area} м²`)
+      }
+      pushItem(
+        t('addPropertyDetailsBedroomsLabel'),
+        displayProperty.bedrooms !== undefined &&
+          displayProperty.bedrooms !== null &&
+          displayProperty.bedrooms !== ''
+          ? displayProperty.bedrooms
+          : '—'
+      )
+      pushItem(t('addPropertyDetailsBathroomsShortLabel'), displayProperty.bathrooms || '—')
+      pushItem(
+        t('addPropertyDetailsFloorsCountLabel'),
+        displayProperty.total_floors !== undefined && displayProperty.total_floors !== null
+          ? displayProperty.total_floors
+          : '—'
+      )
+      pushItem(t('addPropertyDetailsBuildingMaterialLabel'), renderPropertyBuildingTypeValue())
+      pushItem(
+        t('addPropertyDetailsYearBuiltLabel'),
+        displayProperty.year_built !== undefined && displayProperty.year_built !== null
+          ? displayProperty.year_built
+          : '—'
+      )
+    } else {
+      pushItem(
+        t('propertyDetailRoomsLabel'),
+        displayProperty.rooms || displayProperty.beds || displayProperty.bedrooms || '—'
+      )
+      pushItem(
+        t('addPropertyDetailsAreaLabel'),
+        displayProperty.area || displayProperty.sqft
+          ? `${displayProperty.area || displayProperty.sqft} м²`
+          : '—'
+      )
+      if (
+        displayProperty.living_area !== null &&
+        displayProperty.living_area !== undefined &&
+        displayProperty.living_area !== '' &&
+        Number(displayProperty.living_area) > 0
+      ) {
+        pushItem(t('addPropertyDetailsLivingAreaLabel'), `${displayProperty.living_area} м²`)
+      }
+      pushItem(t('addPropertyDetailsBathroomsShortLabel'), displayProperty.bathrooms || '—')
+      pushItem(
+        t('propertyDetailFloorLabel'),
+        displayProperty.floor !== undefined && displayProperty.floor !== null
+          ? displayProperty.floor
+          : '—'
+      )
+      pushItem(
+        t('propertyDetailTotalFloorsShort'),
+        displayProperty.total_floors !== undefined && displayProperty.total_floors !== null
+          ? displayProperty.total_floors
+          : '—'
+      )
+      pushItem(t('propertyDetailBuildingTypeShort'), renderPropertyBuildingTypeValue())
+      pushItem(
+        t('addPropertyDetailsYearBuiltLabel'),
+        displayProperty.year_built !== undefined && displayProperty.year_built !== null
+          ? displayProperty.year_built
+          : '—'
+      )
+    }
+
+    return items
+  }
+
+  const getPropertyAdditionalDetailItems = () => {
+    const items = []
+    if (displayProperty.renovation) {
+      items.push({ key: 'renovation', label: t('propertyDetailRenovation'), value: displayProperty.renovation })
+    }
+    if (displayProperty.condition) {
+      items.push({ key: 'condition', label: t('propertyDetailCondition'), value: displayProperty.condition })
+    }
+    if (displayProperty.heating) {
+      items.push({ key: 'heating', label: t('propertyDetailHeating'), value: displayProperty.heating })
+    }
+    if (displayProperty.water_supply) {
+      items.push({
+        key: 'water_supply',
+        label: t('propertyDetailWaterSupply'),
+        value: displayProperty.water_supply,
+      })
+    }
+    if (displayProperty.sewerage) {
+      items.push({ key: 'sewerage', label: t('propertyDetailSewerage'), value: displayProperty.sewerage })
+    }
+    if (displayProperty.commercial_type) {
+      items.push({
+        key: 'commercial_type',
+        label: t('propertyDetailCommercialType'),
+        value: displayProperty.commercial_type,
+      })
+    }
+    if (displayProperty.business_hours) {
+      items.push({
+        key: 'business_hours',
+        label: t('propertyDetailBusinessHours'),
+        value: displayProperty.business_hours,
+      })
+    }
+    return items
+  }
+
+  const renderMobileSpecsSection = (
+    title,
+    items,
+    { collapseAfter = null, expanded = true, onExpand } = {}
+  ) => {
+    if (!items.length) return null
+
+    const canCollapse =
+      collapseAfter != null && items.length > collapseAfter && typeof onExpand === 'function'
+    const visibleItems =
+      canCollapse && !expanded ? items.slice(0, collapseAfter) : items
+    const hiddenCount =
+      canCollapse && !expanded ? items.length - collapseAfter : 0
+
+    return (
+      <section className="property-detail-mobile-specs">
+        <h3 className="property-detail-mobile-specs__title">{title}</h3>
+        <div className="property-detail-mobile-specs__grid" role="list">
+          {visibleItems.map((item) => (
+            <div
+              key={item.key}
+              className={`property-detail-mobile-specs__cell${
+                item.wide ? ' property-detail-mobile-specs__cell--wide' : ''
+              }`}
+              role="listitem"
+            >
+              <span className="property-detail-mobile-specs__label">{item.label}</span>
+              <span className="property-detail-mobile-specs__value">{item.value}</span>
+            </div>
+          ))}
+        </div>
+        {hiddenCount > 0 ? (
+          <button
+            type="button"
+            className="property-detail-mobile-specs__more"
+            onClick={onExpand}
+          >
+            {t('showMore', { count: hiddenCount })}
+          </button>
+        ) : null}
+      </section>
+    )
+  }
+
+  const renderPropertyMainDetailsBlock = ({ layout = 'desktop' } = {}) => {
+    const items = getPropertyMainDetailItems()
+
+    if (layout === 'mobile-about') {
+      return renderMobileSpecsSection(t('addPropertyDetailsTitle'), items, {
+        collapseAfter: MOBILE_MAIN_SPECS_INITIAL_COUNT,
+        expanded: mobileMainSpecsExpanded,
+        onExpand: () => setMobileMainSpecsExpanded(true),
+      })
+    }
+
+    return (
+      <div className="property-detail-info-block property-detail-info-block--main-details">
+        <h3 className="property-detail-info-block__title">{t('addPropertyDetailsTitle')}</h3>
+        <div className="property-detail-info-block__content property-detail-info-block__content--horizontal">
+          {items.map((item) => (
+            <div
+              key={item.key}
+              className="property-detail-info-item property-detail-info-item--horizontal"
+            >
+              <span className="property-detail-info-label">{item.label}:</span>
+              <span className="property-detail-info-value">{item.value}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  const renderPropertyAdditionalDetailsBlock = ({ layout = 'desktop' } = {}) => {
+    const items = getPropertyAdditionalDetailItems()
+    if (!items.length) return null
+
+    if (layout === 'mobile-about') {
+      return renderMobileSpecsSection(t('propertyDetailAdditionalInfoTitle'), items)
+    }
+
+    return (
+      <div className="property-detail-info-block">
+        <h3 className="property-detail-info-block__title">{t('propertyDetailAdditionalInfoTitle')}</h3>
+        <div className="property-detail-info-block__content property-detail-info-block__content--grid">
+          {items.map((item) => (
+            <div key={item.key} className="property-detail-info-item">
+              <span className="property-detail-info-label">{item.label}:</span>
+              <span className="property-detail-info-value">{item.value}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  const getPropertyAmenityLabels = () => {
+    const featureLabelKeys = {
+      feature1: 'addPropertyAmenitiesUndergroundParking',
+      feature2: 'addPropertyAmenitiesKitchenFurniture',
+      feature3: 'addPropertyAmenitiesWashingMachine',
+      feature4: 'addPropertyAmenitiesDishwasher',
+      feature5: 'addPropertyAmenitiesIntercom',
+      feature6: 'addPropertyAmenitiesCctv',
+      feature7: 'addPropertyAmenitiesLoggia',
+      feature8: 'addPropertyAmenitiesStorage',
+      feature9: 'propertyDetailFeature9',
+      feature10: 'propertyDetailFeature10',
+      feature11: 'propertyDetailFeature11',
+      feature12: 'addPropertyAmenitiesBikeParking',
+      feature13: 'propertyDetailFeature13',
+      feature14: 'propertyDetailFeature14',
+      feature15: 'propertyDetailFeature15',
+      feature16: 'addPropertyAmenitiesVideoIntercom',
+      feature17: 'addPropertyAmenitiesConcierge',
+      feature18: 'addPropertyAmenitiesWardrobe',
+      feature19: 'propertyDetailFeature19',
+      feature20: 'propertyDetailFeature20',
+      feature21: 'propertyDetailFeature21',
+      feature22: 'propertyDetailFeature22',
+      feature23: 'propertyDetailFeature23',
+      feature24: 'propertyDetailFeature24',
+      feature25: 'propertyDetailFeature25',
+      feature26: 'propertyDetailFeature26',
+    }
+    const mainAmenityKeys = {
+      balcony: 'addPropertyAmenitiesBalcony',
+      parking: 'addPropertyAmenitiesCategoryParking',
+      elevator: 'addPropertyAmenitiesElevator',
+      garage: 'propertyDetailAmenityGarage',
+      pool: 'propertyDetailAmenityPool',
+      garden: 'propertyDetailAmenityGarden',
+      electricity: 'propertyDetailAmenityElectricity',
+      internet: 'addPropertyAmenitiesInternet',
+      security: 'addPropertyAmenitiesSecurity',
+      furniture: 'addPropertyAmenitiesCategoryFurniture',
+    }
+
+    const amenities = []
+    const amenitiesArray = property.amenities || displayProperty.amenities || []
+    const isAmenitiesArray = Array.isArray(amenitiesArray)
+
+    if (isAmenitiesArray && amenitiesArray.length > 0) {
+      Object.entries(mainAmenityKeys).forEach(([key, labelKey]) => {
+        if (amenitiesArray.includes(key)) amenities.push(t(labelKey))
+      })
+      for (let i = 1; i <= 26; i++) {
+        const featureKey = `feature${i}`
+        if (amenitiesArray.includes(featureKey) && featureLabelKeys[featureKey]) {
+          amenities.push(t(featureLabelKeys[featureKey]))
+        }
+      }
+    } else {
+      Object.entries(mainAmenityKeys).forEach(([key, labelKey]) => {
+        if (displayProperty[key] === true) amenities.push(t(labelKey))
+      })
+      for (let i = 1; i <= 26; i++) {
+        const featureKey = `feature${i}`
+        if (displayProperty[featureKey] === true && featureLabelKeys[featureKey]) {
+          amenities.push(t(featureLabelKeys[featureKey]))
+        }
+      }
+    }
+
+    return amenities
+  }
+
+  const renderPropertyAmenitiesBlock = ({ layout = 'desktop' } = {}) => {
+    if (isDebtProperty) return null
+
+    const amenities = getPropertyAmenityLabels()
+
+    if (layout === 'mobile-about') {
+      return (
+        <section className="property-detail-mobile-amenities">
+          <h3 className="property-detail-mobile-amenities__title">{t('propertyDetailAmenitiesTitle')}</h3>
+          {amenities.length === 0 ? (
+            <p className="property-detail-mobile-amenities__empty">{t('propertyDetailAmenitiesNone')}</p>
+          ) : (
+            <ul className="property-detail-mobile-amenities__list">
+              {amenities.map((amenity, index) => (
+                <li key={`${amenity}-${index}`} className="property-detail-mobile-amenities__item">
+                  <span className="property-detail-mobile-amenities__icon" aria-hidden>
+                    <FiCheck size={14} strokeWidth={3} />
+                  </span>
+                  <span className="property-detail-mobile-amenities__label">{amenity}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      )
+    }
+
+    return (
+      <div className="property-detail-info-block">
+        <h3 className="property-detail-info-block__title">{t('propertyDetailAmenitiesTitle')}</h3>
+        <div className="property-detail-info-block__content property-detail-info-block__content--amenities">
+          {amenities.length === 0 ? (
+            <span className="amenity-tag amenity-tag--empty">{t('propertyDetailAmenitiesNone')}</span>
+          ) : (
+            amenities.map((amenity, index) => (
+              <span key={`${amenity}-${index}`} className="amenity-tag">
+                {amenity}
+              </span>
+            ))
+          )}
+        </div>
+      </div>
+    )
+  }
+
+  const renderMobileAboutAdditionalAmenitiesBlock = () => {
+    const additionalInfo =
+      displayProperty.additional_amenities ||
+      property.additional_amenities ||
+      property.additionalAmenities ||
+      null
+    const text =
+      additionalInfo !== null && additionalInfo !== undefined ? String(additionalInfo).trim() : ''
+    if (!text) return null
+
+    const lines = text
+      .split(/\n+/)
+      .map((line) => line.trim())
+      .filter(Boolean)
+
+    return (
+      <section className="property-detail-mobile-extra-amenities">
+        <h3 className="property-detail-mobile-extra-amenities__title">
+          {t('propertyDetailAdditionalAmenitiesTitle')}
+        </h3>
+        {lines.length > 1 ? (
+          <ul className="property-detail-mobile-extra-amenities__list">
+            {lines.map((line, index) => (
+              <li key={`${index}-${line.slice(0, 24)}`} className="property-detail-mobile-extra-amenities__item">
+                <FiCheck className="property-detail-mobile-extra-amenities__check" size={16} aria-hidden />
+                <span>{line}</span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="property-detail-mobile-extra-amenities__text">{text}</p>
+        )}
+      </section>
+    )
+  }
+
+  const mobileListingPostedDate = useMemo(() => {
+    const raw =
+      displayProperty?.reviewed_at ||
+      displayProperty?.created_at ||
+      displayProperty?.auction_start_date ||
+      null
+    if (!raw) return null
+    const parsed = new Date(raw)
+    if (Number.isNaN(parsed.getTime())) return null
+    const localeByLang = {
+      ru: 'ru-RU',
+      de: 'de-DE',
+      sv: 'sv-SE',
+      fr: 'fr-FR',
+      es: 'es-ES',
+      en: 'en-US',
+    }
+    const locale = localeByLang[currentLang] || 'en-US'
+    return parsed.toLocaleDateString(locale, {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    })
+  }, [
+    displayProperty?.reviewed_at,
+    displayProperty?.created_at,
+    displayProperty?.auction_start_date,
+    currentLang,
+  ])
+
+  useEffect(() => {
+    if (!isAuctionProperty || !displayProperty?.id) return undefined
+
+    const propertyId = String(displayProperty.id)
+    let visitorId = localStorage.getItem(VISITOR_STORAGE_KEY)
+    if (!visitorId) {
+      visitorId = `v_${Date.now()}_${Math.random().toString(36).slice(2, 12)}`
+      localStorage.setItem(VISITOR_STORAGE_KEY, visitorId)
+    }
+
+    let cancelled = false
+
+    const sendHeartbeat = async () => {
+      try {
+        const base = API_BASE_URL || (await getApiBaseUrl())
+        const response = await fetch(`${base}/properties/${propertyId}/viewer-heartbeat`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sessionId: visitorId }),
+          cache: 'no-store',
+          keepalive: true,
+        })
+        if (!response.ok) return
+        const data = await response.json()
+        if (!cancelled && typeof data?.count === 'number') {
+          setPropertyViewerCount(data.count)
+        }
+      } catch {
+        // ignore network errors
+      }
+    }
+
+    sendHeartbeat()
+    const intervalId = setInterval(sendHeartbeat, PROPERTY_VIEWER_HEARTBEAT_MS)
+    const onFocus = () => sendHeartbeat()
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') sendHeartbeat()
+    }
+    window.addEventListener('focus', onFocus)
+    document.addEventListener('visibilitychange', onVisibility)
+
+    return () => {
+      cancelled = true
+      clearInterval(intervalId)
+      window.removeEventListener('focus', onFocus)
+      document.removeEventListener('visibilitychange', onVisibility)
+    }
+  }, [isAuctionProperty, displayProperty?.id])
+
+  useEffect(() => {
+    setPropertyViewerCount(null)
+  }, [displayProperty?.id])
+
+  const renderMobileAuctionListingMeta = () => {
+    if (!isAuctionProperty) return null
+    const hasPostedDate = Boolean(mobileListingPostedDate)
+    const hasViewerCount = propertyViewerCount != null
+    if (!hasPostedDate && !hasViewerCount) return null
+
+    return (
+      <p className="property-detail-mobile-listing-meta">
+        {hasPostedDate ? (
+          <span>{t('propertyDetailListedOn', { date: mobileListingPostedDate })}</span>
+        ) : null}
+        {hasPostedDate && hasViewerCount ? (
+          <span className="property-detail-mobile-listing-meta__sep" aria-hidden>
+            {' '}
+            ·{' '}
+          </span>
+        ) : null}
+        {hasViewerCount ? (
+          <span>{t('propertyDetailOnlineNow', { count: propertyViewerCount })}</span>
+        ) : null}
+      </p>
+    )
+  }
+
+  const galleryPhotoCount = useMemo(
+    () => galleryMedia.filter((item) => item.type === 'photo').length,
+    [galleryMedia],
+  )
+  const galleryVideoCount = useMemo(
+    () => galleryMedia.filter((item) => item.type === 'video').length,
+    [galleryMedia],
+  )
+
+  const formatMobileBidDateTime = useCallback(
+    (iso) => {
+      if (!iso) return ''
+      const localeByLang = {
+        ru: 'ru-RU',
+        de: 'de-DE',
+        sv: 'sv-SE',
+        fr: 'fr-FR',
+        es: 'es-ES',
+        en: 'en-US',
+      }
+      const locale = localeByLang[currentLang] || 'en-US'
+      return new Date(iso).toLocaleString(locale, {
+        day: 'numeric',
+        month: 'short',
+        hour: '2-digit',
+        minute: '2-digit',
+      })
+    },
+    [currentLang],
+  )
+
+  const renderMobileGalleryTab = () => {
+    if (!galleryMedia.length) {
+      return (
+        <p className="property-detail-mobile-gallery__empty" role="status">
+          {t('propertyDetailGalleryEmpty')}
+        </p>
+      )
+    }
+
+    const heroMedia = currentMedia
+    const heroIsVideo = heroMedia?.type === 'video'
+    const heroImageSrc =
+      heroIsVideo && heroMedia.thumbnail ? heroMedia.thumbnail : heroMedia?.url
+
+    return (
+      <section className="property-detail-mobile-gallery" aria-label={t('propertyDetailTabGallery')}>
+        <div
+          className="property-detail-mobile-gallery__hero"
+          {...(gallerySwipeEnabled ? gallerySwipeHandlers : {})}
+        >
+          {galleryMedia.length > 1 ? (
+            <>
+              <button
+                type="button"
+                className="property-detail-mobile-gallery__nav property-detail-mobile-gallery__nav--prev"
+                onClick={handlePreviousImage}
+                aria-label={t('previous') || 'Previous'}
+              >
+                <FiChevronLeft size={22} />
+              </button>
+              <button
+                type="button"
+                className="property-detail-mobile-gallery__nav property-detail-mobile-gallery__nav--next"
+                onClick={handleNextImage}
+                aria-label={t('next') || 'Next'}
+              >
+                <FiChevronRight size={22} />
+              </button>
+            </>
+          ) : null}
+          <span className="property-detail-mobile-gallery__counter">
+            {currentImageIndex + 1} / {galleryMedia.length}
+          </span>
+          <div className="property-detail-mobile-gallery__stage">
+            {heroIsVideo ? (
+              <>
+                {heroImageSrc ? (
+                  <img src={heroImageSrc} alt="" className="property-detail-mobile-gallery__hero-img" />
+                ) : (
+                  <div className="property-detail-mobile-gallery__hero-video-fallback" aria-hidden />
+                )}
+                <span className="property-detail-mobile-gallery__play-badge" aria-hidden>
+                  <FiPlay size={28} />
+                </span>
+              </>
+            ) : (
+              <img src={heroMedia?.url} alt="" className="property-detail-mobile-gallery__hero-img" />
+            )}
+          </div>
+        </div>
+
+        {(galleryPhotoCount > 0 || galleryVideoCount > 0) && (
+          <div className="property-detail-mobile-gallery__meta">
+            {galleryPhotoCount > 0 ? (
+              <span className="property-detail-mobile-gallery__pill">
+                {t('propertyDetailGalleryPhotosCount', { count: galleryPhotoCount })}
+              </span>
+            ) : null}
+            {galleryVideoCount > 0 ? (
+              <span className="property-detail-mobile-gallery__pill property-detail-mobile-gallery__pill--video">
+                {t('propertyDetailGalleryVideosCount', { count: galleryVideoCount })}
+              </span>
+            ) : null}
+          </div>
+        )}
+
+        <div
+          ref={mobileGalleryFilmstripRef}
+          className="property-detail-mobile-gallery__filmstrip"
+          role="list"
+        >
+          {galleryMedia.map((media, index) => {
+            const isActive = currentImageIndex === index
+            const thumbSrc =
+              media.type === 'video'
+                ? media.thumbnail || null
+                : media.url
+            return (
+              <button
+                key={`${media.type}-${index}`}
+                type="button"
+                role="listitem"
+                className={`property-detail-mobile-gallery__thumb${
+                  isActive ? ' property-detail-mobile-gallery__thumb--active' : ''
+                }`}
+                onClick={() => handleThumbnailClick(index)}
+                aria-current={isActive ? 'true' : undefined}
+                aria-label={t('propertyDetailGalleryItemLabel', {
+                  n: index + 1,
+                  total: galleryMedia.length,
+                })}
+              >
+                {thumbSrc ? (
+                  <img src={thumbSrc} alt="" loading="lazy" />
+                ) : (
+                  <span className="property-detail-mobile-gallery__thumb-video" aria-hidden>
+                    <FiPlay size={18} />
+                  </span>
+                )}
+                {media.type === 'video' ? (
+                  <span className="property-detail-mobile-gallery__thumb-type" aria-hidden>
+                    <FiPlay size={10} />
+                  </span>
+                ) : null}
+              </button>
+            )
+          })}
+        </div>
+      </section>
+    )
+  }
+
+  const renderMobileBidsTab = () => {
+    const leaderBid =
+      auctionBidsList.length > 0
+        ? auctionBidsList.reduce((top, bid) => (bid.bid_amount > top.bid_amount ? bid : top))
+        : null
+
+    const isSameLeaderBid = (a, b) => {
+      if (!a || !b) return false
+      if (a.id != null && b.id != null) return String(a.id) === String(b.id)
+      return (
+        String(a.user_id) === String(b.user_id) &&
+        a.bid_amount === b.bid_amount &&
+        String(a.created_at) === String(b.created_at)
+      )
+    }
+
+    const otherBids = leaderBid
+      ? auctionBidsList.filter((bid) => !isSameLeaderBid(bid, leaderBid))
+      : []
+
+    const leaderUserId =
+      leaderBid?.user_id_number ||
+      leaderBid?.user_id ||
+      currentLeader?.userIdNumber ||
+      currentLeader?.userId ||
+      currentLeader?.id
+    const leaderFlag =
+      flagEmojiForStoredCountry(leaderBid?.bidder_country) ||
+      currentLeader?.countryFlag ||
+      ''
+    const leaderIsYou =
+      isCurrentUserLeadingCard ||
+      (leaderBid?.user_id != null &&
+        Number(leaderBid.user_id) === Number(currentUserNumericId))
+
+    const renderBidRow = (bid, index) => {
+      const countryFlag = flagEmojiForStoredCountry(bid.bidder_country)
+      return (
+        <li
+          key={bid.id || `bid-row-${index}-${bid.created_at}`}
+          className="property-detail-mobile-bids__row"
+        >
+          <div className="property-detail-mobile-bids__row-user">
+            <span className="property-detail-mobile-bids__row-avatar" aria-hidden>
+              {countryFlag || <FiUser size={16} />}
+            </span>
+            <span className="property-detail-mobile-bids__row-id">
+              #{bid.user_id_number || bid.user_id || t('propertyDetailUnknown')}
+            </span>
+          </div>
+          <div className="property-detail-mobile-bids__row-meta">
+            <span className="property-detail-mobile-bids__row-amount">
+              {fmtBidPrice(bid.bid_amount)}
+            </span>
+            <span className="property-detail-mobile-bids__row-time">
+              {formatMobileBidDateTime(bid.created_at)}
+            </span>
+          </div>
+        </li>
+      )
+    }
+
+    return (
+      <section className="property-detail-mobile-bids" aria-label={t('propertyDetailTabBids')}>
+        {isReservedActive ? (
+          <div className="property-detail-mobile-bids__notice property-detail-mobile-bids__notice--reserved">
+            <FiLock size={18} aria-hidden />
+            <span>{t('propertyDetailBidsPaused')}</span>
+          </div>
+        ) : null}
+
+        {auctionEndedForSidebar ? (
+          <div className="property-detail-mobile-bids__notice property-detail-mobile-bids__notice--ended">
+            {t('propertyDetailAuctionCompleted')}
+          </div>
+        ) : null}
+
+        {leaderBid ? (
+          <article
+            className={`property-detail-mobile-bids__leader-hero${
+              leaderIsYou ? ' property-detail-mobile-bids__leader-hero--you' : ''
+            }`}
+          >
+            <span className="property-detail-mobile-bids__leader-hero-shine" aria-hidden />
+            <div className="property-detail-mobile-bids__leader-hero-top">
+              <span className="property-detail-mobile-bids__leader-hero-badge">
+                <Crown size={14} strokeWidth={2.25} aria-hidden />
+                {leaderIsYou
+                  ? t('propertyDetailYouAreWinningShort')
+                  : t('propertyDetailAuctionLeader')}
+              </span>
+            </div>
+            <div className="property-detail-mobile-bids__leader-hero-body">
+              <span className="property-detail-mobile-bids__leader-hero-flag" aria-hidden>
+                {leaderFlag || '🏳️'}
+              </span>
+              <div className="property-detail-mobile-bids__leader-hero-player">
+                <span className="property-detail-mobile-bids__leader-hero-id">
+                  #{leaderUserId || t('propertyDetailUnknown')}
+                </span>
+                <span className="property-detail-mobile-bids__leader-hero-time">
+                  <FiClock size={12} aria-hidden />
+                  {formatMobileBidDateTime(leaderBid.created_at)}
+                </span>
+              </div>
+            </div>
+            <p className="property-detail-mobile-bids__leader-hero-amount">
+              {fmtBidPrice(leaderBid.bid_amount)}
+            </p>
+            <p className="property-detail-mobile-bids__leader-hero-caption">
+              {t('propertyDetailCurrentMaxBid')}
+            </p>
+          </article>
+        ) : (
+          <p className="property-detail-mobile-bids__empty" role="status">
+            {t('propertyDetailBidsEmpty')}
+          </p>
+        )}
+
+        {otherBids.length > 0 ? (
+          <div className="property-detail-mobile-bids__rest">
+            <h3 className="property-detail-mobile-bids__rest-title">
+              {t('propertyDetailBidsAllTitle', { count: otherBids.length })}
+            </h3>
+            <ul className="property-detail-mobile-bids__list">{otherBids.map(renderBidRow)}</ul>
+          </div>
+        ) : null}
+
+        <div className="property-detail-mobile-bids__actions">
+          {!auctionEndedForSidebar && !isReservedActive ? (
+            <button
+              type="button"
+              className="property-detail-mobile-bids__cta property-detail-mobile-bids__cta--primary"
+              onClick={() => setIsBidDrawerOpen(true)}
+            >
+              {t('placeBid')}
+            </button>
+          ) : null}
+          <button
+            type="button"
+            className="property-detail-mobile-bids__cta property-detail-mobile-bids__cta--secondary"
+            onClick={() => setIsBidHistoryOpen(true)}
+          >
+            {t('propertyDetailBidHistory')}
+          </button>
+        </div>
+      </section>
+    )
+  }
+
+  const renderMobileAuctionTestDriveBlock = () => {
+    if (!isAuctionProperty || !showsTestDriveSection) return null
+
+    return (
+      <div className="property-detail-mobile-test-drive">
+        <div className="property-detail-mobile-test-drive__hero">
+          <span className="property-detail-mobile-test-drive__icon-wrap" aria-hidden>
+            <Home size={22} strokeWidth={2.25} />
+          </span>
+          <div className="property-detail-mobile-test-drive__hero-text">
+            <span className="property-detail-mobile-test-drive__eyebrow">{t('testDrive')}</span>
+            <span className="property-detail-mobile-test-drive__headline">
+              {t('propertyDetailTestDriveHeadline')}
+            </span>
+            <span className="property-detail-mobile-test-drive__lead">{t('testDrivePromoDrawerLead')}</span>
+          </div>
+        </div>
+        <TestDriveSection
+          propertyId={displayProperty.id}
+          propertyTable={
+            property.source_table || displayProperty.source_table || 'properties_apartments'
+          }
+          hasTestDrive
+          i18nLang={currentLang}
+        />
+      </div>
+    )
+  }
+
+  const renderMobileAboutDocumentsBlock = () => {
+    if (!processedDocuments.length) return null
+
+    return (
+      <section className="property-detail-mobile-documents">
+        <h3 className="property-detail-mobile-documents__title">
+          {t('propertyDetailDocumentsTitle')}
+        </h3>
+        <ul className="property-detail-mobile-documents__list">
+          {processedDocuments.map((doc, index) => (
+            <li key={`${doc.url}-${index}`}>
+              <button
+                type="button"
+                className="property-detail-mobile-documents__item"
+                onClick={() => setSelectedDocument(doc)}
+              >
+                <span className="property-detail-mobile-documents__icon-wrap" aria-hidden>
+                  <FiFileText size={20} />
+                </span>
+                <span className="property-detail-mobile-documents__meta">
+                  <span className="property-detail-mobile-documents__name">{doc.name}</span>
+                  <span className="property-detail-mobile-documents__type">
+                    {doc.type === 'pdf'
+                      ? t('propertyDetailDocumentPdf')
+                      : t('propertyDetailDocumentImage')}
+                  </span>
+                </span>
+                <FiChevronRight
+                  className="property-detail-mobile-documents__chevron"
+                  size={20}
+                  aria-hidden
+                />
+              </button>
+            </li>
+          ))}
+        </ul>
+      </section>
+    )
+  }
+
+  const renderMobileAboutPropertyContent = () => {
+    const descriptionText = displayProperty.description
+      ? String(displayProperty.description).trim()
+      : ''
+
+    return (
+      <div className="property-detail-mobile-about-content">
+        {descriptionText ? (
+          <section className="property-detail-mobile-description">
+            <h3 className="property-detail-mobile-description__title">
+              {t('addPropertyNameLabelDescription')}
+            </h3>
+            <p className="property-detail-mobile-description__text">{descriptionText}</p>
+          </section>
+        ) : null}
+        {renderPropertyMainDetailsBlock({ layout: 'mobile-about' })}
+        {renderPropertyAdditionalDetailsBlock({ layout: 'mobile-about' })}
+        {renderPropertyAmenitiesBlock({ layout: 'mobile-about' })}
+        <PropertyDetailYieldPromo onClick={openInvestorPanelForProperty} />
+        {renderMobileAboutAdditionalAmenitiesBlock()}
+        {renderMobileAboutDocumentsBlock()}
+      </div>
+    )
+  }
+
+  const renderMobileAboutBidSummary = () => {
+    const startingPrice = displayProperty?.auction_starting_price || 0
+    const displayBidAmount =
+      currentBid !== null ? currentBid : startingPrice
+    const bidLabel =
+      currentBid !== null && currentBid !== startingPrice
+        ? t('propertyDetailCurrentMaxBid')
+        : t('propertyDetailStartingBidLabel')
+    const showLeader = currentLeader && !auctionEndedForSidebar
+    const leaderId =
+      currentLeader?.userIdNumber || currentLeader?.userId || currentLeader?.id
+
+    const leaderTitle =
+      currentLeader?.country || currentLeader?.bidder_country || undefined
+
+    return (
+      <div className="property-detail-mobile-about-bid">
+        <span className="property-detail-mobile-about-bid__label">{bidLabel}</span>
+        <div className="property-detail-mobile-about-bid__row">
+          <div
+            className={`property-detail-mobile-about-bid__price-col${
+              priceAnimation ? ' property-detail-mobile-about-bid__price-col--animated' : ''
+            }`}
+          >
+            <span className="property-detail-mobile-about-bid__value">
+              {fmtBidPrice(displayBidAmount)}
+            </span>
+            {priceAnimation && (
+              <FiArrowUp className="property-detail-mobile-about-bid__arrow" size={18} aria-hidden />
+            )}
+          </div>
+          {showLeader && leaderId != null && leaderId !== '' && (
+            <div
+              className={`property-detail-mobile-about-leader${
+                isCurrentUserLeadingCard ? ' property-detail-mobile-about-leader--you' : ''
+              }`}
+              title={leaderTitle}
+            >
+              {currentLeader.countryFlag ? (
+                <span className="property-detail-mobile-about-leader__flag-wrap" aria-hidden>
+                  <span className="property-detail-mobile-about-leader__flag">
+                    {currentLeader.countryFlag}
+                  </span>
+                </span>
+              ) : null}
+              <span className="property-detail-mobile-about-leader__meta">
+                <span className="property-detail-mobile-about-leader__caption">
+                  {isCurrentUserLeadingCard
+                    ? t('propertyDetailYouAreWinningShort')
+                    : t('propertyDetailAuctionLeaderShort')}
+                </span>
+                <span className="property-detail-mobile-about-leader__id">
+                  {currentLeader.userIdNumber
+                    ? `#${currentLeader.userIdNumber}`
+                    : t('propertyDetailWinnerUserId', { id: leaderId })}
+                </span>
+              </span>
+            </div>
+          )}
+        </div>
+      </div>
+    )
+  }
+
+  const renderAuctionTimerVisual = () => {
+    if (showCircularTimerAuctionBlock && circularTimerEndTime) {
+      return (
+        <CircularTimer
+          endTime={circularTimerEndTime}
+          size={168}
+          strokeWidth={8}
+          originalDuration={displayProperty.test_timer_duration || originalTestTimerDuration}
+          isUserLeader={isUserLeader && !auctionEndedForSidebar}
+          bidInfo={timerBidInfo}
+          auctionEndedLabel={t('propertyDetailAuctionCompleted')}
+        />
+      )
+    }
+    if (auctionEndTime) {
+      return (
+        <PropertyTimer
+          endTime={auctionEndTime}
+          auctionEndedLabel={t('propertyDetailAuctionCompleted')}
+        />
+      )
+    }
+    return null
+  }
+
+  const auctionBiddingFormProps = {
+    isAuctionProperty,
+    displayProperty,
+    currentBid,
+    priceAnimation,
+    fmtBidPrice,
+    isReservedActive,
+    kycBidBlocked,
+    paymentActionsLocked,
+    currencyView,
+    getQuickBidAmounts,
+    formatQuickBidLabel,
+    handleQuickBid,
+    isSubmittingBid,
+    isUserLeader,
+    disableAuctionBidFields,
+    notifyListingCurrencyOnly,
+    bidAmountInputValue,
+    handleBidAmountChange,
+    bidAmount,
+    handleBidSubmit,
+    auctionEndedForSidebar,
+  }
+
   return (
-    <div className="property-detail-page-new">
+    <div
+      className={`property-detail-page-new${
+        isAuctionProperty
+          ? ` property-detail-page-new--auction-mobile-v2 property-detail-mobile-tab-${auctionMobileTab}`
+          : ''
+      }`}
+    >
       {showConfetti && (
         <>
           <div className="winner-celebration-confetti" aria-hidden>
@@ -2508,8 +3654,12 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
           onGoToProperty={handleGoToPropertyFromNotification}
         />
       )}
-      {/* Заголовок */}
-      <div className="property-detail-header">
+      {/* Заголовок (на мобильном аукционе скрыт — «Назад» в галерее) */}
+      <div
+        className={`property-detail-header${
+          isAuctionProperty ? ' property-detail-header--auction-desktop' : ''
+        }`}
+      >
         <div className="property-detail-header__container">
           <PageBackButton onClick={handleBackClick} />
         </div>
@@ -2596,6 +3746,85 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                         <FiArrowUp className="price-overlay__arrow" size={24} />
                       </div>
                     </div>
+                  </div>
+                )}
+                <div className="property-detail-gallery__toolbar">
+                  {isAuctionProperty && (
+                    <PageBackButton
+                      onClick={handleBackClick}
+                      className="page-back-button--icon-only property-detail-gallery__toolbar-back"
+                      iconSize={20}
+                    />
+                  )}
+                  <div className="property-detail-gallery__toolbar-actions">
+                    {isAuctionProperty &&
+                      !shouldShowCircularAuctionTimer(displayProperty) &&
+                      auctionEndTime &&
+                      !timerExpired &&
+                      !isBuyNowSaleCompleted &&
+                      !isReservedActive &&
+                      hasDbBackedProperty(displayProperty) && (
+                        <button
+                          type="button"
+                          className="property-detail-gallery__action-btn"
+                          onClick={() => setAuctionReminderOpen(true)}
+                          aria-label={t('auctionReminderButton')}
+                        >
+                          <Bell size={20} strokeWidth={2.25} />
+                        </button>
+                      )}
+                    <button
+                      type="button"
+                      className="property-detail-gallery__action-btn"
+                      onClick={handleShare}
+                      disabled={isReservedActive}
+                      aria-label={t('share') || 'Поделиться'}
+                    >
+                      <FiShare2 size={20} />
+                    </button>
+                    <button
+                      type="button"
+                      className={`property-detail-gallery__action-btn ${
+                        isFavorite ? 'property-detail-gallery__action-btn--active' : ''
+                      }`}
+                      onClick={handleToggleFavorite}
+                      disabled={isReservedActive}
+                      aria-label={t('addToFavorites') || 'В избранное'}
+                    >
+                      {isFavorite ? <FaHeartSolid size={20} /> : <FiHeart size={20} />}
+                    </button>
+                  </div>
+                </div>
+                {isAuctionProperty && auctionGalleryStripItems.length > 0 && (
+                  <div className="property-detail-gallery__thumb-strip">
+                    {auctionGalleryStripItems.map(({ media, index, moreCount }) => (
+                      <button
+                        key={index}
+                        type="button"
+                        className={`property-detail-gallery__thumb-strip-item${
+                          currentImageIndex === index
+                            ? ' property-detail-gallery__thumb-strip-item--active'
+                            : ''
+                        }`}
+                        onClick={() => handleThumbnailClick(index)}
+                        aria-label={`${t('gallery') || 'Gallery'} ${index + 1}`}
+                      >
+                        {media.type === 'video' ? (
+                          media.thumbnail ? (
+                            <img src={media.thumbnail} alt="" />
+                          ) : (
+                            <span className="property-detail-gallery__thumb-strip-video">▶</span>
+                          )
+                        ) : (
+                          <img src={media.url} alt="" />
+                        )}
+                        {moreCount > 0 && (
+                          <span className="property-detail-gallery__thumb-strip-more">
+                            +{moreCount}
+                          </span>
+                        )}
+                      </button>
+                    ))}
                   </div>
                 )}
                 {galleryMedia.length > 1 && (
@@ -2707,288 +3936,15 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
             </div>
 
             {/* Блок с подробной информацией об объекте - под галереей */}
-            <div className="property-detail-info-section">
-              {/* Подробная информация - показываем всегда */}
-              <div className="property-detail-info-block">
-                <h3 className="property-detail-info-block__title">{t('addPropertyDetailsTitle')}</h3>
-                <div className="property-detail-info-block__content property-detail-info-block__content--horizontal">
-                  {/* Для домов и вилл показываем специфичные поля */}
-                  {(displayProperty.property_type === 'house' || displayProperty.property_type === 'villa') ? (
-                    <>
-                      {(displayProperty.land_area !== null && displayProperty.land_area !== undefined && displayProperty.land_area !== '' && Number(displayProperty.land_area) > 0) && (
-                        <div className="property-detail-info-item property-detail-info-item--horizontal">
-                          <span className="property-detail-info-label">{t('addPropertyDetailsLandAreaLabel')}:</span>
-                          <span className="property-detail-info-value">
-                            {displayProperty.land_area} м²
-                          </span>
-                        </div>
-                      )}
-                      <div className="property-detail-info-item property-detail-info-item--horizontal">
-                        <span className="property-detail-info-label">{t('addPropertyDetailsAreaLabel')}:</span>
-                        <span className="property-detail-info-value">
-                          {(displayProperty.area || displayProperty.sqft) ? `${displayProperty.area || displayProperty.sqft} м²` : '—'}
-                        </span>
-                      </div>
-                      {(displayProperty.living_area !== null && displayProperty.living_area !== undefined && displayProperty.living_area !== '' && Number(displayProperty.living_area) > 0) && (
-                        <div className="property-detail-info-item property-detail-info-item--horizontal">
-                          <span className="property-detail-info-label">{t('addPropertyDetailsLivingAreaLabel')}:</span>
-                          <span className="property-detail-info-value">
-                            {displayProperty.living_area} м²
-                          </span>
-                        </div>
-                      )}
-                      <div className="property-detail-info-item property-detail-info-item--horizontal">
-                        <span className="property-detail-info-label">{t('addPropertyDetailsBedroomsLabel')}:</span>
-                        <span className="property-detail-info-value">
-                          {(displayProperty.bedrooms !== undefined && displayProperty.bedrooms !== null && displayProperty.bedrooms !== '') ? displayProperty.bedrooms : '—'}
-                        </span>
-                      </div>
-                      <div className="property-detail-info-item property-detail-info-item--horizontal">
-                        <span className="property-detail-info-label">{t('addPropertyDetailsBathroomsShortLabel')}:</span>
-                        <span className="property-detail-info-value">{displayProperty.bathrooms || '—'}</span>
-                      </div>
-                      <div className="property-detail-info-item property-detail-info-item--horizontal">
-                        <span className="property-detail-info-label">{t('addPropertyDetailsFloorsCountLabel')}:</span>
-                        <span className="property-detail-info-value">
-                          {(displayProperty.total_floors !== undefined && displayProperty.total_floors !== null) ? displayProperty.total_floors : '—'}
-                        </span>
-                      </div>
-                      <div className="property-detail-info-item property-detail-info-item--horizontal">
-                        <span className="property-detail-info-label">{t('addPropertyDetailsBuildingMaterialLabel')}:</span>
-                        <span className="property-detail-info-value">
-                          {displayProperty.building_type ? (
-                            displayProperty.building_type === 'monolithic' ? t('addPropertyDetailsBuildingMonolithic') :
-                            displayProperty.building_type === 'brick' ? t('addPropertyDetailsBuildingBrick') :
-                            displayProperty.building_type === 'panel' ? t('addPropertyDetailsBuildingPanel') :
-                            displayProperty.building_type === 'block' ? t('addPropertyDetailsBuildingBlock') :
-                            displayProperty.building_type === 'wood' ? t('addPropertyDetailsBuildingWood') :
-                            displayProperty.building_type === 'frame' ? t('addPropertyDetailsBuildingFrame') :
-                            displayProperty.building_type === 'aerated_concrete' ? t('addPropertyDetailsBuildingAerated') :
-                            displayProperty.building_type === 'foam_concrete' ? t('addPropertyDetailsBuildingFoam') :
-                            displayProperty.building_type === 'other' ? t('addPropertyDetailsBuildingOther') :
-                            displayProperty.building_type
-                          ) : '—'}
-                        </span>
-                      </div>
-                      <div className="property-detail-info-item property-detail-info-item--horizontal">
-                        <span className="property-detail-info-label">{t('addPropertyDetailsYearBuiltLabel')}:</span>
-                        <span className="property-detail-info-value">
-                          {(displayProperty.year_built !== undefined && displayProperty.year_built !== null) ? displayProperty.year_built : '—'}
-                        </span>
-                      </div>
-                    </>
-                  ) : (
-                    /* Для квартир и апартаментов показываем стандартные поля */
-                    <>
-                      <div className="property-detail-info-item property-detail-info-item--horizontal">
-                        <span className="property-detail-info-label">{t('propertyDetailRoomsLabel')}:</span>
-                        <span className="property-detail-info-value">
-                          {displayProperty.rooms || displayProperty.beds || displayProperty.bedrooms || '—'}
-                        </span>
-                      </div>
-                      <div className="property-detail-info-item property-detail-info-item--horizontal">
-                        <span className="property-detail-info-label">{t('addPropertyDetailsAreaLabel')}:</span>
-                        <span className="property-detail-info-value">
-                          {(displayProperty.area || displayProperty.sqft) ? `${displayProperty.area || displayProperty.sqft} м²` : '—'}
-                        </span>
-                      </div>
-                      {(displayProperty.living_area !== null && displayProperty.living_area !== undefined && displayProperty.living_area !== '' && Number(displayProperty.living_area) > 0) && (
-                        <div className="property-detail-info-item property-detail-info-item--horizontal">
-                          <span className="property-detail-info-label">{t('addPropertyDetailsLivingAreaLabel')}:</span>
-                          <span className="property-detail-info-value">
-                            {displayProperty.living_area} м²
-                          </span>
-                        </div>
-                      )}
-                      <div className="property-detail-info-item property-detail-info-item--horizontal">
-                        <span className="property-detail-info-label">{t('addPropertyDetailsBathroomsShortLabel')}:</span>
-                        <span className="property-detail-info-value">{displayProperty.bathrooms || '—'}</span>
-                      </div>
-                      <div className="property-detail-info-item property-detail-info-item--horizontal">
-                        <span className="property-detail-info-label">{t('propertyDetailFloorLabel')}:</span>
-                        <span className="property-detail-info-value">
-                          {(displayProperty.floor !== undefined && displayProperty.floor !== null) ? displayProperty.floor : '—'}
-                        </span>
-                      </div>
-                      <div className="property-detail-info-item property-detail-info-item--horizontal">
-                        <span className="property-detail-info-label">{t('propertyDetailTotalFloorsShort')}:</span>
-                        <span className="property-detail-info-value">
-                          {(displayProperty.total_floors !== undefined && displayProperty.total_floors !== null) ? displayProperty.total_floors : '—'}
-                        </span>
-                      </div>
-                      <div className="property-detail-info-item property-detail-info-item--horizontal">
-                        <span className="property-detail-info-label">{t('propertyDetailBuildingTypeShort')}:</span>
-                        <span className="property-detail-info-value">
-                          {displayProperty.building_type ? (
-                            displayProperty.building_type === 'monolithic' ? t('addPropertyDetailsBuildingMonolithic') :
-                            displayProperty.building_type === 'brick' ? t('addPropertyDetailsBuildingBrick') :
-                            displayProperty.building_type === 'panel' ? t('addPropertyDetailsBuildingPanel') :
-                            displayProperty.building_type === 'block' ? t('addPropertyDetailsBuildingBlock') :
-                            displayProperty.building_type === 'wood' ? t('addPropertyDetailsBuildingWood') :
-                            displayProperty.building_type === 'frame' ? t('addPropertyDetailsBuildingFrame') :
-                            displayProperty.building_type === 'aerated_concrete' ? t('addPropertyDetailsBuildingAerated') :
-                            displayProperty.building_type === 'foam_concrete' ? t('addPropertyDetailsBuildingFoam') :
-                            displayProperty.building_type === 'other' ? t('addPropertyDetailsBuildingOther') :
-                            displayProperty.building_type
-                          ) : '—'}
-                        </span>
-                      </div>
-                      <div className="property-detail-info-item property-detail-info-item--horizontal">
-                        <span className="property-detail-info-label">{t('addPropertyDetailsYearBuiltLabel')}:</span>
-                        <span className="property-detail-info-value">
-                          {(displayProperty.year_built !== undefined && displayProperty.year_built !== null) ? displayProperty.year_built : '—'}
-                        </span>
-                      </div>
-                    </>
-                  )}
-                </div>
-              </div>
+            <div
+              className={`property-detail-info-section${
+                isAuctionProperty ? ' property-detail-info-section--auction-sheet' : ''
+              }`}
+            >
+              {renderPropertyMainDetailsBlock()}
+              {renderPropertyAdditionalDetailsBlock()}
 
-              {/* Дополнительная информация - показываем если есть данные */}
-              {((displayProperty.renovation !== undefined && displayProperty.renovation !== null && displayProperty.renovation !== '') || 
-                (displayProperty.condition !== undefined && displayProperty.condition !== null && displayProperty.condition !== '') || 
-                (displayProperty.heating !== undefined && displayProperty.heating !== null && displayProperty.heating !== '') || 
-                (displayProperty.water_supply !== undefined && displayProperty.water_supply !== null && displayProperty.water_supply !== '') || 
-                (displayProperty.sewerage !== undefined && displayProperty.sewerage !== null && displayProperty.sewerage !== '') || 
-                (displayProperty.commercial_type !== undefined && displayProperty.commercial_type !== null && displayProperty.commercial_type !== '') || 
-                (displayProperty.business_hours !== undefined && displayProperty.business_hours !== null && displayProperty.business_hours !== '')) && (
-                <div className="property-detail-info-block">
-                  <h3 className="property-detail-info-block__title">{t('propertyDetailAdditionalInfoTitle')}</h3>
-                  <div className="property-detail-info-block__content property-detail-info-block__content--grid">
-                    {displayProperty.renovation && (
-                      <div className="property-detail-info-item">
-                        <span className="property-detail-info-label">{t('propertyDetailRenovation')}:</span>
-                        <span className="property-detail-info-value">{displayProperty.renovation}</span>
-                      </div>
-                    )}
-                    {displayProperty.condition && (
-                      <div className="property-detail-info-item">
-                        <span className="property-detail-info-label">{t('propertyDetailCondition')}:</span>
-                        <span className="property-detail-info-value">{displayProperty.condition}</span>
-                      </div>
-                    )}
-                    {displayProperty.heating && (
-                      <div className="property-detail-info-item">
-                        <span className="property-detail-info-label">{t('propertyDetailHeating')}:</span>
-                        <span className="property-detail-info-value">{displayProperty.heating}</span>
-                      </div>
-                    )}
-                    {displayProperty.water_supply && (
-                      <div className="property-detail-info-item">
-                        <span className="property-detail-info-label">{t('propertyDetailWaterSupply')}:</span>
-                        <span className="property-detail-info-value">{displayProperty.water_supply}</span>
-                      </div>
-                    )}
-                    {displayProperty.sewerage && (
-                      <div className="property-detail-info-item">
-                        <span className="property-detail-info-label">{t('propertyDetailSewerage')}:</span>
-                        <span className="property-detail-info-value">{displayProperty.sewerage}</span>
-                      </div>
-                    )}
-                    {displayProperty.commercial_type && (
-                      <div className="property-detail-info-item">
-                        <span className="property-detail-info-label">{t('propertyDetailCommercialType')}:</span>
-                        <span className="property-detail-info-value">{displayProperty.commercial_type}</span>
-                      </div>
-                    )}
-                    {displayProperty.business_hours && (
-                      <div className="property-detail-info-item">
-                        <span className="property-detail-info-label">{t('propertyDetailBusinessHours')}:</span>
-                        <span className="property-detail-info-value">{displayProperty.business_hours}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* Удобства - красивый горизонтальный блок (для обычных объектов, не долгов) */}
-              {!isDebtProperty && (
-                <div className="property-detail-info-block">
-                  <h3 className="property-detail-info-block__title">{t('propertyDetailAmenitiesTitle')}</h3>
-                  <div className="property-detail-info-block__content property-detail-info-block__content--amenities">
-                    {(() => {
-                    // Маппинг ключей i18n для feature полей
-                    const featureLabelKeys = {
-                      feature1: 'addPropertyAmenitiesUndergroundParking',
-                      feature2: 'addPropertyAmenitiesKitchenFurniture',
-                      feature3: 'addPropertyAmenitiesWashingMachine',
-                      feature4: 'addPropertyAmenitiesDishwasher',
-                      feature5: 'addPropertyAmenitiesIntercom',
-                      feature6: 'addPropertyAmenitiesCctv',
-                      feature7: 'addPropertyAmenitiesLoggia',
-                      feature8: 'addPropertyAmenitiesStorage',
-                      feature9: 'propertyDetailFeature9',
-                      feature10: 'propertyDetailFeature10',
-                      feature11: 'propertyDetailFeature11',
-                      feature12: 'addPropertyAmenitiesBikeParking',
-                      feature13: 'propertyDetailFeature13',
-                      feature14: 'propertyDetailFeature14',
-                      feature15: 'propertyDetailFeature15',
-                      feature16: 'addPropertyAmenitiesVideoIntercom',
-                      feature17: 'addPropertyAmenitiesConcierge',
-                      feature18: 'addPropertyAmenitiesWardrobe',
-                      feature19: 'propertyDetailFeature19',
-                      feature20: 'propertyDetailFeature20',
-                      feature21: 'propertyDetailFeature21',
-                      feature22: 'propertyDetailFeature22',
-                      feature23: 'propertyDetailFeature23',
-                      feature24: 'propertyDetailFeature24',
-                      feature25: 'propertyDetailFeature25',
-                      feature26: 'propertyDetailFeature26'
-                    }
-                    const mainAmenityKeys = {
-                      balcony: 'addPropertyAmenitiesBalcony',
-                      parking: 'addPropertyAmenitiesCategoryParking',
-                      elevator: 'addPropertyAmenitiesElevator',
-                      garage: 'propertyDetailAmenityGarage',
-                      pool: 'propertyDetailAmenityPool',
-                      garden: 'propertyDetailAmenityGarden',
-                      electricity: 'propertyDetailAmenityElectricity',
-                      internet: 'addPropertyAmenitiesInternet',
-                      security: 'addPropertyAmenitiesSecurity',
-                      furniture: 'addPropertyAmenitiesCategoryFurniture'
-                    }
-                    const amenities = []
-                    const amenitiesArray = property.amenities || displayProperty.amenities || []
-                    const isAmenitiesArray = Array.isArray(amenitiesArray)
-                    if (isAmenitiesArray && amenitiesArray.length > 0) {
-                      Object.entries(mainAmenityKeys).forEach(([key, labelKey]) => {
-                        if (amenitiesArray.includes(key)) amenities.push(t(labelKey))
-                      })
-                      for (let i = 1; i <= 26; i++) {
-                        const featureKey = `feature${i}`
-                        if (amenitiesArray.includes(featureKey) && featureLabelKeys[featureKey]) {
-                          amenities.push(t(featureLabelKeys[featureKey]))
-                        }
-                      }
-                    } else {
-                      // Fallback: если массив amenities не приходит из API — собираем по булевым полям (как в модерации)
-                      Object.entries(mainAmenityKeys).forEach(([key, labelKey]) => {
-                        if (displayProperty[key] === true) amenities.push(t(labelKey))
-                      })
-                      for (let i = 1; i <= 26; i++) {
-                        const featureKey = `feature${i}`
-                        if (displayProperty[featureKey] === true && featureLabelKeys[featureKey]) {
-                          amenities.push(t(featureLabelKeys[featureKey]))
-                        }
-                      }
-                    }
-                      if (amenities.length === 0) {
-                        return (
-                          <span className="amenity-tag amenity-tag--empty">
-                            {t('propertyDetailAmenitiesNone')}
-                          </span>
-                        )
-                      }
-                      return amenities.map((amenity, index) => (
-                        <span key={index} className="amenity-tag">
-                          {amenity}
-                        </span>
-                      ))
-                    })()}
-                  </div>
-                </div>
-              )}
+              {renderPropertyAmenitiesBlock()}
 
               {/* Дополнительная информация (текст, который пользователь написал сам) */}
               {(() => {
@@ -3032,7 +3988,11 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
             </div>
 
             {/* Описание и адрес — отдельный блок под подробной информацией (для мобилки, на десктопе скрыт через CSS) */}
-            <div className="property-detail-extra-text-mobile">
+            <div
+              className={`property-detail-extra-text-mobile${
+                isAuctionProperty ? ' property-detail-extra-text-mobile--auction-sheet' : ''
+              }`}
+            >
               {displayProperty.description && (
                 <>
                   <h3 className="property-detail-extra-text-title">Описание</h3>
@@ -3044,7 +4004,11 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
             </div>
 
             {/* Карта для мобильной версии — под описанием и адресом */}
-            <div className="property-detail-map-mobile">
+            <div
+              className={`property-detail-map-mobile${
+                isAuctionProperty ? ' property-detail-map-mobile--auction-sheet' : ''
+              }`}
+            >
               <div className="property-detail-sidebar__map">
                 <h2 className="property-detail-sidebar__map-title">
                   {displayProperty.location || t('location') || 'Местоположение'}
@@ -3095,22 +4059,133 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                 </div>
               </div>
             </div>
+            {renderMobileAuctionTestDriveBlock()}
+            {renderMobileAuctionListingMeta()}
           </div>
 
           {/* Правая колонка */}
-          <div className="property-detail-sidebar">
-            <div className="property-detail-sidebar__content">
+          <div
+            className={`property-detail-sidebar${
+              isAuctionProperty ? ' property-detail-sidebar--auction-mobile' : ''
+            }`}
+          >
+            <div
+              className={`property-detail-sidebar__content${
+                isAuctionProperty ? ' property-detail-mobile-sheet' : ''
+              }`}
+            >
               {/* Название */}
-              <h1 className="property-detail-sidebar__title">{propertyInfo}</h1>
+              {isAuctionProperty ? (
+                <div className="property-detail-mobile-sheet__head">
+                  <div className="property-detail-mobile-sheet__badge-row">
+                    <span className="property-detail-mobile-badge property-detail-mobile-badge--type">
+                      {auctionPropertyTypeLabel}
+                    </span>
+                    {auctionEndTime && !auctionEndedForSidebar && (
+                      <span className="property-detail-mobile-badge property-detail-mobile-badge--live">
+                        {t('propertyDetailAuctionLive') || 'Live auction'}
+                      </span>
+                    )}
+                  </div>
+                  <h1 className="property-detail-sidebar__title property-detail-mobile-sheet__title">
+                    {propertyInfo}
+                  </h1>
+                  {displayProperty.location ? (
+                    <p className="property-detail-mobile-sheet__address">{displayProperty.location}</p>
+                  ) : null}
+                  <div className="property-detail-mobile-tabs" role="tablist">
+                    <button
+                      type="button"
+                      role="tab"
+                      aria-selected={auctionMobileTab === 'about'}
+                      className={`property-detail-mobile-tabs__tab${
+                        auctionMobileTab === 'about' ? ' property-detail-mobile-tabs__tab--active' : ''
+                      }`}
+                      onClick={() => setAuctionMobileTab('about')}
+                    >
+                      {t('propertyDetailTabAbout')}
+                    </button>
+                    <button
+                      type="button"
+                      role="tab"
+                      aria-selected={auctionMobileTab === 'gallery'}
+                      className={`property-detail-mobile-tabs__tab${
+                        auctionMobileTab === 'gallery' ? ' property-detail-mobile-tabs__tab--active' : ''
+                      }`}
+                      onClick={() => setAuctionMobileTab('gallery')}
+                    >
+                      {t('propertyDetailTabGallery')}
+                    </button>
+                    <button
+                      type="button"
+                      role="tab"
+                      aria-selected={auctionMobileTab === 'bids'}
+                      className={`property-detail-mobile-tabs__tab${
+                        auctionMobileTab === 'bids' ? ' property-detail-mobile-tabs__tab--active' : ''
+                      }`}
+                      onClick={() => setAuctionMobileTab('bids')}
+                    >
+                      {t('propertyDetailTabBids')}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <h1 className="property-detail-sidebar__title">{propertyInfo}</h1>
+              )}
 
-              <PropertyCurrencySelector
-                baseCurrency={currencyView.baseCurrency}
-                displayCurrency={currencyView.displayCurrency}
-                onChange={currencyView.setDisplayCurrency}
-                options={currencyView.options}
-                loading={currencyView.loading}
-                isConverted={currencyView.isConverted}
-              />
+              {isAuctionProperty && (
+                <div
+                  className={`property-detail-mobile-tab-panel property-detail-mobile-tab-panel--about${
+                    auctionMobileTab === 'about' ? ' is-active' : ''
+                  }`}
+                >
+                  {auctionEndTime && (
+                    <div className="property-detail-mobile-about-timer">
+                      {isReservedActive ? (
+                        <div className="property-detail-mobile-about-timer__reserved">
+                          <FiLock size={18} aria-hidden />
+                          <span>{t('propertyDetailBidsPaused')}</span>
+                        </div>
+                      ) : auctionEndedForSidebar ? (
+                        <p className="property-detail-mobile-about-timer__ended" role="status">
+                          {t('propertyDetailAuctionCompleted')}
+                        </p>
+                      ) : (
+                        renderAuctionTimerVisual()
+                      )}
+                    </div>
+                  )}
+                  {auctionEndTime && !isReservedActive && !auctionEndedForSidebar && (
+                    renderMobileAboutBidSummary()
+                  )}
+                  {renderMobileAboutPropertyContent()}
+                </div>
+              )}
+
+              {isAuctionProperty && (
+                <div
+                  className={`property-detail-mobile-tab-panel property-detail-mobile-tab-panel--gallery${
+                    auctionMobileTab === 'gallery' ? ' is-active' : ''
+                  }`}
+                >
+                  {renderMobileGalleryTab()}
+                </div>
+              )}
+
+              <div
+                className={
+                  isAuctionProperty ? 'property-detail-currency--auction-sidebar-top' : undefined
+                }
+              >
+                <PropertyCurrencySelector
+                  baseCurrency={currencyView.baseCurrency}
+                  displayCurrency={currencyView.displayCurrency}
+                  onChange={currencyView.setDisplayCurrency}
+                  options={currencyView.options}
+                  loading={currencyView.loading}
+                  isConverted={currencyView.isConverted}
+                />
+              </div>
 
               {/* Минимальная цена продажи для аукционных объектов */}
               {(() => {
@@ -3283,7 +4358,11 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
               })()}
 
               {/* Местоположение */}
-              <div className="property-detail-sidebar__location">
+              <div
+                className={`property-detail-sidebar__location${
+                  isAuctionProperty ? ' property-detail-sidebar__location--title-card' : ''
+                }`}
+              >
                 <span>{displayProperty.location}</span>
               </div>
 
@@ -3291,433 +4370,11 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                   Для долгов тоже показываем, чтобы UX был как у аукциона. */}
               {isAuctionProperty && auctionEndTime ? (
                 <div
-                  className={`property-detail-sidebar__auction-block${auctionEndedForSidebar ? ' property-detail-sidebar__auction-block--ended' : ''}`}
+                  className={`property-detail-mobile-tab-panel property-detail-mobile-tab-panel--bids${
+                    auctionMobileTab === 'bids' ? ' is-active' : ''
+                  }`}
                 >
-                  {/* Для долгов: показываем сумму долга отдельно */}
-                  {isDebtProperty && displayProperty.debt_amount != null && displayProperty.debt_amount !== '' && !Number.isNaN(Number(displayProperty.debt_amount)) && (
-                    <div className="property-detail-sidebar__current-bid" style={{ marginBottom: 12 }}>
-                      <span className="current-bid-label">{t('debtsDebtAmount')}</span>
-                      <span className="current-bid-value">{fmtPrice(displayProperty.debt_amount)}</span>
-                    </div>
-                  )}
-
-                  {/* Проверяем резервацию объекта */}
-                  {isReservedActive ? (
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '1rem' }}>
-                      <div className="property-reservation-block" style={{ minWidth: '250px' }}>
-                        <div className="reservation-icon">🔒</div>
-                        <div className="reservation-text">
-                          <div className="reservation-title">{t('propertyDetailBidsPaused')}</div>
-                          <div className="reservation-subtitle">
-                            {t('propertyDetailReservationUntil', {
-                              date: new Date(displayProperty.reserved_until).toLocaleString(undefined, {
-                                year: 'numeric',
-                                month: '2-digit',
-                                day: '2-digit',
-                                hour: '2-digit',
-                                minute: '2-digit'
-                              }),
-                              hours: Math.ceil((new Date(displayProperty.reserved_until) - new Date()) / (1000 * 60 * 60))
-                            })}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ) : auctionEndedForSidebar ? (
-                    <div
-                      className="property-detail-auction-ended"
-                      style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '1rem', width: '100%' }}
-                    >
-                      {isBuyNowSaleCompleted && displayProperty.buy_now_winner_user_id != null && (
-                        <div className="auction-winner-card auction-winner-card--settled" style={{ marginTop: 14, width: '100%', maxWidth: 320 }}>
-                          <div className="auction-winner-name" style={{ textAlign: 'center' }}>
-                            {t('propertyCardBuyNowWinner', { id: displayProperty.buy_now_winner_user_id })}
-                          </div>
-                        </div>
-                      )}
-                      {!isBuyNowSaleCompleted && showAuctionCompletedWinner && (
-                        <div className="auction-winner-card auction-winner-card--settled" style={{ marginTop: 14, width: '100%', maxWidth: 320 }}>
-                          <div className="auction-winner-label">🏆 {t('propertyDetailAuctionWinner')}</div>
-                          <div className="auction-winner-name">
-                            {t('propertyDetailWinnerUserId', { id: displayEndedAuctionPlayerId ?? resolvedWinnerUserId })}
-                          </div>
-                          <div className="auction-winner-bid">
-                            {t('propertyDetailWinningBid')} {fmtBidPrice(resolvedWinningBid)}
-                          </div>
-                        </div>
-                      )}
-                      {!isBuyNowSaleCompleted && showAuctionCompletedNoBids && (
-                        <div className="auction-completed-no-bids" role="status" style={{ marginTop: 12 }}>
-                          {t('propertyDetailAuctionNoBids')}
-                        </div>
-                      )}
-                    </div>
-                  ) : showCircularTimerAuctionBlock ? (
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '1rem' }}>
-                      {circularTimerEndTime ? (
-                        <CircularTimer
-                          endTime={circularTimerEndTime}
-                          size={150}
-                          strokeWidth={8}
-                          originalDuration={displayProperty.test_timer_duration || originalTestTimerDuration}
-                          isUserLeader={isUserLeader && !auctionEndedForSidebar}
-                          bidInfo={timerBidInfo}
-                          auctionEndedLabel={t('propertyDetailAuctionCompleted')}
-                        />
-                      ) : null}
-                      {previousLeader && !auctionEndedForSidebar && isLeaderChanging && (
-                        <div className="auction-leader-card auction-leader-card--exiting">
-                          <div className="auction-leader-label">{t('propertyDetailAuctionLeader')}</div>
-                          <div className="auction-leader-name">
-                            {previousLeader.countryFlag && (
-                              <span className="auction-leader-country-flag">{previousLeader.countryFlag}</span>
-                            )}
-                            <span className="auction-leader-id">
-                              {previousLeader.userIdNumber || previousLeader.userId || previousLeader.id || t('propertyDetailUnknown')}
-                            </span>
-                          </div>
-                          <div className="auction-leader-bid">
-                            {t('propertyDetailBid')} {fmtBidPrice(previousLeader.bidAmount)}
-                          </div>
-                        </div>
-                      )}
-                      {currentLeader && !auctionEndedForSidebar && (
-                        <div className={`auction-leader-card ${isLeaderChanging ? 'auction-leader-card--entering' : ''}`}>
-                          <div className="auction-leader-label">{currentLeaderLabel}</div>
-                          <div className="auction-leader-name">
-                            {currentLeader.countryFlag && (
-                              <span className="auction-leader-country-flag">{currentLeader.countryFlag}</span>
-                            )}
-                            <span className="auction-leader-id">
-                              {currentLeader.userIdNumber || currentLeader.userId || currentLeader.id}
-                            </span>
-                          </div>
-                          <div
-                            className={`auction-leader-bid ${priceAnimation ? 'auction-leader-bid--price-up' : ''}`}
-                          >
-                            <span className="auction-leader-bid__amount">
-                              {t('propertyDetailBid')} {fmtBidPrice(currentLeader.bidAmount)}
-                            </span>
-                            {priceAnimation && (
-                              <FiArrowUp className="auction-leader-bid__arrow-up" size={18} aria-hidden />
-                            )}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <>
-                      <PropertyTimer endTime={auctionEndTime} auctionEndedLabel={t('propertyDetailAuctionCompleted')} />
-                      {previousLeader && !auctionEndedForSidebar && isLeaderChanging && (
-                        <div className="auction-leader-card auction-leader-card--exiting">
-                          <div className="auction-leader-label">{t('propertyDetailAuctionLeader')}</div>
-                          <div className="auction-leader-name">
-                            {previousLeader.countryFlag && (
-                              <span className="auction-leader-country-flag">{previousLeader.countryFlag}</span>
-                            )}
-                            <span className="auction-leader-id">
-                              {previousLeader.userIdNumber || previousLeader.userId || previousLeader.id || t('propertyDetailUnknown')}
-                            </span>
-                          </div>
-                          <div className="auction-leader-bid">
-                            {t('propertyDetailBid')} {fmtBidPrice(previousLeader.bidAmount)}
-                          </div>
-                        </div>
-                      )}
-                      {currentLeader && !auctionEndedForSidebar && (
-                        <div className={`auction-leader-card ${isLeaderChanging ? 'auction-leader-card--entering' : ''}`}>
-                          <div className="auction-leader-label">{currentLeaderLabel}</div>
-                          <div className="auction-leader-name">
-                            {currentLeader.countryFlag && (
-                              <span className="auction-leader-country-flag">{currentLeader.countryFlag}</span>
-                            )}
-                            <span className="auction-leader-id">
-                              {currentLeader.userIdNumber || currentLeader.userId || currentLeader.id}
-                            </span>
-                          </div>
-                          <div
-                            className={`auction-leader-bid ${priceAnimation ? 'auction-leader-bid--price-up' : ''}`}
-                          >
-                            <span className="auction-leader-bid__amount">
-                              {t('propertyDetailBid')} {fmtBidPrice(currentLeader.bidAmount)}
-                            </span>
-                            {priceAnimation && (
-                              <FiArrowUp className="auction-leader-bid__arrow-up" size={18} aria-hidden />
-                            )}
-                          </div>
-                        </div>
-                      )}
-                    </>
-                  )}
-                  {/* Показываем лидера для обычных объектов (без таймера) */}
-                  {!isAuctionProperty && currentLeader && (
-                    <div className="auction-leader-card">
-                      <div className="auction-leader-label">
-                        {isCurrentUserLeadingCard ? 'ВЫ ЛИДЕР АУКЦИОНА' : t('propertyDetailCurrentLeader')}
-                      </div>
-                      <div className="auction-leader-name">
-                        {currentLeader.countryFlag && (
-                          <span className="auction-leader-country-flag">{currentLeader.countryFlag}</span>
-                        )}
-                        <span className="auction-leader-id">
-                          {currentLeader.userIdNumber || currentLeader.userId || currentLeader.id}
-                        </span>
-                      </div>
-                      <div
-                        className={`auction-leader-bid ${priceAnimation ? 'auction-leader-bid--price-up' : ''}`}
-                      >
-                        <span className="auction-leader-bid__amount">
-                          {t('propertyDetailBid')} {fmtBidPrice(currentLeader.bidAmount)}
-                        </span>
-                        {priceAnimation && (
-                          <FiArrowUp className="auction-leader-bid__arrow-up" size={18} aria-hidden />
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Стартовая сумма → форма ставок → последние ставки → история (светло-серый фон) */}
-                  <div className="property-detail-sidebar__auction-bid-stack">
-                  {/* Блок с текущей/стартовой ценой.
-                      Для аукционных объектов, когда уже есть ставка и показывается карточка лидера,
-                      скрываем этот блок, чтобы не дублировать сумму. */}
-                  {!(
-                    isAuctionProperty &&
-                    currentBid !== null &&
-                    currentBid !== (displayProperty.auction_starting_price || 0)
-                  ) && (
-                    <div className="property-detail-sidebar__current-bid">
-                      <span className="current-bid-label">
-                        {currentBid !== null && currentBid !== (isAuctionProperty ? displayProperty.auction_starting_price : displayProperty.price)
-                          ? t('propertyDetailCurrentMaxBid')
-                          : isAuctionProperty 
-                            ? t('propertyDetailStartingBidLabel')
-                            : t('propertyDetailObjectPrice')}
-                      </span>
-                      <div className={`current-bid-value-wrapper ${priceAnimation ? 'current-bid-value-wrapper--animated' : ''}`}>
-                        <span className="current-bid-value">
-                          {fmtBidPrice(
-                            currentBid !== null
-                              ? currentBid
-                              : isAuctionProperty
-                                ? displayProperty.auction_starting_price || 0
-                                : displayProperty.price || 0,
-                          )}
-                        </span>
-                        {priceAnimation && (
-                          <span className="current-bid-arrow">
-                            <FiArrowUp size={20} />
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Функционал ставки - скрываем когда таймер истек или сделка «купить сейчас» завершена */}
-                  {(!isAuctionProperty || !auctionEndedForSidebar) && (
-                  <div className="property-detail-sidebar__bidding-section">
-                    {isReservedActive && (
-                      <div style={{
-                        background: 'rgba(245, 158, 11, 0.1)',
-                        border: '1px solid #f59e0b',
-                        borderRadius: '8px',
-                        padding: '12px',
-                        marginBottom: '16px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        color: '#92400e',
-                        fontSize: '14px'
-                      }}>
-                        <FiLock size={16} />
-                        <span>{t('propertyDetailBidsUnavailableReserved')}</span>
-                      </div>
-                    )}
-                    {!isReservedActive && kycBidBlocked && (
-                      <div className="auction-verification-pending-banner" role="status">
-                        {t('propertyDetailBidVerificationPending')}
-                      </div>
-                    )}
-                    {paymentActionsLocked ? (
-                      <p className="property-detail-sidebar__bids-currency-note" role="note">
-                        {t('propertyDetailBidsListingCurrency', { currency: currencyView.baseCurrency })}
-                      </p>
-                    ) : null}
-                    <div className="bidding-section__quick-buttons">
-                      {(() => {
-                        const quickBidAmounts = getQuickBidAmounts()
-
-                        return quickBidAmounts.map((amount, index) => (
-                          <button
-                            key={index}
-                            type="button"
-                            className={`bidding-section__quick-btn${
-                              paymentActionsLocked ? ' bidding-section__quick-btn--preview' : ''
-                            }`}
-                            onClick={() => handleQuickBid(amount)}
-                            disabled={
-                              isSubmittingBid ||
-                              isUserLeader ||
-                              disableAuctionBidFields
-                            }
-                            style={{
-                              opacity: disableAuctionBidFields ? 0.5 : 1,
-                              cursor:
-                                disableAuctionBidFields || paymentActionsLocked
-                                  ? 'not-allowed'
-                                  : 'pointer',
-                            }}
-                          >
-                            {formatQuickBidLabel(amount)}
-                          </button>
-                        ))
-                      })()}
-                    </div>
-
-                    {isAuctionProperty &&
-                      !isUserLeader &&
-                      !(isReservedActive) &&
-                      (() => {
-                        const startingPrice = displayProperty.auction_starting_price || 0
-                        const effectiveCurrentBid =
-                          currentBid !== null ? currentBid : (displayProperty.currentBid || startingPrice)
-                        const step = getAuctionMinBidStep(effectiveCurrentBid)
-                        const minBid = effectiveCurrentBid + step
-                        return (
-                          <p
-                            className="bidding-section__min-hint"
-                            style={{ fontSize: '12px', opacity: 0.88, margin: '6px 0 10px', lineHeight: 1.35 }}
-                          >
-                            {t('propertyDetailMinBidHint', {
-                              min: fmtBidPrice(minBid),
-                              step: fmtBidPrice(step),
-                            })}
-                          </p>
-                        )
-                      })()}
-                    
-                    <div
-                      className={`bidding-section__input-wrapper${
-                        paymentActionsLocked ? ' bidding-section__input-wrapper--preview' : ''
-                      }`}
-                      onClick={() => {
-                        if (paymentActionsLocked) notifyListingCurrencyOnly('bid')
-                      }}
-                      onKeyDown={(e) => {
-                        if (paymentActionsLocked && (e.key === 'Enter' || e.key === ' ')) {
-                          e.preventDefault()
-                          notifyListingCurrencyOnly('bid')
-                        }
-                      }}
-                      role={paymentActionsLocked ? 'button' : undefined}
-                      tabIndex={paymentActionsLocked ? 0 : undefined}
-                    >
-                      <span className="bidding-section__currency">
-                        {paymentActionsLocked ? currencyView.symbol : currencyView.baseSymbol}
-                      </span>
-                      <input
-                        type="text"
-                        inputMode="decimal"
-                        autoComplete="off"
-                        readOnly={paymentActionsLocked}
-                        className="bidding-section__input"
-                        placeholder={isUserLeader ? t('propertyDetailYouAreLeading') : (isReservedActive) ? t('objectReserved') : t('propertyDetailEnterBidAmount')}
-                        value={bidAmountInputValue}
-                        onChange={handleBidAmountChange}
-                        disabled={
-                          isSubmittingBid ||
-                          isUserLeader ||
-                          disableAuctionBidFields
-                        }
-                        style={{
-                          opacity: disableAuctionBidFields ? 0.5 : 1,
-                          cursor:
-                            disableAuctionBidFields || paymentActionsLocked
-                              ? 'not-allowed'
-                              : 'text',
-                        }}
-                      />
-                    </div>
-
-                    <button
-                      type="button"
-                      className={`bidding-section__submit-btn ${isUserLeader ? 'bidding-section__submit-btn--winner' : ''}${
-                        paymentActionsLocked ? ' bidding-section__submit-btn--preview' : ''
-                      }`}
-                      onClick={handleBidSubmit}
-                      disabled={isSubmittingBid || (!paymentActionsLocked && !bidAmount) || isUserLeader || disableAuctionBidFields}
-                      style={{
-                        opacity: disableAuctionBidFields ? 0.5 : 1,
-                        cursor:
-                          disableAuctionBidFields || paymentActionsLocked
-                            ? 'not-allowed'
-                            : 'pointer',
-                      }}
-                    >
-                      {isSubmittingBid ? t('propertyDetailSubmitting') : isUserLeader ? t('propertyDetailYouAreWinning') : (isReservedActive) ? t('objectReserved') : t('placeBid')}
-                    </button>
-                  </div>
-                  )}
-
-                  {/* Последние две ставки */}
-                  {recentBids.length > 0 && (() => {
-                    // Находим максимальную ставку для определения лидера
-                    const maxBidAmount = Math.max(...recentBids.map(b => b.bid_amount))
-                    return (
-                      <div className="property-detail-sidebar__recent-bids">
-                        <div className="recent-bids__title">{t('propertyDetailRecentBids')}</div>
-                        <div className="recent-bids__list">
-                          {recentBids.map((bid, index) => {
-                            const isHighest = bid.bid_amount === maxBidAmount
-                            const countryFlag = flagEmojiForStoredCountry(bid.bidder_country)
-                            return (
-                              <div key={bid.id || index} className={`recent-bid-item ${isHighest ? 'recent-bid-item--highest' : ''}`}>
-                                <div className="recent-bid-item__user">
-                                  <FiUser size={14} />
-                                  {countryFlag && (
-                                    <span
-                                      className="recent-bid-item__country-flag"
-                                      title={bid.bidder_country}
-                                      aria-hidden
-                                    >
-                                      {countryFlag}
-                                    </span>
-                                  )}
-                                  <span className="recent-bid-item__user-name">
-                                    {bid.user_id_number || bid.user_id || t('propertyDetailUnknown')}
-                                  </span>
-                                  {isHighest && (
-                                    <span className="recent-bid-item__badge">{t('propertyDetailLeader')}</span>
-                                  )}
-                                </div>
-                                <div className="recent-bid-item__info">
-                                  <div className="recent-bid-item__amount">{fmtBidPrice(bid.bid_amount)}</div>
-                                  <div className="recent-bid-item__time">
-                                    <FiClock size={12} />
-                                    {new Date(bid.created_at).toLocaleString('ru-RU', {
-                                      day: '2-digit',
-                                      month: '2-digit',
-                                      hour: '2-digit',
-                                      minute: '2-digit'
-                                    })}
-                                  </div>
-                                </div>
-                              </div>
-                            )
-                          })}
-                        </div>
-                      </div>
-                    )
-                  })()}
-
-                  <button
-                    type="button"
-                    className="property-detail-sidebar__history-btn"
-                    onClick={() => setIsBidHistoryOpen(true)}
-                  >
-                    {t('propertyDetailBidHistory')}
-                  </button>
-                  </div>
+                  {renderMobileBidsTab()}
                 </div>
               ) : null}
 
@@ -3876,7 +4533,9 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
         onClose={() => setIsDepositRequiredOpen(false)}
         onGoToDeposit={() => {
           setIsDepositRequiredOpen(false)
-          navigateToWallet(navigate, '/auction')
+          const from =
+            typeof window !== 'undefined' ? window.location.pathname : '/auction'
+          navigateToWallet(navigate, from)
         }}
       />
 
@@ -3885,6 +4544,35 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
         onClose={dismissTestDrivePromo}
         onGoToSection={scrollToTestDriveSection}
       />
+
+      {isAuctionProperty && (
+        <div className="property-detail-mobile-bottom-bar">
+          <div className="property-detail-mobile-bottom-bar__price">
+            <span className="property-detail-mobile-bottom-bar__label">{auctionStickyPriceLabel}</span>
+            <span className="property-detail-mobile-bottom-bar__value">{auctionStickyPriceValue}</span>
+          </div>
+          <button
+            type="button"
+            className="property-detail-mobile-bottom-bar__cta"
+            onClick={() => setIsBidDrawerOpen(true)}
+            disabled={auctionEndedForSidebar || isReservedActive}
+          >
+            {t('placeBid')}
+          </button>
+        </div>
+      )}
+
+      <AuctionBidDrawer
+        isOpen={isBidDrawerOpen && isAuctionProperty}
+        onClose={() => setIsBidDrawerOpen(false)}
+        title={t('placeBid')}
+      >
+        <PropertyDetailAuctionBiddingForm
+          {...auctionBiddingFormProps}
+          showCurrencySelector
+          alwaysShowCurrentBid
+        />
+      </AuctionBidDrawer>
 
       {/* Модальное окно для просмотра документа */}
       {selectedDocument && (

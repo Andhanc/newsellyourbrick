@@ -22,6 +22,7 @@ import { MenuToggleIcon } from '@/components/ui/menu-toggle-icon'
 import { getCabinetDataPath, getCabinetProfilePath, isSellerCabinetRole } from '../utils/cabinetRoutes'
 import SiteNavDrawer from './SiteNavDrawer'
 import { setSiteNavDrawerOpen } from '../utils/siteNavDrawerDocumentFlag'
+import { UI_LANGUAGES } from '../constants/uiLanguages'
 
 const Header = () => {
   const navigate = useNavigate()

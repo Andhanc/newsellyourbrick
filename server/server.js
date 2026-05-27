@@ -233,6 +233,64 @@ app.get('/api/admin/online-count', async (req, res) => {
   }
 });
 
+// Смотрят карточку объекта: propertyId -> Map(sessionId -> lastSeen)
+const propertyPageViewers = new Map();
+const PROPERTY_VIEWER_TIMEOUT_MS = 90 * 1000;
+
+function prunePropertyPageViewers(propertyId) {
+  const sessions = propertyPageViewers.get(propertyId);
+  if (!sessions) return;
+  const now = Date.now();
+  for (const [sessionId, lastSeen] of sessions.entries()) {
+    if (now - lastSeen > PROPERTY_VIEWER_TIMEOUT_MS) sessions.delete(sessionId);
+  }
+  if (sessions.size === 0) propertyPageViewers.delete(propertyId);
+}
+
+function getPropertyPageViewerCount(propertyId) {
+  const key = String(propertyId);
+  prunePropertyPageViewers(key);
+  return propertyPageViewers.get(key)?.size ?? 0;
+}
+
+/**
+ * POST /api/properties/:id/viewer-heartbeat — пинг просмотра карточки объекта
+ */
+app.post('/api/properties/:id/viewer-heartbeat', express.json(), async (req, res) => {
+  const propertyId = String(req.params.id || '').trim();
+  const sessionId = req.body?.sessionId || req.query?.sessionId || req.headers['x-visitor-id'] || null;
+  if (!propertyId || !/^\d+$/.test(propertyId)) {
+    return res.status(400).json({ success: false, error: 'property id required' });
+  }
+  if (!sessionId || typeof sessionId !== 'string' || sessionId.length > 128) {
+    return res.status(400).json({ success: false, error: 'sessionId required' });
+  }
+  let sessions = propertyPageViewers.get(propertyId);
+  if (!sessions) {
+    sessions = new Map();
+    propertyPageViewers.set(propertyId, sessions);
+  }
+  sessions.set(sessionId, Date.now());
+  prunePropertyPageViewers(propertyId);
+  res.json({ success: true, count: getPropertyPageViewerCount(propertyId) });
+});
+
+/**
+ * GET /api/properties/:id/viewer-count — сколько сейчас смотрят объект
+ */
+app.get('/api/properties/:id/viewer-count', async (req, res) => {
+  const propertyId = String(req.params.id || '').trim();
+  if (!propertyId || !/^\d+$/.test(propertyId)) {
+    return res.status(400).json({ success: false, error: 'property id required' });
+  }
+  try {
+    res.json({ success: true, count: getPropertyPageViewerCount(propertyId) });
+  } catch (error) {
+    console.error('Ошибка при получении viewer count:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // Подписчики SSE для автообновления списка аукциона (без polling)
 const auctionSSEClients = new Set();
 

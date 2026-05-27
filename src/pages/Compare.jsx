@@ -1,5 +1,7 @@
 import { useMemo, useState, useCallback, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import CompareInvestorProDrawer from '../components/CompareInvestorProDrawer'
+import { useSubscriptionCalculatorAccess } from '../hooks/useSubscriptionCalculatorAccess'
 import axios from 'axios'
 import Header from '../components/Header'
 import { mapListingToCalculatorData, pickCityForAuctionCalculator } from '../utils/propertyCalculatorMapping'
@@ -18,6 +20,9 @@ import '../components/PropertyListingGrid.css'
 import { formatPropertyPrice } from '../utils/currency'
 
 const COMPARE_PICK_SKELETON_COUNT = 4
+function compareInvestorDrawerSessionKey(leftKey, rightKey) {
+  return `compareInvestorProDrawer:${leftKey}:${rightKey}`
+}
 
 /** Плейсхолдер карточки выбора, пока каталог и избранное подгружаются */
 function ComparePickCardSkeleton() {
@@ -595,8 +600,11 @@ const Compare = () => {
   const navigate = useNavigate()
   const { favoritesLoading } = usePropertyFavorites()
   const { favoriteAuctions, catalogLoading } = useFavoriteAuctionItems()
+  const { resolved: subscriptionResolved, allowed: hasCalculatorAccess } =
+    useSubscriptionCalculatorAccess()
 
   const listLoading = catalogLoading || favoritesLoading
+  const [compareInvestorDrawerOpen, setCompareInvestorDrawerOpen] = useState(false)
   const [selectedKeys, setSelectedKeys] = useState(() => [])
   const [aiResult, setAiResult] = useState(null)
   const [aiLoading, setAiLoading] = useState(false)
@@ -765,6 +773,36 @@ const Compare = () => {
   const refreshAiAnalysis = useCallback(() => {
     setAiRefreshKey((k) => k + 1)
   }, [])
+
+  useEffect(() => {
+    if (!pair) {
+      setCompareInvestorDrawerOpen(false)
+      return undefined
+    }
+    if (!subscriptionResolved) return undefined
+    if (hasCalculatorAccess) {
+      setCompareInvestorDrawerOpen(false)
+      return undefined
+    }
+
+    const sessionKey = compareInvestorDrawerSessionKey(pair.left.key, pair.right.key)
+    try {
+      if (sessionStorage.getItem(sessionKey) === '1') return undefined
+    } catch {
+      /* private mode */
+    }
+
+    const timer = window.setTimeout(() => {
+      setCompareInvestorDrawerOpen(true)
+      try {
+        sessionStorage.setItem(sessionKey, '1')
+      } catch {
+        /* ignore */
+      }
+    }, 480)
+
+    return () => window.clearTimeout(timer)
+  }, [pair, pair?.left?.key, pair?.right?.key, subscriptionResolved, hasCalculatorAccess])
 
   return (
     <div className="compare-page">
@@ -1230,6 +1268,12 @@ const Compare = () => {
           </>
         )}
       </div>
+
+      <CompareInvestorProDrawer
+        isOpen={compareInvestorDrawerOpen}
+        onClose={() => setCompareInvestorDrawerOpen(false)}
+        onOpenInvestorPanel={() => navigate('/calculator')}
+      />
     </div>
   )
 }

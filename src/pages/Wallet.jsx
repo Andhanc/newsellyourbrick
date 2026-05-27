@@ -22,6 +22,7 @@ import { getApiBaseUrl, getApiBaseUrlSync } from '../utils/apiConfig'
 import UserBidHistoryModal from '../components/UserBidHistoryModal'
 import BuyNowModal from '../components/BuyNowModal'
 import DepositTopUpPicker from '../components/DepositTopUpPicker'
+import DepositSuccessDrawer from '../components/DepositSuccessDrawer'
 import SellerVerificationModal from '../components/SellerVerificationModal'
 import { showNotification } from '../utils/toastHelper'
 import { getCurrencySymbol } from '../utils/currency'
@@ -242,6 +243,7 @@ const WalletInner = () => {
   const [showTopUpPicker, setShowTopUpPicker] = useState(false)
   const [stripeCheckoutLoading, setStripeCheckoutLoading] = useState(false)
   const [showVerificationAfterTopUp, setShowVerificationAfterTopUp] = useState(false)
+  const [showDepositSuccessDrawer, setShowDepositSuccessDrawer] = useState(false)
   const [tonConnectUI] = useTonConnectUI()
   const tonAddress = useTonAddress()
   const tonWallet = useTonWallet()
@@ -517,24 +519,31 @@ const WalletInner = () => {
         const result = await confirmWalletDepositSession(sessionId, dbUserId)
         if (result.ok) {
           if (result.data?.credited && typeof result.data.amountEur === 'number') {
-            showNotification(t('walletPage_paymentCredited', { amount: formatAmount(result.data.amountEur) }))
+            let isVerified = false
             try {
               const resV = await fetch(`${API_BASE_URL}/users/${dbUserId}/verification-status`)
               if (resV.ok) {
                 const json = await resV.json()
-                if (!(json.success && json.data?.isVerified)) {
-                  setShowVerificationAfterTopUp(true)
-                }
-              } else {
-                setShowVerificationAfterTopUp(true)
+                isVerified = Boolean(json.success && json.data?.isVerified)
               }
             } catch {
+              /* treat as unverified */
+            }
+            await loadUserData(false)
+            if (isVerified) {
+              setShowDepositSuccessDrawer(true)
+            } else {
+              showNotification(
+                t('walletPage_paymentCredited', { amount: formatAmount(result.data.amountEur) }),
+              )
               setShowVerificationAfterTopUp(true)
             }
           } else if (result.data?.already) {
             showNotification(t('walletPage_paymentAlreadyRecorded'))
+            await loadUserData(false)
+          } else {
+            await loadUserData(false)
           }
-          await loadUserData(false)
         } else {
           showNotification(result.error || t('walletPage_paymentConfirmError'), 'error')
         }
@@ -637,19 +646,30 @@ const WalletInner = () => {
     }
   }
 
-  const handleWalletBack = () => {
+  const navigateToWalletEntryOrigin = () => {
     const fromState = location.state?.from
     const from = isSafeWalletFromPath(fromState) ? fromState : getWalletEntryFrom()
     if (from) {
       clearWalletEntryFrom()
       navigate(from)
-      return
+      return true
     }
+    return false
+  }
+
+  const handleWalletBack = () => {
+    if (navigateToWalletEntryOrigin()) return
     const idx = window.history.state?.idx
     if (typeof idx === 'number' && idx > 0) {
       navigate(-1)
       return
     }
+    navigate('/auction')
+  }
+
+  const handleDepositSuccessContinue = () => {
+    setShowDepositSuccessDrawer(false)
+    if (navigateToWalletEntryOrigin()) return
     navigate('/auction')
   }
 
@@ -799,6 +819,12 @@ const WalletInner = () => {
           tonPaymentLoading={tonPaymentLoading}
           tonPaymentSuccess={tonPaymentSuccess}
           shortenAddress={shortenAddress}
+        />
+        <DepositSuccessDrawer
+          isOpen={showDepositSuccessDrawer}
+          onClose={() => setShowDepositSuccessDrawer(false)}
+          balanceFormatted={formatAmount(depositAmount)}
+          onContinue={handleDepositSuccessContinue}
         />
         {dbUserId && (
           <SellerVerificationModal

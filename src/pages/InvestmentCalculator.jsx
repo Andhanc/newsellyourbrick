@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useUser } from '@clerk/clerk-react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -30,6 +30,7 @@ import {
   getStoredNumericUserId,
 } from '../services/authService';
 import { useFavoriteAuctionItems } from '../hooks/useFavoriteAuctionItems';
+import { subscriptionUnlocksCalculator } from '../utils/subscriptionAccess';
 import {
   ChevronDown,
   Wallet,
@@ -78,15 +79,6 @@ function listingThumbProps(property) {
   });
 }
 
-/** Доступ к инвестиционному калькулятору: активная подписка Pro или VIP */
-function subscriptionUnlocksCalculator(sub) {
-  if (!sub || typeof sub !== 'object') return false;
-  const plan = String(sub.plan_key || '').toLowerCase();
-  if (plan !== 'pro' && plan !== 'vip') return false;
-  const st = String(sub.status || '').toLowerCase();
-  return st === 'active' || st === 'trialing';
-}
-
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -101,7 +93,9 @@ ChartJS.register(
 const InvestmentCalculator = () => {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, isLoaded: userLoaded } = useUser();
+  const propertyEntryHandledRef = useRef(false);
 
   const [propertyPrice, setPropertyPrice] = useState('');
   const [renovationCost, setRenovationCost] = useState('');
@@ -325,6 +319,28 @@ const InvestmentCalculator = () => {
     },
     []
   );
+
+  useEffect(() => {
+    if (propertyEntryHandledRef.current) return;
+    const property = location.state?.calculatorFromProperty;
+    if (!property || typeof property !== 'object') return;
+
+    propertyEntryHandledRef.current = true;
+
+    const rawStrategy = location.state?.calculatorStrategy;
+    const strategy =
+      rawStrategy === 'resale' || rawStrategy === 'fractional' || rawStrategy === 'rent'
+        ? rawStrategy
+        : 'rent';
+
+    setInvestmentStrategy(strategy);
+    setDataSource('manual');
+    setSelectedFavoriteKey(null);
+    applyPropertyPreset(property, strategy);
+    setWizardStep(3);
+
+    navigate(location.pathname, { replace: true, state: null });
+  }, [location.state, location.pathname, navigate, applyPropertyPreset]);
 
   const selectedFavoriteItem = useMemo(
     () => favoriteAuctions.find((x) => x.key === selectedFavoriteKey) ?? null,
