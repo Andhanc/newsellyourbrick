@@ -47,7 +47,6 @@ import { propertyRowAllowsTestDriveListing } from './testDriveListingRules.js';
 import {
   AUCTION_DEPOSIT_MIN_EUR,
   isAuctionDepositSufficient,
-  userHasOpenAuctionParticipation,
 } from './utils/auctionDeposit.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -13684,16 +13683,6 @@ app.post('/api/users/:id/deposit/withdraw', async (req, res) => {
     }
     
     const newDeposit = currentDeposit - amount;
-    if (!isAuctionDepositSufficient(newDeposit)) {
-      const hasOpenAuctionBids = await userHasOpenAuctionParticipation(prisma, userId, schemaCache);
-      if (hasOpenAuctionBids) {
-        return res.status(400).json({
-          success: false,
-          code: 'WITHDRAW_BELOW_AUCTION_DEPOSIT',
-          error: `Нельзя вывести средства ниже ${AUCTION_DEPOSIT_MIN_EUR} €, пока у вас есть активные ставки на аукционе.`,
-        });
-      }
-    }
 
     await prisma.$transaction(async (tx) => {
       await tx.users.update({

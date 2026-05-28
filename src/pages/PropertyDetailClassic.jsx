@@ -8,6 +8,7 @@ import {
   FiHeart,
   FiChevronLeft,
   FiChevronRight,
+  FiArrowRight,
   FiFileText,
   FiUser,
   FiClock,
@@ -985,6 +986,39 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
   const kycBidBlocked =
     auctionKycRequired && isAuctionDepositSufficient(auctionUserDeposit) && auctionKycVerified === false
   const disableAuctionBidFields = isReservedActive || kycBidBlocked
+  const mobileAboutDepositContentLocked =
+    isAuctionProperty &&
+    Number(auctionUserDeposit) <= 0 &&
+    !roleSkipsAuctionKyc(userRoleForAuction)
+
+  const wrapMobileDepositGatedBlock = (block) => {
+    if (!block) return null
+    if (!mobileAboutDepositContentLocked) return block
+
+    const openDepositGateModal = () => setIsDepositRequiredOpen(true)
+
+    return (
+      <div className="property-detail-mobile-deposit-gate property-detail-mobile-deposit-gate--locked">
+        <div className="property-detail-mobile-deposit-gate__content" aria-hidden="true">
+          {block}
+        </div>
+        <button
+          type="button"
+          className="property-detail-mobile-deposit-gate__overlay"
+          onClick={openDepositGateModal}
+          aria-label={t('propertyDetailDepositGateAria')}
+        >
+          <span className="property-detail-mobile-deposit-gate__prompt">
+            <FiLock size={18} strokeWidth={2.25} aria-hidden />
+            <span className="property-detail-mobile-deposit-gate__prompt-text">
+              {t('propertyDetailDepositGateTitle')}
+            </span>
+            <FiArrowRight size={18} aria-hidden />
+          </span>
+        </button>
+      </div>
+    )
+  }
 
   // После оплаты резерва в Stripe — подтвердить сессию (если webhook ещё не обработал)
   useEffect(() => {
@@ -2880,7 +2914,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
     const amenities = getPropertyAmenityLabels()
 
     if (layout === 'mobile-about') {
-      return (
+      return wrapMobileDepositGatedBlock(
         <section className="property-detail-mobile-amenities">
           <h3 className="property-detail-mobile-amenities__title">{t('propertyDetailAmenitiesTitle')}</h3>
           {amenities.length === 0 ? (
@@ -2934,7 +2968,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
       .map((line) => line.trim())
       .filter(Boolean)
 
-    return (
+    return wrapMobileDepositGatedBlock(
       <section className="property-detail-mobile-extra-amenities">
         <h3 className="property-detail-mobile-extra-amenities__title">
           {t('propertyDetailAdditionalAmenitiesTitle')}
@@ -3397,7 +3431,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
   const renderMobileAboutDocumentsBlock = () => {
     if (!processedDocuments.length) return null
 
-    return (
+    return wrapMobileDepositGatedBlock(
       <section className="property-detail-mobile-documents">
         <h3 className="property-detail-mobile-documents__title">
           {t('propertyDetailDocumentsTitle')}
@@ -3409,6 +3443,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                 type="button"
                 className="property-detail-mobile-documents__item"
                 onClick={() => setSelectedDocument(doc)}
+                tabIndex={mobileAboutDepositContentLocked ? -1 : undefined}
               >
                 <span className="property-detail-mobile-documents__icon-wrap" aria-hidden>
                   <FiFileText size={20} />
