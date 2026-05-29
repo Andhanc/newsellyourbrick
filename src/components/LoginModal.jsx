@@ -13,6 +13,7 @@ import { getApiBaseUrl } from '../utils/apiConfig'
 import { getClerkOAuthReturnUrl } from '../utils/clerkOAuth'
 import { showNotification } from '../utils/toastHelper'
 import { shouldDefaultLoginModalToLogin } from '../utils/visitorAuthDefault'
+import { setLoginModalOpen } from '../utils/loginModalDocumentFlag'
 import { marketerLogin } from '../services/newsApi'
 import AnimatedCharacters from './AnimatedCharacters'
 import './LoginModal.css'
@@ -159,6 +160,11 @@ const LoginModal = ({ isOpen, onClose, authEntryVariant = 'header_wizard' }) => 
       container.innerHTML = ''
     }
   }, [isOpen, telegramBotUsername])
+
+  useEffect(() => {
+    setLoginModalOpen(isOpen)
+    return () => setLoginModalOpen(false)
+  }, [isOpen])
 
   // Не скрываем LoginModal полностью, чтобы EmailVerificationModal мог рендериться
   // Вместо этого скрываем только содержимое LoginModal
@@ -826,7 +832,7 @@ const LoginModal = ({ isOpen, onClose, authEntryVariant = 'header_wizard' }) => 
                 }}
               >
                 <span className="login-modal__wizard-tile-icon" aria-hidden>
-                  <FiUser size={32} />
+                  <FiUser />
                 </span>
                 <span className="login-modal__wizard-tile-title">{t('roleBuyer')}</span>
                 <span className="login-modal__wizard-tile-desc">{t('authWizardRoleBuyerHint')}</span>
@@ -840,7 +846,7 @@ const LoginModal = ({ isOpen, onClose, authEntryVariant = 'header_wizard' }) => 
                 }}
               >
                 <span className="login-modal__wizard-tile-icon" aria-hidden>
-                  <FiShoppingBag size={32} />
+                  <FiShoppingBag />
                 </span>
                 <span className="login-modal__wizard-tile-title">{t('roleSeller')}</span>
                 <span className="login-modal__wizard-tile-desc">{t('authWizardRoleSellerHint')}</span>
@@ -858,7 +864,7 @@ const LoginModal = ({ isOpen, onClose, authEntryVariant = 'header_wizard' }) => 
             onClick={handleBackToRoleStep}
             aria-label={t('authWizardBackToRoleAria')}
           >
-            <FiChevronLeft size={20} aria-hidden />
+            <FiChevronLeft size={16} aria-hidden />
             {t('authWizardBackToRole')}
           </button>
         )}
@@ -980,17 +986,29 @@ const LoginModal = ({ isOpen, onClose, authEntryVariant = 'header_wizard' }) => 
             className="login-modal__social-btn login-modal__social-btn--facebook"
             onClick={handleFacebookAuth}
             disabled={isLoading || !signInLoaded}
+            aria-label={
+              isLoading
+                ? t('socialConnecting')
+                : (isLogin ? t('loginWithFacebook') : t('registerWithFacebook'))
+            }
             style={{ 
               opacity: (isLoading || !signInLoaded) ? 0.6 : 1, 
               cursor: (isLoading || !signInLoaded) ? 'not-allowed' : 'pointer' 
             }}
           >
             <FaFacebook size={20} />
-            <span>
-              {isLoading 
-                ? t('socialConnecting')
-                : (isLogin ? t('loginWithFacebook') : t('registerWithFacebook'))}
-            </span>
+            {isLoading ? (
+              <span aria-hidden="true">{t('socialConnecting')}</span>
+            ) : (
+              <>
+                <span className="login-modal__social-btn-label login-modal__social-btn-label--full" aria-hidden="true">
+                  {isLogin ? t('loginWithFacebook') : t('registerWithFacebook')}
+                </span>
+                <span className="login-modal__social-btn-label login-modal__social-btn-label--short" aria-hidden="true">
+                  Facebook
+                </span>
+              </>
+            )}
           </button>
           
           <button
@@ -998,13 +1016,19 @@ const LoginModal = ({ isOpen, onClose, authEntryVariant = 'header_wizard' }) => 
             className="login-modal__social-btn login-modal__social-btn--google"
             onClick={handleGoogleAuth}
             disabled={isLoading || !signInLoaded}
+            aria-label={isLogin ? t('loginWithGoogle') : t('registerWithGoogle')}
             style={{ 
               opacity: (isLoading || !signInLoaded) ? 0.6 : 1, 
               cursor: (isLoading || !signInLoaded) ? 'not-allowed' : 'pointer' 
             }}
           >
             <FaGoogle size={20} />
-            <span>{isLogin ? t('loginWithGoogle') : t('registerWithGoogle')}</span>
+            <span className="login-modal__social-btn-label login-modal__social-btn-label--full" aria-hidden="true">
+              {isLogin ? t('loginWithGoogle') : t('registerWithGoogle')}
+            </span>
+            <span className="login-modal__social-btn-label login-modal__social-btn-label--short" aria-hidden="true">
+              Google
+            </span>
           </button>
           
           <button 
@@ -1012,21 +1036,34 @@ const LoginModal = ({ isOpen, onClose, authEntryVariant = 'header_wizard' }) => 
             className="login-modal__social-btn login-modal__social-btn--whatsapp"
             onClick={handleWhatsAppLogin}
             disabled={isLoading}
+            aria-label={isLogin ? t('loginWithWhatsApp') : t('registerWithWhatsApp')}
             style={{ 
               opacity: isLoading ? 0.6 : 1, 
               cursor: isLoading ? 'not-allowed' : 'pointer' 
             }}
           >
             <FaWhatsapp size={20} />
-            <span>{isLogin ? t('loginWithWhatsApp') : t('registerWithWhatsApp')}</span>
+            <span className="login-modal__social-btn-label login-modal__social-btn-label--full" aria-hidden="true">
+              {isLogin ? t('loginWithWhatsApp') : t('registerWithWhatsApp')}
+            </span>
+            <span className="login-modal__social-btn-label login-modal__social-btn-label--short" aria-hidden="true">
+              WhatsApp
+            </span>
           </button>
 
           {telegramBotUsername ? (
             <div className="login-modal__telegram-row">
-              <span className="login-modal__telegram-caption">
+              <span className="login-modal__telegram-caption login-modal__telegram-caption--full">
                 {isLogin ? t('loginWithTelegram') : t('registerWithTelegram')}
               </span>
-              <div className="login-modal__telegram-widget" ref={telegramWidgetRef} aria-label={isLogin ? t('loginWithTelegram') : t('registerWithTelegram')} />
+              <span className="login-modal__telegram-caption login-modal__telegram-caption--short" aria-hidden="true">
+                Telegram
+              </span>
+              <div
+                className="login-modal__telegram-widget"
+                ref={telegramWidgetRef}
+                aria-label={isLogin ? t('loginWithTelegram') : t('registerWithTelegram')}
+              />
             </div>
           ) : !telegramConfigLoaded ? (
             <div className="login-modal__telegram-row login-modal__telegram-loading">
@@ -1038,9 +1075,15 @@ const LoginModal = ({ isOpen, onClose, authEntryVariant = 'header_wizard' }) => 
               className="login-modal__social-btn login-modal__social-btn--telegram"
               onClick={handleTelegramClick}
               title={t('telegramEnvHint')}
+              aria-label={isLogin ? t('loginWithTelegram') : t('registerWithTelegram')}
             >
               <FaTelegram size={20} />
-              <span>{isLogin ? t('loginWithTelegram') : t('registerWithTelegram')}</span>
+              <span className="login-modal__social-btn-label login-modal__social-btn-label--full" aria-hidden="true">
+                {isLogin ? t('loginWithTelegram') : t('registerWithTelegram')}
+              </span>
+              <span className="login-modal__social-btn-label login-modal__social-btn-label--short" aria-hidden="true">
+                Telegram
+              </span>
             </button>
           )}
         </div>

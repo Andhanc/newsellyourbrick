@@ -30,7 +30,7 @@
   justify-content: center;
   width: 100px;
   height: 100px;
-  background: linear-gradient(135deg, #0ABAB5 0%, #089a95 100%);
+  background: linear-gradient(135deg, #0abab5 0%, #089a95 100%);
   border-radius: 20px;
   color: white;
   flex-shrink: 0;
@@ -61,7 +61,7 @@
   align-items: center;
   gap: 10px;
   padding: 16px 32px;
-  background: linear-gradient(135deg, #0ABAB5 0%, #089a95 100%);
+  background: linear-gradient(135deg, #0abab5 0%, #089a95 100%);
   color: white;
   border: none;
   border-radius: 12px;
@@ -101,7 +101,6 @@
     text-align: center;
   }
 
-  /* h2 и абзац участвуют в сетке как прямые дети */
   .property-search-block__text {
     display: contents;
   }

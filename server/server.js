@@ -7762,6 +7762,8 @@ app.post('/api/properties', upload.fields([
       videos,
       additional_documents,
       additional_amenities,
+      tz_amenities_json,
+      tz_parameters_json,
       test_drive_data,
       test_drive = 0,
       is_debt,
@@ -7821,6 +7823,19 @@ app.post('/api/properties', upload.fields([
     } catch (parseError) {
       console.warn('⚠️ Ошибка парсинга JSON для медиа:', parseError.message);
     }
+
+    const parseJsonObjectOrArraySafe = (value, fallback) => {
+      if (value == null || value === '') return fallback
+      if (typeof value === 'object') return value
+      if (typeof value !== 'string') return fallback
+      try {
+        return JSON.parse(value)
+      } catch {
+        return fallback
+      }
+    }
+    const parsedTzAmenities = parseJsonObjectOrArraySafe(tz_amenities_json, [])
+    const parsedTzParameters = parseJsonObjectOrArraySafe(tz_parameters_json, {})
 
     parsedPhotos = normalizePhotosListInput(parsedPhotos);
 
@@ -7943,6 +7958,9 @@ app.post('/api/properties', upload.fields([
       water_supply: water_supply || null,
       sewerage: sewerage || null,
       additional_amenities: additional_amenities || null,
+      tz_amenities_json: Array.isArray(parsedTzAmenities) ? parsedTzAmenities : [],
+      tz_parameters_json:
+        parsedTzParameters && typeof parsedTzParameters === 'object' ? parsedTzParameters : {},
       photos: parsedPhotos.length > 0 ? parsedPhotos : null,
       videos: parsedVideos.length > 0 ? parsedVideos : null,
       additional_documents: parsedAdditionalDocuments.length > 0 ? parsedAdditionalDocuments : null,
@@ -8546,6 +8564,8 @@ app.put('/api/properties/:id', upload.fields([
       videos,
       additional_documents,
       additional_amenities,
+      tz_amenities_json,
+      tz_parameters_json,
       test_drive_data,
       test_drive = 0,
       is_debt,
@@ -8619,6 +8639,19 @@ app.put('/api/properties/:id', upload.fields([
     } catch (parseError) {
       console.warn('⚠️ Ошибка парсинга JSON для медиа:', parseError.message);
     }
+
+    const parseJsonObjectOrArraySafe = (value, fallback) => {
+      if (value == null || value === '') return fallback
+      if (typeof value === 'object') return value
+      if (typeof value !== 'string') return fallback
+      try {
+        return JSON.parse(value)
+      } catch {
+        return fallback
+      }
+    }
+    const parsedTzAmenities = parseJsonObjectOrArraySafe(tz_amenities_json, [])
+    const parsedTzParameters = parseJsonObjectOrArraySafe(tz_parameters_json, {})
 
     parsedPhotos = normalizePhotosListInput(parsedPhotos);
     
@@ -8785,6 +8818,16 @@ app.put('/api/properties/:id', upload.fields([
         JSON.stringify(parsedVideos.length > 0 ? parsedVideos : parseStoredJsonArraySafe(originalProperty.videos)),
         JSON.stringify(parsedAdditionalDocuments.length > 0 ? parsedAdditionalDocuments : parseStoredJsonArraySafe(originalProperty.additional_documents)),
         additional_amenities || originalProperty.additional_amenities,
+        JSON.stringify(
+          Array.isArray(parsedTzAmenities)
+            ? parsedTzAmenities
+            : parseJsonObjectOrArraySafe(originalProperty.tz_amenities_json, [])
+        ),
+        JSON.stringify(
+          parsedTzParameters && typeof parsedTzParameters === 'object'
+            ? parsedTzParameters
+            : parseJsonObjectOrArraySafe(originalProperty.tz_parameters_json, {})
+        ),
         ownershipDocumentPath,
         noDebtsDocumentPath,
         normalizedTestDriveEdit !== undefined ? normalizedTestDriveEdit : (originalProperty.test_drive !== undefined && originalProperty.test_drive !== null ? originalProperty.test_drive : 0),
@@ -8922,12 +8965,14 @@ app.put('/api/properties/:id', upload.fields([
           videos: values[40],
           additional_documents: values[41],
           additional_amenities: values[42],
-          ownership_document: values[43],
-          no_debts_document: values[44],
-          test_drive: values[45],
-          test_drive_data: values[46],
-          moderation_status: values[47],
-          rejection_reason: values[48],
+          tz_amenities_json: values[43],
+          tz_parameters_json: values[44],
+          ownership_document: values[45],
+          no_debts_document: values[46],
+          test_drive: values[47],
+          test_drive_data: values[48],
+          moderation_status: values[49],
+          rejection_reason: values[50],
         },
       });
       const newPropertyId = created.id;

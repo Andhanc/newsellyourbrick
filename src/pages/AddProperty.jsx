@@ -341,27 +341,16 @@ const SINGLE_PAGE_SECTION_HELP = {
 
 /** Boolean-поля удобств на одностраничном шаге (совпадают с buildSinglePageAmenityGroups и submit) */
 const SINGLE_PAGE_AMENITY_FORM_KEYS = [
-  'parking',
-  'feature1',
-  'feature12',
-  'feature2',
-  'furniture',
-  'feature3',
-  'feature4',
-  'electricity',
-  'feature18',
-  'internet',
-  'security',
-  'feature5',
-  'feature6',
-  'feature16',
-  'feature17',
   'balcony',
-  'feature7',
-  'feature8',
+  'parking',
   'elevator',
   'pool',
   'garden',
+  'electricity',
+  'internet',
+  'security',
+  'furniture',
+  ...Array.from({ length: 26 }, (_, index) => `feature${index + 1}`),
 ]
 
 function getSinglePageTypeProfile(propertyTypeUi, propertyType) {
@@ -381,103 +370,239 @@ function getSinglePageTypeProfile(propertyTypeUi, propertyType) {
 }
 
 function buildSinglePageAmenityGroups(t, typeProfile) {
-  const allGroups = [
-    {
-      id: 'parking',
-      title: t('addPropertyAmenitiesCategoryParking'),
-      items: [
-        { key: 'parking', label: t('addPropertyAmenitiesParkingSpace') },
-        { key: 'feature1', label: t('addPropertyAmenitiesUndergroundParking') },
-        { key: 'feature12', label: t('addPropertyAmenitiesBikeParking') },
-      ],
-    },
-    {
-      id: 'furniture',
-      title: t('addPropertyAmenitiesCategoryFurniture'),
-      items: [
-        { key: 'feature2', label: t('addPropertyAmenitiesKitchenFurniture') },
-        { key: 'furniture', label: t('addPropertyAmenitiesBuiltInFurniture') },
-        { key: 'feature3', label: t('addPropertyAmenitiesWashingMachine') },
-        { key: 'feature4', label: t('addPropertyAmenitiesDishwasher') },
-        { key: 'electricity', label: t('addPropertyAmenitiesAirConditioning') },
-        { key: 'feature18', label: t('addPropertyAmenitiesWardrobe') },
-      ],
-    },
-    {
-      id: 'security',
-      title: t('addPropertyAmenitiesCategorySecurity'),
-      items: [
-        { key: 'internet', label: t('addPropertyAmenitiesInternet') },
-        { key: 'security', label: t('addPropertyAmenitiesSecurity') },
-        { key: 'feature5', label: t('addPropertyAmenitiesIntercom') },
-        { key: 'feature6', label: t('addPropertyAmenitiesCctv') },
-        { key: 'feature16', label: t('addPropertyAmenitiesVideoIntercom') },
-        { key: 'feature17', label: t('addPropertyAmenitiesConcierge') },
-      ],
-    },
-    {
-      id: 'rooms',
-      title: t('addPropertyAmenitiesCategoryRooms'),
-      items: [
-        { key: 'balcony', label: t('addPropertyAmenitiesBalcony') },
-        { key: 'feature7', label: t('addPropertyAmenitiesLoggia') },
-        { key: 'feature8', label: t('addPropertyAmenitiesStorage') },
-        { key: 'elevator', label: t('addPropertyAmenitiesElevator') },
-      ],
-    },
-    {
-      id: 'outdoor',
-      title: t('addPropertyAmenitiesCategoryOutdoor'),
-      items: [
-        { key: 'pool', label: t('propertyDetailAmenityPool') },
-        { key: 'garden', label: t('propertyDetailAmenityGarden') },
-      ],
-    },
-  ]
-
-  if (typeProfile === 'land') {
-    return [
+  const byType = {
+    apartment: [
       {
-        id: 'land-infra',
-        title: 'Инфраструктура участка',
+        id: 'residential-parking',
+        title: t('addPropertyAmenitiesGroupResidentialParkingStorage'),
         items: [
-          { key: 'parking', label: 'Подъезд для автомобиля' },
-          { key: 'electricity', label: 'Электричество рядом/подключено' },
-          { key: 'internet', label: 'Интернет рядом/подключен' },
-          { key: 'security', label: 'Охраняемая территория' },
+          { key: 'feature1', label: t('addPropertyAmenityUndergroundParking'), tzKey: 'underground_parking' },
+          { key: 'parking', label: t('addPropertyAmenityCoveredParking'), tzKey: 'covered_parking' },
+          { key: 'feature12', label: t('addPropertyAmenityBikeStorage'), tzKey: 'bike_storage' },
+          { key: 'feature8', label: t('addPropertyAmenityStorageRoom'), tzKey: 'storage_room' },
         ],
       },
-    ]
+      {
+        id: 'residential-security',
+        title: t('addPropertyAmenitiesGroupResidentialSecurity'),
+        items: [
+          { key: 'security', label: t('addPropertyAmenitySecurity247'), tzKey: 'security_24_7' },
+          { key: 'feature6', label: t('addPropertyAmenityCctv'), tzKey: 'cctv' },
+          { key: 'feature16', label: t('addPropertyAmenityVideoIntercom'), tzKey: 'video_intercom' },
+          { key: 'elevator', label: t('addPropertyAmenitiesElevator'), tzKey: 'elevator' },
+        ],
+      },
+      {
+        id: 'residential-comfort',
+        title: t('addPropertyAmenitiesGroupResidentialComfort'),
+        items: [
+          { key: 'electricity', label: t('addPropertyAmenityAirConditioning'), tzKey: 'air_conditioning' },
+          { key: 'feature19', label: t('addPropertyAmenityFireplace'), tzKey: 'fireplace' },
+          { key: 'feature20', label: t('addPropertyAmenitySmartHome'), tzKey: 'smart_home' },
+          { key: 'feature21', label: t('addPropertyAmenitySolarPanels'), tzKey: 'solar_panels' },
+          { key: 'internet', label: t('addPropertyAmenityFibreInternet'), tzKey: 'fibre_internet' },
+        ],
+      },
+      {
+        id: 'residential-outdoor',
+        title: t('addPropertyAmenitiesGroupResidentialOutdoor'),
+        items: [
+          { key: 'pool', label: t('addPropertyAmenityPoolCommunal'), tzKey: 'pool_communal' },
+          { key: 'garden', label: t('addPropertyAmenityGarden'), tzKey: 'garden' },
+          { key: 'balcony', label: t('addPropertyAmenitiesBalcony'), tzKey: 'balcony' },
+          { key: 'feature9', label: t('addPropertyAmenityRooftopTerrace'), tzKey: 'rooftop_terrace' },
+        ],
+      },
+    ],
+    apartments: null,
+    house: [
+      {
+        id: 'residential-parking',
+        title: t('addPropertyAmenitiesGroupResidentialParkingStorage'),
+        items: [
+          { key: 'feature1', label: t('addPropertyAmenityUndergroundParking'), tzKey: 'underground_parking' },
+          { key: 'feature11', label: t('addPropertyAmenityPrivateGarage'), tzKey: 'private_garage' },
+          { key: 'parking', label: t('addPropertyAmenityOpenParking'), tzKey: 'open_parking' },
+          { key: 'feature8', label: t('addPropertyAmenityStorageRoom'), tzKey: 'storage_room' },
+        ],
+      },
+      {
+        id: 'residential-comfort',
+        title: t('addPropertyAmenitiesGroupResidentialComfort'),
+        items: [
+          { key: 'electricity', label: t('addPropertyAmenityAirConditioning'), tzKey: 'air_conditioning' },
+          { key: 'feature19', label: t('addPropertyAmenityFireplace'), tzKey: 'fireplace' },
+          { key: 'feature20', label: t('addPropertyAmenitySmartHome'), tzKey: 'smart_home' },
+          { key: 'feature21', label: t('addPropertyAmenitySolarPanels'), tzKey: 'solar_panels' },
+          { key: 'internet', label: t('addPropertyAmenityFibreInternet'), tzKey: 'fibre_internet' },
+        ],
+      },
+      {
+        id: 'residential-outdoor',
+        title: t('addPropertyAmenitiesGroupResidentialOutdoor'),
+        items: [
+          { key: 'pool', label: t('addPropertyAmenityPoolPrivate'), tzKey: 'pool_private' },
+          { key: 'garden', label: t('addPropertyAmenityGarden'), tzKey: 'garden' },
+          { key: 'feature14', label: t('addPropertyAmenitySauna'), tzKey: 'sauna' },
+          { key: 'feature15', label: t('addPropertyAmenitySpa'), tzKey: 'spa' },
+          { key: 'feature9', label: t('addPropertyAmenityRooftopTerrace'), tzKey: 'rooftop_terrace' },
+        ],
+      },
+    ],
+    villa: null,
+    commercial: [
+      {
+        id: 'commercial-parking',
+        title: t('addPropertyAmenitiesGroupCommercialParking'),
+        items: [
+          { key: 'parking', label: t('addPropertyAmenitySurfaceParking'), tzKey: 'surface_parking' },
+          { key: 'feature1', label: t('addPropertyAmenityUndergroundParking'), tzKey: 'underground_parking' },
+          { key: 'feature12', label: t('addPropertyAmenityEvCharging'), tzKey: 'ev_charging' },
+          { key: 'feature25', label: t('addPropertyAmenityLoadingDock'), tzKey: 'loading_dock' },
+        ],
+      },
+      {
+        id: 'commercial-tech',
+        title: t('addPropertyAmenitiesGroupCommercialTech'),
+        items: [
+          { key: 'feature10', label: t('addPropertyAmenityRaisedFloor'), tzKey: 'raised_floor' },
+          { key: 'feature22', label: t('addPropertyAmenityHvacSystem'), tzKey: 'hvac_system' },
+          { key: 'electricity', label: t('addPropertyAmenityThreePhasePower'), tzKey: 'three_phase_power' },
+          { key: 'feature24', label: t('addPropertyAmenityBackupGenerator'), tzKey: 'backup_generator' },
+          { key: 'internet', label: t('addPropertyAmenityFibreInternet'), tzKey: 'fibre_internet' },
+        ],
+      },
+      {
+        id: 'commercial-building',
+        title: t('addPropertyAmenitiesGroupCommercialBuilding'),
+        items: [
+          { key: 'feature17', label: t('addPropertyAmenitySecurity247'), tzKey: 'security_24_7' },
+          { key: 'feature6', label: t('addPropertyAmenityCctv'), tzKey: 'cctv' },
+          { key: 'feature5', label: t('addPropertyAmenityAccessControl'), tzKey: 'access_control' },
+          { key: 'elevator', label: t('addPropertyAmenitiesElevator'), tzKey: 'elevator' },
+          { key: 'feature26', label: t('addPropertyAmenityFreightElevator'), tzKey: 'freight_elevator' },
+        ],
+      },
+    ],
+    land: [
+      {
+        id: 'land-utilities',
+        title: t('addPropertyAmenitiesGroupLandUtilities'),
+        items: [
+          { key: 'electricity', label: t('addPropertyAmenityElectricityConnected'), tzKey: 'electricity_connected' },
+          { key: 'internet', label: t('addPropertyAmenityInternetConnected'), tzKey: 'internet_connected' },
+          { key: 'feature24', label: t('addPropertyAmenityWaterConnected'), tzKey: 'water_connected' },
+          { key: 'feature25', label: t('addPropertyAmenityGasConnected'), tzKey: 'gas_connected' },
+          { key: 'feature26', label: t('addPropertyAmenitySewageConnected'), tzKey: 'sewage_connected' },
+        ],
+      },
+      {
+        id: 'land-access',
+        title: t('addPropertyAmenitiesGroupLandAccess'),
+        items: [
+          { key: 'parking', label: t('addPropertyAmenityRoadAccessPaved'), tzKey: 'road_access_paved' },
+          { key: 'feature1', label: t('addPropertyAmenityRoadAccessDirt'), tzKey: 'road_access_dirt' },
+          { key: 'feature9', label: t('addPropertyAmenitySeaFrontage'), tzKey: 'sea_frontage' },
+          { key: 'garden', label: t('addPropertyAmenityTreesOnPlot'), tzKey: 'trees_on_plot' },
+          { key: 'feature11', label: t('addPropertyAmenityExistingStructures'), tzKey: 'existing_structures' },
+        ],
+      },
+    ],
+    other: [
+      {
+        id: 'hotel-guest',
+        title: t('addPropertyAmenitiesGroupHotelGuest'),
+        items: [
+          { key: 'pool', label: t('addPropertyAmenityPoolOutdoor'), tzKey: 'pool_outdoor' },
+          { key: 'feature13', label: t('addPropertyAmenityGym'), tzKey: 'gym' },
+          { key: 'feature14', label: t('addPropertyAmenitySauna'), tzKey: 'sauna' },
+          { key: 'feature15', label: t('addPropertyAmenitySpa'), tzKey: 'spa_wellness' },
+          { key: 'feature9', label: t('addPropertyAmenityTennisCourt'), tzKey: 'tennis_court' },
+        ],
+      },
+      {
+        id: 'hotel-fb',
+        title: t('addPropertyAmenitiesGroupHotelFood'),
+        items: [
+          { key: 'feature2', label: t('addPropertyAmenityRestaurant'), tzKey: 'restaurant' },
+          { key: 'feature4', label: t('addPropertyAmenityBarLounge'), tzKey: 'bar_lounge' },
+        ],
+      },
+      {
+        id: 'hotel-transport',
+        title: t('addPropertyAmenitiesGroupHotelParking'),
+        items: [
+          { key: 'parking', label: t('addPropertyAmenityParkingOnsite'), tzKey: 'parking_onsite' },
+          { key: 'feature1', label: t('addPropertyAmenityUndergroundParking'), tzKey: 'underground_parking' },
+          { key: 'feature12', label: t('addPropertyAmenityEvCharging'), tzKey: 'ev_charging' },
+          { key: 'feature11', label: t('addPropertyAmenityHelipad'), tzKey: 'helipad' },
+        ],
+      },
+      {
+        id: 'hotel-tech',
+        title: t('addPropertyAmenitiesGroupHotelTech'),
+        items: [
+          { key: 'feature20', label: t('addPropertyAmenitySmartBuildingBms'), tzKey: 'smart_building_bms' },
+          { key: 'feature21', label: t('addPropertyAmenitySolarPanels'), tzKey: 'solar_panels' },
+          { key: 'feature24', label: t('addPropertyAmenityEnergyCertificate'), tzKey: 'energy_certificate' },
+          { key: 'feature25', label: t('addPropertyAmenityBackupGenerator'), tzKey: 'backup_generator' },
+        ],
+      },
+    ],
   }
 
-  if (typeProfile === 'house' || typeProfile === 'villa') {
-    return allGroups.filter((group) => ['parking', 'furniture', 'security', 'outdoor'].includes(group.id))
+  byType.apartments = byType.apartment
+  byType.villa = byType.house
+
+  return byType[typeProfile] || byType.apartment
+}
+
+function buildTzAmenitiesAndParamsPayload(formData, typeProfile, amenityGroups) {
+  const amenities = []
+  amenityGroups.forEach((group) => {
+    group.items.forEach((item) => {
+      if (item.tzKey && formData[item.key]) {
+        amenities.push(item.tzKey)
+      }
+    })
+  })
+
+  const params = {}
+  if (typeProfile === 'apartment' || typeProfile === 'apartments' || typeProfile === 'house' || typeProfile === 'villa') {
+    if (formData.bedrooms !== '' && formData.bedrooms != null) params.bedrooms = Number(formData.bedrooms)
+    if (formData.bathrooms !== '' && formData.bathrooms != null) params.bathrooms = Number(formData.bathrooms)
+    if (formData.area !== '' && formData.area != null) params.total_area_m2 = Number(formData.area)
+    if (formData.livingArea !== '' && formData.livingArea != null) params.living_area_m2 = Number(formData.livingArea)
+    if (formData.landArea !== '' && formData.landArea != null) params.plot_area_m2 = Number(formData.landArea)
+    if (formData.floor !== '' && formData.floor != null) params.floor = Number(formData.floor)
+    if (formData.totalFloors !== '' && formData.totalFloors != null) params.total_floors = Number(formData.totalFloors)
+    if (formData.condition) params.condition = formData.condition
+    if (formData.yearBuilt !== '' && formData.yearBuilt != null) params.year_built = Number(formData.yearBuilt)
   }
 
   if (typeProfile === 'commercial') {
-    return allGroups
-      .filter((group) => ['parking', 'security', 'furniture'].includes(group.id))
-      .map((group) => {
-        if (group.id !== 'furniture') return group
-        return {
-          ...group,
-          title: 'Инженерия и оснащение',
-          items: [
-            { key: 'internet', label: t('addPropertyAmenitiesInternet') },
-            { key: 'electricity', label: 'Электричество / мощность' },
-            { key: 'feature3', label: t('addPropertyAmenitiesWashingMachine') },
-            { key: 'feature4', label: t('addPropertyAmenitiesDishwasher') },
-          ],
-        }
-      })
+    if (formData.area !== '' && formData.area != null) params.total_area_m2 = Number(formData.area)
+    if (formData.commercialType) params.commercial_subtype = formData.commercialType
+    if (formData.condition) params.condition = formData.condition
+    if (formData.yearBuilt !== '' && formData.yearBuilt != null) params.year_built = Number(formData.yearBuilt)
+  }
+
+  if (typeProfile === 'land') {
+    if (formData.landArea !== '' && formData.landArea != null) params.plot_area = Number(formData.landArea)
+    if (formData.commercialType) params.zoning_permitted_use = formData.commercialType
+    if (formData.area !== '' && formData.area != null) params.price_per_m2 = Number(formData.area)
   }
 
   if (typeProfile === 'other') {
-    return allGroups.filter((group) => ['parking', 'security', 'outdoor'].includes(group.id))
+    if (formData.area !== '' && formData.area != null) params.total_area_m2 = Number(formData.area)
+    if (formData.yearBuilt !== '' && formData.yearBuilt != null) params.year_built = Number(formData.yearBuilt)
+    if (formData.condition) params.operating_status = formData.condition
   }
 
-  // apartment / apartments
-  return allGroups.filter((group) => ['parking', 'furniture', 'security', 'rooms'].includes(group.id))
+  return {
+    amenities: Array.from(new Set(amenities)),
+    parameters: params,
+  }
 }
 
 function getAddPropertyNamePlaceholderKey(propertyType) {
@@ -710,11 +835,6 @@ const SINGLE_PAGE_SP_MAIN_SELECTOR = '.single-page-add-flow__main'
 
 /** Линия «фокуса»: когда верх *следующей* карточки доходит сюда, тело *текущей* сворачивается (только геометрия, не «заполнено»). */
 const SP_ACTIVATION_LINE_RATIO = 0.4
-
-/** Сколько wheel-дельты нужно накопить, чтобы свернуть/развернуть секцию */
-const SP_WHEEL_FOLD_TRIGGER = 52
-/** Насколько близко к низу viewport должен быть конец шага, чтобы разрешить автосворачивание вниз */
-const SP_WHEEL_COLLAPSE_BOTTOM_GAP_PX = 56
 
 /** Секция «в фокусе» по линии в viewport — без скачков intersectionRatio между соседями */
 function pickSinglePageSectionIdFromAnchor() {
@@ -959,7 +1079,6 @@ const AddProperty = ({
   const spFoldByIdRef = useRef({})
   const prevSpFoldKeyRef = useRef('')
   const [spFoldRev, setSpFoldRev] = useState(0)
-  const spWheelFoldAccumulatorRef = useRef(0)
   spActiveSectionRef.current = spActiveSection
   const listingModeScrollRef = useRef(null)
   const listingModeWheelAccumulatorRef = useRef(0)
@@ -1012,7 +1131,6 @@ const AddProperty = ({
     setSpSectionListRev(0)
     spFoldByIdRef.current = {}
     prevSpFoldKeyRef.current = ''
-    spWheelFoldAccumulatorRef.current = 0
     setSpFoldRev(0)
     showNotification('Все поля формы очищены', 'success')
   }
@@ -1903,6 +2021,11 @@ const AddProperty = ({
       if (formData.additionalAmenities) {
         formDataToSend.append('additional_amenities', formData.additionalAmenities)
       }
+
+      // Каноничные удобства/параметры по TZ (новое хранение в БД, независимо от legacy feature-полей)
+      const tzPayload = buildTzAmenitiesAndParamsPayload(formData, submitTypeProfile, singlePageAmenityGroups)
+      formDataToSend.append('tz_amenities_json', JSON.stringify(tzPayload.amenities))
+      formDataToSend.append('tz_parameters_json', JSON.stringify(tzPayload.parameters))
       
       // Медиа (JSON) — только URL на сервере, без base64 (иначе POST не проходит лимиты прокси на проде)
       formDataToSend.append('photos', JSON.stringify(photoUrlsForSubmit))
@@ -3006,6 +3129,10 @@ const AddProperty = ({
     const selectedOption = PROPERTY_TYPE_OPTIONS.find(item => item.id === typeId)
     const backendType = selectedOption?.backendType || 'apartment'
     const typeProfile = getSinglePageTypeProfile(typeId, backendType)
+    const amenitiesReset = SINGLE_PAGE_AMENITY_FORM_KEYS.reduce((acc, key) => {
+      acc[key] = false
+      return acc
+    }, {})
     const typeSpecificReset = {
       rooms: '',
       bedrooms: '',
@@ -3020,27 +3147,7 @@ const AddProperty = ({
       landArea: '',
       commercialType: '',
       cadastralNumber: '',
-      parking: false,
-      feature1: false,
-      feature12: false,
-      feature2: false,
-      furniture: false,
-      feature3: false,
-      feature4: false,
-      electricity: false,
-      feature18: false,
-      internet: false,
-      security: false,
-      feature5: false,
-      feature6: false,
-      feature16: false,
-      feature17: false,
-      balcony: false,
-      feature7: false,
-      feature8: false,
-      elevator: false,
-      pool: false,
-      garden: false,
+      ...amenitiesReset,
       additionalAmenities: '',
     }
     
@@ -5262,79 +5369,12 @@ const AddProperty = ({
       })
     }
 
-    const pickFoldTargetFromWheel = (direction, anchorId) => {
-      if (!anchorId) return null
-      const isCollapsed = spFoldByIdRef.current[anchorId] === true
-      const isDone = singlePageSectionDoneMap[anchorId] === true
-      if (direction > 0) {
-        // Вниз: сворачиваем только текущий шаг, если он уже заполнен.
-        return isDone && !isCollapsed ? anchorId : null
-      }
-      // Вверх: раскрываем только текущий шаг, если он свернут.
-      return isCollapsed ? anchorId : null
-    }
-
-    const canCollapseSectionOnWheelDown = (sectionId) => {
-      if (!sectionId) return false
-      const sectionEl = document.querySelector(`[data-sp-section="${sectionId}"]`)
-      if (!sectionEl) return false
-      const rect = sectionEl.getBoundingClientRect()
-      const viewportBottom =
-        main === window ? window.innerHeight : main.getBoundingClientRect().bottom
-      // Закрываем вниз только когда пользователь почти дошел до конца текущего шага.
-      return rect.bottom <= viewportBottom - SP_WHEEL_COLLAPSE_BOTTOM_GAP_PX
-    }
-
-    const handleWheel = (event) => {
-      if (event.ctrlKey) return
-      if (!Number.isFinite(event.deltaY) || Math.abs(event.deltaY) < 0.5) return
-      const root = document.querySelector(SINGLE_PAGE_SP_MAIN_SELECTOR)
-      const nodes = root ? [...root.querySelectorAll('[data-sp-section]')] : []
-      if (!nodes.length) return
-      const ids = nodes.map((n) => n.getAttribute('data-sp-section')).filter(Boolean)
-      if (!ids.length) return
-      spOrderedSectionIdsRef.current = ids
-
-      const anchorId = pickSinglePageSectionIdFromAnchor()
-      const direction = event.deltaY > 0 ? 1 : -1
-      const targetId = pickFoldTargetFromWheel(direction, anchorId)
-      if (!targetId) {
-        spWheelFoldAccumulatorRef.current = 0
-        return
-      }
-      if (direction > 0 && !canCollapseSectionOnWheelDown(targetId)) {
-        spWheelFoldAccumulatorRef.current = 0
-        return
-      }
-
-      event.preventDefault()
-      const prevAccum = spWheelFoldAccumulatorRef.current
-      const sameDirection = prevAccum === 0 || Math.sign(prevAccum) === Math.sign(event.deltaY)
-      const nextAccum = (sameDirection ? prevAccum : 0) + event.deltaY
-      spWheelFoldAccumulatorRef.current = nextAccum
-      if (Math.abs(nextAccum) < SP_WHEEL_FOLD_TRIGGER) return
-
-      spWheelFoldAccumulatorRef.current = 0
-      const nextFold = {
-        ...spFoldByIdRef.current,
-        [targetId]: direction > 0,
-      }
-      const changed = applySinglePageFoldState(nextFold, nodes)
-      if (changed) {
-        spActiveSectionRef.current = targetId
-        setSpActiveSection(targetId)
-        schedule()
-      }
-    }
-
-    main.addEventListener('wheel', handleWheel, { passive: false })
     main.addEventListener('scroll', schedule, { passive: true })
     window.addEventListener('resize', schedule, { passive: true })
     const t = window.setTimeout(schedule, 120)
 
     return () => {
       window.clearTimeout(t)
-      main.removeEventListener('wheel', handleWheel)
       main.removeEventListener('scroll', schedule)
       window.removeEventListener('resize', schedule)
       if (raf) window.cancelAnimationFrame(raf)
@@ -5342,7 +5382,6 @@ const AddProperty = ({
   }, [
     useSinglePageFlow,
     applySinglePageFoldState,
-    singlePageSectionDoneMap,
   ])
 
   // Чтобы при переходе между шагами страница/контейнер начинались сверху,
@@ -8571,218 +8610,25 @@ const AddProperty = ({
                 </h2>
                 
                 <div className="property-amenities-content-scrollable">
-                  {/* Парковка */}
-                  <div className="amenities-category">
-                    <h4 className="amenities-category-title">
-                      <span className="amenities-category-icon">🚗</span>
-                      {t('addPropertyAmenitiesCategoryParking')}
-                    </h4>
-                    <div className="amenities-list">
-                      <label className="amenity-item">
-                        <input
-                          type="checkbox"
-                          checked={formData.parking || false}
-                          onChange={(e) => handleDetailChange('parking', e.target.checked)}
-                          className="amenity-checkbox"
-                        />
-                        <span className="amenity-label">{t('addPropertyAmenitiesParkingSpace')}</span>
-                      </label>
-                      <label className="amenity-item">
-                        <input
-                          type="checkbox"
-                          checked={formData.feature1 || false}
-                          onChange={(e) => handleDetailChange('feature1', e.target.checked)}
-                          className="amenity-checkbox"
-                        />
-                        <span className="amenity-label">{t('addPropertyAmenitiesUndergroundParking')}</span>
-                      </label>
-                      <label className="amenity-item">
-                        <input
-                          type="checkbox"
-                          checked={formData.feature12 || false}
-                          onChange={(e) => handleDetailChange('feature12', e.target.checked)}
-                          className="amenity-checkbox"
-                        />
-                        <span className="amenity-label">{t('addPropertyAmenitiesBikeParking')}</span>
-                      </label>
+                  {singlePageAmenityGroups.map((group) => (
+                    <div key={group.id} className="amenities-category">
+                      <h4 className="amenities-category-title">{group.title}</h4>
+                      <div className="amenities-list">
+                        {group.items.map(({ key, label }) => (
+                          <label key={`${group.id}-${key}`} className="amenity-item">
+                            <input
+                              type="checkbox"
+                              checked={formData[key] || false}
+                              onChange={(e) => handleDetailChange(key, e.target.checked)}
+                              className="amenity-checkbox"
+                            />
+                            <span className="amenity-label">{label}</span>
+                          </label>
+                        ))}
+                      </div>
                     </div>
-                  </div>
+                  ))}
 
-                  {/* Мебель и техника */}
-                  <div className="amenities-category">
-                    <h4 className="amenities-category-title">
-                      <span className="amenities-category-icon">🛋️</span>
-                      {t('addPropertyAmenitiesCategoryFurniture')}
-                    </h4>
-                    <div className="amenities-list">
-                      <label className="amenity-item">
-                        <input
-                          type="checkbox"
-                          checked={formData.feature2 || false}
-                          onChange={(e) => handleDetailChange('feature2', e.target.checked)}
-                          className="amenity-checkbox"
-                        />
-                        <span className="amenity-label">{t('addPropertyAmenitiesKitchenFurniture')}</span>
-                      </label>
-                      <label className="amenity-item">
-                        <input
-                          type="checkbox"
-                          checked={formData.furniture || false}
-                          onChange={(e) => handleDetailChange('furniture', e.target.checked)}
-                          className="amenity-checkbox"
-                        />
-                        <span className="amenity-label">{t('addPropertyAmenitiesBuiltInFurniture')}</span>
-                      </label>
-                      <label className="amenity-item">
-                        <input
-                          type="checkbox"
-                          checked={formData.feature3 || false}
-                          onChange={(e) => handleDetailChange('feature3', e.target.checked)}
-                          className="amenity-checkbox"
-                        />
-                        <span className="amenity-label">{t('addPropertyAmenitiesWashingMachine')}</span>
-                      </label>
-                      <label className="amenity-item">
-                        <input
-                          type="checkbox"
-                          checked={formData.feature4 || false}
-                          onChange={(e) => handleDetailChange('feature4', e.target.checked)}
-                          className="amenity-checkbox"
-                        />
-                        <span className="amenity-label">{t('addPropertyAmenitiesDishwasher')}</span>
-                      </label>
-                      <label className="amenity-item">
-                        <input
-                          type="checkbox"
-                          checked={formData.electricity || false}
-                          onChange={(e) => handleDetailChange('electricity', e.target.checked)}
-                          className="amenity-checkbox"
-                        />
-                        <span className="amenity-label">{t('addPropertyAmenitiesAirConditioning')}</span>
-                      </label>
-                      <label className="amenity-item">
-                        <input
-                          type="checkbox"
-                          checked={formData.feature18 || false}
-                          onChange={(e) => handleDetailChange('feature18', e.target.checked)}
-                          className="amenity-checkbox"
-                        />
-                        <span className="amenity-label">{t('addPropertyAmenitiesWardrobe')}</span>
-                      </label>
-                    </div>
-                  </div>
-
-                  {/* Коммуникации и безопасность */}
-                  <div className="amenities-category">
-                    <h4 className="amenities-category-title">
-                      <span className="amenities-category-icon">🔒</span>
-                      {t('addPropertyAmenitiesCategorySecurity')}
-                    </h4>
-                    <div className="amenities-list">
-                      <label className="amenity-item">
-                        <input
-                          type="checkbox"
-                          checked={formData.internet || false}
-                          onChange={(e) => handleDetailChange('internet', e.target.checked)}
-                          className="amenity-checkbox"
-                        />
-                        <span className="amenity-label">{t('addPropertyAmenitiesInternet')}</span>
-                      </label>
-                      <label className="amenity-item">
-                        <input
-                          type="checkbox"
-                          checked={formData.security || false}
-                          onChange={(e) => handleDetailChange('security', e.target.checked)}
-                          className="amenity-checkbox"
-                        />
-                        <span className="amenity-label">{t('addPropertyAmenitiesSecurity')}</span>
-                      </label>
-                      <label className="amenity-item">
-                        <input
-                          type="checkbox"
-                          checked={formData.feature5 || false}
-                          onChange={(e) => handleDetailChange('feature5', e.target.checked)}
-                          className="amenity-checkbox"
-                        />
-                        <span className="amenity-label">{t('addPropertyAmenitiesIntercom')}</span>
-                      </label>
-                      <label className="amenity-item">
-                        <input
-                          type="checkbox"
-                          checked={formData.feature6 || false}
-                          onChange={(e) => handleDetailChange('feature6', e.target.checked)}
-                          className="amenity-checkbox"
-                        />
-                        <span className="amenity-label">{t('addPropertyAmenitiesCctv')}</span>
-                      </label>
-                      <label className="amenity-item">
-                        <input
-                          type="checkbox"
-                          checked={formData.feature16 || false}
-                          onChange={(e) => handleDetailChange('feature16', e.target.checked)}
-                          className="amenity-checkbox"
-                        />
-                        <span className="amenity-label">{t('addPropertyAmenitiesVideoIntercom')}</span>
-                      </label>
-                      <label className="amenity-item">
-                        <input
-                          type="checkbox"
-                          checked={formData.feature17 || false}
-                          onChange={(e) => handleDetailChange('feature17', e.target.checked)}
-                          className="amenity-checkbox"
-                        />
-                        <span className="amenity-label">{t('addPropertyAmenitiesConcierge')}</span>
-                      </label>
-                    </div>
-                  </div>
-
-                  {/* Дополнительные помещения */}
-                  <div className="amenities-category">
-                    <h4 className="amenities-category-title">
-                      <span className="amenities-category-icon">🏠</span>
-                      {t('addPropertyAmenitiesCategoryRooms')}
-                    </h4>
-                    <div className="amenities-list">
-                      <label className="amenity-item">
-                        <input
-                          type="checkbox"
-                          checked={formData.balcony || false}
-                          onChange={(e) => handleDetailChange('balcony', e.target.checked)}
-                          className="amenity-checkbox"
-                        />
-                        <span className="amenity-label">{t('addPropertyAmenitiesBalcony')}</span>
-                      </label>
-                      <label className="amenity-item">
-                        <input
-                          type="checkbox"
-                          checked={formData.feature7 || false}
-                          onChange={(e) => handleDetailChange('feature7', e.target.checked)}
-                          className="amenity-checkbox"
-                        />
-                        <span className="amenity-label">{t('addPropertyAmenitiesLoggia')}</span>
-                      </label>
-                      <label className="amenity-item">
-                        <input
-                          type="checkbox"
-                          checked={formData.feature8 || false}
-                          onChange={(e) => handleDetailChange('feature8', e.target.checked)}
-                          className="amenity-checkbox"
-                        />
-                        <span className="amenity-label">{t('addPropertyAmenitiesStorage')}</span>
-                      </label>
-                      <label className="amenity-item">
-                        <input
-                          type="checkbox"
-                          checked={formData.elevator || false}
-                          onChange={(e) => handleDetailChange('elevator', e.target.checked)}
-                          className="amenity-checkbox"
-                        />
-                        <span className="amenity-label">{t('addPropertyAmenitiesElevator')}</span>
-                      </label>
-                    </div>
-                  </div>
-
-                  {/* Дополнительно */}
                   <div className="amenities-category">
                     <h4 className="amenities-category-title">
                       <span className="amenities-category-icon">➕</span>

@@ -386,14 +386,6 @@ const AdminPanelPage = () => {
         />
         {renderContent()}
       </div>
-      {isClientsSection && clientsMenuOpen && (
-        <div
-          role="presentation"
-          aria-hidden
-          className="admin-sidebar-backdrop crm-admin-nav-backdrop"
-          onClick={closeClientsAdminMenu}
-        />
-      )}
       <UsersModal
         isOpen={showUsersModal}
         onClose={() => setShowUsersModal(false)}

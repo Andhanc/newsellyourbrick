@@ -271,7 +271,7 @@ const PropertyList = ({
     if (!ensureCanOpenProperty()) {
       showNotification(
         <span>
-          Чтобы открыть страницу объекта, войдите в систему.{' '}
+          {t('toastOpenListingLoginPrefix')}{' '}
           <button
             type="button"
             className="auth-toast-link"
@@ -281,7 +281,8 @@ const PropertyList = ({
               requestOpenLoginModal({ wizard: true })
             }}
           >
-            Войти / Регистрация <span className="auth-toast-link__arrow">→</span>
+            {t('toastOpenListingLoginLink')}{' '}
+            <span className="auth-toast-link__arrow">→</span>
           </button>
         </span>,
         'warning',

@@ -110,7 +110,12 @@ const Sidebar = ({
             <div
               key={item.id}
               className={['menu-item', activeSection === item.id ? 'active' : ''].filter(Boolean).join(' ')}
-              onClick={() => onSectionChange(item.id)}
+              onClick={() => {
+                onSectionChange(item.id);
+                if (isMobile) {
+                  handleCloseSidebar();
+                }
+              }}
             >
               <IconComponent size={20} />
               <span className="menu-item__label">{item.label}</span>

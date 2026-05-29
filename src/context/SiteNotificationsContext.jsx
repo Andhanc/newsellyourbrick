@@ -80,7 +80,7 @@ async function resolveDbUserIdFromSession(API_BASE_URL) {
 function showPropertyAuthRequiredToast(t) {
   showToast(
     <span style={{ whiteSpace: 'normal' }}>
-      {t('toastOpenListingLoginPrefix', 'Чтобы открыть страницу объекта, войдите в систему.')}{' '}
+      {t('toastOpenListingLoginPrefix')}{' '}
       <button
         type="button"
         className="auth-toast-link"
@@ -90,7 +90,7 @@ function showPropertyAuthRequiredToast(t) {
           requestOpenLoginModal({ wizard: true })
         }}
       >
-        {t('toastOpenListingLoginLink', 'Войти / Регистрация')}{' '}
+        {t('toastOpenListingLoginLink')}{' '}
         <span className="auth-toast-link__arrow">→</span>
       </button>
     </span>,
@@ -181,7 +181,9 @@ export function SiteNotificationsProvider({ children }) {
           if (newBidOutbidNotifications.length > 0) {
             newBidOutbidNotifications.forEach((notif) => {
               const message =
-                notif.message || notif.title || 'Вашу ставку перебили!'
+                notif.message ||
+                notif.title ||
+                t('toastBidOutbidFallback', 'Your bid has been outbid!')
               showToast(message, 'warning', 5000)
             })
           }
@@ -196,7 +198,7 @@ export function SiteNotificationsProvider({ children }) {
               const message =
                 notif.message ||
                 notif.title ||
-                t('toastTestDriveUpdate', 'Обновление по тест-драйву')
+                t('toastTestDriveUpdate', 'Test-drive update')
               showToast(
                 message,
                 notif.title?.includes('отклон') ? 'warning' : 'success',
@@ -290,7 +292,10 @@ export function SiteNotificationsProvider({ children }) {
     async (notification, action) => {
       const payload = parseNotificationData(notification?.data)
       if (!payload?.booking_id) {
-        showToast('Не удалось прочитать заявку. Обновите страницу.', 'error')
+        showToast(
+          t('notificationsBookingReadError', 'Could not read the request. Refresh the page.'),
+          'error'
+        )
         return
       }
       const storedDbId = localStorage.getItem('userId')
@@ -307,10 +312,19 @@ export function SiteNotificationsProvider({ children }) {
         if (action === 'approve') {
           ownerComment =
             window.prompt(
-              'Добавьте комментарий для покупателя: время заезда, получение ключей и т.д.'
+              t(
+                'notificationsOwnerCommentPrompt',
+                'Add a comment for the buyer: check-in time, key pickup, etc.'
+              )
             ) || ''
           if (!ownerComment.trim()) {
-            showToast('Комментарий обязателен при подтверждении', 'warning')
+            showToast(
+              t(
+                'notificationsOwnerCommentRequired',
+                'A comment is required to confirm the request.'
+              ),
+              'warning'
+            )
             return
           }
         }
@@ -329,13 +343,16 @@ export function SiteNotificationsProvider({ children }) {
         )
         const json = await res.json().catch(() => ({}))
         if (!res.ok || !json.success) {
-          showToast(json.error || 'Не удалось выполнить действие', 'error')
+          showToast(
+            json.error || t('notificationsActionFailed', 'Failed to complete this action.'),
+            'error'
+          )
           return
         }
         showToast(
           action === 'approve'
-            ? 'Тест-драйв подтверждён'
-            : 'Заявка отклонена',
+            ? t('notificationsTestDriveApproved', 'Test-drive request approved.')
+            : t('notificationsRequestRejected', 'Request declined.'),
           'success',
           4000
         )
@@ -347,10 +364,10 @@ export function SiteNotificationsProvider({ children }) {
         setNotifications(refreshed || [])
       } catch (e) {
         console.error('test-drive respond', e)
-        showToast('Ошибка сети', 'error')
+        showToast(t('networkErrorShort', 'Network error'), 'error')
       }
     },
-    [API_BASE_URL]
+    [API_BASE_URL, t]
   )
 
   const handleNotificationView = useCallback(
@@ -504,7 +521,7 @@ export function SiteNotificationsProvider({ children }) {
                                 respondTestDriveRequest(notification, 'approve')
                               }
                             >
-                              Подтвердить
+                              {t('approve', 'Approve')}
                             </button>
                             <button
                               type="button"
@@ -513,7 +530,7 @@ export function SiteNotificationsProvider({ children }) {
                                 respondTestDriveRequest(notification, 'reject')
                               }
                             >
-                              Отклонить
+                              {t('reject', 'Reject')}
                             </button>
                           </div>
                         ) : notification.type === 'test_drive_result' &&
@@ -603,7 +620,7 @@ export function SiteNotificationsProvider({ children }) {
                               closePanel()
                             }}
                           >
-                            Закрыть
+                            {t('close', 'Close')}
                           </button>
                         )}
                       </div>

@@ -352,9 +352,9 @@ const ShareDetailPage = () => {
       <div className="share-detail-page">
         <Header />
         <div className="share-detail-page__container">
-          <p>Объект не найден.</p>
+          <p>{t('shareDetailNotFound')}</p>
           <button type="button" onClick={() => navigate('/shares')}>
-            Назад к долевым объектам
+            {t('shareDetailBackToShares')}
           </button>
         </div>
       </div>
@@ -438,7 +438,7 @@ const ShareDetailPage = () => {
       <div className="share-detail-page__bg" />
       <div className="share-detail-page__container">
         <button type="button" className="share-detail-page__back" onClick={() => navigate('/shares')}>
-          <FiArrowLeft size={20} /> Назад к долевым объектам
+          <FiArrowLeft size={20} /> {t('shareDetailBackToShares')}
         </button>
 
         <div className="share-detail__layout">

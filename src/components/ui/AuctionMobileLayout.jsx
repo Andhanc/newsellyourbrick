@@ -56,7 +56,7 @@ export default function AuctionMobileLayout({
       const v = localStorage.getItem(STORAGE_KEY)
       if (v === 'list' || v === 'card') return v
     } catch (_) {}
-    return 'list'
+    return 'card'
   })
 
   useEffect(() => {
@@ -69,16 +69,16 @@ export default function AuctionMobileLayout({
     <div className="auction-mobile-layout w-full max-w-none px-3 pb-2 sm:px-4">
       <div className="auction-mobile-tabs">
         <ViewTab
-          active={view === 'list'}
-          onClick={() => setView('list')}
-          icon={List}
-          label={t('auctionViewList')}
-        />
-        <ViewTab
           active={view === 'card'}
           onClick={() => setView('card')}
           icon={LayoutGrid}
           label={t('auctionViewCard')}
+        />
+        <ViewTab
+          active={view === 'list'}
+          onClick={() => setView('list')}
+          icon={List}
+          label={t('auctionViewList')}
         />
       </div>
 
@@ -458,7 +458,7 @@ function AuctionMobileItem({
     if (!ensureCanOpenProperty()) {
       showNotification(
         <span>
-          Чтобы открыть страницу объекта, войдите в систему.{' '}
+          {t('toastOpenListingLoginPrefix')}{' '}
           <button
             type="button"
             className="auth-toast-link"
@@ -468,7 +468,8 @@ function AuctionMobileItem({
               requestOpenLoginModal({ wizard: true })
             }}
           >
-            Войти / Регистрация <span className="auth-toast-link__arrow">→</span>
+            {t('toastOpenListingLoginLink')}{' '}
+            <span className="auth-toast-link__arrow">→</span>
           </button>
         </span>,
         'warning',

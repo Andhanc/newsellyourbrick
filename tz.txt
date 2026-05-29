@@ -1,10 +1,340 @@
-Продать сейчас - сумма за которую я мгновенно готов продать объект покупателю во время аукциона. 
+ФИЛЬТРЫ ПО ТИПУ ОБЪЕКТА
+TYPE 1: RESIDENTIAL (Жилая недвижимость)
+Подтипы — multiselect:
+apartment | villa | house | penthouse | studio | duplex | townhouse | chalet | bungalow
 
-Стартовая ставка - сумма с которой начинаются торги, она не может быть больше чем 30% от суммы продать сейчас
+Параметры: 
 
-Минимальная цена продажи - Это нижний порог, ниже которого продавец не готов отдать объект. Например, если продавец установил минимальную цену в 90 000 евро, то:
-Если ставки на аукционе дошли только до 70 000 евро, менеджер позвонит продавцу и спросит: "Получилось 70 000, продаёшь или нет?"
-Продавец может отказать и не продавать объект
-Это защита интересов продавца от слишком низких предложений
+bedrooms              pills: 1 | 2 | 3 | 4 | 5+
+bathrooms             pills: 1 | 2 | 3 | 4+
+total_area_m2         range: from / to
+living_area_m2        range: from / to
+plot_area_m2          range: from / to      (для villa / house / chalet)
+floor                 range: from / to
+total_floors          number input           (в здании, для апартаментов)
+condition             select: New build | Good | Needs renovation | Off-plan
+year_built            range: from / to
+ownership_type        select: Freehold | Leasehold | Share
+price_per_m2          range: from / to
+
+Amenities — Parking & Storage 
+
+underground_parking        Подземный паркинг          ✅ физ. характеристика, влияет на цену
+private_garage             Отдельный гараж            ✅
+covered_parking            Крытое парковочное место   ✅
+open_parking               Открытое парковочное место ✅
+ev_charging                Зарядка для электромобиля  ✅ инфраструктура объекта
+storage_room               Кладовая                   ✅
+bike_storage               Велостоянка                ✅
+
+
+Amenities — Outdoor & Recreation 
+
+pool_private               Частный бассейн            ✅ капитальный объект
+pool_communal              Общий бассейн комплекса    ✅
+jacuzzi                    Джакузи / Hot tub          ✅
+tennis_court               Теннисный корт             ✅ капитальный объект
+padel_court                Падел-корт                 ✅
+basketball_court           Баскетбольная площадка     ✅
+garden                     Сад / Придомовая территория ✅
+rooftop_terrace            Эксплуатируемая кровля     ✅
+balcony                    Балкон / Лоджия            ✅
+bbq_area                   Зона барбекю               ✅ капитальное сооружение
+beach_access               Прямой выход к пляжу       ✅ влияет на цену
+playground                 Детская площадка           ✅ инфраструктура комплекса
+golf_course_on_site        Гольф-поле на территории   ✅
+
+Amenities — Building & Security 
+
+security_24_7              Круглосуточная охрана / Консьерж  ✅ инфраструктура здания
+cctv                       Видеонаблюдение                   ✅
+video_intercom             Видеодомофон                      ✅
+gated_community            Закрытый охраняемый комплекс      ✅ влияет на цену
+elevator                   Лифт                              ✅
+wheelchair_accessible      Доступность МГН                   ✅
+
+
+Amenities — Smart Home & Tech 
+
+smart_home                 Система умного дома               ✅ капитальная установка
+smart_lighting             Умное освещение                   ✅
+smart_climate              Умное управление климатом         ✅
+smart_security             Умные замки / охранная система    ✅
+solar_panels               Солнечные панели                  ✅ снижают OpEx, влияют на доходность
+fibre_internet             Оптоволокно (в здание)            ✅ инфраструктура здания
+
+Amenities — Climate & Comfort 
+
+air_conditioning           Кондиционирование                 ✅
+central_heating            Центральное отопление             ✅
+underfloor_heating         Тёплый пол                        ✅
+fireplace                  Камин                             ✅
+double_glazing             Двойной стеклопакет               ✅ энергоэффективность
+energy_certificate         Класс энергоэффективности         ✅ select: A | B | C | D | E | F | G
+
+
+Amenities — Wellness (капитальные объекты) 
+gym                        Фитнес-зал в здании/комплексе     ✅ инфраструктура
+spa                        SPA / Велнес-центр                ✅
+sauna                      Сауна                             ✅
+cinema_room                Домашний кинотеатр                ✅ капитальная отделка
+wine_cellar                Винный погреб                     ✅ капитальный объект
+
+Amenities — Views (влияют на цену) 
+sea_view                   Вид на море                       ✅
+mountain_view              Вид на горы                       ✅
+golf_view                  Вид на гольф-поле                 ✅
+city_view                  Вид на город / Skyline            ✅
+garden_view                Вид на сад / парк                 ✅
+
+
+
+Investment flags 
+rental_income_confirmed    Подтверждённый доход от аренды    ✅ инвестиционный параметр
+tenanted                   Объект сдан в аренду сейчас       ✅ cash flow с первого дня
+holiday_rental_licence     Лицензия на краткосрочную аренду  ✅ юр. документ на объект
+golden_visa_eligible       Подходит для Golden Visa          ✅ юр. статус объекта
+new_development            Новостройка / девелоперский проект ✅
+off_plan                   Продажа на стадии строительства   ✅
+TYPE 2: COMMERCIAL (Коммерческая недвижимость)
+Подтипы — multiselect:
+office | retail | warehouse | industrial | mixed_use | showroom | restaurant_space | medical | data_centre 
+
+Параметры: 
+
+total_area_m2         range: from / to
+rentable_area_m2      range: from / to
+number_of_units       range: from / to
+condition             select: Shell & core | Fitted | Plug & play | Needs renovation
+year_built            range: from / to
+ownership_type        select: Freehold | Leasehold
+current_occupancy_pct range: from / to
+remaining_lease_term  select: Vacant | <1 yr | 1–3 yr | 3–5 yr | 5–10 yr | 10+ yr
+noi_eur_yr            range: from / to    (Net Operating Income)
+gross_yield_pct       range: from / to
+wault_yr              range: from / to    (Weighted Avg Unexpired Lease Term)
+price_per_m2          range: from / to
+
+
+Amenities — Parking
+ 
+underground_parking        Подземный паркинг              ✅
+surface_parking            Наземная парковка              ✅
+parking_ratio              Мест на 100 м² — number input  ✅
+ev_charging                Зарядки для электромобилей     ✅
+loading_dock               Погрузочный dok                ✅ критично для склада/логистики
+
+
+Amenities — Technical specifications 
+
+raised_floor               Фальшпол                       ✅ критично для IT/офисов
+suspended_ceiling          Подвесной потолок              ✅
+ceiling_height_m           Высота потолков (м) — range    ✅ критично для склада
+three_phase_power          Трёхфазная электросеть         ✅
+backup_generator           Резервный генератор            ✅
+fibre_internet             Оптоволокно / кабельная разводка ✅
+hvac_system                Система вентиляции / климат    ✅
+
+
+Amenities — Building 
+reception_lobby            Ресепшн / Лобби                ✅
+security_24_7              Круглосуточная охрана          ✅
+cctv                       Видеонаблюдение                ✅
+access_control             Система контроля доступа       ✅
+elevator                   Пассажирский лифт              ✅
+freight_elevator           Грузовой лифт                  ✅
+wheelchair_accessible      Доступность МГН                ✅
+conference_rooms           Переговорные комнаты           ✅ физ. инфраструктура
+
+
+Investment flags 
+anchor_tenant              Якорный арендатор              ✅
+multi_tenant               Мультиарендный объект          ✅
+sale_leaseback             Sale & leaseback возможен      ✅
+change_of_use_permission   Разрешение на смену назначения ✅
+planning_permission        Разрешение на застройку        ✅
+
+
+
+TYPE 3: LAND (Земля / участки)
+Подтипы — multiselect:
+residential-plot | commercial-plot | agricultural | industrial-zone | coastal | forest | mixed-zonin 
+
+Core parameters: 
+plot_area                 range + unit toggle: m² / ha
+zoning_permitted_use      multiselect: Residential | Commercial | Agricultural | Industrial | Mixed
+planning_permission       select: None | Pending | Approved | Full planning
+far_floor_area_ratio      number input    (коэффициент застройки)
+max_build_height_m        number input
+distance_to_sea_km        range: from / to
+terrain                   select: Flat | Moderate slope | Steep
+price_per_m2              range: from / to
+
+
+Amenities — Utilities (подключены к участку) 
+water_connected            Водопровод подключён           ✅ физ. инфраструктура
+electricity_connected      Электричество подключено       ✅
+gas_connected              Газ подключён                  ✅
+sewage_connected           Канализация подключена         ✅
+internet_connected         Интернет / телефония           ✅
+
+Amenities — Access & Physical 
+road_access_paved          Асфальтированный подъезд       ✅
+road_access_dirt           Грунтовая дорога               ✅
+sea_frontage               Береговая линия (выход к воде) ✅
+waterfront                 Водоём / река / озеро          ✅
+south_facing               Южная экспозиция               ✅
+flat_terrain               Ровный рельеф                  ✅
+existing_structures        Существующие постройки         ✅
+trees_on_plot              Деревья / лес на участке       ✅
+
+TYPE 4: HOTEL & HOSPITALITY (Отели, курорты, апарт-отели)
+Подтипы — multiselect:
+hotel | apart-hotel | hostel | resort | boutique-hotel | guest-house | serviced-apartments
+
+
+Параметры: 
+number_of_rooms_keys      range: from / to
+star_rating               pills: 1★ | 2★ | 3★ | 4★ | 5★ | Unrated
+total_area_m2             range: from / to
+occupancy_rate_pct        range: from / to
+revpar_eur                range: from / to    (Revenue per Available Room)
+adr_eur                   range: from / to    (Average Daily Rate)
+operating_status          select: Operational | Under renovation | Development stage | Closed
+management_model          select: Owner-operated | Management contract | Franchise | Lease
+gross_yield_pct           range: from / to
+year_built                range: from / to
+ownership_type            select: Freehold | Leasehold
+
+Amenities — Guest facilities (капитальные объекты) 
+pool_outdoor               Открытый бассейн               ✅
+pool_indoor                Крытый бассейн                 ✅
+spa_wellness               SPA / Велнес-центр             ✅
+gym                        Фитнес-центр                   ✅
+sauna                      Сауна                          ✅
+tennis_court               Теннисный корт                 ✅
+beach_private              Частный пляж                   ✅
+water_sports_facilities    Инфраструктура водного спорта  ✅
+golf_course                Гольф-поле на территории       ✅
+
+
+
+
+Amenities — F&B infrastructure (капитальная) 
+
+restaurant                 Ресторан (помещение)           ✅ физ. объект, влияет на стоимость
+bar_lounge                 Бар / Лаундж (помещение)       ✅
+
+
+Amenities — Parking & Transport 
+parking_onsite             Парковка на территории         ✅
+underground_parking        Подземный паркинг              ✅
+ev_charging                Зарядки для электромобилей     ✅
+helipad                    Вертолётная площадка           ✅ для курортов / люкс
+
+
+Amenities — Tech & Sustainability 
+smart_building_bms         Система управления зданием     ✅
+solar_panels               Солнечные панели               ✅ снижает OpEx → влияет на NOI
+energy_certificate         Класс энергоэффективности      ✅
+backup_generator           Резервный генератор            ✅
+
+
+ВСЕ ЧТО НИЖЕ НА ОБСУЖДЕНИЕ
+
+DEBT INSTRUMENTS (Долговые инструменты)
+Подтипы — multiselect:
+Параметры: 
+instrument_type       multiselect: Mortgage | Bridge loan | Mezzanine | NPL | Senior debt | Construction loan
+loan_amount_eur       range: from / to
+ltv_pct               range: from / to
+interest_rate_pct     range: from / to
+loan_type             select: Fixed | Floating | Mixed
+remaining_term_months range: from / to
+loan_status           select: Performing | Sub-performing | Non-performing
+collateral_type       select: Residential | Commercial | Land | Mixed
+security_rank         select: Senior | Mezzanine | Junior
+collateral_has_income Залог генерирует доход             ✅
+cross_collateralised  Перекрёстное обеспечение           ✅
+personal_guarantee    Личное поручительство              ✅
+
+
+FRACTIONAL OWNERSHIP (Долевое инвестирование)
+Подтипы — multiselect:
+residential-share | commercial-share | hotel-share | land-share | tokenized | SPV-based
+
+Примечание: В недвижимости термин SPV-based означает, что владение, финансирование или строительство объекта недвижимости организовано через SPV (Special Purpose Vehicle) — специально созданное юридическое лицо (компанию-пустышку) под конкретный проект. 
+
+Параметры: 
+
+underlying_asset_type  multiselect: Residential | Commercial | Hotel | Land
+min_investment_eur     range: from / to
+total_asset_value_eur  range: from / to
+gross_yield_pct        range: from / to
+share_available_pct    range: from / to
+dividend_frequency     select: Monthly | Quarterly | Annually | On exit
+investment_horizon     select: <1 yr | 1–3 yr | 3–5 yr | 5–10 yr | Open-ended
+structure              select: Token | SPV / Ltd | Direct co-ownership | Fund unit
+number_of_coinvestors  range: from / to
+secondary_market       Доля может быть перепродана       ✅
+regulated              Регулируется финансовым органом   ✅
+audited_financials     Аудированная отчётность           ✅
+token_based            Токенизированная доля             ✅
+
+Расшифровка:
+тот список описывает способы деления и структурирования инвестиций в недвижимость. Здесь нет «перебора» (дублирования), так как первые четыре пункта отвечают на вопрос «Во что вкладывают?», а последние два — «Как технически и юридически оформлена доля?».
+Ниже приведена расшифровка каждого термина.
+
+Объект инвестиций (Тип недвижимости)
+Residential-share — доля в жилой недвижимости (квартиры, виллы, доходные дома).
+Commercial-share — доля в коммерческих объектах (офисы, склады, торговые центры, коворкинги).
+Hotel-share — доля в отельном бизнесе (номерной фонд, курортные комплексы с управлением).
+Land-share — доля в земельном участке (под застройку, сельское хозяйство или для перепродажи).
+Юридическая и техническая форма (Как оформлена доля)
+Tokenized — цифровая доля (токен) на блокчейне. Заменяет бумажные договоры, позволяя покупать микродоли в один клик через криптокошелек.
+SPV-based — доля через юридическое лицо. Вы владеете не самой недвижимостью, а акциями компании (SPV), созданной специально под этот объект.
+На рассмотрение
+DEAL-SPECIFIC FILTERS (добавляются поверх при выборе механики)
+При выборе: Active Bidding / Auction
+
+- Auction ends             select: Today | 3 days | 7 days | 30 days | Any
+- Starting bid (€)         range: from / to
+- Current bid (€)          range: from / to
+- No reserve price         checkbox
+- I'm current highest bid  checkbox
+- Bid increment (€)        number input (опционально)
+- Auto-bid enabled         checkbox
+
+
+При выборе: Distressed Asset
+- Distress type            multiselect: Foreclosure | Bankruptcy | Motivated seller | Below market value | REO (bank-owned)
+- Discount to market (%)   range: from / to
+- Legal status             select: Pre-foreclosure | Auction stage | Post-foreclosure | Clear title
+- Time on market (days)    range: from / to
+
+При выборе: Immediate Purchase 
+- Price negotiable         checkbox
+- Seller financing         checkbox  (vendor finance)
+- Quick close available    checkbox  (< 30 дней)
+
+INVESTMENT PARAMETERS (общие, показываются всегда для инвестиционного контекста) На рассмотрение
+
+- Gross yield (%)          range: from / to
+- Net yield (%)            range: from / to
+- Investment horizon       select: Short (<1 yr) | Medium (1–5 yr) | Long (5+ yr)
+- Min. investment (€)      range: from / to
+- Capital appreciation     checkbox  (ожидаемый рост стоимости)
+- Income-generating        checkbox  (объект уже генерирует доход)
+
+
+ДОПОЛНИТЕЛЬНЫЕ ФИЛЬТРЫ (общие) 
+
+- Verified seller          checkbox
+- Exclusive listing        checkbox
+- Virtual tour available   checkbox
+- Remote signing possible  checkbox
+- Legal due diligence done checkbox
+- Added to platform        select: Last 24h | Last 7 days | Last 30 days | Any
+- Sort by                  select: Newest | Price ↑ | Price ↓ | Yield ↓ | Ending soon (auction) | Most viewed
 
 

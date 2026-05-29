@@ -52,6 +52,8 @@ CREATE TABLE IF NOT EXISTS properties_apartments (
     
     -- Дополнительные удобства (текстовое описание)
     additional_amenities TEXT,
+    tz_amenities_json TEXT,
+    tz_parameters_json TEXT,
     
     -- Медиа
     photos TEXT, -- JSON массив URL фото
@@ -150,6 +152,8 @@ CREATE TABLE IF NOT EXISTS properties_houses (
     
     -- Дополнительные удобства (текстовое описание)
     additional_amenities TEXT,
+    tz_amenities_json TEXT,
+    tz_parameters_json TEXT,
     
     -- Медиа
     photos TEXT, -- JSON массив URL фото

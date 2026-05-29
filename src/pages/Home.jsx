@@ -1175,7 +1175,7 @@ function Home() {
       </div>
 
       <Header />
-      <Hero />
+      <Hero staticMobileCards={isAuctionRoute} />
       {isAuctionRoute && (
         <div className="page-context-heading page-context-heading--home-auction">
           <div className="page-context-heading--home-auction-inner">

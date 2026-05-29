@@ -2,6 +2,7 @@ import {
   buildLocationOptionsFromProperties,
   buildPriceRangeFromProperties,
 } from '../../src/utils/propertySearchLocation.js'
+import { getPropertyListingCurrency } from '../../src/utils/catalogPriceFilter.js'
 import { getPrisma } from '../database/prismaClient.js'
 
 function isAuctionRow(p) {
@@ -101,11 +102,28 @@ function dedupePropertiesById(list = []) {
   return out
 }
 
+function buildCurrenciesFromProperties(properties = []) {
+  const counts = new Map()
+  for (const property of properties) {
+    const code = getPropertyListingCurrency(property)
+    counts.set(code, (counts.get(code) || 0) + 1)
+  }
+  const sorted = [...counts.entries()].sort((a, b) => b[1] - a[1])
+  const currencies = sorted.map(([code]) => code)
+  return {
+    currencies,
+    defaultCurrency: currencies[0] || 'EUR',
+  }
+}
+
 export function buildPropertySearchOptions(properties = []) {
   const unique = dedupePropertiesById(properties)
+  const { currencies, defaultCurrency } = buildCurrenciesFromProperties(unique)
   return {
     locations: buildLocationOptionsFromProperties(unique),
     priceRange: buildPriceRangeFromProperties(unique),
+    currencies,
+    defaultCurrency,
   }
 }
 

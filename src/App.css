@@ -208,6 +208,14 @@ html.site-nav-drawer-open .property-list-header .ai-button {
   transition: opacity 0.18s ease;
 }
 
+/* Открыта модалка входа / регистрации: убираем плавающую кнопку AI */
+html.login-modal-open button.ai-button {
+  visibility: hidden !important;
+  pointer-events: none !important;
+  opacity: 0 !important;
+  transition: opacity 0.18s ease;
+}
+
 /*
  * У футера на мобилке: всегда убираем FAB AI (и депозит), чтобы не перекрывать языки.
  * Открытая панель чата / AI (.chat-dock-active) остаётся на экране.

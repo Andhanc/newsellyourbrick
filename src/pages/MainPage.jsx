@@ -2107,7 +2107,7 @@ function MainPage() {
   const showPropertyAuthRequiredToast = () => {
     showNotification(
       <span>
-        Чтобы открыть страницу объекта, войдите в систему.{' '}
+        {t('toastOpenListingLoginPrefix')}{' '}
         <button
           type="button"
           className="auth-toast-link"
@@ -2117,7 +2117,8 @@ function MainPage() {
             requestOpenLoginModal({ wizard: true })
           }}
         >
-          Войти / Регистрация <span className="auth-toast-link__arrow">→</span>
+          {t('toastOpenListingLoginLink')}{' '}
+          <span className="auth-toast-link__arrow">→</span>
         </button>
       </span>,
       'warning',
@@ -2178,7 +2179,7 @@ function MainPage() {
 
   const handleBookNow = () => {
     // Обработчик бронирования
-    showNotification('Функция бронирования будет реализована позже')
+    showNotification(t('bookingFeatureSoon', 'Booking will be available soon.'))
   }
 
   const handleCallBroker = () => {
@@ -2189,7 +2190,7 @@ function MainPage() {
 
   const handleChatBroker = () => {
     // Обработчик чата с брокером
-    showNotification('Чат с брокером будет реализован позже')
+    showNotification(t('brokerChatFeatureSoon', 'Broker chat will be available soon.'))
   }
 
   // Получаем все свойства для карты

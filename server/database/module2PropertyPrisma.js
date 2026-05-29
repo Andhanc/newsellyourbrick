@@ -29,6 +29,8 @@ function parseApartmentRow(property) {
   p.videos = parseJsonSafe(p.videos, []);
   p.additional_documents = parseJsonSafe(p.additional_documents, []);
   p.test_drive_data = parseJsonSafe(p.test_drive_data, null);
+  p.tz_amenities_json = parseJsonSafe(p.tz_amenities_json, []);
+  p.tz_parameters_json = parseJsonSafe(p.tz_parameters_json, {});
   return p;
 }
 
@@ -48,6 +50,8 @@ function parseHouseRow(property) {
   p.videos = parseJsonSafe(p.videos, []);
   p.additional_documents = parseJsonSafe(p.additional_documents, []);
   p.test_drive_data = parseJsonSafe(p.test_drive_data, null);
+  p.tz_amenities_json = parseJsonSafe(p.tz_amenities_json, []);
+  p.tz_parameters_json = parseJsonSafe(p.tz_parameters_json, {});
   return p;
 }
 
@@ -403,6 +407,8 @@ export const apartmentQueries = {
       commercial_type: propertyData.commercial_type ?? null,
       business_hours: propertyData.business_hours ?? null,
       additional_amenities: propertyData.additional_amenities ?? null,
+      tz_amenities_json: propertyData.tz_amenities_json ? JSON.stringify(propertyData.tz_amenities_json) : null,
+      tz_parameters_json: propertyData.tz_parameters_json ? JSON.stringify(propertyData.tz_parameters_json) : null,
       photos: propertyData.photos ? JSON.stringify(propertyData.photos) : null,
       videos: propertyData.videos ? JSON.stringify(propertyData.videos) : null,
       additional_documents: propertyData.additional_documents ? JSON.stringify(propertyData.additional_documents) : null,
@@ -502,6 +508,8 @@ export const apartmentQueries = {
         commercial_type: propertyData.commercial_type ?? null,
         business_hours: propertyData.business_hours ?? null,
         additional_amenities: propertyData.additional_amenities ?? null,
+        tz_amenities_json: propertyData.tz_amenities_json ? JSON.stringify(propertyData.tz_amenities_json) : null,
+        tz_parameters_json: propertyData.tz_parameters_json ? JSON.stringify(propertyData.tz_parameters_json) : null,
         photos: propertyData.photos ? JSON.stringify(propertyData.photos) : null,
         videos: propertyData.videos ? JSON.stringify(propertyData.videos) : null,
         additional_documents: propertyData.additional_documents ? JSON.stringify(propertyData.additional_documents) : null,
@@ -620,6 +628,8 @@ export const houseQueries = {
       water_supply: propertyData.water_supply ?? null,
       sewerage: propertyData.sewerage ?? null,
       additional_amenities: propertyData.additional_amenities ?? null,
+      tz_amenities_json: propertyData.tz_amenities_json ? JSON.stringify(propertyData.tz_amenities_json) : null,
+      tz_parameters_json: propertyData.tz_parameters_json ? JSON.stringify(propertyData.tz_parameters_json) : null,
       photos: propertyData.photos ? JSON.stringify(propertyData.photos) : null,
       videos: propertyData.videos ? JSON.stringify(propertyData.videos) : null,
       additional_documents: propertyData.additional_documents ? JSON.stringify(propertyData.additional_documents) : null,
@@ -716,6 +726,8 @@ export const houseQueries = {
         water_supply: propertyData.water_supply ?? null,
         sewerage: propertyData.sewerage ?? null,
         additional_amenities: propertyData.additional_amenities ?? null,
+        tz_amenities_json: propertyData.tz_amenities_json ? JSON.stringify(propertyData.tz_amenities_json) : null,
+        tz_parameters_json: propertyData.tz_parameters_json ? JSON.stringify(propertyData.tz_parameters_json) : null,
         photos: propertyData.photos ? JSON.stringify(propertyData.photos) : null,
         videos: propertyData.videos ? JSON.stringify(propertyData.videos) : null,
         additional_documents: propertyData.additional_documents ? JSON.stringify(propertyData.additional_documents) : null,

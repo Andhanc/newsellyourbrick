@@ -7,26 +7,6 @@ const Header = ({ title, onLogout, onBack }) => {
     typeof window !== 'undefined' ? window.innerWidth <= 768 : false
   );
 
-  const createSidebarBackdrop = () => {
-    if (typeof document === 'undefined') return;
-
-    if (document.getElementById('admin-sidebar-backdrop')) return;
-
-    const backdrop = document.createElement('div');
-    backdrop.id = 'admin-sidebar-backdrop';
-    backdrop.className = 'admin-sidebar-backdrop';
-
-    backdrop.addEventListener('click', () => {
-      const sidebar = document.getElementById('sidebar');
-      if (sidebar) {
-        sidebar.classList.remove('active');
-      }
-      backdrop.remove();
-    });
-
-    document.body.appendChild(backdrop);
-  };
-
   const removeSidebarBackdrop = () => {
     if (typeof document === 'undefined') return;
     const existing = document.getElementById('admin-sidebar-backdrop');
@@ -67,12 +47,8 @@ const Header = ({ title, onLogout, onBack }) => {
   const handleBurgerClick = () => {
     const sidebar = document.getElementById('sidebar');
     if (sidebar) {
-      const isActive = sidebar.classList.toggle('active');
-      if (isActive) {
-        createSidebarBackdrop();
-      } else {
-        removeSidebarBackdrop();
-      }
+      sidebar.classList.toggle('active');
+      removeSidebarBackdrop();
     }
   };
 

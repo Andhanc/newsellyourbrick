@@ -285,6 +285,8 @@ model properties {
   living_area            Float?
   building_type          String?
   additional_amenities   String?
+  tz_amenities_json      String?
+  tz_parameters_json     String?
   test_timer_end_date    String?
   auction_minimum_bid    Float?
   /// Только участники закрытого клуба (VIP) видят лот в аукционе.
@@ -340,6 +342,8 @@ model properties_apartments {
   commercial_type        String?
   business_hours         String?
   additional_amenities   String?
+  tz_amenities_json      String?
+  tz_parameters_json     String?
   photos                 String?
   videos                 String?
   additional_documents   String?
@@ -429,6 +433,8 @@ model properties_houses {
   security               Int?    @default(0)
   furniture              Int?    @default(0)
   additional_amenities   String?
+  tz_amenities_json      String?
+  tz_parameters_json     String?
   photos                 String?
   videos                 String?
   additional_documents   String?

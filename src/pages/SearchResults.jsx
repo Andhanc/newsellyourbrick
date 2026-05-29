@@ -1,8 +1,12 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { FiAlertCircle } from 'react-icons/fi'
 import PageBackButton from '../components/PageBackButton'
 import PropertyListingCard from '../components/PropertyListingCard'
+import PropertySearchFiltersPanel, {
+  EMPTY_CATALOG_FILTERS,
+} from '../components/PropertySearchFiltersPanel'
 import { ensureCanOpenProperty } from '../utils/propertyAccessGuard'
 import { getApiBaseUrl } from '../utils/apiConfig'
 import './SearchResults.css'
@@ -10,14 +14,12 @@ import '../components/PropertyListingGrid.css'
 import { getPropertyDetailPath, auctionListingDedupeKey } from '../utils/propertyDetailUrl'
 import { formatPropertyForListingCard } from '../utils/formatPropertyListingCard'
 import { fetchSearchCatalogProperties } from '../utils/propertySearchCatalog'
+import { groupPropertiesByCatalogSection } from '../utils/catalogSearchSections'
 import {
   filterPropertiesStrict,
   normalizeSearchPriceFilters,
 } from '../utils/propertySearchFilters'
-import {
-  hasPropertyListingTimer,
-  isPropertyListingSoldOut,
-} from '../utils/auctionReminderBounds'
+import { isPropertyListingSoldOut } from '../utils/auctionReminderBounds'
 
 function isHiddenSoldListing(property) {
   if (!property) return true
@@ -42,16 +44,22 @@ function SearchResultsGrid({ properties, onOpen }) {
 }
 
 const SearchResults = () => {
+  const { t } = useTranslation()
   const navigate = useNavigate()
   const [properties, setProperties] = useState([])
   const [loading, setLoading] = useState(true)
+  const [activeFilters, setActiveFilters] = useState(EMPTY_CATALOG_FILTERS)
 
   useEffect(() => {
-    const savedFilters = sessionStorage.getItem('propertySearchFilters')
-    if (savedFilters) {
-      searchProperties(JSON.parse(savedFilters))
-    } else {
-      setLoading(false)
+    try {
+      const savedFilters = sessionStorage.getItem('propertySearchFilters')
+      const parsed = savedFilters ? JSON.parse(savedFilters) : EMPTY_CATALOG_FILTERS
+      const filters = parsed && typeof parsed === 'object' ? parsed : EMPTY_CATALOG_FILTERS
+      setActiveFilters(filters)
+      searchProperties(filters)
+    } catch {
+      setActiveFilters(EMPTY_CATALOG_FILTERS)
+      searchProperties(EMPTY_CATALOG_FILTERS)
     }
   }, [])
 
@@ -81,28 +89,31 @@ const SearchResults = () => {
     }
   }
 
-  const { withTimer, withoutTimer, splitByTimer } = useMemo(() => {
-    const timerList = []
-    const noTimerList = []
-    for (const property of properties) {
-      if (hasPropertyListingTimer(property)) {
-        timerList.push(property)
-      } else {
-        noTimerList.push(property)
+  const groupedSections = useMemo(
+    () => groupPropertiesByCatalogSection(properties, activeFilters),
+    [properties, activeFilters]
+  )
+
+  const totalUniqueCount = useMemo(() => {
+    const seen = new Set()
+    for (const section of groupedSections) {
+      for (const property of section.properties) {
+        seen.add(auctionListingDedupeKey(property))
       }
     }
-    return {
-      withTimer: timerList,
-      withoutTimer: noTimerList,
-      splitByTimer: timerList.length > 0 && noTimerList.length > 0,
-    }
-  }, [properties])
+    return seen.size
+  }, [groupedSections])
 
   const openProperty = (property) => {
     if (!ensureCanOpenProperty()) return
     navigate(getPropertyDetailPath(property.id, { property }), {
       state: { property },
     })
+  }
+
+  const handleApplyFilters = (nextFilters) => {
+    setActiveFilters(nextFilters)
+    searchProperties(nextFilters || EMPTY_CATALOG_FILTERS)
   }
 
   if (loading) {
@@ -121,17 +132,15 @@ const SearchResults = () => {
       <div className="search-results__container">
         <PageBackButton
           className="search-results__back"
-          onClick={() => navigate('/#landing-property-search', { state: { openPropertySearch: true } })}
+          onClick={() => navigate('/#landing-property-search')}
         />
 
-        <h1 className="search-results__title">
-          Результаты поиска
-          {properties.length > 0 && (
-            <span className="search-results__count">({properties.length})</span>
-          )}
-        </h1>
+        <PropertySearchFiltersPanel
+          initialFilters={activeFilters}
+          onApplyFilters={handleApplyFilters}
+        />
 
-        {properties.length === 0 ? (
+        {totalUniqueCount === 0 ? (
           <div className="search-results__empty">
             <FiAlertCircle size={48} />
             <h2>Ничего не найдено</h2>
@@ -139,19 +148,30 @@ const SearchResults = () => {
             <button
               type="button"
               className="search-results__button"
-              onClick={() => navigate('/auction')}
+              onClick={() => {
+                sessionStorage.setItem('propertySearchFilters', JSON.stringify(EMPTY_CATALOG_FILTERS))
+                setActiveFilters(EMPTY_CATALOG_FILTERS)
+                searchProperties(EMPTY_CATALOG_FILTERS)
+              }}
             >
-              Вернуться на главную
+              Показать все объекты
             </button>
           </div>
-        ) : splitByTimer ? (
-          <div className="search-results__sections property-listing-grid-sections">
-            <SearchResultsGrid properties={withTimer} onOpen={openProperty} />
-            <div className="property-listing-grid-divider" role="separator" aria-hidden="true" />
-            <SearchResultsGrid properties={withoutTimer} onOpen={openProperty} />
-          </div>
         ) : (
-          <SearchResultsGrid properties={properties} onOpen={openProperty} />
+          <div className="search-results__sections property-listing-grid-sections">
+            {groupedSections.map((section, index) => (
+              <div key={section.key} className="search-results__section">
+                <h2 className="search-results__section-title">
+                  {t(section.labelKey)}
+                  <span className="search-results__section-count">({section.properties.length})</span>
+                </h2>
+                <SearchResultsGrid properties={section.properties} onOpen={openProperty} />
+                {index < groupedSections.length - 1 ? (
+                  <div className="property-listing-grid-divider" role="separator" aria-hidden="true" />
+                ) : null}
+              </div>
+            ))}
+          </div>
         )}
       </div>
     </div>

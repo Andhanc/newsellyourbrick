@@ -15,6 +15,14 @@ const SYMBOL_BY_CODE = Object.fromEntries(
 /** Быстрый выбор в форме добавления объекта */
 export const QUICK_LISTING_CURRENCY_CODES = ['USD', 'EUR', 'GBP', 'AED']
 
+/** Валюты в фильтре глобального каталога: евро, доллары, дирхамы */
+export const CATALOG_FILTER_CURRENCY_CODES = ['EUR', 'USD', 'AED']
+
+export function getCatalogFilterCurrencies() {
+  const known = new Map(PROPERTY_CURRENCIES.map((c) => [c.code, c]))
+  return CATALOG_FILTER_CURRENCY_CODES.map((code) => known.get(code)).filter(Boolean)
+}
+
 export function normalizeCurrencyCode(currency) {
   const code = String(currency || 'USD')
     .trim()

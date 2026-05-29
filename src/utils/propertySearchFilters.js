@@ -1,6 +1,11 @@
 import { getPropertyListingKind } from './propertyListingKind'
 import { hasBuyNowOption } from './hasBuyNowOption'
 import {
+  getPropertyListingCurrency,
+  hasCatalogPriceFilter,
+  parseCatalogPriceValue,
+} from './catalogPriceFilter'
+import {
   getPropertyListPrice,
   propertyMatchesLocationFilter,
 } from './propertySearchLocation'
@@ -54,6 +59,16 @@ function passesPurchaseTypeFilter(prop, purchaseType) {
   }
 }
 
+function normalizePurchaseTypes(filters = {}) {
+  if (Array.isArray(filters.purchaseTypes)) {
+    return filters.purchaseTypes.filter((value) => hasFilterValue(value))
+  }
+  if (hasFilterValue(filters.purchaseType)) {
+    return [filters.purchaseType]
+  }
+  return []
+}
+
 /** Точное совпадение комнат; значение «5» в подборке = опция «5+» */
 function passesRoomsFilter(prop, roomsFilter) {
   const propRooms = Number(prop.rooms ?? prop.bedrooms ?? 0)
@@ -93,16 +108,18 @@ export function normalizeSearchPriceFilters(filters = {}, priceBounds = null) {
   return out
 }
 
+function passesCurrencyFilter(prop, filters = {}) {
+  if (!hasFilterValue(filters.currency)) return true
+  return getPropertyListingCurrency(prop) === String(filters.currency).trim().toUpperCase()
+}
+
 function passesPriceFilter(prop, filters = {}) {
   const price = getPropertyListPrice(prop)
-  if (hasFilterValue(filters.minPrice)) {
-    const minPrice = parseFloat(filters.minPrice)
-    if (!Number.isFinite(minPrice) || price < minPrice) return false
-  }
-  if (hasFilterValue(filters.maxPrice)) {
-    const maxPrice = parseFloat(filters.maxPrice)
-    if (!Number.isFinite(maxPrice) || price > maxPrice) return false
-  }
+  const minPrice = parseCatalogPriceValue(filters.minPrice)
+  const maxPrice = parseCatalogPriceValue(filters.maxPrice)
+
+  if (minPrice != null && price < minPrice) return false
+  if (maxPrice != null && price > maxPrice) return false
   return true
 }
 
@@ -141,7 +158,11 @@ export function filterPropertiesStrict(properties = [], filters = {}) {
     result = result.filter((p) => passesRoomsFilter(p, filters.rooms))
   }
 
-  if (hasFilterValue(filters.minPrice) || hasFilterValue(filters.maxPrice)) {
+  if (hasFilterValue(filters.currency)) {
+    result = result.filter((p) => passesCurrencyFilter(p, filters))
+  }
+
+  if (hasCatalogPriceFilter(filters)) {
     result = result.filter((p) => passesPriceFilter(p, filters))
   }
 
@@ -149,8 +170,9 @@ export function filterPropertiesStrict(properties = [], filters = {}) {
     result = result.filter((p) => passesPropertyTypeFilter(p, filters.propertyType))
   }
 
-  if (hasFilterValue(filters.purchaseType)) {
-    result = result.filter((p) => passesPurchaseTypeFilter(p, filters.purchaseType))
+  const purchaseTypes = normalizePurchaseTypes(filters)
+  if (purchaseTypes.length > 0) {
+    result = result.filter((p) => purchaseTypes.some((type) => passesPurchaseTypeFilter(p, type)))
   }
 
   if (hasFilterValue(filters.minArea) || hasFilterValue(filters.maxArea)) {

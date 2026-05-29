@@ -1,11 +1,61 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import heroFeatureCoinMoneta from '../assets/moneta.jpg'
 import './Hero.css'
 
-const Hero = () => {
+function measureCopyHeight(element) {
+  if (!element || typeof window === 'undefined') return 0
+
+  const clone = element.cloneNode(true)
+  const width = element.getBoundingClientRect().width
+  clone.style.cssText = [
+    'position:absolute',
+    'left:-9999px',
+    'top:0',
+    'visibility:hidden',
+    'pointer-events:none',
+    'max-height:none',
+    'height:auto',
+    'overflow:visible',
+    `width:${width}px`,
+  ].join(';')
+
+  clone.querySelectorAll('p').forEach((node) => {
+    node.style.display = 'block'
+    node.style.overflow = 'visible'
+    node.style.webkitLineClamp = 'unset'
+    node.style.lineClamp = 'unset'
+  })
+
+  element.parentElement?.appendChild(clone)
+  const height = Math.ceil(clone.getBoundingClientRect().height)
+  clone.remove()
+  return height
+}
+
+const MOBILE_BREAKPOINT_PX = 768
+
+const Hero = ({ staticMobileCards = false }) => {
   const { t } = useTranslation()
+  const [isMobile, setIsMobile] = useState(
+    () =>
+      typeof window !== 'undefined' &&
+      window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT_PX}px)`).matches,
+  )
   const [expandedIndex, setExpandedIndex] = useState(null)
+  const [collapsingIndex, setCollapsingIndex] = useState(null)
+  const [expandedHeights, setExpandedHeights] = useState({})
+  const copyRefs = useRef([])
+
+  const isStaticMobile = staticMobileCards && isMobile
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined
+    const mq = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT_PX}px)`)
+    const onChange = () => setIsMobile(mq.matches)
+    mq.addEventListener('change', onChange)
+    return () => mq.removeEventListener('change', onChange)
+  }, [])
 
   const FEATURES = [
     {
@@ -28,27 +78,97 @@ const Hero = () => {
     }
   ]
 
+  const closeCard = (index) => {
+    setCollapsingIndex(index)
+    setExpandedIndex(null)
+  }
+
+  const openCard = (index) => {
+    const copyEl = copyRefs.current[index]
+    const measuredHeight = copyEl ? measureCopyHeight(copyEl) : 0
+    if (measuredHeight > 0) {
+      setExpandedHeights((prev) => ({ ...prev, [index]: measuredHeight }))
+    }
+    setCollapsingIndex(null)
+    setExpandedIndex(index)
+  }
+
   const handleToggle = (index) => {
-    setExpandedIndex((prev) => (prev === index ? null : index))
+    if (expandedIndex === index) {
+      closeCard(index)
+      return
+    }
+
+    if (collapsingIndex === index) {
+      openCard(index)
+      return
+    }
+
+    openCard(index)
+  }
+
+  useEffect(() => {
+    if (isStaticMobile) return undefined
+    if (expandedIndex === null || typeof window === 'undefined') return undefined
+
+    const remeasure = () => {
+      const copyEl = copyRefs.current[expandedIndex]
+      if (!copyEl) return
+      const measuredHeight = measureCopyHeight(copyEl)
+      if (measuredHeight > 0) {
+        setExpandedHeights((prev) => ({ ...prev, [expandedIndex]: measuredHeight }))
+      }
+    }
+
+    window.addEventListener('resize', remeasure, { passive: true })
+    return () => window.removeEventListener('resize', remeasure)
+  }, [expandedIndex, isStaticMobile, t])
+
+  const handleCopyTransitionEnd = (index) => (event) => {
+    if (event.target !== event.currentTarget || event.propertyName !== 'max-height') return
+    setCollapsingIndex((prev) => (prev === index ? null : prev))
   }
 
   return (
     <section className="hero">
       <div className="hero-container">
-        <div className="hero-features">
-          {FEATURES.map((feature, index) => (
+        <div
+          className={[
+            'hero-features',
+            isStaticMobile && 'hero-features--static-mobile',
+          ]
+            .filter(Boolean)
+            .join(' ')}
+        >
+          {FEATURES.map((feature, index) => {
+            const isExpanded = expandedIndex === index
+            const isCollapsing = collapsingIndex === index
+            const isOpen = isExpanded || isCollapsing
+            return (
             <div
               key={feature.titleKey}
-              className={`hero-feature-card ${expandedIndex === index ? 'hero-feature-card--expanded' : ''}`}
-              onClick={() => handleToggle(index)}
-              role="button"
-              tabIndex={0}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault()
-                  handleToggle(index)
-                }
-              }}
+              className={[
+                'hero-feature-card',
+                isStaticMobile && 'hero-feature-card--static',
+                !isStaticMobile && isExpanded && 'hero-feature-card--expanded',
+                !isStaticMobile && isCollapsing && 'hero-feature-card--collapsing',
+              ]
+                .filter(Boolean)
+                .join(' ')}
+              {...(!isStaticMobile
+                ? {
+                    onClick: () => handleToggle(index),
+                    role: 'button',
+                    tabIndex: 0,
+                    'aria-expanded': isOpen,
+                    onKeyDown: (e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault()
+                        handleToggle(index)
+                      }
+                    },
+                  }
+                : {})}
             >
               <div className="hero-feature-image">
                 <img
@@ -59,10 +179,26 @@ const Hero = () => {
               </div>
               <div className="hero-feature-content">
                 <h3>{t(feature.titleKey)}</h3>
-                <p>{t(feature.textKey)}</p>
+                {!isStaticMobile ? (
+                  <div
+                    ref={(el) => {
+                      copyRefs.current[index] = el
+                    }}
+                    className="hero-feature-copy"
+                    style={
+                      (isExpanded || isCollapsing) && expandedHeights[index]
+                        ? { '--hero-copy-expanded-max': `${expandedHeights[index]}px` }
+                        : undefined
+                    }
+                    onTransitionEnd={handleCopyTransitionEnd(index)}
+                  >
+                    <p>{t(feature.textKey)}</p>
+                  </div>
+                ) : null}
               </div>
             </div>
-          ))}
+            )
+          })}
         </div>
       </div>
     </section>
