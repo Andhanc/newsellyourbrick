@@ -116,6 +116,23 @@ model auction_reminders {
   @@index([auction_started_sent_at, auction_start_at], map: "idx_auction_reminders_started")
 }
 
+model auction_bid_ceilings {
+  id             Int       @id @default(autoincrement())
+  user_id        Int
+  property_id    Int
+  property_table String
+  max_amount     Float
+  is_active      Int?      @default(1)
+  activated_at   DateTime?
+  created_at     DateTime? @default(now())
+  updated_at     DateTime? @default(now())
+  users          users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([user_id, property_id, property_table], map: "sqlite_autoindex_auction_bid_ceilings_1")
+  @@index([property_id, property_table], map: "idx_auction_bid_ceilings_property")
+  @@index([user_id], map: "idx_auction_bid_ceilings_user")
+}
+
 model bonus_task_submissions {
   id          Int       @id @default(autoincrement())
   user_id     Int
@@ -766,6 +783,7 @@ model users {
   assistant_leads               assistant_leads[]
   live_chat_sessions            live_chat_sessions[]
   auction_winners               auction_winners[]
+  auction_bid_ceilings          auction_bid_ceilings[]
   bids                          bids[]
   bonus_task_submissions        bonus_task_submissions[]
   crm_leads                     crm_leads[]

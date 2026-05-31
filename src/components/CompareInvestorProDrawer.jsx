@@ -33,6 +33,9 @@ export default function CompareInvestorProDrawer({ isOpen, onClose, onOpenInvest
   if (!visible || typeof document === 'undefined') return null
 
   const closingBackdrop = isClosing ? ' drawer-dismiss-backdrop--closing' : ''
+  const closingPanelClasses = isClosing
+    ? `${closingPanel} drawer-dismiss-from-bottom--closing drawer-dismiss-modal--closing`
+    : closingPanel
 
   const handleOpenPanel = () => {
     requestClose(() => onOpenInvestorPanel?.())
@@ -53,7 +56,7 @@ export default function CompareInvestorProDrawer({ isOpen, onClose, onOpenInvest
       >
         <div
           ref={panelRef}
-          className={`compare-investor-pro-drawer__panel${closingPanel}${isCollapsed ? ' compare-investor-pro-drawer__panel--collapsed' : ''}`}
+          className={`compare-investor-pro-drawer__panel${closingPanelClasses}${isCollapsed ? ' compare-investor-pro-drawer__panel--collapsed' : ''}`}
           style={panelDragStyle}
         >
           <div

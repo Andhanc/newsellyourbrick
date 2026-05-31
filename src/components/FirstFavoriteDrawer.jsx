@@ -33,6 +33,9 @@ export default function FirstFavoriteDrawer({ isOpen, onClose, onGoToFavorites }
   if (!visible || typeof document === 'undefined') return null
 
   const closingBackdrop = isClosing ? ' drawer-dismiss-backdrop--closing' : ''
+  const closingPanelClasses = isClosing
+    ? `${closingPanel} drawer-dismiss-from-bottom--closing drawer-dismiss-modal--closing`
+    : closingPanel
 
   const handleGoToFavorites = () => {
     requestClose(() => onGoToFavorites?.())
@@ -53,7 +56,7 @@ export default function FirstFavoriteDrawer({ isOpen, onClose, onGoToFavorites }
       >
         <div
           ref={panelRef}
-          className={`first-favorite-drawer__panel${closingPanel}${isCollapsed ? ' first-favorite-drawer__panel--collapsed' : ''}`}
+          className={`first-favorite-drawer__panel${closingPanelClasses}${isCollapsed ? ' first-favorite-drawer__panel--collapsed' : ''}`}
           style={panelDragStyle}
         >
           <div

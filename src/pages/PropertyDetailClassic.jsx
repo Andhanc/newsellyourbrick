@@ -49,6 +49,7 @@ import TestDriveSection from '../components/TestDriveSection'
 import PageBackButton from '../components/PageBackButton'
 import TestDrivePromoDrawer from '../components/TestDrivePromoDrawer'
 import AuctionBidDrawer from '../components/AuctionBidDrawer'
+import AuctionBidCeilingModal from '../components/AuctionBidCeilingModal'
 import PropertyDetailAuctionBiddingForm from '../components/PropertyDetailAuctionBiddingForm'
 import PropertyDetailYieldPromo from '../components/PropertyDetailYieldPromo'
 import { propertyBlocksTestDrivePromo, propertyShowsTestDrive } from '../utils/propertyShowsTestDrive'
@@ -71,6 +72,8 @@ import { confirmPropertyReservationSession } from '../utils/subscriptionCheckout
 import { hasEmailForBuyNowFlow } from '../utils/buyNowEmailGate'
 import { usePropertyDisplayCurrency } from '../hooks/usePropertyDisplayCurrency'
 import { useHorizontalSwipe } from '../hooks/useHorizontalSwipe'
+import useAuctionDesktopBidPanelDock from '../hooks/useAuctionDesktopBidPanelDock'
+import { useLayoutScrollRef } from '../context/LayoutScrollContext'
 import {
   formatBidInputDisplayFromStored,
   formatBidMoneyAmount,
@@ -79,7 +82,7 @@ import {
 } from '../utils/moneyInputFormat'
 import PropertyCurrencySelector from '../components/PropertyCurrencySelector'
 import '../components/PropertyCurrencySelector.css'
-import { ShieldQuestionMark, ShieldAlert, ShieldCheck, Bell, Home, Crown } from 'lucide-react'
+import { ShieldQuestionMark, ShieldAlert, ShieldCheck, Bell, Home, Crown, LayoutGrid } from 'lucide-react'
 
 // Используем синхронную версию для инициализации, затем обновим при загрузке
 let API_BASE_URL = getApiBaseUrlSync()
@@ -98,10 +101,16 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
   const thumbnailScrollRef = useRef(null)
   const mobileGalleryFilmstripRef = useRef(null)
+  const desktopAuctionFilmstripRef = useRef(null)
+  const auctionDesktopBidPanelRef = useRef(null)
+  const auctionDesktopBidAnchorRef = useRef(null)
+  const layoutScrollRef = useLayoutScrollRef()
   const [isBidHistoryOpen, setIsBidHistoryOpen] = useState(false)
   const [isBuyNowModalOpen, setIsBuyNowModalOpen] = useState(false)
   const [buyNowModalVariant, setBuyNowModalVariant] = useState('buyNow')
   const [auctionReminderOpen, setAuctionReminderOpen] = useState(false)
+  const [bidCeilingOpen, setBidCeilingOpen] = useState(false)
+  const [userBidCeiling, setUserBidCeiling] = useState(null)
   const [mapCoordinates, setMapCoordinates] = useState(null)
   const [isGeocoding, setIsGeocoding] = useState(false)
   const [bidAmount, setBidAmount] = useState('')
@@ -814,6 +823,12 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
     }
     if (mobileGalleryFilmstripRef.current) {
       const stripThumb = mobileGalleryFilmstripRef.current.children[index]
+      if (stripThumb) {
+        stripThumb.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' })
+      }
+    }
+    if (desktopAuctionFilmstripRef.current) {
+      const stripThumb = desktopAuctionFilmstripRef.current.children[index]
       if (stripThumb) {
         stripThumb.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' })
       }
@@ -2505,11 +2520,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
     return t('propertyTypeApartment')
   }, [displayProperty?.property_type, displayProperty?.propertyType, t])
 
-  const auctionStickyPriceLabel =
-    currentBid !== null &&
-    currentBid !== (displayProperty?.auction_starting_price || 0)
-      ? t('propertyDetailCurrentMaxBid')
-      : t('propertyDetailStartingBidLabel')
+  const auctionStickyPriceLabel = t('propertyDetailCurrentMaxBid')
 
   const auctionStickyPriceValue = fmtBidPrice(
     currentBid !== null
@@ -2542,6 +2553,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
       moreCount: index === maxVisible - 1 ? galleryMedia.length - maxVisible : 0,
     }))
   }, [galleryMedia])
+
 
   const renderAuctionLeaderCards = () => (
     <>
@@ -2935,6 +2947,22 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
       )
     }
 
+    if (layout === 'desktop-auction') {
+      return amenities.length === 0 ? (
+        <p className="property-detail-auction-desktop-amenities__empty">
+          {t('propertyDetailAmenitiesNone')}
+        </p>
+      ) : (
+        <ul className="property-detail-auction-desktop-amenities__list">
+          {amenities.map((amenity, index) => (
+            <li key={`${amenity}-${index}`} className="property-detail-auction-desktop-amenities__item">
+              <span>{amenity}</span>
+            </li>
+          ))}
+        </ul>
+      )
+    }
+
     return (
       <div className="property-detail-info-block">
         <h3 className="property-detail-info-block__title">{t('propertyDetailAmenitiesTitle')}</h3>
@@ -3249,7 +3277,13 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
     )
   }
 
-  const renderMobileBidsTab = () => {
+  const renderAuctionBidsHistoryPanel = ({
+    showLeaderHero = true,
+    showPlaceBidCta = true,
+    showNotices = true,
+    listClassName = 'property-detail-mobile-bids__list',
+    rowClassName = 'property-detail-mobile-bids__row',
+  } = {}) => {
     const leaderBid =
       auctionBidsList.length > 0
         ? auctionBidsList.reduce((top, bid) => (bid.bid_amount > top.bid_amount ? bid : top))
@@ -3289,7 +3323,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
       return (
         <li
           key={bid.id || `bid-row-${index}-${bid.created_at}`}
-          className="property-detail-mobile-bids__row"
+          className={rowClassName}
         >
           <div className="property-detail-mobile-bids__row-user">
             <span className="property-detail-mobile-bids__row-avatar" aria-hidden>
@@ -3312,21 +3346,21 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
     }
 
     return (
-      <section className="property-detail-mobile-bids" aria-label={t('propertyDetailTabBids')}>
-        {isReservedActive ? (
+      <>
+        {showNotices && isReservedActive ? (
           <div className="property-detail-mobile-bids__notice property-detail-mobile-bids__notice--reserved">
             <FiLock size={18} aria-hidden />
             <span>{t('propertyDetailBidsPaused')}</span>
           </div>
         ) : null}
 
-        {auctionEndedForSidebar ? (
+        {showNotices && auctionEndedForSidebar ? (
           <div className="property-detail-mobile-bids__notice property-detail-mobile-bids__notice--ended">
             {t('propertyDetailAuctionCompleted')}
           </div>
         ) : null}
 
-        {leaderBid ? (
+        {showLeaderHero && leaderBid ? (
           <article
             className={`property-detail-mobile-bids__leader-hero${
               leaderIsYou ? ' property-detail-mobile-bids__leader-hero--you' : ''
@@ -3362,23 +3396,31 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
               {t('propertyDetailCurrentMaxBid')}
             </p>
           </article>
-        ) : (
+        ) : null}
+
+        {showLeaderHero && !leaderBid ? (
           <p className="property-detail-mobile-bids__empty" role="status">
             {t('propertyDetailBidsEmpty')}
           </p>
-        )}
+        ) : null}
 
         {otherBids.length > 0 ? (
           <div className="property-detail-mobile-bids__rest">
             <h3 className="property-detail-mobile-bids__rest-title">
               {t('propertyDetailBidsAllTitle', { count: otherBids.length })}
             </h3>
-            <ul className="property-detail-mobile-bids__list">{otherBids.map(renderBidRow)}</ul>
+            <ul className={listClassName}>{otherBids.map(renderBidRow)}</ul>
           </div>
         ) : null}
 
+        {!showLeaderHero && !leaderBid && otherBids.length === 0 ? (
+          <p className="property-detail-mobile-bids__empty" role="status">
+            {t('propertyDetailBidsEmpty')}
+          </p>
+        ) : null}
+
         <div className="property-detail-mobile-bids__actions">
-          {!auctionEndedForSidebar && !isReservedActive ? (
+          {showPlaceBidCta && !auctionEndedForSidebar && !isReservedActive ? (
             <button
               type="button"
               className="property-detail-mobile-bids__cta property-detail-mobile-bids__cta--primary"
@@ -3395,9 +3437,15 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
             {t('propertyDetailBidHistory')}
           </button>
         </div>
-      </section>
+      </>
     )
   }
+
+  const renderMobileBidsTab = () => (
+    <section className="property-detail-mobile-bids" aria-label={t('propertyDetailTabBids')}>
+      {renderAuctionBidsHistoryPanel()}
+    </section>
+  )
 
   const renderMobileAuctionTestDriveBlock = () => {
     if (!isAuctionProperty || !showsTestDriveSection) return null
@@ -3498,10 +3546,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
     const startingPrice = displayProperty?.auction_starting_price || 0
     const displayBidAmount =
       currentBid !== null ? currentBid : startingPrice
-    const bidLabel =
-      currentBid !== null && currentBid !== startingPrice
-        ? t('propertyDetailCurrentMaxBid')
-        : t('propertyDetailStartingBidLabel')
+    const bidLabel = t('propertyDetailCurrentMaxBid')
     const showLeader = currentLeader && !auctionEndedForSidebar
     const leaderId =
       currentLeader?.userIdNumber || currentLeader?.userId || currentLeader?.id
@@ -3583,6 +3628,66 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
     return null
   }
 
+  const fetchUserBidCeiling = useCallback(async () => {
+    const userId = getStoredNumericUserId()
+    if (!userId || !displayProperty?.id || !isAuctionProperty) {
+      setUserBidCeiling(null)
+      return
+    }
+    try {
+      const q = new URLSearchParams({
+        user_id: String(userId),
+        property_id: String(displayProperty.id),
+        property_table: propertySourceTable || 'properties_apartments',
+      })
+      const res = await fetch(`${API_BASE_URL}/bids/ceiling?${q.toString()}`)
+      const json = await res.json()
+      if (json.success && json.data?.max_amount != null) {
+        setUserBidCeiling(json.data)
+      } else {
+        setUserBidCeiling(null)
+      }
+    } catch {
+      setUserBidCeiling(null)
+    }
+  }, [displayProperty?.id, isAuctionProperty, propertySourceTable])
+
+  useEffect(() => {
+    void fetchUserBidCeiling()
+  }, [fetchUserBidCeiling])
+
+  const handleOpenBidCeiling = () => {
+    if (paymentActionsLocked) {
+      notifyListingCurrencyOnly('bid')
+      return
+    }
+    const isClerkAuth = user && userLoaded
+    const isOldAuth = isAuthenticated()
+    if (!isClerkAuth && !isOldAuth) {
+      requestOpenLoginModal({ wizard: true })
+      return
+    }
+    if (isReservedActive) return
+    if (isAuctionProperty && !roleSkipsAuctionKyc(userData?.role || 'buyer')) {
+      if (!isAuctionDepositSufficient(auctionUserDeposit)) {
+        setIsDepositRequiredOpen(true)
+        return
+      }
+      if (auctionKycVerified === false) {
+        showToast(t('propertyDetailBidVerificationPending'), 'error')
+        return
+      }
+    }
+    setBidCeilingOpen(true)
+  }
+
+  useAuctionDesktopBidPanelDock({
+    enabled: isAuctionProperty,
+    panelRef: auctionDesktopBidPanelRef,
+    anchorRef: auctionDesktopBidAnchorRef,
+    layoutScrollRef,
+  })
+
   const auctionBiddingFormProps = {
     isAuctionProperty,
     displayProperty,
@@ -3605,13 +3710,799 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
     bidAmount,
     handleBidSubmit,
     auctionEndedForSidebar,
+    showBidCeilingButton: isAuctionProperty && !auctionEndedForSidebar,
+    onOpenBidCeiling: handleOpenBidCeiling,
+    bidCeilingActive: userBidCeiling?.max_amount != null,
   }
+
+  const renderAuctionBuyNowBlock = () => {
+    const buyNowPrice = displayProperty.price ? Number(displayProperty.price) : 0
+    const startingPrice = displayProperty.auction_starting_price
+      ? Number(displayProperty.auction_starting_price)
+      : 0
+    const effectiveCurrentBid =
+      currentBid !== null ? currentBid : displayProperty.currentBid || startingPrice
+    const shouldShowBuyNow =
+      isAuctionProperty &&
+      buyNowPrice > 0 &&
+      buyNowPrice > startingPrice &&
+      !timerExpired &&
+      !isBuyNowSaleCompleted &&
+      effectiveCurrentBid < buyNowPrice
+
+    if (!shouldShowBuyNow) return null
+
+    return (
+      <>
+        <div className="property-detail-sidebar__current-bid property-detail-auction-desktop__buy-now-price">
+          <span className="current-bid-label">{t('propertyDetailMinSellingPrice')}</span>
+          <span className="current-bid-value">{fmtBidPrice(displayProperty.price)}</span>
+        </div>
+        <button
+          type="button"
+          className={`property-detail-sidebar__buy-now-btn${
+            paymentActionsLocked ? ' property-detail-sidebar__buy-now-btn--currency-preview' : ''
+          }`}
+          onClick={handleBookNow}
+          disabled={isReservedActive || !buyNowEmailOk}
+          title={!buyNowEmailOk ? t('buyNowEmailRequired') : undefined}
+          style={{
+            opacity: isReservedActive || !buyNowEmailOk ? 0.5 : 1,
+            cursor:
+              isReservedActive || !buyNowEmailOk || paymentActionsLocked
+                ? 'not-allowed'
+                : 'pointer',
+          }}
+        >
+          {isReservedActive ? t('objectReserved') : t('buyNowSectionTitle')}
+        </button>
+      </>
+    )
+  }
+
+  const renderAuctionWinnerPurchaseButton = () => {
+    if (!isAuctionProperty || !timerExpired || !isUserLeader || isBuyNowSaleCompleted) {
+      return null
+    }
+    return (
+      <button
+        type="button"
+        className={`property-detail-sidebar__buy-btn property-detail-sidebar__buy-btn--winner${
+          paymentActionsLocked ? ' property-detail-sidebar__buy-now-btn--currency-preview' : ''
+        }`}
+        onClick={() => openBuyNowModal('auctionWinner')}
+        disabled={isReservedActive || !buyNowEmailOk}
+        title={!buyNowEmailOk ? t('buyNowEmailRequired') : undefined}
+        style={{
+          opacity: isReservedActive || !buyNowEmailOk ? 0.5 : 1,
+          cursor: isReservedActive || !buyNowEmailOk ? 'not-allowed' : 'pointer',
+        }}
+      >
+        {t('propertyDetailGoToPurchase')}
+      </button>
+    )
+  }
+
+  const renderAuctionEndedState = () => {
+    if (!auctionEndedForSidebar) return null
+    if (showAuctionCompletedWinner) {
+      return (
+        <div className="auction-winner-card auction-winner-card--settled property-detail-auction-desktop__winner">
+          <div className="auction-winner-label">{t('propertyDetailAuctionWinner')}</div>
+          <div className="auction-winner-name">
+            {displayEndedAuctionPlayerId != null
+              ? `#${displayEndedAuctionPlayerId}`
+              : t('propertyDetailUnknown')}
+          </div>
+          {resolvedWinningBid != null ? (
+            <div className="auction-winner-bid">{fmtBidPrice(resolvedWinningBid)}</div>
+          ) : null}
+        </div>
+      )
+    }
+    if (showAuctionCompletedNoBids) {
+      return (
+        <div className="auction-completed-no-bids property-detail-auction-desktop__no-bids">
+          {t('propertyDetailAuctionNoBids')}
+        </div>
+      )
+    }
+    return null
+  }
+
+  const renderDesktopAuctionDebtRisk = () => {
+    if (!isDebtProperty) return null
+    const sev = displayProperty.debt_severity
+    const accentColor =
+      sev === 'red' ? '#DC2626' : sev === 'yellow' ? '#CA8A04' : '#16A34A'
+    const riskIcon =
+      sev === 'red' ? ShieldQuestionMark : sev === 'yellow' ? ShieldAlert : ShieldCheck
+    const riskTitle =
+      sev === 'red' ? 'Высокий риск' : sev === 'yellow' ? 'Средний риск' : 'Низкий риск'
+    const riskSubtitle =
+      sev === 'red'
+        ? 'Красный — существенные задолженности'
+        : sev === 'yellow'
+          ? 'Жёлтый — требуют времени и расходов'
+          : 'Зелёный — технические и процедурные моменты'
+    const riskDescription =
+      sev === 'red'
+        ? 'Существенные задолженности и/или ограничения. Перед покупкой потребуется глубокая юридическая и финансовая проверка.'
+        : sev === 'yellow'
+          ? 'Вопросы, которые могут потребовать времени и дополнительных расходов, но, как правило, решаемы при грамотном сопровождении.'
+          : 'В основном технические или процедурные вопросы, решаемые стандартными действиями при сделке.'
+    const ctaText =
+      sev === 'red'
+        ? '🔥 Высокий шанс заработать'
+        : sev === 'yellow'
+          ? '📈 Средний шанс заработать'
+          : '✅ Стабильный шанс заработать'
+    const debtFeatures = [
+      displayProperty.debt_utilities && 'Долги по коммунальным услугам',
+      displayProperty.debt_mortgage_pledge && 'Залог у банка',
+      displayProperty.debt_property_taxes && 'Неоплаченные налоги на имущество',
+      displayProperty.debt_arrest && 'Арест / ограничения',
+      displayProperty.debt_inherited && 'Долги наследодателя',
+      displayProperty.debt_third_party && 'Долги перед третьими лицами',
+      displayProperty.debt_other && displayProperty.debt_other,
+      displayProperty.debt_amount
+        ? `Сумма долга: ${fmtPrice(displayProperty.debt_amount)}`
+        : null,
+    ].filter(Boolean)
+    if (debtFeatures.length === 0) debtFeatures.push('Долговые обязательства уточняются')
+
+    return (
+      <div className="property-detail-debt-risk-card property-detail-auction-desktop__debt">
+        <FlipCard
+          color={accentColor}
+          icon={riskIcon}
+          title={riskTitle}
+          subtitle={riskSubtitle}
+          description={riskDescription}
+          features={debtFeatures.slice(0, 4)}
+          ctaText={ctaText}
+          clickToFlip
+        />
+      </div>
+    )
+  }
+
+  const renderAuctionContentTabs = ({ desktop = false } = {}) => {
+    const tabsClass = desktop
+      ? 'property-detail-auction-desktop-tabs property-detail-auction-content-tabs property-detail-auction-desktop-only'
+      : 'property-detail-mobile-tabs property-detail-auction-content-tabs'
+    const tabBtnClass = desktop
+      ? 'property-detail-auction-desktop-tabs__tab'
+      : 'property-detail-mobile-tabs__tab'
+    const tabActiveClass = desktop
+      ? ' property-detail-auction-desktop-tabs__tab--active'
+      : ' property-detail-mobile-tabs__tab--active'
+
+    return (
+      <div className={tabsClass} role="tablist">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={auctionMobileTab === 'about'}
+          className={`${tabBtnClass}${auctionMobileTab === 'about' ? tabActiveClass : ''}`}
+          onClick={() => setAuctionMobileTab('about')}
+        >
+          {t('propertyDetailTabAbout')}
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={auctionMobileTab === 'gallery'}
+          className={`${tabBtnClass}${auctionMobileTab === 'gallery' ? tabActiveClass : ''}`}
+          onClick={() => setAuctionMobileTab('gallery')}
+        >
+          {t('propertyDetailTabGallery')}
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={auctionMobileTab === 'bids'}
+          className={`${tabBtnClass}${auctionMobileTab === 'bids' ? tabActiveClass : ''}`}
+          onClick={() => setAuctionMobileTab('bids')}
+        >
+          {t('propertyDetailTabBids')}
+        </button>
+      </div>
+    )
+  }
+
+  const renderDesktopAuctionHead = () => (
+    <header className="property-detail-auction-desktop__head property-detail-auction-desktop-only">
+      <div className="property-detail-auction-desktop__badge-row">
+        <span className="property-detail-auction-desktop__badge property-detail-auction-desktop__badge--type">
+          {auctionPropertyTypeLabel}
+        </span>
+        {auctionEndTime && !auctionEndedForSidebar ? (
+          <span className="property-detail-auction-desktop__badge property-detail-auction-desktop__badge--live">
+            <span className="property-detail-auction-desktop__live-dot" aria-hidden />
+            {t('propertyDetailAuctionLive')}
+          </span>
+        ) : null}
+      </div>
+      <h1 className="property-detail-auction-desktop__title">{propertyInfo}</h1>
+      {displayProperty.location ? (
+        <p className="property-detail-auction-desktop__location">
+          <IoLocationOutline size={17} strokeWidth={2} aria-hidden />
+          <span>{displayProperty.location}</span>
+        </p>
+      ) : null}
+      <div className="property-detail-auction-desktop__listing-meta">
+        {renderMobileAuctionListingMeta()}
+      </div>
+    </header>
+  )
+
+  const renderDesktopAuctionHeroGallery = () => {
+    const openGalleryTab = () => setAuctionMobileTab('gallery')
+
+    const renderMosaicCell = (media, index, { showMoreOverlay = false, moreCount = 0 } = {}) => {
+      const isVideo = media?.type === 'video'
+      const imgSrc = isVideo ? media.thumbnail || null : media?.url
+
+      return (
+        <>
+          {isVideo && !imgSrc ? (
+            <span className="property-detail-auction-hero__cell-video" aria-hidden>
+              <FiPlay size={28} />
+            </span>
+          ) : imgSrc ? (
+            <img src={imgSrc} alt="" className="property-detail-auction-hero__cell-img" loading="lazy" />
+          ) : null}
+          {isVideo && imgSrc ? (
+            <span className="property-detail-auction-hero__cell-play" aria-hidden>
+              <FiPlay size={18} />
+            </span>
+          ) : null}
+          {showMoreOverlay && moreCount > 0 ? (
+            <span className="property-detail-auction-hero__cell-more">
+              +{moreCount}
+            </span>
+          ) : null}
+        </>
+      )
+    }
+
+    const showAuctionReminderButton =
+      !shouldShowCircularAuctionTimer(displayProperty) &&
+      auctionEndTime &&
+      !timerExpired &&
+      !isBuyNowSaleCompleted &&
+      !isReservedActive &&
+      hasDbBackedProperty(displayProperty)
+
+    const renderHeroActions = () => (
+      <div className="property-detail-auction-hero__actions-top">
+        {showAuctionReminderButton ? (
+          <button
+            type="button"
+            className="property-detail-auction-hero__action-btn"
+            onClick={() => setAuctionReminderOpen(true)}
+            aria-label={t('auctionReminderButton')}
+          >
+            <Bell size={18} strokeWidth={2.25} />
+          </button>
+        ) : null}
+        <button
+          type="button"
+          className="property-detail-auction-hero__action-btn"
+          onClick={handleShare}
+          disabled={isReservedActive}
+          aria-label={t('share') || 'Поделиться'}
+        >
+          <FiShare2 size={18} />
+        </button>
+        <button
+          type="button"
+          className={`property-detail-auction-hero__action-btn${
+            isFavorite ? ' property-detail-auction-hero__action-btn--active' : ''
+          }`}
+          onClick={handleToggleFavorite}
+          disabled={isReservedActive}
+          aria-label={t('addToFavorites') || 'В избранное'}
+        >
+          {isFavorite ? <FaHeartSolid size={18} /> : <FiHeart size={18} />}
+        </button>
+      </div>
+    )
+
+    const renderHeroFooter = () => {
+      if (galleryMedia.length <= 1) return null
+
+      return (
+        <div className="property-detail-auction-hero__footer">
+          <span className="property-detail-auction-hero__footer-count">
+            {currentImageIndex + 1} / {galleryMedia.length}
+          </span>
+          <button
+            type="button"
+            className="property-detail-auction-hero__footer-btn"
+            onClick={openGalleryTab}
+          >
+            <LayoutGrid size={16} strokeWidth={2.25} aria-hidden />
+            {t('propertyDetailGalleryViewAll', { count: galleryMedia.length })}
+          </button>
+        </div>
+      )
+    }
+
+    if (!galleryMedia.length) {
+      return (
+        <section
+          className="property-detail-auction-hero property-detail-auction-hero--empty property-detail-auction-desktop-only"
+          aria-label={t('gallery')}
+        >
+          <p className="property-detail-auction-hero__empty">{t('propertyDetailGalleryEmpty')}</p>
+        </section>
+      )
+    }
+
+    const mediaCount = galleryMedia.length
+    const mosaicExtraCount = mediaCount > 5 ? mediaCount - 5 : 0
+
+    if (mediaCount === 1) {
+      const media = galleryMedia[0]
+      return (
+        <section
+          className="property-detail-auction-hero property-detail-auction-hero--single property-detail-auction-desktop-only"
+          aria-label={t('gallery')}
+        >
+          <div
+            className={`property-detail-auction-hero__stage${
+              isReservedActive ? ' property-detail-auction-hero__stage--reserved' : ''
+            }`}
+            {...gallerySwipeHandlers}
+          >
+            {media.type === 'video' ? (
+              <div className="property-detail-auction-hero__video-wrap">
+                <iframe
+                  src={
+                    media.videoType === 'youtube'
+                      ? getYouTubeEmbedUrl(media.videoId || media.url)
+                      : media.videoType === 'googledrive'
+                        ? getGoogleDriveEmbedUrl(media.videoId || media.url)
+                        : media.url
+                  }
+                  title={displayProperty.name}
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                />
+              </div>
+            ) : (
+              <img
+                src={media.url}
+                alt={displayProperty.name}
+                className="property-detail-auction-hero__stage-img"
+              />
+            )}
+            {isReservedActive && (
+              <div className="property-detail-gallery__reserved-banner" aria-hidden>
+                <span className="property-detail-gallery__reserved-text">Забронировано</span>
+              </div>
+            )}
+            {renderHeroActions()}
+            {renderHeroFooter()}
+          </div>
+        </section>
+      )
+    }
+
+    if (mediaCount >= 4) {
+      const sideCells = mediaCount === 4 ? galleryMedia.slice(1, 4) : galleryMedia.slice(1, 5)
+
+      return (
+        <section
+          className="property-detail-auction-hero property-detail-auction-hero--mosaic property-detail-auction-desktop-only"
+          aria-label={t('gallery')}
+        >
+          <div className="property-detail-auction-hero__mosaic-wrap">
+            <div
+              className={`property-detail-auction-hero__mosaic property-detail-auction-hero__mosaic--count-${Math.min(mediaCount, 5)}`}
+            >
+              <button
+                type="button"
+                className={`property-detail-auction-hero__mosaic-cell property-detail-auction-hero__mosaic-cell--primary${
+                  currentImageIndex === 0 ? ' property-detail-auction-hero__mosaic-cell--active' : ''
+                }`}
+                onClick={() => handleThumbnailClick(0)}
+                aria-label={t('propertyDetailGalleryItemLabel', { n: 1, total: mediaCount })}
+              >
+                {renderMosaicCell(galleryMedia[0], 0)}
+              </button>
+              <div className="property-detail-auction-hero__mosaic-side">
+                {sideCells.map((media, sideIndex) => {
+                  const index = sideIndex + 1
+                  const isLast = index === 4
+                  const showOverlay = isLast && mosaicExtraCount > 0
+
+                  return (
+                    <button
+                      key={`mosaic-${index}`}
+                      type="button"
+                      className={`property-detail-auction-hero__mosaic-cell${
+                        currentImageIndex === index && !showOverlay
+                          ? ' property-detail-auction-hero__mosaic-cell--active'
+                          : ''
+                      }`}
+                      onClick={() => (showOverlay ? openGalleryTab() : handleThumbnailClick(index))}
+                      aria-label={
+                        showOverlay
+                          ? t('propertyDetailOpenFullGallery')
+                          : t('propertyDetailGalleryItemLabel', { n: index + 1, total: mediaCount })
+                      }
+                    >
+                      {renderMosaicCell(media, index, {
+                        showMoreOverlay: showOverlay,
+                        moreCount: mosaicExtraCount,
+                      })}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+            {renderHeroActions()}
+            {renderHeroFooter()}
+          </div>
+        </section>
+      )
+    }
+
+    return (
+      <section
+        className={`property-detail-auction-hero property-detail-auction-hero--stage property-detail-auction-desktop-only${
+          mediaCount === 2 ? ' property-detail-auction-hero--stage-duo' : ''
+        }`}
+        aria-label={t('gallery')}
+      >
+        <div
+          className={`property-detail-auction-hero__stage${
+            isReservedActive ? ' property-detail-auction-hero__stage--reserved' : ''
+          }`}
+          {...gallerySwipeHandlers}
+        >
+          {currentMedia?.type === 'video' ? (
+            <div className="property-detail-auction-hero__video-wrap">
+              <iframe
+                src={
+                  currentMedia.videoType === 'youtube'
+                    ? getYouTubeEmbedUrl(currentMedia.videoId || currentMedia.url)
+                    : currentMedia.videoType === 'googledrive'
+                      ? getGoogleDriveEmbedUrl(currentMedia.videoId || currentMedia.url)
+                      : currentMedia.url
+                }
+                title={displayProperty.name}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              />
+            </div>
+          ) : (
+            <img
+              src={currentMedia?.url}
+              alt={displayProperty.name}
+              className="property-detail-auction-hero__stage-img"
+            />
+          )}
+          {isReservedActive && (
+            <div className="property-detail-gallery__reserved-banner" aria-hidden>
+              <span className="property-detail-gallery__reserved-text">Забронировано</span>
+            </div>
+          )}
+          {priceAnimation && currentBid !== null && (
+            <div className="property-detail-gallery__price-overlay">
+              <div className="price-overlay__content">
+                <div className="price-overlay__label">Новая ставка</div>
+                <div className="price-overlay__value-wrapper">
+                  <span className="price-overlay__value">{fmtPrice(currentBid)}</span>
+                  <FiArrowUp className="price-overlay__arrow" size={24} />
+                </div>
+              </div>
+            </div>
+          )}
+          {galleryMedia.length > 1 && (
+            <>
+              <button
+                type="button"
+                className="property-detail-gallery__nav property-detail-gallery__nav--prev property-detail-auction-hero__nav"
+                onClick={handlePreviousImage}
+                disabled={isReservedActive}
+                aria-label={t('previousImage') || 'Предыдущее фото'}
+              >
+                <FiChevronLeft size={22} />
+              </button>
+              <button
+                type="button"
+                className="property-detail-gallery__nav property-detail-gallery__nav--next property-detail-auction-hero__nav"
+                onClick={handleNextImage}
+                disabled={isReservedActive}
+                aria-label={t('nextImage') || 'Следующее фото'}
+              >
+                <FiChevronRight size={22} />
+              </button>
+            </>
+          )}
+          {renderHeroActions()}
+          {renderHeroFooter()}
+        </div>
+
+        <div className="property-detail-auction-hero__filmstrip-wrap">
+          <div
+            ref={desktopAuctionFilmstripRef}
+            className="property-detail-auction-hero__filmstrip"
+            role="list"
+          >
+            {galleryMedia.map((media, index) => (
+              <button
+                key={`desktop-strip-${index}`}
+                type="button"
+                role="listitem"
+                className={`property-detail-auction-hero__filmstrip-item${
+                  currentImageIndex === index ? ' property-detail-auction-hero__filmstrip-item--active' : ''
+                }`}
+                onClick={() => handleThumbnailClick(index)}
+                aria-label={t('propertyDetailGalleryItemLabel', {
+                  n: index + 1,
+                  total: galleryMedia.length,
+                })}
+                aria-current={currentImageIndex === index ? 'true' : undefined}
+              >
+                {renderMosaicCell(media, index)}
+              </button>
+            ))}
+          </div>
+        </div>
+      </section>
+    )
+  }
+
+  const renderDesktopAuctionTestDriveBlock = () => {
+    if (!isAuctionProperty || !showsTestDriveSection) return null
+
+    return (
+      <section className="property-detail-auction-desktop-card property-detail-auction-desktop-test-drive">
+        <div className="property-detail-auction-desktop-test-drive__banner">
+          <div className="property-detail-auction-desktop-test-drive__banner-main">
+            <span className="property-detail-auction-desktop-test-drive__icon" aria-hidden>
+              <Home size={24} strokeWidth={2} />
+            </span>
+            <div className="property-detail-auction-desktop-test-drive__copy">
+              <span className="property-detail-auction-desktop-test-drive__eyebrow">
+                {t('testDrive')}
+              </span>
+              <h3 className="property-detail-auction-desktop-test-drive__title">
+                {t('propertyDetailTestDriveHeadline')}
+              </h3>
+              <p className="property-detail-auction-desktop-test-drive__lead">
+                {t('testDrivePromoDrawerLead')}
+              </p>
+            </div>
+          </div>
+          <span className="property-detail-auction-desktop-test-drive__badge">
+            {t('propertyDetailTestDriveDaysBadge')}
+          </span>
+        </div>
+        <div className="property-detail-auction-desktop-test-drive__body">
+          <TestDriveSection
+            propertyId={displayProperty.id}
+            propertyTable={
+              property.source_table || displayProperty.source_table || 'properties_apartments'
+            }
+            hasTestDrive
+            i18nLang={currentLang}
+          />
+        </div>
+      </section>
+    )
+  }
+
+  const renderDesktopAuctionAdditionalAmenitiesBlock = () => {
+    const additionalInfo =
+      displayProperty.additional_amenities ||
+      property.additional_amenities ||
+      property.additionalAmenities ||
+      null
+    const text =
+      additionalInfo !== null && additionalInfo !== undefined ? String(additionalInfo).trim() : ''
+    if (!text) return null
+
+    const lines = text
+      .split(/\n+/)
+      .map((line) => line.trim())
+      .filter(Boolean)
+
+    return (
+      <section className="property-detail-auction-desktop-card property-detail-auction-desktop-card--extra">
+        <h3 className="property-detail-auction-desktop-card__title">
+          {t('propertyDetailAdditionalAmenitiesTitle')}
+        </h3>
+        {lines.length > 1 ? (
+          <ul className="property-detail-auction-desktop-amenities__list property-detail-auction-desktop-amenities__list--extra">
+            {lines.map((line, index) => (
+              <li
+                key={`${index}-${line.slice(0, 24)}`}
+                className="property-detail-auction-desktop-amenities__item"
+              >
+                <span>{line}</span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="property-detail-auction-desktop-card__description">{text}</p>
+        )}
+      </section>
+    )
+  }
+
+  const renderDesktopAuctionMapBlock = () => {
+    const locationLabel = displayProperty.location || t('location') || 'Местоположение'
+    const hasExactCoords =
+      finalCoordinates &&
+      finalCoordinates[0] !== 53.9045 &&
+      finalCoordinates[1] !== 27.5615
+
+    return (
+      <section
+        className="property-detail-auction-desktop-card property-detail-auction-desktop-card--map property-detail-map-mobile--auction-sheet"
+        aria-label={t('location') || 'Местоположение'}
+      >
+        <div className="property-detail-auction-desktop-map__header">
+          <div className="property-detail-auction-desktop-map__header-main">
+            <span className="property-detail-auction-desktop-map__icon" aria-hidden>
+              <IoLocationOutline size={22} />
+            </span>
+            <div className="property-detail-auction-desktop-map__copy">
+              <span className="property-detail-auction-desktop-map__eyebrow">{t('location')}</span>
+              <h2 className="property-detail-auction-desktop-map__title">{locationLabel}</h2>
+            </div>
+          </div>
+        </div>
+
+        <div className="property-detail-auction-desktop-map__frame">
+          <div className="property-detail-auction-desktop-map__map-wrap">
+            {typeof window !== 'undefined' && (
+              <>
+                <LocationMap
+                  center={finalCoordinates}
+                  zoom={hasExactCoords ? 15 : undefined}
+                  marker={hasExactCoords ? finalCoordinates : null}
+                />
+                {isGeocoding ? (
+                  <div className="property-detail-auction-desktop-map__loading" role="status">
+                    {t('propertyDetailMapSearching') || 'Поиск местоположения...'}
+                  </div>
+                ) : null}
+              </>
+            )}
+          </div>
+          <div className="property-detail-auction-desktop-map__frame-glow" aria-hidden />
+        </div>
+      </section>
+    )
+  }
+
+  const renderDesktopAuctionAboutContent = () => {
+    const descriptionText = displayProperty.description
+      ? String(displayProperty.description).trim()
+      : ''
+    const mainItems = getPropertyMainDetailItems()
+    const additionalItems = getPropertyAdditionalDetailItems()
+
+    return (
+      <div className="property-detail-auction-desktop-about">
+        {descriptionText ? (
+          <section className="property-detail-auction-desktop-card property-detail-auction-desktop-card--description">
+            <h2 className="property-detail-auction-desktop-card__title">
+              {t('addPropertyNameLabelDescription')}
+            </h2>
+            <p className="property-detail-auction-desktop-card__description">{descriptionText}</p>
+          </section>
+        ) : null}
+
+        {mainItems.length > 0 ? (
+          <section className="property-detail-auction-desktop-card">
+            {renderPropertyMainDetailsBlock()}
+          </section>
+        ) : null}
+
+        {additionalItems.length > 0 ? (
+          <section className="property-detail-auction-desktop-card">
+            {renderPropertyAdditionalDetailsBlock()}
+          </section>
+        ) : null}
+
+        {!isDebtProperty ? (
+          <section className="property-detail-auction-desktop-card property-detail-auction-desktop-card--amenities">
+            <h2 className="property-detail-auction-desktop-card__title">
+              {t('propertyDetailAmenitiesTitle')}
+            </h2>
+            {renderPropertyAmenitiesBlock({ layout: 'desktop-auction' })}
+          </section>
+        ) : null}
+
+        {renderDesktopAuctionAdditionalAmenitiesBlock()}
+
+        <section className="property-detail-auction-desktop-card property-detail-auction-desktop-card--promo">
+          <PropertyDetailYieldPromo
+            onClick={openInvestorPanelForProperty}
+            variant="desktop-auction"
+          />
+        </section>
+
+        {renderDesktopAuctionMapBlock()}
+        {renderDesktopAuctionTestDriveBlock()}
+        {renderDesktopAuctionDebtRisk()}
+      </div>
+    )
+  }
+
+  const renderDesktopBidsTab = () => (
+    <section
+      className="property-detail-mobile-bids property-detail-auction-desktop-bids"
+      aria-label={t('propertyDetailTabBids')}
+    >
+      {renderAuctionBidsHistoryPanel({ showPlaceBidCta: false })}
+    </section>
+  )
+
+  const renderDesktopAuctionSidebar = () => (
+    <div className="property-detail-auction-desktop" ref={auctionDesktopBidPanelRef}>
+      <div className="property-detail-auction-desktop__sticky">
+        <div className="property-detail-auction-desktop__bid-panel">
+          {auctionEndTime ? (
+            <div className="property-detail-auction-desktop__timer">
+              {isReservedActive ? (
+                <div className="property-detail-mobile-about-timer__reserved">
+                  <FiLock size={18} aria-hidden />
+                  <span>{t('propertyDetailBidsPaused')}</span>
+                </div>
+              ) : !auctionEndedForSidebar ? (
+                renderAuctionTimerVisual()
+              ) : (
+                <div
+                  className="auction-completed-banner auction-completed-banner--page"
+                  role="status"
+                >
+                  {t('propertyDetailAuctionCompleted')}
+                </div>
+              )}
+            </div>
+          ) : null}
+
+          {!auctionEndedForSidebar ? renderMobileAboutBidSummary() : null}
+          {renderAuctionEndedState()}
+
+          {!auctionEndedForSidebar ? (
+            <div className="property-detail-sidebar__auction-block property-detail-auction-desktop__leaders">
+              {renderAuctionLeaderCards()}
+            </div>
+          ) : null}
+
+          {!auctionEndedForSidebar ? (
+            <div className="property-detail-sidebar__auction-bid-stack property-detail-auction-desktop__bid-stack">
+              <PropertyDetailAuctionBiddingForm
+                {...auctionBiddingFormProps}
+                showCurrencySelector
+                alwaysShowCurrentBid={false}
+                suppressCurrentBidDisplay
+              />
+            </div>
+          ) : null}
+
+          {renderAuctionBuyNowBlock()}
+          {renderAuctionWinnerPurchaseButton()}
+        </div>
+      </div>
+    </div>
+  )
 
   return (
     <div
       className={`property-detail-page-new${
         isAuctionProperty
-          ? ` property-detail-page-new--auction-mobile-v2 property-detail-mobile-tab-${auctionMobileTab}`
+          ? ` property-detail-page-new--auction-mobile-v2 property-detail-page-new--auction property-detail-mobile-tab-${auctionMobileTab}`
           : ''
       }`}
     >
@@ -3725,10 +4616,26 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
       <div className="property-detail-main">
         <div className="property-detail-main__container">
           {/* Левая колонка - обёртка для галереи и информации */}
-          <div className="property-detail-left-column">
-            {/* Галерея */}
+          <div
+            className={`property-detail-left-column${
+              isAuctionProperty ? ' property-detail-auction-left-column' : ''
+            }`}
+          >
+            {isAuctionProperty ? renderDesktopAuctionHeroGallery() : null}
+            {isAuctionProperty ? renderDesktopAuctionHead() : null}
+            {isAuctionProperty ? renderAuctionContentTabs({ desktop: true }) : null}
+
+            {isAuctionProperty ? (
+              <div className="property-detail-auction-tab-target property-detail-auction-tab-target--gallery property-detail-auction-desktop-gallery-panel property-detail-auction-desktop-only">
+                {renderMobileGalleryTab()}
+              </div>
+            ) : null}
+
+            {/* Галерея (мобильная; на десктопе аукциона — компактный hero выше) */}
             <div
-              className={`property-detail-gallery${isReservedActive ? ' property-detail-gallery--reserved' : ''}`}
+              className={`property-detail-gallery${
+                isReservedActive ? ' property-detail-gallery--reserved' : ''
+              }${isAuctionProperty ? ' property-detail-auction-mobile-gallery' : ''}`}
             >
               <div
                 className="property-detail-gallery__main"
@@ -3970,12 +4877,62 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
               )}
             </div>
 
-            {/* Блок с подробной информацией об объекте - под галереей */}
             <div
-              className={`property-detail-info-section${
-                isAuctionProperty ? ' property-detail-info-section--auction-sheet' : ''
-              }`}
+              className={
+                isAuctionProperty
+                  ? 'property-detail-auction-tab-target property-detail-auction-tab-target--about'
+                  : undefined
+              }
             >
+            {isAuctionProperty ? (
+              <>
+                <div className="property-detail-auction-desktop-only">
+                  {renderDesktopAuctionAboutContent()}
+                </div>
+                <div className="property-detail-auction-mobile-about-left">
+                  <div className="property-detail-info-section property-detail-info-section--auction-sheet">
+                    {renderPropertyMainDetailsBlock()}
+                    {renderPropertyAdditionalDetailsBlock()}
+                    {renderPropertyAmenitiesBlock()}
+                    {(() => {
+                      const additionalInfo =
+                        displayProperty.additional_amenities ||
+                        property.additional_amenities ||
+                        property.additionalAmenities ||
+                        null
+                      const hasAdditionalInfo =
+                        additionalInfo !== null &&
+                        additionalInfo !== undefined &&
+                        String(additionalInfo).trim() !== ''
+                      return hasAdditionalInfo ? (
+                        <div className="property-detail-info-block">
+                          <h3 className="property-detail-info-block__title">
+                            {t('propertyDetailAdditionalAmenitiesTitle')}
+                          </h3>
+                          <div className="property-detail-info-block__content property-detail-info-block__content--text">
+                            <p>{String(additionalInfo)}</p>
+                          </div>
+                        </div>
+                      ) : null
+                    })()}
+                  </div>
+                  <div className="property-detail-extra-text-mobile property-detail-extra-text-mobile--auction-sheet">
+                    {displayProperty.description && (
+                      <>
+                        <h3 className="property-detail-extra-text-title">Описание</h3>
+                        <p className="property-detail-extra-description">
+                          {displayProperty.description}
+                        </p>
+                      </>
+                    )}
+                  </div>
+                  {renderMobileAuctionTestDriveBlock()}
+                </div>
+              </>
+            ) : (
+              <>
+            {/* Блок с подробной информацией об объекте - под галереей */}
+            <div className="property-detail-info-section">
               {renderPropertyMainDetailsBlock()}
               {renderPropertyAdditionalDetailsBlock()}
 
@@ -4023,11 +4980,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
             </div>
 
             {/* Описание и адрес — отдельный блок под подробной информацией (для мобилки, на десктопе скрыт через CSS) */}
-            <div
-              className={`property-detail-extra-text-mobile${
-                isAuctionProperty ? ' property-detail-extra-text-mobile--auction-sheet' : ''
-              }`}
-            >
+            <div className="property-detail-extra-text-mobile">
               {displayProperty.description && (
                 <>
                   <h3 className="property-detail-extra-text-title">Описание</h3>
@@ -4038,12 +4991,14 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
               )}
             </div>
 
-            {/* Карта для мобильной версии — под описанием и адресом */}
-            <div
-              className={`property-detail-map-mobile${
-                isAuctionProperty ? ' property-detail-map-mobile--auction-sheet' : ''
-              }`}
-            >
+            {renderMobileAuctionListingMeta()}
+              </>
+            )}
+            </div>
+
+            {/* Карта — для неаукционных объектов */}
+            {!isAuctionProperty ? (
+            <div className="property-detail-map-mobile">
               <div className="property-detail-sidebar__map">
                 <h2 className="property-detail-sidebar__map-title">
                   {displayProperty.location || t('location') || 'Местоположение'}
@@ -4094,19 +5049,83 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                 </div>
               </div>
             </div>
-            {renderMobileAuctionTestDriveBlock()}
-            {renderMobileAuctionListingMeta()}
+            ) : null}
+
+            {isAuctionProperty ? (
+              <div className="property-detail-map-mobile property-detail-map-mobile--auction-sheet property-detail-auction-tab-target property-detail-auction-tab-target--about property-detail-auction-mobile-about-left">
+                <div className="property-detail-sidebar__map">
+                  <h2 className="property-detail-sidebar__map-title">
+                    {displayProperty.location || t('location') || 'Местоположение'}
+                  </h2>
+                  <div className="property-detail-sidebar__map-container">
+                    {typeof window !== 'undefined' && (
+                      <>
+                        <LocationMap
+                          center={finalCoordinates}
+                          zoom={
+                            finalCoordinates &&
+                            finalCoordinates[0] !== 53.9045 &&
+                            finalCoordinates[1] !== 27.5615
+                              ? 15
+                              : undefined
+                          }
+                          marker={
+                            finalCoordinates &&
+                            finalCoordinates[0] !== 53.9045 &&
+                            finalCoordinates[1] !== 27.5615
+                              ? finalCoordinates
+                              : null
+                          }
+                        />
+                        {isGeocoding && (
+                          <div
+                            style={{
+                              position: 'absolute',
+                              top: '50%',
+                              left: '50%',
+                              transform: 'translate(-50%, -50%)',
+                              background: 'rgba(255, 255, 255, 0.95)',
+                              padding: '12px 20px',
+                              borderRadius: '8px',
+                              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
+                              zIndex: 1000,
+                              fontSize: '14px',
+                              color: '#4b5563',
+                              fontFamily: 'Montserrat, sans-serif',
+                              fontWeight: 500,
+                            }}
+                          >
+                            Поиск местоположения...
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ) : null}
+
+            {isAuctionProperty ? (
+              <div className="property-detail-auction-tab-target property-detail-auction-tab-target--bids property-detail-auction-desktop-bids-target property-detail-auction-desktop-only">
+                {renderDesktopBidsTab()}
+              </div>
+            ) : null}
           </div>
 
           {/* Правая колонка */}
           <div
+            ref={isAuctionProperty ? auctionDesktopBidAnchorRef : undefined}
             className={`property-detail-sidebar${
               isAuctionProperty ? ' property-detail-sidebar--auction-mobile' : ''
             }`}
           >
+            {isAuctionProperty ? renderDesktopAuctionSidebar() : null}
+
             <div
               className={`property-detail-sidebar__content${
-                isAuctionProperty ? ' property-detail-mobile-sheet' : ''
+                isAuctionProperty
+                  ? ' property-detail-mobile-sheet property-detail-auction-mobile-only'
+                  : ''
               }`}
             >
               {/* Название */}
@@ -4128,41 +5147,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                   {displayProperty.location ? (
                     <p className="property-detail-mobile-sheet__address">{displayProperty.location}</p>
                   ) : null}
-                  <div className="property-detail-mobile-tabs" role="tablist">
-                    <button
-                      type="button"
-                      role="tab"
-                      aria-selected={auctionMobileTab === 'about'}
-                      className={`property-detail-mobile-tabs__tab${
-                        auctionMobileTab === 'about' ? ' property-detail-mobile-tabs__tab--active' : ''
-                      }`}
-                      onClick={() => setAuctionMobileTab('about')}
-                    >
-                      {t('propertyDetailTabAbout')}
-                    </button>
-                    <button
-                      type="button"
-                      role="tab"
-                      aria-selected={auctionMobileTab === 'gallery'}
-                      className={`property-detail-mobile-tabs__tab${
-                        auctionMobileTab === 'gallery' ? ' property-detail-mobile-tabs__tab--active' : ''
-                      }`}
-                      onClick={() => setAuctionMobileTab('gallery')}
-                    >
-                      {t('propertyDetailTabGallery')}
-                    </button>
-                    <button
-                      type="button"
-                      role="tab"
-                      aria-selected={auctionMobileTab === 'bids'}
-                      className={`property-detail-mobile-tabs__tab${
-                        auctionMobileTab === 'bids' ? ' property-detail-mobile-tabs__tab--active' : ''
-                      }`}
-                      onClick={() => setAuctionMobileTab('bids')}
-                    >
-                      {t('propertyDetailTabBids')}
-                    </button>
-                  </div>
+                  {renderAuctionContentTabs()}
                 </div>
               ) : (
                 <h1 className="property-detail-sidebar__title">{propertyInfo}</h1>
@@ -4222,70 +5207,8 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                 />
               </div>
 
-              {/* Минимальная цена продажи для аукционных объектов */}
-              {(() => {
-                const buyNowPrice = displayProperty.price ? Number(displayProperty.price) : 0;
-                const startingPrice = displayProperty.auction_starting_price ? Number(displayProperty.auction_starting_price) : 0;
-                // Получаем текущую максимальную ставку
-                const effectiveCurrentBid = currentBid !== null ? currentBid : (displayProperty.currentBid || startingPrice);
-                
-                // Показываем блок только если:
-                // 1. Это аукцион
-                // 2. Указана цена "Купить сейчас" (price > 0)
-                // 3. Цена "Купить сейчас" больше стартовой цены аукциона (логическая проверка)
-                // 4. Таймер не истек
-                // 5. Текущая ставка меньше минимальной цены продажи (если ставка >= цены, блок скрывается)
-                const shouldShowBuyNow = isAuctionProperty &&
-                                         buyNowPrice > 0 && 
-                                         buyNowPrice > startingPrice && 
-                                         !timerExpired &&
-                                         !isBuyNowSaleCompleted &&
-                                         effectiveCurrentBid < buyNowPrice;
-                
-                return shouldShowBuyNow ? (
-                  <>
-                    <div className="property-detail-sidebar__current-bid">
-                      <span className="current-bid-label">{t('propertyDetailMinSellingPrice')}</span>
-                      <span className="current-bid-value">{fmtBidPrice(displayProperty.price)}</span>
-                    </div>
-                    <button
-                      type="button"
-                      className={`property-detail-sidebar__buy-now-btn${
-                        paymentActionsLocked ? ' property-detail-sidebar__buy-now-btn--currency-preview' : ''
-                      }`}
-                      onClick={handleBookNow}
-                      disabled={isReservedActive || !buyNowEmailOk}
-                      title={!buyNowEmailOk ? t('buyNowEmailRequired') : undefined}
-                      style={{
-                        opacity: isReservedActive || !buyNowEmailOk ? 0.5 : 1,
-                        cursor:
-                          isReservedActive || !buyNowEmailOk || paymentActionsLocked
-                            ? 'not-allowed'
-                            : 'pointer',
-                      }}
-                    >
-                      {isReservedActive ? t('objectReserved') : t('buyNowSectionTitle')}
-                    </button>
-                  </>
-                ) : null;
-              })()}
-              {/* Кнопка для победителя аукциона */}
-              {isAuctionProperty && timerExpired && isUserLeader && !isBuyNowSaleCompleted && (
-                <button
-                  className={`property-detail-sidebar__buy-btn property-detail-sidebar__buy-btn--winner${
-                    paymentActionsLocked ? ' property-detail-sidebar__buy-now-btn--currency-preview' : ''
-                  }`}
-                  onClick={() => openBuyNowModal('auctionWinner')}
-                  disabled={isReservedActive || !buyNowEmailOk}
-                  title={!buyNowEmailOk ? t('buyNowEmailRequired') : undefined}
-                  style={{
-                    opacity: isReservedActive || !buyNowEmailOk ? 0.5 : 1,
-                    cursor: isReservedActive || !buyNowEmailOk ? 'not-allowed' : 'pointer'
-                  }}
-                >
-                  {t('propertyDetailGoToPurchase')}
-                </button>
-              )}
+              {isAuctionProperty ? renderAuctionBuyNowBlock() : null}
+              {isAuctionProperty ? renderAuctionWinnerPurchaseButton() : null}
 
               {/* Цена для неаукционных объектов */}
               {!isAuctionProperty && displayProperty.price && Number(displayProperty.price) > 0 && (
@@ -4561,6 +5484,24 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
         property={displayProperty}
         open={auctionReminderOpen}
         onClose={() => setAuctionReminderOpen(false)}
+      />
+
+      <AuctionBidCeilingModal
+        open={bidCeilingOpen}
+        onClose={() => setBidCeilingOpen(false)}
+        property={displayProperty}
+        propertyTable={propertySourceTable}
+        userId={getStoredNumericUserId()}
+        currentBid={currentBid}
+        startingPrice={displayProperty?.auction_starting_price || 0}
+        currencySymbol={currencyView.baseSymbol}
+        fmtPrice={fmtBidPrice}
+        onSaved={(data) => {
+          setUserBidCeiling(data)
+          showToast(t('auctionBidCeilingSaved'), 'success')
+          void fetchUserBidCeiling()
+        }}
+        onError={(msg) => showToast(msg, 'error')}
       />
 
       <DepositRequiredModal

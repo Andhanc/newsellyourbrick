@@ -28,6 +28,12 @@ import { buildOwnerSaleCelebrations } from './ownerSaleCelebrations.js';
 import { buildPropertySearchOptionsWithBids } from './services/propertySearchOptions.js';
 import { getAuctionMinBidStep } from '../src/utils/auctionBidStep.js';
 import {
+  getBidCeiling,
+  upsertBidCeiling,
+  deactivateBidCeiling,
+  evaluateBidCeilings,
+} from './database/auctionBidCeilingPrisma.js';
+import {
   registerStripeBillingRoutes,
   createStripeWebhookHandler,
   refundHalfTestDriveBookingPayment,
@@ -14193,6 +14199,55 @@ app.post('/api/bids', async (req, res) => {
         if (property?.user_id) {
           void notifyOwnerPropertyEngagement(prisma, property, tableName);
         }
+
+        try {
+          const basePrice =
+            property.auction_starting_price != null
+              ? Number(property.auction_starting_price)
+              : Number(property.price) || 0;
+          const autoBids = await evaluateBidCeilings(prisma, {
+            propertyId: propertyIdNum,
+            propertyTable: tableName,
+            property,
+            basePrice,
+            onAutoBidPlaced: async ({ bidAmount, currentMax }) => {
+              const newMinimumBid = bidAmount + getAuctionMinBidStep(bidAmount);
+              broadcastPropertyBidEvent(propertyIdNum, {
+                type: 'bid_placed',
+                property_id: propertyIdNum,
+                bid_amount: bidAmount,
+                minimum_bid: newMinimumBid,
+                from_ceiling: true,
+              });
+              try {
+                const updatedAt = new Date().toISOString();
+                if (tableName === 'properties_apartments') {
+                  await prisma.properties_apartments.update({
+                    where: { id: propertyIdNum },
+                    data: { auction_minimum_bid: newMinimumBid, updated_at: updatedAt },
+                  });
+                } else if (tableName === 'properties_houses') {
+                  await prisma.properties_houses.update({
+                    where: { id: propertyIdNum },
+                    data: { auction_minimum_bid: newMinimumBid, updated_at: updatedAt },
+                  });
+                } else {
+                  await prisma.properties.update({
+                    where: { id: propertyIdNum },
+                    data: { auction_minimum_bid: newMinimumBid, updated_at: updatedAt },
+                  });
+                }
+              } catch (minErr) {
+                console.warn('auction_minimum_bid (ceiling auto-bid):', minErr?.message || minErr);
+              }
+            },
+          });
+          if (autoBids.length > 0) {
+            console.log(`🎯 Авто-ставки по потолку: ${autoBids.length} для property ${propertyIdNum}`);
+          }
+        } catch (ceilingErr) {
+          console.warn('evaluateBidCeilings (фон):', ceilingErr?.message || ceilingErr);
+        }
       })();
     });
   } catch (error) {
@@ -14202,6 +14257,174 @@ app.post('/api/bids', async (req, res) => {
       success: false, 
       error: error.message || 'Внутренняя ошибка сервера' 
     });
+  }
+});
+
+/**
+ * GET /api/bids/ceiling — потолок цены пользователя для лота
+ */
+app.get('/api/bids/ceiling', async (req, res) => {
+  try {
+    const userId = parseInt(String(req.query.user_id ?? ''), 10);
+    const propertyId = parseInt(String(req.query.property_id ?? ''), 10);
+    const propertyTable =
+      normalizeBidPropertyTableQuery(req.query.property_table) || 'properties_apartments';
+
+    if (!Number.isFinite(userId) || userId <= 0) {
+      return res.status(400).json({ success: false, error: 'user_id обязателен' });
+    }
+    if (!Number.isFinite(propertyId) || propertyId <= 0) {
+      return res.status(400).json({ success: false, error: 'property_id обязателен' });
+    }
+
+    const prisma = getPrisma();
+    const row = await getBidCeiling(prisma, {
+      userId,
+      propertyId,
+      propertyTable,
+    });
+
+    if (!row || row.is_active !== 1) {
+      return res.json({ success: true, data: null });
+    }
+
+    res.json({
+      success: true,
+      data: {
+        max_amount: row.max_amount,
+        activated_at: row.activated_at,
+        updated_at: row.updated_at,
+      },
+    });
+  } catch (error) {
+    console.error('GET /api/bids/ceiling:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * PUT /api/bids/ceiling — установить / обновить потолок цены
+ */
+app.put('/api/bids/ceiling', async (req, res) => {
+  try {
+    const { user_id, property_id, property_table, property_type, max_amount } = req.body ?? {};
+    const userIdNum = parseInt(user_id, 10);
+    const propertyIdNum = parseInt(property_id, 10);
+    const maxAmountNum = parseFloat(max_amount);
+
+    if (!Number.isFinite(userIdNum) || userIdNum <= 0) {
+      return res.status(400).json({ success: false, error: 'Некорректный user_id' });
+    }
+    if (!Number.isFinite(propertyIdNum) || propertyIdNum <= 0) {
+      return res.status(400).json({ success: false, error: 'Некорректный property_id' });
+    }
+    if (!Number.isFinite(maxAmountNum) || maxAmountNum <= 0) {
+      return res.status(400).json({ success: false, error: 'Некорректный max_amount' });
+    }
+
+    const prisma = getPrisma();
+    const user = await userQueries.getById(userIdNum);
+    if (!user) {
+      return res.status(404).json({ success: false, error: 'Пользователь не найден' });
+    }
+
+    const { property, tableName } = await loadPropertyForBid(propertyIdNum, {
+      property_table,
+      property_type,
+    });
+    if (!property) {
+      return res.status(404).json({ success: false, error: 'Объект не найден' });
+    }
+
+    const basePrice =
+      property.auction_starting_price != null
+        ? Number(property.auction_starting_price)
+        : Number(property.price) || 0;
+    const bidWhere = buildBidWhereForProperty(propertyIdNum, tableName);
+    const maxAgg = await prisma.bids.aggregate({
+      where: bidWhere,
+      _max: { bid_amount: true },
+    });
+    const currentMaxBid =
+      maxAgg?._max?.bid_amount != null
+        ? Math.max(basePrice, Number(maxAgg._max.bid_amount))
+        : basePrice;
+
+    const row = await upsertBidCeiling(prisma, {
+      userId: userIdNum,
+      propertyId: propertyIdNum,
+      propertyTable: tableName,
+      maxAmount: maxAmountNum,
+      currentMaxBid,
+      basePrice,
+    });
+
+    setImmediate(() => {
+      void evaluateBidCeilings(prisma, {
+        propertyId: propertyIdNum,
+        propertyTable: tableName,
+        property,
+        basePrice,
+        onAutoBidPlaced: async ({ bidAmount }) => {
+          const newMinimumBid = bidAmount + getAuctionMinBidStep(bidAmount);
+          broadcastPropertyBidEvent(propertyIdNum, {
+            type: 'bid_placed',
+            property_id: propertyIdNum,
+            bid_amount: bidAmount,
+            minimum_bid: newMinimumBid,
+            from_ceiling: true,
+          });
+        },
+      }).catch((err) => console.warn('evaluateBidCeilings after PUT:', err?.message || err));
+    });
+
+    res.json({
+      success: true,
+      data: {
+        max_amount: row.max_amount,
+        updated_at: row.updated_at,
+      },
+    });
+  } catch (error) {
+    if (error.message === 'MAX_BELOW_MINIMUM') {
+      return res.status(400).json({
+        success: false,
+        error: 'MAX_BELOW_MINIMUM',
+        minimum: error.minimum,
+        step: error.step,
+      });
+    }
+    console.error('PUT /api/bids/ceiling:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * DELETE /api/bids/ceiling — отменить потолок цены
+ */
+app.delete('/api/bids/ceiling', async (req, res) => {
+  try {
+    const userIdNum = parseInt(req.body?.user_id ?? req.query?.user_id, 10);
+    const propertyIdNum = parseInt(req.body?.property_id ?? req.query?.property_id, 10);
+    const propertyTable =
+      normalizeBidPropertyTableQuery(req.body?.property_table ?? req.query?.property_table) ||
+      'properties_apartments';
+
+    if (!Number.isFinite(userIdNum) || !Number.isFinite(propertyIdNum)) {
+      return res.status(400).json({ success: false, error: 'user_id и property_id обязательны' });
+    }
+
+    const prisma = getPrisma();
+    await deactivateBidCeiling(prisma, {
+      userId: userIdNum,
+      propertyId: propertyIdNum,
+      propertyTable,
+    });
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('DELETE /api/bids/ceiling:', error);
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 

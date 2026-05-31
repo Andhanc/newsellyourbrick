@@ -1,4 +1,4 @@
-import { FiLock } from 'react-icons/fi'
+import { FiLock, FiPlus } from 'react-icons/fi'
 import { useTranslation } from 'react-i18next'
 import { getAuctionMinBidStep } from '../utils/auctionBidStep'
 import PropertyCurrencySelector from './PropertyCurrencySelector'
@@ -28,15 +28,20 @@ export default function PropertyDetailAuctionBiddingForm({
   showCurrencySelector = false,
   alwaysShowCurrentBid = false,
   showSubmitButton = true,
+  showBidCeilingButton = false,
+  onOpenBidCeiling,
+  bidCeilingActive = false,
+  suppressCurrentBidDisplay = false,
 }) {
   const { t } = useTranslation()
 
   const startingPrice = displayProperty?.auction_starting_price || 0
   const hideCurrentBid =
-    !alwaysShowCurrentBid &&
-    isAuctionProperty &&
-    currentBid !== null &&
-    currentBid !== startingPrice
+    suppressCurrentBidDisplay ||
+    (!alwaysShowCurrentBid &&
+      isAuctionProperty &&
+      currentBid !== null &&
+      currentBid !== startingPrice)
 
   const showBidding =
     !isAuctionProperty || !auctionEndedForSidebar
@@ -59,13 +64,9 @@ export default function PropertyDetailAuctionBiddingForm({
       {!hideCurrentBid && (
         <div className="property-detail-sidebar__current-bid">
           <span className="current-bid-label">
-            {currentBid !== null &&
-            currentBid !==
-              (isAuctionProperty ? displayProperty.auction_starting_price : displayProperty.price)
+            {isAuctionProperty
               ? t('propertyDetailCurrentMaxBid')
-              : isAuctionProperty
-                ? t('propertyDetailStartingBidLabel')
-                : t('propertyDetailObjectPrice')}
+              : t('propertyDetailObjectPrice')}
           </span>
           <div
             className={`current-bid-value-wrapper ${priceAnimation ? 'current-bid-value-wrapper--animated' : ''}`}
@@ -184,32 +185,48 @@ export default function PropertyDetailAuctionBiddingForm({
           </div>
 
           {showSubmitButton && (
-            <button
-              type="button"
-              className={`bidding-section__submit-btn ${isUserLeader ? 'bidding-section__submit-btn--winner' : ''}${
-                paymentActionsLocked ? ' bidding-section__submit-btn--preview' : ''
-              }`}
-              onClick={handleBidSubmit}
-              disabled={
-                isSubmittingBid ||
-                (!paymentActionsLocked && !bidAmount) ||
-                isUserLeader ||
-                disableAuctionBidFields
-              }
-              style={{
-                opacity: disableAuctionBidFields ? 0.5 : 1,
-                cursor:
-                  disableAuctionBidFields || paymentActionsLocked ? 'not-allowed' : 'pointer',
-              }}
-            >
-              {isSubmittingBid
-                ? t('propertyDetailSubmitting')
-                : isUserLeader
-                  ? t('propertyDetailYouAreWinning')
-                  : isReservedActive
-                    ? t('objectReserved')
-                    : t('placeBid')}
-            </button>
+            <div className="bidding-section__submit-row">
+              <button
+                type="button"
+                className={`bidding-section__submit-btn ${isUserLeader ? 'bidding-section__submit-btn--winner' : ''}${
+                  paymentActionsLocked ? ' bidding-section__submit-btn--preview' : ''
+                }`}
+                onClick={handleBidSubmit}
+                disabled={
+                  isSubmittingBid ||
+                  (!paymentActionsLocked && !bidAmount) ||
+                  isUserLeader ||
+                  disableAuctionBidFields
+                }
+                style={{
+                  opacity: disableAuctionBidFields ? 0.5 : 1,
+                  cursor:
+                    disableAuctionBidFields || paymentActionsLocked ? 'not-allowed' : 'pointer',
+                }}
+              >
+                {isSubmittingBid
+                  ? t('propertyDetailSubmitting')
+                  : isUserLeader
+                    ? t('propertyDetailYouAreWinning')
+                    : isReservedActive
+                      ? t('objectReserved')
+                      : t('placeBid')}
+              </button>
+              {showBidCeilingButton && onOpenBidCeiling ? (
+                <button
+                  type="button"
+                  className={`bidding-section__ceiling-btn${
+                    bidCeilingActive ? ' bidding-section__ceiling-btn--active' : ''
+                  }`}
+                  onClick={onOpenBidCeiling}
+                  disabled={disableAuctionBidFields || isReservedActive}
+                  aria-label={t('auctionBidCeilingButtonAria')}
+                  title={t('auctionBidCeilingButtonAria')}
+                >
+                  <FiPlus size={22} strokeWidth={2.5} />
+                </button>
+              ) : null}
+            </div>
           )}
         </div>
       )}

@@ -33,6 +33,9 @@ export default function CompareFavoritesDrawer({ isOpen, onClose, onCompare }) {
   if (!visible || typeof document === 'undefined') return null
 
   const closingBackdrop = isClosing ? ' drawer-dismiss-backdrop--closing' : ''
+  const closingPanelClasses = isClosing
+    ? `${closingPanel} drawer-dismiss-from-bottom--closing drawer-dismiss-modal--closing`
+    : closingPanel
 
   const handleCompare = () => {
     requestClose(() => onCompare?.())
@@ -53,7 +56,7 @@ export default function CompareFavoritesDrawer({ isOpen, onClose, onCompare }) {
       >
         <div
           ref={panelRef}
-          className={`compare-favorites-drawer__panel${closingPanel}${isCollapsed ? ' compare-favorites-drawer__panel--collapsed' : ''}`}
+          className={`compare-favorites-drawer__panel${closingPanelClasses}${isCollapsed ? ' compare-favorites-drawer__panel--collapsed' : ''}`}
           style={panelDragStyle}
         >
           <div

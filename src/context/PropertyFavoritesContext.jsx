@@ -77,20 +77,12 @@ function dispatchFavoritesChanged() {
   }
 }
 
-const MOBILE_FAVORITE_DRAWER_MQ = '(max-width: 768px)'
-
-function isMobileViewport() {
-  return (
-    typeof window !== 'undefined' && window.matchMedia(MOBILE_FAVORITE_DRAWER_MQ).matches
-  )
-}
-
 function maybeOpenFirstFavoriteDrawer(countBeforeAdd) {
-  return countBeforeAdd === 0 && isMobileViewport()
+  return countBeforeAdd === 0
 }
 
 function maybeOpenCompareFavoritesDrawer(countBeforeAdd) {
-  return countBeforeAdd === 1 && isMobileViewport()
+  return countBeforeAdd === 1
 }
 
 function PropertyFavoritesDrawersHost({

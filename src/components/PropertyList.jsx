@@ -13,6 +13,9 @@ import PropertySearchModal from './PropertySearchModal'
 import { PropertyListingSkeletonGrid } from './PropertyListingSkeletonGrid'
 import { AuctionMobileListingSkeleton, readAuctionMobileViewMode } from './AuctionMobileListingSkeleton'
 import AuctionMobileLayout from './ui/AuctionMobileLayout'
+import AuctionDesktopFilters from './AuctionDesktopFilters'
+import AuctionPropertyCard from './AuctionPropertyCard'
+import { PanelLeftClose, PanelLeftOpen } from 'lucide-react'
 import ImageWithSkeleton from './ImageWithSkeleton'
 import { ensureCanOpenProperty } from '../utils/propertyAccessGuard'
 import { formatPropertyPrice } from '../utils/currency'
@@ -34,6 +37,7 @@ import { buildResponsiveImageProps } from '../utils/responsiveImage'
 import './PropertyList.css'
 
 const MOBILE_BREAKPOINT = 768
+const AUCTION_DESKTOP_PAGE_SIZE = 20
 
 const PROPERTY_FILTER_ITEMS = [
   { kind: 'type', value: 'все', labelKey: 'propertyTypeAll' },
@@ -64,7 +68,33 @@ const PropertyList = ({
   const [tooltip, setTooltip] = useState({ show: false, text: '', x: 0, y: 0 })
   const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth <= MOBILE_BREAKPOINT)
   const [mobileAuctionTypesOpen, setMobileAuctionTypesOpen] = useState(false)
+  const [desktopFiltersOpen, setDesktopFiltersOpen] = useState(true)
+  const [desktopFiltersTransitioning, setDesktopFiltersTransitioning] = useState(false)
+  const desktopFiltersTransitionTimerRef = useRef(null)
+  const [minAreaFilter, setMinAreaFilter] = useState('')
+  const [maxAreaFilter, setMaxAreaFilter] = useState('')
+  const [minPriceFilter, setMinPriceFilter] = useState('')
+  const [maxPriceFilter, setMaxPriceFilter] = useState('')
   const searchFiltersBarRef = useRef(null)
+
+  const toggleDesktopFilters = () => {
+    setDesktopFiltersTransitioning(true)
+    setDesktopFiltersOpen((open) => !open)
+    if (desktopFiltersTransitionTimerRef.current) {
+      clearTimeout(desktopFiltersTransitionTimerRef.current)
+    }
+    desktopFiltersTransitionTimerRef.current = setTimeout(() => {
+      setDesktopFiltersTransitioning(false)
+    }, 320)
+  }
+
+  useEffect(() => {
+    return () => {
+      if (desktopFiltersTransitionTimerRef.current) {
+        clearTimeout(desktopFiltersTransitionTimerRef.current)
+      }
+    }
+  }, [])
 
   useEffect(() => {
     if (!isMobile || location.pathname !== '/auction' || !mobileAuctionTypesOpen) return
@@ -134,6 +164,7 @@ const PropertyList = ({
     }
   }, [location.search])
   const [visibleCount, setVisibleCount] = useState(9)
+  const [auctionPage, setAuctionPage] = useState(1)
 
   const isPropertyLiked = (property) =>
     isFavorite(property, hasDbBackedProperty(property) ? undefined : 'property')
@@ -217,6 +248,22 @@ const PropertyList = ({
     if (saleFilter === 'ended' && !isAuctionEnded(property)) {
       return false
     }
+
+    const propertyArea = Number(property.area ?? property.sqft ?? property.living_area)
+    if (minAreaFilter !== '' && Number.isFinite(propertyArea)) {
+      if (propertyArea < Number(minAreaFilter)) return false
+    }
+    if (maxAreaFilter !== '' && Number.isFinite(propertyArea)) {
+      if (propertyArea > Number(maxAreaFilter)) return false
+    }
+
+    const propertyPrice = Number(property.price)
+    if (minPriceFilter !== '' && Number.isFinite(propertyPrice)) {
+      if (propertyPrice < Number(minPriceFilter)) return false
+    }
+    if (maxPriceFilter !== '' && Number.isFinite(propertyPrice)) {
+      if (propertyPrice > Number(maxPriceFilter)) return false
+    }
     
     // Фильтрация по поисковому запросу
     if (searchQuery) {
@@ -250,15 +297,74 @@ const PropertyList = ({
     propertyType,
     saleFilter,
     searchQuery,
+    minAreaFilter,
+    maxAreaFilter,
+    minPriceFilter,
+    maxPriceFilter,
     auctionNowTick,
   ])
 
   useEffect(() => {
     setVisibleCount(9)
-  }, [searchQuery, propertyType, saleFilter])
+    setAuctionPage(1)
+  }, [searchQuery, propertyType, saleFilter, minAreaFilter, maxAreaFilter, minPriceFilter, maxPriceFilter])
 
   const isAuctionPage = location.pathname === '/auction'
   const isAuctionMobileFilters = isMobile && isAuctionPage
+  const isAuctionDesktop = isAuctionPage && !isMobile
+
+  const auctionTotalPages = Math.max(
+    1,
+    Math.ceil(filteredProperties.length / AUCTION_DESKTOP_PAGE_SIZE)
+  )
+  const safeAuctionPage = Math.min(auctionPage, auctionTotalPages)
+
+  useEffect(() => {
+    if (isAuctionDesktop && auctionPage > auctionTotalPages) {
+      setAuctionPage(auctionTotalPages)
+    }
+  }, [isAuctionDesktop, auctionPage, auctionTotalPages])
+
+  const displayedProperties = useMemo(() => {
+    if (isMobile && isAuctionPage) {
+      return filteredProperties.slice(0, visibleCount)
+    }
+    if (isAuctionDesktop) {
+      const start = (safeAuctionPage - 1) * AUCTION_DESKTOP_PAGE_SIZE
+      return filteredProperties.slice(start, start + AUCTION_DESKTOP_PAGE_SIZE)
+    }
+    return filteredProperties.slice(0, visibleCount)
+  }, [
+    filteredProperties,
+    isMobile,
+    isAuctionPage,
+    isAuctionDesktop,
+    visibleCount,
+    safeAuctionPage,
+  ])
+
+  const goToAuctionPage = (page) => {
+    const next = Math.max(1, Math.min(page, auctionTotalPages))
+    setAuctionPage(next)
+    requestAnimationFrame(() => {
+      document.getElementById('properties-grid')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    })
+  }
+
+  const auctionFilterBounds = useMemo(() => {
+    const areas = propertiesToUse
+      .map((p) => Number(p.area ?? p.sqft ?? p.living_area))
+      .filter((v) => Number.isFinite(v) && v > 0)
+    const prices = propertiesToUse
+      .map((p) => Number(p.price))
+      .filter((v) => Number.isFinite(v) && v > 0)
+    return {
+      areaMin: areas.length ? Math.floor(Math.min(...areas)) : 0,
+      areaMax: areas.length ? Math.ceil(Math.max(...areas)) : 500,
+      priceMin: prices.length ? Math.floor(Math.min(...prices)) : 0,
+      priceMax: prices.length ? Math.ceil(Math.max(...prices)) : 1_000_000,
+    }
+  }, [propertiesToUse])
 
   const handleFavoriteToggle = (property, e) => {
     e.preventDefault()
@@ -344,9 +450,13 @@ const PropertyList = ({
       <section
         className={`property-list${floatWidgetsHiddenByFooter ? ' property-list--footer-near' : ''}${
           isAuctionMobileFilters ? ' property-list--auction-mobile-page' : ''
-        }`}
+        }${isAuctionDesktop ? ' property-list--auction-desktop' : ''}`}
       >
-        <div className="property-list-container">
+        <div
+          className={`property-list-container${
+            isAuctionDesktop ? ' property-list-container--auction-desktop' : ''
+          }`}
+        >
         {isMobile && isAuctionPage && onOpenAIChat && (
           <div className="property-list-header">
             <button
@@ -365,8 +475,57 @@ const PropertyList = ({
         )}
 
         <div
+          className={`${
+            isAuctionDesktop
+              ? `auction-desktop-layout${
+                  desktopFiltersOpen ? '' : ' auction-desktop-layout--filters-hidden'
+                }`
+              : ''
+          }`.trim()}
+        >
+          {isAuctionDesktop && desktopFiltersOpen ? (
+            <AuctionDesktopFilters
+              propertyType={propertyType}
+              setPropertyType={setPropertyType}
+              saleFilter={saleFilter}
+              setSaleFilter={setSaleFilter}
+              minArea={minAreaFilter}
+              maxArea={maxAreaFilter}
+              setMinArea={setMinAreaFilter}
+              setMaxArea={setMaxAreaFilter}
+              minPrice={minPriceFilter}
+              maxPrice={maxPriceFilter}
+              setMinPrice={setMinPriceFilter}
+              setMaxPrice={setMaxPriceFilter}
+              areaBounds={{
+                min: auctionFilterBounds.areaMin,
+                max: auctionFilterBounds.areaMax,
+              }}
+              priceBounds={{
+                min: auctionFilterBounds.priceMin,
+                max: auctionFilterBounds.priceMax,
+              }}
+              onApply={() => {
+                const grid = document.getElementById('properties-grid')
+                grid?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+              }}
+            />
+          ) : null}
+
+          <div
+            className={`${
+              isAuctionDesktop ? 'auction-desktop-layout__main' : ''
+            }${
+              isAuctionDesktop && !desktopFiltersOpen
+                ? ' auction-desktop-layout__main--filters-hidden'
+                : ''
+            }`.trim() || undefined}
+          >
+        <div
           ref={searchFiltersBarRef}
           className={`search-filters-bar${
+            isAuctionDesktop ? ' search-filters-bar--auction-desktop' : ''
+          }${
             isAuctionMobileFilters ? ' search-filters-bar--auction-mobile' : ''
           }${
             isAuctionMobileFilters
@@ -376,6 +535,19 @@ const PropertyList = ({
               : ''
           }`}
         >
+          {isAuctionDesktop ? (
+            <button
+              type="button"
+              className="auction-desktop-filters-toggle"
+              onClick={toggleDesktopFilters}
+              aria-label={
+                desktopFiltersOpen ? t('auctionToggleFiltersHide') : t('auctionToggleFiltersShow')
+              }
+              aria-expanded={desktopFiltersOpen}
+            >
+              {desktopFiltersOpen ? <PanelLeftClose size={20} /> : <PanelLeftOpen size={20} />}
+            </button>
+          ) : null}
           <div className="search-box">
             <svg className="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <circle cx="11" cy="11" r="8"/>
@@ -397,6 +569,7 @@ const PropertyList = ({
               </button>
             )}
           </div>
+          {!isAuctionDesktop ? (
           <div className="filters-and-types-grid">
             <button
               type="button"
@@ -448,9 +621,19 @@ const PropertyList = ({
               ))}
             </div>
           </div>
+          ) : null}
         </div>
 
-        {loading ? (
+        {isAuctionDesktop && desktopFiltersTransitioning ? (
+          <div
+            className="auction-desktop-layout-loader"
+            aria-busy="true"
+            aria-live="polite"
+            aria-label={t('loading')}
+          >
+            <div className="auction-desktop-layout-loader__spinner" aria-hidden="true" />
+          </div>
+        ) : loading ? (
           isMobile && isAuctionPage ? (
             <div
               id="properties-grid"
@@ -479,7 +662,7 @@ const PropertyList = ({
             {isMobile && isAuctionPage ? (
               <div id="properties-grid" className="properties-grid properties-grid--mobile-auction">
                 <AuctionMobileLayout
-                  properties={filteredProperties.slice(0, visibleCount)}
+                  properties={displayedProperties}
                   formatPrice={formatPrice}
                   isFavorite={isPropertyLiked}
                   onFavoriteToggle={handleFavoriteToggle}
@@ -487,8 +670,26 @@ const PropertyList = ({
                 />
               </div>
             ) : (
-            <div id="properties-grid" className="properties-grid">
-              {filteredProperties.slice(0, visibleCount).map((property) => {
+            <div
+              id="properties-grid"
+              className={`properties-grid${isAuctionPage ? ' properties-grid--auction-cards' : ''}`}
+            >
+              {displayedProperties.map((property) => {
+                if (isAuctionPage) {
+                  return (
+                    <AuctionPropertyCard
+                      key={auctionListingDedupeKey(property)}
+                      property={property}
+                      isFavorite={isPropertyLiked(property)}
+                      onFavoriteToggle={handleFavoriteToggle}
+                      onOpen={openProperty}
+                      onTooltip={setTooltip}
+                      viewerHasVip={viewerHasVip}
+                      formatPrice={formatPrice}
+                    />
+                  )
+                }
+
                 const propertyTitle = property.title || property.name || ''
                 const propertyImage = getPropertyCardImage(
                   property,
@@ -1006,21 +1207,61 @@ const PropertyList = ({
             </div>
             )}
 
-            {filteredProperties.length > visibleCount && (
-          <div className="load-more-container">
-            <button 
-              className="load-more-button"
-              onClick={() => setVisibleCount(filteredProperties.length)}
-            >
-              {t('showMore', { count: filteredProperties.length - visibleCount })}
-            </button>
-          </div>
-        )}
+            {isAuctionDesktop && filteredProperties.length > 0 ? (
+              <nav className="auction-desktop-pagination" aria-label={t('auctionPaginationLabel')}>
+                <button
+                  type="button"
+                  className="auction-desktop-pagination__arrow"
+                  disabled={safeAuctionPage <= 1}
+                  onClick={() => goToAuctionPage(safeAuctionPage - 1)}
+                  aria-label={t('auctionPaginationPrev')}
+                >
+                  ←
+                </button>
+                <div className="auction-desktop-pagination__pages">
+                  {Array.from({ length: auctionTotalPages }, (_, index) => index + 1).map((page) => (
+                    <button
+                      key={page}
+                      type="button"
+                      className={`auction-desktop-pagination__page${
+                        page === safeAuctionPage ? ' auction-desktop-pagination__page--active' : ''
+                      }`}
+                      onClick={() => goToAuctionPage(page)}
+                      aria-current={page === safeAuctionPage ? 'page' : undefined}
+                    >
+                      {page}
+                    </button>
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  className="auction-desktop-pagination__arrow"
+                  disabled={safeAuctionPage >= auctionTotalPages}
+                  onClick={() => goToAuctionPage(safeAuctionPage + 1)}
+                  aria-label={t('auctionPaginationNext')}
+                >
+                  →
+                </button>
+              </nav>
+            ) : null}
+
+            {!isAuctionDesktop && filteredProperties.length > visibleCount && (
+              <div className="load-more-container">
+                <button
+                  className="load-more-button"
+                  onClick={() => setVisibleCount(filteredProperties.length)}
+                >
+                  {t('showMore', { count: filteredProperties.length - visibleCount })}
+                </button>
+              </div>
+            )}
           </>
         )}
+          </div>
+        </div>
       </div>
 
-      {isSearchModalOpen && (
+      {!isAuctionDesktop && isSearchModalOpen && (
         <PropertySearchModal
           isOpen={isSearchModalOpen}
           onClose={() => setIsSearchModalOpen(false)}

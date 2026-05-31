@@ -3,7 +3,14 @@ import { useTranslation } from 'react-i18next'
 import './PropertyTimer.css'
 import { FlipNumber } from '@/components/ui/flip-countdown'
 
-const PropertyTimer = ({ endTime, compact = false, className = '', auctionEndedLabel = null }) => {
+const PropertyTimer = ({
+  endTime,
+  compact = false,
+  className = '',
+  auctionEndedLabel = null,
+  showUnitLabels = false,
+  unitSeparator = ':',
+}) => {
   const { t } = useTranslation()
   const [timeLeft, setTimeLeft] = useState({
     days: 0,
@@ -102,11 +109,37 @@ const PropertyTimer = ({ endTime, compact = false, className = '', auctionEndedL
   else if (days >= 60) digitColor = '#f97316' // orange
 
   /* Крупный flip; узкие экраны поджимаются в CSS (container / mobile) */
-  const flipStyle = {
-    '--flip-card-width': '40px',
-    '--flip-card-height': '58px',
-    '--flip-card-font-size': '29px',
-  }
+  const flipStyle = showUnitLabels
+    ? {
+        '--flip-card-width': '22px',
+        '--flip-card-height': '32px',
+        '--flip-card-font-size': '16px',
+      }
+    : {
+        '--flip-card-width': '40px',
+        '--flip-card-height': '58px',
+        '--flip-card-font-size': '29px',
+      }
+
+  const sepChar = unitSeparator === 'dot' ? '·' : ':'
+  const sepClass =
+    unitSeparator === 'dot'
+      ? 'property-timer-detail-sep property-timer-detail-sep--dot'
+      : 'property-timer-detail-sep'
+
+  const renderDetailUnit = (value, labelKey) => (
+    <div className="property-timer-detail-unit">
+      <FlipNumber
+        value={String(value).padStart(2, '0')}
+        padTo={2}
+        style={flipStyle}
+        textColor={digitColor}
+      />
+      {showUnitLabels ? (
+        <span className="property-timer-detail-unit-label">{t(labelKey)}</span>
+      ) : null}
+    </div>
+  )
 
   if (isEnded && auctionEndedLabel) {
     return (
@@ -124,21 +157,19 @@ const PropertyTimer = ({ endTime, compact = false, className = '', auctionEndedL
       className={`property-timer property-timer--detail ${statusClass} ${isCritical ? 'timer-critical' : ''} ${className}`.trim()}
     >
       <div className="property-timer-detail-flip-row">
-        <div className="property-timer-detail-unit">
-          <FlipNumber value={String(timeLeft.days).padStart(2, '0')} padTo={2} style={flipStyle} textColor={digitColor} />
-        </div>
-        <span className="property-timer-detail-sep" aria-hidden="true">:</span>
-        <div className="property-timer-detail-unit">
-          <FlipNumber value={String(timeLeft.hours).padStart(2, '0')} padTo={2} style={flipStyle} textColor={digitColor} />
-        </div>
-        <span className="property-timer-detail-sep" aria-hidden="true">:</span>
-        <div className="property-timer-detail-unit">
-          <FlipNumber value={String(timeLeft.minutes).padStart(2, '0')} padTo={2} style={flipStyle} textColor={digitColor} />
-        </div>
-        <span className="property-timer-detail-sep" aria-hidden="true">:</span>
-        <div className="property-timer-detail-unit">
-          <FlipNumber value={String(timeLeft.seconds).padStart(2, '0')} padTo={2} style={flipStyle} textColor={digitColor} />
-        </div>
+        {renderDetailUnit(timeLeft.days, 'timerDay')}
+        <span className={sepClass} aria-hidden="true">
+          {sepChar}
+        </span>
+        {renderDetailUnit(timeLeft.hours, 'timerHour')}
+        <span className={sepClass} aria-hidden="true">
+          {sepChar}
+        </span>
+        {renderDetailUnit(timeLeft.minutes, 'timerMin')}
+        <span className={sepClass} aria-hidden="true">
+          {sepChar}
+        </span>
+        {renderDetailUnit(timeLeft.seconds, 'timerSec')}
       </div>
     </div>
   )
