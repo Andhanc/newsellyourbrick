@@ -2159,6 +2159,8 @@
   "privateClubVipCelebrationCtaProfile": "Go to profile",
   "privateClubVipCelebrationCtaWhatsApp": "Open WhatsApp",
   "profileVipBadgeTitle": "VIP member",
+  "profileVipClubPromoTitle": "SellYourBrick private club",
+  "profileVipClubPromoLead": "Exclusive listings, a personal manager, and auction priority",
   "privateClubKickedModalTitle": "Removed from the private club",
   "privateClubKickedModalBody": "Unfortunately, a moderator has removed you from the private club. Your club access period stored in your profile has been withdrawn.",
   "privateClubKickedModalOk": "OK"

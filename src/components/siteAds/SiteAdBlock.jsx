@@ -12,6 +12,23 @@ export default function SiteAdBlock({ ad, onClose }) {
   const external = showButton && isExternalAdUrl(buttonUrl)
   const buttonLabel = String(ad.buttonLabel || 'Подробнее').trim() || 'Подробнее'
 
+  const cta = showButton ? (
+    external ? (
+      <a
+        className="site-ad-block__cta"
+        href={buttonUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        {buttonLabel}
+      </a>
+    ) : (
+      <Link to={buttonUrl} className="site-ad-block__cta">
+        {buttonLabel}
+      </Link>
+    )
+  ) : null
+
   return (
     <article className="site-ad-block" aria-label={ad.title}>
       <div className="site-ad-block__bg" aria-hidden="true" />
@@ -28,31 +45,19 @@ export default function SiteAdBlock({ ad, onClose }) {
         <FiX size={18} />
       </button>
 
-      <div className="site-ad-block__icon-wrap" aria-hidden="true">
-        <SiteAdIcon iconId={ad.icon} size={22} />
+      <div className="site-ad-block__main">
+        <div className="site-ad-block__icon-wrap" aria-hidden="true">
+          <SiteAdIcon iconId={ad.icon} size={22} />
+        </div>
+
+        <div className="site-ad-block__content">
+          <span className="site-ad-block__label">Реклама</span>
+          <h3 className="site-ad-block__title">{ad.title}</h3>
+          <p className="site-ad-block__description">{ad.description}</p>
+        </div>
       </div>
 
-      <div className="site-ad-block__content">
-        <span className="site-ad-block__label">Реклама</span>
-        <h3 className="site-ad-block__title">{ad.title}</h3>
-        <p className="site-ad-block__description">{ad.description}</p>
-        {showButton ? (
-          external ? (
-            <a
-              className="site-ad-block__cta"
-              href={buttonUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              {buttonLabel}
-            </a>
-          ) : (
-            <Link to={buttonUrl} className="site-ad-block__cta">
-              {buttonLabel}
-            </Link>
-          )
-        ) : null}
-      </div>
+      {cta ? <div className="site-ad-block__actions">{cta}</div> : null}
     </article>
   )
 }

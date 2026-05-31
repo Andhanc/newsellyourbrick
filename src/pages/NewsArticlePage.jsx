@@ -1,20 +1,48 @@
-import { useCallback, useEffect, useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { useNewsArticleTocFixed } from '@/hooks/useNewsArticleTocFixed'
+import {
+  getNewsArticleScrollOffsetPx,
+  useNewsArticleMobileFixedHead,
+} from '@/hooks/useNewsArticleMobileFixedHead'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import { FiShare2 } from 'react-icons/fi'
 import Header from '@/components/Header'
+import PageBackButton from '@/components/PageBackButton'
 import NewsArticleMeta from '@/components/news/NewsArticleMeta'
 import NewsArticleBody from '@/components/news/NewsArticleBody'
 import { fetchArticleBySlug } from '@/services/newsApi'
-import { scrollMainTo } from '@/utils/mainScroll'
+import {
+  getMainScrollEl,
+  pickActiveIdByMainScroll,
+  scrollMainElementIntoView,
+  scrollMainTo,
+} from '@/utils/mainScroll'
 import './News.css'
 import './NewsArticlePage.css'
 
 export default function NewsArticlePage() {
+  const navigate = useNavigate()
   const { slug } = useParams()
   const [article, setArticle] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [activeSection, setActiveSection] = useState('')
+  const layoutRef = useRef(null)
+  const stickyHeadRef = useRef(null)
+  const headSpacerRef = useRef(null)
+  const toolbarRef = useRef(null)
+  const tocPanelRef = useRef(null)
+  const tocNavRef = useRef(null)
+  const scrollSpyRafRef = useRef(0)
+
+  useNewsArticleTocFixed(
+    layoutRef,
+    stickyHeadRef,
+    tocPanelRef,
+    Boolean(article?.sections?.length),
+  )
+
+  useNewsArticleMobileFixedHead(stickyHeadRef, headSpacerRef)
 
   useEffect(() => {
     scrollMainTo(0, 0)
@@ -40,27 +68,49 @@ export default function NewsArticlePage() {
     }
   }, [slug])
 
+  const sectionIds = article?.sections?.map((s) => s.id).filter(Boolean) ?? []
+
   useEffect(() => {
-    const sections = article?.sections || []
-    if (!sections.length) return undefined
+    if (!sectionIds.length) return undefined
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const visible = entries
-          .filter((e) => e.isIntersecting)
-          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0]
-        if (visible?.target?.id) setActiveSection(visible.target.id)
-      },
-      { rootMargin: '-20% 0px -55% 0px', threshold: [0, 0.25, 0.5] },
+    const updateActive = () => {
+      const next = pickActiveIdByMainScroll(sectionIds, {
+        offset: getNewsArticleScrollOffsetPx(stickyHeadRef.current),
+      })
+      setActiveSection((prev) => (prev === next ? prev : next))
+    }
+
+    const schedule = () => {
+      if (scrollSpyRafRef.current) return
+      scrollSpyRafRef.current = window.requestAnimationFrame(() => {
+        scrollSpyRafRef.current = 0
+        updateActive()
+      })
+    }
+
+    const scrollRoot = getMainScrollEl()
+    scrollRoot?.addEventListener('scroll', schedule, { passive: true })
+    window.addEventListener('resize', schedule, { passive: true })
+    const t = window.setTimeout(updateActive, 80)
+
+    return () => {
+      scrollRoot?.removeEventListener('scroll', schedule)
+      window.removeEventListener('resize', schedule)
+      window.clearTimeout(t)
+      if (scrollSpyRafRef.current) {
+        window.cancelAnimationFrame(scrollSpyRafRef.current)
+        scrollSpyRafRef.current = 0
+      }
+    }
+  }, [sectionIds.join('|')])
+
+  useEffect(() => {
+    if (!activeSection || !tocNavRef.current) return
+    const link = tocNavRef.current.querySelector(
+      `[data-toc-section="${activeSection}"]`,
     )
-
-    sections.forEach((s) => {
-      const el = document.getElementById(s.id)
-      if (el) observer.observe(el)
-    })
-
-    return () => observer.disconnect()
-  }, [article])
+    link?.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+  }, [activeSection])
 
   const handleShare = useCallback(async () => {
     const url = window.location.href
@@ -80,19 +130,35 @@ export default function NewsArticlePage() {
     }
   }, [article?.title])
 
-  const scrollToSection = (id) => {
+  const scrollToSection = useCallback((id) => {
     const el = document.getElementById(id)
     if (el) {
-      el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      scrollMainElementIntoView(el, {
+        offset: getNewsArticleScrollOffsetPx(stickyHeadRef.current),
+        behavior: 'smooth',
+      })
       setActiveSection(id)
     }
-  }
+  }, [])
+
+  const goToNewsList = useCallback(() => {
+    navigate('/news')
+  }, [navigate])
 
   if (loading) {
     return (
-      <div className="news-page">
+      <div className="news-page news-page--article">
         <Header />
         <main className="news-article-page__main">
+          <div ref={stickyHeadRef} className="news-article-page__sticky-head">
+            <div ref={toolbarRef} className="news-article-page__toolbar">
+              <PageBackButton
+                className="news-article-page__back-btn"
+                onClick={goToNewsList}
+              />
+            </div>
+          </div>
+          <div ref={headSpacerRef} className="news-article-page__head-spacer" aria-hidden />
           <p className="news-article-page__status">Загрузка…</p>
         </main>
       </div>
@@ -101,52 +167,82 @@ export default function NewsArticlePage() {
 
   if (error || !article) {
     return (
-      <div className="news-page">
+      <div className="news-page news-page--article">
         <Header />
         <main className="news-article-page__main">
+          <div ref={stickyHeadRef} className="news-article-page__sticky-head">
+            <div ref={toolbarRef} className="news-article-page__toolbar">
+              <PageBackButton
+                className="news-article-page__back-btn"
+                onClick={goToNewsList}
+              />
+            </div>
+          </div>
+          <div ref={headSpacerRef} className="news-article-page__head-spacer" aria-hidden />
           <p className="news-article-page__status">{error || 'Статья не найдена'}</p>
-          <Link to="/news" className="news-article-page__back">
-            ← Все новости
-          </Link>
         </main>
       </div>
     )
   }
 
+  const hasToc = (article.sections || []).length > 0
+
   return (
-    <div className="news-page">
+    <div className="news-page news-page--article">
       <Header />
       <main className="news-article-page__main">
-        <div className="news-article-page__layout">
-          <aside className="news-article-page__toc" aria-label="Содержание">
-            <h2 className="news-article-page__toc-title">Содержание</h2>
-            <nav>
-              <ul className="news-article-page__toc-list">
-                {(article.sections || []).map((section) => (
-                  <li
-                    key={section.id}
-                    className={
-                      section.level === 3 ? 'news-article-page__toc-item--nested' : ''
-                    }
-                  >
-                    <button
-                      type="button"
-                      className={`news-article-page__toc-link${
-                        activeSection === section.id ? ' news-article-page__toc-link--active' : ''
-                      }`}
-                      onClick={() => scrollToSection(section.id)}
-                    >
-                      {section.title}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </nav>
-          </aside>
+        <div ref={layoutRef} className="news-article-page__layout">
+          <div ref={stickyHeadRef} className="news-article-page__sticky-head">
+            <div ref={toolbarRef} className="news-article-page__toolbar">
+              <PageBackButton
+                className="news-article-page__back-btn"
+                onClick={goToNewsList}
+              />
+            </div>
+
+            {hasToc ? (
+              <aside className="news-article-page__toc" aria-label="Содержание">
+                <div ref={tocPanelRef} className="news-article-page__toc-panel">
+                  <h2 className="news-article-page__toc-title">Содержание</h2>
+                  <nav ref={tocNavRef} className="news-article-page__toc-nav">
+                    <ul className="news-article-page__toc-list">
+                      {(article.sections || []).map((section) => (
+                        <li
+                          key={section.id}
+                          className={
+                            section.level === 3
+                              ? 'news-article-page__toc-item--nested'
+                              : ''
+                          }
+                        >
+                          <button
+                            type="button"
+                            data-toc-section={section.id}
+                            className={`news-article-page__toc-link${
+                              activeSection === section.id
+                                ? ' news-article-page__toc-link--active'
+                                : ''
+                            }`}
+                            aria-current={
+                              activeSection === section.id ? 'location' : undefined
+                            }
+                            onClick={() => scrollToSection(section.id)}
+                          >
+                            {section.title}
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </nav>
+                </div>
+              </aside>
+            ) : null}
+          </div>
+
+          <div ref={headSpacerRef} className="news-article-page__head-spacer" aria-hidden />
 
           <article className="news-article-page__content">
             <div className="news-article-page__top-row">
-              <span className="news-article-page__badge">{article.badge}</span>
               <button
                 type="button"
                 className="news-article-page__share"
@@ -163,8 +259,6 @@ export default function NewsArticlePage() {
             <NewsArticleMeta
               date={article.date}
               views={article.views}
-              comments={article.comments}
-              likes={article.likes}
               className="news-article-page__meta"
             />
 

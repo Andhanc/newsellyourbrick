@@ -1,12 +1,12 @@
 .site-ad-block {
   position: relative;
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 16px;
   width: 100%;
   max-width: 1200px;
   margin: 0 auto;
-  padding: 18px 48px 18px 18px;
+  padding: 16px 48px 16px 18px;
   border-radius: 20px;
   overflow: hidden;
   box-sizing: border-box;
@@ -75,6 +75,16 @@
   width: 90px;
   height: 90px;
   background: #a78bfa;
+}
+
+.site-ad-block__main {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex: 1;
+  min-width: 0;
 }
 
 .site-ad-block__icon-wrap {
@@ -152,12 +162,20 @@
   color: rgba(255, 255, 255, 0.92);
 }
 
+.site-ad-block__actions {
+  position: relative;
+  z-index: 1;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  margin-right: 28px;
+}
+
 .site-ad-block__cta {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  margin-top: 12px;
-  padding: 10px 18px;
+  padding: 11px 20px;
   border: none;
   border-radius: 12px;
   background: rgba(255, 255, 255, 0.95);
@@ -166,6 +184,7 @@
   font-size: 0.8125rem;
   font-weight: 800;
   text-decoration: none;
+  white-space: nowrap;
   cursor: pointer;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
@@ -189,10 +208,23 @@
 
 @media (max-width: 640px) {
   .site-ad-block {
-    flex-direction: column;
+    flex-wrap: wrap;
+    align-items: flex-start;
     gap: 12px;
     padding: 16px 44px 16px 16px;
     border-radius: 16px;
+  }
+
+  .site-ad-block__main {
+    align-items: flex-start;
+    width: 100%;
+  }
+
+  .site-ad-block__actions {
+    width: 100%;
+    margin-right: 0;
+    justify-content: flex-end;
+    padding-top: 2px;
   }
 
   .site-ad-block__icon-wrap {

@@ -126,6 +126,52 @@ export function registerNewsRoutes(app) {
     }
   })
 
+  router.post('/marketer/images/search', requireMarketer, express.json(), async (req, res) => {
+    try {
+      const { searchNewsCoverImages } = await import('./services/newsImageSearch.js')
+      const query = String(req.body?.query || '').trim()
+      if (!query) {
+        return res.status(400).json({ success: false, error: 'Укажите запрос для поиска' })
+      }
+      const limit = Math.min(Number(req.body?.limit) || 6, 10)
+      const images = await searchNewsCoverImages(query, { limit })
+      return res.json({ success: true, images, query })
+    } catch (err) {
+      console.error('[news/images/search]', err)
+      return res.status(500).json({ success: false, error: err?.message || 'Ошибка поиска фото' })
+    }
+  })
+
+  router.post('/marketer/images/suggest', requireMarketer, express.json(), async (req, res) => {
+    try {
+      const { generateImageMetaFromDraft } = await import('./services/newsImageAi.js')
+      const draft = req.body?.draft
+      if (!draft?.title) {
+        return res.status(400).json({ success: false, error: 'Нет данных статьи' })
+      }
+      const meta = await generateImageMetaFromDraft(draft)
+      return res.json({ success: true, ...meta })
+    } catch (err) {
+      console.error('[news/images/suggest]', err)
+      return res.status(500).json({ success: false, error: err?.message || 'Ошибка подбора запроса' })
+    }
+  })
+
+  router.post('/marketer/images/generate', requireMarketer, express.json(), async (req, res) => {
+    try {
+      const { generateAiCoverFromDraft } = await import('./services/newsImageAi.js')
+      const draft = req.body?.draft
+      if (!draft?.title) {
+        return res.status(400).json({ success: false, error: 'Нет данных статьи' })
+      }
+      const result = await generateAiCoverFromDraft(draft)
+      return res.json({ success: true, ...result })
+    } catch (err) {
+      console.error('[news/images/generate]', err)
+      return res.status(500).json({ success: false, error: err?.message || 'Ошибка генерации фото' })
+    }
+  })
+
   router.post('/marketer/publish', requireMarketer, express.json(), (req, res) => {
     try {
       const draft = req.body?.draft

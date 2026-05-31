@@ -1,6 +1,12 @@
 import { useState } from 'react'
-import { FiX, FiLoader } from 'react-icons/fi'
-import { generateNewsDraft, publishNewsDraft } from '@/services/newsApi'
+import { FiX, FiLoader, FiImage, FiRefreshCw, FiSearch } from 'react-icons/fi'
+import {
+  generateNewsDraft,
+  publishNewsDraft,
+  searchNewsCoverImages,
+  suggestNewsImageQuery,
+  generateNewsAiCover,
+} from '@/services/newsApi'
 import NewsArticleMeta from './NewsArticleMeta'
 import NewsArticleBody from './NewsArticleBody'
 import './GenerateNewsModal.css'
@@ -10,6 +16,9 @@ export default function GenerateNewsModal({ open, onClose, onPublished }) {
   const [draft, setDraft] = useState(null)
   const [step, setStep] = useState('prompt')
   const [loading, setLoading] = useState(false)
+  const [imageLoading, setImageLoading] = useState(false)
+  const [imageQuery, setImageQuery] = useState('')
+  const [imageOptions, setImageOptions] = useState([])
   const [error, setError] = useState('')
 
   if (!open) return null
@@ -20,6 +29,9 @@ export default function GenerateNewsModal({ open, onClose, onPublished }) {
     setStep('prompt')
     setError('')
     setLoading(false)
+    setImageLoading(false)
+    setImageQuery('')
+    setImageOptions([])
   }
 
   const handleClose = () => {
@@ -33,6 +45,8 @@ export default function GenerateNewsModal({ open, onClose, onPublished }) {
     try {
       const result = await generateNewsDraft(prompt)
       setDraft(result)
+      setImageQuery(result.imageSearchQuery || '')
+      setImageOptions([])
       setStep('preview')
     } catch (e) {
       const raw = e?.message || 'Ошибка генерации'
@@ -41,9 +55,7 @@ export default function GenerateNewsModal({ open, onClose, onPublished }) {
           ? 'Сессия истекла — войдите снова'
           : /aborted|timeout|timed out/i.test(raw)
             ? 'Генерация заняла слишком много времени. Сократите промпт или подождите ~15 сек и нажмите «Сгенерировать» снова.'
-            : /JSON|json/i.test(raw)
-              ? 'Ошибка формата ответа AI. В промпте укажите только тему статьи (2–5 предложений), без технических инструкций про фото — и повторите.'
-              : raw
+            : raw
       setError(friendly)
     } finally {
       setLoading(false)
@@ -55,7 +67,10 @@ export default function GenerateNewsModal({ open, onClose, onPublished }) {
     setError('')
     setLoading(true)
     try {
-      const article = await publishNewsDraft(draft)
+      const article = await publishNewsDraft({
+        ...draft,
+        imageSearchQuery: imageQuery.trim() || draft.imageSearchQuery,
+      })
       onPublished?.(article)
       handleClose()
     } catch (e) {
@@ -64,6 +79,78 @@ export default function GenerateNewsModal({ open, onClose, onPublished }) {
       setLoading(false)
     }
   }
+
+  const applyImage = (url) => {
+    if (!url || !draft) return
+    setDraft({ ...draft, image: url })
+  }
+
+  const handleSearchImages = async (queryOverride) => {
+    if (!draft) return
+    const query = String(queryOverride ?? imageQuery ?? draft.imageSearchQuery ?? '').trim()
+    if (!query) {
+      setError('Укажите запрос для поиска фото')
+      return
+    }
+    setError('')
+    setImageLoading(true)
+    try {
+      const images = await searchNewsCoverImages(query, 6)
+      setImageOptions(images)
+      if (images.length) applyImage(images[0])
+      setImageQuery(query)
+    } catch (e) {
+      setError(e?.message || 'Не удалось найти фото')
+    } finally {
+      setImageLoading(false)
+    }
+  }
+
+  const handleSuggestQuery = async () => {
+    if (!draft) return
+    setError('')
+    setImageLoading(true)
+    try {
+      const meta = await suggestNewsImageQuery(draft)
+      setImageQuery(meta.imageSearchQuery || '')
+      setDraft({
+        ...draft,
+        imageSearchQuery: meta.imageSearchQuery || draft.imageSearchQuery,
+        imagePrompt: meta.imagePrompt || draft.imagePrompt,
+      })
+      await handleSearchImages(meta.imageSearchQuery)
+    } catch (e) {
+      setError(e?.message || 'Не удалось подобрать запрос')
+    } finally {
+      setImageLoading(false)
+    }
+  }
+
+  const handleGenerateAiImage = async () => {
+    if (!draft) return
+    setError('')
+    setImageLoading(true)
+    try {
+      const result = await generateNewsAiCover({
+        ...draft,
+        imageSearchQuery: imageQuery.trim() || draft.imageSearchQuery,
+      })
+      setDraft({
+        ...draft,
+        image: result.image,
+        imagePrompt: result.imagePrompt || draft.imagePrompt,
+        imageSearchQuery: result.imageSearchQuery || draft.imageSearchQuery,
+      })
+      setImageQuery(result.imageSearchQuery || imageQuery)
+      setImageOptions((prev) => [result.image, ...prev.filter((u) => u !== result.image)].slice(0, 6))
+    } catch (e) {
+      setError(e?.message || 'Не удалось сгенерировать фото')
+    } finally {
+      setImageLoading(false)
+    }
+  }
+
+  const headingCount = draft?.headingCount ?? draft?.body?.filter((b) => b.type === 'h2').length ?? 0
 
   return (
     <div className="gen-news-modal-overlay" role="presentation" onClick={handleClose}>
@@ -98,7 +185,7 @@ export default function GenerateNewsModal({ open, onClose, onPublished }) {
               id="gen-news-prompt"
               className="gen-news-modal__textarea"
               rows={6}
-              placeholder="Кратко опишите тему (2–5 предложений). Длинные инструкции замедляют генерацию."
+              placeholder="Кратко опишите тему (2–5 предложений). ИИ создаст статью с 3–7 разделами и подберёт обложку."
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
               disabled={loading}
@@ -123,20 +210,95 @@ export default function GenerateNewsModal({ open, onClose, onPublished }) {
           </>
         ) : (
           <div className="gen-news-modal__preview">
-            <div className="gen-news-modal__preview-image-wrap">
-              <img src={draft?.image} alt="" className="gen-news-modal__preview-image" />
-              <span className="gen-news-modal__preview-badge">{draft?.badge}</span>
+            <div className="gen-news-modal__image-panel">
+              <div className="gen-news-modal__preview-image-wrap">
+                <img src={draft?.image} alt="" className="gen-news-modal__preview-image" />
+                <span className="gen-news-modal__preview-badge">{draft?.badge}</span>
+                {imageLoading ? (
+                  <div className="gen-news-modal__image-loading">
+                    <FiLoader className="gen-news-modal__spin" size={24} />
+                  </div>
+                ) : null}
+              </div>
+
+              <div className="gen-news-modal__image-toolbar">
+                <button
+                  type="button"
+                  className="gen-news-modal__image-btn"
+                  onClick={handleSuggestQuery}
+                  disabled={imageLoading || loading}
+                >
+                  <FiSearch size={16} />
+                  ИИ-подбор фото
+                </button>
+                <button
+                  type="button"
+                  className="gen-news-modal__image-btn"
+                  onClick={() => handleSearchImages()}
+                  disabled={imageLoading || loading}
+                >
+                  <FiRefreshCw size={16} />
+                  Найти другие
+                </button>
+                <button
+                  type="button"
+                  className="gen-news-modal__image-btn gen-news-modal__image-btn--accent"
+                  onClick={handleGenerateAiImage}
+                  disabled={imageLoading || loading}
+                >
+                  <FiImage size={16} />
+                  Сгенерировать ИИ
+                </button>
+              </div>
+
+              <label className="gen-news-modal__label" htmlFor="gen-news-image-query">
+                Запрос для поиска (English)
+              </label>
+              <div className="gen-news-modal__image-query-row">
+                <input
+                  id="gen-news-image-query"
+                  type="text"
+                  className="gen-news-modal__image-query-input"
+                  value={imageQuery}
+                  onChange={(e) => setImageQuery(e.target.value)}
+                  placeholder="Barcelona architecture travel"
+                  disabled={imageLoading || loading}
+                />
+                <button
+                  type="button"
+                  className="gen-news-modal__btn gen-news-modal__btn--ghost"
+                  onClick={() => handleSearchImages(imageQuery)}
+                  disabled={imageLoading || loading || !imageQuery.trim()}
+                >
+                  Искать
+                </button>
+              </div>
+
+              {imageOptions.length > 1 ? (
+                <div className="gen-news-modal__image-grid">
+                  {imageOptions.map((url) => (
+                    <button
+                      key={url}
+                      type="button"
+                      className={`gen-news-modal__image-option${draft?.image === url ? ' gen-news-modal__image-option--active' : ''}`}
+                      onClick={() => applyImage(url)}
+                      title="Выбрать обложку"
+                    >
+                      <img src={url} alt="" />
+                    </button>
+                  ))}
+                </div>
+              ) : null}
             </div>
+
             <h3 className="gen-news-modal__preview-title">{draft?.title}</h3>
             <p className="gen-news-modal__preview-lead">{draft?.lead}</p>
-            <NewsArticleMeta
-              date="сегодня"
-              views={0}
-              comments={0}
-              likes={0}
-            />
+            <NewsArticleMeta date="сегодня" views={0} />
             <p className="gen-news-modal__preview-excerpt">
               <strong>Карточка:</strong> {draft?.excerpt}
+            </p>
+            <p className="gen-news-modal__preview-sections">
+              <strong>Разделов:</strong> {headingCount} (нужно 3–7)
             </p>
             <div className="gen-news-modal__preview-body">
               <NewsArticleBody body={draft?.body} />
@@ -154,7 +316,7 @@ export default function GenerateNewsModal({ open, onClose, onPublished }) {
                 type="button"
                 className="gen-news-modal__btn gen-news-modal__btn--primary"
                 onClick={handlePublish}
-                disabled={loading}
+                disabled={loading || imageLoading}
               >
                 {loading ? <FiLoader className="gen-news-modal__spin" size={18} /> : null}
                 {loading ? 'Публикация…' : 'Опубликовать'}

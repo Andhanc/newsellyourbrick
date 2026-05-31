@@ -4,7 +4,7 @@ import {
   FiChevronLeft,
   FiChevronRight,
 } from 'react-icons/fi'
-import { SiTelegram } from 'react-icons/si'
+import { SiInstagram, SiTelegram, SiWhatsapp } from 'react-icons/si'
 import Header from '@/components/Header'
 import NewsArticleCard from '@/components/news/NewsArticleCard'
 import NewsArticleMeta from '@/components/news/NewsArticleMeta'
@@ -115,11 +115,23 @@ const STATIC_PORA_ARTICLES = [
   },
 ]
 
+const TELEGRAM_HREF =
+  (import.meta.env.VITE_MANAGER_TELEGRAM_URL || '').trim() || 'https://t.me/'
+
 const SOCIAL_LINKS = [
-  { id: 'telegram', label: 'Telegram', href: 'https://t.me/', Icon: SiTelegram },
-  { id: 'vk', label: 'VK', href: 'https://vk.com/', iconLetter: 'VK' },
-  { id: 'dzen', label: 'Dzen', href: 'https://dzen.ru/', iconLetter: 'Д' },
-  { id: 'pinterest', label: 'Pinterest', href: 'https://pinterest.com/', iconLetter: 'P' },
+  { id: 'telegram', label: 'Telegram', href: TELEGRAM_HREF, Icon: SiTelegram },
+  {
+    id: 'instagram',
+    label: 'Instagram',
+    href: 'https://www.instagram.com/',
+    Icon: SiInstagram,
+  },
+  {
+    id: 'whatsapp',
+    label: 'WhatsApp',
+    href: 'https://wa.me/447700183959',
+    Icon: SiWhatsapp,
+  },
 ]
 
 function publishedToHeroSlide(article) {
@@ -136,61 +148,150 @@ function publishedToHeroSlide(article) {
   }
 }
 
+function dedupeArticlesById(articles) {
+  const seen = new Set()
+  return articles.filter((a) => {
+    if (!a?.id || seen.has(a.id)) return false
+    seen.add(a.id)
+    return true
+  })
+}
+
+/** Каждая статья — максимум в одном ряду сетки (без повторов между рядами). */
+function buildNewsGridRows(articles) {
+  const pool = articles
+  const used = new Set()
+
+  const pick = (limit, size) => {
+    const out = []
+    for (const article of pool) {
+      if (used.has(article.id)) continue
+      if (size && article.size !== size) continue
+      out.push(article)
+      used.add(article.id)
+      if (out.length >= limit) break
+    }
+    return out
+  }
+
+  const pickAny = (limit) => {
+    const out = []
+    for (const article of pool) {
+      if (used.has(article.id)) continue
+      out.push(article)
+      used.add(article.id)
+      if (out.length >= limit) break
+    }
+    return out
+  }
+
+  const fillRow = (limit, size) => {
+    const row = pick(limit, size)
+    while (row.length < limit) {
+      const more = pickAny(1)
+      if (!more.length) break
+      row.push(...more)
+    }
+    return row
+  }
+
+  return {
+    duoRow1: fillRow(2, 'large'),
+    duoRow2: fillRow(2, 'medium'),
+    trioRow1: fillRow(3, 'small'),
+    trioRow2: pickAny(3),
+  }
+}
+
 function NewsHero({ slides, activeIndex, onPrev, onNext, onDot, onOpen }) {
-  const slide = slides[activeIndex]
+  if (!slides.length) return null
+
+  const safeIndex =
+    ((activeIndex % slides.length) + slides.length) % slides.length
+  const slide = slides[safeIndex]
+  const canNavigate = slides.length > 1
+
+  const openSlide = (target) => {
+    if (target?.slug) onOpen(target)
+  }
 
   return (
     <section className="news-hero" aria-label="Главная новость">
       <div className="news-hero__frame">
-        <button
-          type="button"
-          className="news-hero__hit"
-          onClick={() => slide.slug && onOpen(slide)}
-          disabled={!slide.slug}
+        <div
+          className="news-hero__track"
+          style={{ transform: `translate3d(-${safeIndex * 100}%, 0, 0)` }}
         >
-          <img className="news-hero__bg" src={slide.image} alt="" />
-        </button>
-        <div className="news-hero__overlay" aria-hidden />
-        <button
-          type="button"
-          className="news-hero__nav news-hero__nav--prev"
-          onClick={onPrev}
-          aria-label="Предыдущая новость"
-        >
-          <FiChevronLeft size={28} />
-        </button>
-        <button
-          type="button"
-          className="news-hero__nav news-hero__nav--next"
-          onClick={onNext}
-          aria-label="Следующая новость"
-        >
-          <FiChevronRight size={28} />
-        </button>
-        <div className="news-hero__content">
-          <span className="news-hero__badge">{slide.badge}</span>
-          <h2 className="news-hero__title">{slide.title}</h2>
-          <NewsArticleMeta
-            className="news-meta--hero"
-            date={slide.date}
-            views={slide.views}
-            comments={slide.comments}
-            likes={slide.likes}
-          />
-        </div>
-        <div className="news-hero__dots" role="tablist" aria-label="Слайды">
-          {slides.map((s, i) => (
-            <button
-              key={s.id}
-              type="button"
-              role="tab"
-              aria-selected={i === activeIndex}
-              aria-label={`Слайд ${i + 1}`}
-              className={`news-hero__dot${i === activeIndex ? ' news-hero__dot--active' : ''}`}
-              onClick={() => onDot(i)}
-            />
+          {slides.map((item) => (
+            <article key={item.id} className="news-hero__slide" aria-hidden={item.id !== slide.id}>
+              <img className="news-hero__bg" src={item.image} alt="" loading="lazy" decoding="async" />
+            </article>
           ))}
         </div>
+
+        <div className="news-hero__overlay" aria-hidden />
+
+        {canNavigate ? (
+          <>
+            <button
+              type="button"
+              className="news-hero__nav news-hero__nav--prev"
+              onClick={(e) => {
+                e.stopPropagation()
+                onPrev()
+              }}
+              aria-label="Предыдущая новость"
+            >
+              <FiChevronLeft size={28} />
+            </button>
+            <button
+              type="button"
+              className="news-hero__nav news-hero__nav--next"
+              onClick={(e) => {
+                e.stopPropagation()
+                onNext()
+              }}
+              aria-label="Следующая новость"
+            >
+              <FiChevronRight size={28} />
+            </button>
+          </>
+        ) : null}
+
+        <div className="news-hero__content">
+          <button
+            type="button"
+            className="news-hero__content-hit"
+            onClick={() => openSlide(slide)}
+            disabled={!slide.slug}
+          >
+            <h2 className="news-hero__title">{slide.title}</h2>
+            <NewsArticleMeta
+              className="news-meta--hero"
+              date={slide.date}
+              views={slide.views}
+            />
+          </button>
+        </div>
+
+        {canNavigate ? (
+          <div className="news-hero__dots" role="tablist" aria-label="Слайды">
+            {slides.map((s, i) => (
+              <button
+                key={s.id}
+                type="button"
+                role="tab"
+                aria-selected={i === safeIndex}
+                aria-label={`Слайд ${i + 1}`}
+                className={`news-hero__dot${i === safeIndex ? ' news-hero__dot--active' : ''}`}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onDot(i)
+                }}
+              />
+            ))}
+          </div>
+        ) : null}
       </div>
     </section>
   )
@@ -198,41 +299,39 @@ function NewsHero({ slides, activeIndex, onPrev, onNext, onDot, onOpen }) {
 
 function NewsSocialBanner() {
   return (
-    <section className="news-social" aria-label="Мы в соцсетях">
+    <section className="news-social" aria-label="SellYourBrick в соцсетях">
       <div className="news-social__inner">
-        <div className="news-social__brand">
-          <span className="news-social__mascot" aria-hidden>
-            <span className="news-social__mascot-head" />
-            <span className="news-social__mascot-glasses" />
-          </span>
-          <p className="news-social__title">МЫ В СОЦСЕТЯХ</p>
+        <div className="news-social__glow" aria-hidden />
+        <div className="news-social__copy">
+          <p className="news-social__eyebrow">Следите за нами</p>
+          <h2 className="news-social__brand" aria-label="SellYourBrick">
+            <span className="news-social__brand-word">Sell</span>
+            <span className="news-social__brand-word news-social__brand-word--accent">
+              Your
+            </span>
+            <span className="news-social__brand-word">Brick</span>
+          </h2>
+          <p className="news-social__tagline">
+            Новости, подборки и советы по недвижимости — в мессенджерах и соцсетях
+          </p>
         </div>
         <ul className="news-social__links">
           {SOCIAL_LINKS.map((item) => {
             const Icon = item.Icon
             return (
-            <li key={item.id}>
-              <a
-                href={item.href}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="news-social__link"
-              >
-                <span className="news-social__link-icon" aria-hidden>
-                  {Icon ? (
+              <li key={item.id}>
+                <a
+                  href={item.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="news-social__link"
+                >
+                  <span className="news-social__link-icon" aria-hidden>
                     <Icon size={22} />
-                  ) : (
-                    <span className="news-social__link-letter">{item.iconLetter}</span>
-                  )}
-                </span>
-                <span className="news-social__link-label">
-                  {item.label}
-                  <span className="news-social__link-arrow" aria-hidden>
-                    ›
                   </span>
-                </span>
-              </a>
-            </li>
+                  <span className="news-social__link-label">{item.label}</span>
+                </a>
+              </li>
             )
           })}
         </ul>
@@ -254,36 +353,53 @@ const News = () => {
   }, [])
 
   const gridArticles = useMemo(() => {
+    const mapArticle = (a) => ({
+      id: a.id,
+      slug: a.slug,
+      size: a.size || 'medium',
+      image: a.image,
+      badge: a.badge,
+      title: a.title,
+      excerpt: a.excerpt,
+      date: a.date,
+      views: a.views,
+      comments: a.comments,
+      likes: a.likes,
+    })
+
     if (published.length) {
-      return published.map((a) => ({
-        id: a.id,
-        slug: a.slug,
-        size: a.size || 'medium',
-        image: a.image,
-        badge: a.badge,
-        title: a.title,
-        excerpt: a.excerpt,
-        date: a.date,
-        views: a.views,
-        comments: a.comments,
-        likes: a.likes,
-      }))
+      return dedupeArticlesById(published).map(mapArticle)
     }
     return STATIC_PORA_ARTICLES
   }, [published])
 
   const heroSlides = useMemo(() => {
-    const fromPublished = published
-      .filter((a) => a.featured || published.indexOf(a) < 3)
+    const fromPublished = dedupeArticlesById(published)
+      .filter((a, i) => a.featured || i < 3)
       .slice(0, 5)
       .map(publishedToHeroSlide)
     if (fromPublished.length) return fromPublished
     return STATIC_HERO_SLIDES
   }, [published])
 
+  const { duoRow1, duoRow2, trioRow1, trioRow2 } = useMemo(
+    () => buildNewsGridRows(gridArticles),
+    [gridArticles],
+  )
+
   const heroCount = heroSlides.length
+
+  useEffect(() => {
+    if (!heroCount) {
+      setHeroIndex(0)
+      return
+    }
+    setHeroIndex((i) => (i >= heroCount ? 0 : i))
+  }, [heroCount, heroSlides.map((s) => s.id).join('|')])
+
   const goHero = useCallback(
     (delta) => {
+      if (heroCount < 1) return
       setHeroIndex((i) => (i + delta + heroCount) % heroCount)
     },
     [heroCount],
@@ -297,21 +413,6 @@ const News = () => {
     },
     [navigate],
   )
-
-  const largeArticles = gridArticles.filter((a) => a.size === 'large')
-  const mediumArticles = gridArticles.filter((a) => a.size === 'medium')
-  const smallArticles = gridArticles.filter((a) => a.size === 'small')
-  const restArticles = gridArticles.filter(
-    (a) => !['large', 'medium', 'small'].includes(a.size),
-  )
-
-  const duoRow1 = largeArticles.length ? largeArticles : gridArticles.slice(0, 2)
-  const duoRow2 =
-    mediumArticles.length > 0
-      ? mediumArticles
-      : gridArticles.slice(duoRow1.length, duoRow1.length + 2)
-  const trioRow1 = smallArticles.slice(0, 3)
-  const trioRow2 = [...smallArticles.slice(3), ...restArticles].slice(0, 3)
 
   return (
     <div className="news-page">
@@ -327,18 +428,7 @@ const News = () => {
             onOpen={handleArticleOpen}
           />
 
-          <section className="news-section" aria-labelledby="news-pora-heading">
-            <h2 id="news-pora-heading" className="news-section__title">
-              П
-              <span className="news-section__title-sun" aria-hidden>
-                ☀️
-              </span>
-              РА
-              <span className="news-section__title-chevron" aria-hidden>
-                ›
-              </span>
-            </h2>
-
+          <section className="news-section" aria-label="Статьи">
             {duoRow1.length > 0 ? (
               <div className="news-grid news-grid--duo">
                 {duoRow1.map((article) => (

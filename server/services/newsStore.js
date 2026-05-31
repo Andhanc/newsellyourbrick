@@ -142,6 +142,7 @@ export function publishArticle(draft) {
     excerpt: draft.excerpt || draft.lead || '',
     image: draft.image,
     imageSearchQuery: draft.imageSearchQuery || '',
+    imagePrompt: draft.imagePrompt || '',
     size: draft.size || 'medium',
     featured: Boolean(draft.featured),
     sections: Array.isArray(draft.sections) ? draft.sections : [],

@@ -90,10 +90,15 @@ function AppLayoutFrame({ isBlocked, appLayoutRef, children }) {
   const addPropertySingleScroll =
     pathname === '/owner/property/new' || /^\/property\/[^/]+\/edit$/.test(pathname)
   const calculatorSingleScroll = pathname === '/calculator'
+  const newsArticleScroll = /^\/news\/[^/]+$/.test(pathname)
 
   const routeClass = addPropertySingleScroll
     ? 'app-layout--add-property-single-scroll'
-    : (calculatorSingleScroll ? 'app-layout--calculator-single-scroll' : '')
+    : calculatorSingleScroll
+      ? 'app-layout--calculator-single-scroll'
+      : newsArticleScroll
+        ? 'app-layout--news-article'
+        : ''
 
   return (
     <div

@@ -140,3 +140,44 @@ export async function deleteMarketerArticle(id) {
   if (!res.ok) throw new Error(data.error || 'Ошибка удаления')
   return true
 }
+
+async function parseNewsApiError(res, data, fallback) {
+  if (res.status === 401) {
+    setMarketerToken('')
+    throw new Error('SESSION_EXPIRED')
+  }
+  if (!res.ok) throw new Error(data.error || fallback)
+}
+
+export async function searchNewsCoverImages(query, limit = 6) {
+  const res = await fetch(`${BASE()}/marketer/images/search`, {
+    method: 'POST',
+    headers: marketerHeaders(),
+    body: JSON.stringify({ query, limit }),
+  })
+  const data = await res.json().catch(() => ({}))
+  await parseNewsApiError(res, data, 'Ошибка поиска фото')
+  return data.images || []
+}
+
+export async function suggestNewsImageQuery(draft) {
+  const res = await fetch(`${BASE()}/marketer/images/suggest`, {
+    method: 'POST',
+    headers: marketerHeaders(),
+    body: JSON.stringify({ draft }),
+  })
+  const data = await res.json().catch(() => ({}))
+  await parseNewsApiError(res, data, 'Ошибка подбора запроса')
+  return data
+}
+
+export async function generateNewsAiCover(draft) {
+  const res = await fetch(`${BASE()}/marketer/images/generate`, {
+    method: 'POST',
+    headers: marketerHeaders(),
+    body: JSON.stringify({ draft }),
+  })
+  const data = await res.json().catch(() => ({}))
+  await parseNewsApiError(res, data, 'Ошибка генерации фото')
+  return data
+}

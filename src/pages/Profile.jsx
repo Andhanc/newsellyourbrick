@@ -16,6 +16,7 @@ import { formatBillingReasonForUi } from '../utils/formatBillingReason'
 import { fetchVerificationStatus } from '../utils/verificationStatusApi'
 import { fetchUserById } from '../utils/usersApi'
 import BuyerCabinetSidebar from '../components/BuyerCabinetSidebar'
+import ProfileVipClubPromo from '../components/ProfileVipClubPromo'
 import { useChainedAppLayoutScroll } from '../hooks/useChainedAppLayoutScroll'
 import { effectiveDisplayTier, userHasVipAccess, SUBSCRIPTION_BILLING_UPDATED_EVENT } from '../hooks/useCabinetOverviewData'
 import './Profile.css'
@@ -1031,6 +1032,8 @@ const Profile = () => {
               </div>
             </div>
           </div>
+
+          <ProfileVipClubPromo className="profile-main__vip-promo" />
 
           <div className="profile-sections">
             {(subscriptionBillingLoading ||

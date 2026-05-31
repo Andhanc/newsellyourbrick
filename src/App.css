@@ -110,6 +110,12 @@
   height: auto !important;
 }
 
+/* Статья новостей: overflow-x на контенте ломает position:sticky у «Содержания» */
+.app-layout.app-layout--news-article .app-layout__content {
+  overflow-x: visible;
+  overflow-y: visible;
+}
+
 /* Выбранные маршруты (главная, аукцион, профиль и т.д.): без pinch и двойного тапа для зума */
 html.main-page-no-zoom,
 body.main-page-no-zoom {

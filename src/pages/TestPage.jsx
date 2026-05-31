@@ -61,6 +61,7 @@ import PassportRecognitionModal from '../components/PassportRecognitionModal'
 import { countries as countryList } from '../components/CountrySelect'
 import { COUNTRY_CODES as phoneCountryCodes } from '../components/PhoneInput'
 import { ProfileSpotlightOnboarding } from '../components/ProfileSpotlightOnboarding'
+import ProfileVipClubPromo from '../components/ProfileVipClubPromo'
 import { ServiceQuickLinksTour } from '../components/ServiceQuickLinksTour'
 import TestDriveBuyerCancelModal from '../components/TestDriveBuyerCancelModal'
 import TestDriveCheckInModal from '../components/TestDriveCheckInModal'
@@ -3416,6 +3417,8 @@ function TestPage() {
                   })}
                 </div>
               </section>
+
+              <ProfileVipClubPromo className="test-page__vip-promo" />
 
               <div className="test-bento">
                 <div className="test-bento__main">
