@@ -223,7 +223,7 @@ export default function PropertyDetailAuctionBiddingForm({
                   aria-label={t('auctionBidCeilingButtonAria')}
                   title={t('auctionBidCeilingButtonAria')}
                 >
-                  <FiPlus size={22} strokeWidth={2.5} />
+                  <FiPlus size={22} strokeWidth={2.5} aria-hidden />
                 </button>
               ) : null}
             </div>

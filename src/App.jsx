@@ -28,6 +28,8 @@ import ChatDockActiveBridge from './components/ChatDockActiveBridge'
 import MainPage from './pages/MainPage'
 import Home from './pages/Home'
 import SiteNotificationsProvider from './context/SiteNotificationsContext'
+import SiteAdsHost from './components/siteAds/SiteAdsHost'
+import SiteAdsErrorBoundary from './components/siteAds/SiteAdsErrorBoundary'
 import DebtsPage from './pages/Debts'
 import SearchResults from './pages/SearchResults'
 import PropertyDetailPage from './pages/PropertyDetailPage'
@@ -569,6 +571,9 @@ function App() {
       <SiteFooterNearObserver />
       <ChatDockActiveBridge />
       <AppLayoutFrame appLayoutRef={appLayoutRef} isBlocked={isBlocked}>
+        <SiteAdsErrorBoundary>
+          <SiteAdsHost />
+        </SiteAdsErrorBoundary>
         <div className="app-layout__content">
           <RouteErrorBoundary>
             <Routes>

@@ -1,3 +1,5 @@
+@import '../styles/promoBottomSheetDrawer.css';
+
 .test-drive-promo-drawer__backdrop {
   position: fixed;
   inset: 0;
@@ -268,36 +270,6 @@
 }
 
 @media (max-width: 768px) {
-  .test-drive-promo-drawer__panel {
-    max-height: 40dvh;
-    display: flex;
-    flex-direction: column;
-  }
-
-  .test-drive-promo-drawer__body {
-    flex: 1;
-    min-height: 0;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-    overscroll-behavior: contain;
-    padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
-  }
-
-  .test-drive-promo-drawer__illustration {
-    width: min(160px, 52vw);
-    margin-bottom: 0;
-  }
-
-  .test-drive-promo-drawer__lead {
-    margin-bottom: 16px;
-    font-size: 14px;
-  }
-
-  .test-drive-promo-drawer__cta {
-    padding: 14px 18px;
-    font-size: 15px;
-  }
-
   .test-drive-promo-drawer__panel.drawer-dismiss-modal--closing {
     animation: drawer-dismiss-from-bottom-out 0.38s cubic-bezier(0.22, 1, 0.32, 1) both !important;
   }

@@ -20,6 +20,7 @@ import {
   shouldShowCircularAuctionTimer,
 } from '../utils/auctionReminderBounds'
 import './AuctionPropertyCard.css'
+import { PROPERTY_DETAIL_AUCTION_TAB_BIDS } from '../utils/propertyDetailUrl'
 
 function useAuctionCardState(property) {
   return useMemo(() => {
@@ -153,7 +154,7 @@ export default function AuctionPropertyCard({
             onClick={(e) => {
               e.preventDefault()
               e.stopPropagation()
-              onOpen(property)
+              onOpen(property, { auctionTab: PROPERTY_DETAIL_AUCTION_TAB_BIDS })
             }}
           >
             <span>{t('auctionResultSummary')}</span>

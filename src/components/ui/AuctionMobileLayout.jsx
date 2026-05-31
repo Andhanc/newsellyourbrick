@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useLayoutEffect, useMemo } from 'react'
+import { useState, useEffect, useRef, useLayoutEffect, useMemo, useCallback } from 'react'
 import { useUser } from '@clerk/clerk-react'
 import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
@@ -25,11 +25,12 @@ import {
 } from '@/utils/auctionReminderBounds'
 import { getPropertyCardImage } from '@/utils/propertyImage'
 import { resolveAuctionCurrentBidValue } from '../../services/auctionListCache'
-import { getPropertyDetailPath, auctionListingDedupeKey } from '../../utils/propertyDetailUrl'
+import { auctionListingDedupeKey, PROPERTY_DETAIL_AUCTION_TAB_BIDS, buildPropertyDetailNavigation } from '../../utils/propertyDetailUrl'
 import { isPrivateClubAuctionLot } from '../../utils/isPrivateClubAuctionLot'
 import { AUCTION_MOBILE_VIEW_STORAGE_KEY } from '../../constants/auctionMobileViewStorage'
 import { buildResponsiveImageProps } from '../../utils/responsiveImage'
 import ImageWithSkeleton from '../ImageWithSkeleton'
+import AuctionPropertyCard from '../AuctionPropertyCard'
 import '../PropertyList.css'
 import './AuctionMobileLayout.css'
 
@@ -48,6 +49,8 @@ export default function AuctionMobileLayout({
   isFavorite,
   onFavoriteToggle,
   viewerHasVip = false,
+  onOpen,
+  onTooltip,
 }) {
   const { t } = useTranslation()
   const navigate = useNavigate()
@@ -64,6 +67,42 @@ export default function AuctionMobileLayout({
       localStorage.setItem(STORAGE_KEY, view)
     } catch (_) {}
   }, [view])
+
+  const openProperty = useCallback(
+    (property, { auctionTab } = {}) => {
+      if (onOpen) {
+        onOpen(property, { auctionTab })
+        return
+      }
+      if (!ensureCanOpenProperty()) {
+        showNotification(
+          <span>
+            {t('toastOpenListingLoginPrefix')}{' '}
+            <button
+              type="button"
+              className="auth-toast-link"
+              onClick={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                requestOpenLoginModal({ wizard: true })
+              }}
+            >
+              {t('toastOpenListingLoginLink')}{' '}
+              <span className="auth-toast-link__arrow">→</span>
+            </button>
+          </span>,
+          'warning',
+          7000,
+        )
+        return
+      }
+      const { pathname, state } = buildPropertyDetailNavigation(property, {
+        auctionTab: auctionTab || undefined,
+      })
+      navigate(pathname, { state })
+    },
+    [navigate, onOpen, t],
+  )
 
   return (
     <div className="auction-mobile-layout w-full max-w-none px-3 pb-2 sm:px-4">
@@ -90,22 +129,36 @@ export default function AuctionMobileLayout({
             className={cn(
               'w-full',
               view === 'list' && 'auction-mobile-stack',
-              view === 'card' && 'auction-mobile-stack auction-mobile-stack--grid',
+              view === 'card' &&
+                'auction-mobile-stack auction-mobile-stack--desktop-cards properties-grid properties-grid--auction-cards',
             )}
           >
-            {properties.map((property) => (
-              <AuctionMobileItem
-                key={auctionListingDedupeKey(property)}
-                property={property}
-                view={view}
-                formatPrice={formatPrice}
-                t={t}
-                navigate={navigate}
-                isFavorite={isFavorite}
-                onFavoriteToggle={onFavoriteToggle}
-                viewerHasVip={viewerHasVip}
-              />
-            ))}
+            {properties.map((property) =>
+              view === 'card' ? (
+                <AuctionPropertyCard
+                  key={auctionListingDedupeKey(property)}
+                  property={property}
+                  isFavorite={typeof isFavorite === 'function' ? isFavorite(property) : false}
+                  onFavoriteToggle={onFavoriteToggle}
+                  onOpen={openProperty}
+                  onTooltip={onTooltip}
+                  viewerHasVip={viewerHasVip}
+                  formatPrice={formatPrice}
+                />
+              ) : (
+                <AuctionMobileItem
+                  key={auctionListingDedupeKey(property)}
+                  property={property}
+                  view={view}
+                  formatPrice={formatPrice}
+                  t={t}
+                  onOpen={openProperty}
+                  isFavorite={isFavorite}
+                  onFavoriteToggle={onFavoriteToggle}
+                  viewerHasVip={viewerHasVip}
+                />
+              ),
+            )}
           </motion.div>
         </LayoutGroup>
       </div>
@@ -368,7 +421,7 @@ function AuctionMobileItem({
   view,
   formatPrice,
   t,
-  navigate,
+  onOpen,
   isFavorite,
   onFavoriteToggle,
   viewerHasVip = false,
@@ -454,33 +507,11 @@ function AuctionMobileItem({
     ? resolveAuctionCurrentBidValue(property)
     : property.price || 0
 
-  const goDetail = () => {
-    if (!ensureCanOpenProperty()) {
-      showNotification(
-        <span>
-          {t('toastOpenListingLoginPrefix')}{' '}
-          <button
-            type="button"
-            className="auth-toast-link"
-            onClick={(e) => {
-              e.preventDefault()
-              e.stopPropagation()
-              requestOpenLoginModal({ wizard: true })
-            }}
-          >
-            {t('toastOpenListingLoginLink')}{' '}
-            <span className="auth-toast-link__arrow">→</span>
-          </button>
-        </span>,
-        'warning',
-        7000,
-      )
-      return
-    }
-    navigate(getPropertyDetailPath(property.id, { property }), { state: { property } })
+  const goDetail = (options) => {
+    onOpen?.(property, options)
   }
 
-  const openProperty = (e) => {
+  const handleCardClick = (e) => {
     if (e?.target?.closest?.('button') || e?.target?.closest?.('a')) return
     goDetail()
   }
@@ -598,7 +629,7 @@ function AuctionMobileItem({
           isAuctionEndedCard && 'auction-mobile-item--ended',
           privateClubCard && 'auction-mobile-item--private-club-card',
         )}
-        onClick={openProperty}
+        onClick={handleCardClick}
         style={{ cursor: 'pointer' }}
         whileTap={reduceMotion ? undefined : { scale: 0.992 }}
       >
@@ -611,7 +642,7 @@ function AuctionMobileItem({
               onClick={(e) => {
                 e.preventDefault()
                 e.stopPropagation()
-                goDetail()
+                goDetail({ auctionTab: PROPERTY_DETAIL_AUCTION_TAB_BIDS })
               }}
             >
               <span>{t('auctionResultSummary')}</span>

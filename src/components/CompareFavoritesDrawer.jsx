@@ -28,6 +28,7 @@ export default function CompareFavoritesDrawer({ isOpen, onClose, onCompare }) {
     isClosing,
     requestClose,
     panelClosingClass: 'compare-favorites-drawer__panel--closing',
+    maxViewportHeightRatio: 0.5,
   })
 
   if (!visible || typeof document === 'undefined') return null

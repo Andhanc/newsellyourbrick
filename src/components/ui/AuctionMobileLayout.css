@@ -198,6 +198,245 @@
   align-items: start;
 }
 
+/* Режим «Карточки»: те же auction-card, что на десктопе — 2 в ряд */
+.auction-mobile-stack--desktop-cards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 10px;
+  row-gap: 14px;
+  align-items: stretch;
+  width: 100%;
+}
+
+.auction-mobile-stack--desktop-cards .auction-card {
+  min-height: 100%;
+}
+
+.properties-grid--mobile-auction .auction-mobile-stack--desktop-cards {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  column-gap: 10px !important;
+  row-gap: 14px !important;
+}
+
+@media (min-width: 480px) {
+  .auction-mobile-stack--desktop-cards,
+  .properties-grid--mobile-auction .auction-mobile-stack--desktop-cards {
+    column-gap: 12px !important;
+    row-gap: 16px !important;
+  }
+}
+
+@media (min-width: 640px) {
+  .auction-mobile-stack--desktop-cards,
+  .properties-grid--mobile-auction .auction-mobile-stack--desktop-cards {
+    column-gap: 20px !important;
+    row-gap: 24px !important;
+  }
+}
+
+/* 2 в ряд на телефоне: масштаб desktop-карточки под узкую колонку */
+.auction-mobile-stack--desktop-cards .auction-card {
+  border-radius: 12px;
+}
+
+.auction-mobile-stack--desktop-cards .auction-card__body {
+  gap: 6px;
+  padding: 10px 10px 12px;
+}
+
+.auction-mobile-stack--desktop-cards .auction-card__location {
+  font-size: 0.68rem;
+}
+
+.auction-mobile-stack--desktop-cards .auction-card__location svg {
+  width: 12px;
+  height: 12px;
+}
+
+.auction-mobile-stack--desktop-cards .auction-card__title {
+  font-size: 0.78rem;
+  line-height: 1.25;
+  -webkit-line-clamp: 2;
+}
+
+.auction-mobile-stack--desktop-cards .auction-card__specs {
+  gap: 4px;
+}
+
+.auction-mobile-stack--desktop-cards .auction-card__spec {
+  padding: 3px 6px;
+  font-size: 0.62rem;
+  gap: 2px;
+}
+
+.auction-mobile-stack--desktop-cards .auction-card__spec svg {
+  width: 11px;
+  height: 11px;
+}
+
+.auction-mobile-stack--desktop-cards .auction-card__price-panel {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 7px 8px;
+  border-radius: 10px;
+}
+
+.auction-mobile-stack--desktop-cards .auction-card__price-label {
+  font-size: 0.58rem;
+}
+
+.auction-mobile-stack--desktop-cards .auction-card__price-value {
+  width: 100%;
+  font-size: 0.82rem;
+  text-align: left;
+}
+
+.auction-mobile-stack--desktop-cards .auction-card__actions {
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.auction-mobile-stack--desktop-cards .auction-card__btn {
+  padding: 9px 8px;
+  font-size: 0.68rem;
+  border-radius: 10px;
+}
+
+.auction-mobile-stack--desktop-cards .auction-card__favorite {
+  width: 32px;
+  height: 32px;
+}
+
+.auction-mobile-stack--desktop-cards .auction-card__favorite svg {
+  width: 18px;
+  height: 18px;
+}
+
+.auction-mobile-stack--desktop-cards .auction-card__photo-icon {
+  width: 30px;
+  height: 30px;
+}
+
+.auction-mobile-stack--desktop-cards .auction-card__vip-ribbon {
+  top: 8px;
+  left: 8px;
+  padding: 4px 7px;
+  font-size: 0.55rem;
+  gap: 4px;
+}
+
+.auction-mobile-stack--desktop-cards .auction-card__vip-ribbon svg {
+  width: 11px;
+  height: 11px;
+}
+
+.auction-mobile-stack--desktop-cards .auction-card__vip-strip {
+  padding: 5px 8px;
+  gap: 5px;
+}
+
+.auction-mobile-stack--desktop-cards .auction-card__vip-strip-label {
+  font-size: 0.55rem;
+}
+
+.auction-mobile-stack--desktop-cards .auction-card__vip-strip-cta {
+  padding: 3px 6px;
+  font-size: 0.55rem;
+}
+
+/* Оверлей SOLD OUT / «Итоги аукциона» — компактнее на 2 колонки */
+.auction-mobile-stack--desktop-cards .auction-card__ended-overlay {
+  gap: 6px;
+  padding: 8px 6px;
+}
+
+.auction-mobile-stack--desktop-cards .auction-card__ended-title {
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  line-height: 1.1;
+}
+
+.auction-mobile-stack--desktop-cards .auction-card__ended-link {
+  gap: 3px;
+  padding: 5px 8px;
+  font-size: 0.58rem;
+  line-height: 1.15;
+  max-width: calc(100% - 8px);
+  background: linear-gradient(135deg, #0abab5 0%, #089a96 100%);
+  color: #fff;
+  box-shadow: 0 3px 10px rgba(10, 186, 181, 0.24);
+}
+
+.auction-mobile-stack--desktop-cards .auction-card__ended-link svg {
+  width: 10px;
+  height: 10px;
+  flex-shrink: 0;
+}
+
+/* Таймер на превью — компактный под 2 колонки (перебивает PropertyTimer.css @768px) */
+.auction-mobile-stack--desktop-cards .auction-card__timer-dock {
+  bottom: 5px;
+  max-width: calc(100% - 8px);
+}
+
+.auction-mobile-stack--desktop-cards .auction-card__timer-dock .auction-card__flip-timer.property-timer--detail {
+  padding: 3px 4px 2px;
+  border-radius: 7px;
+}
+
+.auction-mobile-stack--desktop-cards .auction-card__flip-timer .property-timer-detail-flip-row {
+  gap: 0;
+}
+
+.auction-mobile-stack--desktop-cards .auction-card__flip-timer .flip-countdown-container {
+  gap: 0;
+}
+
+.auction-mobile-stack--desktop-cards .auction-card__flip-timer.property-timer--detail .flip-unit,
+.auction-mobile-stack--desktop-cards .auction-card__flip-timer .flip-unit {
+  width: 13px !important;
+  height: 18px !important;
+  border-radius: 4px !important;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08) !important;
+}
+
+.auction-mobile-stack--desktop-cards .auction-card__flip-timer.property-timer--detail .flip-digit,
+.auction-mobile-stack--desktop-cards .auction-card__flip-timer .flip-digit {
+  font-size: 8px !important;
+  line-height: 1 !important;
+}
+
+.auction-mobile-stack--desktop-cards .auction-card__flip-timer .property-timer-detail-sep,
+.auction-mobile-stack--desktop-cards .auction-card__flip-timer .property-timer-detail-sep--dot {
+  font-size: 7px !important;
+  margin-top: 0 !important;
+  padding: 0 !important;
+  line-height: 1 !important;
+}
+
+.auction-mobile-stack--desktop-cards .auction-card__flip-timer.property-timer--auction-ended .property-timer-ended-detail {
+  padding: 4px 6px;
+  border-radius: 7px;
+  font-size: 7px;
+  line-height: 1.2;
+}
+
+.auction-mobile-stack--desktop-cards .auction-card__timer-dock > .circular-timer {
+  transform: scale(0.56);
+  transform-origin: center center;
+  padding: 0;
+  margin: -13px 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.auction-mobile-stack--desktop-cards .auction-card__timer-dock--live > .circular-timer {
+  border: none;
+}
+
 /* Сетка «Карточки»: превью 3:2 — ниже карточка на телефоне, без «вытянутого» 4:3 */
 .auction-mobile-item--card .auction-mobile-item__media {
   width: 100%;
@@ -1517,4 +1756,61 @@
 
 .auction-mobile-item--private-club-card .auction-mobile-head {
   margin-bottom: 0;
+}
+
+/* Скелетон desktop auction-card при загрузке (режим «Карточки») */
+.auction-card--skeleton {
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.auction-card-skeleton__media {
+  background: linear-gradient(110deg, #e2e8f0 8%, #f1f5f9 18%, #e2e8f0 33%);
+  background-size: 200% 100%;
+  animation: auction-mobile-skeleton-wave 1.4s ease-in-out infinite;
+}
+
+.auction-card-skeleton__body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 16px 16px;
+}
+
+.auction-card-skeleton__line,
+.auction-card-skeleton__price-panel,
+.auction-card-skeleton__btn {
+  border-radius: 8px;
+  background: linear-gradient(110deg, #e2e8f0 8%, #f1f5f9 18%, #e2e8f0 33%);
+  background-size: 200% 100%;
+  animation: auction-mobile-skeleton-wave 1.4s ease-in-out infinite;
+}
+
+.auction-card-skeleton__line--short {
+  width: 42%;
+  height: 12px;
+}
+
+.auction-card-skeleton__line--title {
+  width: 88%;
+  height: 18px;
+}
+
+.auction-card-skeleton__line--specs {
+  width: 72%;
+  height: 14px;
+}
+
+.auction-card-skeleton__price-panel {
+  width: 100%;
+  height: 52px;
+  border-radius: 12px;
+  margin-top: 4px;
+}
+
+.auction-card-skeleton__btn {
+  width: 100%;
+  height: 44px;
+  border-radius: 12px;
+  margin-top: 2px;
 }

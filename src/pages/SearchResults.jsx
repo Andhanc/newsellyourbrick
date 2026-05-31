@@ -11,7 +11,7 @@ import { ensureCanOpenProperty } from '../utils/propertyAccessGuard'
 import { getApiBaseUrl } from '../utils/apiConfig'
 import './SearchResults.css'
 import '../components/PropertyListingGrid.css'
-import { getPropertyDetailPath, auctionListingDedupeKey } from '../utils/propertyDetailUrl'
+import { getPropertyDetailPath, auctionListingDedupeKey, buildPropertyDetailNavigation } from '../utils/propertyDetailUrl'
 import { formatPropertyForListingCard } from '../utils/formatPropertyListingCard'
 import { fetchSearchCatalogProperties } from '../utils/propertySearchCatalog'
 import { groupPropertiesByCatalogSection } from '../utils/catalogSearchSections'
@@ -104,11 +104,12 @@ const SearchResults = () => {
     return seen.size
   }, [groupedSections])
 
-  const openProperty = (property) => {
+  const openProperty = (property, { auctionTab } = {}) => {
     if (!ensureCanOpenProperty()) return
-    navigate(getPropertyDetailPath(property.id, { property }), {
-      state: { property },
+    const { pathname, state } = buildPropertyDetailNavigation(property, {
+      auctionTab: auctionTab || undefined,
     })
+    navigate(pathname, { state })
   }
 
   const handleApplyFilters = (nextFilters) => {

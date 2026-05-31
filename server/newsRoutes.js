@@ -9,6 +9,13 @@ import {
   listPublishedArticles,
   publishArticle,
 } from './services/newsStore.js'
+import {
+  createAd,
+  deleteAd,
+  listActiveAds,
+  listAllAds,
+  toPublicAd,
+} from './services/siteAdsStore.js'
 
 const MARKETER_LOGIN = () => String(process.env.MARKETER_LOGIN || 'manager').trim()
 const MARKETER_PASSWORD = () => String(process.env.MARKETER_PASSWORD || 'manager').trim()
@@ -137,6 +144,35 @@ export function registerNewsRoutes(app) {
     const ok = deleteArticle(req.params.id)
     if (!ok) return res.status(404).json({ success: false, error: 'Статья не найдена' })
     return res.json({ success: true })
+  })
+
+  router.get('/marketer/ads', requireMarketer, (_req, res) => {
+    const ads = listAllAds()
+    return res.json({ success: true, ads })
+  })
+
+  router.post('/marketer/ads', requireMarketer, express.json(), (req, res) => {
+    try {
+      const ad = createAd(req.body || {})
+      return res.json({ success: true, ad })
+    } catch (err) {
+      const status = err?.statusCode || 500
+      return res.status(status).json({
+        success: false,
+        error: err?.message || 'Ошибка создания рекламы',
+      })
+    }
+  })
+
+  router.delete('/marketer/ads/:id', requireMarketer, (req, res) => {
+    const ok = deleteAd(req.params.id)
+    if (!ok) return res.status(404).json({ success: false, error: 'Реклама не найдена' })
+    return res.json({ success: true })
+  })
+
+  router.get('/ads', (_req, res) => {
+    const ads = listActiveAds().map(toPublicAd)
+    return res.json({ success: true, ads })
   })
 
   router.get('/articles', (_req, res) => {

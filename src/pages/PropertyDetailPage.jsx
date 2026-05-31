@@ -338,16 +338,20 @@ const PropertyDetailPage = () => {
     }
   }, [id, propertyFromState, i18n.language, disambigPropertyType, navigate, t])
 
-  if (isLoading && !error) {
+  if (isLoading && !property && !error) {
     return <PropertyDetailClassicSkeleton />
   }
 
-  if (error || !property) {
+  if (error && !property) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
-        <p>{error || 'Объявление не найдено'}</p>
+        <p>{error}</p>
       </div>
     )
+  }
+
+  if (!property) {
+    return <PropertyDetailClassicSkeleton />
   }
   
   const searchParams = new URLSearchParams(location.search)

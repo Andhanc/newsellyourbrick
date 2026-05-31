@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { List, LayoutGrid } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { AUCTION_MOBILE_VIEW_STORAGE_KEY } from '../constants/auctionMobileViewStorage'
+import './AuctionPropertyCard.css'
 import './ui/AuctionMobileLayout.css'
 
 /**
@@ -18,17 +19,6 @@ export function AuctionMobileListingSkeleton({ viewMode = 'list' }) {
       <div className="auction-mobile-tabs">
         <button
           type="button"
-          className={cn('auction-mobile-tab', !isCard && 'auction-mobile-tab--active')}
-          disabled
-          aria-current={!isCard ? 'true' : undefined}
-        >
-          <span>
-            <List size={16} strokeWidth={2.2} />
-            {t('auctionViewList')}
-          </span>
-        </button>
-        <button
-          type="button"
           className={cn('auction-mobile-tab', isCard && 'auction-mobile-tab--active')}
           disabled
           aria-current={isCard ? 'true' : undefined}
@@ -38,17 +28,33 @@ export function AuctionMobileListingSkeleton({ viewMode = 'list' }) {
             {t('auctionViewCard')}
           </span>
         </button>
+        <button
+          type="button"
+          className={cn('auction-mobile-tab', !isCard && 'auction-mobile-tab--active')}
+          disabled
+          aria-current={!isCard ? 'true' : undefined}
+        >
+          <span>
+            <List size={16} strokeWidth={2.2} />
+            {t('auctionViewList')}
+          </span>
+        </button>
       </div>
 
       <div
         className={cn(
-          'auction-mobile-stack',
-          isCard && 'auction-mobile-stack--grid',
+          isCard
+            ? 'auction-mobile-stack auction-mobile-stack--desktop-cards properties-grid properties-grid--auction-cards'
+            : 'auction-mobile-stack',
         )}
       >
-        {Array.from({ length: itemCount }, (_, i) => (
-          <AuctionMobileSkeletonItem key={`am-sk-${i}`} variant={isCard ? 'card' : 'list'} />
-        ))}
+        {Array.from({ length: itemCount }, (_, i) =>
+          isCard ? (
+            <AuctionDesktopCardSkeletonItem key={`am-sk-${i}`} />
+          ) : (
+            <AuctionMobileSkeletonItem key={`am-sk-${i}`} variant="list" />
+          ),
+        )}
       </div>
     </div>
   )
@@ -61,6 +67,21 @@ export function readAuctionMobileViewMode() {
     if (v === 'card' || v === 'list') return v
   } catch (_) {}
   return 'list'
+}
+
+function AuctionDesktopCardSkeletonItem() {
+  return (
+    <div className="auction-card auction-card--skeleton" aria-hidden>
+      <div className="auction-card__media auction-card-skeleton__media" />
+      <div className="auction-card__body auction-card-skeleton__body">
+        <div className="auction-card-skeleton__line auction-card-skeleton__line--short" />
+        <div className="auction-card-skeleton__line auction-card-skeleton__line--title" />
+        <div className="auction-card-skeleton__line auction-card-skeleton__line--specs" />
+        <div className="auction-card-skeleton__price-panel" />
+        <div className="auction-card-skeleton__btn" />
+      </div>
+    </div>
+  )
 }
 
 function AuctionMobileSkeletonItem({ variant }) {

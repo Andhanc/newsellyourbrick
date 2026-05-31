@@ -662,21 +662,26 @@
 
 .property-auction-ended-overlay__result-link {
   border: none;
-  background: transparent;
-  padding: 0;
+  padding: 8px 14px;
   margin: 0;
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  color: #0ABAB5;
-  font-size: 16px;
-  font-weight: 600;
+  gap: 6px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #0abab5 0%, #089a96 100%);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
   cursor: pointer;
-  text-shadow: 0 2px 8px rgba(2, 6, 23, 0.45);
+  box-shadow: 0 4px 14px rgba(10, 186, 181, 0.28);
+  text-shadow: none;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
 .property-auction-ended-overlay__result-link:hover {
-  color: #7fe7e3;
+  color: #fff;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(10, 186, 181, 0.34);
 }
 
 @keyframes pulse {

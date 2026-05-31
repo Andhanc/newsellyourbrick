@@ -19,7 +19,7 @@
     "postinstall": "prisma generate",
     "prestart": "node scripts/prisma-startup.mjs",
     "start": "node server/server.js",
-    "start:local": "echo '🚀 Запуск приложения локально...' && concurrently --restart-tries 3 --restart-after 2000 --kill-others-on-fail=false --names \"SERVER,FRONTEND\" --prefix-colors \"blue,green\" --prefix \"[{name}]\" \"npm run server\" \"npm run dev\"",
+    "start:local": "echo '🚀 Запуск приложения локально...' && concurrently --restart-tries 3 --restart-after 2000 --kill-others-on-fail=false --names \"SERVER,FRONTEND\" --prefix-colors \"blue,green\" --prefix \"[{name}]\" \"npm run server:dev\" \"npm run dev\"",
     "delete-user": "node delete-user-by-id.js",
     "clear-properties": "node clear-properties.js",
     "db:generate": "prisma generate",

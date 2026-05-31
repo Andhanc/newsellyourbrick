@@ -28,6 +28,7 @@ export default function CompareInvestorProDrawer({ isOpen, onClose, onOpenInvest
     isClosing,
     requestClose,
     panelClosingClass: 'compare-investor-pro-drawer__panel--closing',
+    maxViewportHeightRatio: 0.5,
   })
 
   if (!visible || typeof document === 'undefined') return null

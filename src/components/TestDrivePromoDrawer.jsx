@@ -30,6 +30,7 @@ export default function TestDrivePromoDrawer({ isOpen, onClose, onGoToSection })
     isClosing,
     requestClose,
     panelClosingClass: 'test-drive-promo-drawer__panel--closing',
+    maxViewportHeightRatio: 0.5,
   })
 
   if (!visible || typeof document === 'undefined') return null

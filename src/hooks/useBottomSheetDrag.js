@@ -8,7 +8,15 @@ const ENTER_ANIMATION_MS = 440
 /**
  * Жесты нижнего sheet: тянуть за handle — менять высоту и закрыть свайпом вниз.
  */
-export function useBottomSheetDrag({ isOpen, visible, isClosing, requestClose, panelClosingClass }) {
+export function useBottomSheetDrag({
+  isOpen,
+  visible,
+  isClosing,
+  requestClose,
+  panelClosingClass,
+  /** Доля высоты окна (0–1), например 0.5 = не больше половины экрана */
+  maxViewportHeightRatio = null,
+}) {
   const [dragY, setDragY] = useState(0)
   const [sheetHeight, setSheetHeight] = useState(null)
   const [isDragging, setIsDragging] = useState(false)
@@ -19,19 +27,30 @@ export function useBottomSheetDrag({ isOpen, visible, isClosing, requestClose, p
   const pointerStartYRef = useRef(0)
   const heightAtDragStartRef = useRef(0)
 
+  const getMaxSheetHeight = useCallback(() => {
+    if (maxViewportHeightRatio == null || maxViewportHeightRatio <= 0) return Infinity
+    return Math.max(MIN_SHEET_HEIGHT, Math.round(window.innerHeight * maxViewportHeightRatio))
+  }, [maxViewportHeightRatio])
+
   const measureFullHeight = useCallback(
     (applySheetHeight = true) => {
       const panel = panelRef.current
       if (!panel) return
+      const cap = getMaxSheetHeight()
       panel.style.height = ''
-      panel.style.maxHeight = ''
-      const h = panel.offsetHeight
+      if (Number.isFinite(cap)) {
+        panel.style.maxHeight = `${cap}px`
+      } else {
+        panel.style.maxHeight = ''
+      }
+      const measured = panel.offsetHeight
+      const h = Number.isFinite(cap) ? Math.min(measured, cap) : measured
       fullHeightRef.current = h
       if (applySheetHeight) setSheetHeight(h)
       setDragY(0)
       dragYRef.current = 0
     },
-    [],
+    [getMaxSheetHeight],
   )
 
   useEffect(() => {

@@ -37,6 +37,28 @@
   box-sizing: border-box;
 }
 
+@media (min-width: 769px) {
+  /* Когда открыт сайдбар фильтров — та же колонка, что у .property-list-container--auction-desktop */
+  .home-page--auction.home-page--auction-filters-open .page-context-heading.page-context-heading--home-auction {
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  .home-page--auction.home-page--auction-filters-open .page-context-heading--home-auction-inner {
+    max-width: 1440px;
+    padding-left: 24px;
+    padding-right: 24px;
+    display: grid;
+    grid-template-columns: minmax(280px, 320px) minmax(0, 1fr);
+    gap: 24px;
+    align-items: end;
+  }
+
+  .home-page--auction.home-page--auction-filters-open .page-context-heading--home-auction-inner > * {
+    grid-column: 1;
+  }
+}
+
 .home-page--auction .page-context-heading__title--auction-script {
   font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
   font-weight: 700;

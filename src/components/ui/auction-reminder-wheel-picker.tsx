@@ -13,7 +13,7 @@ import { cn } from "@/lib/utils";
 import "./auction-reminder-wheel-picker.css";
 
 const ITEM_HEIGHT = 40;
-const VISIBLE_ITEMS = 5;
+const DEFAULT_VISIBLE_ITEMS = 5;
 const PERSPECTIVE_ORIGIN = ITEM_HEIGHT * 2;
 const STEP_MS = 30 * 60 * 1000;
 
@@ -26,12 +26,18 @@ export interface AuctionReminderWheelPickerProps
   rangeMinMs: number;
   rangeMaxMs: number;
   compareMode: AuctionReminderCompareMode;
-  size?: "sm" | "md" | "lg";
+  size?: "xs" | "sm" | "md" | "lg";
+  visibleItems?: number;
   disabled?: boolean;
   locale?: string;
 }
 
 const sizeConfig = {
+  xs: {
+    itemHeight: ITEM_HEIGHT * 0.68,
+    fontSize: "text-xs",
+    gap: "gap-1",
+  },
   sm: {
     itemHeight: ITEM_HEIGHT * 0.8,
     fontSize: "text-sm",
@@ -443,6 +449,7 @@ export const AuctionReminderWheelPicker = React.forwardRef<
       rangeMaxMs,
       compareMode,
       size = "md",
+      visibleItems = DEFAULT_VISIBLE_ITEMS,
       disabled = false,
       locale,
       className,
@@ -579,7 +586,7 @@ export const AuctionReminderWheelPicker = React.forwardRef<
             applyIndices(monthIndex, i, 0);
           }}
           itemHeight={config.itemHeight}
-          visibleItems={VISIBLE_ITEMS}
+          visibleItems={visibleItems}
           disabled={disabled}
           className="w-14"
           ariaLabel="День"
@@ -594,7 +601,7 @@ export const AuctionReminderWheelPicker = React.forwardRef<
             applyIndices(i, 0, 0);
           }}
           itemHeight={config.itemHeight}
-          visibleItems={VISIBLE_ITEMS}
+          visibleItems={visibleItems}
           disabled={disabled}
           className="w-36 min-w-[9rem]"
           ariaLabel="Месяц"
@@ -607,7 +614,7 @@ export const AuctionReminderWheelPicker = React.forwardRef<
             applyIndices(monthIndex, Math.min(dayIndex, days.length - 1), i);
           }}
           itemHeight={config.itemHeight}
-          visibleItems={VISIBLE_ITEMS}
+          visibleItems={visibleItems}
           disabled={disabled}
           className="w-20"
           ariaLabel="Время"

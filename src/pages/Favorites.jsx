@@ -10,7 +10,7 @@ import { usePropertyFavorites } from '../context/PropertyFavoritesContext'
 import { hasDbBackedProperty } from '../utils/propertyFavoriteKey'
 import { ensureCanOpenProperty } from '../utils/propertyAccessGuard'
 import { useFavoriteAuctionItems } from '../hooks/useFavoriteAuctionItems'
-import { getPropertyDetailPath, auctionListingDedupeKey } from '../utils/propertyDetailUrl'
+import { getPropertyDetailPath, auctionListingDedupeKey, buildPropertyDetailNavigation } from '../utils/propertyDetailUrl'
 import { hasPropertyListingTimer } from '../utils/auctionReminderBounds'
 
 const FAVORITES_CARD_SKELETON_COUNT = 4
@@ -58,11 +58,12 @@ const Favorites = () => {
     }
   }, [favoriteAuctions])
 
-  const openProperty = (property) => {
+  const openProperty = (property, { auctionTab } = {}) => {
     if (!ensureCanOpenProperty()) return
-    navigate(getPropertyDetailPath(property.id, { property }), {
-      state: { property },
+    const { pathname, state } = buildPropertyDetailNavigation(property, {
+      auctionTab: auctionTab || undefined,
     })
+    navigate(pathname, { state })
   }
 
   return (

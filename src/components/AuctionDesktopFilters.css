@@ -196,32 +196,51 @@
 
 .auction-desktop-filters__slider-track {
   position: relative;
-  height: 28px;
-  margin-bottom: 8px;
+  height: 36px;
+  margin-bottom: 4px;
+  --slider-thumb-size: 22px;
 }
 
-.auction-desktop-filters__slider-track::before {
-  content: '';
+.auction-desktop-filters__slider-rail,
+.auction-desktop-filters__slider-fill {
   position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 6px;
+  border-radius: 999px;
+  pointer-events: none;
+}
+
+.auction-desktop-filters__slider-rail {
   left: 0;
   right: 0;
-  top: 50%;
-  height: 4px;
-  transform: translateY(-50%);
-  border-radius: 999px;
-  background: #e2e8f0;
+  background: linear-gradient(180deg, #e8edf3 0%, #dde4ec 100%);
+  box-shadow:
+    inset 0 1px 2px rgba(15, 23, 42, 0.08),
+    0 1px 0 rgba(255, 255, 255, 0.85);
 }
 
-.auction-desktop-filters__slider-track::after {
-  content: '';
-  position: absolute;
-  top: 50%;
+.auction-desktop-filters__slider-fill {
   left: var(--range-left, 0%);
   width: var(--range-width, 100%);
-  height: 4px;
-  transform: translateY(-50%);
-  border-radius: 999px;
-  background: var(--auction-tiffany);
+  background: linear-gradient(90deg, #0abab5 0%, #14c4bf 52%, #089a96 100%);
+  box-shadow:
+    0 0 0 1px rgba(10, 186, 181, 0.18),
+    0 4px 14px rgba(10, 186, 181, 0.28);
+  transition:
+    left 0.12s ease,
+    width 0.12s ease;
+}
+
+.auction-desktop-filters__slider-scale {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+  color: #94a3b8;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
 }
 
 .auction-desktop-filters__range {
@@ -230,6 +249,7 @@
   right: 0;
   top: 50%;
   width: 100%;
+  height: var(--slider-thumb-size);
   margin: 0;
   transform: translateY(-50%);
   appearance: none;
@@ -238,36 +258,75 @@
 }
 
 .auction-desktop-filters__range::-webkit-slider-runnable-track {
-  height: 4px;
+  height: 6px;
   background: transparent;
 }
 
 .auction-desktop-filters__range::-moz-range-track {
-  height: 4px;
+  height: 6px;
   background: transparent;
+  border: none;
 }
 
 .auction-desktop-filters__range::-webkit-slider-thumb {
   appearance: none;
-  width: 18px;
-  height: 18px;
+  width: var(--slider-thumb-size);
+  height: var(--slider-thumb-size);
+  margin-top: calc((6px - var(--slider-thumb-size)) / 2);
   border-radius: 50%;
-  border: 2px solid #fff;
-  background: var(--auction-tiffany);
-  box-shadow: 0 2px 8px rgba(10, 186, 181, 0.35);
+  border: 3px solid #fff;
+  background: radial-gradient(circle at 35% 30%, #5eead4 0%, #0abab5 55%, #089a96 100%);
+  box-shadow:
+    0 0 0 1px rgba(10, 186, 181, 0.35),
+    0 4px 12px rgba(10, 186, 181, 0.35),
+    0 2px 4px rgba(15, 23, 42, 0.12);
   pointer-events: auto;
-  cursor: pointer;
+  cursor: grab;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
 }
 
 .auction-desktop-filters__range::-moz-range-thumb {
-  width: 18px;
-  height: 18px;
+  width: var(--slider-thumb-size);
+  height: var(--slider-thumb-size);
   border-radius: 50%;
-  border: 2px solid #fff;
-  background: var(--auction-tiffany);
-  box-shadow: 0 2px 8px rgba(10, 186, 181, 0.35);
+  border: 3px solid #fff;
+  background: radial-gradient(circle at 35% 30%, #5eead4 0%, #0abab5 55%, #089a96 100%);
+  box-shadow:
+    0 0 0 1px rgba(10, 186, 181, 0.35),
+    0 4px 12px rgba(10, 186, 181, 0.35),
+    0 2px 4px rgba(15, 23, 42, 0.12);
   pointer-events: auto;
-  cursor: pointer;
+  cursor: grab;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.auction-desktop-filters__range:active::-webkit-slider-thumb,
+.auction-desktop-filters__range:active::-moz-range-thumb {
+  cursor: grabbing;
+  transform: scale(1.08);
+  box-shadow:
+    0 0 0 1px rgba(10, 186, 181, 0.45),
+    0 6px 18px rgba(10, 186, 181, 0.42),
+    0 2px 6px rgba(15, 23, 42, 0.14);
+}
+
+.auction-desktop-filters__range:focus-visible::-webkit-slider-thumb,
+.auction-desktop-filters__range:focus-visible::-moz-range-thumb {
+  box-shadow:
+    0 0 0 1px rgba(10, 186, 181, 0.45),
+    0 4px 12px rgba(10, 186, 181, 0.35),
+    0 0 0 5px var(--auction-tiffany-ring);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .auction-desktop-filters__range:hover::-webkit-slider-thumb,
+  .auction-desktop-filters__range:hover::-moz-range-thumb {
+    transform: scale(1.06);
+  }
 }
 
 .auction-desktop-filters__range--min {

@@ -1,3 +1,5 @@
+@import '../styles/promoBottomSheetDrawer.css';
+
 .compare-favorites-drawer__backdrop {
   position: fixed;
   inset: 0;
@@ -269,36 +271,6 @@
 }
 
 @media (max-width: 768px) {
-  .compare-favorites-drawer__panel {
-    max-height: 40dvh;
-    display: flex;
-    flex-direction: column;
-  }
-
-  .compare-favorites-drawer__body {
-    flex: 1;
-    min-height: 0;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-    overscroll-behavior: contain;
-    padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
-  }
-
-  .compare-favorites-drawer__illustration {
-    width: min(160px, 52vw);
-    margin-bottom: 0;
-  }
-
-  .compare-favorites-drawer__hint {
-    margin-bottom: 16px;
-    font-size: 12px;
-  }
-
-  .compare-favorites-drawer__cta {
-    padding: 14px 18px;
-    font-size: 15px;
-  }
-
   .compare-favorites-drawer__panel.drawer-dismiss-modal--closing {
     animation: drawer-dismiss-from-bottom-out 0.38s cubic-bezier(0.22, 1, 0.32, 1) both !important;
   }

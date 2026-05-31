@@ -19,7 +19,7 @@ import {
 } from '../utils/auctionReminderBounds'
 import { getPropertyCardImage } from '../utils/propertyImage'
 import { resolveAuctionCurrentBidValue } from '../services/auctionListCache'
-import { auctionListingDedupeKey } from '../utils/propertyDetailUrl'
+import { auctionListingDedupeKey, PROPERTY_DETAIL_AUCTION_TAB_BIDS } from '../utils/propertyDetailUrl'
 import { buildResponsiveImageProps } from '../utils/responsiveImage'
 import './PropertyList.css'
 
@@ -230,7 +230,7 @@ const PropertyListingCard = ({
             onClick={(e) => {
               e.preventDefault()
               e.stopPropagation()
-              onOpen?.(property)
+              onOpen?.(property, { auctionTab: PROPERTY_DETAIL_AUCTION_TAB_BIDS })
             }}
           >
             <span>{t('auctionResultSummary')}</span>

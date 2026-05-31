@@ -28,6 +28,7 @@ export default function FirstFavoriteDrawer({ isOpen, onClose, onGoToFavorites }
     isClosing,
     requestClose,
     panelClosingClass: 'first-favorite-drawer__panel--closing',
+    maxViewportHeightRatio: 0.5,
   })
 
   if (!visible || typeof document === 'undefined') return null

@@ -271,6 +271,34 @@ export default function AuctionBidCeilingModal({
 
           <div className="auction-bid-ceiling-modal__form-side">
             <div className="auction-bid-ceiling-modal__form-card">
+              <div className="auction-bid-ceiling-modal__mobile-head">
+                <span className="auction-bid-ceiling-modal__mobile-badge">
+                  <Sparkles size={12} aria-hidden />
+                  {t('auctionBidCeilingBadge')}
+                </span>
+                <h2 className="auction-bid-ceiling-modal__mobile-title">{t('auctionBidCeilingTitle')}</h2>
+                <p className="auction-bid-ceiling-modal__mobile-lead">{t('auctionBidCeilingSubtitle')}</p>
+              </div>
+
+              <div className="auction-bid-ceiling-modal__mobile-stats">
+                <div className="auction-bid-ceiling-modal__stat">
+                  <span className="auction-bid-ceiling-modal__stat-label">
+                    {t('propertyDetailCurrentMaxBid')}
+                  </span>
+                  <span className="auction-bid-ceiling-modal__stat-value">
+                    {fmtPrice ? fmtPrice(effectiveCurrentBid) : `${effectiveCurrentBid} ${currencySymbol}`}
+                  </span>
+                </div>
+                <div className="auction-bid-ceiling-modal__stat">
+                  <span className="auction-bid-ceiling-modal__stat-label">
+                    {t('auctionBidCeilingMinLabel')}
+                  </span>
+                  <span className="auction-bid-ceiling-modal__stat-value auction-bid-ceiling-modal__stat-value--accent">
+                    {fmtPrice ? fmtPrice(minCeiling) : `${minCeiling} ${currencySymbol}`}
+                  </span>
+                </div>
+              </div>
+
               <div className="auction-bid-ceiling-modal__form-header">
                 <span className="auction-bid-ceiling-modal__form-icon" aria-hidden>
                   <TrendingUp size={20} />

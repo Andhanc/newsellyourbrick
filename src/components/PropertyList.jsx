@@ -31,8 +31,12 @@ import {
 } from '../utils/auctionReminderBounds'
 import { getPropertyCardImage } from '../utils/propertyImage'
 import { resolveAuctionCurrentBidValue } from '../services/auctionListCache'
-import { getPropertyDetailPath, auctionListingDedupeKey } from '../utils/propertyDetailUrl'
+import { getPropertyDetailPath, auctionListingDedupeKey, PROPERTY_DETAIL_AUCTION_TAB_BIDS, buildPropertyDetailNavigation } from '../utils/propertyDetailUrl'
 import { isPrivateClubAuctionLot } from '../utils/isPrivateClubAuctionLot'
+import {
+  matchesAuctionPropertyTypesFilter,
+  matchesAuctionSaleTypesFilter,
+} from '../utils/auctionDesktopFilterMatch'
 import { buildResponsiveImageProps } from '../utils/responsiveImage'
 import './PropertyList.css'
 
@@ -63,8 +67,8 @@ const PropertyList = ({
   const [searchQuery, setSearchQuery] = useState('')
   const [showFilters, setShowFilters] = useState(false)
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false)
-  const [propertyType, setPropertyType] = useState('все')
-  const [saleFilter, setSaleFilter] = useState('all')
+  const [propertyTypes, setPropertyTypes] = useState([])
+  const [saleFilters, setSaleFilters] = useState([])
   const [tooltip, setTooltip] = useState({ show: false, text: '', x: 0, y: 0 })
   const [isMobile, setIsMobile] = useState(() => typeof window !== 'undefined' && window.innerWidth <= MOBILE_BREAKPOINT)
   const [mobileAuctionTypesOpen, setMobileAuctionTypesOpen] = useState(false)
@@ -140,17 +144,17 @@ const PropertyList = ({
     const filter = searchParams.get('filter')
     
     const normalizedCategory = normalizeCategoryFromUrl(category)
-    if (normalizedCategory) setPropertyType(normalizedCategory)
-    
+    if (normalizedCategory) setPropertyTypes([normalizedCategory])
+
     // Применяем фильтр типа продажи (аукцион / купить сейчас)
     if (filter === 'auction') {
-      setSaleFilter('auction')
+      setSaleFilters(['auction'])
     } else if (filter === 'buy_now') {
-      setSaleFilter('buy_now')
+      setSaleFilters(['buy_now'])
     } else if (filter === 'ended') {
-      setSaleFilter('ended')
+      setSaleFilters(['ended'])
     } else {
-      setSaleFilter('all')
+      setSaleFilters([])
     }
     
     // Прокрутка к блоку объектов при фильтре категории или «Купить сейчас»
@@ -209,43 +213,12 @@ const PropertyList = ({
     }
 
     // Фильтрация по типу недвижимости
-    if (propertyType !== 'все') {
-      // Если есть property_type из API, используем его
-      if (property.property_type) {
-        const typeMap = {
-          'квартира': ['apartment', 'flat'],
-          // Исторически "Apartment" из ссылок главной может приходить в обе модели: apartment/commercial.
-          'апартаменты': ['commercial', 'apartment'],
-          'вилла': ['villa'],
-          'дом': ['house', 'townhouse']
-        }
-        if (typeMap[propertyType] && !typeMap[propertyType].includes(property.property_type)) {
-          return false
-        }
-      } else {
-        // Иначе используем старую логику по названию
-        const titleLower = property.title.toLowerCase()
-        const typeMatch = {
-          'квартира': titleLower.includes('квартир') || titleLower.includes('студи'),
-          'апартаменты': titleLower.includes('апартамент'),
-          'вилла': titleLower.includes('вилл'),
-          'дом': titleLower.includes('дом') || titleLower.includes('таунхаус')
-        }
-        
-        if (!typeMatch[propertyType]) {
-          return false
-        }
-      }
+    if (!matchesAuctionPropertyTypesFilter(property, propertyTypes)) {
+      return false
     }
-    
+
     // Фильтрация по типу продажи
-    if (saleFilter === 'auction' && property.isAuction !== true) {
-      return false
-    }
-    if (saleFilter === 'buy_now' && !hasBuyNowPrice) {
-      return false
-    }
-    if (saleFilter === 'ended' && !isAuctionEnded(property)) {
+    if (!matchesAuctionSaleTypesFilter(property, saleFilters, isAuctionEnded)) {
       return false
     }
 
@@ -294,8 +267,8 @@ const PropertyList = ({
   }, [
     propertiesToUse,
     location.pathname,
-    propertyType,
-    saleFilter,
+    propertyTypes,
+    saleFilters,
     searchQuery,
     minAreaFilter,
     maxAreaFilter,
@@ -307,11 +280,22 @@ const PropertyList = ({
   useEffect(() => {
     setVisibleCount(9)
     setAuctionPage(1)
-  }, [searchQuery, propertyType, saleFilter, minAreaFilter, maxAreaFilter, minPriceFilter, maxPriceFilter])
+  }, [searchQuery, propertyTypes, saleFilters, minAreaFilter, maxAreaFilter, minPriceFilter, maxPriceFilter])
 
   const isAuctionPage = location.pathname === '/auction'
   const isAuctionMobileFilters = isMobile && isAuctionPage
   const isAuctionDesktop = isAuctionPage && !isMobile
+
+  useEffect(() => {
+    const root = document.querySelector('.home-page--auction')
+    if (!root) return undefined
+    if (!isAuctionDesktop || !desktopFiltersOpen) {
+      root.classList.remove('home-page--auction-filters-open')
+      return undefined
+    }
+    root.classList.add('home-page--auction-filters-open')
+    return () => root.classList.remove('home-page--auction-filters-open')
+  }, [isAuctionDesktop, desktopFiltersOpen])
 
   const auctionTotalPages = Math.max(
     1,
@@ -373,7 +357,7 @@ const PropertyList = ({
     return toggleFavorite(property, mockCat || 'property')
   }
 
-  const openProperty = (property) => {
+  const openProperty = (property, { auctionTab } = {}) => {
     if (!ensureCanOpenProperty()) {
       showNotification(
         <span>
@@ -396,9 +380,10 @@ const PropertyList = ({
       )
       return
     }
-    navigate(getPropertyDetailPath(property.id, { property }), {
-      state: { property },
+    const { pathname, state } = buildPropertyDetailNavigation(property, {
+      auctionTab: auctionTab || undefined,
     })
+    navigate(pathname, { state })
   }
 
   return (
@@ -485,10 +470,10 @@ const PropertyList = ({
         >
           {isAuctionDesktop && desktopFiltersOpen ? (
             <AuctionDesktopFilters
-              propertyType={propertyType}
-              setPropertyType={setPropertyType}
-              saleFilter={saleFilter}
-              setSaleFilter={setSaleFilter}
+              propertyTypes={propertyTypes}
+              setPropertyTypes={setPropertyTypes}
+              saleFilters={saleFilters}
+              setSaleFilters={setSaleFilters}
               minArea={minAreaFilter}
               maxArea={maxAreaFilter}
               setMinArea={setMinAreaFilter}
@@ -599,20 +584,34 @@ const PropertyList = ({
                   type="button"
                   className={`type-button ${
                     item.kind === 'type'
-                      ? propertyType === item.value
-                        ? 'active'
-                        : ''
-                      : saleFilter === item.value
+                      ? item.value === 'все'
+                        ? propertyTypes.length === 0
+                          ? 'active'
+                          : ''
+                        : propertyTypes.includes(item.value)
+                          ? 'active'
+                          : ''
+                      : saleFilters.includes(item.value)
                         ? 'active'
                         : ''
                   }`}
                   onClick={() => {
                     if (item.kind === 'type') {
-                      setPropertyType(item.value)
-                      setSaleFilter('all')
+                      if (item.value === 'все') {
+                        setPropertyTypes([])
+                        return
+                      }
+                      setPropertyTypes((prev) =>
+                        prev.includes(item.value)
+                          ? prev.filter((v) => v !== item.value)
+                          : [...prev, item.value],
+                      )
                     } else {
-                      setSaleFilter(item.value)
-                      setPropertyType('все')
+                      setSaleFilters((prev) =>
+                        prev.includes(item.value)
+                          ? prev.filter((v) => v !== item.value)
+                          : [...prev, item.value],
+                      )
                     }
                   }}
                 >
@@ -666,6 +665,8 @@ const PropertyList = ({
                   formatPrice={formatPrice}
                   isFavorite={isPropertyLiked}
                   onFavoriteToggle={handleFavoriteToggle}
+                  onOpen={openProperty}
+                  onTooltip={setTooltip}
                   viewerHasVip={viewerHasVip}
                 />
               </div>
@@ -828,7 +829,7 @@ const PropertyList = ({
                     onClick={(e) => {
                       e.preventDefault()
                       e.stopPropagation()
-                      openProperty(property)
+                      openProperty(property, { auctionTab: PROPERTY_DETAIL_AUCTION_TAB_BIDS })
                     }}
                   >
                     <span>{t('auctionResultSummary')}</span>

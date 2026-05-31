@@ -12,6 +12,7 @@ const LocationMap = ({
   markerDraggable = false,
   onMarkerDragEnd,
   allowFullscreen = true,
+  controlsLayout = 'default',
 }) => {
   const containerRef = useRef(null)
   const mapContainerRef = useRef(null)
@@ -53,7 +54,9 @@ const LocationMap = ({
       attributionControl: false,
     })
 
-    map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right')
+    if (controlsLayout !== 'column') {
+      map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right')
+    }
     mapRef.current = map
 
     return () => {
@@ -64,7 +67,7 @@ const LocationMap = ({
       map.remove()
       mapRef.current = null
     }
-  }, [allowFullscreen])
+  }, [allowFullscreen, controlsLayout])
 
   useEffect(() => {
     if (!allowFullscreen || typeof document === 'undefined') return undefined
@@ -267,18 +270,75 @@ const LocationMap = ({
     run()
   }, [marker, markerDraggable])
 
+  const handleZoomIn = () => {
+    try {
+      mapRef.current?.zoomIn({ duration: 200 })
+    } catch {
+      // ignore
+    }
+  }
+
+  const handleZoomOut = () => {
+    try {
+      mapRef.current?.zoomOut({ duration: 200 })
+    } catch {
+      // ignore
+    }
+  }
+
+  const useColumnControls = controlsLayout === 'column'
+
   return (
-    <div ref={containerRef} className={`location-map-container ${isFullscreen ? 'location-map-container--fullscreen' : ''}`}>
-      {allowFullscreen && (
-        <button
-          type="button"
-          className="location-map-fullscreen-btn"
-          onClick={toggleFullscreen}
-          aria-label={isFullscreen ? 'Свернуть карту' : 'Открыть карту'}
-          title={isFullscreen ? 'Свернуть карту' : 'Открыть карту'}
-        >
-          {isFullscreen ? <FiMinimize2 size={15} /> : <FiMaximize2 size={15} />}
-        </button>
+    <div
+      ref={containerRef}
+      className={`location-map-container${
+        isFullscreen ? ' location-map-container--fullscreen' : ''
+      }${useColumnControls ? ' location-map-container--column-controls' : ''}`}
+    >
+      {useColumnControls ? (
+        <div className="location-map-controls-column">
+          {allowFullscreen ? (
+            <button
+              type="button"
+              className="location-map-controls-column__btn location-map-controls-column__btn--expand"
+              onClick={toggleFullscreen}
+              aria-label={isFullscreen ? 'Свернуть карту' : 'Открыть карту'}
+              title={isFullscreen ? 'Свернуть карту' : 'Открыть карту'}
+            >
+              {isFullscreen ? <FiMinimize2 size={16} /> : <FiMaximize2 size={16} />}
+            </button>
+          ) : null}
+          <button
+            type="button"
+            className="location-map-controls-column__btn"
+            onClick={handleZoomIn}
+            aria-label="Увеличить"
+            title="Увеличить"
+          >
+            +
+          </button>
+          <button
+            type="button"
+            className="location-map-controls-column__btn"
+            onClick={handleZoomOut}
+            aria-label="Уменьшить"
+            title="Уменьшить"
+          >
+            −
+          </button>
+        </div>
+      ) : (
+        allowFullscreen && (
+          <button
+            type="button"
+            className="location-map-fullscreen-btn"
+            onClick={toggleFullscreen}
+            aria-label={isFullscreen ? 'Свернуть карту' : 'Открыть карту'}
+            title={isFullscreen ? 'Свернуть карту' : 'Открыть карту'}
+          >
+            {isFullscreen ? <FiMinimize2 size={15} /> : <FiMaximize2 size={15} />}
+          </button>
+        )
       )}
       <div ref={mapContainerRef} className="location-map" />
     </div>

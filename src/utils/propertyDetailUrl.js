@@ -31,6 +31,21 @@ export function getPropertyDetailPath(propertyId, options = {}) {
   return `/property/${propertyId}${search}`
 }
 
+/** Вкладка «История ставок» на странице объекта (PropertyDetailClassic). */
+export const PROPERTY_DETAIL_AUCTION_TAB_BIDS = 'bids'
+
+export function buildPropertyDetailNavigation(property, { auctionTab, ...pathOptions } = {}) {
+  if (!property || property.id == null) {
+    return { pathname: '/', state: {} }
+  }
+  const state = { property }
+  if (auctionTab) state.auctionTab = auctionTab
+  return {
+    pathname: getPropertyDetailPath(property.id, { property, ...pathOptions }),
+    state,
+  }
+}
+
 /**
  * Добавляет viewer_user_id к URL GET /api/properties/:id (доступ к лотам «только VIP»).
  */

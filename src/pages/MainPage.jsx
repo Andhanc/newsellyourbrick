@@ -82,7 +82,7 @@ import { usePropertyFavorites } from '../context/PropertyFavoritesContext'
 import { useLayoutScrollRef } from '../context/LayoutScrollContext'
 import { UI_LANGUAGES } from '../constants/uiLanguages'
 import { isAuctionListingEnded } from '../utils/auctionReminderBounds'
-import { auctionListingDedupeKey, getPropertyDetailPath } from '../utils/propertyDetailUrl'
+import { auctionListingDedupeKey, getPropertyDetailPath, PROPERTY_DETAIL_AUCTION_TAB_BIDS, buildPropertyDetailNavigation } from '../utils/propertyDetailUrl'
 import { fetchAuctionMaxBidsBatch, getMaxBidForProperty } from '../utils/fetchAuctionMaxBids'
 import { resolvePropertySourceTable } from '../utils/propertySourceTable'
 import { hasBuyNowOption } from '../utils/hasBuyNowOption'
@@ -2126,31 +2126,37 @@ function MainPage() {
     )
   }
 
-  const handlePropertyClick = (category, propertyId, isClassic = false, hasTimer = false, property = null) => {
+  const handlePropertyClick = (
+    category,
+    propertyId,
+    isClassic = false,
+    hasTimer = false,
+    property = null,
+    { auctionTab } = {},
+  ) => {
     if (!ensureCanOpenProperty()) {
       showPropertyAuthRequiredToast()
       return
     }
     // Если объект не передан, пытаемся найти его в массивах
     let propertyToNavigate = property
-    
+
     if (!propertyToNavigate) {
       // Ищем объект в recommendedProperties и nearbyProperties
       const allProperties = [...recommendedProperties, ...nearbyProperties]
       propertyToNavigate = allProperties.find(p => p.id === propertyId)
     }
-    
-    // Все объекты переходят на страницу объекта
-    // PropertyDetailPage сама определит, какую страницу показывать (аукционную или классическую)
-    const path = getPropertyDetailPath(propertyId, {
-      property: propertyToNavigate,
-      classic: isClassic,
-    })
+
     if (propertyToNavigate) {
-      navigate(path, { state: { property: propertyToNavigate } })
-    } else {
-      navigate(path)
+      const { pathname, state } = buildPropertyDetailNavigation(propertyToNavigate, {
+        classic: isClassic,
+        auctionTab: auctionTab || undefined,
+      })
+      navigate(pathname, { state })
+      return
     }
+
+    navigate(getPropertyDetailPath(propertyId, { classic: isClassic }))
   }
 
   const handleBackClick = () => {

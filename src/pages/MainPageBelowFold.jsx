@@ -11,6 +11,7 @@ import { AuctionShowcaseSkeletonCards } from '../components/AuctionShowcaseSkele
 import { PropertyListingSkeletonGrid } from '../components/PropertyListingSkeletonGrid'
 import LandingFaqAccordion from '../components/LandingFaqAccordion'
 import '../components/PropertyList.css'
+import { PROPERTY_DETAIL_AUCTION_TAB_BIDS } from '../utils/propertyDetailUrl'
 /* После PropertyList: стили витрины из MainPage (лента карточек) гарантированно в каскаде */
 import './MainPage.css'
 import LeadGenCta from '../components/LeadGenCta'
@@ -122,7 +123,9 @@ export default function MainPageBelowFold() {
                         onClick={(e) => {
                           e.preventDefault()
                           e.stopPropagation()
-                          handlePropertyClick('apartment', apartment.id, false, hasTimer, apartment)
+                          handlePropertyClick('apartment', apartment.id, false, hasTimer, apartment, {
+                            auctionTab: PROPERTY_DETAIL_AUCTION_TAB_BIDS,
+                          })
                         }}
                       >
                         <span>{t('auctionResultSummary')}</span>
@@ -262,7 +265,9 @@ export default function MainPageBelowFold() {
                         onClick={(e) => {
                           e.preventDefault()
                           e.stopPropagation()
-                          handlePropertyClick('villa', villa.id, false, false, villa)
+                          handlePropertyClick('villa', villa.id, false, false, villa, {
+                            auctionTab: PROPERTY_DETAIL_AUCTION_TAB_BIDS,
+                          })
                         }}
                       >
                         <span>{t('auctionResultSummary')}</span>

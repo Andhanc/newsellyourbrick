@@ -1,31 +1,29 @@
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ChevronDown, X } from 'lucide-react'
+import {
+  AUCTION_DESKTOP_PROPERTY_TYPE_ITEMS,
+  AUCTION_DESKTOP_SALE_TYPE_ITEMS,
+} from '../utils/auctionDesktopFilterMatch'
 import './AuctionDesktopFilters.css'
 
-const PROPERTY_TYPE_ITEMS = [
-  { value: 'все', labelKey: 'propertyTypeAll' },
-  { value: 'квартира', labelKey: 'propertyTypeFlat' },
-  { value: 'апартаменты', labelKey: 'propertyTypeApartment' },
-  { value: 'вилла', labelKey: 'propertyTypeVilla' },
-  { value: 'дом', labelKey: 'propertyTypeHouse' },
-]
-
-const SALE_TYPE_ITEMS = [
-  { value: 'auction', labelKey: 'modalPurchaseTypeAuction' },
-  { value: 'buy_now', labelKey: 'buyNowSectionTitle' },
-  { value: 'ended', labelKey: 'auctionFilterEnded' },
-]
+const PROPERTY_TYPE_ITEMS = AUCTION_DESKTOP_PROPERTY_TYPE_ITEMS
+const SALE_TYPE_ITEMS = AUCTION_DESKTOP_SALE_TYPE_ITEMS
 
 function clamp(n, min, max) {
   return Math.max(min, Math.min(max, n))
 }
 
+function toggleListValue(list, value) {
+  if (list.includes(value)) return list.filter((item) => item !== value)
+  return [...list, value]
+}
+
 function AuctionDesktopFilters({
-  propertyType,
-  setPropertyType,
-  saleFilter,
-  setSaleFilter,
+  propertyTypes,
+  setPropertyTypes,
+  saleFilters,
+  setSaleFilters,
   minArea,
   maxArea,
   setMinArea,
@@ -48,26 +46,26 @@ function AuctionDesktopFilters({
 
   const activeChips = useMemo(() => {
     const chips = []
-    if (propertyType !== 'все') {
-      const item = PROPERTY_TYPE_ITEMS.find((i) => i.value === propertyType)
+    propertyTypes.forEach((typeValue) => {
+      const item = PROPERTY_TYPE_ITEMS.find((i) => i.value === typeValue)
       if (item) {
         chips.push({
-          id: `type-${propertyType}`,
+          id: `type-${typeValue}`,
           label: t(item.labelKey),
-          onRemove: () => setPropertyType('все'),
+          onRemove: () => setPropertyTypes((prev) => prev.filter((v) => v !== typeValue)),
         })
       }
-    }
-    if (saleFilter !== 'all') {
-      const item = SALE_TYPE_ITEMS.find((i) => i.value === saleFilter)
+    })
+    saleFilters.forEach((saleValue) => {
+      const item = SALE_TYPE_ITEMS.find((i) => i.value === saleValue)
       if (item) {
         chips.push({
-          id: `sale-${saleFilter}`,
+          id: `sale-${saleValue}`,
           label: t(item.labelKey),
-          onRemove: () => setSaleFilter('all'),
+          onRemove: () => setSaleFilters((prev) => prev.filter((v) => v !== saleValue)),
         })
       }
-    }
+    })
     if (minArea !== '' || maxArea !== '') {
       chips.push({
         id: 'area',
@@ -90,8 +88,8 @@ function AuctionDesktopFilters({
     }
     return chips
   }, [
-    propertyType,
-    saleFilter,
+    propertyTypes,
+    saleFilters,
     minArea,
     maxArea,
     minPrice,
@@ -100,8 +98,8 @@ function AuctionDesktopFilters({
     areaBounds.max,
     priceBounds.min,
     priceBounds.max,
-    setPropertyType,
-    setSaleFilter,
+    setPropertyTypes,
+    setSaleFilters,
     setMinArea,
     setMaxArea,
     setMinPrice,
@@ -126,12 +124,24 @@ function AuctionDesktopFilters({
   }
 
   const handleReset = () => {
-    setPropertyType('все')
-    setSaleFilter('all')
+    setPropertyTypes([])
+    setSaleFilters([])
     setMinArea('')
     setMaxArea('')
     setMinPrice('')
     setMaxPrice('')
+  }
+
+  const togglePropertyType = (value) => {
+    if (value === 'все') {
+      setPropertyTypes([])
+      return
+    }
+    setPropertyTypes((prev) => toggleListValue(prev, value))
+  }
+
+  const toggleSaleType = (value) => {
+    setSaleFilters((prev) => toggleListValue(prev, value))
   }
 
   const applyAreaRange = (nextMin, nextMax) => {
@@ -182,11 +192,12 @@ function AuctionDesktopFilters({
                 <label className="auction-desktop-filters__check">
                   <input
                     type="checkbox"
-                    checked={propertyType === item.value}
-                    onChange={() => {
-                      setPropertyType(item.value)
-                      if (item.value !== 'все') setSaleFilter('all')
-                    }}
+                    checked={
+                      item.value === 'все'
+                        ? propertyTypes.length === 0
+                        : propertyTypes.includes(item.value)
+                    }
+                    onChange={() => togglePropertyType(item.value)}
                   />
                   <span className="auction-desktop-filters__check-box" aria-hidden />
                   <span>{t(item.labelKey)}</span>
@@ -207,11 +218,8 @@ function AuctionDesktopFilters({
                 <label className="auction-desktop-filters__check">
                   <input
                     type="checkbox"
-                    checked={saleFilter === item.value}
-                    onChange={() => {
-                      setSaleFilter(saleFilter === item.value ? 'all' : item.value)
-                      setPropertyType('все')
-                    }}
+                    checked={saleFilters.includes(item.value)}
+                    onChange={() => toggleSaleType(item.value)}
                   />
                   <span className="auction-desktop-filters__check-box" aria-hidden />
                   <span>{t(item.labelKey)}</span>
@@ -251,6 +259,8 @@ function AuctionDesktopFilters({
             className="auction-desktop-filters__slider-track"
             style={{ '--range-left': `${areaFillLeft}%`, '--range-width': `${areaFillWidth}%` }}
           >
+            <div className="auction-desktop-filters__slider-rail" aria-hidden />
+            <div className="auction-desktop-filters__slider-fill" aria-hidden />
             <input
               type="range"
               className="auction-desktop-filters__range auction-desktop-filters__range--min"
@@ -258,6 +268,7 @@ function AuctionDesktopFilters({
               max={areaBounds.max}
               value={sliderAreaMin}
               onChange={(e) => applyAreaRange(Number(e.target.value), sliderAreaMax)}
+              aria-label={t('auctionFilterAreaMin')}
             />
             <input
               type="range"
@@ -266,7 +277,12 @@ function AuctionDesktopFilters({
               max={areaBounds.max}
               value={sliderAreaMax}
               onChange={(e) => applyAreaRange(sliderAreaMin, Number(e.target.value))}
+              aria-label={t('auctionFilterAreaMax')}
             />
+          </div>
+          <div className="auction-desktop-filters__slider-scale" aria-hidden>
+            <span>{areaBounds.min}</span>
+            <span>{areaBounds.max}</span>
           </div>
           <p className="auction-desktop-filters__range-hint">
             {t('auctionFilterFromTo', {
@@ -307,6 +323,8 @@ function AuctionDesktopFilters({
             className="auction-desktop-filters__slider-track"
             style={{ '--range-left': `${priceFillLeft}%`, '--range-width': `${priceFillWidth}%` }}
           >
+            <div className="auction-desktop-filters__slider-rail" aria-hidden />
+            <div className="auction-desktop-filters__slider-fill" aria-hidden />
             <input
               type="range"
               className="auction-desktop-filters__range auction-desktop-filters__range--min"
@@ -314,6 +332,7 @@ function AuctionDesktopFilters({
               max={priceBounds.max}
               value={sliderPriceMin}
               onChange={(e) => applyPriceRange(Number(e.target.value), sliderPriceMax)}
+              aria-label={t('auctionFilterPriceMin')}
             />
             <input
               type="range"
@@ -322,7 +341,12 @@ function AuctionDesktopFilters({
               max={priceBounds.max}
               value={sliderPriceMax}
               onChange={(e) => applyPriceRange(sliderPriceMin, Number(e.target.value))}
+              aria-label={t('auctionFilterPriceMax')}
             />
+          </div>
+          <div className="auction-desktop-filters__slider-scale" aria-hidden>
+            <span>{priceBounds.min.toLocaleString()}</span>
+            <span>{priceBounds.max.toLocaleString()}</span>
           </div>
           <p className="auction-desktop-filters__range-hint">
             {t('auctionFilterFromTo', {
