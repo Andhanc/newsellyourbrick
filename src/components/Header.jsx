@@ -23,7 +23,6 @@ import { getCabinetDataPath, getCabinetProfilePath, isSellerCabinetRole } from '
 import { UI_LANGUAGES } from '../constants/uiLanguages'
 import SiteNavDrawer from './SiteNavDrawer'
 import { setSiteNavDrawerOpen } from '../utils/siteNavDrawerDocumentFlag'
-import { UI_LANGUAGES } from '../constants/uiLanguages'
 
 const Header = () => {
   const navigate = useNavigate()
