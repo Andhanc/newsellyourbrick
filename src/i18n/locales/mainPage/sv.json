@@ -63,6 +63,8 @@
   "closeNotifications": "Stäng aviseringar",
   "noNotifications": "Inga aviseringar",
   "close": "Stäng",
+  "toastOpenListingLoginPrefix": "Logga in för att öppna objektsidan.",
+  "toastOpenListingLoginLink": "Logga in / Registrera",
   "menu": "Meny",
   "navSiteTitle": "Webbplatsnavigering",
   "moreSections": "Fler avsnitt",

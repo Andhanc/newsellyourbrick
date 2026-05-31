@@ -63,6 +63,8 @@
   "closeNotifications": "Benachrichtigungen schließen",
   "noNotifications": "Keine Benachrichtigungen",
   "close": "Schließen",
+  "toastOpenListingLoginPrefix": "Um die Objektseite zu öffnen, melden Sie sich an.",
+  "toastOpenListingLoginLink": "Anmelden / Registrieren",
   "menu": "Menü",
   "navSiteTitle": "Seitennavigation",
   "moreSections": "Weitere Bereiche",

@@ -336,6 +336,11 @@
     padding: 10px 10px 2px;
   }
 
+  .hero-features--static-mobile .hero-feature-card--static .hero-feature-image__img {
+    width: 68px;
+    height: 68px;
+  }
+
   .hero-features--static-mobile .hero-feature-card--static .hero-feature-content {
     flex: 1;
     display: flex;
@@ -456,6 +461,11 @@
 
   .hero-features--static-mobile .hero-feature-card--static .hero-feature-image {
     padding: 8px 8px 0;
+  }
+
+  .hero-features--static-mobile .hero-feature-card--static .hero-feature-image__img {
+    width: 54px;
+    height: 54px;
   }
 
   .hero-features--static-mobile .hero-feature-card--static .hero-feature-content {

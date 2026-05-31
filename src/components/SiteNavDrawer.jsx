@@ -36,7 +36,6 @@ export function useSiteDrawerMenuActive(isManagerChatOpen, aiConsultantOpen) {
       auction: starts('/auction') || pathname === '/main',
       shares: starts('/shares'),
       debts: starts('/debts'),
-      favorites: starts('/favorites'),
       chat: managerChatHighlighted,
       bonuses: starts('/bonuses'),
       map: starts('/map'),
@@ -167,17 +166,6 @@ export default function SiteNavDrawer({
                   }}
                 >
                   <span>{t('debtsTitle')}</span>
-                </button>
-                <button
-                  type="button"
-                  className={`menu-dropdown__item${drawerMenuActive.favorites ? ' menu-dropdown__item--active' : ''}`}
-                  aria-current={drawerMenuActive.favorites ? 'page' : undefined}
-                  onClick={() => {
-                    navigate('/favorites')
-                    closeAfterNav()
-                  }}
-                >
-                  <span>{t('favorites')}</span>
                 </button>
                 <button
                   type="button"

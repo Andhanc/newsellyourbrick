@@ -63,6 +63,8 @@
   "closeNotifications": "Fermer les notifications",
   "noNotifications": "Aucune notification",
   "close": "Fermer",
+  "toastOpenListingLoginPrefix": "Pour ouvrir la page du bien, connectez-vous.",
+  "toastOpenListingLoginLink": "Connexion / Inscription",
   "menu": "Menu",
   "navSiteTitle": "Navigation du site",
   "moreSections": "Plus de rubriques",
