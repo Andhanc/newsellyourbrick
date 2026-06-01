@@ -6,6 +6,7 @@ import { usePropertyFavorites } from '../context/PropertyFavoritesContext'
 import { hasDbBackedProperty } from '../utils/propertyFavoriteKey'
 import { hasBuyNowOption, hasAuctionBuyNowListingForm } from '../utils/hasBuyNowOption'
 import PropertyTimer from './PropertyTimer'
+import PropertyShareButton from './PropertyShareButton'
 import CircularTimer from './CircularTimer'
 import ImageWithSkeleton from './ImageWithSkeleton'
 import { formatPropertyPrice } from '../utils/currency'
@@ -281,11 +282,12 @@ const PropertyListingCard = ({
                 )}
               </div>
             )}
-          {showFavorite ? (
+          <div className="property-media-actions">
             <button
               type="button"
               className={`property-favorite ${isPropertyLiked(property) ? 'active' : ''}`}
               onClick={(e) => handleFavoriteToggle(property, e)}
+              aria-label={t('favorites')}
             >
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden>
                 <path
@@ -296,7 +298,8 @@ const PropertyListingCard = ({
                 />
               </svg>
             </button>
-          ) : null}
+            <PropertyShareButton property={property} />
+          </div>
           {imageTopRightAction ? (
             <button
               type="button"

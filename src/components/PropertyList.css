@@ -2707,6 +2707,87 @@
     padding-right: 24px;
   }
 
+  .property-list--auction-desktop .shares-listing-shell {
+    width: 100%;
+  }
+
+  .property-list--auction-desktop .page-context-heading.page-context-heading--listing-auction {
+    position: relative;
+    z-index: 2;
+    max-width: none;
+    width: 100%;
+    margin: 0;
+    padding: 0 0 20px;
+    background: transparent;
+    box-sizing: border-box;
+  }
+
+  .property-list--auction-desktop .page-context-heading--listing-auction-inner {
+    max-width: none;
+    margin: 0;
+    text-align: left;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  .property-list--auction-desktop .page-context-heading__title--auction-script {
+    font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
+    font-weight: 700;
+    font-style: italic;
+    font-size: clamp(2.35rem, 5.2vw, 3.35rem);
+    line-height: 1.12;
+    color: #0f172a;
+    margin: 0.35rem 0 0.55rem;
+    letter-spacing: 0.03em;
+    text-align: left;
+    font-synthesis: none;
+  }
+
+  .property-list--auction-desktop .page-context-heading--listing-auction-inner .page-breadcrumbs {
+    margin-bottom: 0;
+  }
+
+  .property-list--auction-desktop .shares-listing-shell--with-filters {
+    display: grid;
+    grid-template-columns: minmax(280px, 320px) minmax(0, 1fr);
+    gap: 24px;
+    align-items: start;
+  }
+
+  .property-list--auction-desktop .shares-listing-shell--with-filters .page-context-heading.page-context-heading--listing-auction {
+    grid-column: 1;
+    grid-row: 1;
+    align-self: end;
+    padding-bottom: 12px;
+    text-align: left;
+  }
+
+  .property-list--auction-desktop .shares-listing-shell--with-filters .page-context-heading--listing-auction-inner {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    text-align: left;
+  }
+
+  .property-list--auction-desktop .shares-listing-shell--with-filters .page-context-heading__title--auction-script {
+    text-align: left;
+  }
+
+  .property-list--auction-desktop .shares-listing-shell--with-filters .page-breadcrumbs.page-breadcrumbs--flat-club .page-breadcrumbs__list {
+    justify-content: flex-start;
+  }
+
+  .property-list--auction-desktop .shares-listing-shell--with-filters .shares-listing-layout {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+
+  .property-list--auction-desktop .shares-listing-shell--filters-hidden .page-context-heading.page-context-heading--listing-auction {
+    max-width: 1048px;
+    margin-inline: auto;
+    padding-bottom: 20px;
+  }
+
   .auction-desktop-layout {
     display: grid;
     grid-template-columns: minmax(280px, 320px) minmax(0, 1fr);

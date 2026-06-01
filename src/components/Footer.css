@@ -182,6 +182,12 @@
   flex-shrink: 0;
 }
 
+a.footer__brand {
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+}
+
 .footer__brand-icon {
   width: 32px;
   height: 32px;

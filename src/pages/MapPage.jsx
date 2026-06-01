@@ -1,11 +1,13 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useUser } from '@clerk/clerk-react'
 import { showNotification } from '../utils/toastHelper'
 import maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import { useNavigate } from 'react-router-dom'
-import { FiHeart, FiMapPin, FiX, FiArrowUp, FiSearch } from 'react-icons/fi'
+import { FiMapPin, FiX, FiMap, FiSearch } from 'react-icons/fi'
 import PageBackButton from '../components/PageBackButton'
+import MapPagePropertyGrid, { MapPagePropertyGridSkeletons } from '../components/MapPagePropertyGrid'
+import MapPageFilters from '../components/MapPageFilters'
 import { useTranslation } from 'react-i18next'
 import { HiOutlineArrowsExpand } from 'react-icons/hi'
 import { getApiBaseUrl } from '../utils/apiConfig'
@@ -15,41 +17,155 @@ import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
 import { isSiteUserSignedIn } from '../utils/siteAuthGate'
 import { usePropertyFavorites } from '../context/PropertyFavoritesContext'
 import { hasDbBackedProperty } from '../utils/propertyFavoriteKey'
-import { getMainScrollEl, getMainScrollTop, scrollMainTo } from '../utils/mainScroll'
+import { getMainScrollEl, scrollMainTo } from '../utils/mainScroll'
 import { buildResponsiveImageProps } from '../utils/responsiveImage'
 import { formatPropertyPrice } from '../utils/currency'
 import './MapPage.css'
 import { getPropertyDetailPath, auctionListingDedupeKey } from '../utils/propertyDetailUrl'
+import {
+  EMPTY_MAP_FILTERS,
+  applyMapPageFilters,
+  getMapPriceBounds,
+  countActiveMapFilters,
+} from '../utils/mapPageFilters'
 
-const SORT_OPTIONS = [
-  { id: 'popular', label: 'По популярности' },
-  { id: 'rating', label: 'По рейтингу' },
-  { id: 'price', label: 'Сначала дешевле' }
+const MAP_LIST_SKELETON_COUNT = 6
+const MAP_PIN_MINI_ZOOM = 16
+const MAP_PIN_CLUSTER_RADIUS_PX = 84
+const MAP_PIN_MINI_APPEAR_DELAY_MS = 280
+const MAP_PIN_MINI_STAGGER_MS = 40
+
+const GEOCODE_RESULT_PRIORITY = [
+  'building',
+  'house',
+  'residential',
+  'commercial',
+  'retail',
+  'industrial',
+  'office',
+  'apartments',
+  'street',
+  'road',
+  'neighbourhood',
+  'suburb',
+  'quarter',
+  'city',
+  'town',
+  'village',
 ]
 
-const MAP_LIST_SKELETON_COUNT = 5
+function buildMapPointItems(properties, getCoords) {
+  const items = []
+  for (const property of properties) {
+    const coords = getCoords(property)
+    if (!coords) continue
+    items.push({ property, lat: coords[0], lng: coords[1] })
+  }
+  return items
+}
 
-/** Пока грузится API — разметка как у .map-booking-card, без блокировки карты */
-function MapBookingCardSkeleton() {
-  return (
-    <article className="map-booking-card map-booking-card--skeleton" aria-hidden="true">
-      <div className="map-booking-card__media">
-        <div className="map-booking-card__img-wrap map-booking-card__img-wrap--skeleton">
-          <div className="map-card-skel-shimmer map-card-skel-shimmer--media" />
-          <span className="map-booking-card__fav-ring-skel" />
-        </div>
-      </div>
-      <div className="map-booking-card__body">
-        <div className="map-card-skel-line map-card-skel-line--title" />
-        <div className="map-card-skel-line map-card-skel-line--meta" />
-        <div className="map-card-skel-line map-card-skel-line--loc" />
-      </div>
-      <div className="map-booking-card__right">
-        <div className="map-card-skel-line map-card-skel-line--price" />
-        <div className="map-booking-card__show-btn-skel" />
-      </div>
-    </article>
-  )
+function clusterMapPoints(map, items, radiusPx) {
+  const clusters = []
+  const used = new Set()
+
+  for (let i = 0; i < items.length; i += 1) {
+    if (used.has(i)) continue
+    const group = [items[i]]
+    used.add(i)
+    const anchor = map.project([items[i].lng, items[i].lat])
+
+    for (let j = i + 1; j < items.length; j += 1) {
+      if (used.has(j)) continue
+      const point = map.project([items[j].lng, items[j].lat])
+      const dist = Math.hypot(anchor.x - point.x, anchor.y - point.y)
+      if (dist <= radiusPx) {
+        group.push(items[j])
+        used.add(j)
+      }
+    }
+
+    if (group.length === 1) {
+      clusters.push({ type: 'point', ...group[0] })
+      continue
+    }
+
+    const lat = group.reduce((sum, item) => sum + item.lat, 0) / group.length
+    const lng = group.reduce((sum, item) => sum + item.lng, 0) / group.length
+    clusters.push({
+      type: 'cluster',
+      lat,
+      lng,
+      count: group.length,
+      properties: group.map((item) => item.property),
+    })
+  }
+
+  return clusters
+}
+
+function resolveMapMarkerItems(map, items) {
+  if (map.getZoom() >= MAP_PIN_MINI_ZOOM) {
+    return items.map((item) => ({ type: 'point', ...item }))
+  }
+
+  const clustered = clusterMapPoints(map, items, MAP_PIN_CLUSTER_RADIUS_PX)
+  return clustered.map((item) => {
+    if (item.type !== 'point') return item
+    return {
+      type: 'cluster',
+      lat: item.lat,
+      lng: item.lng,
+      count: 1,
+      properties: [item.property],
+    }
+  })
+}
+
+function scoreGeocodeHit(hit) {
+  const type = String(hit?.type || hit?.class || '').toLowerCase()
+  const typeIdx = GEOCODE_RESULT_PRIORITY.indexOf(type)
+  const typeScore = typeIdx >= 0 ? (GEOCODE_RESULT_PRIORITY.length - typeIdx) * 12 : 0
+  const importance = Number.parseFloat(hit?.importance)
+  return typeScore + (Number.isFinite(importance) ? importance * 6 : 0)
+}
+
+function pickBestGeocodeHit(hits) {
+  if (!Array.isArray(hits) || hits.length === 0) return null
+  let best = hits[0]
+  let bestScore = scoreGeocodeHit(hits[0])
+  for (const hit of hits.slice(1)) {
+    const score = scoreGeocodeHit(hit)
+    if (score > bestScore) {
+      best = hit
+      bestScore = score
+    }
+  }
+  return best
+}
+
+function scheduleMapPinMiniReveal(el, index) {
+  requestAnimationFrame(() => {
+    window.setTimeout(() => {
+      if (el.isConnected) el.classList.add('map-pin-mini--visible')
+    }, MAP_PIN_MINI_APPEAR_DELAY_MS + index * MAP_PIN_MINI_STAGGER_MS)
+  })
+}
+
+function bindMarkerActivate(el, onActivate) {
+  let lastActivate = 0
+  const handler = (e) => {
+    if (e.button != null && e.button !== 0) return
+    const now = Date.now()
+    if (now - lastActivate < 450) return
+    lastActivate = now
+    e.stopPropagation()
+    onActivate(e)
+  }
+  el.addEventListener('click', handler)
+  el.addEventListener('pointerup', (e) => {
+    if (e.pointerType === 'mouse') return
+    handler(e)
+  })
 }
 
 function parseCoordinates(value) {
@@ -96,6 +212,7 @@ function normalizeApiProperty(prop, index) {
     parseCoordinates(prop.map_coordinates) ||
     parseCoordinates({ lat: prop.lat ?? prop.latitude, lng: prop.lng ?? prop.lon ?? prop.longitude })
   return {
+    ...prop,
     id: prop.id,
     title: prop.title || prop.name || '',
     location: prop.location || prop.address || '',
@@ -104,16 +221,21 @@ function normalizeApiProperty(prop, index) {
     images: images.length ? images : ['https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800'],
     area: prop.area ?? prop.sqft ?? 0,
     rooms: prop.rooms ?? prop.beds ?? prop.bedrooms ?? 0,
+    bathrooms: prop.bathrooms ?? prop.baths ?? 0,
     floor: prop.floor ?? null,
     coordinates,
+    property_type: prop.property_type || prop.propertyType || '',
+    isAuction,
+    is_auction: isAuction,
+    currency: prop.currency || 'USD',
     source_table:
       prop.source_table ||
       (isAuction ? 'properties' : 'properties_apartments'),
-    _index: index
+    _index: index,
   }
 }
 
-const GEOCODE_CACHE_PREFIX = 'map_geocode_v1:'
+const GEOCODE_CACHE_PREFIX = 'map_geocode_v2:'
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 
 async function geocodeAddress(address) {
@@ -128,11 +250,11 @@ async function geocodeAddress(address) {
     }
   } catch (_) {}
   try {
-    const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1&accept-language=ru&addressdetails=0`
+    const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5&accept-language=ru&addressdetails=1`
     const res = await fetch(url, { headers: { Accept: 'application/json' } })
     if (!res.ok) return null
     const data = await res.json()
-    const hit = Array.isArray(data) ? data[0] : null
+    const hit = pickBestGeocodeHit(Array.isArray(data) ? data : [])
     const lat = hit?.lat != null ? parseFloat(hit.lat) : NaN
     const lng = hit?.lon != null ? parseFloat(hit.lon) : NaN
     if (Number.isNaN(lat) || Number.isNaN(lng)) return null
@@ -150,11 +272,10 @@ const MapPage = () => {
   const { isFavorite, toggleFavorite: toggleFavoriteGlobal } = usePropertyFavorites()
   const [propertiesList, setPropertiesList] = useState([])
   const [loading, setLoading] = useState(true)
-  const [sortBy, setSortBy] = useState('popular')
+  const [mapFilters, setMapFilters] = useState(EMPTY_MAP_FILTERS)
+  const [filtersMenuOpen, setFiltersMenuOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
-  const [showLikedOnly, setShowLikedOnly] = useState(false)
   const [selectedProperty, setSelectedProperty] = useState(null)
-  const [imageIndex, setImageIndex] = useState({})
   const mapRef = useRef(null)
   const mapWrapRef = useRef(null)
   const mapInstanceRef = useRef(null)
@@ -165,7 +286,7 @@ const MapPage = () => {
   const [mapExpanded, setMapExpanded] = useState(false)
   /** Подсказка сверху карты после тапа по маркеру / «Показать» */
   const [mapOpenHintProperty, setMapOpenHintProperty] = useState(null)
-  const [showScrollToTop, setShowScrollToTop] = useState(false)
+  const [mapFabPhase, setMapFabPhase] = useState('hidden') // hidden | visible | leaving
 
   const formatPrice = (n, currency = 'USD') =>
     formatPropertyPrice(n, currency, { locale: 'en-US' })
@@ -237,26 +358,40 @@ const MapPage = () => {
     return () => { cancelled = true }
   }, [propertiesList])
 
-  // ─── Поиск, фильтр «понравившиеся» и сортировка ─────────────────────────
+  // ─── Поиск, фильтры и сортировка ─────────────────────────────────────────
   const searchNormalized = searchQuery.trim().toLowerCase()
+  const priceBounds = useMemo(() => getMapPriceBounds(propertiesList), [propertiesList])
+  const activeFilterCount = useMemo(() => countActiveMapFilters(mapFilters), [mapFilters])
 
-  const filteredProperties = showLikedOnly
-    ? propertiesList.filter((p) => isFavorite(p, null))
-    : propertiesList
+  const filteredProperties = useMemo(() => {
+    let list = applyMapPageFilters(propertiesList, mapFilters, { isFavorite })
 
-  const searchFilteredProperties = searchNormalized
-    ? filteredProperties.filter((p) => {
+    if (searchNormalized) {
+      list = list.filter((p) => {
         const title = String(p.title || '').toLowerCase()
         const location = String(p.location || '').toLowerCase()
         return title.includes(searchNormalized) || location.includes(searchNormalized)
       })
-    : filteredProperties
+    }
 
-  const sortedProperties = [...searchFilteredProperties].sort((a, b) => {
-    if (sortBy === 'price') return (a.price || a.currentBid || 0) - (b.price || b.currentBid || 0)
-    if (sortBy === 'rating') return ((b.id || 0) % 10) - ((a.id || 0) % 10)
-    return 0
-  })
+    return list
+  }, [propertiesList, mapFilters, searchNormalized, isFavorite])
+
+  const sortedProperties = useMemo(
+    () => [...filteredProperties].sort((a, b) => ((b.id || 0) % 10) - ((a.id || 0) % 10)),
+    [filteredProperties],
+  )
+
+  useEffect(() => {
+    if (!selectedProperty) return
+    const stillVisible = sortedProperties.some(
+      (property) => String(property.id) === String(selectedProperty.id),
+    )
+    if (!stillVisible) {
+      setSelectedProperty(null)
+      setMapOpenHintProperty(null)
+    }
+  }, [sortedProperties, selectedProperty])
 
   // ─── Инициализация карты ─────────────────────────────────────────────────
   useEffect(() => {
@@ -311,98 +446,149 @@ const MapPage = () => {
     }
   }, [mapContainerReady])
 
-  // ─── Обновление маркеров — запускается только когда карта готова ─────────
+  // ─── Обновление маркеров — кластеры при отдалении, карточки при приближении ─
+  const updateMapMarkers = useCallback(
+    ({ fitBounds = false } = {}) => {
+      const map = mapInstanceRef.current
+      if (!map || !mapReady) return
+
+      markersRef.current.forEach((m) => m.remove())
+      markersRef.current = []
+
+      const pointItems = buildMapPointItems(sortedProperties, getPropertyCoordinates)
+      const markerItems = resolveMapMarkerItems(map, pointItems)
+      const bounds = new maplibregl.LngLatBounds()
+      let hasPoints = false
+
+      let miniCardIndex = 0
+
+      markerItems.forEach((item) => {
+        const lngLat = [item.lng, item.lat]
+        hasPoints = true
+        bounds.extend(lngLat)
+
+        if (item.type === 'cluster') {
+          const el = document.createElement('div')
+          el.className = 'map-pin-cluster'
+          el.setAttribute('role', 'button')
+          el.title = String(item.count)
+          const countEl = document.createElement('span')
+          countEl.className = 'map-pin-cluster__count'
+          countEl.textContent = item.count > 99 ? '99+' : String(item.count)
+          el.appendChild(countEl)
+
+          bindMarkerActivate(el, () => {
+            const targetZoom = Math.min(
+              Math.max(map.getZoom() + 2, MAP_PIN_MINI_ZOOM + 0.5),
+              SATELLITE_MAP_MAX_ZOOM,
+            )
+            map.flyTo({ center: lngLat, zoom: targetZoom, duration: 650 })
+            if (item.count === 1 && item.properties?.[0]) {
+              setSelectedProperty(item.properties[0])
+            }
+          })
+
+          const marker = new maplibregl.Marker({
+            element: el,
+            anchor: 'center',
+          })
+            .setLngLat(lngLat)
+            .addTo(map)
+
+          markersRef.current.push(marker)
+          return
+        }
+
+        const property = item.property
+        const isSelected =
+          selectedProperty != null && String(selectedProperty.id) === String(property.id)
+        const priceStr = formatPrice(property.price ?? property.currentBid ?? 0, property.currency)
+        const thumbSrc =
+          (Array.isArray(property.images) && property.images[0]) ||
+          'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800'
+
+        const focusProperty = () => {
+          setSelectedProperty(property)
+          map.flyTo({
+            center: lngLat,
+            zoom: Math.min(Math.max(map.getZoom(), MAP_PIN_MINI_ZOOM + 0.5), SATELLITE_MAP_MAX_ZOOM),
+            duration: 700,
+          })
+          setMapOpenHintProperty(property)
+        }
+
+        const el = document.createElement('div')
+        el.className = `map-pin-mini map-pin-mini--enter${isSelected ? ' map-pin-mini--active' : ''}`
+        el.setAttribute('role', 'button')
+
+        const inner = document.createElement('div')
+        inner.className = 'map-pin-mini__inner'
+
+        const imgWrap = document.createElement('div')
+        imgWrap.className = 'map-pin-mini__img-wrap'
+        const img = document.createElement('img')
+        img.className = 'map-pin-mini__img'
+        img.src = thumbSrc
+        img.alt = ''
+        img.decoding = 'async'
+        img.addEventListener('error', () => {
+          img.src = 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800'
+        })
+        imgWrap.appendChild(img)
+        if (isSelected) {
+          imgWrap.classList.add('map-pin-mini__img-wrap--openable')
+        }
+        el.title = 'Показать на карте'
+
+        const priceEl = document.createElement('span')
+        priceEl.className = 'map-pin-mini__price'
+        priceEl.textContent = priceStr
+
+        inner.appendChild(imgWrap)
+        inner.appendChild(priceEl)
+        el.appendChild(inner)
+
+        scheduleMapPinMiniReveal(el, miniCardIndex)
+        miniCardIndex += 1
+
+        bindMarkerActivate(el, focusProperty)
+
+        const marker = new maplibregl.Marker({
+          element: el,
+          anchor: 'bottom',
+        })
+          .setLngLat(lngLat)
+          .addTo(map)
+
+        markersRef.current.push(marker)
+      })
+
+      if (fitBounds && !selectedProperty && hasPoints) {
+        map.fitBounds(bounds, {
+          padding: { top: 80, right: 80, bottom: 80, left: 80 },
+          maxZoom: Math.min(MAP_PIN_MINI_ZOOM - 1, SATELLITE_MAP_MAX_ZOOM),
+          duration: 700,
+        })
+      }
+    },
+    [sortedProperties, selectedProperty, mapReady],
+  )
+
   useEffect(() => {
-    if (!mapReady) return
+    updateMapMarkers({ fitBounds: !selectedProperty })
+  }, [sortedProperties, selectedProperty, mapReady, updateMapMarkers])
+
+  useEffect(() => {
+    if (!mapReady) return undefined
     const map = mapInstanceRef.current
-    if (!map) return
+    if (!map) return undefined
 
-    // Удаляем старые маркеры
-    markersRef.current.forEach((m) => m.remove())
-    markersRef.current = []
-
-    const bounds = new maplibregl.LngLatBounds()
-    let hasPoints = false
-
-    sortedProperties.forEach((property) => {
-      const coords = getPropertyCoordinates(property)
-      if (!coords) return
-
-      const lngLat = [coords[1], coords[0]]
-      const isSelected =
-        selectedProperty != null && String(selectedProperty.id) === String(property.id)
-      const priceStr = formatPrice(property.price ?? property.currentBid ?? 0, property.currency)
-      const thumbSrc =
-        (Array.isArray(property.images) && property.images[0]) ||
-        'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800'
-
-      const el = document.createElement('div')
-      el.className = `map-pin-mini${isSelected ? ' map-pin-mini--active' : ''}`
-      el.setAttribute('role', 'button')
-
-      const imgWrap = document.createElement('div')
-      imgWrap.className = 'map-pin-mini__img-wrap'
-      const img = document.createElement('img')
-      img.className = 'map-pin-mini__img'
-      img.src = thumbSrc
-      img.alt = ''
-      img.decoding = 'async'
-      img.addEventListener('error', () => {
-        img.src = 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800'
-      })
-      imgWrap.appendChild(img)
-      if (isSelected) {
-        imgWrap.classList.add('map-pin-mini__img-wrap--openable')
-      }
-      el.title = 'Показать на карте'
-
-      const priceEl = document.createElement('span')
-      priceEl.className = 'map-pin-mini__price'
-      priceEl.textContent = priceStr
-
-      el.appendChild(imgWrap)
-      el.appendChild(priceEl)
-
-      let lastMarkerActivate = 0
-      const onMarkerActivate = (e) => {
-        if (e.button != null && e.button !== 0) return
-        const now = Date.now()
-        if (now - lastMarkerActivate < 450) return
-        lastMarkerActivate = now
-        e.stopPropagation()
-        setSelectedProperty(property)
-        map.flyTo({ center: lngLat, zoom: Math.min(16, SATELLITE_MAP_MAX_ZOOM), duration: 700 })
-        setMapOpenHintProperty(property)
-      }
-      el.addEventListener('click', onMarkerActivate)
-      // MapLibre на маркере вызывает mousedown.preventDefault() — на части Safari/тач «click» не приходит; pointerup для touch/pen
-      el.addEventListener('pointerup', (e) => {
-        if (e.pointerType === 'mouse') return
-        onMarkerActivate(e)
-      })
-
-      const marker = new maplibregl.Marker({
-        element: el,
-        anchor: 'center',
-        subpixelPositioning: true
-      })
-        .setLngLat(lngLat)
-        .addTo(map)
-
-      markersRef.current.push(marker)
-      bounds.extend(lngLat)
-      hasPoints = true
-    })
-
-    // Позиционируем карту (только если не выбран конкретный объект)
-    if (!selectedProperty && hasPoints) {
-      map.fitBounds(bounds, {
-        padding: { top: 80, right: 80, bottom: 80, left: 80 },
-        maxZoom: Math.min(15, SATELLITE_MAP_MAX_ZOOM),
-        duration: 700
-      })
+    const onZoomEnd = () => updateMapMarkers()
+    map.on('zoomend', onZoomEnd)
+    return () => {
+      map.off('zoomend', onZoomEnd)
     }
-  }, [sortedProperties, selectedProperty, mapReady])
+  }, [mapReady, updateMapMarkers])
 
   // ─── Ресайз при раскрытии карты ─────────────────────────────────────────
   useEffect(() => {
@@ -426,34 +612,48 @@ const MapPage = () => {
     }
   }, [mapExpanded])
 
-  // ─── Кнопка «вверх» на мобильных ─────────────────────────────────────────
+  // ─── Плавающая кнопка «Карта» на мобильных ───────────────────────────────
   useEffect(() => {
-    const el = getMainScrollEl()
-    const target = el || window
-    let raf = 0
-
-    const update = () => {
-      const y = getMainScrollTop()
-      setShowScrollToTop(y > 240)
+    if (mapExpanded) {
+      setMapFabPhase('hidden')
+      return undefined
     }
 
-    const onScroll = () => {
-      if (raf) cancelAnimationFrame(raf)
-      raf = requestAnimationFrame(update)
-    }
+    const mapEl = mapWrapRef.current
+    if (!mapEl) return undefined
 
-    update()
-    target.addEventListener('scroll', onScroll, { passive: true })
-    return () => {
-      if (raf) cancelAnimationFrame(raf)
-      target.removeEventListener('scroll', onScroll)
-    }
+    const root = getMainScrollEl()
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        const wantShow = !entry.isIntersecting
+        setMapFabPhase((prev) => {
+          if (wantShow) return 'visible'
+          if (prev === 'visible') return 'leaving'
+          return prev
+        })
+      },
+      {
+        root,
+        threshold: 0.08,
+      },
+    )
+
+    observer.observe(mapEl)
+    return () => observer.disconnect()
+  }, [mapExpanded, mapContainerReady])
+
+  const handleMapFabAnimationEnd = useCallback((event) => {
+    if (event.animationName !== 'mapFabSlideOut') return
+    setMapFabPhase((prev) => (prev === 'leaving' ? 'hidden' : prev))
+  }, [])
+
+  const scrollToMap = useCallback(() => {
+    scrollMainTo(0, 0, 'smooth')
+    mapWrapRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start', inline: 'nearest' })
+    window.setTimeout(() => mapInstanceRef.current?.resize(), 400)
   }, [])
 
   // ─── Прочие обработчики ──────────────────────────────────────────────────
-  const setCardImageIndex = (cardKey, index) =>
-    setImageIndex((prev) => ({ ...prev, [cardKey]: index }))
-
   const toggleFavorite = async (e, property) => {
     e.stopPropagation()
     const mockCat = hasDbBackedProperty(property) ? undefined : 'recommended'
@@ -469,7 +669,7 @@ const MapPage = () => {
     // flyTo вызывается здесь; маркеры обновятся через setSelectedProperty → useEffect
     mapInstanceRef.current?.flyTo({
       center: [coords[1], coords[0]],
-      zoom: Math.min(16, SATELLITE_MAP_MAX_ZOOM),
+      zoom: Math.min(MAP_PIN_MINI_ZOOM + 0.5, SATELLITE_MAP_MAX_ZOOM),
       duration: 700
     })
     setSelectedProperty(property)
@@ -492,176 +692,98 @@ const MapPage = () => {
 
         <div className="map-page-main">
           <aside className="map-page-list">
-            <div className="map-list-search-bar">
-              <div className="map-page-search-box">
-                <FiSearch className="map-page-search-box__icon" size={20} aria-hidden />
-                <input
-                  type="text"
-                  className="map-page-search-box__input"
-                  inputMode="search"
-                  enterKeyHint="search"
-                  placeholder={t('searchPlaceholderLong')}
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  autoComplete="off"
-                  spellCheck={false}
-                />
-                {searchQuery && (
-                  <button
-                    type="button"
-                    className="map-page-search-box__clear"
-                    onClick={() => setSearchQuery('')}
-                    aria-label={t('clearSearch')}
-                  >
-                    <FiX size={22} aria-hidden />
-                  </button>
-                )}
-              </div>
-            </div>
-            <header className="map-list-header">
-              <p className="map-list-count map-list-count--secondary">
-                {loading ? (
-                  <span
-                    className="map-list-count-skel"
-                    role="status"
-                    aria-busy="true"
-                    aria-label="Загрузка списка объектов"
-                  >
-                    <span className="map-list-count-skel__bar" />
-                  </span>
-                ) : (
-                  <>
-                    <strong>{sortedProperties.length}</strong> объектов
-                  </>
-                )}
-              </p>
-              <div className="map-sort-pills">
+            <div className={`map-list-search-bar${filtersMenuOpen ? ' is-filters-open' : ''}`}>
+              <div className="map-list-search-block">
+                <div className="map-list-search-toolbar">
+                <div className="map-page-search-box">
+                  <FiSearch className="map-page-search-box__icon" size={20} aria-hidden />
+                  <input
+                    type="text"
+                    className="map-page-search-box__input"
+                    inputMode="search"
+                    enterKeyHint="search"
+                    placeholder={t('mapSearchPlaceholder', { defaultValue: 'Название или адрес' })}
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    autoComplete="off"
+                    spellCheck={false}
+                  />
+                  {searchQuery && (
+                    <button
+                      type="button"
+                      className="map-page-search-box__clear"
+                      onClick={() => setSearchQuery('')}
+                      aria-label={t('clearSearch')}
+                    >
+                      <FiX size={22} aria-hidden />
+                    </button>
+                  )}
+                </div>
                 <button
                   type="button"
-                  className={`map-sort-pill map-sort-pill--liked ${showLikedOnly ? 'active' : ''}`}
-                  onClick={() => setShowLikedOnly((v) => !v)}
-                  aria-pressed={showLikedOnly}
+                  className={`map-list-filters-burger${filtersMenuOpen ? ' is-open' : ''}${activeFilterCount > 0 ? ' has-active' : ''}`}
+                  aria-expanded={filtersMenuOpen}
+                  aria-controls="map-page-filters-panel"
+                  aria-label={t('mapFiltersMenuAriaLabel', { defaultValue: 'Фильтры' })}
+                  onClick={() => setFiltersMenuOpen((open) => !open)}
                 >
-                  <FiHeart size={16} aria-hidden />
-                  Понравившиеся
+                  <span className="map-list-filters-burger__icon" aria-hidden>
+                    <span />
+                    <span />
+                    <span />
+                  </span>
+                  {activeFilterCount > 0 ? (
+                    <span className="map-list-filters-burger__badge" aria-hidden>
+                      {activeFilterCount}
+                    </span>
+                  ) : null}
                 </button>
-                {SORT_OPTIONS.map((opt) => (
-                  <button
-                    key={opt.id}
-                    type="button"
-                    className={`map-sort-pill ${sortBy === opt.id ? 'active' : ''}`}
-                    onClick={() => setSortBy(opt.id)}
-                  >
-                    {opt.label}
-                  </button>
-                ))}
+                </div>
+                <MapPageFilters
+                  id="map-page-filters-panel"
+                  open={filtersMenuOpen}
+                  filters={mapFilters}
+                  onChange={setMapFilters}
+                  priceBounds={priceBounds}
+                />
               </div>
-            </header>
+            </div>
+            <p className="map-list-inline-count">
+              {loading ? (
+                <span className="map-list-count-skel" role="status" aria-busy="true">
+                  <span className="map-list-count-skel__bar" />
+                </span>
+              ) : (
+                <>
+                  <strong>{sortedProperties.length}</strong> {t('mapFiltersObjects', { defaultValue: 'объектов' })}
+                </>
+              )}
+            </p>
 
             <div className="map-list-scroll" aria-busy={loading}>
               {loading ? (
-                <>
-                  {Array.from({ length: MAP_LIST_SKELETON_COUNT }, (_, i) => (
-                    <MapBookingCardSkeleton key={`map-card-skel-${i}`} />
-                  ))}
-                </>
+                <MapPagePropertyGridSkeletons count={MAP_LIST_SKELETON_COUNT} />
               ) : sortedProperties.length === 0 ? (
                 <div className="map-list-empty">
                   <p>
                     {searchNormalized
                       ? t('noResultsHint')
-                      : showLikedOnly
+                      : mapFilters.likedOnly
                         ? 'Пока нет понравившихся объектов на карте. Добавьте сердечком из списка.'
                         : 'Нет объектов для отображения'}
                   </p>
                 </div>
-              ) : sortedProperties.map((property) => {
-                const images = property.images || []
-                const cardKey = auctionListingDedupeKey(property)
-                const currentImgIndex = imageIndex[cardKey] ?? 0
-                const isSelected =
-                  selectedProperty != null && auctionListingDedupeKey(selectedProperty) === cardKey
-                const priceDisplay = property.price ?? property.currentBid ?? 0
-                const metaParts = []
-                if (property.area) metaParts.push(`${property.area} м²`)
-                if (property.rooms) metaParts.push(`${property.rooms} комн.`)
-                if (property.floor) metaParts.push(`${property.floor} этаж`)
-                const listCardImageSrc = images[currentImgIndex] || images[0]
-                const listCardImageProps = buildResponsiveImageProps(listCardImageSrc, {
-                  widths: [320, 480, 640, 800],
-                  sizes: '(max-width: 768px) 100vw, 280px',
-                  quality: 72,
-                  fit: 'crop',
-                })
-
-                return (
-                  <article
-                    key={cardKey}
-                    className={`map-booking-card ${isSelected ? 'selected' : ''}`}
-                    onClick={() => {
-                      if (!ensureCanOpenProperty(user && userLoaded)) return
-                      navigate(getPropertyDetailPath(property.id, { property }), { state: { property } })
-                    }}
-                  >
-                    <div className="map-booking-card__media">
-                      <div className="map-booking-card__img-wrap">
-                        <img {...listCardImageProps} alt={property.title} />
-                        <button
-                          type="button"
-                          className={`map-booking-card__fav ${isFavorite(property, null) ? 'active' : ''}`}
-                          onClick={(e) => toggleFavorite(e, property)}
-                          aria-label="В избранное"
-                        >
-                          <FiHeart size={18} />
-                        </button>
-                        {images.length > 1 && (
-                          <div className="map-booking-card__dots">
-                            {images.slice(0, 5).map((_, i) => (
-                              <span
-                                key={i}
-                                className={i === currentImgIndex ? 'active' : ''}
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  setCardImageIndex(cardKey, i)
-                                }}
-                              />
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="map-booking-card__body">
-                      <h3 className="map-booking-card__title">{property.title}</h3>
-                      {metaParts.length > 0 && (
-                        <p className="map-booking-card__meta">{metaParts.join(' · ')}</p>
-                      )}
-                      {property.location && (
-                        <div className="map-booking-card__location">
-                          <span className="map-booking-card__location-row">
-                            <FiMapPin size={14} className="map-booking-card__location-icon" />
-                            {property.location}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="map-booking-card__right">
-                      <div className="map-booking-card__price-block">
-                        <p className="map-booking-card__price">{formatPrice(priceDisplay, property.currency)}</p>
-                      </div>
-                      <button
-                        type="button"
-                        className="map-booking-card__show-btn"
-                        onClick={(e) => { e.stopPropagation(); focusOnProperty(property) }}
-                      >
-                        <FiMapPin className="map-booking-card__show-btn-icon" size={15} aria-hidden />
-                        Показать
-                      </button>
-                    </div>
-                  </article>
-                )
-              })}
+              ) : (
+                <MapPagePropertyGrid
+                  properties={sortedProperties}
+                  formatPrice={formatPrice}
+                  isFavorite={(property) => isFavorite(property, null)}
+                  onFavoriteToggle={toggleFavorite}
+                  selectedProperty={selectedProperty}
+                  user={user}
+                  userLoaded={userLoaded}
+                />
+              )}
             </div>
           </aside>
 
@@ -677,9 +799,22 @@ const MapPage = () => {
               />
             )}
             {!mapExpanded && (
-              <button type="button" className="map-expand-btn" onClick={() => setMapExpanded(true)}>
-                <HiOutlineArrowsExpand size={18} />
-                Раскрыть карту
+              <div className="map-page-map-toolbar">
+                <PageBackButton
+                  onClick={() => navigate(-1)}
+                  className="page-back-button--icon-only map-page-map-toolbar__back"
+                  iconSize={20}
+                />
+              </div>
+            )}
+            {!mapExpanded && (
+              <button
+                type="button"
+                className="map-expand-btn"
+                onClick={() => setMapExpanded(true)}
+                aria-label={t('mapExpandBtnAriaLabel')}
+              >
+                <HiOutlineArrowsExpand size={18} aria-hidden />
               </button>
             )}
             {mapOpenHintProperty && (
@@ -736,8 +871,9 @@ const MapPage = () => {
             )}
             {mapExpanded && (
               <PageBackButton
-                className="page-back-button--floating"
+                className="page-back-button--icon-only map-page-map-toolbar__back map-page-map-toolbar__back--fullscreen"
                 onClick={() => setMapExpanded(false)}
+                iconSize={20}
               />
             )}
           </div>
@@ -746,11 +882,18 @@ const MapPage = () => {
 
       <button
         type="button"
-        className={`map-scroll-top-btn ${showScrollToTop && !mapExpanded ? 'map-scroll-top-btn--visible' : ''}`}
-        onClick={() => scrollMainTo(0, 0, 'smooth')}
-        aria-label="Наверх"
+        className={[
+          'map-float-map-btn',
+          mapFabPhase === 'visible' && 'map-float-map-btn--visible',
+          mapFabPhase === 'leaving' && 'map-float-map-btn--leaving',
+        ].filter(Boolean).join(' ')}
+        onClick={scrollToMap}
+        onAnimationEnd={handleMapFabAnimationEnd}
+        aria-label={t('mapFloatBtnAriaLabel')}
+        aria-hidden={mapFabPhase === 'hidden'}
       >
-        <FiArrowUp size={24} strokeWidth={2.25} aria-hidden />
+        <span className="map-float-map-btn__label">{t('mapFloatBtnLabel')}</span>
+        <FiMap size={18} aria-hidden />
       </button>
     </div>
   )

@@ -7,6 +7,7 @@ import {
 import { MdBed, MdOutlineBathtub } from 'react-icons/md'
 import { BiArea } from 'react-icons/bi'
 import PropertyTimer from '../components/PropertyTimer'
+import PropertyShareButton from '../components/PropertyShareButton'
 import { AuctionShowcaseSkeletonCards } from '../components/AuctionShowcaseSkeletonStrip'
 import { PropertyListingSkeletonGrid } from '../components/PropertyListingSkeletonGrid'
 import LandingFaqAccordion from '../components/LandingFaqAccordion'
@@ -68,7 +69,11 @@ export default function MainPageBelowFold() {
           <header className="auction-showcase__header">
             <div className="auction-showcase__intro">
               <div className="auction-showcase__title-row">
-                <h2 className="auction-showcase__title">{t('auctionSectionTitle')}</h2>
+                <h2 className="auction-showcase__title">
+                  <Link to="/auction?filter=auction" className="auction-showcase__title-link">
+                    {t('auctionSectionTitle')}
+                  </Link>
+                </h2>
                 <button
                   type="button"
                   className="auction-showcase__cta"
@@ -147,26 +152,29 @@ export default function MainPageBelowFold() {
                           alt={apartment.name}
                           className="auction-showcase-card__image"
                         />
-                        <button
-                          type="button"
-                          className={`property-favorite ${
-                            isFavorite(apartment, 'apartment') ? 'active' : ''
-                          }`}
-                          onClick={(e) => {
-                            e.preventDefault()
-                            e.stopPropagation()
-                            toggleFavorite(apartment, 'apartment')
-                          }}
-                        >
-                          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                            <path
-                              d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                              fill={isFavorite(apartment, 'apartment') ? 'currentColor' : 'none'}
-                            />
-                          </svg>
-                        </button>
+                        <div className="property-media-actions property-media-actions--compact property-media-actions--reverse">
+                          <PropertyShareButton property={apartment} variant="compact" iconSize={16} />
+                          <button
+                            type="button"
+                            className={`property-favorite ${
+                              isFavorite(apartment, 'apartment') ? 'active' : ''
+                            }`}
+                            onClick={(e) => {
+                              e.preventDefault()
+                              e.stopPropagation()
+                              toggleFavorite(apartment, 'apartment')
+                            }}
+                          >
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                              <path
+                                d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                fill={isFavorite(apartment, 'apartment') ? 'currentColor' : 'none'}
+                              />
+                            </svg>
+                          </button>
+                        </div>
                       </div>
                       <div className="auction-showcase-card__caption">
                         {hasTimer ? (
@@ -219,7 +227,11 @@ export default function MainPageBelowFold() {
           <header className="auction-showcase__header">
             <div className="auction-showcase__intro">
               <div className="auction-showcase__title-row">
-                <h2 className="auction-showcase__title">{t('buyNowSectionTitle')}</h2>
+                <h2 className="auction-showcase__title">
+                  <Link to="/auction?filter=buy_now" className="auction-showcase__title-link">
+                    {t('buyNowSectionTitle')}
+                  </Link>
+                </h2>
                 <button
                   type="button"
                   className="auction-showcase__cta"
@@ -289,26 +301,29 @@ export default function MainPageBelowFold() {
                           alt={villa.name}
                           className="auction-showcase-card__image"
                         />
-                        <button
-                          type="button"
-                          className={`property-favorite ${
-                            isFavorite(villa, 'villa') ? 'active' : ''
-                          }`}
-                          onClick={(e) => {
-                            e.preventDefault()
-                            e.stopPropagation()
-                            toggleFavorite(villa, 'villa')
-                          }}
-                        >
-                          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                            <path
-                              d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                              fill={isFavorite(villa, 'villa') ? 'currentColor' : 'none'}
-                            />
-                          </svg>
-                        </button>
+                        <div className="property-media-actions property-media-actions--compact property-media-actions--reverse">
+                          <PropertyShareButton property={villa} variant="compact" iconSize={16} />
+                          <button
+                            type="button"
+                            className={`property-favorite ${
+                              isFavorite(villa, 'villa') ? 'active' : ''
+                            }`}
+                            onClick={(e) => {
+                              e.preventDefault()
+                              e.stopPropagation()
+                              toggleFavorite(villa, 'villa')
+                            }}
+                          >
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                              <path
+                                d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                fill={isFavorite(villa, 'villa') ? 'currentColor' : 'none'}
+                              />
+                            </svg>
+                          </button>
+                        </div>
                       </div>
                       <div className="auction-showcase-card__caption">
                         <h3 className="auction-showcase-card__name">{villa.name}</h3>
@@ -359,7 +374,11 @@ export default function MainPageBelowFold() {
           <header className="auction-showcase__header">
             <div className="auction-showcase__intro">
               <div className="auction-showcase__title-row">
-                <h2 className="auction-showcase__title">{t('debtsTitle')}</h2>
+                <h2 className="auction-showcase__title">
+                  <Link to="/debts" className="auction-showcase__title-link">
+                    {t('debtsTitle')}
+                  </Link>
+                </h2>
                 <button
                   type="button"
                   className="auction-showcase__cta"
@@ -416,26 +435,29 @@ export default function MainPageBelowFold() {
                             alt={flat.name}
                             className="auction-showcase-card__image"
                           />
-                          <button
-                            type="button"
-                            className={`property-favorite ${
-                              isFavorite(flat, 'flat') ? 'active' : ''
-                            }`}
-                            onClick={(e) => {
-                              e.preventDefault()
-                              e.stopPropagation()
-                              toggleFavorite(flat, 'flat')
-                            }}
-                          >
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                              <path
-                                d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                                fill={isFavorite(flat, 'flat') ? 'currentColor' : 'none'}
-                              />
-                            </svg>
-                          </button>
+                          <div className="property-media-actions property-media-actions--compact property-media-actions--reverse">
+                            <PropertyShareButton property={flat} variant="compact" iconSize={16} />
+                            <button
+                              type="button"
+                              className={`property-favorite ${
+                                isFavorite(flat, 'flat') ? 'active' : ''
+                              }`}
+                              onClick={(e) => {
+                                e.preventDefault()
+                                e.stopPropagation()
+                                toggleFavorite(flat, 'flat')
+                              }}
+                            >
+                              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                                <path
+                                  d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
+                                  stroke="currentColor"
+                                  strokeWidth="2"
+                                  fill={isFavorite(flat, 'flat') ? 'currentColor' : 'none'}
+                                />
+                              </svg>
+                            </button>
+                          </div>
                         </div>
                         <div className="auction-showcase-card__caption">
                           {hasTimer ? (
@@ -498,7 +520,20 @@ export default function MainPageBelowFold() {
           <header className="auction-showcase__header">
             <div className="auction-showcase__intro">
               <div className="auction-showcase__title-row">
-                <h2 className="auction-showcase__title">{t('fractionalSaleTitle')}</h2>
+                <h2 className="auction-showcase__title">
+                  <Link
+                    to="/shares"
+                    className="auction-showcase__title-link"
+                    onClick={(e) => {
+                      if (!ensureCanOpenProperty()) {
+                        e.preventDefault()
+                        showPropertyAuthRequiredToast()
+                      }
+                    }}
+                  >
+                    {t('fractionalSaleTitle')}
+                  </Link>
+                </h2>
                 <button
                   type="button"
                   className="auction-showcase__cta"
@@ -589,26 +624,29 @@ export default function MainPageBelowFold() {
                             alt={townhouse.name}
                             className="auction-showcase-card__image"
                           />
-                          <button
-                            type="button"
-                            className={`property-favorite ${
-                              isFavorite(townhouse, 'townhouse') ? 'active' : ''
-                            }`}
-                            onClick={(e) => {
-                              e.preventDefault()
-                              e.stopPropagation()
-                              toggleFavorite(townhouse, 'townhouse')
-                            }}
-                          >
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                              <path
-                                d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                                fill={isFavorite(townhouse, 'townhouse') ? 'currentColor' : 'none'}
-                              />
-                            </svg>
-                          </button>
+                          <div className="property-media-actions property-media-actions--compact property-media-actions--reverse">
+                            <PropertyShareButton property={townhouse} variant="compact" iconSize={16} />
+                            <button
+                              type="button"
+                              className={`property-favorite ${
+                                isFavorite(townhouse, 'townhouse') ? 'active' : ''
+                              }`}
+                              onClick={(e) => {
+                                e.preventDefault()
+                                e.stopPropagation()
+                                toggleFavorite(townhouse, 'townhouse')
+                              }}
+                            >
+                              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                                <path
+                                  d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
+                                  stroke="currentColor"
+                                  strokeWidth="2"
+                                  fill={isFavorite(townhouse, 'townhouse') ? 'currentColor' : 'none'}
+                                />
+                              </svg>
+                            </button>
+                          </div>
                         </div>
                         <div className="auction-showcase-card__caption">
                           <div
@@ -693,7 +731,7 @@ export default function MainPageBelowFold() {
               <span className="landing-stat__label">{t('statLabel1')}</span>
             </div>
             <div className="landing-stat">
-              <span className="landing-stat__value">12–25%</span>
+              <span className="landing-stat__value">34%</span>
               <span className="landing-stat__label">{t('statLabel2')}</span>
             </div>
           </div>
@@ -768,26 +806,29 @@ export default function MainPageBelowFold() {
                       alt={property.name}
                       className="property-image"
                     />
-                    <button
-                      type="button"
-                      className={`property-favorite ${
-                        isFavorite(property, 'recommended') ? 'active' : ''
-                      }`}
-                      onClick={(e) => {
-                        e.preventDefault()
-                        e.stopPropagation()
-                        toggleFavorite(property, 'recommended')
-                      }}
-                    >
-                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                        <path 
-                          d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" 
-                          stroke="currentColor" 
-                          strokeWidth="2" 
-                          fill={isFavorite(property, 'recommended') ? "currentColor" : "none"}
-                        />
-                      </svg>
-                    </button>
+                    <div className="property-media-actions property-media-actions--reverse">
+                      <PropertyShareButton property={property} />
+                      <button
+                        type="button"
+                        className={`property-favorite ${
+                          isFavorite(property, 'recommended') ? 'active' : ''
+                        }`}
+                        onClick={(e) => {
+                          e.preventDefault()
+                          e.stopPropagation()
+                          toggleFavorite(property, 'recommended')
+                        }}
+                      >
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                          <path 
+                            d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" 
+                            stroke="currentColor" 
+                            strokeWidth="2" 
+                            fill={isFavorite(property, 'recommended') ? "currentColor" : "none"}
+                          />
+                        </svg>
+                      </button>
+                    </div>
                   </div>
                   <div className="property-content">
                     {index % 2 === 1 && property.isAuction && property.endTime && (
@@ -865,26 +906,29 @@ export default function MainPageBelowFold() {
                       alt={property.name}
                       className="property-image"
                     />
-                    <button
-                      type="button"
-                      className={`property-favorite ${
-                        isFavorite(property, 'nearby') ? 'active' : ''
-                      }`}
-                      onClick={(e) => {
-                        e.preventDefault()
-                        e.stopPropagation()
-                        toggleFavorite(property, 'nearby')
-                      }}
-                    >
-                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                        <path 
-                          d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" 
-                          stroke="currentColor" 
-                          strokeWidth="2" 
-                          fill={isFavorite(property, 'nearby') ? "currentColor" : "none"}
-                        />
-                      </svg>
-                    </button>
+                    <div className="property-media-actions property-media-actions--reverse">
+                      <PropertyShareButton property={property} />
+                      <button
+                        type="button"
+                        className={`property-favorite ${
+                          isFavorite(property, 'nearby') ? 'active' : ''
+                        }`}
+                        onClick={(e) => {
+                          e.preventDefault()
+                          e.stopPropagation()
+                          toggleFavorite(property, 'nearby')
+                        }}
+                      >
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                          <path 
+                            d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" 
+                            stroke="currentColor" 
+                            strokeWidth="2" 
+                            fill={isFavorite(property, 'nearby') ? "currentColor" : "none"}
+                          />
+                        </svg>
+                      </button>
+                    </div>
                   </div>
                   <div className="property-content">
                     {index % 2 === 1 && property.isAuction && property.endTime && (

@@ -8,12 +8,14 @@ import { usePropertyFavorites } from '../context/PropertyFavoritesContext'
 import { hasDbBackedProperty } from '../utils/propertyFavoriteKey'
 import { hasBuyNowOption, hasAuctionBuyNowListingForm } from '../utils/hasBuyNowOption'
 import PropertyTimer from './PropertyTimer'
+import PropertyShareButton from './PropertyShareButton'
 import CircularTimer from './CircularTimer'
 import PropertySearchModal from './PropertySearchModal'
 import { PropertyListingSkeletonGrid } from './PropertyListingSkeletonGrid'
 import { AuctionMobileListingSkeleton, readAuctionMobileViewMode } from './AuctionMobileListingSkeleton'
 import AuctionMobileLayout from './ui/AuctionMobileLayout'
 import AuctionDesktopFilters from './AuctionDesktopFilters'
+import PageBreadcrumbs from './PageBreadcrumbs'
 import AuctionPropertyCard from './AuctionPropertyCard'
 import { PanelLeftClose, PanelLeftOpen } from 'lucide-react'
 import ImageWithSkeleton from './ImageWithSkeleton'
@@ -460,9 +462,29 @@ const PropertyList = ({
         )}
 
         <div
+          className={
+            isAuctionDesktop
+              ? `shares-listing-shell${
+                  desktopFiltersOpen ? ' shares-listing-shell--with-filters' : ' shares-listing-shell--filters-hidden'
+                }`
+              : undefined
+          }
+        >
+        {isAuctionDesktop ? (
+          <div className="page-context-heading page-context-heading--listing-auction">
+            <div className="page-context-heading--listing-auction-inner">
+              <h1 className="page-context-heading__title page-context-heading__title--auction-script">
+                {t('auction')}
+              </h1>
+              <PageBreadcrumbs className="page-breadcrumbs--flat-club" separator=">" />
+            </div>
+          </div>
+        ) : null}
+
+        <div
           className={`${
             isAuctionDesktop
-              ? `auction-desktop-layout${
+              ? `shares-listing-layout auction-desktop-layout${
                   desktopFiltersOpen ? '' : ' auction-desktop-layout--filters-hidden'
                 }`
               : ''
@@ -963,19 +985,22 @@ const PropertyList = ({
                       {t('auctionPrivateClubVipBadge')}
                     </span>
                   ) : null}
-                  <button 
-                    className={`property-favorite ${isPropertyLiked(property) ? 'active' : ''}`}
-                    onClick={(e) => handleFavoriteToggle(property, e)}
-                  >
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                      <path 
-                        d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" 
-                        stroke="currentColor" 
-                        strokeWidth="2" 
-                        fill={isPropertyLiked(property) ? "currentColor" : "none"}
-                      />
-                    </svg>
-                  </button>
+                  <div className="property-media-actions">
+                    <button 
+                      className={`property-favorite ${isPropertyLiked(property) ? 'active' : ''}`}
+                      onClick={(e) => handleFavoriteToggle(property, e)}
+                    >
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                        <path 
+                          d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" 
+                          stroke="currentColor" 
+                          strokeWidth="2" 
+                          fill={isPropertyLiked(property) ? "currentColor" : "none"}
+                        />
+                      </svg>
+                    </button>
+                    <PropertyShareButton property={property} />
+                  </div>
                 </div>
                 <div className="property-content">
                   {isMobile ? (
@@ -1259,6 +1284,7 @@ const PropertyList = ({
           </>
         )}
           </div>
+        </div>
         </div>
       </div>
 

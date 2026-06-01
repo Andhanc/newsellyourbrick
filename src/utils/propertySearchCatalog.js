@@ -18,13 +18,17 @@ export async function fetchSearchCatalogProperties(apiBaseUrl) {
   ])
 
   const allProperties = []
-  const pushList = (response) => {
+
+  const pushList = async (response) => {
     if (!response?.ok) return
-    return response.json().then((data) => {
+    try {
+      const data = await response.json()
       if (data?.success && Array.isArray(data.data)) {
         allProperties.push(...data.data)
       }
-    })
+    } catch {
+      // ignore broken endpoint payload
+    }
   }
 
   await Promise.all([

@@ -82,13 +82,13 @@ export function buildBreadcrumbTrail(location, homeTo, t) {
   }
 
   if (pathname === '/shares') {
-    return [home, { to: null, label: t('sharesTitle') }]
+    return [home, { to: null, label: t('shares') }]
   }
 
   if (/^\/shares\/[^/]+$/.test(pathname)) {
     return [
       home,
-      { to: '/shares', label: t('sharesTitle') },
+      { to: '/shares', label: t('shares') },
       { to: null, label: t('listingDefault') },
     ]
   }

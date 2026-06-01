@@ -5171,6 +5171,10 @@ button.test-doc-row {
   pointer-events: none;
 }
 
+.test-page--onboarding-gate .test-hero-pro__home-corner {
+  pointer-events: auto;
+}
+
 .test-page--onboarding-gate .test-hero-icon-tile--gate-data {
   pointer-events: auto;
 }

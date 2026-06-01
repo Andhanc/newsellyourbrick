@@ -197,6 +197,15 @@ const Footer = () => {
     )
   }
 
+  const renderFooterBrand = (className) => (
+    <Link to="/" onClick={scrollToTop} className={className} aria-label={t('home')}>
+      <div className="footer__brand-icon">
+        <span className="footer__brand-house" />
+      </div>
+      <span className="footer__brand-text">Sellyourbrick</span>
+    </Link>
+  )
+
   return (
     <footer id="site-footer" className={`footer${location.pathname === '/deposit' ? ' footer--deposit' : ''}`}>
       <div className="footer__container">
@@ -230,23 +239,13 @@ const Footer = () => {
                 />
               </div>
 
-              <div className="footer__brand footer__brand--mobile">
-                <div className="footer__brand-icon">
-                  <span className="footer__brand-house" />
-                </div>
-                <span className="footer__brand-text">Sellyourbrick</span>
-              </div>
+              {renderFooterBrand('footer__brand footer__brand--mobile')}
             </div>
           </div>
 
           <div className="footer__upper-right">
             <div className="footer__store-buttons">
-            <div className="footer__brand footer__brand--inline footer__brand--desktop-inline">
-              <div className="footer__brand-icon">
-                <span className="footer__brand-house" />
-              </div>
-              <span className="footer__brand-text">Sellyourbrick</span>
-            </div>
+            {renderFooterBrand('footer__brand footer__brand--inline footer__brand--desktop-inline')}
             <button
               type="button"
               className="footer__store-btn"

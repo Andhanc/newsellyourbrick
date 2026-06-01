@@ -2,7 +2,7 @@ import { useNavigate, useSearchParams, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useState, useEffect, useRef } from 'react'
 import { getUserData } from '../services/authService'
-import { FiArrowLeft } from 'react-icons/fi'
+import Header from '../components/Header'
 import VerificationToast from '../components/VerificationToast'
 import PricingCards from '../components/ui/PricingCards'
 import { startProSubscriptionCheckout, confirmCheckoutSession, startVipSubscriptionCheckout } from '../utils/subscriptionCheckout'
@@ -93,10 +93,6 @@ const Subscriptions = () => {
     }
   }, [searchParams, setSearchParams, t, navigate])
 
-  const handleBack = () => {
-    navigate(-1)
-  }
-
   const handleBookCall = async (plan, billingCycle = 'monthly') => {
     if (plan === 'pro') {
       const tier = effectivePurchasedTier(subscriptionBilling?.subscription)
@@ -151,21 +147,10 @@ const Subscriptions = () => {
 
   return (
     <div className="subscriptions-page subscriptions-page--focus" ref={buyerCabinetPageRef}>
+      <Header />
       {userId && <VerificationToast userId={userId} />}
 
       <div className="subscriptions-focus" ref={buyerCabinetMainScrollRef}>
-        <div className="subscriptions-focus__top">
-          <button
-            type="button"
-            className="subscriptions-focus__back"
-            onClick={handleBack}
-            aria-label={t('subscriptions_focus_back')}
-          >
-            <FiArrowLeft size={18} aria-hidden />
-            {t('subscriptions_focus_back')}
-          </button>
-        </div>
-
         <header className="subscriptions-focus__header">
           <h1 className="subscriptions-focus__title" id="subscriptions-pricing-section">
             {t('buyerCabinet_sectionSubscriptions')}

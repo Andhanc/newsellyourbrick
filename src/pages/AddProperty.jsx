@@ -833,6 +833,25 @@ function clearDraft(draftKey = DRAFT_KEY) {
 
 const SINGLE_PAGE_SP_MAIN_SELECTOR = '.single-page-add-flow__main'
 
+/** Секция single-page ↔ шаг в полоске прогресса */
+const SP_SECTION_TO_WIZARD_STEP_ID = {
+  type: 'type-selection',
+  'property-name': 'property-name',
+  address: 'location',
+  details: 'details',
+  amenities: 'amenities',
+  media: 'photos',
+  documents: 'documents',
+  testdrive: 'test-drive-question',
+  listing: 'listing-type',
+  calculator: 'price-calculator',
+  price: 'price',
+}
+
+const WIZARD_STEP_ID_TO_SP_SECTION = Object.fromEntries(
+  Object.entries(SP_SECTION_TO_WIZARD_STEP_ID).map(([sectionId, stepId]) => [stepId, sectionId]),
+)
+
 /** Линия «фокуса»: когда верх *следующей* карточки доходит сюда, тело *текущей* сворачивается (только геометрия, не «заполнено»). */
 const SP_ACTIVATION_LINE_RATIO = 0.4
 
@@ -1072,6 +1091,9 @@ const AddProperty = ({
   const [listingModeThemeStage, setListingModeThemeStage] = useState(0)
   const [expandedListingModeId, setExpandedListingModeId] = useState(null)
   const [spActiveSection, setSpActiveSection] = useState('type')
+  const [showProgressSectionLists, setShowProgressSectionLists] = useState(false)
+  const [showPendingProgressSteps, setShowPendingProgressSteps] = useState(false)
+  const [showCompletedProgressSteps, setShowCompletedProgressSteps] = useState(false)
   const spActiveSectionRef = useRef('type')
   const spOrderedSectionIdsRef = useRef([])
   const prevSpOrderedIdsKeyRef = useRef('')
@@ -5189,21 +5211,6 @@ const AddProperty = ({
   /** Single-page: шаг «Оценка» — расчёт или уже введённые суммы (чтобы прогресс не блокировался) */
   const hasPriceCalculatorStepDone = calculatorGuidanceApplied || hasPrice
 
-  const singlePageSections = [
-    hasType,
-    hasPropertyName,
-    hasAddress,
-    hasDetails,
-    hasAmenities,
-    hasMedia,
-    hasDocuments,
-    hasTestDrive,
-    hasListingType,
-    hasPriceCalculatorStepDone,
-    hasPrice,
-  ]
-  const completedSinglePageSections = singlePageSections.filter(Boolean).length
-  const singlePageProgress = Math.round((completedSinglePageSections / singlePageSections.length) * 100)
   const stepFlow = [
     { id: 'type-selection', label: 'Тип' },
     { id: 'property-name', label: 'Описание' },
@@ -5219,10 +5226,6 @@ const AddProperty = ({
   ]
   const currentStepForProgress = wizardRenderStep === 'test-drive-pricing' ? 'test-drive-question' : wizardRenderStep
   const currentStepIndex = Math.max(0, stepFlow.findIndex(step => step.id === currentStepForProgress))
-  const progressPercent = useSinglePageFlow
-    ? singlePageProgress
-    : Math.round((currentStepIndex / stepFlow.length) * 100)
-  const remainingSteps = Math.max(0, stepFlow.length - (currentStepIndex + 1))
   const singlePageStepDoneMap = {
     'type-selection': hasType,
     'property-name': hasPropertyName,
@@ -5236,6 +5239,40 @@ const AddProperty = ({
     'price-calculator': hasPriceCalculatorStepDone,
     'price': hasPrice,
   }
+  const wizardActiveStepId = useSinglePageFlow
+    ? (SP_SECTION_TO_WIZARD_STEP_ID[spActiveSection] || 'type-selection')
+    : currentStepForProgress
+  const wizardDisplayStepIndex = Math.max(0, stepFlow.findIndex((step) => step.id === wizardActiveStepId))
+  const wizardCompletedCount = stepFlow.filter((step) =>
+    useSinglePageFlow ? singlePageStepDoneMap[step.id] : stepFlow.indexOf(step) < wizardDisplayStepIndex,
+  ).length
+  const progressPercent = Math.min(
+    100,
+    Math.round((wizardCompletedCount / Math.max(stepFlow.length, 1)) * 100),
+  )
+  const remainingSteps = Math.max(stepFlow.length - wizardCompletedCount, 0)
+
+  const getWizardStepLabelClass = (step, index) => {
+    const isDone = useSinglePageFlow
+      ? Boolean(singlePageStepDoneMap[step.id])
+      : index < wizardDisplayStepIndex
+    return isDone ? 'is-done' : 'is-pending'
+  }
+  const singlePageProgressSteps = useMemo(() => {
+    if (!useSinglePageFlow) {
+      return { pending: [], done: [] }
+    }
+    const mapped = stepFlow.map((step) => ({
+      ...step,
+      isDone: Boolean(singlePageStepDoneMap[step.id]),
+      spSectionId: WIZARD_STEP_ID_TO_SP_SECTION[step.id],
+    }))
+    return {
+      pending: mapped.filter((step) => !step.isDone),
+      done: mapped.filter((step) => step.isDone),
+    }
+  }, [useSinglePageFlow, stepFlow, singlePageStepDoneMap])
+
   const singlePageSectionDoneMap = useMemo(
     () => ({
       type: hasType,
@@ -5489,34 +5526,186 @@ const AddProperty = ({
             Сбросить
           </button>
         </div>
-        <div className="add-property-wizard-progress">
-          <div className="add-property-wizard-progress__top">
-            <span>Шаг {currentStepIndex + 1} из {stepFlow.length}</span>
-            <span>{progressPercent}% заполнено</span>
-          </div>
-          <div className="add-property-wizard-progress__track">
-            <div
-              className="add-property-wizard-progress__fill"
-              style={{ width: `${progressPercent}%` }}
-            />
-          </div>
-          <div className="add-property-wizard-progress__labels">
-            {stepFlow.map((step, index) => (
-              <span
-                key={step.id}
-                className={`add-property-wizard-progress__label ${
-                  useSinglePageFlow
-                    ? (singlePageStepDoneMap[step.id] ? 'is-done' : '')
-                    : (index <= currentStepIndex ? 'is-done' : '')
-                }`}
-              >
-                {step.label}
+        <div
+          className={[
+            'add-property-wizard-progress',
+            useSinglePageFlow && 'add-property-wizard-progress--unified',
+            useSinglePageFlow && progressPercent >= 100 && 'add-property-wizard-progress--complete',
+          ]
+            .filter(Boolean)
+            .join(' ')}
+          aria-label={useSinglePageFlow ? 'Заполнение анкеты' : undefined}
+        >
+          {useSinglePageFlow ? (
+            <div className="add-property-wizard-progress__compact-head">
+              <div className="add-property-wizard-progress__compact-summary">
+                <p className="add-property-wizard-progress__compact-title">Прогресс анкеты</p>
+                <p className="add-property-wizard-progress__compact-step">
+                  Шаг {wizardDisplayStepIndex + 1} из {stepFlow.length}
+                  {` · «${stepFlow[wizardDisplayStepIndex]?.label || ''}»`}
+                </p>
+              </div>
+              <div className="add-property-wizard-progress__compact-stats" aria-label={`Заполнено ${progressPercent}%`}>
+                <strong>{progressPercent}%</strong>
+                <span>{wizardCompletedCount}/{stepFlow.length}</span>
+              </div>
+              <div className="add-property-wizard-progress__track" aria-hidden>
+                <div
+                  className="add-property-wizard-progress__fill"
+                  style={{ width: `${progressPercent}%` }}
+                />
+              </div>
+              <div className="add-property-wizard-progress__compact-meta">
+                <span>
+                  Заполнено: {wizardCompletedCount} · Осталось: {remainingSteps}
+                </span>
+                <button
+                  type="button"
+                  className="add-property-wizard-progress__compact-toggle"
+                  onClick={() => setShowProgressSectionLists((prev) => !prev)}
+                  aria-expanded={showProgressSectionLists}
+                  aria-label={showProgressSectionLists ? 'Скрыть списки заполненности' : 'Показать списки заполненности'}
+                >
+                  <FiChevronDown
+                    className={`add-property-wizard-progress__compact-toggle-icon${showProgressSectionLists ? ' is-open' : ''}`}
+                    size={16}
+                    aria-hidden
+                  />
+                </button>
+              </div>
+            </div>
+          ) : (
+            <>
+              <div className="add-property-wizard-progress__top">
+                <span>
+                  Шаг {wizardDisplayStepIndex + 1} из {stepFlow.length}
+                </span>
+                <span>
+                  {progressPercent}% заполнено
+                  <span className="add-property-wizard-progress__count">
+                    {' '}
+                    ({wizardCompletedCount}/{stepFlow.length})
+                  </span>
+                </span>
+              </div>
+              <div className="add-property-wizard-progress__track" aria-hidden>
+                <div
+                  className="add-property-wizard-progress__fill"
+                  style={{ width: `${progressPercent}%` }}
+                />
+              </div>
+            </>
+          )}
+          {!useSinglePageFlow && (
+            <div className="add-property-wizard-progress__labels" role="list">
+              {stepFlow.map((step, index) => {
+                const labelClass = `add-property-wizard-progress__label ${getWizardStepLabelClass(step, index)}`
+                return (
+                  <span key={step.id} className={labelClass} role="listitem">
+                    {step.label}
+                  </span>
+                )
+              })}
+            </div>
+          )}
+          {!useSinglePageFlow && (
+            <div className="add-property-wizard-progress__legend" aria-hidden>
+              <span className="add-property-wizard-progress__legend-item">
+                <span className="add-property-wizard-progress__legend-dot is-done" />
+                Заполнен
               </span>
-            ))}
-          </div>
-          <p className="add-property-wizard-progress__hint">
-            {remainingSteps > 0 ? `Осталось шагов: ${remainingSteps}` : 'Последний шаг перед проверкой и публикацией'}
-          </p>
+              <span className="add-property-wizard-progress__legend-item">
+                <span className="add-property-wizard-progress__legend-dot is-pending" />
+                Не заполнен
+              </span>
+            </div>
+          )}
+          {useSinglePageFlow && showProgressSectionLists && (
+            <div className="add-property-wizard-progress__continuation">
+              <div className="add-property-wizard-progress__smart-list">
+                <div className="add-property-wizard-progress__accordion">
+                  <button
+                    type="button"
+                    className="add-property-wizard-progress__accordion-toggle"
+                    onClick={() => setShowPendingProgressSteps((prev) => !prev)}
+                    aria-expanded={showPendingProgressSteps}
+                  >
+                    <span className="add-property-wizard-progress__accordion-title">Незаполненные</span>
+                    <span className="add-property-wizard-progress__accordion-right">
+                      <span className="add-property-wizard-progress__accordion-count is-pending">{singlePageProgressSteps.pending.length}</span>
+                      <FiChevronDown
+                        className={`add-property-wizard-progress__accordion-chevron${showPendingProgressSteps ? ' is-open' : ''}`}
+                        size={16}
+                        aria-hidden
+                      />
+                    </span>
+                  </button>
+                  {showPendingProgressSteps && (
+                    <div className="add-property-wizard-progress__accordion-body">
+                      {singlePageProgressSteps.pending.length > 0 ? (
+                        <div className="add-property-wizard-progress__smart-chips" role="list">
+                          {singlePageProgressSteps.pending.map((step) => (
+                            <button
+                              key={step.id}
+                              type="button"
+                              className="add-property-wizard-progress__label is-pending"
+                              role="listitem"
+                              onClick={() => step.spSectionId && scrollSpSectionIntoView(step.spSectionId)}
+                              title={`Перейти к разделу «${step.label}»`}
+                            >
+                              {step.label}
+                            </button>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="add-property-wizard-progress__smart-empty">Нет незаполненных разделов.</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+                <div className="add-property-wizard-progress__accordion">
+                  <button
+                    type="button"
+                    className="add-property-wizard-progress__accordion-toggle"
+                    onClick={() => setShowCompletedProgressSteps((prev) => !prev)}
+                    aria-expanded={showCompletedProgressSteps}
+                  >
+                    <span className="add-property-wizard-progress__accordion-title">Заполненные</span>
+                    <span className="add-property-wizard-progress__accordion-right">
+                      <span className="add-property-wizard-progress__accordion-count is-done">{singlePageProgressSteps.done.length}</span>
+                      <FiChevronDown
+                        className={`add-property-wizard-progress__accordion-chevron${showCompletedProgressSteps ? ' is-open' : ''}`}
+                        size={16}
+                        aria-hidden
+                      />
+                    </span>
+                  </button>
+                  {showCompletedProgressSteps && (
+                    <div className="add-property-wizard-progress__accordion-body">
+                      {singlePageProgressSteps.done.length > 0 ? (
+                        <div className="add-property-wizard-progress__smart-chips is-complete" role="list">
+                          {singlePageProgressSteps.done.map((step) => (
+                            <button
+                              key={step.id}
+                              type="button"
+                              className="add-property-wizard-progress__label is-done"
+                              role="listitem"
+                              onClick={() => step.spSectionId && scrollSpSectionIntoView(step.spSectionId)}
+                              title={`Перейти к разделу «${step.label}»`}
+                            >
+                              {step.label}
+                            </button>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="add-property-wizard-progress__smart-empty">Пока нет заполненных разделов.</p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {useSinglePageFlow ? (
@@ -6958,30 +7147,8 @@ const AddProperty = ({
                 )}
               </div>
 
-              <aside className="single-page-add-flow__aside" aria-label="Прогресс и подсказки">
+              <aside className="single-page-add-flow__aside" aria-label="Подсказки">
                 <div className="sp-aside-stack">
-                  <div className="sp-aside-progress-card">
-                    <p className="sp-aside-progress-card__eyebrow">Заполнение анкеты</p>
-                    <div
-                      className="single-page-add-flow__progress-circle sp-aside-progress-ring"
-                      aria-label={`Заполнено ${singlePageProgress}%`}
-                    >
-                      <svg viewBox="0 0 42 42">
-                        <circle cx="21" cy="21" r="16" className="single-page-add-flow__progress-bg" />
-                        <circle
-                          cx="21"
-                          cy="21"
-                          r="16"
-                          className="single-page-add-flow__progress-fg"
-                          style={{ strokeDasharray: `${(singlePageProgress / 100) * 100.53} 100.53` }}
-                        />
-                      </svg>
-                      <span>{singlePageProgress}%</span>
-                    </div>
-                    <p className="sp-aside-progress-card__hint">
-                      {singlePageProgress >= 100 ? 'Можно переходить к оплате' : 'Заполните блоки слева — подсказки обновляются при прокрутке'}
-                    </p>
-                  </div>
                   <div className="sp-aside-card">
                     <div className="sp-aside-card__kicker">Советы</div>
                     <h4 className="sp-aside-card__title">{spGuideCopy.title}</h4>

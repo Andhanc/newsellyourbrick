@@ -9,6 +9,7 @@ import {
   FiUser,
   FiGlobe,
 } from 'react-icons/fi'
+import { isInlineAiChatRoute } from '../utils/inlineAiChatRoutes'
 import LoginModal from './LoginModal'
 import { getUserData, clearUserData } from '../services/authService'
 import { getApiBaseUrl } from '../utils/apiConfig'
@@ -133,9 +134,7 @@ const Header = () => {
 
   useEffect(() => {
     const onOpenAIChat = () => {
-      const isInlineAiRoute =
-        location.pathname === '/' || location.pathname === '/auction' || location.pathname === '/main'
-      if (!isInlineAiRoute) {
+      if (!isInlineAiChatRoute(location.pathname)) {
         setIsGlobalAiModalOpen(true)
       }
     }
@@ -667,7 +666,15 @@ const Header = () => {
             </button>
             <button
               type="button"
-              className={`new-header__filter-btn ${(location.pathname === '/auction' || location.pathname === '/main') ? (isAIChatOpen ? 'new-header__filter-btn--active' : '') : (location.pathname === '/chat' ? 'new-header__filter-btn--active' : '')}`}
+              className={`new-header__filter-btn ${
+                isInlineAiChatRoute(location.pathname)
+                  ? isAIChatOpen
+                    ? 'new-header__filter-btn--active'
+                    : ''
+                  : location.pathname === '/chat'
+                    ? 'new-header__filter-btn--active'
+                    : ''
+              }`}
               onClick={() => {
                 openAiAssistantFromHeader()
               }}

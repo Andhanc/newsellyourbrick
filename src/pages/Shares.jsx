@@ -1,19 +1,34 @@
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { FiSearch } from 'react-icons/fi'
+import { PanelLeftClose, PanelLeftOpen } from 'lucide-react'
 import Header from '../components/Header'
+import SiteChatDock from '../components/SiteChatDock'
 import PageBreadcrumbs from '../components/PageBreadcrumbs'
 import DepositButton from '../components/DepositButton'
 import DepositButtonSkeleton from '../components/DepositButtonSkeleton'
+import SharesDesktopFilters from '../components/SharesDesktopFilters'
 import { AnimatedMarqueeHero } from '../components/ui/hero-3'
 import { fetchUserDeposit } from '../utils/depositApi'
 import { fetchNumericDbUserIdForApi, getStoredNumericUserId } from '../services/authService'
 import './Shares.css'
 import { getPropertyCardImage } from '../utils/propertyImage'
 import { ShareCardSkeletonGrid } from '../components/ShareCardSkeletonGrid'
+import PropertyShareButton from '../components/PropertyShareButton'
+import { usePropertyFavorites } from '../context/PropertyFavoritesContext'
+import { hasDbBackedProperty } from '../utils/propertyFavoriteKey'
+import '../components/PropertyList.css'
 import { buildResponsiveImageProps } from '../utils/responsiveImage'
 import { formatPropertyPrice } from '../utils/currency'
+import {
+  EMPTY_SHARES_FILTERS,
+  applySharesPageFilters,
+  getSharesPriceBounds,
+  SHARES_MOBILE_FILTER_ITEMS,
+  isShareSoldOut,
+} from '../utils/sharesPageFilters'
+
+const MOBILE_BREAKPOINT = 768
 
 // Фотографии разных объектов недвижимости для бегущей строки
 const HERO_MARQUEE_IMAGES = [
@@ -76,7 +91,15 @@ const DEMO_SHARE_OBJECTS = [
 const Shares = () => {
   const { t } = useTranslation()
   const navigate = useNavigate()
+  const { isFavorite, toggleFavorite } = usePropertyFavorites()
   const [searchQuery, setSearchQuery] = useState('')
+  const [sharesFilters, setSharesFilters] = useState(EMPTY_SHARES_FILTERS)
+  const [desktopFiltersOpen, setDesktopFiltersOpen] = useState(true)
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false)
+  const [isMobile, setIsMobile] = useState(
+    () => typeof window !== 'undefined' && window.innerWidth <= MOBILE_BREAKPOINT,
+  )
+  const searchFiltersBarRef = useRef(null)
   const [apiShares, setApiShares] = useState([])
   const [loadingShares, setLoadingShares] = useState(true)
   const [compactShareCards, setCompactShareCards] = useState(false)
@@ -86,11 +109,47 @@ const Shares = () => {
 
   useEffect(() => {
     const mq = window.matchMedia('(max-width: 768px)')
-    const update = () => setCompactShareCards(mq.matches)
+    const update = () => {
+      setCompactShareCards(mq.matches)
+      setIsMobile(mq.matches)
+    }
     update()
     mq.addEventListener('change', update)
     return () => mq.removeEventListener('change', update)
   }, [])
+
+  useEffect(() => {
+    if (!isMobile || !mobileFiltersOpen) return
+    const handlePointerDown = (e) => {
+      if (searchFiltersBarRef.current && !searchFiltersBarRef.current.contains(e.target)) {
+        setMobileFiltersOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handlePointerDown)
+    document.addEventListener('touchstart', handlePointerDown, { passive: true })
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown)
+      document.removeEventListener('touchstart', handlePointerDown)
+    }
+  }, [isMobile, mobileFiltersOpen])
+
+  const isSharesDesktop = !isMobile
+
+  const setPropertyType = (propertyType) => {
+    setSharesFilters((prev) => ({ ...prev, propertyType }))
+  }
+
+  const setAvailabilityFilter = (availability) => {
+    setSharesFilters((prev) => ({ ...prev, availability }))
+  }
+
+  const setMinPriceFilter = (minPrice) => {
+    setSharesFilters((prev) => ({ ...prev, minPrice }))
+  }
+
+  const setMaxPriceFilter = (maxPrice) => {
+    setSharesFilters((prev) => ({ ...prev, maxPrice }))
+  }
 
   useEffect(() => {
     let cancelled = false
@@ -156,27 +215,43 @@ const Shares = () => {
   }, [loadShares])
 
   const allShareObjects = [...DEMO_SHARE_OBJECTS, ...apiShares]
-  const filtered = allShareObjects.filter(
-    (obj) =>
-      !searchQuery ||
-      (obj.title || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (obj.location || '').toLowerCase().includes(searchQuery.toLowerCase())
+  const priceBounds = useMemo(() => getSharesPriceBounds(allShareObjects), [allShareObjects])
+
+  const filtered = useMemo(
+    () => applySharesPageFilters(allShareObjects, sharesFilters, searchQuery),
+    [allShareObjects, sharesFilters, searchQuery],
   )
 
   const formatPrice = (n, currency = 'USD') =>
     formatPropertyPrice(n, currency, { compact: true })
 
+  const toShareFavoriteProperty = (obj) => ({
+    ...obj,
+    title: obj.title,
+    name: obj.title,
+    sale_type: 'share',
+    is_shared_ownership: true,
+  })
+
+  const isShareLiked = (obj) =>
+    isFavorite(
+      toShareFavoriteProperty(obj),
+      hasDbBackedProperty(obj) ? undefined : 'share',
+    )
+
+  const handleShareFavoriteToggle = (obj, e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    toggleFavorite(
+      toShareFavoriteProperty(obj),
+      hasDbBackedProperty(obj) ? undefined : 'share',
+    )
+  }
+
   return (
-    <div className="shares-page">
+    <div className="shares-page shares-page--catalog">
       <Header />
       <div className="shares-page__bg" />
-      <div className="shares-page__breadcrumbs-strip">
-        <div className="page-context-heading page-context-heading--strip-auction-style">
-          <div className="page-context-heading--strip-auction-inner page-context-heading--strip-auction-inner--shares-top">
-            <PageBreadcrumbs className="page-breadcrumbs--flat-club" separator=">" />
-          </div>
-        </div>
-      </div>
       <AnimatedMarqueeHero
         title={
           <>
@@ -189,27 +264,163 @@ const Shares = () => {
         images={HERO_MARQUEE_IMAGES}
         className="animated-marquee-hero--shares"
       />
-      <main className="shares-container">
-        <div className="shares-search-bar">
-          <FiSearch className="shares-search-bar__icon" size={20} />
-          <input
-            type="text"
-            className="shares-search-bar__input"
-            placeholder={t('searchPlaceholderLong')}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-          {searchQuery && (
-            <button
-              type="button"
-              className="shares-search-bar__clear"
-              onClick={() => setSearchQuery('')}
-              aria-label={t('clearSearch')}
+      <main className="shares-container shares-container--catalog">
+        <div
+          className={`shares-listing-shell${
+            isSharesDesktop && desktopFiltersOpen ? ' shares-listing-shell--with-filters' : ''
+          }${isSharesDesktop && !desktopFiltersOpen ? ' shares-listing-shell--filters-hidden' : ''}`}
+        >
+          <div className="page-context-heading page-context-heading--listing-auction">
+            <div className="page-context-heading--listing-auction-inner">
+              <h1 className="page-context-heading__title page-context-heading__title--auction-script">
+                {t('shares')}
+              </h1>
+              <PageBreadcrumbs className="page-breadcrumbs--flat-club" separator=">" />
+            </div>
+          </div>
+
+          <div
+            className={`shares-listing-layout${
+              isSharesDesktop
+                ? ` auction-desktop-layout${
+                    desktopFiltersOpen ? '' : ' auction-desktop-layout--filters-hidden'
+                  }`
+                : ''
+            }`}
+          >
+            {isSharesDesktop && desktopFiltersOpen ? (
+              <SharesDesktopFilters
+                propertyType={sharesFilters.propertyType}
+                setPropertyType={setPropertyType}
+                availabilityFilter={sharesFilters.availability}
+                setAvailabilityFilter={setAvailabilityFilter}
+                minPrice={sharesFilters.minPrice}
+                maxPrice={sharesFilters.maxPrice}
+                setMinPrice={setMinPriceFilter}
+                setMaxPrice={setMaxPriceFilter}
+                priceBounds={priceBounds}
+                onApply={() => {
+                  document.getElementById('shares-grid')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                }}
+              />
+            ) : null}
+
+            <div
+              className={`shares-listing-layout__main${
+                isSharesDesktop ? ' auction-desktop-layout__main' : ''
+              }${
+                isSharesDesktop && !desktopFiltersOpen ? ' auction-desktop-layout__main--filters-hidden' : ''
+              }`.trim()}
             >
-              ×
-            </button>
-          )}
-        </div>
+              <div
+                ref={searchFiltersBarRef}
+                className={`search-filters-bar${
+                  isSharesDesktop ? ' search-filters-bar--auction-desktop' : ' search-filters-bar--auction-mobile'
+                }${
+                  isMobile
+                    ? mobileFiltersOpen
+                      ? ' search-filters-bar--types-expanded'
+                      : ' search-filters-bar--types-collapsed'
+                    : ''
+                }`}
+              >
+                {isSharesDesktop ? (
+                  <button
+                    type="button"
+                    className="auction-desktop-filters-toggle"
+                    onClick={() => setDesktopFiltersOpen((open) => !open)}
+                    aria-label={
+                      desktopFiltersOpen ? t('auctionToggleFiltersHide') : t('auctionToggleFiltersShow')
+                    }
+                    aria-expanded={desktopFiltersOpen}
+                  >
+                    {desktopFiltersOpen ? <PanelLeftClose size={20} /> : <PanelLeftOpen size={20} />}
+                  </button>
+                ) : null}
+                <div className="search-box">
+                  <svg
+                    className="search-icon"
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    aria-hidden
+                  >
+                    <circle cx="11" cy="11" r="8" />
+                    <path d="m21 21-4.35-4.35" />
+                  </svg>
+                  <input
+                    type="text"
+                    className="search-input"
+                    placeholder={t('searchPlaceholderLong')}
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                  {searchQuery ? (
+                    <button
+                      type="button"
+                      className="search-clear"
+                      onClick={() => setSearchQuery('')}
+                      aria-label={t('clearSearch')}
+                    >
+                      ×
+                    </button>
+                  ) : null}
+                </div>
+                {isMobile ? (
+                  <div className="filters-and-types-grid">
+                    <button
+                      type="button"
+                      className="filters-button"
+                      aria-expanded={mobileFiltersOpen}
+                      onClick={() => setMobileFiltersOpen((open) => !open)}
+                    >
+                      <svg
+                        width="20"
+                        height="20"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        aria-hidden
+                      >
+                        <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+                      </svg>
+                      {t('filters')}
+                    </button>
+                    <div className="property-types property-types--auction-mobile">
+                      {SHARES_MOBILE_FILTER_ITEMS.map((item) => (
+                        <button
+                          key={`${item.kind}-${item.value}`}
+                          type="button"
+                          className={`type-button ${
+                            item.kind === 'type'
+                              ? sharesFilters.propertyType === item.value
+                                ? 'active'
+                                : ''
+                              : sharesFilters.availability === item.value
+                                ? 'active'
+                                : ''
+                          }`}
+                          onClick={() => {
+                            if (item.kind === 'type') {
+                              setPropertyType(item.value)
+                            } else {
+                              setAvailabilityFilter(
+                                sharesFilters.availability === item.value ? 'all' : item.value,
+                              )
+                            }
+                          }}
+                        >
+                          {t(item.labelKey)}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+              </div>
 
         <div id="shares-grid" className="shares-grid" aria-busy={loadingShares}>
           {loadingShares ? (
@@ -222,7 +433,7 @@ const Shares = () => {
             filtered.map((obj) => {
               const rawSoldPercent = (obj.totalShares > 0) ? Math.round((obj.sharesSold / obj.totalShares) * 100) : 0
               const soldPercent = Math.max(0, Math.min(rawSoldPercent, 100))
-              const isSoldOut = obj.sharesSold >= obj.totalShares
+              const isSoldOut = isShareSoldOut(obj)
               const total = Math.max(1, Number(obj.totalShares) || 1)
               const sold = Math.min(obj.sharesSold || 0, total)
               const remaining = Math.max(total - sold, 0)
@@ -239,10 +450,25 @@ const Shares = () => {
                 className={`share-card ${isSoldOut ? 'share-card--sold-out' : ''}`}
                 onClick={() => navigate(`/shares/${obj.id}`, { state: { shareObject: obj } })}
               >
-                <div className="share-card__badge">
-                  {isSoldOut ? t('sharesSoldOut') : t('sharesBadgeShare')}
-                </div>
                 <div className="share-card__image-wrap">
+                  <div className="property-media-actions property-media-actions--compact">
+                    <button
+                      type="button"
+                      className={`property-favorite ${isShareLiked(obj) ? 'active' : ''}`}
+                      onClick={(e) => handleShareFavoriteToggle(obj, e)}
+                      aria-label={t('favorites')}
+                    >
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden>
+                        <path
+                          d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          fill={isShareLiked(obj) ? 'currentColor' : 'none'}
+                        />
+                      </svg>
+                    </button>
+                    <PropertyShareButton property={obj} variant="compact" iconSize={16} />
+                  </div>
                   <div className="share-card__scale" aria-hidden>
                     <div className="share-card__scale-track">
                       <div
@@ -303,8 +529,17 @@ const Shares = () => {
             })
           )}
         </div>
+            </div>
+          </div>
+        </div>
       </main>
-      <div className="shares-floats">
+      <SiteChatDock
+        wrapperClassName="shares-floats"
+        recommendationProperties={allShareObjects}
+        onRecommendationClick={(share) =>
+          navigate(`/shares/${share.id}`, { state: { shareObject: share } })
+        }
+      >
         {dbUserId ? (
           depositLoading ? (
             <DepositButtonSkeleton />
@@ -312,15 +547,7 @@ const Shares = () => {
             <DepositButton amount={userDeposit} />
           )
         ) : null}
-        <button
-          type="button"
-          className="ai-button"
-          onClick={() => navigate('/chat')}
-          aria-label="AI Assistant"
-        >
-          AI
-        </button>
-      </div>
+      </SiteChatDock>
     </div>
   )
 }

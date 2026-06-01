@@ -4,7 +4,6 @@ import { FiChevronDown, FiSearch } from 'react-icons/fi'
 import { getApiBaseUrl } from '../utils/apiConfig'
 import { fetchDedupe } from '../utils/fetchDedupe'
 import {
-  CATALOG_FILTER_CURRENCY_CODES,
   getCatalogFilterCurrencies,
   getCurrencySymbol,
   normalizeCurrencyCode,
@@ -13,55 +12,19 @@ import {
   hasCatalogPriceFilter,
   validateCatalogPriceRange,
 } from '../utils/catalogPriceFilter'
+import {
+  CATALOG_PROPERTY_TYPE_OPTIONS,
+  CATALOG_PURCHASE_TYPE_OPTIONS,
+  CATALOG_ROOM_OPTIONS,
+  EMPTY_CATALOG_FILTERS,
+  getCatalogFilterProfile,
+  loadCatalogFiltersFromSession,
+  mergeCatalogFilters,
+  persistCatalogFilters,
+} from '../utils/catalogFilters'
 import './PropertySearchFiltersPanel.css'
 
-const PROPERTY_TYPE_KEYS = [
-  'propertyTypeFlat',
-  'propertyTypeApartment',
-  'propertyTypeVilla',
-  'propertyTypeHouse',
-  'propertyTypeTownhouse',
-]
-const PROPERTY_TYPE_VALUES = ['Квартира', 'Апартаменты', 'Вилла', 'Дом', 'Таунхаус']
-const PURCHASE_TYPE_OPTIONS = [
-  { value: 'auction', labelKey: 'modalPurchaseTypeAuction' },
-  { value: 'buy_now', labelKey: 'modalPurchaseTypeBuyNow' },
-  { value: 'shares', labelKey: 'modalPurchaseTypeShares' },
-  { value: 'debt', labelKey: 'modalPurchaseTypeDebt' },
-  { value: 'direct', labelKey: 'modalPurchaseTypeDirect' },
-]
-
-export const EMPTY_CATALOG_FILTERS = {
-  country: '',
-  region: '',
-  propertyType: '',
-  purchaseTypes: [],
-  purchaseType: '',
-  currency: '',
-  minPrice: '',
-  maxPrice: '',
-}
-
-function mergeFiltersFromSource(source, prev) {
-  if (!source || typeof source !== 'object') return prev
-  return {
-    ...prev,
-    country: source.country || '',
-    region: source.region || '',
-    propertyType: source.propertyType || '',
-    purchaseTypes: Array.isArray(source.purchaseTypes)
-      ? source.purchaseTypes.slice(0, 3)
-      : source.purchaseType
-        ? [source.purchaseType]
-        : [],
-    currency: (() => {
-      const code = source.currency ? normalizeCurrencyCode(source.currency) : ''
-      return CATALOG_FILTER_CURRENCY_CODES.includes(code) ? code : ''
-    })(),
-    minPrice: source.minPrice != null ? String(source.minPrice) : '',
-    maxPrice: source.maxPrice != null ? String(source.maxPrice) : '',
-  }
-}
+export { EMPTY_CATALOG_FILTERS }
 
 function sanitizePriceInput(raw) {
   return String(raw || '').replace(/\D/g, '')
@@ -85,9 +48,7 @@ function CatalogPriceField({
       className={`property-search-filters-panel__field property-search-filters-panel__field--price ${fieldClassName}`.trim()}
     >
       <span>{label}</span>
-      <div
-        className={`psf-currency-input-wrap${dropdownOpen ? ' is-open' : ''}`}
-      >
+      <div className={`psf-currency-input-wrap${dropdownOpen ? ' is-open' : ''}`}>
         <button
           type="button"
           className="psf-currency-button"
@@ -128,19 +89,30 @@ function CatalogPriceField({
   )
 }
 
-const PropertySearchFiltersPanel = ({ onApplyFilters, initialFilters = null }) => {
+const PropertySearchFiltersPanel = ({
+  filters: controlledFilters,
+  onFiltersChange,
+  onApplyFilters,
+  findButtonLabelKey = 'modalFind',
+}) => {
   const { t } = useTranslation()
   const panelRef = useRef(null)
-  const [filters, setFilters] = useState(EMPTY_CATALOG_FILTERS)
+  const isControlled = controlledFilters != null && typeof onFiltersChange === 'function'
+  const [internalFilters, setInternalFilters] = useState(EMPTY_CATALOG_FILTERS)
+  const filters = isControlled ? controlledFilters : internalFilters
+  const setFilters = isControlled ? onFiltersChange : setInternalFilters
+
   const [locationOptions, setLocationOptions] = useState([])
   const [defaultCurrency, setDefaultCurrency] = useState('EUR')
   const [optionsLoading, setOptionsLoading] = useState(false)
   const [priceErrorKey, setPriceErrorKey] = useState('')
   const [currencyDropdownAnchor, setCurrencyDropdownAnchor] = useState(null)
 
+  const profile = getCatalogFilterProfile(filters.propertyType)
   const activeCurrency = filters.currency || defaultCurrency
-
   const currencyList = useMemo(() => getCatalogFilterCurrencies(), [])
+
+  const propertyTypeOptions = CATALOG_PROPERTY_TYPE_OPTIONS.filter((opt) => opt.value !== '')
 
   useEffect(() => {
     let cancelled = false
@@ -169,27 +141,16 @@ const PropertySearchFiltersPanel = ({ onApplyFilters, initialFilters = null }) =
   }, [])
 
   useEffect(() => {
-    if (initialFilters && typeof initialFilters === 'object') {
-      setFilters((prev) => mergeFiltersFromSource(initialFilters, prev))
-      return
-    }
-
-    try {
-      const raw = sessionStorage.getItem('propertySearchFilters')
-      if (!raw) return
-      const parsed = JSON.parse(raw)
-      setFilters((prev) => mergeFiltersFromSource(parsed, prev))
-    } catch {
-      // ignore broken persisted filters
-    }
-  }, [initialFilters])
+    if (isControlled) return
+    setInternalFilters(loadCatalogFiltersFromSession())
+  }, [isControlled])
 
   useEffect(() => {
     if (filters.currency || !defaultCurrency) return
     if (hasCatalogPriceFilter(filters)) {
       setFilters((prev) => ({ ...prev, currency: defaultCurrency }))
     }
-  }, [defaultCurrency, filters.currency, filters.minPrice, filters.maxPrice])
+  }, [defaultCurrency, filters.currency, filters.minPrice, filters.maxPrice, setFilters])
 
   useEffect(() => {
     if (!currencyDropdownAnchor) return
@@ -204,7 +165,7 @@ const PropertySearchFiltersPanel = ({ onApplyFilters, initialFilters = null }) =
 
   const selectedCountry = useMemo(
     () => locationOptions.find((country) => country.key === filters.country),
-    [filters.country, locationOptions]
+    [filters.country, locationOptions],
   )
 
   const handleCountryChange = (value) => {
@@ -224,7 +185,6 @@ const PropertySearchFiltersPanel = ({ onApplyFilters, initialFilters = null }) =
           purchaseTypes: prev.purchaseTypes.filter((item) => item !== value),
         }
       }
-      if (prev.purchaseTypes.length >= 3) return prev
       return {
         ...prev,
         purchaseTypes: [...prev.purchaseTypes, value],
@@ -265,15 +225,15 @@ const PropertySearchFiltersPanel = ({ onApplyFilters, initialFilters = null }) =
         ? normalizeCurrencyCode(filters.currency)
         : ''
 
-    const payload = {
+    const payload = persistCatalogFilters({
       ...filters,
       currency: resolvedCurrency,
-      purchaseType:
-        filters.purchaseTypes.length === 1 ? filters.purchaseTypes[0] : '',
-    }
-    sessionStorage.setItem('propertySearchFilters', JSON.stringify(payload))
+    })
+
     if (typeof onApplyFilters === 'function') {
       onApplyFilters(payload)
+    } else if (isControlled) {
+      onFiltersChange(mergeCatalogFilters(payload, EMPTY_CATALOG_FILTERS))
     }
   }
 
@@ -295,16 +255,14 @@ const PropertySearchFiltersPanel = ({ onApplyFilters, initialFilters = null }) =
             role="group"
             aria-label={t('modalPurchaseType')}
           >
-            {PURCHASE_TYPE_OPTIONS.map((option) => {
+            {CATALOG_PURCHASE_TYPE_OPTIONS.map((option) => {
               const active = filters.purchaseTypes.includes(option.value)
-              const disabled = !active && filters.purchaseTypes.length >= 3
               return (
                 <button
                   key={option.value}
                   type="button"
                   className={`property-search-filters-panel__chip${active ? ' is-active' : ''}`}
                   onClick={() => togglePurchaseType(option.value)}
-                  disabled={disabled}
                   aria-pressed={active}
                 >
                   {t(option.labelKey)}
@@ -353,16 +311,51 @@ const PropertySearchFiltersPanel = ({ onApplyFilters, initialFilters = null }) =
               <select
                 className="property-search-filters-panel__input"
                 value={filters.propertyType}
-                onChange={(e) => setFilters((prev) => ({ ...prev, propertyType: e.target.value }))}
+                onChange={(e) => {
+                  const propertyType = e.target.value
+                  const nextProfile = getCatalogFilterProfile(propertyType)
+                  setFilters((prev) => ({
+                    ...prev,
+                    propertyType,
+                    rooms: nextProfile.rooms ? prev.rooms : '',
+                  }))
+                }}
               >
                 <option value="">{t('catalogFilterAllTypes')}</option>
-                {PROPERTY_TYPE_VALUES.map((type, index) => (
-                  <option key={type} value={type}>
-                    {t(PROPERTY_TYPE_KEYS[index])}
+                {propertyTypeOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {t(option.labelKey)}
                   </option>
                 ))}
               </select>
             </label>
+
+            {profile.rooms ? (
+              <div className="property-search-filters-panel__field property-search-filters-panel__field--rooms">
+                <span>{t('modalRooms')}</span>
+                <div className="property-search-filters-panel__room-pills" role="group">
+                  {CATALOG_ROOM_OPTIONS.map((opt) => {
+                    const isActive = filters.rooms === opt.value
+                    return (
+                      <button
+                        key={opt.value}
+                        type="button"
+                        className={`property-search-filters-panel__room-pill${isActive ? ' is-active' : ''}`}
+                        aria-pressed={isActive}
+                        onClick={() =>
+                          setFilters((prev) => ({
+                            ...prev,
+                            rooms: isActive ? '' : opt.value,
+                          }))
+                        }
+                      >
+                        {opt.label}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            ) : null}
 
             <CatalogPriceField
               label={t('modalFrom')}
@@ -386,7 +379,7 @@ const PropertySearchFiltersPanel = ({ onApplyFilters, initialFilters = null }) =
               onClick={handleSearch}
             >
               <FiSearch size={18} />
-              <span>{t('modalFind')}</span>
+              <span>{t(findButtonLabelKey)}</span>
             </button>
           </div>
 

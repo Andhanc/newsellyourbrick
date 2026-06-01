@@ -4,7 +4,10 @@ import { useTranslation } from 'react-i18next'
 import { FiShoppingBag, FiInbox, FiCheckCircle, FiEye, FiX } from 'react-icons/fi'
 import { getPropertyCardImage } from '../utils/propertyImage'
 import { buildResponsiveImageProps } from '../utils/responsiveImage'
+import PropertyShareButton from './PropertyShareButton'
 import ImageWithSkeleton from './ImageWithSkeleton'
+import { usePropertyFavorites } from '../context/PropertyFavoritesContext'
+import '../components/PropertyList.css'
 import { showToast } from './ToastContainer'
 import OwnerTestDriveRequestModal from './OwnerTestDriveRequestModal'
 import './OwnerMySalesSection.css'
@@ -44,6 +47,7 @@ const SALES_SECTIONS = [
 export default function OwnerMySalesSection({ userId, apiBaseUrl }) {
   const { t } = useTranslation()
   const navigate = useNavigate()
+  const { isFavorite, toggleFavorite } = usePropertyFavorites()
   const [sectionFilter, setSectionFilter] = useState('all')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -58,6 +62,21 @@ export default function OwnerMySalesSection({ userId, apiBaseUrl }) {
     test_drive: [],
     buy_now: [],
   })
+
+  const toSaleFavoriteProperty = (item) => ({
+    id: item.id,
+    title: item.title,
+    name: item.title,
+    property_type: String(item.property_table || '').includes('house') ? 'house' : 'apartment',
+  })
+
+  const isPropertyLiked = (item) => isFavorite(toSaleFavoriteProperty(item))
+
+  const handleFavoriteToggle = (item, e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    toggleFavorite(toSaleFavoriteProperty(item))
+  }
 
   const fetchMySales = useCallback(
     async (silent = false) => {
@@ -237,6 +256,32 @@ export default function OwnerMySalesSection({ userId, apiBaseUrl }) {
               className="property-image"
               containerClassName="property-image"
             />
+          <div className="property-media-actions">
+            <button
+              type="button"
+              className={`property-favorite ${isPropertyLiked(item) ? 'active' : ''}`}
+              onClick={(e) => handleFavoriteToggle(item, e)}
+              aria-label={t('favorites')}
+            >
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden>
+                <path
+                  d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  fill={isPropertyLiked(item) ? 'currentColor' : 'none'}
+                />
+              </svg>
+            </button>
+            <PropertyShareButton
+              property={{
+                id: item.id,
+                title: item.title,
+                name: item.title,
+                property_type:
+                  String(item.property_table || '').includes('house') ? 'house' : 'apartment',
+              }}
+            />
+          </div>
           </div>
           <div className="property-content">
             <h3 className="property-title">{item.title || '—'}</h3>

@@ -7276,6 +7276,25 @@
   -webkit-font-smoothing: antialiased;
 }
 
+.auction-showcase__title-link {
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-decoration: none;
+  transition: opacity 0.2s ease;
+}
+
+.auction-showcase__title-link:hover {
+  opacity: 0.82;
+  text-decoration: none;
+}
+
+.auction-showcase__title-link:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 4px;
+  border-radius: 2px;
+}
+
 .auction-showcase__subtitle {
   margin: 12px 0 0;
   font-size: clamp(17px, 1.45vw, 20px);

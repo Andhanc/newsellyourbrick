@@ -6,6 +6,7 @@ export const CATALOG_SEARCH_SECTIONS = [
   { key: 'buy_now', labelKey: 'modalPurchaseTypeBuyNow' },
   { key: 'shares', labelKey: 'modalPurchaseTypeShares' },
   { key: 'debt', labelKey: 'modalPurchaseTypeDebt' },
+  { key: 'direct', labelKey: 'modalPurchaseTypeDirect' },
 ]
 
 function normalizePurchaseTypes(filters = {}) {
@@ -29,6 +30,8 @@ export function propertyMatchesCatalogSection(property, sectionKey) {
       return kind === 'shares'
     case 'debt':
       return kind === 'debt'
+    case 'direct':
+      return kind === 'direct'
     default:
       return false
   }
@@ -43,10 +46,22 @@ export function getCatalogSectionsToRender(filters = {}) {
 }
 
 export function groupPropertiesByCatalogSection(properties = [], filters = {}) {
-  return getCatalogSectionsToRender(filters)
+  const sections = getCatalogSectionsToRender(filters)
     .map((section) => ({
       ...section,
       properties: properties.filter((property) => propertyMatchesCatalogSection(property, section.key)),
     }))
     .filter((section) => section.properties.length > 0)
+
+  if (sections.length > 0 || properties.length === 0) {
+    return sections
+  }
+
+  return [
+    {
+      key: 'all',
+      labelKey: 'catalogSearchAllResults',
+      properties,
+    },
+  ]
 }

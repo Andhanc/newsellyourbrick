@@ -1,17 +1,21 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ensureCanOpenProperty } from '../utils/propertyAccessGuard'
 import { useTranslation } from 'react-i18next'
-import { FiSearch } from 'react-icons/fi'
-import { ShieldQuestionMark, ShieldAlert, ShieldCheck } from 'lucide-react'
+import { PanelLeftClose, PanelLeftOpen, ShieldQuestionMark, ShieldAlert, ShieldCheck } from 'lucide-react'
+import DebtsDesktopFilters from '../components/DebtsDesktopFilters'
 import Header from '../components/Header'
+import SiteChatDock from '../components/SiteChatDock'
 import PageBreadcrumbs from '../components/PageBreadcrumbs'
 import DepositButton from '../components/DepositButton'
 import DepositButtonSkeleton from '../components/DepositButtonSkeleton'
 import FlipCard from '../components/ui/FlipCard'
 import PropertyTimer from '../components/PropertyTimer'
+import PropertyShareButton from '../components/PropertyShareButton'
 import CircularTimer from '../components/CircularTimer'
 import AuctionMobileLayout from '../components/ui/AuctionMobileLayout'
+import { usePropertyFavorites } from '../context/PropertyFavoritesContext'
+import { hasDbBackedProperty } from '../utils/propertyFavoriteKey'
 import { hasBuyNowOption } from '../utils/hasBuyNowOption'
 import { formatPropertyPrice } from '../utils/currency'
 import { getPropertyCardImage } from '../utils/propertyImage'
@@ -27,6 +31,12 @@ import { buildResponsiveImageProps } from '../utils/responsiveImage'
 import './Shares.css'
 import '../components/PropertyList.css'
 import { getPropertyDetailPath, auctionListingDedupeKey } from '../utils/propertyDetailUrl'
+import {
+  EMPTY_DEBTS_FILTERS,
+  applyDebtsPageFilters,
+  getDebtsPriceBounds,
+  DEBTS_MOBILE_FILTER_ITEMS,
+} from '../utils/debtsPageFilters'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api'
 const MOBILE_BREAKPOINT = 768
@@ -34,7 +44,12 @@ const MOBILE_BREAKPOINT = 768
 const Debts = () => {
   const { t } = useTranslation()
   const navigate = useNavigate()
+  const { isFavorite, toggleFavorite } = usePropertyFavorites()
   const [searchQuery, setSearchQuery] = useState('')
+  const [debtsFilters, setDebtsFilters] = useState(EMPTY_DEBTS_FILTERS)
+  const [desktopFiltersOpen, setDesktopFiltersOpen] = useState(true)
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false)
+  const searchFiltersBarRef = useRef(null)
   const [openRiskCard, setOpenRiskCard] = useState(null)
   const [apiDebts, setApiDebts] = useState([])
   const [loadingDebts, setLoadingDebts] = useState(true)
@@ -51,6 +66,39 @@ const Debts = () => {
     window.addEventListener('resize', check)
     return () => window.removeEventListener('resize', check)
   }, [])
+
+  useEffect(() => {
+    if (!isMobile || !mobileFiltersOpen) return
+    const handlePointerDown = (e) => {
+      if (searchFiltersBarRef.current && !searchFiltersBarRef.current.contains(e.target)) {
+        setMobileFiltersOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handlePointerDown)
+    document.addEventListener('touchstart', handlePointerDown, { passive: true })
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown)
+      document.removeEventListener('touchstart', handlePointerDown)
+    }
+  }, [isMobile, mobileFiltersOpen])
+
+  const isDebtsDesktop = !isMobile
+
+  const setPropertyType = (propertyType) => {
+    setDebtsFilters((prev) => ({ ...prev, propertyType }))
+  }
+
+  const setRiskFilter = (risk) => {
+    setDebtsFilters((prev) => ({ ...prev, risk }))
+  }
+
+  const setMinPriceFilter = (minPrice) => {
+    setDebtsFilters((prev) => ({ ...prev, minPrice }))
+  }
+
+  const setMaxPriceFilter = (maxPrice) => {
+    setDebtsFilters((prev) => ({ ...prev, maxPrice }))
+  }
 
   useEffect(() => {
     let cancelled = false
@@ -209,16 +257,25 @@ const Debts = () => {
     void loadDebts()
   }, [loadDebts])
 
-  const filtered = apiDebts.filter(
-    (obj) =>
-      !searchQuery ||
-      (obj.title || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (obj.location || '').toLowerCase().includes(searchQuery.toLowerCase())
+  const priceBounds = useMemo(() => getDebtsPriceBounds(apiDebts), [apiDebts])
+
+  const filtered = useMemo(
+    () => applyDebtsPageFilters(apiDebts, debtsFilters, searchQuery),
+    [apiDebts, debtsFilters, searchQuery],
   )
 
   const formatPrice = (n, currency = 'USD') => {
     if (!n || Number.isNaN(Number(n))) return '—'
     return formatPropertyPrice(n, currency, { compact: true })
+  }
+
+  const isPropertyLiked = (property) =>
+    isFavorite(property, hasDbBackedProperty(property) ? undefined : 'property')
+
+  const handleFavoriteToggle = (property, e) => {
+    e.preventDefault()
+    e.stopPropagation()
+    toggleFavorite(property, hasDbBackedProperty(property) ? undefined : 'property')
   }
 
   return (
@@ -279,35 +336,161 @@ const Debts = () => {
             onFlipChange={(next) => setOpenRiskCard(next ? 'low' : null)}
           />
         </div>
-        <div className="page-context-heading page-context-heading--strip-auction-style">
-          <div className="page-context-heading--strip-auction-inner page-context-heading--strip-auction-inner--debts-top">
-            <h1 className="page-context-heading__title page-context-heading__title--auction-serif page-context-heading__title--after-breadcrumbs">
-              {t('debtsTitle')}
-            </h1>
-            <PageBreadcrumbs className="page-breadcrumbs--flat-club" separator=">" />
-          </div>
-        </div>
 
-        <div className="shares-search-bar">
-          <FiSearch className="shares-search-bar__icon" size={20} />
-          <input
-            type="text"
-            className="shares-search-bar__input"
-            placeholder={t('searchPlaceholderLong')}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-          {searchQuery && (
-            <button
-              type="button"
-              className="shares-search-bar__clear"
-              onClick={() => setSearchQuery('')}
-              aria-label={t('clearSearch')}
+        <div
+          className={`shares-listing-shell${
+            isDebtsDesktop && desktopFiltersOpen ? ' shares-listing-shell--with-filters' : ''
+          }${isDebtsDesktop && !desktopFiltersOpen ? ' shares-listing-shell--filters-hidden' : ''}`}
+        >
+          <div className="page-context-heading page-context-heading--listing-auction">
+            <div className="page-context-heading--listing-auction-inner">
+              <h1 className="page-context-heading__title page-context-heading__title--auction-script">
+                {t('debtsTitle')}
+              </h1>
+              <PageBreadcrumbs className="page-breadcrumbs--flat-club" separator=">" />
+            </div>
+          </div>
+
+          <div
+            className={`shares-listing-layout${
+              isDebtsDesktop
+                ? ` auction-desktop-layout${
+                    desktopFiltersOpen ? '' : ' auction-desktop-layout--filters-hidden'
+                  }`
+                : ''
+            }`}
+          >
+          {isDebtsDesktop && desktopFiltersOpen ? (
+            <DebtsDesktopFilters
+              propertyType={debtsFilters.propertyType}
+              setPropertyType={setPropertyType}
+              riskFilter={debtsFilters.risk}
+              setRiskFilter={setRiskFilter}
+              minPrice={debtsFilters.minPrice}
+              maxPrice={debtsFilters.maxPrice}
+              setMinPrice={setMinPriceFilter}
+              setMaxPrice={setMaxPriceFilter}
+              priceBounds={priceBounds}
+              onApply={() => {
+                document.getElementById('properties-grid')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+              }}
+            />
+          ) : null}
+
+          <div
+            className={`shares-listing-layout__main${
+              isDebtsDesktop ? ' auction-desktop-layout__main' : ''
+            }${
+              isDebtsDesktop && !desktopFiltersOpen ? ' auction-desktop-layout__main--filters-hidden' : ''
+            }`.trim()}
+          >
+            <div
+              ref={searchFiltersBarRef}
+              className={`search-filters-bar${
+                isDebtsDesktop ? ' search-filters-bar--auction-desktop' : ' search-filters-bar--auction-mobile'
+              }${
+                isMobile
+                  ? mobileFiltersOpen
+                    ? ' search-filters-bar--types-expanded'
+                    : ' search-filters-bar--types-collapsed'
+                  : ''
+              }`}
             >
-              ×
-            </button>
-          )}
-        </div>
+              {isDebtsDesktop ? (
+                <button
+                  type="button"
+                  className="auction-desktop-filters-toggle"
+                  onClick={() => setDesktopFiltersOpen((open) => !open)}
+                  aria-label={
+                    desktopFiltersOpen ? t('auctionToggleFiltersHide') : t('auctionToggleFiltersShow')
+                  }
+                  aria-expanded={desktopFiltersOpen}
+                >
+                  {desktopFiltersOpen ? <PanelLeftClose size={20} /> : <PanelLeftOpen size={20} />}
+                </button>
+              ) : null}
+              <div className="search-box">
+                <svg
+                  className="search-icon"
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  aria-hidden
+                >
+                  <circle cx="11" cy="11" r="8" />
+                  <path d="m21 21-4.35-4.35" />
+                </svg>
+                <input
+                  type="text"
+                  className="search-input"
+                  placeholder={t('searchPlaceholderLong')}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+                {searchQuery ? (
+                  <button
+                    type="button"
+                    className="search-clear"
+                    onClick={() => setSearchQuery('')}
+                    aria-label={t('clearSearch')}
+                  >
+                    ×
+                  </button>
+                ) : null}
+              </div>
+              {isMobile ? (
+                <div className="filters-and-types-grid">
+                  <button
+                    type="button"
+                    className="filters-button"
+                    aria-expanded={mobileFiltersOpen}
+                    onClick={() => setMobileFiltersOpen((open) => !open)}
+                  >
+                    <svg
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      aria-hidden
+                    >
+                      <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+                    </svg>
+                    {t('filters')}
+                  </button>
+                  <div className="property-types property-types--auction-mobile">
+                    {DEBTS_MOBILE_FILTER_ITEMS.map((item) => (
+                      <button
+                        key={`${item.kind}-${item.value}`}
+                        type="button"
+                        className={`type-button ${
+                          item.kind === 'type'
+                            ? debtsFilters.propertyType === item.value
+                              ? 'active'
+                              : ''
+                            : debtsFilters.risk === item.value
+                              ? 'active'
+                              : ''
+                        }`}
+                        onClick={() => {
+                          if (item.kind === 'type') {
+                            setPropertyType(item.value)
+                          } else {
+                            setRiskFilter(debtsFilters.risk === item.value ? 'all' : item.value)
+                          }
+                        }}
+                      >
+                        {t(item.labelKey)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+            </div>
 
         <div className="shares-grid" aria-busy={loadingDebts}>
           {loadingDebts && (
@@ -341,8 +524,8 @@ const Debts = () => {
                     <AuctionMobileLayout
                       properties={filtered}
                       formatPrice={formatPrice}
-                      isFavorite={() => false}
-                      onFavoriteToggle={() => false}
+                      isFavorite={isPropertyLiked}
+                      onFavoriteToggle={handleFavoriteToggle}
                     />
                   </div>
                 </div>
@@ -408,6 +591,24 @@ const Debts = () => {
                           <div className="property-link">
                             <div className="property-image-container">
                               <img {...propertyImageProps} alt={propertyTitle} className="property-image" />
+                              <div className="property-media-actions">
+                                <button
+                                  type="button"
+                                  className={`property-favorite ${isPropertyLiked(property) ? 'active' : ''}`}
+                                  onClick={(e) => handleFavoriteToggle(property, e)}
+                                  aria-label={t('favorites')}
+                                >
+                                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden>
+                                    <path
+                                      d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
+                                      stroke="currentColor"
+                                      strokeWidth="2"
+                                      fill={isPropertyLiked(property) ? 'currentColor' : 'none'}
+                                    />
+                                  </svg>
+                                </button>
+                                <PropertyShareButton property={property} />
+                              </div>
                               {isReserved && (
                                 <div className="property-reserved-overlay">
                                   <div className="reserved-overlay-icon">🔒</div>
@@ -494,8 +695,11 @@ const Debts = () => {
             </>
           )}
         </div>
+          </div>
+        </div>
+        </div>
       </main>
-      <div className="shares-floats">
+      <SiteChatDock wrapperClassName="shares-floats" recommendationProperties={apiDebts}>
         {dbUserId ? (
           depositLoading ? (
             <DepositButtonSkeleton />
@@ -503,15 +707,7 @@ const Debts = () => {
             <DepositButton amount={userDeposit} />
           )
         ) : null}
-        <button
-          type="button"
-          className="ai-button"
-          onClick={() => navigate('/chat')}
-          aria-label="AI Assistant"
-        >
-          AI
-        </button>
-      </div>
+      </SiteChatDock>
     </div>
   )
 }

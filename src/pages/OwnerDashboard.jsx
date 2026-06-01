@@ -25,8 +25,6 @@ import {
   FiBell,
   FiArrowRight,
   FiArrowUp,
-  FiHeart,
-  FiActivity,
   FiShoppingBag,
 } from 'react-icons/fi'
 import { MdBed, MdOutlineBathtub } from 'react-icons/md'
@@ -40,6 +38,7 @@ import OwnerModerationNoticeModal from '../components/OwnerModerationNoticeModal
 import OwnerPropertyBidAnalyticsModal from '../components/OwnerPropertyBidAnalyticsModal'
 import OwnerTestDriveSection from '../components/OwnerTestDriveSection'
 import OwnerMySalesSection from '../components/OwnerMySalesSection'
+import OwnerCabinetQuickNav from '../components/OwnerCabinetQuickNav'
 import OwnerSaleCelebrationModal from '../components/OwnerSaleCelebrationModal'
 import ImageWithSkeleton from '../components/ImageWithSkeleton'
 import { getDismissedCelebrationIds, dismissCelebration } from '../utils/ownerSaleCelebrationStorage'
@@ -66,6 +65,103 @@ import {
 } from '../utils/ownerAnalyticsExcelExport'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
+const OWNER_ADD_PROPERTY_DRAFT_KEY = 'addPropertyDraft'
+
+const hasNonEmptyString = (value) => typeof value === 'string' && value.trim() !== ''
+const hasPositiveNumber = (value) => {
+  const num = Number(value)
+  return Number.isFinite(num) && num > 0
+}
+const hasFiniteNumber = (value) => Number.isFinite(Number(value))
+
+const getDraftProgressCount = (draft) => {
+  if (!draft || typeof draft !== 'object') return 0
+
+  const formData = draft.formData && typeof draft.formData === 'object' ? draft.formData : {}
+
+  const hasType = hasNonEmptyString(formData.propertyType)
+
+  const hasPropertyName = hasNonEmptyString(formData.title) || hasNonEmptyString(formData.description)
+
+  const hasAddress =
+    hasNonEmptyString(formData.address) ||
+    hasNonEmptyString(formData.location) ||
+    (draft.selectedCoordinates &&
+      typeof draft.selectedCoordinates === 'object' &&
+      hasFiniteNumber(draft.selectedCoordinates.lat) &&
+      hasFiniteNumber(draft.selectedCoordinates.lng))
+
+  const hasDetails =
+    hasPositiveNumber(formData.area) ||
+    hasPositiveNumber(formData.livingArea) ||
+    hasPositiveNumber(formData.landArea) ||
+    hasPositiveNumber(formData.rooms) ||
+    hasPositiveNumber(formData.bedrooms) ||
+    hasPositiveNumber(formData.bathrooms) ||
+    hasPositiveNumber(formData.floor) ||
+    hasPositiveNumber(formData.totalFloors) ||
+    hasPositiveNumber(formData.yearBuilt) ||
+    hasNonEmptyString(formData.buildingType) ||
+    hasNonEmptyString(formData.constructionType) ||
+    hasNonEmptyString(formData.commercialType)
+
+  const hasAmenities =
+    Boolean(
+      formData.balcony ||
+        formData.parking ||
+        formData.elevator ||
+        formData.pool ||
+        formData.garden ||
+        formData.internet ||
+        formData.electricity ||
+        formData.security ||
+        formData.furniture,
+    ) ||
+    hasNonEmptyString(formData.additionalAmenities)
+
+  const hasMedia =
+    (Array.isArray(draft.photos) && draft.photos.length > 0) ||
+    (Array.isArray(draft.videos) && draft.videos.length > 0)
+
+  const requiredDocuments =
+    draft.requiredDocuments && typeof draft.requiredDocuments === 'object' ? draft.requiredDocuments : null
+  const hasRequiredDocs = Boolean(requiredDocuments?.ownership || requiredDocuments?.noDebts)
+  const hasAdditionalDocs = Array.isArray(draft.additionalDocuments) && draft.additionalDocuments.length > 0
+  const hasDebtDocs =
+    draft.debtDocumentsByCategory &&
+    typeof draft.debtDocumentsByCategory === 'object' &&
+    Object.values(draft.debtDocumentsByCategory).some(
+      (category) => category && typeof category === 'object' && Object.keys(category).length > 0,
+    )
+  const hasDocuments = Boolean(hasRequiredDocs || hasAdditionalDocs || hasDebtDocs)
+
+  const hasTestDrive = typeof formData.testDrive === 'boolean'
+
+  const hasPrice =
+    hasPositiveNumber(formData.price) ||
+    hasPositiveNumber(formData.auctionStartingPrice) ||
+    hasPositiveNumber(formData.minimumSalePrice) ||
+    hasPositiveNumber(formData.debtAmount) ||
+    hasPositiveNumber(formData.totalShares)
+
+  const steps = [
+    hasType,
+    hasPropertyName,
+    hasAddress,
+    hasDetails,
+    hasAmenities,
+    hasMedia,
+    hasDocuments,
+    hasTestDrive,
+    hasPrice,
+  ]
+
+  return steps.filter(Boolean).length
+}
+
+const hasMeaningfulAddPropertyDraft = (draft) => {
+  return getDraftProgressCount(draft) > 0
+}
 
 const formatDateSafe = (value) => {
   if (!value) return 'Не указано'
@@ -90,18 +186,6 @@ const formatDateSafe = (value) => {
 
   if (Number.isNaN(date.getTime())) return 'Не указано'
   return date.toLocaleDateString('ru-RU')
-}
-
-const ruCountWithNoun = (n, one, few, many) => {
-  const abs = Math.abs(Number(n)) || 0
-  const n100 = abs % 100
-  const n10 = abs % 10
-  let word = many
-  if (n100 > 10 && n100 < 20) word = many
-  else if (n10 === 1) word = one
-  else if (n10 >= 2 && n10 <= 4) word = few
-  else word = many
-  return `${abs} ${word}`
 }
 
 // Демонстрационные данные объявлений владельца
@@ -238,6 +322,10 @@ const OwnerDashboard = () => {
   const [interestCount, setInterestCount] = useState(0) // Количество уникальных заинтересованных пользователей
   const [showProfileFieldsModal, setShowProfileFieldsModal] = useState(false)
   const [missingFields, setMissingFields] = useState([])
+  const [hasAddPropertyDraft, setHasAddPropertyDraft] = useState(false)
+  const [isDraftNoticeDismissed, setIsDraftNoticeDismissed] = useState(false)
+  const [isDraftNoticeClosing, setIsDraftNoticeClosing] = useState(false)
+  const draftNoticeCloseTimerRef = useRef(null)
 
   useEffect(() => {
     if (!ownerNotifOpen) return
@@ -248,6 +336,54 @@ const OwnerDashboard = () => {
       document.body.style.overflow = prev
     }
   }, [ownerNotifOpen])
+
+  const refreshAddPropertyDraftState = useCallback(() => {
+    if (typeof window === 'undefined') {
+      setHasAddPropertyDraft(false)
+      setIsDraftNoticeDismissed(false)
+      setIsDraftNoticeClosing(false)
+      return
+    }
+    try {
+      const raw = window.localStorage.getItem(OWNER_ADD_PROPERTY_DRAFT_KEY)
+      if (!raw) {
+        setHasAddPropertyDraft(false)
+        setIsDraftNoticeDismissed(false)
+        setIsDraftNoticeClosing(false)
+        return
+      }
+      const parsed = JSON.parse(raw)
+      const hasDraft = hasMeaningfulAddPropertyDraft(parsed)
+      setHasAddPropertyDraft(hasDraft)
+      if (!hasDraft) {
+        setIsDraftNoticeDismissed(false)
+        setIsDraftNoticeClosing(false)
+      }
+    } catch {
+      setHasAddPropertyDraft(false)
+      setIsDraftNoticeDismissed(false)
+      setIsDraftNoticeClosing(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined
+    refreshAddPropertyDraftState()
+    const handleStorage = (event) => {
+      if (event.key === OWNER_ADD_PROPERTY_DRAFT_KEY) {
+        refreshAddPropertyDraftState()
+      }
+    }
+    const handleFocus = () => {
+      refreshAddPropertyDraftState()
+    }
+    window.addEventListener('storage', handleStorage)
+    window.addEventListener('focus', handleFocus)
+    return () => {
+      window.removeEventListener('storage', handleStorage)
+      window.removeEventListener('focus', handleFocus)
+    }
+  }, [refreshAddPropertyDraftState])
 
   useEffect(() => {
     if (searchParams.get('panel') !== 'profile') return
@@ -269,6 +405,14 @@ const OwnerDashboard = () => {
       }, 600)
     }
   }, [searchParams, navigate])
+
+  useEffect(() => {
+    return () => {
+      if (draftNoticeCloseTimerRef.current) {
+        clearTimeout(draftNoticeCloseTimerRef.current)
+      }
+    }
+  }, [])
 
   useEffect(() => {
     // Проверяем, авторизован ли владелец
@@ -1394,6 +1538,40 @@ const OwnerDashboard = () => {
     }
   }
 
+  const handleResumeDraftProperty = () => {
+    navigate('/owner/property/new')
+  }
+
+  const handleDiscardDraftProperty = () => {
+    if (typeof window === 'undefined') return
+    const confirmed = window.confirm('Удалить незавершённое объявление и начать заново?')
+    if (!confirmed) return
+    try {
+      window.localStorage.removeItem(OWNER_ADD_PROPERTY_DRAFT_KEY)
+      setHasAddPropertyDraft(false)
+      setIsDraftNoticeDismissed(false)
+      setIsDraftNoticeClosing(false)
+      showToast('Черновик удалён', 'success')
+    } catch {
+      showToast('Не удалось удалить черновик', 'error')
+    }
+  }
+
+  const handleCloseDraftNotice = () => {
+    if (isDraftNoticeClosing) return
+    setIsDraftNoticeClosing(true)
+    if (draftNoticeCloseTimerRef.current) {
+      clearTimeout(draftNoticeCloseTimerRef.current)
+    }
+    draftNoticeCloseTimerRef.current = setTimeout(() => {
+      setIsDraftNoticeDismissed(true)
+      setIsDraftNoticeClosing(false)
+      draftNoticeCloseTimerRef.current = null
+    }, 280)
+  }
+
+  const shouldRenderDraftNotice = hasAddPropertyDraft && (!isDraftNoticeDismissed || isDraftNoticeClosing)
+
   const getStatusBadge = (status) => {
     const statusConfig = {
       active: { text: 'Активно', class: 'status-badge--active' },
@@ -1605,6 +1783,14 @@ const OwnerDashboard = () => {
                 >
                   <FiUser size={20} />
                 </button>
+                <button
+                  type="button"
+                  className="owner-dashboard__home-btn"
+                  onClick={() => navigate('/')}
+                >
+                  <FiHome size={18} />
+                  <span>{t('home')}</span>
+                </button>
                 <button 
                   className="owner-dashboard__add-btn"
                   onClick={handleAddProperty}
@@ -1651,6 +1837,8 @@ const OwnerDashboard = () => {
             <span className="owner-dashboard__tab-text">{t('ownerTabMySales')}</span>
           </button>
         </div>
+
+        <OwnerCabinetQuickNav />
       </header>
 
       {ownerNotifVisible && (
@@ -1917,6 +2105,15 @@ const OwnerDashboard = () => {
             </div>
           </div>
 
+          <button
+            type="button"
+            className="owner-dashboard__add-listing-cta"
+            onClick={handleAddProperty}
+          >
+            <FiPlus size={17} aria-hidden />
+            <span>{t('addProperty')}</span>
+          </button>
+
           <div className="properties-grid owner-properties-grid">
             {propertiesLoading ? (
               <div style={{ textAlign: 'center', padding: '40px' }}>
@@ -1944,9 +2141,6 @@ const OwnerDashboard = () => {
 
                 const propertyCurrencySymbol = getListingCurrencySymbol(property.currency)
 
-                const minSalePriceNum = Number(property.price) || 0
-                const hasMinSalePrice = property.isAuction && minSalePriceNum > 0
-
                 const startNum = Number(startingPriceRaw)
                 const apiCurrent = Number(property.currentBid ?? property.current_bid)
                 const showAuctionCurrentBid = kind.key === 'auction' || kind.key === 'auction_buy_now'
@@ -1959,9 +2153,7 @@ const OwnerDashboard = () => {
                       : null)
 
                 const priceNum = Number(property.price) || 0
-                const shouldShowPrice =
-                  (!property.isAuction || (property.isAuction && priceNum > 0)) && priceNum > 0
-                const showBidUnderPrice = showAuctionCurrentBid && currentBidValue != null
+                const effectiveBidValue = currentBidValue ?? (priceNum > 0 ? priceNum : null)
                 const cardImageProps = buildResponsiveImageProps(property.image, {
                   widths: [320, 480, 640],
                   sizes: '(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw',
@@ -1990,30 +2182,7 @@ const OwnerDashboard = () => {
                       <div className="property-card-owner__header">
                         <div className="property-card-owner__title-wrapper">
                           <h3 className="property-card-owner__title">{property.title}</h3>
-                          {showBidUnderPrice ? (
-                            <div
-                              className={`property-bid-info property-bid-info--owner${
-                                ownerBidPulseIds[property.id] ? ' property-bid-info--pulse' : ''
-                              }`}
-                            >
-                              <span className="bid-label">{t('ownerCardBidLabel')}</span>
-                              <span className="bid-value">
-                                {propertyCurrencySymbol}
-                                {formatPrice(currentBidValue)}
-                                {ownerBidPulseIds[property.id] ? (
-                                  <FiArrowUp className="bid-value__arrow" size={18} aria-hidden />
-                                ) : null}
-                              </span>
-                            </div>
-                          ) : null}
                         </div>
-                        {shouldShowPrice ? (
-                          <div className="property-card-owner__price-column">
-                            <div className="property-card-owner__price">
-                              ${priceNum.toLocaleString('ru-RU')}
-                            </div>
-                          </div>
-                        ) : null}
                       </div>
 
                       <p className="property-card-owner__location">{property.location}</p>
@@ -2037,102 +2206,37 @@ const OwnerDashboard = () => {
                         </div>
                       </div>
 
-                      {/* Дублируем статус специально для мобильной версии под данными объекта */}
-                      <div className={`property-status-indicator property-status-indicator--${property.status} property-status-indicator--mobile`}>
-                        {property.status === 'active' && <span>Активно</span>}
-                        {property.status === 'pending' && <span>На модерации</span>}
-                        {property.status === 'rejected' && <span>Отклонено</span>}
-                        {property.status === 'sold' && <span>Продано</span>}
-                      </div>
-
-                      <div className="property-content-bottom">
-                      <div className="property-card-owner__stats">
-                        <div className="property-card-owner__stats-primary">
-                        <div className="property-card-owner__stat property-card-owner__stat--likes">
-                          <FiHeart size={14} aria-hidden />
-                          <span className="property-card-owner__stat-text">
-                            {ruCountWithNoun(property.likesCount ?? 0, 'лайк', 'лайка', 'лайков')}
-                          </span>
-                        </div>
-                        <div className="property-card-owner__stat property-card-owner__stat--bids">
-                          <FiActivity size={14} aria-hidden />
-                          <span className="property-card-owner__stat-text">
-                            {ruCountWithNoun(property.bidsCount ?? 0, 'ставка', 'ставки', 'ставок')}
-                          </span>
-                        </div>
-                        <div className="property-card-owner__stat property-card-owner__stat--status">
-                          <span className="property-card-owner__status-icon" aria-hidden>
-                            {property.status === 'active' ? (
-                              <FiCheck size={14} />
-                            ) : property.status === 'pending' ? (
-                              <FiClock size={14} />
-                            ) : property.status === 'rejected' ? (
-                              <FiAlertCircle size={14} />
-                            ) : property.status === 'sold' ? (
-                              <FiShoppingBag size={14} />
-                            ) : (
-                              <FiActivity size={14} />
-                            )}
-                          </span>
-                          <span className="property-card-owner__stat-text property-card-owner__stat-text--status">
-                            Статус:{' '}
-                            {property.status === 'active'
-                              ? 'Опубликован'
-                              : property.status === 'pending'
-                                ? 'На модерации'
-                                : property.status === 'rejected'
-                                  ? 'Отклонено'
-                                  : property.status === 'sold'
-                                    ? 'Продано'
-                                    : 'Не указано'}
-                          </span>
-                        </div>
-                        </div>
-                        {property.rejectionReason && !property.rejectionReason.startsWith('EDIT:') && (
-                          <div className="property-card-owner__stat" style={{ color: '#ef4444', fontWeight: 500 }}>
-                            <FiAlertCircle size={14} />
-                            <span>Причина отклонения: {property.rejectionReason}</span>
-                          </div>
-                        )}
-                        {(property.rejectionReason && property.rejectionReason.startsWith('EDIT:')) || property.hasPendingEdit ? (
-                          <div className="property-card-owner__stat property-card-owner__stat--pending-edit">
-                            <FiClock size={14} className="property-card-owner__pending-edit-icon" />
-                            <span className="property-card-owner__pending-edit-text">
-                              <span className="property-card-owner__pending-edit-text-line">Изменения отправлены</span>
-                              <span className="property-card-owner__pending-edit-text-line">и ожидают проверки</span>
-                            </span>
-                          </div>
-                        ) : null}
+                      <div
+                        className={`property-bid-info property-bid-info--owner${
+                          ownerBidPulseIds[property.id] ? ' property-bid-info--pulse' : ''
+                        }`}
+                      >
+                        <span className="bid-label">{t('ownerCardBidLabel')}</span>
+                        <span className="bid-value">
+                          {propertyCurrencySymbol}
+                          {formatPrice(effectiveBidValue)}
+                          {ownerBidPulseIds[property.id] ? (
+                            <FiArrowUp className="bid-value__arrow" size={18} aria-hidden />
+                          ) : null}
+                        </span>
                       </div>
 
                       <div className="property-card-owner__actions">
                         <button
                           type="button"
-                          className="action-btn action-btn--analytics"
-                          onClick={() => handleOpenBidAnalytics(property)}
-                        >
-                          Аналитика
-                        </button>
-                        <button
                           className="action-btn action-btn--view"
                           onClick={() => handleViewProperty(property.id)}
                         >
                           Просмотр
                         </button>
                         <button
+                          type="button"
                           className="action-btn action-btn--edit"
                           onClick={() => handleEditProperty(property)}
                         >
                           Изменить
                         </button>
-                        <button
-                          className="action-btn action-btn--delete"
-                          onClick={() => handleDeleteProperty(property.id)}
-                        >
-                          Удалить
-                        </button>
                       </div>
-                    </div>
                     </div>
                   </div>
                 )
@@ -2732,6 +2836,52 @@ const OwnerDashboard = () => {
           </div>
         </div>
       )}
+
+      {shouldRenderDraftNotice ? (
+        <aside
+          className={`owner-dashboard__draft-notice ${
+            isDraftNoticeClosing
+              ? 'owner-dashboard__draft-notice--closing'
+              : 'owner-dashboard__draft-notice--visible'
+          }`}
+          role="status"
+          aria-live="polite"
+        >
+          <button
+            type="button"
+            className="owner-dashboard__draft-notice-close"
+            onClick={handleCloseDraftNotice}
+            aria-label="Закрыть уведомление о черновике"
+          >
+            <FiX size={16} aria-hidden />
+          </button>
+          <div className="owner-dashboard__draft-notice-head">
+            <span className="owner-dashboard__draft-notice-alert" aria-hidden>
+              !
+            </span>
+            <p className="owner-dashboard__draft-notice-title">Незавершённое объявление</p>
+          </div>
+          <p className="owner-dashboard__draft-notice-subtitle">Вы начали заполнять объект. Продолжить?</p>
+          <div className="owner-dashboard__draft-notice-actions">
+            <button
+              type="button"
+              className="owner-dashboard__draft-notice-btn owner-dashboard__draft-notice-btn--resume"
+              onClick={handleResumeDraftProperty}
+            >
+              <FiArrowRight size={16} aria-hidden />
+              <span>Вернуться</span>
+            </button>
+            <button
+              type="button"
+              className="owner-dashboard__draft-notice-btn owner-dashboard__draft-notice-btn--discard"
+              onClick={handleDiscardDraftProperty}
+            >
+              <FiTrash2 size={16} aria-hidden />
+              <span>Сбросить</span>
+            </button>
+          </div>
+        </aside>
+      ) : null}
 
       {/* Панель профиля */}
       {isProfilePanelOpen && (

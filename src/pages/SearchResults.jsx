@@ -1,15 +1,25 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { FiAlertCircle } from 'react-icons/fi'
-import PageBackButton from '../components/PageBackButton'
+import { PanelLeftClose, PanelLeftOpen } from 'lucide-react'
+import Header from '../components/Header'
+import Footer from '../components/Footer'
 import PropertyListingCard from '../components/PropertyListingCard'
-import PropertySearchFiltersPanel, {
-  EMPTY_CATALOG_FILTERS,
-} from '../components/PropertySearchFiltersPanel'
+import PropertySearchFiltersPanel from '../components/PropertySearchFiltersPanel'
+import CatalogDesktopFilters from '../components/CatalogDesktopFilters'
 import { ensureCanOpenProperty } from '../utils/propertyAccessGuard'
 import { getApiBaseUrl } from '../utils/apiConfig'
+import {
+  EMPTY_CATALOG_FILTERS,
+  filterPropertiesBySearchQuery,
+  getCatalogFilterBounds,
+  loadCatalogFiltersFromSession,
+  persistCatalogFilters,
+  sanitizeCatalogFilters,
+} from '../utils/catalogFilters'
 import './SearchResults.css'
+import '../components/PropertyList.css'
 import '../components/PropertyListingGrid.css'
 import { getPropertyDetailPath, auctionListingDedupeKey, buildPropertyDetailNavigation } from '../utils/propertyDetailUrl'
 import { formatPropertyForListingCard } from '../utils/formatPropertyListingCard'
@@ -20,6 +30,8 @@ import {
   normalizeSearchPriceFilters,
 } from '../utils/propertySearchFilters'
 import { isPropertyListingSoldOut } from '../utils/auctionReminderBounds'
+
+const MOBILE_BREAKPOINT = 768
 
 function isHiddenSoldListing(property) {
   if (!property) return true
@@ -46,63 +58,80 @@ function SearchResultsGrid({ properties, onOpen }) {
 const SearchResults = () => {
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const [properties, setProperties] = useState([])
+  const [catalogProperties, setCatalogProperties] = useState([])
   const [loading, setLoading] = useState(true)
   const [activeFilters, setActiveFilters] = useState(EMPTY_CATALOG_FILTERS)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [desktopFiltersOpen, setDesktopFiltersOpen] = useState(true)
+  const [isMobile, setIsMobile] = useState(
+    () => typeof window !== 'undefined' && window.innerWidth <= MOBILE_BREAKPOINT,
+  )
+  const searchFiltersBarRef = useRef(null)
+
+  const isSearchDesktop = !isMobile
 
   useEffect(() => {
-    try {
-      const savedFilters = sessionStorage.getItem('propertySearchFilters')
-      const parsed = savedFilters ? JSON.parse(savedFilters) : EMPTY_CATALOG_FILTERS
-      const filters = parsed && typeof parsed === 'object' ? parsed : EMPTY_CATALOG_FILTERS
-      setActiveFilters(filters)
-      searchProperties(filters)
-    } catch {
-      setActiveFilters(EMPTY_CATALOG_FILTERS)
-      searchProperties(EMPTY_CATALOG_FILTERS)
+    const check = () => setIsMobile(window.innerWidth <= MOBILE_BREAKPOINT)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
+
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      try {
+        setLoading(true)
+        const API_BASE_URL = await getApiBaseUrl()
+        const catalog = await fetchSearchCatalogProperties(API_BASE_URL)
+        if (cancelled) return
+        const formatted = catalog
+          .map((prop) => formatPropertyForListingCard(prop))
+          .filter((property) => !isHiddenSoldListing(property))
+        const bounds = getCatalogFilterBounds(formatted)
+        const initialFilters = sanitizeCatalogFilters(loadCatalogFiltersFromSession(bounds), bounds)
+        persistCatalogFilters(initialFilters)
+        setCatalogProperties(formatted)
+        setActiveFilters(initialFilters)
+      } catch (error) {
+        console.error('Ошибка загрузки каталога:', error)
+        if (!cancelled) setCatalogProperties([])
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    })()
+    return () => {
+      cancelled = true
     }
   }, [])
 
-  const searchProperties = async (searchFilters) => {
-    try {
-      setLoading(true)
-      const API_BASE_URL = await getApiBaseUrl()
-      const catalog = await fetchSearchCatalogProperties(API_BASE_URL)
+  const filterBounds = useMemo(
+    () => getCatalogFilterBounds(catalogProperties),
+    [catalogProperties],
+  )
 
-      const formattedProperties = catalog.map((prop) => formatPropertyForListingCard(prop))
-
-      const priceBounds = {
-        min: Number(searchFilters._priceBoundMin) || 1,
-        max: Number(searchFilters._priceBoundMax) || 1_000_000,
-      }
-      const filtered = filterPropertiesStrict(
-        formattedProperties,
-        normalizeSearchPriceFilters(searchFilters, priceBounds)
-      ).filter((property) => !isHiddenSoldListing(property))
-
-      setProperties(filtered)
-    } catch (error) {
-      console.error('Ошибка поиска:', error)
-      setProperties([])
-    } finally {
-      setLoading(false)
+  const filteredProperties = useMemo(() => {
+    const priceBounds = {
+      min: filterBounds.priceMin,
+      max: filterBounds.priceMax,
     }
-  }
+    const normalized = normalizeSearchPriceFilters(activeFilters, priceBounds)
+    const strict = filterPropertiesStrict(catalogProperties, normalized)
+    return filterPropertiesBySearchQuery(strict, searchQuery)
+  }, [catalogProperties, activeFilters, searchQuery, filterBounds.priceMin, filterBounds.priceMax])
 
   const groupedSections = useMemo(
-    () => groupPropertiesByCatalogSection(properties, activeFilters),
-    [properties, activeFilters]
+    () => groupPropertiesByCatalogSection(filteredProperties, activeFilters),
+    [filteredProperties, activeFilters],
   )
 
   const totalUniqueCount = useMemo(() => {
     const seen = new Set()
-    for (const section of groupedSections) {
-      for (const property of section.properties) {
-        seen.add(auctionListingDedupeKey(property))
-      }
+    for (const property of filteredProperties) {
+      seen.add(auctionListingDedupeKey(property))
     }
     return seen.size
-  }, [groupedSections])
+  }, [filteredProperties])
 
   const openProperty = (property, { auctionTab } = {}) => {
     if (!ensureCanOpenProperty()) return
@@ -112,69 +141,226 @@ const SearchResults = () => {
     navigate(pathname, { state })
   }
 
+  const sanitizeActiveFilters = (nextFilters) =>
+    sanitizeCatalogFilters(nextFilters, {
+      priceMin: filterBounds.priceMin,
+      priceMax: filterBounds.priceMax,
+    })
+
+  const commitFilters = (nextFilters) => {
+    const sanitized = sanitizeActiveFilters(nextFilters)
+    setActiveFilters(sanitized)
+    persistCatalogFilters(sanitized)
+  }
+
   const handleApplyFilters = (nextFilters) => {
-    setActiveFilters(nextFilters)
-    searchProperties(nextFilters || EMPTY_CATALOG_FILTERS)
+    commitFilters({ ...EMPTY_CATALOG_FILTERS, ...nextFilters })
+  }
+
+  const handleDesktopFilterChange = (updater) => {
+    setActiveFilters((prev) => {
+      const next = typeof updater === 'function' ? updater(prev) : { ...prev, ...updater }
+      const sanitized = sanitizeActiveFilters(next)
+      persistCatalogFilters(sanitized)
+      return sanitized
+    })
+  }
+
+  const handleResetFilters = () => {
+    commitFilters(EMPTY_CATALOG_FILTERS)
+    setSearchQuery('')
   }
 
   if (loading) {
     return (
-      <div className="search-results">
-        <div className="search-results__loading">
-          <div className="search-results__spinner"></div>
-          <p>Поиск недвижимости...</p>
+      <div className="search-results-page">
+        <Header />
+        <div className="search-results search-results--loading">
+          <div className="search-results__loading">
+            <div className="search-results__spinner"></div>
+            <p>Поиск недвижимости...</p>
+          </div>
         </div>
+        <Footer />
       </div>
     )
   }
 
   return (
-    <div className="search-results">
+    <div className="search-results-page">
+      <Header />
+      <main className="search-results search-results--catalog-layout">
       <div className="search-results__container">
-        <PageBackButton
-          className="search-results__back"
-          onClick={() => navigate('/#landing-property-search')}
-        />
+        <div
+          className={`search-results__listing-shell shares-listing-shell${
+            isSearchDesktop && desktopFiltersOpen ? ' shares-listing-shell--with-filters' : ''
+          }${isSearchDesktop && !desktopFiltersOpen ? ' shares-listing-shell--filters-hidden' : ''}`}
+        >
+          <div
+            className={`search-results__layout shares-listing-layout${
+              isSearchDesktop
+                ? ` auction-desktop-layout${
+                    desktopFiltersOpen ? '' : ' auction-desktop-layout--filters-hidden'
+                  }`
+                : ''
+            }`}
+          >
+            {isSearchDesktop && desktopFiltersOpen ? (
+              <CatalogDesktopFilters
+                filters={activeFilters}
+                onChange={handleDesktopFilterChange}
+                priceBounds={{ min: filterBounds.priceMin, max: filterBounds.priceMax }}
+                onApply={() => {
+                  document.getElementById('search-results-grid')?.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start',
+                  })
+                }}
+              />
+            ) : null}
 
-        <PropertySearchFiltersPanel
-          initialFilters={activeFilters}
-          onApplyFilters={handleApplyFilters}
-        />
-
-        {totalUniqueCount === 0 ? (
-          <div className="search-results__empty">
-            <FiAlertCircle size={48} />
-            <h2>Ничего не найдено</h2>
-            <p>Попробуйте изменить параметры поиска</p>
-            <button
-              type="button"
-              className="search-results__button"
-              onClick={() => {
-                sessionStorage.setItem('propertySearchFilters', JSON.stringify(EMPTY_CATALOG_FILTERS))
-                setActiveFilters(EMPTY_CATALOG_FILTERS)
-                searchProperties(EMPTY_CATALOG_FILTERS)
-              }}
+            <div
+              className={`search-results__main shares-listing-layout__main${
+                isSearchDesktop ? ' auction-desktop-layout__main' : ''
+              }${
+                isSearchDesktop && !desktopFiltersOpen
+                  ? ' auction-desktop-layout__main--filters-hidden'
+                  : ''
+              }`.trim()}
             >
-              Показать все объекты
-            </button>
-          </div>
-        ) : (
-          <div className="search-results__sections property-listing-grid-sections">
-            {groupedSections.map((section, index) => (
-              <div key={section.key} className="search-results__section">
-                <h2 className="search-results__section-title">
-                  {t(section.labelKey)}
-                  <span className="search-results__section-count">({section.properties.length})</span>
-                </h2>
-                <SearchResultsGrid properties={section.properties} onOpen={openProperty} />
-                {index < groupedSections.length - 1 ? (
-                  <div className="property-listing-grid-divider" role="separator" aria-hidden="true" />
-                ) : null}
+              {!isSearchDesktop ? (
+                <>
+                  <PropertySearchFiltersPanel
+                    filters={activeFilters}
+                    onFiltersChange={handleApplyFilters}
+                  />
+                  <div className="search-filters-bar search-filters-bar--auction-mobile search-results__mobile-search">
+                    <div className="search-box">
+                      <svg
+                        className="search-icon"
+                        width="20"
+                        height="20"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        aria-hidden
+                      >
+                        <circle cx="11" cy="11" r="8" />
+                        <path d="m21 21-4.35-4.35" />
+                      </svg>
+                      <input
+                        type="text"
+                        className="search-input"
+                        placeholder={t('searchPlaceholderLong')}
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                      />
+                      {searchQuery ? (
+                        <button
+                          type="button"
+                          className="search-clear"
+                          onClick={() => setSearchQuery('')}
+                        >
+                          ×
+                        </button>
+                      ) : null}
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <div
+                  ref={searchFiltersBarRef}
+                  className="search-filters-bar search-filters-bar--auction-desktop"
+                >
+                  <button
+                    type="button"
+                    className="auction-desktop-filters-toggle"
+                    onClick={() => setDesktopFiltersOpen((open) => !open)}
+                    aria-label={
+                      desktopFiltersOpen ? t('auctionToggleFiltersHide') : t('auctionToggleFiltersShow')
+                    }
+                    aria-expanded={desktopFiltersOpen}
+                  >
+                    {desktopFiltersOpen ? <PanelLeftClose size={20} /> : <PanelLeftOpen size={20} />}
+                  </button>
+                  <div className="search-box">
+                    <svg
+                      className="search-icon"
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      aria-hidden
+                    >
+                      <circle cx="11" cy="11" r="8" />
+                      <path d="m21 21-4.35-4.35" />
+                    </svg>
+                    <input
+                      type="text"
+                      className="search-input"
+                      placeholder={t('searchPlaceholderLong')}
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                    {searchQuery ? (
+                      <button
+                        type="button"
+                        className="search-clear"
+                        onClick={() => setSearchQuery('')}
+                      >
+                        ×
+                      </button>
+                    ) : null}
+                  </div>
+                </div>
+              )}
+
+              <div id="search-results-grid" className="search-results__body">
+                {totalUniqueCount === 0 ? (
+                  <div className="search-results__empty">
+                    <FiAlertCircle size={48} />
+                    <h2>Ничего не найдено</h2>
+                    <p>Попробуйте изменить параметры поиска</p>
+                    <button
+                      type="button"
+                      className="search-results__button"
+                      onClick={handleResetFilters}
+                    >
+                      Показать все объекты
+                    </button>
+                  </div>
+                ) : (
+                  <div className="search-results__sections property-listing-grid-sections">
+                    {groupedSections.map((section, index) => (
+                      <div key={section.key} className="search-results__section">
+                        <h2 className="search-results__section-title">
+                          {t(section.labelKey)}
+                          <span className="search-results__section-count">
+                            ({section.properties.length})
+                          </span>
+                        </h2>
+                        <SearchResultsGrid properties={section.properties} onOpen={openProperty} />
+                        {index < groupedSections.length - 1 ? (
+                          <div
+                            className="property-listing-grid-divider"
+                            role="separator"
+                            aria-hidden="true"
+                          />
+                        ) : null}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
-            ))}
+            </div>
           </div>
-        )}
+        </div>
       </div>
+      </main>
+      <Footer />
     </div>
   )
 }

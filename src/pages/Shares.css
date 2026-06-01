@@ -45,6 +45,43 @@
   transform: translateY(0) scale(1);
 }
 
+/* Плавающие виджеты — контейнер (Доли / Долги) */
+.shares-floats .deposit-button,
+.shares-floats > .ai-button,
+.shares-floats .chat-widget {
+  transition:
+    opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.65s cubic-bezier(0.65, 0, 0.2, 1),
+    visibility 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+button.chat-widget__recommendation-link {
+  border: none;
+  background: transparent;
+  padding: 0;
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+
+/* У футера: депозит и AI уезжают вправо за экран (как на аукционе) */
+html.site-footer-near .shares-floats .deposit-button {
+  opacity: 0 !important;
+  visibility: hidden !important;
+  transform: translate3d(calc(100vw + 64px), 0, 0) scale(0.96) !important;
+  pointer-events: none !important;
+  transition-delay: 0s;
+}
+
+html.site-footer-near .shares-floats > button.ai-button {
+  opacity: 0 !important;
+  visibility: hidden !important;
+  transform: translate3d(calc(100vw + 64px), 0, 0) scale(0.96) !important;
+  pointer-events: none !important;
+  transition-delay: 0.07s;
+}
+
 /* Новый header на странице долей — такой же, как на Главной/домашней */
 .shares-page .new-header {
   background: transparent;
@@ -241,27 +278,125 @@
   box-sizing: border-box;
 }
 
-/* Долги: нет hero — чуть меньше зазор под шапкой, блок с крошками выше */
+/* Долги: контейнер не растягивается на весь экран — иначе заголовок уезжает вниз */
 .shares-page--debts .shares-container {
+  flex: 0 1 auto;
   padding-top: calc(env(safe-area-inset-top, 0px) + 96px);
 }
 
-/* Заголовок и крошки — в одну колонку с поиском (без доп. padding у strip) */
-.shares-page--debts .page-context-heading.page-context-heading--strip-auction-style {
-  padding-left: 0;
-  padding-right: 0;
-  padding-bottom: 12px;
+/* Листинг с фильтрами — Долги и Доли */
+.shares-page .shares-listing-shell {
+  width: 100%;
 }
 
-.shares-page--debts .page-context-heading--strip-auction-inner {
+.shares-page .page-context-heading.page-context-heading--listing-auction {
+  position: relative;
+  z-index: 2;
   max-width: none;
-  margin-left: 0;
-  margin-right: 0;
+  width: 100%;
+  margin: 0;
+  padding: 0 0 20px;
+  background: transparent;
+  box-sizing: border-box;
+}
+
+.shares-page .page-context-heading--listing-auction-inner {
+  max-width: none;
+  margin: 0;
+  text-align: left;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.shares-page .page-context-heading__title--auction-script {
+  font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
+  font-weight: 700;
+  font-style: italic;
+  font-size: clamp(2.35rem, 5.2vw, 3.35rem);
+  line-height: 1.12;
+  color: #0f172a;
+  margin: 0.35rem 0 0.55rem;
+  letter-spacing: 0.03em;
+  text-align: left;
+  font-synthesis: none;
+}
+
+.shares-page .page-context-heading--listing-auction-inner .page-breadcrumbs {
+  margin-bottom: 0;
+}
+
+.shares-page--catalog .shares-container,
+.shares-page--debts .shares-container {
+  flex: 0 1 auto;
+}
+
+@media (min-width: 769px) {
+  .shares-page--catalog .shares-container,
+  .shares-page--debts .shares-container {
+    max-width: 1440px;
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+
+  .shares-page .shares-listing-shell--with-filters {
+    display: grid;
+    grid-template-columns: minmax(280px, 320px) minmax(0, 1fr);
+    gap: 24px;
+    align-items: start;
+  }
+
+  .shares-page .shares-listing-shell--with-filters .page-context-heading.page-context-heading--listing-auction {
+    grid-column: 1;
+    grid-row: 1;
+    align-self: end;
+    padding-bottom: 12px;
+    text-align: left;
+  }
+
+  .shares-page .shares-listing-shell--with-filters .page-context-heading--listing-auction-inner {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    text-align: left;
+  }
+
+  .shares-page .shares-listing-shell--with-filters .page-context-heading__title--auction-script {
+    text-align: left;
+  }
+
+  .shares-page .shares-listing-shell--with-filters .page-breadcrumbs.page-breadcrumbs--flat-club .page-breadcrumbs__list {
+    justify-content: flex-start;
+  }
+
+  .shares-page .shares-listing-shell--with-filters .shares-listing-layout {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+
+  .shares-page .shares-listing-shell--filters-hidden .page-context-heading.page-context-heading--listing-auction {
+    max-width: 1048px;
+    margin-inline: auto;
+    padding-bottom: 20px;
+  }
+
+  .shares-page .shares-listing-layout__main {
+    min-width: 0;
+  }
+
+  .shares-page .auction-desktop-layout--filters-hidden .shares-grid {
+    max-width: 1048px;
+    margin-inline: auto;
+  }
 }
 
 @media (max-width: 768px) {
-  .shares-page--debts .shares-container {
-    padding-top: calc(env(safe-area-inset-top, 0px) + 92px);
+  .shares-page .page-context-heading.page-context-heading--listing-auction {
+    padding-bottom: 12px;
+  }
+
+  .shares-page .page-context-heading__title--auction-script {
+    margin: 0 0 0.3rem;
+    font-size: clamp(2rem, 8vw, 2.5rem);
   }
 }
 
@@ -408,6 +543,10 @@
 
 .shares-flip-cards > * {
   flex: 0 0 auto;
+}
+
+.shares-flip-cards--debts .flip-card-back-features {
+  margin-top: 36px;
 }
 
 @media (max-width: 1100px) {
@@ -564,7 +703,7 @@
   }
 
   .shares-flip-cards--debts .flip-card-back-features {
-    margin-top: 10px !important;
+    margin-top: 32px !important;
     gap: 8px !important;
   }
 
@@ -720,7 +859,7 @@
 .share-card__image-wrap .share-card__scale {
   position: absolute;
   top: 10px;
-  right: 10px;
+  left: 10px;
   bottom: 10px;
   width: 26px;
   z-index: 2;
@@ -793,20 +932,23 @@
   border-color: rgba(100, 116, 139, 0.4);
 }
 
-.share-card__badge {
-  position: absolute;
-  top: 16px;
-  left: 16px;
-  z-index: 2;
-  padding: 8px 14px;
-  border-radius: 12px;
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  background: linear-gradient(135deg, #0ABAB5 0%, #06a39e 100%);
-  color: #fff;
-  box-shadow: 0 4px 16px rgba(10, 186, 181, 0.45);
+.share-card__image-wrap > .property-media-actions {
+  z-index: 4;
+  flex-direction: column;
+  align-items: center;
+  right: 8px;
+  top: 8px;
+  gap: 6px;
+}
+
+.share-card__image-wrap > .property-media-actions .property-favorite {
+  width: 34px;
+  height: 34px;
+}
+
+.share-card__image-wrap > .property-media-actions .property-favorite svg {
+  width: 16px;
+  height: 16px;
 }
 
 .share-card__image-wrap {
@@ -886,11 +1028,6 @@
 
 .share-card--sold-out:hover {
   transform: translateY(-6px);
-}
-
-.share-card--sold-out .share-card__badge {
-  background: linear-gradient(135deg, #64748b 0%, #475569 100%);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
 }
 
 .share-card__content {
@@ -1009,21 +1146,17 @@
     aspect-ratio: 4 / 3;
   }
 
-  .share-card__badge {
-    top: 8px;
-    left: 8px;
-    padding: 4px 8px;
-    border-radius: 8px;
-    font-size: 8px;
-    letter-spacing: 0.07em;
-    box-shadow: 0 2px 8px rgba(10, 186, 181, 0.35);
-  }
-
   .share-card__image-wrap .share-card__scale {
     top: 6px;
-    right: 6px;
+    left: 6px;
     bottom: 6px;
     width: 20px;
+  }
+
+  .share-card__image-wrap > .property-media-actions {
+    right: 6px;
+    top: 6px;
+    gap: 5px;
   }
 
   .share-card__image-wrap .share-card__scale-track {
@@ -1045,8 +1178,8 @@
 
   .share-card__sold-overlay {
     align-items: flex-end;
-    justify-content: flex-start;
-    padding: 0 26px 6px 7px;
+    justify-content: center;
+    padding: 0 7px 6px 26px;
     min-height: 22px;
     background: linear-gradient(to top, rgba(0, 0, 0, 0.72) 0%, rgba(0, 0, 0, 0.38) 55%, transparent 100%);
   }
@@ -1208,26 +1341,6 @@
   border-color: rgba(0, 0, 0, 0.06);
 }
 
-.share-card-skeleton__badge {
-  position: absolute;
-  top: 16px;
-  left: 16px;
-  z-index: 2;
-  width: 88px;
-  height: 32px;
-  border-radius: 12px;
-  background: linear-gradient(
-    105deg,
-    #dbeafe 0%,
-    #e2e8f0 40%,
-    rgba(232, 250, 248, 0.85) 50%,
-    #e2e8f0 60%,
-    #dbeafe 100%
-  );
-  background-size: 220% 100%;
-  animation: share-card-skeleton-wave 1.45s cubic-bezier(0.45, 0, 0.55, 1) infinite;
-}
-
 .share-card--skeleton .share-card__image-wrap {
   background: #e8edf2;
 }
@@ -1255,7 +1368,7 @@
 .share-card-skeleton__scale {
   position: absolute;
   top: 10px;
-  right: 10px;
+  left: 10px;
   bottom: 10px;
   width: 26px;
   z-index: 2;
@@ -1357,35 +1470,30 @@
 }
 
 .shares-grid .share-card--skeleton:nth-child(2) .share-card-skeleton__shimmer,
-.shares-grid .share-card--skeleton:nth-child(2) .share-card-skeleton__badge,
 .shares-grid .share-card--skeleton:nth-child(2) .share-card-skeleton__line,
 .shares-grid .share-card--skeleton:nth-child(2) .share-card-skeleton__footer {
   animation-delay: 0.12s;
 }
 
 .shares-grid .share-card--skeleton:nth-child(3) .share-card-skeleton__shimmer,
-.shares-grid .share-card--skeleton:nth-child(3) .share-card-skeleton__badge,
 .shares-grid .share-card--skeleton:nth-child(3) .share-card-skeleton__line,
 .shares-grid .share-card--skeleton:nth-child(3) .share-card-skeleton__footer {
   animation-delay: 0.24s;
 }
 
 .shares-grid .share-card--skeleton:nth-child(4) .share-card-skeleton__shimmer,
-.shares-grid .share-card--skeleton:nth-child(4) .share-card-skeleton__badge,
 .shares-grid .share-card--skeleton:nth-child(4) .share-card-skeleton__line,
 .shares-grid .share-card--skeleton:nth-child(4) .share-card-skeleton__footer {
   animation-delay: 0.36s;
 }
 
 .shares-grid .share-card--skeleton:nth-child(5) .share-card-skeleton__shimmer,
-.shares-grid .share-card--skeleton:nth-child(5) .share-card-skeleton__badge,
 .shares-grid .share-card--skeleton:nth-child(5) .share-card-skeleton__line,
 .shares-grid .share-card--skeleton:nth-child(5) .share-card-skeleton__footer {
   animation-delay: 0.48s;
 }
 
 .shares-grid .share-card--skeleton:nth-child(6) .share-card-skeleton__shimmer,
-.shares-grid .share-card--skeleton:nth-child(6) .share-card-skeleton__badge,
 .shares-grid .share-card--skeleton:nth-child(6) .share-card-skeleton__line,
 .shares-grid .share-card--skeleton:nth-child(6) .share-card-skeleton__footer {
   animation-delay: 0.58s;
@@ -1401,17 +1509,9 @@
 }
 
 @media (max-width: 768px) {
-  .share-card-skeleton__badge {
-    top: 8px;
-    left: 8px;
-    width: 56px;
-    height: 22px;
-    border-radius: 8px;
-  }
-
   .share-card-skeleton__scale {
     top: 6px;
-    right: 6px;
+    left: 6px;
     bottom: 6px;
     width: 20px;
   }

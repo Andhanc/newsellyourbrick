@@ -24,6 +24,10 @@ export default function FlipCard({
   const isFlipped = isControlled ? isFlippedProp : internalIsFlipped
   const accent = color || '#ff2e88'
 
+  const ctaLabel = String(ctaText || '')
+    .replace(/^(\p{Extended_Pictographic}\p{Emoji_Modifier}*|\p{Emoji_Presentation})(\uFE0F|\u200D\p{Extended_Pictographic})*\s+/u, '')
+    .trim()
+
   const cardStyle = {
     background: 'linear-gradient(160deg, #ffffff 0%, #f8fafc 100%)',
     boxShadow: `0 2px 4px rgba(0,0,0,0.04), 0 8px 24px -4px rgba(0,0,0,0.07), 0 0 0 1px rgba(0,0,0,0.05), 0 0 0 5px ${accent}10`,
@@ -180,13 +184,8 @@ export default function FlipCard({
               <h3 className="flip-card-back-title" style={{ fontSize: 20, fontWeight: 700, color: '#18181b', lineHeight: 1.2, margin: 0 }}>{title}</h3>
             </div>
 
-            {/* 2. Описание */}
-            <p className="flip-card-back-description" style={{ margin: '10px 0 0', fontSize: 13, color: '#71717a', lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-              {description}
-            </p>
-
-            {/* 3. Список — flex-grow чтобы кнопка была внизу */}
-            <div className="flip-card-back-features" style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 10, flexGrow: 1 }}>
+            {/* 2. Список — flex-grow чтобы кнопка была внизу */}
+            <div className="flip-card-back-features">
               {features.map((feature, index) => {
                 const IconComponent = ICON_FEATURES[index % ICON_FEATURES.length]
                 return (
@@ -217,6 +216,7 @@ export default function FlipCard({
                 className="flip-card-back-cta"
                 style={{
                   width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  gap: 12,
                   borderRadius: 12, padding: '10px 16px',
                   background: 'linear-gradient(135deg, #f8fafc 0%, #ffffff 50%, #f1f5f9 100%)',
                   border: '1px solid rgba(226,232,240,0.9)',
@@ -224,8 +224,11 @@ export default function FlipCard({
                   boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
                 }}
               >
-                <span style={{ fontSize: 14, fontWeight: 600, color: '#18181b' }}>{ctaText}</span>
-                <ArrowRight style={{ width: 16, height: 16, color: accent }} />
+                <span className="flip-card-back-cta-label">
+                  <CardIcon className="flip-card-back-cta-icon" style={{ color: accent }} aria-hidden />
+                  <span style={{ fontSize: 14, fontWeight: 600, color: '#18181b' }}>{ctaLabel}</span>
+                </span>
+                <ArrowRight style={{ width: 16, height: 16, color: accent, flexShrink: 0 }} />
               </button>
             </div>
 

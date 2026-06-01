@@ -9,14 +9,7 @@ import {
   getPropertyListPrice,
   propertyMatchesLocationFilter,
 } from './propertySearchLocation'
-
-const PROPERTY_TYPE_SEARCH_MAP = {
-  Квартира: ['apartment'],
-  Апартаменты: ['commercial'],
-  Вилла: ['villa'],
-  Дом: ['house'],
-  Таунхаус: ['house'],
-}
+import { propertyMatchesCatalogPropertyType } from './catalogFilters'
 
 export function getSearchLocationCriteria(filters = {}) {
   return {
@@ -36,9 +29,7 @@ function passesSearchLocationFilter(prop, filters = {}) {
 }
 
 function passesPropertyTypeFilter(prop, propertyType) {
-  const targetTypes = PROPERTY_TYPE_SEARCH_MAP[propertyType] || []
-  if (!targetTypes.length) return false
-  return targetTypes.includes(prop.property_type)
+  return propertyMatchesCatalogPropertyType(prop, propertyType)
 }
 
 function passesPurchaseTypeFilter(prop, purchaseType) {
@@ -158,11 +149,10 @@ export function filterPropertiesStrict(properties = [], filters = {}) {
     result = result.filter((p) => passesRoomsFilter(p, filters.rooms))
   }
 
-  if (hasFilterValue(filters.currency)) {
-    result = result.filter((p) => passesCurrencyFilter(p, filters))
-  }
-
   if (hasCatalogPriceFilter(filters)) {
+    if (hasFilterValue(filters.currency)) {
+      result = result.filter((p) => passesCurrencyFilter(p, filters))
+    }
     result = result.filter((p) => passesPriceFilter(p, filters))
   }
 

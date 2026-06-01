@@ -2,7 +2,7 @@
   position: fixed;
   top: 0;
   right: 0;
-  z-index: 10000;
+  z-index: 20000;
   pointer-events: none;
   padding: 20px;
 }

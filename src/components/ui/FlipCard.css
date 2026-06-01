@@ -16,3 +16,24 @@
 .flip-card-line {
   animation: flip-card-slideIn 2s ease-in-out infinite;
 }
+
+.flip-card-back-features {
+  margin-top: var(--flip-card-features-offset, 36px);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex-grow: 1;
+}
+
+.flip-card-back-cta-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.flip-card-back-cta-icon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}

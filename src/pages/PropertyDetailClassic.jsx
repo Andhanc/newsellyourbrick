@@ -2285,7 +2285,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
     // Проверяем, что пользователь не является продавцом
     const userRole = userData?.role || 'buyer'
     if (userRole === 'seller' || userRole === 'owner') {
-      showNotification('Продавцы не могут покупать объекты')
+      showSellerRoleWarningToast('покупать')
       return
     }
 
@@ -2306,6 +2306,33 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
   }
 
   const handleBookNow = () => openBuyNowModal('buyNow')
+
+  const showSellerRoleWarningToast = (actionLabel = 'делать ставки') => {
+    showNotification(
+      <span>
+        Продавцы не могут {actionLabel} на объекты.{' '}
+        <button
+          type="button"
+          className="auth-toast-link"
+          onClick={(e) => {
+            e.preventDefault()
+            e.stopPropagation()
+            try {
+              sessionStorage.setItem('login_modal_mode', 'register')
+              sessionStorage.setItem('login_modal_user_role', 'buyer')
+            } catch {
+              // ignore
+            }
+            requestOpenLoginModal({ wizard: false })
+          }}
+        >
+          Стать покупателем <span className="auth-toast-link__arrow">→</span>
+        </button>
+      </span>,
+      'info',
+      9000
+    )
+  }
 
   // Функция для определения значений кнопок быстрых ставок в зависимости от текущей ставки
   const getQuickBidAmounts = () => {
@@ -2344,7 +2371,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
     // Проверяем, что пользователь не является продавцом
     const userRole = userData?.role || 'buyer'
     if (userRole === 'seller' || userRole === 'owner') {
-      showNotification('Продавцы не могут делать ставки на объекты')
+      showSellerRoleWarningToast('делать ставки')
       return
     }
 
@@ -2428,7 +2455,7 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
     // Проверяем, что пользователь не является продавцом
     const userRole = userData?.role || 'buyer'
     if (userRole === 'seller' || userRole === 'owner') {
-      showNotification('Продавцы не могут делать ставки на объекты')
+      showSellerRoleWarningToast('делать ставки')
       return
     }
 
@@ -4073,10 +4100,10 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
           : 'В основном технические или процедурные вопросы, решаемые стандартными действиями при сделке.'
     const ctaText =
       sev === 'red'
-        ? '🔥 Высокий шанс заработать'
+        ? 'Высокий шанс заработать'
         : sev === 'yellow'
-          ? '📈 Средний шанс заработать'
-          : '✅ Стабильный шанс заработать'
+          ? 'Средний шанс заработать'
+          : 'Стабильный шанс заработать'
     const debtFeatures = [
       displayProperty.debt_utilities && 'Долги по коммунальным услугам',
       displayProperty.debt_mortgage_pledge && 'Залог у банка',
@@ -5696,9 +5723,9 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
                     : 'В основном технические или процедурные вопросы, решаемые стандартными действиями при сделке.'
 
                 const ctaText =
-                  sev === 'red' ? '🔥 Высокий шанс заработать' :
-                  sev === 'yellow' ? '📈 Средний шанс заработать' :
-                  '✅ Стабильный шанс заработать'
+                  sev === 'red' ? 'Высокий шанс заработать' :
+                  sev === 'yellow' ? 'Средний шанс заработать' :
+                  'Стабильный шанс заработать'
 
                 const debtFeatures = [
                   displayProperty.debt_utilities && 'Долги по коммунальным услугам',

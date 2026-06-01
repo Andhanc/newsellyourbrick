@@ -287,6 +287,34 @@
   transform: translateY(0);
 }
 
+.property-search-filters-panel__field--rooms {
+  grid-column: 1 / -1;
+}
+
+.property-search-filters-panel__room-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.property-search-filters-panel__room-pill {
+  min-width: 40px;
+  padding: 9px 12px;
+  border-radius: 10px;
+  border: 1px solid #d7e2ef;
+  background: #fff;
+  color: #334155;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.property-search-filters-panel__room-pill.is-active {
+  border-color: rgba(10, 186, 181, 0.7);
+  background: rgba(10, 186, 181, 0.12);
+  color: #0f766e;
+}
+
 .property-search-filters-panel__price-error {
   margin: 4px 0 0;
   font-size: 13px;

@@ -605,6 +605,33 @@ const PropertyDetail = () => {
   const formatPrice = (price) =>
     formatPropertyPrice(price, normalizedProperty.currency, { compact: true })
 
+  const showSellerRoleWarningToast = () => {
+    showNotification(
+      <span>
+        Продавцы не могут делать ставки на объекты.{' '}
+        <button
+          type="button"
+          className="auth-toast-link"
+          onClick={(e) => {
+            e.preventDefault()
+            e.stopPropagation()
+            try {
+              sessionStorage.setItem('login_modal_mode', 'register')
+              sessionStorage.setItem('login_modal_user_role', 'buyer')
+            } catch {
+              // ignore
+            }
+            requestOpenLoginModal({ wizard: false })
+          }}
+        >
+          Стать покупателем <span className="auth-toast-link__arrow">→</span>
+        </button>
+      </span>,
+      'info',
+      9000
+    )
+  }
+
   const handleBid = async (e) => {
     e.preventDefault()
     setBidError('')
@@ -617,7 +644,7 @@ const PropertyDetail = () => {
     // Проверяем, что пользователь не является продавцом
     const userRole = userData?.role || 'buyer'
     if (userRole === 'seller' || userRole === 'owner') {
-      showNotification('Продавцы не могут делать ставки на объекты')
+      showSellerRoleWarningToast()
       return
     }
     

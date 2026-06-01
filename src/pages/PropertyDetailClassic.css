@@ -1146,6 +1146,10 @@
   --flip-card-max-width: none;
 }
 
+.property-detail-debt-risk-card .flip-card-back-features {
+  margin-top: 36px;
+}
+
 /* Десктоп: меняем местами блок риска и блок ставок */
 @media (min-width: 961px) {
   .property-detail-sidebar__content {
@@ -2624,7 +2628,7 @@
   }
 
   .property-detail-debt-risk-card .flip-card-back-features {
-    margin-top: 10px !important;
+    margin-top: 32px !important;
     gap: 8px !important;
   }
 

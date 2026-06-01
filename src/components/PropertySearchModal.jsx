@@ -6,10 +6,10 @@ import { FiX, FiSearch, FiDollarSign, FiMapPin, FiHome, FiTag, FiChevronLeft } f
 import { getApiBaseUrl } from '../utils/apiConfig'
 import { fetchDedupe } from '../utils/fetchDedupe'
 import { useDrawerDismiss, DRAWER_DISMISS_MS } from '../hooks/useDrawerDismiss'
+import { CATALOG_PROPERTY_TYPE_OPTIONS } from '../utils/catalogFilters'
 import './PropertySearchModal.css'
 
-const PROPERTY_TYPE_KEYS = ['propertyTypeFlat', 'propertyTypeApartment', 'propertyTypeVilla', 'propertyTypeHouse', 'propertyTypeTownhouse']
-const PROPERTY_TYPE_VALUES = ['Квартира', 'Апартаменты', 'Вилла', 'Дом', 'Таунхаус']
+const CATALOG_PROPERTY_TYPE_SELECT_OPTIONS = CATALOG_PROPERTY_TYPE_OPTIONS.filter((opt) => opt.value)
 const PURCHASE_TYPE_OPTIONS = [
   { value: '', labelKey: 'modalAnyPurchaseType' },
   { value: 'auction', labelKey: 'modalPurchaseTypeAuction' },
@@ -441,9 +441,9 @@ const PropertySearchModal = ({ isOpen, onClose, restoreFromSession = false }) =>
                   onChange={(e) => handleFilterChange('propertyType', e.target.value)}
                 >
                   <option value="">{t('modalAnyType')}</option>
-                  {PROPERTY_TYPE_VALUES.map((type, i) => (
-                    <option key={type} value={type}>
-                      {t(PROPERTY_TYPE_KEYS[i])}
+                  {CATALOG_PROPERTY_TYPE_SELECT_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {t(option.labelKey)}
                     </option>
                   ))}
                 </select>

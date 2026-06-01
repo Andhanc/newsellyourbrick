@@ -10,7 +10,6 @@ export function ShareCardSkeletonGrid({ count = 6 }) {
           className="share-card share-card--skeleton"
           aria-hidden="true"
         >
-          <div className="share-card-skeleton__badge" />
           <div className="share-card__image-wrap">
             <div className="share-card-skeleton__scale" aria-hidden>
               <div className="share-card-skeleton__scale-track" />

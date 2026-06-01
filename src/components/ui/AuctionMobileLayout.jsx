@@ -9,6 +9,7 @@ import { MdBed, MdOutlineBathtub } from 'react-icons/md'
 import { BiArea } from 'react-icons/bi'
 import { cn } from '@/lib/utils'
 import PropertyTimer from '../PropertyTimer'
+import PropertyShareButton from '../PropertyShareButton'
 import CircularTimer from '../CircularTimer'
 import { showNotification } from '@/utils/toastHelper'
 import { ensureCanOpenProperty } from '@/utils/propertyAccessGuard'
@@ -706,6 +707,12 @@ function AuctionMobileItem({
                 className="auction-mobile-photo-icons"
                 onClick={(e) => e.stopPropagation()}
               >
+                <PropertyShareButton
+                  property={property}
+                  variant="mobile-media"
+                  className="auction-mobile-share-btn"
+                  iconSize={16}
+                />
                 {showBuyNow && (
                   <AuctionPhotoHint type="buy" tooltipKey="buyNowTooltip" onGo={goDetail} />
                 )}
@@ -713,6 +720,16 @@ function AuctionMobileItem({
                   <AuctionPhotoHint type="test" tooltipKey="testDriveTooltip" onGo={goDetail} />
                 )}
               </div>
+            )}
+            {!isReserved &&
+            !showMobilePrivateClubHero &&
+            !(showBuyNow || hasTestDrive) &&
+            !isAuctionListingEnded(property) && (
+              <PropertyShareButton
+                property={property}
+                variant="mobile-media"
+                iconSize={16}
+              />
             )}
             {view === 'list' && redOnImage && (
               <div className="auction-mobile-circular-timer auction-mobile-circular-timer--list-bottom">

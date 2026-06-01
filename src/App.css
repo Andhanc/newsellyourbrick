@@ -238,7 +238,8 @@ html.login-modal-open button.ai-button {
     transform: translate3d(calc(100vw + 64px), 0, 0) scale(0.96) !important;
   }
 
-  html.site-footer-near .home-auction-floats .deposit-button {
+  html.site-footer-near .home-auction-floats .deposit-button,
+  html.site-footer-near .shares-floats .deposit-button {
     opacity: 0 !important;
     pointer-events: none !important;
     transform: translate3d(calc(100vw + 64px), 0, 0) scale(0.96) !important;

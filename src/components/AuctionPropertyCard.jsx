@@ -4,6 +4,7 @@ import { MapPin, Gem, ShoppingBag, Car, ArrowUpRight } from 'lucide-react'
 import { MdBed, MdOutlineBathtub } from 'react-icons/md'
 import { BiArea } from 'react-icons/bi'
 import PropertyTimer from './PropertyTimer'
+import PropertyShareButton from './PropertyShareButton'
 import CircularTimer from './CircularTimer'
 import ImageWithSkeleton from './ImageWithSkeleton'
 import { getPropertyCardImage } from '../utils/propertyImage'
@@ -197,6 +198,8 @@ export default function AuctionPropertyCard({
               />
             </svg>
           </button>
+
+          <PropertyShareButton property={property} variant="glass" iconSize={18} />
 
           {showFeatureBadges ? (
             <div className="auction-card__photo-icons" onClick={(e) => e.stopPropagation()}>
