@@ -20,7 +20,7 @@ const PropertySearchBlock = () => {
         </header>
         <PropertySearchFiltersPanel
           onApplyFilters={handleApplyFilters}
-          findButtonLabelKey="findProperty"
+          findButtonLabelKey="modalFind"
         />
       </div>
     </section>

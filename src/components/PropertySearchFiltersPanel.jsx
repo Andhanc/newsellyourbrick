@@ -15,9 +15,7 @@ import {
 import {
   CATALOG_PROPERTY_TYPE_OPTIONS,
   CATALOG_PURCHASE_TYPE_OPTIONS,
-  CATALOG_ROOM_OPTIONS,
   EMPTY_CATALOG_FILTERS,
-  getCatalogFilterProfile,
   loadCatalogFiltersFromSession,
   mergeCatalogFilters,
   persistCatalogFilters,
@@ -103,12 +101,11 @@ const PropertySearchFiltersPanel = ({
   const setFilters = isControlled ? onFiltersChange : setInternalFilters
 
   const [locationOptions, setLocationOptions] = useState([])
-  const [defaultCurrency, setDefaultCurrency] = useState('EUR')
+  const defaultCurrency = 'EUR'
   const [optionsLoading, setOptionsLoading] = useState(false)
   const [priceErrorKey, setPriceErrorKey] = useState('')
   const [currencyDropdownAnchor, setCurrencyDropdownAnchor] = useState(null)
 
-  const profile = getCatalogFilterProfile(filters.propertyType)
   const activeCurrency = filters.currency || defaultCurrency
   const currencyList = useMemo(() => getCatalogFilterCurrencies(), [])
 
@@ -125,10 +122,6 @@ const PropertySearchFiltersPanel = ({
         const json = await res.json()
         if (!json?.success || cancelled) return
         setLocationOptions(Array.isArray(json?.data?.locations) ? json.data.locations : [])
-        const apiDefault = json?.data?.defaultCurrency
-        if (apiDefault && getCatalogFilterCurrencies().some((c) => c.code === apiDefault)) {
-          setDefaultCurrency(apiDefault)
-        }
       } catch {
         if (!cancelled) setLocationOptions([])
       } finally {
@@ -313,11 +306,9 @@ const PropertySearchFiltersPanel = ({
                 value={filters.propertyType}
                 onChange={(e) => {
                   const propertyType = e.target.value
-                  const nextProfile = getCatalogFilterProfile(propertyType)
                   setFilters((prev) => ({
                     ...prev,
                     propertyType,
-                    rooms: nextProfile.rooms ? prev.rooms : '',
                   }))
                 }}
               >
@@ -329,33 +320,6 @@ const PropertySearchFiltersPanel = ({
                 ))}
               </select>
             </label>
-
-            {profile.rooms ? (
-              <div className="property-search-filters-panel__field property-search-filters-panel__field--rooms">
-                <span>{t('modalRooms')}</span>
-                <div className="property-search-filters-panel__room-pills" role="group">
-                  {CATALOG_ROOM_OPTIONS.map((opt) => {
-                    const isActive = filters.rooms === opt.value
-                    return (
-                      <button
-                        key={opt.value}
-                        type="button"
-                        className={`property-search-filters-panel__room-pill${isActive ? ' is-active' : ''}`}
-                        aria-pressed={isActive}
-                        onClick={() =>
-                          setFilters((prev) => ({
-                            ...prev,
-                            rooms: isActive ? '' : opt.value,
-                          }))
-                        }
-                      >
-                        {opt.label}
-                      </button>
-                    )
-                  })}
-                </div>
-              </div>
-            ) : null}
 
             <CatalogPriceField
               label={t('modalFrom')}
