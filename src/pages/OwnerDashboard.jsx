@@ -42,6 +42,7 @@ import OwnerCabinetQuickNav from '../components/OwnerCabinetQuickNav'
 import OwnerSaleCelebrationModal from '../components/OwnerSaleCelebrationModal'
 import ImageWithSkeleton from '../components/ImageWithSkeleton'
 import { getDismissedCelebrationIds, dismissCelebration } from '../utils/ownerSaleCelebrationStorage'
+import { getPropertyDetailPath } from '../utils/propertyDetailUrl'
 import CountrySelect, { countries as countryList } from '../components/CountrySelect'
 import { getUserData, saveUserData, logout, clearUserData, CLERK_DB_USER_SYNCED } from '../services/authService'
 import { getNotificationItemClass } from '../utils/notificationItemClass'
@@ -1416,8 +1417,9 @@ const OwnerDashboard = () => {
 
   const handleEditProperty = (property) => {
     if (!property?.id) return
-    navigate(`/property/${property.id}/edit`, {
+    navigate('/owner/property/new', {
       state: {
+        editPropertyId: property.id,
         property_type: property.property_type,
         admin_added:
           property.created_by_admin === true ||
@@ -1430,8 +1432,16 @@ const OwnerDashboard = () => {
     })
   }
 
-  const handleViewProperty = (id) => {
-    navigate(`/property/${id}`, { state: { fromOwnerDashboard: true } })
+  const handleViewProperty = (propertyOrId) => {
+    const property =
+      propertyOrId != null && typeof propertyOrId === 'object'
+        ? propertyOrId
+        : properties.find((p) => String(p.id) === String(propertyOrId))
+    const id = property?.id ?? propertyOrId
+    if (id == null) return
+    navigate(getPropertyDetailPath(id, { property: property || { id } }), {
+      state: { property, fromOwnerDashboard: true },
+    })
   }
 
   const handleOpenBidAnalytics = (property) => {
@@ -1913,7 +1923,14 @@ const OwnerDashboard = () => {
                                   onClick={(e) => {
                                     e.stopPropagation()
                                     setOwnerNotifOpen(false)
-                                    navigate(`/property/${notification.data.property_id}`)
+                                    navigate(
+                                      getPropertyDetailPath(notification.data.property_id, {
+                                        property: {
+                                          id: notification.data.property_id,
+                                          property_type: notification.data.property_type,
+                                        },
+                                      })
+                                    )
                                   }}
                                 >
                                   {t('goTo')}
@@ -2225,7 +2242,7 @@ const OwnerDashboard = () => {
                         <button
                           type="button"
                           className="action-btn action-btn--view"
-                          onClick={() => handleViewProperty(property.id)}
+                          onClick={() => handleViewProperty(property)}
                         >
                           Просмотр
                         </button>

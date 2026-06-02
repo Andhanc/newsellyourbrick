@@ -26,7 +26,8 @@ import {
   FiTrendingUp,
   FiShield,
   FiZap,
-  FiTarget
+  FiTarget,
+  FiLock,
 } from 'react-icons/fi'
 import { PiBuildingApartment, PiBuildings, PiWarehouse } from 'react-icons/pi'
 
@@ -238,6 +239,112 @@ function normalizeConstructionTypeForForm(raw) {
   if (v === 'monolithic_frame') return 'monolithic'
   if (v === 'panel_frame') return 'panel'
   return ''
+}
+
+function parseTzParametersFromProperty(property) {
+  const raw = property?.tz_parameters_json
+  if (!raw) return {}
+  if (typeof raw === 'object' && !Array.isArray(raw)) return raw
+  try {
+    const parsed = JSON.parse(raw)
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {}
+  } catch {
+    return {}
+  }
+}
+
+/** Тип конструкции в БД хранится в building_type, не в construction_type */
+function resolveConstructionTypeForForm(property) {
+  return normalizeConstructionTypeForForm(
+    property?.construction_type || property?.building_type || ''
+  )
+}
+
+/** Разбор country/city/address/apartment из полей или строки location */
+function resolveLocationFieldsFromProperty(property) {
+  let country = String(property?.country || '').trim()
+  let city = String(property?.city || '').trim()
+  let address = String(property?.address || '').trim()
+  let apartment = String(property?.apartment || '').trim()
+  const location = String(property?.location || '').trim()
+
+  if ((!country || !city) && location) {
+    const parts = location.split(',').map((p) => p.trim()).filter(Boolean)
+    if (parts.length >= 2) {
+      if (!country) country = parts[0]
+      if (!city) city = parts[1]
+      if (!address && parts.length === 3) {
+        address = parts[2]
+      } else if (!address && parts.length >= 4) {
+        const last = parts[parts.length - 1]
+        if (/^\d+[a-zA-Zа-яА-ЯёЁ\-/]*$/.test(last)) {
+          apartment = apartment || last
+          address = parts.slice(2, -1).join(', ')
+        } else {
+          address = parts.slice(2).join(', ')
+        }
+      }
+    } else if (!address) {
+      address = location
+    }
+  }
+
+  if (!address && location) {
+    const prefix = [country, city].filter(Boolean).join(', ')
+    if (prefix && location.startsWith(prefix)) {
+      const rest = location.slice(prefix.length).replace(/^,\s*/, '')
+      if (rest) {
+        const restParts = rest.split(',').map((p) => p.trim()).filter(Boolean)
+        if (restParts.length >= 2 && /^\d+[a-zA-Zа-яА-ЯёЁ\-/]*$/.test(restParts[restParts.length - 1])) {
+          apartment = apartment || restParts[restParts.length - 1]
+          address = restParts.slice(0, -1).join(', ')
+        } else {
+          address = rest
+        }
+      }
+    } else if (!country && !city) {
+      address = location
+    }
+  }
+
+  return {
+    country,
+    city,
+    address,
+    apartment,
+    location: location || [country, city, address, apartment].filter(Boolean).join(', '),
+    citySearch: city,
+    addressSearch: address || (location && !country && !city ? location : ''),
+  }
+}
+
+async function fetchReverseGeocodeFields(lat, lng) {
+  const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lng)}&accept-language=ru&addressdetails=1`
+  const response = await fetch(url, {
+    headers: { 'User-Agent': 'PropertyListingApp/1.0' },
+  })
+  if (!response.ok) return null
+  const data = await response.json()
+  const a = data.address || {}
+  const country = a.country || ''
+  const city = a.city || a.town || a.village || a.municipality || a.county || a.state || ''
+  const road = a.road || a.street || ''
+  const hn = a.house_number || ''
+  const streetLine = [road, hn].filter(Boolean).join(', ')
+  const display = typeof data.display_name === 'string' ? data.display_name : ''
+  const shortAddr =
+    streetLine ||
+    display.split(',').map((s) => s.trim()).filter(Boolean).slice(0, 2).join(', ')
+  const location = country && city && shortAddr ? `${country}, ${city}, ${shortAddr}` : display || shortAddr
+  return {
+    country,
+    city,
+    address: shortAddr,
+    apartment: hn,
+    location,
+    citySearch: city,
+    addressSearch: shortAddr,
+  }
 }
 
 /** Single-page поток включён (используется в эффектах до объявления переменной внутри компонента) */
@@ -569,7 +676,6 @@ function buildTzAmenitiesAndParamsPayload(formData, typeProfile, amenityGroups) 
 
   const params = {}
   if (typeProfile === 'apartment' || typeProfile === 'apartments' || typeProfile === 'house' || typeProfile === 'villa') {
-    if (formData.bedrooms !== '' && formData.bedrooms != null) params.bedrooms = Number(formData.bedrooms)
     if (formData.bathrooms !== '' && formData.bathrooms != null) params.bathrooms = Number(formData.bathrooms)
     if (formData.area !== '' && formData.area != null) params.total_area_m2 = Number(formData.area)
     if (formData.livingArea !== '' && formData.livingArea != null) params.living_area_m2 = Number(formData.livingArea)
@@ -882,7 +988,9 @@ const AddProperty = ({
   const location = useLocation()
   const [searchParams, setSearchParams] = useSearchParams()
   const { id } = useParams() // ID объекта для редактирования
-  const isEditMode = !!id // Режим редактирования
+  const editPropertyIdFromState = location?.state?.editPropertyId || null
+  const editPropertyId = id || editPropertyIdFromState
+  const isEditMode = !!editPropertyId // Режим редактирования
   const propertyTypeFromNavState = location?.state?.property_type || null
   const adminAddedFromNavState = location?.state?.admin_added === true
   const [isAdminAddedProperty, setIsAdminAddedProperty] = useState(() => adminMode || adminAddedFromNavState)
@@ -1664,16 +1772,6 @@ const AddProperty = ({
       }
     }
     
-    // Логируем для bedrooms
-    if (field === 'bedrooms') {
-      console.log('🔍 handleDetailChange - bedrooms:', {
-        value,
-        validatedValue,
-        type: typeof validatedValue,
-        numValue: field === 'bedrooms' ? parseFloat(value) : null
-      });
-    }
-    
     setFormData(prev => ({
       ...prev,
       [field]: validatedValue
@@ -1682,6 +1780,10 @@ const AddProperty = ({
 
   const handlePublish = async (options = {}) => {
     const { skipSuccessModal = false } = options
+    if (isEditMode && !originalPropertyId) {
+      showNotification('Данные объекта ещё загружаются. Подождите и попробуйте снова.')
+      return false
+    }
     if (!formData.title || photos.length === 0) {
       showNotification('Пожалуйста, заполните заголовок и загрузите хотя бы одно фото')
       return false
@@ -1693,7 +1795,11 @@ const AddProperty = ({
     const resolvedNoDebtsDoc = await draftSerializableToFile(requiredDocuments.noDebts, 'no-debts.pdf')
 
     if (!formData.isDebtProperty) {
-      if (!resolvedOwnershipDoc || !resolvedNoDebtsDoc) {
+      const needOwnership =
+        !resolvedOwnershipDoc && !(isEditMode && requiredDocuments.ownership?.isExisting)
+      const needNoDebts =
+        !resolvedNoDebtsDoc && !(isEditMode && requiredDocuments.noDebts?.isExisting)
+      if (needOwnership || needNoDebts) {
         showNotification('Пожалуйста, загрузите все необходимые документы')
         return false
       }
@@ -1916,8 +2022,8 @@ const AddProperty = ({
         }
       }
 
-      // Минимальная цена продажи не выше «Продать сейчас» и не выше 90% от неё (если задана)
-      if (!isShare && isAuctionMode) {
+      // При редактировании блок цен заблокирован — не блокируем отправку старыми правилами 30%/90%
+      if (!isShare && isAuctionMode && !isEditMode) {
         const publishMinErr = getMinimumSaleVsBuyNowError(formData.minimumSalePrice, formData.price)
         if (publishMinErr) {
           setIsSubmitting(false)
@@ -1926,9 +2032,8 @@ const AddProperty = ({
           return false
         }
       }
-      // Правило 30% от «Купить сейчас» для стартовой ставки: при любой положительной цене buy now (аукцион + buy now, долг на аукционе и т.д.)
       const publishBuyNowNum = Number(removeCommas(String(formData.price || '')))
-      if (!isShare && isAuctionMode && publishBuyNowNum > 0) {
+      if (!isShare && isAuctionMode && !isEditMode && publishBuyNowNum > 0) {
         const publishBuyNowErr = getAuctionStartingVsBuyNowError(formData.price, formData.auctionStartingPrice)
         if (publishBuyNowErr) {
           setIsSubmitting(false)
@@ -1947,8 +2052,8 @@ const AddProperty = ({
       // Общие характеристики
       if (formData.area) formDataToSend.append('area', String(formData.area))
       if (formData.livingArea) formDataToSend.append('living_area', String(formData.livingArea))
-      if (formData.buildingType) formDataToSend.append('building_type', formData.buildingType)
-      if (formData.constructionType) formDataToSend.append('construction_type', formData.constructionType)
+      const buildingTypeToSave = formData.constructionType || formData.buildingType
+      if (buildingTypeToSave) formDataToSend.append('building_type', buildingTypeToSave)
       
       // Для квартир/апартаментов отправляем rooms, для домов/вилл - bedrooms.
       // Для земли/другого комнатные параметры не отправляем.
@@ -2151,6 +2256,12 @@ const AddProperty = ({
           onAdminComplete()
           return true
         }
+        if (isEditMode) {
+          showNotification(data.message || 'Изменения отправлены на модерацию')
+          window.dispatchEvent(new CustomEvent('owner-properties-update'))
+          if (!adminMode) navigate('/owner')
+          return true
+        }
         if (!skipSuccessModal) {
           setShowSuccessModal(true)
         }
@@ -2189,10 +2300,10 @@ const AddProperty = ({
 
   // Загружаем данные объекта при редактировании
   useEffect(() => {
-    if (isEditMode && id) {
-      loadPropertyData(id)
+    if (isEditMode && editPropertyId) {
+      loadPropertyData(editPropertyId)
     }
-  }, [isEditMode, id])
+  }, [isEditMode, editPropertyId, userId])
 
   // Восстановление черновика только для нового объекта (не редактирование)
   const draftRestoredRef = useRef(false)
@@ -2477,12 +2588,19 @@ const AddProperty = ({
     setIsLoadingProperty(true)
     try {
       const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
+      const userData = getUserData()
+      const viewerUserId = Number(userId || userData?.id)
+      const hasViewerUserId = Number.isFinite(viewerUserId) && viewerUserId > 0
       // В некоторых случаях бэкенд требует property_type, чтобы однозначно найти запись по id (при пересечении id между таблицами).
-      const propertyTypeHint = propertyTypeFromNavState ? `?property_type=${encodeURIComponent(propertyTypeFromNavState)}` : ''
+      const queryParams = new URLSearchParams()
+      if (propertyTypeFromNavState) queryParams.set('property_type', propertyTypeFromNavState)
+      if (hasViewerUserId) queryParams.set('viewer_user_id', String(viewerUserId))
+      const propertyTypeHint = queryParams.toString() ? `?${queryParams.toString()}` : ''
       let response = await fetch(`${API_BASE_URL}/properties/${propertyId}${propertyTypeHint}`)
       if (!response.ok && propertyTypeFromNavState) {
         // fallback: пробуем без подсказки
-        response = await fetch(`${API_BASE_URL}/properties/${propertyId}`)
+        const fallbackQuery = hasViewerUserId ? `?viewer_user_id=${encodeURIComponent(String(viewerUserId))}` : ''
+        response = await fetch(`${API_BASE_URL}/properties/${propertyId}${fallbackQuery}`)
       }
       
       if (!response.ok) {
@@ -2604,9 +2722,33 @@ const AddProperty = ({
           }
         }
         
+        const isShareProperty =
+          property.is_shared_ownership === 1 || property.is_shared_ownership === true
+        const isDebtProperty =
+          property.is_debt === 1 ||
+          property.is_debt === true ||
+          property.sale_type === 'debt' ||
+          property.has_debt === 1 ||
+          property.has_debt === true
+        const isAuctionProperty = property.is_auction === 1 || property.is_auction === true
+        const normalizedListingMode = property.listing_mode
+          || (isShareProperty
+            ? 'shares'
+            : isDebtProperty
+              ? (isAuctionProperty ? 'debt_auction' : 'debt')
+              : (isAuctionProperty
+                ? ((property.price != null && String(property.price) !== '') ? 'auction_buy_now' : 'auction')
+                : 'auction'))
+        const normalizedPropertyType = property.property_type || ''
+
         // Предзаполняем форму данными объекта
+        // Важно: стартуем от INITIAL_FORM_DATA, чтобы не терять поля,
+        // которых может не быть в ответе API.
         setFormData({
-          propertyType: property.property_type || '',
+          ...INITIAL_FORM_DATA,
+          propertyType: normalizedPropertyType,
+          propertyTypeUi: normalizedPropertyType,
+          listingMode: normalizedListingMode,
           testDrive: property.test_drive !== undefined && property.test_drive !== null ? (property.test_drive === 1 || property.test_drive === true) : null,
           testDrivePricePerDay: testDriveData?.price_per_day ? String(testDriveData.price_per_day) : '',
           testDriveInsuranceDeposit: testDriveData?.insurance_deposit ? String(testDriveData.insurance_deposit) : '',
@@ -2617,19 +2759,19 @@ const AddProperty = ({
             property.minimum_sale_price != null && property.minimum_sale_price !== ''
               ? String(property.minimum_sale_price)
               : '',
-          isShareProperty: !!(property.is_shared_ownership === 1 || property.is_shared_ownership === true),
-          isDebtProperty: !!(property.is_debt === 1 || property.is_debt === true || property.sale_type === 'debt' || property.has_debt === 1 || property.has_debt === true),
+          isShareProperty,
+          isDebtProperty,
           totalShares: (property.total_shares != null && property.total_shares !== '') ? String(property.total_shares) : '',
-          isAuction: (property.is_auction === 1 || property.is_auction === true),
+          isAuction: isAuctionProperty,
           auctionStartDate: property.auction_start_date || '',
           auctionEndDate: property.auction_end_date || '',
           auctionStartingPrice: property.auction_starting_price ? String(property.auction_starting_price) : '',
           area: property.area ? String(property.area) : '',
           livingArea: property.living_area ? String(property.living_area) : '',
           buildingType: property.building_type || '',
-          constructionType: normalizeConstructionTypeForForm(property.construction_type),
+          constructionType: resolveConstructionTypeForForm(property),
           rooms: (property.rooms !== undefined && property.rooms !== null && property.rooms !== '') ? String(property.rooms) : '',
-          bedrooms: (property.bedrooms !== undefined && property.bedrooms !== null && property.bedrooms !== '') ? String(property.bedrooms) : '',
+          bedrooms: '',
           bathrooms: (property.bathrooms !== undefined && property.bathrooms !== null && property.bathrooms !== '') ? String(property.bathrooms) : '',
           floor: property.floor ? String(property.floor) : '',
           // Для домов/вилл используем floors, для квартир/апартаментов - total_floors
@@ -2687,7 +2829,15 @@ const AddProperty = ({
           feature24: property.feature24 === 1 || property.feature24 === true,
           feature25: property.feature25 === 1 || property.feature25 === true,
           feature26: property.feature26 === 1 || property.feature26 === true,
-          additionalAmenities: property.additional_amenities || ''
+          additionalAmenities: property.additional_amenities || '',
+          debtUtilities: property.debt_utilities === 1 || property.debt_utilities === true,
+          debtBankPledge: property.debt_mortgage_pledge === 1 || property.debt_mortgage_pledge === true,
+          debtPropertyTaxes: property.debt_property_taxes === 1 || property.debt_property_taxes === true,
+          debtArrest: property.debt_arrest === 1 || property.debt_arrest === true,
+          debtInherited: property.debt_inherited === 1 || property.debt_inherited === true,
+          debtThirdParty: property.debt_third_party === 1 || property.debt_third_party === true,
+          debtOther: property.debt_other || '',
+          debtAmount: property.debt_amount != null && property.debt_amount !== '' ? String(property.debt_amount) : '',
         })
         
         // Устанавливаем валюту
@@ -2729,41 +2879,64 @@ const AddProperty = ({
           setFormData(prev => ({ ...prev, coordinates: null }))
         }
         
+        let locationFields = resolveLocationFieldsFromProperty(property)
+
+        // Если в БД только координаты — подтягиваем адрес обратным геокодированием
+        if (
+          (!locationFields.country || !locationFields.city || !locationFields.addressSearch) &&
+          parsedCoordinates &&
+          Array.isArray(parsedCoordinates) &&
+          parsedCoordinates.length >= 2
+        ) {
+          try {
+            const lat = parseFloat(parsedCoordinates[0])
+            const lng = parseFloat(parsedCoordinates[1])
+            if (!isNaN(lat) && !isNaN(lng)) {
+              const reverseFields = await fetchReverseGeocodeFields(lat, lng)
+              if (reverseFields) {
+                locationFields = {
+                  ...locationFields,
+                  country: locationFields.country || reverseFields.country,
+                  city: locationFields.city || reverseFields.city,
+                  address: locationFields.address || reverseFields.address,
+                  apartment: locationFields.apartment || reverseFields.apartment,
+                  location: locationFields.location || reverseFields.location,
+                  citySearch: locationFields.citySearch || reverseFields.citySearch,
+                  addressSearch: locationFields.addressSearch || reverseFields.addressSearch,
+                }
+              }
+            }
+          } catch (reverseErr) {
+            console.warn('⚠️ Обратное геокодирование при загрузке редактирования:', reverseErr)
+          }
+        }
+
+        setFormData((prev) => ({
+          ...prev,
+          country: locationFields.country || prev.country,
+          city: locationFields.city || prev.city,
+          address: locationFields.address || prev.address,
+          apartment: locationFields.apartment || prev.apartment,
+          location: locationFields.location || prev.location,
+        }))
+
+        if (locationFields.citySearch) setCitySearch(locationFields.citySearch)
+        if (locationFields.addressSearch) setAddressSearch(locationFields.addressSearch)
+
         // Сохраняем данные о местоположении для восстановления при переходе на шаг location
-        // Сохраняем координаты вместе с остальными данными о местоположении
-        setSavedLocationData(prev => {
+        setSavedLocationData((prev) => {
           const locationData = {
-            country: property.country || '',
-            city: property.city || '',
-            address: property.address || '',
-            location: property.location || '',
-            coordinates: parsedCoordinates || prev?.coordinates || null, // Приоритет: новые координаты > старые > null
-            citySearch: property.city || '',
-            addressSearch: property.address || property.location || ''
+            country: locationFields.country || '',
+            city: locationFields.city || '',
+            address: locationFields.address || '',
+            location: locationFields.location || '',
+            coordinates: parsedCoordinates || prev?.coordinates || null,
+            citySearch: locationFields.citySearch || '',
+            addressSearch: locationFields.addressSearch || '',
           }
           console.log('💾 Сохраняем данные о местоположении:', locationData)
-          console.log('💾 Координаты в locationData:', locationData.coordinates)
           return locationData
         })
-        
-        // Устанавливаем город для поиска
-        if (property.city) {
-          setCitySearch(property.city)
-        }
-        
-        // Устанавливаем адрес для поиска (приоритет: location > address)
-        // Если location содержит полный адрес, используем его, иначе используем address
-        let addressToSet = ''
-        if (property.location) {
-          // Если location содержит полный адрес, извлекаем только улицу
-          // Или используем location как есть, если address пустой
-          addressToSet = property.address || property.location
-        } else if (property.address) {
-          addressToSet = property.address
-        }
-        if (addressToSet) {
-          setAddressSearch(addressToSet)
-        }
         
         // Устанавливаем документы как загруженные (если они есть)
         if (property.ownership_document) {
@@ -2798,37 +2971,7 @@ const AddProperty = ({
           }))
           setUploadedDocuments(prev => ({ ...prev, noDebts: true }))
         }
-        // После загрузки: правило 30% от «Купить сейчас» для стартовой ставки
-        if (property.price && property.auction_starting_price) {
-          const loadErr = getAuctionStartingVsBuyNowError(
-            String(property.price),
-            String(property.auction_starting_price)
-          )
-          if (loadErr) {
-            setValidationErrors(prev => ({ ...prev, auctionStartingPrice: loadErr }))
-          } else {
-            setValidationErrors(prev => {
-              const next = { ...prev }
-              delete next.auctionStartingPrice
-              return next
-            })
-          }
-        }
-        if (property.minimum_sale_price != null && property.price) {
-          const loadMinErr = getMinimumSaleVsBuyNowError(
-            String(property.minimum_sale_price),
-            String(property.price)
-          )
-          if (loadMinErr) {
-            setValidationErrors((prev) => ({ ...prev, minimumSalePrice: loadMinErr }))
-          } else {
-            setValidationErrors((prev) => {
-              const next = { ...prev }
-              delete next.minimumSalePrice
-              return next
-            })
-          }
-        }
+        // Правила 30%/90% при открытии на редактирование не показываем — цены в этом режиме не меняются
         
         // Начинаем пошаговый процесс редактирования:
         // для долей и долгов сразу переходим к названию, для остальных — к вопросу о тест-драйве
@@ -3640,12 +3783,18 @@ const AddProperty = ({
     setCitySuggestions([city])
   }
 
-  // Синхронизация citySearch с formData.city при изменении извне (только если citySearch пустой)
+  // Синхронизация полей поиска адреса с formData (в т.ч. после загрузки редактирования)
   useEffect(() => {
     if (!citySearch && formData.city) {
       setCitySearch(formData.city)
     }
-  }, [])
+  }, [formData.city, citySearch])
+
+  useEffect(() => {
+    if (!addressSearch && formData.address) {
+      setAddressSearch(formData.address)
+    }
+  }, [formData.address, addressSearch])
 
   // Функция для форматирования короткого адреса (только улица и район)
   const formatShortAddress = (suggestion) => {
@@ -3783,24 +3932,9 @@ const AddProperty = ({
     setLocationMapZoom(16)
     setFormData(prev => ({ ...prev, coordinates: coords }))
     try {
-      const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${encodeURIComponent(lat)}&lon=${encodeURIComponent(lng)}&accept-language=ru&addressdetails=1`
-      const response = await fetch(url, {
-        headers: { 'User-Agent': 'PropertyListingApp/1.0' },
-      })
-      if (!response.ok) return
-      const data = await response.json()
-      const a = data.address || {}
-      const country = a.country || ''
-      const city =
-        a.city || a.town || a.village || a.municipality || a.county || a.state || ''
-      const road = a.road || ''
-      const hn = a.house_number || ''
-      const streetLine = [road, hn].filter(Boolean).join(', ')
-      const display = typeof data.display_name === 'string' ? data.display_name : ''
-      const shortAddr =
-        streetLine ||
-        display.split(',').map((s) => s.trim()).filter(Boolean).slice(0, 2).join(', ')
-      const formatted = country && city && shortAddr ? `${country}, ${city}, ${shortAddr}` : display || shortAddr
+      const reverseFields = await fetchReverseGeocodeFields(lat, lng)
+      if (!reverseFields) return
+      const { country, city, address: shortAddr, apartment: hn, location: formatted } = reverseFields
 
       setFormData((prev) => ({
         ...prev,
@@ -4228,10 +4362,6 @@ const AddProperty = ({
       if (!formData.totalFloors || formData.totalFloors === '' || parseFloat(formData.totalFloors) <= 0) {
         errors.totalFloors = 'Укажите количество этажей'
       }
-      // Важно: проверяем на undefined/null/пустую строку, но разрешаем 0 как валидное значение
-      if (formData.bedrooms === undefined || formData.bedrooms === null || formData.bedrooms === '' || (formData.bedrooms !== '0' && parseFloat(formData.bedrooms) <= 0)) {
-        errors.bedrooms = 'Укажите количество спален'
-      }
       if (!formData.bathrooms || formData.bathrooms === '' || parseFloat(formData.bathrooms) <= 0) {
         errors.bathrooms = 'Укажите количество ванных комнат'
       }
@@ -4305,23 +4435,13 @@ const AddProperty = ({
     // Очищаем ошибки
     setValidationErrors({})
     
-    // Сохраняем данные о спальнях в formData
-    // ВАЖНО: для домов/вилл НЕ перезаписываем bedrooms, если оно уже было введено в простое поле
-    const isHouseOrVilla = detailsTypeProfile === 'house' || detailsTypeProfile === 'villa'
-    setFormData(prev => {
-      // Для домов/вилл сохраняем значение из простого поля ввода, если оно есть
-      if (isHouseOrVilla && prev.bedrooms !== undefined && prev.bedrooms !== null && prev.bedrooms !== '') {
-        return {
-          ...prev,
-          // Не перезаписываем bedrooms для домов/вилл
-        }
-      }
-      // Для квартир/апартаментов вычисляем из массива спален
-      return {
+    // Для устаревшего потока «другие типы» — считаем спальни из блока кроватей
+    if (detailsTypeProfile !== 'house' && detailsTypeProfile !== 'villa' && detailsTypeProfile !== 'apartment' && detailsTypeProfile !== 'apartments' && detailsTypeProfile !== 'commercial' && detailsTypeProfile !== 'land' && detailsTypeProfile !== 'other') {
+      setFormData((prev) => ({
         ...prev,
-        bedrooms: bedrooms.filter(b => getTotalBedsCount(b.beds) > 0).length
-      }
-    })
+        bedrooms: bedrooms.filter((b) => getTotalBedsCount(b.beds) > 0).length,
+      }))
+    }
     setCurrentStep(formData.isDebtProperty ? 'photos' : 'amenities')
   }
 
@@ -5446,8 +5566,13 @@ const AddProperty = ({
     }
   }, [wizardRenderStep, useSinglePageFlow])
 
+  const handleSubmitEditForModeration = async () => {
+    if (isSubmitting || isLoadingProperty) return
+    await handlePublish()
+  }
+
   return (
-    <div className="add-property-page">
+    <div className={`add-property-page${isEditMode ? ' add-property-page--edit-moderation' : ''}`}>
       <div className="add-property-container">
         <div className="add-property-header">
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -5518,13 +5643,15 @@ const AddProperty = ({
               {isEditMode ? t('addPropertyTitleEdit') : t('addPropertyTitleNew')}
             </h1>
           </div>
-          <button
-            type="button"
-            className="add-property-reset-btn"
-            onClick={handleResetAll}
-          >
-            Сбросить
-          </button>
+          {!isEditMode && (
+            <button
+              type="button"
+              className="add-property-reset-btn"
+              onClick={handleResetAll}
+            >
+              Сбросить
+            </button>
+          )}
         </div>
         <div
           className={[
@@ -6149,13 +6276,6 @@ const AddProperty = ({
                           />
                           <input
                             type="number"
-                            value={formData.bedrooms}
-                            onChange={(e) => setFormData((prev) => ({ ...prev, bedrooms: e.target.value }))}
-                            className="property-name-input"
-                            placeholder="Спален"
-                          />
-                          <input
-                            type="number"
                             value={formData.bathrooms}
                             onChange={(e) => setFormData((prev) => ({ ...prev, bathrooms: e.target.value }))}
                             className="property-name-input"
@@ -6222,13 +6342,6 @@ const AddProperty = ({
                             onChange={(e) => setFormData((prev) => ({ ...prev, area: e.target.value }))}
                             className="property-name-input"
                             placeholder="Площадь дома, м²"
-                          />
-                          <input
-                            type="number"
-                            value={formData.bedrooms}
-                            onChange={(e) => setFormData((prev) => ({ ...prev, bedrooms: e.target.value }))}
-                            className="property-name-input"
-                            placeholder="Спален"
                           />
                           <input
                             type="number"
@@ -6834,7 +6947,6 @@ const AddProperty = ({
                           propertyType: formData.propertyType,
                           area: formData.area,
                           rooms: formData.rooms,
-                          bedrooms: formData.bedrooms,
                           city: formData.city,
                           country: formData.country,
                           address: formData.address,
@@ -6852,11 +6964,17 @@ const AddProperty = ({
                   <section
                     ref={singlePagePriceSectionRef}
                     data-sp-section="price"
-                    className={`sp-card sp-card--enter sp-card--price${!isSpSectionBodyVisible('price') ? ' sp-card--section-collapsed' : ''}`}
+                    className={`sp-card sp-card--enter sp-card--price${isEditMode ? ' sp-card--edit-locked-section' : ''}${!isSpSectionBodyVisible('price') ? ' sp-card--section-collapsed' : ''}`}
                   >
+                    <div className={isEditMode ? 'sp-card__edit-lock-host' : 'sp-card__edit-lock-pass-through'}>
+                      <div
+                        className={isEditMode ? 'sp-card__edit-lock-content is-locked' : 'sp-card__edit-lock-pass-through'}
+                        aria-hidden={isEditMode}
+                        inert={isEditMode ? true : undefined}
+                      >
                     <header
                       className="sp-card__head sp-card__head--collapsible"
-                      onClick={() => scrollSpSectionIntoView('price')}
+                      onClick={isEditMode ? undefined : () => scrollSpSectionIntoView('price')}
                     >
                       <div className="sp-card__head-maincol">
                         <span className="sp-card__step">Шаг 11</span>
@@ -6866,8 +6984,8 @@ const AddProperty = ({
                         )}
                       </div>
                       <span className="sp-card__head-toggle" aria-hidden="true">
-                          <FiChevronDown className={isSpSectionBodyVisible('price') ? 'is-expanded' : ''} size={22} />
-                        </span>
+                        <FiChevronDown className={isSpSectionBodyVisible('price') ? 'is-expanded' : ''} size={22} />
+                      </span>
                     </header>
                     <div
                       className={`sp-card__collapsible-panel${isSpSectionBodyVisible('price') ? ' is-open' : ''}`}
@@ -7136,12 +7254,30 @@ const AddProperty = ({
                       </div>
                     )}
 
-                    <div className="sp-submit-row">
-                      <button type="button" className="sp-btn sp-btn--primary sp-btn--wide" disabled={!hasPrice || isSubmitting} onClick={handlePriceContinue}>
-                        {isSubmitting ? 'Отправка...' : 'Оплата и верификация'}
-                      </button>
+                    {!isEditMode && (
+                      <div className="sp-submit-row">
+                        <button type="button" className="sp-btn sp-btn--primary sp-btn--wide" disabled={!hasPrice || isSubmitting} onClick={handlePriceContinue}>
+                          {isSubmitting ? 'Отправка...' : 'Оплата и верификация'}
+                        </button>
+                      </div>
+                    )}
+                      </div>
                     </div>
                       </div>
+                      {isEditMode && (
+                        <div
+                          className="sp-card__edit-lock-overlay"
+                          role="status"
+                          aria-label="Раздел заблокирован"
+                        >
+                          <div className="sp-card__edit-lock-card">
+                            <span className="sp-card__edit-lock-icon" aria-hidden>
+                              <FiLock size={28} />
+                            </span>
+                            <p className="sp-card__edit-lock-title">Раздел заблокирован</p>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </section>
                 )}
@@ -8311,42 +8447,22 @@ const AddProperty = ({
                       </div>
                     </div>
 
-                    {/* Строка: Кол-во спален | Кол-во ванных */}
-                    <div className="detail-form-field detail-form-field--split">
-                      <div className="detail-form-field-half">
-                        <label className="detail-form-label">
-                          <span className="detail-form-label-text">{t('addPropertyDetailsBedroomsLabel')}</span>
-                        </label>
-                        <input
-                          type="number"
-                          value={formData.bedrooms}
-                          onChange={(e) => handleDetailChange('bedrooms', e.target.value)}
-                          onWheel={(e) => e.target.blur()}
-                          className={`detail-form-input detail-form-input--narrow ${validationErrors.bedrooms ? 'detail-form-input--error' : ''}`}
-                          placeholder="0"
-                          min="0"
-                        />
-                        {validationErrors.bedrooms && (
-                          <span className="detail-form-error">{validationErrors.bedrooms}</span>
-                        )}
-                      </div>
-                      <div className="detail-form-field-half">
-                        <label className="detail-form-label">
-                          <span className="detail-form-label-text">{t('addPropertyDetailsBathroomsShortLabel')}</span>
-                        </label>
-                        <input
-                          type="number"
-                          value={formData.bathrooms}
-                          onChange={(e) => handleDetailChange('bathrooms', e.target.value)}
-                          onWheel={(e) => e.target.blur()}
-                          className={`detail-form-input detail-form-input--narrow ${validationErrors.bathrooms ? 'detail-form-input--error' : ''}`}
-                          placeholder="0"
-                          min="0"
-                        />
-                        {validationErrors.bathrooms && (
-                          <span className="detail-form-error">{validationErrors.bathrooms}</span>
-                        )}
-                      </div>
+                    <div className="detail-form-field">
+                      <label className="detail-form-label">
+                        <span className="detail-form-label-text">{t('addPropertyDetailsBathroomsShortLabel')}</span>
+                      </label>
+                      <input
+                        type="number"
+                        value={formData.bathrooms}
+                        onChange={(e) => handleDetailChange('bathrooms', e.target.value)}
+                        onWheel={(e) => e.target.blur()}
+                        className={`detail-form-input detail-form-input--narrow ${validationErrors.bathrooms ? 'detail-form-input--error' : ''}`}
+                        placeholder="0"
+                        min="0"
+                      />
+                      {validationErrors.bathrooms && (
+                        <span className="detail-form-error">{validationErrors.bathrooms}</span>
+                      )}
                     </div>
 
                     {/* Строка: Год постройки | Материал постройки */}
@@ -9749,7 +9865,6 @@ const AddProperty = ({
                 propertyType: formData.propertyType,
                 area: formData.area,
                 rooms: formData.rooms,
-                bedrooms: formData.bedrooms,
                 city: formData.city,
                 country: formData.country,
                 address: formData.address,
@@ -10153,7 +10268,21 @@ const AddProperty = ({
               </div>
           </div>
         ) : null}
+
+        {isEditMode && (
+          <div className="add-property-edit-moderation-bar" role="region" aria-label="Отправка на модерацию">
+            <button
+              type="button"
+              className="add-property-edit-moderation-bar__btn"
+              disabled={isSubmitting || isLoadingProperty}
+              onClick={handleSubmitEditForModeration}
+            >
+              {isLoadingProperty ? 'Загрузка...' : isSubmitting ? 'Отправка...' : 'Отправить на модерацию'}
+            </button>
+          </div>
+        )}
       </div>
+
       {showCarousel && mediaItems.length > 0 && (
         <div className="carousel-overlay" onClick={() => setShowCarousel(false)}>
           <div className="carousel-container" onClick={(e) => e.stopPropagation()}>
@@ -10367,7 +10496,6 @@ const AddProperty = ({
           propertyType: formData.propertyType,
           area: formData.area,
           rooms: formData.rooms,
-          bedrooms: formData.bedrooms,
           city: formData.city,
           country: formData.country,
           address: formData.address,

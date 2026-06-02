@@ -59,6 +59,7 @@ import { navigateToWallet } from '../utils/walletNavigation'
 import { getPropertyEntryFrom } from '../utils/propertyNavigation'
 import { appendViewerUserIdToPropertyApiUrl, PROPERTY_DETAIL_AUCTION_TAB_BIDS } from '../utils/propertyDetailUrl'
 import { hasDbBackedProperty } from '../utils/propertyFavoriteKey'
+import { getResolvedAmenityLabels } from '../utils/tzAmenityLabels'
 import { patchCachedAuctionPropertyBid } from '../services/auctionListCache'
 import { usePropertyFavorites } from '../context/PropertyFavoritesContext'
 import {
@@ -3057,74 +3058,13 @@ function PropertyDetailClassic({ property: initialProperty, onBack, showDocument
   }
 
   const getPropertyAmenityLabels = () => {
-    const featureLabelKeys = {
-      feature1: 'addPropertyAmenitiesUndergroundParking',
-      feature2: 'addPropertyAmenitiesKitchenFurniture',
-      feature3: 'addPropertyAmenitiesWashingMachine',
-      feature4: 'addPropertyAmenitiesDishwasher',
-      feature5: 'addPropertyAmenitiesIntercom',
-      feature6: 'addPropertyAmenitiesCctv',
-      feature7: 'addPropertyAmenitiesLoggia',
-      feature8: 'addPropertyAmenitiesStorage',
-      feature9: 'propertyDetailFeature9',
-      feature10: 'propertyDetailFeature10',
-      feature11: 'propertyDetailFeature11',
-      feature12: 'addPropertyAmenitiesBikeParking',
-      feature13: 'propertyDetailFeature13',
-      feature14: 'propertyDetailFeature14',
-      feature15: 'propertyDetailFeature15',
-      feature16: 'addPropertyAmenitiesVideoIntercom',
-      feature17: 'addPropertyAmenitiesConcierge',
-      feature18: 'addPropertyAmenitiesWardrobe',
-      feature19: 'propertyDetailFeature19',
-      feature20: 'propertyDetailFeature20',
-      feature21: 'propertyDetailFeature21',
-      feature22: 'propertyDetailFeature22',
-      feature23: 'propertyDetailFeature23',
-      feature24: 'propertyDetailFeature24',
-      feature25: 'propertyDetailFeature25',
-      feature26: 'propertyDetailFeature26',
+    const merged = {
+      ...displayProperty,
+      ...property,
+      amenities: property?.amenities ?? displayProperty?.amenities,
+      tz_amenities_json: property?.tz_amenities_json ?? displayProperty?.tz_amenities_json,
     }
-    const mainAmenityKeys = {
-      balcony: 'addPropertyAmenitiesBalcony',
-      parking: 'addPropertyAmenitiesCategoryParking',
-      elevator: 'addPropertyAmenitiesElevator',
-      garage: 'propertyDetailAmenityGarage',
-      pool: 'propertyDetailAmenityPool',
-      garden: 'propertyDetailAmenityGarden',
-      electricity: 'propertyDetailAmenityElectricity',
-      internet: 'addPropertyAmenitiesInternet',
-      security: 'addPropertyAmenitiesSecurity',
-      furniture: 'addPropertyAmenitiesCategoryFurniture',
-    }
-
-    const amenities = []
-    const amenitiesArray = property.amenities || displayProperty.amenities || []
-    const isAmenitiesArray = Array.isArray(amenitiesArray)
-
-    if (isAmenitiesArray && amenitiesArray.length > 0) {
-      Object.entries(mainAmenityKeys).forEach(([key, labelKey]) => {
-        if (amenitiesArray.includes(key)) amenities.push(t(labelKey))
-      })
-      for (let i = 1; i <= 26; i++) {
-        const featureKey = `feature${i}`
-        if (amenitiesArray.includes(featureKey) && featureLabelKeys[featureKey]) {
-          amenities.push(t(featureLabelKeys[featureKey]))
-        }
-      }
-    } else {
-      Object.entries(mainAmenityKeys).forEach(([key, labelKey]) => {
-        if (displayProperty[key] === true) amenities.push(t(labelKey))
-      })
-      for (let i = 1; i <= 26; i++) {
-        const featureKey = `feature${i}`
-        if (displayProperty[featureKey] === true && featureLabelKeys[featureKey]) {
-          amenities.push(t(featureLabelKeys[featureKey]))
-        }
-      }
-    }
-
-    return amenities
+    return getResolvedAmenityLabels(merged)
   }
 
   const renderPropertyAmenitiesBlock = ({ layout = 'desktop' } = {}) => {

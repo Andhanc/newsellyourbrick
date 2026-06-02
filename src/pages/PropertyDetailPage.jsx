@@ -188,6 +188,14 @@ const PropertyDetailPage = () => {
 
               const pt = normalizePropertyDetailType(prop)
 
+              const featureFields = {}
+              for (let fi = 1; fi <= 26; fi += 1) {
+                const featureKey = `feature${fi}`
+                const fv = prop[featureKey]
+                featureFields[featureKey] =
+                  fv === 1 || fv === true || fv === '1' || fv === 'true'
+              }
+
               /** Поля аукциона/тест-таймера для getEffectiveAuctionEndTime и PropertyDetailClassic (должны совпадать с ответом API). */
               const testTimerDurationRaw = prop.test_timer_duration
               const testTimerDuration =
@@ -207,11 +215,12 @@ const PropertyDetailPage = () => {
                 buy_now_completed_at: prop.buy_now_completed_at ?? null,
               }
 
-              // Преобразуем данные из базы в формат для компонентов
+              // Преобразуем данные из базы в формат для компонентов (база — prop, затем явные поля UI)
               const formattedProperty = {
+                ...prop,
                 id: prop.id,
                 title: prop.title,
-                name: prop.title,
+                name: prop.title || prop.name || '',
                 description: prop.description || '',
                 location: prop.location || '',
                 price: prop.price || 0, // Минимальная цена продажи
@@ -284,6 +293,10 @@ const PropertyDetailPage = () => {
                 buy_now_winner_user_id: prop.buy_now_winner_user_id ?? null,
                 buy_now_completed_at: prop.buy_now_completed_at ?? null,
                 additional_amenities: prop.additional_amenities || null,
+                amenities: Array.isArray(prop.amenities) ? prop.amenities : [],
+                tz_amenities_json: prop.tz_amenities_json ?? null,
+                tz_parameters_json: prop.tz_parameters_json ?? null,
+                ...featureFields,
                 // Информация о продавце
                 seller: prop.first_name && prop.last_name 
                   ? `${prop.first_name} ${prop.last_name}` 
@@ -311,7 +324,20 @@ const PropertyDetailPage = () => {
                 reserved_by: prop.reserved_by || null,
                 reservation_time_remaining: prop.reservation_time_remaining || null,
               }
-              if (isActive) setProperty(formattedProperty)
+              if (isActive) {
+                setProperty(formattedProperty)
+                const ptForUrl = normalizePropertyTypeForDetailQuery(prop)
+                if (ptForUrl && !disambigPropertyType) {
+                  const qs = new URLSearchParams(location.search || '')
+                  if (!normalizePropertyTypeQueryParam(qs.get('property_type'))) {
+                    qs.set('property_type', ptForUrl)
+                    navigate(`${location.pathname}?${qs.toString()}`, {
+                      replace: true,
+                      state: location.state,
+                    })
+                  }
+                }
+              }
             } else {
               if (isActive) setError('Объявление не найдено')
             }
@@ -336,7 +362,7 @@ const PropertyDetailPage = () => {
       isActive = false
       abortController.abort()
     }
-  }, [id, propertyFromState, i18n.language, disambigPropertyType, navigate, t])
+  }, [id, propertyFromState, i18n.language, disambigPropertyType, navigate, t, location.pathname, location.search, location.state])
 
   if (isLoading && !property && !error) {
     return <PropertyDetailClassicSkeleton />

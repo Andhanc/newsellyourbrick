@@ -62,16 +62,17 @@
 
 .add-property-page::before {
   content: '';
-  position: fixed;
+  /* absolute, не fixed: fixed остаётся в viewport и перекрывает #site-footer
+     (контент .app-layout__content выше футера по z-index) */
+  position: absolute;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  width: 100vw;
-  height: 100vh;
+  width: 100%;
+  height: 100%;
   background: linear-gradient(135deg, #e8e8f5 0%, #f0e0eb 60%, #f8e8f0 100%);
   z-index: -1;
-  background-attachment: fixed;
   pointer-events: none;
 }
 
@@ -137,6 +138,78 @@
 .add-property-reset-btn:hover {
   background: #ffe8e8;
   border-color: #eaa6ab;
+}
+
+.add-property-save-edit-btn {
+  padding: 10px 18px;
+  border-radius: 10px;
+  border: none;
+  background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: opacity 0.2s ease, transform 0.15s ease;
+}
+
+.add-property-save-edit-btn:hover:not(:disabled) {
+  opacity: 0.92;
+  transform: translateY(-1px);
+}
+
+.add-property-save-edit-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.add-property-page--edit-moderation {
+  min-height: auto;
+}
+
+.add-property-page--edit-moderation .add-property-container {
+  padding-bottom: 0;
+  margin-bottom: 48px;
+}
+
+.add-property-edit-moderation-bar {
+  position: sticky;
+  bottom: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  margin-top: 16px;
+  margin-left: -18px;
+  margin-right: -18px;
+  padding: 14px 18px 16px;
+  border-top: 1px solid rgba(10, 186, 181, 0.2);
+  background: #fff;
+  box-shadow: 0 -6px 20px rgba(15, 23, 42, 0.06);
+}
+
+.add-property-edit-moderation-bar__btn {
+  flex: 0 0 auto;
+  padding: 14px 28px;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: opacity 0.2s ease, transform 0.15s ease;
+}
+
+.add-property-edit-moderation-bar__btn:hover:not(:disabled) {
+  opacity: 0.92;
+  transform: translateY(-1px);
+}
+
+.add-property-edit-moderation-bar__btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
 }
 
 .add-property-header::after {
@@ -5588,6 +5661,26 @@ select.property-location-input {
     padding: 16px 20px 20px;
   }
 
+  .add-property-page--edit-moderation .add-property-container {
+    margin-bottom: 12px;
+    padding-bottom: 12px;
+  }
+
+  .add-property-page--edit-moderation .single-page-add-flow--studio {
+    padding-bottom: 8px;
+  }
+
+  .add-property-edit-moderation-bar {
+    margin-top: 8px;
+    margin-left: -20px;
+    margin-right: -20px;
+    padding: 10px 20px 12px;
+  }
+
+  .add-property-edit-moderation-bar__btn {
+    width: 100%;
+  }
+
   .add-property-wizard-progress {
     top: calc(8px + env(safe-area-inset-top, 0px));
     width: min(100%, calc(100% - 16px));
@@ -7507,11 +7600,17 @@ select.property-location-input {
   margin-top: 8px;
   overflow: visible;
   max-width: 100%;
+  width: 100%;
+  display: flex;
+  justify-content: center;
 }
 
 /* Шаг 10 (single-page): убрать эффект "карточка в карточке" и дать ширину секции */
 .single-page-add-flow--studio .sp-calculator-embed .property-calculator-embedded {
-  max-width: 100%;
+  width: 100%;
+  max-width: min(560px, 100%);
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .single-page-add-flow--studio .sp-calculator-embed .property-calculator-modal--embedded {
@@ -7546,8 +7645,11 @@ select.property-location-input {
 }
 
 .single-page-add-flow--studio section[data-sp-section='calculator'] .sp-calculator-embed {
-  margin-left: 0;
-  margin-right: 0;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 16px;
+  padding-right: 16px;
+  box-sizing: border-box;
 }
 
 /* Шаг: автоматический расчёт (калькулятор встроен в мастер) */
@@ -7593,6 +7695,11 @@ select.property-location-input {
 
 .add-property-price-calculator-step__actions {
   margin-top: 28px;
+}
+
+.add-property-price-calculator-step > .property-calculator-embedded {
+  margin-left: auto;
+  margin-right: auto;
 }
 
 /* Экран цены и аукциона */
@@ -8542,6 +8649,71 @@ select.property-location-input {
 .sp-card__head-toggle svg.is-expanded,
 .sp-card__head-toggle--btn svg.is-expanded {
   transform: rotate(180deg);
+}
+
+.sp-card__edit-lock-pass-through {
+  display: contents;
+}
+
+.sp-card--edit-locked-section {
+  position: relative;
+}
+
+.sp-card--edit-locked-section .sp-card__edit-lock-host {
+  position: relative;
+}
+
+.sp-card--edit-locked-section .sp-card__edit-lock-content.is-locked {
+  filter: blur(6px);
+  opacity: 0.5;
+  pointer-events: none;
+  user-select: none;
+}
+
+.sp-card--edit-locked-section .sp-card__head--collapsible {
+  cursor: default;
+}
+
+.sp-card__edit-lock-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+  pointer-events: auto;
+}
+
+.sp-card__edit-lock-card {
+  max-width: 360px;
+  padding: 20px 22px;
+  border-radius: 16px;
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 12px 40px rgba(15, 23, 42, 0.12);
+  text-align: center;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.sp-card__edit-lock-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  margin: 0 auto 12px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+  color: #475569;
+}
+
+.sp-card__edit-lock-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: #0f172a;
 }
 
 .sp-card--section-collapsed .sp-card__head {

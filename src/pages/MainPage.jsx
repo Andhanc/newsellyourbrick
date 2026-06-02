@@ -71,7 +71,10 @@ import { syncAssistantLead } from '../services/assistantLeadService'
 import { getManagerContactButtons } from '../services/liveChatApi'
 import { NotificationsBell } from '../context/SiteNotificationsContext'
 import SiteNavDrawer from '../components/SiteNavDrawer'
-import CookieConsentDrawer, { readCookieConsentChoice } from '../components/CookieConsentDrawer'
+import CookieConsentDrawer, {
+  COOKIE_CONSENT_ENABLED,
+  readCookieConsentChoice,
+} from '../components/CookieConsentDrawer'
 import { setSiteNavDrawerOpen } from '../utils/siteNavDrawerDocumentFlag'
 import { fetchUserById } from '../utils/usersApi'
 
@@ -736,16 +739,21 @@ function MainPage() {
   const [isMenuClosing, setIsMenuClosing] = useState(false)
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
   const [cookieConsentOpen, setCookieConsentOpen] = useState(
-    () => location.pathname === '/' && readCookieConsentChoice() == null,
+    () => COOKIE_CONSENT_ENABLED && location.pathname === '/' && readCookieConsentChoice() == null,
   )
 
   useEffect(() => {
+    if (!COOKIE_CONSENT_ENABLED) {
+      setCookieConsentOpen(false)
+      return
+    }
     if (location.pathname === '/' && readCookieConsentChoice() == null) {
       setCookieConsentOpen(true)
     } else if (location.pathname !== '/') {
       setCookieConsentOpen(false)
     }
   }, [location.pathname])
+
   /** Вариант входа в LoginModal: с главной hero — default (шаг 2 формы), иначе как в шапке — мастер */
   const [mainLoginModalAuthEntry, setMainLoginModalAuthEntry] = useState('header_wizard')
   /** Модалка «стать продавцом» / «стать покупателем» для залогиненных с другой ролью */
@@ -3080,10 +3088,12 @@ function MainPage() {
         authEntryVariant={mainLoginModalAuthEntry}
       />
 
-      <CookieConsentDrawer
-        open={cookieConsentOpen}
-        onClose={() => setCookieConsentOpen(false)}
-      />
+      {COOKIE_CONSENT_ENABLED ? (
+        <CookieConsentDrawer
+          open={cookieConsentOpen}
+          onClose={() => setCookieConsentOpen(false)}
+        />
+      ) : null}
     </div>
   )
 }

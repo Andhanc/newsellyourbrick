@@ -8,6 +8,9 @@ import './CookieConsentDrawer.css'
 
 const STORAGE_KEY = 'syb_cookie_consent_v1'
 
+/** Включить, когда будет готов полноценный сценарий согласия на cookies */
+export const COOKIE_CONSENT_ENABLED = false
+
 export function readCookieConsentChoice() {
   if (typeof window === 'undefined') return null
   try {
@@ -31,7 +34,7 @@ export default function CookieConsentDrawer({ open, onClose }) {
   const { visible, isClosing, requestClose } = useDrawerDismiss(open, onClose)
   const [resolving, setResolving] = useState(false)
 
-  if (!visible || typeof document === 'undefined') return null
+  if (!COOKIE_CONSENT_ENABLED || !visible || typeof document === 'undefined') return null
 
   const closingModal = isClosing ? ' drawer-dismiss-modal--closing' : ''
   const busy = resolving || isClosing

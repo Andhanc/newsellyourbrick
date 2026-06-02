@@ -210,6 +210,8 @@ function SharesDesktopFilters({
             className="auction-desktop-filters__slider-track"
             style={{ '--range-left': `${priceFillLeft}%`, '--range-width': `${priceFillWidth}%` }}
           >
+            <div className="auction-desktop-filters__slider-rail" aria-hidden />
+            <div className="auction-desktop-filters__slider-fill" aria-hidden />
             <input
               type="range"
               className="auction-desktop-filters__range auction-desktop-filters__range--min"
@@ -217,6 +219,7 @@ function SharesDesktopFilters({
               max={priceBounds.max}
               value={sliderPriceMin}
               onChange={(e) => applyPriceRange(Number(e.target.value), sliderPriceMax)}
+              aria-label={t('auctionFilterPriceMin')}
             />
             <input
               type="range"
@@ -225,7 +228,12 @@ function SharesDesktopFilters({
               max={priceBounds.max}
               value={sliderPriceMax}
               onChange={(e) => applyPriceRange(sliderPriceMin, Number(e.target.value))}
+              aria-label={t('auctionFilterPriceMax')}
             />
+          </div>
+          <div className="auction-desktop-filters__slider-scale" aria-hidden>
+            <span>{priceBounds.min}</span>
+            <span>{priceBounds.max}</span>
           </div>
           <p className="auction-desktop-filters__range-hint">
             {t('auctionFilterFromTo', {

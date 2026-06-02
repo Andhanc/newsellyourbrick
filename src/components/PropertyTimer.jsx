@@ -61,6 +61,7 @@ const PropertyTimer = ({
   // Для дней < 60 остается 'timer-short' (красный)
 
   const isCritical = days < 30 // Красный мигающий: меньше 1 месяца
+  const hasThreeDigitDays = days >= 100
 
   if (compact) {
     if (isEnded && auctionEndedLabel) {
@@ -154,7 +155,7 @@ const PropertyTimer = ({
 
   return (
     <div
-      className={`property-timer property-timer--detail ${statusClass} ${isCritical ? 'timer-critical' : ''} ${className}`.trim()}
+      className={`property-timer property-timer--detail ${statusClass} ${isCritical ? 'timer-critical' : ''} ${hasThreeDigitDays ? 'property-timer--days-3' : ''} ${className}`.trim()}
     >
       <div className="property-timer-detail-flip-row">
         {renderDetailUnit(timeLeft.days, 'timerDay')}

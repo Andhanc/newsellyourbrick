@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next'
+import { getResolvedAmenityLabels } from '../../utils/tzAmenityLabels'
 
 export default function PropertyDetailInfoSection({
   displayProperty,
@@ -144,72 +145,13 @@ export default function PropertyDetailInfoSection({
   }
 
   const renderAmenities = () => {
-    const featureLabelKeys = {
-      feature1: 'addPropertyAmenityUndergroundParking',
-      feature2: 'addPropertyAmenityRestaurant',
-      feature3: 'addPropertyAmenitiesWashingMachine',
-      feature4: 'addPropertyAmenityBarLounge',
-      feature5: 'addPropertyAmenityAccessControl',
-      feature6: 'addPropertyAmenityCctv',
-      feature7: 'addPropertyAmenitiesLoggia',
-      feature8: 'addPropertyAmenityStorageRoom',
-      feature9: 'addPropertyAmenityRooftopTerrace',
-      feature10: 'addPropertyAmenityRaisedFloor',
-      feature11: 'addPropertyAmenityPrivateGarage',
-      feature12: 'addPropertyAmenityEvCharging',
-      feature13: 'addPropertyAmenityGym',
-      feature14: 'addPropertyAmenitySauna',
-      feature15: 'addPropertyAmenitySpa',
-      feature16: 'addPropertyAmenityVideoIntercom',
-      feature17: 'addPropertyAmenitySecurity247',
-      feature18: 'addPropertyAmenitiesWardrobe',
-      feature19: 'addPropertyAmenityFireplace',
-      feature20: 'addPropertyAmenitySmartHome',
-      feature21: 'addPropertyAmenitySolarPanels',
-      feature22: 'addPropertyAmenityHvacSystem',
-      feature23: 'addPropertyAmenityAirConditioning',
-      feature24: 'addPropertyAmenityWaterConnected',
-      feature25: 'addPropertyAmenityBackupGenerator',
-      feature26: 'addPropertyAmenityFreightElevator',
+    const merged = {
+      ...displayProperty,
+      ...sourceProperty,
+      amenities: sourceProperty?.amenities ?? displayProperty?.amenities,
+      tz_amenities_json: sourceProperty?.tz_amenities_json ?? displayProperty?.tz_amenities_json,
     }
-    const mainAmenityKeys = {
-      balcony: 'addPropertyAmenitiesBalcony',
-      parking: 'addPropertyAmenitiesParkingSpace',
-      elevator: 'addPropertyAmenitiesElevator',
-      garage: 'propertyDetailAmenityGarage',
-      pool: 'addPropertyAmenityPool',
-      garden: 'addPropertyAmenityGarden',
-      electricity: 'addPropertyAmenityElectricityConnected',
-      internet: 'addPropertyAmenityInternetConnected',
-      security: 'addPropertyAmenitySecurity247',
-      furniture: 'addPropertyAmenitiesBuiltInFurniture',
-    }
-
-    const amenities = []
-    const amenitiesArray = sourceProperty?.amenities || displayProperty.amenities || []
-    const isAmenitiesArray = Array.isArray(amenitiesArray)
-
-    if (isAmenitiesArray && amenitiesArray.length > 0) {
-      Object.entries(mainAmenityKeys).forEach(([key, labelKey]) => {
-        if (amenitiesArray.includes(key)) amenities.push(t(labelKey))
-      })
-      for (let i = 1; i <= 26; i++) {
-        const featureKey = `feature${i}`
-        if (amenitiesArray.includes(featureKey) && featureLabelKeys[featureKey]) {
-          amenities.push(t(featureLabelKeys[featureKey]))
-        }
-      }
-    } else {
-      Object.entries(mainAmenityKeys).forEach(([key, labelKey]) => {
-        if (displayProperty[key] === true) amenities.push(t(labelKey))
-      })
-      for (let i = 1; i <= 26; i++) {
-        const featureKey = `feature${i}`
-        if (displayProperty[featureKey] === true && featureLabelKeys[featureKey]) {
-          amenities.push(t(featureLabelKeys[featureKey]))
-        }
-      }
-    }
+    const amenities = getResolvedAmenityLabels(merged)
 
     if (amenities.length === 0) {
       return (

@@ -103,6 +103,8 @@
 .app-layout.app-layout--add-property-single-scroll .add-property-page,
 .app-layout.app-layout--add-property-single-scroll .add-property-container,
 .app-layout.app-layout--add-property-single-scroll .add-property-form,
+.app-layout.app-layout--add-property-single-scroll .single-page-add-flow,
+.app-layout.app-layout--add-property-single-scroll .single-page-add-flow--studio,
 .app-layout.app-layout--add-property-single-scroll .property-price-screen,
 .app-layout.app-layout--add-property-single-scroll .property-price-main {
   overflow: visible !important;

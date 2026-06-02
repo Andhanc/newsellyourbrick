@@ -7,6 +7,11 @@ import LocationMap from '../LocationMap';
 import './ModerationPropertyDetail.css';
 import { getApiBaseUrlSync } from '../../utils/apiConfig';
 import { showNotification } from '../../utils/toastHelper';
+import {
+  collectAmenityKeys,
+  getAmenityLabelRu,
+  getResolvedAmenityLabels,
+} from '../../utils/tzAmenityLabels';
 
 const API_BASE_URL = getApiBaseUrlSync();
 
@@ -272,26 +277,71 @@ const ModerationPropertyDetail = ({ property, onBack, onApprove, onReject }) => 
 
   // Загружаем оригинальный объект, если это запрос на редактирование
   useEffect(() => {
-    if (requestType === 'edit' && property.rejection_reason) {
-      const originalPropertyId = property.rejection_reason.replace('EDIT:', '');
-      if (originalPropertyId) {
-        setLoadingOriginal(true);
-        fetch(`${API_BASE_URL}/properties/${originalPropertyId}`)
-          .then(res => res.json())
-          .then(data => {
-            if (data.success && data.data) {
-              setOriginalProperty(data.data);
-            }
-          })
-          .catch(error => {
-            console.error('Ошибка загрузки оригинального объекта:', error);
-          })
-          .finally(() => {
-            setLoadingOriginal(false);
-          });
-      }
+    if (requestType !== 'edit' || !property.rejection_reason) {
+      setOriginalProperty(null);
+      return undefined;
     }
-  }, [property, requestType]);
+
+    const editMatch = String(property.rejection_reason).match(/^EDIT:(\d+)$/);
+    const originalPropertyId = editMatch ? editMatch[1] : '';
+    if (!originalPropertyId) return undefined;
+
+    let cancelled = false;
+    setLoadingOriginal(true);
+    setOriginalProperty(null);
+
+    const moderationParam = 'for_moderation=1';
+    const buildQuery = (propertyType) => {
+      const params = new URLSearchParams({ for_moderation: '1' });
+      if (propertyType) params.set('property_type', propertyType);
+      return `?${params.toString()}`;
+    };
+
+    const tryFetch = async (query) => {
+      const res = await fetch(`${API_BASE_URL}/properties/${originalPropertyId}${query}`);
+      if (!res.ok) return null;
+      const data = await res.json();
+      return data.success && data.data ? data.data : null;
+    };
+
+    const propertyTypesToTry = [
+      property.property_type,
+      'apartment',
+      'commercial',
+      'house',
+      'villa',
+    ].filter(Boolean);
+    const uniqueTypes = [...new Set(propertyTypesToTry)];
+
+    (async () => {
+      try {
+        let loaded = null;
+        for (const pt of uniqueTypes) {
+          loaded = await tryFetch(buildQuery(pt));
+          if (loaded) break;
+        }
+        if (!loaded) {
+          loaded = await tryFetch(`?${moderationParam}`);
+        }
+        if (!cancelled) {
+          setOriginalProperty(loaded);
+        }
+      } catch (error) {
+        if (!cancelled) {
+          console.error('Ошибка загрузки оригинального объекта:', error);
+          setOriginalProperty(null);
+        }
+      } finally {
+        if (!cancelled) {
+          setLoadingOriginal(false);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [property.id, property.rejection_reason, property.property_type, requestType]);
 
   // Подгружаем документы по долгу, если объект — долг и debt_documents отсутствуют или пусты
   useEffect(() => {
@@ -435,6 +485,20 @@ const ModerationPropertyDetail = ({ property, onBack, onApprove, onReject }) => 
         field: 'Фотографии',
         old: `${oldPhotos.length} фото`,
         new: `${newPhotos.length} фото`
+      });
+    }
+
+    const oldAmenityKeys = [...collectAmenityKeys(originalProperty)].sort();
+    const newAmenityKeys = [...collectAmenityKeys(property)].sort();
+    if (JSON.stringify(oldAmenityKeys) !== JSON.stringify(newAmenityKeys)) {
+      changes.push({
+        field: 'Удобства',
+        old: oldAmenityKeys.length
+          ? oldAmenityKeys.map((k) => getAmenityLabelRu(k)).join(', ')
+          : 'Не указано',
+        new: newAmenityKeys.length
+          ? newAmenityKeys.map((k) => getAmenityLabelRu(k)).join(', ')
+          : 'Не указано',
       });
     }
     
@@ -806,106 +870,18 @@ const ModerationPropertyDetail = ({ property, onBack, onApprove, onReject }) => 
             <h3>Удобства</h3>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginTop: '10px' }}>
               {(() => {
-                // Маппинг названий для основных удобств
-                const mainAmenitiesLabels = {
-                  balcony: 'Балкон',
-                  parking: 'Парковка',
-                  elevator: 'Лифт',
-                  garage: 'Гараж',
-                  pool: 'Бассейн',
-                  garden: 'Сад',
-                  electricity: 'Электричество',
-                  internet: 'Интернет',
-                  security: 'Охрана 24/7',
-                  furniture: 'Мебель'
+                const labels = getResolvedAmenityLabels(property)
+                if (!labels.length) {
+                  return <span style={{ color: '#999' }}>Удобства не указаны</span>
                 }
-                
-                // Маппинг названий для feature полей
-                const featureLabels = {
-                  feature1: 'Подземная парковка',
-                  feature2: 'Ресторан',
-                  feature3: 'Стиральная машина',
-                  feature4: 'Бар / лаундж',
-                  feature5: 'Контроль доступа',
-                  feature6: 'Видеонаблюдение',
-                  feature7: 'Лоджия',
-                  feature8: 'Кладовая',
-                  feature9: 'Эксплуатируемая кровля / терраса',
-                  feature10: 'Фальшпол',
-                  feature11: 'Отдельный гараж / существующие постройки / вертолетная площадка',
-                  feature12: 'EV-зарядка / велостоянка',
-                  feature13: 'Фитнес-центр',
-                  feature14: 'Сауна',
-                  feature15: 'SPA / велнес',
-                  feature16: 'Видеодомофон',
-                  feature17: 'Круглосуточная охрана',
-                  feature18: 'Гардеробная',
-                  feature19: 'Камин',
-                  feature20: 'Система умного дома',
-                  feature21: 'Солнечные панели',
-                  feature22: 'Система вентиляции / HVAC',
-                  feature23: 'Центральное кондиционирование',
-                  feature24: 'Водопровод подключен / сертификат энергоэффективности',
-                  feature25: 'Резервный генератор / газ подключен / loading dock',
-                  feature26: 'Грузовой лифт / канализация подключена'
-                }
-                
-                // Получаем массив amenities (единственный источник правды)
-                const amenitiesArray = property.amenities || []
-                const isAmenitiesArray = Array.isArray(amenitiesArray)
-                
-                const amenityTags = []
-                
-                // Проверяем ТОЛЬКО массив amenities
-                if (isAmenitiesArray && amenitiesArray.length > 0) {
-                  // Основные удобства
-                  Object.entries(mainAmenitiesLabels).forEach(([key, label]) => {
-                    if (amenitiesArray.includes(key)) {
-                      amenityTags.push(
-                        <span key={key} style={{ padding: '5px 10px', backgroundColor: '#e8f5e9', borderRadius: '4px' }}>
-                          {label}
-                        </span>
-                      )
-                    }
-                  })
-                  
-                  // Feature поля
-                  for (let i = 1; i <= 26; i++) {
-                    const featureKey = `feature${i}`
-                    if (amenitiesArray.includes(featureKey) && featureLabels[featureKey]) {
-                      amenityTags.push(
-                        <span key={featureKey} style={{ padding: '5px 10px', backgroundColor: '#e8f5e9', borderRadius: '4px' }}>
-                          {featureLabels[featureKey]}
-                        </span>
-                      )
-                    }
-                  }
-                } else {
-                  // Fallback: если массива нет, проверяем отдельные поля (для старых записей)
-                  Object.entries(mainAmenitiesLabels).forEach(([key, label]) => {
-                    if (property[key] === 1 || property[key] === true || property[key] === '1') {
-                      amenityTags.push(
-                        <span key={key} style={{ padding: '5px 10px', backgroundColor: '#e8f5e9', borderRadius: '4px' }}>
-                          {label}
-                        </span>
-                      )
-                    }
-                  })
-                  
-                  for (let i = 1; i <= 26; i++) {
-                    const featureKey = `feature${i}`
-                    const featureValue = property[featureKey]
-                    if ((featureValue === 1 || featureValue === true || featureValue === '1') && featureLabels[featureKey]) {
-                      amenityTags.push(
-                        <span key={featureKey} style={{ padding: '5px 10px', backgroundColor: '#e8f5e9', borderRadius: '4px' }}>
-                          {featureLabels[featureKey]}
-                        </span>
-                      )
-                    }
-                  }
-                }
-                
-                return amenityTags.length > 0 ? amenityTags : <span style={{ color: '#999' }}>Удобства не указаны</span>
+                return labels.map((label, index) => (
+                  <span
+                    key={`${label}-${index}`}
+                    style={{ padding: '5px 10px', backgroundColor: '#e8f5e9', borderRadius: '4px' }}
+                  >
+                    {label}
+                  </span>
+                ))
               })()}
             </div>
             {/* Дополнительные удобства */}

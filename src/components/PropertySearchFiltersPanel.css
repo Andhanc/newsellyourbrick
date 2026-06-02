@@ -345,6 +345,10 @@
 }
 
 @media (min-width: 1024px) {
+  .property-search-filters-panel__container {
+    max-width: 1120px;
+  }
+
   .property-search-filters-panel__content {
     width: max-content;
     max-width: 100%;
@@ -352,9 +356,11 @@
   }
 
   .property-search-filters-panel__form {
-    grid-template-columns: 162px 162px 182px 142px 142px 128px;
+    grid-template-columns: 158px 158px 176px 136px 136px 122px 120px;
+    grid-template-rows: auto;
     justify-content: center;
     column-gap: 8px;
+    row-gap: 0;
     width: max-content;
     margin: 0 auto;
   }
@@ -370,11 +376,13 @@
   }
 
   .property-search-filters-panel__button {
-    grid-column: 6;
+    grid-column: 7;
+    grid-row: 1;
     margin-top: 0;
-    max-width: 128px;
+    max-width: none;
     width: 100%;
-    justify-self: end;
+    justify-self: stretch;
+    align-self: end;
   }
 }
 

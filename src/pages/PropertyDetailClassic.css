@@ -7172,6 +7172,28 @@
     margin: 0 auto;
   }
 
+  /* Для 100+ дней уменьшаем flip-блоки, чтобы таймер не вылезал из панели */
+  .property-detail-auction-desktop__timer .property-timer--detail.property-timer--days-3 .flip-unit {
+    width: 34px !important;
+    height: 52px !important;
+  }
+
+  .property-detail-auction-desktop__timer .property-timer--detail.property-timer--days-3 .flip-digit {
+    font-size: 24px !important;
+  }
+
+  .property-detail-auction-desktop__timer
+    .property-timer--detail.property-timer--days-3
+    .property-timer-detail-flip-row {
+    gap: 1px;
+  }
+
+  .property-detail-auction-desktop__timer
+    .property-timer--detail.property-timer--days-3
+    .property-timer-detail-sep {
+    font-size: 26px;
+  }
+
   /* Текущая ставка в правой панели — без вложенной карточки */
   .property-detail-auction-desktop__bid-panel .property-detail-mobile-about-bid,
   .property-detail-auction-desktop__bid-card .property-detail-mobile-about-bid {

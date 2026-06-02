@@ -42,6 +42,8 @@ import { useManagerLiveChat } from '../hooks/useManagerLiveChat'
 import { getPropertyDetailPath } from '../utils/propertyDetailUrl'
 import { useCabinetOverviewData } from '../hooks/useCabinetOverviewData'
 
+const MOBILE_BREAKPOINT = 768
+
 function formatPropertyForList(prop, isAuction) {
   return {
     ...prop,
@@ -85,6 +87,9 @@ function Home() {
   const navigate = useNavigate()
   const location = useLocation()
   const isAuctionRoute = location.pathname === '/auction'
+  const [isMobileViewport, setIsMobileViewport] = useState(
+    () => typeof window !== 'undefined' && window.innerWidth <= MOBILE_BREAKPOINT,
+  )
   const { cabinetVipActive, numericUserId } = useCabinetOverviewData()
   const cabinetVipRef = useRef(false)
   const viewerUserIdRef = useRef(null)
@@ -113,6 +118,13 @@ function Home() {
     managerContactPendingChoice: false,
     preferredContact: null
   })
+
+  useEffect(() => {
+    const check = () => setIsMobileViewport(window.innerWidth <= MOBILE_BREAKPOINT)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
 
   useEffect(() => {
     cabinetVipRef.current = cabinetVipActive
@@ -1176,7 +1188,7 @@ function Home() {
 
       <Header />
       <Hero staticMobileCards={isAuctionRoute} />
-      {isAuctionRoute && (
+      {isAuctionRoute && isMobileViewport && (
         <div className="page-context-heading page-context-heading--home-auction">
           <div className="page-context-heading--home-auction-inner">
             <h1 className="page-context-heading__title page-context-heading__title--auction-script">

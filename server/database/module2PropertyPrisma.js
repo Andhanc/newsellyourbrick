@@ -55,6 +55,34 @@ function parseHouseRow(property) {
   return p;
 }
 
+/** При одинаковом numeric id в apartments и houses — берём запись с более свежим updated_at. */
+function pickPropertyWhenIdCollides(propertyInHouses, propertyInApartments) {
+  const houseTs = propertyInHouses?.updated_at
+    ? new Date(propertyInHouses.updated_at).getTime()
+    : 0;
+  const aptTs = propertyInApartments?.updated_at
+    ? new Date(propertyInApartments.updated_at).getTime()
+    : 0;
+
+  if (aptTs > houseTs) {
+    propertyInApartments.source_table = 'properties_apartments';
+    return propertyInApartments;
+  }
+  if (houseTs > aptTs) {
+    propertyInHouses.source_table = 'properties_houses';
+    return propertyInHouses;
+  }
+
+  const aptPt = String(propertyInApartments?.property_type || '').toLowerCase();
+  if (aptPt === 'apartment' || aptPt === 'commercial') {
+    propertyInApartments.source_table = 'properties_apartments';
+    return propertyInApartments;
+  }
+
+  propertyInHouses.source_table = 'properties_houses';
+  return propertyInHouses;
+}
+
 function mapApartmentWithUser(p) {
   const u = p.users;
   const { users, ...rest } = p;
@@ -965,16 +993,10 @@ export const propertyQueries = {
     const propertyInApartments = await apartmentQueries.getById(nid);
 
     if (propertyInHouses && propertyInApartments) {
-      if (propertyInHouses.property_type === 'house' || propertyInHouses.property_type === 'villa') {
-        propertyInHouses.source_table = 'properties_houses';
-        return propertyInHouses;
-      }
-      if (propertyInApartments.property_type === 'apartment' || propertyInApartments.property_type === 'commercial') {
-        propertyInApartments.source_table = 'properties_apartments';
-        return propertyInApartments;
-      }
-      propertyInHouses.source_table = 'properties_houses';
-      return propertyInHouses;
+      console.warn(
+        `⚠️ getById: ID=${nid} найден и в properties_houses, и в properties_apartments — выбираем по updated_at`
+      );
+      return pickPropertyWhenIdCollides(propertyInHouses, propertyInApartments);
     }
     if (propertyInHouses) {
       if (propertyInHouses.property_type === 'house' || propertyInHouses.property_type === 'villa') {
