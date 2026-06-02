@@ -8,7 +8,7 @@ const PropertySearchBlock = () => {
   const navigate = useNavigate()
 
   const handleApplyFilters = () => {
-    navigate('/search-results')
+    navigate('/search-results', { state: { fromPropertySearchBlock: true } })
   }
 
   return (

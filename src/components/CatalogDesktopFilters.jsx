@@ -31,7 +31,6 @@ function CatalogDesktopFilters({
   filters,
   onChange,
   priceBounds,
-  onApply,
 }) {
   const { t } = useTranslation()
   const [locationOptions, setLocationOptions] = useState([])
@@ -153,8 +152,10 @@ function CatalogDesktopFilters({
     t,
   ])
 
-  const sliderPriceMin = filters.minPrice !== '' ? Number(filters.minPrice) : priceBounds.min
-  const sliderPriceMax = filters.maxPrice !== '' ? Number(filters.maxPrice) : priceBounds.max
+  const sliderPriceMinRaw = filters.minPrice !== '' ? Number(filters.minPrice) : priceBounds.min
+  const sliderPriceMaxRaw = filters.maxPrice !== '' ? Number(filters.maxPrice) : priceBounds.max
+  const sliderPriceMin = clamp(sliderPriceMinRaw, priceBounds.min, priceBounds.max)
+  const sliderPriceMax = clamp(sliderPriceMaxRaw, sliderPriceMin, priceBounds.max)
 
   const priceSpan = Math.max(1, priceBounds.max - priceBounds.min)
   const priceFillLeft = ((sliderPriceMin - priceBounds.min) / priceSpan) * 100
@@ -357,6 +358,8 @@ function CatalogDesktopFilters({
             className="auction-desktop-filters__slider-track"
             style={{ '--range-left': `${priceFillLeft}%`, '--range-width': `${priceFillWidth}%` }}
           >
+            <div className="auction-desktop-filters__slider-rail" aria-hidden />
+            <div className="auction-desktop-filters__slider-fill" aria-hidden />
             <input
               type="range"
               className="auction-desktop-filters__range auction-desktop-filters__range--min"
@@ -378,11 +381,8 @@ function CatalogDesktopFilters({
       </div>
 
       <div className="auction-desktop-filters__footer">
-        <button type="button" className="auction-desktop-filters__apply" onClick={onApply}>
-          {t('auctionApplyFilters')}
-        </button>
         <button type="button" className="auction-desktop-filters__clear" onClick={handleReset}>
-          {t('auctionClearAllFilters')}
+          {t('catalogResetFilters')}
         </button>
       </div>
     </aside>

@@ -1028,7 +1028,7 @@ const AddProperty = ({
   const [videoLinkType, setVideoLinkType] = useState('any')
   const [showPhotoLinkModal, setShowPhotoLinkModal] = useState(false)
   const [photoLink, setPhotoLink] = useState('')
-  const [currency, setCurrency] = useState('USD')
+  const [currency, setCurrency] = useState('EUR')
   const [showCurrencyDropdown, setShowCurrencyDropdown] = useState(null) // 'price' или 'auction' или null
   /** Подшаг ввода сумм на шаге 10 (single-page): 0 — мин. цена, далее «Продать сейчас» (если есть), стартовая ставка */
   const [spAuctionAmountStepIndex, setSpAuctionAmountStepIndex] = useState(0)

@@ -110,6 +110,7 @@ const PropertySearchFiltersPanel = ({
   const currencyList = useMemo(() => getCatalogFilterCurrencies(), [])
 
   const propertyTypeOptions = CATALOG_PROPERTY_TYPE_OPTIONS.filter((opt) => opt.value !== '')
+  const selectedPurchaseType = Array.isArray(filters.purchaseTypes) ? (filters.purchaseTypes[0] || '') : ''
 
   useEffect(() => {
     let cancelled = false
@@ -169,20 +170,11 @@ const PropertySearchFiltersPanel = ({
     }))
   }
 
-  const togglePurchaseType = (value) => {
-    setFilters((prev) => {
-      const exists = prev.purchaseTypes.includes(value)
-      if (exists) {
-        return {
-          ...prev,
-          purchaseTypes: prev.purchaseTypes.filter((item) => item !== value),
-        }
-      }
-      return {
-        ...prev,
-        purchaseTypes: [...prev.purchaseTypes, value],
-      }
-    })
+  const handlePurchaseTypeChange = (value) => {
+    setFilters((prev) => ({
+      ...prev,
+      purchaseTypes: value ? [value] : [],
+    }))
   }
 
   const handlePriceChange = (field, raw) => {
@@ -243,27 +235,6 @@ const PropertySearchFiltersPanel = ({
     <section className="property-search-filters-panel" ref={panelRef}>
       <div className="property-search-filters-panel__container">
         <div className="property-search-filters-panel__content">
-          <div
-            className="property-search-filters-panel__sale-types"
-            role="group"
-            aria-label={t('modalPurchaseType')}
-          >
-            {CATALOG_PURCHASE_TYPE_OPTIONS.map((option) => {
-              const active = filters.purchaseTypes.includes(option.value)
-              return (
-                <button
-                  key={option.value}
-                  type="button"
-                  className={`property-search-filters-panel__chip${active ? ' is-active' : ''}`}
-                  onClick={() => togglePurchaseType(option.value)}
-                  aria-pressed={active}
-                >
-                  {t(option.labelKey)}
-                </button>
-              )
-            })}
-          </div>
-
           <div className="property-search-filters-panel__form">
             <label className="property-search-filters-panel__field">
               <span>{t('catalogFilterCountry')}</span>
@@ -314,6 +285,22 @@ const PropertySearchFiltersPanel = ({
               >
                 <option value="">{t('catalogFilterAllTypes')}</option>
                 {propertyTypeOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {t(option.labelKey)}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="property-search-filters-panel__field">
+              <span>{t('modalPurchaseType')}</span>
+              <select
+                className="property-search-filters-panel__input"
+                value={selectedPurchaseType}
+                onChange={(e) => handlePurchaseTypeChange(e.target.value)}
+              >
+                <option value="">{t('modalAnyPurchaseType')}</option>
+                {CATALOG_PURCHASE_TYPE_OPTIONS.map((option) => (
                   <option key={option.value} value={option.value}>
                     {t(option.labelKey)}
                   </option>

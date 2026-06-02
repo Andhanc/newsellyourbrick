@@ -5715,6 +5715,11 @@ select.property-location-input {
     grid-template-columns: 1fr;
   }
 
+  /* Шаг "Параметры" на мобилке: по два поля в строке */
+  .single-page-add-flow--studio section[data-sp-section='details'] .single-page-add-flow__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .property-type-selection-screen {
     padding: 32px 20px 50px;
     max-width: 100%;
@@ -7502,6 +7507,47 @@ select.property-location-input {
   margin-top: 8px;
   overflow: visible;
   max-width: 100%;
+}
+
+/* Шаг 10 (single-page): убрать эффект "карточка в карточке" и дать ширину секции */
+.single-page-add-flow--studio .sp-calculator-embed .property-calculator-embedded {
+  max-width: 100%;
+}
+
+.single-page-add-flow--studio .sp-calculator-embed .property-calculator-modal--embedded {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.single-page-add-flow--studio .sp-calculator-embed .property-calculator-modal--embedded::before {
+  display: none;
+}
+
+.single-page-add-flow--studio .sp-calculator-embed .property-calculator-modal--embedded .property-calculator-modal__content {
+  padding: 0;
+}
+
+.single-page-add-flow--studio .sp-calculator-embed .property-calculator-modal--embedded .property-calculator-form__panel {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+/* Шаг 10: убираем внутренние боковые отступы у раскрытого контента карточки */
+.single-page-add-flow--studio section[data-sp-section='calculator'] > .sp-card__collapsible-panel,
+.single-page-add-flow--studio section[data-sp-section='calculator'] > .sp-card__collapsible-panel .sp-card__collapsible-body {
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.single-page-add-flow--studio section[data-sp-section='calculator'] .sp-calculator-embed {
+  margin-left: 0;
+  margin-right: 0;
 }
 
 /* Шаг: автоматический расчёт (калькулятор встроен в мастер) */
@@ -9965,6 +10011,31 @@ select.property-location-input {
 
 .sp-auction-picker.auction-fields-section {
   margin: 0;
+}
+
+/* Шаг 11 (single-page): период аукциона без вложенной "glass" карточки и ограничений ширины */
+.single-page-add-flow--studio .sp-auction-picker.auction-fields-section {
+  max-width: none;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  animation: none;
+}
+
+.single-page-add-flow--studio .sp-auction-picker.auction-fields-section::before,
+.single-page-add-flow--studio .sp-auction-picker.auction-fields-section::after {
+  display: none;
+}
+
+/* Шаг 11: аналогично убираем боковые внутренние отступы контейнера шага */
+.single-page-add-flow--studio section[data-sp-section='price'] > .sp-card__collapsible-panel,
+.single-page-add-flow--studio section[data-sp-section='price'] > .sp-card__collapsible-panel .sp-card__collapsible-body {
+  padding-left: 0;
+  padding-right: 0;
 }
 
 .sp-submit-row {

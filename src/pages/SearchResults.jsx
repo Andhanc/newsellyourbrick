@@ -1,12 +1,11 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { FiAlertCircle } from 'react-icons/fi'
 import { PanelLeftClose, PanelLeftOpen } from 'lucide-react'
 import Header from '../components/Header'
 import Footer from '../components/Footer'
 import PropertyListingCard from '../components/PropertyListingCard'
-import PropertySearchFiltersPanel from '../components/PropertySearchFiltersPanel'
 import CatalogDesktopFilters from '../components/CatalogDesktopFilters'
 import { ensureCanOpenProperty } from '../utils/propertyAccessGuard'
 import { getApiBaseUrl } from '../utils/apiConfig'
@@ -58,6 +57,7 @@ function SearchResultsGrid({ properties, onOpen }) {
 const SearchResults = () => {
   const { t } = useTranslation()
   const navigate = useNavigate()
+  const location = useLocation()
   const [catalogProperties, setCatalogProperties] = useState([])
   const [loading, setLoading] = useState(true)
   const [activeFilters, setActiveFilters] = useState(EMPTY_CATALOG_FILTERS)
@@ -67,6 +67,7 @@ const SearchResults = () => {
     () => typeof window !== 'undefined' && window.innerWidth <= MOBILE_BREAKPOINT,
   )
   const searchFiltersBarRef = useRef(null)
+  const autoScrolledRef = useRef(false)
 
   const isSearchDesktop = !isMobile
 
@@ -133,6 +134,19 @@ const SearchResults = () => {
     return seen.size
   }, [filteredProperties])
 
+  useEffect(() => {
+    if (!location.state?.fromPropertySearchBlock) return
+    if (loading || autoScrolledRef.current) return
+
+    const target = document.getElementById('search-results-grid')
+    if (!target) return
+
+    autoScrolledRef.current = true
+    requestAnimationFrame(() => {
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    })
+  }, [loading, location.state])
+
   const openProperty = (property, { auctionTab } = {}) => {
     if (!ensureCanOpenProperty()) return
     const { pathname, state } = buildPropertyDetailNavigation(property, {
@@ -151,10 +165,6 @@ const SearchResults = () => {
     const sanitized = sanitizeActiveFilters(nextFilters)
     setActiveFilters(sanitized)
     persistCatalogFilters(sanitized)
-  }
-
-  const handleApplyFilters = (nextFilters) => {
-    commitFilters({ ...EMPTY_CATALOG_FILTERS, ...nextFilters })
   }
 
   const handleDesktopFilterChange = (updater) => {
@@ -205,17 +215,11 @@ const SearchResults = () => {
                 : ''
             }`}
           >
-            {isSearchDesktop && desktopFiltersOpen ? (
+            {!isSearchDesktop || desktopFiltersOpen ? (
               <CatalogDesktopFilters
                 filters={activeFilters}
                 onChange={handleDesktopFilterChange}
                 priceBounds={{ min: filterBounds.priceMin, max: filterBounds.priceMax }}
-                onApply={() => {
-                  document.getElementById('search-results-grid')?.scrollIntoView({
-                    behavior: 'smooth',
-                    block: 'start',
-                  })
-                }}
               />
             ) : null}
 
@@ -229,45 +233,39 @@ const SearchResults = () => {
               }`.trim()}
             >
               {!isSearchDesktop ? (
-                <>
-                  <PropertySearchFiltersPanel
-                    filters={activeFilters}
-                    onFiltersChange={handleApplyFilters}
-                  />
-                  <div className="search-filters-bar search-filters-bar--auction-mobile search-results__mobile-search">
-                    <div className="search-box">
-                      <svg
-                        className="search-icon"
-                        width="20"
-                        height="20"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        aria-hidden
+                <div className="search-filters-bar search-filters-bar--auction-mobile search-results__mobile-search">
+                  <div className="search-box">
+                    <svg
+                      className="search-icon"
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      aria-hidden
+                    >
+                      <circle cx="11" cy="11" r="8" />
+                      <path d="m21 21-4.35-4.35" />
+                    </svg>
+                    <input
+                      type="text"
+                      className="search-input"
+                      placeholder={t('searchPlaceholderLong')}
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                    {searchQuery ? (
+                      <button
+                        type="button"
+                        className="search-clear"
+                        onClick={() => setSearchQuery('')}
                       >
-                        <circle cx="11" cy="11" r="8" />
-                        <path d="m21 21-4.35-4.35" />
-                      </svg>
-                      <input
-                        type="text"
-                        className="search-input"
-                        placeholder={t('searchPlaceholderLong')}
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                      />
-                      {searchQuery ? (
-                        <button
-                          type="button"
-                          className="search-clear"
-                          onClick={() => setSearchQuery('')}
-                        >
-                          ×
-                        </button>
-                      ) : null}
-                    </div>
+                        ×
+                      </button>
+                    ) : null}
                   </div>
-                </>
+                </div>
               ) : (
                 <div
                   ref={searchFiltersBarRef}

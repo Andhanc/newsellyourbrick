@@ -297,7 +297,7 @@
 
 @media (max-width: 768px) {
   .search-results {
-    padding: calc(env(safe-area-inset-top, 0px) + 68px) 12px 24px;
+    padding: calc(env(safe-area-inset-top, 0px) + 90px) 12px 24px;
   }
 
   .search-results__title {
