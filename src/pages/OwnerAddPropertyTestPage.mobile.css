@@ -1,0 +1,181 @@
+@media (max-width: 900px) {
+  .oap {
+    height: 100dvh;
+    overflow: hidden;
+    background: #e8eaed;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .oap-shell {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    max-width: 100%;
+    padding: 0;
+    margin: 0;
+  }
+
+  .oap-header {
+    flex-shrink: 0;
+    justify-content: center;
+    position: relative;
+    padding: 16px 48px;
+    margin-bottom: 0;
+    background: #fff;
+    border-bottom: 1px solid #e5e7eb;
+  }
+
+  .oap-header__back {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 36px;
+    height: 36px;
+  }
+
+  .oap-header__title {
+    font-size: 17px;
+    font-weight: 600;
+    text-align: center;
+  }
+
+  .oap-stepper {
+    flex-shrink: 0;
+    margin: 0;
+    padding: 16px 20px 12px;
+    background: #fff;
+    border-bottom: 1px solid #f3f4f6;
+  }
+
+  .oap-stepper__item {
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    flex: 1;
+  }
+
+  .oap-stepper__dot {
+    width: 28px;
+    height: 28px;
+    font-size: 13px;
+  }
+
+  .oap-stepper__label {
+    font-size: 11px;
+    white-space: normal;
+    text-align: center;
+    line-height: 1.2;
+  }
+
+  .oap-stepper__line {
+    display: none;
+  }
+
+  .oap-content {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    margin: 12px 16px 0;
+    padding: 20px 16px;
+    border-radius: 14px;
+    box-shadow: 0 1px 4px rgba(15, 23, 42, 0.06);
+  }
+
+  .oap-step1--mobile {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+
+  .oap-step1__fields {
+    gap: 16px;
+  }
+
+  .oap-field__input,
+  .oap-field__textarea {
+    padding: 11px 12px;
+    font-size: 15px;
+  }
+
+  .oap-upload {
+    min-height: 180px;
+    padding: 24px 16px;
+    border-radius: 12px;
+  }
+
+  .oap-upload__inner--mobile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .oap-upload__icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 52px;
+    height: 52px;
+    margin-bottom: 12px;
+    border-radius: 50%;
+    background: var(--oap-primary-soft);
+    color: var(--oap-primary);
+  }
+
+  .oap-upload__title {
+    font-size: 15px;
+  }
+
+  .oap-upload__hint {
+    margin-bottom: 0;
+    font-size: 13px;
+  }
+
+  .oap-upload__link {
+    border: none;
+    background: none;
+    padding: 0;
+    font: inherit;
+    font-weight: 600;
+    color: var(--oap-primary);
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  .oap-upload__formats {
+    margin-top: 10px;
+    font-size: 12px;
+  }
+
+  .oap-step-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .oap-listing-cards {
+    grid-template-columns: 1fr;
+  }
+
+  .oap-footer {
+    flex-shrink: 0;
+    padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px));
+    background: #fff;
+    border-top: 1px solid #e5e7eb;
+    justify-content: stretch;
+  }
+
+  .oap-btn--full {
+    width: 100%;
+    padding: 14px 20px;
+    border-radius: 12px;
+    font-size: 16px;
+  }
+
+  .oap-desktop-only {
+    display: none !important;
+  }
+}

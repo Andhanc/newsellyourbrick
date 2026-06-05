@@ -1,4 +1,5 @@
 import { getUserData } from '../services/authService'
+import { LEGACY_OWNER_CABINET_PATH, NEW_OWNER_CABINET_HOME_PATH } from './ownerTestProfile'
 
 /** @returns {'admin' | 'seller' | 'owner' | 'buyer' | 'client'} */
 export function readStoredUserRole() {
@@ -27,8 +28,13 @@ export function isSellerCabinetRole(role = readStoredUserRole()) {
 /** Главная страница личного кабинета по роли. */
 export function getCabinetHomePath(role = readStoredUserRole()) {
   if (role === 'admin') return '/admin'
-  if (isSellerCabinetRole(role)) return '/owner'
+  if (isSellerCabinetRole(role)) return NEW_OWNER_CABINET_HOME_PATH
   return '/profile'
+}
+
+/** Прямая ссылка на прежний кабинет продавца (/owner). */
+export function getLegacySellerCabinetPath() {
+  return LEGACY_OWNER_CABINET_PATH
 }
 
 /** Профиль / личный кабинет. */
@@ -38,20 +44,25 @@ export function getCabinetProfilePath(role = readStoredUserRole()) {
 
 /** Персональные данные и документы. */
 export function getCabinetDataPath(role = readStoredUserRole()) {
-  if (isSellerCabinetRole(role)) return '/owner?panel=profile'
+  if (isSellerCabinetRole(role)) return '/owner-test?view=profile'
   return '/profile?data=1'
 }
 
 /** Ссылка на поле в разделе «Данные» (например из VerificationToast). */
 export function getCabinetDataFieldPath(field, role = readStoredUserRole()) {
   const encoded = encodeURIComponent(field)
-  if (isSellerCabinetRole(role)) return `/owner?panel=profile&highlight=${encoded}`
+  if (isSellerCabinetRole(role)) return `/owner-test?view=profile&highlight=${encoded}`
   return `/profile?data=1&highlight=${encoded}`
 }
 
 export function isCabinetProfilePath(pathname, role = readStoredUserRole()) {
   if (isSellerCabinetRole(role)) {
-    return pathname === '/owner' || pathname.startsWith('/owner/')
+    return (
+      pathname === NEW_OWNER_CABINET_HOME_PATH ||
+      pathname.startsWith('/owner-') ||
+      pathname === LEGACY_OWNER_CABINET_PATH ||
+      pathname.startsWith(`${LEGACY_OWNER_CABINET_PATH}/`)
+    )
   }
   return pathname === '/profile' || pathname.startsWith('/profile/')
 }
@@ -59,7 +70,7 @@ export function isCabinetProfilePath(pathname, role = readStoredUserRole()) {
 export function isCabinetDataPath(pathname, search = '', role = readStoredUserRole()) {
   const params = new URLSearchParams(search)
   if (isSellerCabinetRole(role)) {
-    return (pathname === '/owner' || pathname.startsWith('/owner/')) && params.get('panel') === 'profile'
+    return pathname === '/owner-test' && params.get('view') === 'profile'
   }
   return (pathname === '/profile' || pathname.startsWith('/profile/')) && params.get('data') === '1'
 }

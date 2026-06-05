@@ -1,0 +1,183 @@
+import { useState, useEffect, useRef, useId, useCallback } from 'react'
+import { Link } from 'react-router-dom'
+import { useUser, useClerk } from '@clerk/clerk-react'
+import { ChevronDown } from 'lucide-react'
+import {
+  OWNER_PROFILE_TABS,
+  getOwnerProfileTabPath,
+} from '../pages/ownerProfileTestTabs'
+import { getUserData, logout } from '../services/authService'
+import { useOwnerTestProfileOptional } from '../context/OwnerTestProfileContext'
+import './OwnerTestProfileMenu.css'
+
+const SELLER_ROLE_LABEL = 'Продавец'
+
+export function resolveOwnerTestDisplayName({ name, fullName } = {}) {
+  if (name?.trim()) return name.trim()
+  if (fullName?.trim()) return fullName.trim()
+  const localName = getUserData()?.name
+  if (localName?.trim()) return localName.trim()
+  return SELLER_ROLE_LABEL
+}
+
+export default function OwnerTestProfileMenu({
+  name,
+  role,
+  current = false,
+  activeTab,
+  onTabSelect,
+  onLogout,
+}) {
+  const profileCtx = useOwnerTestProfileOptional()
+  const { user } = useUser()
+  const { signOut } = useClerk()
+  const displayName = resolveOwnerTestDisplayName({
+    name,
+    fullName: profileCtx?.fullName,
+  })
+  const displayRole = role?.trim() || profileCtx?.roleLabel || SELLER_ROLE_LABEL
+  const [open, setOpen] = useState(false)
+  const rootRef = useRef(null)
+  const gradientId = useId()
+
+  useEffect(() => {
+    if (!open) return undefined
+
+    const handlePointerDown = (event) => {
+      if (rootRef.current && !rootRef.current.contains(event.target)) {
+        setOpen(false)
+      }
+    }
+
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') setOpen(false)
+    }
+
+    document.addEventListener('mousedown', handlePointerDown)
+    document.addEventListener('keydown', handleKeyDown)
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown)
+      document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [open])
+
+  const closeMenu = () => setOpen(false)
+
+  const handleLogout = useCallback(async () => {
+    closeMenu()
+    if (onLogout) {
+      onLogout()
+      return
+    }
+
+    if (!window.confirm('Вы уверены, что хотите выйти?')) {
+      return
+    }
+
+    sessionStorage.setItem('clerk_logout_in_progress', 'true')
+    try {
+      if (user && signOut) {
+        await signOut({ redirectUrl: `${window.location.origin}/` })
+      }
+    } catch (error) {
+      console.warn('OwnerTestProfileMenu: Clerk signOut', error)
+    }
+
+    try {
+      await logout()
+    } catch (error) {
+      console.warn('OwnerTestProfileMenu: logout()', error)
+    } finally {
+      sessionStorage.removeItem('clerk_logout_in_progress')
+    }
+
+    window.location.assign('/')
+  }, [onLogout, signOut, user])
+
+  return (
+    <div className={`otpm${current ? ' otpm--current' : ''}`} ref={rootRef}>
+      <div className="otpm__pill">
+        <Link
+          to={getOwnerProfileTabPath('personal')}
+          className="otpm__identity"
+          aria-label="Профиль"
+          onClick={closeMenu}
+        >
+          <span className="otpm__avatar" aria-hidden>
+            <svg viewBox="0 0 40 40">
+              <defs>
+                <linearGradient id={gradientId} x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0%" stopColor="#53d8d3" />
+                  <stop offset="100%" stopColor="#089a95" />
+                </linearGradient>
+              </defs>
+              <circle cx="20" cy="20" r="20" fill={`url(#${gradientId})`} />
+              <circle cx="20" cy="16" r="7" fill="#F8FAFC" />
+              <ellipse cx="20" cy="34" rx="11" ry="8" fill="#F8FAFC" />
+            </svg>
+          </span>
+          <span className="otpm__info">
+            <span className="otpm__name">{displayName}</span>
+            <span className="otpm__role">{displayRole}</span>
+          </span>
+        </Link>
+        <button
+          type="button"
+          className={`otpm__toggle${open ? ' otpm__toggle--open' : ''}`}
+          aria-label="Разделы профиля"
+          aria-haspopup="menu"
+          aria-expanded={open}
+          onClick={() => setOpen((prev) => !prev)}
+        >
+          <ChevronDown size={16} strokeWidth={2.2} aria-hidden />
+        </button>
+      </div>
+
+      {open && (
+        <div className="otpm__menu" role="menu" aria-label="Разделы профиля">
+          {OWNER_PROFILE_TABS.map((tab) => {
+            const isActive = activeTab === tab.id
+
+            if (onTabSelect) {
+              return (
+                <button
+                  key={tab.id}
+                  type="button"
+                  role="menuitem"
+                  className={`otpm__item${isActive ? ' otpm__item--active' : ''}`}
+                  onClick={() => {
+                    onTabSelect(tab.id)
+                    closeMenu()
+                  }}
+                >
+                  {tab.label}
+                </button>
+              )
+            }
+
+            return (
+              <Link
+                key={tab.id}
+                to={getOwnerProfileTabPath(tab.id)}
+                role="menuitem"
+                className="otpm__item"
+                onClick={closeMenu}
+              >
+                {tab.label}
+              </Link>
+            )
+          })}
+          <div className="otpm__divider" role="separator" />
+          <button
+            type="button"
+            role="menuitem"
+            className="otpm__item otpm__item--logout"
+            onClick={handleLogout}
+          >
+            Выйти
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}

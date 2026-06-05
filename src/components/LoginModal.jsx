@@ -16,6 +16,7 @@ import { shouldDefaultLoginModalToLogin } from '../utils/visitorAuthDefault'
 import { setLoginModalOpen } from '../utils/loginModalDocumentFlag'
 import { marketerLogin } from '../services/newsApi'
 import AnimatedCharacters from './AnimatedCharacters'
+import { getCabinetHomePath } from '../utils/cabinetRoutes'
 import './LoginModal.css'
 
 /** authEntryVariant: header_wizard — Шаг 1 (роль) → Шаг 2 (вход/регистрация + данные); default — один экран (принудительные OAuth и т.п.) */
@@ -191,8 +192,7 @@ const LoginModal = ({ isOpen, onClose, authEntryVariant = 'header_wizard' }) => 
 
   /** После создания записи в БД из сессии Clerk — кабинет по выбранной роли */
   const navigateToCabinetAfterClerkDbSync = () => {
-    const path = userRole === 'seller' || userRole === 'owner' ? '/owner' : '/profile'
-    navigate(path)
+    navigate(getCabinetHomePath(userRole === 'owner' ? 'owner' : userRole))
   }
 
   const handleInputChange = (e) => {
@@ -253,7 +253,7 @@ const LoginModal = ({ isOpen, onClose, authEntryVariant = 'header_wizard' }) => 
         localStorage.setItem('isOwnerLoggedIn', 'true')
         setIsLoading(false)
         onClose()
-        navigate('/owner')
+        navigate(getCabinetHomePath('owner'))
         return
       }
       
@@ -312,7 +312,7 @@ const LoginModal = ({ isOpen, onClose, authEntryVariant = 'header_wizard' }) => 
             
             // Определяем куда редиректить в зависимости от роли пользователя
             const userRole = result.user?.role || 'buyer';
-            const redirectPath = (userRole === 'seller' || userRole === 'owner') ? '/owner' : '/profile';
+            const redirectPath = getCabinetHomePath(userRole === 'owner' ? 'owner' : userRole);
             
             console.log('✅ Вход успешен, редирект на:', redirectPath, 'для роли:', userRole);
             
@@ -672,7 +672,7 @@ const LoginModal = ({ isOpen, onClose, authEntryVariant = 'header_wizard' }) => 
       if (userRole === 'seller') {
         localStorage.setItem('isOwnerLoggedIn', 'true')
         localStorage.setItem('userRole', 'seller')
-        navigate('/owner')
+        navigate(getCabinetHomePath('seller'))
       } else {
         navigate('/profile')
       }
@@ -735,7 +735,7 @@ const LoginModal = ({ isOpen, onClose, authEntryVariant = 'header_wizard' }) => 
     if (userRole === 'seller' || userRole === 'owner') {
       localStorage.setItem('isOwnerLoggedIn', 'true')
       localStorage.setItem('userRole', 'seller')
-      navigate('/owner')
+      navigate(getCabinetHomePath('seller'))
     } else {
       navigate('/profile')
     }

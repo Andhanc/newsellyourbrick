@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { verifyTelegramAuth } from '../services/authService'
 import { showNotification } from '../utils/toastHelper'
 import AuthAlertModal from '../components/AuthAlertModal'
+import { getCabinetHomePath } from '../utils/cabinetRoutes'
 
 /**
  * Страница, на которую Telegram редиректит после успешного нажатия "Log in with Telegram".
@@ -59,7 +60,7 @@ export default function TelegramAuthCallback() {
           setStatus('success')
           showNotification(`Добро пожаловать, ${result.user?.name || 'Пользователь'}!`)
           const redirectPath = (result.user?.role === 'seller' || result.user?.role === 'owner')
-            ? '/owner'
+            ? getCabinetHomePath(result.user.role)
             : '/profile'
           if (result.user?.role === 'seller' || result.user?.role === 'owner') {
             localStorage.setItem('isOwnerLoggedIn', 'true')

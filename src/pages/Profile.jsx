@@ -19,6 +19,7 @@ import BuyerCabinetSidebar from '../components/BuyerCabinetSidebar'
 import ProfileVipClubPromo from '../components/ProfileVipClubPromo'
 import { useChainedAppLayoutScroll } from '../hooks/useChainedAppLayoutScroll'
 import { effectiveDisplayTier, userHasVipAccess, SUBSCRIPTION_BILLING_UPDATED_EVENT } from '../hooks/useCabinetOverviewData'
+import { getCabinetHomePath } from '../utils/cabinetRoutes'
 import './Profile.css'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
@@ -198,7 +199,7 @@ const Profile = () => {
               )
             }
             if (roleNorm === 'seller' && window.location.pathname === '/profile') {
-              navigate('/owner', { replace: true })
+              navigate(getCabinetHomePath('seller'), { replace: true })
             }
           } catch (e) {
             console.warn('⚠️ Profile: не удалось синхронизировать localStorage с ролью из БД', e)

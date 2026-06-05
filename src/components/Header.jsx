@@ -20,7 +20,12 @@ import { fetchUserById } from '../utils/usersApi'
 import '../pages/MainPage.css'
 import { NotificationsBell } from '../context/SiteNotificationsContext'
 import { MenuToggleIcon } from '@/components/ui/menu-toggle-icon'
-import { getCabinetDataPath, getCabinetProfilePath, isSellerCabinetRole } from '../utils/cabinetRoutes'
+import {
+  getCabinetDataPath,
+  getCabinetHomePath,
+  getCabinetProfilePath,
+  isSellerCabinetRole,
+} from '../utils/cabinetRoutes'
 import { UI_LANGUAGES } from '../constants/uiLanguages'
 import SiteNavDrawer from './SiteNavDrawer'
 import { setSiteNavDrawerOpen } from '../utils/siteNavDrawerDocumentFlag'
@@ -841,7 +846,7 @@ const Header = () => {
 
                     // Если по локальным данным видно, что это продавец — ведем в кабинет продавца
                     if (isOwner) {
-                      navigate('/owner')
+                      navigate(getCabinetHomePath('seller'))
                       return
                     }
 

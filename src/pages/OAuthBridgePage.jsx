@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth, useUser, AuthenticateWithRedirectCallback } from '@clerk/clerk-react'
+import { getCabinetHomePath } from '../utils/cabinetRoutes'
 
 /**
  * Лёгкая страница возврата после Clerk OAuth (без AuthenticateWithRedirectCallback —
@@ -24,7 +25,7 @@ export default function OAuthBridgePage() {
       const uid = localStorage.getItem('userId')
       if (!uid || !/^\d+$/.test(String(uid))) return
       const r = localStorage.getItem('userRole')
-      navigate(r === 'seller' || r === 'owner' ? '/owner' : '/profile', { replace: true })
+      navigate(getCabinetHomePath(r === 'owner' ? 'owner' : r), { replace: true })
     }
     const id = window.setInterval(tick, 150)
     tick()

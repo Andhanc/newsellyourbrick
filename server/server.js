@@ -12518,12 +12518,17 @@ app.get('/api/owner/:userId/my-sales', async (req, res) => {
 
     const winnerKeySet = new Set(winnerDedup.map((w) => `${w.property_table}:${Number(w.property_id)}`));
 
+    const winnerReservePaid = (w) =>
+      w.deposit_paid === 1 ||
+      ['deposit_paid', 'completed'].includes(String(w.status || '').toLowerCase());
+
     const auction = [];
     const debts = [];
 
     for (const w of winnerDedup) {
       const p = propByKey.get(`${w.property_table}:${Number(w.property_id)}`);
       if (!p) continue;
+      if (!winnerReservePaid(w)) continue;
       const debt = isDebtRow(p);
       const base = {
         id: p.id,
@@ -12537,6 +12542,10 @@ app.get('/api/owner/:userId/my-sales', async (req, res) => {
         sold_at: w.won_at,
         photos: p.photos,
         cover_url: p.cover_url,
+        buyer_user_id: Number(w.user_id) || null,
+        reserve_paid: true,
+        sale_status: w.status || 'deposit_paid',
+        sale_channel: debt ? 'debts' : 'auction',
       };
       if (debt) {
         debts.push(base);
@@ -12585,6 +12594,12 @@ app.get('/api/owner/:userId/my-sales', async (req, res) => {
         .filter((t) => Number.isFinite(t));
       const sold_at =
         purchaseTimes.length > 0 ? new Date(Math.max(...purchaseTimes)).toISOString() : null;
+      const latestPurchase = [...relevant].sort((a, b) => {
+        const ta = a.purchase_date ? new Date(a.purchase_date).getTime() : 0;
+        const tb = b.purchase_date ? new Date(b.purchase_date).getTime() : 0;
+        return tb - ta;
+      })[0];
+      if (!latestPurchase || amount <= 0) continue;
       shares.push({
         id: p.id,
         property_type: p.property_type,
@@ -12600,6 +12615,10 @@ app.get('/api/owner/:userId/my-sales', async (req, res) => {
         sold_at,
         photos: p.photos,
         cover_url: p.cover_url,
+        buyer_user_id: Number(latestPurchase.buyer_id) || null,
+        reserve_paid: true,
+        sale_status: 'completed',
+        sale_channel: 'share',
       });
     }
 
@@ -12625,6 +12644,10 @@ app.get('/api/owner/:userId/my-sales', async (req, res) => {
         sold_at: p.buy_now_completed_at,
         photos: p.photos,
         cover_url: p.cover_url,
+        buyer_user_id: Number(p.buy_now_winner_user_id) || null,
+        reserve_paid: true,
+        sale_status: 'completed',
+        sale_channel: debt ? 'debts' : 'buy_now',
       };
       if (debt) {
         const exists = debts.find((d) => Number(d.id) === Number(p.id) && d.property_table === p.property_table);
@@ -12680,13 +12703,40 @@ app.get('/api/owner/:userId/my-sales', async (req, res) => {
       });
     }
 
+    const buyerIds = [
+      ...new Set(
+        [...auction, ...shares, ...debts, ...buy_now]
+          .map((row) => Number(row.buyer_user_id))
+          .filter((id) => Number.isFinite(id) && id > 0)
+      ),
+    ];
+    const buyerDisplayById = new Map();
+    if (buyerIds.length) {
+      const users = await prisma.users.findMany({
+        where: { id: { in: buyerIds } },
+        select: { id: true, first_name: true, last_name: true, email: true },
+      });
+      for (const u of users) {
+        const label =
+          [u.first_name, u.last_name].filter(Boolean).join(' ').trim() || u.email || null;
+        if (label) buyerDisplayById.set(Number(u.id), label);
+      }
+    }
+    const attachBuyerDisplay = (rows) =>
+      rows.map((row) => ({
+        ...row,
+        buyer_display:
+          buyerDisplayById.get(Number(row.buyer_user_id)) ||
+          (row.buyer_user_id ? `Покупатель #${row.buyer_user_id}` : null),
+      }));
+
     res.json({
       success: true,
       data: {
-        auction,
-        shares,
-        debts,
-        buy_now,
+        auction: attachBuyerDisplay(auction),
+        shares: attachBuyerDisplay(shares),
+        debts: attachBuyerDisplay(debts),
+        buy_now: attachBuyerDisplay(buy_now),
         test_drive,
       },
     });

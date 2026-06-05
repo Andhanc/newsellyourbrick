@@ -64,6 +64,7 @@ import { askPropertyAssistant, detectManagerContactIntent, filterPropertiesByLoc
 import { getUserData, clearUserData, isAuthenticated } from '../services/authService'
 import {
   getCabinetDataPath,
+  getCabinetHomePath,
   getCabinetProfilePath,
   isSellerCabinetRole,
 } from '../utils/cabinetRoutes'
@@ -1014,7 +1015,7 @@ function MainPage() {
     }
     const role = getUserRole()
     if (role === 'seller' || role === 'owner') {
-      navigate('/owner')
+      navigate(getCabinetHomePath(role))
       return
     }
     setHeroRolePitch('seller')
@@ -2460,7 +2461,7 @@ function MainPage() {
 
             // Продавца ведем в кабинет продавца
             if (isOwner) {
-              navigate('/owner')
+              navigate(getCabinetHomePath('seller'))
               return
             }
 
@@ -2572,7 +2573,7 @@ function MainPage() {
 
                   // Продавца ведем в кабинет продавца
                   if (isOwner) {
-                    navigate('/owner')
+                    navigate(getCabinetHomePath('seller'))
                     return
                   }
 

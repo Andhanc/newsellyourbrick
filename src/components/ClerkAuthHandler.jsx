@@ -9,6 +9,7 @@ import {
   clearUserDataWithoutAdmin,
 } from '../services/authService'
 import AuthAlertModal from './AuthAlertModal'
+import { getCabinetHomePath } from '../utils/cabinetRoutes'
 
 /** После редиректа на главную состояние модалки может сброситься (Strict Mode / навигация) — поднимаем из sessionStorage. */
 const PENDING_DUPLICATE_REGISTER_ALERT = 'pending_duplicate_register_alert'
@@ -489,7 +490,9 @@ const ClerkAuthHandler = () => {
         if (isOAuthCompletionContext) {
           // Определяем куда редиректить в зависимости от роли пользователя
           const savedUserRole = effectiveCabinetRole || localStorage.getItem('userRole') || 'buyer'
-          const redirectPath = (savedUserRole === 'seller' || savedUserRole === 'owner') ? '/owner' : '/profile'
+          const redirectPath = (savedUserRole === 'seller' || savedUserRole === 'owner')
+            ? getCabinetHomePath(savedUserRole)
+            : '/profile'
 
           // Навигация на правильную страницу в зависимости от роли
           if (window.location.pathname !== redirectPath) {

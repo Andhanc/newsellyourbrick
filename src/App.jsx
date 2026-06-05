@@ -63,6 +63,16 @@ const SectionsPage = lazyWithRetry(() => import('./pages/SectionsPage'))
 const InvestmentCalculator = lazyWithRetry(() => import('./pages/InvestmentCalculator'))
 const JetonPage = lazyWithRetry(() => import('./pages/JetonPage'))
 const TestPage = lazyWithRetry(() => import('./pages/TestPage'))
+const OwnerTestRoute = lazyWithRetry(() => import('./pages/OwnerTestRoute'), 'OwnerTestRoute')
+const OwnerTestLegacyRedirect = lazyWithRetry(() =>
+  import('./pages/ownerTestLegacyRedirects').then((m) => ({ default: m.OwnerTestLegacyRedirect }))
+)
+const OwnerTestLegacyRedirectWrapper = lazyWithRetry(() =>
+  import('./pages/ownerTestLegacyRedirects').then((m) => ({ default: m.OwnerTestLegacyRedirectWrapper }))
+)
+const OwnerTestLegacyProfileRedirect = lazyWithRetry(() =>
+  import('./pages/ownerTestLegacyRedirects').then((m) => ({ default: m.OwnerTestLegacyProfileRedirect }))
+)
 const CabinetProfileRoute = lazyWithRetry(() => import('./components/CabinetProfileRoute'))
 const BlockedUserModal = lazyWithRetry(() => import('./components/BlockedUserModal'))
 const LazyOAuthBridgePage = lazyWithRetry(() => import('./pages/OAuthBridgePage'))
@@ -111,8 +121,16 @@ function AppLayoutFrame({ isBlocked, appLayoutRef, children }) {
 }
 
 // Компонент для валидации сессии при запуске приложения
+function isOwnerTestMockPath(pathname = '') {
+  if (pathname === '/owner-test' || pathname.startsWith('/owner-test/')) return true
+  if (pathname === '/main-owner-test' || pathname === '/owner-test-drive') return true
+  return /^\/owner-[a-z0-9-]*-test(\/|$)/.test(pathname)
+}
+
 function SessionValidator({ onBlockedChange }) {
   useEffect(() => {
+    let cancelled = false
+
     // Валидируем сессию при монтировании приложения
     const checkSession = async () => {
       // Сначала проверяем флаг блокировки в localStorage
@@ -126,10 +144,14 @@ function SessionValidator({ onBlockedChange }) {
       
       try {
         const result = await validateSession()
+        if (cancelled) return
+
         if (!result.valid && result.cleared) {
           console.log('✅ Устаревшая сессия автоматически очищена при запуске приложения')
-          // Перезагружаем страницу для полного сброса состояния
-          window.location.reload()
+          // На mock owner-test не делаем full reload — иначе гонка с lazy-чанками даёт цикл F5
+          if (!isOwnerTestMockPath(window.location.pathname)) {
+            window.location.reload()
+          }
         } else if (result.valid) {
           // validateSession для гостя возвращает { valid: true, user: null } — не считаем это «визитом»
           if (result.user != null) {
@@ -163,7 +185,10 @@ function SessionValidator({ onBlockedChange }) {
     // Небольшая задержка, чтобы дать время другим компонентам инициализироваться
     const timeoutId = setTimeout(checkSession, 500)
     
-    return () => clearTimeout(timeoutId)
+    return () => {
+      cancelled = true
+      clearTimeout(timeoutId)
+    }
   }, [onBlockedChange])
 
   return null
@@ -818,6 +843,78 @@ function App() {
                 element={
                   <LazyPage>
                     <TestPage />
+                  </LazyPage>
+                }
+              />
+              <Route
+                path="/owner-test"
+                element={
+                  <LazyPage>
+                    <OwnerTestRoute />
+                  </LazyPage>
+                }
+              />
+              <Route
+                path="/main-owner-test"
+                element={
+                  <LazyPage>
+                    <OwnerTestLegacyRedirect />
+                  </LazyPage>
+                }
+              />
+              <Route
+                path="/owner-properties-test"
+                element={
+                  <LazyPage>
+                    <OwnerTestLegacyRedirect view="properties" />
+                  </LazyPage>
+                }
+              />
+              <Route
+                path="/owner-property-analytics-test/:propertyId"
+                element={
+                  <LazyPage>
+                    <OwnerTestLegacyRedirectWrapper />
+                  </LazyPage>
+                }
+              />
+              <Route
+                path="/owner-test-drive"
+                element={
+                  <LazyPage>
+                    <OwnerTestLegacyRedirect view="test-drive" />
+                  </LazyPage>
+                }
+              />
+              <Route
+                path="/owner-subscriptions-test"
+                element={
+                  <LazyPage>
+                    <OwnerTestLegacyRedirect view="subscriptions" />
+                  </LazyPage>
+                }
+              />
+              <Route
+                path="/owner-sales-test"
+                element={
+                  <LazyPage>
+                    <OwnerTestLegacyRedirect view="sales" />
+                  </LazyPage>
+                }
+              />
+              <Route
+                path="/owner-profile-test"
+                element={
+                  <LazyPage>
+                    <OwnerTestLegacyProfileRedirect />
+                  </LazyPage>
+                }
+              />
+              <Route
+                path="/owner-add-property-test"
+                element={
+                  <LazyPage>
+                    <OwnerTestLegacyRedirect view="add-property" />
                   </LazyPage>
                 }
               />
