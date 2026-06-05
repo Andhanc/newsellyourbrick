@@ -12,13 +12,14 @@ import {
   Settings,
   Bell,
   ChevronDown,
+  ChevronRight,
   SlidersHorizontal,
-  MoreVertical,
   Menu,
   X,
 } from 'lucide-react'
 import { OTD_IMAGES } from './ownerTestDriveImages'
 import OwnerTestProfileMenu from '../components/OwnerTestProfileMenu'
+import OwnerTestDriveDetailModal from '../components/OwnerTestDriveDetailModal'
 import { useOwnerTestEmbeddedNav } from '../hooks/useOwnerTestEmbeddedNav'
 import {
   CLERK_DB_USER_SYNCED,
@@ -80,8 +81,11 @@ export default function OwnerTestDrivePage() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [bookings, setBookings] = useState([])
   const [bookingsLoading, setBookingsLoading] = useState(true)
+  const [selectedRow, setSelectedRow] = useState(null)
 
   const closeMenu = useCallback(() => setMenuOpen(false), [])
+  const closeDetailModal = useCallback(() => setSelectedRow(null), [])
+  const userId = useMemo(() => getOwnerTestDriveUserId(), [])
 
   const loadBookings = useCallback(async () => {
     const userId = getOwnerTestDriveUserId()
@@ -124,6 +128,10 @@ export default function OwnerTestDrivePage() {
     () => filterOwnerTestDriveRows(bookings, activeTab),
     [bookings, activeTab]
   )
+
+  const handleRowOpen = useCallback((row) => {
+    setSelectedRow(row)
+  }, [])
 
   const renderNavItem = useCallback(
     ({ id, label, icon: Icon, active, badge, href }) => {
@@ -228,12 +236,25 @@ export default function OwnerTestDrivePage() {
                     <th>Даты</th>
                     <th>Залог</th>
                     <th>Статус</th>
-                    <th aria-label="Действия" />
+                    <th aria-label="Открыть" />
                   </tr>
                 </thead>
                 <tbody>
                   {filteredRows.map((row) => (
-                    <tr key={row.id}>
+                    <tr
+                      key={row.id}
+                      className="otd-table__row--clickable"
+                      onClick={() => handleRowOpen(row)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault()
+                          handleRowOpen(row)
+                        }
+                      }}
+                      tabIndex={0}
+                      role="button"
+                      aria-label={`Открыть заявку ${row.displayId}`}
+                    >
                       <td>
                         <div className="otd-object-cell">
                           <img
@@ -258,12 +279,17 @@ export default function OwnerTestDrivePage() {
                         <span className="otd-amount">{row.amount}</span>
                       </td>
                       <td>
-                        <span className={`otd-status otd-status--${row.statusKey}`}>{row.status}</span>
+                        <div className="otd-status-cell">
+                          <span className={`otd-status otd-status--${row.statusKey}`}>{row.status}</span>
+                          {row.checkInStatus === 'checked_in' ? (
+                            <span className="otd-status otd-status--checked-in">Заселился</span>
+                          ) : null}
+                        </div>
                       </td>
                       <td>
-                        <button type="button" className="otd-row-menu" aria-label="Действия">
-                          <MoreVertical size={18} />
-                        </button>
+                        <span className="otd-row-open" aria-hidden>
+                          <ChevronRight size={18} />
+                        </span>
                       </td>
                     </tr>
                   ))}
@@ -272,6 +298,13 @@ export default function OwnerTestDrivePage() {
             </div>
             )}
           </div>
+
+          <OwnerTestDriveDetailModal
+            row={selectedRow}
+            userId={userId}
+            onClose={closeDetailModal}
+            onUpdated={loadBookings}
+          />
 
           <div className="otd-promo-grid">
             <article className="otd-promo-card otd-promo-card--light">

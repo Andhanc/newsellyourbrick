@@ -73,6 +73,26 @@ async function enrichBookingsWithLocations(bookings) {
   return locationByKey
 }
 
+const CHECK_IN_STATUS_LABELS = {
+  pending_checkin: 'Ожидает вашего подтверждения',
+  awaiting_buyer_checkin: 'Ожидает заселения покупателя',
+  checked_in: 'Клиент заселился',
+  issues_reported: 'Покупатель сообщил о проблемах',
+}
+
+export function getCheckInStatusLabel(status) {
+  const key = String(status || '').toLowerCase()
+  return CHECK_IN_STATUS_LABELS[key] || null
+}
+
+export function canOwnerConfirmBooking(rawStatus) {
+  return ['pending', 'paid'].includes(String(rawStatus || '').toLowerCase())
+}
+
+export function canOwnerCancelBooking(rawStatus) {
+  return ['pending', 'paid', 'approved'].includes(String(rawStatus || '').toLowerCase())
+}
+
 export function mapOwnerTestDriveBooking(booking, locationByKey = new Map()) {
   const statusKey = String(booking.status || 'pending').toLowerCase()
   const statusUi = STATUS_MAP[statusKey] || STATUS_MAP.pending
@@ -86,16 +106,27 @@ export function mapOwnerTestDriveBooking(booking, locationByKey = new Map()) {
 
   return {
     id: booking.id,
+    bookingId: booking.id,
     displayId: `TD-${booking.id}`,
     title: booking.property_title || `Объект #${booking.property_id}`,
     location: locationByKey.get(cacheKey) || 'Не указано',
     image,
     buyer: booking.buyer_display || 'Покупатель',
     dates: formatDateRange(booking.start_date, booking.end_date),
+    startDate: booking.start_date,
+    endDate: booking.end_date,
     amount: formatDeposit(booking),
     status: statusUi.status,
     statusKey: statusUi.statusKey,
+    rawStatus: statusKey,
     tab: statusUi.tab,
+    ownerComment: String(booking.owner_comment || '').trim(),
+    checkInStatus: String(booking.check_in_status || '').toLowerCase(),
+    checkInStatusLabel: getCheckInStatusLabel(booking.check_in_status),
+    propertyId: booking.property_id,
+    propertyTable: booking.property_table || 'properties_apartments',
+    cancellationReason: String(booking.cancellation_reason || '').trim(),
+    cancelledBy: String(booking.cancelled_by || '').toLowerCase(),
     raw: booking,
   }
 }
@@ -137,6 +168,36 @@ export function countOwnerTestDriveByTab(rows) {
 
 export function getOwnerTestDriveUserId() {
   return getStoredNumericUserId()
+}
+
+export async function respondOwnerTestDriveBooking(userId, bookingId, action, ownerComment = '') {
+  const response = await fetch(`${API_BASE_URL}/test-drive-bookings/${bookingId}/respond`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      user_id: userId,
+      action,
+      owner_comment: action === 'approve' ? ownerComment : undefined,
+    }),
+  })
+  const json = await response.json().catch(() => ({}))
+  if (!response.ok || !json.success) {
+    throw new Error(json.error || 'Не удалось выполнить действие')
+  }
+  return json
+}
+
+export async function cancelOwnerTestDriveBooking(userId, bookingId, reason) {
+  const response = await fetch(`${API_BASE_URL}/test-drive-bookings/${bookingId}/cancel-by-owner`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ user_id: userId, reason }),
+  })
+  const json = await response.json().catch(() => ({}))
+  if (!response.ok || !json.success) {
+    throw new Error(json.error || 'Не удалось снять бронь')
+  }
+  return json
 }
 
 export { CLERK_DB_USER_SYNCED }

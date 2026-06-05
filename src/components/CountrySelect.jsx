@@ -281,6 +281,12 @@ const CountrySelect = ({ value, onChange, placeholder = 'Выберите стр
     }
   };
 
+  // Синхронизация при выборе снаружи / после onChange родителя
+  useEffect(() => {
+    setIsOpen(false);
+    setSearchQuery('');
+  }, [value]);
+
   // Закрываем выпадающий список при клике вне компонента
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -309,10 +315,12 @@ const CountrySelect = ({ value, onChange, placeholder = 'Выберите стр
   const selectedCountry = countries.find(c => c.name === value || c.code === value);
 
   // Обработка выбора страны (передаём родителю русское название для совместимости с API)
-  const handleSelect = (country) => {
-    onChange(country.name);
+  const handleSelect = (country, event) => {
+    event?.preventDefault?.();
+    event?.stopPropagation?.();
     setSearchQuery('');
     setIsOpen(false);
+    onChange(country.name);
   };
 
   // Обработка открытия/закрытия
@@ -332,7 +340,11 @@ const CountrySelect = ({ value, onChange, placeholder = 'Выберите стр
     <div className={`country-select ${className}`} ref={containerRef}>
       <div 
         className={`country-select__trigger ${isOpen ? 'country-select__trigger--open' : ''}`}
-        onClick={handleToggle}
+        onMouseDown={(e) => {
+          if (e.target.closest('.country-select__input')) return;
+          e.preventDefault();
+          handleToggle();
+        }}
       >
         <div className="country-select__value">
           {selectedCountry && !searchQuery && (
@@ -359,11 +371,11 @@ const CountrySelect = ({ value, onChange, placeholder = 'Выберите стр
                 setIsOpen(true);
               }
             }}
-            onClick={(e) => {
+            onMouseDown={(e) => {
               e.stopPropagation();
-              if (!isOpen) {
-                setIsOpen(true);
-              }
+            }}
+            onFocus={() => {
+              if (!isOpen) setIsOpen(true);
             }}
           />
         </div>
@@ -391,10 +403,12 @@ const CountrySelect = ({ value, onChange, placeholder = 'Выберите стр
               filteredCountries.map((country) => (
                 <div
                   key={country.code}
+                  role="option"
+                  aria-selected={selectedCountry?.code === country.code}
                   className={`country-select__option ${
                     selectedCountry?.code === country.code ? 'country-select__option--selected' : ''
                   }`}
-                  onClick={() => handleSelect(country)}
+                  onMouseDown={(e) => handleSelect(country, e)}
                 >
                   <span className="country-select__flag">{country.flag}</span>
                   <span className="country-select__name">{getCountryName(country.code)}</span>

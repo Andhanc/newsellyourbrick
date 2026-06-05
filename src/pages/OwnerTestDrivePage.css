@@ -442,6 +442,38 @@
   background: #fafafa;
 }
 
+.otd-table__row--clickable {
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.otd-table__row--clickable:focus-visible {
+  outline: 2px solid var(--otd-tiffany);
+  outline-offset: -2px;
+}
+
+.otd-status-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+
+.otd-row-open {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  color: var(--otd-text-muted);
+}
+
+.otd-table__row--clickable:hover .otd-row-open {
+  background: rgba(10, 186, 181, 0.1);
+  color: var(--otd-tiffany-dark);
+}
+
 .otd-object-cell {
   display: flex;
   align-items: center;
@@ -514,22 +546,9 @@
   color: #b91c1c;
 }
 
-.otd-row-menu {
-  width: 32px;
-  height: 32px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border: none;
-  border-radius: 8px;
-  background: transparent;
-  color: var(--otd-text-muted);
-  cursor: pointer;
-}
-
-.otd-row-menu:hover {
-  background: #f3f4f6;
-  color: var(--otd-text);
+.otd-status--checked-in {
+  background: rgba(34, 197, 94, 0.12);
+  color: #15803d;
 }
 
 /* ——— Promo blocks ——— */
