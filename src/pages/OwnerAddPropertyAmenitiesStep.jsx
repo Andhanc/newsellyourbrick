@@ -1,102 +1,94 @@
-import { Sparkles, Check } from 'lucide-react'
+import { Check, Lightbulb } from 'lucide-react'
 import { getAmenityGroupsForProfile } from '../utils/oapAmenityGroups'
-
-const AMENITIES_SUBTITLES = {
-  apartment: 'Парковка, безопасность, комфорт и территория — как в фильтрах каталога',
-  apartments: 'Парковка, безопасность, комфорт и территория — как в фильтрах каталога',
-  house: 'Парковка, технологии и зона отдыха для загородного объекта',
-  villa: 'Парковка, технологии и зона отдыха для премиального объекта',
-  commercial: 'Логистика, инженерия и безопасность коммерческого помещения',
-  land: 'Коммуникации и подъезд к участку',
-  other: 'Инфраструктура нестандартного или гостиничного формата',
-}
+import { getAmenityIcon } from './oapAmenityIcons'
+import { OAP_AMENITIES_IMAGES } from './oapAmenitiesImages'
+import './OwnerAddPropertyAmenitiesStep.css'
+import './oapStepSidebar.css'
 
 export default function OwnerAddPropertyAmenitiesStep({
-  propertyType,
   typeProfile,
-  propertyTypeLabel,
   additionalAmenities,
   selectedAmenities,
   onAdditionalChange,
   onToggleAmenity,
 }) {
   const groups = getAmenityGroupsForProfile(typeProfile)
-  const selectedCount = selectedAmenities.length
+  const allItems = groups.flatMap((group) => group.items)
 
   return (
     <section className="oap-amenities-step" aria-labelledby="oap-amenities-step-title">
-      <header className="oap-amenities-step__head">
-        <span className="oap-amenities-step__badge" aria-hidden>
-          <Sparkles size={22} strokeWidth={1.85} />
-        </span>
-        <div className="oap-amenities-step__head-text">
-          <h2 id="oap-amenities-step-title" className="oap-amenities-step__title">
-            Описание и удобства
-          </h2>
-          <p className="oap-amenities-step__subtitle">
-            {propertyTypeLabel
-              ? `${propertyTypeLabel}: ${AMENITIES_SUBTITLES[typeProfile] || AMENITIES_SUBTITLES.apartment}`
-              : 'Отметьте удобства и добавьте детали — так объявление лучше находят в фильтрах'}
-          </p>
-        </div>
-        {selectedCount > 0 && (
-          <span className="oap-amenities-step__counter">
-            <Check size={14} aria-hidden />
-            {selectedCount}
-          </span>
-        )}
-      </header>
+      <div className="oap-amenities-step__layout">
+        <div className="oap-amenities-step__main">
+          <header className="oap-amenities-step__head">
+            <h2 id="oap-amenities-step-title" className="oap-amenities-step__title">
+              Выберите удобства для объекта
+            </h2>
+            <p className="oap-amenities-step__subtitle">
+              Отметьте все, что есть в вашем объекте
+            </p>
+          </header>
 
-      <div className="oap-amenities-step__card">
-        <label className="oap-amenities-extra">
-          <span className="oap-amenities-extra__label">Дополнительное описание удобств</span>
-          <span className="oap-amenities-extra__hint">
-            Необязательно — укажите особенности, которых нет в списке ниже
-          </span>
-          <textarea
-            className="oap-amenities-extra__textarea"
-            rows={5}
-            placeholder="Например: встроенная система умного дома, проектор, музыкальная система и т.д."
-            value={additionalAmenities}
-            onChange={(e) => onAdditionalChange(e.target.value)}
-          />
-        </label>
-
-        <p className="oap-amenities-step__intro">
-          Отметьте удобства по разделам — набор зависит от типа объекта
-          {propertyType ? ` (${propertyTypeLabel?.toLowerCase() || propertyType})` : ''}.
-        </p>
-
-        <div className="oap-amenities-groups">
-          {groups.map((group) => (
-            <div key={group.id} className="oap-amenities-group">
-              <h3 className="oap-amenities-group__title">{group.title}</h3>
-              <div className="oap-amenities-group__chips">
-                {group.items.map((item) => {
-                  const isActive = selectedAmenities.includes(item.tzKey)
-                  return (
-                    <button
-                      key={item.tzKey}
-                      type="button"
-                      className={`oap-amenity-chip${isActive ? ' oap-amenity-chip--active' : ''}`}
-                      aria-pressed={isActive}
-                      onClick={() => onToggleAmenity(item.tzKey)}
-                    >
-                      {isActive && <Check size={14} className="oap-amenity-chip__icon" aria-hidden />}
-                      <span>{item.label}</span>
-                    </button>
-                  )
-                })}
-              </div>
+          <div className="oap-amenities-step__card">
+            <div className="oap-amenities-grid" role="group" aria-label="Удобства объекта">
+              {allItems.map((item) => {
+                const isActive = selectedAmenities.includes(item.tzKey)
+                const ItemIcon = getAmenityIcon(item.tzKey)
+                return (
+                  <button
+                    key={item.tzKey}
+                    type="button"
+                    className={`oap-amenity-card${isActive ? ' oap-amenity-card--active' : ''}`}
+                    aria-pressed={isActive}
+                    title={item.label}
+                    onClick={() => onToggleAmenity(item.tzKey)}
+                  >
+                    <span className="oap-amenity-card__icon-wrap" aria-hidden>
+                      <ItemIcon size={16} strokeWidth={1.85} />
+                    </span>
+                    <span className="oap-amenity-card__label">{item.label}</span>
+                    {isActive && (
+                      <span className="oap-amenity-card__check" aria-hidden>
+                        <Check size={11} strokeWidth={3} />
+                      </span>
+                    )}
+                  </button>
+                )
+              })}
             </div>
-          ))}
-        </div>
-      </div>
 
-      <p className="oap-amenities-step__tip">
-        Точный список удобств повышает доверие покупателей и помогает объявлению попадать в
-        релевантные фильтры поиска.
-      </p>
+            <label className="oap-amenities-extra">
+              <span className="oap-amenities-extra__label">Дополнительное описание удобств</span>
+              <textarea
+                className="oap-amenities-extra__textarea"
+                rows={4}
+                placeholder="Например: встроенная система умного дома, проектор, музыкальная система и т.д."
+                value={additionalAmenities}
+                onChange={(e) => onAdditionalChange(e.target.value)}
+              />
+            </label>
+          </div>
+        </div>
+
+        <aside className="oap-step-sidebar" aria-label="Подсказка">
+          <div className="oap-step-sidebar__head">
+            <span className="oap-step-sidebar__icon" aria-hidden>
+              <Lightbulb size={16} strokeWidth={2} />
+            </span>
+            <span className="oap-step-sidebar__title">Подсказка</span>
+          </div>
+          <p className="oap-step-sidebar__text">
+            Выбранные удобства будут отображаться в карточке объекта и привлекут больше внимания
+            покупателей.
+          </p>
+          <div className="oap-step-sidebar__illustration">
+            <img
+              src={OAP_AMENITIES_IMAGES.sidebarInterior}
+              alt=""
+              className="oap-step-sidebar__img"
+            />
+          </div>
+        </aside>
+      </div>
     </section>
   )
 }

@@ -1,36 +1,70 @@
 import { useState, useRef, useCallback } from 'react'
 import {
   FileText,
-  Upload,
-  X,
-  Check,
-  FileCheck2,
-  ShieldCheck,
-  ScrollText,
   CloudUpload,
+  X,
   Plus,
+  Image as ImageIcon,
+  ShieldCheck,
+  Lock,
+  CalendarCheck,
+  Headphones,
 } from 'lucide-react'
+import { OAP_DOCUMENT_IMAGES } from './oapDocumentImages'
+import './OwnerAddPropertyDocumentsStep.css'
 
 const MAX_ADDITIONAL_DOCUMENTS = 5
 const MAX_DOC_SIZE = 10 * 1024 * 1024
+const DISPLAY_STEP = 7
+const DISPLAY_TOTAL = 10
 
 const REQUIRED_DOCS = [
   {
     key: 'ownership',
-    label: 'Документ собственности',
-    hint: 'Подтверждает право собственности на объект',
-    Icon: ScrollText,
+    label: 'Документ о праве собственности',
+    hint: 'Подтверждает ваше право собственности на объект',
+    iconTone: 'blue',
+    Icon: FileText,
   },
   {
     key: 'noDebts',
     label: 'Справка об отсутствии обременений',
-    hint: 'Об отсутствии залогов и ограничений',
+    hint: 'Подтверждает отсутствие залогов и ограничений',
+    iconTone: 'green',
     Icon: ShieldCheck,
+  },
+]
+
+const SIDEBAR_TIPS = [
+  {
+    tone: 'blue',
+    Icon: FileText,
+    title: 'Читаемые сканы',
+    text: 'Загружайте PDF или чёткие фото — текст на всех страницах должен быть виден.',
+  },
+  {
+    tone: 'green',
+    Icon: CalendarCheck,
+    title: 'Быстрая модерация',
+    text: 'Полный пакет документов ускоряет проверку и публикацию объекта.',
+  },
+  {
+    tone: 'purple',
+    Icon: Lock,
+    title: 'Конфиденциальность',
+    text: 'Файлы шифруются и доступны только модераторам и проверенным покупателям.',
   },
 ]
 
 function isAcceptedDocument(file) {
   return file.type === 'application/pdf' || file.type.startsWith('image/')
+}
+
+function formatFileSize(bytes) {
+  if (!bytes) return ''
+  if (bytes < 1024) return `${bytes} Б`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} КБ`
+  return `${(bytes / (1024 * 1024)).toFixed(1)} МБ`
 }
 
 export default function OwnerAddPropertyDocumentsStep({
@@ -146,7 +180,6 @@ export default function OwnerAddPropertyDocumentsStep({
     [additionalDocuments.length, processAdditionalFiles]
   )
 
-  const requiredCount = REQUIRED_DOCS.filter((doc) => requiredDocuments[doc.key]).length
   const inputRefs = {
     ownership: ownershipInputRef,
     noDebts: noDebtsInputRef,
@@ -155,192 +188,255 @@ export default function OwnerAddPropertyDocumentsStep({
 
   return (
     <section className="oap-documents-step" aria-labelledby="oap-documents-step-title">
-      <header className="oap-documents-step__head">
-        <span className="oap-documents-step__badge" aria-hidden>
-          <FileCheck2 size={18} strokeWidth={1.85} />
-        </span>
-        <div className="oap-documents-step__head-text">
-          <h2 id="oap-documents-step-title" className="oap-documents-step__title">
-            Документы
-          </h2>
-          <p className="oap-documents-step__subtitle">
-            Загрузите необходимые документы для публикации объекта
-          </p>
-        </div>
-        <span
-          className={`oap-documents-step__counter${requiredCount === 2 ? ' oap-documents-step__counter--done' : ''}`}
-        >
-          <Check size={13} aria-hidden />
-          {requiredCount}/2
-        </span>
-      </header>
-
-      {notice && (
-        <p className="oap-documents-step__notice" role="status">
-          {notice}
-        </p>
-      )}
-
-      <div className="oap-documents-step__card">
-        <h3 className="oap-documents-step__section-title">Основные документы</h3>
-
-        <div className="oap-documents-step__main-grid">
-          {REQUIRED_DOCS.map((doc) => {
-            const uploaded = requiredDocuments[doc.key]
-            const error = errors[doc.key]
-            const DocIcon = doc.Icon
-
-            return (
-              <article
-                key={doc.key}
-                className={`oap-documents-step__main-card${uploaded ? ' oap-documents-step__main-card--done' : ''}${error ? ' oap-documents-step__main-card--error' : ''}`}
-              >
-                <span className="oap-documents-step__main-icon" aria-hidden>
-                  <DocIcon size={20} strokeWidth={1.75} />
-                </span>
-
-                <h4 className="oap-documents-step__main-title">
-                  {doc.label}
-                  <span className="oap-documents-step__required-mark">*</span>
-                </h4>
-                <p className="oap-documents-step__main-hint">{doc.hint}</p>
-
-                <input
-                  ref={inputRefs[doc.key]}
-                  type="file"
-                  accept="application/pdf,image/*"
-                  className="oap-documents-step__file-input"
-                  onChange={(e) => handleRequiredUpload(doc.key, e)}
-                />
-
-                {uploaded ? (
-                  <div className="oap-documents-step__main-file">
-                    {uploaded.preview ? (
-                      <img src={uploaded.preview} alt="" className="oap-documents-step__main-file-thumb" />
-                    ) : (
-                      <span className="oap-documents-step__main-file-thumb oap-documents-step__main-file-thumb--pdf">
-                        <FileText size={14} aria-hidden />
-                      </span>
-                    )}
-                    <span className="oap-documents-step__main-file-name" title={uploaded.name}>
-                      {uploaded.name}
-                    </span>
-                    <button
-                      type="button"
-                      className="oap-documents-step__main-file-remove"
-                      aria-label={`Удалить ${doc.label}`}
-                      onClick={() => onRequiredRemove(doc.key)}
-                    >
-                      <X size={14} />
-                    </button>
-                  </div>
-                ) : (
-                  <button
-                    type="button"
-                    className="oap-documents-step__main-btn"
-                    onClick={() => inputRefs[doc.key].current?.click()}
-                  >
-                    Загрузить документ
-                  </button>
-                )}
-
-                <p className="oap-documents-step__formats">PDF, JPG, PNG до 10 МБ</p>
-                {error && <p className="oap-documents-step__error">{error}</p>}
-              </article>
-            )
-          })}
-        </div>
-
-        <div className="oap-documents-step__extra">
-          <div className="oap-documents-step__extra-head">
-            <h3 className="oap-documents-step__extra-title">
-              Дополнительные документы
-              <span className="oap-documents-step__extra-optional"> (необязательно)</span>
-            </h3>
-            <span className="oap-documents-step__extra-count">
-              Загружено {additionalDocuments.length} из {MAX_ADDITIONAL_DOCUMENTS}
-            </span>
-          </div>
-
-          <div
-            className={`oap-documents-step__extra-drop${extraDragOver ? ' oap-documents-step__extra-drop--drag' : ''}${extraFull ? ' oap-documents-step__extra-drop--full' : ''}`}
-            onDragOver={(e) => {
-              e.preventDefault()
-              if (!extraFull) setExtraDragOver(true)
-            }}
-            onDragLeave={() => setExtraDragOver(false)}
-            onDrop={handleExtraDrop}
-          >
-            <CloudUpload size={18} strokeWidth={1.75} aria-hidden />
-            <p className="oap-documents-step__extra-drop-text">
-              Перетащите файлы сюда или{' '}
-              <button
-                type="button"
-                className="oap-documents-step__extra-drop-btn"
-                onClick={() => additionalInputRef.current?.click()}
-                disabled={extraFull}
-              >
-                выбрать файлы
-              </button>
+      <div className="oap-documents-step__layout">
+        <div className="oap-documents-step__main">
+          <header className="oap-documents-step__page-head">
+            <div className="oap-documents-step__page-head-row">
+              <h2 id="oap-documents-step-title" className="oap-documents-step__title">
+                Документы
+              </h2>
+              <span className="oap-documents-step__step-badge">
+                Шаг {DISPLAY_STEP} из {DISPLAY_TOTAL}
+              </span>
+            </div>
+            <p className="oap-documents-step__subtitle">
+              Загрузите документы, подтверждающие право собственности и прозрачность сделки
             </p>
-            <p className="oap-documents-step__formats oap-documents-step__formats--center">
-              PDF, JPG, PNG до 10 МБ каждый
+          </header>
+
+          {notice && (
+            <p className="oap-documents-step__notice" role="status">
+              {notice}
             </p>
-          </div>
+          )}
 
-          <input
-            ref={additionalInputRef}
-            type="file"
-            accept="application/pdf,image/*"
-            multiple
-            className="oap-documents-step__file-input"
-            onChange={handleAdditionalUpload}
-          />
+          <div className="oap-documents-step__section">
+            <h3 className="oap-documents-step__section-title">Обязательные документы</h3>
 
-          <div className="oap-documents-step__slots">
-            {Array.from({ length: MAX_ADDITIONAL_DOCUMENTS }).map((_, index) => {
-              const doc = additionalDocuments[index]
-              if (doc) {
+            <div className="oap-documents-step__required-list">
+              {REQUIRED_DOCS.map((doc) => {
+                const uploaded = requiredDocuments[doc.key]
+                const error = errors[doc.key]
+                const DocIcon = doc.Icon
+
                 return (
-                  <div key={doc.id} className="oap-documents-step__slot oap-documents-step__slot--filled">
-                    {doc.type === 'image' && doc.url ? (
-                      <img src={doc.url} alt="" className="oap-documents-step__slot-preview" />
-                    ) : (
-                      <FileText size={18} aria-hidden />
-                    )}
-                    <span className="oap-documents-step__slot-name" title={doc.name}>
-                      {doc.name}
-                    </span>
-                    <button
-                      type="button"
-                      className="oap-documents-step__slot-remove"
-                      aria-label={`Удалить ${doc.name}`}
-                      onClick={() => onRemoveAdditional(doc.id)}
+                  <article
+                    key={doc.key}
+                    className={`oap-documents-step__req-card${uploaded ? ' oap-documents-step__req-card--done' : ''}${error ? ' oap-documents-step__req-card--error' : ''}`}
+                  >
+                    <span
+                      className={`oap-documents-step__req-icon oap-documents-step__req-icon--${doc.iconTone}`}
+                      aria-hidden
                     >
-                      <X size={12} />
-                    </button>
-                  </div>
-                )
-              }
+                      <DocIcon size={22} strokeWidth={1.75} />
+                    </span>
 
-              return (
-                <button
-                  key={`empty-${index}`}
-                  type="button"
-                  className="oap-documents-step__slot oap-documents-step__slot--empty"
-                  onClick={() => additionalInputRef.current?.click()}
-                  disabled={extraFull}
-                  aria-label={`Добавить документ ${index + 1}`}
-                >
-                  <FileText size={16} aria-hidden />
-                  <span className="oap-documents-step__slot-plus">
-                    <Plus size={10} strokeWidth={3} />
-                  </span>
-                </button>
-              )
-            })}
+                    <div className="oap-documents-step__req-content">
+                      <h4 className="oap-documents-step__req-title">
+                        {doc.label}
+                        <span className="oap-documents-step__required-mark">*</span>
+                      </h4>
+                      <p className="oap-documents-step__req-hint">{doc.hint}</p>
+                    </div>
+
+                    <div className="oap-documents-step__req-action">
+                      <input
+                        ref={inputRefs[doc.key]}
+                        type="file"
+                        accept="application/pdf,image/*"
+                        className="oap-documents-step__file-input"
+                        onChange={(e) => handleRequiredUpload(doc.key, e)}
+                      />
+
+                      {uploaded ? (
+                        <div className="oap-documents-step__req-file">
+                          <span
+                            className={`oap-documents-step__file-badge oap-documents-step__file-badge--${uploaded.type}`}
+                            aria-hidden
+                          >
+                            {uploaded.type === 'image' ? (
+                              <>
+                                <ImageIcon size={15} />
+                                <span>IMG</span>
+                              </>
+                            ) : (
+                              <>
+                                <FileText size={15} />
+                                <span>PDF</span>
+                              </>
+                            )}
+                          </span>
+                          <div className="oap-documents-step__req-file-meta">
+                            <span className="oap-documents-step__req-file-name" title={uploaded.name}>
+                              {uploaded.name}
+                            </span>
+                            <span className="oap-documents-step__req-file-size">
+                              {formatFileSize(uploaded.file?.size)}
+                            </span>
+                          </div>
+                          <button
+                            type="button"
+                            className="oap-documents-step__req-file-remove"
+                            aria-label={`Удалить ${doc.label}`}
+                            onClick={() => onRequiredRemove(doc.key)}
+                          >
+                            <X size={14} />
+                          </button>
+                        </div>
+                      ) : (
+                        <>
+                          <button
+                            type="button"
+                            className="oap-documents-step__upload-btn"
+                            onClick={() => inputRefs[doc.key].current?.click()}
+                          >
+                            <CloudUpload size={16} aria-hidden />
+                            Загрузить файл
+                          </button>
+                          <p className="oap-documents-step__formats">PDF, JPG, PNG до 10 МБ</p>
+                        </>
+                      )}
+                      {error && <p className="oap-documents-step__error">{error}</p>}
+                    </div>
+                  </article>
+                )
+              })}
+            </div>
+          </div>
+
+          <div className="oap-documents-step__section">
+            <h3 className="oap-documents-step__section-title">
+              Дополнительные документы
+              <span className="oap-documents-step__optional-mark"> (необязательно)</span>
+            </h3>
+            <p className="oap-documents-step__section-desc">
+              Вы можете загрузить до {MAX_ADDITIONAL_DOCUMENTS} дополнительных документов
+            </p>
+
+            <input
+              ref={additionalInputRef}
+              type="file"
+              accept="application/pdf,image/*"
+              multiple
+              className="oap-documents-step__file-input"
+              onChange={handleAdditionalUpload}
+            />
+
+            <div
+              className={`oap-documents-step__slots${extraDragOver ? ' oap-documents-step__slots--drag' : ''}`}
+              onDragOver={(e) => {
+                e.preventDefault()
+                if (!extraFull) setExtraDragOver(true)
+              }}
+              onDragLeave={() => setExtraDragOver(false)}
+              onDrop={handleExtraDrop}
+            >
+              {Array.from({ length: MAX_ADDITIONAL_DOCUMENTS }).map((_, index) => {
+                const doc = additionalDocuments[index]
+                if (doc) {
+                  return (
+                    <div key={doc.id} className="oap-documents-step__slot oap-documents-step__slot--filled">
+                      <button
+                        type="button"
+                        className="oap-documents-step__slot-remove"
+                        aria-label={`Удалить ${doc.name}`}
+                        onClick={() => onRemoveAdditional(doc.id)}
+                      >
+                        <X size={12} />
+                      </button>
+                      <span
+                        className={`oap-documents-step__file-badge oap-documents-step__file-badge--${doc.type} oap-documents-step__file-badge--slot`}
+                        aria-hidden
+                      >
+                        {doc.type === 'image' ? (
+                          <>
+                            <ImageIcon size={18} />
+                            <span>IMG</span>
+                          </>
+                        ) : (
+                          <>
+                            <FileText size={18} />
+                            <span>PDF</span>
+                          </>
+                        )}
+                      </span>
+                      <span className="oap-documents-step__slot-name" title={doc.name}>
+                        {doc.name}
+                      </span>
+                      <span className="oap-documents-step__slot-size">
+                        {formatFileSize(doc.file?.size)}
+                      </span>
+                    </div>
+                  )
+                }
+
+                return (
+                  <button
+                    key={`empty-${index}`}
+                    type="button"
+                    className="oap-documents-step__slot oap-documents-step__slot--empty"
+                    onClick={() => additionalInputRef.current?.click()}
+                    disabled={extraFull}
+                    aria-label={`Добавить документ ${index + 1}`}
+                  >
+                    <span className="oap-documents-step__slot-add-icon" aria-hidden>
+                      <Plus size={22} strokeWidth={2} />
+                    </span>
+                    <span className="oap-documents-step__slot-add-label">Добавить документ</span>
+                  </button>
+                )
+              })}
+            </div>
+
+            <p className="oap-documents-step__formats oap-documents-step__formats--block">
+              PDF, JPG, PNG до 10 МБ на файл
+            </p>
           </div>
         </div>
+
+        <aside className="oap-documents-step__sidebar" aria-label="Подсказки и помощь">
+          <div className="oap-documents-step__sidebar-hero">
+            <img
+              src={OAP_DOCUMENT_IMAGES.sidebarHero}
+              alt=""
+              className="oap-documents-step__sidebar-img"
+            />
+          </div>
+
+          <div className="oap-documents-step__tips">
+            <h3 className="oap-documents-step__tips-title">Подсказки</h3>
+            <ul className="oap-documents-step__tips-list">
+              {SIDEBAR_TIPS.map((tip) => {
+                const TipIcon = tip.Icon
+                return (
+                  <li key={tip.title} className="oap-documents-step__tip-item">
+                    <span
+                      className={`oap-documents-step__tip-icon oap-documents-step__tip-icon--${tip.tone}`}
+                      aria-hidden
+                    >
+                      <TipIcon size={16} strokeWidth={1.75} />
+                    </span>
+                    <div>
+                      <strong>{tip.title}</strong>
+                      <p>{tip.text}</p>
+                    </div>
+                  </li>
+                )
+              })}
+            </ul>
+          </div>
+
+          <div className="oap-documents-step__help">
+            <h3 className="oap-documents-step__help-title">Нужна помощь?</h3>
+            <p className="oap-documents-step__help-text">
+              Если возникли вопросы по документам или загрузке файлов — напишите в поддержку.
+            </p>
+            <button type="button" className="oap-documents-step__help-btn">
+              <Headphones size={16} aria-hidden />
+              Связаться с поддержкой
+            </button>
+          </div>
+        </aside>
       </div>
     </section>
   )

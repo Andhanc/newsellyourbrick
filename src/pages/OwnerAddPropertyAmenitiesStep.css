@@ -1,0 +1,180 @@
+/* ——— Step: amenities (mockup) ——— */
+.oap-amenities-step {
+  --oap-tiffany: #0abab5;
+  --oap-tiffany-dark: #089a95;
+  --oap-tiffany-soft: rgba(10, 186, 181, 0.12);
+  --oap-tiffany-bg: rgba(10, 186, 181, 0.08);
+  --oap-tiffany-ring: rgba(10, 186, 181, 0.28);
+}
+
+.oap-amenities-step__layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 28px;
+  align-items: start;
+}
+
+.oap-amenities-step__main {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+}
+
+.oap-amenities-step__title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #111827;
+}
+
+.oap-amenities-step__subtitle {
+  margin: 6px 0 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #6b7280;
+}
+
+.oap-amenities-step__card {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 24px 28px 28px;
+  border-radius: 14px;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
+}
+
+.oap-amenities-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.oap-amenity-card {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: auto;
+  max-width: 100%;
+  height: 48px;
+  padding: 0 14px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #fff;
+  font: inherit;
+  text-align: left;
+  color: #374151;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+}
+
+.oap-amenity-card:hover {
+  border-color: #d1d5db;
+  background: #fafafa;
+}
+
+.oap-amenity-card--active {
+  border-color: var(--oap-tiffany);
+  background: var(--oap-tiffany-bg);
+  color: #065f5c;
+  box-shadow: 0 0 0 1px var(--oap-tiffany-ring);
+}
+
+.oap-amenity-card__icon-wrap {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  color: #6b7280;
+  background: #f3f4f6;
+}
+
+.oap-amenity-card--active .oap-amenity-card__icon-wrap {
+  color: var(--oap-tiffany-dark);
+  background: var(--oap-tiffany-soft);
+}
+
+.oap-amenity-card__label {
+  flex: 0 1 auto;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.oap-amenity-card__check {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  margin-left: 2px;
+  border-radius: 50%;
+  color: #fff;
+  background: var(--oap-tiffany);
+}
+
+.oap-amenities-extra {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 4px;
+  border-top: 1px solid #f3f4f6;
+}
+
+.oap-amenities-extra__label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #6b7280;
+}
+
+.oap-amenities-extra__textarea {
+  width: 100%;
+  min-height: 96px;
+  padding: 12px 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  font: inherit;
+  font-size: 15px;
+  line-height: 1.55;
+  color: #111827;
+  background: #fff;
+  resize: vertical;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.oap-amenities-extra__textarea::placeholder {
+  color: #9ca3af;
+}
+
+.oap-amenities-extra__textarea:focus {
+  outline: none;
+  border-color: var(--oap-tiffany);
+  box-shadow: 0 0 0 3px var(--oap-tiffany-ring);
+}
+
+@media (max-width: 900px) {
+  .oap-amenities-step__layout {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .oap-amenities-step__card {
+    padding: 18px 16px 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .oap-amenity-card {
+    width: 100%;
+    max-width: 100%;
+    justify-content: flex-start;
+  }
+}

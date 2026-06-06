@@ -54,7 +54,7 @@
     flex-direction: column;
     align-items: center;
     gap: 6px;
-    flex: 1;
+    flex: 0 0 auto;
   }
 
   .oap-stepper__dot {
@@ -71,7 +71,17 @@
   }
 
   .oap-stepper__line {
-    display: none;
+    flex: 1 1 4px;
+    min-width: 4px;
+    margin: 13px 3px 0;
+    height: 2px;
+    border: none;
+    border-radius: 999px;
+    background: var(--oap-primary);
+  }
+
+  .oap-stepper__line--done {
+    background: var(--oap-primary);
   }
 
   .oap-content {
@@ -85,16 +95,13 @@
     box-shadow: 0 1px 4px rgba(15, 23, 42, 0.06);
   }
 
-  .oap-text-step__head {
-    flex-direction: column;
-    gap: 12px;
-    margin-bottom: 18px;
+  .oap-text-step__layout {
+    grid-template-columns: 1fr;
+    gap: 20px;
   }
 
-  .oap-text-step__badge {
-    width: 44px;
-    height: 44px;
-    border-radius: 12px;
+  .oap-text-step__main {
+    gap: 18px;
   }
 
   .oap-text-step__title {
@@ -105,10 +112,13 @@
     font-size: 13px;
   }
 
-  .oap-text-step__card {
+  .oap-text-step__fields {
+    gap: 16px;
+  }
+
+  .oap-text-step__tip {
+    position: static;
     padding: 16px;
-    gap: 22px;
-    border-radius: 12px;
   }
 
   .oap-text-field__input,
@@ -121,16 +131,13 @@
     min-height: 140px;
   }
 
-  .oap-params-step__head {
-    flex-direction: column;
-    gap: 12px;
-    margin-bottom: 18px;
+  .oap-params-step__layout {
+    grid-template-columns: 1fr;
+    gap: 20px;
   }
 
-  .oap-params-step__badge {
-    width: 44px;
-    height: 44px;
-    border-radius: 12px;
+  .oap-params-step__main {
+    gap: 18px;
   }
 
   .oap-params-step__title {
@@ -141,19 +148,9 @@
     font-size: 13px;
   }
 
-  .oap-params-step__card {
-    padding: 14px;
-    border-radius: 12px;
-  }
-
   .oap-params-grid {
     grid-template-columns: 1fr;
-    gap: 14px;
-  }
-
-  .oap-param-field__meta {
-    min-height: 42px;
-    margin-bottom: 6px;
+    gap: 16px;
   }
 
   .oap-param-field__input,
@@ -163,9 +160,8 @@
   }
 
   .oap-params-step__tip {
-    margin-top: 16px;
-    font-size: 12px;
-    padding: 12px 14px;
+    position: static;
+    padding: 16px;
   }
 
   .oap-loc-step__head {
@@ -332,75 +328,8 @@
     margin: 0 4px;
   }
 
-  .oap-documents-step__head {
-    margin-bottom: 12px;
-  }
-
-  .oap-documents-step__title {
-    font-size: 16px;
-  }
-
-  .oap-documents-step__subtitle {
-    font-size: 11px;
-  }
-
-  .oap-documents-step__card {
-    padding: 12px;
-    gap: 12px;
-  }
-
-  .oap-documents-step__main-grid {
-    grid-template-columns: 1fr;
-    gap: 8px;
-  }
-
-  .oap-documents-step__main-card {
-    padding: 10px;
-  }
-
-  .oap-documents-step__extra-head {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 4px;
-  }
-
-  .oap-documents-step__extra-drop {
-    padding: 10px 12px;
-  }
-
-  .oap-documents-step__slots {
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-    gap: 6px;
-  }
-
   .oap-stepper__label {
     font-size: 9px;
-  }
-
-  .oap-testdrive-step__head--centered {
-    align-items: flex-start;
-    text-align: left;
-  }
-
-  .oap-testdrive-step__title {
-    font-size: 18px;
-  }
-
-  .oap-testdrive-step__subtitle {
-    font-size: 13px;
-  }
-
-  .oap-testdrive-step__card {
-    padding: 16px;
-    gap: 14px;
-  }
-
-  .oap-testdrive-step__choices {
-    grid-template-columns: 1fr;
-  }
-
-  .oap-testdrive-step__fields {
-    grid-template-columns: 1fr;
   }
 
   .oap-step-grid {

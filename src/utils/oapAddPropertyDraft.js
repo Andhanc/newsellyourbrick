@@ -230,7 +230,7 @@ export async function restoreOapDraftState(draft) {
 
   return {
     form: { ...draft.form },
-    step: typeof draft.step === 'number' ? Math.min(Math.max(draft.step, 1), 9) : 1,
+    step: typeof draft.step === 'number' ? Math.min(Math.max(draft.step, 1), 11) : 1,
     photos,
     videos: Array.isArray(draft.videos) ? draft.videos : [],
     requiredDocuments: {

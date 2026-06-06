@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useMemo } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import {
   OWNER_VIEWS,
@@ -10,6 +10,16 @@ const OwnerTestNavigationContext = createContext(null)
 
 export function OwnerTestNavigationProvider({ children }) {
   const [searchParams, setSearchParams] = useSearchParams()
+
+  // После Stripe возвращаем на мастер добавления объекта (черновик в localStorage).
+  useEffect(() => {
+    const checkout = searchParams.get('listing_fee_checkout')
+    if (!checkout) return
+    if (searchParams.get('view') === OWNER_VIEWS.ADD_PROPERTY) return
+    const next = new URLSearchParams(searchParams)
+    next.set('view', OWNER_VIEWS.ADD_PROPERTY)
+    setSearchParams(next, { replace: true })
+  }, [searchParams, setSearchParams])
 
   const view = resolveOwnerTestView(searchParams)
   const propertyId = searchParams.get('propertyId') || ''
