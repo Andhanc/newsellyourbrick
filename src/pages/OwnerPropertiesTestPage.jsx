@@ -21,6 +21,7 @@ import {
   Eye,
   Home,
   Plus,
+  Upload,
   ClipboardList,
   Briefcase,
   Clock,
@@ -37,9 +38,11 @@ import {
   filterOwnerProperties,
   getOwnerPropertiesUserId,
 } from '../utils/ownerPropertiesList'
+import { fetchOwnerTestDriveBookings } from '../utils/ownerTestDriveList'
 import { getCurrencySymbol } from '../utils/currency'
 import OwnerTestProfileMenu from '../components/OwnerTestProfileMenu'
 import OwnerNotificationsButton from '../components/OwnerNotificationsButton'
+import FileUploadModal from '../components/FileUploadModal'
 import { OwnerAdStack } from '../components/OwnerAds'
 import { useOwnerTestProfile } from '../context/OwnerTestProfileContext'
 import { OWNER_VIEWS } from '../context/OwnerTestNavigationContext'
@@ -118,6 +121,43 @@ function formatQuickMoney(value, currency = 'USD') {
   const num = Number(value)
   if (!Number.isFinite(num) || num <= 0) return `${getCurrencySymbol(currency)}0`
   return `${getCurrencySymbol(currency)}${num.toLocaleString('ru-RU', { maximumFractionDigits: 0 })}`
+}
+
+function getTestDrivePaymentAmount(row) {
+  const raw = row?.raw || {}
+
+  const insurance = Number(raw.insurance_deposit_amount ?? raw.insurance_deposit)
+  if (Number.isFinite(insurance) && insurance > 0) return insurance
+
+  const majorCandidates = [
+    raw.total_major,
+    raw.total_amount,
+    raw.paid_amount,
+    raw.payment_amount,
+  ]
+
+  for (const candidate of majorCandidates) {
+    const amount = Number(candidate)
+    if (Number.isFinite(amount) && amount > 0) return amount
+  }
+
+  const centsCandidates = [
+    raw.paid_amount_cents,
+    raw.amount_cents,
+    raw.total_cents,
+    raw.payment_amount_cents,
+  ]
+
+  for (const candidate of centsCandidates) {
+    const amount = Number(candidate)
+    if (Number.isFinite(amount) && amount > 0) return amount / 100
+  }
+
+  return 0
+}
+
+function getTestDrivePaymentCurrency(row) {
+  return String(row?.raw?.paid_currency || row?.raw?.currency || 'USD').toUpperCase()
 }
 
 function QuickAnalyticsPeriodSelect({ value, onChange }) {
@@ -484,12 +524,14 @@ export default function OwnerPropertiesTestPage() {
   const [activeTab, setActiveTab] = useState('all')
   const [menuOpen, setMenuOpen] = useState(false)
   const [properties, setProperties] = useState([])
+  const [testDriveRows, setTestDriveRows] = useState([])
   const [propertiesLoading, setPropertiesLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
   const [analyticsPeriod, setAnalyticsPeriod] = useState('30d')
   const [propertyFilters, setPropertyFilters] = useState(DEFAULT_PROPERTY_FILTERS)
   const [timerNow, setTimerNow] = useState(() => Date.now())
+  const [showFileUploadModal, setShowFileUploadModal] = useState(false)
 
   const closeMenu = useCallback(() => setMenuOpen(false), [])
 
@@ -497,17 +539,23 @@ export default function OwnerPropertiesTestPage() {
     const userId = getOwnerPropertiesUserId()
     if (!userId) {
       setProperties([])
+      setTestDriveRows([])
       setPropertiesLoading(false)
       return
     }
 
     setPropertiesLoading(true)
     try {
-      const rows = await fetchOwnerProperties(userId)
+      const [rows, testDrives] = await Promise.all([
+        fetchOwnerProperties(userId),
+        fetchOwnerTestDriveBookings(userId),
+      ])
       setProperties(rows)
+      setTestDriveRows(testDrives)
     } catch (error) {
       console.warn('OwnerPropertiesTestPage: не удалось загрузить объекты', error)
       setProperties([])
+      setTestDriveRows([])
     } finally {
       setPropertiesLoading(false)
     }
@@ -543,18 +591,29 @@ export default function OwnerPropertiesTestPage() {
         const currentBid = Number(row.currentBidAmount)
         acc.views += Number(row.viewsCount) || 0
         acc.bids += Number.isFinite(bidSum) && bidSum > 0 ? bidSum : Number.isFinite(currentBid) ? currentBid : 0
-        acc.bookings += Number(row.bookingsCount) || 0
         return acc
       },
-      { views: 0, bids: 0, bookings: 0 }
+      { views: 0, bids: 0 }
     )
+    const testDriveTotal = testDriveRows.reduce(
+      (sum, row) => sum + getTestDrivePaymentAmount(row),
+      0
+    )
+    const paidTestDriveRow = testDriveRows.find((row) => getTestDrivePaymentAmount(row) > 0)
+    const testDriveCurrency = paidTestDriveRow ? getTestDrivePaymentCurrency(paidTestDriveRow) : currency
 
     return [
       { label: 'Все просмотры', value: formatQuickNumber(totals.views), delta: '', up: null, spark: 'tiffany' },
       { label: 'Сумма всех ставок', value: formatQuickMoney(totals.bids, currency), delta: '', up: null, spark: 'green' },
-      { label: 'Сумма всех броней', value: formatQuickNumber(totals.bookings), delta: '', up: null, spark: 'orange' },
+      {
+        label: 'Сумма всех тест-драйвов',
+        value: `${formatQuickNumber(testDriveRows.length)} · ${formatQuickMoney(testDriveTotal, testDriveCurrency)}`,
+        delta: '',
+        up: null,
+        spark: 'orange',
+      },
     ]
-  }, [properties])
+  }, [properties, testDriveRows])
 
   const filterTabs = useMemo(
     () => FILTER_TAB_DEFS.map((tab) => ({ ...tab, count: tabCounts[tab.id] ?? 0 })),
@@ -669,10 +728,19 @@ export default function OwnerPropertiesTestPage() {
   }, [menuOpen])
 
   const mainColumn = (
+    <>
       <div className="op-body">
         <header className="op-header op-desktop-only">
           <h1 className="op-header__title">Мои объекты</h1>
           <div className="op-header__actions">
+            <button
+              type="button"
+              className="op-btn op-btn--file op-header__file-btn"
+              onClick={() => setShowFileUploadModal(true)}
+            >
+              <Upload size={18} strokeWidth={2.25} aria-hidden />
+              Добавить через файл
+            </button>
             {isEmbedded ? (
               <button
                 type="button"
@@ -696,20 +764,30 @@ export default function OwnerPropertiesTestPage() {
         <div className="op-workspace">
           <div className="op-mob-pagehead op-mobile-only">
             <h1 className="op-mob-pagehead__title">Мои объекты</h1>
-            {isEmbedded ? (
+            <div className="op-mob-pagehead__actions">
               <button
                 type="button"
-                className="op-mob-add-btn"
-                aria-label="Добавить объект"
-                onClick={() => goTo(OWNER_VIEWS.ADD_PROPERTY)}
+                className="op-mob-file-btn"
+                aria-label="Добавить через файл"
+                onClick={() => setShowFileUploadModal(true)}
               >
-                <Plus size={22} strokeWidth={2.5} aria-hidden />
+                <Upload size={21} strokeWidth={2.4} aria-hidden />
               </button>
-            ) : (
-              <Link to="/owner-add-property-test" className="op-mob-add-btn" aria-label="Добавить объект">
-                <Plus size={22} strokeWidth={2.5} aria-hidden />
-              </Link>
-            )}
+              {isEmbedded ? (
+                <button
+                  type="button"
+                  className="op-mob-add-btn"
+                  aria-label="Добавить объект"
+                  onClick={() => goTo(OWNER_VIEWS.ADD_PROPERTY)}
+                >
+                  <Plus size={22} strokeWidth={2.5} aria-hidden />
+                </button>
+              ) : (
+                <Link to="/owner-add-property-test" className="op-mob-add-btn" aria-label="Добавить объект">
+                  <Plus size={22} strokeWidth={2.5} aria-hidden />
+                </Link>
+              )}
+            </div>
           </div>
 
           <section className="op-mob-metrics op-mobile-only" aria-label="Сводка по объектам">
@@ -910,6 +988,13 @@ export default function OwnerPropertiesTestPage() {
           </aside>
         </div>
       </div>
+      <FileUploadModal
+        isOpen={showFileUploadModal}
+        onClose={() => setShowFileUploadModal(false)}
+        userId={getOwnerPropertiesUserId()}
+        onSuccess={loadProperties}
+      />
+    </>
   )
 
   if (isEmbedded) return mainColumn

@@ -197,6 +197,13 @@
     min-width: 0;
   }
 
+  .op-mob-pagehead__actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
   .op-mob-add-btn {
     width: 44px;
     height: 44px;
@@ -211,6 +218,21 @@
     cursor: pointer;
     text-decoration: none;
     box-shadow: 0 4px 12px rgba(10, 186, 181, 0.3);
+  }
+
+  .op-mob-file-btn {
+    width: 44px;
+    height: 44px;
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(10, 186, 181, 0.24);
+    border-radius: 12px;
+    background: #ffffff;
+    color: var(--op-tiffany-dark);
+    cursor: pointer;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 6px 14px rgba(10, 186, 181, 0.12);
   }
 
   /* —— Сводка (сетка 2 колонки) —— */

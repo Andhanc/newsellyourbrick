@@ -50,9 +50,9 @@
   padding: 10px 16px;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.92);
-  border: 1px solid rgba(74, 144, 226, 0.22);
+  border: 1px solid rgba(10, 186, 181, 0.24);
   box-shadow:
-    0 4px 14px rgba(74, 144, 226, 0.12),
+    0 4px 14px rgba(10, 186, 181, 0.14),
     0 1px 3px rgba(0, 0, 0, 0.06);
   pointer-events: auto;
   transform-origin: 50% 100%;
@@ -66,8 +66,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(145deg, rgba(74, 144, 226, 0.15), rgba(53, 122, 189, 0.08));
-  color: #357abd;
+  background: linear-gradient(145deg, rgba(83, 216, 211, 0.18), rgba(10, 186, 181, 0.1));
+  color: #089a95;
 }
 
 .excel-bucket-preloader__chip-icon-svg {

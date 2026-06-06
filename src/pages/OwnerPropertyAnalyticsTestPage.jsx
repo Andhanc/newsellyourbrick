@@ -6,12 +6,11 @@ import {
   LinearScale,
   PointElement,
   LineElement,
-  ArcElement,
   Filler,
   Tooltip,
   Legend,
 } from 'chart.js'
-import { Line, Doughnut } from 'react-chartjs-2'
+import { Line } from 'react-chartjs-2'
 import {
   LayoutDashboard,
   Building2,
@@ -32,19 +31,27 @@ import {
   MoreVertical,
   Plus,
   Gavel,
+  CircleDollarSign,
   Home,
   Briefcase,
   ClipboardList,
   SlidersHorizontal,
   RefreshCw,
   Clock,
+  Download,
 } from 'lucide-react'
 import { OWNER_PROP_IMAGES } from './ownerPropertiesTestImages'
 import { OWNER_LISTING_TYPE_LABELS, getOwnerTestProperty } from './ownerPropertiesTestData'
+import { OwnerAdCard } from '../components/OwnerAds'
+import {
+  downloadXlsxBuffer,
+  exportOwnerAnalyticsExcel,
+} from '../utils/ownerAnalyticsExcelExport'
 import {
   fetchOwnerProperties,
   getOwnerPropertiesUserId,
 } from '../utils/ownerPropertiesList'
+import { showNotification } from '../utils/toastHelper'
 import OwnerTestProfileMenu from '../components/OwnerTestProfileMenu'
 import OwnerNotificationsButton from '../components/OwnerNotificationsButton'
 import { useOwnerTestProfile } from '../context/OwnerTestProfileContext'
@@ -58,13 +65,20 @@ ChartJS.register(
   LinearScale,
   PointElement,
   LineElement,
-  ArcElement,
   Filler,
   Tooltip,
   Legend
 )
 
 const OPA_TIFFANY = '#0abab5'
+
+const EMPTY_OWNER_SALES = {
+  auction: [],
+  shares: [],
+  debts: [],
+  buy_now: [],
+  test_drive: [],
+}
 
 const CHART_METRICS = [
   { id: 'bids', label: 'Ставки' },
@@ -154,6 +168,74 @@ function buildMetricSeries(baseSeries, metric, analytics) {
   return Array.isArray(baseSeries) ? baseSeries : []
 }
 
+function formatDateSafe(value) {
+  if (!value) return '—'
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return '—'
+  return date.toLocaleDateString('ru-RU')
+}
+
+function normalizeAnalyticsPropertyTable(table) {
+  const value = String(table || '').trim()
+  if (value === 'houses') return 'properties_houses'
+  if (value === 'apartments') return 'properties_apartments'
+  if (value === 'properties_houses' || value === 'properties_apartments') return value
+  return value || 'properties_apartments'
+}
+
+function getAnalyticsPropertyTable(property) {
+  const raw = property?.raw || property || {}
+  return normalizeAnalyticsPropertyTable(
+    raw.property_table ||
+      raw.propertyTable ||
+      raw.source_table ||
+      (raw.property_type === 'house' || raw.property_type === 'villa' ? 'properties_houses' : '')
+  )
+}
+
+function getAnalyticsSaleKey(row) {
+  const id = row?.property_id ?? row?.propertyId ?? row?.id
+  const table = normalizeAnalyticsPropertyTable(row?.property_table ?? row?.propertyTable ?? row?.source_table)
+  return `${Number(id)}:${table}`
+}
+
+function filterSalesForAnalyticsProperty(data, property) {
+  if (!data || !property) return EMPTY_OWNER_SALES
+  const propertyKey = `${Number(property.id)}:${getAnalyticsPropertyTable(property)}`
+  const filtered = { ...EMPTY_OWNER_SALES }
+  for (const section of ['auction', 'shares', 'debts', 'buy_now']) {
+    const rows = Array.isArray(data[section]) ? data[section] : []
+    filtered[section] = rows.filter((row) => getAnalyticsSaleKey(row) === propertyKey)
+  }
+  return filtered
+}
+
+function buildAnalyticsExcelProperty(property) {
+  const raw = property?.raw || {}
+  return {
+    ...raw,
+    id: property.id,
+    title: property.title,
+    location: property.location,
+    price: property.priceAmount ?? raw.price ?? 0,
+    beds: raw.bedrooms || raw.rooms || 0,
+    baths: raw.bathrooms || 0,
+    sqft: raw.area || 0,
+    status:
+      property.filterKey === 'sold'
+        ? 'sold'
+        : property.filterKey === 'draft'
+          ? 'pending'
+          : property.filterKey === 'active'
+            ? 'active'
+            : property.statusKey || 'pending',
+    likesCount: property.likesCount ?? raw.likes_count ?? 0,
+    bidsCount: property.bidsCount ?? raw.bids_count ?? 0,
+    shares_sold: raw.shares_sold ?? property.shares_sold ?? 0,
+    publishedDate: raw.created_at || raw.updated_at || null,
+  }
+}
+
 function getAnalyticsTimerEndTime(property) {
   return (
     property?.auctionEndTime ||
@@ -169,10 +251,16 @@ function getAnalyticsTimerEndTime(property) {
   )
 }
 
+function formatAnalyticsTimerLabel(label) {
+  const value = String(label || '').trim()
+  if (!value) return value
+  return value.replace(/^(\d+)\s*д\s+(\d{1,2}:\d{2}:\d{2})$/i, '$1:$2')
+}
+
 function getAnalyticsTimerState(property, now = Date.now()) {
   const endTime = getAnalyticsTimerEndTime(property)
   if (!endTime && property?.auctionTimer) {
-    return { expired: false, critical: false, caption: 'Осталось', label: property.auctionTimer }
+    return { expired: false, critical: false, caption: 'Осталось', label: formatAnalyticsTimerLabel(property.auctionTimer) }
   }
   if (!endTime) return null
 
@@ -196,33 +284,60 @@ function getAnalyticsTimerState(property, now = Date.now()) {
     critical: days === 0 && hours < 1,
     caption: 'Осталось',
     label: days > 0
-      ? `${days}д ${two(hours)}:${two(minutes)}:${two(seconds)}`
+      ? `${days}:${two(hours)}:${two(minutes)}:${two(seconds)}`
       : `${two(hours)}:${two(minutes)}:${two(seconds)}`,
   }
 }
 
-function AnalyticsTimerCard({ property, now }) {
+function AnalyticsTimerPanel({ property, now }) {
   const timer = getAnalyticsTimerState(property, now)
-  if (!timer) return null
+  const hasTimer = Boolean(timer)
+  const currentBid = property?.currentBid || property?.price || '—'
+  const statusText = timer?.expired ? 'Аукцион завершён' : hasTimer ? 'Активный таймер' : 'Таймер не установлен'
+  const value = timer?.label || '—'
 
   return (
-    <span
+    <section
       className={[
-        'opa-object-timer',
-        timer.expired && 'opa-object-timer--expired',
-        timer.critical && 'opa-object-timer--critical',
+        'opa-timer-panel',
+        !hasTimer && 'opa-timer-panel--empty',
+        timer?.expired && 'opa-timer-panel--expired',
+        timer?.critical && 'opa-timer-panel--critical',
       ]
         .filter(Boolean)
         .join(' ')}
+      aria-label="Таймер объекта"
     >
-      <span className="opa-object-timer__icon" aria-hidden>
-        <Clock size={14} strokeWidth={2.4} />
-      </span>
-      <span className="opa-object-timer__content">
-        <span className="opa-object-timer__caption">{timer.caption}</span>
-        <span className="opa-object-timer__value">{timer.label}</span>
-      </span>
-    </span>
+      <div className="opa-timer-panel__main">
+        <span className="opa-timer-panel__icon" aria-hidden>
+          <Clock size={24} strokeWidth={2.4} />
+        </span>
+        <div className="opa-timer-panel__copy">
+          <span className="opa-timer-panel__eyebrow">{statusText}</span>
+          <h2 className="opa-timer-panel__title">Таймер объекта</h2>
+          <p className="opa-timer-panel__text">
+            {timer?.expired
+              ? 'Период торгов по объекту завершён.'
+              : hasTimer
+                ? 'Следите за временем до окончания торгов и активностью покупателей.'
+                : 'Для этого объекта пока нет активного таймера.'}
+          </p>
+        </div>
+      </div>
+      <div className="opa-timer-panel__count" aria-live="polite">
+        <span className="opa-timer-panel__count-label">
+          {timer?.expired ? 'Статус' : hasTimer ? 'До окончания' : 'Осталось'}
+        </span>
+        <strong>{value}</strong>
+      </div>
+      <div className="opa-timer-panel__meta">
+        <span>
+          <CircleDollarSign size={17} strokeWidth={2.2} aria-hidden />
+          Текущая ставка
+        </span>
+        <strong>{currentBid}</strong>
+      </div>
+    </section>
   )
 }
 
@@ -237,6 +352,7 @@ export default function OwnerPropertyAnalyticsTestPage() {
   const [chartMetric, setChartMetric] = useState('bids')
   const [chartMetricOpen, setChartMetricOpen] = useState(false)
   const [timerNow, setTimerNow] = useState(() => Date.now())
+  const [exportingExcel, setExportingExcel] = useState(false)
   const isMobile = useOpaMobile()
 
   const closeMenu = useCallback(() => setMenuOpen(false), [])
@@ -401,33 +517,54 @@ export default function OwnerPropertyAnalyticsTestPage() {
     [isMobile]
   )
 
-  const donutData = useMemo(() => {
-    if (!analytics) return null
-    return {
-      labels: analytics.trafficSources.map((s) => s.label),
-      datasets: [
-        {
-          data: analytics.trafficSources.map((s) => s.pct),
-          backgroundColor: analytics.trafficSources.map((s) => s.color),
-          borderWidth: 0,
-          hoverOffset: 4,
-        },
-      ],
+  const handleExportToExcel = useCallback(async () => {
+    const userId = getOwnerPropertiesUserId()
+    if (!userId) {
+      showNotification('Войдите в аккаунт, чтобы скачать отчёт')
+      return
     }
-  }, [analytics])
+    if (!property) return
 
-  const donutOptions = useMemo(
-    () => ({
-      responsive: true,
-      maintainAspectRatio: false,
-      cutout: '72%',
-      plugins: {
-        legend: { display: false },
-        tooltip: { enabled: true },
-      },
-    }),
-    []
-  )
+    setExportingExcel(true)
+    try {
+      const response = await fetch(`/api/owner/${userId}/my-sales`)
+      const json = await response.json().catch(() => ({}))
+      const salesData =
+        response.ok && json.success && json.data ? json.data : EMPTY_OWNER_SALES
+      const propertySales = filterSalesForAnalyticsProperty(salesData, property)
+      const excelProperty = buildAnalyticsExcelProperty(property)
+
+      const buffer = await exportOwnerAnalyticsExcel({
+        formatDateSafe,
+        properties: [excelProperty],
+        mySalesData: propertySales,
+        stats: {
+          totalProperties: 1,
+          activeProperties: property.filterKey === 'active' || property.statusKey === 'active' ? 1 : 0,
+          soldProperties: property.filterKey === 'sold' || property.statusKey === 'sold' ? 1 : 0,
+          totalLikes: Number(property.likesCount ?? analytics?.likesRaw) || 0,
+          totalBids: Number(property.bidsCount ?? analytics?.bidsRaw) || 0,
+          totalSharesSoldAgg: Number(property.raw?.shares_sold ?? property.shares_sold) || 0,
+          interestCount: Number(property.bidsCount ?? analytics?.bidsRaw) || 0,
+          convLikesToBidsPct:
+            Number(property.likesCount ?? analytics?.likesRaw) > 0
+              ? (
+                  ((Number(property.bidsCount ?? analytics?.bidsRaw) || 0) /
+                    (Number(property.likesCount ?? analytics?.likesRaw) || 1)) *
+                  100
+                ).toFixed(1)
+              : '0',
+          interestPerListing: Number(property.bidsCount ?? analytics?.bidsRaw) || 0,
+        },
+      })
+      downloadXlsxBuffer(buffer, `property_analytics_${property.id}_${new Date().toISOString().split('T')[0]}.xlsx`)
+    } catch (error) {
+      console.error('OwnerPropertyAnalyticsTestPage: export excel', error)
+      showNotification('Не удалось сформировать Excel-отчёт')
+    } finally {
+      setExportingExcel(false)
+    }
+  }, [analytics, property])
 
   if (propertyLoading) {
     return (
@@ -589,31 +726,31 @@ export default function OwnerPropertyAnalyticsTestPage() {
                 </div>
               </article>
 
-              <article className="opa-card opa-traffic-card opa-desktop-only">
-                <h2 className="opa-card__title">Источники трафика</h2>
-                <div className="opa-traffic-card__body">
-                  <div className="opa-traffic-visual">
-                    <div className="opa-donut-wrap">
-                      {donutData && <Doughnut data={donutData} options={donutOptions} />}
-                      <div className="opa-donut-center">
-                        <span className="opa-donut-center__label">Всего</span>
-                        <span className="opa-donut-center__value">{analytics.trafficTotal}</span>
-                      </div>
-                    </div>
-                    <AnalyticsTimerCard property={property} now={timerNow} />
+              <div className="opa-analytics-side">
+                <section className="opa-analytics-ad" aria-label="Премиум размещение">
+                  <OwnerAdCard type="premium" />
+                </section>
+                <article className="opa-report-card" aria-label="Скачать отчёт">
+                  <span className="opa-report-card__icon" aria-hidden>
+                    <Download size={21} strokeWidth={2.3} />
+                  </span>
+                  <div className="opa-report-card__copy">
+                    <h2 className="opa-report-card__title">Скачать отчёт</h2>
+                    <p className="opa-report-card__text">Excel по объекту, ставкам, лайкам и продажам.</p>
                   </div>
-                  <ul className="opa-traffic-legend">
-                    {analytics.trafficSources.map((source) => (
-                      <li key={source.label}>
-                        <i style={{ background: source.color }} />
-                        <span>{source.label}</span>
-                        <strong>{source.pct}%</strong>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </article>
+                  <button
+                    type="button"
+                    className="opa-report-card__button"
+                    onClick={handleExportToExcel}
+                    disabled={exportingExcel}
+                  >
+                    {exportingExcel ? 'Формируем…' : 'Скачать'}
+                  </button>
+                </article>
+              </div>
             </section>
+
+            <AnalyticsTimerPanel property={property} now={timerNow} />
 
           </div>
         </div>

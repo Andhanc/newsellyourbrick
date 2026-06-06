@@ -308,6 +308,8 @@
   display: flex;
   align-items: center;
   gap: 12px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .op-date-pill {
@@ -1618,6 +1620,22 @@ html.op-page-active,
 
 .op-btn--primary:hover {
   box-shadow: 0 6px 18px rgba(10, 186, 181, 0.35);
+}
+
+.op-btn--file {
+  gap: 8px;
+  min-height: 44px;
+  padding: 10px 16px;
+  border: 1px solid rgba(10, 186, 181, 0.24);
+  background: #ffffff;
+  color: var(--op-tiffany-dark);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 8px 20px rgba(10, 186, 181, 0.08);
+}
+
+.op-btn--file:hover {
+  border-color: rgba(10, 186, 181, 0.4);
+  background: #f0fdfa;
+  box-shadow: 0 6px 18px rgba(10, 186, 181, 0.16);
 }
 
 .op-btn--white {

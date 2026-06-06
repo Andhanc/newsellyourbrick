@@ -2,12 +2,12 @@ import { useEffect, useState } from 'react'
 import Confetti from 'react-confetti'
 
 const COLORS = [
-  '#4A90E2',
-  '#357abd',
-  '#38bdf8',
-  '#818cf8',
-  '#c084fc',
-  '#f472b6',
+  '#0abab5',
+  '#089a95',
+  '#53d8d3',
+  '#99f6e4',
+  '#14b8a6',
+  '#2dd4bf',
   '#34d399',
   '#fbbf24',
   '#fde047',

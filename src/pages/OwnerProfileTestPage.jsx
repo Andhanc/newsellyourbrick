@@ -40,6 +40,7 @@ import {
   downloadXlsxBuffer,
   exportOwnerAnalyticsExcel,
 } from '../utils/ownerAnalyticsExcelExport'
+import { getCurrencySymbol } from '../utils/currency'
 import { showNotification } from '../utils/toastHelper'
 import './OwnerProfileTestPage.css'
 import './OwnerProfileTestPage.mobile.css'
@@ -109,7 +110,7 @@ function formatNumber(value) {
 
 function formatMoney(value, currency = 'USD') {
   const amount = Number(value) || 0
-  const symbol = String(currency || 'USD').toUpperCase() === 'EUR' ? '€' : '$'
+  const symbol = getCurrencySymbol(currency)
   return `${symbol}${amount.toLocaleString('ru-RU', { maximumFractionDigits: 0 })}`
 }
 
@@ -123,6 +124,29 @@ function getOwnerRowTable(row) {
 
 function propertyKey(id, table) {
   return `${table || 'properties_apartments'}:${Number(id)}`
+}
+
+function normalizeStatsPropertyTable(table) {
+  const value = String(table || '').trim()
+  if (value === 'houses') return 'properties_houses'
+  if (value === 'apartments') return 'properties_apartments'
+  if (value === 'properties_houses' || value === 'properties_apartments') return value
+  return value || 'properties_apartments'
+}
+
+function getSalePropertyKey(sale) {
+  const id = sale.property_id ?? sale.propertyId ?? sale.id
+  const table = normalizeStatsPropertyTable(sale.property_table ?? sale.propertyTable ?? sale.source_table)
+  return propertyKey(id, table)
+}
+
+function getBookingPropertyKey(booking) {
+  const raw = booking?.raw || booking || {}
+  const id = booking?.propertyId ?? raw.property_id ?? raw.propertyId ?? raw.id
+  const table = normalizeStatsPropertyTable(
+    booking?.propertyTable ?? raw.property_table ?? raw.propertyTable ?? raw.source_table
+  )
+  return propertyKey(id, table)
 }
 
 function collectOwnerSalesRows(data) {
@@ -151,10 +175,20 @@ function buildSalesRevenueByProperty(data, periodStart = null) {
   const revenueByKey = new Map()
   for (const sale of collectOwnerSalesRows(data)) {
     if (periodStart != null && !isAfterPeriodStart(sale.sold_at, periodStart)) continue
-    const key = propertyKey(sale.id ?? sale.property_id, sale.property_table)
+    const key = getSalePropertyKey(sale)
     revenueByKey.set(key, (revenueByKey.get(key) || 0) + (Number(sale.sale_amount) || 0))
   }
   return revenueByKey
+}
+
+function buildSalesCountByProperty(data, periodStart = null) {
+  const countByKey = new Map()
+  for (const sale of collectOwnerSalesRows(data)) {
+    if (periodStart != null && !isAfterPeriodStart(sale.sold_at, periodStart)) continue
+    const key = getSalePropertyKey(sale)
+    countByKey.set(key, (countByKey.get(key) || 0) + 1)
+  }
+  return countByKey
 }
 
 function buildBookingsByProperty(rows, periodStart = null) {
@@ -163,7 +197,7 @@ function buildBookingsByProperty(rows, periodStart = null) {
     if (periodStart != null && !isAfterPeriodStart(row.startDate || row.raw?.created_at, periodStart)) {
       continue
     }
-    const key = propertyKey(row.propertyId, row.propertyTable)
+    const key = getBookingPropertyKey(row)
     bookingsByKey.set(key, (bookingsByKey.get(key) || 0) + 1)
   }
   return bookingsByKey
@@ -452,24 +486,24 @@ export default function OwnerProfileTestPage() {
   const statsPeriodStart = useMemo(() => getStatsPeriodStart(statsPeriod), [statsPeriod])
 
   const bookingsByProperty = useMemo(
+    () => buildBookingsByProperty(ownerTestDriveRows),
+    [ownerTestDriveRows]
+  )
+
+  const periodBookingsByProperty = useMemo(
     () => buildBookingsByProperty(ownerTestDriveRows, statsPeriodStart),
     [ownerTestDriveRows, statsPeriodStart]
   )
 
   const revenueByProperty = useMemo(
-    () => buildSalesRevenueByProperty(ownerSalesData, statsPeriodStart),
-    [ownerSalesData, statsPeriodStart]
+    () => buildSalesRevenueByProperty(ownerSalesData),
+    [ownerSalesData]
   )
 
-  const salesCountByProperty = useMemo(() => {
-    const map = new Map()
-    for (const sale of collectOwnerSalesRows(ownerSalesData)) {
-      if (!isAfterPeriodStart(sale.sold_at, statsPeriodStart)) continue
-      const key = propertyKey(sale.id ?? sale.property_id, sale.property_table)
-      map.set(key, (map.get(key) || 0) + 1)
-    }
-    return map
-  }, [ownerSalesData, statsPeriodStart])
+  const salesCountByProperty = useMemo(
+    () => buildSalesCountByProperty(ownerSalesData),
+    [ownerSalesData]
+  )
 
   const statsRows = useMemo(
     () =>
@@ -477,12 +511,21 @@ export default function OwnerProfileTestPage() {
         const table = getOwnerRowTable(row)
         const key = propertyKey(row.id, table)
         const revenue = revenueByProperty.get(key) || 0
+        const rawCurrentBid =
+          row.currentBidAmount ??
+          row.raw?.current_bid ??
+          row.raw?.currentBid ??
+          row.raw?.auction_starting_price ??
+          row.raw?.starting_price ??
+          0
         return {
           ...row,
           analyticsKey: key,
           table,
           viewsValue: Number(row.viewsCount) || 0,
-          bookingsValue: bookingsByProperty.get(key) || Number(row.bookingsCount) || 0,
+          testDriveValue: bookingsByProperty.get(key) || Number(row.bookingsCount) || 0,
+          currentBidValue: Number(rawCurrentBid) || 0,
+          currentBidCurrency: row.currency || row.raw?.currency || 'USD',
           salesValue: salesCountByProperty.get(key) || 0,
           revenueValue: revenue,
           revenueCurrency: row.currency || row.raw?.currency || 'USD',
@@ -501,7 +544,7 @@ export default function OwnerProfileTestPage() {
     const activeProperties = statsRows.filter((row) => row.filterKey === 'active' || row.statusKey === 'active').length
     const soldProperties = statsRows.filter((row) => row.filterKey === 'sold' || row.statusKey === 'sold').length
     const totalViews = statsRows.reduce((sum, row) => sum + row.viewsValue, 0)
-    const totalBookings = statsRows.reduce((sum, row) => sum + row.bookingsValue, 0)
+    const totalBookings = [...periodBookingsByProperty.values()].reduce((sum, value) => sum + value, 0)
     const totalRevenue = ownerSalesRows.reduce((sum, row) => sum + (Number(row.sale_amount) || 0), 0)
     const totalLikes = statsRows.reduce((sum, row) => sum + (Number(row.likesCount) || 0), 0)
     const totalBids = statsRows.reduce((sum, row) => sum + (Number(row.bidsCount) || 0), 0)
@@ -529,7 +572,7 @@ export default function OwnerProfileTestPage() {
       convLikesToBidsPct: totalLikes > 0 ? ((totalBids / totalLikes) * 100).toFixed(1) : '0',
       interestPerListing: totalProperties > 0 ? (buyerIds.size / totalProperties).toFixed(1) : '0',
     }
-  }, [ownerSalesRows, statsRows])
+  }, [ownerSalesRows, periodBookingsByProperty, statsRows])
 
   const statsMetrics = useMemo(
     () => [
@@ -541,9 +584,9 @@ export default function OwnerProfileTestPage() {
         tone: 'tiffany',
       },
       {
-        label: 'Брони',
+        label: 'Тест-драйвы',
         value: statsLoading ? '…' : formatNumber(statsTotals.totalBookings),
-        delta: statsLoading ? 'Загрузка' : 'тест-драйвы',
+        delta: statsLoading ? 'Загрузка' : 'заявки',
         icon: CalendarCheck,
         tone: 'orange',
       },
@@ -568,8 +611,8 @@ export default function OwnerProfileTestPage() {
   const sortedStatsRows = useMemo(
     () =>
       [...statsRows].sort((a, b) => {
-        const scoreA = a.revenueValue * 10 + a.viewsValue + a.bookingsValue * 25
-        const scoreB = b.revenueValue * 10 + b.viewsValue + b.bookingsValue * 25
+        const scoreA = a.revenueValue * 10 + a.viewsValue + a.testDriveValue * 25
+        const scoreB = b.revenueValue * 10 + b.viewsValue + b.testDriveValue * 25
         return scoreB - scoreA
       }),
     [statsRows]
@@ -944,7 +987,8 @@ export default function OwnerProfileTestPage() {
                       <tr>
                         <th>Объект</th>
                         <th>Просмотры</th>
-                        <th>Брони</th>
+                        <th>Тест-драйв</th>
+                        <th>Текущая ставка</th>
                         <th>Продажи</th>
                         <th>Доход</th>
                       </tr>
@@ -952,11 +996,11 @@ export default function OwnerProfileTestPage() {
                     <tbody>
                       {statsLoading ? (
                         <tr>
-                          <td colSpan={5}>Загрузка статистики…</td>
+                          <td colSpan={6}>Загрузка статистики…</td>
                         </tr>
                       ) : sortedStatsRows.length === 0 ? (
                         <tr>
-                          <td colSpan={5}>Объекты пока не найдены</td>
+                          <td colSpan={6}>Объекты пока не найдены</td>
                         </tr>
                       ) : (
                         sortedStatsRows.map((row) => (
@@ -966,7 +1010,8 @@ export default function OwnerProfileTestPage() {
                               <span className="opr-stats-table__location">{row.location}</span>
                             </td>
                             <td>{formatNumber(row.viewsValue)}</td>
-                            <td>{formatNumber(row.bookingsValue)}</td>
+                            <td>{formatNumber(row.testDriveValue)}</td>
+                            <td>{row.currentBidValue > 0 ? formatMoney(row.currentBidValue, row.currentBidCurrency) : '—'}</td>
                             <td>{formatNumber(row.salesValue)}</td>
                             <td>{formatMoney(row.revenueValue, row.revenueCurrency)}</td>
                           </tr>

@@ -665,6 +665,307 @@
   height: 260px;
 }
 
+.opa-analytics-side {
+  min-width: 0;
+  align-self: start;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.opa-analytics-ad {
+  min-width: 0;
+}
+
+.opa-analytics-ad .oad-card {
+  min-height: 220px;
+  height: auto;
+  border-radius: 22px;
+  box-shadow: 0 22px 52px rgba(88, 28, 135, 0.16);
+  padding: 24px 24px 22px;
+}
+
+.opa-analytics-ad .oad-card__copy {
+  width: min(58%, 300px);
+}
+
+.opa-analytics-ad .oad-card__title {
+  font-size: clamp(21px, 1.85vw, 28px);
+  line-height: 1.12;
+}
+
+.opa-analytics-ad .oad-card__text {
+  max-width: 280px;
+  margin: 14px 0 20px;
+  font-size: 14px;
+  line-height: 1.42;
+}
+
+.opa-analytics-ad .oad-card__button {
+  min-width: 156px;
+  min-height: 44px;
+  padding: 0 18px;
+  font-size: 13px;
+  border-radius: 11px;
+}
+
+.opa-analytics-ad .oad-card__dismiss {
+  top: 14px;
+  right: 14px;
+  width: 22px;
+  height: 22px;
+  font-size: 19px;
+}
+
+.opa-analytics-ad .oad-card__image--house {
+  right: -58px;
+  bottom: -12px;
+  width: 54%;
+  max-width: 300px;
+}
+
+.opa-report-card {
+  display: grid;
+  grid-template-columns: 46px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 13px;
+  padding: 16px;
+  border: 1px solid rgba(226, 232, 240, 0.86);
+  border-radius: 20px;
+  background:
+    radial-gradient(circle at 94% 0%, rgba(83, 216, 211, 0.16), transparent 42%),
+    #ffffff;
+  box-shadow: 0 16px 34px rgba(15, 23, 42, 0.07);
+}
+
+.opa-report-card__icon {
+  width: 46px;
+  height: 46px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 15px;
+  color: #ffffff;
+  background: var(--opa-gradient-brand);
+  box-shadow: 0 12px 22px rgba(10, 186, 181, 0.2);
+}
+
+.opa-report-card__copy {
+  min-width: 0;
+}
+
+.opa-report-card__title {
+  margin: 0;
+  color: #111827;
+  font-size: 17px;
+  font-weight: 850;
+  letter-spacing: -0.02em;
+}
+
+.opa-report-card__text {
+  margin: 3px 0 0;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1.35;
+}
+
+.opa-report-card__button {
+  min-height: 42px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 13px;
+  background: var(--opa-gradient-brand);
+  color: #ffffff;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 850;
+  white-space: nowrap;
+  cursor: pointer;
+  box-shadow: 0 12px 24px rgba(10, 186, 181, 0.2);
+}
+
+.opa-report-card__button:disabled {
+  cursor: wait;
+  opacity: 0.72;
+  box-shadow: none;
+}
+
+.opa-timer-panel {
+  position: relative;
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(410px, 0.38fr) minmax(250px, 0.24fr);
+  align-items: center;
+  gap: 20px;
+  padding: 22px;
+  border: 1px solid rgba(226, 232, 240, 0.86);
+  border-radius: 22px;
+  background:
+    radial-gradient(circle at 88% 18%, rgba(83, 216, 211, 0.18), transparent 32%),
+    linear-gradient(135deg, #ffffff 0%, #f8fffe 100%);
+  box-shadow: 0 18px 42px rgba(15, 23, 42, 0.07);
+}
+
+.opa-timer-panel::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(90deg, rgba(10, 186, 181, 0.1), transparent 34%);
+}
+
+.opa-timer-panel__main,
+.opa-timer-panel__count,
+.opa-timer-panel__meta {
+  position: relative;
+  z-index: 1;
+}
+
+.opa-timer-panel__main {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-width: 0;
+}
+
+.opa-timer-panel__icon {
+  width: 56px;
+  height: 56px;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 18px;
+  color: #ffffff;
+  background: var(--opa-gradient-brand);
+  box-shadow: 0 14px 28px rgba(10, 186, 181, 0.22);
+}
+
+.opa-timer-panel__copy {
+  min-width: 0;
+}
+
+.opa-timer-panel__eyebrow {
+  display: inline-flex;
+  margin-bottom: 5px;
+  color: #089a95;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.opa-timer-panel__title {
+  margin: 0;
+  color: #111827;
+  font-size: 22px;
+  font-weight: 850;
+  letter-spacing: -0.02em;
+}
+
+.opa-timer-panel__text {
+  margin: 5px 0 0;
+  max-width: 540px;
+  color: #6b7280;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.opa-timer-panel__count {
+  min-width: 0;
+  min-height: 86px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: #ffffff;
+  border: 1px solid rgba(10, 186, 181, 0.16);
+  box-shadow: 0 14px 28px rgba(10, 186, 181, 0.09);
+  font-variant-numeric: tabular-nums;
+}
+
+.opa-timer-panel__count-label {
+  margin-bottom: 4px;
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.opa-timer-panel__count strong {
+  color: #067b77;
+  font-size: clamp(28px, 2vw, 40px);
+  font-weight: 900;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.opa-timer-panel__meta {
+  min-width: 0;
+  min-height: 86px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 7px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: rgba(15, 23, 42, 0.035);
+}
+
+.opa-timer-panel__meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 750;
+  white-space: nowrap;
+}
+
+.opa-timer-panel__meta strong {
+  color: #111827;
+  font-size: clamp(20px, 1.35vw, 26px);
+  font-weight: 900;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+.opa-timer-panel--critical {
+  background:
+    radial-gradient(circle at 88% 18%, rgba(248, 113, 113, 0.15), transparent 32%),
+    linear-gradient(135deg, #ffffff 0%, #fff7f7 100%);
+}
+
+.opa-timer-panel--critical .opa-timer-panel__icon {
+  background: linear-gradient(135deg, #fb7185, #ef4444);
+  box-shadow: 0 14px 28px rgba(239, 68, 68, 0.18);
+}
+
+.opa-timer-panel--critical .opa-timer-panel__eyebrow,
+.opa-timer-panel--critical .opa-timer-panel__count strong {
+  color: #b91c1c;
+}
+
+.opa-timer-panel--expired,
+.opa-timer-panel--empty {
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+}
+
+.opa-timer-panel--expired .opa-timer-panel__icon,
+.opa-timer-panel--empty .opa-timer-panel__icon {
+  background: #94a3b8;
+  box-shadow: none;
+}
+
+.opa-timer-panel--expired .opa-timer-panel__eyebrow,
+.opa-timer-panel--empty .opa-timer-panel__eyebrow,
+.opa-timer-panel--expired .opa-timer-panel__count strong,
+.opa-timer-panel--empty .opa-timer-panel__count strong {
+  color: #475569;
+}
+
 .opa-traffic-card__body {
   display: flex;
   align-items: center;

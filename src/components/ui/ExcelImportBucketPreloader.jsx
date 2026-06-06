@@ -52,14 +52,14 @@ export default function ExcelImportBucketPreloader({ title }) {
           <defs>
             <linearGradient id="excel-bucket-rim" x1="200" y1="0" x2="200" y2="120" gradientUnits="userSpaceOnUse">
               <stop stopColor="rgba(255,255,255,0.55)" />
-              <stop offset="1" stopColor="rgba(74,144,226,0.2)" />
+              <stop offset="1" stopColor="rgba(10,186,181,0.22)" />
             </linearGradient>
             <linearGradient id="excel-bucket-body" x1="200" y1="60" x2="200" y2="260" gradientUnits="userSpaceOnUse">
               <stop stopColor="rgba(255,255,255,0.42)" />
-              <stop offset="1" stopColor="rgba(74,144,226,0.12)" />
+              <stop offset="1" stopColor="rgba(10,186,181,0.14)" />
             </linearGradient>
             <filter id="excel-bucket-shadow" x="-20" y="-20" width="440" height="300" filterUnits="userSpaceOnUse">
-              <feDropShadow dx="0" dy="12" stdDeviation="16" floodColor="rgba(74, 144, 226, 0.25)" />
+              <feDropShadow dx="0" dy="12" stdDeviation="16" floodColor="rgba(10, 186, 181, 0.25)" />
             </filter>
           </defs>
           <g filter="url(#excel-bucket-shadow)">
