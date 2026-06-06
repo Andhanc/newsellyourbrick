@@ -5,7 +5,7 @@ import { FaHeart } from 'react-icons/fa6'
 import { useHorizontalSwipe } from '../../hooks/useHorizontalSwipe'
 
 const FALLBACK_IMAGE =
-  'https://images.unsplash.com/photo-1505691938895-1758d7feb511?auto=format&fit=crop&w=800&q=80'
+  '/images/external/photo-1505691938895-1758d7feb511-f43679f6a1.jpg'
 
 export default function PropertyDetailGallery({
   images = [],

@@ -726,9 +726,9 @@ const VerificationHintModal = ({ isOpen, onClose, step, data }) => {
 
   // Примеры фото
   const exampleImages = {
-    1: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/9f/Pasport_RF.jpg/330px-Pasport_RF.jpg',
-    2: 'https://pechater.ru/wp-content/uploads/2019/08/foto-ot-pechaterfoto-foto-s-retushyu.jpg',
-    3: 'https://www.computerra.ru/wp-content/uploads/2015/06/1e7fcc548a024256a091661587173216.jpg'
+    1: '/images/external/330px-pasport-rf-bd9b968f5e.jpg',
+    2: '/images/external/foto-ot-pechaterfoto-foto-s-retushyu-db47859419.jpg',
+    3: '/images/external/1e7fcc548a024256a091661587173216-aafd404dec.jpg'
   }
 
   return (

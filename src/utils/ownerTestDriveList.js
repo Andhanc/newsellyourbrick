@@ -6,7 +6,7 @@ import { getPropertyCardImage } from './propertyImage'
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
 
 const FALLBACK_IMAGE =
-  'https://images.unsplash.com/photo-1568605114967-8130f3a36994?auto=format&fit=crop&w=800&q=80'
+  '/images/external/photo-1568605114967-8130f3a36994-bc29e86e2f.jpg'
 
 const STATUS_MAP = {
   pending: { status: 'Ожидает', statusKey: 'pending', tab: 'pending' },

@@ -5,7 +5,7 @@ import { X, ExternalLink, ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getMainScrollLeft, getMainScrollTop } from '@/utils/mainScroll';
 
-const PLACEHOLDER_IMAGE = 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&q=80&w=1200';
+const PLACEHOLDER_IMAGE = '/images/external/photo-1618005182384-a83a8bd57fbe-57eec0643a.jpg';
 
 const ProjectCard = forwardRef(
   (

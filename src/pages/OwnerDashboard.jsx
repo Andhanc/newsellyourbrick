@@ -196,7 +196,7 @@ const mockOwnerProperties = [
     title: 'Lakeshore Blvd West',
     location: 'Costa Adeje, Tenerife',
     price: 797500,
-    image: 'https://images.unsplash.com/photo-1505691938895-1758d7feb511?auto=format&fit=crop&w=800&q=80',
+    image: '/images/external/photo-1505691938895-1758d7feb511-f43679f6a1.jpg',
     beds: 2,
     baths: 2,
     sqft: 2000,
@@ -210,7 +210,7 @@ const mockOwnerProperties = [
     title: 'Eleanor Pena Property',
     location: 'Playa de las Américas, Tenerife',
     price: 1200000,
-    image: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=800&q=80',
+    image: '/images/external/photo-1600596542815-ffad4c1539a9-95d912f909.jpg',
     beds: 3,
     baths: 2,
     sqft: 1800,
@@ -231,7 +231,7 @@ const mockOwnerProperties = [
     title: 'Bessie Cooper Property',
     location: 'Los Cristianos, Tenerife',
     price: 950000,
-    image: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=800&q=80',
+    image: '/images/external/photo-1522708323590-d24dbb6b0267-cf542d6d64.jpg',
     beds: 2,
     baths: 1,
     sqft: 1500,
@@ -245,7 +245,7 @@ const mockOwnerProperties = [
     title: 'Darrell Steward Property',
     location: 'Puerto de la Cruz, Tenerife',
     price: 680000,
-    image: 'https://images.unsplash.com/photo-1568605114967-8130f3a36994?auto=format&fit=crop&w=800&q=80',
+    image: '/images/external/photo-1568605114967-8130f3a36994-bc29e86e2f.jpg',
     beds: 1,
     baths: 1,
     sqft: 1200,
@@ -668,7 +668,7 @@ const OwnerDashboard = () => {
           const formattedProperties = result.data.map(prop => {
             const imageUrl = getPropertyCardImage(
               prop,
-              'https://images.unsplash.com/photo-1568605114967-8130f3a36994?auto=format&fit=crop&w=800&q=80'
+              '/images/external/photo-1568605114967-8130f3a36994-bc29e86e2f.jpg'
             )
 
             let photosArray = prop.photos
@@ -2063,7 +2063,7 @@ const OwnerDashboard = () => {
           <div className="property-calculator-card">
             <div className="property-calculator-card__image">
               <img 
-                src="https://t4.ftcdn.net/jpg/18/28/02/25/360_F_1828022572_oAUGr6FsgeCSUty8xFbtsj2pOwXdthho.jpg" 
+                src="/images/external/360-f-1828022572-oaugr6fsgecsuty8xfbtsj2po-a1fdbf4e6b.jpg" 
                 alt={t('ownerCalcTitle')} 
               />
             </div>
@@ -2189,7 +2189,7 @@ const OwnerDashboard = () => {
                         containerClassName="property-image"
                         onError={(e) => {
                           e.currentTarget.src =
-                            'https://images.unsplash.com/photo-1568605114967-8130f3a36994?auto=format&fit=crop&w=800&q=80'
+                            '/images/external/photo-1568605114967-8130f3a36994-bc29e86e2f.jpg'
                         }}
                       />
                       {getStatusBadge(property.status)}

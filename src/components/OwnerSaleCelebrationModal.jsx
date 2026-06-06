@@ -10,7 +10,7 @@ import { getCurrencySymbol } from '../utils/currency'
 import { useDrawerDismiss } from '../hooks/useDrawerDismiss'
 
 const FALLBACK_IMG =
-  'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=800&q=80'
+  '/images/external/photo-1560448204-e02f11c3d0e2-54a1e4fab4.jpg'
 
 function formatSaleAmount(amount, currency, locale) {
   const n = Number(amount)

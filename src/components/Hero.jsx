@@ -61,7 +61,7 @@ const Hero = ({ staticMobileCards = false }) => {
     {
       titleKey: 'heroFeature1Title',
       textKey: 'heroFeature1Text',
-      img: 'https://static.cdn-cian.ru/frontend/valuation-my-home-page-frontend/icon_1.17dab2f77576179c.png',
+      img: '/images/external/icon-1-17dab2f77576179c-14e3e1ef79.png',
       altKey: 'heroFeature1Alt'
     },
     {
@@ -73,7 +73,7 @@ const Hero = ({ staticMobileCards = false }) => {
     {
       titleKey: 'heroFeature3Title',
       textKey: 'heroFeature3Text',
-      img: 'https://static.cdn-cian.ru/frontend/valuation-my-home-page-frontend/icon_3.be34334d56e4527b.svg',
+      img: '/images/external/icon-3-be34334d56e4527b-7e5b2f6844.svg',
       altKey: 'heroFeature3Alt'
     }
   ]

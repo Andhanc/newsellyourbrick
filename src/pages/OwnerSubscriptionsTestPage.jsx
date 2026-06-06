@@ -60,7 +60,7 @@ const PLANS = [
   {
     id: 'standard',
     name: 'Стандарт',
-    price: 19,
+    price: 99,
     features: [
       'До 10 активных объектов',
       'Расширенная статистика',
@@ -71,7 +71,7 @@ const PLANS = [
   {
     id: 'pro',
     name: 'Pro',
-    price: 49,
+    price: 490,
     features: [
       'Неограниченные объекты',
       'Расширенная аналитика',
@@ -81,9 +81,9 @@ const PLANS = [
     ],
   },
   {
-    id: 'corporate',
-    name: 'Корпоративный',
-    price: 99,
+    id: 'institutional',
+    name: 'Институциональный',
+    price: 1500,
     features: [
       'Все функции Pro',
       'API доступ',
@@ -97,7 +97,8 @@ const PROFILE_SUBSCRIPTION_TO_PLAN_ID = {
   Базовый: 'basic',
   Стандарт: 'standard',
   Pro: 'pro',
-  Корпоративный: 'corporate',
+  Корпоративный: 'institutional',
+  Институциональный: 'institutional',
 }
 
 const CHECKOUT_ERROR_TEXT = {
@@ -111,6 +112,7 @@ const CHECKOUT_ERROR_TEXT = {
 function normalizeReturnedPlanId(planKey) {
   const key = String(planKey || '').toLowerCase()
   if (key === 'premium') return 'pro'
+  if (key === 'corporate') return 'institutional'
   return PLANS.some((plan) => plan.id === key) ? key : ''
 }
 

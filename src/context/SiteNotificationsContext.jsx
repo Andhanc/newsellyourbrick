@@ -31,7 +31,7 @@ import { useDrawerDismiss } from '../hooks/useDrawerDismiss'
 const SiteNotificationsContext = createContext(null)
 
 const LIST_FALLBACK_IMG =
-  'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=400&q=80'
+  '/images/external/photo-1560448204-e02f11c3d0e2-1ff5809f2f.jpg'
 
 function parseNotificationData(data) {
   if (data == null) return null

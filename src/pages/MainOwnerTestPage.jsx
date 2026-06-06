@@ -38,6 +38,7 @@ import {
 import OwnerNotificationsDrawer from '../components/OwnerNotificationsDrawer'
 import OwnerNotificationsButton from '../components/OwnerNotificationsButton'
 import OwnerTestProfileMenu from '../components/OwnerTestProfileMenu'
+import { OwnerBuyerAd } from '../components/OwnerAds'
 import { useOwnerTestEmbeddedNav } from '../hooks/useOwnerTestEmbeddedNav'
 import {
   CLERK_DB_USER_SYNCED,
@@ -1164,22 +1165,25 @@ export default function MainOwnerTestPage() {
           <article className="mot-card mot-status-card mot-desktop-only">
             <h2 className="mot-card__title">Распределение по статусам</h2>
             <div className="mot-status-card__body">
-              <div className="mot-donut-wrap">
-                <Doughnut data={donutData} options={donutOptions} />
-                <div className="mot-donut-center">
-                  <span className="mot-donut-center__label">Всего</span>
-                  <span className="mot-donut-center__value">{propertyStatsRows.length}</span>
+              <div className="mot-status-card__analytics">
+                <div className="mot-donut-wrap">
+                  <Doughnut data={donutData} options={donutOptions} />
+                  <div className="mot-donut-center">
+                    <span className="mot-donut-center__label">Всего</span>
+                    <span className="mot-donut-center__value">{propertyStatsRows.length}</span>
+                  </div>
                 </div>
+                <ul className="mot-status-legend">
+                  {statusLegend.map((s) => (
+                    <li key={s.label}>
+                      <i style={{ background: s.color }} />
+                      <span>{s.label}</span>
+                      <strong>{s.count}</strong>
+                    </li>
+                  ))}
+                </ul>
               </div>
-              <ul className="mot-status-legend">
-                {statusLegend.map((s) => (
-                  <li key={s.label}>
-                    <i style={{ background: s.color }} />
-                    <span>{s.label}</span>
-                    <strong>{s.count}</strong>
-                  </li>
-                ))}
-              </ul>
+              <OwnerBuyerAd className="mot-status-buyer-ad" />
             </div>
           </article>
 

@@ -140,7 +140,7 @@ export function useFavoriteAuctionItems() {
             title: `Объект #${row.property_id}`,
             name: `Объект #${row.property_id}`,
             location: '',
-              image: 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=800&q=80',
+              image: '/images/external/photo-1560448204-e02f11c3d0e2-54a1e4fab4.jpg',
           },
           mockCategory: null,
         })

@@ -133,7 +133,7 @@ const PropertyDetailPage = () => {
               if (processedImages.length === 0) {
                 processedImages = normalizedImage
                   ? [normalizedImage]
-                  : ['https://images.unsplash.com/photo-1568605114967-8130f3a36994?auto=format&fit=crop&w=800&q=80']
+                  : ['/images/external/photo-1568605114967-8130f3a36994-bc29e86e2f.jpg']
               }
               
               // Обрабатываем видео

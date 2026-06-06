@@ -21,9 +21,10 @@ const EMPTY_PROFILE = {
 const STRIPE_OWNER_SUBSCRIPTION_LABELS = {
   standard: 'Стандарт',
   premium: 'Pro',
-  corporate: 'Корпоративный',
+  corporate: 'Институциональный',
+  institutional: 'Институциональный',
   pro: 'Pro',
-  vip: 'Корпоративный',
+  vip: 'Институциональный',
 }
 
 const ACTIVE_SUBSCRIPTION_STATUSES = new Set(['active', 'trialing', 'past_due', 'paused'])

@@ -13,7 +13,7 @@ import { getCurrencySymbol } from '../utils/currency'
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
 
 const SHARE_PURCHASE_IMAGE_PLACEHOLDER =
-  'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=800&q=80'
+  '/images/external/photo-1560448204-e02f11c3d0e2-54a1e4fab4.jpg'
 
 function sharePurchaseImageSrc(raw) {
   if (!raw || typeof raw !== 'string') return SHARE_PURCHASE_IMAGE_PLACEHOLDER
@@ -87,7 +87,7 @@ export default function OwnerPurchasedAssets({ userId }) {
           const property = winner.property || {}
           const firstPhoto = getPropertyCardImage(
             property,
-            'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800'
+            '/images/external/photo-1522708323590-d24dbb6b0267-b4dd9c7026.jpg'
           )
           return {
             id: winner.id,

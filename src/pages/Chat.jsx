@@ -344,7 +344,7 @@ const Chat = () => {
       description: 'Найдёт, подскажет, позвонит',
       avatar: 'expert',
       unread: true,
-      photo: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&h=150&fit=crop&crop=face'
+      photo: '/images/external/photo-1494790108377-be9c29b29330-89f0c4a88f.jpg'
     }
   ]
 

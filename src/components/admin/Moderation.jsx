@@ -17,7 +17,7 @@ const mockUsersForModeration = [
     firstName: 'Петр',
     lastName: 'Петров',
     middleName: 'Иванович',
-    avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=200&q=80',
+    avatar: '/images/external/photo-1506794778202-cad84cf45f1d-7fea972b45.jpg',
     email: 'petr@example.com',
     phone: '+7 (912) 345-67-89',
     passportNumber: '4512 345678',
@@ -27,11 +27,11 @@ const mockUsersForModeration = [
     registrationDate: '2024-02-20',
     moderationStatus: 'pending',
     documents: [
-      { name: 'Паспорт', type: 'pdf', url: 'https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf', photo: 'https://upload.wikimedia.org/wikipedia/commons/c/c6/%D0%AD%D0%BB%D0%B5%D0%BA%D1%82%D1%80%D0%BE%D0%BD%D0%BD%D1%8B%D0%B9_%D0%BF%D0%B0%D1%81%D0%BF%D0%BE%D1%80%D1%82_%D0%A0%D0%A4.jpg' },
-      { name: 'Справка', type: 'pdf', url: 'https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf', photo: 'https://images.unsplash.com/photo-1450101499163-c8848c66ca85?auto=format&fit=crop&w=800&q=80' }
+      { name: 'Паспорт', type: 'pdf', url: 'https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf', photo: '/images/external/d0-ad-d0-bb-d0-b5-d0-ba-d1-82-d1-80-d0-be--8c3f8d7484.jpg' },
+      { name: 'Справка', type: 'pdf', url: 'https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf', photo: '/images/external/photo-1450101499163-c8848c66ca85-72a0e796aa.jpg' }
     ],
     photos: [
-      'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80'
+      '/images/external/photo-1507003211169-0a1dd7228f2d-94d7ce3808.jpg'
     ]
   },
   {
@@ -39,7 +39,7 @@ const mockUsersForModeration = [
     firstName: 'Мария',
     lastName: 'Иванова',
     middleName: 'Сергеевна',
-    avatar: 'https://images.unsplash.com/photo-1525134479668-1bee5c7c6845?auto=format&fit=crop&w=200&q=80',
+    avatar: '/images/external/photo-1525134479668-1bee5c7c6845-966b578ed7.jpg',
     email: 'maria@example.com',
     phone: '+7 (923) 456-78-90',
     passportNumber: '4513 456789',
@@ -49,10 +49,10 @@ const mockUsersForModeration = [
     registrationDate: '2024-05-12',
     moderationStatus: 'pending',
     documents: [
-      { name: 'Паспорт', type: 'pdf', url: 'https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf', photo: 'https://upload.wikimedia.org/wikipedia/commons/c/c6/%D0%AD%D0%BB%D0%B5%D0%BA%D1%82%D1%80%D0%BE%D0%BD%D0%BD%D1%8B%D0%B9_%D0%BF%D0%B0%D1%81%D0%BF%D0%BE%D1%80%D1%82_%D0%A0%D0%A4.jpg' }
+      { name: 'Паспорт', type: 'pdf', url: 'https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf', photo: '/images/external/d0-ad-d0-bb-d0-b5-d0-ba-d1-82-d1-80-d0-be--8c3f8d7484.jpg' }
     ],
     photos: [
-      'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=400&q=80'
+      '/images/external/photo-1494790108377-be9c29b29330-e7e855964a.jpg'
     ]
   },
   {
@@ -60,7 +60,7 @@ const mockUsersForModeration = [
     firstName: 'Сергей',
     lastName: 'Волков',
     middleName: 'Александрович',
-    avatar: 'https://images.unsplash.com/photo-1544723795-3fb0b90c07c1?auto=format&fit=crop&w=200&q=80',
+    avatar: '/images/external/photo-1472099645785-5658abf4ff4e-066a8445b1.jpg',
     email: 'sergey@example.com',
     phone: '+7 (934) 567-89-01',
     passportNumber: '4514 567890',
@@ -70,12 +70,12 @@ const mockUsersForModeration = [
     registrationDate: '2024-08-30',
     moderationStatus: 'pending',
     documents: [
-      { name: 'Паспорт', type: 'pdf', url: 'https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf', photo: 'https://upload.wikimedia.org/wikipedia/commons/c/c6/%D0%AD%D0%BB%D0%B5%D0%BA%D1%82%D1%80%D0%BE%D0%BD%D0%BD%D1%8B%D0%B9_%D0%BF%D0%B0%D1%81%D0%BF%D0%BE%D1%80%D1%82_%D0%A0%D0%A4.jpg' },
-      { name: 'Справка', type: 'pdf', url: 'https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf', photo: 'https://images.unsplash.com/photo-1450101499163-c8848c66ca85?auto=format&fit=crop&w=800&q=80' },
-      { name: 'Лицензия', type: 'pdf', url: 'https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf', photo: 'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&w=800&q=80' }
+      { name: 'Паспорт', type: 'pdf', url: 'https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf', photo: '/images/external/d0-ad-d0-bb-d0-b5-d0-ba-d1-82-d1-80-d0-be--8c3f8d7484.jpg' },
+      { name: 'Справка', type: 'pdf', url: 'https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf', photo: '/images/external/photo-1450101499163-c8848c66ca85-72a0e796aa.jpg' },
+      { name: 'Лицензия', type: 'pdf', url: 'https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf', photo: '/images/external/photo-1454165804606-c3d57bc86b40-3152e46306.jpg' }
     ],
     photos: [
-      'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=400&q=80'
+      '/images/external/photo-1472099645785-5658abf4ff4e-066a8445b1.jpg'
     ]
   }
 ];
@@ -95,11 +95,11 @@ const mockPropertiesForModeration = [
     images: 5,
     description: 'Прекрасная квартира с видом на океан',
     imageUrls: [
-      'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1505691938895-1758d7feb511?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1484154218962-a197022b5858?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?auto=format&fit=crop&w=1200&q=80'
+      '/images/external/photo-1560448204-e02f11c3d0e2-ef4b1c9172.jpg',
+      '/images/external/photo-1505691938895-1758d7feb511-295137cd90.jpg',
+      '/images/external/photo-1484154218962-a197022b5858-fad0412faf.jpg',
+      '/images/external/photo-1564013799919-ab600027ffc6-6867e26b04.jpg',
+      '/images/external/photo-1522771739844-6a9f6d5f14af-c11365faed.jpg'
     ],
     documents: [
       { name: 'Свидетельство о праве собственности', type: 'pdf', url: 'https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf' },
@@ -121,14 +121,14 @@ const mockPropertiesForModeration = [
     images: 8,
     description: 'Роскошная вилла с бассейном',
     imageUrls: [
-      'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1505691938895-1758d7feb511?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1484154218962-a197022b5858?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=1200&q=80'
+      '/images/external/photo-1600596542815-ffad4c1539a9-ee898bce64.jpg',
+      '/images/external/photo-1505691938895-1758d7feb511-295137cd90.jpg',
+      '/images/external/photo-1560448204-e02f11c3d0e2-ef4b1c9172.jpg',
+      '/images/external/photo-1484154218962-a197022b5858-fad0412faf.jpg',
+      '/images/external/photo-1564013799919-ab600027ffc6-6867e26b04.jpg',
+      '/images/external/photo-1522771739844-6a9f6d5f14af-c11365faed.jpg',
+      '/images/external/photo-1600585154340-be6161a56a0c-e705a536f2.jpg',
+      '/images/external/photo-1600607687939-ce8a6c25118c-7aaf4b83d3.jpg'
     ],
     documents: [
       { name: 'Свидетельство о праве собственности', type: 'pdf', url: 'https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf' },
@@ -151,12 +151,12 @@ const mockPropertiesForModeration = [
     images: 6,
     description: 'Уютный дом для семьи',
     imageUrls: [
-      'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1600607687644-c7171b42498b?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?auto=format&fit=crop&w=1200&q=80',
-      'https://images.unsplash.com/photo-1600585154526-990dbe4eb5f3?auto=format&fit=crop&w=1200&q=80'
+      '/images/external/photo-1522708323590-d24dbb6b0267-55446ced7e.jpg',
+      '/images/external/photo-1600585154340-be6161a56a0c-e705a536f2.jpg',
+      '/images/external/photo-1600607687939-ce8a6c25118c-7aaf4b83d3.jpg',
+      '/images/external/photo-1600607687939-ce8a6c25118c-7aaf4b83d3.jpg',
+      '/images/external/photo-1600566753190-17f0baa2a6c3-6def29adbc.jpg',
+      '/images/external/photo-1600585154526-990dced4db0d-06b654a393.jpg'
     ],
     documents: [
       { name: 'Свидетельство о праве собственности', type: 'pdf', url: 'https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf' },

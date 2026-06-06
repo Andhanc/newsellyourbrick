@@ -332,7 +332,7 @@ const Statistics = ({ businessInfo, onShowUsers }) => {
           object_title: auction.title || auction.name || 'Без названия',
           description: auction.description || '',
           object_location: auction.location || 'Не указано',
-          image_url: auction.image || (auction.images && auction.images[0]) || 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=800&q=80',
+          image_url: auction.image || (auction.images && auction.images[0]) || '/images/external/photo-1560448204-e02f11c3d0e2-54a1e4fab4.jpg',
           starting_price: auction.auction_starting_price || auction.price || 0,
           auction_starting_price: auction.auction_starting_price || auction.price || 0,
           // Пока используем стартовую цену, актуальную ставку подставим ниже после загрузки истории торгов

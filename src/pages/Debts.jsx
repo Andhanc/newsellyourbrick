@@ -196,7 +196,7 @@ const Debts = () => {
         const mapped = json.data.filter(isDebtRecord).map((p) => {
           const image = getPropertyCardImage(
             p,
-            'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=800&q=80'
+            '/images/external/photo-1560448204-e02f11c3d0e2-54a1e4fab4.jpg'
           )
           const location = p.location || [p.city, p.country].filter(Boolean).join(', ') || ''
           const priceNumber = p.price != null && p.price !== '' ? Number(p.price) : 0
@@ -537,7 +537,7 @@ const Debts = () => {
                       const propertyImages = property.images || (property.image ? [property.image] : [])
                       const propertyImage =
                         propertyImages[0] ||
-                        'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=800&q=80'
+                        '/images/external/photo-1560448204-e02f11c3d0e2-54a1e4fab4.jpg'
                       const propertyImageProps = buildResponsiveImageProps(propertyImage, {
                         widths: [320, 480, 640, 800],
                         sizes: '(max-width: 500px) 50vw, (max-width: 768px) 50vw, (max-width: 1200px) 50vw, 33vw',

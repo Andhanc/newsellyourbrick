@@ -537,15 +537,15 @@ function buildDirectionSummaries(t) {
       moreCount: 8,
       thumbnails: [
         {
-          src: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=160&h=160&fit=crop&q=80',
+          src: '/images/external/photo-1600596542815-ffad4c1539a9-1305f3ad61.jpg',
           alt: t('buyerCabinet_thumbModernHouse'),
         },
         {
-          src: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=160&h=160&fit=crop&q=80',
+          src: '/images/external/photo-1600585154340-be6161a56a0c-d7a57ab629.jpg',
           alt: t('buyerCabinet_thumbVillaPool'),
         },
         {
-          src: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=160&h=160&fit=crop&q=80',
+          src: '/images/external/photo-1512917774080-9991f1c4c750-6c14f5737b.jpg',
           alt: t('buyerCabinet_thumbFlatRoofHouse'),
         },
       ],
@@ -560,15 +560,15 @@ function buildDirectionSummaries(t) {
       moreCount: 6,
       thumbnails: [
         {
-          src: 'https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?w=160&h=160&fit=crop&q=80',
+          src: '/images/external/photo-1568605117036-5fe5e7bab0b7-32f92559a5.jpg',
           alt: t('buyerCabinet_thumbCountryCottage'),
         },
         {
-          src: 'https://images.unsplash.com/photo-1600047509807-ba8f99d2cdde?w=160&h=160&fit=crop&q=80',
+          src: '/images/external/photo-1600047509807-ba8f99d2cdde-6a550a8c9a.jpg',
           alt: t('buyerCabinet_thumbFacade'),
         },
         {
-          src: 'https://images.unsplash.com/photo-1570129477492-45c003edd2be?w=160&h=160&fit=crop&q=80',
+          src: '/images/external/photo-1570129477492-45c003edd2be-a6e8fdead4.jpg',
           alt: t('buyerCabinet_thumbLawnHouse'),
         },
       ],
@@ -583,15 +583,15 @@ function buildDirectionSummaries(t) {
       moreCount: 5,
       thumbnails: [
         {
-          src: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=160&h=160&fit=crop&q=80',
+          src: '/images/external/photo-1600607687939-ce8a6c25118c-3f6b6fdeda.jpg',
           alt: t('buyerCabinet_thumbLivingRoom'),
         },
         {
-          src: 'https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=160&h=160&fit=crop&q=80',
+          src: '/images/external/photo-1600566753190-17f0baa2a6c3-fadfb56f04.jpg',
           alt: t('buyerCabinet_thumbMultiStoreyHouse'),
         },
         {
-          src: 'https://images.unsplash.com/photo-1605276374104-dee2a0ed3cd6?w=160&h=160&fit=crop&q=80',
+          src: '/images/external/photo-1605276374104-dee2a0ed3cd6-4659477264.jpg',
           alt: t('buyerCabinet_thumbResidentialArchitecture'),
         },
       ],

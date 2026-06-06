@@ -1076,20 +1076,26 @@ function isoFromUnix(sec) {
   return new Date(sec * 1000).toISOString();
 }
 
-/** Pro / VIP из metadata подписки или сопоставления Price ID с .env */
+/** Owner subscriptions from metadata, plus legacy Pro / VIP price IDs from .env. */
 const OWNER_SUBSCRIPTION_PLANS = {
-  standard: { name: 'Стандарт', monthlyUsd: 19 },
-  corporate: { name: 'Корпоративный', monthlyUsd: 99 },
+  standard: { name: 'Стандарт', monthlyUsd: 99 },
+  pro: { name: 'Pro', monthlyUsd: 490 },
+  institutional: { name: 'Институциональный', monthlyUsd: 1500 },
 };
 
 const OWNER_SUBSCRIPTION_PLAN_KEYS = new Set(Object.keys(OWNER_SUBSCRIPTION_PLANS));
 
+function normalizeOwnerSubscriptionPlanKey(planKey) {
+  const key = String(planKey || '').toLowerCase();
+  return key === 'corporate' ? 'institutional' : key;
+}
+
 function isOwnerSubscriptionPlanKey(planKey) {
-  return OWNER_SUBSCRIPTION_PLAN_KEYS.has(String(planKey || '').toLowerCase());
+  return OWNER_SUBSCRIPTION_PLAN_KEYS.has(normalizeOwnerSubscriptionPlanKey(planKey));
 }
 
 function planKeyFromStripeSubscription(subscription) {
-  const m = String(subscription?.metadata?.plan_key || '').toLowerCase();
+  const m = normalizeOwnerSubscriptionPlanKey(subscription?.metadata?.plan_key);
   if (m === 'vip' || m === 'pro' || isOwnerSubscriptionPlanKey(m)) return m;
   const priceIdPro = (process.env.STRIPE_PRICE_ID_PRO || '').trim();
   const priceIdProYear = (process.env.STRIPE_PRICE_ID_PRO_YEAR || '').trim();
@@ -1283,9 +1289,11 @@ export async function syncCheckoutSessionToDatabase(stripe, sessionId, options =
   const sub = await stripe.subscriptions.retrieve(subscriptionId, { expand: ['items.data.price'] });
   const customerId = typeof session.customer === 'string' ? session.customer : session.customer?.id;
 
-  const sessionPlan = String(session.metadata?.plan_key || '').toLowerCase();
+  const sessionPlan = normalizeOwnerSubscriptionPlanKey(session.metadata?.plan_key);
   const planKey =
-    sessionPlan === 'vip' || sessionPlan === 'pro' ? sessionPlan : planKeyFromStripeSubscription(sub);
+    sessionPlan === 'vip' || sessionPlan === 'pro' || isOwnerSubscriptionPlanKey(sessionPlan)
+      ? sessionPlan
+      : planKeyFromStripeSubscription(sub);
 
   let invoiceId = null;
   if (session.invoice) {
@@ -1563,7 +1571,7 @@ function userHasActiveOwnerSubscriptionPlan(state, planKey) {
   if (!state) return false;
   const st = String(state.status || '').toLowerCase();
   if (!['active', 'trialing', 'past_due', 'paused'].includes(st)) return false;
-  return String(state.plan_key || '').toLowerCase() === String(planKey || '').toLowerCase();
+  return normalizeOwnerSubscriptionPlanKey(state.plan_key) === normalizeOwnerSubscriptionPlanKey(planKey);
 }
 
 export function registerStripeBillingRoutes(app) {
@@ -1583,7 +1591,7 @@ export function registerStripeBillingRoutes(app) {
           error: 'Платежи не настроены: задайте STRIPE_SECRET_KEY в .env',
         });
       }
-      const plan = String(req.body?.plan || '').toLowerCase();
+      const plan = normalizeOwnerSubscriptionPlanKey(req.body?.plan);
       const billingCycle = String(req.body?.billingCycle || 'monthly').toLowerCase() === 'yearly' ? 'yearly' : 'monthly';
       const userId = req.body?.userId != null ? String(req.body.userId).slice(0, 128) : '';
       const customerEmail =
@@ -1711,7 +1719,7 @@ export function registerStripeBillingRoutes(app) {
       if (plan !== 'pro' && plan !== 'vip') {
         return res.status(400).json({
           success: false,
-          error: 'Неизвестный план. Доступны: pro, vip, deposit, standard, corporate',
+          error: 'Неизвестный план. Доступны: standard, pro, institutional, vip, deposit',
         });
       }
 

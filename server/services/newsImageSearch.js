@@ -1,10 +1,10 @@
 const FALLBACK_PHOTOS = [
-  'https://images.unsplash.com/photo-1520106212296-df2701f1c794?w=1400&h=700&fit=crop&q=80',
-  'https://images.unsplash.com/photo-1565008576549-57569a49371d?w=1400&h=700&fit=crop&q=80',
-  'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1400&h=700&fit=crop&q=80',
-  'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=1400&h=700&fit=crop&q=80',
-  'https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=1400&h=700&fit=crop&q=80',
-  'https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?w=1400&h=700&fit=crop&q=80',
+  '/images/external/photo-1469854523086-cc02fe5d8800-5a351c34bc.jpg',
+  '/images/external/photo-1565008576549-57569a49371d-6ab9ddf58d.jpg',
+  '/images/external/photo-1507525428034-b723cf961d3e-e10e4b3948.jpg',
+  '/images/external/photo-1469854523086-cc02fe5d8800-5a351c34bc.jpg',
+  '/images/external/photo-1449824913935-59a10b8d2000-166ec9ebc2.jpg',
+  '/images/external/photo-1510812431401-41d2bd2722f3-edf0985a27.jpg',
 ]
 
 function hashQuery(q) {

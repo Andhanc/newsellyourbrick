@@ -32,26 +32,26 @@ const MOBILE_BREAKPOINT = 768
 
 // Фотографии разных объектов недвижимости для бегущей строки
 const HERO_MARQUEE_IMAGES = [
-  'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=900&auto=format&fit=crop&q=70', // villa with pool
-  'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=900&auto=format&fit=crop&q=70', // penthouse
-  'https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=900&auto=format&fit=crop&q=70', // mountain lodge
-  'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=900&auto=format&fit=crop&q=70', // seaside apartment
-  'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=900&auto=format&fit=crop&q=70', // downtown loft
-  'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=900&auto=format&fit=crop&q=70', // family home
+  '/images/external/photo-1600596542815-ffad4c1539a9-8e64e4db52.jpg', // villa with pool
+  '/images/external/photo-1600585154340-be6161a56a0c-c8de737e17.jpg', // penthouse
+  '/images/external/photo-1600566753190-17f0baa2a6c3-ae67f1c22f.jpg', // mountain lodge
+  '/images/external/photo-1502672260266-1c1ef2d93688-acaae47eb8.jpg', // seaside apartment
+  '/images/external/photo-1560448204-e02f11c3d0e2-d2972f440a.jpg', // downtown loft
+  '/images/external/photo-1580587771525-78b9dba3b914-91f09fab03.jpg', // family home
 ]
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api'
 
 // Демо-объекты долей (показываются вместе с объектами из API)
 const SHARE_CARD_FALLBACK =
-  'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=800&q=80'
+  '/images/external/photo-1560448204-e02f11c3d0e2-54a1e4fab4.jpg'
 
 const DEMO_SHARE_OBJECTS = [
   {
     id: 'share-demo-1',
     title: 'Квартира в центре, 2-комн.',
     location: 'Минск, ул. Примерная, 10',
-    image: 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=800&q=80',
+    image: '/images/external/photo-1560448204-e02f11c3d0e2-54a1e4fab4.jpg',
     totalPrice: 120000,
     pricePerShare: 6000,
     totalShares: 20,
@@ -64,7 +64,7 @@ const DEMO_SHARE_OBJECTS = [
     id: 'share-demo-2',
     title: 'Апартаменты с видом на море',
     location: 'Барселона, Eixample',
-    image: 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=800&q=80',
+    image: '/images/external/photo-1502672260266-1c1ef2d93688-97c7b765e8.jpg',
     totalPrice: 250000,
     pricePerShare: 12500,
     totalShares: 20,
@@ -77,7 +77,7 @@ const DEMO_SHARE_OBJECTS = [
     id: 'share-demo-3',
     title: 'Студия в историческом центре',
     location: 'Вена, 1-й район',
-    image: 'https://images.unsplash.com/photo-1502672023488-70e25813eb80?auto=format&fit=crop&w=800&q=80',
+    image: '/images/external/photo-1502672023488-70e25813eb80-62911a5aab.jpg',
     totalPrice: 180000,
     pricePerShare: 9000,
     totalShares: 20,

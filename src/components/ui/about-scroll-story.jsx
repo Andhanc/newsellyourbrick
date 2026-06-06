@@ -191,7 +191,7 @@ export default function AboutScrollStory() {
                 <div className="syb-parallax-svg syb-parallax-float syb-hero-reveal__parallax-building">
                   <img
                     className="syb-hero-reveal__parallax-building-img"
-                    src="https://cdn-icons-png.flaticon.com/512/7481/7481373.png"
+                    src="/images/external/7481373-0fcb3cf8eb.png"
                     alt=""
                     width={280}
                     height={280}
@@ -214,7 +214,7 @@ export default function AboutScrollStory() {
 
                 <div className="syb-parallax-svg syb-parallax-float syb-hero-reveal__parallax-card">
                   <img
-                    src="https://upload.wikimedia.org/wikipedia/commons/8/87/PDF_file_icon.svg"
+                    src="/images/external/pdf-file-icon-70a6aa0f65.svg"
                     alt=""
                     width={200}
                     height={260}

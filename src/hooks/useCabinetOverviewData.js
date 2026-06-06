@@ -77,7 +77,7 @@ function rowInitials(title) {
 }
 
 const HISTORY_THUMB_PLACEHOLDER =
-  'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=400&q=72'
+  '/images/external/photo-1560448204-e02f11c3d0e2-d2beb47285.jpg'
 
 function sharePurchaseImageSrc(raw) {
   if (!raw || typeof raw !== 'string') return HISTORY_THUMB_PLACEHOLDER

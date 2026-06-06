@@ -6,9 +6,9 @@ export const properties = [
     price: 35000,
     currentBid: 32000,
     images: [
-      "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800",
-      "https://images.unsplash.com/photo-1484154218962-a197022b5858?w=800",
-      "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800"
+      "/images/external/photo-1522708323590-d24dbb6b0267-b4dd9c7026.jpg",
+      "/images/external/photo-1484154218962-a197022b5858-c1598513e5.jpg",
+      "/images/external/photo-1560448204-e02f11c3d0e2-d14b9ca751.jpg"
     ],
     area: 58,
     rooms: 2,
@@ -26,9 +26,9 @@ export const properties = [
     price: 25000,
     currentBid: 23000,
     images: [
-      "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800",
-      "https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?w=800",
-      "https://images.unsplash.com/photo-1484101403633-562f891dc89a?w=800"
+      "/images/external/photo-1502672260266-1c1ef2d93688-a4a56b6673.jpg",
+      "/images/external/photo-1522771739844-6a9f6d5f14af-6b0b3bd36d.jpg",
+      "/images/external/photo-1484101403633-562f891dc89a-12d9cf9785.jpg"
     ],
     area: 37,
     rooms: 1,
@@ -46,9 +46,9 @@ export const properties = [
     price: 36000,
     currentBid: 34000,
     images: [
-      "https://images.unsplash.com/photo-1556912172-45b7abe8b7e1?w=800",
-      "https://images.unsplash.com/photo-1556912173-67134a4c0d8a?w=800",
-      "https://images.unsplash.com/photo-1556912172-45b7abe8b7e1?w=800"
+      "/images/external/photo-1556912172-45b7abe8b7e1-b9e7d0f8dc.jpg",
+      "/images/external/photo-1556912172-45b7abe8b7e1-b9e7d0f8dc.jpg",
+      "/images/external/photo-1556912172-45b7abe8b7e1-b9e7d0f8dc.jpg"
     ],
     area: 37,
     rooms: 1,
@@ -66,9 +66,9 @@ export const properties = [
     price: 9500000,
     currentBid: 9200000,
     images: [
-      "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=800",
-      "https://images.unsplash.com/photo-1600607687644-c7171b42498b?w=800",
-      "https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=800"
+      "/images/external/photo-1600607687939-ce8a6c25118c-b4493b474b.jpg",
+      "/images/external/photo-1600607687939-ce8a6c25118c-b4493b474b.jpg",
+      "/images/external/photo-1600566753190-17f0baa2a6c3-1953ced3f5.jpg"
     ],
     area: 85,
     rooms: 3,
@@ -86,9 +86,9 @@ export const properties = [
     price: 7200000,
     currentBid: 7000000,
     images: [
-      "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800",
-      "https://images.unsplash.com/photo-1600585154526-990dced4db0d?w=800",
-      "https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?w=800"
+      "/images/external/photo-1600585154340-be6161a56a0c-fdb01a4056.jpg",
+      "/images/external/photo-1600585154526-990dced4db0d-06b654a393.jpg",
+      "/images/external/photo-1600566753086-00f18fb6b3ea-16c5798373.jpg"
     ],
     area: 65,
     rooms: 2,
@@ -106,8 +106,8 @@ export const properties = [
     price: 2800000,
     currentBid: 2600000,
     images: [
-      "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800",
-      "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800"
+      "/images/external/photo-1522708323590-d24dbb6b0267-b4dd9c7026.jpg",
+      "/images/external/photo-1502672260266-1c1ef2d93688-a4a56b6673.jpg"
     ],
     area: 28,
     rooms: 0,
@@ -125,9 +125,9 @@ export const properties = [
     price: 18500000,
     currentBid: 17500000,
     images: [
-      "https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?w=800",
-      "https://images.unsplash.com/photo-1600607687644-c7171b42498b?w=800",
-      "https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?w=800"
+      "/images/external/photo-1600607687920-4e2a09cf159d-841fb3874c.jpg",
+      "/images/external/photo-1600607687939-ce8a6c25118c-b4493b474b.jpg",
+      "/images/external/photo-1600566753086-00f18fb6b3ea-16c5798373.jpg"
     ],
     area: 120,
     rooms: 4,
@@ -145,9 +145,9 @@ export const properties = [
     price: 8500000,
     currentBid: 8200000,
     images: [
-      "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800",
-      "https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?w=800",
-      "https://images.unsplash.com/photo-1484101403633-562f891dc89a?w=800"
+      "/images/external/photo-1502672260266-1c1ef2d93688-a4a56b6673.jpg",
+      "/images/external/photo-1522771739844-6a9f6d5f14af-6b0b3bd36d.jpg",
+      "/images/external/photo-1484101403633-562f891dc89a-12d9cf9785.jpg"
     ],
     area: 42,
     rooms: 1,
@@ -165,9 +165,9 @@ export const properties = [
     price: 24500000,
     currentBid: 23500000,
     images: [
-      "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800",
-      "https://images.unsplash.com/photo-1600585154526-990dced4db0d?w=800",
-      "https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?w=800"
+      "/images/external/photo-1600585154340-be6161a56a0c-fdb01a4056.jpg",
+      "/images/external/photo-1600585154526-990dced4db0d-06b654a393.jpg",
+      "/images/external/photo-1600566753086-00f18fb6b3ea-16c5798373.jpg"
     ],
     area: 180,
     rooms: 5,
@@ -185,9 +185,9 @@ export const properties = [
     price: 12500000,
     currentBid: 11800000,
     images: [
-      "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800",
-      "https://images.unsplash.com/photo-1484154218962-a197022b5858?w=800",
-      "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800"
+      "/images/external/photo-1522708323590-d24dbb6b0267-b4dd9c7026.jpg",
+      "/images/external/photo-1484154218962-a197022b5858-c1598513e5.jpg",
+      "/images/external/photo-1560448204-e02f11c3d0e2-d14b9ca751.jpg"
     ],
     area: 55,
     rooms: 2,
@@ -205,9 +205,9 @@ export const properties = [
     price: 45000000,
     currentBid: 42000000,
     images: [
-      "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800",
-      "https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?w=800",
-      "https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=800"
+      "/images/external/photo-1600585154340-be6161a56a0c-fdb01a4056.jpg",
+      "/images/external/photo-1600607687920-4e2a09cf159d-841fb3874c.jpg",
+      "/images/external/photo-1600566753190-17f0baa2a6c3-1953ced3f5.jpg"
     ],
     area: 250,
     rooms: 6,
@@ -225,9 +225,9 @@ export const properties = [
     price: 6800000,
     currentBid: 6500000,
     images: [
-      "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=800",
-      "https://images.unsplash.com/photo-1600607687644-c7171b42498b?w=800",
-      "https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=800"
+      "/images/external/photo-1600607687939-ce8a6c25118c-b4493b474b.jpg",
+      "/images/external/photo-1600607687939-ce8a6c25118c-b4493b474b.jpg",
+      "/images/external/photo-1600566753190-17f0baa2a6c3-1953ced3f5.jpg"
     ],
     area: 95,
     rooms: 3,
@@ -245,9 +245,9 @@ export const properties = [
     price: 19500000,
     currentBid: 18500000,
     images: [
-      "https://images.unsplash.com/photo-1570129477492-45c003edd2be?w=800",
-      "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800",
-      "https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=800"
+      "/images/external/photo-1570129477492-45c003edd2be-b1cf669c50.jpg",
+      "/images/external/photo-1600585154340-be6161a56a0c-fdb01a4056.jpg",
+      "/images/external/photo-1600566753190-17f0baa2a6c3-1953ced3f5.jpg"
     ],
     area: 160,
     rooms: 4,
@@ -265,9 +265,9 @@ export const properties = [
     price: 28000000,
     currentBid: 26500000,
     images: [
-      "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=800",
-      "https://images.unsplash.com/photo-1600607687644-c7171b42498b?w=800",
-      "https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=800"
+      "/images/external/photo-1600607687939-ce8a6c25118c-b4493b474b.jpg",
+      "/images/external/photo-1600607687939-ce8a6c25118c-b4493b474b.jpg",
+      "/images/external/photo-1600566753190-17f0baa2a6c3-1953ced3f5.jpg"
     ],
     area: 200,
     rooms: 5,
@@ -285,9 +285,9 @@ export const properties = [
     price: 18500000,
     currentBid: 17500000,
     images: [
-      "https://images.unsplash.com/photo-1600585154526-990dced4db0d?w=800",
-      "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800",
-      "https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?w=800"
+      "/images/external/photo-1600585154526-990dced4db0d-06b654a393.jpg",
+      "/images/external/photo-1600585154340-be6161a56a0c-fdb01a4056.jpg",
+      "/images/external/photo-1600566753086-00f18fb6b3ea-16c5798373.jpg"
     ],
     area: 170,
     rooms: 4,
@@ -305,9 +305,9 @@ export const properties = [
     price: 52000000,
     currentBid: 49000000,
     images: [
-      "https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?w=800",
-      "https://images.unsplash.com/photo-1600607687644-c7171b42498b?w=800",
-      "https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=800"
+      "/images/external/photo-1600607687920-4e2a09cf159d-841fb3874c.jpg",
+      "/images/external/photo-1600607687939-ce8a6c25118c-b4493b474b.jpg",
+      "/images/external/photo-1600566753190-17f0baa2a6c3-1953ced3f5.jpg"
     ],
     area: 280,
     rooms: 6,
@@ -325,9 +325,9 @@ export const properties = [
     price: 38000000,
     currentBid: 36000000,
     images: [
-      "https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=800",
-      "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800",
-      "https://images.unsplash.com/photo-1600585154526-990dced4db0d?w=800"
+      "/images/external/photo-1600566753190-17f0baa2a6c3-1953ced3f5.jpg",
+      "/images/external/photo-1600585154340-be6161a56a0c-fdb01a4056.jpg",
+      "/images/external/photo-1600585154526-990dced4db0d-06b654a393.jpg"
     ],
     area: 220,
     rooms: 5,
@@ -345,9 +345,9 @@ export const properties = [
     price: 48000000,
     currentBid: 45000000,
     images: [
-      "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800",
-      "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=800",
-      "https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?w=800"
+      "/images/external/photo-1600585154340-be6161a56a0c-fdb01a4056.jpg",
+      "/images/external/photo-1600607687939-ce8a6c25118c-b4493b474b.jpg",
+      "/images/external/photo-1600566753086-00f18fb6b3ea-16c5798373.jpg"
     ],
     area: 300,
     rooms: 7,
@@ -365,9 +365,9 @@ export const properties = [
     price: 18500000,
     currentBid: 17500000,
     images: [
-      "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800",
-      "https://images.unsplash.com/photo-1484154218962-a197022b5858?w=800",
-      "https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=800"
+      "/images/external/photo-1560448204-e02f11c3d0e2-d14b9ca751.jpg",
+      "/images/external/photo-1484154218962-a197022b5858-c1598513e5.jpg",
+      "/images/external/photo-1564013799919-ab600027ffc6-0b929d901d.jpg"
     ],
     area: 95,
     rooms: 2,
@@ -385,9 +385,9 @@ export const properties = [
     price: 12500000,
     currentBid: 11800000,
     images: [
-      "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800",
-      "https://images.unsplash.com/photo-1484154218962-a197022b5858?w=800",
-      "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800"
+      "/images/external/photo-1522708323590-d24dbb6b0267-b4dd9c7026.jpg",
+      "/images/external/photo-1484154218962-a197022b5858-c1598513e5.jpg",
+      "/images/external/photo-1560448204-e02f11c3d0e2-d14b9ca751.jpg"
     ],
     area: 75,
     rooms: 2,
@@ -405,9 +405,9 @@ export const properties = [
     price: 22000000,
     currentBid: 21000000,
     images: [
-      "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=800",
-      "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=800",
-      "https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=800"
+      "/images/external/photo-1600585154340-be6161a56a0c-fdb01a4056.jpg",
+      "/images/external/photo-1600607687939-ce8a6c25118c-b4493b474b.jpg",
+      "/images/external/photo-1600566753190-17f0baa2a6c3-1953ced3f5.jpg"
     ],
     area: 110,
     rooms: 3,
@@ -425,9 +425,9 @@ export const properties = [
     price: 8500000,
     currentBid: 8000000,
     images: [
-      "https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800",
-      "https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?w=800",
-      "https://images.unsplash.com/photo-1484101403633-562f891dc89a?w=800"
+      "/images/external/photo-1502672260266-1c1ef2d93688-a4a56b6673.jpg",
+      "/images/external/photo-1522771739844-6a9f6d5f14af-6b0b3bd36d.jpg",
+      "/images/external/photo-1484101403633-562f891dc89a-12d9cf9785.jpg"
     ],
     area: 45,
     rooms: 0,

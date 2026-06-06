@@ -26,14 +26,14 @@ const TRANSLATION_LANGUAGES = [
 
 // Моковые изображения для недвижимости
 const mockPropertyImages = [
-  'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=1200&q=80',
-  'https://images.unsplash.com/photo-1505691938895-1758d7feb511?auto=format&fit=crop&w=1200&q=80',
-  'https://images.unsplash.com/photo-1484154218962-a197022b5858?auto=format&fit=crop&w=1200&q=80',
-  'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&w=1200&q=80',
-  'https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?auto=format&fit=crop&w=1200&q=80',
-  'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80',
-  'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=1200&q=80',
-  'https://images.unsplash.com/photo-1600607687644-c7171b42498b?auto=format&fit=crop&w=1200&q=80'
+  '/images/external/photo-1560448204-e02f11c3d0e2-ef4b1c9172.jpg',
+  '/images/external/photo-1505691938895-1758d7feb511-295137cd90.jpg',
+  '/images/external/photo-1484154218962-a197022b5858-fad0412faf.jpg',
+  '/images/external/photo-1564013799919-ab600027ffc6-6867e26b04.jpg',
+  '/images/external/photo-1522771739844-6a9f6d5f14af-c11365faed.jpg',
+  '/images/external/photo-1600585154340-be6161a56a0c-e705a536f2.jpg',
+  '/images/external/photo-1600607687939-ce8a6c25118c-7aaf4b83d3.jpg',
+  '/images/external/photo-1600607687939-ce8a6c25118c-7aaf4b83d3.jpg'
 ];
 
 const ModerationPropertyDetail = ({ property, onBack, onApprove, onReject }) => {
@@ -1201,7 +1201,7 @@ const ModerationPropertyDetail = ({ property, onBack, onApprove, onReject }) => 
                   onClick={() => {
                     setSelectedDocument({ 
                       type: documentType, 
-                      url: documentUrl || 'https://images.unsplash.com/photo-1505691938895-1758d7feb511?auto=format&fit=crop&w=1200&q=80', 
+                      url: documentUrl || '/images/external/photo-1505691938895-1758d7feb511-295137cd90.jpg', 
                       name: documentName 
                     });
                   }}
@@ -1246,7 +1246,7 @@ const ModerationPropertyDetail = ({ property, onBack, onApprove, onReject }) => 
                     onClick={() => {
                       setSelectedDocument({ 
                         type: documentType, 
-                        url: documentUrl || 'https://images.unsplash.com/photo-1505691938895-1758d7feb511?auto=format&fit=crop&w=1200&q=80', 
+                        url: documentUrl || '/images/external/photo-1505691938895-1758d7feb511-295137cd90.jpg', 
                         name: documentName 
                       });
                     }}

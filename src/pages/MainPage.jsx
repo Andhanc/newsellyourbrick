@@ -6,7 +6,7 @@ import { useUser } from '@clerk/clerk-react'
 import './MainPage.css'
 /** Фон hero-секции (внешнее изображение виллы) */
 const HERO_BACKGROUND_URL =
-  'https://www.magazindomov.ru/wp-content/uploads/2020/07/Villa-Palazzetta-1.jpg'
+  '/images/external/villa-palazzetta-1-577bba2c20.jpg'
 import {
   FiSearch,
   FiSliders,
@@ -100,7 +100,7 @@ const MainPageBelowFoldLazy = lazyWithRetry(() => import('./MainPageBelowFold'))
 let API_BASE_URL = getApiBaseUrlSync()
 
 const LISTING_IMAGE_FALLBACK =
-  'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=800&q=80'
+  '/images/external/photo-1560448204-e02f11c3d0e2-54a1e4fab4.jpg'
 
 function asFiniteNumberOrNull(value) {
   if (value == null || value === '') return null
@@ -112,34 +112,34 @@ function asFiniteNumberOrNull(value) {
 // Базовые данные для 4 блоков 3D-папок (заголовки переводятся в компоненте через useMemo)
 const landingFolderDataBase = [
   { titleKey: 'folderActiveBidding', gradient: 'linear-gradient(135deg, #0d9488 0%, #0f766e 100%)', linkHref: '/auction?filter=auction', projects: [
-    { id: 'ab1', image: 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&q=80&w=800', title: 'Аукцион недвижимости' },
-    { id: 'ab2', image: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&q=80&w=800', title: 'Торги объектами' },
-    { id: 'ab3', image: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&q=80&w=800', title: 'Концентрация спроса' },
-    { id: 'ab4', image: 'https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?auto=format&fit=crop&q=80&w=800', title: 'Рыночные ставки' },
+    { id: 'ab1', image: '/images/external/photo-1560518883-ce09059eeffa-95dd949987.jpg', title: 'Аукцион недвижимости' },
+    { id: 'ab2', image: '/images/external/photo-1600585154340-be6161a56a0c-08c1b1d59d.jpg', title: 'Торги объектами' },
+    { id: 'ab3', image: '/images/external/photo-1600607687939-ce8a6c25118c-9791198f05.jpg', title: 'Концентрация спроса' },
+    { id: 'ab4', image: '/images/external/photo-1600566753190-17f0baa2a6c3-9c1606daed.jpg', title: 'Рыночные ставки' },
   ] },
   { titleKey: 'folderImmediatePurchase', gradient: 'linear-gradient(to right, #f59e0b 0%, #d97706 100%)', linkHref: '/auction?filter=buy_now', projects: [
-    { id: 'ip1', image: 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&q=80&w=800', title: 'Сделка по цене' },
-    { id: 'ip2', image: 'https://images.unsplash.com/photo-1484154218962-a197022b5858?auto=format&fit=crop&q=80&w=800', title: 'Ликвидность сейчас' },
-    { id: 'ip3', image: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&q=80&w=800', title: 'Без ожидания' },
-    { id: 'ip4', image: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&q=80&w=800', title: 'Твёрдая цена' },
+    { id: 'ip1', image: '/images/external/photo-1560448204-e02f11c3d0e2-5b957100f2.jpg', title: 'Сделка по цене' },
+    { id: 'ip2', image: '/images/external/photo-1484154218962-a197022b5858-7367c16227.jpg', title: 'Ликвидность сейчас' },
+    { id: 'ip3', image: '/images/external/photo-1600596542815-ffad4c1539a9-514a2414cc.jpg', title: 'Без ожидания' },
+    { id: 'ip4', image: '/images/external/photo-1600585154340-be6161a56a0c-08c1b1d59d.jpg', title: 'Твёрдая цена' },
   ] },
   { titleKey: 'folderDistressedAssets', gradient: 'linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%)', linkHref: '/about', projects: [
-    { id: 'da1', image: 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&q=80&w=800', title: 'Арбитраж активов' },
-    { id: 'da2', image: 'https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?auto=format&fit=crop&q=80&w=800', title: 'Специальные ситуации' },
-    { id: 'da3', image: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&q=80&w=800', title: 'Верификация лотов' },
-    { id: 'da4', image: 'https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?auto=format&fit=crop&q=80&w=800', title: 'Due Diligence' },
+    { id: 'da1', image: '/images/external/photo-1564013799919-ab600027ffc6-614ed79fec.jpg', title: 'Арбитраж активов' },
+    { id: 'da2', image: '/images/external/photo-1522771739844-6a9f6d5f14af-afc86ce7ca.jpg', title: 'Специальные ситуации' },
+    { id: 'da3', image: '/images/external/photo-1512917774080-9991f1c4c750-928d26ff49.jpg', title: 'Верификация лотов' },
+    { id: 'da4', image: '/images/external/photo-1600566753086-00f18fb6b3ea-79bf60cec6.jpg', title: 'Due Diligence' },
   ] },
   { titleKey: 'folderDebtsStrategy', gradient: 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)', linkHref: '/debts', projects: [
-    { id: 'db1', image: 'https://images.unsplash.com/photo-1450101499163-c8848c66ca85?auto=format&fit=crop&q=80&w=800', title: 'Покупка долга' },
-    { id: 'db2', image: 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?auto=format&fit=crop&q=80&w=800', title: 'Анализ рисков' },
-    { id: 'db3', image: 'https://images.unsplash.com/photo-1554224154-22dec7ec8818?auto=format&fit=crop&q=80&w=800', title: 'Структура сделки' },
-    { id: 'db4', image: 'https://images.unsplash.com/photo-1526304640581-d334cdbbf45e?auto=format&fit=crop&q=80&w=800', title: 'Доходность и сроки' },
+    { id: 'db1', image: '/images/external/photo-1450101499163-c8848c66ca85-eb206c83e6.jpg', title: 'Покупка долга' },
+    { id: 'db2', image: '/images/external/photo-1554224155-8d04cb21cd6c-6f898cdd1f.jpg', title: 'Анализ рисков' },
+    { id: 'db3', image: '/images/external/photo-1554224154-22dec7ec8818-ee3fb0cdfa.jpg', title: 'Структура сделки' },
+    { id: 'db4', image: '/images/external/photo-1526304640581-d334cdbbf45e-d7bba8f22f.jpg', title: 'Доходность и сроки' },
   ] },
   { titleKey: 'folderFractional', gradient: 'linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%)', linkHref: '/shares', projects: [
-    { id: 'fo1', image: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&q=80&w=800', title: 'Долевое участие' },
-    { id: 'fo2', image: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&q=80&w=800', title: 'Премиальные активы' },
-    { id: 'fo3', image: 'https://images.unsplash.com/photo-1503387762-592deb58ef4e?auto=format&fit=crop&q=80&w=800', title: 'Co-investment' },
-    { id: 'fo4', image: 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&q=80&w=800', title: 'Доли в объектах' },
+    { id: 'fo1', image: '/images/external/photo-1486406146926-c627a92ad1ab-f0c377ec01.jpg', title: 'Долевое участие' },
+    { id: 'fo2', image: '/images/external/photo-1545324418-cc1a3fa10c00-d04a952c51.jpg', title: 'Премиальные активы' },
+    { id: 'fo3', image: '/images/external/photo-1503387762-592deb58ef4e-c6ab278a57.jpg', title: 'Co-investment' },
+    { id: 'fo4', image: '/images/external/photo-1560518883-ce09059eeffa-95dd949987.jpg', title: 'Доли в объектах' },
   ] },
 ]
 
@@ -152,15 +152,15 @@ const recommendedProperties = [
     price: 797500,
     coordinates: [28.2916, -16.6291], // Costa Adeje, Tenerife
     image:
-      'https://images.unsplash.com/photo-1505691938895-1758d7feb511?auto=format&fit=crop&w=800&q=80',
+      '/images/external/photo-1505691938895-1758d7feb511-f43679f6a1.jpg',
     images: [
-      'https://images.unsplash.com/photo-1505691938895-1758d7feb511?auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1484154218962-a197022b5858?auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=800&q=80',
+      '/images/external/photo-1505691938895-1758d7feb511-f43679f6a1.jpg',
+      '/images/external/photo-1560448204-e02f11c3d0e2-54a1e4fab4.jpg',
+      '/images/external/photo-1484154218962-a197022b5858-c5aa75b2e0.jpg',
+      '/images/external/photo-1564013799919-ab600027ffc6-cd6cfcc604.jpg',
+      '/images/external/photo-1522771739844-6a9f6d5f14af-daf4e960b5.jpg',
+      '/images/external/photo-1600585154340-be6161a56a0c-753fb8cc27.jpg',
+      '/images/external/photo-1600607687939-ce8a6c25118c-91f350a715.jpg',
     ],
     beds: 2,
     baths: 2,
@@ -175,7 +175,7 @@ const recommendedProperties = [
       name: 'Muhammad Farhan',
       phone: '18392719103',
       avatar:
-        'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=150&q=80',
+        '/images/external/photo-1472099645785-5658abf4ff4e-1d5975d484.jpg',
     },
   },
   {
@@ -186,14 +186,14 @@ const recommendedProperties = [
     price: 1200,
     coordinates: [28.1000, -16.7200], // Playa de las Américas, Tenerife
     image:
-      'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=800&q=80',
+      '/images/external/photo-1600596542815-ffad4c1539a9-95d912f909.jpg',
     images: [
-      'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1484154218962-a197022b5858?auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80',
+      '/images/external/photo-1600596542815-ffad4c1539a9-95d912f909.jpg',
+      '/images/external/photo-1560448204-e02f11c3d0e2-54a1e4fab4.jpg',
+      '/images/external/photo-1484154218962-a197022b5858-c5aa75b2e0.jpg',
+      '/images/external/photo-1564013799919-ab600027ffc6-cd6cfcc604.jpg',
+      '/images/external/photo-1522771739844-6a9f6d5f14af-daf4e960b5.jpg',
+      '/images/external/photo-1600585154340-be6161a56a0c-753fb8cc27.jpg',
     ],
     beds: 2,
     baths: 1,
@@ -208,7 +208,7 @@ const recommendedProperties = [
       name: 'Muhammad Farhan',
       phone: '18392719103',
       avatar:
-        'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=150&q=80',
+        '/images/external/photo-1472099645785-5658abf4ff4e-1d5975d484.jpg',
     },
   },
 ]
@@ -222,14 +222,14 @@ const nearbyProperties = [
     price: 1000,
     coordinates: [28.0500, -16.7167], // Los Cristianos, Tenerife
     image:
-      'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=800&q=80',
+      '/images/external/photo-1522708323590-d24dbb6b0267-cf542d6d64.jpg',
     images: [
-      'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1484154218962-a197022b5858?auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80',
+      '/images/external/photo-1522708323590-d24dbb6b0267-cf542d6d64.jpg',
+      '/images/external/photo-1560448204-e02f11c3d0e2-54a1e4fab4.jpg',
+      '/images/external/photo-1484154218962-a197022b5858-c5aa75b2e0.jpg',
+      '/images/external/photo-1564013799919-ab600027ffc6-cd6cfcc604.jpg',
+      '/images/external/photo-1522771739844-6a9f6d5f14af-daf4e960b5.jpg',
+      '/images/external/photo-1600585154340-be6161a56a0c-753fb8cc27.jpg',
     ],
     beds: 2,
     baths: 2,
@@ -244,7 +244,7 @@ const nearbyProperties = [
       name: 'Muhammad Farhan',
       phone: '18392719103',
       avatar:
-        'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=150&q=80',
+        '/images/external/photo-1472099645785-5658abf4ff4e-1d5975d484.jpg',
     },
   },
   {
@@ -255,14 +255,14 @@ const nearbyProperties = [
     price: 980,
     coordinates: [28.4167, -16.5500], // Puerto de la Cruz, Tenerife
     image:
-      'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=800&q=80',
+      '/images/external/photo-1600596542815-ffad4c1539a9-95d912f909.jpg',
     images: [
-      'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1484154218962-a197022b5858?auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80',
+      '/images/external/photo-1600596542815-ffad4c1539a9-95d912f909.jpg',
+      '/images/external/photo-1560448204-e02f11c3d0e2-54a1e4fab4.jpg',
+      '/images/external/photo-1484154218962-a197022b5858-c5aa75b2e0.jpg',
+      '/images/external/photo-1564013799919-ab600027ffc6-cd6cfcc604.jpg',
+      '/images/external/photo-1522771739844-6a9f6d5f14af-daf4e960b5.jpg',
+      '/images/external/photo-1600585154340-be6161a56a0c-753fb8cc27.jpg',
     ],
     beds: 1,
     baths: 1,
@@ -277,7 +277,7 @@ const nearbyProperties = [
       name: 'Muhammad Farhan',
       phone: '18392719103',
       avatar:
-        'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=150&q=80',
+        '/images/external/photo-1472099645785-5658abf4ff4e-1d5975d484.jpg',
     },
   },
 ]
@@ -290,14 +290,14 @@ const apartmentsData = [
     price: 8500372,
     coordinates: [28.2916, -16.6291],
     owner: { firstName: 'Хосе', lastName: 'Мендес' },
-    image: 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=800&q=80',
+    image: '/images/external/photo-1560448204-e02f11c3d0e2-54a1e4fab4.jpg',
     images: [
-      'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1484154218962-a197022b5858?auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=800&q=80',
+      '/images/external/photo-1560448204-e02f11c3d0e2-54a1e4fab4.jpg',
+      '/images/external/photo-1484154218962-a197022b5858-c5aa75b2e0.jpg',
+      '/images/external/photo-1564013799919-ab600027ffc6-cd6cfcc604.jpg',
+      '/images/external/photo-1522771739844-6a9f6d5f14af-daf4e960b5.jpg',
+      '/images/external/photo-1600585154340-be6161a56a0c-753fb8cc27.jpg',
+      '/images/external/photo-1600607687939-ce8a6c25118c-91f350a715.jpg',
     ],
     hasSamolyot: false,
     isAuction: true,
@@ -319,16 +319,16 @@ const villasData = [
     price: 12000000,
     coordinates: [28.2916, -16.6291],
     owner: { firstName: 'Франсиско', lastName: 'Гарсия' },
-    image: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=800&q=80',
+    image: '/images/external/photo-1600596542815-ffad4c1539a9-95d912f909.jpg',
     images: [
-      'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1505691938895-1758d7feb511?auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1484154218962-a197022b5858?auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=800&q=80',
+      '/images/external/photo-1600596542815-ffad4c1539a9-95d912f909.jpg',
+      '/images/external/photo-1505691938895-1758d7feb511-f43679f6a1.jpg',
+      '/images/external/photo-1560448204-e02f11c3d0e2-54a1e4fab4.jpg',
+      '/images/external/photo-1484154218962-a197022b5858-c5aa75b2e0.jpg',
+      '/images/external/photo-1564013799919-ab600027ffc6-cd6cfcc604.jpg',
+      '/images/external/photo-1522771739844-6a9f6d5f14af-daf4e960b5.jpg',
+      '/images/external/photo-1600585154340-be6161a56a0c-753fb8cc27.jpg',
+      '/images/external/photo-1600607687939-ce8a6c25118c-91f350a715.jpg',
     ],
     hasSamolyot: false,
     isAuction: true,
@@ -350,14 +350,14 @@ const flatsData = [
     price: 12500000,
     coordinates: [55.7558, 37.6173],
     owner: { firstName: 'Александр', lastName: 'Иванов' },
-    image: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=800&q=80',
+    image: '/images/external/photo-1522708323590-d24dbb6b0267-cf542d6d64.jpg',
     images: [
-      'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1484154218962-a197022b5858?auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80',
+      '/images/external/photo-1522708323590-d24dbb6b0267-cf542d6d64.jpg',
+      '/images/external/photo-1484154218962-a197022b5858-c5aa75b2e0.jpg',
+      '/images/external/photo-1560448204-e02f11c3d0e2-54a1e4fab4.jpg',
+      '/images/external/photo-1564013799919-ab600027ffc6-cd6cfcc604.jpg',
+      '/images/external/photo-1522771739844-6a9f6d5f14af-daf4e960b5.jpg',
+      '/images/external/photo-1600585154340-be6161a56a0c-753fb8cc27.jpg',
     ],
     hasSamolyot: false,
     isAuction: true,
@@ -379,14 +379,14 @@ const townhousesData = [
     price: 24500000,
     coordinates: [55.6759, 37.2784],
     owner: { firstName: 'Владимир', lastName: 'Новиков' },
-    image: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80',
+    image: '/images/external/photo-1600585154340-be6161a56a0c-753fb8cc27.jpg',
     images: [
-      'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1600585154526-990dced4db0d?auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1484154218962-a197022b5858?auto=format&fit=crop&w=800&q=80',
-      'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=800&q=80',
+      '/images/external/photo-1600585154340-be6161a56a0c-753fb8cc27.jpg',
+      '/images/external/photo-1600585154526-990dced4db0d-857efc2969.jpg',
+      '/images/external/photo-1600566753086-00f18fb6b3ea-ebdc75633e.jpg',
+      '/images/external/photo-1522708323590-d24dbb6b0267-cf542d6d64.jpg',
+      '/images/external/photo-1484154218962-a197022b5858-c5aa75b2e0.jpg',
+      '/images/external/photo-1560448204-e02f11c3d0e2-54a1e4fab4.jpg',
     ],
     hasSamolyot: false,
     isAuction: true,

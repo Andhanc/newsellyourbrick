@@ -298,7 +298,7 @@ const ObjectsList = () => {
           >
             <div className="property-card__image">
               <img
-                src={property.image || (property.images && property.images[0]) || 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?auto=format&fit=crop&w=800&q=80'}
+                src={property.image || (property.images && property.images[0]) || '/images/external/photo-1560448204-e02f11c3d0e2-54a1e4fab4.jpg'}
                 alt={property.name || property.title}
               />
             </div>

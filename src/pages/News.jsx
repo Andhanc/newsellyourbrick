@@ -32,7 +32,7 @@ const STATIC_PORA_ARTICLES = [
     slug: null,
     size: 'large',
     image:
-      'https://images.unsplash.com/photo-1565008576549-57569a49371d?w=900&h=520&fit=crop&q=80',
+      '/images/external/photo-1565008576549-57569a49371d-2725bbeba2.jpg',
     badge: '🌊 К морю!',
     title: 'Топ-10 курортных городов и посёлков южного берега Крыма',
     excerpt:
@@ -47,7 +47,7 @@ const STATIC_PORA_ARTICLES = [
     slug: null,
     size: 'large',
     image:
-      'https://images.unsplash.com/photo-1596484552834-065fdc8dc103?w=900&h=520&fit=crop&q=80',
+      '/images/external/photo-1449824913935-59a10b8d2000-e6bb6de958.jpg',
     badge: 'Идеи для поездок',
     title: 'Малые города Калининградской области, в которые стоит заехать',
     excerpt:
@@ -62,7 +62,7 @@ const STATIC_PORA_ARTICLES = [
     slug: null,
     size: 'medium',
     image:
-      'https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=700&h=420&fit=crop&q=80',
+      '/images/external/photo-1449824913935-59a10b8d2000-e6bb6de958.jpg',
     badge: 'Идеи для поездок',
     title: 'Города с необычной архитектурой: куда поехать в 2026',
     excerpt: 'От модерна до авангарда — подборка городов, где прогулки превращаются в экскурсию.',
@@ -76,7 +76,7 @@ const STATIC_PORA_ARTICLES = [
     slug: null,
     size: 'medium',
     image:
-      'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=700&h=420&fit=crop&q=80',
+      '/images/external/photo-1507525428034-b723cf961d3e-ae413f8ef9.jpg',
     badge: '🌊 К морю!',
     title: 'Пляжи России: 7 мест с чистой водой и инфраструктурой',
     excerpt: 'Собрали побережья, куда удобно добраться из крупных городов и где комфортно отдыхать с детьми.',
@@ -90,7 +90,7 @@ const STATIC_PORA_ARTICLES = [
     slug: null,
     size: 'small',
     image:
-      'https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?w=600&h=380&fit=crop&q=80',
+      '/images/external/photo-1510812431401-41d2bd2722f3-b97a9ab704.jpg',
     badge: 'Идеи для поездок',
     title: 'Винные маршруты Краснодарского края на выходные',
     excerpt: 'Дегустации, винодельни и гастрономия — план поездки на 2–3 дня.',
@@ -104,7 +104,7 @@ const STATIC_PORA_ARTICLES = [
     slug: null,
     size: 'small',
     image:
-      'https://images.unsplash.com/photo-1520106212296-df2701f1c794?w=600&h=380&fit=crop&q=80',
+      '/images/external/photo-1469854523086-cc02fe5d8800-5a351c34bc.jpg',
     badge: 'Идеи для поездок',
     title: 'Казань или Нижний Новгород — куда лучше поехать в 2026 году',
     excerpt: 'Сравниваем атмосферу, достопримечательности и бюджет поездки на 3–4 дня.',

@@ -218,7 +218,7 @@ function normalizeApiProperty(prop, index) {
     location: prop.location || prop.address || '',
     price,
     currentBid: isAuction ? (prop.auction_current_bid ?? prop.auction_starting_price ?? price) : null,
-    images: images.length ? images : ['https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800'],
+    images: images.length ? images : ['/images/external/photo-1522708323590-d24dbb6b0267-b4dd9c7026.jpg'],
     area: prop.area ?? prop.sqft ?? 0,
     rooms: prop.rooms ?? prop.beds ?? prop.bedrooms ?? 0,
     bathrooms: prop.bathrooms ?? prop.baths ?? 0,
@@ -505,7 +505,7 @@ const MapPage = () => {
         const priceStr = formatPrice(property.price ?? property.currentBid ?? 0, property.currency)
         const thumbSrc =
           (Array.isArray(property.images) && property.images[0]) ||
-          'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800'
+          '/images/external/photo-1522708323590-d24dbb6b0267-b4dd9c7026.jpg'
 
         const focusProperty = () => {
           setSelectedProperty(property)
@@ -532,7 +532,7 @@ const MapPage = () => {
         img.alt = ''
         img.decoding = 'async'
         img.addEventListener('error', () => {
-          img.src = 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800'
+          img.src = '/images/external/photo-1522708323590-d24dbb6b0267-b4dd9c7026.jpg'
         })
         imgWrap.appendChild(img)
         if (isSelected) {
@@ -834,7 +834,7 @@ const MapPage = () => {
                   <img
                     {...buildResponsiveImageProps(
                       (Array.isArray(mapOpenHintProperty.images) && mapOpenHintProperty.images[0]) ||
-                        'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800',
+                        '/images/external/photo-1522708323590-d24dbb6b0267-b4dd9c7026.jpg',
                       {
                         widths: [96, 160, 240],
                         sizes: '48px',
