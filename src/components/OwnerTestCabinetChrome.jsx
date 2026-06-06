@@ -18,7 +18,7 @@ import {
   ClipboardList,
   SlidersHorizontal,
 } from 'lucide-react'
-import { MOT_PROMO_IMAGES } from '../pages/mainOwnerTestPromoImages'
+import OwnerNotificationsDrawer from './OwnerNotificationsDrawer'
 import { useOwnerTestNav } from '../context/OwnerTestNavigationContext'
 import {
   isNavItemActive,
@@ -77,6 +77,7 @@ function LogoMark({ className = '' }) {
 export default function OwnerTestCabinetChrome({ children }) {
   const { view, goTo } = useOwnerTestNav()
   const [menuOpen, setMenuOpen] = useState(false)
+  const [notificationsOpen, setNotificationsOpen] = useState(false)
   const showTabbar = isTabbarView(view)
 
   const closeMenu = useCallback(() => setMenuOpen(false), [])
@@ -148,7 +149,13 @@ export default function OwnerTestCabinetChrome({ children }) {
           <span className="otc-logo__text">SellYourBrick</span>
         </div>
         <div className="otc-mob-topbar__slot otc-mob-topbar__slot--right">
-          <button type="button" className="otc-mob-topbar__bell" aria-label="Уведомления">
+          <button
+            type="button"
+            className="otc-mob-topbar__bell"
+            aria-label="Уведомления"
+            aria-expanded={notificationsOpen}
+            onClick={() => setNotificationsOpen(true)}
+          >
             <Bell size={22} strokeWidth={2} />
             <span className="otc-icon-btn__badge">3</span>
           </button>
@@ -187,20 +194,6 @@ export default function OwnerTestCabinetChrome({ children }) {
         <nav className="otc-nav" aria-label="Кабинет продавца">
           {NAV_ITEMS.map(renderNavItem)}
         </nav>
-        <div className="otc-sidebar-promo">
-          <div className="otc-sidebar-promo__body">
-            <p className="otc-sidebar-promo__title">Станьте покупателем</p>
-            <p className="otc-sidebar-promo__text">
-              Ищите и бронируйте недвижимость на платформе
-            </p>
-            <button type="button" className="otc-btn otc-btn--primary otc-btn--sm">
-              Стать покупателем
-            </button>
-          </div>
-          <div className="otc-sidebar-promo__visual">
-            <img src={MOT_PROMO_IMAGES.sidebarBuyer} alt="" loading="lazy" decoding="async" />
-          </div>
-        </div>
       </aside>
 
       <div className="otc-stage">{children}</div>
@@ -239,6 +232,11 @@ export default function OwnerTestCabinetChrome({ children }) {
           })}
         </nav>
       )}
+
+      <OwnerNotificationsDrawer
+        open={notificationsOpen}
+        onClose={() => setNotificationsOpen(false)}
+      />
     </div>
   )
 }

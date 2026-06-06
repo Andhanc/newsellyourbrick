@@ -37,6 +37,7 @@ import {
   ClipboardList,
 } from 'lucide-react'
 import { MOT_PROMO_IMAGES } from './mainOwnerTestPromoImages'
+import OwnerNotificationsDrawer from '../components/OwnerNotificationsDrawer'
 import OwnerTestProfileMenu from '../components/OwnerTestProfileMenu'
 import { useOwnerTestEmbeddedNav } from '../hooks/useOwnerTestEmbeddedNav'
 import './MainOwnerTestPage.css'
@@ -148,11 +149,83 @@ const STATUS_LEGEND = [
 
 const MOT_TIFFANY = '#0abab5'
 
+const DATE_PRESETS = [
+  { id: 'week', label: '7 дней', from: '2024-05-25', to: '2024-05-31' },
+  { id: 'month', label: 'Май', from: '2024-05-01', to: '2024-05-31' },
+  { id: 'quarter', label: 'Квартал', from: '2024-04-01', to: '2024-06-30' },
+]
+
+const INITIAL_DATE_RANGE = DATE_PRESETS[1]
+
 const SPARK_COLORS = {
   tiffany: MOT_TIFFANY,
   orange: '#F59E0B',
   teal: '#14B8A6',
   green: '#22C55E',
+}
+
+function formatMotDate(value) {
+  if (!value) return ''
+  const date = new Date(`${value}T00:00:00`)
+  return new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'short', year: 'numeric' })
+    .format(date)
+    .replace(/\.$/, '')
+}
+
+function dateRangeLabel(range) {
+  return `${formatMotDate(range.from)} – ${formatMotDate(range.to)}`
+}
+
+function DateRangePopover({ open, draftRange, selectedRange, onDraftChange, onPreset, onApply, onClose }) {
+  return (
+    <div className={`mot-date-popover${open ? ' mot-date-popover--open' : ''}`}>
+      <div className="mot-date-popover__head">
+        <span>Период аналитики</span>
+        <strong>{dateRangeLabel(draftRange)}</strong>
+      </div>
+      <div className="mot-date-popover__presets" aria-label="Быстрый выбор периода">
+        {DATE_PRESETS.map((preset) => {
+          const active = draftRange.from === preset.from && draftRange.to === preset.to
+          return (
+            <button
+              key={preset.id}
+              type="button"
+              className={`mot-date-popover__preset${active ? ' mot-date-popover__preset--active' : ''}`}
+              onClick={() => onPreset(preset)}
+            >
+              {preset.label}
+            </button>
+          )
+        })}
+      </div>
+      <div className="mot-date-popover__fields">
+        <label>
+          <span>С</span>
+          <input
+            type="date"
+            value={draftRange.from}
+            onChange={(event) => onDraftChange({ ...draftRange, from: event.target.value })}
+          />
+        </label>
+        <label>
+          <span>По</span>
+          <input
+            type="date"
+            value={draftRange.to}
+            onChange={(event) => onDraftChange({ ...draftRange, to: event.target.value })}
+          />
+        </label>
+      </div>
+      <div className="mot-date-popover__actions">
+        <button type="button" className="mot-date-popover__ghost" onClick={onClose}>
+          Отмена
+        </button>
+        <button type="button" className="mot-date-popover__apply" onClick={onApply}>
+          Применить
+        </button>
+      </div>
+    </div>
+  )
 }
 
 function LogoMark({ className = '' }) {
@@ -230,9 +303,22 @@ function useMotMobile() {
 export default function MainOwnerTestPage() {
   const { isEmbedded } = useOwnerTestEmbeddedNav()
   const [menuOpen, setMenuOpen] = useState(false)
+  const [notificationsOpen, setNotificationsOpen] = useState(false)
+  const [datePopoverOpen, setDatePopoverOpen] = useState(false)
+  const [selectedRange, setSelectedRange] = useState(INITIAL_DATE_RANGE)
+  const [draftRange, setDraftRange] = useState(INITIAL_DATE_RANGE)
   const isMobile = useMotMobile()
 
   const closeMenu = useCallback(() => setMenuOpen(false), [])
+  const closeDatePopover = useCallback(() => {
+    setDraftRange(selectedRange)
+    setDatePopoverOpen(false)
+  }, [selectedRange])
+
+  const handleApplyRange = useCallback(() => {
+    setSelectedRange(draftRange)
+    setDatePopoverOpen(false)
+  }, [draftRange])
 
   const renderNavItem = useCallback(
     ({ id, label, icon: Icon, active, badge, href }) => {
@@ -276,6 +362,31 @@ export default function MainOwnerTestPage() {
       document.body.style.overflow = prev
     }
   }, [menuOpen])
+
+  useEffect(() => {
+    if (!datePopoverOpen) return undefined
+
+    const handlePointerDown = (event) => {
+      if (!event.target.closest('.mot-date-control')) {
+        setDraftRange(selectedRange)
+        setDatePopoverOpen(false)
+      }
+    }
+
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        setDraftRange(selectedRange)
+        setDatePopoverOpen(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handlePointerDown)
+    document.addEventListener('keydown', handleKeyDown)
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown)
+      document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [datePopoverOpen, selectedRange])
 
   const lineChartData = useMemo(
     () => ({
@@ -398,12 +509,38 @@ export default function MainOwnerTestPage() {
       <header className="mot-header mot-desktop-only">
         <h1 className="mot-header__title">Главная</h1>
         <div className="mot-header__actions">
-          <button type="button" className="mot-date-pill">
-            <Calendar size={18} strokeWidth={2} aria-hidden />
-            <span>1 мая – 31 мая 2024</span>
-            <ChevronDown size={16} strokeWidth={2.2} aria-hidden />
-          </button>
-          <button type="button" className="mot-icon-btn" aria-label="Уведомления">
+          <div className="mot-date-control">
+            <button
+              type="button"
+              className="mot-date-pill"
+              aria-haspopup="dialog"
+              aria-expanded={datePopoverOpen}
+              onClick={() => {
+                setDraftRange(selectedRange)
+                setDatePopoverOpen((prev) => !prev)
+              }}
+            >
+              <Calendar size={18} strokeWidth={2} aria-hidden />
+              <span>{dateRangeLabel(selectedRange)}</span>
+              <ChevronDown size={16} strokeWidth={2.2} aria-hidden />
+            </button>
+            <DateRangePopover
+              open={datePopoverOpen}
+              draftRange={draftRange}
+              selectedRange={selectedRange}
+              onDraftChange={setDraftRange}
+              onPreset={setDraftRange}
+              onApply={handleApplyRange}
+              onClose={closeDatePopover}
+            />
+          </div>
+          <button
+            type="button"
+            className="mot-icon-btn"
+            aria-label="Уведомления"
+            aria-expanded={notificationsOpen}
+            onClick={() => setNotificationsOpen(true)}
+          >
             <Bell size={20} strokeWidth={2} />
             <span className="mot-icon-btn__badge">3</span>
           </button>
@@ -413,10 +550,30 @@ export default function MainOwnerTestPage() {
 
       <div className="mot-mob-pagehead mot-mobile-only">
         <h1 className="mot-mob-pagehead__title">Главная</h1>
-        <button type="button" className="mot-date-pill mot-date-pill--compact">
-          <span>1 мая – 31 мая 2024</span>
-          <Calendar size={16} strokeWidth={2} aria-hidden />
-        </button>
+        <div className="mot-date-control mot-date-control--mobile">
+          <button
+            type="button"
+            className="mot-date-pill mot-date-pill--compact"
+            aria-haspopup="dialog"
+            aria-expanded={datePopoverOpen}
+            onClick={() => {
+              setDraftRange(selectedRange)
+              setDatePopoverOpen((prev) => !prev)
+            }}
+          >
+            <span>{dateRangeLabel(selectedRange)}</span>
+            <Calendar size={16} strokeWidth={2} aria-hidden />
+          </button>
+          <DateRangePopover
+            open={datePopoverOpen}
+            draftRange={draftRange}
+            selectedRange={selectedRange}
+            onDraftChange={setDraftRange}
+            onPreset={setDraftRange}
+            onApply={handleApplyRange}
+            onClose={closeDatePopover}
+          />
+        </div>
       </div>
 
       <div className="mot-content">
@@ -561,56 +718,86 @@ export default function MainOwnerTestPage() {
             </div>
           </article>
 
-          <article className="mot-card mot-promo-ad mot-desktop-only">
-            <img
-              className="mot-promo-ad__photo"
-              src={MOT_PROMO_IMAGES.promoteListing}
-              alt=""
-              loading="lazy"
-              decoding="async"
-            />
-            <div className="mot-promo-ad__shade" aria-hidden />
-            <div className="mot-promo-ad__copy">
-              <span className="mot-promo-ad__tag">Реклама</span>
-              <h2 className="mot-promo-ad__title">Продвигайте свои объекты!</h2>
-              <p className="mot-promo-ad__text">
+          <article className="mot-promo-card mot-promo-card--light mot-promo-card--promote mot-desktop-only">
+            <div className="mot-promo-card__copy">
+              <span className="mot-promo-card__tag">Продвижение</span>
+              <h2 className="mot-promo-card__title">Продвигайте свои объекты!</h2>
+              <p className="mot-promo-card__text">
                 Увеличьте просмотры и получайте больше броней с тарифами продвижения
               </p>
-              <button type="button" className="mot-btn mot-btn--primary mot-btn--on-photo">
-                Выбрать тариф
-              </button>
+              <div className="mot-promo-card__actions">
+                <button type="button" className="mot-btn mot-btn--primary mot-btn--sm">
+                  Выбрать тариф
+                </button>
+              </div>
+            </div>
+            <div className="mot-promo-card__visual mot-promo-card__visual--listing" aria-hidden>
+              <img src={MOT_PROMO_IMAGES.promoteListing} alt="" loading="lazy" decoding="async" />
             </div>
           </article>
         </section>
 
-        <section className="mot-mob-promo mot-card mot-mobile-only" aria-label="Стать покупателем">
-          <div className="mot-mob-promo__copy">
-            <h2 className="mot-mob-promo__title">Станьте покупателем</h2>
-            <p className="mot-mob-promo__text">
-              Ищите и бронируйте недвижимость на платформе
-            </p>
-            <button type="button" className="mot-btn mot-btn--primary mot-btn--sm">
-              Стать покупателем
-            </button>
-          </div>
-          <div className="mot-mob-promo__visual">
-            <img src={MOT_PROMO_IMAGES.sidebarBuyer} alt="" loading="lazy" decoding="async" />
-          </div>
+        <section className="mot-promo-grid mot-desktop-only" aria-label="Рекламные предложения">
+          <article className="mot-promo-card mot-promo-card--dark mot-promo-card--buyer">
+            <div className="mot-promo-card__glow" aria-hidden />
+            <div className="mot-promo-card__copy">
+              <span className="mot-promo-card__tag">Режим покупателя</span>
+              <h2 className="mot-promo-card__title">Ищете недвижимость для себя?</h2>
+              <p className="mot-promo-card__text">
+                Переключитесь в режим покупателя и находите объекты по всему миру
+              </p>
+              <div className="mot-promo-card__actions mot-promo-card__actions--dark">
+                <button type="button" className="mot-btn mot-btn--white mot-btn--sm">
+                  Стать покупателем
+                </button>
+              </div>
+            </div>
+            <div className="mot-promo-card__visual mot-promo-card__visual--photo" aria-hidden>
+              <img src={MOT_PROMO_IMAGES.bannerBuyer} alt="" loading="lazy" decoding="async" />
+            </div>
+          </article>
         </section>
 
-        <section className="mot-bottom-banner mot-desktop-only" aria-label="Стать покупателем">
-          <div className="mot-bottom-banner__copy">
-            <h2>Ищете недвижимость для себя?</h2>
-            <p>Переключитесь в режим покупателя и находите объекты по всему миру</p>
-            <button type="button" className="mot-btn mot-btn--primary">
-              Стать покупателем
-            </button>
-          </div>
-          <figure className="mot-bottom-banner__figure">
-            <img src={MOT_PROMO_IMAGES.bannerBuyer} alt="" loading="lazy" decoding="async" />
-          </figure>
+        <section className="mot-mob-promo-grid mot-mobile-only" aria-label="Рекламные предложения">
+          <article className="mot-mob-promo-card mot-mob-promo-card--light">
+            <div className="mot-mob-promo-card__copy">
+              <span className="mot-mob-promo-card__tag">Продвижение</span>
+              <h2 className="mot-mob-promo-card__title">Продвигайте объекты</h2>
+              <p className="mot-mob-promo-card__text">
+                Больше просмотров и броней с тарифами продвижения
+              </p>
+              <button type="button" className="mot-btn mot-btn--primary mot-btn--sm">
+                Выбрать тариф
+              </button>
+            </div>
+            <div className="mot-mob-promo-card__visual" aria-hidden>
+              <img src={MOT_PROMO_IMAGES.promoteThumb} alt="" loading="lazy" decoding="async" />
+            </div>
+          </article>
+
+          <article className="mot-mob-promo-card mot-mob-promo-card--dark">
+            <div className="mot-mob-promo-card__copy">
+              <span className="mot-mob-promo-card__tag">Покупатель</span>
+              <h2 className="mot-mob-promo-card__title">Станьте покупателем</h2>
+              <p className="mot-mob-promo-card__text">
+                Ищите и бронируйте недвижимость на платформе
+              </p>
+              <button type="button" className="mot-btn mot-btn--white mot-btn--sm">
+                Стать покупателем
+              </button>
+            </div>
+            <div className="mot-mob-promo-card__visual" aria-hidden>
+              <img src={MOT_PROMO_IMAGES.buyerThumb} alt="" loading="lazy" decoding="async" />
+            </div>
+          </article>
+
         </section>
       </div>
+
+      <OwnerNotificationsDrawer
+        open={notificationsOpen}
+        onClose={() => setNotificationsOpen(false)}
+      />
     </div>
   )
 
@@ -635,7 +822,13 @@ export default function MainOwnerTestPage() {
           <span className="mot-logo__text">SellYourBrick</span>
         </div>
         <div className="mot-mob-topbar__slot mot-mob-topbar__slot--right">
-          <button type="button" className="mot-mob-topbar__bell" aria-label="Уведомления">
+          <button
+            type="button"
+            className="mot-mob-topbar__bell"
+            aria-label="Уведомления"
+            aria-expanded={notificationsOpen}
+            onClick={() => setNotificationsOpen(true)}
+          >
             <Bell size={22} strokeWidth={2} />
             <span className="mot-icon-btn__badge">3</span>
           </button>
@@ -679,12 +872,14 @@ export default function MainOwnerTestPage() {
         </nav>
 
         <div className="mot-sidebar-promo">
+          <div className="mot-sidebar-promo__glow" aria-hidden />
           <div className="mot-sidebar-promo__body">
+            <span className="mot-sidebar-promo__tag">Режим покупателя</span>
             <p className="mot-sidebar-promo__title">Станьте покупателем</p>
             <p className="mot-sidebar-promo__text">
               Ищите и бронируйте недвижимость на платформе
             </p>
-            <button type="button" className="mot-btn mot-btn--primary mot-btn--sm">
+            <button type="button" className="mot-btn mot-btn--white mot-btn--sm">
               Стать покупателем
             </button>
           </div>
@@ -720,6 +915,7 @@ export default function MainOwnerTestPage() {
           )
         })}
       </nav>
+
     </div>
   )
 }

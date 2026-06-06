@@ -9,8 +9,57 @@ html.otd-page-active #site-footer,
 html.ost-page-active #site-footer,
 html.osl-page-active #site-footer,
 html.opr-page-active #site-footer,
-html.oap-page-active #site-footer {
+html.oap-page-active #site-footer,
+html.owner-test-cabinet-active #site-footer {
   display: block !important;
+}
+
+/* Desktop: sticky sidebar — overflow-x на .app-layout__content ломает position: sticky */
+@media (min-width: 901px) {
+  html.owner-test-cabinet-active .app-layout__content,
+  html.mot-page-active .app-layout__content,
+  html.op-page-active .app-layout__content,
+  html.opa-page-active .app-layout__content,
+  html.otd-page-active .app-layout__content,
+  html.ost-page-active .app-layout__content,
+  html.osl-page-active .app-layout__content,
+  html.opr-page-active .app-layout__content,
+  html.oap-page-active .app-layout__content {
+    overflow: visible;
+  }
+
+  html.owner-test-cabinet-active .otc,
+  html.mot-page-active .mot,
+  html.op-page-active .op,
+  html.opa-page-active .opa,
+  html.otd-page-active .otd,
+  html.ost-page-active .ost,
+  html.osl-page-active .osl,
+  html.opr-page-active .opr,
+  html.oap-page-active .oap {
+    align-items: flex-start;
+  }
+
+  html.owner-test-cabinet-active .otc-sidebar,
+  html.mot-page-active .mot-sidebar,
+  html.op-page-active .op-sidebar,
+  html.opa-page-active .opa-sidebar,
+  html.otd-page-active .otd-sidebar,
+  html.ost-page-active .ost-sidebar,
+  html.osl-page-active .osl-sidebar,
+  html.opr-page-active .opr-sidebar,
+  html.oap-page-active .opa-sidebar {
+    position: sticky;
+    top: 0;
+    align-self: flex-start;
+    height: 100vh;
+    height: 100dvh;
+    max-height: 100vh;
+    max-height: 100dvh;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
 }
 
 @media (max-width: 900px) {

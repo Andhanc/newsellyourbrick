@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import {
   LayoutDashboard,
@@ -11,7 +11,7 @@ import {
   MessageSquare,
   Settings,
   Bell,
-  ChevronDown,
+  Check,
   Menu,
   X,
 } from 'lucide-react'
@@ -35,58 +35,53 @@ const NAV_ITEMS = [
 
 const PERIOD_TABS = [
   { id: 'monthly', label: 'Ежемесячно' },
-  { id: 'yearly', label: 'Ежегодно', badge: '-20%' },
-  { id: 'lifetime', label: 'Пожизненный' },
+  { id: 'yearly', label: 'Ежегодно' },
 ]
 
 const PLANS = [
   {
     id: 'basic',
     name: 'Базовый',
-    prices: { monthly: 0, yearly: 0, lifetime: 0 },
+    price: 0,
     features: [
-      { text: 'До 3 активных объектов' },
-      { text: 'Базовая аналитика' },
-      { text: 'Поддержка по email' },
+      'До 3 активных объектов',
+      'Базовая аналитика',
+      'Поддержка по email',
     ],
     current: true,
   },
   {
     id: 'standard',
     name: 'Стандарт',
-    prices: { monthly: 19, yearly: 15, lifetime: 199 },
+    price: 19,
     features: [
-      { text: 'До 10 активных объектов' },
-      { text: 'Расширенная аналитика' },
-      { text: 'Приоритетная поддержка' },
-      { text: 'Продвижение объектов' },
+      'До 10 активных объектов',
+      'Расширенная статистика',
+      'Приоритетная поддержка',
+      'Продвижение объектов',
     ],
-    highlighted: true,
   },
   {
     id: 'premium',
     name: 'Премиум',
-    prices: { monthly: 49, yearly: 39, lifetime: 499 },
+    price: 49,
     features: [
-      { text: 'Неограниченные объекты', accent: 'tiffany' },
-      { text: 'Расширенная аналитика', accent: 'green' },
-      { text: 'Приоритетная поддержка', accent: 'mint' },
-      { text: 'VIP поддержка 24/7', accent: 'gold' },
-      { text: 'Продвижение объектов' },
-      { text: 'Персональный менеджер' },
+      'Неограниченные объекты',
+      'Расширенная аналитика',
+      'VIP поддержка 24/7',
+      'Продвижение объектов',
+      'Персональный менеджер',
     ],
-    popular: true,
-    featured: true,
   },
   {
     id: 'corporate',
     name: 'Корпоративный',
-    prices: { monthly: 99, yearly: 79, lifetime: 999 },
+    price: 99,
     features: [
-      { text: 'Все функции Премиум' },
-      { text: 'API доступ' },
-      { text: 'Индивидуальное решение' },
-      { text: 'Персональный менеджер' },
+      'Все функции Премиум',
+      'API доступ',
+      'Индивидуальное решение',
+      'Персональный менеджер',
     ],
   },
 ]
@@ -116,36 +111,13 @@ function LogoMark({ className = '' }) {
   )
 }
 
-function formatPrice(amount, period) {
-  if (period === 'lifetime') {
-    return amount === 0 ? '$0' : `$${amount}`
-  }
-  return `$${amount}`
+function formatPrice(amount) {
+  return amount === 0 ? '$0' : `$${amount}`
 }
 
-function PromoPercentIcon() {
-  return (
-    <svg className="ost-save-banner__icon" viewBox="0 0 56 56" aria-hidden>
-      <defs>
-        <linearGradient id="ost-save-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#53d8d3" />
-          <stop offset="100%" stopColor="#089a95" />
-        </linearGradient>
-      </defs>
-      <rect x="8" y="8" width="40" height="40" rx="10" fill="url(#ost-save-grad)" />
-      <text
-        x="28"
-        y="34"
-        textAnchor="middle"
-        fill="#fff"
-        fontSize="18"
-        fontWeight="700"
-        fontFamily="Inter, sans-serif"
-      >
-        %
-      </text>
-    </svg>
-  )
+function getPeriodPrice(plan, period) {
+  if (plan.price === 0) return 0
+  return period === 'yearly' ? Math.round(plan.price * 0.8) : plan.price
 }
 
 export default function OwnerSubscriptionsTestPage() {
@@ -198,10 +170,7 @@ export default function OwnerSubscriptionsTestPage() {
     }
   }, [menuOpen])
 
-  const periodSuffix = useMemo(() => {
-    if (period === 'lifetime') return ''
-    return period === 'yearly' ? '/ мес' : '/ мес'
-  }, [period])
+  const isYearly = period === 'yearly'
 
   const mainColumn = (
       <div className="ost-body">
@@ -222,105 +191,100 @@ export default function OwnerSubscriptionsTestPage() {
           </div>
 
           <div className="ost-content">
-            <div
-              className="ost-period-tabs"
-              role="tablist"
-              aria-label="Период оплаты"
-            >
-              {PERIOD_TABS.map((tab) => (
-                <button
-                  key={tab.id}
-                  type="button"
-                  role="tab"
-                  aria-selected={period === tab.id}
-                  className={[
-                    'ost-period-tabs__item',
-                    period === tab.id && 'ost-period-tabs__item--active',
-                    tab.id === 'lifetime' && 'ost-period-tabs__item--desktop-only',
-                  ]
-                    .filter(Boolean)
-                    .join(' ')}
-                  onClick={() => setPeriod(tab.id)}
-                >
-                  {tab.label}
-                  {tab.badge && (
-                    <span className="ost-period-tabs__badge">{tab.badge}</span>
-                  )}
-                </button>
-              ))}
+            <div className="ost-billing">
+              <div
+                className="ost-period-tabs"
+                role="tablist"
+                aria-label="Период оплаты"
+              >
+                {PERIOD_TABS.map((tab) => (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    role="tab"
+                    aria-selected={period === tab.id}
+                    className={[
+                      'ost-period-tabs__item',
+                      period === tab.id && 'ost-period-tabs__item--active',
+                    ]
+                      .filter(Boolean)
+                      .join(' ')}
+                    onClick={() => setPeriod(tab.id)}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
             </div>
 
             <div className="ost-plans-grid">
-              {PLANS.map((plan) => (
-                <article
-                  key={plan.id}
-                  className={[
-                    'ost-plan-card',
-                    plan.current && 'ost-plan-card--current',
-                    plan.highlighted && 'ost-plan-card--highlighted',
-                    plan.featured && 'ost-plan-card--featured',
-                  ]
-                    .filter(Boolean)
-                    .join(' ')}
-                >
-                  <div className="ost-plan-card__head">
-                    <h2 className="ost-plan-card__name">{plan.name}</h2>
-                    {plan.popular && (
-                      <span className="ost-plan-card__badge">Популярный</span>
+              {PLANS.map((plan) => {
+                const displayPrice = getPeriodPrice(plan, period)
+                return (
+                  <article
+                    key={plan.id}
+                    className={[
+                      'ost-plan-card',
+                      plan.current && 'ost-plan-card--current',
+                    ]
+                      .filter(Boolean)
+                      .join(' ')}
+                  >
+                    <div className="ost-plan-card__head">
+                      <h2 className="ost-plan-card__name">{plan.name}</h2>
+                    </div>
+                    <p className="ost-plan-card__price">
+                      <span key={`${plan.id}-${period}`} className="ost-plan-card__amount">
+                        {formatPrice(displayPrice)}
+                      </span>
+                      <span className="ost-plan-card__period">/ мес</span>
+                    </p>
+                    {isYearly && plan.price > 0 ? (
+                      <div className="ost-plan-card__saving" aria-label="Годовой план выгоднее на 20%">
+                        <span className="ost-plan-card__old-price">{formatPrice(plan.price)} / мес</span>
+                        <span className="ost-plan-card__saving-badge">Выгоднее на 20%</span>
+                      </div>
+                    ) : (
+                      <div className="ost-plan-card__saving ost-plan-card__saving--empty" aria-hidden />
                     )}
-                  </div>
-                  <p className="ost-plan-card__price">
-                    <span className="ost-plan-card__amount">
-                      {formatPrice(plan.prices[period], period)}
-                    </span>
-                    {period !== 'lifetime' && (
-                      <span className="ost-plan-card__period">{periodSuffix}</span>
+                    <ul className="ost-plan-card__features">
+                      {plan.features.map((feature) => (
+                        <li key={feature} className="ost-plan-card__feature">
+                          <Check size={15} strokeWidth={2.5} aria-hidden />
+                          <span>{feature}</span>
+                        </li>
+                      ))}
+                    </ul>
+                    {plan.current ? (
+                      <button type="button" className="ost-plan-card__btn ost-plan-card__btn--current" disabled>
+                        Текущий тариф
+                      </button>
+                    ) : (
+                      <button type="button" className="ost-plan-card__btn ost-plan-card__btn--select">
+                        Выбрать
+                      </button>
                     )}
-                    {period === 'lifetime' && plan.prices[period] > 0 && (
-                      <span className="ost-plan-card__period"> разово</span>
-                    )}
-                  </p>
-                  <ul className="ost-plan-card__features">
-                    {plan.features.map((feature) => (
-                      <li
-                        key={feature.text}
-                        className={
-                          feature.accent
-                            ? `ost-plan-card__feature ost-plan-card__feature--${feature.accent}`
-                            : 'ost-plan-card__feature'
-                        }
-                      >
-                        {feature.text}
-                      </li>
-                    ))}
-                  </ul>
-                  {plan.current ? (
-                    <button type="button" className="ost-plan-card__btn ost-plan-card__btn--current" disabled>
-                      Текущий тариф
-                    </button>
-                  ) : (
-                    <button type="button" className="ost-plan-card__btn ost-plan-card__btn--select">
-                      Выбрать
-                    </button>
-                  )}
-                </article>
-              ))}
+                  </article>
+                )
+              })}
             </div>
 
             <section className="ost-save-banner" aria-label="Скидка на годовой план">
               <div className="ost-save-banner__copy">
                 <h2 className="ost-save-banner__title">Экономьте до 20% при оплате за год</h2>
-                <p className="ost-save-banner__text">Выберите годовой план и получите скидку</p>
+                <p className="ost-save-banner__text">
+                  Переключитесь на годовой план, и цены красиво пересчитаются со скидкой
+                </p>
               </div>
-              <div className="ost-save-banner__actions">
-                <button
-                  type="button"
-                  className="ost-save-banner__btn"
-                  onClick={() => setPeriod('yearly')}
-                >
-                  Перейти на годовой план
-                </button>
-                <PromoPercentIcon />
+              <button
+                type="button"
+                className="ost-save-banner__btn"
+                onClick={() => setPeriod('yearly')}
+              >
+                Перейти на годовой план
+              </button>
+              <div className="ost-save-banner__icon-wrap" aria-hidden>
+                <img src={OST_IMAGES.discountPercent} alt="" loading="lazy" decoding="async" />
               </div>
             </section>
           </div>

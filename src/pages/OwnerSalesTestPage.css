@@ -34,6 +34,24 @@
   -webkit-font-smoothing: antialiased;
 }
 
+.osl-body {
+  --osl-tiffany: #0abab5;
+  --osl-tiffany-dark: #089a95;
+  --osl-tiffany-light: #53d8d3;
+  --osl-tiffany-soft: #ecfdf5;
+  --osl-tiffany-muted: rgba(10, 186, 181, 0.14);
+  --osl-tiffany-ring: rgba(10, 186, 181, 0.28);
+  --osl-gradient-brand: linear-gradient(135deg, #2f8cff 0%, #0b6ff0 100%);
+  --osl-surface: #ffffff;
+  --osl-text: #111827;
+  --osl-text-muted: #6b7280;
+  --osl-text-light: #9ca3af;
+  --osl-border: #eef1f6;
+  --osl-shadow: 0 14px 38px rgba(15, 23, 42, 0.05);
+  --osl-radius: 16px;
+  --osl-radius-sm: 12px;
+}
+
 .osl *,
 .osl *::before,
 .osl *::after {
@@ -731,3 +749,255 @@
   }
 }
 
+/* ——— Sales mock layout polish ——— */
+@media (min-width: 901px) {
+  .osl-body {
+    min-height: 100vh;
+    background: #ffffff;
+    color: var(--osl-text);
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+
+  .osl-header {
+    position: static;
+    padding: 15px 31px 22px;
+    background: #ffffff;
+    backdrop-filter: none;
+  }
+
+  .osl-header__title {
+    font-size: 24px;
+    line-height: 1.2;
+    letter-spacing: -0.025em;
+    color: #111827;
+  }
+
+  .osl-workspace {
+    flex: 1;
+    background: #ffffff;
+  }
+
+  .osl-content {
+    padding: 14px 31px 28px;
+    gap: 0;
+  }
+
+  .osl-tabs-row {
+    align-items: center;
+    margin-bottom: 35px;
+  }
+
+  .osl-tabs {
+    gap: 28px;
+    border-bottom: 0;
+    overflow: visible;
+  }
+
+  .osl-tabs__item {
+    margin: 0;
+    padding: 0;
+    border-bottom: 0;
+    color: #8a94a6;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0;
+  }
+
+  .osl-tabs__item--active {
+    color: #2563eb;
+    border-bottom-color: transparent;
+  }
+
+  .osl-filter-btn {
+    height: 36px;
+    margin-bottom: 0;
+    padding: 0 12px;
+    gap: 8px;
+    border: 0;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #6b7280;
+    box-shadow: 0 8px 18px rgba(15, 23, 42, 0.06);
+  }
+
+  .osl-table-card {
+    margin-bottom: 54px;
+    overflow: visible;
+    border: 0;
+    border-radius: 0;
+    background: #ffffff;
+    box-shadow: none;
+  }
+
+  .osl-table {
+    table-layout: fixed;
+  }
+
+  .osl-table thead th {
+    padding: 0 0 20px;
+    border-bottom: 0;
+    background: transparent;
+    color: #9ca3af;
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  .osl-table thead th:nth-child(1) {
+    width: 32%;
+  }
+
+  .osl-table thead th:nth-child(2) {
+    width: 22%;
+  }
+
+  .osl-table thead th:nth-child(3) {
+    width: 14%;
+  }
+
+  .osl-table thead th:nth-child(4) {
+    width: 18%;
+  }
+
+  .osl-table thead th:nth-child(5) {
+    width: 14%;
+  }
+
+  .osl-table tbody td {
+    height: 62px;
+    padding: 0 0 18px;
+    border-bottom: 0;
+    color: #111827;
+  }
+
+  .osl-table tbody tr:hover {
+    background: transparent;
+  }
+
+  .osl-object-cell {
+    gap: 14px;
+  }
+
+  .osl-object-cell__thumb {
+    width: 50px;
+    height: 39px;
+    border-radius: 3px;
+    box-shadow: 0 7px 15px rgba(15, 23, 42, 0.11);
+  }
+
+  .osl-object-cell__title {
+    max-width: 210px;
+    margin-bottom: 4px;
+    overflow: hidden;
+    color: #111827;
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1.2;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .osl-object-cell__meta {
+    color: #9ca3af;
+    font-size: 11px;
+    font-weight: 500;
+  }
+
+  .osl-buyer,
+  .osl-amount,
+  .osl-sale-date {
+    font-size: 14px;
+    font-weight: 700;
+    color: #111827;
+    white-space: nowrap;
+  }
+
+  .osl-status {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 88px;
+    height: 26px;
+    padding: 0 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  .osl-status--completed {
+    background: #dff7ec;
+    color: #0f9f64;
+  }
+
+  .osl-status--in-progress {
+    background: #fff0d5;
+    color: #d48612;
+  }
+
+  .osl-status--pending {
+    background: #f2f3f5;
+    color: #5b6472;
+  }
+
+  .osl-status--cancelled {
+    background: #ffe5eb;
+    color: #d64263;
+  }
+
+  .osl-buyer-banner {
+    position: relative;
+    min-height: 84px;
+    margin-top: 0;
+    padding: 20px 30px;
+    overflow: hidden;
+    border: 0;
+    border-radius: 0;
+    background: #f2f7ff;
+    box-shadow: none;
+  }
+
+  .osl-buyer-banner__copy {
+    position: relative;
+    z-index: 2;
+  }
+
+  .osl-buyer-banner__title {
+    margin-bottom: 5px;
+    font-size: 18px;
+    line-height: 1.2;
+    letter-spacing: 0;
+  }
+
+  .osl-buyer-banner__text {
+    color: #6b7280;
+    font-size: 13px;
+    font-weight: 500;
+  }
+
+  .osl-buyer-banner__actions {
+    position: relative;
+    z-index: 2;
+    margin-right: 120px;
+  }
+
+  .osl-buyer-banner .osl-btn--primary {
+    min-width: 178px;
+    height: 40px;
+    padding: 0 18px;
+    border-radius: 4px;
+    background: #0b73f6;
+    box-shadow: 0 9px 20px rgba(11, 115, 246, 0.24);
+    font-size: 13px;
+  }
+
+  .osl-buyer-banner__image {
+    position: absolute;
+    right: 0;
+    top: 0;
+    width: 328px;
+    height: 100%;
+    object-fit: cover;
+    object-position: right center;
+    pointer-events: none;
+  }
+}

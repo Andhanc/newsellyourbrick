@@ -12,6 +12,7 @@ import {
   Settings,
   Bell,
   ChevronDown,
+  Search,
   SlidersHorizontal,
   Menu,
   X,
@@ -21,7 +22,6 @@ import OwnerTestProfileMenu from '../components/OwnerTestProfileMenu'
 import { useOwnerTestEmbeddedNav } from '../hooks/useOwnerTestEmbeddedNav'
 import {
   CLERK_DB_USER_SYNCED,
-  OWNER_SALE_TYPE_LABELS,
   countOwnerSalesByTab,
   fetchOwnerSales,
   filterOwnerSalesRows,
@@ -49,6 +49,91 @@ const FILTER_TAB_DEFS = [
   { id: 'cancelled', label: 'Отмененные', shortLabel: 'Отмененные' },
 ]
 
+const DESIGN_SALES_ROWS = [
+  {
+    id: 'demo-sale-1',
+    title: 'Апартаменты в центре',
+    location: 'Лос-Анджелес, США',
+    image: OSL_IMAGES.thumbVilla,
+    buyer: 'John Smith',
+    dealAmount: '$850 000',
+    saleDate: '12 мая 2024',
+    statusLabel: 'Завершено',
+    statusTone: 'completed',
+    tab: 'completed',
+  },
+  {
+    id: 'demo-sale-2',
+    title: 'Вилла в пригороде',
+    location: 'Лос-Анджелес, США',
+    image: OSL_IMAGES.thumbApartment,
+    buyer: 'Michael Brown',
+    dealAmount: '$1 250 000',
+    saleDate: '8 мая 2024',
+    statusLabel: 'В процессе',
+    statusTone: 'in-progress',
+    tab: 'in_progress',
+  },
+  {
+    id: 'demo-sale-3',
+    title: 'Коммерческая недвижимость',
+    location: 'Москва, Россия',
+    image: OSL_IMAGES.thumbLoft,
+    buyer: 'Robert Johnson',
+    dealAmount: '$950 000',
+    saleDate: '5 мая 2024',
+    statusLabel: 'Завершено',
+    statusTone: 'completed',
+    tab: 'completed',
+  },
+  {
+    id: 'demo-sale-4',
+    title: 'Вилла у моря',
+    location: 'Малибу, США',
+    image: OSL_IMAGES.thumbPenthouse,
+    buyer: 'Emily Johnson',
+    dealAmount: '$2 450 000',
+    saleDate: '2 мая 2024',
+    statusLabel: 'В ожидании',
+    statusTone: 'pending',
+    tab: 'pending',
+  },
+  {
+    id: 'demo-sale-5',
+    title: 'Пентхаус у моря',
+    location: 'Майами, США',
+    image: OSL_IMAGES.thumbVilla,
+    buyer: 'James Wilson',
+    dealAmount: '$780 000',
+    saleDate: '30 апр 2024',
+    statusLabel: 'Отменено',
+    statusTone: 'cancelled',
+    tab: 'cancelled',
+  },
+]
+
+function formatSaleDate(value) {
+  if (!value) return '—'
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return '—'
+  return date.toLocaleDateString('ru-RU', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  })
+}
+
+function getRowStatus(row) {
+  if (row.statusLabel && row.statusTone) return row
+  if (row.tab === 'completed') {
+    return { ...row, statusLabel: 'Завершено', statusTone: 'completed' }
+  }
+  if (row.tab === 'cancelled') {
+    return { ...row, statusLabel: 'Отменено', statusTone: 'cancelled' }
+  }
+  return { ...row, statusLabel: 'В процессе', statusTone: 'in-progress' }
+}
+
 function LogoMark({ className = '' }) {
   return (
     <svg className={`osl-logo__mark ${className}`.trim()} viewBox="0 0 40 40" aria-hidden>
@@ -70,25 +155,6 @@ function LogoMark({ className = '' }) {
       >
         $
       </text>
-    </svg>
-  )
-}
-
-function KeyVisual() {
-  return (
-    <svg className="osl-buyer-banner__key" viewBox="0 0 80 80" aria-hidden>
-      <defs>
-        <linearGradient id="osl-key-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#94e8e4" />
-          <stop offset="50%" stopColor="#53d8d3" />
-          <stop offset="100%" stopColor="#089a95" />
-        </linearGradient>
-      </defs>
-      <circle cx="28" cy="28" r="16" fill="url(#osl-key-grad)" />
-      <circle cx="28" cy="28" r="8" fill="#f0fdfa" />
-      <rect x="40" y="24" width="32" height="8" rx="4" fill="url(#osl-key-grad)" />
-      <rect x="62" y="20" width="6" height="6" rx="2" fill="url(#osl-key-grad)" />
-      <rect x="54" y="30" width="6" height="6" rx="2" fill="url(#osl-key-grad)" />
     </svg>
   )
 }
@@ -132,7 +198,17 @@ export default function OwnerSalesTestPage() {
     return () => window.removeEventListener(CLERK_DB_USER_SYNCED, onUserSynced)
   }, [loadSales])
 
-  const tabCounts = useMemo(() => countOwnerSalesByTab(sales), [sales])
+  const displayRows = useMemo(() => {
+    const sourceRows = sales.length > 0 ? sales : DESIGN_SALES_ROWS
+    return sourceRows.map((row) =>
+      getRowStatus({
+        ...row,
+        saleDate: row.saleDate || formatSaleDate(row.raw?.sold_at || row.raw?.created_at),
+      })
+    )
+  }, [sales])
+
+  const tabCounts = useMemo(() => countOwnerSalesByTab(displayRows), [displayRows])
 
   const filterTabs = useMemo(
     () => FILTER_TAB_DEFS.map((tab) => ({ ...tab, count: tabCounts[tab.id] ?? 0 })),
@@ -140,8 +216,8 @@ export default function OwnerSalesTestPage() {
   )
 
   const filteredRows = useMemo(
-    () => filterOwnerSalesRows(sales, activeTab),
-    [sales, activeTab]
+    () => filterOwnerSalesRows(displayRows, activeTab),
+    [displayRows, activeTab]
   )
 
   const renderNavItem = useCallback(
@@ -236,19 +312,15 @@ export default function OwnerSalesTestPage() {
                 ))}
               </div>
               <button type="button" className="osl-filter-btn osl-desktop-only">
-                <SlidersHorizontal size={16} strokeWidth={2} aria-hidden />
+                <Search size={16} strokeWidth={2} aria-hidden />
                 Фильтр
                 <ChevronDown size={14} strokeWidth={2.2} aria-hidden />
               </button>
             </div>
 
-            {salesLoading ? (
-              <div className="osl-table-state">Загрузка продаж…</div>
-            ) : filteredRows.length === 0 ? (
+            {filteredRows.length === 0 ? (
               <div className="osl-table-state">
-                {sales.length === 0
-                  ? 'Пока нет продаж с оплаченным резервом или завершённой покупкой.'
-                  : 'Нет продаж по выбранному фильтру.'}
+                {salesLoading ? 'Загрузка продаж…' : 'Нет продаж по выбранному фильтру.'}
               </div>
             ) : (
               <>
@@ -260,8 +332,8 @@ export default function OwnerSalesTestPage() {
                       <th>Объект</th>
                       <th>Покупатель</th>
                       <th>Сумма</th>
-                      <th>Резерв 10%</th>
-                      <th>Тип продажи</th>
+                      <th>Дата продажи</th>
+                      <th>Статус</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -285,21 +357,14 @@ export default function OwnerSalesTestPage() {
                           <span className="osl-buyer">{row.buyer}</span>
                         </td>
                         <td>
-                          <div className="osl-deal-cell">
-                            <span className="osl-deal-cell__label">{row.dealLabel}</span>
-                            <span className="osl-deal-cell__amount">{row.dealAmount}</span>
-                          </div>
+                          <span className="osl-amount">{row.dealAmount}</span>
                         </td>
                         <td>
-                          <span
-                            className={`osl-reserve osl-reserve--${row.reservePaid ? 'paid' : 'unpaid'}`}
-                          >
-                            {row.reservePaid ? 'Оплачен' : 'Не оплачен'}
-                          </span>
+                          <span className="osl-sale-date">{row.saleDate}</span>
                         </td>
                         <td>
-                          <span className={`osl-sale-type osl-sale-type--${row.saleType}`}>
-                            {OWNER_SALE_TYPE_LABELS[row.saleType]}
+                          <span className={`osl-status osl-status--${row.statusTone}`}>
+                            {row.statusLabel}
                           </span>
                         </td>
                       </tr>
@@ -317,17 +382,12 @@ export default function OwnerSalesTestPage() {
                     <p className="osl-mob-list__title">{row.title}</p>
                     <p className="osl-mob-list__meta">{row.buyer}</p>
                     <p className="osl-mob-list__deal">
-                      <span className="osl-mob-list__deal-label">{row.dealLabel}</span>
+                      <span className="osl-mob-list__deal-label">{row.saleDate}</span>
                       <span className="osl-mob-list__deal-amount">{row.dealAmount}</span>
                     </p>
                     <div className="osl-mob-list__tags">
-                      <span
-                        className={`osl-reserve osl-reserve--${row.reservePaid ? 'paid' : 'unpaid'}`}
-                      >
-                        Резерв 10%: {row.reservePaid ? 'оплачен' : 'не оплачен'}
-                      </span>
-                      <span className={`osl-sale-type osl-sale-type--${row.saleType}`}>
-                        {OWNER_SALE_TYPE_LABELS[row.saleType]}
+                      <span className={`osl-status osl-status--${row.statusTone}`}>
+                        {row.statusLabel}
                       </span>
                     </div>
                   </div>
@@ -336,33 +396,6 @@ export default function OwnerSalesTestPage() {
             </ul>
               </>
             )}
-
-            <div className="osl-promo-grid">
-              <article className="osl-promo-card osl-promo-card--light">
-                <h3>Продвигайте объекты</h3>
-                <p>Выделите объекты в каталоге и получайте больше заявок на покупку</p>
-                <div className="osl-promo-card__actions">
-                  <button type="button" className="osl-btn osl-btn--primary osl-btn--sm">
-                    Выбрать тариф
-                  </button>
-                  <div className="osl-promo-card__visual" aria-hidden>
-                    <img src={OSL_IMAGES.promoPremium} alt="" loading="lazy" decoding="async" />
-                  </div>
-                </div>
-              </article>
-              <article className="osl-promo-card osl-promo-card--dark">
-                <h3>Ищете покупателей?</h3>
-                <p>Откройте доступ к проверенной аудитории инвесторов по всему миру</p>
-                <div className="osl-promo-card__actions osl-promo-card__actions--dark">
-                  <button type="button" className="osl-btn osl-btn--white osl-btn--sm">
-                    Узнать больше
-                  </button>
-                  <div className="osl-promo-card__visual osl-promo-card__visual--photo" aria-hidden>
-                    <img src={OSL_IMAGES.promoSidebarBuyer} alt="" loading="lazy" decoding="async" />
-                  </div>
-                </div>
-              </article>
-            </div>
 
             <section className="osl-buyer-banner" aria-label="Стать покупателем">
               <div className="osl-buyer-banner__copy">
@@ -375,8 +408,15 @@ export default function OwnerSalesTestPage() {
                 <button type="button" className="osl-btn osl-btn--primary">
                   Стать покупателем
                 </button>
-                <KeyVisual />
               </div>
+              <img
+                className="osl-buyer-banner__image"
+                src={OSL_IMAGES.buyerKeyBanner}
+                alt=""
+                loading="lazy"
+                decoding="async"
+                aria-hidden
+              />
             </section>
           </div>
         </div>

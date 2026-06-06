@@ -143,19 +143,54 @@ export async function fetchOwnerProperties(userId) {
   return rows
 }
 
-export function filterOwnerProperties(rows, { tab = 'all', query = '' } = {}) {
+export function filterOwnerProperties(
+  rows,
+  { tab = 'all', query = '', listingTypes = [], sortBy = 'date_desc' } = {}
+) {
   const q = String(query || '')
     .trim()
     .toLowerCase()
 
-  return rows.filter((row) => {
+  const typeSet = Array.isArray(listingTypes) && listingTypes.length > 0 ? new Set(listingTypes) : null
+
+  let result = rows.filter((row) => {
     if (tab !== 'all' && row.filterKey !== tab) return false
+    if (typeSet && !typeSet.has(row.listingType)) return false
     if (!q) return true
     const haystack = [row.title, row.location, row.displayId, String(row.id)]
       .join(' ')
       .toLowerCase()
     return haystack.includes(q)
   })
+
+  const byViews = (row) => {
+    const num = Number(String(row.views || '').replace(/\s/g, ''))
+    return Number.isFinite(num) ? num : 0
+  }
+  const byPrice = (row) => {
+    const num = Number(row.raw?.price)
+    return Number.isFinite(num) ? num : 0
+  }
+  const byDate = (row) => {
+    const ts = new Date(row.raw?.created_at || 0).getTime()
+    return Number.isFinite(ts) ? ts : 0
+  }
+
+  result = [...result].sort((a, b) => {
+    switch (sortBy) {
+      case 'views_desc':
+        return byViews(b) - byViews(a)
+      case 'price_desc':
+        return byPrice(b) - byPrice(a)
+      case 'price_asc':
+        return byPrice(a) - byPrice(b)
+      case 'date_desc':
+      default:
+        return byDate(b) - byDate(a)
+    }
+  })
+
+  return result
 }
 
 export function countOwnerPropertiesByTab(rows) {

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard,
@@ -25,7 +25,6 @@ import {
   ClipboardList,
   Briefcase,
 } from 'lucide-react'
-import { OWNER_PROP_IMAGES } from './ownerPropertiesTestImages'
 import {
   OWNER_LISTING_TYPE_LABELS,
   getOwnerPropertyAmount,
@@ -82,6 +81,203 @@ const QUICK_ANALYTICS = [
   { label: 'Общее количество броней', value: '834', delta: '+8.2%', up: true, spark: 'green' },
   { label: 'Конверсия в бронь', value: '6.7%', delta: '+1.2%', up: true, spark: 'orange' },
 ]
+
+const ANALYTICS_PERIODS = [
+  { id: '7d', label: 'Последние 7 дней' },
+  { id: '30d', label: 'Последние 30 дней' },
+  { id: '90d', label: 'Последние 90 дней' },
+]
+
+const LISTING_TYPE_FILTER_OPTIONS = [
+  { id: 'auction', label: 'Аукцион' },
+  { id: 'buy_now', label: 'Купить сейчас' },
+  { id: 'shares', label: 'Доли' },
+  { id: 'debts', label: 'Долги' },
+]
+
+const SORT_FILTER_OPTIONS = [
+  { id: 'date_desc', label: 'Сначала новые' },
+  { id: 'views_desc', label: 'Больше просмотров' },
+  { id: 'price_desc', label: 'Дороже' },
+  { id: 'price_asc', label: 'Дешевле' },
+]
+
+const DEFAULT_PROPERTY_FILTERS = {
+  listingTypes: [],
+  sortBy: 'date_desc',
+}
+
+function isPropertyFiltersActive(filters) {
+  return filters.listingTypes.length > 0 || filters.sortBy !== DEFAULT_PROPERTY_FILTERS.sortBy
+}
+
+function QuickAnalyticsPeriodSelect({ value, onChange }) {
+  const [open, setOpen] = useState(false)
+  const rootRef = useRef(null)
+
+  useEffect(() => {
+    if (!open) return undefined
+
+    const handlePointerDown = (event) => {
+      if (rootRef.current && !rootRef.current.contains(event.target)) {
+        setOpen(false)
+      }
+    }
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') setOpen(false)
+    }
+
+    document.addEventListener('pointerdown', handlePointerDown)
+    document.addEventListener('keydown', handleKeyDown)
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown)
+      document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [open])
+
+  const selected = ANALYTICS_PERIODS.find((period) => period.id === value) ?? ANALYTICS_PERIODS[1]
+
+  return (
+    <div className="op-period-select" ref={rootRef}>
+      <button
+        type="button"
+        className="op-select-pill op-period-select__trigger"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        onClick={() => setOpen((prev) => !prev)}
+      >
+        <span>{selected.label}</span>
+        <ChevronDown
+          size={14}
+          strokeWidth={2.2}
+          aria-hidden
+          className={`op-period-select__chevron${open ? ' op-period-select__chevron--open' : ''}`}
+        />
+      </button>
+      {open ? (
+        <ul className="op-period-select__menu" role="listbox" aria-label="Период аналитики">
+          {ANALYTICS_PERIODS.map((period) => (
+            <li key={period.id} role="none">
+              <button
+                type="button"
+                role="option"
+                aria-selected={period.id === value}
+                className={`op-period-select__option${period.id === value ? ' op-period-select__option--active' : ''}`}
+                onClick={() => {
+                  onChange(period.id)
+                  setOpen(false)
+                }}
+              >
+                {period.label}
+              </button>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </div>
+  )
+}
+
+function PropertiesFilterMenu({ filters, onChange }) {
+  const [open, setOpen] = useState(false)
+  const rootRef = useRef(null)
+
+  useEffect(() => {
+    if (!open) return undefined
+
+    const handlePointerDown = (event) => {
+      if (rootRef.current && !rootRef.current.contains(event.target)) {
+        setOpen(false)
+      }
+    }
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') setOpen(false)
+    }
+
+    document.addEventListener('pointerdown', handlePointerDown)
+    document.addEventListener('keydown', handleKeyDown)
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown)
+      document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [open])
+
+  const active = isPropertyFiltersActive(filters)
+
+  const toggleListingType = (typeId) => {
+    onChange({
+      ...filters,
+      listingTypes: filters.listingTypes.includes(typeId)
+        ? filters.listingTypes.filter((item) => item !== typeId)
+        : [...filters.listingTypes, typeId],
+    })
+  }
+
+  const resetFilters = () => {
+    onChange(DEFAULT_PROPERTY_FILTERS)
+    setOpen(false)
+  }
+
+  return (
+    <div className="op-filter-menu" ref={rootRef}>
+      <button
+        type="button"
+        className={`op-filter-btn${active ? ' op-filter-btn--active' : ''}`}
+        aria-haspopup="dialog"
+        aria-expanded={open}
+        onClick={() => setOpen((prev) => !prev)}
+      >
+        <SlidersHorizontal size={18} strokeWidth={2} aria-hidden />
+        Фильтр
+        {active ? <span className="op-filter-btn__badge" aria-hidden /> : null}
+      </button>
+      {open ? (
+        <div className="op-filter-menu__panel" role="dialog" aria-label="Фильтры объектов">
+          <div className="op-filter-menu__section">
+            <p className="op-filter-menu__title">Тип размещения</p>
+            <div className="op-filter-menu__chips">
+              {LISTING_TYPE_FILTER_OPTIONS.map((option) => {
+                const selected = filters.listingTypes.includes(option.id)
+                return (
+                  <button
+                    key={option.id}
+                    type="button"
+                    className={`op-filter-menu__chip${selected ? ' op-filter-menu__chip--active' : ''}`}
+                    aria-pressed={selected}
+                    onClick={() => toggleListingType(option.id)}
+                  >
+                    {option.label}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+          <div className="op-filter-menu__section">
+            <p className="op-filter-menu__title">Сортировка</p>
+            <div className="op-filter-menu__sort">
+              {SORT_FILTER_OPTIONS.map((option) => (
+                <button
+                  key={option.id}
+                  type="button"
+                  className={`op-filter-menu__sort-item${filters.sortBy === option.id ? ' op-filter-menu__sort-item--active' : ''}`}
+                  aria-pressed={filters.sortBy === option.id}
+                  onClick={() => onChange({ ...filters, sortBy: option.id })}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="op-filter-menu__actions">
+            <button type="button" className="op-filter-menu__reset" onClick={resetFilters}>
+              Сбросить
+            </button>
+          </div>
+        </div>
+      ) : null}
+    </div>
+  )
+}
 
 function MiniSpark({ variant }) {
   const colors = { tiffany: MOT_TIFFANY, green: '#22c55e', orange: '#f59e0b' }
@@ -230,6 +426,8 @@ export default function OwnerPropertiesTestPage() {
   const [propertiesLoading, setPropertiesLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
+  const [analyticsPeriod, setAnalyticsPeriod] = useState('30d')
+  const [propertyFilters, setPropertyFilters] = useState(DEFAULT_PROPERTY_FILTERS)
 
   const closeMenu = useCallback(() => setMenuOpen(false), [])
 
@@ -287,8 +485,14 @@ export default function OwnerPropertiesTestPage() {
   )
 
   const visibleProperties = useMemo(
-    () => filterOwnerProperties(properties, { tab: activeTab, query: searchQuery }),
-    [properties, activeTab, searchQuery]
+    () =>
+      filterOwnerProperties(properties, {
+        tab: activeTab,
+        query: searchQuery,
+        listingTypes: propertyFilters.listingTypes,
+        sortBy: propertyFilters.sortBy,
+      }),
+    [properties, activeTab, searchQuery, propertyFilters]
   )
 
   const totalPages = Math.max(1, Math.ceil(visibleProperties.length / PAGE_SIZE))
@@ -302,7 +506,7 @@ export default function OwnerPropertiesTestPage() {
 
   useEffect(() => {
     setCurrentPage(1)
-  }, [activeTab, searchQuery])
+  }, [activeTab, searchQuery, propertyFilters])
 
   useEffect(() => {
     if (currentPage > totalPages) {
@@ -454,10 +658,7 @@ export default function OwnerPropertiesTestPage() {
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </label>
-              <button type="button" className="op-filter-btn">
-                <SlidersHorizontal size={18} strokeWidth={2} aria-hidden />
-                Фильтр
-              </button>
+              <PropertiesFilterMenu filters={propertyFilters} onChange={setPropertyFilters} />
             </div>
 
             <div className="op-table-card">
@@ -585,10 +786,7 @@ export default function OwnerPropertiesTestPage() {
             <section className="op-rail-card op-quick-analytics">
               <div className="op-rail-card__head">
                 <h2>Быстрая аналитика</h2>
-                <button type="button" className="op-select-pill">
-                  Последние 30 дней
-                  <ChevronDown size={14} />
-                </button>
+                <QuickAnalyticsPeriodSelect value={analyticsPeriod} onChange={setAnalyticsPeriod} />
               </div>
               <ul className="op-quick-list">
                 {QUICK_ANALYTICS.map((item) => (
@@ -602,44 +800,17 @@ export default function OwnerPropertiesTestPage() {
                   </li>
                 ))}
               </ul>
-              <button type="button" className="op-link-btn">
-                Перейти к аналитике
-              </button>
             </section>
 
-            <section className="op-rail-card op-rail-promo op-rail-promo--light">
+            <section className="op-rail-card op-rail-promo op-rail-promo--premium">
+              <div className="op-rail-promo__glow" aria-hidden />
               <div className="op-rail-promo__copy">
+                <span className="op-rail-promo__tag">Продвижение</span>
                 <h2>Продвигайте свои объекты</h2>
                 <p>Увеличьте просмотры и получайте больше броней с тарифами продвижения</p>
-                <div className="op-rail-promo__actions">
-                  <button type="button" className="op-btn op-btn--primary op-btn--sm op-rail-promo__cta">
-                    Выбрать тариф
-                  </button>
-                  <div className="op-rail-promo__visual" aria-hidden>
-                    <img src={OWNER_PROP_IMAGES.promoPromote} alt="" loading="lazy" decoding="async" />
-                  </div>
-                </div>
-              </div>
-            </section>
-
-            <section className="op-rail-card op-rail-promo op-rail-promo--dark">
-              <div className="op-rail-promo__copy">
-                <h2>Ищете недвижимость для себя?</h2>
-                <p>Переключитесь в режим покупателя и находите объекты по всему миру</p>
-                <div className="op-rail-promo__actions op-rail-promo__actions--dark">
-                  <button type="button" className="op-btn op-btn--white op-btn--sm op-rail-promo__cta">
-                    Стать покупателем
-                  </button>
-                  <div className="op-rail-promo__visual op-rail-promo__visual--dark" aria-hidden>
-                    <img
-                      src={OWNER_PROP_IMAGES.promoBannerDark}
-                      alt=""
-                      className="op-rail-promo__img--house"
-                      loading="lazy"
-                      decoding="async"
-                    />
-                  </div>
-                </div>
+                <button type="button" className="op-btn op-btn--primary op-btn--sm op-btn--block op-rail-promo__cta">
+                  Выбрать тариф
+                </button>
               </div>
             </section>
           </aside>
@@ -710,20 +881,6 @@ export default function OwnerPropertiesTestPage() {
         <nav className="op-nav" aria-label="Кабинет продавца">
           {NAV_ITEMS.map(renderNavItem)}
         </nav>
-
-        <div className="op-sidebar-promo">
-          <p className="op-sidebar-promo__title">Станьте покупателем</p>
-          <p className="op-sidebar-promo__text">Ищите и бронируйте недвижимость на платформе</p>
-          <button type="button" className="op-btn op-btn--primary op-btn--sm">
-            Стать покупателем
-          </button>
-          <img
-            className="op-sidebar-promo__img"
-            src={OWNER_PROP_IMAGES.promoSidebarBuyer}
-            alt=""
-            loading="lazy"
-          />
-        </div>
 
         <div className="op-sidebar-user">
           <span className="op-sidebar-user__avatar" aria-hidden>

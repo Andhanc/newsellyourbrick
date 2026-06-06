@@ -219,6 +219,42 @@
     white-space: nowrap;
   }
 
+  .mot-date-control--mobile {
+    position: relative;
+    flex-shrink: 0;
+  }
+
+  .mot-date-control--mobile .mot-date-popover {
+    position: fixed;
+    top: auto;
+    left: 12px !important;
+    right: 12px !important;
+    bottom: calc(74px + env(safe-area-inset-bottom, 0px));
+    width: calc(100vw - 24px) !important;
+    max-width: none;
+    padding: 14px;
+    border-radius: 18px;
+    transform: translateY(10px) scale(0.98);
+    transform-origin: bottom right;
+  }
+
+  .mot-date-control--mobile .mot-date-popover--open {
+    transform: translateY(0) scale(1);
+  }
+
+  .mot-date-popover__head strong {
+    font-size: 15px;
+  }
+
+  .mot-date-popover__fields {
+    grid-template-columns: 1fr;
+  }
+
+  .mot-date-popover__actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
   /* —— Scroll area —— */
   .mot-content {
     flex: 1;
@@ -475,77 +511,137 @@
     padding-top: 2px;
   }
 
-  /* —— Promo banner —— */
-  .mot-mob-promo {
+  /* —— Promo cards —— */
+  .mot-mob-promo-grid {
     display: flex !important;
-    flex-direction: row;
-    align-items: stretch;
+    flex-direction: column;
+    gap: 12px;
     margin: 0 var(--mot-mob-pad) 16px;
-    padding: 0;
-    overflow: hidden;
-    min-height: 132px;
-    border-radius: 12px !important;
-    border: none !important;
-    background: linear-gradient(135deg, #eef8ff 0%, #f5fbff 50%, #ffffff 100%) !important;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06) !important;
   }
 
-  .mot-mob-promo__copy {
+  .mot-mob-promo-card {
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+    overflow: hidden;
+    min-height: 132px;
+    border-radius: 14px;
+  }
+
+  .mot-mob-promo-card--light {
+    background: linear-gradient(135deg, #ecfdf5 0%, #f8fffe 55%, #ffffff 100%);
+    border: 1px solid rgba(10, 186, 181, 0.32);
+    box-shadow: 0 4px 16px rgba(10, 186, 181, 0.1);
+  }
+
+  .mot-mob-promo-card--dark {
+    background: linear-gradient(128deg, #0f172a 0%, #134e4a 55%, #0d9488 100%);
+    border: 1px solid rgba(10, 186, 181, 0.32);
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.16);
+  }
+
+  .mot-mob-promo-card__copy {
     flex: 1;
     min-width: 0;
-    padding: 16px 8px 16px 16px;
+    padding: 14px 8px 14px 14px;
     display: flex;
     flex-direction: column;
     justify-content: center;
     z-index: 1;
   }
 
-  .mot-mob-promo__title {
-    margin: 0 0 6px;
-    font-size: 15px;
+  .mot-mob-promo-card__tag {
+    display: inline-block;
+    align-self: flex-start;
+    margin-bottom: 6px;
+    padding: 3px 8px;
+    border-radius: 999px;
+    font-size: 9px;
     font-weight: 700;
-    color: #000000;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .mot-mob-promo-card--light .mot-mob-promo-card__tag {
+    background: rgba(10, 186, 181, 0.12);
+    color: #0d9488;
+  }
+
+  .mot-mob-promo-card--dark .mot-mob-promo-card__tag {
+    background: rgba(10, 186, 181, 0.22);
+    color: #99f6e4;
+  }
+
+  .mot-mob-promo-card__title {
+    margin: 0 0 4px;
+    font-size: 14px;
+    font-weight: 700;
     line-height: 1.25;
   }
 
-  .mot-mob-promo__text {
-    margin: 0 0 12px;
+  .mot-mob-promo-card--light .mot-mob-promo-card__title {
+    color: #111827;
+  }
+
+  .mot-mob-promo-card--dark .mot-mob-promo-card__title {
+    color: #fff;
+  }
+
+  .mot-mob-promo-card__text {
+    margin: 0 0 10px;
     font-size: 11px;
     line-height: 1.4;
+  }
+
+  .mot-mob-promo-card--light .mot-mob-promo-card__text {
     color: #6b7280;
   }
 
-  .mot-mob-promo__copy .mot-btn--primary.mot-btn--sm {
-    padding: 9px 14px;
-    font-size: 12px;
-    font-weight: 600;
-    border-radius: 10px;
+  .mot-mob-promo-card--dark .mot-mob-promo-card__text {
+    color: rgba(255, 255, 255, 0.76);
+  }
+
+  .mot-mob-promo-card--light .mot-btn--primary.mot-btn--sm {
+    padding: 8px 12px;
+    font-size: 11px;
     background: var(--mot-tiffany);
+    color: #fff;
     box-shadow: none;
   }
 
-  .mot-mob-promo__copy .mot-btn--primary.mot-btn--sm:hover {
-    background: #089a95;
+  .mot-mob-promo-card--dark .mot-btn--white.mot-btn--sm {
+    padding: 8px 12px;
+    font-size: 11px;
   }
 
-  .mot-mob-promo__visual {
-    flex: 0 0 118px;
+  .mot-mob-promo-card__visual {
+    flex: 0 0 96px;
     position: relative;
     overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px;
   }
 
-  .mot-mob-promo__visual::before {
-    display: none;
+  .mot-mob-promo-card--dark .mot-mob-promo-card__visual {
+    padding: 10px 12px 10px 0;
   }
 
-  .mot-mob-promo__visual img {
+  .mot-mob-promo-card__visual img {
     width: 100%;
     height: 100%;
-    min-height: 132px;
-    object-fit: cover;
-    object-position: center right;
+    object-fit: contain;
+    object-position: center;
     display: block;
   }
+
+  .mot-mob-promo-card--dark .mot-mob-promo-card__visual img {
+    border-radius: 10px;
+    object-fit: cover;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.24);
+  }
+
 
   /* —— Bottom nav —— */
   .mot-tabbar {
@@ -637,7 +733,7 @@
     flex: 0 0 120px;
   }
 
-  .mot-mob-promo__visual {
-    flex: 0 0 100px;
+  .mot-mob-promo-card__visual {
+    flex: 0 0 88px;
   }
 }

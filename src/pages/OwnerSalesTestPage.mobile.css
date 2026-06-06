@@ -353,9 +353,39 @@
   }
 
   .osl-mob-list__tags .osl-reserve,
-  .osl-mob-list__tags .osl-sale-type {
+  .osl-mob-list__tags .osl-sale-type,
+  .osl-mob-list__tags .osl-status {
     font-size: 11px;
     padding: 4px 8px;
+  }
+
+  .osl-status {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  .osl-status--completed {
+    background: #dff7ec;
+    color: #0f9f64;
+  }
+
+  .osl-status--in-progress {
+    background: #fff0d5;
+    color: #d48612;
+  }
+
+  .osl-status--pending {
+    background: #f2f3f5;
+    color: #5b6472;
+  }
+
+  .osl-status--cancelled {
+    background: #ffe5eb;
+    color: #d64263;
   }
 
   .osl-promo-grid {
@@ -363,19 +393,36 @@
   }
 
   .osl-buyer-banner {
+    position: relative;
     flex-direction: column;
     align-items: flex-start;
     padding: 16px;
     border-radius: 14px;
+    overflow: hidden;
+    background: #f2f7ff;
   }
 
   .osl-buyer-banner__actions {
     width: 100%;
     justify-content: space-between;
+    position: relative;
+    z-index: 2;
   }
 
-  .osl-buyer-banner__key {
-    width: 56px;
-    height: 56px;
+  .osl-buyer-banner__copy {
+    position: relative;
+    z-index: 2;
+    max-width: 70%;
+  }
+
+  .osl-buyer-banner__image {
+    position: absolute;
+    right: -58px;
+    bottom: 0;
+    width: 220px;
+    height: 100%;
+    object-fit: cover;
+    object-position: right center;
+    pointer-events: none;
   }
 }

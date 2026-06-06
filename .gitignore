@@ -58,6 +58,8 @@ server/uploads/
 *.png
 !6019556644745841501.png
 !main fon.png
+!public/images/owner-sales-test/
+!public/images/owner-sales-test/sales-buyer-key-banner.png
 *.gif
 *.pdf
 !public/documents/reserve-terms.pdf
