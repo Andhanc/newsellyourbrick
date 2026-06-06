@@ -58,8 +58,14 @@ server/uploads/
 *.png
 !6019556644745841501.png
 !main fon.png
+!public/images/oap-*/
+!public/images/oap-*/**
 !public/images/owner-sales-test/
-!public/images/owner-sales-test/sales-buyer-key-banner.png
+!public/images/owner-sales-test/**
+!public/images/owner-properties-test/
+!public/images/owner-properties-test/**
+!public/images/owner-test/
+!public/images/owner-test/**
 *.gif
 *.pdf
 !public/documents/reserve-terms.pdf

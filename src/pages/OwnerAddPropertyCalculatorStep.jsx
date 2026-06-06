@@ -68,6 +68,15 @@ export default function OwnerAddPropertyCalculatorStep({
             Расчёт основан на похожих объявлениях в выбранном городе. Это ориентир — финальные суммы
             вы задаёте сами на шаге «Цена и дата».
           </p>
+          <p className="oap-calculator-step__sidebar-text">
+            Чем точнее площадь, район и тип объекта, тем ближе оценка к реальному рынку. При
+            необходимости уточните район в форме слева перед расчётом.
+          </p>
+          <ul className="oap-calculator-step__sidebar-tips">
+            <li>Используйте результат как стартовую точку для аукциона</li>
+            <li>После расчёта суммы можно подставить в поля цены одним кликом</li>
+            <li>Рынок меняется — итоговую цену всегда контролируете вы</li>
+          </ul>
           <div className="oap-calculator-step__sidebar-illustration">
             <img
               src={OAP_CALCULATOR_IMAGES.sidebarHero}

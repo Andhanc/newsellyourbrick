@@ -80,6 +80,15 @@ export default function OwnerAddPropertyAmenitiesStep({
             Выбранные удобства будут отображаться в карточке объекта и привлекут больше внимания
             покупателей.
           </p>
+          <p className="oap-step-sidebar__text">
+            Отмечайте только то, что реально есть у объекта — это повышает доверие и снижает число
+            уточняющих вопросов на просмотре.
+          </p>
+          <ul className="oap-step-sidebar__tips">
+            <li>Парковка, лифт и охрана — часто решают при выборе квартиры</li>
+            <li>Бассейн, сад и терраса усиливают премиальное позиционирование</li>
+            <li>В поле ниже можно добавить редкие опции, которых нет в списке</li>
+          </ul>
           <div className="oap-step-sidebar__illustration">
             <img
               src={OAP_AMENITIES_IMAGES.sidebarInterior}

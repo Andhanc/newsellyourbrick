@@ -108,6 +108,11 @@ export default function OwnerAddPropertyListingStep({
             Выберите формат под ваш объект: классический аукцион, торги с мгновенным выкупом, продажа
             долей или работа с долговыми активами.
           </p>
+          <p className="oap-listing-step__sidebar-text oap-listing-step__sidebar-text--extra">
+            Аукцион с выкупом ускоряет сделку — покупатель может сразу забрать объект по фиксированной
+            цене. Продажа долей подойдёт, если хотите привлечь нескольких инвесторов. Формат можно
+            изменить до публикации объявления.
+          </p>
           <div className="oap-listing-step__sidebar-illustration">
             <img
               src={OAP_LISTING_IMAGES.sidebarHero}
