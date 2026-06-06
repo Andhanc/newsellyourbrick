@@ -22,6 +22,9 @@
   }
 
   .osl-body {
+    --osl-mob-pad: 16px;
+    --osl-tiffany: #0abab5;
+
     flex: 1;
     min-height: 0;
     display: flex;
@@ -181,15 +184,16 @@
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    padding: 16px 0 12px;
-    background: transparent;
+    margin: 0 calc(var(--osl-mob-pad) * -1);
+    padding: 16px var(--osl-mob-pad) 12px;
+    background: #ffffff;
   }
 
   .osl-mob-pagehead__title {
     margin: 0;
-    font-size: 26px;
+    font-size: 24px;
     font-weight: 700;
-    letter-spacing: -0.03em;
+    letter-spacing: -0.02em;
     color: #000000;
     line-height: 1.15;
     flex: 1;
@@ -270,6 +274,81 @@
 
   .osl-tabs__item--desktop-only {
     display: none;
+  }
+
+  .osl-sales-summary {
+    display: grid;
+    grid-template-columns: 44px minmax(0, 1fr);
+    gap: 12px;
+    align-items: center;
+    margin: 0 0 14px;
+    padding: 14px;
+    border: 1px solid rgba(10, 186, 181, 0.22);
+    border-radius: 14px;
+    background:
+      linear-gradient(120deg, rgba(236, 253, 251, 0.98) 0%, rgba(255, 255, 255, 0.98) 54%, rgba(231, 250, 247, 0.96) 100%);
+    box-shadow: 0 10px 24px rgba(10, 186, 181, 0.09);
+  }
+
+  .osl-sales-summary__icon {
+    width: 44px;
+    height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    background: #0abab5;
+    color: #ffffff;
+    box-shadow: 0 10px 18px rgba(10, 186, 181, 0.22);
+  }
+
+  .osl-sales-summary__copy {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .osl-sales-summary__label {
+    color: #6b7280;
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .osl-sales-summary__value {
+    color: #111827;
+    font-size: 24px;
+    font-weight: 800;
+    line-height: 1.12;
+    white-space: nowrap;
+  }
+
+  .osl-sales-summary__meta {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    color: #6b7280;
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .osl-sales-summary__pill {
+    height: 28px;
+    padding: 0 10px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    border-radius: 999px;
+    background: rgba(10, 186, 181, 0.12);
+    color: #089a95;
+  }
+
+  .osl-sales-summary__hint {
+    height: 28px;
+    display: inline-flex;
+    align-items: center;
+    color: #089a95;
   }
 
   /* —— Mobile list —— */
@@ -394,9 +473,10 @@
 
   .osl-buyer-banner {
     position: relative;
+    min-height: 150px;
     flex-direction: column;
     align-items: flex-start;
-    padding: 16px;
+    padding: 18px;
     border-radius: 14px;
     overflow: hidden;
     background: #f2f7ff;
@@ -417,9 +497,9 @@
 
   .osl-buyer-banner__image {
     position: absolute;
-    right: -58px;
+    right: -64px;
     bottom: 0;
-    width: 220px;
+    width: 250px;
     height: 100%;
     object-fit: cover;
     object-position: right center;

@@ -41,7 +41,14 @@ const OWNER_NOTIFICATIONS = [
   },
 ]
 
-export default function OwnerNotificationsDrawer({ open, onClose }) {
+export default function OwnerNotificationsDrawer({ open, onClose, items = OWNER_NOTIFICATIONS }) {
+  const handleItemAction = (item) => {
+    if (typeof item.onAction === 'function') {
+      item.onAction()
+      onClose()
+    }
+  }
+
   useEffect(() => {
     if (!open) return undefined
 
@@ -76,26 +83,52 @@ export default function OwnerNotificationsDrawer({ open, onClose }) {
           </button>
         </header>
 
-        <ul className="ond__list">
-          {OWNER_NOTIFICATIONS.map((item) => {
-            const Icon = item.icon
-            return (
-              <li key={item.id} className={`ond-item ond-item--${item.tone}`}>
-                <span className="ond-item__icon">
-                  <Icon size={18} strokeWidth={2.2} aria-hidden />
-                </span>
-                <span className="ond-item__body">
-                  <span className="ond-item__title">
-                    {item.title}
-                    {item.unread && <i aria-label="Новое" />}
+        {items.length > 0 ? (
+          <ul className="ond__list">
+            {items.map((item) => {
+              const Icon = item.icon
+              return (
+                <li key={item.id} className={`ond-item ond-item--${item.tone}`}>
+                  <span className="ond-item__icon">
+                    <Icon size={18} strokeWidth={2.2} aria-hidden />
                   </span>
-                  <span className="ond-item__text">{item.text}</span>
-                </span>
-                <time className="ond-item__time">{item.time}</time>
-              </li>
-            )
-          })}
-        </ul>
+                  <span className="ond-item__body">
+                    <span className="ond-item__title">
+                      {item.title}
+                      {item.unread && <i aria-label="Новое" />}
+                    </span>
+                    <span className="ond-item__text">{item.text}</span>
+                  </span>
+                  <span className="ond-item__side">
+                    {item.amount && <strong className="ond-item__amount">{item.amount}</strong>}
+                    <time className="ond-item__time">{item.time}</time>
+                    {item.onAction ? (
+                      <button
+                        type="button"
+                        className="ond-item__open"
+                        onClick={() => handleItemAction(item)}
+                      >
+                        Открыть
+                      </button>
+                    ) : item.href ? (
+                      <a className="ond-item__open" href={item.href} onClick={onClose}>
+                        Открыть
+                      </a>
+                    ) : null}
+                  </span>
+                </li>
+              )
+            })}
+          </ul>
+        ) : (
+          <div className="ond__empty">
+            <span className="ond__empty-icon">
+              <TrendingUp size={22} strokeWidth={2.2} aria-hidden />
+            </span>
+            <strong>Ставок пока нет</strong>
+            <p>Когда покупатели сделают ставки на ваши объекты, они появятся здесь.</p>
+          </div>
+        )}
       </aside>
     </div>
   )

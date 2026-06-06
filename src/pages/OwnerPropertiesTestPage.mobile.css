@@ -448,6 +448,32 @@
     font-size: 11px;
   }
 
+  .op-mob-list__meta-row .op-object-timer {
+    min-height: 34px;
+    padding: 5px 7px;
+    gap: 7px;
+    border-radius: 11px;
+  }
+
+  .op-mob-list__meta-row .op-object-timer__icon {
+    width: 22px;
+    height: 22px;
+    border-radius: 8px;
+  }
+
+  .op-mob-list__meta-row .op-object-timer__icon svg {
+    width: 12px;
+    height: 12px;
+  }
+
+  .op-mob-list__meta-row .op-object-timer__caption {
+    font-size: 8px;
+  }
+
+  .op-mob-list__meta-row .op-object-timer__value {
+    font-size: 11px;
+  }
+
   .op-mob-list__amount {
     margin: 0 0 6px;
   }

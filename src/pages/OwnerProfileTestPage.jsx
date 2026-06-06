@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import {
   LayoutDashboard,
@@ -10,23 +10,36 @@ import {
   BarChart3,
   MessageSquare,
   Settings,
-  Bell,
   Menu,
   X,
-  Pencil,
-  Wallet,
-  ChevronRight,
-  CheckCircle2,
   Eye,
+  Download,
   DollarSign,
   TrendingUp,
+  Mail,
+  Phone,
+  ShieldCheck,
+  UserRound,
+  FileText,
+  Sparkles,
 } from 'lucide-react'
 import { OPR_IMAGES } from './ownerProfileTestImages'
 import { OWNER_PROFILE_TABS, isOwnerProfileTabId } from './ownerProfileTestTabs'
 import OwnerTestProfileMenu from '../components/OwnerTestProfileMenu'
+import OwnerNotificationsButton from '../components/OwnerNotificationsButton'
 import { useOwnerTestProfile } from '../context/OwnerTestProfileContext'
 import { OWNER_VIEWS } from '../context/OwnerTestNavigationContext'
 import { useOwnerTestEmbeddedNav } from '../hooks/useOwnerTestEmbeddedNav'
+import {
+  CLERK_DB_USER_SYNCED,
+  fetchOwnerProperties,
+  getOwnerPropertiesUserId,
+} from '../utils/ownerPropertiesList'
+import { fetchOwnerTestDriveBookings } from '../utils/ownerTestDriveList'
+import {
+  downloadXlsxBuffer,
+  exportOwnerAnalyticsExcel,
+} from '../utils/ownerAnalyticsExcelExport'
 import { showNotification } from '../utils/toastHelper'
 import './OwnerProfileTestPage.css'
 import './OwnerProfileTestPage.mobile.css'
@@ -36,7 +49,7 @@ import './OwnerProfileTestPage.mobile.css'
  * — firstName, lastName, country, phone, email, address, passportNumber, identificationNumber
  * — subscription, depositStatus (отображение)
  * — avatar, role, memberSince
- * — notifications, statistics (вкладки настроек)
+ * — statistics (вкладки настроек)
  */
 const NAV_ITEMS = [
   { id: 'home', label: 'Главная', icon: LayoutDashboard, href: '/main-owner-test' },
@@ -50,32 +63,111 @@ const NAV_ITEMS = [
   { id: 'settings', label: 'Настройки', icon: Settings, active: true },
 ]
 
-const STATS_METRICS = [
-  { label: 'Просмотры', value: '12 450', delta: '+12.5%', icon: Eye, tone: 'tiffany' },
-  { label: 'Брони', value: '834', delta: '+8.2%', icon: CalendarCheck, tone: 'orange' },
-  { label: 'Продажи', value: '128', delta: '+9.7%', icon: ShoppingBag, tone: 'teal' },
-  { label: 'Доход', value: '$48 750', delta: '+24.3%', icon: DollarSign, tone: 'green' },
+const PROFILE_COMPLETION_FIELDS = [
+  'firstName',
+  'lastName',
+  'country',
+  'phone',
+  'email',
+  'address',
+  'passportNumber',
+  'identificationNumber',
 ]
 
-const STATS_TOP_PROPERTIES = [
-  { name: 'Вилла у моря', views: '3 240', bookings: 42, revenue: '$12 400' },
-  { name: 'Пентхаус Manhattan', views: '2 890', bookings: 31, revenue: '$9 850' },
-  { name: 'Лофт в центре', views: '1 760', bookings: 18, revenue: '$5 200' },
-]
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
 
-const NOTIFICATION_SETTINGS = [
-  { id: 'email', label: 'Email-уведомления', defaultOn: true },
-  { id: 'push', label: 'Push-уведомления', defaultOn: true },
-  { id: 'bookings', label: 'Новые брони', defaultOn: true },
-  { id: 'sales', label: 'Продажи и ставки', defaultOn: true },
-  { id: 'messages', label: 'Сообщения', defaultOn: false },
-]
+const EMPTY_OWNER_SALES = {
+  auction: [],
+  shares: [],
+  debts: [],
+  buy_now: [],
+  test_drive: [],
+}
 
-const APP_SETTINGS_TOGGLES = [
-  { id: 'showPhone', label: 'Показывать телефон в объявлениях', defaultOn: true },
-  { id: 'showEmail', label: 'Показывать email в объявлениях', defaultOn: false },
-  { id: 'twoFactor', label: 'Двухфакторная аутентификация', defaultOn: false },
-]
+function formatDateSafe(value) {
+  if (!value) return 'Не указано'
+  const raw = String(value).trim()
+  if (!raw) return 'Не указано'
+
+  let date = new Date(raw)
+  if (Number.isNaN(date.getTime()) && /^\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}(:\d{2})?$/.test(raw)) {
+    date = new Date(raw.replace(' ', 'T'))
+  }
+  if (Number.isNaN(date.getTime()) && /^\d{2}\.\d{2}\.\d{4}/.test(raw)) {
+    const [datePart, timePart] = raw.split(' ')
+    const [dd, mm, yyyy] = datePart.split('.')
+    date = new Date(`${yyyy}-${mm}-${dd}${timePart ? `T${timePart}` : ''}`)
+  }
+
+  if (Number.isNaN(date.getTime())) return 'Не указано'
+  return date.toLocaleDateString('ru-RU')
+}
+
+function formatNumber(value) {
+  return (Number(value) || 0).toLocaleString('ru-RU')
+}
+
+function formatMoney(value, currency = 'USD') {
+  const amount = Number(value) || 0
+  const symbol = String(currency || 'USD').toUpperCase() === 'EUR' ? '€' : '$'
+  return `${symbol}${amount.toLocaleString('ru-RU', { maximumFractionDigits: 0 })}`
+}
+
+function getOwnerRowTable(row) {
+  const raw = row?.raw || row || {}
+  if (raw.property_table) return raw.property_table
+  if (raw.source_table === 'houses' || raw.source_table === 'properties_houses') return 'properties_houses'
+  if (raw.property_type === 'house' || raw.property_type === 'villa') return 'properties_houses'
+  return 'properties_apartments'
+}
+
+function propertyKey(id, table) {
+  return `${table || 'properties_apartments'}:${Number(id)}`
+}
+
+function collectOwnerSalesRows(data) {
+  const sales = data || EMPTY_OWNER_SALES
+  return ['auction', 'shares', 'debts', 'buy_now'].flatMap((key) =>
+    Array.isArray(sales[key]) ? sales[key] : []
+  )
+}
+
+function getStatsPeriodStart(period) {
+  const date = new Date()
+  if (period === '7d') date.setDate(date.getDate() - 6)
+  else if (period === 'year') date.setFullYear(date.getFullYear() - 1)
+  else date.setDate(date.getDate() - 29)
+  date.setHours(0, 0, 0, 0)
+  return date.getTime()
+}
+
+function isAfterPeriodStart(value, periodStart) {
+  if (!value) return false
+  const time = new Date(value).getTime()
+  return Number.isFinite(time) && time >= periodStart
+}
+
+function buildSalesRevenueByProperty(data, periodStart = null) {
+  const revenueByKey = new Map()
+  for (const sale of collectOwnerSalesRows(data)) {
+    if (periodStart != null && !isAfterPeriodStart(sale.sold_at, periodStart)) continue
+    const key = propertyKey(sale.id ?? sale.property_id, sale.property_table)
+    revenueByKey.set(key, (revenueByKey.get(key) || 0) + (Number(sale.sale_amount) || 0))
+  }
+  return revenueByKey
+}
+
+function buildBookingsByProperty(rows, periodStart = null) {
+  const bookingsByKey = new Map()
+  for (const row of rows) {
+    if (periodStart != null && !isAfterPeriodStart(row.startDate || row.raw?.created_at, periodStart)) {
+      continue
+    }
+    const key = propertyKey(row.propertyId, row.propertyTable)
+    bookingsByKey.set(key, (bookingsByKey.get(key) || 0) + 1)
+  }
+  return bookingsByKey
+}
 
 function LogoMark({ className = '' }) {
   return (
@@ -120,63 +212,6 @@ function ProfileAvatar({ large = false }) {
   )
 }
 
-const SUB_PROMO_PERKS = [
-  'Неограниченные объекты',
-  'Продвижение в каталоге',
-  'Приоритетная поддержка',
-]
-
-function SubscriptionPromo({ isEmbedded, goTo }) {
-  return (
-    <section className="opr-sub-promo" aria-label="Подписки и тарифы">
-      <div className="opr-sub-promo__glow" aria-hidden />
-      <div className="opr-sub-promo__body">
-        <span className="opr-sub-promo__badge">−20% на годовой план</span>
-        <h3 className="opr-sub-promo__title">Перейдите на Премиум</h3>
-        <p className="opr-sub-promo__text">
-          Больше просмотров, заявок и инструментов для роста продаж
-        </p>
-        <ul className="opr-sub-promo__list">
-          {SUB_PROMO_PERKS.map((item) => (
-            <li key={item}>{item}</li>
-          ))}
-        </ul>
-        {isEmbedded ? (
-          <button
-            type="button"
-            className="opr-btn opr-btn--primary opr-sub-promo__btn"
-            onClick={() => goTo(OWNER_VIEWS.SUBSCRIPTIONS)}
-          >
-            Смотреть тарифы
-          </button>
-        ) : (
-          <Link to="/owner-subscriptions-test" className="opr-btn opr-btn--primary opr-sub-promo__btn">
-            Смотреть тарифы
-          </Link>
-        )}
-      </div>
-      <div className="opr-sub-promo__visual" aria-hidden>
-        <img src={OPR_IMAGES.promoPremium} alt="" loading="lazy" decoding="async" />
-      </div>
-    </section>
-  )
-}
-
-function Toggle({ checked, onChange, label }) {
-  return (
-    <label className="opr-toggle">
-      <span className="opr-toggle__label">{label}</span>
-      <input
-        type="checkbox"
-        className="opr-toggle__input"
-        checked={checked}
-        onChange={(e) => onChange(e.target.checked)}
-      />
-      <span className="opr-toggle__track" aria-hidden />
-    </label>
-  )
-}
-
 export default function OwnerProfileTestPage() {
   const { profile, loading, saving, fullName, roleLabel, updateProfile, saveProfile } =
     useOwnerTestProfile()
@@ -190,18 +225,21 @@ export default function OwnerProfileTestPage() {
     return isOwnerProfileTabId(tab) ? tab : 'personal'
   })
   const [menuOpen, setMenuOpen] = useState(false)
-  const [notifications, setNotifications] = useState(() =>
-    Object.fromEntries(NOTIFICATION_SETTINGS.map((n) => [n.id, n.defaultOn]))
-  )
-  const [appSettings, setAppSettings] = useState(() =>
-    Object.fromEntries(APP_SETTINGS_TOGGLES.map((item) => [item.id, item.defaultOn]))
-  )
   const [appPreferences, setAppPreferences] = useState({
     language: 'ru',
     currency: 'usd',
     timezone: 'minsk',
   })
   const [statsPeriod, setStatsPeriod] = useState('30d')
+  const [ownerProperties, setOwnerProperties] = useState([])
+  const [ownerTestDriveRows, setOwnerTestDriveRows] = useState([])
+  const [ownerSalesData, setOwnerSalesData] = useState(EMPTY_OWNER_SALES)
+  const [statsLoading, setStatsLoading] = useState(true)
+  const [statsError, setStatsError] = useState('')
+  const [exportingExcel, setExportingExcel] = useState(false)
+  const [saveReleased, setSaveReleased] = useState(false)
+  const profileFormRef = useRef(null)
+  const saveReleaseRef = useRef(null)
 
   const closeMenu = useCallback(() => setMenuOpen(false), [])
 
@@ -242,6 +280,42 @@ export default function OwnerProfileTestPage() {
       showNotification(result.error || 'Не удалось сохранить изменения')
     }
   }
+
+  const loadStatistics = useCallback(async () => {
+    const userId = getOwnerPropertiesUserId()
+    if (!userId) {
+      setOwnerProperties([])
+      setOwnerTestDriveRows([])
+      setOwnerSalesData(EMPTY_OWNER_SALES)
+      setStatsLoading(false)
+      setStatsError('Войдите в аккаунт продавца, чтобы увидеть статистику.')
+      return
+    }
+
+    setStatsLoading(true)
+    setStatsError('')
+    try {
+      const [properties, testDrives, salesResponse] = await Promise.all([
+        fetchOwnerProperties(userId),
+        fetchOwnerTestDriveBookings(userId),
+        fetch(`${API_BASE_URL}/owner/${userId}/my-sales`),
+      ])
+      const salesJson = await salesResponse.json().catch(() => ({}))
+      setOwnerProperties(properties)
+      setOwnerTestDriveRows(testDrives)
+      setOwnerSalesData(
+        salesResponse.ok && salesJson.success && salesJson.data ? salesJson.data : EMPTY_OWNER_SALES
+      )
+    } catch (error) {
+      console.warn('OwnerProfileTestPage: не удалось загрузить статистику', error)
+      setOwnerProperties([])
+      setOwnerTestDriveRows([])
+      setOwnerSalesData(EMPTY_OWNER_SALES)
+      setStatsError('Не удалось загрузить статистику. Попробуйте обновить страницу.')
+    } finally {
+      setStatsLoading(false)
+    }
+  }, [])
 
   const selectProfileTab = useCallback(
     (tabId) => {
@@ -287,6 +361,280 @@ export default function OwnerProfileTestPage() {
     }
   }, [menuOpen])
 
+  useEffect(() => {
+    if (activeTab !== 'personal') {
+      setSaveReleased(false)
+      return undefined
+    }
+
+    let frame = null
+    let settleTimer = null
+    let observer = null
+    const form = profileFormRef.current
+    const releaseAnchor = saveReleaseRef.current
+    const scrollParent = (() => {
+      let parent = form?.parentElement
+      while (parent && parent !== document.body) {
+        const { overflowY } = window.getComputedStyle(parent)
+        if (['auto', 'scroll'].includes(overflowY)) {
+          return parent
+        }
+        parent = parent.parentElement
+      }
+      return null
+    })()
+
+    const updateSavePosition = () => {
+      frame = null
+      const currentForm = profileFormRef.current
+      if (!currentForm) return
+
+      const bottomOffset = window.matchMedia('(max-width: 900px)').matches ? 18 : 24
+      const currentSlot = saveReleaseRef.current
+      const button = currentForm.querySelector('.opr-profile-form__save')
+      const buttonHeight = button?.getBoundingClientRect().height || 46
+      const rootBottom = scrollParent?.getBoundingClientRect().bottom || window.innerHeight
+      const slotRect = currentSlot?.getBoundingClientRect()
+      const slotTop = slotRect?.top
+      const formBottom = currentForm.getBoundingClientRect().bottom
+      const staticButtonOffset = slotRect ? Math.max((slotRect.height - buttonHeight) / 2, 0) : 0
+      const fixedButtonTop = rootBottom - bottomOffset - buttonHeight
+      const releaseLine = fixedButtonTop - staticButtonOffset
+
+      setSaveReleased((wasReleased) => {
+        if (slotTop == null) return formBottom <= rootBottom - bottomOffset
+        return wasReleased ? slotTop <= releaseLine + 48 : slotTop <= releaseLine
+      })
+    }
+
+    const scheduleUpdate = () => {
+      if (frame != null) return
+      frame = window.requestAnimationFrame(updateSavePosition)
+    }
+
+    updateSavePosition()
+    settleTimer = window.setTimeout(updateSavePosition, 250)
+    window.addEventListener('scroll', scheduleUpdate, { passive: true })
+    window.addEventListener('resize', scheduleUpdate)
+    window.addEventListener('load', scheduleUpdate)
+    document.addEventListener('scroll', scheduleUpdate, true)
+    scrollParent?.addEventListener('scroll', scheduleUpdate, { passive: true })
+    if (releaseAnchor && 'IntersectionObserver' in window) {
+      observer = new IntersectionObserver(scheduleUpdate, {
+        root: scrollParent,
+        threshold: 0,
+      })
+      observer.observe(releaseAnchor)
+    }
+
+    return () => {
+      if (frame != null) window.cancelAnimationFrame(frame)
+      if (settleTimer != null) window.clearTimeout(settleTimer)
+      observer?.disconnect()
+      window.removeEventListener('scroll', scheduleUpdate)
+      window.removeEventListener('resize', scheduleUpdate)
+      window.removeEventListener('load', scheduleUpdate)
+      document.removeEventListener('scroll', scheduleUpdate, true)
+      scrollParent?.removeEventListener('scroll', scheduleUpdate)
+    }
+  }, [activeTab])
+
+  useEffect(() => {
+    loadStatistics()
+  }, [loadStatistics])
+
+  useEffect(() => {
+    const onUserSynced = () => loadStatistics()
+    window.addEventListener(CLERK_DB_USER_SYNCED, onUserSynced)
+    return () => window.removeEventListener(CLERK_DB_USER_SYNCED, onUserSynced)
+  }, [loadStatistics])
+
+  const statsPeriodStart = useMemo(() => getStatsPeriodStart(statsPeriod), [statsPeriod])
+
+  const bookingsByProperty = useMemo(
+    () => buildBookingsByProperty(ownerTestDriveRows, statsPeriodStart),
+    [ownerTestDriveRows, statsPeriodStart]
+  )
+
+  const revenueByProperty = useMemo(
+    () => buildSalesRevenueByProperty(ownerSalesData, statsPeriodStart),
+    [ownerSalesData, statsPeriodStart]
+  )
+
+  const salesCountByProperty = useMemo(() => {
+    const map = new Map()
+    for (const sale of collectOwnerSalesRows(ownerSalesData)) {
+      if (!isAfterPeriodStart(sale.sold_at, statsPeriodStart)) continue
+      const key = propertyKey(sale.id ?? sale.property_id, sale.property_table)
+      map.set(key, (map.get(key) || 0) + 1)
+    }
+    return map
+  }, [ownerSalesData, statsPeriodStart])
+
+  const statsRows = useMemo(
+    () =>
+      ownerProperties.map((row) => {
+        const table = getOwnerRowTable(row)
+        const key = propertyKey(row.id, table)
+        const revenue = revenueByProperty.get(key) || 0
+        return {
+          ...row,
+          analyticsKey: key,
+          table,
+          viewsValue: Number(row.viewsCount) || 0,
+          bookingsValue: bookingsByProperty.get(key) || Number(row.bookingsCount) || 0,
+          salesValue: salesCountByProperty.get(key) || 0,
+          revenueValue: revenue,
+          revenueCurrency: row.currency || row.raw?.currency || 'USD',
+        }
+      }),
+    [bookingsByProperty, ownerProperties, revenueByProperty, salesCountByProperty]
+  )
+
+  const ownerSalesRows = useMemo(
+    () => collectOwnerSalesRows(ownerSalesData).filter((row) => isAfterPeriodStart(row.sold_at, statsPeriodStart)),
+    [ownerSalesData, statsPeriodStart]
+  )
+
+  const statsTotals = useMemo(() => {
+    const totalProperties = statsRows.length
+    const activeProperties = statsRows.filter((row) => row.filterKey === 'active' || row.statusKey === 'active').length
+    const soldProperties = statsRows.filter((row) => row.filterKey === 'sold' || row.statusKey === 'sold').length
+    const totalViews = statsRows.reduce((sum, row) => sum + row.viewsValue, 0)
+    const totalBookings = statsRows.reduce((sum, row) => sum + row.bookingsValue, 0)
+    const totalRevenue = ownerSalesRows.reduce((sum, row) => sum + (Number(row.sale_amount) || 0), 0)
+    const totalLikes = statsRows.reduce((sum, row) => sum + (Number(row.likesCount) || 0), 0)
+    const totalBids = statsRows.reduce((sum, row) => sum + (Number(row.bidsCount) || 0), 0)
+    const totalSharesSoldAgg = statsRows.reduce(
+      (sum, row) => sum + (Number(row.raw?.shares_sold ?? row.shares_sold) || 0),
+      0
+    )
+    const buyerIds = new Set(
+      ownerSalesRows
+        .map((row) => Number(row.buyer_user_id))
+        .filter((id) => Number.isFinite(id) && id > 0)
+    )
+    return {
+      totalProperties,
+      activeProperties,
+      soldProperties,
+      totalViews,
+      totalBookings,
+      totalSales: ownerSalesRows.length,
+      totalRevenue,
+      totalLikes,
+      totalBids,
+      totalSharesSoldAgg,
+      interestCount: buyerIds.size,
+      convLikesToBidsPct: totalLikes > 0 ? ((totalBids / totalLikes) * 100).toFixed(1) : '0',
+      interestPerListing: totalProperties > 0 ? (buyerIds.size / totalProperties).toFixed(1) : '0',
+    }
+  }, [ownerSalesRows, statsRows])
+
+  const statsMetrics = useMemo(
+    () => [
+      {
+        label: 'Просмотры',
+        value: statsLoading ? '…' : formatNumber(statsTotals.totalViews),
+        delta: statsLoading ? 'Загрузка' : `${formatNumber(statsTotals.totalProperties)} объектов`,
+        icon: Eye,
+        tone: 'tiffany',
+      },
+      {
+        label: 'Брони',
+        value: statsLoading ? '…' : formatNumber(statsTotals.totalBookings),
+        delta: statsLoading ? 'Загрузка' : 'тест-драйвы',
+        icon: CalendarCheck,
+        tone: 'orange',
+      },
+      {
+        label: 'Продажи',
+        value: statsLoading ? '…' : formatNumber(statsTotals.totalSales),
+        delta: statsLoading ? 'Загрузка' : 'успешные сделки',
+        icon: ShoppingBag,
+        tone: 'teal',
+      },
+      {
+        label: 'Доход',
+        value: statsLoading ? '…' : formatMoney(statsTotals.totalRevenue),
+        delta: statsLoading ? 'Загрузка' : 'по продажам',
+        icon: DollarSign,
+        tone: 'green',
+      },
+    ],
+    [statsLoading, statsTotals]
+  )
+
+  const sortedStatsRows = useMemo(
+    () =>
+      [...statsRows].sort((a, b) => {
+        const scoreA = a.revenueValue * 10 + a.viewsValue + a.bookingsValue * 25
+        const scoreB = b.revenueValue * 10 + b.viewsValue + b.bookingsValue * 25
+        return scoreB - scoreA
+      }),
+    [statsRows]
+  )
+
+  const excelProperties = useMemo(
+    () =>
+      statsRows.map((row) => ({
+        ...row.raw,
+        id: row.id,
+        title: row.title,
+        location: row.location,
+        price: row.priceAmount ?? row.raw?.price ?? 0,
+        beds: row.raw?.bedrooms || row.raw?.rooms || 0,
+        baths: row.raw?.bathrooms || 0,
+        sqft: row.raw?.area || 0,
+        status:
+          row.filterKey === 'sold'
+            ? 'sold'
+            : row.filterKey === 'draft'
+              ? 'pending'
+              : row.filterKey === 'active'
+                ? 'active'
+                : row.statusKey || 'pending',
+        likesCount: row.likesCount ?? row.raw?.likes_count ?? 0,
+        bidsCount: row.bidsCount ?? row.raw?.bids_count ?? 0,
+        shares_sold: row.raw?.shares_sold ?? 0,
+        publishedDate: row.raw?.created_at || row.raw?.updated_at || null,
+      })),
+    [statsRows]
+  )
+
+  const handleExportToExcel = useCallback(async () => {
+    const userId = getOwnerPropertiesUserId()
+    if (!userId) {
+      showNotification('Войдите в аккаунт, чтобы скачать отчёт')
+      return
+    }
+    setExportingExcel(true)
+    try {
+      const buffer = await exportOwnerAnalyticsExcel({
+        formatDateSafe,
+        properties: excelProperties,
+        mySalesData: ownerSalesData,
+        stats: {
+          totalProperties: statsTotals.totalProperties,
+          activeProperties: statsTotals.activeProperties,
+          soldProperties: statsTotals.soldProperties,
+          totalLikes: statsTotals.totalLikes,
+          totalBids: statsTotals.totalBids,
+          totalSharesSoldAgg: statsTotals.totalSharesSoldAgg,
+          interestCount: statsTotals.interestCount,
+          convLikesToBidsPct: statsTotals.convLikesToBidsPct,
+          interestPerListing: statsTotals.interestPerListing,
+        },
+      })
+      downloadXlsxBuffer(buffer, `analytics_report_${new Date().toISOString().split('T')[0]}.xlsx`)
+    } catch (error) {
+      console.error('OwnerProfileTestPage: export excel', error)
+      showNotification('Не удалось сформировать Excel-отчёт')
+    } finally {
+      setExportingExcel(false)
+    }
+  }, [excelProperties, ownerSalesData, statsTotals])
+
   if (loading || !profile) {
     return (
       <div className="opr opr--loading">
@@ -295,15 +643,21 @@ export default function OwnerProfileTestPage() {
     )
   }
 
+  const completedProfileFields = PROFILE_COMPLETION_FIELDS.filter((field) =>
+    String(profile[field] || '').trim()
+  ).length
+  const profileCompletion = Math.round((completedProfileFields / PROFILE_COMPLETION_FIELDS.length) * 100)
+  const quickFacts = [
+    { label: 'Почта', value: profile.email || 'Не указана', icon: Mail },
+    { label: 'Телефон', value: profile.phone || 'Не указан', icon: Phone },
+  ]
+
   const mainColumn = (
       <div className="opr-body">
         <header className="opr-header opr-desktop-only">
           <h1 className="opr-header__title">Профиль</h1>
           <div className="opr-header__actions">
-            <button type="button" className="opr-icon-btn" aria-label="Уведомления">
-              <Bell size={20} strokeWidth={2} />
-              <span className="opr-icon-btn__badge">3</span>
-            </button>
+            <OwnerNotificationsButton className="opr-icon-btn" badgeClassName="opr-icon-btn__badge" />
             <OwnerTestProfileMenu
               current
               activeTab={activeTab}
@@ -313,6 +667,9 @@ export default function OwnerProfileTestPage() {
         </header>
 
         <div className="opr-workspace">
+          <div className="opr-mob-pagehead opr-mobile-only">
+            <h1 className="opr-mob-pagehead__title">Профиль</h1>
+          </div>
           <div className="opr-content">
             <div className="opr-profile-tabs" role="tablist" aria-label="Разделы профиля">
               {OWNER_PROFILE_TABS.map((tab) => (
@@ -329,6 +686,59 @@ export default function OwnerProfileTestPage() {
               ))}
             </div>
 
+            {activeTab === 'personal' && (
+              <section className="opr-profile-overview" aria-label="Сводка профиля">
+                <div className="opr-profile-overview__identity">
+                  <ProfileAvatar large />
+                  <div className="opr-profile-overview__copy">
+                    <span className="opr-profile-overview__eyebrow">Кабинет продавца</span>
+                    <h2 className="opr-profile-overview__name">{fullName}</h2>
+                    <div className="opr-profile-overview__badges">
+                      <span className="opr-profile-overview__badge">
+                        <ShieldCheck size={15} strokeWidth={2.3} aria-hidden />
+                        {roleLabel}
+                      </span>
+                      <span className="opr-profile-overview__badge opr-profile-overview__badge--soft">
+                        <Sparkles size={15} strokeWidth={2.3} aria-hidden />
+                        {profile.subscription}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="opr-profile-overview__facts">
+                  {quickFacts.map((fact) => {
+                    const Icon = fact.icon
+                    return (
+                      <div key={fact.label} className="opr-profile-overview__fact">
+                        <span className="opr-profile-overview__fact-icon" aria-hidden>
+                          <Icon size={16} strokeWidth={2.2} />
+                        </span>
+                        <span className="opr-profile-overview__fact-label">{fact.label}</span>
+                        <strong className="opr-profile-overview__fact-value">{fact.value}</strong>
+                      </div>
+                    )
+                  })}
+                </div>
+
+                <div className="opr-profile-overview__completion">
+                  <div
+                    className="opr-profile-overview__ring"
+                    style={{ '--opr-progress': `${profileCompletion}%` }}
+                    aria-label={`Профиль заполнен на ${profileCompletion}%`}
+                  >
+                    <span>{profileCompletion}%</span>
+                  </div>
+                  <div>
+                    <p className="opr-profile-overview__completion-title">Готовность профиля</p>
+                    <p className="opr-profile-overview__completion-text">
+                      {completedProfileFields} из {PROFILE_COMPLETION_FIELDS.length} полей заполнено
+                    </p>
+                  </div>
+                </div>
+              </section>
+            )}
+
             <div
               className={[
                 'opr-profile-layout',
@@ -337,227 +747,131 @@ export default function OwnerProfileTestPage() {
                 .filter(Boolean)
                 .join(' ')}
             >
-                <div className="opr-profile-side">
-                  <aside className="opr-profile-card">
-                    <div className="opr-profile-card__avatar-wrap">
-                      <ProfileAvatar large />
-                      <button type="button" className="opr-profile-card__avatar-edit opr-mobile-only" aria-label="Изменить фото">
-                        <Pencil size={14} strokeWidth={2} />
-                      </button>
+                <form className="opr-profile-form" ref={profileFormRef} onSubmit={handleSaveProfile}>
+                  <section className="opr-form-section">
+                    <div className="opr-form-section__head">
+                      <span className="opr-form-section__icon" aria-hidden>
+                        <UserRound size={18} strokeWidth={2.3} />
+                      </span>
+                      <div>
+                        <h3 className="opr-form-section__title">Основные данные</h3>
+                        <p className="opr-form-section__subtitle">Имя, контакты и адрес для сделок</p>
+                      </div>
                     </div>
-                    <h2 className="opr-profile-card__name">{fullName}</h2>
-                    <p className="opr-profile-card__role">{roleLabel}</p>
-                    <p className="opr-profile-card__since">
-                      {profile.memberSince || 'Участник платформы'}
-                    </p>
-                    <button type="button" className="opr-profile-card__photo-btn opr-desktop-only">
-                      Изменить фото
+                    <div className="opr-form-row">
+                      <label className="opr-field">
+                        <span className="opr-field__label">Имя</span>
+                        <input
+                          type="text"
+                          className="opr-field__input"
+                          value={profile.firstName}
+                          onChange={(e) => updateProfile('firstName', e.target.value)}
+                        />
+                      </label>
+                      <label className="opr-field">
+                        <span className="opr-field__label">Фамилия</span>
+                        <input
+                          type="text"
+                          className="opr-field__input"
+                          value={profile.lastName}
+                          onChange={(e) => updateProfile('lastName', e.target.value)}
+                        />
+                      </label>
+                    </div>
+
+                    <div className="opr-form-row">
+                      <label className="opr-field">
+                        <span className="opr-field__label">Страна</span>
+                        <input
+                          type="text"
+                          className="opr-field__input"
+                          value={profile.country}
+                          onChange={(e) => updateProfile('country', e.target.value)}
+                        />
+                      </label>
+                      <label className="opr-field">
+                        <span className="opr-field__label">Телефон</span>
+                        <input
+                          type="tel"
+                          className="opr-field__input"
+                          value={profile.phone}
+                          onChange={(e) => updateProfile('phone', e.target.value)}
+                        />
+                      </label>
+                    </div>
+
+                    <div className="opr-form-row">
+                      <label className="opr-field">
+                        <span className="opr-field__label">Почта</span>
+                        <input
+                          type="email"
+                          className="opr-field__input"
+                          value={profile.email}
+                          onChange={(e) => updateProfile('email', e.target.value)}
+                        />
+                      </label>
+                      <label className="opr-field">
+                        <span className="opr-field__label">Адрес проживания</span>
+                        <input
+                          type="text"
+                          className="opr-field__input"
+                          value={profile.address}
+                          onChange={(e) => updateProfile('address', e.target.value)}
+                          autoComplete="street-address"
+                        />
+                      </label>
+                    </div>
+                  </section>
+
+                  <section className="opr-form-section">
+                    <div className="opr-form-section__head">
+                      <span className="opr-form-section__icon" aria-hidden>
+                        <FileText size={18} strokeWidth={2.3} />
+                      </span>
+                      <div>
+                        <h3 className="opr-form-section__title">Документы</h3>
+                        <p className="opr-form-section__subtitle">Данные для проверки продавца и выплат</p>
+                      </div>
+                    </div>
+                    <div className="opr-form-row">
+                      <label className="opr-field">
+                        <span className="opr-field__label">Номер паспорта</span>
+                        <input
+                          type="text"
+                          className="opr-field__input"
+                          value={profile.passportNumber}
+                          onChange={(e) => updateProfile('passportNumber', e.target.value)}
+                          autoComplete="off"
+                        />
+                      </label>
+                      <label className="opr-field">
+                        <span className="opr-field__label">Идентификационный номер</span>
+                        <input
+                          type="text"
+                          className="opr-field__input"
+                          value={profile.identificationNumber}
+                          onChange={(e) => updateProfile('identificationNumber', e.target.value)}
+                          autoComplete="off"
+                        />
+                      </label>
+                    </div>
+                  </section>
+
+                  <div className="opr-profile-form__save-slot" ref={saveReleaseRef}>
+                    <button
+                      type="submit"
+                      className={[
+                        'opr-btn opr-btn--primary opr-profile-form__save',
+                        saveReleased && 'opr-profile-form__save--released',
+                      ]
+                        .filter(Boolean)
+                        .join(' ')}
+                      disabled={saving}
+                    >
+                      {saving ? 'Сохранение…' : 'Сохранить изменения'}
                     </button>
-                  </aside>
-
-                  <SubscriptionPromo isEmbedded={isEmbedded} goTo={goTo} />
-                </div>
-
-                <form className="opr-profile-form" onSubmit={handleSaveProfile}>
-                  <div className="opr-form-row">
-                    <label className="opr-field">
-                      <span className="opr-field__label">Имя</span>
-                      <input
-                        type="text"
-                        className="opr-field__input"
-                        value={profile.firstName}
-                        onChange={(e) => updateProfile('firstName', e.target.value)}
-                      />
-                    </label>
-                    <label className="opr-field">
-                      <span className="opr-field__label">Фамилия</span>
-                      <input
-                        type="text"
-                        className="opr-field__input"
-                        value={profile.lastName}
-                        onChange={(e) => updateProfile('lastName', e.target.value)}
-                      />
-                    </label>
                   </div>
-
-                  <div className="opr-form-row">
-                    <label className="opr-field">
-                      <span className="opr-field__label">Страна</span>
-                      <input
-                        type="text"
-                        className="opr-field__input"
-                        value={profile.country}
-                        onChange={(e) => updateProfile('country', e.target.value)}
-                      />
-                    </label>
-                    <label className="opr-field">
-                      <span className="opr-field__label">Телефон</span>
-                      <input
-                        type="tel"
-                        className="opr-field__input"
-                        value={profile.phone}
-                        onChange={(e) => updateProfile('phone', e.target.value)}
-                      />
-                    </label>
-                  </div>
-
-                  <div className="opr-form-row">
-                    <label className="opr-field">
-                      <span className="opr-field__label">Почта</span>
-                      <input
-                        type="email"
-                        className="opr-field__input"
-                        value={profile.email}
-                        onChange={(e) => updateProfile('email', e.target.value)}
-                      />
-                    </label>
-                    <label className="opr-field">
-                      <span className="opr-field__label">Адрес проживания</span>
-                      <input
-                        type="text"
-                        className="opr-field__input"
-                        value={profile.address}
-                        onChange={(e) => updateProfile('address', e.target.value)}
-                        autoComplete="street-address"
-                      />
-                    </label>
-                  </div>
-
-                  <div className="opr-form-row">
-                    <label className="opr-field">
-                      <span className="opr-field__label">Номер паспорта</span>
-                      <input
-                        type="text"
-                        className="opr-field__input"
-                        value={profile.passportNumber}
-                        onChange={(e) => updateProfile('passportNumber', e.target.value)}
-                        autoComplete="off"
-                      />
-                    </label>
-                    <label className="opr-field">
-                      <span className="opr-field__label">Идентификационный номер</span>
-                      <input
-                        type="text"
-                        className="opr-field__input"
-                        value={profile.identificationNumber}
-                        onChange={(e) => updateProfile('identificationNumber', e.target.value)}
-                        autoComplete="off"
-                      />
-                    </label>
-                  </div>
-
-                  <div className="opr-status-grid">
-                    <article className="opr-status-card opr-status-card--subscription">
-                      <div className="opr-status-card__bg" aria-hidden>
-                        <img
-                          className="opr-status-card__bg-img"
-                          src={OPR_IMAGES.statusSubscriptionBg}
-                          alt=""
-                          loading="lazy"
-                          decoding="async"
-                        />
-                        <div className="opr-status-card__bg-shade" />
-                      </div>
-                      <div className="opr-status-card__content">
-                        <div className="opr-status-card__head">
-                          <div className="opr-status-card__icon" aria-hidden>
-                            <CreditCard size={20} strokeWidth={2} />
-                          </div>
-                          <span className="opr-status-card__chip">Тариф</span>
-                        </div>
-                        <span className="opr-status-card__label">Подписка</span>
-                        <p className="opr-status-card__value">{profile.subscription}</p>
-                        <p className="opr-status-card__hint">Больше объектов и продвижение в каталоге</p>
-                        {isEmbedded ? (
-                          <button
-                            type="button"
-                            className="opr-status-card__action"
-                            onClick={() => goTo(OWNER_VIEWS.SUBSCRIPTIONS)}
-                          >
-                            Повысить тариф
-                            <ChevronRight size={16} strokeWidth={2.2} aria-hidden />
-                          </button>
-                        ) : (
-                          <Link to="/owner-subscriptions-test" className="opr-status-card__action">
-                            Повысить тариф
-                            <ChevronRight size={16} strokeWidth={2.2} aria-hidden />
-                          </Link>
-                        )}
-                      </div>
-                    </article>
-
-                    <article className={`opr-status-card opr-status-card--deposit opr-status-card--${profile.depositStatusKey}`}>
-                      <div className="opr-status-card__bg" aria-hidden>
-                        <img
-                          className="opr-status-card__bg-img"
-                          src={
-                            profile.depositStatusKey === 'paid'
-                              ? OPR_IMAGES.statusDepositBg
-                              : OPR_IMAGES.statusDepositUnpaidBg
-                          }
-                          alt=""
-                          loading="lazy"
-                          decoding="async"
-                        />
-                        <div className="opr-status-card__bg-shade" />
-                      </div>
-                      <div className="opr-status-card__content">
-                        <div className="opr-status-card__head">
-                          <div className="opr-status-card__icon" aria-hidden>
-                            {profile.depositStatusKey === 'paid' ? (
-                              <CheckCircle2 size={20} strokeWidth={2} />
-                            ) : (
-                              <Wallet size={20} strokeWidth={2} />
-                            )}
-                          </div>
-                          <span className={`opr-status-card__chip opr-status-card__chip--${profile.depositStatusKey}`}>
-                            {profile.depositStatusKey === 'paid' ? 'Активен' : 'Ожидает'}
-                          </span>
-                        </div>
-                        <span className="opr-status-card__label">Статус депозита</span>
-                        <p className="opr-status-card__value">{profile.depositStatus}</p>
-                        <p className="opr-status-card__hint">
-                          {profile.depositStatusKey === 'paid'
-                            ? 'Депозит активен, участие в аукционах доступно'
-                            : 'Пополните депозит для участия в сделках'}
-                        </p>
-                      </div>
-                    </article>
-                  </div>
-
-                  <button
-                    type="submit"
-                    className="opr-btn opr-btn--primary opr-profile-form__save"
-                    disabled={saving}
-                  >
-                    {saving ? 'Сохранение…' : 'Сохранить изменения'}
-                  </button>
                 </form>
-            </div>
-
-            <div
-              className={[
-                'opr-panel',
-                activeTab !== 'notifications' && 'opr-panel--hidden',
-              ]
-                .filter(Boolean)
-                .join(' ')}
-            >
-              <div className="opr-settings-list">
-                {NOTIFICATION_SETTINGS.map((item) => (
-                  <Toggle
-                    key={item.id}
-                    label={item.label}
-                    checked={notifications[item.id]}
-                    onChange={(value) =>
-                      setNotifications((prev) => ({ ...prev, [item.id]: value }))
-                    }
-                  />
-                ))}
-              </div>
-              <button type="button" className="opr-btn opr-btn--primary opr-profile-form__save">
-                Сохранить изменения
-              </button>
             </div>
 
             <div
@@ -572,28 +886,39 @@ export default function OwnerProfileTestPage() {
                 <div className="opr-stats__head">
                   <div>
                     <h2 className="opr-stats__title">Обзор показателей</h2>
-                    <p className="opr-stats__subtitle">Динамика за выбранный период</p>
+                    <p className="opr-stats__subtitle">Статистика по всем объектам за выбранный период</p>
                   </div>
-                  <div className="opr-stats-period" role="group" aria-label="Период">
-                    {[
-                      { id: '7d', label: '7 дней' },
-                      { id: '30d', label: '30 дней' },
-                      { id: 'year', label: 'Год' },
-                    ].map((period) => (
-                      <button
-                        key={period.id}
-                        type="button"
-                        className={`opr-stats-period__btn${statsPeriod === period.id ? ' opr-stats-period__btn--active' : ''}`}
-                        onClick={() => setStatsPeriod(period.id)}
-                      >
-                        {period.label}
-                      </button>
-                    ))}
+                  <div className="opr-stats__actions">
+                    <div className="opr-stats-period" role="group" aria-label="Период">
+                      {[
+                        { id: '7d', label: '7 дней' },
+                        { id: '30d', label: '30 дней' },
+                        { id: 'year', label: 'Год' },
+                      ].map((period) => (
+                        <button
+                          key={period.id}
+                          type="button"
+                          className={`opr-stats-period__btn${statsPeriod === period.id ? ' opr-stats-period__btn--active' : ''}`}
+                          onClick={() => setStatsPeriod(period.id)}
+                        >
+                          {period.label}
+                        </button>
+                      ))}
+                    </div>
+                    <button
+                      type="button"
+                      className="opr-stats-export"
+                      onClick={handleExportToExcel}
+                      disabled={exportingExcel || statsLoading}
+                    >
+                      <Download size={18} strokeWidth={2.2} aria-hidden />
+                      <span>{exportingExcel ? 'Формируем…' : 'Получить Excel отчет'}</span>
+                    </button>
                   </div>
                 </div>
 
                 <div className="opr-stats-grid">
-                  {STATS_METRICS.map((metric) => {
+                  {statsMetrics.map((metric) => {
                     const Icon = metric.icon
                     return (
                       <article key={metric.label} className="opr-stat-card">
@@ -612,25 +937,41 @@ export default function OwnerProfileTestPage() {
                 </div>
 
                 <div className="opr-stats-table-wrap">
-                  <h3 className="opr-stats-table__title">Топ объектов</h3>
+                  <h3 className="opr-stats-table__title">Все объекты</h3>
+                  {statsError ? <p className="opr-stats__message">{statsError}</p> : null}
                   <table className="opr-stats-table">
                     <thead>
                       <tr>
                         <th>Объект</th>
                         <th>Просмотры</th>
                         <th>Брони</th>
+                        <th>Продажи</th>
                         <th>Доход</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {STATS_TOP_PROPERTIES.map((row) => (
-                        <tr key={row.name}>
-                          <td>{row.name}</td>
-                          <td>{row.views}</td>
-                          <td>{row.bookings}</td>
-                          <td>{row.revenue}</td>
+                      {statsLoading ? (
+                        <tr>
+                          <td colSpan={5}>Загрузка статистики…</td>
                         </tr>
-                      ))}
+                      ) : sortedStatsRows.length === 0 ? (
+                        <tr>
+                          <td colSpan={5}>Объекты пока не найдены</td>
+                        </tr>
+                      ) : (
+                        sortedStatsRows.map((row) => (
+                          <tr key={row.analyticsKey}>
+                            <td>
+                              <span className="opr-stats-table__object">{row.title}</span>
+                              <span className="opr-stats-table__location">{row.location}</span>
+                            </td>
+                            <td>{formatNumber(row.viewsValue)}</td>
+                            <td>{formatNumber(row.bookingsValue)}</td>
+                            <td>{formatNumber(row.salesValue)}</td>
+                            <td>{formatMoney(row.revenueValue, row.revenueCurrency)}</td>
+                          </tr>
+                        ))
+                      )}
                     </tbody>
                   </table>
                 </div>
@@ -692,21 +1033,8 @@ export default function OwnerProfileTestPage() {
                   </div>
                 </div>
 
-                <div className="opr-settings-list">
-                  <h2 className="opr-app-settings__title opr-app-settings__title--in-list">Приватность и безопасность</h2>
-                  {APP_SETTINGS_TOGGLES.map((item) => (
-                    <Toggle
-                      key={item.id}
-                      label={item.label}
-                      checked={appSettings[item.id]}
-                      onChange={(value) =>
-                        setAppSettings((prev) => ({ ...prev, [item.id]: value }))
-                      }
-                    />
-                  ))}
-                </div>
               </section>
-              <button type="button" className="opr-btn opr-btn--primary opr-profile-form__save">
+              <button type="button" className="opr-btn opr-btn--primary opr-profile-form__save opr-profile-form__save--settings">
                 Сохранить изменения
               </button>
             </div>
@@ -736,10 +1064,11 @@ export default function OwnerProfileTestPage() {
           <span className="opr-logo__text">SellYourBrick</span>
         </div>
         <div className="opr-mob-topbar__slot opr-mob-topbar__slot--right">
-          <button type="button" className="opr-mob-topbar__bell" aria-label="Уведомления">
-            <Bell size={22} strokeWidth={2} />
-            <span className="opr-icon-btn__badge">3</span>
-          </button>
+          <OwnerNotificationsButton
+            className="opr-mob-topbar__bell"
+            badgeClassName="opr-icon-btn__badge"
+            iconSize={22}
+          />
         </div>
       </header>
 

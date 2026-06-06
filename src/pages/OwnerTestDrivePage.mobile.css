@@ -22,6 +22,9 @@
   }
 
   .otd-body {
+    --otd-mob-pad: 16px;
+    --otd-tiffany: #0abab5;
+
     flex: 1;
     min-height: 0;
     display: flex;
@@ -181,15 +184,16 @@
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    padding: 16px 0 12px;
-    background: transparent;
+    margin: 0 calc(var(--otd-mob-pad) * -1);
+    padding: 16px var(--otd-mob-pad) 12px;
+    background: #ffffff;
   }
 
   .otd-mob-pagehead__title {
     margin: 0;
-    font-size: 26px;
+    font-size: 24px;
     font-weight: 700;
-    letter-spacing: -0.03em;
+    letter-spacing: -0.02em;
     color: #000000;
     line-height: 1.15;
     flex: 1;
@@ -244,14 +248,6 @@
     color: var(--otd-tiffany);
     border-bottom-color: var(--otd-tiffany);
     font-weight: 600;
-  }
-
-  .otd-filter-btn {
-    align-self: flex-end;
-    height: 40px;
-    padding: 0 12px;
-    font-size: 13px;
-    border-radius: 8px;
   }
 
   /* —— Table: only Объект + Статус —— */

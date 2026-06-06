@@ -10,15 +10,13 @@ import {
   BarChart3,
   MessageSquare,
   Settings,
-  Bell,
-  ChevronDown,
   ChevronRight,
-  SlidersHorizontal,
   Menu,
   X,
 } from 'lucide-react'
 import { OTD_IMAGES } from './ownerTestDriveImages'
 import OwnerTestProfileMenu from '../components/OwnerTestProfileMenu'
+import OwnerNotificationsButton from '../components/OwnerNotificationsButton'
 import OwnerTestDriveDetailModal from '../components/OwnerTestDriveDetailModal'
 import { useOwnerTestEmbeddedNav } from '../hooks/useOwnerTestEmbeddedNav'
 import {
@@ -181,10 +179,7 @@ export default function OwnerTestDrivePage() {
         <header className="otd-header otd-desktop-only">
           <h1 className="otd-header__title">Тест-драйв</h1>
           <div className="otd-header__actions">
-            <button type="button" className="otd-icon-btn" aria-label="Уведомления">
-              <Bell size={20} strokeWidth={2} />
-              <span className="otd-icon-btn__badge">3</span>
-            </button>
+            <OwnerNotificationsButton className="otd-icon-btn" badgeClassName="otd-icon-btn__badge" />
             <OwnerTestProfileMenu />
           </div>
         </header>
@@ -196,7 +191,7 @@ export default function OwnerTestDrivePage() {
 
           <div className="otd-content">
           <div className="otd-tabs-row">
-            <div className="otd-tabs" role="tablist" aria-label="Фильтр тест-драйвов">
+            <div className="otd-tabs" role="tablist" aria-label="Статусы тест-драйвов">
               {filterTabs.map((tab) => (
                 <button
                   key={tab.id}
@@ -210,11 +205,6 @@ export default function OwnerTestDrivePage() {
                 </button>
               ))}
             </div>
-            <button type="button" className="otd-filter-btn">
-              <SlidersHorizontal size={16} strokeWidth={2} aria-hidden />
-              Фильтр
-              <ChevronDown size={14} strokeWidth={2.2} aria-hidden />
-            </button>
           </div>
 
           <div className="otd-table-card">
@@ -305,33 +295,6 @@ export default function OwnerTestDrivePage() {
             onClose={closeDetailModal}
             onUpdated={loadBookings}
           />
-
-          <div className="otd-promo-grid">
-            <article className="otd-promo-card otd-promo-card--light">
-              <h3>Продвигайте тест-драйв</h3>
-              <p>Выделите объекты в каталоге и получайте больше заявок на просмотр</p>
-              <div className="otd-promo-card__actions">
-                <button type="button" className="otd-btn otd-btn--primary otd-btn--sm">
-                  Выбрать тариф
-                </button>
-                <div className="otd-promo-card__visual" aria-hidden>
-                  <img src={OTD_IMAGES.promoPremium} alt="" loading="lazy" decoding="async" />
-                </div>
-              </div>
-            </article>
-            <article className="otd-promo-card otd-promo-card--dark">
-              <h3>Ищете покупателей?</h3>
-              <p>Откройте доступ к проверенной аудитории инвесторов по всему миру</p>
-              <div className="otd-promo-card__actions otd-promo-card__actions--dark">
-                <button type="button" className="otd-btn otd-btn--white otd-btn--sm">
-                  Узнать больше
-                </button>
-                <div className="otd-promo-card__visual otd-promo-card__visual--photo" aria-hidden>
-                  <img src={OTD_IMAGES.promoSidebarBuyer} alt="" loading="lazy" decoding="async" />
-                </div>
-              </div>
-            </article>
-          </div>
         </div>
         </div>
       </div>
@@ -358,10 +321,11 @@ export default function OwnerTestDrivePage() {
           <span className="otd-logo__text">SellYourBrick</span>
         </div>
         <div className="otd-mob-topbar__slot otd-mob-topbar__slot--right">
-          <button type="button" className="otd-mob-topbar__bell" aria-label="Уведомления">
-            <Bell size={22} strokeWidth={2} />
-            <span className="otd-icon-btn__badge">3</span>
-          </button>
+          <OwnerNotificationsButton
+            className="otd-mob-topbar__bell"
+            badgeClassName="otd-icon-btn__badge"
+            iconSize={22}
+          />
         </div>
       </header>
 

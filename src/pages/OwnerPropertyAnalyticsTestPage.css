@@ -31,6 +31,19 @@
   box-sizing: border-box;
 }
 
+.opa-body {
+  --opa-tiffany: #0abab5;
+  --opa-tiffany-dark: #089a95;
+  --opa-gradient-brand: linear-gradient(135deg, #53d8d3 0%, #0abab5 48%, #089a95 100%);
+  --opa-gradient-active: linear-gradient(135deg, #1ba8a3 0%, #0abab5 42%, #089a95 100%);
+  --opa-surface: #ffffff;
+  --opa-text: #111827;
+  --opa-text-muted: #6b7280;
+  --opa-border: #e5e7eb;
+  --opa-shadow: 0 14px 36px rgba(15, 23, 42, 0.06);
+  --opa-radius: 18px;
+}
+
 .opa-sidebar {
   width: var(--opa-sidebar-w);
   flex-shrink: 0;
@@ -338,7 +351,7 @@
 .opa-property-card,
 .opa-card {
   background: var(--opa-surface);
-  border: 1px solid rgba(229, 231, 235, 0.8);
+  border: 1px solid rgba(229, 231, 235, 0.75);
   border-radius: var(--opa-radius);
   box-shadow: var(--opa-shadow);
 }
@@ -376,6 +389,13 @@
   font-weight: 700;
 }
 
+.opa-property-card__chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
 .opa-status {
   display: inline-flex;
   padding: 4px 10px;
@@ -404,6 +424,117 @@
   color: #7c3aed;
 }
 
+.opa-listing-type {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 28px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(10, 186, 181, 0.11);
+  color: #089a95;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.opa-listing-type span {
+  color: rgba(8, 154, 149, 0.68);
+  font-weight: 700;
+}
+
+.opa-listing-type strong {
+  color: #067b77;
+  font-weight: 800;
+}
+
+.opa-object-timer {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 42px;
+  width: min(190px, 100%);
+  padding: 6px 9px;
+  border: 1px solid rgba(10, 186, 181, 0.18);
+  border-radius: 14px;
+  background:
+    radial-gradient(circle at 92% 0%, rgba(83, 216, 211, 0.18), transparent 42%),
+    linear-gradient(135deg, rgba(240, 253, 250, 0.96), #ffffff);
+  color: #087f7b;
+  box-shadow: 0 10px 24px rgba(10, 186, 181, 0.1);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.opa-object-timer__icon {
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: #0abab5;
+  color: #ffffff;
+  box-shadow: 0 8px 16px rgba(10, 186, 181, 0.22);
+}
+
+.opa-object-timer__content {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.opa-object-timer__caption {
+  color: #64748b;
+  font-size: 9px;
+  font-weight: 800;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.opa-object-timer__value {
+  color: #0f766e;
+  font-size: 12px;
+  font-weight: 900;
+  line-height: 1.1;
+}
+
+.opa-object-timer--critical {
+  border-color: rgba(239, 68, 68, 0.18);
+  background:
+    radial-gradient(circle at 92% 0%, rgba(248, 113, 113, 0.14), transparent 42%),
+    linear-gradient(135deg, #fff7f7, #ffffff);
+  color: #b91c1c;
+  box-shadow: 0 10px 24px rgba(239, 68, 68, 0.08);
+}
+
+.opa-object-timer--critical .opa-object-timer__icon {
+  background: #ef4444;
+  box-shadow: 0 8px 16px rgba(239, 68, 68, 0.2);
+}
+
+.opa-object-timer--critical .opa-object-timer__value {
+  color: #b91c1c;
+}
+
+.opa-object-timer--expired {
+  border-color: #e5e7eb;
+  background: #f8fafc;
+  color: #6b7280;
+  box-shadow: none;
+}
+
+.opa-object-timer--expired .opa-object-timer__icon {
+  background: #94a3b8;
+  box-shadow: none;
+}
+
+.opa-object-timer--expired .opa-object-timer__value {
+  color: #475569;
+}
+
 .opa-kpi-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -417,7 +548,7 @@
   padding: 16px;
   border-radius: var(--opa-radius);
   background: var(--opa-surface);
-  border: 1px solid rgba(229, 231, 235, 0.8);
+  border: 1px solid rgba(229, 231, 235, 0.75);
   box-shadow: var(--opa-shadow);
 }
 
@@ -463,8 +594,7 @@
 }
 
 .opa-chart-card,
-.opa-traffic-card,
-.opa-extra-stats {
+.opa-traffic-card {
   padding: 18px 20px;
 }
 
@@ -483,6 +613,54 @@
   margin-bottom: 14px;
 }
 
+.opa-metric-select {
+  position: relative;
+  z-index: 4;
+  flex-shrink: 0;
+}
+
+.opa-metric-select .opa-select-pill {
+  min-width: 148px;
+  justify-content: space-between;
+  color: #111827;
+  font-weight: 700;
+}
+
+.opa-metric-select__menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 176px;
+  padding: 6px;
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  border-radius: 14px;
+  background: #ffffff;
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.12);
+}
+
+.opa-metric-select__option {
+  width: 100%;
+  min-height: 36px;
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: #4b5563;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+}
+
+.opa-metric-select__option:hover,
+.opa-metric-select__option--active {
+  background: rgba(10, 186, 181, 0.1);
+  color: #089a95;
+}
+
 .opa-chart-card__canvas {
   height: 260px;
 }
@@ -492,6 +670,15 @@
   align-items: center;
   gap: 24px;
   margin-top: 16px;
+}
+
+.opa-traffic-visual {
+  width: 178px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
 }
 
 .opa-donut-wrap {
@@ -549,23 +736,10 @@
   font-weight: 700;
 }
 
-.opa-extra-stats__grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 16px;
-  margin-top: 16px;
-}
-
-.opa-extra-stat__label {
-  display: block;
-  margin-bottom: 6px;
-  font-size: 12px;
-  color: var(--opa-text-muted);
-}
-
-.opa-extra-stat__value {
-  font-size: 20px;
-  font-weight: 700;
+.opa-traffic-visual .opa-object-timer {
+  width: 80%;
+  margin-top: 24px;
+  justify-content: center;
 }
 
 .opa-mob-topbar,
@@ -580,9 +754,6 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .opa-extra-stats__grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
 }
 
 @media (max-width: 1024px) {
@@ -590,4 +761,30 @@
   .opa-charts {
     grid-template-columns: 1fr;
   }
+}
+
+/* Embedded analytics cards: keep every dashboard block white and rounded. */
+.opa-body .opa-property-card,
+.opa-body .opa-kpi,
+.opa-body .opa-card,
+.opa-body .opa-period-pill,
+.opa-body .opa-select-pill,
+.opa-body .opa-icon-btn,
+.opa-body .owner-test-profile-menu__trigger {
+  background: #ffffff;
+  border: 1px solid rgba(226, 232, 240, 0.86);
+  border-radius: 18px;
+  box-shadow: 0 14px 36px rgba(15, 23, 42, 0.06);
+}
+
+.opa-body .opa-period-pill,
+.opa-body .opa-select-pill,
+.opa-body .opa-icon-btn {
+  border-radius: 14px;
+}
+
+.opa-body .opa-property-card,
+.opa-body .opa-kpi,
+.opa-body .opa-card {
+  overflow: hidden;
 }

@@ -540,10 +540,10 @@
 
 /* ——— Cards & buttons ——— */
 .mot-card {
-  background: linear-gradient(180deg, #ffffff 0%, #fafefe 100%);
-  border-radius: var(--mot-radius);
-  box-shadow: var(--mot-shadow);
-  border: 1px solid rgba(229, 231, 235, 0.7);
+  background: #ffffff;
+  border-radius: 24px;
+  box-shadow: 0 16px 38px rgba(15, 23, 42, 0.06);
+  border: 1px solid rgba(10, 186, 181, 0.12);
 }
 
 .mot-card__title {
@@ -651,6 +651,62 @@
   cursor: pointer;
 }
 
+.mot-chart-filter {
+  position: relative;
+  z-index: 5;
+}
+
+.mot-chart-filter--open .mot-select-pill svg {
+  transform: rotate(180deg);
+}
+
+.mot-select-pill svg {
+  transition: transform 0.18s ease;
+}
+
+.mot-chart-filter__menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 210px;
+  padding: 6px;
+  border: 1px solid rgba(10, 186, 181, 0.14);
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 18px 42px rgba(15, 23, 42, 0.12);
+  opacity: 0;
+  transform: translateY(-4px);
+  pointer-events: none;
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+.mot-chart-filter--open .mot-chart-filter__menu {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.mot-chart-filter__option {
+  width: 100%;
+  min-height: 38px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--mot-text-muted);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 650;
+  text-align: left;
+  cursor: pointer;
+}
+
+.mot-chart-filter__option:hover,
+.mot-chart-filter__option--active {
+  background: rgba(10, 186, 181, 0.1);
+  color: #0d9488;
+}
+
 /* ——— Metrics ——— */
 .mot-metrics {
   display: grid;
@@ -660,8 +716,9 @@
 
 .mot-metric {
   padding: 20px 22px;
-  background: linear-gradient(145deg, #ffffff 0%, #f0fdfa 100%);
+  background: #ffffff;
   border-color: rgba(10, 186, 181, 0.12);
+  border-radius: 22px;
   position: relative;
 }
 
@@ -751,9 +808,7 @@
 }
 
 .mot-metric__delta {
-  font-size: 12px;
-  font-weight: 600;
-  color: #22c55e;
+  display: none;
 }
 
 /* ——— Chart row ——— */
@@ -880,9 +935,20 @@
   gap: 5px;
 }
 
+.mot-best__empty {
+  display: grid;
+  align-content: center;
+  min-height: 210px;
+  gap: 8px;
+  padding: 18px;
+  border-radius: 18px;
+  background: rgba(10, 186, 181, 0.07);
+  border: 1px dashed rgba(10, 186, 181, 0.24);
+}
+
 /* ——— Triple row ——— */
 .mot-row--triple {
-  grid-template-columns: minmax(300px, 1.05fr) minmax(300px, 0.95fr) minmax(280px, 0.9fr);
+  grid-template-columns: minmax(300px, 1.05fr) minmax(300px, 0.95fr);
   align-items: stretch;
 }
 
@@ -904,6 +970,13 @@
   grid-template-columns: auto 1fr auto;
   gap: 12px;
   align-items: start;
+}
+
+.mot-activity__item--bid {
+  padding: 10px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(10, 186, 181, 0.06) 0%, rgba(255, 255, 255, 0.92) 100%);
+  border: 1px solid rgba(10, 186, 181, 0.1);
 }
 
 .mot-activity__icon {
@@ -934,6 +1007,64 @@
   color: var(--mot-text-light);
   white-space: nowrap;
   padding-top: 2px;
+}
+
+.mot-activity__side {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  min-width: max-content;
+}
+
+.mot-activity__amount {
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(10, 186, 181, 0.1);
+  color: #0d9488;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.mot-activity__empty {
+  min-height: 220px;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 10px;
+  margin: 16px 0 12px;
+  padding: 24px;
+  border-radius: 20px;
+  background: rgba(10, 186, 181, 0.06);
+  border: 1px dashed rgba(10, 186, 181, 0.24);
+  text-align: center;
+}
+
+.mot-activity__empty-icon {
+  width: 54px;
+  height: 54px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #53d8d3 0%, #0abab5 100%);
+  color: #fff;
+  box-shadow: 0 14px 28px rgba(10, 186, 181, 0.22);
+}
+
+.mot-activity__empty strong {
+  color: var(--mot-text);
+  font-size: 16px;
+}
+
+.mot-activity__empty p {
+  margin: 0;
+  max-width: 320px;
+  color: var(--mot-text-muted);
+  font-size: 13px;
+  line-height: 1.45;
 }
 
 .mot-status-card {
@@ -1284,12 +1415,7 @@
 
 @media (max-width: 1120px) {
   .mot-row--triple {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .mot-row--triple .mot-promo-card {
-    grid-column: span 2;
-    min-height: 220px;
+    grid-template-columns: 1fr;
   }
 }
 

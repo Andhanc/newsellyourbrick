@@ -22,30 +22,31 @@ import {
   BarChart3,
   MessageSquare,
   Settings,
-  Bell,
   ChevronDown,
   Menu,
   X,
   ArrowLeft,
   Calendar,
   Heart,
-  CarFront,
   Inbox,
   MoreVertical,
   Plus,
+  Gavel,
   Home,
   Briefcase,
   ClipboardList,
   SlidersHorizontal,
   RefreshCw,
+  Clock,
 } from 'lucide-react'
 import { OWNER_PROP_IMAGES } from './ownerPropertiesTestImages'
-import { getOwnerTestProperty } from './ownerPropertiesTestData'
+import { OWNER_LISTING_TYPE_LABELS, getOwnerTestProperty } from './ownerPropertiesTestData'
 import {
   fetchOwnerProperties,
   getOwnerPropertiesUserId,
 } from '../utils/ownerPropertiesList'
 import OwnerTestProfileMenu from '../components/OwnerTestProfileMenu'
+import OwnerNotificationsButton from '../components/OwnerNotificationsButton'
 import { useOwnerTestProfile } from '../context/OwnerTestProfileContext'
 import { OWNER_VIEWS } from '../context/OwnerTestNavigationContext'
 import { useOwnerTestEmbeddedNav } from '../hooks/useOwnerTestEmbeddedNav'
@@ -64,6 +65,12 @@ ChartJS.register(
 )
 
 const OPA_TIFFANY = '#0abab5'
+
+const CHART_METRICS = [
+  { id: 'bids', label: 'Ставки' },
+  { id: 'views', label: 'Просмотры' },
+  { id: 'likes', label: 'Понравилось' },
+]
 
 const NAV_ITEMS = [
   { id: 'home', label: 'Главная', icon: LayoutDashboard, href: '/main-owner-test' },
@@ -132,6 +139,93 @@ function useOpaMobile() {
   return mobile
 }
 
+function buildMetricSeries(baseSeries, metric, analytics) {
+  if (metric === 'bids' && Array.isArray(analytics?.bidsChartDesktop)) {
+    return Array.isArray(baseSeries) && baseSeries.length === analytics.bidsChartMobile?.length
+      ? analytics.bidsChartMobile
+      : analytics.bidsChartDesktop
+  }
+  if (metric === 'likes' && Array.isArray(analytics?.likesChartDesktop)) {
+    return Array.isArray(baseSeries) && baseSeries.length === analytics.likesChartMobile?.length
+      ? analytics.likesChartMobile
+      : analytics.likesChartDesktop
+  }
+  if (metric === 'views' && Array.isArray(baseSeries)) return baseSeries
+  return Array.isArray(baseSeries) ? baseSeries : []
+}
+
+function getAnalyticsTimerEndTime(property) {
+  return (
+    property?.auctionEndTime ||
+    property?.test_timer_end_date ||
+    property?.auction_end_date ||
+    property?.end_time ||
+    property?.endTime ||
+    property?.raw?.test_timer_end_date ||
+    property?.raw?.auction_end_date ||
+    property?.raw?.end_time ||
+    property?.raw?.endTime ||
+    null
+  )
+}
+
+function getAnalyticsTimerState(property, now = Date.now()) {
+  const endTime = getAnalyticsTimerEndTime(property)
+  if (!endTime && property?.auctionTimer) {
+    return { expired: false, critical: false, caption: 'Осталось', label: property.auctionTimer }
+  }
+  if (!endTime) return null
+
+  const endMs = new Date(endTime).getTime()
+  if (!Number.isFinite(endMs)) return null
+
+  const remainingMs = endMs - now
+  if (remainingMs <= 0) {
+    return { expired: true, critical: false, caption: 'Таймер', label: 'Завершён' }
+  }
+
+  const totalSeconds = Math.floor(remainingMs / 1000)
+  const days = Math.floor(totalSeconds / 86400)
+  const hours = Math.floor((totalSeconds % 86400) / 3600)
+  const minutes = Math.floor((totalSeconds % 3600) / 60)
+  const seconds = totalSeconds % 60
+  const two = (value) => String(value).padStart(2, '0')
+
+  return {
+    expired: false,
+    critical: days === 0 && hours < 1,
+    caption: 'Осталось',
+    label: days > 0
+      ? `${days}д ${two(hours)}:${two(minutes)}:${two(seconds)}`
+      : `${two(hours)}:${two(minutes)}:${two(seconds)}`,
+  }
+}
+
+function AnalyticsTimerCard({ property, now }) {
+  const timer = getAnalyticsTimerState(property, now)
+  if (!timer) return null
+
+  return (
+    <span
+      className={[
+        'opa-object-timer',
+        timer.expired && 'opa-object-timer--expired',
+        timer.critical && 'opa-object-timer--critical',
+      ]
+        .filter(Boolean)
+        .join(' ')}
+    >
+      <span className="opa-object-timer__icon" aria-hidden>
+        <Clock size={14} strokeWidth={2.4} />
+      </span>
+      <span className="opa-object-timer__content">
+        <span className="opa-object-timer__caption">{timer.caption}</span>
+        <span className="opa-object-timer__value">{timer.label}</span>
+      </span>
+    </span>
+  )
+}
+
 export default function OwnerPropertyAnalyticsTestPage() {
   const { fullName, roleLabel } = useOwnerTestProfile()
   const { propertyId: routePropertyId } = useParams()
@@ -140,6 +234,9 @@ export default function OwnerPropertyAnalyticsTestPage() {
   const [property, setProperty] = useState(() => getOwnerTestProperty(propertyId))
   const [propertyLoading, setPropertyLoading] = useState(() => !getOwnerTestProperty(propertyId))
   const [menuOpen, setMenuOpen] = useState(false)
+  const [chartMetric, setChartMetric] = useState('bids')
+  const [chartMetricOpen, setChartMetricOpen] = useState(false)
+  const [timerNow, setTimerNow] = useState(() => Date.now())
   const isMobile = useOpaMobile()
 
   const closeMenu = useCallback(() => setMenuOpen(false), [])
@@ -230,16 +327,29 @@ export default function OwnerPropertyAnalyticsTestPage() {
     }
   }, [menuOpen])
 
+  const propertyTimerEndTime = useMemo(() => getAnalyticsTimerEndTime(property), [property])
+
+  useEffect(() => {
+    if (!propertyTimerEndTime) return undefined
+    setTimerNow(Date.now())
+    const timer = window.setInterval(() => setTimerNow(Date.now()), 1000)
+    return () => window.clearInterval(timer)
+  }, [propertyTimerEndTime])
+
   const analytics = property?.analytics
+  const selectedChartMetric = CHART_METRICS.find((metric) => metric.id === chartMetric) || CHART_METRICS[0]
+  const listingTypeLabel = OWNER_LISTING_TYPE_LABELS[property?.listingType] || 'Продажа'
 
   const lineChartData = useMemo(() => {
     if (!analytics) return null
+    const sourceSeries = isMobile ? analytics.viewsChartMobile : analytics.viewsChartDesktop
+    const metricSeries = buildMetricSeries(sourceSeries, chartMetric, analytics)
     return {
       labels: isMobile ? analytics.chartLabelsMobile : analytics.chartLabelsDesktop,
       datasets: [
         {
-          label: 'Просмотры',
-          data: isMobile ? analytics.viewsChartMobile : analytics.viewsChartDesktop,
+          label: selectedChartMetric.label,
+          data: metricSeries,
           borderColor: OPA_TIFFANY,
           backgroundColor: 'rgba(10, 186, 181, 0.14)',
           fill: true,
@@ -251,7 +361,7 @@ export default function OwnerPropertyAnalyticsTestPage() {
         },
       ],
     }
-  }, [analytics, isMobile])
+  }, [analytics, chartMetric, isMobile, selectedChartMetric.label])
 
   const lineChartOptions = useMemo(
     () => ({
@@ -335,24 +445,24 @@ export default function OwnerPropertyAnalyticsTestPage() {
   const kpiItems = [
     {
       label: 'Просмотры',
-      value: property.views,
+      value: analytics.views,
       delta: property.viewsDelta,
       up: property.viewsUp,
       icon: BarChart3,
     },
     {
-      label: 'В избранное',
-      value: analytics.favorites,
+      label: 'Ставки',
+      value: analytics.bids,
+      delta: '',
+      up: null,
+      icon: Gavel,
+    },
+    {
+      label: 'Лайки',
+      value: analytics.likes,
       delta: analytics.favoritesDelta,
       up: analytics.favoritesUp,
       icon: Heart,
-    },
-    {
-      label: 'Тест-драйвы',
-      value: analytics.testDrives,
-      delta: analytics.testDrivesDelta,
-      up: analytics.testDrivesUp,
-      icon: CarFront,
     },
     {
       label: 'Заявки',
@@ -361,13 +471,6 @@ export default function OwnerPropertyAnalyticsTestPage() {
       up: analytics.leadsUp,
       icon: Inbox,
     },
-  ]
-
-  const extraStats = [
-    { label: 'Среднее время на странице', value: analytics.avgTime },
-    { label: 'Показатель отказов', value: analytics.bounceRate },
-    { label: 'Добавлено в избранное', value: analytics.addedToFavorites },
-    { label: 'Поделились', value: analytics.shares },
   ]
 
   const mainColumn = (
@@ -397,10 +500,7 @@ export default function OwnerPropertyAnalyticsTestPage() {
               {analytics.period}
               <ChevronDown size={14} strokeWidth={2.2} aria-hidden />
             </button>
-            <button type="button" className="opa-icon-btn" aria-label="Уведомления">
-              <Bell size={20} strokeWidth={2} />
-              <span className="opa-icon-btn__badge">3</span>
-            </button>
+            <OwnerNotificationsButton className="opa-icon-btn" badgeClassName="opa-icon-btn__badge" />
             <OwnerTestProfileMenu />
           </div>
         </header>
@@ -419,7 +519,13 @@ export default function OwnerPropertyAnalyticsTestPage() {
                   <h2 className="opa-property-card__title">{property.title}</h2>
                   <p className="opa-property-card__location">{property.location}</p>
                   <p className="opa-property-card__price">{property.price}</p>
-                  <span className={`opa-status opa-status--${property.statusKey}`}>{property.status}</span>
+                  <div className="opa-property-card__chips">
+                    <span className={`opa-status opa-status--${property.statusKey}`}>{property.status}</span>
+                    <span className={`opa-listing-type opa-listing-type--${property.listingType}`}>
+                      <span>Тип продажи</span>
+                      <strong>{listingTypeLabel}</strong>
+                    </span>
+                  </div>
                 </div>
               </article>
 
@@ -443,11 +549,40 @@ export default function OwnerPropertyAnalyticsTestPage() {
             <section className="opa-charts">
               <article className="opa-card opa-chart-card">
                 <div className="opa-chart-card__head">
-                  <h2 className="opa-card__title">Динамика просмотров</h2>
-                  <button type="button" className="opa-select-pill">
-                    Просмотры
-                    <ChevronDown size={14} strokeWidth={2.2} aria-hidden />
-                  </button>
+                  <h2 className="opa-card__title">Динамика: {selectedChartMetric.label.toLowerCase()}</h2>
+                  <div className="opa-metric-select">
+                    <button
+                      type="button"
+                      className="opa-select-pill"
+                      aria-haspopup="listbox"
+                      aria-expanded={chartMetricOpen}
+                      onClick={() => setChartMetricOpen((open) => !open)}
+                    >
+                      {selectedChartMetric.label}
+                      <ChevronDown size={14} strokeWidth={2.2} aria-hidden />
+                    </button>
+                    {chartMetricOpen && (
+                      <div className="opa-metric-select__menu" role="listbox" aria-label="Метрика графика">
+                        {CHART_METRICS.map((metric) => (
+                          <button
+                            key={metric.id}
+                            type="button"
+                            role="option"
+                            aria-selected={metric.id === chartMetric}
+                            className={`opa-metric-select__option${
+                              metric.id === chartMetric ? ' opa-metric-select__option--active' : ''
+                            }`}
+                            onClick={() => {
+                              setChartMetric(metric.id)
+                              setChartMetricOpen(false)
+                            }}
+                          >
+                            {metric.label}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <div className="opa-chart-card__canvas">
                   {lineChartData && <Line data={lineChartData} options={lineChartOptions} />}
@@ -457,12 +592,15 @@ export default function OwnerPropertyAnalyticsTestPage() {
               <article className="opa-card opa-traffic-card opa-desktop-only">
                 <h2 className="opa-card__title">Источники трафика</h2>
                 <div className="opa-traffic-card__body">
-                  <div className="opa-donut-wrap">
-                    {donutData && <Doughnut data={donutData} options={donutOptions} />}
-                    <div className="opa-donut-center">
-                      <span className="opa-donut-center__label">Всего</span>
-                      <span className="opa-donut-center__value">{analytics.trafficTotal}</span>
+                  <div className="opa-traffic-visual">
+                    <div className="opa-donut-wrap">
+                      {donutData && <Doughnut data={donutData} options={donutOptions} />}
+                      <div className="opa-donut-center">
+                        <span className="opa-donut-center__label">Всего</span>
+                        <span className="opa-donut-center__value">{analytics.trafficTotal}</span>
+                      </div>
                     </div>
+                    <AnalyticsTimerCard property={property} now={timerNow} />
                   </div>
                   <ul className="opa-traffic-legend">
                     {analytics.trafficSources.map((source) => (
@@ -477,17 +615,6 @@ export default function OwnerPropertyAnalyticsTestPage() {
               </article>
             </section>
 
-            <section className="opa-card opa-extra-stats opa-desktop-only">
-              <h2 className="opa-card__title">Дополнительная статистика</h2>
-              <div className="opa-extra-stats__grid">
-                {extraStats.map((item) => (
-                  <div key={item.label} className="opa-extra-stat">
-                    <span className="opa-extra-stat__label">{item.label}</span>
-                    <span className="opa-extra-stat__value">{item.value}</span>
-                  </div>
-                ))}
-              </div>
-            </section>
           </div>
         </div>
       </div>

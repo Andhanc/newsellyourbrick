@@ -10,7 +10,6 @@ import {
   BarChart3,
   MessageSquare,
   Settings,
-  Bell,
   ChevronDown,
   Search,
   SlidersHorizontal,
@@ -24,6 +23,7 @@ import {
   Plus,
   ClipboardList,
   Briefcase,
+  Clock,
 } from 'lucide-react'
 import {
   OWNER_LISTING_TYPE_LABELS,
@@ -37,7 +37,10 @@ import {
   filterOwnerProperties,
   getOwnerPropertiesUserId,
 } from '../utils/ownerPropertiesList'
+import { getCurrencySymbol } from '../utils/currency'
 import OwnerTestProfileMenu from '../components/OwnerTestProfileMenu'
+import OwnerNotificationsButton from '../components/OwnerNotificationsButton'
+import { OwnerAdStack } from '../components/OwnerAds'
 import { useOwnerTestProfile } from '../context/OwnerTestProfileContext'
 import { OWNER_VIEWS } from '../context/OwnerTestNavigationContext'
 import { useOwnerTestEmbeddedNav } from '../hooks/useOwnerTestEmbeddedNav'
@@ -76,12 +79,6 @@ const TAB_ITEMS = [
   { id: 'more', label: 'Ещё', icon: SlidersHorizontal },
 ]
 
-const QUICK_ANALYTICS = [
-  { label: 'Общие просмотры', value: '12 450', delta: '+12.5%', up: true, spark: 'tiffany' },
-  { label: 'Общее количество броней', value: '834', delta: '+8.2%', up: true, spark: 'green' },
-  { label: 'Конверсия в бронь', value: '6.7%', delta: '+1.2%', up: true, spark: 'orange' },
-]
-
 const ANALYTICS_PERIODS = [
   { id: '7d', label: 'Последние 7 дней' },
   { id: '30d', label: 'Последние 30 дней' },
@@ -109,6 +106,18 @@ const DEFAULT_PROPERTY_FILTERS = {
 
 function isPropertyFiltersActive(filters) {
   return filters.listingTypes.length > 0 || filters.sortBy !== DEFAULT_PROPERTY_FILTERS.sortBy
+}
+
+function formatQuickNumber(value) {
+  const num = Number(value)
+  if (!Number.isFinite(num) || num <= 0) return '0'
+  return num.toLocaleString('ru-RU', { maximumFractionDigits: 0 })
+}
+
+function formatQuickMoney(value, currency = 'USD') {
+  const num = Number(value)
+  if (!Number.isFinite(num) || num <= 0) return `${getCurrencySymbol(currency)}0`
+  return `${getCurrencySymbol(currency)}${num.toLocaleString('ru-RU', { maximumFractionDigits: 0 })}`
 }
 
 function QuickAnalyticsPeriodSelect({ value, onChange }) {
@@ -341,6 +350,58 @@ function AmountCell({ row }) {
   )
 }
 
+function getObjectTimerState(endTime, now = Date.now()) {
+  if (!endTime) return null
+  const endMs = new Date(endTime).getTime()
+  if (!Number.isFinite(endMs)) return null
+
+  const remainingMs = endMs - now
+  if (remainingMs <= 0) {
+    return { expired: true, label: 'Завершён', caption: 'Таймер' }
+  }
+
+  const totalSeconds = Math.floor(remainingMs / 1000)
+  const days = Math.floor(totalSeconds / 86400)
+  const hours = Math.floor((totalSeconds % 86400) / 3600)
+  const minutes = Math.floor((totalSeconds % 3600) / 60)
+  const seconds = totalSeconds % 60
+  const two = (value) => String(value).padStart(2, '0')
+
+  return {
+    expired: false,
+    critical: days === 0 && hours < 1,
+    caption: 'Осталось',
+    label: days > 0
+      ? `${days}д ${two(hours)}:${two(minutes)}:${two(seconds)}`
+      : `${two(hours)}:${two(minutes)}:${two(seconds)}`,
+  }
+}
+
+function ObjectTimerBadge({ endTime, now }) {
+  const timer = getObjectTimerState(endTime, now)
+  if (!timer) return <span className="op-object-timer op-object-timer--empty">—</span>
+
+  return (
+    <span
+      className={[
+        'op-object-timer',
+        timer.expired && 'op-object-timer--expired',
+        timer.critical && 'op-object-timer--critical',
+      ]
+        .filter(Boolean)
+        .join(' ')}
+    >
+      <span className="op-object-timer__icon" aria-hidden>
+        <Clock size={13} strokeWidth={2.4} />
+      </span>
+      <span className="op-object-timer__content">
+        <span className="op-object-timer__caption">{timer.caption}</span>
+        <span className="op-object-timer__value">{timer.label}</span>
+      </span>
+    </span>
+  )
+}
+
 function getVisiblePages(currentPage, totalPages) {
   if (totalPages <= 7) {
     return Array.from({ length: totalPages }, (_, index) => ({ type: 'page', value: index + 1 }))
@@ -428,6 +489,7 @@ export default function OwnerPropertiesTestPage() {
   const [currentPage, setCurrentPage] = useState(1)
   const [analyticsPeriod, setAnalyticsPeriod] = useState('30d')
   const [propertyFilters, setPropertyFilters] = useState(DEFAULT_PROPERTY_FILTERS)
+  const [timerNow, setTimerNow] = useState(() => Date.now())
 
   const closeMenu = useCallback(() => setMenuOpen(false), [])
 
@@ -468,6 +530,32 @@ export default function OwnerPropertiesTestPage() {
 
   const tabCounts = useMemo(() => countOwnerPropertiesByTab(properties), [properties])
 
+  const quickAnalytics = useMemo(() => {
+    const currency =
+      properties.find((row) => Number(row.bidsAmountTotal) > 0 && row.currency)?.currency ||
+      properties.find((row) => Number(row.currentBidAmount) > 0 && row.currency)?.currency ||
+      properties.find((row) => row.currency)?.currency ||
+      'USD'
+
+    const totals = properties.reduce(
+      (acc, row) => {
+        const bidSum = Number(row.bidsAmountTotal)
+        const currentBid = Number(row.currentBidAmount)
+        acc.views += Number(row.viewsCount) || 0
+        acc.bids += Number.isFinite(bidSum) && bidSum > 0 ? bidSum : Number.isFinite(currentBid) ? currentBid : 0
+        acc.bookings += Number(row.bookingsCount) || 0
+        return acc
+      },
+      { views: 0, bids: 0, bookings: 0 }
+    )
+
+    return [
+      { label: 'Все просмотры', value: formatQuickNumber(totals.views), delta: '', up: null, spark: 'tiffany' },
+      { label: 'Сумма всех ставок', value: formatQuickMoney(totals.bids, currency), delta: '', up: null, spark: 'green' },
+      { label: 'Сумма всех броней', value: formatQuickNumber(totals.bookings), delta: '', up: null, spark: 'orange' },
+    ]
+  }, [properties])
+
   const filterTabs = useMemo(
     () => FILTER_TAB_DEFS.map((tab) => ({ ...tab, count: tabCounts[tab.id] ?? 0 })),
     [tabCounts]
@@ -503,6 +591,18 @@ export default function OwnerPropertiesTestPage() {
     const start = (safeCurrentPage - 1) * PAGE_SIZE
     return visibleProperties.slice(start, start + PAGE_SIZE)
   }, [visibleProperties, safeCurrentPage])
+
+  const hasVisibleTimers = useMemo(
+    () => paginatedProperties.some((row) => row.auctionEndTime),
+    [paginatedProperties]
+  )
+
+  useEffect(() => {
+    if (!hasVisibleTimers) return undefined
+    setTimerNow(Date.now())
+    const timer = window.setInterval(() => setTimerNow(Date.now()), 1000)
+    return () => window.clearInterval(timer)
+  }, [hasVisibleTimers])
 
   useEffect(() => {
     setCurrentPage(1)
@@ -588,10 +688,7 @@ export default function OwnerPropertiesTestPage() {
                 Добавить объект
               </Link>
             )}
-            <button type="button" className="op-icon-btn" aria-label="Уведомления">
-              <Bell size={20} strokeWidth={2} />
-              <span className="op-icon-btn__badge">3</span>
-            </button>
+            <OwnerNotificationsButton className="op-icon-btn" badgeClassName="op-icon-btn__badge" />
             <OwnerTestProfileMenu />
           </div>
         </header>
@@ -679,6 +776,7 @@ export default function OwnerPropertiesTestPage() {
                       <th>Объект</th>
                       <th>Статус</th>
                       <th>Тип</th>
+                      <th>Таймер</th>
                       <th>Просмотры</th>
                       <th>Стоимость</th>
                     </tr>
@@ -714,6 +812,9 @@ export default function OwnerPropertiesTestPage() {
                         </td>
                         <td>
                           <ListingTypeBadge type={row.listingType} />
+                        </td>
+                        <td>
+                          <ObjectTimerBadge endTime={row.auctionEndTime} now={timerNow} />
                         </td>
                         <td>
                           <div className="op-stat-cell">
@@ -755,6 +856,9 @@ export default function OwnerPropertiesTestPage() {
                       <p className="op-mob-list__location">{row.location}</p>
                       <div className="op-mob-list__meta-row">
                         <ListingTypeBadge type={row.listingType} />
+                        {row.auctionEndTime ? (
+                          <ObjectTimerBadge endTime={row.auctionEndTime} now={timerNow} />
+                        ) : null}
                       </div>
                       <div className="op-mob-list__amount">
                         <AmountCell row={row} />
@@ -789,7 +893,7 @@ export default function OwnerPropertiesTestPage() {
                 <QuickAnalyticsPeriodSelect value={analyticsPeriod} onChange={setAnalyticsPeriod} />
               </div>
               <ul className="op-quick-list">
-                {QUICK_ANALYTICS.map((item) => (
+                {quickAnalytics.map((item) => (
                   <li key={item.label}>
                     <div className="op-quick-list__text">
                       <span className="op-quick-list__label">{item.label}</span>
@@ -802,17 +906,7 @@ export default function OwnerPropertiesTestPage() {
               </ul>
             </section>
 
-            <section className="op-rail-card op-rail-promo op-rail-promo--premium">
-              <div className="op-rail-promo__glow" aria-hidden />
-              <div className="op-rail-promo__copy">
-                <span className="op-rail-promo__tag">Продвижение</span>
-                <h2>Продвигайте свои объекты</h2>
-                <p>Увеличьте просмотры и получайте больше броней с тарифами продвижения</p>
-                <button type="button" className="op-btn op-btn--primary op-btn--sm op-btn--block op-rail-promo__cta">
-                  Выбрать тариф
-                </button>
-              </div>
-            </section>
+            <OwnerAdStack cards={['premium', 'fastSales']} className="op-owner-ads" />
           </aside>
         </div>
       </div>
@@ -839,10 +933,11 @@ export default function OwnerPropertiesTestPage() {
           <span className="op-logo__text">SellYourBrick</span>
         </div>
         <div className="op-mob-topbar__slot op-mob-topbar__slot--right">
-          <button type="button" className="op-mob-topbar__bell" aria-label="Уведомления">
-            <Bell size={22} strokeWidth={2} />
-            <span className="op-icon-btn__badge">2</span>
-          </button>
+          <OwnerNotificationsButton
+            className="op-mob-topbar__bell"
+            badgeClassName="op-icon-btn__badge"
+            iconSize={22}
+          />
         </div>
       </header>
 

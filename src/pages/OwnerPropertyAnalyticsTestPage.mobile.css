@@ -125,6 +125,40 @@
     vertical-align: middle;
   }
 
+  .opa-property-card__chips {
+    margin-top: 10px;
+  }
+
+  .opa-listing-type {
+    max-width: 100%;
+  }
+
+  .opa-object-timer {
+    width: min(190px, 100%);
+    min-height: 38px;
+    padding: 5px 8px;
+    border-radius: 12px;
+  }
+
+  .opa-object-timer__icon {
+    width: 24px;
+    height: 24px;
+    border-radius: 9px;
+  }
+
+  .opa-object-timer__icon svg {
+    width: 13px;
+    height: 13px;
+  }
+
+  .opa-object-timer__caption {
+    font-size: 8px;
+  }
+
+  .opa-object-timer__value {
+    font-size: 11px;
+  }
+
   .opa-kpi-grid {
     grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 8px;
@@ -159,6 +193,18 @@
 
   .opa-chart-card {
     padding: 14px;
+  }
+
+  .opa-chart-card__head {
+    align-items: flex-start;
+  }
+
+  .opa-metric-select .opa-select-pill {
+    min-width: 132px;
+  }
+
+  .opa-metric-select__menu {
+    width: 160px;
   }
 
   .opa-chart-card__canvas {

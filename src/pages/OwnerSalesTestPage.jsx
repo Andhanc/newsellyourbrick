@@ -10,15 +10,16 @@ import {
   BarChart3,
   MessageSquare,
   Settings,
-  Bell,
-  ChevronDown,
-  Search,
+  DollarSign,
   SlidersHorizontal,
+  TrendingUp,
   Menu,
   X,
 } from 'lucide-react'
 import { OSL_IMAGES } from './ownerSalesTestImages'
 import OwnerTestProfileMenu from '../components/OwnerTestProfileMenu'
+import OwnerNotificationsButton from '../components/OwnerNotificationsButton'
+import { OwnerBuyerAd } from '../components/OwnerAds'
 import { useOwnerTestEmbeddedNav } from '../hooks/useOwnerTestEmbeddedNav'
 import {
   CLERK_DB_USER_SYNCED,
@@ -134,6 +135,17 @@ function getRowStatus(row) {
   return { ...row, statusLabel: 'В процессе', statusTone: 'in-progress' }
 }
 
+function parseSaleAmount(value) {
+  if (typeof value === 'number') return Number.isFinite(value) ? value : 0
+  const normalized = String(value || '').replace(/[^\d.,-]/g, '').replace(',', '.')
+  const amount = Number.parseFloat(normalized.replace(/\.(?=.*\.)/g, ''))
+  return Number.isFinite(amount) ? amount : 0
+}
+
+function formatTotalSalesAmount(value) {
+  return `$${value.toLocaleString('ru-RU', { maximumFractionDigits: 0 })}`
+}
+
 function LogoMark({ className = '' }) {
   return (
     <svg className={`osl-logo__mark ${className}`.trim()} viewBox="0 0 40 40" aria-hidden>
@@ -220,6 +232,16 @@ export default function OwnerSalesTestPage() {
     [displayRows, activeTab]
   )
 
+  const salesSummary = useMemo(() => {
+    const total = displayRows.reduce((sum, row) => sum + parseSaleAmount(row.dealAmount), 0)
+    const completed = displayRows.filter((row) => row.statusTone === 'completed').length
+    return {
+      total: formatTotalSalesAmount(total),
+      deals: displayRows.length,
+      completed,
+    }
+  }, [displayRows])
+
   const renderNavItem = useCallback(
     ({ id, label, icon: Icon, active, badge, href }) => {
       const className = `osl-nav__item${active ? ' osl-nav__item--active' : ''}`
@@ -268,10 +290,7 @@ export default function OwnerSalesTestPage() {
         <header className="osl-header osl-desktop-only">
           <h1 className="osl-header__title">Продажи</h1>
           <div className="osl-header__actions">
-            <button type="button" className="osl-icon-btn" aria-label="Уведомления">
-              <Bell size={20} strokeWidth={2} />
-              <span className="osl-icon-btn__badge">3</span>
-            </button>
+            <OwnerNotificationsButton className="osl-icon-btn" badgeClassName="osl-icon-btn__badge" />
             <OwnerTestProfileMenu />
           </div>
         </header>
@@ -311,12 +330,24 @@ export default function OwnerSalesTestPage() {
                   </button>
                 ))}
               </div>
-              <button type="button" className="osl-filter-btn osl-desktop-only">
-                <Search size={16} strokeWidth={2} aria-hidden />
-                Фильтр
-                <ChevronDown size={14} strokeWidth={2.2} aria-hidden />
-              </button>
             </div>
+
+            <section className="osl-sales-summary" aria-label="Общая сумма продаж">
+              <div className="osl-sales-summary__icon" aria-hidden>
+                <DollarSign size={22} strokeWidth={2.3} />
+              </div>
+              <div className="osl-sales-summary__copy">
+                <span className="osl-sales-summary__label">Общая сумма продаж</span>
+                <strong className="osl-sales-summary__value">{salesSummary.total}</strong>
+              </div>
+              <div className="osl-sales-summary__meta">
+                <span className="osl-sales-summary__pill">
+                  <TrendingUp size={14} strokeWidth={2.3} aria-hidden />
+                  {salesSummary.deals} сделок
+                </span>
+                <span className="osl-sales-summary__hint">{salesSummary.completed} завершено</span>
+              </div>
+            </section>
 
             {filteredRows.length === 0 ? (
               <div className="osl-table-state">
@@ -397,27 +428,7 @@ export default function OwnerSalesTestPage() {
               </>
             )}
 
-            <section className="osl-buyer-banner" aria-label="Стать покупателем">
-              <div className="osl-buyer-banner__copy">
-                <h2 className="osl-buyer-banner__title">Ищете недвижимость для себя?</h2>
-                <p className="osl-buyer-banner__text">
-                  Находите лучшие предложения на нашей платформе
-                </p>
-              </div>
-              <div className="osl-buyer-banner__actions">
-                <button type="button" className="osl-btn osl-btn--primary">
-                  Стать покупателем
-                </button>
-              </div>
-              <img
-                className="osl-buyer-banner__image"
-                src={OSL_IMAGES.buyerKeyBanner}
-                alt=""
-                loading="lazy"
-                decoding="async"
-                aria-hidden
-              />
-            </section>
+            <OwnerBuyerAd className="osl-owner-buyer-ad" />
           </div>
         </div>
       </div>
@@ -444,10 +455,11 @@ export default function OwnerSalesTestPage() {
           <span className="osl-logo__text">SellYourBrick</span>
         </div>
         <div className="osl-mob-topbar__slot osl-mob-topbar__slot--right">
-          <button type="button" className="osl-mob-topbar__bell" aria-label="Уведомления">
-            <Bell size={22} strokeWidth={2} />
-            <span className="osl-icon-btn__badge">3</span>
-          </button>
+          <OwnerNotificationsButton
+            className="osl-mob-topbar__bell"
+            badgeClassName="osl-icon-btn__badge"
+            iconSize={22}
+          />
         </div>
       </header>
 

@@ -2,23 +2,19 @@ import { useState, useCallback, useEffect } from 'react'
 import {
   LayoutDashboard,
   Building2,
-  CalendarCheck,
   ShoppingBag,
   Car,
   CreditCard,
-  BarChart3,
   MessageSquare,
   Settings,
-  Bell,
   Menu,
   X,
   Home,
   Briefcase,
   Plus,
-  ClipboardList,
   SlidersHorizontal,
 } from 'lucide-react'
-import OwnerNotificationsDrawer from './OwnerNotificationsDrawer'
+import OwnerNotificationsButton from './OwnerNotificationsButton'
 import { useOwnerTestNav } from '../context/OwnerTestNavigationContext'
 import {
   isNavItemActive,
@@ -32,11 +28,9 @@ import './OwnerTestCabinetChrome.css'
 const NAV_ITEMS = [
   { id: 'home', label: 'Главная', icon: LayoutDashboard },
   { id: 'properties', label: 'Мои объекты', icon: Building2 },
-  { id: 'bookings', label: 'Брони', icon: CalendarCheck },
   { id: 'sales', label: 'Продажи', icon: ShoppingBag },
   { id: 'testdrive', label: 'Тест-драйв', icon: Car },
   { id: 'subscriptions', label: 'Подписки', icon: CreditCard },
-  { id: 'analytics', label: 'Аналитика', icon: BarChart3 },
   { id: 'messages', label: 'Сообщения', icon: MessageSquare, badge: 3 },
   { id: 'settings', label: 'Настройки', icon: Settings },
 ]
@@ -45,7 +39,6 @@ const TAB_ITEMS = [
   { id: 'home', label: 'Главная', icon: Home },
   { id: 'properties', label: 'Объекты', icon: Briefcase },
   { id: 'fab', fab: true },
-  { id: 'bookings', label: 'Брони', icon: ClipboardList },
   { id: 'more', label: 'Ещё', icon: SlidersHorizontal },
 ]
 
@@ -77,7 +70,6 @@ function LogoMark({ className = '' }) {
 export default function OwnerTestCabinetChrome({ children }) {
   const { view, goTo } = useOwnerTestNav()
   const [menuOpen, setMenuOpen] = useState(false)
-  const [notificationsOpen, setNotificationsOpen] = useState(false)
   const showTabbar = isTabbarView(view)
 
   const closeMenu = useCallback(() => setMenuOpen(false), [])
@@ -149,16 +141,11 @@ export default function OwnerTestCabinetChrome({ children }) {
           <span className="otc-logo__text">SellYourBrick</span>
         </div>
         <div className="otc-mob-topbar__slot otc-mob-topbar__slot--right">
-          <button
-            type="button"
+          <OwnerNotificationsButton
             className="otc-mob-topbar__bell"
-            aria-label="Уведомления"
-            aria-expanded={notificationsOpen}
-            onClick={() => setNotificationsOpen(true)}
-          >
-            <Bell size={22} strokeWidth={2} />
-            <span className="otc-icon-btn__badge">3</span>
-          </button>
+            badgeClassName="otc-icon-btn__badge"
+            iconSize={22}
+          />
         </div>
       </header>
 
@@ -233,10 +220,6 @@ export default function OwnerTestCabinetChrome({ children }) {
         </nav>
       )}
 
-      <OwnerNotificationsDrawer
-        open={notificationsOpen}
-        onClose={() => setNotificationsOpen(false)}
-      />
     </div>
   )
 }

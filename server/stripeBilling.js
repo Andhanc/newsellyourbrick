@@ -1077,9 +1077,20 @@ function isoFromUnix(sec) {
 }
 
 /** Pro / VIP из metadata подписки или сопоставления Price ID с .env */
+const OWNER_SUBSCRIPTION_PLANS = {
+  standard: { name: 'Стандарт', monthlyUsd: 19 },
+  corporate: { name: 'Корпоративный', monthlyUsd: 99 },
+};
+
+const OWNER_SUBSCRIPTION_PLAN_KEYS = new Set(Object.keys(OWNER_SUBSCRIPTION_PLANS));
+
+function isOwnerSubscriptionPlanKey(planKey) {
+  return OWNER_SUBSCRIPTION_PLAN_KEYS.has(String(planKey || '').toLowerCase());
+}
+
 function planKeyFromStripeSubscription(subscription) {
   const m = String(subscription?.metadata?.plan_key || '').toLowerCase();
-  if (m === 'vip' || m === 'pro') return m;
+  if (m === 'vip' || m === 'pro' || isOwnerSubscriptionPlanKey(m)) return m;
   const priceIdPro = (process.env.STRIPE_PRICE_ID_PRO || '').trim();
   const priceIdProYear = (process.env.STRIPE_PRICE_ID_PRO_YEAR || '').trim();
   const priceIdVip = (process.env.STRIPE_PRICE_ID_VIP || '').trim();
@@ -1239,7 +1250,7 @@ export async function confirmWalletDepositSession(stripe, sessionId, expectedUse
 /**
  * Сохраняет подписку и первый платёж из Checkout Session (idempotent).
  */
-export async function syncCheckoutSessionToDatabase(stripe, sessionId) {
+export async function syncCheckoutSessionToDatabase(stripe, sessionId, options = {}) {
   const session = await stripe.checkout.sessions.retrieve(sessionId, {
     expand: ['subscription', 'line_items'],
   });
@@ -1255,7 +1266,16 @@ export async function syncCheckoutSessionToDatabase(stripe, sessionId) {
     return { ok: false, error: 'no_subscription' };
   }
 
-  const uid = parseInt(session.metadata?.app_user_id || '', 10);
+  const metadataUserId = parseInt(session.metadata?.app_user_id || '', 10);
+  const expectedUserId = parseInt(String(options.expectedUserId || '').trim(), 10);
+  if (
+    Number.isFinite(metadataUserId) &&
+    Number.isFinite(expectedUserId) &&
+    metadataUserId !== expectedUserId
+  ) {
+    return { ok: false, error: 'user_mismatch' };
+  }
+  const uid = Number.isFinite(metadataUserId) ? metadataUserId : expectedUserId;
   if (!Number.isFinite(uid)) {
     return { ok: false, error: 'no_app_user_id' };
   }
@@ -1324,7 +1344,16 @@ export async function syncCheckoutSessionToDatabase(stripe, sessionId) {
     customer_email: session.customer_details?.email || session.customer_email || null,
   });
 
-  return { ok: true };
+  return {
+    ok: true,
+    data: {
+      user_id: uid,
+      plan_key: planKey,
+      status: sub.status,
+      current_period_end: isoFromUnix(sub.current_period_end),
+      stripe_subscription_id: subscriptionId,
+    },
+  };
 }
 
 async function persistInvoicePaid(stripe, invoice) {
@@ -1530,6 +1559,13 @@ function userHasActiveStripeVipPlan(state) {
   return String(state.plan_key || '').toLowerCase() === 'vip';
 }
 
+function userHasActiveOwnerSubscriptionPlan(state, planKey) {
+  if (!state) return false;
+  const st = String(state.status || '').toLowerCase();
+  if (!['active', 'trialing', 'past_due', 'paused'].includes(st)) return false;
+  return String(state.plan_key || '').toLowerCase() === String(planKey || '').toLowerCase();
+}
+
 export function registerStripeBillingRoutes(app) {
   const stripe = getStripe();
   const priceIdPro = (process.env.STRIPE_PRICE_ID_PRO || '').trim();
@@ -1599,10 +1635,83 @@ export function registerStripeBillingRoutes(app) {
         return res.json({ success: true, url: session.url });
       }
 
+      if (isOwnerSubscriptionPlanKey(plan)) {
+        if (!userId || !/^\d+$/.test(userId)) {
+          return res.status(400).json({
+            success: false,
+            error: 'Укажите числовой userId для привязки подписки к аккаунту',
+          });
+        }
+
+        const sellerPlan = OWNER_SUBSCRIPTION_PLANS[plan];
+        const unitAmount = majorToStripeMinor(
+          billingCycle === 'yearly'
+            ? sellerPlan.monthlyUsd * 0.8 * 12
+            : sellerPlan.monthlyUsd,
+          'usd'
+        );
+        const uidCheckout = parseInt(userId, 10);
+        const existingSub = await stripeSubscriptionQueries.getStateByUserId(uidCheckout);
+        if (userHasActiveOwnerSubscriptionPlan(existingSub, plan)) {
+          return res.status(409).json({
+            success: false,
+            error: 'already_subscribed_owner_plan',
+          });
+        }
+
+        const returnPath =
+          typeof req.body?.returnPath === 'string' &&
+          req.body.returnPath.startsWith('/') &&
+          !req.body.returnPath.includes('..')
+            ? req.body.returnPath.slice(0, 220)
+            : '/owner-test?view=subscriptions';
+        const joiner = returnPath.includes('?') ? '&' : '?';
+        const successUrl = `${frontendBase}${returnPath}${joiner}subscription_checkout=success&session_id={CHECKOUT_SESSION_ID}&owner_plan=${plan}`;
+        const cancelUrl = `${frontendBase}${returnPath}${joiner}subscription_checkout=canceled`;
+
+        const session = await stripe.checkout.sessions.create({
+          mode: 'subscription',
+          payment_method_types: ['card'],
+          line_items: [
+            {
+              quantity: 1,
+              price_data: {
+                currency: 'usd',
+                unit_amount: unitAmount,
+                recurring: { interval: billingCycle === 'yearly' ? 'year' : 'month' },
+                product_data: {
+                  name: `SellYourBrick ${sellerPlan.name}`,
+                  description: `Подписка продавца: ${sellerPlan.name}.`.slice(0, 500),
+                },
+              },
+            },
+          ],
+          success_url: successUrl,
+          cancel_url: cancelUrl,
+          metadata: {
+            app_user_id: userId,
+            billing_cycle: billingCycle,
+            plan_key: plan,
+            checkout_purpose: 'owner_subscription',
+          },
+          subscription_data: {
+            metadata: {
+              app_user_id: userId,
+              billing_cycle: billingCycle,
+              plan_key: plan,
+              checkout_purpose: 'owner_subscription',
+            },
+          },
+          ...(customerEmail && customerEmail.includes('@') ? { customer_email: customerEmail } : {}),
+        });
+
+        return res.json({ success: true, url: session.url });
+      }
+
       if (plan !== 'pro' && plan !== 'vip') {
         return res.status(400).json({
           success: false,
-          error: 'Неизвестный план. Доступны: pro, vip, deposit',
+          error: 'Неизвестный план. Доступны: pro, vip, deposit, standard, corporate',
         });
       }
 
@@ -1669,12 +1778,25 @@ export function registerStripeBillingRoutes(app) {
       }
 
       const planKeyMeta = isVip ? 'vip' : 'pro';
+      const checkoutReturnPath =
+        typeof req.body?.returnPath === 'string' &&
+        req.body.returnPath.startsWith('/') &&
+        !req.body.returnPath.includes('..')
+          ? req.body.returnPath.slice(0, 220)
+          : '';
+      const checkoutReturnJoiner = checkoutReturnPath.includes('?') ? '&' : '?';
+      const checkoutSuccessUrl = checkoutReturnPath
+        ? `${frontendBase}${checkoutReturnPath}${checkoutReturnJoiner}subscription_checkout=success&session_id={CHECKOUT_SESSION_ID}&owner_plan=${planKeyMeta}`
+        : `${frontendBase}/profile?subscription_checkout=success&session_id={CHECKOUT_SESSION_ID}${isVip ? '&vip_club=1' : ''}`;
+      const checkoutCancelUrl = checkoutReturnPath
+        ? `${frontendBase}${checkoutReturnPath}${checkoutReturnJoiner}subscription_checkout=canceled`
+        : `${frontendBase}/profile`;
       const session = await stripe.checkout.sessions.create({
         mode: 'subscription',
         payment_method_types: ['card'],
         line_items: [{ price: selectedPriceId, quantity: 1 }],
-        success_url: `${frontendBase}/profile?subscription_checkout=success&session_id={CHECKOUT_SESSION_ID}${isVip ? '&vip_club=1' : ''}`,
-        cancel_url: `${frontendBase}/profile`,
+        success_url: checkoutSuccessUrl,
+        cancel_url: checkoutCancelUrl,
         metadata: userId
           ? { app_user_id: userId, billing_cycle: billingCycle, plan_key: planKeyMeta }
           : { billing_cycle: billingCycle, plan_key: planKeyMeta },
@@ -2718,11 +2840,16 @@ export function registerStripeBillingRoutes(app) {
       if (!sessionId || !sessionId.startsWith('cs_')) {
         return res.status(400).json({ success: false, error: 'Нужен session_id (cs_...)' });
       }
-      const result = await syncCheckoutSessionToDatabase(stripe, sessionId);
+      const expectedUserId =
+        req.body?.userId != null || req.body?.expectedUserId != null
+          ? String(req.body?.userId ?? req.body?.expectedUserId).trim()
+          : '';
+      const result = await syncCheckoutSessionToDatabase(stripe, sessionId, { expectedUserId });
       if (!result.ok) {
-        return res.status(400).json({ success: false, error: result.error || 'sync_failed' });
+        const status = result.error === 'user_mismatch' ? 403 : 400;
+        return res.status(status).json({ success: false, error: result.error || 'sync_failed' });
       }
-      return res.json({ success: true });
+      return res.json({ success: true, data: result.data || null });
     } catch (err) {
       console.error('[Stripe] confirm-session:', err?.message || err);
       return res.status(500).json({ success: false, error: err?.message || 'Ошибка' });

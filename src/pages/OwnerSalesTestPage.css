@@ -34,6 +34,138 @@
   -webkit-font-smoothing: antialiased;
 }
 
+.osl-owner-buyer-ad {
+  min-height: 184px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(190px, 28%);
+  grid-template-areas:
+    "copy image"
+    "actions image";
+  align-items: center;
+  gap: 14px 22px;
+  margin-top: 0;
+  padding: 20px 28px;
+  border-radius: 18px;
+  text-align: left;
+}
+
+.osl-owner-buyer-ad .oad-buyer__copy {
+  grid-area: copy;
+  max-width: 520px;
+}
+
+.osl-owner-buyer-ad .oad-buyer__title {
+  font-size: 24px;
+  line-height: 1.16;
+}
+
+.osl-owner-buyer-ad .oad-buyer__text {
+  max-width: 430px;
+  margin-top: 8px;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.osl-owner-buyer-ad .oad-buyer__image {
+  grid-area: image;
+  justify-self: end;
+  align-self: end;
+  width: min(270px, 100%);
+  height: 136px;
+  margin: 0;
+  object-fit: contain;
+}
+
+.osl-owner-buyer-ad .oad-buyer__list {
+  display: none;
+}
+
+.osl-owner-buyer-ad .oad-buyer__list li {
+  width: auto;
+  display: inline-flex;
+  gap: 7px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(10, 186, 181, 0.08);
+  color: #475569;
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.osl-owner-buyer-ad .oad-buyer__icon {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 20px;
+}
+
+.osl-owner-buyer-ad .oad-buyer__actions {
+  grid-area: actions;
+  width: auto;
+  max-width: none;
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+  margin-top: 4px;
+  padding-top: 0;
+}
+
+.osl-owner-buyer-ad .oad-buyer__button {
+  min-height: 42px;
+  padding: 0 18px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #53d8d3 0%, #0abab5 48%, #089a95 100%);
+  font-size: 14px;
+  box-shadow: 0 12px 24px rgba(10, 186, 181, 0.24);
+}
+
+.osl-owner-buyer-ad .oad-buyer__button:hover,
+.osl-owner-buyer-ad .oad-buyer__button:focus-visible {
+  box-shadow: 0 15px 30px rgba(10, 186, 181, 0.32);
+}
+
+.osl-owner-buyer-ad .oad-buyer__link {
+  color: #0abab5;
+  font-size: 13px;
+}
+
+@media (max-width: 760px) {
+  .osl-owner-buyer-ad {
+    min-height: 148px;
+    grid-template-columns: minmax(0, 1fr) 110px;
+    grid-template-areas:
+      "copy image"
+      "actions image";
+    gap: 10px;
+    padding: 16px;
+    border-radius: 16px;
+  }
+
+  .osl-owner-buyer-ad .oad-buyer__title {
+    font-size: 18px;
+  }
+
+  .osl-owner-buyer-ad .oad-buyer__text {
+    margin-top: 5px;
+    font-size: 12px;
+  }
+
+  .osl-owner-buyer-ad .oad-buyer__image {
+    width: 120px;
+    height: 104px;
+  }
+
+  .osl-owner-buyer-ad .oad-buyer__list,
+  .osl-owner-buyer-ad .oad-buyer__link {
+    display: none;
+  }
+
+  .osl-owner-buyer-ad .oad-buyer__button {
+    min-height: 36px;
+    padding: 0 14px;
+    font-size: 12px;
+  }
+}
+
 .osl-body {
   --osl-tiffany: #0abab5;
   --osl-tiffany-dark: #089a95;
@@ -383,30 +515,6 @@
   color: var(--osl-tiffany-dark);
   font-weight: 600;
   border-bottom-color: var(--osl-tiffany);
-}
-
-.osl-filter-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  height: 40px;
-  padding: 0 14px;
-  border: 1px solid var(--osl-border);
-  border-radius: 10px;
-  background: var(--osl-surface);
-  color: var(--osl-text);
-  font: inherit;
-  font-size: 13px;
-  font-weight: 500;
-  cursor: pointer;
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
-  white-space: nowrap;
-  flex-shrink: 0;
-  margin-bottom: 1px;
-}
-
-.osl-filter-btn:hover {
-  border-color: #cbd5e1;
 }
 
 /* ——— Table ——— */
@@ -759,16 +867,18 @@
   }
 
   .osl-header {
-    position: static;
-    padding: 15px 31px 22px;
-    background: #ffffff;
-    backdrop-filter: none;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    padding: 28px 32px 20px;
+    background: linear-gradient(180deg, rgba(244, 251, 251, 0.97) 0%, rgba(240, 253, 250, 0.85) 100%);
+    backdrop-filter: blur(8px);
   }
 
   .osl-header__title {
-    font-size: 24px;
-    line-height: 1.2;
-    letter-spacing: -0.025em;
+    font-size: 28px;
+    line-height: 1.15;
+    letter-spacing: -0.03em;
     color: #111827;
   }
 
@@ -784,7 +894,7 @@
 
   .osl-tabs-row {
     align-items: center;
-    margin-bottom: 35px;
+    margin-bottom: 22px;
   }
 
   .osl-tabs {
@@ -804,24 +914,87 @@
   }
 
   .osl-tabs__item--active {
-    color: #2563eb;
+    color: #0abab5;
     border-bottom-color: transparent;
   }
 
-  .osl-filter-btn {
-    height: 36px;
-    margin-bottom: 0;
-    padding: 0 12px;
-    gap: 8px;
-    border: 0;
-    border-radius: 8px;
-    background: #ffffff;
+  .osl-sales-summary {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    min-height: 92px;
+    margin-bottom: 34px;
+    padding: 18px 22px;
+    border: 1px solid rgba(10, 186, 181, 0.22);
+    border-radius: 14px;
+    background:
+      linear-gradient(120deg, rgba(236, 253, 251, 0.98) 0%, rgba(255, 255, 255, 0.98) 48%, rgba(231, 250, 247, 0.96) 100%);
+    box-shadow: 0 16px 38px rgba(10, 186, 181, 0.09);
+  }
+
+  .osl-sales-summary__icon {
+    width: 52px;
+    height: 52px;
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 14px;
+    background: #0abab5;
+    color: #ffffff;
+    box-shadow: 0 12px 24px rgba(10, 186, 181, 0.24);
+  }
+
+  .osl-sales-summary__copy {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  .osl-sales-summary__label {
     color: #6b7280;
-    box-shadow: 0 8px 18px rgba(15, 23, 42, 0.06);
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  .osl-sales-summary__value {
+    color: #111827;
+    font-size: 28px;
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: 0;
+    white-space: nowrap;
+  }
+
+  .osl-sales-summary__meta {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: #6b7280;
+    font-size: 13px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  .osl-sales-summary__pill {
+    height: 32px;
+    padding: 0 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border-radius: 999px;
+    background: rgba(10, 186, 181, 0.12);
+    color: #089a95;
+  }
+
+  .osl-sales-summary__hint {
+    color: #089a95;
   }
 
   .osl-table-card {
-    margin-bottom: 54px;
+    margin-bottom: 44px;
     overflow: visible;
     border: 0;
     border-radius: 0;
@@ -946,12 +1119,12 @@
 
   .osl-buyer-banner {
     position: relative;
-    min-height: 84px;
+    min-height: 118px;
     margin-top: 0;
-    padding: 20px 30px;
+    padding: 26px 30px;
     overflow: hidden;
     border: 0;
-    border-radius: 0;
+    border-radius: 12px;
     background: #f2f7ff;
     box-shadow: none;
   }
@@ -985,8 +1158,8 @@
     height: 40px;
     padding: 0 18px;
     border-radius: 4px;
-    background: #0b73f6;
-    box-shadow: 0 9px 20px rgba(11, 115, 246, 0.24);
+    background: #0abab5;
+    box-shadow: 0 9px 20px rgba(10, 186, 181, 0.24);
     font-size: 13px;
   }
 
@@ -994,7 +1167,7 @@
     position: absolute;
     right: 0;
     top: 0;
-    width: 328px;
+    width: 420px;
     height: 100%;
     object-fit: cover;
     object-position: right center;

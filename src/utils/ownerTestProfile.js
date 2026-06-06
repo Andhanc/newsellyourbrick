@@ -18,6 +18,26 @@ const EMPTY_PROFILE = {
   memberSince: '',
 }
 
+const STRIPE_OWNER_SUBSCRIPTION_LABELS = {
+  standard: 'Стандарт',
+  premium: 'Pro',
+  corporate: 'Корпоративный',
+  pro: 'Pro',
+  vip: 'Корпоративный',
+}
+
+const ACTIVE_SUBSCRIPTION_STATUSES = new Set(['active', 'trialing', 'past_due', 'paused'])
+
+function resolveOwnerSubscriptionLabel(dbUser, fallback) {
+  const sub = dbUser?.stripe_subscription_state
+  const status = String(sub?.status || '').toLowerCase()
+  const planKey = String(sub?.plan_key || '').toLowerCase()
+  if (ACTIVE_SUBSCRIPTION_STATUSES.has(status) && STRIPE_OWNER_SUBSCRIPTION_LABELS[planKey]) {
+    return STRIPE_OWNER_SUBSCRIPTION_LABELS[planKey]
+  }
+  return fallback
+}
+
 function splitFullName(fullName) {
   const parts = String(fullName || '')
     .trim()
@@ -65,6 +85,7 @@ export function mergeOwnerTestProfileWithDb(base, dbUser) {
     address: dbUser.address || base.address,
     passportNumber: dbUser.passport_number || base.passportNumber,
     identificationNumber: dbUser.identification_number || base.identificationNumber,
+    subscription: resolveOwnerSubscriptionLabel(dbUser, base.subscription),
     memberSince: formatMemberSince(dbUser.created_at) || base.memberSince,
   }
 }

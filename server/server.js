@@ -12309,7 +12309,8 @@ app.get('/api/properties/user/:userId', async (req, res) => {
 
     if (idTableConditions.length > 0) {
       try {
-        const [favGroups, bidCountGroups] = await Promise.all([
+        await testDriveBookingQueries.ensureTable();
+        const [favGroups, bidCountGroups, bookingCountGroups] = await Promise.all([
           prisma.property_favorites.groupBy({
             by: ['property_id', 'property_table'],
             where: { OR: idTableConditions },
@@ -12319,14 +12320,28 @@ app.get('/api/properties/user/:userId', async (req, res) => {
             by: ['property_id', 'property_table'],
             where: { OR: idTableConditions },
             _count: { _all: true },
+            _sum: { bid_amount: true },
+          }),
+          prisma.test_drive_bookings.groupBy({
+            by: ['property_id', 'property_table'],
+            where: {
+              OR: idTableConditions,
+              status: { in: ['pending', 'approved', 'paid'] },
+            },
+            _count: { _all: true },
           }),
         ]);
         const toCountMap = (rows) =>
           new Map(rows.map((r) => [`${r.property_id}\0${r.property_table}`, r._count._all]));
+        const toBidSumMap = (rows) =>
+          new Map(rows.map((r) => [`${r.property_id}\0${r.property_table}`, Number(r._sum?.bid_amount) || 0]));
         const likesMap = toCountMap(favGroups);
         const bidsCountMap = toCountMap(bidCountGroups);
+        const bidsSumMap = toBidSumMap(bidCountGroups);
+        const bookingsCountMap = toCountMap(bookingCountGroups);
 
         let nullBidByPropertyId = new Map();
+        let nullBidSumByPropertyId = new Map();
         const aptIds = formattedProperties
           .filter((p) => engagementTableFromPropertyRow(p) === 'properties_apartments')
           .map((p) => Number(p.id))
@@ -12336,8 +12351,10 @@ app.get('/api/properties/user/:userId', async (req, res) => {
             by: ['property_id'],
             where: { property_id: { in: aptIds }, property_table: null },
             _count: { _all: true },
+            _sum: { bid_amount: true },
           });
           nullBidByPropertyId = new Map(nullRows.map((r) => [r.property_id, r._count._all]));
+          nullBidSumByPropertyId = new Map(nullRows.map((r) => [r.property_id, Number(r._sum?.bid_amount) || 0]));
         }
 
         formattedProperties = formattedProperties.map((p) => {
@@ -12345,13 +12362,17 @@ app.get('/api/properties/user/:userId', async (req, res) => {
           const table = engagementTableFromPropertyRow(p);
           const key = `${id}\0${table}`;
           let bids = bidsCountMap.get(key) ?? 0;
+          let bidAmountTotal = bidsSumMap.get(key) ?? 0;
           if (table === 'properties_apartments') {
             bids += nullBidByPropertyId.get(id) ?? 0;
+            bidAmountTotal += nullBidSumByPropertyId.get(id) ?? 0;
           }
           return {
             ...p,
             likes_count: likesMap.get(key) ?? 0,
             bids_count: bids,
+            bids_total_amount: bidAmountTotal,
+            booking_count: bookingsCountMap.get(key) ?? 0,
           };
         });
       } catch (aggErr) {
@@ -12360,6 +12381,8 @@ app.get('/api/properties/user/:userId', async (req, res) => {
           ...p,
           likes_count: 0,
           bids_count: 0,
+          bids_total_amount: 0,
+          booking_count: 0,
         }));
       }
     } else {
@@ -12367,6 +12390,8 @@ app.get('/api/properties/user/:userId', async (req, res) => {
         ...p,
         likes_count: 0,
         bids_count: 0,
+        bids_total_amount: 0,
+        booking_count: 0,
       }));
     }
 

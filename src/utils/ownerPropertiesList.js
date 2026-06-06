@@ -25,6 +25,11 @@ function formatViewsCount(value) {
   return num.toLocaleString('ru-RU')
 }
 
+function finiteNumber(value, fallback = 0) {
+  const num = Number(value)
+  return Number.isFinite(num) ? num : fallback
+}
+
 function mapListingType(property) {
   const kind = getPropertyListingKind(property).key
   if (kind === 'shares') return 'shares'
@@ -86,13 +91,44 @@ function resolveCurrentBid(property, listingType) {
   return Number.isFinite(num) && num > 0 ? num : null
 }
 
+function resolveBookingCount(property) {
+  const raw =
+    property.booking_count ??
+    property.bookings_count ??
+    property.bookingCount ??
+    property.bookingsCount ??
+    property.reservation_count ??
+    property.reservations_count ??
+    property.purchase_requests_count ??
+    null
+  const count = finiteNumber(raw, NaN)
+  if (Number.isFinite(count)) return count
+
+  if (property.is_reserved === true || property.is_reserved === 1 || property.is_reserved === 'true') {
+    return 1
+  }
+
+  const reservedUntil = property.reserved_until
+  if (reservedUntil) {
+    const until = new Date(reservedUntil).getTime()
+    if (Number.isFinite(until) && until > Date.now()) return 1
+  }
+
+  return 0
+}
+
 export function mapApiPropertyToOwnerListRow(prop) {
   const listingType = mapListingType(prop)
   const { status, statusKey, filterKey } = resolveStatus(prop)
   const currency = prop.currency || 'USD'
   const priceNum = Number(prop.price)
   const currentBidNum = resolveCurrentBid(prop, listingType)
-  const viewsCount = Number(prop.likes_count ?? prop.likesCount) || 0
+  const bidsAmountTotal = finiteNumber(prop.bids_total_amount ?? prop.bidsTotalAmount)
+  const viewsCount =
+    Number(prop.view_count ?? prop.views_count ?? prop.viewsCount) || 0
+  const likesCount = Number(prop.likes_count ?? prop.likesCount ?? prop.favorites_count ?? prop.favoritesCount) || 0
+  const bidsCount = Number(prop.bids_count ?? prop.bidsCount) || 0
+  const bookingsCount = resolveBookingCount(prop)
   const displayId = `OB-${prop.id}`
 
   const row = {
@@ -105,12 +141,20 @@ export function mapApiPropertyToOwnerListRow(prop) {
     statusKey,
     filterKey,
     listingType,
+    currency,
+    priceAmount: finiteNumber(priceNum),
+    viewsCount,
     views: formatViewsCount(viewsCount),
+    likesCount,
+    bidsCount,
+    bidsAmountTotal,
+    currentBidAmount: currentBidNum ?? 0,
+    bookingsCount,
     viewsDelta: '',
     viewsUp: null,
     price: formatMoney(priceNum, currency),
     currentBid: currentBidNum != null ? formatMoney(currentBidNum, currency) : null,
-    auctionEndTime: listingType === 'auction' ? resolveAuctionEndTime(prop) : null,
+    auctionEndTime: resolveAuctionEndTime(prop),
     date: prop.created_at
       ? new Date(prop.created_at).toLocaleDateString('ru-RU', {
           day: '2-digit',

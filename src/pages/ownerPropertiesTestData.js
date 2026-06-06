@@ -38,47 +38,85 @@ function parseMetric(value) {
   return Number.parseInt(String(value).replace(/\s/g, ''), 10) || 0
 }
 
-export function buildOwnerPropertyAnalytics(property) {
-  const views = parseMetric(property.views)
-  const bookings = parseMetric(property.bookings)
-  const hasStats = views > 0
+function formatMetric(value) {
+  const num = Number(value)
+  if (!Number.isFinite(num)) return '0'
+  return num.toLocaleString('ru-RU', { maximumFractionDigits: 0 })
+}
 
-  const peak = views || 800
-  const chartDesktop = [
-    Math.round(peak * 0.32),
-    Math.round(peak * 0.42),
-    Math.round(peak * 0.55),
-    Math.round(peak * 0.72),
-    Math.round(peak * 0.88),
-    views || peak,
-  ]
-  const chartMobile = [
-    Math.round(peak * 0.34),
-    Math.round(peak * 0.78),
-    views || peak,
-  ]
+function firstFiniteMetric(...values) {
+  for (const value of values) {
+    const num = Number(value)
+    if (Number.isFinite(num)) return num
+  }
+  return null
+}
+
+function buildTotalSeries(total, points) {
+  const value = Number(total) || 0
+  if (value <= 0) return Array.from({ length: points }, () => 0)
+  if (points <= 1) return [value]
+  return Array.from({ length: points }, (_, index) => {
+    if (index === points - 1) return value
+    return 0
+  })
+}
+
+export function buildOwnerPropertyAnalytics(property) {
+  const views = firstFiniteMetric(
+    property.viewsCount,
+    property.raw?.view_count,
+    property.raw?.views_count,
+    property.raw?.viewsCount
+  ) ?? parseMetric(property.views)
+  const likes = firstFiniteMetric(
+    property.likesCount,
+    property.raw?.likes_count,
+    property.raw?.likesCount,
+    property.raw?.favorites_count,
+    property.raw?.favoritesCount
+  ) ?? parseMetric(property.likes)
+  const bids = firstFiniteMetric(
+    property.bidsCount,
+    property.raw?.bids_count,
+    property.raw?.bidsCount
+  ) ?? parseMetric(property.bids)
+  const bookings = firstFiniteMetric(property.bookingsCount, property.raw?.booking_count) ?? parseMetric(property.bookings)
+  const hasStats = views > 0 || likes > 0 || bids > 0 || bookings > 0
+  const chartLabelsDesktop = ['1 мая', '8 мая', '15 мая', '22 мая', '28 мая', '31 мая']
+  const chartLabelsMobile = ['1 мая', '16 мая', '31 мая']
 
   return {
     period: '1 мая — 31 мая 2024',
-    favorites: hasStats ? String(bookings || Math.round(views * 0.026)) : '—',
-    favoritesDelta: hasStats ? property.bookingsDelta || '+8.2%' : '',
-    favoritesUp: property.bookingsUp ?? true,
-    testDrives: hasStats ? String(Math.max(2, Math.round(views / 249))) : '—',
-    testDrivesDelta: hasStats ? '+3.1%' : '',
-    testDrivesUp: true,
-    leads: hasStats ? String(Math.round(views * 0.103) || 12) : '—',
-    leadsDelta: hasStats ? '+10.3%' : '',
-    leadsUp: true,
+    views: formatMetric(views),
+    viewsRaw: views,
+    likes: formatMetric(likes),
+    likesRaw: likes,
+    bids: formatMetric(bids),
+    bidsRaw: bids,
+    favorites: formatMetric(likes),
+    favoritesDelta: '',
+    favoritesUp: null,
+    testDrives: formatMetric(bookings),
+    testDrivesDelta: '',
+    testDrivesUp: null,
+    leads: formatMetric(bookings),
+    leadsDelta: '',
+    leadsUp: null,
     avgTime: hasStats ? '3:45 мин' : '—',
     bounceRate: hasStats ? '32%' : '—',
-    addedToFavorites: hasStats ? String(Math.round(bookings * 0.75) || 24) : '—',
-    shares: hasStats ? String(Math.round(views * 0.014) || 18) : '—',
-    trafficTotal: hasStats ? String(views) : '—',
+    addedToFavorites: formatMetric(likes),
+    shares: '—',
+    trafficTotal: formatMetric(views),
     trafficSources: TRAFFIC_SOURCES,
-    viewsChartDesktop: hasStats ? chartDesktop : [0, 0, 0, 0, 0, 0],
-    viewsChartMobile: hasStats ? chartMobile : [0, 0, 0],
-    chartLabelsDesktop: ['1 мая', '8 мая', '15 мая', '22 мая', '28 мая', '31 мая'],
-    chartLabelsMobile: ['1 мая', '16 мая', '31 мая'],
+    viewsChartDesktop: buildTotalSeries(views, chartLabelsDesktop.length),
+    viewsChartMobile: buildTotalSeries(views, chartLabelsMobile.length),
+    bidsChartDesktop: buildTotalSeries(bids, chartLabelsDesktop.length),
+    bidsChartMobile: buildTotalSeries(bids, chartLabelsMobile.length),
+    likesChartDesktop: buildTotalSeries(likes, chartLabelsDesktop.length),
+    likesChartMobile: buildTotalSeries(likes, chartLabelsMobile.length),
+    chartLabelsDesktop,
+    chartLabelsMobile,
   }
 }
 

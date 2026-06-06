@@ -27,15 +27,24 @@ export function navigateToStripeCheckout(checkoutUrl) {
 }
 
 /** После возврата с Stripe — синхронизировать сессию в БД */
-export async function confirmCheckoutSession(sessionId) {
+export async function confirmCheckoutSession(sessionId, userId) {
+  const resolvedUserId =
+    userId != null && String(userId).trim()
+      ? String(userId).trim()
+      : typeof window !== 'undefined'
+        ? window.localStorage.getItem('userId')
+        : ''
   const res = await fetch(`${API_BASE}/billing/confirm-session`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ session_id: sessionId }),
+    body: JSON.stringify({
+      session_id: sessionId,
+      userId: resolvedUserId || undefined,
+    }),
   })
   const data = await res.json().catch(() => ({}))
   if (!res.ok) return { ok: false, error: data.error || 'confirm_failed' }
-  return { ok: true }
+  return { ok: true, data: data.data || null }
 }
 
 /**
@@ -114,6 +123,37 @@ export async function startVipSubscriptionCheckout({ userId, customerEmail, bill
       billingCycle: normalizedBillingCycle,
       userId: userId != null ? String(userId) : undefined,
       customerEmail: customerEmail || undefined,
+    }),
+  })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) {
+    return { ok: false, error: data.error || 'Не удалось создать сессию оплаты' }
+  }
+  if (data.url) {
+    navigateToStripeCheckout(data.url)
+    return { ok: true }
+  }
+  return { ok: false, error: 'Сервер не вернул ссылку на оплату' }
+}
+
+export async function startOwnerSubscriptionCheckout({
+  plan,
+  userId,
+  customerEmail,
+  billingCycle = 'monthly',
+  returnPath,
+} = {}) {
+  const normalizedBillingCycle = billingCycle === 'yearly' ? 'yearly' : 'monthly'
+  const normalizedPlan = String(plan || '').toLowerCase()
+  const res = await fetch(`${API_BASE}/billing/create-checkout-session`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      plan: normalizedPlan,
+      billingCycle: normalizedBillingCycle,
+      userId: userId != null ? String(userId) : undefined,
+      customerEmail: customerEmail || undefined,
+      returnPath: returnPath || undefined,
     }),
   })
   const data = await res.json().catch(() => ({}))

@@ -1,6 +1,5 @@
 export const OWNER_PROFILE_TABS = [
   { id: 'personal', label: 'Личные данные' },
-  { id: 'notifications', label: 'Уведомления' },
   { id: 'statistics', label: 'Статистика' },
   { id: 'settings', label: 'Настройки' },
 ]

@@ -23,7 +23,6 @@ import {
   BarChart3,
   MessageSquare,
   Settings,
-  Bell,
   ChevronDown,
   Calendar,
   Eye,
@@ -36,10 +35,18 @@ import {
   DollarSign,
   ClipboardList,
 } from 'lucide-react'
-import { MOT_PROMO_IMAGES } from './mainOwnerTestPromoImages'
 import OwnerNotificationsDrawer from '../components/OwnerNotificationsDrawer'
+import OwnerNotificationsButton from '../components/OwnerNotificationsButton'
 import OwnerTestProfileMenu from '../components/OwnerTestProfileMenu'
 import { useOwnerTestEmbeddedNav } from '../hooks/useOwnerTestEmbeddedNav'
+import {
+  CLERK_DB_USER_SYNCED,
+  fetchOwnerProperties,
+  getOwnerPropertiesUserId,
+} from '../utils/ownerPropertiesList'
+import { fetchOwnerTestDriveBookings } from '../utils/ownerTestDriveList'
+import { OWNER_VIEWS, ownerTestHref } from '../utils/ownerTestNav'
+import { propertyBidsApiQuery } from '../utils/propertySourceTable'
 import './MainOwnerTestPage.css'
 import './MainOwnerTestPage.mobile.css'
 
@@ -74,41 +81,6 @@ const TAB_ITEMS = [
   { id: 'more', label: 'Ещё', icon: SlidersHorizontal },
 ]
 
-const METRICS = [
-  {
-    label: 'Просмотры',
-    value: '12 450',
-    delta: '+ 12.5%',
-    spark: 'tiffany',
-    icon: Eye,
-    iconTone: 'tiffany',
-  },
-  {
-    label: 'Брони',
-    value: '834',
-    delta: '+ 8.2%',
-    spark: 'orange',
-    icon: CalendarCheck,
-    iconTone: 'orange',
-  },
-  {
-    label: 'Продажи',
-    value: '128',
-    delta: '+ 9.7%',
-    spark: 'teal',
-    icon: ShoppingBag,
-    iconTone: 'teal',
-  },
-  {
-    label: 'Доход',
-    value: '$48 750',
-    delta: '+ 24.3%',
-    spark: 'green',
-    icon: DollarSign,
-    iconTone: 'green',
-  },
-]
-
 const ACTIVITY = [
   {
     tone: 'blue',
@@ -140,19 +112,31 @@ const ACTIVITY = [
   },
 ]
 
-const STATUS_LEGEND = [
-  { label: 'Активные', count: 8, color: '#0abab5' },
-  { label: 'Забронированные', count: 4, color: '#5eead4' },
-  { label: 'Проданные', count: 3, color: '#F59E0B' },
-  { label: 'Черновики', count: 3, color: '#EF4444' },
-]
-
 const MOT_TIFFANY = '#0abab5'
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
+
+function toInputDate(date) {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+function monthPresetLabel(date) {
+  const label = new Intl.DateTimeFormat('ru-RU', { month: 'long' }).format(date)
+  return label.charAt(0).toUpperCase() + label.slice(1)
+}
+
+const TODAY = new Date()
+const WEEK_START = new Date(TODAY)
+WEEK_START.setDate(TODAY.getDate() - 6)
+const MONTH_START = new Date(TODAY.getFullYear(), TODAY.getMonth(), 1)
+const QUARTER_START = new Date(TODAY.getFullYear(), TODAY.getMonth() - 2, 1)
 
 const DATE_PRESETS = [
-  { id: 'week', label: '7 дней', from: '2024-05-25', to: '2024-05-31' },
-  { id: 'month', label: 'Май', from: '2024-05-01', to: '2024-05-31' },
-  { id: 'quarter', label: 'Квартал', from: '2024-04-01', to: '2024-06-30' },
+  { id: 'week', label: '7 дней', from: toInputDate(WEEK_START), to: toInputDate(TODAY) },
+  { id: 'month', label: monthPresetLabel(TODAY), from: toInputDate(MONTH_START), to: toInputDate(TODAY) },
+  { id: 'quarter', label: 'Квартал', from: toInputDate(QUARTER_START), to: toInputDate(TODAY) },
 ]
 
 const INITIAL_DATE_RANGE = DATE_PRESETS[1]
@@ -164,6 +148,37 @@ const SPARK_COLORS = {
   green: '#22C55E',
 }
 
+const CHART_FILTERS = [
+  { id: 'all', label: 'Все данные' },
+  { id: 'views', label: 'Просмотры' },
+  { id: 'testDrives', label: 'Тест-драйвы / брони' },
+  { id: 'bids', label: 'Ставки' },
+]
+
+const CHART_SERIES = [
+  {
+    key: 'views',
+    label: 'Просмотры',
+    color: MOT_TIFFANY,
+    backgroundColor: 'rgba(10, 186, 181, 0.12)',
+    fill: true,
+  },
+  {
+    key: 'testDrives',
+    label: 'Тест-драйвы / брони',
+    color: '#F59E0B',
+    backgroundColor: 'transparent',
+    fill: false,
+  },
+  {
+    key: 'bids',
+    label: 'Ставки',
+    color: '#22C55E',
+    backgroundColor: 'transparent',
+    fill: false,
+  },
+]
+
 function formatMotDate(value) {
   if (!value) return ''
   const date = new Date(`${value}T00:00:00`)
@@ -174,6 +189,161 @@ function formatMotDate(value) {
 
 function dateRangeLabel(range) {
   return `${formatMotDate(range.from)} – ${formatMotDate(range.to)}`
+}
+
+function parseMotNumber(value) {
+  if (typeof value === 'number') return Number.isFinite(value) ? value : 0
+  if (value == null) return 0
+  const parsed = Number(String(value).replace(/[^\d.-]/g, ''))
+  return Number.isFinite(parsed) ? parsed : 0
+}
+
+function formatMotNumber(value) {
+  const num = Number(value) || 0
+  return num.toLocaleString('ru-RU')
+}
+
+function formatMotCompactNumber(value) {
+  const num = Number(value) || 0
+  if (num >= 1000000) return `${(num / 1000000).toLocaleString('ru-RU', { maximumFractionDigits: 1 })} млн`
+  if (num >= 1000) return `${(num / 1000).toLocaleString('ru-RU', { maximumFractionDigits: 1 })} тыс`
+  return formatMotNumber(num)
+}
+
+function parseMotTime(value) {
+  if (!value) return null
+  const ts = new Date(value).getTime()
+  return Number.isFinite(ts) ? ts : null
+}
+
+function formatTimerLeft(endTime) {
+  const ts = parseMotTime(endTime)
+  if (!ts) return '—'
+  const diff = Math.max(0, ts - Date.now())
+  if (diff <= 0) return 'Завершён'
+  const days = Math.floor(diff / 86400000)
+  const hours = Math.floor((diff % 86400000) / 3600000)
+  const minutes = Math.floor((diff % 3600000) / 60000)
+  if (days > 0) return `${days} д ${String(hours).padStart(2, '0')} ч`
+  return `${hours} ч ${String(minutes).padStart(2, '0')} мин`
+}
+
+function buildPropertyKey(propertyId, table) {
+  const normalizedTable = String(table || 'properties_apartments')
+  return `${normalizedTable}:${Number(propertyId)}`
+}
+
+function getRowPropertyTable(row) {
+  const raw = row?.raw || {}
+  if (raw.property_table) return raw.property_table
+  if (raw.source_table === 'houses') return 'properties_houses'
+  if (raw.source_table === 'apartments') return 'properties_apartments'
+  if (raw.property_type === 'house' || raw.property_type === 'villa') return 'properties_houses'
+  return 'properties_apartments'
+}
+
+function toDateOnly(value) {
+  const ts = parseMotTime(value)
+  if (!ts) return ''
+  const date = new Date(ts)
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+function buildDateBuckets(range, maxBuckets = 90) {
+  const start = new Date(`${range.from}T00:00:00`)
+  const end = new Date(`${range.to}T00:00:00`)
+  if (!Number.isFinite(start.getTime()) || !Number.isFinite(end.getTime()) || start > end) {
+    return []
+  }
+  const buckets = []
+  const cursor = new Date(start)
+  const days = Math.max(1, Math.floor((end.getTime() - start.getTime()) / 86400000) + 1)
+  const stepDays = Math.max(1, Math.ceil(days / maxBuckets))
+  while (cursor <= end) {
+    const value = toDateOnly(cursor.toISOString())
+    buckets.push({
+      value,
+      label: new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'short' })
+        .format(cursor)
+        .replace(/\.$/, ''),
+      endTs: new Date(`${value}T23:59:59.999`).getTime(),
+    })
+    cursor.setDate(cursor.getDate() + stepDays)
+  }
+  const endValue = toDateOnly(end.toISOString())
+  if (buckets[buckets.length - 1]?.value !== endValue) {
+    buckets.push({
+      value: endValue,
+      label: new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'short' })
+        .format(end)
+        .replace(/\.$/, ''),
+      endTs: new Date(`${endValue}T23:59:59.999`).getTime(),
+    })
+  }
+  return buckets
+}
+
+function buildRangeFromDates(dates, fallbackRange) {
+  const sortedDates = dates.filter(Boolean).sort()
+  if (sortedDates.length === 0) return fallbackRange
+  return {
+    from: sortedDates[0],
+    to: sortedDates[sortedDates.length - 1],
+  }
+}
+
+async function fetchOwnerBidRows(properties) {
+  const rows = await Promise.all(
+    properties.map(async (property) => {
+      const table = getRowPropertyTable(property)
+      try {
+        const response = await fetch(
+          `${API_BASE_URL}/bids/property/${property.id}?${propertyBidsApiQuery(property.id, table)}`
+        )
+        if (!response.ok) return []
+        const json = await response.json().catch(() => ({}))
+        if (!json.success || !Array.isArray(json.data)) return []
+        return json.data.map((bid) => ({
+          ...bid,
+          propertyTable: table,
+          propertyId: property.id,
+          propertyTitle: property.title,
+          propertyLocation: property.location,
+          propertyCurrency: property.currency,
+          propertyImage: property.image,
+        }))
+      } catch {
+        return []
+      }
+    })
+  )
+  return rows.flat()
+}
+
+function formatBidAmount(value, currency = 'USD') {
+  const amount = Number(value)
+  if (!Number.isFinite(amount)) return '—'
+  return new Intl.NumberFormat('ru-RU', {
+    style: 'currency',
+    currency: currency || 'USD',
+    maximumFractionDigits: 0,
+  }).format(amount)
+}
+
+function formatRelativeTime(value) {
+  const ts = parseMotTime(value)
+  if (!ts) return ''
+  const diff = Date.now() - ts
+  if (diff < 60000) return 'только что'
+  if (diff < 3600000) return `${Math.max(1, Math.floor(diff / 60000))} мин назад`
+  if (diff < 86400000) return `${Math.floor(diff / 3600000)} ч назад`
+  if (diff < 604800000) return `${Math.floor(diff / 86400000)} д назад`
+  return new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'short' })
+    .format(new Date(ts))
+    .replace(/\.$/, '')
 }
 
 function DateRangePopover({ open, draftRange, selectedRange, onDraftChange, onPreset, onApply, onClose }) {
@@ -301,12 +471,18 @@ function useMotMobile() {
 }
 
 export default function MainOwnerTestPage() {
-  const { isEmbedded } = useOwnerTestEmbeddedNav()
+  const { isEmbedded, goTo } = useOwnerTestEmbeddedNav()
   const [menuOpen, setMenuOpen] = useState(false)
-  const [notificationsOpen, setNotificationsOpen] = useState(false)
   const [datePopoverOpen, setDatePopoverOpen] = useState(false)
+  const [chartFilterOpen, setChartFilterOpen] = useState(false)
+  const [chartMetricFilter, setChartMetricFilter] = useState('all')
   const [selectedRange, setSelectedRange] = useState(INITIAL_DATE_RANGE)
   const [draftRange, setDraftRange] = useState(INITIAL_DATE_RANGE)
+  const [ownerProperties, setOwnerProperties] = useState([])
+  const [testDriveRows, setTestDriveRows] = useState([])
+  const [ownerBidRows, setOwnerBidRows] = useState([])
+  const [bidDrawerOpen, setBidDrawerOpen] = useState(false)
+  const [overviewLoading, setOverviewLoading] = useState(true)
   const isMobile = useMotMobile()
 
   const closeMenu = useCallback(() => setMenuOpen(false), [])
@@ -319,6 +495,36 @@ export default function MainOwnerTestPage() {
     setSelectedRange(draftRange)
     setDatePopoverOpen(false)
   }, [draftRange])
+
+  const loadOverview = useCallback(async () => {
+    const userId = getOwnerPropertiesUserId()
+    if (!userId) {
+      setOwnerProperties([])
+      setTestDriveRows([])
+      setOwnerBidRows([])
+      setOverviewLoading(false)
+      return
+    }
+
+    setOverviewLoading(true)
+    try {
+      const properties = await fetchOwnerProperties(userId)
+      const [testDrives, bidRows] = await Promise.all([
+        fetchOwnerTestDriveBookings(userId),
+        fetchOwnerBidRows(properties),
+      ])
+      setOwnerProperties(properties)
+      setTestDriveRows(testDrives)
+      setOwnerBidRows(bidRows)
+    } catch (error) {
+      console.warn('MainOwnerTestPage: не удалось загрузить реальные данные главной', error)
+      setOwnerProperties([])
+      setTestDriveRows([])
+      setOwnerBidRows([])
+    } finally {
+      setOverviewLoading(false)
+    }
+  }, [])
 
   const renderNavItem = useCallback(
     ({ id, label, icon: Icon, active, badge, href }) => {
@@ -355,6 +561,16 @@ export default function MainOwnerTestPage() {
   }, [isEmbedded])
 
   useEffect(() => {
+    loadOverview()
+  }, [loadOverview])
+
+  useEffect(() => {
+    const onUserSynced = () => loadOverview()
+    window.addEventListener(CLERK_DB_USER_SYNCED, onUserSynced)
+    return () => window.removeEventListener(CLERK_DB_USER_SYNCED, onUserSynced)
+  }, [loadOverview])
+
+  useEffect(() => {
     if (!menuOpen) return undefined
     const prev = document.body.style.overflow
     document.body.style.overflow = 'hidden'
@@ -388,49 +604,250 @@ export default function MainOwnerTestPage() {
     }
   }, [datePopoverOpen, selectedRange])
 
+  useEffect(() => {
+    if (!chartFilterOpen) return undefined
+
+    const handlePointerDown = (event) => {
+      if (!event.target.closest('.mot-chart-filter')) {
+        setChartFilterOpen(false)
+      }
+    }
+
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') setChartFilterOpen(false)
+    }
+
+    document.addEventListener('mousedown', handlePointerDown)
+    document.addEventListener('keydown', handleKeyDown)
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown)
+      document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [chartFilterOpen])
+
+  const testDriveCountByProperty = useMemo(() => {
+    const map = new Map()
+    for (const row of testDriveRows) {
+      const key = buildPropertyKey(row.propertyId, row.propertyTable)
+      map.set(key, (map.get(key) || 0) + 1)
+    }
+    return map
+  }, [testDriveRows])
+
+  const bidCountByProperty = useMemo(() => {
+    const map = new Map()
+    for (const row of ownerBidRows) {
+      const key = buildPropertyKey(row.propertyId || row.property_id, row.propertyTable || row.property_table)
+      map.set(key, (map.get(key) || 0) + 1)
+    }
+    return map
+  }, [ownerBidRows])
+
+  const propertyStatsRows = useMemo(
+    () =>
+      ownerProperties.map((row) => {
+        const key = buildPropertyKey(row.id, getRowPropertyTable(row))
+        const views = Number(row.viewsCount) || parseMotNumber(row.views)
+        const testDrives = testDriveCountByProperty.get(key) || 0
+        const fallbackBids = Number(row.bidsCount ?? row.raw?.bids_count ?? row.raw?.bidsCount) || 0
+        const bids = bidCountByProperty.get(key) ?? fallbackBids
+        return {
+          ...row,
+          statsKey: key,
+          viewsValue: views,
+          testDrivesValue: testDrives,
+          bidsValue: bids,
+          totalEngagement: views + testDrives + bids,
+        }
+      }),
+    [bidCountByProperty, ownerProperties, testDriveCountByProperty]
+  )
+
+  const totals = useMemo(
+    () =>
+      propertyStatsRows.reduce(
+        (acc, row) => {
+          acc.views += row.viewsValue
+          acc.testDrives += row.testDrivesValue
+          acc.bids += row.bidsValue
+          return acc
+        },
+        { views: 0, testDrives: 0, bids: 0 }
+      ),
+    [propertyStatsRows]
+  )
+
+  const bidNotifications = useMemo(() => {
+    const propertyByKey = new Map(propertyStatsRows.map((row) => [row.statsKey, row]))
+    return ownerBidRows
+      .map((bid) => {
+        const table = bid.propertyTable || bid.property_table
+        const propertyId = bid.propertyId || bid.property_id
+        const property = propertyByKey.get(buildPropertyKey(propertyId, table))
+        const propertyTitle = bid.propertyTitle || property?.title || `Объект #${propertyId}`
+        const propertyLocation = bid.propertyLocation || property?.location || ''
+        const buyerId = bid.user_id_number || bid.user_id
+        const amount = formatBidAmount(bid.bid_amount, bid.propertyCurrency || property?.currency || 'USD')
+        const createdAt = bid.created_at || bid.createdAt
+        const createdTs = parseMotTime(createdAt) || 0
+        const openParams = { propertyId }
+        return {
+          id: `bid-${bid.id || `${propertyId}-${createdTs}-${bid.bid_amount}`}`,
+          tone: 'teal',
+          icon: DollarSign,
+          title: 'Новая ставка на объект',
+          text: `${propertyTitle}${buyerId ? ` • Покупатель #${buyerId}` : ''}${propertyLocation ? ` • ${propertyLocation}` : ''}`,
+          time: formatRelativeTime(createdAt),
+          amount,
+          createdTs,
+          unread: true,
+          href: ownerTestHref(OWNER_VIEWS.PROPERTY_ANALYTICS, openParams),
+          onAction: goTo && propertyId
+            ? () => goTo(OWNER_VIEWS.PROPERTY_ANALYTICS, openParams)
+            : null,
+        }
+      })
+      .sort((a, b) => b.createdTs - a.createdTs)
+  }, [goTo, ownerBidRows, propertyStatsRows])
+
+  const visibleBidNotifications = useMemo(() => bidNotifications.slice(0, 4), [bidNotifications])
+
+  const statusLegend = useMemo(() => {
+    const counts = propertyStatsRows.reduce(
+      (acc, row) => {
+        const key = row.filterKey || row.statusKey || 'draft'
+        if (acc[key] != null) acc[key] += 1
+        return acc
+      },
+      { active: 0, booked: 0, sold: 0, draft: 0 }
+    )
+    return [
+      { label: 'Активные', count: counts.active, color: '#0abab5' },
+      { label: 'Забронированные', count: counts.booked, color: '#5eead4' },
+      { label: 'Проданные', count: counts.sold, color: '#F59E0B' },
+      { label: 'Черновики', count: counts.draft, color: '#EF4444' },
+    ]
+  }, [propertyStatsRows])
+
+  const metrics = useMemo(
+    () => [
+      {
+        label: 'Просмотры',
+        value: formatMotNumber(totals.views),
+        delta: overviewLoading ? 'Загрузка' : 'всего',
+        spark: 'tiffany',
+        icon: Eye,
+        iconTone: 'tiffany',
+      },
+      {
+        label: 'Тест-драйвы',
+        value: formatMotNumber(totals.testDrives),
+        delta: overviewLoading ? 'Загрузка' : 'заявки',
+        spark: 'orange',
+        icon: Car,
+        iconTone: 'orange',
+      },
+      {
+        label: 'Ставки',
+        value: formatMotNumber(totals.bids),
+        delta: overviewLoading ? 'Загрузка' : 'количество',
+        spark: 'teal',
+        icon: TrendingUp,
+        iconTone: 'teal',
+      },
+      {
+        label: 'Объекты',
+        value: formatMotNumber(propertyStatsRows.length),
+        delta: overviewLoading ? 'Загрузка' : 'в кабинете',
+        spark: 'green',
+        icon: Building2,
+        iconTone: 'green',
+      },
+    ],
+    [overviewLoading, propertyStatsRows.length, totals.bids, totals.testDrives, totals.views]
+  )
+
+  const bestTimerProperty = useMemo(() => {
+    const now = Date.now()
+    const withTimers = propertyStatsRows
+      .map((row) => ({ row, time: parseMotTime(row.auctionEndTime) }))
+      .filter(({ time }) => time && time > now)
+      .sort((a, b) => a.time - b.time)
+    return withTimers[0]?.row || null
+  }, [propertyStatsRows])
+
+  const chartSeries = useMemo(() => {
+    const testDriveDates = testDriveRows
+      .map((row) => toDateOnly(row.raw?.created_at || row.createdAt || row.startDate))
+      .filter(Boolean)
+
+    const bidDates = ownerBidRows
+      .map((row) => toDateOnly(row.created_at || row.createdAt))
+      .filter(Boolean)
+
+    const propertyDates = propertyStatsRows
+      .map((row) => toDateOnly(row.raw?.created_at || row.createdAt || row.date))
+      .filter(Boolean)
+
+    const chartRange = buildRangeFromDates([...testDriveDates, ...bidDates, ...propertyDates], selectedRange)
+    const buckets = buildDateBuckets(chartRange)
+
+    const viewsByBucket = buckets.map((bucket) =>
+      propertyStatsRows.reduce((sum, row) => {
+        const createdDate = toDateOnly(row.raw?.created_at || row.createdAt || row.date)
+        if (createdDate && createdDate > bucket.value) return sum
+        return sum + row.viewsValue
+      }, 0)
+    )
+
+    const cumulativeCount = (dates, bucket) =>
+      dates.reduce((sum, date) => (date <= bucket.value ? sum + 1 : sum), 0)
+
+    return {
+      labels: buckets.map((bucket) => bucket.label),
+      views: viewsByBucket,
+      testDrives: buckets.map((bucket) => cumulativeCount(testDriveDates, bucket)),
+      bids: buckets.map((bucket) => cumulativeCount(bidDates, bucket)),
+    }
+  }, [ownerBidRows, propertyStatsRows, selectedRange, testDriveRows])
+
+  const chartFilterLabel = useMemo(
+    () => CHART_FILTERS.find((filter) => filter.id === chartMetricFilter)?.label || CHART_FILTERS[0].label,
+    [chartMetricFilter]
+  )
+
+  const visibleChartSeries = useMemo(
+    () =>
+      chartMetricFilter === 'all'
+        ? CHART_SERIES
+        : CHART_SERIES.filter((series) => series.key === chartMetricFilter),
+    [chartMetricFilter]
+  )
+
+  const chartMax = useMemo(() => {
+    const values = visibleChartSeries.flatMap((series) => chartSeries[series.key] || [])
+    const max = Math.max(0, ...values)
+    if (max <= 5) return 5
+    return Math.ceil(max / 5) * 5
+  }, [chartSeries, visibleChartSeries])
+
   const lineChartData = useMemo(
     () => ({
-      labels: isMobile
-        ? ['1 мая', '16 мая', '31 мая']
-        : ['1 мая', '8 мая', '16 мая', '24 мая', '31 мая'],
-      datasets: [
-        {
-          label: 'Просмотры',
-          data: isMobile ? [620, 1650, 1850] : [620, 1100, 1650, 1200, 1850],
-          borderColor: MOT_TIFFANY,
-          backgroundColor: 'rgba(10, 186, 181, 0.12)',
-          fill: true,
-          tension: 0.42,
-          pointRadius: isMobile ? 4 : 0,
-          pointHoverRadius: 5,
-          pointBackgroundColor: MOT_TIFFANY,
-          borderWidth: 2.5,
-        },
-        {
-          label: 'Брони',
-          data: isMobile ? [280, 580, 720] : [280, 420, 580, 480, 720],
-          borderColor: '#F59E0B',
-          backgroundColor: 'transparent',
-          tension: 0.42,
-          pointRadius: isMobile ? 4 : 0,
-          pointHoverRadius: 5,
-          pointBackgroundColor: '#F59E0B',
-          borderWidth: 2.5,
-        },
-        {
-          label: 'Продажи',
-          data: isMobile ? [120, 260, 340] : [120, 180, 260, 220, 340],
-          borderColor: '#22C55E',
-          backgroundColor: 'transparent',
-          tension: 0.42,
-          pointRadius: isMobile ? 4 : 0,
-          pointHoverRadius: 5,
-          pointBackgroundColor: '#22C55E',
-          borderWidth: 2.5,
-        },
-      ],
+      labels: chartSeries.labels,
+      datasets: visibleChartSeries.map((series) => ({
+        label: series.label,
+        data: chartSeries[series.key] || [],
+        borderColor: series.color,
+        backgroundColor: series.backgroundColor,
+        fill: series.fill,
+        tension: 0.42,
+        pointRadius: isMobile ? 4 : 0,
+        pointHoverRadius: 5,
+        pointBackgroundColor: series.color,
+        borderWidth: 2.5,
+      })),
     }),
-    [isMobile]
+    [chartSeries, isMobile, visibleChartSeries]
   )
 
   const lineChartOptions = useMemo(
@@ -461,9 +878,8 @@ export default function MainOwnerTestPage() {
         },
         y: {
           min: 0,
-          max: 2000,
+          max: chartMax,
           ticks: {
-            stepSize: 500,
             color: '#94A3B8',
             font: { family: 'Inter', size: isMobile ? 10 : 11 },
             callback: (v) => v,
@@ -473,22 +889,22 @@ export default function MainOwnerTestPage() {
         },
       },
     }),
-    [isMobile]
+    [chartMax, isMobile]
   )
 
   const donutData = useMemo(
     () => ({
-      labels: STATUS_LEGEND.map((s) => s.label),
+      labels: statusLegend.map((s) => s.label),
       datasets: [
         {
-          data: STATUS_LEGEND.map((s) => s.count),
-          backgroundColor: STATUS_LEGEND.map((s) => s.color),
+          data: statusLegend.map((s) => s.count),
+          backgroundColor: statusLegend.map((s) => s.color),
           borderWidth: 0,
           hoverOffset: 4,
         },
       ],
     }),
-    []
+    [statusLegend]
   )
 
   const donutOptions = useMemo(
@@ -534,16 +950,12 @@ export default function MainOwnerTestPage() {
               onClose={closeDatePopover}
             />
           </div>
-          <button
-            type="button"
+          <OwnerNotificationsButton
             className="mot-icon-btn"
-            aria-label="Уведомления"
-            aria-expanded={notificationsOpen}
-            onClick={() => setNotificationsOpen(true)}
-          >
-            <Bell size={20} strokeWidth={2} />
-            <span className="mot-icon-btn__badge">3</span>
-          </button>
+            badgeClassName="mot-icon-btn__badge"
+            badge={bidNotifications.length || null}
+            items={bidNotifications}
+          />
           <OwnerTestProfileMenu />
         </div>
       </header>
@@ -579,7 +991,7 @@ export default function MainOwnerTestPage() {
       <div className="mot-content">
         <section className="mot-metrics-wrap mot-mobile-only" aria-label="Ключевые показатели">
           <div className="mot-metrics mot-metrics--scroll">
-            {METRICS.map((m) => {
+            {metrics.map((m) => {
               const Icon = m.icon
               return (
                 <article key={m.label} className="mot-card mot-metric mot-metric--mobile">
@@ -597,7 +1009,7 @@ export default function MainOwnerTestPage() {
         </section>
 
         <section className="mot-metrics mot-desktop-only" aria-label="Ключевые показатели">
-          {METRICS.map((m) => {
+          {metrics.map((m) => {
             const Icon = m.icon
             return (
               <article key={m.label} className="mot-card mot-metric">
@@ -620,22 +1032,45 @@ export default function MainOwnerTestPage() {
         <section className="mot-row mot-row--chart">
           <article className="mot-card mot-chart-card">
             <div className="mot-chart-card__head">
-              <h2 className="mot-card__title">Динамика просмотров</h2>
-              <button type="button" className="mot-select-pill">
-                Месяц
-                <ChevronDown size={14} strokeWidth={2.2} aria-hidden />
-              </button>
+              <h2 className="mot-card__title">Активность объектов</h2>
+              <div className={`mot-chart-filter${chartFilterOpen ? ' mot-chart-filter--open' : ''}`}>
+                <button
+                  type="button"
+                  className="mot-select-pill"
+                  aria-haspopup="listbox"
+                  aria-expanded={chartFilterOpen}
+                  onClick={() => setChartFilterOpen((prev) => !prev)}
+                >
+                  {chartFilterLabel}
+                  <ChevronDown size={14} strokeWidth={2.2} aria-hidden />
+                </button>
+                <div className="mot-chart-filter__menu" role="listbox" aria-label="Показатель графика">
+                  {CHART_FILTERS.map((filter) => (
+                    <button
+                      key={filter.id}
+                      type="button"
+                      className={`mot-chart-filter__option${
+                        chartMetricFilter === filter.id ? ' mot-chart-filter__option--active' : ''
+                      }`}
+                      role="option"
+                      aria-selected={chartMetricFilter === filter.id}
+                      onClick={() => {
+                        setChartMetricFilter(filter.id)
+                        setChartFilterOpen(false)
+                      }}
+                    >
+                      {filter.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
             <div className="mot-chart-card__legend">
-              <span className="mot-legend-item">
-                <i style={{ background: MOT_TIFFANY }} /> Просмотры
-              </span>
-              <span className="mot-legend-item">
-                <i style={{ background: '#F59E0B' }} /> Брони
-              </span>
-              <span className="mot-legend-item">
-                <i style={{ background: '#22C55E' }} /> Продажи
-              </span>
+              {visibleChartSeries.map((series) => (
+                <span key={series.key} className="mot-legend-item">
+                  <i style={{ background: series.color }} /> {series.label}
+                </span>
+              ))}
             </div>
             <div className="mot-chart-card__canvas">
               <Line data={lineChartData} options={lineChartOptions} />
@@ -643,31 +1078,44 @@ export default function MainOwnerTestPage() {
           </article>
 
           <article className="mot-card mot-best mot-desktop-only">
-            <h2 className="mot-card__title">Лучший объект</h2>
-            <div className="mot-best__media">
-              <img
-                src={MOT_PROMO_IMAGES.bestProperty}
-                alt=""
-                className="mot-best__photo"
-                loading="lazy"
-                decoding="async"
-              />
-              <span className="mot-best__badge">Активный</span>
-            </div>
-            <h3 className="mot-best__name">Вилла у моря</h3>
-            <p className="mot-best__location">Майами, США</p>
-            <p className="mot-best__price">$2 450 000</p>
-            <div className="mot-best__stats">
-              <span>
-                <Eye size={14} strokeWidth={2} aria-hidden /> 1245 просмотров
-              </span>
-              <span>
-                <CalendarCheck size={14} strokeWidth={2} aria-hidden /> 32 брони
-              </span>
-            </div>
-            <button type="button" className="mot-btn mot-btn--soft mot-btn--block">
-              Подробнее
-            </button>
+            <h2 className="mot-card__title">Ближайший таймер</h2>
+            {bestTimerProperty ? (
+              <>
+                <div className="mot-best__media">
+                  <img
+                    src={bestTimerProperty.image}
+                    alt=""
+                    className="mot-best__photo"
+                    loading="lazy"
+                    decoding="async"
+                  />
+                  <span className="mot-best__badge">{formatTimerLeft(bestTimerProperty.auctionEndTime)}</span>
+                </div>
+                <h3 className="mot-best__name">{bestTimerProperty.title}</h3>
+                <p className="mot-best__location">{bestTimerProperty.location}</p>
+                <p className="mot-best__price">{bestTimerProperty.currentBid || bestTimerProperty.price}</p>
+                <div className="mot-best__stats">
+                  <span>
+                    <Eye size={14} strokeWidth={2} aria-hidden /> {formatMotCompactNumber(bestTimerProperty.viewsValue)} просмотров
+                  </span>
+                  <span>
+                    <TrendingUp size={14} strokeWidth={2} aria-hidden /> {formatMotNumber(bestTimerProperty.bidsValue)} ставок
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  className="mot-btn mot-btn--soft mot-btn--block"
+                  onClick={() => goTo?.(OWNER_VIEWS.PROPERTY_ANALYTICS, { propertyId: bestTimerProperty.id })}
+                >
+                  Подробнее
+                </button>
+              </>
+            ) : (
+              <div className="mot-best__empty">
+                <p className="mot-best__name">Активных таймеров пока нет</p>
+                <p className="mot-best__location">Когда появится объект с таймером, он отобразится здесь.</p>
+              </div>
+            )}
           </article>
         </section>
 
@@ -675,23 +1123,40 @@ export default function MainOwnerTestPage() {
           <article className="mot-card mot-activity-card">
             <div className="mot-activity-card__head">
               <h2 className="mot-card__title">Последняя активность</h2>
-              <button type="button" className="mot-link-btn mot-link-btn--all mot-mobile-only">
+              <button
+                type="button"
+                className="mot-link-btn mot-link-btn--all mot-mobile-only"
+                onClick={() => setBidDrawerOpen(true)}
+              >
                 Все
               </button>
             </div>
-            <ul className="mot-activity">
-              {ACTIVITY.map((item) => (
-                <li key={item.title + item.time} className="mot-activity__item">
-                  <ActivityIcon tone={item.tone} icon={item.icon} />
-                  <div className="mot-activity__body">
-                    <p className="mot-activity__title">{item.title}</p>
-                    <p className="mot-activity__subtitle">{item.subtitle}</p>
-                  </div>
-                  <time className="mot-activity__time">{item.time}</time>
-                </li>
-              ))}
-            </ul>
-            <button type="button" className="mot-link-btn mot-desktop-only">
+            {visibleBidNotifications.length > 0 ? (
+              <ul className="mot-activity">
+                {visibleBidNotifications.map((item) => (
+                  <li key={item.id} className="mot-activity__item mot-activity__item--bid">
+                    <ActivityIcon tone={item.tone} icon={item.icon} />
+                    <div className="mot-activity__body">
+                      <p className="mot-activity__title">{item.title}</p>
+                      <p className="mot-activity__subtitle">{item.text}</p>
+                    </div>
+                    <div className="mot-activity__side">
+                      <strong className="mot-activity__amount">{item.amount}</strong>
+                      <time className="mot-activity__time">{item.time}</time>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <div className="mot-activity__empty">
+                <span className="mot-activity__empty-icon">
+                  <DollarSign size={22} strokeWidth={2.2} aria-hidden />
+                </span>
+                <strong>Ставок пока нет</strong>
+                <p>Как только покупатели начнут торги по вашим объектам, ставки появятся здесь.</p>
+              </div>
+            )}
+            <button type="button" className="mot-link-btn mot-desktop-only" onClick={() => setBidDrawerOpen(true)}>
               Все уведомления
             </button>
           </article>
@@ -703,11 +1168,11 @@ export default function MainOwnerTestPage() {
                 <Doughnut data={donutData} options={donutOptions} />
                 <div className="mot-donut-center">
                   <span className="mot-donut-center__label">Всего</span>
-                  <span className="mot-donut-center__value">18</span>
+                  <span className="mot-donut-center__value">{propertyStatsRows.length}</span>
                 </div>
               </div>
               <ul className="mot-status-legend">
-                {STATUS_LEGEND.map((s) => (
+                {statusLegend.map((s) => (
                   <li key={s.label}>
                     <i style={{ background: s.color }} />
                     <span>{s.label}</span>
@@ -718,86 +1183,16 @@ export default function MainOwnerTestPage() {
             </div>
           </article>
 
-          <article className="mot-promo-card mot-promo-card--light mot-promo-card--promote mot-desktop-only">
-            <div className="mot-promo-card__copy">
-              <span className="mot-promo-card__tag">Продвижение</span>
-              <h2 className="mot-promo-card__title">Продвигайте свои объекты!</h2>
-              <p className="mot-promo-card__text">
-                Увеличьте просмотры и получайте больше броней с тарифами продвижения
-              </p>
-              <div className="mot-promo-card__actions">
-                <button type="button" className="mot-btn mot-btn--primary mot-btn--sm">
-                  Выбрать тариф
-                </button>
-              </div>
-            </div>
-            <div className="mot-promo-card__visual mot-promo-card__visual--listing" aria-hidden>
-              <img src={MOT_PROMO_IMAGES.promoteListing} alt="" loading="lazy" decoding="async" />
-            </div>
-          </article>
         </section>
 
-        <section className="mot-promo-grid mot-desktop-only" aria-label="Рекламные предложения">
-          <article className="mot-promo-card mot-promo-card--dark mot-promo-card--buyer">
-            <div className="mot-promo-card__glow" aria-hidden />
-            <div className="mot-promo-card__copy">
-              <span className="mot-promo-card__tag">Режим покупателя</span>
-              <h2 className="mot-promo-card__title">Ищете недвижимость для себя?</h2>
-              <p className="mot-promo-card__text">
-                Переключитесь в режим покупателя и находите объекты по всему миру
-              </p>
-              <div className="mot-promo-card__actions mot-promo-card__actions--dark">
-                <button type="button" className="mot-btn mot-btn--white mot-btn--sm">
-                  Стать покупателем
-                </button>
-              </div>
-            </div>
-            <div className="mot-promo-card__visual mot-promo-card__visual--photo" aria-hidden>
-              <img src={MOT_PROMO_IMAGES.bannerBuyer} alt="" loading="lazy" decoding="async" />
-            </div>
-          </article>
-        </section>
-
-        <section className="mot-mob-promo-grid mot-mobile-only" aria-label="Рекламные предложения">
-          <article className="mot-mob-promo-card mot-mob-promo-card--light">
-            <div className="mot-mob-promo-card__copy">
-              <span className="mot-mob-promo-card__tag">Продвижение</span>
-              <h2 className="mot-mob-promo-card__title">Продвигайте объекты</h2>
-              <p className="mot-mob-promo-card__text">
-                Больше просмотров и броней с тарифами продвижения
-              </p>
-              <button type="button" className="mot-btn mot-btn--primary mot-btn--sm">
-                Выбрать тариф
-              </button>
-            </div>
-            <div className="mot-mob-promo-card__visual" aria-hidden>
-              <img src={MOT_PROMO_IMAGES.promoteThumb} alt="" loading="lazy" decoding="async" />
-            </div>
-          </article>
-
-          <article className="mot-mob-promo-card mot-mob-promo-card--dark">
-            <div className="mot-mob-promo-card__copy">
-              <span className="mot-mob-promo-card__tag">Покупатель</span>
-              <h2 className="mot-mob-promo-card__title">Станьте покупателем</h2>
-              <p className="mot-mob-promo-card__text">
-                Ищите и бронируйте недвижимость на платформе
-              </p>
-              <button type="button" className="mot-btn mot-btn--white mot-btn--sm">
-                Стать покупателем
-              </button>
-            </div>
-            <div className="mot-mob-promo-card__visual" aria-hidden>
-              <img src={MOT_PROMO_IMAGES.buyerThumb} alt="" loading="lazy" decoding="async" />
-            </div>
-          </article>
-
-        </section>
       </div>
 
       <OwnerNotificationsDrawer
-        open={notificationsOpen}
-        onClose={() => setNotificationsOpen(false)}
+        open={bidDrawerOpen}
+        onClose={() => setBidDrawerOpen(false)}
+        items={bidNotifications}
       />
+
     </div>
   )
 
@@ -822,16 +1217,13 @@ export default function MainOwnerTestPage() {
           <span className="mot-logo__text">SellYourBrick</span>
         </div>
         <div className="mot-mob-topbar__slot mot-mob-topbar__slot--right">
-          <button
-            type="button"
+          <OwnerNotificationsButton
             className="mot-mob-topbar__bell"
-            aria-label="Уведомления"
-            aria-expanded={notificationsOpen}
-            onClick={() => setNotificationsOpen(true)}
-          >
-            <Bell size={22} strokeWidth={2} />
-            <span className="mot-icon-btn__badge">3</span>
-          </button>
+            badgeClassName="mot-icon-btn__badge"
+            iconSize={22}
+            badge={bidNotifications.length || null}
+            items={bidNotifications}
+          />
         </div>
       </header>
 
@@ -882,9 +1274,6 @@ export default function MainOwnerTestPage() {
             <button type="button" className="mot-btn mot-btn--white mot-btn--sm">
               Стать покупателем
             </button>
-          </div>
-          <div className="mot-sidebar-promo__visual">
-            <img src={MOT_PROMO_IMAGES.sidebarBuyer} alt="" loading="lazy" decoding="async" />
           </div>
         </div>
       </aside>

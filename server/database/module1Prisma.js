@@ -19,6 +19,15 @@ function userToPlain(u) {
   if (o.updated_at instanceof Date) o.updated_at = o.updated_at.toISOString();
   if (o.vip_until instanceof Date) o.vip_until = o.vip_until.toISOString();
   if (o.vip_granted_at instanceof Date) o.vip_granted_at = o.vip_granted_at.toISOString();
+  if (o.stripe_subscription_state?.current_period_start instanceof Date) {
+    o.stripe_subscription_state.current_period_start = o.stripe_subscription_state.current_period_start.toISOString();
+  }
+  if (o.stripe_subscription_state?.current_period_end instanceof Date) {
+    o.stripe_subscription_state.current_period_end = o.stripe_subscription_state.current_period_end.toISOString();
+  }
+  if (o.stripe_subscription_state?.updated_at instanceof Date) {
+    o.stripe_subscription_state.updated_at = o.stripe_subscription_state.updated_at.toISOString();
+  }
   return o;
 }
 
@@ -81,7 +90,12 @@ export const userQueries = {
 
   getById: async (id) => {
     const prisma = getPrisma();
-    const u = await prisma.users.findUnique({ where: { id: Number(id) } });
+    const u = await prisma.users.findUnique({
+      where: { id: Number(id) },
+      include: {
+        stripe_subscription_state: true,
+      },
+    });
     return userToPlain(u);
   },
 

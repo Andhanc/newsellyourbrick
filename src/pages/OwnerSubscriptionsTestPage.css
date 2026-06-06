@@ -616,6 +616,12 @@
   box-shadow: 0 6px 18px rgba(10, 186, 181, 0.35);
 }
 
+.ost-plan-card__btn:disabled {
+  cursor: default;
+  opacity: 0.76;
+  transform: none;
+}
+
 .ost-plan-card__btn--outline {
   background: transparent;
   color: var(--ost-tiffany-dark);
@@ -783,6 +789,21 @@
 .ost-billing {
   align-items: flex-start;
   gap: 0;
+}
+
+.ost-checkout-message {
+  margin: 12px 0 0;
+  max-width: 640px;
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.ost-checkout-message--error {
+  border: 1px solid rgba(220, 38, 38, 0.2);
+  background: #fef2f2;
+  color: #b91c1c;
 }
 
 .ost-period-tabs {
@@ -1012,4 +1033,128 @@
   object-fit: contain;
   display: block;
   filter: hue-rotate(-38deg) saturate(0.95) brightness(1.06);
+}
+
+.ost-owner-ads {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.ost-owner-ads .oad-card {
+  min-height: 230px;
+}
+
+.ost-success-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.ost-success-modal__backdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: rgba(15, 23, 42, 0.46);
+  backdrop-filter: blur(8px);
+  cursor: pointer;
+}
+
+.ost-success-modal__panel {
+  position: relative;
+  z-index: 10004;
+  width: min(430px, 100%);
+  border-radius: 24px;
+  border: 1px solid rgba(10, 186, 181, 0.2);
+  background:
+    linear-gradient(180deg, rgba(240, 253, 250, 0.86) 0%, rgba(255, 255, 255, 0.98) 42%),
+    #ffffff;
+  box-shadow: 0 28px 70px rgba(15, 23, 42, 0.22);
+  padding: 34px 30px 28px;
+  text-align: center;
+  color: #0f172a;
+}
+
+.ost-success-modal__close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 38px;
+  height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  border-radius: 12px;
+  background: #ffffff;
+  color: #64748b;
+  cursor: pointer;
+}
+
+.ost-success-modal__icon {
+  width: 68px;
+  height: 68px;
+  margin: 0 auto 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 22px;
+  background: var(--ost-gradient-brand);
+  color: #ffffff;
+  box-shadow: 0 18px 30px rgba(10, 186, 181, 0.28);
+}
+
+.ost-success-modal__title {
+  margin: 0 0 10px;
+  font-size: 28px;
+  line-height: 1.1;
+  font-weight: 850;
+  letter-spacing: 0;
+}
+
+.ost-success-modal__text {
+  margin: 0;
+  color: #475569;
+  font-size: 15px;
+  line-height: 1.55;
+  font-weight: 600;
+}
+
+.ost-success-modal__btn {
+  width: 100%;
+  min-height: 48px;
+  margin-top: 24px;
+  border: 0;
+  border-radius: 16px;
+  background: var(--ost-gradient-brand);
+  color: #ffffff;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 12px 24px rgba(10, 186, 181, 0.22);
+}
+
+@media (max-width: 760px) {
+  .ost-owner-ads {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .ost-success-modal {
+    padding: 16px;
+  }
+
+  .ost-success-modal__panel {
+    border-radius: 20px;
+    padding: 30px 22px 24px;
+  }
+
+  .ost-success-modal__title {
+    font-size: 25px;
+  }
 }

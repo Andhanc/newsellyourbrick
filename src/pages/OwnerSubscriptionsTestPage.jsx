@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback } from 'react'
-import { Link } from 'react-router-dom'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
 import {
   LayoutDashboard,
   Building2,
@@ -10,14 +10,22 @@ import {
   BarChart3,
   MessageSquare,
   Settings,
-  Bell,
   Check,
   Menu,
   X,
+  Sparkles,
 } from 'lucide-react'
 import { OST_IMAGES } from './ownerSubscriptionsTestImages'
 import OwnerTestProfileMenu from '../components/OwnerTestProfileMenu'
+import { OwnerAdStack } from '../components/OwnerAds'
+import OwnerNotificationsButton from '../components/OwnerNotificationsButton'
 import { useOwnerTestEmbeddedNav } from '../hooks/useOwnerTestEmbeddedNav'
+import Confetti from '../components/Confetti'
+import { useOwnerTestProfile } from '../context/OwnerTestProfileContext'
+import {
+  confirmCheckoutSession,
+  startOwnerSubscriptionCheckout,
+} from '../utils/subscriptionCheckout'
 import './OwnerSubscriptionsTestPage.css'
 import './OwnerSubscriptionsTestPage.mobile.css'
 
@@ -48,7 +56,6 @@ const PLANS = [
       'Базовая аналитика',
       'Поддержка по email',
     ],
-    current: true,
   },
   {
     id: 'standard',
@@ -62,8 +69,8 @@ const PLANS = [
     ],
   },
   {
-    id: 'premium',
-    name: 'Премиум',
+    id: 'pro',
+    name: 'Pro',
     price: 49,
     features: [
       'Неограниченные объекты',
@@ -78,13 +85,34 @@ const PLANS = [
     name: 'Корпоративный',
     price: 99,
     features: [
-      'Все функции Премиум',
+      'Все функции Pro',
       'API доступ',
       'Индивидуальное решение',
       'Персональный менеджер',
     ],
   },
 ]
+
+const PROFILE_SUBSCRIPTION_TO_PLAN_ID = {
+  Базовый: 'basic',
+  Стандарт: 'standard',
+  Pro: 'pro',
+  Корпоративный: 'corporate',
+}
+
+const CHECKOUT_ERROR_TEXT = {
+  already_subscribed_owner_plan: 'Этот тариф уже активен в вашем профиле.',
+  already_subscribed_pro: 'У вас уже есть активная платная подписка.',
+  already_subscribed_vip: 'У вас уже активна VIP-подписка.',
+  no_app_user_id: 'Не удалось привязать оплату к аккаунту: отсутствует ID пользователя. Напишите в поддержку и передайте session_id.',
+  user_mismatch: 'Эта оплата относится к другому аккаунту.',
+}
+
+function normalizeReturnedPlanId(planKey) {
+  const key = String(planKey || '').toLowerCase()
+  if (key === 'premium') return 'pro'
+  return PLANS.some((plan) => plan.id === key) ? key : ''
+}
 
 function LogoMark({ className = '' }) {
   return (
@@ -122,10 +150,101 @@ function getPeriodPrice(plan, period) {
 
 export default function OwnerSubscriptionsTestPage() {
   const { isEmbedded } = useOwnerTestEmbeddedNav()
+  const { profile, reloadProfile } = useOwnerTestProfile()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [period, setPeriod] = useState('monthly')
   const [menuOpen, setMenuOpen] = useState(false)
+  const [startingPlanId, setStartingPlanId] = useState(null)
+  const [checkoutError, setCheckoutError] = useState('')
+  const [successPlanId, setSuccessPlanId] = useState(null)
+  const handledSessionRef = useRef(null)
 
   const closeMenu = useCallback(() => setMenuOpen(false), [])
+
+  const activePlanId = useMemo(() => {
+    if (successPlanId) return successPlanId
+    return PROFILE_SUBSCRIPTION_TO_PLAN_ID[profile?.subscription] || 'basic'
+  }, [profile?.subscription, successPlanId])
+
+  const clearCheckoutParams = useCallback(() => {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev)
+      next.delete('subscription_checkout')
+      next.delete('session_id')
+      next.delete('owner_plan')
+      return next
+    }, { replace: true })
+  }, [setSearchParams])
+
+  const handlePlanCheckout = useCallback(
+    async (plan) => {
+      if (!plan || plan.id === 'basic' || plan.id === activePlanId || startingPlanId) return
+
+      const userId = localStorage.getItem('userId')
+      if (!userId || !/^\d+$/.test(userId)) {
+        setCheckoutError('Войдите в аккаунт продавца, чтобы купить подписку.')
+        return
+      }
+
+      setCheckoutError('')
+      setStartingPlanId(plan.id)
+      const returnPath = `${window.location.pathname}${window.location.search}`
+      const result = await startOwnerSubscriptionCheckout({
+        plan: plan.id,
+        userId,
+        customerEmail: profile?.email,
+        billingCycle: period,
+        returnPath,
+      })
+      if (!result.ok) {
+        setCheckoutError(CHECKOUT_ERROR_TEXT[result.error] || result.error || 'Не удалось открыть оплату Stripe.')
+        setStartingPlanId(null)
+      }
+    },
+    [activePlanId, period, profile?.email, startingPlanId]
+  )
+
+  useEffect(() => {
+    const checkout = searchParams.get('subscription_checkout')
+    const sessionId = searchParams.get('session_id')
+    const ownerPlan = searchParams.get('owner_plan')
+
+    if (checkout === 'canceled') {
+      setCheckoutError('Оплата отменена. Вы можете выбрать тариф ещё раз.')
+      clearCheckoutParams()
+      return
+    }
+
+    if (checkout !== 'success' || !sessionId || handledSessionRef.current === sessionId) return
+    handledSessionRef.current = sessionId
+
+    let alive = true
+    ;(async () => {
+      setCheckoutError('')
+      const userId = localStorage.getItem('userId')
+      const confirmed = await confirmCheckoutSession(sessionId, userId)
+      if (!alive) return
+      if (!confirmed.ok) {
+        const readableError =
+          CHECKOUT_ERROR_TEXT[confirmed.error] ||
+          'Оплата прошла, но подписка не синхронизировалась. Попробуйте обновить страницу или передайте session_id в поддержку.'
+        setCheckoutError(`${readableError} session_id: ${sessionId}`)
+        return
+      }
+      const confirmedPlanId =
+        normalizeReturnedPlanId(confirmed.data?.plan_key) || normalizeReturnedPlanId(ownerPlan)
+      if (confirmedPlanId) {
+        setSuccessPlanId(confirmedPlanId)
+      }
+      await reloadProfile()
+      if (!alive) return
+      clearCheckoutParams()
+    })()
+
+    return () => {
+      alive = false
+    }
+  }, [clearCheckoutParams, reloadProfile, searchParams])
 
   const renderNavItem = useCallback(
     ({ id, label, icon: Icon, active, badge, href }) => {
@@ -171,16 +290,49 @@ export default function OwnerSubscriptionsTestPage() {
   }, [menuOpen])
 
   const isYearly = period === 'yearly'
+  const successPlan = PLANS.find((plan) => plan.id === successPlanId)
+  const successModal = successPlan ? (
+    <div className="ost-success-modal" role="dialog" aria-modal="true" aria-labelledby="ost-success-title">
+      <Confetti />
+      <button
+        type="button"
+        className="ost-success-modal__backdrop"
+        aria-label="Закрыть поздравление"
+        onClick={() => setSuccessPlanId(null)}
+      />
+      <div className="ost-success-modal__panel">
+        <button
+          type="button"
+          className="ost-success-modal__close"
+          aria-label="Закрыть"
+          onClick={() => setSuccessPlanId(null)}
+        >
+          <X size={20} strokeWidth={2.25} />
+        </button>
+        <div className="ost-success-modal__icon" aria-hidden>
+          <Sparkles size={30} strokeWidth={2.2} />
+        </div>
+        <h2 id="ost-success-title" className="ost-success-modal__title">Поздравляем!</h2>
+        <p className="ost-success-modal__text">
+          Подписка «{successPlan.name}» успешно активирована. Новый тариф уже отображается в профиле.
+        </p>
+        <button
+          type="button"
+          className="ost-success-modal__btn"
+          onClick={() => setSuccessPlanId(null)}
+        >
+          Отлично
+        </button>
+      </div>
+    </div>
+  ) : null
 
   const mainColumn = (
       <div className="ost-body">
         <header className="ost-header ost-desktop-only">
           <h1 className="ost-header__title">Подписки</h1>
           <div className="ost-header__actions">
-            <button type="button" className="ost-icon-btn" aria-label="Уведомления">
-              <Bell size={20} strokeWidth={2} />
-              <span className="ost-icon-btn__badge">3</span>
-            </button>
+            <OwnerNotificationsButton className="ost-icon-btn" badgeClassName="ost-icon-btn__badge" />
             <OwnerTestProfileMenu />
           </div>
         </header>
@@ -215,17 +367,22 @@ export default function OwnerSubscriptionsTestPage() {
                   </button>
                 ))}
               </div>
+              {checkoutError ? <p className="ost-checkout-message ost-checkout-message--error">{checkoutError}</p> : null}
             </div>
 
             <div className="ost-plans-grid">
               {PLANS.map((plan) => {
                 const displayPrice = getPeriodPrice(plan, period)
+                const isCurrent = plan.id === activePlanId
+                const isPaidPlan = plan.id !== 'basic'
+                const isStarting = startingPlanId === plan.id
                 return (
                   <article
                     key={plan.id}
                     className={[
                       'ost-plan-card',
-                      plan.current && 'ost-plan-card--current',
+                      isCurrent && 'ost-plan-card--current',
+                      plan.id === 'pro' && 'ost-plan-card--featured',
                     ]
                       .filter(Boolean)
                       .join(' ')}
@@ -255,13 +412,22 @@ export default function OwnerSubscriptionsTestPage() {
                         </li>
                       ))}
                     </ul>
-                    {plan.current ? (
+                    {isCurrent ? (
                       <button type="button" className="ost-plan-card__btn ost-plan-card__btn--current" disabled>
                         Текущий тариф
                       </button>
+                    ) : !isPaidPlan ? (
+                      <button type="button" className="ost-plan-card__btn ost-plan-card__btn--current" disabled>
+                        Бесплатный тариф
+                      </button>
                     ) : (
-                      <button type="button" className="ost-plan-card__btn ost-plan-card__btn--select">
-                        Выбрать
+                      <button
+                        type="button"
+                        className="ost-plan-card__btn ost-plan-card__btn--select"
+                        disabled={Boolean(startingPlanId)}
+                        onClick={() => handlePlanCheckout(plan)}
+                      >
+                        {isStarting ? 'Открываем Stripe…' : 'Купить'}
                       </button>
                     )}
                   </article>
@@ -287,12 +453,21 @@ export default function OwnerSubscriptionsTestPage() {
                 <img src={OST_IMAGES.discountPercent} alt="" loading="lazy" decoding="async" />
               </div>
             </section>
+
+            <OwnerAdStack cards={['premium', 'help']} className="ost-owner-ads" />
           </div>
         </div>
       </div>
   )
 
-  if (isEmbedded) return mainColumn
+  if (isEmbedded) {
+    return (
+      <>
+        {mainColumn}
+        {successModal}
+      </>
+    )
+  }
 
   return (
     <div className={`ost${menuOpen ? ' ost--menu-open' : ''}`}>
@@ -313,10 +488,11 @@ export default function OwnerSubscriptionsTestPage() {
           <span className="ost-logo__text">SellYourBrick</span>
         </div>
         <div className="ost-mob-topbar__slot ost-mob-topbar__slot--right">
-          <button type="button" className="ost-mob-topbar__bell" aria-label="Уведомления">
-            <Bell size={22} strokeWidth={2} />
-            <span className="ost-icon-btn__badge">3</span>
-          </button>
+          <OwnerNotificationsButton
+            className="ost-mob-topbar__bell"
+            badgeClassName="ost-icon-btn__badge"
+            iconSize={22}
+          />
         </div>
       </header>
 
@@ -370,6 +546,7 @@ export default function OwnerSubscriptionsTestPage() {
       </aside>
 
       {mainColumn}
+      {successModal}
     </div>
   )
 }
