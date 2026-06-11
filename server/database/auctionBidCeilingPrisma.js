@@ -1,8 +1,4 @@
 import { getAuctionMinBidStep } from '../../src/utils/auctionBidStep.js'
-import { getEffectiveAuctionEndTime } from '../../src/utils/auctionReminderBounds.js'
-
-const FINAL_PHASE_MS = 10 * 60 * 1000
-const PROXIMITY_STEPS = 2
 
 function normalizeTable(propertyTable) {
   const t = String(propertyTable || 'properties_apartments').trim()
@@ -43,21 +39,26 @@ async function getCurrentLeaderUserId(prisma, propertyId, propertyTable) {
   return top?.user_id ?? null
 }
 
-function shouldActivateCeiling({ ceilingMax, currentMax, property }) {
-  const step = getAuctionMinBidStep(currentMax)
-  const proximityThreshold = step * PROXIMITY_STEPS
-  const nearCeiling = currentMax >= ceilingMax - proximityThreshold
+async function getUserMaxBid(prisma, userId, propertyId, propertyTable) {
+  const uid = Number(userId)
+  if (!Number.isFinite(uid)) return 0
+  const bidWhere = { ...buildWhere(propertyId, propertyTable), user_id: uid }
+  const agg = await prisma.bids.aggregate({
+    where: bidWhere,
+    _max: { bid_amount: true },
+  })
+  const max = agg?._max?.bid_amount
+  return max != null && Number.isFinite(Number(max)) ? Number(max) : 0
+}
 
-  const endRaw = getEffectiveAuctionEndTime(property)
-  let inFinalPhase = false
-  if (endRaw) {
-    const endMs = new Date(endRaw).getTime()
-    if (Number.isFinite(endMs)) {
-      inFinalPhase = endMs - Date.now() <= FINAL_PHASE_MS
-    }
-  }
+function shouldActivateCeiling() {
+  return true
+}
 
-  return nearCeiling || inFinalPhase
+const AUTO_BID_DELAY_MS = 5000
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
 export async function getBidCeiling(prisma, { userId, propertyId, propertyTable }) {
@@ -152,8 +153,9 @@ export async function deactivateBidCeiling(prisma, { userId, propertyId, propert
 }
 
 /**
- * Авто-ставки по потолкам: срабатывают в финальной фазе или когда текущая ставка
- * приблизилась к max_amount пользователя.
+ * Авто-ставки по потолкам.
+ * - activateUserIds: при сохранении потолка — сразу ставка currentMax + step (даже если уже лидер).
+ * - иначе: перебивает соперников минимальным шагом, пока есть активные потолки.
  */
 export async function evaluateBidCeilings(
   prisma,
@@ -163,6 +165,7 @@ export async function evaluateBidCeilings(
     property,
     basePrice = 0,
     onAutoBidPlaced,
+    activateUserIds = null,
   },
 ) {
   const pid = Number(propertyId)
@@ -180,46 +183,88 @@ export async function evaluateBidCeilings(
 
   if (!ceilings.length) return []
 
-  let currentMax = await getCurrentMaxBid(prisma, pid, tbl, basePrice)
-  let leaderId = await getCurrentLeaderUserId(prisma, pid, tbl)
+  const activateSet = activateUserIds
+    ? new Set(
+        (Array.isArray(activateUserIds) ? activateUserIds : [activateUserIds])
+          .map((id) => Number(id))
+          .filter((id) => Number.isFinite(id)),
+      )
+    : new Set()
+
   const placed = []
+  const userMaxBidCache = new Map()
 
-  for (const ceiling of ceilings) {
-    const uid = ceiling.user_id
-    const ceilingMax = Number(ceiling.max_amount)
-    if (!Number.isFinite(ceilingMax) || ceilingMax <= 0) continue
-    if (uid === leaderId) continue
-    if (currentMax >= ceilingMax) continue
+  async function getUserMaxBidCached(uid) {
+    if (!userMaxBidCache.has(uid)) {
+      userMaxBidCache.set(uid, await getUserMaxBid(prisma, uid, pid, tbl))
+    }
+    return userMaxBidCache.get(uid)
+  }
 
-    if (!shouldActivateCeiling({ ceilingMax, currentMax, property })) continue
+  let keepGoing = true
+  while (keepGoing) {
+    keepGoing = false
 
-    const step = getAuctionMinBidStep(currentMax)
-    const bidAmount = Math.min(currentMax + step, ceilingMax)
-    if (bidAmount <= currentMax) continue
+    let currentMax = await getCurrentMaxBid(prisma, pid, tbl, basePrice)
+    let leaderId = await getCurrentLeaderUserId(prisma, pid, tbl)
 
-    const created = await prisma.bids.create({
-      data: {
-        user_id: uid,
-        property_id: pid,
-        property_table: tbl,
-        bid_amount: bidAmount,
-      },
-    })
+    for (const ceiling of ceilings) {
+      const uid = ceiling.user_id
+      const ceilingMax = Number(ceiling.max_amount)
+      if (!Number.isFinite(ceilingMax) || ceilingMax <= 0) continue
+      if (currentMax >= ceilingMax) continue
+      if (!shouldActivateCeiling()) continue
 
-    await prisma.auction_bid_ceilings.update({
-      where: { id: ceiling.id },
-      data: {
-        activated_at: ceiling.activated_at ?? new Date(),
-        updated_at: new Date(),
-      },
-    })
+      const step = getAuctionMinBidStep(currentMax)
+      const bidAmount = Math.min(currentMax + step, ceilingMax)
+      if (bidAmount <= currentMax) continue
 
-    currentMax = bidAmount
-    leaderId = uid
-    placed.push({ bidId: created.id, userId: uid, bidAmount })
+      const forceActivate = activateSet.has(uid)
+      const userMaxBid = await getUserMaxBidCached(uid)
 
-    if (typeof onAutoBidPlaced === 'function') {
-      await onAutoBidPlaced({ userId: uid, bidAmount, currentMax })
+      if (forceActivate) {
+        // Сразу после сохранения потолка: ставка с минимальным шагом, если ещё не на этом уровне.
+        if (userMaxBid >= bidAmount) {
+          activateSet.delete(uid)
+          continue
+        }
+      } else if (uid === leaderId) {
+        // Уже лидирует — не повышаем без перебития соперником.
+        continue
+      }
+
+      // Пауза перед авто-ставкой: при перебивании и между цепочкой авто-ставок.
+      if (placed.length > 0 || !forceActivate) {
+        await sleep(AUTO_BID_DELAY_MS)
+      }
+
+      const created = await prisma.bids.create({
+        data: {
+          user_id: uid,
+          property_id: pid,
+          property_table: tbl,
+          bid_amount: bidAmount,
+        },
+      })
+
+      await prisma.auction_bid_ceilings.update({
+        where: { id: ceiling.id },
+        data: {
+          activated_at: ceiling.activated_at ?? new Date(),
+          updated_at: new Date(),
+        },
+      })
+
+      userMaxBidCache.set(uid, bidAmount)
+      activateSet.delete(uid)
+      currentMax = bidAmount
+      leaderId = uid
+      keepGoing = true
+      placed.push({ bidId: created.id, userId: uid, bidAmount })
+
+      if (typeof onAutoBidPlaced === 'function') {
+        await onAutoBidPlaced({ userId: uid, bidAmount, currentMax })
+      }
     }
   }
 

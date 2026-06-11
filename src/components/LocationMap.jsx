@@ -11,6 +11,7 @@ const LocationMap = ({
   marker,
   markerDraggable = false,
   onMarkerDragEnd,
+  onMapReady,
   allowFullscreen = true,
   controlsLayout = 'default',
 }) => {
@@ -21,10 +22,12 @@ const LocationMap = ({
   const lastCenterRef = useRef(null)
   const lastZoomAppliedRef = useRef(null)
   const onMarkerDragEndRef = useRef(onMarkerDragEnd)
+  const onMapReadyRef = useRef(onMapReady)
   const markerDraggableRef = useRef(markerDraggable)
   const [isFullscreen, setIsFullscreen] = useState(false)
 
   onMarkerDragEndRef.current = onMarkerDragEnd
+  onMapReadyRef.current = onMapReady
   markerDraggableRef.current = markerDraggable
 
   // Инициализация карты (без маркера — маркер в отдельном эффекте)
@@ -59,7 +62,18 @@ const LocationMap = ({
     }
     mapRef.current = map
 
+    const notifyMapReady = () => {
+      onMapReadyRef.current?.(map)
+    }
+
+    if (map.loaded()) {
+      notifyMapReady()
+    } else {
+      map.once('load', notifyMapReady)
+    }
+
     return () => {
+      onMapReadyRef.current?.(null)
       if (markerRef.current) {
         markerRef.current.remove()
         markerRef.current = null

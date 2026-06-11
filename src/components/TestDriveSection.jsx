@@ -13,6 +13,7 @@ export default function TestDriveSection({
   propertyTable,
   hasTestDrive,
   i18nLang,
+  layout = 'default',
 }) {
   const navigate = useNavigate()
   const [loading, setLoading] = useState(true)
@@ -76,17 +77,27 @@ export default function TestDriveSection({
   const ru = !i18nLang || i18nLang.startsWith('ru')
   const allDone = eligibility.can_request
 
+  const isPromoLayout = layout === 'promo'
+
   return (
-    <div id="property-test-drive-section" className="property-detail-test-drive">
+    <div
+      id="property-test-drive-section"
+      className={`property-detail-test-drive${isPromoLayout ? ' property-detail-test-drive--promo' : ''}`}
+    >
+      {!isPromoLayout ? (
       <h3 className="property-detail-info-block__title">
         {ru ? 'Тест-драйв' : 'Test drive'}
       </h3>
+      ) : null}
+      {!isPromoLayout ? (
       <p className="property-detail-test-drive__intro">
         {ru
           ? 'Тест-драйв — возможность прожить в объекте перед сделкой. Выберите от 5 до 21 календарного дня подряд, согласуйте заезд с владельцем и оплатите проживание.'
           : 'Test drive lets you stay in the property before you buy. Pick 5–21 consecutive calendar days, coordinate with the owner, and pay for the stay.'}
       </p>
+      ) : null}
 
+      {!isPromoLayout ? (
       <ul className="property-detail-test-drive__conditions">
         <li className={eligibility.has_deposit ? 'is-done' : ''}>
           {eligibility.has_deposit ? (
@@ -101,6 +112,7 @@ export default function TestDriveSection({
           </span>
         </li>
       </ul>
+      ) : null}
 
       <button
         type="button"

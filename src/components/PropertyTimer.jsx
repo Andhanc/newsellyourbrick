@@ -9,6 +9,7 @@ const PropertyTimer = ({
   className = '',
   auctionEndedLabel = null,
   showUnitLabels = false,
+  fullUnitLabels = false,
   unitSeparator = ':',
 }) => {
   const { t } = useTranslation()
@@ -110,17 +111,18 @@ const PropertyTimer = ({
   else if (days >= 60) digitColor = '#f97316' // orange
 
   /* Крупный flip; узкие экраны поджимаются в CSS (container / mobile) */
-  const flipStyle = showUnitLabels
-    ? {
-        '--flip-card-width': '22px',
-        '--flip-card-height': '32px',
-        '--flip-card-font-size': '16px',
-      }
-    : {
-        '--flip-card-width': '40px',
-        '--flip-card-height': '58px',
-        '--flip-card-font-size': '29px',
-      }
+  const flipStyle =
+    showUnitLabels && !fullUnitLabels
+      ? {
+          '--flip-card-width': '22px',
+          '--flip-card-height': '32px',
+          '--flip-card-font-size': '16px',
+        }
+      : {
+          '--flip-card-width': '40px',
+          '--flip-card-height': '58px',
+          '--flip-card-font-size': '29px',
+        }
 
   const sepChar = unitSeparator === 'dot' ? '·' : ':'
   const sepClass =
@@ -128,7 +130,7 @@ const PropertyTimer = ({
       ? 'property-timer-detail-sep property-timer-detail-sep--dot'
       : 'property-timer-detail-sep'
 
-  const renderDetailUnit = (value, labelKey) => (
+  const renderDetailUnit = (value, shortLabelKey, fullLabelKey) => (
     <div className="property-timer-detail-unit">
       <FlipNumber
         value={String(value).padStart(2, '0')}
@@ -137,7 +139,9 @@ const PropertyTimer = ({
         textColor={digitColor}
       />
       {showUnitLabels ? (
-        <span className="property-timer-detail-unit-label">{t(labelKey)}</span>
+        <span className="property-timer-detail-unit-label">
+          {t(fullUnitLabels ? fullLabelKey : shortLabelKey)}
+        </span>
       ) : null}
     </div>
   )
@@ -158,19 +162,19 @@ const PropertyTimer = ({
       className={`property-timer property-timer--detail ${statusClass} ${isCritical ? 'timer-critical' : ''} ${hasThreeDigitDays ? 'property-timer--days-3' : ''} ${className}`.trim()}
     >
       <div className="property-timer-detail-flip-row">
-        {renderDetailUnit(timeLeft.days, 'timerDay')}
+        {renderDetailUnit(timeLeft.days, 'timerDay', 'timerDayFull')}
         <span className={sepClass} aria-hidden="true">
           {sepChar}
         </span>
-        {renderDetailUnit(timeLeft.hours, 'timerHour')}
+        {renderDetailUnit(timeLeft.hours, 'timerHour', 'timerHourFull')}
         <span className={sepClass} aria-hidden="true">
           {sepChar}
         </span>
-        {renderDetailUnit(timeLeft.minutes, 'timerMin')}
+        {renderDetailUnit(timeLeft.minutes, 'timerMin', 'timerMinFull')}
         <span className={sepClass} aria-hidden="true">
           {sepChar}
         </span>
-        {renderDetailUnit(timeLeft.seconds, 'timerSec')}
+        {renderDetailUnit(timeLeft.seconds, 'timerSec', 'timerSecFull')}
       </div>
     </div>
   )

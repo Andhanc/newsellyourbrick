@@ -43,6 +43,7 @@ import { sendCrmEmailViaEmailJS, resolveBuyerEmailForPurchaseRequest } from './e
 import { registerIntelligenceIoProxy } from './intelligenceIoProxy.js';
 import { getActiveAiProvider, isAiConfigured } from './aiChatConfig.js';
 import { registerNewsRoutes } from './newsRoutes.js';
+import { fetchNearbyPlacesForCategory } from './services/mapNearbyPlacesService.js';
 import { publicPropertyListsCache } from './middleware/publicPropertyListsCache.js';
 import { getCurrencySymbol } from './utils/currency.js';
 import {
@@ -833,6 +834,33 @@ app.get('/api/geo/country', (req, res) => {
     success: true,
     country,
   });
+});
+
+app.get('/api/map/nearby-places', async (req, res) => {
+  const lat = Number.parseFloat(req.query.lat);
+  const lng = Number.parseFloat(req.query.lng);
+  const category = String(req.query.category || '').trim();
+
+  if (
+    !Number.isFinite(lat) ||
+    !Number.isFinite(lng) ||
+    lat < -90 ||
+    lat > 90 ||
+    lng < -180 ||
+    lng > 180 ||
+    !category
+  ) {
+    return res.status(400).json({ success: false, error: 'Invalid map query params' });
+  }
+
+  try {
+    const places = await fetchNearbyPlacesForCategory(lat, lng, category);
+    res.setHeader('Cache-Control', 'public, max-age=3600, stale-while-revalidate=86400');
+    return res.json({ success: true, data: { places } });
+  } catch (error) {
+    console.error('[map/nearby-places]', category, lat, lng, error?.message || error);
+    return res.status(502).json({ success: false, error: 'Failed to load nearby places' });
+  }
 });
 
 app.get('/api/config', async (req, res) => {
@@ -14262,6 +14290,8 @@ app.post('/api/bids', async (req, res) => {
           property_id: propertyIdNum,
           bid_amount: bidAmountNum,
           minimum_bid: newMinimumBid,
+          leader_user_id: userIdNum,
+          user_id: userIdNum,
           ...(extendedTestTimer || {}),
         });
 
@@ -14279,13 +14309,15 @@ app.post('/api/bids', async (req, res) => {
             propertyTable: tableName,
             property,
             basePrice,
-            onAutoBidPlaced: async ({ bidAmount, currentMax }) => {
+            onAutoBidPlaced: async ({ userId, bidAmount }) => {
               const newMinimumBid = bidAmount + getAuctionMinBidStep(bidAmount);
               broadcastPropertyBidEvent(propertyIdNum, {
                 type: 'bid_placed',
                 property_id: propertyIdNum,
                 bid_amount: bidAmount,
                 minimum_bid: newMinimumBid,
+                leader_user_id: userId,
+                user_id: userId,
                 from_ceiling: true,
               });
               try {
@@ -14428,30 +14460,57 @@ app.put('/api/bids/ceiling', async (req, res) => {
       basePrice,
     });
 
-    setImmediate(() => {
-      void evaluateBidCeilings(prisma, {
-        propertyId: propertyIdNum,
-        propertyTable: tableName,
-        property,
-        basePrice,
-        onAutoBidPlaced: async ({ bidAmount }) => {
-          const newMinimumBid = bidAmount + getAuctionMinBidStep(bidAmount);
-          broadcastPropertyBidEvent(propertyIdNum, {
-            type: 'bid_placed',
-            property_id: propertyIdNum,
-            bid_amount: bidAmount,
-            minimum_bid: newMinimumBid,
-            from_ceiling: true,
-          });
-        },
-      }).catch((err) => console.warn('evaluateBidCeilings after PUT:', err?.message || err));
+    const autoBids = await evaluateBidCeilings(prisma, {
+      propertyId: propertyIdNum,
+      propertyTable: tableName,
+      property,
+      basePrice,
+      activateUserIds: [userIdNum],
+      onAutoBidPlaced: async ({ userId, bidAmount }) => {
+        const newMinimumBid = bidAmount + getAuctionMinBidStep(bidAmount);
+        broadcastPropertyBidEvent(propertyIdNum, {
+          type: 'bid_placed',
+          property_id: propertyIdNum,
+          bid_amount: bidAmount,
+          minimum_bid: newMinimumBid,
+          leader_user_id: userId,
+          user_id: userId,
+          from_ceiling: true,
+        });
+        try {
+          const updatedAt = new Date().toISOString();
+          if (tableName === 'properties_apartments') {
+            await prisma.properties_apartments.update({
+              where: { id: propertyIdNum },
+              data: { auction_minimum_bid: newMinimumBid, updated_at: updatedAt },
+            });
+          } else if (tableName === 'properties_houses') {
+            await prisma.properties_houses.update({
+              where: { id: propertyIdNum },
+              data: { auction_minimum_bid: newMinimumBid, updated_at: updatedAt },
+            });
+          } else {
+            await prisma.properties.update({
+              where: { id: propertyIdNum },
+              data: { auction_minimum_bid: newMinimumBid, updated_at: updatedAt },
+            });
+          }
+        } catch (minErr) {
+          console.warn('auction_minimum_bid (ceiling save):', minErr?.message || minErr);
+        }
+      },
     });
+
+    if (autoBids.length > 0) {
+      console.log(`🎯 Авто-ставка при сохранении потолка: ${autoBids.length} для property ${propertyIdNum}`);
+    }
 
     res.json({
       success: true,
       data: {
         max_amount: row.max_amount,
         updated_at: row.updated_at,
+        auto_bids: autoBids,
       },
     });
   } catch (error) {

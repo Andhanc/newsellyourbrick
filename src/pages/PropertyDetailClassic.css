@@ -2338,16 +2338,50 @@
 .property-detail-sidebar__map-title {
   font-size: 16px;
   font-weight: 600;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
   color: #111827;
 }
 
+.property-detail-sidebar__map-address {
+  margin: 0 0 12px;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.45;
+  color: #475569;
+}
+
 .property-detail-sidebar__map-container {
-  height: 330px;
+  height: 360px;
   border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 8px 20px rgba(15, 23, 42, 0.12);
   position: relative;
+}
+
+.property-detail-sidebar__map-stack {
+  position: relative;
+}
+
+.property-detail-sidebar__map-stack .property-detail-location-map--split {
+  gap: 12px;
+}
+
+.property-detail-sidebar__map-loading {
+  position: absolute;
+  top: 180px;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1000;
+  padding: 12px 20px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid rgba(10, 186, 181, 0.22);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+  font-family: 'Montserrat', system-ui, sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: #475569;
+  pointer-events: none;
 }
 
 @media (max-width: 960px) {
@@ -2857,7 +2891,7 @@
     --pd-tiffany-soft-border: rgba(10, 186, 181, 0.35);
     --pd-tiffany-ring: rgba(10, 186, 181, 0.14);
     --pd-tiffany-glow: rgba(10, 186, 181, 0.32);
-    background: #f8fafc;
+    background: #ffffff;
     padding-bottom: calc(100px + env(safe-area-inset-bottom, 0px));
   }
 
@@ -3017,10 +3051,10 @@
     .property-detail-mobile-test-drive
     .property-detail-test-drive {
     margin-top: 0;
-    padding: 16px;
-    border-radius: 16px;
-    background: #ffffff;
-    border: 1px solid #e2e8f0;
+    padding: 0;
+    border-radius: 0;
+    background: transparent;
+    border: none;
     box-shadow: none;
   }
 
@@ -3445,9 +3479,9 @@
   .property-detail-mobile-about-content {
     display: flex;
     flex-direction: column;
-    gap: 22px;
-    margin-top: 22px;
-    padding: 0 2px 8px;
+    gap: 36px;
+    margin-top: 28px;
+    padding: 0 2px 12px;
     box-sizing: border-box;
   }
 
@@ -3589,7 +3623,7 @@
   }
 
   .property-detail-page-new--auction-mobile-v2 .property-detail-mobile-amenities__title {
-    margin: 0 0 14px;
+    margin: 0 0 16px;
     font-family: 'Montserrat', system-ui, sans-serif;
     font-size: 17px;
     font-weight: 700;
@@ -4956,7 +4990,7 @@
     --pd-card-radius: 20px;
     --pd-card-shadow: 0 2px 8px rgba(15, 23, 42, 0.04), 0 16px 40px rgba(15, 23, 42, 0.06);
     --pd-auction-header-h: 56px;
-    background: #f8fafc;
+    background: #ffffff;
     padding-top: var(--pd-auction-header-h);
   }
 
@@ -5111,7 +5145,7 @@
     top: calc(var(--pd-auction-header-h, 56px) + 8px);
     z-index: 15;
     flex-shrink: 0;
-    background: rgba(248, 250, 252, 0.92);
+    background: rgba(255, 255, 255, 0.92);
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
     border: none;
@@ -6230,14 +6264,14 @@
   .property-detail-auction-tab-target--about {
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 40px;
   }
 
   /* Десктоп: вкладка «Описание» — отдельные карточки */
   .property-detail-auction-desktop-about {
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 40px;
     background: transparent;
     border: none;
     box-shadow: none;
@@ -6245,20 +6279,20 @@
   }
 
   .property-detail-auction-desktop-card {
-    background: #ffffff;
-    border-radius: var(--pd-card-radius);
-    padding: 26px 30px;
-    border: 1px solid #e2e8f0;
-    box-shadow: var(--pd-card-shadow);
+    background: transparent;
+    border-radius: 0;
+    padding: 0;
+    border: none;
+    box-shadow: none;
     box-sizing: border-box;
   }
 
   .property-detail-auction-desktop-card--description {
-    background: linear-gradient(180deg, #ffffff 0%, #fafbfc 100%);
+    background: transparent;
   }
 
   .property-detail-auction-desktop-card__title {
-    margin: 0 0 16px;
+    margin: 0 0 18px;
     padding: 0;
     border: none;
     font-family: 'Montserrat', system-ui, sans-serif;
@@ -6345,11 +6379,11 @@
 
   /* legacy section aliases */
   .property-detail-auction-desktop-section {
-    background: #ffffff;
-    border-radius: var(--pd-card-radius);
-    padding: 26px 30px;
-    border: 1px solid #e2e8f0;
-    box-shadow: var(--pd-card-shadow);
+    background: transparent;
+    border-radius: 0;
+    padding: 0;
+    border: none;
+    box-shadow: none;
     box-sizing: border-box;
   }
 
@@ -6420,7 +6454,7 @@
 
   /* —— Desktop: документы —— */
   .property-detail-auction-desktop-card--documents {
-    padding: 24px 28px 28px;
+    padding: 0;
   }
 
   .property-detail-auction-desktop-documents__head {
@@ -6586,239 +6620,64 @@
 
   /* ——— Desktop: тест-драйв ——— */
   .property-detail-auction-desktop-test-drive {
-    padding: 24px 28px 28px;
-    overflow: hidden;
-  }
-
-  .property-detail-auction-desktop-test-drive__banner {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 20px;
-    padding: 0 0 22px;
-    margin-bottom: 4px;
+    padding: 0;
+    overflow: visible;
     background: transparent;
-    border-bottom: 1px solid #f1f5f9;
-  }
-
-  .property-detail-auction-desktop-test-drive__banner-main {
-    display: flex;
-    align-items: flex-start;
-    gap: 18px;
-    flex: 1 1 auto;
-    min-width: 0;
-  }
-
-  .property-detail-auction-desktop-test-drive__icon {
-    flex-shrink: 0;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 52px;
-    height: 52px;
-    border-radius: 16px;
-    color: var(--pd-tiffany-deep);
-    background: #ffffff;
-    border: 1px solid var(--pd-tiffany-soft-border);
-    box-shadow: 0 6px 18px var(--pd-tiffany-ring);
-  }
-
-  .property-detail-auction-desktop-test-drive__copy {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    min-width: 0;
-  }
-
-  .property-detail-auction-desktop-test-drive__eyebrow {
-    font-family: 'Montserrat', system-ui, sans-serif;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--pd-tiffany-deep);
-  }
-
-  .property-detail-auction-desktop-test-drive__title {
-    margin: 0;
-    font-family: 'Montserrat', system-ui, sans-serif;
-    font-size: 20px;
-    font-weight: 800;
-    line-height: 1.25;
-    letter-spacing: -0.02em;
-    color: #0f172a;
-  }
-
-  .property-detail-auction-desktop-test-drive__lead {
-    margin: 0;
-    max-width: 52ch;
-    font-family: 'Montserrat', system-ui, sans-serif;
-    font-size: 14px;
-    line-height: 1.6;
-    color: #64748b;
-  }
-
-  .property-detail-auction-desktop-test-drive__badge {
-    flex-shrink: 0;
-    display: inline-flex;
-    align-items: center;
-    padding: 8px 14px;
-    border-radius: 999px;
-    font-family: 'Montserrat', system-ui, sans-serif;
-    font-size: 13px;
-    font-weight: 700;
-    color: var(--pd-tiffany-deep);
-    background: #ffffff;
-    border: 1px solid var(--pd-tiffany-soft-border);
-    box-shadow: 0 4px 14px var(--pd-tiffany-ring);
-    white-space: nowrap;
-  }
-
-  .property-detail-auction-desktop-test-drive__body {
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-  }
-
-  .property-detail-auction-desktop-test-drive .property-detail-test-drive {
-    margin: 0;
-    padding: 0;
     border: none;
-    border-radius: 0;
-    background: transparent;
     box-shadow: none;
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
   }
 
-  .property-detail-auction-desktop-test-drive .property-detail-test-drive .property-detail-info-block__title,
-  .property-detail-auction-desktop-test-drive .property-detail-test-drive__intro {
-    display: none;
-  }
-
-  .property-detail-auction-desktop-test-drive .property-detail-test-drive__conditions {
-    margin-bottom: 18px;
-    padding: 0;
-    border-radius: 0;
-    background: transparent;
-    border: none;
-    width: 100%;
-    text-align: center;
-  }
-
-  .property-detail-auction-desktop-test-drive .property-detail-test-drive__conditions li {
-    font-size: 14px;
-    font-weight: 600;
-    line-height: 1.45;
-    justify-content: center;
-  }
-
-  .property-detail-auction-desktop-test-drive .property-detail-test-drive__cta {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: auto;
-    min-width: min(100%, 320px);
-    margin: 0 auto;
-    padding: 14px 28px;
-    border-radius: 999px;
-    font-size: 15px;
-  }
-
-  .property-detail-auction-desktop-test-drive .property-detail-test-drive__hint {
-    text-align: center;
-    margin-top: 12px;
-    width: 100%;
+  .property-detail-auction-desktop-test-drive .property-detail-test-drive-promo {
+    box-shadow:
+      0 16px 40px rgba(15, 23, 42, 0.08),
+      0 0 0 1px rgba(226, 232, 240, 0.9);
   }
 
   .property-detail-auction-desktop-card--map {
-    padding: 24px 28px 28px;
+    padding: 0;
     overflow: hidden;
-    background:
-      radial-gradient(ellipse 90% 80% at 100% 0%, rgba(10, 186, 181, 0.08) 0%, transparent 55%),
-      #ffffff;
+    background: transparent;
   }
 
   .property-detail-auction-desktop-map__header {
     margin-bottom: 18px;
   }
 
-  .property-detail-auction-desktop-map__header-main {
-    display: flex;
-    align-items: flex-start;
-    gap: 14px;
+  .property-detail-auction-desktop-map__interactive {
+    position: relative;
   }
 
-  .property-detail-auction-desktop-map__icon {
-    flex-shrink: 0;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 46px;
-    height: 46px;
-    border-radius: 14px;
-    color: var(--pd-tiffany-deep);
-    background: var(--pd-tiffany-soft);
-    border: 1px solid var(--pd-tiffany-soft-border);
-    box-shadow: 0 6px 18px var(--pd-tiffany-ring);
+  .property-detail-auction-desktop-map__interactive .property-detail-location-map--split {
+    gap: 16px;
   }
 
-  .property-detail-auction-desktop-map__copy {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    min-width: 0;
-  }
-
-  .property-detail-auction-desktop-map__eyebrow {
+  .property-detail-auction-desktop-map__heading {
+    margin: 0 0 8px;
     font-family: 'Montserrat', system-ui, sans-serif;
-    font-size: 11px;
+    font-size: 18px;
     font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--pd-tiffany-deep);
+    line-height: 1.25;
+    color: #0f172a;
   }
 
-  .property-detail-auction-desktop-map__title {
+  .property-detail-auction-desktop-map__address {
     margin: 0;
     font-family: 'Montserrat', system-ui, sans-serif;
     font-size: 14px;
     font-weight: 500;
     line-height: 1.45;
-    letter-spacing: normal;
     color: #475569;
   }
 
   .property-detail-auction-desktop-map__frame {
     position: relative;
     border-radius: 18px;
-    padding: 3px;
-    background: linear-gradient(
-      135deg,
-      rgba(10, 186, 181, 0.55) 0%,
-      rgba(10, 186, 181, 0.18) 45%,
-      rgba(10, 186, 181, 0.42) 100%
-    );
-    box-shadow:
-      0 16px 40px rgba(10, 186, 181, 0.14),
-      0 8px 24px rgba(15, 23, 42, 0.08);
-  }
-
-  .property-detail-auction-desktop-map__frame-glow {
-    position: absolute;
-    inset: 0;
-    border-radius: 18px;
-    pointer-events: none;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45);
   }
 
   .property-detail-auction-desktop-map__map-wrap {
     position: relative;
-    height: clamp(280px, 34vw, 380px);
-    border-radius: 15px;
+    height: clamp(320px, 38vw, 430px);
+    border-radius: 18px;
     overflow: hidden;
     background: #e2e8f0;
   }
@@ -6871,11 +6730,11 @@
 
   .property-detail-page-new--auction-mobile-v2 .property-detail-info-section--auction-sheet {
     display: block !important;
-    background: #ffffff;
-    border-radius: var(--pd-card-radius);
-    padding: 26px 28px;
-    box-shadow: var(--pd-card-shadow);
-    border: 1px solid #e2e8f0;
+    background: transparent;
+    border-radius: 0;
+    padding: 0;
+    box-shadow: none;
+    border: none;
   }
 
   .property-detail-page-new--auction-mobile-v2
@@ -6933,19 +6792,20 @@
   .property-detail-page-new--auction-mobile-v2
     .property-detail-mobile-test-drive
     .property-detail-test-drive {
-    border-radius: var(--pd-card-radius);
-    border: 1px solid #e2e8f0;
-    box-shadow: var(--pd-card-shadow);
+    border-radius: 0;
+    border: none;
+    box-shadow: none;
+    background: transparent;
   }
 
   .property-detail-page-new--auction-mobile-v2 .property-detail-map-mobile--auction-sheet {
     display: block !important;
     margin-top: 0;
-    background: #ffffff;
-    border-radius: var(--pd-card-radius);
-    padding: 22px 24px 24px;
-    border: 1px solid #e2e8f0;
-    box-shadow: var(--pd-card-shadow);
+    background: transparent;
+    border-radius: 0;
+    padding: 0;
+    border: none;
+    box-shadow: none;
     box-sizing: border-box;
   }
 
@@ -6955,13 +6815,28 @@
     font-size: 17px;
     font-weight: 700;
     color: #0f172a;
+    margin-bottom: 8px;
+  }
+
+  .property-detail-page-new--auction-mobile-v2
+    .property-detail-map-mobile--auction-sheet
+    .property-detail-sidebar__map-address {
     margin-bottom: 14px;
+    font-size: 14px;
+    color: #475569;
+  }
+
+  .property-detail-page-new--auction-mobile-v2
+    .property-detail-map-mobile--auction-sheet
+    .property-detail-sidebar__map-stack
+    .property-detail-location-map__filters {
+    margin-top: 2px;
   }
 
   .property-detail-page-new--auction-mobile-v2
     .property-detail-map-mobile--auction-sheet
     .property-detail-sidebar__map-container {
-    height: 260px;
+    height: 290px;
     border-radius: 12px;
   }
 
@@ -6976,11 +6851,11 @@
 
   .property-detail-auction-desktop-about-lead {
     display: block;
-    background: #ffffff;
-    border-radius: var(--pd-card-radius);
-    padding: 24px 28px;
-    border: 1px solid #e2e8f0;
-    box-shadow: var(--pd-card-shadow);
+    background: transparent;
+    border-radius: 0;
+    padding: 0;
+    border: none;
+    box-shadow: none;
   }
 
   .property-detail-auction-desktop-about-lead__title {
