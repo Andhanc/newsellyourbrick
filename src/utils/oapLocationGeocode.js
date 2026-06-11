@@ -1,3 +1,5 @@
+import i18n from '../i18n/config'
+
 const NOMINATIM_HEADERS = { 'User-Agent': 'PropertyListingApp/1.0' }
 
 export async function fetchNominatimFirst(query) {
@@ -231,9 +233,9 @@ export function buildFormattedLocation({ country, city, street, apartment }) {
 
 export function validateLocationForm(form, addressSearch) {
   const errors = {}
-  if (!form.country?.trim()) errors.country = 'Выберите страну'
-  if (!form.city?.trim()) errors.city = 'Укажите город'
+  if (!form.country?.trim()) errors.country = i18n.t('oap_err_country')
+  if (!form.city?.trim()) errors.city = i18n.t('oap_err_city')
   const street = form.address?.trim() || addressSearch?.trim()
-  if (!street) errors.address = 'Укажите улицу из подсказок'
+  if (!street) errors.address = i18n.t('oap_err_address')
   return errors
 }

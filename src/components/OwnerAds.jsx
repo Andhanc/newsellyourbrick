@@ -1,54 +1,73 @@
+import { useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { BadgeCheck, Eye, MessageCircle, ShieldCheck } from 'lucide-react'
 import './OwnerAds.css'
 
 const AD_IMAGES = {
-  buyerHouse: '/images/owner-ads/ad-buyer-house.png',
-  premiumHouse: '/images/owner-ads/ad-premium-house.png',
-  growthChart: '/images/owner-ads/ad-growth-chart.png',
-  salesExpert: '/images/owner-ads/ad-sales-expert.png',
+  buyerHouse: '/images/owner-test/owner-promo-sidebar-buyer.png',
+  premiumHouse: '/images/owner-test/owner-promo-promote-thumb.png',
+  growthChart: '/images/owner-wallet-test/metric-chart.png',
+  salesExpert: '/images/owner-test/owner-promo-buyer-thumb.png',
 }
 
-const COMPACT_ADS = {
-  premium: {
-    title: 'Премиум размещение',
-    text: 'Выделите свой объект и получите больше просмотров',
-    button: 'Узнать больше',
-    image: AD_IMAGES.premiumHouse,
-    imageClassName: 'oad-card__image--house',
-    tone: 'premium',
-    dismiss: true,
-  },
-  fastSales: {
-    title: 'Быстрые продажи с SellYourBrick',
-    text: 'Ускорьте продажу объектов с нашими инструментами',
-    button: 'Подробнее',
-    image: AD_IMAGES.growthChart,
-    imageClassName: 'oad-card__image--chart',
-    tone: 'fast',
-  },
-  help: {
-    title: 'Нужна помощь с продажей?',
-    text: 'Наши эксперты помогут вам на каждом этапе',
-    button: 'Связаться',
-    image: AD_IMAGES.salesExpert,
-    imageClassName: 'oad-card__image--expert',
-    tone: 'help',
-  },
+function useCompactAds() {
+  const { t } = useTranslation()
+
+  return useMemo(
+    () => ({
+      premium: {
+        title: t('ownerTest_adPremiumTitle'),
+        text: t('ownerTest_adPremiumText'),
+        button: t('ownerTest_adPremiumButton'),
+        image: AD_IMAGES.premiumHouse,
+        imageClassName: 'oad-card__image--house',
+        tone: 'premium',
+        dismiss: true,
+      },
+      fastSales: {
+        title: t('ownerTest_adFastSalesTitle'),
+        text: t('ownerTest_adFastSalesText'),
+        button: t('ownerTest_adFastSalesButton'),
+        image: AD_IMAGES.growthChart,
+        imageClassName: 'oad-card__image--chart',
+        tone: 'fast',
+      },
+      help: {
+        title: t('ownerTest_adHelpTitle'),
+        text: t('ownerTest_adHelpText'),
+        button: t('ownerTest_adHelpButton'),
+        image: AD_IMAGES.salesExpert,
+        imageClassName: 'oad-card__image--expert',
+        tone: 'help',
+      },
+    }),
+    [t]
+  )
 }
 
-const BUYER_FEATURES = [
-  { text: 'Доступ к закрытым предложениям', icon: BadgeCheck },
-  { text: 'Просмотр объектов без посредников', icon: Eye },
-  { text: 'Персональные рекомендации', icon: MessageCircle },
-  { text: 'Специальные условия для покупателей', icon: ShieldCheck },
-]
+function useBuyerFeatures() {
+  const { t } = useTranslation()
+
+  return useMemo(
+    () => [
+      { text: t('ownerTest_adBuyerFeatureClosedDeals'), icon: BadgeCheck },
+      { text: t('ownerTest_adBuyerFeatureNoMiddlemen'), icon: Eye },
+      { text: t('ownerTest_adBuyerFeatureRecommendations'), icon: MessageCircle },
+      { text: t('ownerTest_adBuyerFeatureSpecialTerms'), icon: ShieldCheck },
+    ],
+    [t]
+  )
+}
 
 export function OwnerBuyerAd({ className = '' }) {
+  const { t } = useTranslation()
+  const buyerFeatures = useBuyerFeatures()
+
   return (
-    <article className={`oad-buyer ${className}`.trim()} aria-label="Реклама режима покупателя">
+    <article className={`oad-buyer ${className}`.trim()} aria-label={t('ownerTest_adBuyerAria')}>
       <div className="oad-buyer__copy">
-        <h2 className="oad-buyer__title">Ищете недвижимость для себя?</h2>
-        <p className="oad-buyer__text">Найдите лучшие предложения на нашей платформе</p>
+        <h2 className="oad-buyer__title">{t('ownerTest_adBuyerTitle')}</h2>
+        <p className="oad-buyer__text">{t('ownerTest_adBuyerText')}</p>
       </div>
 
       <img
@@ -61,7 +80,7 @@ export function OwnerBuyerAd({ className = '' }) {
       />
 
       <ul className="oad-buyer__list">
-        {BUYER_FEATURES.map(({ text, icon: Icon }) => (
+        {buyerFeatures.map(({ text, icon: Icon }) => (
           <li key={text}>
             <span className="oad-buyer__icon" aria-hidden>
               <Icon size={17} strokeWidth={2.3} />
@@ -73,10 +92,10 @@ export function OwnerBuyerAd({ className = '' }) {
 
       <div className="oad-buyer__actions">
         <button type="button" className="oad-buyer__button">
-          Стать покупателем
+          {t('ownerTest_adBuyerBecome')}
         </button>
         <button type="button" className="oad-buyer__link">
-          Подробнее
+          {t('ownerTest_adBuyerMore')}
         </button>
       </div>
     </article>
@@ -84,13 +103,15 @@ export function OwnerBuyerAd({ className = '' }) {
 }
 
 export function OwnerAdCard({ type }) {
-  const ad = COMPACT_ADS[type]
+  const { t } = useTranslation()
+  const compactAds = useCompactAds()
+  const ad = compactAds[type]
   if (!ad) return null
 
   return (
     <article className={`oad-card oad-card--${ad.tone}`} aria-label={ad.title}>
       {ad.dismiss ? (
-        <button type="button" className="oad-card__dismiss" aria-label="Скрыть рекламу">
+        <button type="button" className="oad-card__dismiss" aria-label={t('ownerTest_adDismiss')}>
           ×
         </button>
       ) : null}
@@ -114,8 +135,10 @@ export function OwnerAdCard({ type }) {
 }
 
 export function OwnerAdStack({ cards = ['premium', 'fastSales', 'help'], className = '' }) {
+  const { t } = useTranslation()
+
   return (
-    <section className={`oad-stack ${className}`.trim()} aria-label="Рекламные предложения">
+    <section className={`oad-stack ${className}`.trim()} aria-label={t('ownerTest_adStackAria')}>
       {cards.map((type) => (
         <OwnerAdCard key={type} type={type} />
       ))}
@@ -124,8 +147,10 @@ export function OwnerAdStack({ cards = ['premium', 'fastSales', 'help'], classNa
 }
 
 export function OwnerAdsShowcase({ className = '' }) {
+  const { t } = useTranslation()
+
   return (
-    <section className={`oad-showcase ${className}`.trim()} aria-label="Рекламные предложения">
+    <section className={`oad-showcase ${className}`.trim()} aria-label={t('ownerTest_adShowcaseAria')}>
       <OwnerBuyerAd />
       <OwnerAdStack />
     </section>

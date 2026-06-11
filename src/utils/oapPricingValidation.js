@@ -1,8 +1,13 @@
+import i18n from '../i18n/config'
+import { getOwnerTestIntlLocale } from './ownerTestI18n'
+
 export const AUCTION_MIN_MONTHS = 3
 export const AUCTION_MIN_DAYS = 15
 
 export function parseMoneyDigits(value) {
-  const n = parseFloat(String(value ?? '').replace(/\s/g, '').replace(',', '.'))
+  const cleaned = String(value ?? '').replace(/\s/g, '').replace(/,/g, '')
+  if (!cleaned) return null
+  const n = parseFloat(cleaned)
   return Number.isFinite(n) ? n : null
 }
 
@@ -39,8 +44,8 @@ export function getMinAuctionEndDate(
   return minEnd.toISOString().split('T')[0]
 }
 
-function formatDateRu(dateStr) {
-  return new Date(dateStr).toLocaleDateString('ru-RU', {
+function formatAuctionMinDate(dateStr) {
+  return new Date(dateStr).toLocaleDateString(getOwnerTestIntlLocale(i18n.language), {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
@@ -49,10 +54,10 @@ function formatDateRu(dateStr) {
 
 export function getAuctionEndDateError(startDateRaw, endDateRaw) {
   const raw = String(endDateRaw ?? '').trim()
-  if (!raw) return 'Укажите дату окончания аукциона'
+  if (!raw) return i18n.t('oap_err_auctionEndRequired')
 
   const end = new Date(raw)
-  if (Number.isNaN(end.getTime())) return 'Укажите дату окончания аукциона'
+  if (Number.isNaN(end.getTime())) return i18n.t('oap_err_auctionEndRequired')
 
   const minEndStr = getMinAuctionEndDate(startDateRaw)
   if (!minEndStr) return null
@@ -62,7 +67,7 @@ export function getAuctionEndDateError(startDateRaw, endDateRaw) {
   end.setHours(0, 0, 0, 0)
 
   if (end < minEnd) {
-    return `Минимальный период аукциона составляет 3 месяца и 15 дней. Минимальная дата окончания: ${formatDateRu(minEndStr)}`
+    return i18n.t('oap_err_auctionEndMinPeriod', { date: formatAuctionMinDate(minEndStr) })
   }
 
   return null
@@ -74,10 +79,10 @@ export function getMinimumSaleVsBuyNowError(minRaw, buyNowRaw) {
   const buyNow = parseMoneyDigits(buyNowRaw)
   if (!buyNow || buyNow <= 0 || !min || min <= 0) return null
   if (min > buyNow + 1e-9) {
-    return 'Минимальная цена продажи не может быть выше цены «Продать сейчас»'
+    return i18n.t('oap_err_minimumSaleExceedsBuyNow')
   }
   if (min > buyNow * 0.9 + 1e-9) {
-    return 'Минимальная цена продажи не может превышать 90% от цены «Продать сейчас»'
+    return i18n.t('oap_err_minimumSaleExceeds90Percent')
   }
   return null
 }
@@ -90,7 +95,7 @@ export function getAuctionStartingVsBuyNowError(buyNowRaw, startingRaw) {
   if (!starting || starting <= 0) return null
   const maxAllowed = buyNow * 0.3
   if (starting > maxAllowed + 1e-9) {
-    return 'Стартовая ставка не может превышать 30% от цены «Продать сейчас»'
+    return i18n.t('oap_err_startingBidExceeds30Percent')
   }
   return null
 }

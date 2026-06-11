@@ -1,27 +1,22 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import {
-  LayoutDashboard,
-  Building2,
-  CalendarCheck,
-  ShoppingBag,
-  Car,
-  CreditCard,
-  BarChart3,
-  MessageSquare,
-  Settings,
-  Check,
-  Menu,
-  X,
-  Sparkles,
-} from 'lucide-react'
+import { useTranslation } from 'react-i18next'
+import { Check, Menu, X, Sparkles } from 'lucide-react'
 import { OST_IMAGES } from './ownerSubscriptionsTestImages'
 import OwnerTestProfileMenu from '../components/OwnerTestProfileMenu'
 import { OwnerAdStack } from '../components/OwnerAds'
 import OwnerNotificationsButton from '../components/OwnerNotificationsButton'
+import OwnerSupportButton from '../components/OwnerSupportButton'
 import { useOwnerTestEmbeddedNav } from '../hooks/useOwnerTestEmbeddedNav'
+import { useOwnerTestNavItems } from '../hooks/useOwnerTestNavItems'
 import Confetti from '../components/Confetti'
 import { useOwnerTestProfile } from '../context/OwnerTestProfileContext'
+import {
+  formatOwnerTestDays,
+  getOwnerTestIntlLocale,
+  resolveProfileSubscriptionPlanId,
+} from '../utils/ownerTestI18n'
+import { OWNER_TEST_STANDALONE_HREF_MAP } from '../utils/ownerTestNav'
 import {
   confirmCheckoutSession,
   startOwnerSubscriptionCheckout,
@@ -29,91 +24,13 @@ import {
 import './OwnerSubscriptionsTestPage.css'
 import './OwnerSubscriptionsTestPage.mobile.css'
 
-const NAV_ITEMS = [
-  { id: 'home', label: 'Главная', icon: LayoutDashboard, href: '/main-owner-test' },
-  { id: 'properties', label: 'Мои объекты', icon: Building2, href: '/owner-properties-test' },
-  { id: 'bookings', label: 'Брони', icon: CalendarCheck },
-  { id: 'sales', label: 'Продажи', icon: ShoppingBag, href: '/owner-sales-test' },
-  { id: 'testdrive', label: 'Тест-драйв', icon: Car, href: '/owner-test-drive' },
-  { id: 'subscriptions', label: 'Подписки', icon: CreditCard, active: true },
-  { id: 'analytics', label: 'Аналитика', icon: BarChart3 },
-  { id: 'messages', label: 'Сообщения', icon: MessageSquare, badge: 3 },
-  { id: 'settings', label: 'Настройки', icon: Settings, href: '/owner-profile-test' },
-]
-
-const PERIOD_TABS = [
-  { id: 'monthly', label: 'Ежемесячно' },
-  { id: 'yearly', label: 'Ежегодно' },
-]
-
-const PLANS = [
-  {
-    id: 'basic',
-    name: 'Базовый',
-    price: 0,
-    features: [
-      'До 3 активных объектов',
-      'Базовая аналитика',
-      'Поддержка по email',
-    ],
-  },
-  {
-    id: 'standard',
-    name: 'Стандарт',
-    price: 99,
-    features: [
-      'До 10 активных объектов',
-      'Расширенная статистика',
-      'Приоритетная поддержка',
-      'Продвижение объектов',
-    ],
-  },
-  {
-    id: 'pro',
-    name: 'Pro',
-    price: 490,
-    features: [
-      'Неограниченные объекты',
-      'Расширенная аналитика',
-      'VIP поддержка 24/7',
-      'Продвижение объектов',
-      'Персональный менеджер',
-    ],
-  },
-  {
-    id: 'institutional',
-    name: 'Институциональный',
-    price: 1500,
-    features: [
-      'Все функции Pro',
-      'API доступ',
-      'Индивидуальное решение',
-      'Персональный менеджер',
-    ],
-  },
-]
-
-const PROFILE_SUBSCRIPTION_TO_PLAN_ID = {
-  Базовый: 'basic',
-  Стандарт: 'standard',
-  Pro: 'pro',
-  Корпоративный: 'institutional',
-  Институциональный: 'institutional',
-}
-
-const CHECKOUT_ERROR_TEXT = {
-  already_subscribed_owner_plan: 'Этот тариф уже активен в вашем профиле.',
-  already_subscribed_pro: 'У вас уже есть активная платная подписка.',
-  already_subscribed_vip: 'У вас уже активна VIP-подписка.',
-  no_app_user_id: 'Не удалось привязать оплату к аккаунту: отсутствует ID пользователя. Напишите в поддержку и передайте session_id.',
-  user_mismatch: 'Эта оплата относится к другому аккаунту.',
-}
+const PLAN_IDS = ['basic', 'standard', 'pro', 'institutional']
 
 function normalizeReturnedPlanId(planKey) {
   const key = String(planKey || '').toLowerCase()
   if (key === 'premium') return 'pro'
   if (key === 'corporate') return 'institutional'
-  return PLANS.some((plan) => plan.id === key) ? key : ''
+  return PLAN_IDS.includes(key) ? key : ''
 }
 
 function LogoMark({ className = '' }) {
@@ -141,8 +58,9 @@ function LogoMark({ className = '' }) {
   )
 }
 
-function formatPrice(amount) {
-  return amount === 0 ? '$0' : `$${amount}`
+function formatPrice(amount, locale) {
+  if (amount === 0) return '0 €'
+  return `${amount.toLocaleString(locale)} €`
 }
 
 function getPeriodPrice(plan, period) {
@@ -150,8 +68,47 @@ function getPeriodPrice(plan, period) {
   return period === 'yearly' ? Math.round(plan.price * 0.8) : plan.price
 }
 
+function getCurrentPlanBilling(plan, period, subscriptionPeriodEnd, t, intlLocale, lang) {
+  if (!plan || plan.price === 0) return null
+
+  const amount = getPeriodPrice(plan, period)
+  let nextChargeDate = subscriptionPeriodEnd ? new Date(subscriptionPeriodEnd) : null
+
+  if (!nextChargeDate || !Number.isFinite(nextChargeDate.getTime())) {
+    nextChargeDate = new Date()
+    nextChargeDate.setDate(nextChargeDate.getDate() + 18)
+  }
+
+  const now = new Date()
+  now.setHours(0, 0, 0, 0)
+  const endDay = new Date(nextChargeDate)
+  endDay.setHours(0, 0, 0, 0)
+  const daysRemaining = Math.max(0, Math.ceil((endDay - now) / (1000 * 60 * 60 * 24)))
+
+  return {
+    daysRemaining,
+    daysLabel: formatOwnerTestDays(daysRemaining, lang),
+    nextChargeDate: nextChargeDate.toLocaleDateString(intlLocale, {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    }),
+    amountLabel: formatPrice(amount, intlLocale),
+    periodLabel:
+      period === 'yearly'
+        ? t('ownerTest_planPerYear', { price: '' }).replace(/^\s*\/?\s*/, '/ ')
+        : t('ownerTest_planPerMonth', { price: '' }).replace(/^\s*\/?\s*/, '/ '),
+  }
+}
+
 export default function OwnerSubscriptionsTestPage() {
+  const { t, i18n } = useTranslation()
+  const intlLocale = useMemo(() => getOwnerTestIntlLocale(i18n.language), [i18n.language])
   const { isEmbedded } = useOwnerTestEmbeddedNav()
+  const navItems = useOwnerTestNavItems({
+    activeId: 'subscriptions',
+    hrefMap: isEmbedded ? undefined : OWNER_TEST_STANDALONE_HREF_MAP,
+  })
   const { profile, reloadProfile } = useOwnerTestProfile()
   const [searchParams, setSearchParams] = useSearchParams()
   const [period, setPeriod] = useState('monthly')
@@ -161,11 +118,78 @@ export default function OwnerSubscriptionsTestPage() {
   const [successPlanId, setSuccessPlanId] = useState(null)
   const handledSessionRef = useRef(null)
 
+  const periodTabs = useMemo(
+    () => [
+      { id: 'monthly', label: t('ownerTest_subscriptionsBillingMonthly') },
+      { id: 'yearly', label: t('ownerTest_subscriptionsBillingYearly') },
+    ],
+    [t]
+  )
+
+  const plans = useMemo(
+    () => [
+      {
+        id: 'basic',
+        name: t('ownerTest_planBasic'),
+        price: 0,
+        features: [
+          t('ownerTest_planFeatureBasic1'),
+          t('ownerTest_planFeatureBasic2'),
+          t('ownerTest_planFeatureBasic3'),
+        ],
+      },
+      {
+        id: 'standard',
+        name: t('ownerTest_planStandard'),
+        price: 99,
+        features: [
+          t('ownerTest_planFeatureStandard1'),
+          t('ownerTest_planFeatureStandard2'),
+          t('ownerTest_planFeatureStandard3'),
+          t('ownerTest_planFeatureStandard4'),
+        ],
+      },
+      {
+        id: 'pro',
+        name: t('ownerTest_planPro'),
+        price: 490,
+        features: [
+          t('ownerTest_planFeaturePro1'),
+          t('ownerTest_planFeaturePro2'),
+          t('ownerTest_planFeaturePro3'),
+          t('ownerTest_planFeaturePro4'),
+        ],
+      },
+      {
+        id: 'institutional',
+        name: t('ownerTest_planInstitutional'),
+        price: 1500,
+        features: [
+          t('ownerTest_planFeatureInstitutional1'),
+          t('ownerTest_planFeatureInstitutional2'),
+          t('ownerTest_planFeatureInstitutional3'),
+        ],
+      },
+    ],
+    [t]
+  )
+
+  const checkoutErrorText = useMemo(
+    () => ({
+      already_subscribed_owner_plan: t('ownerTest_checkoutErrAlreadyOwnerPlan'),
+      already_subscribed_pro: t('ownerTest_checkoutErrAlreadyPro'),
+      already_subscribed_vip: t('ownerTest_checkoutErrAlreadyVip'),
+      no_app_user_id: t('ownerTest_checkoutErrNoUserId'),
+      user_mismatch: t('ownerTest_checkoutErrUserMismatch'),
+    }),
+    [t]
+  )
+
   const closeMenu = useCallback(() => setMenuOpen(false), [])
 
   const activePlanId = useMemo(() => {
     if (successPlanId) return successPlanId
-    return PROFILE_SUBSCRIPTION_TO_PLAN_ID[profile?.subscription] || 'basic'
+    return resolveProfileSubscriptionPlanId(profile?.subscription) || 'basic'
   }, [profile?.subscription, successPlanId])
 
   const clearCheckoutParams = useCallback(() => {
@@ -184,7 +208,7 @@ export default function OwnerSubscriptionsTestPage() {
 
       const userId = localStorage.getItem('userId')
       if (!userId || !/^\d+$/.test(userId)) {
-        setCheckoutError('Войдите в аккаунт продавца, чтобы купить подписку.')
+        setCheckoutError(t('ownerTest_checkoutLoginRequired'))
         return
       }
 
@@ -199,11 +223,13 @@ export default function OwnerSubscriptionsTestPage() {
         returnPath,
       })
       if (!result.ok) {
-        setCheckoutError(CHECKOUT_ERROR_TEXT[result.error] || result.error || 'Не удалось открыть оплату Stripe.')
+        setCheckoutError(
+          checkoutErrorText[result.error] || result.error || t('ownerTest_checkoutStripeError')
+        )
         setStartingPlanId(null)
       }
     },
-    [activePlanId, period, profile?.email, startingPlanId]
+    [activePlanId, checkoutErrorText, period, profile?.email, startingPlanId, t]
   )
 
   useEffect(() => {
@@ -212,7 +238,7 @@ export default function OwnerSubscriptionsTestPage() {
     const ownerPlan = searchParams.get('owner_plan')
 
     if (checkout === 'canceled') {
-      setCheckoutError('Оплата отменена. Вы можете выбрать тариф ещё раз.')
+      setCheckoutError(t('ownerTest_checkoutCancelled'))
       clearCheckoutParams()
       return
     }
@@ -228,8 +254,7 @@ export default function OwnerSubscriptionsTestPage() {
       if (!alive) return
       if (!confirmed.ok) {
         const readableError =
-          CHECKOUT_ERROR_TEXT[confirmed.error] ||
-          'Оплата прошла, но подписка не синхронизировалась. Попробуйте обновить страницу или передайте session_id в поддержку.'
+          checkoutErrorText[confirmed.error] || t('ownerTest_checkoutSyncError')
         setCheckoutError(`${readableError} session_id: ${sessionId}`)
         return
       }
@@ -246,7 +271,7 @@ export default function OwnerSubscriptionsTestPage() {
     return () => {
       alive = false
     }
-  }, [clearCheckoutParams, reloadProfile, searchParams])
+  }, [checkoutErrorText, clearCheckoutParams, reloadProfile, searchParams, t])
 
   const renderNavItem = useCallback(
     ({ id, label, icon: Icon, active, badge, href }) => {
@@ -292,21 +317,21 @@ export default function OwnerSubscriptionsTestPage() {
   }, [menuOpen])
 
   const isYearly = period === 'yearly'
-  const successPlan = PLANS.find((plan) => plan.id === successPlanId)
+  const successPlan = plans.find((plan) => plan.id === successPlanId)
   const successModal = successPlan ? (
     <div className="ost-success-modal" role="dialog" aria-modal="true" aria-labelledby="ost-success-title">
       <Confetti />
       <button
         type="button"
         className="ost-success-modal__backdrop"
-        aria-label="Закрыть поздравление"
+        aria-label={t('ownerTest_ariaCloseCelebration')}
         onClick={() => setSuccessPlanId(null)}
       />
       <div className="ost-success-modal__panel">
         <button
           type="button"
           className="ost-success-modal__close"
-          aria-label="Закрыть"
+          aria-label={t('ownerTest_ariaClose')}
           onClick={() => setSuccessPlanId(null)}
         >
           <X size={20} strokeWidth={2.25} />
@@ -314,16 +339,18 @@ export default function OwnerSubscriptionsTestPage() {
         <div className="ost-success-modal__icon" aria-hidden>
           <Sparkles size={30} strokeWidth={2.2} />
         </div>
-        <h2 id="ost-success-title" className="ost-success-modal__title">Поздравляем!</h2>
+        <h2 id="ost-success-title" className="ost-success-modal__title">
+          {t('ownerSaleCelebrationHeadline')}
+        </h2>
         <p className="ost-success-modal__text">
-          Подписка «{successPlan.name}» успешно активирована. Новый тариф уже отображается в профиле.
+          {t('ownerTest_planActiveSubscription')}: {successPlan.name}
         </p>
         <button
           type="button"
           className="ost-success-modal__btn"
           onClick={() => setSuccessPlanId(null)}
         >
-          Отлично
+          {t('ownerSaleCelebrationCtaVip')}
         </button>
       </div>
     </div>
@@ -332,8 +359,9 @@ export default function OwnerSubscriptionsTestPage() {
   const mainColumn = (
       <div className="ost-body">
         <header className="ost-header ost-desktop-only">
-          <h1 className="ost-header__title">Подписки</h1>
+          <h1 className="ost-header__title">{t('ownerTest_subscriptionsTitle')}</h1>
           <div className="ost-header__actions">
+            <OwnerSupportButton className="ost-icon-btn" />
             <OwnerNotificationsButton className="ost-icon-btn" badgeClassName="ost-icon-btn__badge" />
             <OwnerTestProfileMenu />
           </div>
@@ -341,7 +369,7 @@ export default function OwnerSubscriptionsTestPage() {
 
         <div className="ost-workspace">
           <div className="ost-mob-pagehead ost-mobile-only">
-            <h1 className="ost-mob-pagehead__title">Подписки</h1>
+            <h1 className="ost-mob-pagehead__title">{t('ownerTest_subscriptionsTitle')}</h1>
           </div>
 
           <div className="ost-content">
@@ -349,9 +377,9 @@ export default function OwnerSubscriptionsTestPage() {
               <div
                 className="ost-period-tabs"
                 role="tablist"
-                aria-label="Период оплаты"
+                aria-label={t('ownerTest_ariaPaymentPeriod')}
               >
-                {PERIOD_TABS.map((tab) => (
+                {periodTabs.map((tab) => (
                   <button
                     key={tab.id}
                     type="button"
@@ -373,35 +401,46 @@ export default function OwnerSubscriptionsTestPage() {
             </div>
 
             <div className="ost-plans-grid">
-              {PLANS.map((plan) => {
+              {plans.map((plan) => {
                 const displayPrice = getPeriodPrice(plan, period)
                 const isCurrent = plan.id === activePlanId
                 const isPaidPlan = plan.id !== 'basic'
                 const isStarting = startingPlanId === plan.id
+                const billing = isCurrent && isPaidPlan
+                  ? getCurrentPlanBilling(plan, period, profile?.subscriptionPeriodEnd, t, intlLocale, i18n.language)
+                  : null
                 return (
                   <article
                     key={plan.id}
                     className={[
                       'ost-plan-card',
                       isCurrent && 'ost-plan-card--current',
-                      plan.id === 'pro' && 'ost-plan-card--featured',
+                      isCurrent && isPaidPlan && 'ost-plan-card--current-paid',
+                      plan.id === 'pro' && !isCurrent && 'ost-plan-card--featured',
                     ]
                       .filter(Boolean)
                       .join(' ')}
                   >
+                    {isCurrent && isPaidPlan ? (
+                      <span className="ost-plan-card__owned-badge">{t('ownerTest_planCurrent')}</span>
+                    ) : null}
                     <div className="ost-plan-card__head">
                       <h2 className="ost-plan-card__name">{plan.name}</h2>
                     </div>
                     <p className="ost-plan-card__price">
                       <span key={`${plan.id}-${period}`} className="ost-plan-card__amount">
-                        {formatPrice(displayPrice)}
+                        {formatPrice(displayPrice, intlLocale)}
                       </span>
-                      <span className="ost-plan-card__period">/ мес</span>
+                      <span className="ost-plan-card__period">
+                        {t('ownerTest_planPerMonth', { price: '' }).replace(/^\s*\/?\s*/, '/ ')}
+                      </span>
                     </p>
                     {isYearly && plan.price > 0 ? (
-                      <div className="ost-plan-card__saving" aria-label="Годовой план выгоднее на 20%">
-                        <span className="ost-plan-card__old-price">{formatPrice(plan.price)} / мес</span>
-                        <span className="ost-plan-card__saving-badge">Выгоднее на 20%</span>
+                      <div className="ost-plan-card__saving" aria-label={t('ownerTest_ariaYearlySaving')}>
+                        <span className="ost-plan-card__old-price">
+                          {formatPrice(plan.price, intlLocale)} {t('ownerTest_planPerMonth', { price: '' }).replace(/^\s*\/?\s*/, '/ ')}
+                        </span>
+                        <span className="ost-plan-card__saving-badge">{t('ownerTest_planYearlySaving')}</span>
                       </div>
                     ) : (
                       <div className="ost-plan-card__saving ost-plan-card__saving--empty" aria-hidden />
@@ -414,13 +453,34 @@ export default function OwnerSubscriptionsTestPage() {
                         </li>
                       ))}
                     </ul>
+                    {billing ? (
+                      <div className="ost-plan-card__billing" aria-label={t('ownerTest_ariaCurrentSubscription')}>
+                        <div className="ost-plan-card__billing-item">
+                          <span className="ost-plan-card__billing-label">{t('ownerTest_propertiesTimerLeft')}</span>
+                          <span className="ost-plan-card__billing-value">{billing.daysLabel}</span>
+                        </div>
+                        <div className="ost-plan-card__billing-item">
+                          <span className="ost-plan-card__billing-label">
+                            {t('ownerTest_withdrawCardExp', { date: '' }).replace(/\s*\{\{date\}\}.*/, '').trim()}
+                          </span>
+                          <span className="ost-plan-card__billing-value">{billing.nextChargeDate}</span>
+                        </div>
+                        <div className="ost-plan-card__billing-item">
+                          <span className="ost-plan-card__billing-label">{t('ownerSaleCelebrationSumLabel')}</span>
+                          <span className="ost-plan-card__billing-value ost-plan-card__billing-value--amount">
+                            {billing.amountLabel}
+                            <span className="ost-plan-card__billing-period">{billing.periodLabel}</span>
+                          </span>
+                        </div>
+                      </div>
+                    ) : null}
                     {isCurrent ? (
                       <button type="button" className="ost-plan-card__btn ost-plan-card__btn--current" disabled>
-                        Текущий тариф
+                        {isPaidPlan ? t('ownerTest_planActiveSubscription') : t('ownerTest_planCurrent')}
                       </button>
                     ) : !isPaidPlan ? (
                       <button type="button" className="ost-plan-card__btn ost-plan-card__btn--current" disabled>
-                        Бесплатный тариф
+                        {t('ownerTest_planBasic')}
                       </button>
                     ) : (
                       <button
@@ -429,7 +489,7 @@ export default function OwnerSubscriptionsTestPage() {
                         disabled={Boolean(startingPlanId)}
                         onClick={() => handlePlanCheckout(plan)}
                       >
-                        {isStarting ? 'Открываем Stripe…' : 'Купить'}
+                        {isStarting ? t('ownerTest_planOpeningStripe') : t('ownerTest_planBuy')}
                       </button>
                     )}
                   </article>
@@ -437,19 +497,17 @@ export default function OwnerSubscriptionsTestPage() {
               })}
             </div>
 
-            <section className="ost-save-banner" aria-label="Скидка на годовой план">
+            <section className="ost-save-banner" aria-label={t('ownerTest_ariaYearlyDiscount')}>
               <div className="ost-save-banner__copy">
-                <h2 className="ost-save-banner__title">Экономьте до 20% при оплате за год</h2>
-                <p className="ost-save-banner__text">
-                  Переключитесь на годовой план, и цены красиво пересчитаются со скидкой
-                </p>
+                <h2 className="ost-save-banner__title">{t('ownerTest_planYearlyBannerTitle')}</h2>
+                <p className="ost-save-banner__text">{t('ownerTest_planYearlyBannerText')}</p>
               </div>
               <button
                 type="button"
                 className="ost-save-banner__btn"
                 onClick={() => setPeriod('yearly')}
               >
-                Перейти на годовой план
+                {t('ownerTest_subscriptionsBillingYearly')}
               </button>
               <div className="ost-save-banner__icon-wrap" aria-hidden>
                 <img src={OST_IMAGES.discountPercent} alt="" loading="lazy" decoding="async" />
@@ -464,32 +522,30 @@ export default function OwnerSubscriptionsTestPage() {
 
   if (isEmbedded) {
     return (
-      <>
+      <div className="ost ost--embedded">
         {mainColumn}
         {successModal}
-      </>
+      </div>
     )
   }
 
   return (
     <div className={`ost${menuOpen ? ' ost--menu-open' : ''}`}>
-      <header className="ost-mob-topbar ost-mobile-only" aria-label="Мобильная шапка">
+      <header className="ost-mob-topbar ost-mobile-only" aria-label={t('ownerTest_ariaMobileHeader')}>
         <div className="ost-mob-topbar__slot ost-mob-topbar__slot--left">
           <button
             type="button"
             className="ost-mob-topbar__menu"
-            aria-label="Открыть меню"
+            aria-label={t('ownerTest_ariaOpenMenu')}
             aria-expanded={menuOpen}
             onClick={() => setMenuOpen(true)}
           >
             <Menu size={22} strokeWidth={2} />
           </button>
         </div>
-        <div className="ost-mob-topbar__brand">
-          <LogoMark />
-          <span className="ost-logo__text">SellYourBrick</span>
-        </div>
+        <h1 className="ost-mob-topbar__title">{t('ownerTest_subscriptionsTitle')}</h1>
         <div className="ost-mob-topbar__slot ost-mob-topbar__slot--right">
+          <OwnerSupportButton className="ost-mob-topbar__bell" iconSize={22} />
           <OwnerNotificationsButton
             className="ost-mob-topbar__bell"
             badgeClassName="ost-icon-btn__badge"
@@ -505,38 +561,38 @@ export default function OwnerSubscriptionsTestPage() {
       />
       <aside
         className={`ost-drawer ost-mobile-only${menuOpen ? ' ost-drawer--open' : ''}`}
-        aria-label="Меню кабинета"
+        aria-label={t('ownerTest_ariaCabinetMenu')}
         aria-hidden={!menuOpen}
       >
         <div className="ost-drawer__head">
           <div className="ost-mob-topbar__brand">
             <LogoMark />
-            <span className="ost-logo__text">SellYourBrick</span>
+            <span className="ost-logo__text">{t('ownerTest_brandName')}</span>
           </div>
-          <button type="button" className="ost-drawer__close" aria-label="Закрыть меню" onClick={closeMenu}>
+          <button type="button" className="ost-drawer__close" aria-label={t('ownerTest_ariaCloseMenu')} onClick={closeMenu}>
             <X size={22} />
           </button>
         </div>
         <div className="ost-sidebar__divider ost-sidebar__divider--drawer" aria-hidden />
-        <nav className="ost-nav ost-nav--drawer">{NAV_ITEMS.map(renderNavItem)}</nav>
+        <nav className="ost-nav ost-nav--drawer">{navItems.map(renderNavItem)}</nav>
       </aside>
 
       <aside className="ost-sidebar ost-desktop-only">
         <div className="ost-sidebar__brand">
-          <span className="ost-logo__mark-slot" aria-hidden />
-          <span className="ost-logo__text">SellYourBrick</span>
+          <LogoMark />
+          <span className="ost-logo__text">{t('ownerTest_brandName')}</span>
         </div>
         <div className="ost-sidebar__divider" aria-hidden />
 
-        <nav className="ost-nav" aria-label="Кабинет продавца">
-          {NAV_ITEMS.map(renderNavItem)}
+        <nav className="ost-nav" aria-label={t('ownerTest_ariaSellerCabinet')}>
+          {navItems.map(renderNavItem)}
         </nav>
 
         <div className="ost-sidebar-promo">
-          <p className="ost-sidebar-promo__title">Станьте покупателем</p>
-          <p className="ost-sidebar-promo__text">Ищите и бронируйте недвижимость на платформе</p>
+          <p className="ost-sidebar-promo__title">{t('heroPitchBecomeBuyerCta')}</p>
+          <p className="ost-sidebar-promo__text">{t('heroPitchBecomeBuyerBody')}</p>
           <button type="button" className="ost-btn ost-btn--primary ost-btn--sm">
-            Стать покупателем
+            {t('heroPitchBecomeBuyerCta')}
           </button>
           <img
             className="ost-sidebar-promo__img"

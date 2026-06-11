@@ -121,6 +121,7 @@ html.owner-test-cabinet-active #site-footer {
   html.opa-page-active .opa-workspace,
   html.otd-page-active .otd-workspace,
   html.ost-page-active .ost-workspace,
+  html.ost-page-active .ost-content,
   html.osl-page-active .osl-workspace,
   html.opr-page-active .opr-workspace,
   html.oap-page-active .oap-content {
@@ -147,5 +148,51 @@ html.owner-test-cabinet-active #site-footer {
     overflow: visible !important;
     flex: none !important;
     min-height: auto !important;
+  }
+
+  html.owner-test-cabinet-active .mot,
+  html.owner-test-cabinet-active .mot.mot--embedded,
+  html.owner-test-cabinet-active .mot-main,
+  html.owner-test-cabinet-active .mot-content,
+  html.owner-test-cabinet-active .op,
+  html.owner-test-cabinet-active .op.op--embedded,
+  html.owner-test-cabinet-active .op-body,
+  html.owner-test-cabinet-active .op-workspace,
+  html.owner-test-cabinet-active .ost,
+  html.owner-test-cabinet-active .ost.ost--embedded,
+  html.owner-test-cabinet-active .ost-body,
+  html.owner-test-cabinet-active .ost-workspace,
+  html.owner-test-cabinet-active .ost-content,
+  html.owner-test-cabinet-active .osl,
+  html.owner-test-cabinet-active .osl.osl--embedded,
+  html.owner-test-cabinet-active .osl-body,
+  html.owner-test-cabinet-active .osl-workspace,
+  html.owner-test-cabinet-active .owl,
+  html.owner-test-cabinet-active .owl.owl--embedded,
+  html.owner-test-cabinet-active .owl-body,
+  html.owner-test-cabinet-active .owl-workspace,
+  html.owner-test-cabinet-active .opr,
+  html.owner-test-cabinet-active .opr.opr--embedded,
+  html.owner-test-cabinet-active .opr-body,
+  html.owner-test-cabinet-active .opr-workspace,
+  html.owner-test-cabinet-active .otd,
+  html.owner-test-cabinet-active .otd.otd--embedded,
+  html.owner-test-cabinet-active .otd-body,
+  html.owner-test-cabinet-active .otd-workspace {
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+    flex: none !important;
+    min-height: 0 !important;
+  }
+
+  html.owner-test-cabinet-active .app-layout {
+    flex: 1 1 0 !important;
+    min-height: 0 !important;
+    height: auto !important;
+    max-height: none !important;
+    overflow-y: auto !important;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
   }
 }

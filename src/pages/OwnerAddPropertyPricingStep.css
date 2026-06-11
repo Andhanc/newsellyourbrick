@@ -51,6 +51,11 @@
   gap: 8px;
 }
 
+.oap-pricing-step__field:has(.oap-select--open) {
+  position: relative;
+  z-index: 25;
+}
+
 .oap-pricing-step__prices-row {
   display: flex;
   flex-wrap: wrap;
@@ -60,8 +65,8 @@
 
 .oap-pricing-step__field--compact {
   flex: 0 0 auto;
-  width: min(100%, 280px);
-  max-width: 280px;
+  width: min(100%, 188px);
+  max-width: 188px;
 }
 
 .oap-pricing-step__field--full {
@@ -74,21 +79,69 @@
   color: #6b7280;
 }
 
+.oap-pricing-step__field-hint {
+  font-size: 11px;
+  line-height: 1.35;
+  color: #9ca3af;
+}
+
+.oap-pricing-step--embedded .oap-pricing-step__subsection {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.oap-pricing-step--embedded .oap-pricing-step__subsection-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--oap-text, #111827);
+}
+
 .oap-pricing-step__field-control {
   position: relative;
-  display: flex;
-  align-items: center;
+  display: block;
 }
 
 .oap-pricing-step__field-icon {
   position: absolute;
-  left: 14px;
+  left: 9px;
+  top: 50%;
   z-index: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #9ca3af;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  transform: translateY(-50%);
   pointer-events: none;
+}
+
+.oap-pricing-step__field-icon--auction {
+  color: #089a95;
+  background: rgba(10, 186, 181, 0.14);
+}
+
+.oap-pricing-step__field-icon--minimum {
+  color: #d97706;
+  background: #fff7ed;
+}
+
+.oap-pricing-step__field-icon--buynow {
+  color: #7c3aed;
+  background: #f5f3ff;
+}
+
+.oap-pricing-step__field-icon--debt {
+  color: #dc2626;
+  background: #fef2f2;
+}
+
+.oap-pricing-step__field-icon--shares,
+.oap-pricing-step__field-icon--primary {
+  color: #0891b2;
+  background: #ecfeff;
 }
 
 .oap-pricing-step__input {
@@ -104,11 +157,11 @@
 }
 
 .oap-pricing-step__input--with-icon {
-  padding-left: 42px;
+  padding-left: 46px;
 }
 
 .oap-pricing-step__input--with-currency {
-  padding-right: 72px;
+  padding-right: 76px;
 }
 
 .oap-pricing-step__input--date {
@@ -134,35 +187,46 @@
   color: #9ca3af;
 }
 
-.oap-pricing-step__currency {
+.oap-pricing-step__currency.oap-select {
   position: absolute;
-  top: 50%;
-  right: 8px;
-  transform: translateY(-50%);
-  min-width: 52px;
-  padding: 4px 20px 4px 6px;
+  top: 1px;
+  right: 1px;
+  bottom: 1px;
+  transform: none;
+  width: auto;
+  min-width: 58px;
+  z-index: 2;
+}
+
+.oap-pricing-step__currency .oap-select__trigger {
+  height: 100%;
+  min-height: 0;
+  padding: 0 22px 0 10px;
   border: none;
-  border-radius: 6px;
-  font: inherit;
+  border-left: 1px solid #e5e7eb;
+  border-radius: 0 9px 9px 0;
   font-size: 12px;
   font-weight: 600;
   color: #374151;
-  background: #f3f4f6
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")
-    no-repeat right 4px center;
-  appearance: none;
-  cursor: pointer;
-  transition: background 0.15s;
+  background: #f9fafb;
+  box-shadow: none;
 }
 
-.oap-pricing-step__currency:hover {
-  background-color: #e5e7eb;
-}
-
-.oap-pricing-step__currency:focus {
-  outline: none;
-  background-color: #e5e7eb;
+.oap-pricing-step__currency .oap-select__trigger:hover,
+.oap-pricing-step__currency.oap-select--open .oap-select__trigger {
+  background: #e5e7eb;
   box-shadow: 0 0 0 2px rgba(10, 186, 181, 0.2);
+}
+
+.oap-pricing-step__currency .oap-select__chevron {
+  width: 14px;
+  height: 14px;
+}
+
+.oap-pricing-step__currency .oap-select__menu {
+  right: 0;
+  left: auto;
+  min-width: 88px;
 }
 
 .oap-pricing-step__field-error {
@@ -179,8 +243,8 @@
 }
 
 .oap-pricing-step__auction-period {
-  width: min(100%, 280px);
-  max-width: 280px;
+  width: min(100%, 188px);
+  max-width: 188px;
   align-self: flex-start;
 }
 

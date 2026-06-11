@@ -1,15 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import {
-  LayoutDashboard,
-  Building2,
-  CalendarCheck,
-  ShoppingBag,
-  Car,
-  CreditCard,
-  BarChart3,
-  MessageSquare,
-  Settings,
   DollarSign,
   SlidersHorizontal,
   TrendingUp,
@@ -19,8 +11,12 @@ import {
 import { OSL_IMAGES } from './ownerSalesTestImages'
 import OwnerTestProfileMenu from '../components/OwnerTestProfileMenu'
 import OwnerNotificationsButton from '../components/OwnerNotificationsButton'
+import OwnerSupportButton from '../components/OwnerSupportButton'
 import { OwnerBuyerAd } from '../components/OwnerAds'
 import { useOwnerTestEmbeddedNav } from '../hooks/useOwnerTestEmbeddedNav'
+import { useOwnerTestNavItems } from '../hooks/useOwnerTestNavItems'
+import { getOwnerTestIntlLocale } from '../utils/ownerTestI18n'
+import { OWNER_TEST_STANDALONE_HREF_MAP } from '../utils/ownerTestNav'
 import {
   CLERK_DB_USER_SYNCED,
   countOwnerSalesByTab,
@@ -31,25 +27,6 @@ import {
 import './OwnerSalesTestPage.css'
 import './OwnerSalesTestPage.mobile.css'
 
-const NAV_ITEMS = [
-  { id: 'home', label: 'Главная', icon: LayoutDashboard, href: '/main-owner-test' },
-  { id: 'properties', label: 'Мои объекты', icon: Building2, href: '/owner-properties-test' },
-  { id: 'bookings', label: 'Брони', icon: CalendarCheck },
-  { id: 'sales', label: 'Продажи', icon: ShoppingBag, active: true },
-  { id: 'testdrive', label: 'Тест-драйв', icon: Car, href: '/owner-test-drive' },
-  { id: 'subscriptions', label: 'Подписки', icon: CreditCard, href: '/owner-subscriptions-test' },
-  { id: 'analytics', label: 'Аналитика', icon: BarChart3 },
-  { id: 'messages', label: 'Сообщения', icon: MessageSquare, badge: 3 },
-  { id: 'settings', label: 'Настройки', icon: Settings, href: '/owner-profile-test' },
-]
-
-const FILTER_TAB_DEFS = [
-  { id: 'all', label: 'Все', shortLabel: 'Все' },
-  { id: 'completed', label: 'Завершенные', shortLabel: 'Подтвержденные' },
-  { id: 'in_progress', label: 'В процессе', shortLabel: 'В процессе' },
-  { id: 'cancelled', label: 'Отмененные', shortLabel: 'Отмененные' },
-]
-
 const DESIGN_SALES_ROWS = [
   {
     id: 'demo-sale-1',
@@ -57,7 +34,7 @@ const DESIGN_SALES_ROWS = [
     location: 'Лос-Анджелес, США',
     image: OSL_IMAGES.thumbVilla,
     buyer: 'John Smith',
-    dealAmount: '$850 000',
+    dealAmount: '850 000 €',
     saleDate: '12 мая 2024',
     statusLabel: 'Завершено',
     statusTone: 'completed',
@@ -69,7 +46,7 @@ const DESIGN_SALES_ROWS = [
     location: 'Лос-Анджелес, США',
     image: OSL_IMAGES.thumbApartment,
     buyer: 'Michael Brown',
-    dealAmount: '$1 250 000',
+    dealAmount: '1 250 000 €',
     saleDate: '8 мая 2024',
     statusLabel: 'В процессе',
     statusTone: 'in-progress',
@@ -81,7 +58,7 @@ const DESIGN_SALES_ROWS = [
     location: 'Москва, Россия',
     image: OSL_IMAGES.thumbLoft,
     buyer: 'Robert Johnson',
-    dealAmount: '$950 000',
+    dealAmount: '950 000 €',
     saleDate: '5 мая 2024',
     statusLabel: 'Завершено',
     statusTone: 'completed',
@@ -93,7 +70,7 @@ const DESIGN_SALES_ROWS = [
     location: 'Малибу, США',
     image: OSL_IMAGES.thumbPenthouse,
     buyer: 'Emily Johnson',
-    dealAmount: '$2 450 000',
+    dealAmount: '2 450 000 €',
     saleDate: '2 мая 2024',
     statusLabel: 'В ожидании',
     statusTone: 'pending',
@@ -105,7 +82,7 @@ const DESIGN_SALES_ROWS = [
     location: 'Майами, США',
     image: OSL_IMAGES.thumbVilla,
     buyer: 'James Wilson',
-    dealAmount: '$780 000',
+    dealAmount: '780 000 €',
     saleDate: '30 апр 2024',
     statusLabel: 'Отменено',
     statusTone: 'cancelled',
@@ -113,26 +90,29 @@ const DESIGN_SALES_ROWS = [
   },
 ]
 
-function formatSaleDate(value) {
+function formatSaleDate(value, locale) {
   if (!value) return '—'
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return '—'
-  return date.toLocaleDateString('ru-RU', {
+  return date.toLocaleDateString(locale, {
     day: 'numeric',
     month: 'short',
     year: 'numeric',
   })
 }
 
-function getRowStatus(row) {
-  if (row.statusLabel && row.statusTone) return row
+function getRowStatus(row, t) {
   if (row.tab === 'completed') {
-    return { ...row, statusLabel: 'Завершено', statusTone: 'completed' }
+    return { ...row, statusLabel: t('ownerTest_salesStatusCompleted'), statusTone: 'completed' }
   }
   if (row.tab === 'cancelled') {
-    return { ...row, statusLabel: 'Отменено', statusTone: 'cancelled' }
+    return { ...row, statusLabel: t('ownerTest_salesStatusCancelled'), statusTone: 'cancelled' }
   }
-  return { ...row, statusLabel: 'В процессе', statusTone: 'in-progress' }
+  if (row.tab === 'pending') {
+    return { ...row, statusLabel: t('ownerTest_salesStatusPending'), statusTone: 'pending' }
+  }
+  if (row.statusLabel && row.statusTone) return row
+  return { ...row, statusLabel: t('ownerTest_salesStatusInProgress'), statusTone: 'in-progress' }
 }
 
 function parseSaleAmount(value) {
@@ -142,8 +122,8 @@ function parseSaleAmount(value) {
   return Number.isFinite(amount) ? amount : 0
 }
 
-function formatTotalSalesAmount(value) {
-  return `$${value.toLocaleString('ru-RU', { maximumFractionDigits: 0 })}`
+function formatTotalSalesAmount(value, locale) {
+  return `${value.toLocaleString(locale, { maximumFractionDigits: 0 })} €`
 }
 
 function LogoMark({ className = '' }) {
@@ -172,7 +152,34 @@ function LogoMark({ className = '' }) {
 }
 
 export default function OwnerSalesTestPage() {
+  const { t, i18n } = useTranslation()
+  const intlLocale = useMemo(() => getOwnerTestIntlLocale(i18n.language), [i18n.language])
   const { isEmbedded } = useOwnerTestEmbeddedNav()
+  const navItems = useOwnerTestNavItems({
+    activeId: 'sales',
+    hrefMap: isEmbedded ? undefined : OWNER_TEST_STANDALONE_HREF_MAP,
+  })
+  const filterTabDefs = useMemo(
+    () => [
+      { id: 'all', label: t('ownerTest_salesTabAll'), shortLabel: t('ownerTest_salesTabAll') },
+      {
+        id: 'completed',
+        label: t('ownerTest_salesTabCompleted'),
+        shortLabel: t('ownerTest_salesTabCompletedShort'),
+      },
+      {
+        id: 'in_progress',
+        label: t('ownerTest_salesTabInProgress'),
+        shortLabel: t('ownerTest_salesTabInProgress'),
+      },
+      {
+        id: 'cancelled',
+        label: t('ownerTest_salesTabCancelled'),
+        shortLabel: t('ownerTest_salesTabCancelled'),
+      },
+    ],
+    [t]
+  )
   const [activeTab, setActiveTab] = useState('all')
   const [menuOpen, setMenuOpen] = useState(false)
   const [sales, setSales] = useState([])
@@ -213,18 +220,21 @@ export default function OwnerSalesTestPage() {
   const displayRows = useMemo(() => {
     const sourceRows = sales.length > 0 ? sales : DESIGN_SALES_ROWS
     return sourceRows.map((row) =>
-      getRowStatus({
-        ...row,
-        saleDate: row.saleDate || formatSaleDate(row.raw?.sold_at || row.raw?.created_at),
-      })
+      getRowStatus(
+        {
+          ...row,
+          saleDate: row.saleDate || formatSaleDate(row.raw?.sold_at || row.raw?.created_at, intlLocale),
+        },
+        t
+      )
     )
-  }, [sales])
+  }, [sales, intlLocale, t])
 
   const tabCounts = useMemo(() => countOwnerSalesByTab(displayRows), [displayRows])
 
   const filterTabs = useMemo(
-    () => FILTER_TAB_DEFS.map((tab) => ({ ...tab, count: tabCounts[tab.id] ?? 0 })),
-    [tabCounts]
+    () => filterTabDefs.map((tab) => ({ ...tab, count: tabCounts[tab.id] ?? 0 })),
+    [filterTabDefs, tabCounts]
   )
 
   const filteredRows = useMemo(
@@ -236,11 +246,11 @@ export default function OwnerSalesTestPage() {
     const total = displayRows.reduce((sum, row) => sum + parseSaleAmount(row.dealAmount), 0)
     const completed = displayRows.filter((row) => row.statusTone === 'completed').length
     return {
-      total: formatTotalSalesAmount(total),
+      total: formatTotalSalesAmount(total, intlLocale),
       deals: displayRows.length,
       completed,
     }
-  }, [displayRows])
+  }, [displayRows, intlLocale])
 
   const renderNavItem = useCallback(
     ({ id, label, icon: Icon, active, badge, href }) => {
@@ -288,24 +298,27 @@ export default function OwnerSalesTestPage() {
   const mainColumn = (
       <div className="osl-body">
         <header className="osl-header osl-desktop-only">
-          <h1 className="osl-header__title">Продажи</h1>
+          <h1 className="osl-header__title">{t('ownerTest_navSales')}</h1>
           <div className="osl-header__actions">
+            <OwnerSupportButton className="osl-icon-btn" />
             <OwnerNotificationsButton className="osl-icon-btn" badgeClassName="osl-icon-btn__badge" />
             <OwnerTestProfileMenu />
           </div>
         </header>
 
         <div className="osl-workspace">
-          <div className="osl-mob-pagehead osl-mobile-only">
-            <h1 className="osl-mob-pagehead__title">Продажи</h1>
-            <button type="button" className="osl-mob-filter-btn" aria-label="Фильтр">
-              <SlidersHorizontal size={20} strokeWidth={2} />
-            </button>
-          </div>
+          {isEmbedded ? (
+            <div className="osl-mob-pagehead osl-mobile-only">
+              <h1 className="osl-mob-pagehead__title">{t('ownerTest_navSales')}</h1>
+              <button type="button" className="osl-mob-filter-btn" aria-label={t('ownerTest_salesFilterAria')}>
+                <SlidersHorizontal size={20} strokeWidth={2} />
+              </button>
+            </div>
+          ) : null}
 
           <div className="osl-content">
             <div className="osl-tabs-row">
-              <div className="osl-tabs" role="tablist" aria-label="Фильтр продаж">
+              <div className="osl-tabs" role="tablist" aria-label={t('ownerTest_ariaSalesFilter')}>
                 {filterTabs.map((tab) => (
                   <button
                     key={tab.id}
@@ -332,26 +345,28 @@ export default function OwnerSalesTestPage() {
               </div>
             </div>
 
-            <section className="osl-sales-summary" aria-label="Общая сумма продаж">
+            <section className="osl-sales-summary osl-desktop-only" aria-label={t('ownerTest_ariaSalesTotal')}>
               <div className="osl-sales-summary__icon" aria-hidden>
                 <DollarSign size={22} strokeWidth={2.3} />
               </div>
               <div className="osl-sales-summary__copy">
-                <span className="osl-sales-summary__label">Общая сумма продаж</span>
+                <span className="osl-sales-summary__label">{t('ownerTest_ariaSalesTotal')}</span>
                 <strong className="osl-sales-summary__value">{salesSummary.total}</strong>
               </div>
               <div className="osl-sales-summary__meta">
                 <span className="osl-sales-summary__pill">
                   <TrendingUp size={14} strokeWidth={2.3} aria-hidden />
-                  {salesSummary.deals} сделок
+                  {salesSummary.deals} {t('ownerTest_profileStatSales').toLowerCase()}
                 </span>
-                <span className="osl-sales-summary__hint">{salesSummary.completed} завершено</span>
+                <span className="osl-sales-summary__hint">
+                  {salesSummary.completed} {t('ownerTest_profileStatDeals')}
+                </span>
               </div>
             </section>
 
             {filteredRows.length === 0 ? (
               <div className="osl-table-state">
-                {salesLoading ? 'Загрузка продаж…' : 'Нет продаж по выбранному фильтру.'}
+                {salesLoading ? t('ownerSalesLoading') : t('ownerTest_salesEmptyFilter')}
               </div>
             ) : (
               <>
@@ -360,11 +375,11 @@ export default function OwnerSalesTestPage() {
                 <table className="osl-table">
                   <thead>
                     <tr>
-                      <th>Объект</th>
-                      <th>Покупатель</th>
-                      <th>Сумма</th>
-                      <th>Дата продажи</th>
-                      <th>Статус</th>
+                      <th>{t('oap_wizardStepObject')}</th>
+                      <th>{t('ownerTestDriveBuyer')}</th>
+                      <th>{t('ownerSaleCelebrationSumLabel')}</th>
+                      <th>{t('ownerAnalyticsSaleDateLabel').replace(':', '').trim()}</th>
+                      <th>{t('buyerCabinet_billingStatus')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -412,16 +427,9 @@ export default function OwnerSalesTestPage() {
                   <div className="osl-mob-list__body">
                     <p className="osl-mob-list__title">{row.title}</p>
                     <p className="osl-mob-list__meta">{row.buyer}</p>
-                    <p className="osl-mob-list__deal">
-                      <span className="osl-mob-list__deal-label">{row.saleDate}</span>
-                      <span className="osl-mob-list__deal-amount">{row.dealAmount}</span>
-                    </p>
-                    <div className="osl-mob-list__tags">
-                      <span className={`osl-status osl-status--${row.statusTone}`}>
-                        {row.statusLabel}
-                      </span>
-                    </div>
+                    <p className="osl-mob-list__date">{row.saleDate}</p>
                   </div>
+                  <span className="osl-mob-list__amount">{row.dealAmount}</span>
                 </li>
               ))}
             </ul>
@@ -434,32 +442,29 @@ export default function OwnerSalesTestPage() {
       </div>
   )
 
-  if (isEmbedded) return mainColumn
+  if (isEmbedded) {
+    return <div className="osl osl--embedded">{mainColumn}</div>
+  }
 
   return (
     <div className={`osl${menuOpen ? ' osl--menu-open' : ''}`}>
-      <header className="osl-mob-topbar osl-mobile-only" aria-label="Мобильная шапка">
+      <header className="osl-mob-topbar osl-mobile-only" aria-label={t('ownerTest_ariaMobileHeader')}>
         <div className="osl-mob-topbar__slot osl-mob-topbar__slot--left">
           <button
             type="button"
             className="osl-mob-topbar__menu"
-            aria-label="Открыть меню"
+            aria-label={t('ownerTest_ariaOpenMenu')}
             aria-expanded={menuOpen}
             onClick={() => setMenuOpen(true)}
           >
             <Menu size={22} strokeWidth={2} />
           </button>
         </div>
-        <div className="osl-mob-topbar__brand">
-          <LogoMark />
-          <span className="osl-logo__text">SellYourBrick</span>
-        </div>
+        <h1 className="osl-mob-topbar__title">{t('ownerTest_navSales')}</h1>
         <div className="osl-mob-topbar__slot osl-mob-topbar__slot--right">
-          <OwnerNotificationsButton
-            className="osl-mob-topbar__bell"
-            badgeClassName="osl-icon-btn__badge"
-            iconSize={22}
-          />
+          <button type="button" className="osl-mob-filter-btn osl-mob-filter-btn--topbar" aria-label={t('ownerTest_salesFilterAria')}>
+            <SlidersHorizontal size={20} strokeWidth={2} />
+          </button>
         </div>
       </header>
 
@@ -470,38 +475,38 @@ export default function OwnerSalesTestPage() {
       />
       <aside
         className={`osl-drawer osl-mobile-only${menuOpen ? ' osl-drawer--open' : ''}`}
-        aria-label="Меню кабинета"
+        aria-label={t('ownerTest_ariaCabinetMenu')}
         aria-hidden={!menuOpen}
       >
         <div className="osl-drawer__head">
           <div className="osl-mob-topbar__brand">
             <LogoMark />
-            <span className="osl-logo__text">SellYourBrick</span>
+            <span className="osl-logo__text">{t('ownerTest_brandName')}</span>
           </div>
-          <button type="button" className="osl-drawer__close" aria-label="Закрыть меню" onClick={closeMenu}>
+          <button type="button" className="osl-drawer__close" aria-label={t('ownerTest_ariaCloseMenu')} onClick={closeMenu}>
             <X size={22} />
           </button>
         </div>
         <div className="osl-sidebar__divider osl-sidebar__divider--drawer" aria-hidden />
-        <nav className="osl-nav osl-nav--drawer">{NAV_ITEMS.map(renderNavItem)}</nav>
+        <nav className="osl-nav osl-nav--drawer">{navItems.map(renderNavItem)}</nav>
       </aside>
 
       <aside className="osl-sidebar osl-desktop-only">
         <div className="osl-sidebar__brand">
-          <span className="osl-logo__mark-slot" aria-hidden />
-          <span className="osl-logo__text">SellYourBrick</span>
+          <LogoMark />
+          <span className="osl-logo__text">{t('ownerTest_brandName')}</span>
         </div>
         <div className="osl-sidebar__divider" aria-hidden />
 
-        <nav className="osl-nav" aria-label="Кабинет продавца">
-          {NAV_ITEMS.map(renderNavItem)}
+        <nav className="osl-nav" aria-label={t('ownerTest_ariaSellerCabinet')}>
+          {navItems.map(renderNavItem)}
         </nav>
 
         <div className="osl-sidebar-promo">
-          <p className="osl-sidebar-promo__title">Станьте покупателем</p>
-          <p className="osl-sidebar-promo__text">Ищите и бронируйте недвижимость на платформе</p>
+          <p className="osl-sidebar-promo__title">{t('heroPitchBecomeBuyerCta')}</p>
+          <p className="osl-sidebar-promo__text">{t('heroPitchBecomeBuyerBody')}</p>
           <button type="button" className="osl-btn osl-btn--primary osl-btn--sm">
-            Стать покупателем
+            {t('heroPitchBecomeBuyerCta')}
           </button>
           <img
             className="osl-sidebar-promo__img"

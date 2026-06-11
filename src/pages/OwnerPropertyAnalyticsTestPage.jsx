@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { Link, Navigate, useParams } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -12,17 +13,8 @@ import {
 } from 'chart.js'
 import { Line } from 'react-chartjs-2'
 import {
-  LayoutDashboard,
-  Building2,
-  CalendarCheck,
-  ShoppingBag,
-  Car,
-  CreditCard,
   BarChart3,
-  MessageSquare,
-  Settings,
   ChevronDown,
-  Menu,
   X,
   ArrowLeft,
   Calendar,
@@ -32,16 +24,12 @@ import {
   Plus,
   Gavel,
   CircleDollarSign,
-  Home,
-  Briefcase,
-  ClipboardList,
-  SlidersHorizontal,
   RefreshCw,
   Clock,
   Download,
 } from 'lucide-react'
 import { OWNER_PROP_IMAGES } from './ownerPropertiesTestImages'
-import { OWNER_LISTING_TYPE_LABELS, getOwnerTestProperty } from './ownerPropertiesTestData'
+import { getOwnerListingTypeLabels, getOwnerTestProperty } from './ownerPropertiesTestData'
 import { OwnerAdCard } from '../components/OwnerAds'
 import {
   downloadXlsxBuffer,
@@ -54,9 +42,13 @@ import {
 import { showNotification } from '../utils/toastHelper'
 import OwnerTestProfileMenu from '../components/OwnerTestProfileMenu'
 import OwnerNotificationsButton from '../components/OwnerNotificationsButton'
+import OwnerSupportButton from '../components/OwnerSupportButton'
 import { useOwnerTestProfile } from '../context/OwnerTestProfileContext'
 import { OWNER_VIEWS } from '../context/OwnerTestNavigationContext'
 import { useOwnerTestEmbeddedNav } from '../hooks/useOwnerTestEmbeddedNav'
+import { useOwnerTestNavItems, useOwnerTestTabItems } from '../hooks/useOwnerTestNavItems'
+import { getOwnerTestIntlLocale } from '../utils/ownerTestI18n'
+import { OWNER_TEST_STANDALONE_HREF_MAP } from '../utils/ownerTestNav'
 import './OwnerPropertyAnalyticsTestPage.css'
 import './OwnerPropertyAnalyticsTestPage.mobile.css'
 
@@ -79,32 +71,6 @@ const EMPTY_OWNER_SALES = {
   buy_now: [],
   test_drive: [],
 }
-
-const CHART_METRICS = [
-  { id: 'bids', label: 'Ставки' },
-  { id: 'views', label: 'Просмотры' },
-  { id: 'likes', label: 'Понравилось' },
-]
-
-const NAV_ITEMS = [
-  { id: 'home', label: 'Главная', icon: LayoutDashboard, href: '/main-owner-test' },
-  { id: 'properties', label: 'Мои объекты', icon: Building2, href: '/owner-properties-test', active: true },
-  { id: 'bookings', label: 'Брони', icon: CalendarCheck },
-  { id: 'sales', label: 'Продажи', icon: ShoppingBag, href: '/owner-sales-test' },
-  { id: 'testdrive', label: 'Тест-драйв', icon: Car, href: '/owner-test-drive' },
-  { id: 'subscriptions', label: 'Подписки', icon: CreditCard, href: '/owner-subscriptions-test' },
-  { id: 'analytics', label: 'Аналитика', icon: BarChart3 },
-  { id: 'messages', label: 'Сообщения', icon: MessageSquare, badge: 3 },
-  { id: 'settings', label: 'Настройки', icon: Settings, href: '/owner-profile-test' },
-]
-
-const TAB_ITEMS = [
-  { id: 'home', label: 'Главная', icon: Home, href: '/main-owner-test' },
-  { id: 'properties', label: 'Объекты', icon: Briefcase, href: '/owner-properties-test', active: true },
-  { id: 'fab', fab: true },
-  { id: 'bookings', label: 'Брони', icon: ClipboardList },
-  { id: 'more', label: 'Ещё', icon: SlidersHorizontal },
-]
 
 function LogoMark({ className = '' }) {
   return (
@@ -168,11 +134,11 @@ function buildMetricSeries(baseSeries, metric, analytics) {
   return Array.isArray(baseSeries) ? baseSeries : []
 }
 
-function formatDateSafe(value) {
+function formatDateSafe(value, locale) {
   if (!value) return '—'
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return '—'
-  return date.toLocaleDateString('ru-RU')
+  return date.toLocaleDateString(locale)
 }
 
 function normalizeAnalyticsPropertyTable(table) {
@@ -257,10 +223,15 @@ function formatAnalyticsTimerLabel(label) {
   return value.replace(/^(\d+)\s*д\s+(\d{1,2}:\d{2}:\d{2})$/i, '$1:$2')
 }
 
-function getAnalyticsTimerState(property, now = Date.now()) {
+function getAnalyticsTimerState(property, t, now = Date.now()) {
   const endTime = getAnalyticsTimerEndTime(property)
   if (!endTime && property?.auctionTimer) {
-    return { expired: false, critical: false, caption: 'Осталось', label: formatAnalyticsTimerLabel(property.auctionTimer) }
+    return {
+      expired: false,
+      critical: false,
+      caption: t('ownerTest_propertiesTimerLeft'),
+      label: formatAnalyticsTimerLabel(property.auctionTimer),
+    }
   }
   if (!endTime) return null
 
@@ -269,7 +240,12 @@ function getAnalyticsTimerState(property, now = Date.now()) {
 
   const remainingMs = endMs - now
   if (remainingMs <= 0) {
-    return { expired: true, critical: false, caption: 'Таймер', label: 'Завершён' }
+    return {
+      expired: true,
+      critical: false,
+      caption: t('ownerTest_propertiesTimerCaption'),
+      label: t('ownerTest_propertiesTimerFinished'),
+    }
   }
 
   const totalSeconds = Math.floor(remainingMs / 1000)
@@ -282,18 +258,22 @@ function getAnalyticsTimerState(property, now = Date.now()) {
   return {
     expired: false,
     critical: days === 0 && hours < 1,
-    caption: 'Осталось',
+    caption: t('ownerTest_propertiesTimerLeft'),
     label: days > 0
       ? `${days}:${two(hours)}:${two(minutes)}:${two(seconds)}`
       : `${two(hours)}:${two(minutes)}:${two(seconds)}`,
   }
 }
 
-function AnalyticsTimerPanel({ property, now }) {
-  const timer = getAnalyticsTimerState(property, now)
+function AnalyticsTimerPanel({ property, now, t }) {
+  const timer = getAnalyticsTimerState(property, t, now)
   const hasTimer = Boolean(timer)
   const currentBid = property?.currentBid || property?.price || '—'
-  const statusText = timer?.expired ? 'Аукцион завершён' : hasTimer ? 'Активный таймер' : 'Таймер не установлен'
+  const statusText = timer?.expired
+    ? t('ownerTest_timerFinished')
+    : hasTimer
+      ? t('ownerTest_propertiesTimerCaption')
+      : t('ownerTest_analyticsNoData')
   const value = timer?.label || '—'
 
   return (
@@ -306,7 +286,7 @@ function AnalyticsTimerPanel({ property, now }) {
       ]
         .filter(Boolean)
         .join(' ')}
-      aria-label="Таймер объекта"
+      aria-label={t('ownerTest_propertiesTimerCaption')}
     >
       <div className="opa-timer-panel__main">
         <span className="opa-timer-panel__icon" aria-hidden>
@@ -314,26 +294,30 @@ function AnalyticsTimerPanel({ property, now }) {
         </span>
         <div className="opa-timer-panel__copy">
           <span className="opa-timer-panel__eyebrow">{statusText}</span>
-          <h2 className="opa-timer-panel__title">Таймер объекта</h2>
+          <h2 className="opa-timer-panel__title">{t('ownerTest_propertiesTimerCaption')}</h2>
           <p className="opa-timer-panel__text">
             {timer?.expired
-              ? 'Период торгов по объекту завершён.'
+              ? t('ownerTest_timerFinished')
               : hasTimer
-                ? 'Следите за временем до окончания торгов и активностью покупателей.'
-                : 'Для этого объекта пока нет активного таймера.'}
+                ? t('oap_testDriveHint')
+                : t('ownerTest_analyticsNoData')}
           </p>
         </div>
       </div>
       <div className="opa-timer-panel__count" aria-live="polite">
         <span className="opa-timer-panel__count-label">
-          {timer?.expired ? 'Статус' : hasTimer ? 'До окончания' : 'Осталось'}
+          {timer?.expired
+            ? t('ownerTest_propertiesTimerCaption')
+            : hasTimer
+              ? t('ownerTest_propertiesTimerLeft')
+              : t('ownerTest_propertiesTimerLeft')}
         </span>
         <strong>{value}</strong>
       </div>
       <div className="opa-timer-panel__meta">
         <span>
           <CircleDollarSign size={17} strokeWidth={2.2} aria-hidden />
-          Текущая ставка
+          {t('bidHistoryCurrentMaxBid')}
         </span>
         <strong>{currentBid}</strong>
       </div>
@@ -342,9 +326,29 @@ function AnalyticsTimerPanel({ property, now }) {
 }
 
 export default function OwnerPropertyAnalyticsTestPage() {
+  const { t, i18n } = useTranslation()
+  const intlLocale = useMemo(() => getOwnerTestIntlLocale(i18n.language), [i18n.language])
   const { fullName, roleLabel } = useOwnerTestProfile()
   const { propertyId: routePropertyId } = useParams()
   const { isEmbedded, goTo, propertyId: embeddedPropertyId } = useOwnerTestEmbeddedNav()
+  const navItems = useOwnerTestNavItems({
+    activeId: 'properties',
+    hrefMap: isEmbedded ? undefined : OWNER_TEST_STANDALONE_HREF_MAP,
+  })
+  const tabItems = useOwnerTestTabItems({
+    activeId: 'properties',
+    hrefMap: isEmbedded ? undefined : OWNER_TEST_STANDALONE_HREF_MAP,
+  })
+  const chartMetrics = useMemo(
+    () => [
+      { id: 'bids', label: t('ownerTest_analyticsMetricBids') },
+      { id: 'views', label: t('ownerTest_analyticsMetricViews') },
+      { id: 'likes', label: t('ownerTest_analyticsMetricLikes') },
+    ],
+    [t]
+  )
+  const listingTypeLabels = useMemo(() => getOwnerListingTypeLabels(t), [t])
+  const formatDateForExport = useCallback((value) => formatDateSafe(value, intlLocale), [intlLocale])
   const propertyId = isEmbedded ? embeddedPropertyId : routePropertyId
   const [property, setProperty] = useState(() => getOwnerTestProperty(propertyId))
   const [propertyLoading, setPropertyLoading] = useState(() => !getOwnerTestProperty(propertyId))
@@ -453,8 +457,9 @@ export default function OwnerPropertyAnalyticsTestPage() {
   }, [propertyTimerEndTime])
 
   const analytics = property?.analytics
-  const selectedChartMetric = CHART_METRICS.find((metric) => metric.id === chartMetric) || CHART_METRICS[0]
-  const listingTypeLabel = OWNER_LISTING_TYPE_LABELS[property?.listingType] || 'Продажа'
+  const selectedChartMetric = chartMetrics.find((metric) => metric.id === chartMetric) || chartMetrics[0]
+  const listingTypeLabel =
+    listingTypeLabels[property?.listingType] || t('ownerTest_propertiesTypeBuyNow')
 
   const lineChartData = useMemo(() => {
     if (!analytics) return null
@@ -520,7 +525,7 @@ export default function OwnerPropertyAnalyticsTestPage() {
   const handleExportToExcel = useCallback(async () => {
     const userId = getOwnerPropertiesUserId()
     if (!userId) {
-      showNotification('Войдите в аккаунт, чтобы скачать отчёт')
+      showNotification(t('ownerTest_analyticsLoginExport'))
       return
     }
     if (!property) return
@@ -535,7 +540,7 @@ export default function OwnerPropertyAnalyticsTestPage() {
       const excelProperty = buildAnalyticsExcelProperty(property)
 
       const buffer = await exportOwnerAnalyticsExcel({
-        formatDateSafe,
+        formatDateSafe: formatDateForExport,
         properties: [excelProperty],
         mySalesData: propertySales,
         stats: {
@@ -560,16 +565,16 @@ export default function OwnerPropertyAnalyticsTestPage() {
       downloadXlsxBuffer(buffer, `property_analytics_${property.id}_${new Date().toISOString().split('T')[0]}.xlsx`)
     } catch (error) {
       console.error('OwnerPropertyAnalyticsTestPage: export excel', error)
-      showNotification('Не удалось сформировать Excel-отчёт')
+      showNotification(t('ownerTest_profileExportError'))
     } finally {
       setExportingExcel(false)
     }
-  }, [analytics, property])
+  }, [analytics, formatDateForExport, property, t])
 
   if (propertyLoading) {
     return (
       <div className="opa-page opa-page--loading">
-        <p>Загрузка объекта…</p>
+        <p>{t('ownerTest_metricLoading')}…</p>
       </div>
     )
   }
@@ -581,28 +586,28 @@ export default function OwnerPropertyAnalyticsTestPage() {
 
   const kpiItems = [
     {
-      label: 'Просмотры',
+      label: t('ownerTest_analyticsMetricViews'),
       value: analytics.views,
       delta: property.viewsDelta,
       up: property.viewsUp,
       icon: BarChart3,
     },
     {
-      label: 'Ставки',
+      label: t('ownerTest_analyticsMetricBids'),
       value: analytics.bids,
       delta: '',
       up: null,
       icon: Gavel,
     },
     {
-      label: 'Лайки',
+      label: t('ownerTest_analyticsMetricLikes'),
       value: analytics.likes,
       delta: analytics.favoritesDelta,
       up: analytics.favoritesUp,
       icon: Heart,
     },
     {
-      label: 'Заявки',
+      label: t('ownerTest_profileStatRequests'),
       value: analytics.leads,
       delta: analytics.leadsDelta,
       up: analytics.leadsUp,
@@ -614,7 +619,7 @@ export default function OwnerPropertyAnalyticsTestPage() {
       <div className="opa-body">
         <header className="opa-header opa-desktop-only">
           <div className="opa-header__title-wrap">
-            <h1 className="opa-header__title">Аналитика по объекту</h1>
+            <h1 className="opa-header__title">{t('ownerAnalyticsTitle')}</h1>
             {isEmbedded ? (
               <button
                 type="button"
@@ -622,12 +627,12 @@ export default function OwnerPropertyAnalyticsTestPage() {
                 onClick={() => goTo(OWNER_VIEWS.PROPERTIES)}
               >
                 <ArrowLeft size={16} strokeWidth={2.2} aria-hidden />
-                Назад к объектам
+                {t('ownerTest_analyticsBack')}
               </button>
             ) : (
               <Link to="/owner-properties-test" className="opa-back-link">
                 <ArrowLeft size={16} strokeWidth={2.2} aria-hidden />
-                Назад к объектам
+                {t('ownerTest_analyticsBack')}
               </Link>
             )}
           </div>
@@ -637,6 +642,7 @@ export default function OwnerPropertyAnalyticsTestPage() {
               {analytics.period}
               <ChevronDown size={14} strokeWidth={2.2} aria-hidden />
             </button>
+            <OwnerSupportButton className="opa-icon-btn" />
             <OwnerNotificationsButton className="opa-icon-btn" badgeClassName="opa-icon-btn__badge" />
             <OwnerTestProfileMenu />
           </div>
@@ -659,7 +665,7 @@ export default function OwnerPropertyAnalyticsTestPage() {
                   <div className="opa-property-card__chips">
                     <span className={`opa-status opa-status--${property.statusKey}`}>{property.status}</span>
                     <span className={`opa-listing-type opa-listing-type--${property.listingType}`}>
-                      <span>Тип продажи</span>
+                      <span>{t('auctionFilterSaleType')}</span>
                       <strong>{listingTypeLabel}</strong>
                     </span>
                   </div>
@@ -686,7 +692,9 @@ export default function OwnerPropertyAnalyticsTestPage() {
             <section className="opa-charts">
               <article className="opa-card opa-chart-card">
                 <div className="opa-chart-card__head">
-                  <h2 className="opa-card__title">Динамика: {selectedChartMetric.label.toLowerCase()}</h2>
+                  <h2 className="opa-card__title">
+                    {t('ownerAnalyticsSalesDynamics')}: {selectedChartMetric.label.toLowerCase()}
+                  </h2>
                   <div className="opa-metric-select">
                     <button
                       type="button"
@@ -699,8 +707,8 @@ export default function OwnerPropertyAnalyticsTestPage() {
                       <ChevronDown size={14} strokeWidth={2.2} aria-hidden />
                     </button>
                     {chartMetricOpen && (
-                      <div className="opa-metric-select__menu" role="listbox" aria-label="Метрика графика">
-                        {CHART_METRICS.map((metric) => (
+                      <div className="opa-metric-select__menu" role="listbox" aria-label={t('ownerTest_ariaChartMetric')}>
+                        {chartMetrics.map((metric) => (
                           <button
                             key={metric.id}
                             type="button"
@@ -727,16 +735,16 @@ export default function OwnerPropertyAnalyticsTestPage() {
               </article>
 
               <div className="opa-analytics-side">
-                <section className="opa-analytics-ad" aria-label="Премиум размещение">
+                <section className="opa-analytics-ad" aria-label={t('ownerTest_adPremiumTitle')}>
                   <OwnerAdCard type="premium" />
                 </section>
-                <article className="opa-report-card" aria-label="Скачать отчёт">
+                <article className="opa-report-card" aria-label={t('ownerAnalyticsExportExcel')}>
                   <span className="opa-report-card__icon" aria-hidden>
                     <Download size={21} strokeWidth={2.3} />
                   </span>
                   <div className="opa-report-card__copy">
-                    <h2 className="opa-report-card__title">Скачать отчёт</h2>
-                    <p className="opa-report-card__text">Excel по объекту, ставкам, лайкам и продажам.</p>
+                    <h2 className="opa-report-card__title">{t('ownerAnalyticsExportExcel')}</h2>
+                    <p className="opa-report-card__text">{t('ownerTest_adPremiumText')}</p>
                   </div>
                   <button
                     type="button"
@@ -744,13 +752,13 @@ export default function OwnerPropertyAnalyticsTestPage() {
                     onClick={handleExportToExcel}
                     disabled={exportingExcel}
                   >
-                    {exportingExcel ? 'Формируем…' : 'Скачать'}
+                    {exportingExcel ? t('ownerTest_profileExporting') : t('ownerTest_analyticsExport')}
                   </button>
                 </article>
               </div>
             </section>
 
-            <AnalyticsTimerPanel property={property} now={timerNow} />
+            <AnalyticsTimerPanel property={property} now={timerNow} t={t} />
 
           </div>
         </div>
@@ -761,9 +769,9 @@ export default function OwnerPropertyAnalyticsTestPage() {
 
   return (
     <div className={`opa${menuOpen ? ' opa--menu-open' : ''}`}>
-      <header className="opa-mob-topbar opa-mobile-only" aria-label="Мобильная шапка">
+      <header className="opa-mob-topbar opa-mobile-only" aria-label={t('ownerTest_ariaMobileHeader')}>
         <div className="opa-mob-topbar__slot opa-mob-topbar__slot--left">
-          <Link to="/owner-properties-test" className="opa-mob-topbar__back" aria-label="Назад к объектам">
+          <Link to="/owner-properties-test" className="opa-mob-topbar__back" aria-label={t('ownerTest_analyticsBack')}>
             <ArrowLeft size={22} strokeWidth={2} />
           </Link>
         </div>
@@ -771,7 +779,7 @@ export default function OwnerPropertyAnalyticsTestPage() {
           <h1 className="opa-mob-topbar__title">{property.title}</h1>
         </div>
         <div className="opa-mob-topbar__slot opa-mob-topbar__slot--right">
-          <button type="button" className="opa-mob-topbar__period" aria-label="Период">
+          <button type="button" className="opa-mob-topbar__period" aria-label={t('ownerTest_ariaAnalyticsPeriod')}>
             <RefreshCw size={18} strokeWidth={2} />
           </button>
         </div>
@@ -784,36 +792,36 @@ export default function OwnerPropertyAnalyticsTestPage() {
       />
       <aside
         className={`opa-drawer opa-mobile-only${menuOpen ? ' opa-drawer--open' : ''}`}
-        aria-label="Меню кабинета"
+        aria-label={t('ownerTest_ariaCabinetMenu')}
         aria-hidden={!menuOpen}
       >
         <div className="opa-drawer__head">
           <div className="opa-mob-topbar__brand">
             <LogoMark />
-            <span className="opa-logo__text">SellYourBrick</span>
+            <span className="opa-logo__text">{t('ownerTest_brandName')}</span>
           </div>
-          <button type="button" className="opa-drawer__close" aria-label="Закрыть меню" onClick={closeMenu}>
+          <button type="button" className="opa-drawer__close" aria-label={t('ownerTest_ariaCloseMenu')} onClick={closeMenu}>
             <X size={22} />
           </button>
         </div>
         <div className="opa-sidebar__divider opa-sidebar__divider--drawer" aria-hidden />
-        <nav className="opa-nav opa-nav--drawer">{NAV_ITEMS.map(renderNavItem)}</nav>
+        <nav className="opa-nav opa-nav--drawer">{navItems.map(renderNavItem)}</nav>
       </aside>
 
       <aside className="opa-sidebar opa-desktop-only">
         <div className="opa-sidebar__brand">
-          <span className="opa-logo__mark-slot" aria-hidden />
-          <span className="opa-logo__text">SellYourBrick</span>
+          <LogoMark />
+          <span className="opa-logo__text">{t('ownerTest_brandName')}</span>
         </div>
         <div className="opa-sidebar__divider" aria-hidden />
-        <nav className="opa-nav" aria-label="Кабинет продавца">
-          {NAV_ITEMS.map(renderNavItem)}
+        <nav className="opa-nav" aria-label={t('ownerTest_ariaSellerCabinet')}>
+          {navItems.map(renderNavItem)}
         </nav>
         <div className="opa-sidebar-promo">
-          <p className="opa-sidebar-promo__title">Станьте покупателем</p>
-          <p className="opa-sidebar-promo__text">Ищите и бронируйте недвижимость на платформе</p>
+          <p className="opa-sidebar-promo__title">{t('heroPitchBecomeBuyerCta')}</p>
+          <p className="opa-sidebar-promo__text">{t('heroPitchBecomeBuyerBody')}</p>
           <button type="button" className="opa-btn opa-btn--primary opa-btn--sm">
-            Стать покупателем
+            {t('heroPitchBecomeBuyerCta')}
           </button>
           <img
             className="opa-sidebar-promo__img"
@@ -840,7 +848,7 @@ export default function OwnerPropertyAnalyticsTestPage() {
             <span className="opa-sidebar-user__name">{fullName}</span>
             <span className="opa-sidebar-user__role">{roleLabel}</span>
           </span>
-          <button type="button" className="opa-sidebar-user__menu" aria-label="Меню профиля">
+          <button type="button" className="opa-sidebar-user__menu" aria-label={t('ownerTest_ariaProfileMenu')}>
             <MoreVertical size={18} />
           </button>
         </div>
@@ -848,12 +856,12 @@ export default function OwnerPropertyAnalyticsTestPage() {
 
       {mainColumn}
 
-      <nav className="opa-tabbar opa-mobile-only" aria-label="Нижняя навигация">
-        {TAB_ITEMS.map((item) => {
+      <nav className="opa-tabbar opa-mobile-only" aria-label={t('ownerTest_ariaBottomNav')}>
+        {tabItems.map((item) => {
           if (item.fab) {
             return (
               <div key="fab" className="opa-tabbar__fab-slot">
-                <Link to="/owner-add-property-test" className="opa-tabbar__fab" aria-label="Добавить объект">
+                <Link to="/owner-add-property-test" className="opa-tabbar__fab" aria-label={t('ownerTest_ariaAddProperty')}>
                   <Plus size={28} strokeWidth={2.5} />
                 </Link>
               </div>

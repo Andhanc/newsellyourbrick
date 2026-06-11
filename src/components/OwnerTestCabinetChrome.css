@@ -13,6 +13,7 @@
   --otc-border: #e5e7eb;
   --otc-sidebar-w: 252px;
   --otc-tab-h: 56px;
+  --otc-mob-topbar-h: 64px;
   --otc-mob-pad: 16px;
 
   display: flex;
@@ -75,8 +76,19 @@
 .otc-sidebar__brand {
   display: flex;
   align-items: center;
+  justify-content: flex-start;
   gap: 10px;
   padding: 0 8px 14px;
+}
+
+.otc-sidebar__brand--drawer {
+  padding: 0;
+  flex: 1;
+  min-width: 0;
+}
+
+.otc-drawer__head .otc-sidebar__brand {
+  margin-bottom: 0;
 }
 
 .otc-sidebar__divider {
@@ -327,8 +339,9 @@
   }
 
   .otc-stage {
-    flex: 1;
-    min-height: 0;
+    flex: none;
+    min-height: auto;
+    overflow: visible;
   }
 
   .otc--tabbar .otc-stage {
@@ -336,15 +349,20 @@
   }
 
   .otc-mob-topbar {
-    display: grid;
-    grid-template-columns: 48px 1fr 48px;
+    display: flex !important;
     align-items: center;
-    height: 56px;
-    padding: 0 var(--otc-mob-pad);
-    padding-top: env(safe-area-inset-top, 0px);
+    justify-content: space-between;
+    gap: 12px;
+    width: 100%;
+    flex-shrink: 0;
+    min-height: var(--otc-mob-topbar-h);
+    height: auto;
+    padding: 8px var(--otc-mob-pad);
+    padding-top: calc(8px + env(safe-area-inset-top, 0px));
     background: #fff;
     border-bottom: 1px solid #f0f0f0;
     z-index: 40;
+    box-sizing: border-box;
   }
 
   .otc-mob-topbar__slot {
@@ -354,6 +372,13 @@
 
   .otc-mob-topbar__slot--right {
     justify-content: flex-end;
+    gap: 2px;
+    flex-shrink: 0;
+  }
+
+  .otc-mob-topbar__slot--right .otsb {
+    display: inline-flex;
+    align-items: center;
   }
 
   .otc-mob-topbar__menu,
@@ -374,8 +399,54 @@
   .otc-mob-topbar__brand {
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
     gap: 7px;
+    min-width: 0;
+    flex: 1;
+    pointer-events: none;
+  }
+
+  .otc-mob-topbar .otpm--topbar-compact {
+    max-width: none;
+  }
+
+  .otc-mob-topbar .otpm--topbar-compact .otpm__pill {
+    padding: 0;
+    border: none;
+    box-shadow: none;
+    background: transparent;
+  }
+
+  .otc-mob-topbar .otpm--topbar-compact .otpm__info,
+  .otc-mob-topbar .otpm--topbar-compact .otpm__toggle {
+    display: none;
+  }
+
+  .otc-mob-topbar .otpm--topbar-compact .otpm__avatar {
+    width: 36px;
+    height: 36px;
+  }
+
+  .otc-mob-topbar__brand .otc-logo__mark {
+    width: 38px;
+    height: 38px;
+    flex-shrink: 0;
+  }
+
+  .otc-mob-topbar__brand .otc-logo__text {
+    font-size: 18px;
+  }
+
+  .otc-sidebar__brand .otc-logo__mark {
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
+  }
+
+  .otc-logo__text {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .otc-icon-btn__badge {

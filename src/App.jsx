@@ -903,6 +903,14 @@ function App() {
                 }
               />
               <Route
+                path="/owner-wallet-test"
+                element={
+                  <LazyPage>
+                    <OwnerTestLegacyRedirect view="wallet" />
+                  </LazyPage>
+                }
+              />
+              <Route
                 path="/owner-profile-test"
                 element={
                   <LazyPage>

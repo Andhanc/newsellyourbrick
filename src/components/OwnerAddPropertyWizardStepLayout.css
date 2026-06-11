@@ -1,0 +1,126 @@
+.oap-wizard-step__layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 308px;
+  gap: 32px;
+  align-items: start;
+}
+
+.oap-wizard-step__main {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-width: 0;
+}
+
+.oap-wizard-step__head {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-bottom: 4px;
+}
+
+.oap-wizard-step__progress {
+  height: 4px;
+  border-radius: 999px;
+  background: #eef2f7;
+  overflow: hidden;
+}
+
+.oap-wizard-step__progress-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #53d8d3 0%, #0abab5 48%, #089a95 100%);
+  transition: width 0.35s ease;
+}
+
+.oap-wizard-step__head-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.oap-wizard-step__title-wrap {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  min-width: 0;
+}
+
+.oap-wizard-step__title-mark {
+  flex-shrink: 0;
+  width: 4px;
+  align-self: stretch;
+  min-height: 36px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #53d8d3 0%, #0abab5 52%, #089a95 100%);
+}
+
+.oap-wizard-step__title {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--oap-text, #111827);
+  line-height: 1.25;
+}
+
+.oap-wizard-step__badge {
+  flex-shrink: 0;
+  padding: 6px 11px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #089a95;
+  background: rgba(10, 186, 181, 0.1);
+  border: 1px solid rgba(10, 186, 181, 0.2);
+  white-space: nowrap;
+}
+
+.oap-wizard-step__subtitle {
+  margin: 0;
+  padding-left: 16px;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--oap-text-muted, #6b7280);
+}
+
+.oap-wizard-step__subtitle-short {
+  display: none;
+}
+
+.oap-wizard-step__panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 20px 22px 22px;
+  border-radius: 16px;
+  background:
+    linear-gradient(180deg, rgba(250, 251, 252, 0.95) 0%, rgba(248, 255, 254, 0.88) 100%);
+  border: 1px solid #e8edf2;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.95);
+}
+
+@media (max-width: 900px) {
+  .oap-wizard-step__layout {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .oap-wizard-step__subtitle-full {
+    display: none;
+  }
+
+  .oap-wizard-step__subtitle-short {
+    display: inline;
+  }
+
+  .oap-wizard-step__panel {
+    padding: 14px 12px 16px;
+  }
+
+  .oap-wizard-step__title {
+    font-size: 18px;
+  }
+}

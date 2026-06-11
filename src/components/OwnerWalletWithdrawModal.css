@@ -1,0 +1,244 @@
+.oww-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(4px);
+}
+
+.oww-modal__dialog {
+  width: min(440px, 100%);
+  max-height: min(92vh, 640px);
+  overflow: auto;
+  border-radius: 20px;
+  background: #fff;
+  box-shadow:
+    0 24px 48px rgba(15, 23, 42, 0.18),
+    0 0 0 1px rgba(10, 186, 181, 0.08);
+}
+
+.oww-modal__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 22px 24px 0;
+}
+
+.oww-modal__title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #111827;
+}
+
+.oww-modal__close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 10px;
+  background: #f3f4f6;
+  color: #6b7280;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.oww-modal__close:hover {
+  background: #e5e7eb;
+  color: #111827;
+}
+
+.oww-modal__body {
+  padding: 18px 24px 24px;
+}
+
+.oww-modal__field {
+  margin-bottom: 20px;
+}
+
+.oww-modal__label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.oww-modal__amount-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  background: #f9fafb;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.oww-modal__amount-row:focus-within {
+  border-color: rgba(10, 186, 181, 0.45);
+  box-shadow: 0 0 0 3px rgba(10, 186, 181, 0.14);
+  background: #fff;
+}
+
+.oww-modal__input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  font-size: 22px;
+  font-weight: 700;
+  color: #111827;
+  outline: none;
+}
+
+.oww-modal__currency {
+  font-size: 18px;
+  font-weight: 600;
+  color: #9ca3af;
+}
+
+.oww-modal__hint {
+  margin: 8px 0 0;
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.oww-modal__hint strong {
+  color: #089a95;
+  font-weight: 600;
+}
+
+.oww-modal__stripe {
+  margin-bottom: 16px;
+}
+
+.oww-modal__stripe-head {
+  margin-bottom: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.oww-modal__card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+}
+
+.oww-modal__card-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: rgba(10, 186, 181, 0.12);
+  color: #089a95;
+  flex-shrink: 0;
+}
+
+.oww-modal__card-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.oww-modal__card-info strong {
+  font-size: 14px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.oww-modal__card-info span {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.oww-modal__card-edit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: #9ca3af;
+  cursor: pointer;
+}
+
+.oww-modal__card-edit:hover {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.oww-modal__info {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 20px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: rgba(10, 186, 181, 0.08);
+  border: 1px solid rgba(10, 186, 181, 0.18);
+  color: #089a95;
+}
+
+.oww-modal__info p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: #0f766e;
+}
+
+.oww-modal__submit {
+  width: 100%;
+  padding: 14px 16px;
+  border: none;
+  border-radius: 14px;
+  background: #0abab5;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(10, 186, 181, 0.32);
+  transition: opacity 0.15s, transform 0.1s;
+}
+
+.oww-modal__submit:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.oww-modal__submit:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+@media (max-width: 480px) {
+  .oww-modal {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .oww-modal__dialog {
+    width: 100%;
+    max-height: 92vh;
+    border-radius: 20px 20px 0 0;
+  }
+}

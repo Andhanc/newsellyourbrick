@@ -55,6 +55,7 @@
 
   .otd-mob-topbar__slot--right {
     justify-content: flex-end;
+    gap: 2px;
   }
 
   .otd-mob-topbar__menu,

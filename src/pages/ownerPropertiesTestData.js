@@ -1,21 +1,27 @@
 import { OWNER_PROP_IMAGES } from './ownerPropertiesTestImages'
+import { getOwnerTestIntlLocale } from '../utils/ownerTestI18n'
 
-export const OWNER_LISTING_TYPE_LABELS = {
-  auction: 'Аукцион',
-  buy_now: 'Купить сейчас',
-  shares: 'Доли',
-  debts: 'Долги',
+/** @deprecated Use getOwnerListingTypeLabels(t) */
+export const OWNER_LISTING_TYPE_LABELS = {}
+
+export function getOwnerListingTypeLabels(t) {
+  return {
+    auction: t('ownerTest_propertiesTypeAuction'),
+    buy_now: t('ownerTest_propertiesTypeBuyNow'),
+    shares: t('ownerTest_propertiesTypeShares'),
+    debts: t('ownerTest_propertiesTypeDebts'),
+  }
 }
 
-export function getOwnerPropertyAmount(row) {
+export function getOwnerPropertyAmount(row, t) {
   if (row.listingType === 'auction') {
     return {
-      label: 'Текущая ставка',
+      label: t('bidHistoryCurrentMaxBid'),
       value: row.currentBid || row.price,
     }
   }
   return {
-    label: 'Цена',
+    label: t('propertyDetailPrice'),
     value: row.price,
   }
 }
@@ -38,10 +44,10 @@ function parseMetric(value) {
   return Number.parseInt(String(value).replace(/\s/g, ''), 10) || 0
 }
 
-function formatMetric(value) {
+function formatMetric(value, locale) {
   const num = Number(value)
   if (!Number.isFinite(num)) return '0'
-  return num.toLocaleString('ru-RU', { maximumFractionDigits: 0 })
+  return num.toLocaleString(locale || getOwnerTestIntlLocale(), { maximumFractionDigits: 0 })
 }
 
 function firstFiniteMetric(...values) {
@@ -62,7 +68,8 @@ function buildTotalSeries(total, points) {
   })
 }
 
-export function buildOwnerPropertyAnalytics(property) {
+export function buildOwnerPropertyAnalytics(property, locale) {
+  const intlLocale = locale || getOwnerTestIntlLocale()
   const views = firstFiniteMetric(
     property.viewsCount,
     property.raw?.view_count,
@@ -88,26 +95,26 @@ export function buildOwnerPropertyAnalytics(property) {
 
   return {
     period: '1 мая — 31 мая 2024',
-    views: formatMetric(views),
+    views: formatMetric(views, intlLocale),
     viewsRaw: views,
-    likes: formatMetric(likes),
+    likes: formatMetric(likes, intlLocale),
     likesRaw: likes,
-    bids: formatMetric(bids),
+    bids: formatMetric(bids, intlLocale),
     bidsRaw: bids,
-    favorites: formatMetric(likes),
+    favorites: formatMetric(likes, intlLocale),
     favoritesDelta: '',
     favoritesUp: null,
-    testDrives: formatMetric(bookings),
+    testDrives: formatMetric(bookings, intlLocale),
     testDrivesDelta: '',
     testDrivesUp: null,
-    leads: formatMetric(bookings),
+    leads: formatMetric(bookings, intlLocale),
     leadsDelta: '',
     leadsUp: null,
     avgTime: hasStats ? '3:45 мин' : '—',
     bounceRate: hasStats ? '32%' : '—',
-    addedToFavorites: formatMetric(likes),
+    addedToFavorites: formatMetric(likes, intlLocale),
     shares: '—',
-    trafficTotal: formatMetric(views),
+    trafficTotal: formatMetric(views, intlLocale),
     trafficSources: TRAFFIC_SOURCES,
     viewsChartDesktop: buildTotalSeries(views, chartLabelsDesktop.length),
     viewsChartMobile: buildTotalSeries(views, chartLabelsMobile.length),

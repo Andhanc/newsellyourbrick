@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { MapPin, Loader2, Check, Navigation } from 'lucide-react'
 import CountrySelect from '../components/CountrySelect'
 import LocationMap from '../components/LocationMap'
@@ -36,7 +37,8 @@ function SuggestList({ items, onSelect, renderLabel }) {
   )
 }
 
-export default function OwnerAddPropertyLocationStep({ form, onFormPatch, errors = {} }) {
+export default function OwnerAddPropertyLocationStep({ form, onFormPatch, errors = {}, embedded = false, wide = false }) {
+  const { t } = useTranslation()
   const [citySearch, setCitySearch] = useState(form.city || '')
   const [addressSearch, setAddressSearch] = useState(form.address || '')
   const [citySuggestions, setCitySuggestions] = useState([])
@@ -283,24 +285,16 @@ export default function OwnerAddPropertyLocationStep({ form, onFormPatch, errors
 
   const uniqueAddressSuggestions = getUniqueAddressSuggestions(addressSuggestions)
 
-  return (
-    <section className="oap-loc-step" aria-labelledby="oap-loc-step-title">
-      <header className="oap-loc-step__head">
-        <span className="oap-loc-step__badge" aria-hidden>
-          <Navigation size={22} strokeWidth={1.85} />
-        </span>
-        <div className="oap-loc-step__head-text">
-          <h2 id="oap-loc-step-title" className="oap-loc-step__title">
-            Адрес на карте
-          </h2>
-          <p className="oap-loc-step__subtitle">
-            Страна и город — из списка с поиском. Улицу выберите из подсказок, затем уточните точку
-            маркером на карте.
-          </p>
-        </div>
-      </header>
-
-      <div className="oap-loc-step__layout">
+  const layout = (
+      <div
+        className={[
+          'oap-loc-step__layout',
+          embedded ? 'oap-loc-step__layout--embedded' : '',
+          embedded && wide ? 'oap-loc-step__layout--embedded-wide' : '',
+        ]
+          .filter(Boolean)
+          .join(' ')}
+      >
         <div className="oap-loc-step__fields">
           <div
             className={`oap-loc-field${errors.country ? ' oap-loc-field--error' : ''}`}
@@ -308,12 +302,12 @@ export default function OwnerAddPropertyLocationStep({ form, onFormPatch, errors
             aria-labelledby="oap-loc-country-label"
           >
             <span id="oap-loc-country-label" className="oap-loc-field__label">
-              Страна <span className="oap-loc-field__req">*</span>
+              {t('oap_locationCountryLabel')} <span className="oap-loc-field__req">*</span>
             </span>
             <CountrySelect
               value={form.country}
               onChange={handleCountryChange}
-              placeholder="Выберите страну"
+              placeholder={t('addPropertyLocationCountryPlaceholder')}
               className="oap-loc-field__country"
             />
             {errors.country && <span className="oap-loc-field__error">{errors.country}</span>}
@@ -321,14 +315,14 @@ export default function OwnerAddPropertyLocationStep({ form, onFormPatch, errors
 
           <label className={`oap-loc-field${errors.city ? ' oap-loc-field--error' : ''}`}>
             <span className="oap-loc-field__label">
-              Город <span className="oap-loc-field__req">*</span>
+              {t('oap_locationCityLabel')} <span className="oap-loc-field__req">*</span>
             </span>
             <div className="oap-loc-field__wrap">
               <input
                 type="text"
                 className="oap-loc-field__input oap-loc-field__input--icon"
                 value={citySearch}
-                placeholder="Начните вводить название города"
+                placeholder={t('oap_locationCityPlaceholder')}
                 onChange={(e) => {
                   const value = e.target.value
                   setCitySearch(value)
@@ -360,14 +354,16 @@ export default function OwnerAddPropertyLocationStep({ form, onFormPatch, errors
 
           <label className={`oap-loc-field${errors.address ? ' oap-loc-field--error' : ''}`}>
             <span className="oap-loc-field__label">
-              Улица <span className="oap-loc-field__req">*</span>
+              {t('oap_locationStreetLabel')} <span className="oap-loc-field__req">*</span>
             </span>
             <div className="oap-loc-field__wrap">
               <input
                 type="text"
                 className="oap-loc-field__input oap-loc-field__input--icon"
                 value={addressSearch}
-                placeholder={form.city ? 'Улица, проспект или район' : 'Сначала выберите город'}
+                placeholder={
+                  form.city ? t('oap_locationStreetPlaceholder') : t('oap_locationStreetNoCity')
+                }
                 disabled={!form.city}
                 onChange={(e) => {
                   const value = e.target.value
@@ -411,14 +407,15 @@ export default function OwnerAddPropertyLocationStep({ form, onFormPatch, errors
 
           <label className="oap-loc-field">
             <span className="oap-loc-field__label">
-              Номер дома <span className="oap-loc-field__opt">необяз.</span>
+              {t('oap_locationHouseLabel')}{' '}
+              <span className="oap-loc-field__opt">{t('oap_locationOptional')}</span>
             </span>
             <div className="oap-loc-field__wrap">
               <input
                 type="text"
                 className="oap-loc-field__input"
                 value={form.apartment}
-                placeholder="Например, 12 или 12к1"
+                placeholder={t('oap_locationHousePlaceholder')}
                 disabled={!form.city || !addressSearch?.trim()}
                 onChange={(e) => {
                   const value = e.target.value
@@ -453,13 +450,14 @@ export default function OwnerAddPropertyLocationStep({ form, onFormPatch, errors
 
           <label className="oap-loc-field">
             <span className="oap-loc-field__label">
-              Кадастровый номер <span className="oap-loc-field__opt">необяз.</span>
+              {t('oap_locationCadastralLabel')}{' '}
+              <span className="oap-loc-field__opt">{t('oap_locationOptional')}</span>
             </span>
             <input
               type="text"
               className="oap-loc-field__input"
               value={form.cadastralNumber || ''}
-              placeholder="Например: 77:01:0004012:3456"
+              placeholder={t('oap_locationCadastralPlaceholder')}
               onChange={(e) => onFormPatch({ cadastralNumber: e.target.value })}
             />
           </label>
@@ -467,9 +465,7 @@ export default function OwnerAddPropertyLocationStep({ form, onFormPatch, errors
 
         <div className="oap-loc-step__map-col">
           <p className="oap-loc-step__map-hint">
-            {mapCoords
-              ? 'Перетащите маркер — адрес и координаты обновятся автоматически.'
-              : 'Выберите город и улицу из подсказок — на карте появится маркер.'}
+            {mapCoords ? t('oap_locationMapDragHint') : t('oap_locationMapSelectHint')}
           </p>
           <div className="oap-loc-step__map">
             <LocationMap
@@ -482,6 +478,24 @@ export default function OwnerAddPropertyLocationStep({ form, onFormPatch, errors
           </div>
         </div>
       </div>
+  )
+
+  if (embedded) return layout
+
+  return (
+    <section className="oap-loc-step" aria-labelledby="oap-loc-step-title">
+      <header className="oap-loc-step__head">
+        <span className="oap-loc-step__badge" aria-hidden>
+          <Navigation size={22} strokeWidth={1.85} />
+        </span>
+        <div className="oap-loc-step__head-text">
+          <h2 id="oap-loc-step-title" className="oap-loc-step__title">
+            {t('oap_locationMapTitle')}
+          </h2>
+          <p className="oap-loc-step__subtitle">{t('oap_locationMapSubtitle')}</p>
+        </div>
+      </header>
+      {layout}
     </section>
   )
 }

@@ -1,0 +1,135 @@
+.oap-select {
+  position: relative;
+  width: 100%;
+}
+
+.oap-select__trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--oap-border, #e5e7eb);
+  border-radius: 10px;
+  background: #fff;
+  font: inherit;
+  font-size: 14px;
+  color: var(--oap-text, #111827);
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.oap-select__trigger:hover:not(:disabled),
+.oap-select--open .oap-select__trigger {
+  border-color: var(--oap-primary, #0abab5);
+  box-shadow: 0 0 0 3px var(--oap-primary-ring, rgba(10, 186, 181, 0.28));
+}
+
+.oap-select__trigger:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.oap-select__placeholder {
+  color: var(--oap-text-muted, #6b7280);
+}
+
+.oap-select__value {
+  color: var(--oap-text, #111827);
+}
+
+.oap-select__chevron {
+  flex-shrink: 0;
+  color: var(--oap-text-light, #9ca3af);
+  transition: transform 0.2s;
+}
+
+.oap-select--open .oap-select__chevron {
+  transform: rotate(180deg);
+}
+
+.oap-select__menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+  background: #fff;
+  border: 1px solid var(--oap-border, #e5e7eb);
+  border-radius: 10px;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.14);
+  z-index: 40;
+  max-height: min(240px, 50dvh);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.oap-select__option {
+  width: 100%;
+  padding: 11px 12px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  font: inherit;
+  font-size: 15px;
+  text-align: left;
+  cursor: pointer;
+  color: var(--oap-text, #111827);
+  transition: background 0.12s;
+}
+
+.oap-select__option:hover {
+  background: #f3f4f6;
+}
+
+.oap-select__option--active {
+  background: var(--oap-primary-soft, rgba(10, 186, 181, 0.12));
+  color: var(--oap-primary-dark, #089a95);
+  font-weight: 600;
+}
+
+.oap-basics-field--error .oap-select__trigger {
+  border-color: #ef4444;
+}
+
+.oap-basics-field:has(.oap-select--open) {
+  z-index: 25;
+  position: relative;
+}
+
+.oap-select--compact {
+  width: auto;
+  min-width: 72px;
+}
+
+.oap-select--compact .oap-select__trigger {
+  min-height: 36px;
+  padding: 0 10px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.oap-select--compact .oap-select__menu {
+  min-width: 100%;
+}
+
+@media (max-width: 900px) {
+  .oap-select__trigger {
+    min-height: 40px;
+    font-size: 16px;
+  }
+
+  .oap-select__menu {
+    max-height: min(220px, 40dvh);
+  }
+
+  .oap-select--compact .oap-select__trigger {
+    min-height: 36px;
+    font-size: 14px;
+  }
+}

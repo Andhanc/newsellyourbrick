@@ -1,23 +1,19 @@
-import { useState, useEffect, useRef, useId, useCallback } from 'react'
+import { useState, useEffect, useRef, useId, useCallback, useMemo } from 'react'
 import { Link } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import { useUser, useClerk } from '@clerk/clerk-react'
 import { ChevronDown } from 'lucide-react'
-import {
-  OWNER_PROFILE_TABS,
-  getOwnerProfileTabPath,
-} from '../pages/ownerProfileTestTabs'
+import { getOwnerProfileTabs, getOwnerProfileTabPath } from '../pages/ownerProfileTestTabs'
 import { getUserData, logout } from '../services/authService'
 import { useOwnerTestProfileOptional } from '../context/OwnerTestProfileContext'
 import './OwnerTestProfileMenu.css'
 
-const SELLER_ROLE_LABEL = 'Продавец'
-
-export function resolveOwnerTestDisplayName({ name, fullName } = {}) {
+export function resolveOwnerTestDisplayName({ name, fullName, fallback } = {}) {
   if (name?.trim()) return name.trim()
   if (fullName?.trim()) return fullName.trim()
   const localName = getUserData()?.name
   if (localName?.trim()) return localName.trim()
-  return SELLER_ROLE_LABEL
+  return fallback || ''
 }
 
 export default function OwnerTestProfileMenu({
@@ -27,15 +23,20 @@ export default function OwnerTestProfileMenu({
   activeTab,
   onTabSelect,
   onLogout,
+  className = '',
 }) {
+  const { t } = useTranslation()
   const profileCtx = useOwnerTestProfileOptional()
   const { user } = useUser()
   const { signOut } = useClerk()
+  const sellerRoleLabel = t('ownerTest_roleSeller')
+  const profileTabs = useMemo(() => getOwnerProfileTabs(t), [t])
   const displayName = resolveOwnerTestDisplayName({
     name,
     fullName: profileCtx?.fullName,
+    fallback: sellerRoleLabel,
   })
-  const displayRole = role?.trim() || profileCtx?.roleLabel || SELLER_ROLE_LABEL
+  const displayRole = role?.trim() || profileCtx?.roleLabel || sellerRoleLabel
   const [open, setOpen] = useState(false)
   const rootRef = useRef(null)
   const gradientId = useId()
@@ -70,7 +71,7 @@ export default function OwnerTestProfileMenu({
       return
     }
 
-    if (!window.confirm('Вы уверены, что хотите выйти?')) {
+    if (!window.confirm(t('ownerTest_logoutConfirm'))) {
       return
     }
 
@@ -92,15 +93,15 @@ export default function OwnerTestProfileMenu({
     }
 
     window.location.assign('/')
-  }, [onLogout, signOut, user])
+  }, [onLogout, signOut, user, t])
 
   return (
-    <div className={`otpm${current ? ' otpm--current' : ''}`} ref={rootRef}>
+    <div className={`otpm${current ? ' otpm--current' : ''}${className ? ` ${className}` : ''}`} ref={rootRef}>
       <div className="otpm__pill">
         <Link
           to={getOwnerProfileTabPath('personal')}
           className="otpm__identity"
-          aria-label="Профиль"
+          aria-label={t('ownerTest_profileAria')}
           onClick={closeMenu}
         >
           <span className="otpm__avatar" aria-hidden>
@@ -124,7 +125,7 @@ export default function OwnerTestProfileMenu({
         <button
           type="button"
           className={`otpm__toggle${open ? ' otpm__toggle--open' : ''}`}
-          aria-label="Разделы профиля"
+          aria-label={t('ownerTest_profileSectionsAria')}
           aria-haspopup="menu"
           aria-expanded={open}
           onClick={() => setOpen((prev) => !prev)}
@@ -134,8 +135,8 @@ export default function OwnerTestProfileMenu({
       </div>
 
       {open && (
-        <div className="otpm__menu" role="menu" aria-label="Разделы профиля">
-          {OWNER_PROFILE_TABS.map((tab) => {
+        <div className="otpm__menu" role="menu" aria-label={t('ownerTest_profileSectionsAria')}>
+          {profileTabs.map((tab) => {
             const isActive = activeTab === tab.id
 
             if (onTabSelect) {
@@ -174,7 +175,7 @@ export default function OwnerTestProfileMenu({
             className="otpm__item otpm__item--logout"
             onClick={handleLogout}
           >
-            Выйти
+            {t('ownerTest_logout')}
           </button>
         </div>
       )}

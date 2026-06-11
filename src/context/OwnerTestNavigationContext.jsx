@@ -4,6 +4,7 @@ import {
   OWNER_VIEWS,
   buildOwnerTestSearchParams,
   resolveOwnerTestView,
+  scrollOwnerCabinetToTop,
 } from '../utils/ownerTestNav'
 
 const OwnerTestNavigationContext = createContext(null)
@@ -30,12 +31,17 @@ export function OwnerTestNavigationProvider({ children }) {
     (nextView, params = {}) => {
       const sp = buildOwnerTestSearchParams(nextView, params)
       setSearchParams(sp, { replace: false })
-      if (typeof window !== 'undefined') {
-        window.scrollTo({ top: 0, behavior: 'auto' })
-      }
     },
     [setSearchParams]
   )
+
+  useEffect(() => {
+    const frameId = window.requestAnimationFrame(() => {
+      scrollOwnerCabinetToTop()
+      window.requestAnimationFrame(scrollOwnerCabinetToTop)
+    })
+    return () => window.cancelAnimationFrame(frameId)
+  }, [view, propertyId, tab, highlight])
 
   const value = useMemo(
     () => ({

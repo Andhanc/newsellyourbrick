@@ -1,33 +1,20 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import {
-  LayoutDashboard,
-  Building2,
-  CalendarCheck,
-  ShoppingBag,
-  Car,
-  CreditCard,
-  BarChart3,
-  MessageSquare,
-  Settings,
   ChevronDown,
   Search,
   SlidersHorizontal,
   MoreVertical,
   ChevronLeft,
   ChevronRight,
-  Menu,
   X,
-  Eye,
-  Home,
   Plus,
   Upload,
-  ClipboardList,
-  Briefcase,
   Clock,
 } from 'lucide-react'
 import {
-  OWNER_LISTING_TYPE_LABELS,
+  getOwnerListingTypeLabels,
   getOwnerPropertyAmount,
   getOwnerPropertyAnalyticsPath,
 } from './ownerPropertiesTestData'
@@ -40,67 +27,33 @@ import {
 } from '../utils/ownerPropertiesList'
 import { fetchOwnerTestDriveBookings } from '../utils/ownerTestDriveList'
 import { getCurrencySymbol } from '../utils/currency'
+import { getOwnerTestIntlLocale } from '../utils/ownerTestI18n'
+import { OWNER_TEST_STANDALONE_HREF_MAP } from '../utils/ownerTestNav'
 import OwnerTestProfileMenu from '../components/OwnerTestProfileMenu'
 import OwnerNotificationsButton from '../components/OwnerNotificationsButton'
+import OwnerSupportButton from '../components/OwnerSupportButton'
 import FileUploadModal from '../components/FileUploadModal'
 import { OwnerAdStack } from '../components/OwnerAds'
 import { useOwnerTestProfile } from '../context/OwnerTestProfileContext'
 import { OWNER_VIEWS } from '../context/OwnerTestNavigationContext'
 import { useOwnerTestEmbeddedNav } from '../hooks/useOwnerTestEmbeddedNav'
+import { useOwnerTestNavItems, useOwnerTestTabItems } from '../hooks/useOwnerTestNavItems'
 import './OwnerPropertiesTestPage.css'
 import './OwnerPropertiesTestPage.mobile.css'
 
 const MOT_TIFFANY = '#0abab5'
 
-const NAV_ITEMS = [
-  { id: 'home', label: 'Главная', icon: LayoutDashboard, href: '/main-owner-test' },
-  { id: 'properties', label: 'Мои объекты', icon: Building2, active: true },
-  { id: 'bookings', label: 'Брони', icon: CalendarCheck },
-  { id: 'sales', label: 'Продажи', icon: ShoppingBag, href: '/owner-sales-test' },
-  { id: 'testdrive', label: 'Тест-драйв', icon: Car, href: '/owner-test-drive' },
-  { id: 'subscriptions', label: 'Подписки', icon: CreditCard, href: '/owner-subscriptions-test' },
-  { id: 'analytics', label: 'Аналитика', icon: BarChart3 },
-  { id: 'messages', label: 'Сообщения', icon: MessageSquare, badge: 3 },
-  { id: 'settings', label: 'Настройки', icon: Settings, href: '/owner-profile-test' },
-]
-
 const PAGE_SIZE = 10
 
-const FILTER_TAB_DEFS = [
-  { id: 'all', label: 'Все объекты', shortLabel: 'Все' },
-  { id: 'active', label: 'Активные', shortLabel: 'Активные' },
-  { id: 'booked', label: 'Забронированные', shortLabel: 'Забронированные' },
-  { id: 'sold', label: 'Проданные', shortLabel: 'Проданные' },
-  { id: 'draft', label: 'Черновики', shortLabel: 'Черновики' },
-]
+const MOB_FILTER_TAB_IDS = ['all', 'active', 'draft']
 
-const TAB_ITEMS = [
-  { id: 'home', label: 'Главная', icon: Home, href: '/main-owner-test' },
-  { id: 'properties', label: 'Объекты', icon: Briefcase, active: true },
-  { id: 'fab', fab: true },
-  { id: 'bookings', label: 'Брони', icon: ClipboardList },
-  { id: 'more', label: 'Ещё', icon: SlidersHorizontal },
-]
-
-const ANALYTICS_PERIODS = [
-  { id: '7d', label: 'Последние 7 дней' },
-  { id: '30d', label: 'Последние 30 дней' },
-  { id: '90d', label: 'Последние 90 дней' },
-]
-
-const LISTING_TYPE_FILTER_OPTIONS = [
-  { id: 'auction', label: 'Аукцион' },
-  { id: 'buy_now', label: 'Купить сейчас' },
-  { id: 'shares', label: 'Доли' },
-  { id: 'debts', label: 'Долги' },
-]
-
-const SORT_FILTER_OPTIONS = [
-  { id: 'date_desc', label: 'Сначала новые' },
-  { id: 'views_desc', label: 'Больше просмотров' },
-  { id: 'price_desc', label: 'Дороже' },
-  { id: 'price_asc', label: 'Дешевле' },
-]
+const FILTER_TAB_KEYS = {
+  all: { label: 'ownerTest_propertiesTabAll', shortLabel: 'ownerTest_propertiesTabAllShort' },
+  active: { label: 'ownerTest_propertiesTabActive', shortLabel: 'ownerTest_propertiesTabActive' },
+  booked: { label: 'ownerTest_propertiesTabBooked', shortLabel: 'ownerTest_propertiesTabBooked' },
+  sold: { label: 'ownerTest_propertiesTabSold', shortLabel: 'ownerTest_propertiesTabSold' },
+  draft: { label: 'ownerTest_propertiesTabDraft', shortLabel: 'ownerTest_propertiesTabDraft' },
+}
 
 const DEFAULT_PROPERTY_FILTERS = {
   listingTypes: [],
@@ -111,16 +64,16 @@ function isPropertyFiltersActive(filters) {
   return filters.listingTypes.length > 0 || filters.sortBy !== DEFAULT_PROPERTY_FILTERS.sortBy
 }
 
-function formatQuickNumber(value) {
+function formatQuickNumber(value, locale) {
   const num = Number(value)
   if (!Number.isFinite(num) || num <= 0) return '0'
-  return num.toLocaleString('ru-RU', { maximumFractionDigits: 0 })
+  return num.toLocaleString(locale, { maximumFractionDigits: 0 })
 }
 
-function formatQuickMoney(value, currency = 'USD') {
+function formatQuickMoney(value, currency = 'EUR', locale) {
   const num = Number(value)
   if (!Number.isFinite(num) || num <= 0) return `${getCurrencySymbol(currency)}0`
-  return `${getCurrencySymbol(currency)}${num.toLocaleString('ru-RU', { maximumFractionDigits: 0 })}`
+  return `${getCurrencySymbol(currency)}${num.toLocaleString(locale, { maximumFractionDigits: 0 })}`
 }
 
 function getTestDrivePaymentAmount(row) {
@@ -161,6 +114,15 @@ function getTestDrivePaymentCurrency(row) {
 }
 
 function QuickAnalyticsPeriodSelect({ value, onChange }) {
+  const { t } = useTranslation()
+  const analyticsPeriods = useMemo(
+    () => [
+      { id: '7d', label: t('ownerTest_propertiesPeriod7d') },
+      { id: '30d', label: t('ownerTest_propertiesPeriod30d') },
+      { id: '90d', label: t('ownerTest_propertiesPeriod90d') },
+    ],
+    [t]
+  )
   const [open, setOpen] = useState(false)
   const rootRef = useRef(null)
 
@@ -184,7 +146,7 @@ function QuickAnalyticsPeriodSelect({ value, onChange }) {
     }
   }, [open])
 
-  const selected = ANALYTICS_PERIODS.find((period) => period.id === value) ?? ANALYTICS_PERIODS[1]
+  const selected = analyticsPeriods.find((period) => period.id === value) ?? analyticsPeriods[1]
 
   return (
     <div className="op-period-select" ref={rootRef}>
@@ -204,8 +166,8 @@ function QuickAnalyticsPeriodSelect({ value, onChange }) {
         />
       </button>
       {open ? (
-        <ul className="op-period-select__menu" role="listbox" aria-label="Период аналитики">
-          {ANALYTICS_PERIODS.map((period) => (
+        <ul className="op-period-select__menu" role="listbox" aria-label={t('ownerTest_ariaAnalyticsPeriod')}>
+          {analyticsPeriods.map((period) => (
             <li key={period.id} role="none">
               <button
                 type="button"
@@ -228,6 +190,25 @@ function QuickAnalyticsPeriodSelect({ value, onChange }) {
 }
 
 function PropertiesFilterMenu({ filters, onChange }) {
+  const { t } = useTranslation()
+  const listingTypeFilterOptions = useMemo(() => {
+    const labels = getOwnerListingTypeLabels(t)
+    return [
+      { id: 'auction', label: labels.auction },
+      { id: 'buy_now', label: labels.buy_now },
+      { id: 'shares', label: labels.shares },
+      { id: 'debts', label: labels.debts },
+    ]
+  }, [t])
+  const sortFilterOptions = useMemo(
+    () => [
+      { id: 'date_desc', label: t('ownerTest_propertiesSortNewest') },
+      { id: 'views_desc', label: t('ownerTest_propertiesSortViews') },
+      { id: 'price_desc', label: t('ownerTest_propertiesSortPriceDesc') },
+      { id: 'price_asc', label: t('ownerTest_propertiesSortPriceAsc') },
+    ],
+    [t]
+  )
   const [open, setOpen] = useState(false)
   const rootRef = useRef(null)
 
@@ -277,15 +258,15 @@ function PropertiesFilterMenu({ filters, onChange }) {
         onClick={() => setOpen((prev) => !prev)}
       >
         <SlidersHorizontal size={18} strokeWidth={2} aria-hidden />
-        Фильтр
+        {t('ownerTest_salesFilterAria')}
         {active ? <span className="op-filter-btn__badge" aria-hidden /> : null}
       </button>
       {open ? (
-        <div className="op-filter-menu__panel" role="dialog" aria-label="Фильтры объектов">
+        <div className="op-filter-menu__panel" role="dialog" aria-label={t('ownerTest_ariaPropertyFilters')}>
           <div className="op-filter-menu__section">
-            <p className="op-filter-menu__title">Тип размещения</p>
+            <p className="op-filter-menu__title">{t('oap_wizardStepListing')}</p>
             <div className="op-filter-menu__chips">
-              {LISTING_TYPE_FILTER_OPTIONS.map((option) => {
+              {listingTypeFilterOptions.map((option) => {
                 const selected = filters.listingTypes.includes(option.id)
                 return (
                   <button
@@ -302,9 +283,9 @@ function PropertiesFilterMenu({ filters, onChange }) {
             </div>
           </div>
           <div className="op-filter-menu__section">
-            <p className="op-filter-menu__title">Сортировка</p>
+            <p className="op-filter-menu__title">{t('filters')}</p>
             <div className="op-filter-menu__sort">
-              {SORT_FILTER_OPTIONS.map((option) => (
+              {sortFilterOptions.map((option) => (
                 <button
                   key={option.id}
                   type="button"
@@ -319,7 +300,7 @@ function PropertiesFilterMenu({ filters, onChange }) {
           </div>
           <div className="op-filter-menu__actions">
             <button type="button" className="op-filter-menu__reset" onClick={resetFilters}>
-              Сбросить
+              {t('catalogResetFilters')}
             </button>
           </div>
         </div>
@@ -376,12 +357,15 @@ function DeltaText({ value, up }) {
 }
 
 function ListingTypeBadge({ type }) {
-  const label = OWNER_LISTING_TYPE_LABELS[type] || type
+  const { t } = useTranslation()
+  const labels = getOwnerListingTypeLabels(t)
+  const label = labels[type] || type
   return <span className={`op-type op-type--${type}`}>{label}</span>
 }
 
 function AmountCell({ row }) {
-  const { label, value } = getOwnerPropertyAmount(row)
+  const { t } = useTranslation()
+  const { label, value } = getOwnerPropertyAmount(row, t)
   return (
     <div className="op-amount-cell">
       <span className="op-amount-cell__label">{label}</span>
@@ -390,14 +374,18 @@ function AmountCell({ row }) {
   )
 }
 
-function getObjectTimerState(endTime, now = Date.now()) {
+function getObjectTimerState(endTime, t, now = Date.now()) {
   if (!endTime) return null
   const endMs = new Date(endTime).getTime()
   if (!Number.isFinite(endMs)) return null
 
   const remainingMs = endMs - now
   if (remainingMs <= 0) {
-    return { expired: true, label: 'Завершён', caption: 'Таймер' }
+    return {
+      expired: true,
+      label: t('ownerTest_propertiesTimerFinished'),
+      caption: t('ownerTest_propertiesTimerCaption'),
+    }
   }
 
   const totalSeconds = Math.floor(remainingMs / 1000)
@@ -410,15 +398,16 @@ function getObjectTimerState(endTime, now = Date.now()) {
   return {
     expired: false,
     critical: days === 0 && hours < 1,
-    caption: 'Осталось',
+    caption: t('ownerTest_propertiesTimerLeft'),
     label: days > 0
-      ? `${days}д ${two(hours)}:${two(minutes)}:${two(seconds)}`
+      ? `${days}d ${two(hours)}:${two(minutes)}:${two(seconds)}`
       : `${two(hours)}:${two(minutes)}:${two(seconds)}`,
   }
 }
 
 function ObjectTimerBadge({ endTime, now }) {
-  const timer = getObjectTimerState(endTime, now)
+  const { t } = useTranslation()
+  const timer = getObjectTimerState(endTime, t, now)
   if (!timer) return <span className="op-object-timer op-object-timer--empty">—</span>
 
   return (
@@ -462,6 +451,7 @@ function getVisiblePages(currentPage, totalPages) {
 }
 
 function PropertiesPagination({ currentPage, totalPages, totalItems, onPageChange }) {
+  const { t } = useTranslation()
   const pageStart = totalItems === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1
   const pageEnd = Math.min(currentPage * PAGE_SIZE, totalItems)
   const pageItems = getVisiblePages(currentPage, totalPages)
@@ -470,15 +460,15 @@ function PropertiesPagination({ currentPage, totalPages, totalItems, onPageChang
     <footer className="op-pagination">
       <p className="op-pagination__info">
         {totalItems === 0
-          ? 'Нет объектов'
-          : `Показано ${pageStart}–${pageEnd} из ${totalItems} объектов`}
+          ? t('ownerTest_propertiesNoItems')
+          : `${pageStart}–${pageEnd} / ${totalItems} ${t('ownerTest_tabProperties')}`}
       </p>
       {totalPages > 1 && (
         <div className="op-pagination__controls">
           <button
             type="button"
             className="op-page-btn"
-            aria-label="Предыдущая страница"
+            aria-label={t('ownerTest_paginationPrev')}
             disabled={currentPage <= 1}
             onClick={() => onPageChange(currentPage - 1)}
           >
@@ -494,7 +484,7 @@ function PropertiesPagination({ currentPage, totalPages, totalItems, onPageChang
                 key={item.value}
                 type="button"
                 className={`op-page-btn${item.value === currentPage ? ' op-page-btn--active' : ''}`}
-                aria-label={`Страница ${item.value}`}
+                aria-label={`${t('ownerTest_tabProperties')} ${item.value}`}
                 aria-current={item.value === currentPage ? 'page' : undefined}
                 onClick={() => onPageChange(item.value)}
               >
@@ -505,7 +495,7 @@ function PropertiesPagination({ currentPage, totalPages, totalItems, onPageChang
           <button
             type="button"
             className="op-page-btn"
-            aria-label="Следующая страница"
+            aria-label={t('ownerTest_paginationNext')}
             disabled={currentPage >= totalPages}
             onClick={() => onPageChange(currentPage + 1)}
           >
@@ -518,8 +508,18 @@ function PropertiesPagination({ currentPage, totalPages, totalItems, onPageChang
 }
 
 export default function OwnerPropertiesTestPage() {
+  const { t, i18n } = useTranslation()
+  const intlLocale = useMemo(() => getOwnerTestIntlLocale(i18n.language), [i18n.language])
   const { fullName, roleLabel } = useOwnerTestProfile()
   const { isEmbedded, goTo } = useOwnerTestEmbeddedNav()
+  const navItems = useOwnerTestNavItems({
+    activeId: 'properties',
+    hrefMap: isEmbedded ? undefined : OWNER_TEST_STANDALONE_HREF_MAP,
+  })
+  const tabItems = useOwnerTestTabItems({
+    activeId: 'properties',
+    hrefMap: isEmbedded ? undefined : OWNER_TEST_STANDALONE_HREF_MAP,
+  })
   const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState('all')
   const [menuOpen, setMenuOpen] = useState(false)
@@ -603,32 +603,55 @@ export default function OwnerPropertiesTestPage() {
     const testDriveCurrency = paidTestDriveRow ? getTestDrivePaymentCurrency(paidTestDriveRow) : currency
 
     return [
-      { label: 'Все просмотры', value: formatQuickNumber(totals.views), delta: '', up: null, spark: 'tiffany' },
-      { label: 'Сумма всех ставок', value: formatQuickMoney(totals.bids, currency), delta: '', up: null, spark: 'green' },
       {
-        label: 'Сумма всех тест-драйвов',
-        value: `${formatQuickNumber(testDriveRows.length)} · ${formatQuickMoney(testDriveTotal, testDriveCurrency)}`,
+        label: t('ownerTest_propertiesMetricAllViews'),
+        value: formatQuickNumber(totals.views, intlLocale),
+        delta: '',
+        up: null,
+        spark: 'tiffany',
+      },
+      {
+        label: t('ownerTest_propertiesMetricAllBids'),
+        value: formatQuickMoney(totals.bids, currency, intlLocale),
+        delta: '',
+        up: null,
+        spark: 'green',
+      },
+      {
+        label: t('ownerTest_propertiesMetricAllTestDrives'),
+        value: `${formatQuickNumber(testDriveRows.length, intlLocale)} · ${formatQuickMoney(testDriveTotal, testDriveCurrency, intlLocale)}`,
         delta: '',
         up: null,
         spark: 'orange',
       },
     ]
-  }, [properties, testDriveRows])
+  }, [properties, testDriveRows, t, intlLocale])
 
   const filterTabs = useMemo(
-    () => FILTER_TAB_DEFS.map((tab) => ({ ...tab, count: tabCounts[tab.id] ?? 0 })),
-    [tabCounts]
+    () =>
+      Object.entries(FILTER_TAB_KEYS).map(([id, keys]) => ({
+        id,
+        label: t(keys.label),
+        shortLabel: t(keys.shortLabel),
+        count: tabCounts[id] ?? 0,
+      })),
+    [tabCounts, t]
+  )
+
+  const mobFilterTabs = useMemo(
+    () => filterTabs.filter((tab) => MOB_FILTER_TAB_IDS.includes(tab.id)),
+    [filterTabs]
   )
 
   const mobSummaryStats = useMemo(
     () => [
-      { label: 'Всего', value: String(tabCounts.all), delta: '', up: null },
-      { label: 'Активные', value: String(tabCounts.active), delta: '', up: null },
-      { label: 'Забронированные', value: String(tabCounts.booked), delta: '', up: null },
-      { label: 'Проданные', value: String(tabCounts.sold), delta: '', up: null },
-      { label: 'Черновики', value: String(tabCounts.draft), delta: '', up: null },
+      { label: t('ownerTest_propertiesMetricTotal'), value: String(tabCounts.all), delta: '', up: null },
+      { label: t('ownerTest_propertiesTabActive'), value: String(tabCounts.active), delta: '', up: null },
+      { label: t('ownerTest_propertiesTabBooked'), value: String(tabCounts.booked), delta: '', up: null },
+      { label: t('ownerTest_propertiesTabSold'), value: String(tabCounts.sold), delta: '', up: null },
+      { label: t('ownerTest_propertiesTabDraft'), value: String(tabCounts.draft), delta: '', up: null },
     ],
-    [tabCounts]
+    [tabCounts, t]
   )
 
   const visibleProperties = useMemo(
@@ -731,7 +754,7 @@ export default function OwnerPropertiesTestPage() {
     <>
       <div className="op-body">
         <header className="op-header op-desktop-only">
-          <h1 className="op-header__title">Мои объекты</h1>
+          <h1 className="op-header__title">{t('ownerTest_navMyProperties')}</h1>
           <div className="op-header__actions">
             <button
               type="button"
@@ -739,7 +762,7 @@ export default function OwnerPropertiesTestPage() {
               onClick={() => setShowFileUploadModal(true)}
             >
               <Upload size={18} strokeWidth={2.25} aria-hidden />
-              Добавить через файл
+              {t('ownerQuickAddCsv')}
             </button>
             {isEmbedded ? (
               <button
@@ -748,49 +771,22 @@ export default function OwnerPropertiesTestPage() {
                 onClick={() => goTo(OWNER_VIEWS.ADD_PROPERTY)}
               >
                 <Plus size={18} strokeWidth={2.5} aria-hidden />
-                Добавить объект
+                {t('addProperty')}
               </button>
             ) : (
               <Link to="/owner-add-property-test" className="op-btn op-btn--primary op-header__add-btn">
                 <Plus size={18} strokeWidth={2.5} aria-hidden />
-                Добавить объект
+                {t('addProperty')}
               </Link>
             )}
+            <OwnerSupportButton className="op-icon-btn" />
             <OwnerNotificationsButton className="op-icon-btn" badgeClassName="op-icon-btn__badge" />
             <OwnerTestProfileMenu />
           </div>
         </header>
 
         <div className="op-workspace">
-          <div className="op-mob-pagehead op-mobile-only">
-            <h1 className="op-mob-pagehead__title">Мои объекты</h1>
-            <div className="op-mob-pagehead__actions">
-              <button
-                type="button"
-                className="op-mob-file-btn"
-                aria-label="Добавить через файл"
-                onClick={() => setShowFileUploadModal(true)}
-              >
-                <Upload size={21} strokeWidth={2.4} aria-hidden />
-              </button>
-              {isEmbedded ? (
-                <button
-                  type="button"
-                  className="op-mob-add-btn"
-                  aria-label="Добавить объект"
-                  onClick={() => goTo(OWNER_VIEWS.ADD_PROPERTY)}
-                >
-                  <Plus size={22} strokeWidth={2.5} aria-hidden />
-                </button>
-              ) : (
-                <Link to="/owner-add-property-test" className="op-mob-add-btn" aria-label="Добавить объект">
-                  <Plus size={22} strokeWidth={2.5} aria-hidden />
-                </Link>
-              )}
-            </div>
-          </div>
-
-          <section className="op-mob-metrics op-mobile-only" aria-label="Сводка по объектам">
+          <section className="op-mob-metrics op-mobile-only" aria-label={t('ownerTest_ariaPropertySummary')}>
             {mobSummaryStats.map((stat) => (
               <article key={stat.label} className="op-mob-metric">
                 <span className="op-mob-metric__label">{stat.label}</span>
@@ -801,7 +797,7 @@ export default function OwnerPropertiesTestPage() {
           </section>
 
           <div className="op-main-panel">
-            <div className="op-tabs" role="tablist">
+            <div className="op-tabs op-tabs--desktop" role="tablist">
               {filterTabs.map((tab) => (
                 <button
                   key={tab.id}
@@ -821,14 +817,29 @@ export default function OwnerPropertiesTestPage() {
               ))}
             </div>
 
-            <div className="op-toolbar">
+            <div className="op-tabs op-tabs--mobile op-mobile-only" role="tablist" aria-label={t('ownerTest_ariaPropertyFilter')}>
+              {mobFilterTabs.map((tab) => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={activeTab === tab.id}
+                  className={`op-tabs__item${activeTab === tab.id ? ' op-tabs__item--active' : ''}`}
+                  onClick={() => setActiveTab(tab.id)}
+                >
+                  {tab.shortLabel} ({tab.count})
+                </button>
+              ))}
+            </div>
+
+            <div className="op-toolbar op-toolbar--desktop">
               <label className="op-search">
                 <Search size={18} strokeWidth={2} aria-hidden />
                 <input
                   type="search"
                   className="op-search__input"
-                  placeholder="Поиск"
-                  aria-label="Поиск по объектам"
+                  placeholder={t('ownerTest_propertiesSearch')}
+                  aria-label={t('ownerTest_ariaPropertySearch')}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
@@ -838,12 +849,12 @@ export default function OwnerPropertiesTestPage() {
 
             <div className="op-table-card">
               {propertiesLoading ? (
-                <div className="op-table-state">Загрузка объектов…</div>
+                <div className="op-table-state">{t('loadingListings')}</div>
               ) : visibleProperties.length === 0 ? (
                 <div className="op-table-state">
                   {properties.length === 0
-                    ? 'У вас пока нет объектов. Добавьте первый объект.'
-                    : 'Нет объектов по выбранному фильтру.'}
+                    ? t('ownerTest_propertiesEmptyAll')
+                    : t('ownerTest_propertiesEmptyFilter')}
                 </div>
               ) : (
               <>
@@ -851,12 +862,12 @@ export default function OwnerPropertiesTestPage() {
                 <table className="op-table">
                   <thead>
                     <tr>
-                      <th>Объект</th>
-                      <th>Статус</th>
-                      <th>Тип</th>
-                      <th>Таймер</th>
-                      <th>Просмотры</th>
-                      <th>Стоимость</th>
+                      <th>{t('ownerTest_tabProperties')}</th>
+                      <th>{t('buyerCabinet_billingStatus')}</th>
+                      <th>{t('oap_wizardStepListing')}</th>
+                      <th>{t('ownerTest_propertiesTimerCaption')}</th>
+                      <th>{t('ownerTest_metricViews')}</th>
+                      <th>{t('propertyDetailPrice')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -873,7 +884,7 @@ export default function OwnerPropertiesTestPage() {
                         }}
                         tabIndex={0}
                         role="link"
-                        aria-label={`Аналитика: ${row.title}`}
+                        aria-label={`${t('ownerTest_ariaStatistics')}: ${row.title}`}
                       >
                         <td>
                           <div className="op-object-cell">
@@ -910,47 +921,37 @@ export default function OwnerPropertiesTestPage() {
               </div>
 
               <ul className="op-mob-list op-mobile-only">
-                {paginatedProperties.map((row) => (
-                  <li
-                    key={row.id}
-                    className="op-mob-list__item op-mob-list__item--clickable"
-                    onClick={() => openPropertyAnalytics(row.id)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault()
-                        openPropertyAnalytics(row.id)
-                      }
-                    }}
-                    tabIndex={0}
-                    role="link"
-                    aria-label={`Аналитика: ${row.title}`}
-                  >
-                    <img src={row.image} alt="" className="op-mob-list__thumb" loading="lazy" />
-                    <div className="op-mob-list__body">
-                      <div className="op-mob-list__head">
-                        <p className="op-mob-list__title">{row.title}</p>
-                        <span className={`op-status op-status--${row.statusKey}`}>{row.status}</span>
-                      </div>
-                      <p className="op-mob-list__location">{row.location}</p>
-                      <div className="op-mob-list__meta-row">
-                        <ListingTypeBadge type={row.listingType} />
-                        {row.auctionEndTime ? (
-                          <ObjectTimerBadge endTime={row.auctionEndTime} now={timerNow} />
-                        ) : null}
-                      </div>
-                      <div className="op-mob-list__amount">
-                        <AmountCell row={row} />
-                      </div>
-                      <div className="op-mob-list__stats">
-                        <span className="op-mob-list__stat">
-                          <Eye size={14} strokeWidth={2} aria-hidden />
-                          {row.views}
-                          <DeltaText value={row.viewsDelta} up={row.viewsUp} />
+                {paginatedProperties.map((row) => {
+                  const amount = getOwnerPropertyAmount(row, t)
+                  return (
+                    <li key={row.id} className="op-mob-list__item">
+                      <button
+                        type="button"
+                        className="op-mob-list__open"
+                        onClick={() => openPropertyAnalytics(row.id)}
+                        aria-label={`${t('ownerTest_ariaStatistics')}: ${row.title}`}
+                      >
+                        <img src={row.image} alt="" className="op-mob-list__thumb" loading="lazy" />
+                        <span className="op-mob-list__body">
+                          <span className="op-mob-list__head">
+                            <span className="op-mob-list__title">{row.title}</span>
+                            <span className={`op-status op-status--${row.statusKey}`}>{row.status}</span>
+                          </span>
+                          <span className="op-mob-list__location">{row.location}</span>
+                          <span className="op-mob-list__price">{amount.value}</span>
                         </span>
-                      </div>
-                    </div>
-                  </li>
-                ))}
+                      </button>
+                      <button
+                        type="button"
+                        className="op-mob-list__menu"
+                        aria-label={`${t('ownerTest_ariaAdd')}: ${row.title}`}
+                        onClick={(event) => event.stopPropagation()}
+                      >
+                        <MoreVertical size={18} strokeWidth={2} aria-hidden />
+                      </button>
+                    </li>
+                  )
+                })}
               </ul>
 
               <PropertiesPagination
@@ -964,10 +965,14 @@ export default function OwnerPropertiesTestPage() {
             </div>
           </div>
 
+          <section className="op-mob-rail op-mobile-only" aria-label={t('ownerTest_ariaAds')}>
+            <OwnerAdStack cards={['premium', 'fastSales']} className="op-owner-ads op-mob-owner-ads" />
+          </section>
+
           <aside className="op-rail op-desktop-only">
             <section className="op-rail-card op-quick-analytics">
               <div className="op-rail-card__head">
-                <h2>Быстрая аналитика</h2>
+                <h2>{t('ownerTest_ariaStatistics')}</h2>
                 <QuickAnalyticsPeriodSelect value={analyticsPeriod} onChange={setAnalyticsPeriod} />
               </div>
               <ul className="op-quick-list">
@@ -997,32 +1002,23 @@ export default function OwnerPropertiesTestPage() {
     </>
   )
 
-  if (isEmbedded) return mainColumn
+  if (isEmbedded) return <div className="op op--embedded">{mainColumn}</div>
 
   return (
     <div className={`op${menuOpen ? ' op--menu-open' : ''}`}>
-      <header className="op-mob-topbar op-mobile-only" aria-label="Мобильная шапка">
-        <div className="op-mob-topbar__slot op-mob-topbar__slot--left">
-          <button
-            type="button"
-            className="op-mob-topbar__menu"
-            aria-label="Открыть меню"
-            aria-expanded={menuOpen}
-            onClick={() => setMenuOpen(true)}
-          >
-            <Menu size={22} strokeWidth={2} />
-          </button>
-        </div>
+      <header className="op-mob-topbar op-mobile-only" aria-label={t('ownerTest_ariaMobileHeader')}>
         <div className="op-mob-topbar__brand">
           <LogoMark />
-          <span className="op-logo__text">SellYourBrick</span>
+          <span className="op-logo__text">{t('ownerTest_brandName')}</span>
         </div>
         <div className="op-mob-topbar__slot op-mob-topbar__slot--right">
+          <OwnerSupportButton className="op-mob-topbar__bell" iconSize={22} />
           <OwnerNotificationsButton
             className="op-mob-topbar__bell"
             badgeClassName="op-icon-btn__badge"
             iconSize={22}
           />
+          <OwnerTestProfileMenu className="otpm--topbar-compact" />
         </div>
       </header>
 
@@ -1033,33 +1029,33 @@ export default function OwnerPropertiesTestPage() {
       />
       <aside
         className={`op-drawer op-mobile-only${menuOpen ? ' op-drawer--open' : ''}`}
-        aria-label="Меню кабинета"
+        aria-label={t('ownerTest_ariaCabinetMenu')}
         aria-hidden={!menuOpen}
       >
         <div className="op-drawer__head">
           <div className="op-mob-topbar__brand">
             <LogoMark />
-            <span className="op-logo__text">SellYourBrick</span>
+            <span className="op-logo__text">{t('ownerTest_brandName')}</span>
           </div>
-          <button type="button" className="op-drawer__close" aria-label="Закрыть меню" onClick={closeMenu}>
+          <button type="button" className="op-drawer__close" aria-label={t('ownerTest_ariaCloseMenu')} onClick={closeMenu}>
             <X size={22} />
           </button>
         </div>
         <div className="op-sidebar__divider op-sidebar__divider--drawer" aria-hidden />
         <nav className="op-nav op-nav--drawer">
-          {NAV_ITEMS.map(renderNavItem)}
+          {navItems.map(renderNavItem)}
         </nav>
       </aside>
 
       <aside className="op-sidebar op-desktop-only">
         <div className="op-sidebar__brand">
-          <span className="op-logo__mark-slot" aria-hidden />
-          <span className="op-logo__text">SellYourBrick</span>
+          <LogoMark />
+          <span className="op-logo__text">{t('ownerTest_brandName')}</span>
         </div>
         <div className="op-sidebar__divider" aria-hidden />
 
-        <nav className="op-nav" aria-label="Кабинет продавца">
-          {NAV_ITEMS.map(renderNavItem)}
+        <nav className="op-nav" aria-label={t('ownerTest_ariaSellerCabinet')}>
+          {navItems.map(renderNavItem)}
         </nav>
 
         <div className="op-sidebar-user">
@@ -1080,7 +1076,7 @@ export default function OwnerPropertiesTestPage() {
             <span className="op-sidebar-user__name">{fullName}</span>
             <span className="op-sidebar-user__role">{roleLabel}</span>
           </span>
-          <button type="button" className="op-sidebar-user__menu" aria-label="Меню профиля">
+          <button type="button" className="op-sidebar-user__menu" aria-label={t('ownerTest_ariaProfileMenu')}>
             <MoreVertical size={18} />
           </button>
         </div>
@@ -1088,12 +1084,12 @@ export default function OwnerPropertiesTestPage() {
 
       {mainColumn}
 
-      <nav className="op-tabbar op-mobile-only" aria-label="Нижняя навигация">
-        {TAB_ITEMS.map((item) => {
+      <nav className="op-tabbar op-mobile-only" aria-label={t('ownerTest_ariaBottomNav')}>
+        {tabItems.map((item) => {
           if (item.fab) {
             return (
               <div key="fab" className="op-tabbar__fab-slot">
-                <Link to="/owner-add-property-test" className="op-tabbar__fab" aria-label="Добавить объект">
+                <Link to="/owner-add-property-test" className="op-tabbar__fab" aria-label={t('ownerTest_ariaAddProperty')}>
                   <Plus size={28} strokeWidth={2.5} />
                 </Link>
               </div>
@@ -1110,7 +1106,12 @@ export default function OwnerPropertiesTestPage() {
             )
           }
           return (
-            <button key={item.id} type="button" className={className}>
+            <button
+              key={item.id}
+              type="button"
+              className={className}
+              onClick={item.id === 'more' ? () => setMenuOpen(true) : undefined}
+            >
               <Icon size={22} strokeWidth={item.active ? 2.25 : 2} aria-hidden />
               <span>{item.label}</span>
             </button>

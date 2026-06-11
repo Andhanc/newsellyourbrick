@@ -1,15 +1,9 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import {
-  LayoutDashboard,
-  Building2,
   CalendarCheck,
   ShoppingBag,
-  Car,
-  CreditCard,
-  BarChart3,
-  MessageSquare,
-  Settings,
   Menu,
   X,
   Eye,
@@ -24,12 +18,16 @@ import {
   Sparkles,
 } from 'lucide-react'
 import { OPR_IMAGES } from './ownerProfileTestImages'
-import { OWNER_PROFILE_TABS, isOwnerProfileTabId } from './ownerProfileTestTabs'
+import { getOwnerProfileTabs, isOwnerProfileTabId } from './ownerProfileTestTabs'
 import OwnerTestProfileMenu from '../components/OwnerTestProfileMenu'
 import OwnerNotificationsButton from '../components/OwnerNotificationsButton'
+import OwnerSupportButton from '../components/OwnerSupportButton'
 import { useOwnerTestProfile } from '../context/OwnerTestProfileContext'
 import { OWNER_VIEWS } from '../context/OwnerTestNavigationContext'
 import { useOwnerTestEmbeddedNav } from '../hooks/useOwnerTestEmbeddedNav'
+import { useOwnerTestNavItems } from '../hooks/useOwnerTestNavItems'
+import { getOwnerProfileFieldLabel, getOwnerTestIntlLocale } from '../utils/ownerTestI18n'
+import { OWNER_TEST_STANDALONE_HREF_MAP } from '../utils/ownerTestNav'
 import {
   CLERK_DB_USER_SYNCED,
   fetchOwnerProperties,
@@ -40,6 +38,21 @@ import {
   downloadXlsxBuffer,
   exportOwnerAnalyticsExcel,
 } from '../utils/ownerAnalyticsExcelExport'
+import OwnerProfileCompletionBanner from '../components/OwnerProfileCompletionBanner'
+import CountrySelect from '../components/CountrySelect'
+import {
+  buildCountryIsoByName,
+  buildPhoneCodeByCountryName,
+  formatProfilePhoneInput,
+  replacePhoneDialCodeByCountry,
+} from '../utils/profilePhoneFormat'
+import {
+  INVALID_SPAIN_DNI_NIE_MESSAGE,
+  isSpainCountry,
+  isValidSpainDniNie,
+  normalizeIdentificationInput,
+} from '../utils/profileIdentification'
+import { OWNER_PROFILE_COMPLETION_FIELDS } from '../utils/ownerTestProfile'
 import { getCurrencySymbol } from '../utils/currency'
 import { showNotification } from '../utils/toastHelper'
 import './OwnerProfileTestPage.css'
@@ -52,29 +65,6 @@ import './OwnerProfileTestPage.mobile.css'
  * — avatar, role, memberSince
  * — statistics (вкладки настроек)
  */
-const NAV_ITEMS = [
-  { id: 'home', label: 'Главная', icon: LayoutDashboard, href: '/main-owner-test' },
-  { id: 'properties', label: 'Мои объекты', icon: Building2, href: '/owner-properties-test' },
-  { id: 'bookings', label: 'Брони', icon: CalendarCheck },
-  { id: 'sales', label: 'Продажи', icon: ShoppingBag, href: '/owner-sales-test' },
-  { id: 'testdrive', label: 'Тест-драйв', icon: Car, href: '/owner-test-drive' },
-  { id: 'subscriptions', label: 'Подписки', icon: CreditCard, href: '/owner-subscriptions-test' },
-  { id: 'analytics', label: 'Аналитика', icon: BarChart3 },
-  { id: 'messages', label: 'Сообщения', icon: MessageSquare, badge: 3 },
-  { id: 'settings', label: 'Настройки', icon: Settings, active: true },
-]
-
-const PROFILE_COMPLETION_FIELDS = [
-  'firstName',
-  'lastName',
-  'country',
-  'phone',
-  'email',
-  'address',
-  'passportNumber',
-  'identificationNumber',
-]
-
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
 
 const EMPTY_OWNER_SALES = {
@@ -85,10 +75,10 @@ const EMPTY_OWNER_SALES = {
   test_drive: [],
 }
 
-function formatDateSafe(value) {
-  if (!value) return 'Не указано'
+function formatDateSafe(value, locale, notSpecifiedLabel) {
+  if (!value) return notSpecifiedLabel
   const raw = String(value).trim()
-  if (!raw) return 'Не указано'
+  if (!raw) return notSpecifiedLabel
 
   let date = new Date(raw)
   if (Number.isNaN(date.getTime()) && /^\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}(:\d{2})?$/.test(raw)) {
@@ -100,18 +90,18 @@ function formatDateSafe(value) {
     date = new Date(`${yyyy}-${mm}-${dd}${timePart ? `T${timePart}` : ''}`)
   }
 
-  if (Number.isNaN(date.getTime())) return 'Не указано'
-  return date.toLocaleDateString('ru-RU')
+  if (Number.isNaN(date.getTime())) return notSpecifiedLabel
+  return date.toLocaleDateString(locale)
 }
 
-function formatNumber(value) {
-  return (Number(value) || 0).toLocaleString('ru-RU')
+function formatNumber(value, locale) {
+  return (Number(value) || 0).toLocaleString(locale)
 }
 
-function formatMoney(value, currency = 'USD') {
+function formatMoney(value, locale, currency = 'EUR') {
   const amount = Number(value) || 0
   const symbol = getCurrencySymbol(currency)
-  return `${symbol}${amount.toLocaleString('ru-RU', { maximumFractionDigits: 0 })}`
+  return `${symbol}${amount.toLocaleString(locale, { maximumFractionDigits: 0 })}`
 }
 
 function getOwnerRowTable(row) {
@@ -247,9 +237,28 @@ function ProfileAvatar({ large = false }) {
 }
 
 export default function OwnerProfileTestPage() {
+  const { t, i18n } = useTranslation()
+  const intlLocale = useMemo(() => getOwnerTestIntlLocale(i18n.language), [i18n.language])
   const { profile, loading, saving, fullName, roleLabel, updateProfile, saveProfile } =
     useOwnerTestProfile()
-  const { isEmbedded, goTo, tab: embeddedTab } = useOwnerTestEmbeddedNav()
+  const { isEmbedded, goTo, tab: embeddedTab, highlight } = useOwnerTestEmbeddedNav()
+  const navItems = useOwnerTestNavItems({
+    activeId: 'settings',
+    hrefMap: isEmbedded ? undefined : OWNER_TEST_STANDALONE_HREF_MAP,
+  })
+  const profileTabs = useMemo(() => getOwnerProfileTabs(t), [t])
+  const statsPeriodDefs = useMemo(
+    () => [
+      { id: '7d', label: t('ownerTest_datePreset7d') },
+      { id: '30d', label: t('ownerTest_propertiesPeriod30d') },
+      { id: 'year', label: t('ownerTest_profilePeriodYear') },
+    ],
+    [t]
+  )
+  const formatDateForExport = useCallback(
+    (value) => formatDateSafe(value, intlLocale, t('ownerTest_profileNotSpecified')),
+    [intlLocale, t]
+  )
   const [searchParams, setSearchParams] = useSearchParams()
   const [activeTab, setActiveTab] = useState(() => {
     if (isEmbedded) {
@@ -261,7 +270,7 @@ export default function OwnerProfileTestPage() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [appPreferences, setAppPreferences] = useState({
     language: 'ru',
-    currency: 'usd',
+    currency: 'eur',
     timezone: 'minsk',
   })
   const [statsPeriod, setStatsPeriod] = useState('30d')
@@ -276,6 +285,46 @@ export default function OwnerProfileTestPage() {
   const saveReleaseRef = useRef(null)
 
   const closeMenu = useCallback(() => setMenuOpen(false), [])
+
+  const phoneCodeByCountryName = useMemo(() => buildPhoneCodeByCountryName(), [])
+  const countryIsoByName = useMemo(() => buildCountryIsoByName(), [])
+
+  const handleCountryChange = useCallback(
+    (countryName) => {
+      if (!profile) return
+      const nextPhone = replacePhoneDialCodeByCountry({
+        currentPhone: profile.phone,
+        previousCountry: profile.country,
+        nextCountry: countryName,
+        phoneCodeByCountryName,
+      })
+      updateProfile('country', countryName)
+      if (nextPhone !== profile.phone) {
+        updateProfile('phone', nextPhone)
+      }
+    },
+    [profile, phoneCodeByCountryName, updateProfile]
+  )
+
+  const handlePhoneChange = useCallback(
+    (event) => {
+      const formatted = formatProfilePhoneInput(
+        event.target.value,
+        profile?.country,
+        countryIsoByName
+      )
+      updateProfile('phone', formatted)
+    },
+    [profile?.country, countryIsoByName, updateProfile]
+  )
+
+  const handleIdentificationChange = useCallback(
+    (event) => {
+      const value = normalizeIdentificationInput(event.target.value, profile?.country)
+      updateProfile('identificationNumber', value)
+    },
+    [profile?.country, updateProfile]
+  )
 
   const renderNavItem = useCallback(
     ({ id, label, icon: Icon, active, badge, href }) => {
@@ -305,16 +354,6 @@ export default function OwnerProfileTestPage() {
     [closeMenu]
   )
 
-  const handleSaveProfile = async (event) => {
-    event.preventDefault()
-    const result = await saveProfile()
-    if (result.success) {
-      showNotification('Изменения сохранены')
-    } else {
-      showNotification(result.error || 'Не удалось сохранить изменения')
-    }
-  }
-
   const loadStatistics = useCallback(async () => {
     const userId = getOwnerPropertiesUserId()
     if (!userId) {
@@ -322,7 +361,7 @@ export default function OwnerProfileTestPage() {
       setOwnerTestDriveRows([])
       setOwnerSalesData(EMPTY_OWNER_SALES)
       setStatsLoading(false)
-      setStatsError('Войдите в аккаунт продавца, чтобы увидеть статистику.')
+      setStatsError(t('ownerTest_profileStatsLoginRequired'))
       return
     }
 
@@ -345,11 +384,11 @@ export default function OwnerProfileTestPage() {
       setOwnerProperties([])
       setOwnerTestDriveRows([])
       setOwnerSalesData(EMPTY_OWNER_SALES)
-      setStatsError('Не удалось загрузить статистику. Попробуйте обновить страницу.')
+      setStatsError(t('ownerTest_profileStatsLoadError'))
     } finally {
       setStatsLoading(false)
     }
-  }, [])
+  }, [t])
 
   const selectProfileTab = useCallback(
     (tabId) => {
@@ -364,6 +403,53 @@ export default function OwnerProfileTestPage() {
     },
     [isEmbedded, goTo, setSearchParams]
   )
+
+  const focusProfileField = useCallback(
+    (fieldKey) => {
+      selectProfileTab('personal')
+      window.requestAnimationFrame(() => {
+        const el = document.getElementById(`owner-profile-field-${fieldKey}`)
+        if (!el) return
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        const focusTarget =
+          el.matches('input, textarea, select')
+            ? el
+            : el.querySelector('.country-select__input, input, textarea, select')
+        focusTarget?.focus({ preventScroll: true })
+        el.classList.add('opr-field__input--highlight')
+        window.setTimeout(() => el.classList.remove('opr-field__input--highlight'), 2200)
+      })
+    },
+    [selectProfileTab]
+  )
+
+  const handleSaveProfile = useCallback(
+    async (event) => {
+      event.preventDefault()
+      if (
+        profile?.identificationNumber?.trim() &&
+        isSpainCountry(profile?.country) &&
+        !isValidSpainDniNie(profile.identificationNumber)
+      ) {
+        showNotification(INVALID_SPAIN_DNI_NIE_MESSAGE, 'error')
+        focusProfileField('identificationNumber')
+        return
+      }
+      const result = await saveProfile()
+      if (result.success) {
+        showNotification(t('ownerTest_profileSaved'))
+      } else {
+        showNotification(result.error || t('ownerTest_profileSaveError'))
+      }
+    },
+    [profile?.country, profile?.identificationNumber, focusProfileField, saveProfile, t]
+  )
+
+  useEffect(() => {
+    if (!highlight || loading || !profile) return
+    if (!OWNER_PROFILE_COMPLETION_FIELDS.includes(highlight)) return
+    focusProfileField(highlight)
+  }, [highlight, loading, profile, focusProfileField])
 
   useEffect(() => {
     if (isEmbedded) {
@@ -525,10 +611,10 @@ export default function OwnerProfileTestPage() {
           viewsValue: Number(row.viewsCount) || 0,
           testDriveValue: bookingsByProperty.get(key) || Number(row.bookingsCount) || 0,
           currentBidValue: Number(rawCurrentBid) || 0,
-          currentBidCurrency: row.currency || row.raw?.currency || 'USD',
+          currentBidCurrency: row.currency || row.raw?.currency || 'EUR',
           salesValue: salesCountByProperty.get(key) || 0,
           revenueValue: revenue,
-          revenueCurrency: row.currency || row.raw?.currency || 'USD',
+          revenueCurrency: row.currency || row.raw?.currency || 'EUR',
         }
       }),
     [bookingsByProperty, ownerProperties, revenueByProperty, salesCountByProperty]
@@ -577,35 +663,37 @@ export default function OwnerProfileTestPage() {
   const statsMetrics = useMemo(
     () => [
       {
-        label: 'Просмотры',
-        value: statsLoading ? '…' : formatNumber(statsTotals.totalViews),
-        delta: statsLoading ? 'Загрузка' : `${formatNumber(statsTotals.totalProperties)} объектов`,
+        label: t('ownerTest_profileStatViews'),
+        value: statsLoading ? '…' : formatNumber(statsTotals.totalViews, intlLocale),
+        delta: statsLoading
+          ? t('ownerTest_metricLoading')
+          : t('ownerTest_profileStatProperties', { count: statsTotals.totalProperties }),
         icon: Eye,
         tone: 'tiffany',
       },
       {
-        label: 'Тест-драйвы',
-        value: statsLoading ? '…' : formatNumber(statsTotals.totalBookings),
-        delta: statsLoading ? 'Загрузка' : 'заявки',
+        label: t('ownerTest_profileStatTestDrives'),
+        value: statsLoading ? '…' : formatNumber(statsTotals.totalBookings, intlLocale),
+        delta: statsLoading ? t('ownerTest_metricLoading') : t('ownerTest_profileStatRequests'),
         icon: CalendarCheck,
         tone: 'orange',
       },
       {
-        label: 'Продажи',
-        value: statsLoading ? '…' : formatNumber(statsTotals.totalSales),
-        delta: statsLoading ? 'Загрузка' : 'успешные сделки',
+        label: t('ownerTest_profileStatSales'),
+        value: statsLoading ? '…' : formatNumber(statsTotals.totalSales, intlLocale),
+        delta: statsLoading ? t('ownerTest_metricLoading') : t('ownerTest_profileStatDeals'),
         icon: ShoppingBag,
         tone: 'teal',
       },
       {
-        label: 'Доход',
-        value: statsLoading ? '…' : formatMoney(statsTotals.totalRevenue),
-        delta: statsLoading ? 'Загрузка' : 'по продажам',
+        label: t('ownerTest_profileStatRevenue'),
+        value: statsLoading ? '…' : formatMoney(statsTotals.totalRevenue, intlLocale),
+        delta: statsLoading ? t('ownerTest_metricLoading') : t('ownerTest_profileStatBySales'),
         icon: DollarSign,
         tone: 'green',
       },
     ],
-    [statsLoading, statsTotals]
+    [intlLocale, statsLoading, statsTotals, t]
   )
 
   const sortedStatsRows = useMemo(
@@ -648,13 +736,13 @@ export default function OwnerProfileTestPage() {
   const handleExportToExcel = useCallback(async () => {
     const userId = getOwnerPropertiesUserId()
     if (!userId) {
-      showNotification('Войдите в аккаунт, чтобы скачать отчёт')
+      showNotification(t('ownerTest_profileExportLogin'))
       return
     }
     setExportingExcel(true)
     try {
       const buffer = await exportOwnerAnalyticsExcel({
-        formatDateSafe,
+        formatDateSafe: formatDateForExport,
         properties: excelProperties,
         mySalesData: ownerSalesData,
         stats: {
@@ -672,34 +760,39 @@ export default function OwnerProfileTestPage() {
       downloadXlsxBuffer(buffer, `analytics_report_${new Date().toISOString().split('T')[0]}.xlsx`)
     } catch (error) {
       console.error('OwnerProfileTestPage: export excel', error)
-      showNotification('Не удалось сформировать Excel-отчёт')
+      showNotification(t('ownerTest_profileExportError'))
     } finally {
       setExportingExcel(false)
     }
-  }, [excelProperties, ownerSalesData, statsTotals])
+  }, [excelProperties, formatDateForExport, ownerSalesData, statsTotals, t])
 
   if (loading || !profile) {
     return (
       <div className="opr opr--loading">
-        <p className="opr-loading-text">Загрузка профиля…</p>
+        <p className="opr-loading-text">{t('buyerCabinet_loadingProfile')}</p>
       </div>
     )
   }
 
-  const completedProfileFields = PROFILE_COMPLETION_FIELDS.filter((field) =>
-    String(profile[field] || '').trim()
-  ).length
-  const profileCompletion = Math.round((completedProfileFields / PROFILE_COMPLETION_FIELDS.length) * 100)
   const quickFacts = [
-    { label: 'Почта', value: profile.email || 'Не указана', icon: Mail },
-    { label: 'Телефон', value: profile.phone || 'Не указан', icon: Phone },
+    {
+      label: t('ownerTest_profileContactEmail'),
+      value: profile.email || t('ownerTest_profileNotSpecifiedF'),
+      icon: Mail,
+    },
+    {
+      label: t('ownerTest_profileContactPhone'),
+      value: profile.phone || t('ownerTest_profileNotSpecified'),
+      icon: Phone,
+    },
   ]
 
   const mainColumn = (
       <div className="opr-body">
         <header className="opr-header opr-desktop-only">
-          <h1 className="opr-header__title">Профиль</h1>
+          <h1 className="opr-header__title">{t('ownerProfileTitle')}</h1>
           <div className="opr-header__actions">
+            <OwnerSupportButton className="opr-icon-btn" />
             <OwnerNotificationsButton className="opr-icon-btn" badgeClassName="opr-icon-btn__badge" />
             <OwnerTestProfileMenu
               current
@@ -711,11 +804,11 @@ export default function OwnerProfileTestPage() {
 
         <div className="opr-workspace">
           <div className="opr-mob-pagehead opr-mobile-only">
-            <h1 className="opr-mob-pagehead__title">Профиль</h1>
+            <h1 className="opr-mob-pagehead__title">{t('ownerProfileTitle')}</h1>
           </div>
           <div className="opr-content">
-            <div className="opr-profile-tabs" role="tablist" aria-label="Разделы профиля">
-              {OWNER_PROFILE_TABS.map((tab) => (
+            <div className="opr-profile-tabs" role="tablist" aria-label={t('ownerTest_ariaProfileSections')}>
+              {profileTabs.map((tab) => (
                 <button
                   key={tab.id}
                   type="button"
@@ -730,11 +823,11 @@ export default function OwnerProfileTestPage() {
             </div>
 
             {activeTab === 'personal' && (
-              <section className="opr-profile-overview" aria-label="Сводка профиля">
+              <section className="opr-profile-overview" aria-label={t('ownerTest_ariaProfileOverview')}>
                 <div className="opr-profile-overview__identity">
                   <ProfileAvatar large />
                   <div className="opr-profile-overview__copy">
-                    <span className="opr-profile-overview__eyebrow">Кабинет продавца</span>
+                    <span className="opr-profile-overview__eyebrow">{t('ownerDashboard')}</span>
                     <h2 className="opr-profile-overview__name">{fullName}</h2>
                     <div className="opr-profile-overview__badges">
                       <span className="opr-profile-overview__badge">
@@ -764,32 +857,24 @@ export default function OwnerProfileTestPage() {
                   })}
                 </div>
 
-                <div className="opr-profile-overview__completion">
-                  <div
-                    className="opr-profile-overview__ring"
-                    style={{ '--opr-progress': `${profileCompletion}%` }}
-                    aria-label={`Профиль заполнен на ${profileCompletion}%`}
-                  >
-                    <span>{profileCompletion}%</span>
-                  </div>
-                  <div>
-                    <p className="opr-profile-overview__completion-title">Готовность профиля</p>
-                    <p className="opr-profile-overview__completion-text">
-                      {completedProfileFields} из {PROFILE_COMPLETION_FIELDS.length} полей заполнено
-                    </p>
-                  </div>
+                <div className="opr-profile-overview__completion-wrap">
+                  <OwnerProfileCompletionBanner
+                    variant="sidebar"
+                    onMissingFieldClick={focusProfileField}
+                  />
                 </div>
               </section>
             )}
 
             <div
               className={[
-                'opr-profile-layout',
-                activeTab !== 'personal' && 'opr-profile-layout--desktop-hidden',
+                'opr-panel',
+                activeTab !== 'personal' && 'opr-panel--hidden',
               ]
                 .filter(Boolean)
                 .join(' ')}
             >
+              <div className="opr-profile-layout">
                 <form className="opr-profile-form" ref={profileFormRef} onSubmit={handleSaveProfile}>
                   <section className="opr-form-section">
                     <div className="opr-form-section__head">
@@ -797,14 +882,15 @@ export default function OwnerProfileTestPage() {
                         <UserRound size={18} strokeWidth={2.3} />
                       </span>
                       <div>
-                        <h3 className="opr-form-section__title">Основные данные</h3>
-                        <p className="opr-form-section__subtitle">Имя, контакты и адрес для сделок</p>
+                        <h3 className="opr-form-section__title">{t('ownerTest_profileTabPersonal')}</h3>
+                        <p className="opr-form-section__subtitle">{t('profileFieldsModalSubtitle')}</p>
                       </div>
                     </div>
                     <div className="opr-form-row">
                       <label className="opr-field">
-                        <span className="opr-field__label">Имя</span>
+                        <span className="opr-field__label">{getOwnerProfileFieldLabel('firstName')}</span>
                         <input
+                          id="owner-profile-field-firstName"
                           type="text"
                           className="opr-field__input"
                           value={profile.firstName}
@@ -812,41 +898,47 @@ export default function OwnerProfileTestPage() {
                         />
                       </label>
                       <label className="opr-field">
-                        <span className="opr-field__label">Фамилия</span>
+                        <span className="opr-field__label">{getOwnerProfileFieldLabel('lastName')}</span>
                         <input
+                          id="owner-profile-field-lastName"
                           type="text"
                           className="opr-field__input"
                           value={profile.lastName}
                           onChange={(e) => updateProfile('lastName', e.target.value)}
                         />
                       </label>
+                      <div className="opr-field opr-field--country" id="owner-profile-field-country">
+                        <span className="opr-field__label">{getOwnerProfileFieldLabel('country')}</span>
+                        <CountrySelect
+                          value={profile.country}
+                          onChange={handleCountryChange}
+                          placeholder={t('ownerProfilePlaceholderCountry')}
+                        />
+                      </div>
                     </div>
 
                     <div className="opr-form-row">
-                      <label className="opr-field">
-                        <span className="opr-field__label">Страна</span>
+                      <label className="opr-field opr-field--phone">
+                        <span className="opr-field__label">{getOwnerProfileFieldLabel('phone')}</span>
                         <input
-                          type="text"
-                          className="opr-field__input"
-                          value={profile.country}
-                          onChange={(e) => updateProfile('country', e.target.value)}
-                        />
-                      </label>
-                      <label className="opr-field">
-                        <span className="opr-field__label">Телефон</span>
-                        <input
+                          id="owner-profile-field-phone"
                           type="tel"
+                          inputMode="tel"
                           className="opr-field__input"
                           value={profile.phone}
-                          onChange={(e) => updateProfile('phone', e.target.value)}
+                          onChange={handlePhoneChange}
+                          autoComplete="tel"
+                          placeholder={
+                            profile.country
+                              ? t('ownerTest_profilePhonePlaceholder')
+                              : t('ownerTest_profilePhoneSelectCountry')
+                          }
                         />
                       </label>
-                    </div>
-
-                    <div className="opr-form-row">
                       <label className="opr-field">
-                        <span className="opr-field__label">Почта</span>
+                        <span className="opr-field__label">{getOwnerProfileFieldLabel('email')}</span>
                         <input
+                          id="owner-profile-field-email"
                           type="email"
                           className="opr-field__input"
                           value={profile.email}
@@ -854,8 +946,9 @@ export default function OwnerProfileTestPage() {
                         />
                       </label>
                       <label className="opr-field">
-                        <span className="opr-field__label">Адрес проживания</span>
+                        <span className="opr-field__label">{getOwnerProfileFieldLabel('address')}</span>
                         <input
+                          id="owner-profile-field-address"
                           type="text"
                           className="opr-field__input"
                           value={profile.address}
@@ -872,14 +965,15 @@ export default function OwnerProfileTestPage() {
                         <FileText size={18} strokeWidth={2.3} />
                       </span>
                       <div>
-                        <h3 className="opr-form-section__title">Документы</h3>
-                        <p className="opr-form-section__subtitle">Данные для проверки продавца и выплат</p>
+                        <h3 className="opr-form-section__title">{t('oap_documentsVerificationTitle')}</h3>
+                        <p className="opr-form-section__subtitle">{t('oap_documentsVerificationSubtitle')}</p>
                       </div>
                     </div>
                     <div className="opr-form-row">
                       <label className="opr-field">
-                        <span className="opr-field__label">Номер паспорта</span>
+                        <span className="opr-field__label">{getOwnerProfileFieldLabel('passportNumber')}</span>
                         <input
+                          id="owner-profile-field-passportNumber"
                           type="text"
                           className="opr-field__input"
                           value={profile.passportNumber}
@@ -888,13 +982,21 @@ export default function OwnerProfileTestPage() {
                         />
                       </label>
                       <label className="opr-field">
-                        <span className="opr-field__label">Идентификационный номер</span>
+                        <span className="opr-field__label">
+                          {getOwnerProfileFieldLabel('identificationNumber', profile.country)}
+                        </span>
                         <input
+                          id="owner-profile-field-identificationNumber"
                           type="text"
                           className="opr-field__input"
                           value={profile.identificationNumber}
-                          onChange={(e) => updateProfile('identificationNumber', e.target.value)}
+                          onChange={handleIdentificationChange}
                           autoComplete="off"
+                          placeholder={
+                            isSpainCountry(profile.country)
+                              ? '12345678Z / X1234567L'
+                              : undefined
+                          }
                         />
                       </label>
                     </div>
@@ -911,10 +1013,11 @@ export default function OwnerProfileTestPage() {
                         .join(' ')}
                       disabled={saving}
                     >
-                      {saving ? 'Сохранение…' : 'Сохранить изменения'}
+                      {saving ? t('ownerProfileSaving') : t('ownerTest_profileSaveChanges')}
                     </button>
                   </div>
                 </form>
+              </div>
             </div>
 
             <div
@@ -925,19 +1028,15 @@ export default function OwnerProfileTestPage() {
                 .filter(Boolean)
                 .join(' ')}
             >
-              <section className="opr-stats" aria-label="Статистика">
+              <section className="opr-stats" aria-label={t('ownerTest_ariaStatistics')}>
                 <div className="opr-stats__head">
                   <div>
-                    <h2 className="opr-stats__title">Обзор показателей</h2>
-                    <p className="opr-stats__subtitle">Статистика по всем объектам за выбранный период</p>
+                    <h2 className="opr-stats__title">{t('ownerTest_profileTabStatistics')}</h2>
+                    <p className="opr-stats__subtitle">{t('ownerTest_ariaPropertySummary')}</p>
                   </div>
                   <div className="opr-stats__actions">
-                    <div className="opr-stats-period" role="group" aria-label="Период">
-                      {[
-                        { id: '7d', label: '7 дней' },
-                        { id: '30d', label: '30 дней' },
-                        { id: 'year', label: 'Год' },
-                      ].map((period) => (
+                    <div className="opr-stats-period" role="group" aria-label={t('ownerTest_ariaPeriod')}>
+                      {statsPeriodDefs.map((period) => (
                         <button
                           key={period.id}
                           type="button"
@@ -955,7 +1054,7 @@ export default function OwnerProfileTestPage() {
                       disabled={exportingExcel || statsLoading}
                     >
                       <Download size={18} strokeWidth={2.2} aria-hidden />
-                      <span>{exportingExcel ? 'Формируем…' : 'Получить Excel отчет'}</span>
+                      <span>{exportingExcel ? t('ownerTest_profileExporting') : t('ownerTest_profileExportExcel')}</span>
                     </button>
                   </div>
                 </div>
@@ -980,27 +1079,27 @@ export default function OwnerProfileTestPage() {
                 </div>
 
                 <div className="opr-stats-table-wrap">
-                  <h3 className="opr-stats-table__title">Все объекты</h3>
+                  <h3 className="opr-stats-table__title">{t('ownerTest_propertiesTabAll')}</h3>
                   {statsError ? <p className="opr-stats__message">{statsError}</p> : null}
                   <table className="opr-stats-table">
                     <thead>
                       <tr>
-                        <th>Объект</th>
-                        <th>Просмотры</th>
-                        <th>Тест-драйв</th>
-                        <th>Текущая ставка</th>
-                        <th>Продажи</th>
-                        <th>Доход</th>
+                        <th>{t('oap_wizardStepObject')}</th>
+                        <th>{t('ownerTest_profileStatViews')}</th>
+                        <th>{t('ownerTest_profileStatTestDrives')}</th>
+                        <th>{t('bidHistoryCurrentMaxBid')}</th>
+                        <th>{t('ownerTest_profileStatSales')}</th>
+                        <th>{t('ownerTest_profileStatRevenue')}</th>
                       </tr>
                     </thead>
                     <tbody>
                       {statsLoading ? (
                         <tr>
-                          <td colSpan={6}>Загрузка статистики…</td>
+                          <td colSpan={6}>{t('ownerTest_metricLoading')}…</td>
                         </tr>
                       ) : sortedStatsRows.length === 0 ? (
                         <tr>
-                          <td colSpan={6}>Объекты пока не найдены</td>
+                          <td colSpan={6}>{t('ownerTest_propertiesNoItems')}</td>
                         </tr>
                       ) : (
                         sortedStatsRows.map((row) => (
@@ -1009,11 +1108,11 @@ export default function OwnerProfileTestPage() {
                               <span className="opr-stats-table__object">{row.title}</span>
                               <span className="opr-stats-table__location">{row.location}</span>
                             </td>
-                            <td>{formatNumber(row.viewsValue)}</td>
-                            <td>{formatNumber(row.testDriveValue)}</td>
-                            <td>{row.currentBidValue > 0 ? formatMoney(row.currentBidValue, row.currentBidCurrency) : '—'}</td>
-                            <td>{formatNumber(row.salesValue)}</td>
-                            <td>{formatMoney(row.revenueValue, row.revenueCurrency)}</td>
+                            <td>{formatNumber(row.viewsValue, intlLocale)}</td>
+                            <td>{formatNumber(row.testDriveValue, intlLocale)}</td>
+                            <td>{row.currentBidValue > 0 ? formatMoney(row.currentBidValue, intlLocale, row.currentBidCurrency) : '—'}</td>
+                            <td>{formatNumber(row.salesValue, intlLocale)}</td>
+                            <td>{formatMoney(row.revenueValue, intlLocale, row.revenueCurrency)}</td>
                           </tr>
                         ))
                       )}
@@ -1031,12 +1130,12 @@ export default function OwnerProfileTestPage() {
                 .filter(Boolean)
                 .join(' ')}
             >
-              <section className="opr-app-settings" aria-label="Настройки приложения">
+              <section className="opr-app-settings" aria-label={t('ownerTest_ariaAppSettings')}>
                 <div className="opr-app-settings__card">
-                  <h2 className="opr-app-settings__title">Общие</h2>
+                  <h2 className="opr-app-settings__title">{t('ownerSettingsTitle')}</h2>
                   <div className="opr-app-settings__selects">
                     <label className="opr-field">
-                      <span className="opr-field__label">Язык интерфейса</span>
+                      <span className="opr-field__label">{t('ownerSettingsChangeLanguage')}</span>
                       <select
                         className="opr-field__input opr-field__select"
                         value={appPreferences.language}
@@ -1044,12 +1143,12 @@ export default function OwnerProfileTestPage() {
                           setAppPreferences((prev) => ({ ...prev, language: e.target.value }))
                         }
                       >
-                        <option value="ru">Русский</option>
-                        <option value="en">English</option>
+                        <option value="ru">{t('ownerSettingsLanguageRu')}</option>
+                        <option value="en">{t('ownerSettingsLanguageEn')}</option>
                       </select>
                     </label>
                     <label className="opr-field">
-                      <span className="opr-field__label">Валюта</span>
+                      <span className="opr-field__label">{t('catalogFilterCurrency')}</span>
                       <select
                         className="opr-field__input opr-field__select"
                         value={appPreferences.currency}
@@ -1059,10 +1158,11 @@ export default function OwnerProfileTestPage() {
                       >
                         <option value="usd">USD ($)</option>
                         <option value="eur">EUR (€)</option>
+                        <option value="aed">AED (د.إ)</option>
                       </select>
                     </label>
                     <label className="opr-field">
-                      <span className="opr-field__label">Часовой пояс</span>
+                      <span className="opr-field__label">{t('ownerTest_ariaPeriod')}</span>
                       <select
                         className="opr-field__input opr-field__select"
                         value={appPreferences.timezone}
@@ -1080,7 +1180,7 @@ export default function OwnerProfileTestPage() {
 
               </section>
               <button type="button" className="opr-btn opr-btn--primary opr-profile-form__save opr-profile-form__save--settings">
-                Сохранить изменения
+                {t('ownerTest_profileSaveChanges')}
               </button>
             </div>
           </div>
@@ -1092,12 +1192,12 @@ export default function OwnerProfileTestPage() {
 
   return (
     <div className={`opr${menuOpen ? ' opr--menu-open' : ''}`}>
-      <header className="opr-mob-topbar opr-mobile-only opr-mobile-only--profile-hidden" aria-label="Мобильная шапка">
+      <header className="opr-mob-topbar opr-mobile-only opr-mobile-only--profile-hidden" aria-label={t('ownerTest_ariaMobileHeader')}>
         <div className="opr-mob-topbar__slot opr-mob-topbar__slot--left">
           <button
             type="button"
             className="opr-mob-topbar__menu"
-            aria-label="Открыть меню"
+            aria-label={t('ownerTest_ariaOpenMenu')}
             aria-expanded={menuOpen}
             onClick={() => setMenuOpen(true)}
           >
@@ -1106,9 +1206,10 @@ export default function OwnerProfileTestPage() {
         </div>
         <div className="opr-mob-topbar__brand">
           <LogoMark />
-          <span className="opr-logo__text">SellYourBrick</span>
+          <span className="opr-logo__text">{t('ownerTest_brandName')}</span>
         </div>
         <div className="opr-mob-topbar__slot opr-mob-topbar__slot--right">
+          <OwnerSupportButton className="opr-mob-topbar__bell" iconSize={22} />
           <OwnerNotificationsButton
             className="opr-mob-topbar__bell"
             badgeClassName="opr-icon-btn__badge"
@@ -1117,22 +1218,22 @@ export default function OwnerProfileTestPage() {
         </div>
       </header>
 
-      <header className="opr-mob-profile-head opr-mobile-only" aria-label="Профиль">
+      <header className="opr-mob-profile-head opr-mobile-only" aria-label={t('ownerTest_ariaProfile')}>
         {isEmbedded ? (
           <button
             type="button"
             className="opr-mob-profile-head__close"
-            aria-label="Закрыть"
+            aria-label={t('ownerTest_ariaClose')}
             onClick={() => goTo(OWNER_VIEWS.HOME)}
           >
             <X size={22} strokeWidth={2} />
           </button>
         ) : (
-          <Link to="/main-owner-test" className="opr-mob-profile-head__close" aria-label="Закрыть">
+          <Link to="/main-owner-test" className="opr-mob-profile-head__close" aria-label={t('ownerTest_ariaClose')}>
             <X size={22} strokeWidth={2} />
           </Link>
         )}
-        <h1 className="opr-mob-profile-head__title">Профиль</h1>
+        <h1 className="opr-mob-profile-head__title">{t('ownerProfileTitle')}</h1>
         <span className="opr-mob-profile-head__spacer" aria-hidden />
       </header>
 
@@ -1143,36 +1244,36 @@ export default function OwnerProfileTestPage() {
       />
       <aside
         className={`opr-drawer opr-mobile-only${menuOpen ? ' opr-drawer--open' : ''}`}
-        aria-label="Меню кабинета"
+        aria-label={t('ownerTest_ariaCabinetMenu')}
         aria-hidden={!menuOpen}
       >
         <div className="opr-drawer__head">
           <div className="opr-mob-topbar__brand">
             <LogoMark />
-            <span className="opr-logo__text">SellYourBrick</span>
+            <span className="opr-logo__text">{t('ownerTest_brandName')}</span>
           </div>
-          <button type="button" className="opr-drawer__close" aria-label="Закрыть меню" onClick={closeMenu}>
+          <button type="button" className="opr-drawer__close" aria-label={t('ownerTest_ariaCloseMenu')} onClick={closeMenu}>
             <X size={22} />
           </button>
         </div>
         <div className="opr-sidebar__divider opr-sidebar__divider--drawer" aria-hidden />
-        <nav className="opr-nav opr-nav--drawer">{NAV_ITEMS.map(renderNavItem)}</nav>
+        <nav className="opr-nav opr-nav--drawer">{navItems.map(renderNavItem)}</nav>
       </aside>
 
       <aside className="opr-sidebar opr-desktop-only">
         <div className="opr-sidebar__brand">
-          <span className="opr-logo__mark-slot" aria-hidden />
-          <span className="opr-logo__text">SellYourBrick</span>
+          <LogoMark />
+          <span className="opr-logo__text">{t('ownerTest_brandName')}</span>
         </div>
         <div className="opr-sidebar__divider" aria-hidden />
-        <nav className="opr-nav" aria-label="Кабинет продавца">
-          {NAV_ITEMS.map(renderNavItem)}
+        <nav className="opr-nav" aria-label={t('ownerTest_ariaSellerCabinet')}>
+          {navItems.map(renderNavItem)}
         </nav>
         <div className="opr-sidebar-promo">
-          <p className="opr-sidebar-promo__title">Станьте покупателем</p>
-          <p className="opr-sidebar-promo__text">Ищите и бронируйте недвижимость на платформе</p>
+          <p className="opr-sidebar-promo__title">{t('heroPitchBecomeBuyerCta')}</p>
+          <p className="opr-sidebar-promo__text">{t('heroPitchBecomeBuyerBody')}</p>
           <button type="button" className="opr-btn opr-btn--primary opr-btn--sm">
-            Стать покупателем
+            {t('heroPitchBecomeBuyerCta')}
           </button>
           <img
             className="opr-sidebar-promo__img"

@@ -11,7 +11,7 @@ import {
 
 const OwnerTestProfileContext = createContext(null)
 
-const SELLER_ROLE_LABEL = 'Продавец'
+import { ownerTestT } from '../utils/ownerTestI18n'
 
 export function OwnerTestProfileProvider({ children }) {
   const [profile, setProfile] = useState(() => mapOwnerTestProfileFromLocal(getUserData()))
@@ -108,7 +108,7 @@ export function OwnerTestProfileProvider({ children }) {
       loading,
       saving,
       fullName: getOwnerTestProfileFullName(profile),
-      roleLabel: SELLER_ROLE_LABEL,
+      roleLabel: ownerTestT('ownerTest_roleSeller'),
       updateProfile,
       saveProfile,
       reloadProfile: loadProfile,

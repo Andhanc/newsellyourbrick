@@ -1,5 +1,14 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
+.mot.mot--embedded {
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+  min-height: 0;
+  background: transparent;
+  background-image: none;
+}
+
 .mot {
   /* SellYourBrick Tiffany */
   --mot-tiffany: #0abab5;
@@ -295,7 +304,7 @@
   padding: 10px 14px;
   border: 1px solid var(--mot-border);
   border-radius: 10px;
-  background: var(--mot-surface);
+  background: #ffffff;
   color: var(--mot-text);
   font: inherit;
   font-size: 13px;
@@ -307,6 +316,7 @@
 
 .mot-date-pill:hover {
   border-color: #cbd5e1;
+  background: #ffffff;
 }
 
 .mot-date-popover {
@@ -459,10 +469,16 @@
   justify-content: center;
   border: 1px solid var(--mot-border);
   border-radius: 10px;
-  background: var(--mot-surface);
+  background: #ffffff;
   color: var(--mot-text-muted);
   cursor: pointer;
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  transition: border-color 0.15s;
+}
+
+.mot-icon-btn:hover {
+  background: #ffffff;
+  border-color: #cbd5e1;
 }
 
 .mot-icon-btn__badge {

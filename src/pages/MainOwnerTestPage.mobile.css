@@ -1,6 +1,6 @@
 /**
- * Mobile main-owner-test — строго по референсу (≤900px).
- * Белый фон, лёгкие карточки с border, горизонтальный скролл метрик.
+ * Mobile analytics (≤900px) — по макету SellYourBrick.
+ * Прокрутка через .app-layout, без вложенных scroll-trap.
  */
 
 @media (max-width: 900px) {
@@ -8,30 +8,48 @@
     display: none !important;
   }
 
+  /* Embedded в OwnerTestCabinetChrome — без фиксированной высоты */
+  .mot.mot--embedded,
+  .mot.mot--embedded .mot-main,
+  .mot.mot--embedded .mot-content {
+    width: 100%;
+    max-width: 100%;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow-x: hidden !important;
+    overflow-y: visible !important;
+    flex: none !important;
+    box-sizing: border-box;
+  }
+
   .mot {
     --mot-mob-pad: 16px;
     --mot-tab-h: 56px;
     --mot-tiffany: #0abab5;
+    --mot-mob-block-border: 1.5px solid rgba(10, 186, 181, 0.34);
+    --mot-mob-block-shadow: 0 8px 22px rgba(15, 23, 42, 0.06);
 
     flex-direction: column;
     width: 100%;
     max-width: 100vw;
-    height: 100dvh;
-    overflow: hidden;
+    height: auto !important;
+    min-height: 0;
+    overflow: visible !important;
     padding-bottom: 0;
     background: #ffffff;
   }
 
   .mot-main {
-    flex: 1;
+    flex: none;
     min-height: 0;
     display: flex;
     flex-direction: column;
-    overflow: hidden;
+    overflow: visible !important;
     background: #ffffff;
   }
 
-  /* —— Header (menu | logo | bell) —— */
+  /* —— Header (standalone route only) —— */
   .mot-mob-topbar {
     display: grid !important;
     grid-template-columns: 48px 1fr 48px;
@@ -52,6 +70,7 @@
 
   .mot-mob-topbar__slot--right {
     justify-content: flex-end;
+    gap: 2px;
   }
 
   .mot-mob-topbar__menu,
@@ -175,53 +194,99 @@
     font-size: 15px;
   }
 
-  /* —— «Главная» + дата —— */
-  .mot-mob-pagehead {
-    display: flex !important;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-    flex-shrink: 0;
-    padding: 16px var(--mot-mob-pad) 12px;
+  /* —— Контент (единый поток, скролл у .app-layout) —— */
+  .mot-content {
+    flex: none;
+    min-height: 0;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden !important;
+    overflow-y: visible !important;
+    padding: 0 0 calc(24px + env(safe-area-inset-bottom, 0px));
+    gap: 0;
     background: #ffffff;
+    box-sizing: border-box;
   }
 
-  .mot-mob-pagehead__title {
+  .mot.mot--embedded .mot-content {
+    padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .mot:not(.mot--embedded) .mot-content {
+    padding-bottom: calc(64px + env(safe-area-inset-bottom, 0px));
+  }
+
+  /* —— Приветствие + период —— */
+  .mot-mob-hero {
+    display: flex !important;
+    flex-direction: column;
+    gap: 14px;
+    flex-shrink: 0;
+    margin: 18px var(--mot-mob-pad) 16px;
+    padding: 0;
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    box-sizing: border-box;
+  }
+
+  .mot-mob-hero__title {
     margin: 0;
-    font-size: 24px;
+    font-size: 22px;
     font-weight: 700;
     letter-spacing: -0.02em;
     color: #000000;
-    line-height: 1.15;
-    flex-shrink: 0;
-  }
-
-  .mot-date-pill--compact {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 8px 10px;
-    font-size: 11px;
-    font-weight: 400;
-    color: #374151;
-    background: #ffffff;
-    border: 1px solid #e5e7eb;
-    border-radius: 10px;
-    box-shadow: none;
-    max-width: 155px;
-    flex-shrink: 0;
     line-height: 1.2;
   }
 
-  .mot-date-pill--compact span {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+  .mot-mob-hero__subtitle {
+    margin: 6px 0 0;
+    font-size: 13px;
+    font-weight: 400;
+    color: #9ca3af;
+    line-height: 1.35;
+  }
+
+  .mot-date-pill--full {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 12px 14px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #374151;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    box-shadow: none;
+    line-height: 1.2;
+  }
+
+  .mot-date-pill--full span {
+    flex: 1;
+    min-width: 0;
+    text-align: left;
+  }
+
+  .mot-date-pill--full svg:first-child {
+    flex-shrink: 0;
+    color: #9ca3af;
+  }
+
+  .mot-date-pill--full svg:last-child {
+    flex-shrink: 0;
+    color: #9ca3af;
   }
 
   .mot-date-control--mobile {
     position: relative;
     flex-shrink: 0;
+  }
+
+  .mot-date-control--full {
+    width: 100%;
   }
 
   .mot-date-control--mobile .mot-date-popover {
@@ -255,19 +320,7 @@
     grid-template-columns: 1fr 1fr;
   }
 
-  /* —— Scroll area —— */
-  .mot-content {
-    flex: 1;
-    min-height: 0;
-    overflow-x: hidden;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-    padding: 0 0 calc(64px + env(safe-area-inset-bottom, 0px));
-    gap: 0;
-    background: #ffffff;
-  }
-
-  /* —— Metrics (horizontal cards) —— */
+  /* —— Metrics: 2×2 —— */
   .mot-metrics-wrap {
     display: block !important;
     margin-bottom: 16px;
@@ -277,34 +330,34 @@
     display: none;
   }
 
-  .mot-metrics--scroll {
-    display: flex !important;
-    flex-wrap: nowrap;
+  .mot-metrics--grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 10px;
-    overflow-x: auto;
     padding: 0 var(--mot-mob-pad);
-    scroll-snap-type: x proximity;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-  }
-
-  .mot-metrics--scroll::-webkit-scrollbar {
-    display: none;
   }
 
   .mot-metric--mobile {
-    flex: 0 0 130px;
-    scroll-snap-align: start;
-    min-height: 0;
+    min-height: 108px;
     height: auto;
     padding: 12px 12px 10px;
     display: flex;
     flex-direction: column;
     align-items: flex-start;
+    justify-content: flex-start;
     background: #ffffff !important;
-    border: 1px solid rgba(10, 186, 181, 0.12) !important;
-    border-radius: 18px !important;
-    box-shadow: 0 12px 26px rgba(15, 23, 42, 0.06) !important;
+    border: 1px solid rgba(10, 186, 181, 0.18) !important;
+    border-radius: 12px !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06) !important;
+  }
+
+  .mot-metric__mobile-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    gap: 8px;
+    margin-bottom: 8px;
   }
 
   .mot-metric--mobile .mot-metric__icon {
@@ -313,8 +366,8 @@
     justify-content: center;
     width: 32px;
     height: 32px;
-    border-radius: 8px;
-    margin-bottom: 8px;
+    border-radius: 10px;
+    flex-shrink: 0;
   }
 
   .mot-metric--mobile .mot-metric__icon--tiffany {
@@ -337,6 +390,14 @@
     color: #22c55e;
   }
 
+  .mot-metric--mobile .mot-metric__spark--mobile-chart {
+    display: block !important;
+    width: 72px;
+    height: 30px;
+    flex-shrink: 0;
+    margin-left: auto;
+  }
+
   .mot-metric--mobile .mot-metric__label {
     display: block;
     font-size: 11px;
@@ -347,7 +408,7 @@
   }
 
   .mot-metric--mobile .mot-metric__value {
-    font-size: 18px;
+    font-size: 20px;
     font-weight: 700;
     color: #000000;
     letter-spacing: -0.02em;
@@ -355,107 +416,237 @@
     margin: 0 0 2px;
   }
 
-  .mot-metric--mobile .mot-metric__delta {
-    display: none;
-  }
-
-  .mot-metric--mobile .mot-metric__spark--bottom {
-    display: block !important;
-    width: 100%;
-    height: 24px;
+  .mot-metric--mobile .mot-metric__delta--mobile {
+    display: block;
     margin-top: auto;
+    font-size: 10px;
+    font-weight: 500;
+    color: #9ca3af;
+    line-height: 1.2;
   }
 
   /* —— Chart card —— */
+  .mot-row {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+
   .mot-row--chart {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     padding: 0 var(--mot-mob-pad);
     margin-bottom: 16px;
     gap: 0;
   }
 
   .mot-chart-card {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
     padding: 16px;
     border-radius: 20px;
     background: #ffffff;
-    border: 1px solid rgba(10, 186, 181, 0.12);
-    box-shadow: 0 12px 26px rgba(15, 23, 42, 0.06);
+    border: var(--mot-mob-block-border);
+    box-shadow: var(--mot-mob-block-shadow);
+    box-sizing: border-box;
+    overflow: hidden;
   }
 
   .mot-chart-card__head {
-    margin-bottom: 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    margin-bottom: 12px;
   }
 
   .mot-chart-card__head .mot-card__title {
+    margin: 0;
     font-size: 15px;
     font-weight: 700;
-    color: #000000;
+    color: #111827;
+    line-height: 1.25;
+  }
+
+  .mot-chart-card__head .mot-chart-filter {
+    align-self: flex-end;
+    max-width: 100%;
   }
 
   .mot-chart-card__legend {
-    gap: 12px;
-    margin-bottom: 12px;
+    display: flex;
     flex-wrap: wrap;
+    gap: 6px 12px;
+    margin-bottom: 12px;
+    max-width: 100%;
   }
 
-  .mot-legend-item {
+  .mot-chart-card__legend .mot-legend-item {
     font-size: 11px;
     color: #6b7280;
+    max-width: 100%;
+    min-width: 0;
   }
 
-  .mot-legend-item i {
+  .mot-chart-card__legend .mot-legend-item i {
     width: 7px;
     height: 7px;
+    flex-shrink: 0;
   }
 
   .mot-chart-card__canvas {
-    height: 200px;
+    position: relative;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    height: 220px;
     margin: 0;
+    padding-top: 4px;
+    overflow: hidden;
+  }
+
+  .mot-chart-card__canvas > div,
+  .mot-chart-card__canvas canvas {
+    max-width: 100% !important;
   }
 
   .mot-select-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    max-width: 140px;
     padding: 6px 10px;
     font-size: 12px;
+    font-weight: 500;
     border-radius: 8px;
     border: 1px solid #e5e7eb;
     background: #fff;
     color: #374151;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .mot-chart-filter__menu {
-    min-width: 190px;
+    min-width: 180px;
     right: 0;
+    z-index: 20;
   }
 
   .mot-chart-filter__option {
-    min-height: 36px;
-    font-size: 12px;
+    min-height: 38px;
+    font-size: 13px;
   }
 
-  /* —— Activity —— */
-  .mot-row--triple {
-    grid-template-columns: 1fr;
-    padding: 0 var(--mot-mob-pad);
-    margin-bottom: 16px;
-    gap: 0;
-  }
-
-  .mot-activity-card {
+  /* —— Ближайший таймер —— */
+  .mot-row--chart .mot-best {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    margin-top: 12px;
     padding: 16px;
     border-radius: 20px;
     background: #ffffff;
-    border: 1px solid rgba(10, 186, 181, 0.12);
-    box-shadow: 0 12px 26px rgba(15, 23, 42, 0.06);
+    border: var(--mot-mob-block-border);
+    box-shadow: var(--mot-mob-block-shadow);
+    box-sizing: border-box;
+  }
+
+  .mot-row--chart .mot-best .mot-card__title {
+    margin: 0 0 12px;
+    font-size: 15px;
+    font-weight: 700;
+    color: #111827;
+  }
+
+  .mot-row--chart .mot-best__media {
+    border-radius: 14px;
+    margin-bottom: 12px;
+    aspect-ratio: 16 / 9;
+  }
+
+  .mot-row--chart .mot-best__badge {
+    top: 10px;
+    right: 10px;
+    padding: 6px 10px;
+    font-size: 11px;
+    box-shadow: 0 4px 12px rgba(34, 197, 94, 0.35);
+  }
+
+  .mot-row--chart .mot-best__name {
+    font-size: 15px;
+    margin-bottom: 4px;
+  }
+
+  .mot-row--chart .mot-best__location {
+    font-size: 12px;
+    margin-bottom: 6px;
+  }
+
+  .mot-row--chart .mot-best__price {
+    font-size: 17px;
+    margin-bottom: 10px;
+  }
+
+  .mot-row--chart .mot-best__stats {
+    gap: 10px;
+    margin-bottom: 12px;
+    font-size: 11px;
+  }
+
+  .mot-row--chart .mot-best__empty {
+    min-height: 140px;
+    padding: 16px;
+    border-radius: 14px;
+  }
+
+  .mot-row--chart .mot-btn--primary.mot-btn--block {
+    width: 100%;
+    min-height: 44px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #ffffff;
+    background: linear-gradient(135deg, #53d8d3 0%, #0abab5 48%, #089a95 100%);
+    box-shadow:
+      0 4px 14px rgba(10, 186, 181, 0.38),
+      inset 0 1px 0 rgba(255, 255, 255, 0.28);
+  }
+
+  /* —— Activity (как на десктопе) —— */
+  .mot-row--triple {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 0 var(--mot-mob-pad);
+    margin-bottom: 16px;
+    gap: 12px;
+  }
+
+  .mot-activity-card {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    padding: 16px;
+    border-radius: 20px;
+    background: #ffffff;
+    border: var(--mot-mob-block-border);
+    box-shadow: var(--mot-mob-block-shadow);
+    box-sizing: border-box;
   }
 
   .mot-activity-card__head {
-    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 0;
   }
 
   .mot-activity-card__head .mot-card__title {
+    margin: 0;
     font-size: 15px;
     font-weight: 700;
-    color: #000000;
+    color: #111827;
   }
 
   .mot-link-btn--all {
@@ -463,48 +654,57 @@
     font-weight: 500;
     color: var(--mot-tiffany);
     padding: 0;
+    flex-shrink: 0;
+  }
+
+  .mot-activity-card .mot-link-btn:not(.mot-link-btn--all) {
+    margin-top: 4px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--mot-tiffany);
   }
 
   .mot-activity {
     list-style: none;
-    margin: 0;
+    margin: 14px 0 10px;
     padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
   }
 
   .mot-activity__item {
     display: grid;
-    grid-template-columns: 40px minmax(0, 1fr);
-    gap: 10px;
+    grid-template-columns: 36px minmax(0, 1fr);
+    grid-template-rows: auto auto;
+    gap: 8px 10px;
     align-items: start;
-    padding: 12px 0;
-    border-bottom: 1px solid #f3f4f6;
   }
 
   .mot-activity__item--bid {
-    grid-template-columns: 40px minmax(0, 1fr);
     padding: 12px;
-    border: 1px solid rgba(10, 186, 181, 0.12);
-    border-radius: 16px;
-    background: rgba(10, 186, 181, 0.05);
-  }
-
-  .mot-activity__item:first-child {
-    padding-top: 0;
-  }
-
-  .mot-activity__item:last-child {
-    border-bottom: none;
-    padding-bottom: 0;
+    border-radius: 14px;
+    background: linear-gradient(135deg, rgba(10, 186, 181, 0.06) 0%, rgba(255, 255, 255, 0.92) 100%);
+    border: 1px solid rgba(10, 186, 181, 0.1);
   }
 
   .mot-activity__icon {
-    width: 40px;
-    height: 40px;
+    grid-column: 1;
+    grid-row: 1;
+    width: 36px;
+    height: 36px;
     border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .mot-activity__body {
+    grid-column: 2;
+    grid-row: 1;
+    min-width: 0;
   }
 
   .mot-activity__title {
-    margin: 0;
+    margin: 0 0 3px;
     font-size: 13px;
     font-weight: 600;
     color: #111827;
@@ -512,34 +712,139 @@
   }
 
   .mot-activity__subtitle {
-    margin: 2px 0 0;
+    display: -webkit-box;
+    margin: 0;
+    font-size: 11px;
+    color: #6b7280;
+    line-height: 1.35;
+    word-break: break-word;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .mot-activity__side {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+    padding-top: 10px;
+    margin-top: 2px;
+    border-top: 1px solid rgba(10, 186, 181, 0.14);
+  }
+
+  .mot-activity__amount {
+    padding: 6px 11px;
+    border-radius: 999px;
+    background: rgba(10, 186, 181, 0.12);
+    color: #0d9488;
     font-size: 12px;
-    color: #9ca3af;
-    line-height: 1.3;
+    font-weight: 800;
+    line-height: 1;
+    white-space: nowrap;
+    flex-shrink: 0;
   }
 
   .mot-activity__time {
     font-size: 11px;
     color: #9ca3af;
     white-space: nowrap;
-    line-height: 1.3;
-    padding-top: 2px;
-  }
-
-  .mot-activity__side {
-    grid-column: 2;
-    align-items: flex-start;
-    margin-top: 8px;
-  }
-
-  .mot-activity__amount {
-    font-size: 11px;
+    line-height: 1.2;
+    text-align: right;
+    flex-shrink: 0;
+    margin-left: auto;
   }
 
   .mot-activity__empty {
-    min-height: 190px;
-    margin: 0;
+    min-height: 160px;
+    margin: 14px 0 10px;
     padding: 20px;
+  }
+
+  /* —— Распределение по статусам —— */
+  .mot-row--triple .mot-status-card {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    padding: 16px;
+    border-radius: 20px;
+    background: #ffffff;
+    border: var(--mot-mob-block-border);
+    box-shadow: var(--mot-mob-block-shadow);
+    box-sizing: border-box;
+  }
+
+  .mot-row--triple .mot-status-card .mot-card__title {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 700;
+    color: #111827;
+  }
+
+  .mot-row--triple .mot-status-card__body {
+    margin-top: 12px;
+    gap: 14px;
+  }
+
+  .mot-row--triple .mot-status-card__analytics {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    min-height: 0;
+    padding: 16px;
+    border-radius: 16px;
+    background: linear-gradient(180deg, #f8fafc 0%, #f0fdfa 100%);
+    border: 1px solid rgba(10, 186, 181, 0.08);
+  }
+
+  .mot-row--triple .mot-donut-wrap {
+    width: 148px;
+    height: 148px;
+  }
+
+  .mot-row--triple .mot-donut-center__value {
+    font-size: 24px;
+  }
+
+  .mot-row--triple .mot-status-legend {
+    width: 100%;
+    gap: 8px;
+  }
+
+  .mot-row--triple .mot-status-legend li {
+    padding: 8px 10px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.88);
+    border: 1px solid rgba(10, 186, 181, 0.08);
+    font-size: 12px;
+  }
+
+  .mot-row--triple .mot-status-legend i {
+    width: 9px;
+    height: 9px;
+  }
+
+  .mot-row--triple .mot-status-buyer-ad.oad-buyer {
+    width: 100%;
+    min-height: 0;
+    margin: 0;
+    padding: 14px;
+    border-radius: 16px;
+  }
+
+  .mot-row--triple .mot-status-buyer-ad .oad-buyer__title {
+    font-size: 14px;
+  }
+
+  .mot-row--triple .mot-status-buyer-ad .oad-buyer__text {
+    font-size: 12px;
   }
 
   /* —— Promo cards —— */
@@ -673,8 +978,7 @@
     box-shadow: 0 4px 14px rgba(0, 0, 0, 0.24);
   }
 
-
-  /* —— Bottom nav —— */
+  /* —— Bottom nav (standalone route) —— */
   .mot-tabbar {
     display: flex !important;
     align-items: flex-end;
@@ -751,17 +1055,17 @@
 }
 
 @media (max-width: 380px) {
-  .mot-mob-pagehead__title {
-    font-size: 22px;
+  .mot-mob-hero__title {
+    font-size: 20px;
   }
 
-  .mot-date-pill--compact {
-    max-width: 132px;
-    font-size: 10px;
+  .mot-date-pill--full {
+    font-size: 12px;
+    padding: 11px 12px;
   }
 
-  .mot-metric--mobile {
-    flex: 0 0 120px;
+  .mot-metric--mobile .mot-metric__value {
+    font-size: 16px;
   }
 
   .mot-mob-promo-card__visual {

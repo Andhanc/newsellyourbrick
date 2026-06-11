@@ -249,35 +249,43 @@
   box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.12);
 }
 
-.oap-testdrive-step__price-currency {
+.oap-testdrive-step__price-currency.oap-select {
   position: absolute;
   top: 50%;
   right: 8px;
   transform: translateY(-50%);
+  width: auto;
   min-width: 52px;
-  padding: 4px 20px 4px 6px;
+  z-index: 2;
+}
+
+.oap-testdrive-step__price-currency .oap-select__trigger {
+  min-height: 28px;
+  padding: 4px 24px 4px 8px;
   border: none;
   border-radius: 6px;
-  font: inherit;
   font-size: 12px;
   font-weight: 600;
   color: #374151;
-  background: #f3f4f6
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")
-    no-repeat right 4px center;
-  appearance: none;
-  cursor: pointer;
-  transition: background 0.15s;
+  background: #f3f4f6;
+  box-shadow: none;
 }
 
-.oap-testdrive-step__price-currency:hover {
-  background-color: #e5e7eb;
-}
-
-.oap-testdrive-step__price-currency:focus {
-  outline: none;
-  background-color: #e5e7eb;
+.oap-testdrive-step__price-currency .oap-select__trigger:hover,
+.oap-testdrive-step__price-currency.oap-select--open .oap-select__trigger {
+  background: #e5e7eb;
   box-shadow: 0 0 0 2px rgba(91, 108, 248, 0.2);
+}
+
+.oap-testdrive-step__price-currency .oap-select__chevron {
+  width: 14px;
+  height: 14px;
+}
+
+.oap-testdrive-step__price-currency .oap-select__menu {
+  right: 0;
+  left: auto;
+  min-width: 88px;
 }
 
 .oap-testdrive-step__required {

@@ -1,0 +1,254 @@
+.oap-finance-step {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.oap-finance-step__rows {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.oap-finance-step__row {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
+.oap-finance-step__row:not(:first-child) {
+  margin-top: 24px;
+  padding-top: 28px;
+  border-top: 1px solid rgba(10, 186, 181, 0.28);
+}
+
+.oap-finance-step__row--split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 340px);
+  gap: 24px;
+  align-items: stretch;
+}
+
+.oap-finance-step__zone {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
+.oap-finance-step__row--calculator .oap-wizard-aside--inline,
+.oap-finance-step__row--calculator .oap-wizard-aside--inline .oap-wizard-aside__card {
+  height: auto;
+}
+
+.oap-finance-step__head {
+  margin-bottom: 28px;
+}
+
+.oap-finance-step__title {
+  margin: 0 0 6px;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--oap-text);
+}
+
+.oap-finance-step__subtitle {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--oap-text-muted);
+}
+
+.oap-finance-step__subtitle-short {
+  display: none;
+}
+
+.oap-finance-block {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.oap-finance-block + .oap-finance-block {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+}
+
+.oap-finance-block__title,
+.oap-finance-block__hint {
+  display: none;
+}
+
+/* Calculator embedded */
+.oap-finance-block--calculator .oap-calculator-step--embedded .oap-calculator-step__applied {
+  margin-bottom: 10px;
+  padding: 10px 12px;
+  font-size: 12px;
+  border-radius: 10px;
+}
+
+.oap-finance-block--calculator .oap-calculator-step--embedded .oap-calculator-step__card {
+  padding: 0;
+  border: none;
+  box-shadow: none;
+  background: transparent;
+  overflow: visible;
+}
+
+.oap-finance-block--calculator .oap-calculator-step--embedded .oap-calculator-step__embed {
+  padding-top: 0;
+}
+
+.oap-finance-block--calculator .oap-calculator-step--embedded .oap-calculator-step__embed .property-calculator-form__panel {
+  background: #f8fafc;
+  border: 1px solid var(--oap-border);
+  border-radius: 12px;
+}
+
+/* Pricing embedded */
+.oap-finance-block--pricing .oap-pricing-step--embedded {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.oap-finance-block--pricing .oap-pricing-step--embedded .oap-pricing-step__subsection {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.oap-finance-block--pricing .oap-pricing-step--embedded .oap-pricing-step__subsection-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--oap-text);
+}
+
+.oap-finance-block--pricing .oap-pricing-step--embedded .oap-pricing-step__card {
+  padding: 0;
+  border: none;
+  box-shadow: none;
+  background: transparent;
+  gap: 12px;
+}
+
+.oap-finance-block--pricing .oap-pricing-step--embedded .oap-pricing-step__prices-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  max-width: none;
+  width: 100%;
+}
+
+.oap-finance-block--pricing .oap-pricing-step--embedded .oap-pricing-step__field--compact {
+  width: min(100%, 188px);
+  max-width: 188px;
+}
+
+.oap-finance-block--pricing .oap-pricing-step--embedded .oap-pricing-step__auction-period {
+  width: min(100%, 188px);
+  max-width: 188px;
+}
+
+.oap-finance-block--pricing .oap-pricing-step--embedded .oap-pricing-step__field-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--oap-text-muted);
+}
+
+.oap-finance-block--pricing .oap-pricing-step--embedded .oap-pricing-step__input {
+  border-radius: 12px;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.oap-finance-block--pricing .oap-pricing-step--embedded .oap-pricing-step__input:focus {
+  border-color: var(--oap-primary);
+  box-shadow: 0 0 0 3px var(--oap-primary-ring);
+}
+
+.oap-finance-block--pricing .oap-pricing-step--embedded .oap-pricing-step__field-hint {
+  font-size: 11px;
+  line-height: 1.35;
+  color: var(--oap-text-muted);
+}
+
+.oap-finance-block--pricing .oap-pricing-step--embedded .oap-pricing-step__card--dates {
+  max-width: none;
+}
+
+.oap-finance-block--pricing .oap-pricing-step--embedded .oap-pricing-step__auction-block {
+  margin: 0;
+}
+
+.oap-finance-block--pricing .oap-pricing-step--embedded .auction-period-picker {
+  gap: 12px;
+}
+
+@media (max-width: 900px) {
+  .oap-finance-step__rows {
+    gap: 14px;
+  }
+
+  .oap-finance-step__row {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: none;
+  }
+
+  .oap--mobile .oap-finance-step .oap-wizard-section {
+    padding: 16px;
+    border-radius: 14px;
+    background: #f8fafc;
+    border: 1px solid #e8edf2;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+  }
+
+  .oap--mobile .oap-finance-step .oap-wizard-section::before {
+    display: block;
+  }
+
+  .oap--mobile .oap-finance-step .oap-wizard-section__head {
+    margin-bottom: 12px;
+  }
+
+  .oap-finance-step__row--split,
+  .oap-finance-step__row--calculator {
+    grid-template-columns: 1fr;
+  }
+
+  .oap-finance-step__title {
+    font-size: 18px;
+  }
+
+  .oap-finance-step__subtitle-full {
+    display: none;
+  }
+
+  .oap-finance-step__subtitle-short {
+    display: inline;
+  }
+
+  .oap-finance-block__hint {
+    font-size: 12px;
+  }
+
+  .oap-finance-block--pricing .oap-pricing-step--embedded .oap-pricing-step__prices-row {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .oap-finance-block--pricing .oap-pricing-step--embedded .oap-pricing-step__field--compact,
+  .oap-finance-block--pricing .oap-pricing-step--embedded .oap-pricing-step__auction-period {
+    max-width: none;
+    width: 100%;
+  }
+
+  .oap-finance-block--pricing .oap-pricing-step--embedded .oap-pricing-step__card--dates {
+    max-width: none;
+  }
+}
+

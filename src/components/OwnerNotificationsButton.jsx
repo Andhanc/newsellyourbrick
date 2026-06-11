@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Bell, DollarSign } from 'lucide-react'
 import OwnerNotificationsDrawer from './OwnerNotificationsDrawer'
 import { useOwnerTestNavOptional } from '../context/OwnerTestNavigationContext'
@@ -41,15 +42,21 @@ function formatBidAmount(value, currency = 'USD') {
   }).format(amount)
 }
 
-function formatRelativeTime(value) {
+function formatRelativeTime(value, t, locale) {
   const ts = parseTime(value)
   if (!ts) return ''
   const diff = Date.now() - ts
-  if (diff < 60000) return 'только что'
-  if (diff < 3600000) return `${Math.max(1, Math.floor(diff / 60000))} мин назад`
-  if (diff < 86400000) return `${Math.floor(diff / 3600000)} ч назад`
-  if (diff < 604800000) return `${Math.floor(diff / 86400000)} д назад`
-  return new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'short' })
+  if (diff < 60000) return t('ownerTest_notificationsTimeJustNow')
+  if (diff < 3600000) {
+    return t('ownerTest_notificationsTimeMinutes', { count: Math.max(1, Math.floor(diff / 60000)) })
+  }
+  if (diff < 86400000) {
+    return t('ownerTest_notificationsTimeHours', { count: Math.floor(diff / 3600000) })
+  }
+  if (diff < 604800000) {
+    return t('ownerTest_notificationsTimeDays', { count: Math.floor(diff / 86400000) })
+  }
+  return new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short' })
     .format(new Date(ts))
     .replace(/\.$/, '')
 }
@@ -88,6 +95,7 @@ export default function OwnerNotificationsButton({
   badge,
   items,
 }) {
+  const { t, i18n } = useTranslation()
   const nav = useOwnerTestNavOptional()
   const [open, setOpen] = useState(false)
   const [properties, setProperties] = useState([])
@@ -135,20 +143,23 @@ export default function OwnerNotificationsButton({
         const table = bid.propertyTable || bid.property_table
         const propertyId = bid.propertyId || bid.property_id
         const property = propertyByKey.get(buildPropertyKey(propertyId, table))
-        const propertyTitle = bid.propertyTitle || property?.title || `Объект #${propertyId}`
+        const propertyTitle =
+          bid.propertyTitle || property?.title || t('ownerTest_notificationsPropertyFallback', { id: propertyId })
         const propertyLocation = bid.propertyLocation || property?.location || ''
         const buyerId = bid.user_id_number || bid.user_id
         const openParams = { propertyId }
         const createdAt = bid.created_at || bid.createdAt
         const createdTs = parseTime(createdAt) || 0
+        const buyerPart = buyerId ? ` • ${t('ownerTest_notificationsBuyer', { id: buyerId })}` : ''
+        const locationPart = propertyLocation ? ` • ${propertyLocation}` : ''
 
         return {
           id: `bid-${bid.id || `${propertyId}-${createdTs}-${bid.bid_amount}`}`,
           tone: 'teal',
           icon: DollarSign,
-          title: 'Новая ставка на объект',
-          text: `${propertyTitle}${buyerId ? ` • Покупатель #${buyerId}` : ''}${propertyLocation ? ` • ${propertyLocation}` : ''}`,
-          time: formatRelativeTime(createdAt),
+          title: t('ownerTest_notificationsNewBid'),
+          text: `${propertyTitle}${buyerPart}${locationPart}`,
+          time: formatRelativeTime(createdAt, t, i18n.language),
           amount: formatBidAmount(bid.bid_amount, bid.propertyCurrency || property?.currency || 'USD'),
           createdTs,
           unread: true,
@@ -157,7 +168,7 @@ export default function OwnerNotificationsButton({
         }
       })
       .sort((a, b) => b.createdTs - a.createdTs)
-  }, [bidRows, nav, properties])
+  }, [bidRows, nav, properties, t, i18n.language])
 
   const resolvedItems = items ?? fetchedItems
   const resolvedBadge = badge !== undefined ? badge : resolvedItems.length || null
@@ -167,7 +178,7 @@ export default function OwnerNotificationsButton({
       <button
         type="button"
         className={className}
-        aria-label="Уведомления"
+        aria-label={t('ownerTest_notificationsAria')}
         aria-expanded={open}
         onClick={() => setOpen(true)}
       >

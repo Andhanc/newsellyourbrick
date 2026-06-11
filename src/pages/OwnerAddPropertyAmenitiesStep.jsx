@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { Check, Lightbulb } from 'lucide-react'
 import { getAmenityGroupsForProfile } from '../utils/oapAmenityGroups'
 import { getAmenityIcon } from './oapAmenityIcons'
@@ -5,15 +6,106 @@ import { OAP_AMENITIES_IMAGES } from './oapAmenitiesImages'
 import './OwnerAddPropertyAmenitiesStep.css'
 import './oapStepSidebar.css'
 
+function AmenityCard({ item, isActive, embedded, onToggle }) {
+  const ItemIcon = getAmenityIcon(item.tzKey)
+
+  return (
+    <button
+      type="button"
+      className={`oap-amenity-card${isActive ? ' oap-amenity-card--active' : ''}`}
+      aria-pressed={isActive}
+      title={item.label}
+      onClick={() => onToggle(item.tzKey)}
+    >
+      <span className="oap-amenity-card__icon-wrap" aria-hidden>
+        <ItemIcon size={16} strokeWidth={1.85} />
+      </span>
+      <span className="oap-amenity-card__label">{item.label}</span>
+      <span className="oap-amenity-card__check" aria-hidden>
+        <Check size={embedded ? 10 : 11} strokeWidth={3} />
+      </span>
+    </button>
+  )
+}
+
 export default function OwnerAddPropertyAmenitiesStep({
+  embedded = false,
   typeProfile,
   additionalAmenities,
   selectedAmenities,
   onAdditionalChange,
   onToggleAmenity,
 }) {
+  const { t } = useTranslation()
   const groups = getAmenityGroupsForProfile(typeProfile)
-  const allItems = groups.flatMap((group) => group.items)
+
+  const GROUP_TITLE_KEYS = {
+    'residential-parking': 'addPropertyAmenitiesGroupResidentialParkingStorage',
+    'residential-security': 'addPropertyAmenitiesGroupResidentialSecurity',
+    'residential-comfort': 'addPropertyAmenitiesGroupResidentialComfort',
+    'residential-outdoor': 'addPropertyAmenitiesGroupResidentialOutdoor',
+    'commercial-parking': 'addPropertyAmenitiesGroupCommercialParking',
+    'commercial-tech': 'addPropertyAmenitiesGroupCommercialTech',
+    'commercial-security': 'addPropertyAmenitiesGroupCommercialBuilding',
+    'land-utilities': 'addPropertyAmenitiesGroupLandUtilities',
+    'land-access': 'addPropertyAmenitiesGroupLandAccess',
+    'hotel-guest': 'addPropertyAmenitiesGroupHotelGuest',
+    'hotel-fb': 'addPropertyAmenitiesGroupHotelFood',
+    'hotel-transport': 'addPropertyAmenitiesGroupHotelParking',
+    'hotel-tech': 'addPropertyAmenitiesGroupHotelTech',
+  }
+
+  const getGroupTitle = (group) => {
+    const key = GROUP_TITLE_KEYS[group.id]
+    return key ? t(key) : group.title
+  }
+
+  const groupedAmenities = (
+    <div className="oap-amenities-groups">
+      {groups.map((group) => (
+        <section key={group.id} className="oap-amenities-group" aria-labelledby={`oap-amenity-group-${group.id}`}>
+          <h3 id={`oap-amenity-group-${group.id}`} className="oap-amenities-group__title">
+            {getGroupTitle(group)}
+          </h3>
+          <div className="oap-amenities-grid" role="group" aria-label={getGroupTitle(group)}>
+            {group.items.map((item) => (
+              <AmenityCard
+                key={item.tzKey}
+                item={item}
+                isActive={selectedAmenities.includes(item.tzKey)}
+                embedded={embedded}
+                onToggle={onToggleAmenity}
+              />
+            ))}
+          </div>
+        </section>
+      ))}
+    </div>
+  )
+
+  const extraField = (
+    <label className="oap-amenities-extra">
+      <span className="oap-amenities-extra__label">{t('addPropertyAmenitiesOtherLabel')}</span>
+      <textarea
+        className="oap-amenities-extra__textarea"
+        rows={embedded ? 3 : 4}
+        placeholder={t('addPropertyAmenitiesOtherPlaceholder')}
+        value={additionalAmenities}
+        onChange={(e) => onAdditionalChange(e.target.value)}
+      />
+    </label>
+  )
+
+  if (embedded) {
+    return (
+      <section className="oap-amenities-step oap-amenities-step--embedded">
+        <div className="oap-amenities-step__card">
+          {groupedAmenities}
+          {extraField}
+        </div>
+      </section>
+    )
+  }
 
   return (
     <section className="oap-amenities-step" aria-labelledby="oap-amenities-step-title">
@@ -21,73 +113,30 @@ export default function OwnerAddPropertyAmenitiesStep({
         <div className="oap-amenities-step__main">
           <header className="oap-amenities-step__head">
             <h2 id="oap-amenities-step-title" className="oap-amenities-step__title">
-              Выберите удобства для объекта
+              {t('addPropertyAmenitiesTitle')}
             </h2>
-            <p className="oap-amenities-step__subtitle">
-              Отметьте все, что есть в вашем объекте
-            </p>
+            <p className="oap-amenities-step__subtitle">{t('addPropertyAmenitiesGroupsIntro')}</p>
           </header>
 
           <div className="oap-amenities-step__card">
-            <div className="oap-amenities-grid" role="group" aria-label="Удобства объекта">
-              {allItems.map((item) => {
-                const isActive = selectedAmenities.includes(item.tzKey)
-                const ItemIcon = getAmenityIcon(item.tzKey)
-                return (
-                  <button
-                    key={item.tzKey}
-                    type="button"
-                    className={`oap-amenity-card${isActive ? ' oap-amenity-card--active' : ''}`}
-                    aria-pressed={isActive}
-                    title={item.label}
-                    onClick={() => onToggleAmenity(item.tzKey)}
-                  >
-                    <span className="oap-amenity-card__icon-wrap" aria-hidden>
-                      <ItemIcon size={16} strokeWidth={1.85} />
-                    </span>
-                    <span className="oap-amenity-card__label">{item.label}</span>
-                    {isActive && (
-                      <span className="oap-amenity-card__check" aria-hidden>
-                        <Check size={11} strokeWidth={3} />
-                      </span>
-                    )}
-                  </button>
-                )
-              })}
-            </div>
-
-            <label className="oap-amenities-extra">
-              <span className="oap-amenities-extra__label">Дополнительное описание удобств</span>
-              <textarea
-                className="oap-amenities-extra__textarea"
-                rows={4}
-                placeholder="Например: встроенная система умного дома, проектор, музыкальная система и т.д."
-                value={additionalAmenities}
-                onChange={(e) => onAdditionalChange(e.target.value)}
-              />
-            </label>
+            {groupedAmenities}
+            {extraField}
           </div>
         </div>
 
-        <aside className="oap-step-sidebar" aria-label="Подсказка">
+        <aside className="oap-step-sidebar" aria-label={t('oap_wizardTipsTitle')}>
           <div className="oap-step-sidebar__head">
             <span className="oap-step-sidebar__icon" aria-hidden>
               <Lightbulb size={16} strokeWidth={2} />
             </span>
-            <span className="oap-step-sidebar__title">Подсказка</span>
+            <span className="oap-step-sidebar__title">{t('oap_wizardTipsTitle')}</span>
           </div>
-          <p className="oap-step-sidebar__text">
-            Выбранные удобства будут отображаться в карточке объекта и привлекут больше внимания
-            покупателей.
-          </p>
-          <p className="oap-step-sidebar__text">
-            Отмечайте только то, что реально есть у объекта — это повышает доверие и снижает число
-            уточняющих вопросов на просмотре.
-          </p>
+          <p className="oap-step-sidebar__text">{t('addPropertyAmenitiesHint2Text')}</p>
+          <p className="oap-step-sidebar__text">{t('addPropertyAmenitiesHint1Item2')}</p>
           <ul className="oap-step-sidebar__tips">
-            <li>Парковка, лифт и охрана — часто решают при выборе квартиры</li>
-            <li>Бассейн, сад и терраса усиливают премиальное позиционирование</li>
-            <li>В поле ниже можно добавить редкие опции, которых нет в списке</li>
+            <li>{t('addPropertyAmenitiesHint1Item1')}</li>
+            <li>{t('addPropertyAmenitiesHint1Item3')}</li>
+            <li>{t('addPropertyAmenitiesOtherLabel')}</li>
           </ul>
           <div className="oap-step-sidebar__illustration">
             <img

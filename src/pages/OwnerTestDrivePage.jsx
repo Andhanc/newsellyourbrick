@@ -1,24 +1,15 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { Link } from 'react-router-dom'
-import {
-  LayoutDashboard,
-  Building2,
-  CalendarCheck,
-  ShoppingBag,
-  Car,
-  CreditCard,
-  BarChart3,
-  MessageSquare,
-  Settings,
-  ChevronRight,
-  Menu,
-  X,
-} from 'lucide-react'
+import { useTranslation } from 'react-i18next'
+import { ChevronRight, Menu, X } from 'lucide-react'
 import { OTD_IMAGES } from './ownerTestDriveImages'
 import OwnerTestProfileMenu from '../components/OwnerTestProfileMenu'
 import OwnerNotificationsButton from '../components/OwnerNotificationsButton'
+import OwnerSupportButton from '../components/OwnerSupportButton'
 import OwnerTestDriveDetailModal from '../components/OwnerTestDriveDetailModal'
 import { useOwnerTestEmbeddedNav } from '../hooks/useOwnerTestEmbeddedNav'
+import { useOwnerTestNavItems } from '../hooks/useOwnerTestNavItems'
+import { OWNER_TEST_STANDALONE_HREF_MAP } from '../utils/ownerTestNav'
 import {
   CLERK_DB_USER_SYNCED,
   countOwnerTestDriveByTab,
@@ -28,25 +19,6 @@ import {
 } from '../utils/ownerTestDriveList'
 import './OwnerTestDrivePage.css'
 import './OwnerTestDrivePage.mobile.css'
-
-const NAV_ITEMS = [
-  { id: 'home', label: 'Главная', icon: LayoutDashboard, href: '/main-owner-test' },
-  { id: 'properties', label: 'Мои объекты', icon: Building2, href: '/owner-properties-test' },
-  { id: 'bookings', label: 'Брони', icon: CalendarCheck },
-  { id: 'sales', label: 'Продажи', icon: ShoppingBag, href: '/owner-sales-test' },
-  { id: 'testdrive', label: 'Тест-драйв', icon: Car, active: true },
-  { id: 'subscriptions', label: 'Подписки', icon: CreditCard, href: '/owner-subscriptions-test' },
-  { id: 'analytics', label: 'Аналитика', icon: BarChart3 },
-  { id: 'messages', label: 'Сообщения', icon: MessageSquare, badge: 3 },
-  { id: 'settings', label: 'Настройки', icon: Settings, href: '/owner-profile-test' },
-]
-
-const FILTER_TAB_DEFS = [
-  { id: 'all', label: 'Все' },
-  { id: 'pending', label: 'Ожидает подтверждения' },
-  { id: 'confirmed', label: 'Подтвержденные' },
-  { id: 'cancelled', label: 'Отмененные' },
-]
 
 function LogoMark({ className = '' }) {
   return (
@@ -74,7 +46,25 @@ function LogoMark({ className = '' }) {
 }
 
 export default function OwnerTestDrivePage() {
+  const { t } = useTranslation()
   const { isEmbedded } = useOwnerTestEmbeddedNav()
+  const navItems = useOwnerTestNavItems({
+    activeId: 'testdrive',
+    hrefMap: isEmbedded ? undefined : OWNER_TEST_STANDALONE_HREF_MAP,
+  })
+  const filterTabDefs = useMemo(
+    () => [
+      { id: 'all', label: t('ownerTest_testDriveTabAll') },
+      { id: 'pending', label: t('ownerTest_testDriveTabPending') },
+      { id: 'confirmed', label: t('ownerTest_testDriveTabConfirmed') },
+      { id: 'cancelled', label: t('ownerTest_testDriveTabCancelled') },
+    ],
+    [t]
+  )
+  const datesColumnLabel = useMemo(
+    () => t('ownerTestDriveModalDates', { start: '', end: '' }).replace(/\s*[:\u2014-].*$/, '').trim(),
+    [t]
+  )
   const [activeTab, setActiveTab] = useState('all')
   const [menuOpen, setMenuOpen] = useState(false)
   const [bookings, setBookings] = useState([])
@@ -118,8 +108,8 @@ export default function OwnerTestDrivePage() {
   const tabCounts = useMemo(() => countOwnerTestDriveByTab(bookings), [bookings])
 
   const filterTabs = useMemo(
-    () => FILTER_TAB_DEFS.map((tab) => ({ ...tab, count: tabCounts[tab.id] ?? 0 })),
-    [tabCounts]
+    () => filterTabDefs.map((tab) => ({ ...tab, count: tabCounts[tab.id] ?? 0 })),
+    [filterTabDefs, tabCounts]
   )
 
   const filteredRows = useMemo(
@@ -177,8 +167,9 @@ export default function OwnerTestDrivePage() {
   const mainColumn = (
       <div className="otd-body">
         <header className="otd-header otd-desktop-only">
-          <h1 className="otd-header__title">Тест-драйв</h1>
+          <h1 className="otd-header__title">{t('ownerTest_navTestDrive')}</h1>
           <div className="otd-header__actions">
+            <OwnerSupportButton className="otd-icon-btn" />
             <OwnerNotificationsButton className="otd-icon-btn" badgeClassName="otd-icon-btn__badge" />
             <OwnerTestProfileMenu />
           </div>
@@ -186,12 +177,12 @@ export default function OwnerTestDrivePage() {
 
         <div className="otd-workspace">
           <div className="otd-mob-pagehead otd-mobile-only">
-            <h1 className="otd-mob-pagehead__title">Тест-драйв</h1>
+            <h1 className="otd-mob-pagehead__title">{t('ownerTest_navTestDrive')}</h1>
           </div>
 
           <div className="otd-content">
           <div className="otd-tabs-row">
-            <div className="otd-tabs" role="tablist" aria-label="Статусы тест-драйвов">
+            <div className="otd-tabs" role="tablist" aria-label={t('ownerTest_chartFilterTestDrives')}>
               {filterTabs.map((tab) => (
                 <button
                   key={tab.id}
@@ -209,24 +200,24 @@ export default function OwnerTestDrivePage() {
 
           <div className="otd-table-card">
             {bookingsLoading ? (
-              <div className="otd-table-state">Загрузка заявок…</div>
+              <div className="otd-table-state">{t('ownerSalesLoading')}</div>
             ) : filteredRows.length === 0 ? (
               <div className="otd-table-state">
                 {bookings.length === 0
-                  ? 'Пока нет заявок на тест-драйв по вашим объектам.'
-                  : 'Нет заявок по выбранному фильтру.'}
+                  ? t('ownerTestDriveEmptyText')
+                  : t('ownerTest_propertiesEmptyFilter')}
               </div>
             ) : (
             <div className="otd-table-wrap">
               <table className="otd-table">
                 <thead>
                   <tr>
-                    <th>Объект</th>
-                    <th>Арендатор</th>
-                    <th>Даты</th>
-                    <th>Залог</th>
-                    <th>Статус</th>
-                    <th aria-label="Открыть" />
+                    <th>{t('ownerTest_navMyProperties')}</th>
+                    <th>{t('ownerTestDriveBuyer')}</th>
+                    <th>{datesColumnLabel}</th>
+                    <th>{t('depositButton_label')}</th>
+                    <th>{t('buyerCabinet_billingStatus')}</th>
+                    <th aria-label={t('ownerTest_notificationsOpen')} />
                   </tr>
                 </thead>
                 <tbody>
@@ -243,7 +234,7 @@ export default function OwnerTestDrivePage() {
                       }}
                       tabIndex={0}
                       role="button"
-                      aria-label={`Открыть заявку ${row.displayId}`}
+                      aria-label={`${t('ownerTest_notificationsOpen')} ${row.displayId}`}
                     >
                       <td>
                         <div className="otd-object-cell">
@@ -272,7 +263,7 @@ export default function OwnerTestDrivePage() {
                         <div className="otd-status-cell">
                           <span className={`otd-status otd-status--${row.statusKey}`}>{row.status}</span>
                           {row.checkInStatus === 'checked_in' ? (
-                            <span className="otd-status otd-status--checked-in">Заселился</span>
+                            <span className="otd-status otd-status--checked-in">{row.checkInStatusLabel}</span>
                           ) : null}
                         </div>
                       </td>
@@ -304,12 +295,12 @@ export default function OwnerTestDrivePage() {
 
   return (
     <div className={`otd${menuOpen ? ' otd--menu-open' : ''}`}>
-      <header className="otd-mob-topbar otd-mobile-only" aria-label="Мобильная шапка">
+      <header className="otd-mob-topbar otd-mobile-only" aria-label={t('ownerTest_ariaMobileHeader')}>
         <div className="otd-mob-topbar__slot otd-mob-topbar__slot--left">
           <button
             type="button"
             className="otd-mob-topbar__menu"
-            aria-label="Открыть меню"
+            aria-label={t('ownerTest_ariaOpenMenu')}
             aria-expanded={menuOpen}
             onClick={() => setMenuOpen(true)}
           >
@@ -318,9 +309,10 @@ export default function OwnerTestDrivePage() {
         </div>
         <div className="otd-mob-topbar__brand">
           <LogoMark />
-          <span className="otd-logo__text">SellYourBrick</span>
+          <span className="otd-logo__text">{t('ownerTest_brandName')}</span>
         </div>
         <div className="otd-mob-topbar__slot otd-mob-topbar__slot--right">
+          <OwnerSupportButton className="otd-mob-topbar__bell" iconSize={22} />
           <OwnerNotificationsButton
             className="otd-mob-topbar__bell"
             badgeClassName="otd-icon-btn__badge"
@@ -336,40 +328,40 @@ export default function OwnerTestDrivePage() {
       />
       <aside
         className={`otd-drawer otd-mobile-only${menuOpen ? ' otd-drawer--open' : ''}`}
-        aria-label="Меню кабинета"
+        aria-label={t('ownerTest_ariaCabinetMenu')}
         aria-hidden={!menuOpen}
       >
         <div className="otd-drawer__head">
           <div className="otd-mob-topbar__brand">
             <LogoMark />
-            <span className="otd-logo__text">SellYourBrick</span>
+            <span className="otd-logo__text">{t('ownerTest_brandName')}</span>
           </div>
-          <button type="button" className="otd-drawer__close" aria-label="Закрыть меню" onClick={closeMenu}>
+          <button type="button" className="otd-drawer__close" aria-label={t('ownerTest_ariaCloseMenu')} onClick={closeMenu}>
             <X size={22} />
           </button>
         </div>
         <div className="otd-sidebar__divider otd-sidebar__divider--drawer" aria-hidden />
         <nav className="otd-nav otd-nav--drawer">
-          {NAV_ITEMS.map(renderNavItem)}
+          {navItems.map(renderNavItem)}
         </nav>
       </aside>
 
       <aside className="otd-sidebar otd-desktop-only">
         <div className="otd-sidebar__brand">
-          <span className="otd-logo__mark-slot" aria-hidden />
-          <span className="otd-logo__text">SellYourBrick</span>
+          <LogoMark />
+          <span className="otd-logo__text">{t('ownerTest_brandName')}</span>
         </div>
         <div className="otd-sidebar__divider" aria-hidden />
 
-        <nav className="otd-nav" aria-label="Кабинет продавца">
-          {NAV_ITEMS.map(renderNavItem)}
+        <nav className="otd-nav" aria-label={t('ownerTest_ariaSellerCabinet')}>
+          {navItems.map(renderNavItem)}
         </nav>
 
         <div className="otd-sidebar-promo">
-          <p className="otd-sidebar-promo__title">Станьте покупателем</p>
-          <p className="otd-sidebar-promo__text">Ищите и бронируйте недвижимость на платформе</p>
+          <p className="otd-sidebar-promo__title">{t('heroPitchBecomeBuyerCta')}</p>
+          <p className="otd-sidebar-promo__text">{t('heroPitchBecomeBuyerBody')}</p>
           <button type="button" className="otd-btn otd-btn--primary otd-btn--sm">
-            Стать покупателем
+            {t('heroPitchBecomeBuyerCta')}
           </button>
           <img
             className="otd-sidebar-promo__img"

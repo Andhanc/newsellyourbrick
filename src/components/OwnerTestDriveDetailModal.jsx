@@ -1,5 +1,6 @@
 import { createPortal } from 'react-dom'
 import { useCallback, useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   Calendar,
   Car,
@@ -19,17 +20,21 @@ import {
 import { showToast } from './ToastContainer'
 import './OwnerTestDriveDetailModal.css'
 
-function getCancelledByLabel(cancelledBy) {
-  if (cancelledBy === 'owner') return 'Отменено владельцем'
-  if (cancelledBy === 'buyer') return 'Отменено покупателем'
-  return 'Отменено'
-}
-
 export default function OwnerTestDriveDetailModal({ row, userId, onClose, onUpdated }) {
+  const { t } = useTranslation()
   const [view, setView] = useState('detail')
   const [ownerComment, setOwnerComment] = useState('')
   const [cancelReason, setCancelReason] = useState('')
   const [responding, setResponding] = useState(false)
+
+  const getCancelledByLabel = useCallback(
+    (cancelledBy) => {
+      if (cancelledBy === 'owner') return t('ownerTestDriveDetailCancelledByOwner')
+      if (cancelledBy === 'buyer') return t('ownerTestDriveDetailCancelledByBuyer')
+      return t('ownerTestDriveDetailCancelled')
+    },
+    [t]
+  )
 
   const resetSubView = useCallback(() => {
     setView('detail')
@@ -62,14 +67,16 @@ export default function OwnerTestDriveDetailModal({ row, userId, onClose, onUpda
       setResponding(true)
       await respondOwnerTestDriveBooking(userId, row.bookingId, action, comment)
       showToast(
-        action === 'approve' ? 'Тест-драйв подтверждён' : 'Заявка отклонена',
+        action === 'approve'
+          ? t('ownerTestDriveDetailApproved')
+          : t('ownerTestDriveDetailRejected'),
         'success'
       )
       window.dispatchEvent(new CustomEvent('owner-notifications-refresh'))
       onUpdated?.()
       onClose()
     } catch (error) {
-      showToast(error?.message || 'Не удалось выполнить действие', 'error')
+      showToast(error?.message || t('ownerTestDriveDetailActionFailed'), 'error')
     } finally {
       setResponding(false)
     }
@@ -79,18 +86,18 @@ export default function OwnerTestDriveDetailModal({ row, userId, onClose, onUpda
     if (!userId || !row.bookingId) return
     const reason = cancelReason.trim()
     if (!reason) {
-      showToast('Укажите причину снятия брони', 'warning')
+      showToast(t('ownerTestDriveDetailCancelReasonRequired'), 'warning')
       return
     }
     try {
       setResponding(true)
       await cancelOwnerTestDriveBooking(userId, row.bookingId, reason)
-      showToast('Бронь снята, покупателю отправлена причина', 'success')
+      showToast(t('ownerTestDriveDetailCancelSuccess'), 'success')
       window.dispatchEvent(new CustomEvent('owner-notifications-refresh'))
       onUpdated?.()
       onClose()
     } catch (error) {
-      showToast(error?.message || 'Не удалось снять бронь', 'error')
+      showToast(error?.message || t('ownerTestDriveDetailCancelFailed'), 'error')
     } finally {
       setResponding(false)
     }
@@ -105,7 +112,7 @@ export default function OwnerTestDriveDetailModal({ row, userId, onClose, onUpda
           onClick={() => handleRespond('reject')}
           disabled={responding}
         >
-          {responding ? '…' : 'Отклонить'}
+          {responding ? '…' : t('ownerTestDriveDetailReject')}
         </button>
       ) : null}
       {canCancel ? (
@@ -115,7 +122,7 @@ export default function OwnerTestDriveDetailModal({ row, userId, onClose, onUpda
           onClick={() => setView('cancel')}
           disabled={responding}
         >
-          Снять бронь
+          {t('ownerTestDriveDetailCancelBooking')}
         </button>
       ) : null}
       {canConfirm ? (
@@ -125,7 +132,7 @@ export default function OwnerTestDriveDetailModal({ row, userId, onClose, onUpda
           onClick={() => setView('approve')}
           disabled={responding}
         >
-          Подтвердить
+          {t('ownerTestDriveDetailConfirm')}
         </button>
       ) : null}
     </div>
@@ -133,13 +140,10 @@ export default function OwnerTestDriveDetailModal({ row, userId, onClose, onUpda
 
   const renderApproveView = () => (
     <div className="otd-detail-modal__subview">
-      <h3 className="otd-detail-modal__subview-title">Подтверждение заявки</h3>
-      <p className="otd-detail-modal__subview-hint">
-        Укажите покупателю время заезда, где забрать ключи и другие инструкции — без этого
-        подтверждение не отправится.
-      </p>
+      <h3 className="otd-detail-modal__subview-title">{t('ownerTestDriveDetailConfirmTitle')}</h3>
+      <p className="otd-detail-modal__subview-hint">{t('ownerTestDriveDetailConfirmHint')}</p>
       <label className="otd-detail-modal__label" htmlFor="otd-owner-comment">
-        Комментарий для покупателя
+        {t('ownerTestDriveDetailCommentLabel')}
       </label>
       <textarea
         id="otd-owner-comment"
@@ -147,7 +151,7 @@ export default function OwnerTestDriveDetailModal({ row, userId, onClose, onUpda
         rows={5}
         value={ownerComment}
         onChange={(e) => setOwnerComment(e.target.value)}
-        placeholder="Например: Заезд с 15:00, ключи у консьержа, код домофона 1234."
+        placeholder={t('ownerTestDriveDetailCommentPlaceholder')}
       />
       <div className="otd-detail-modal__actions">
         <button
@@ -156,7 +160,7 @@ export default function OwnerTestDriveDetailModal({ row, userId, onClose, onUpda
           onClick={resetSubView}
           disabled={responding}
         >
-          Назад
+          {t('ownerTestDriveDetailBack')}
         </button>
         <button
           type="button"
@@ -164,7 +168,7 @@ export default function OwnerTestDriveDetailModal({ row, userId, onClose, onUpda
           onClick={() => handleRespond('approve', ownerComment)}
           disabled={responding || !ownerComment.trim()}
         >
-          {responding ? 'Отправляем…' : 'Подтвердить и отправить'}
+          {responding ? t('ownerTestDriveDetailSending') : t('ownerTestDriveDetailConfirmSend')}
         </button>
       </div>
     </div>
@@ -172,12 +176,10 @@ export default function OwnerTestDriveDetailModal({ row, userId, onClose, onUpda
 
   const renderCancelView = () => (
     <div className="otd-detail-modal__subview">
-      <h3 className="otd-detail-modal__subview-title">Снятие брони</h3>
-      <p className="otd-detail-modal__subview-hint">
-        Укажите причину — она будет отправлена покупателю.
-      </p>
+      <h3 className="otd-detail-modal__subview-title">{t('ownerTestDriveDetailCancelTitle')}</h3>
+      <p className="otd-detail-modal__subview-hint">{t('ownerTestDriveDetailCancelHint')}</p>
       <label className="otd-detail-modal__label" htmlFor="otd-cancel-reason">
-        Причина отмены
+        {t('ownerTestDriveDetailCancelReasonLabel')}
       </label>
       <textarea
         id="otd-cancel-reason"
@@ -185,7 +187,7 @@ export default function OwnerTestDriveDetailModal({ row, userId, onClose, onUpda
         rows={4}
         value={cancelReason}
         onChange={(e) => setCancelReason(e.target.value)}
-        placeholder="Например: объект временно недоступен, переносим на другие даты."
+        placeholder={t('ownerTestDriveDetailCancelPlaceholder')}
       />
       <div className="otd-detail-modal__actions">
         <button
@@ -194,7 +196,7 @@ export default function OwnerTestDriveDetailModal({ row, userId, onClose, onUpda
           onClick={resetSubView}
           disabled={responding}
         >
-          Назад
+          {t('ownerTestDriveDetailBack')}
         </button>
         <button
           type="button"
@@ -202,7 +204,7 @@ export default function OwnerTestDriveDetailModal({ row, userId, onClose, onUpda
           onClick={handleCancel}
           disabled={responding || !cancelReason.trim()}
         >
-          {responding ? 'Снимаем…' : 'Снять бронь'}
+          {responding ? t('ownerTestDriveDetailCancelling') : t('ownerTestDriveDetailCancelBooking')}
         </button>
       </div>
     </div>
@@ -221,7 +223,7 @@ export default function OwnerTestDriveDetailModal({ row, userId, onClose, onUpda
           type="button"
           className="otd-detail-modal__close"
           onClick={onClose}
-          aria-label="Закрыть"
+          aria-label={t('ownerTestDriveDetailClose')}
         >
           <X size={22} />
         </button>
@@ -248,14 +250,14 @@ export default function OwnerTestDriveDetailModal({ row, userId, onClose, onUpda
             <div className="otd-detail-modal__stat-icon" aria-hidden>
               <User size={18} strokeWidth={2} />
             </div>
-            <span className="otd-detail-modal__stat-label">Арендатор</span>
+            <span className="otd-detail-modal__stat-label">{t('ownerTestDriveDetailTenant')}</span>
             <span className="otd-detail-modal__stat-value">{row.buyer}</span>
           </div>
           <div className="otd-detail-modal__stat otd-detail-modal__stat--dates">
             <div className="otd-detail-modal__stat-icon" aria-hidden>
               <Calendar size={18} strokeWidth={2} />
             </div>
-            <span className="otd-detail-modal__stat-label">Даты</span>
+            <span className="otd-detail-modal__stat-label">{t('ownerTestDriveDetailDates')}</span>
             <span className="otd-detail-modal__stat-value otd-detail-modal__stat-value--dates">
               {row.dates}
             </span>
@@ -264,7 +266,7 @@ export default function OwnerTestDriveDetailModal({ row, userId, onClose, onUpda
             <div className="otd-detail-modal__stat-icon" aria-hidden>
               <Wallet size={18} strokeWidth={2} />
             </div>
-            <span className="otd-detail-modal__stat-label">Залог</span>
+            <span className="otd-detail-modal__stat-label">{t('ownerTestDriveDetailDeposit')}</span>
             <span className="otd-detail-modal__stat-value otd-detail-modal__stat-value--amount">
               {row.amount}
             </span>
@@ -275,12 +277,12 @@ export default function OwnerTestDriveDetailModal({ row, userId, onClose, onUpda
           {isCheckedIn ? (
             <span className="otd-detail-modal__checkin otd-detail-modal__checkin--ok">
               <CheckCircle2 size={14} aria-hidden />
-              Клиент заселился
+              {t('ownerTestDriveDetailCheckedIn')}
             </span>
           ) : null}
           {hasIssues ? (
             <span className="otd-detail-modal__checkin otd-detail-modal__checkin--warn">
-              Покупатель сообщил о проблемах
+              {t('ownerTestDriveDetailIssuesReported')}
             </span>
           ) : null}
           {!isCheckedIn && !hasIssues && row.checkInStatusLabel ? (
@@ -292,14 +294,13 @@ export default function OwnerTestDriveDetailModal({ row, userId, onClose, onUpda
           <div className="otd-detail-modal__comment-block">
             <div className="otd-detail-modal__comment-head">
               <KeyRound size={16} aria-hidden />
-              <strong>Инструкции для покупателя</strong>
+              <strong>{t('ownerTestDriveDetailInstructions')}</strong>
             </div>
             <p className="otd-detail-modal__comment-body">{row.ownerComment}</p>
           </div>
         ) : canConfirm ? (
           <div className="otd-detail-modal__hint-block">
-            После подтверждения укажите, где забрать ключи, время заезда и код домофона — это
-            обязательно.
+            {t('ownerTestDriveDetailInstructionsRequired')}
           </div>
         ) : null}
 

@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback } from 'react'
-import { Camera, Upload, Video, X, ImagePlus, Youtube, HardDrive, Film } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
+import { Camera, Upload, Video, X, ImagePlus, Youtube, HardDrive, Plus, AlertTriangle, Sparkles } from 'lucide-react'
 import { getYouTubeVideoId, getGoogleDriveVideoId } from '../utils/oapVideoHelpers'
 
 const MAX_PHOTO_SIZE = 10 * 1024 * 1024
@@ -8,6 +9,7 @@ const MAX_VIDEOS = 3
 const MAX_VIDEO_DURATION = 60
 
 export default function OwnerAddPropertyMediaStep({
+  embedded = false,
   photos,
   videos,
   onAddPhotos,
@@ -15,6 +17,7 @@ export default function OwnerAddPropertyMediaStep({
   onAddVideo,
   onRemoveVideo,
 }) {
+  const { t } = useTranslation()
   const photoInputRef = useRef(null)
   const videoInputRef = useRef(null)
 
@@ -37,28 +40,34 @@ export default function OwnerAddPropertyMediaStep({
       )
       const invalidCount = Array.from(files).length - valid.length
       if (invalidCount > 0) {
-        showNotice('Некоторые файлы пропущены: только JPG или PNG до 10 МБ')
+        showNotice(t('oap_mediaPhotosSkipped'))
       }
       if (photos.length >= MAX_PHOTOS) {
-        showNotice(`Можно загрузить максимум ${MAX_PHOTOS} фото`)
+        showNotice(t('oap_mediaMaxPhotos', { count: MAX_PHOTOS }))
         return
       }
       const remaining = MAX_PHOTOS - photos.length
       if (valid.length > remaining) {
-        showNotice(`Добавлено ${remaining} из ${valid.length} — лимит ${MAX_PHOTOS} фото`)
+        showNotice(
+          t('oap_mediaPhotosAddedPartial', {
+            added: remaining,
+            total: valid.length,
+            max: MAX_PHOTOS,
+          })
+        )
       }
       if (valid.length > 0) onAddPhotos(valid.slice(0, remaining))
     },
-    [photos.length, onAddPhotos, showNotice]
+    [photos.length, onAddPhotos, showNotice, t]
   )
 
   const openVideoSourceModal = useCallback(() => {
     if (videos.length >= MAX_VIDEOS) {
-      showNotice(`Можно загрузить максимум ${MAX_VIDEOS} видео`)
+      showNotice(t('oap_mediaMaxVideos', { count: MAX_VIDEOS }))
       return
     }
     setShowVideoSourceModal(true)
-  }, [videos.length, showNotice])
+  }, [videos.length, showNotice, t])
 
   const closeVideoLinkModal = useCallback(() => {
     setShowVideoLinkModal(false)
@@ -80,7 +89,7 @@ export default function OwnerAddPropertyMediaStep({
 
   const handleVideoLinkSubmit = useCallback(() => {
     if (!videoLink.trim()) {
-      showNotice('Введите ссылку на видео')
+      showNotice(t('oap_mediaEnterVideoLink'))
       return
     }
 
@@ -114,13 +123,13 @@ export default function OwnerAddPropertyMediaStep({
     }
 
     if (isYoutubeMode) {
-      showNotice('Введите корректную ссылку на YouTube')
+      showNotice(t('oap_mediaInvalidYoutube'))
     } else if (isDriveMode) {
-      showNotice('Введите корректную ссылку на Google Drive')
+      showNotice(t('oap_mediaInvalidGdrive'))
     } else {
-      showNotice('Введите корректную ссылку на YouTube или Google Drive')
+      showNotice(t('oap_mediaInvalidVideoLink'))
     }
-  }, [videoLink, videoLinkType, onAddVideo, closeVideoLinkModal, showNotice])
+  }, [videoLink, videoLinkType, onAddVideo, closeVideoLinkModal, showNotice, t])
 
   const handleVideoUpload = useCallback(
     (e) => {
@@ -128,14 +137,14 @@ export default function OwnerAddPropertyMediaStep({
       const remainingSlots = MAX_VIDEOS - videos.length
 
       if (files.length > remainingSlots) {
-        showNotice(`Можно загрузить ещё ${remainingSlots} видео`)
+        showNotice(t('oap_mediaVideosRemaining', { count: remainingSlots }))
         e.target.value = ''
         return
       }
 
       files.forEach((file) => {
         if (!file.type.startsWith('video/')) {
-          showNotice(`«${file.name}» не является видеофайлом`)
+          showNotice(t('oap_mediaNotVideoFile', { name: file.name }))
           return
         }
 
@@ -149,7 +158,10 @@ export default function OwnerAddPropertyMediaStep({
 
           if (duration > MAX_VIDEO_DURATION) {
             showNotice(
-              `«${file.name}» длиннее 1 минуты (${Math.round(duration)} сек.) — загрузите короче`
+              t('oap_mediaVideoTooLong', {
+                name: file.name,
+                seconds: Math.round(duration),
+              })
             )
             return
           }
@@ -164,13 +176,13 @@ export default function OwnerAddPropertyMediaStep({
               duration,
             })
           }
-          reader.onerror = () => showNotice(`Не удалось прочитать «${file.name}»`)
+          reader.onerror = () => showNotice(t('oap_fileReadError', { name: file.name }))
           reader.readAsDataURL(file)
         }
 
         videoEl.onerror = () => {
           URL.revokeObjectURL(objectUrl)
-          showNotice(`Не удалось прочитать видео «${file.name}»`)
+          showNotice(t('oap_mediaReadVideoError', { name: file.name }))
         }
 
         videoEl.src = objectUrl
@@ -178,29 +190,68 @@ export default function OwnerAddPropertyMediaStep({
 
       e.target.value = ''
     },
-    [videos.length, onAddVideo, showNotice]
+    [videos.length, onAddVideo, showNotice, t]
   )
 
-  const hasMedia = photos.length > 0 || videos.length > 0
   const photosFull = photos.length >= MAX_PHOTOS
   const videosFull = videos.length >= MAX_VIDEOS
+  const showPhotoWarning = photos.length < 5
+
+  const sectionClassName = `oap-media-step${embedded ? ' oap-media-step--embedded' : ''}${photos.length > 0 ? ' oap-media-step--has-photos' : ''}${videos.length > 0 ? ' oap-media-step--has-videos' : ''}`
+
+  const renderUploadCard = (type) => {
+    const isPhoto = type === 'photo'
+    const isFull = isPhoto ? photosFull : videosFull
+    const onClick = isPhoto ? () => photoInputRef.current?.click() : openVideoSourceModal
+
+    return (
+      <button
+        type="button"
+        className={`oap-media-step__action-card oap-media-step__action-card--${type}${isFull ? ' oap-media-step__action-card--disabled' : ''}`}
+        onClick={onClick}
+        disabled={isFull}
+      >
+        <span className="oap-media-step__action-card-icon" aria-hidden>
+          {isPhoto ? (
+            <ImagePlus size={embedded ? 18 : 22} strokeWidth={1.75} />
+          ) : (
+            <Video size={embedded ? 18 : 22} strokeWidth={1.75} />
+          )}
+        </span>
+        <span className="oap-media-step__action-card-text">
+          <span className="oap-media-step__action-card-title">
+            {isPhoto
+              ? embedded
+                ? t('oap_mediaUploadPhoto')
+                : t('oap_mediaAddPhoto')
+              : embedded
+                ? t('oap_mediaUploadVideo')
+                : t('oap_mediaAddVideo')}
+          </span>
+        </span>
+        <Upload size={18} className="oap-media-step__action-card-arrow" aria-hidden />
+      </button>
+    )
+  }
 
   return (
-    <section className="oap-media-step" aria-labelledby="oap-media-step-title">
-      <header className="oap-media-step__head">
-        <span className="oap-media-step__badge" aria-hidden>
-          <Camera size={22} strokeWidth={1.85} />
-        </span>
-        <div className="oap-media-step__head-text">
-          <h2 id="oap-media-step-title" className="oap-media-step__title">
-            Фото и видео
-          </h2>
-          <p className="oap-media-step__subtitle">
-            Светлые кадры разных ракурсов и короткое видео — объявление выглядит убедительнее в
-            каталоге
-          </p>
-        </div>
-      </header>
+    <section
+      className={sectionClassName}
+      aria-labelledby={embedded ? undefined : 'oap-media-step-title'}
+    >
+      {!embedded && (
+        <header className="oap-media-step__head">
+          <span className="oap-media-step__badge" aria-hidden>
+            <Camera size={22} strokeWidth={1.85} />
+          </span>
+          <div className="oap-media-step__head-text">
+            <h2 id="oap-media-step-title" className="oap-media-step__title">
+              {t('oap_presentationMediaTitle')}
+            </h2>
+            <p className="oap-media-step__subtitle">{t('oap_presentationMediaHint')}</p>
+          </div>
+        </header>
+      )}
 
       {notice && (
         <p className="oap-media-step__notice" role="status">
@@ -209,51 +260,6 @@ export default function OwnerAddPropertyMediaStep({
       )}
 
       <div className="oap-media-step__card">
-        <div className="oap-media-step__pills">
-          <span className={`oap-media-step__pill${photos.length > 0 ? ' oap-media-step__pill--active' : ''}`}>
-            <ImagePlus size={14} aria-hidden />
-            Фото {photos.length}/{MAX_PHOTOS}
-          </span>
-          <span className={`oap-media-step__pill${videos.length > 0 ? ' oap-media-step__pill--active' : ''}`}>
-            <Film size={14} aria-hidden />
-            Видео {videos.length}/{MAX_VIDEOS}
-          </span>
-        </div>
-
-        <div className="oap-media-step__action-cards">
-          <button
-            type="button"
-            className={`oap-media-step__action-card oap-media-step__action-card--photo${photosFull ? ' oap-media-step__action-card--disabled' : ''}`}
-            onClick={() => photoInputRef.current?.click()}
-            disabled={photosFull}
-          >
-            <span className="oap-media-step__action-card-icon" aria-hidden>
-              <ImagePlus size={22} strokeWidth={1.75} />
-            </span>
-            <span className="oap-media-step__action-card-text">
-              <span className="oap-media-step__action-card-title">Добавить фото</span>
-              <span className="oap-media-step__action-card-desc">JPG или PNG, до 10 МБ</span>
-            </span>
-            <Upload size={18} className="oap-media-step__action-card-arrow" aria-hidden />
-          </button>
-
-          <button
-            type="button"
-            className={`oap-media-step__action-card oap-media-step__action-card--video${videosFull ? ' oap-media-step__action-card--disabled' : ''}`}
-            onClick={openVideoSourceModal}
-            disabled={videosFull}
-          >
-            <span className="oap-media-step__action-card-icon" aria-hidden>
-              <Video size={22} strokeWidth={1.75} />
-            </span>
-            <span className="oap-media-step__action-card-text">
-              <span className="oap-media-step__action-card-title">Добавить видео</span>
-              <span className="oap-media-step__action-card-desc">Файл, YouTube или Drive · до 1 мин</span>
-            </span>
-            <Upload size={18} className="oap-media-step__action-card-arrow" aria-hidden />
-          </button>
-        </div>
-
         <input
           ref={photoInputRef}
           type="file"
@@ -274,65 +280,134 @@ export default function OwnerAddPropertyMediaStep({
           onChange={handleVideoUpload}
         />
 
-        {hasMedia ? (
-          <div className="oap-media-step__gallery">
-            <h3 className="oap-media-step__gallery-title">Загруженные файлы</h3>
-            <div className="oap-media-step__grid">
-              {photos.map((photo) => (
-                <div key={photo.id} className="oap-media-step__tile">
-                  <img src={photo.preview} alt="" />
-                  <button
-                    type="button"
-                    className="oap-media-step__remove"
-                    aria-label="Удалить фото"
-                    onClick={() => onRemovePhoto(photo.id)}
-                  >
-                    <X size={16} />
-                  </button>
+        <div className="oap-media-step__sections">
+          <div className="oap-media-step__section oap-media-step__section--photos">
+            {showPhotoWarning && (
+              <div className="oap-media-step__photo-tip" role="status">
+                <span className="oap-media-step__photo-tip-icon" aria-hidden>
+                  <AlertTriangle size={18} strokeWidth={2} />
+                </span>
+                <div className="oap-media-step__photo-tip-body">
+                  <span className="oap-media-step__photo-tip-title">{t('oap_mediaPhotoTipTitle')}</span>
+                  <span
+                    className="oap-media-step__photo-tip-text"
+                    dangerouslySetInnerHTML={{ __html: t('oap_mediaPhotoTipText') }}
+                  />
                 </div>
-              ))}
-              {videos.map((video) => (
-                <div key={video.id} className="oap-media-step__tile oap-media-step__tile--video">
-                  {video.type === 'file' ? (
-                    <video src={video.url} controls preload="metadata" />
-                  ) : video.type === 'youtube' && video.thumbnail ? (
-                    <img src={video.thumbnail} alt="" />
-                  ) : (
-                    <div className="oap-media-step__video-placeholder">
-                      <Video size={22} aria-hidden />
-                      <span>{video.type === 'youtube' ? 'YouTube' : 'Google Drive'}</span>
-                    </div>
-                  )}
-                  <span className="oap-media-step__video-badge">Видео</span>
-                  <button
-                    type="button"
-                    className="oap-media-step__remove"
-                    aria-label="Удалить видео"
-                    onClick={() => onRemoveVideo(video.id)}
-                  >
-                    <X size={16} />
-                  </button>
+              </div>
+            )}
+
+            <div className="oap-media-step__media-row">
+              <div className="oap-media-step__section-upload">{renderUploadCard('photo')}</div>
+
+              {photos.length > 0 && (
+                <div className="oap-media-step__gallery">
+                  <div className="oap-media-step__grid">
+                    {photos.map((photo) => (
+                      <div key={photo.id} className="oap-media-step__tile">
+                        <img src={photo.preview} alt="" />
+                        <button
+                          type="button"
+                          className="oap-media-step__remove"
+                          aria-label={t('oap_mediaRemovePhoto')}
+                          onClick={() => onRemovePhoto(photo.id)}
+                        >
+                          <X size={16} />
+                        </button>
+                      </div>
+                    ))}
+                    {!photosFull && (
+                      <button
+                        type="button"
+                        className="oap-media-step__add-more"
+                        aria-label={t('oap_mediaAddMorePhotos')}
+                        onClick={() => photoInputRef.current?.click()}
+                      >
+                        <span className="oap-media-step__add-more-icon" aria-hidden>
+                          <Plus size={18} strokeWidth={2.5} />
+                        </span>
+                        <span className="oap-media-step__add-more-label-full">{t('oap_mediaAddMore')}</span>
+                        <span className="oap-media-step__add-more-label-short">{t('oap_mediaAddShort')}</span>
+                      </button>
+                    )}
+                  </div>
                 </div>
-              ))}
+              )}
+            </div>
+
+            {photos.length === 0 && !embedded && (
+              <div className="oap-media-step__empty oap-media-step__empty--photos">
+                <span className="oap-media-step__empty-icon" aria-hidden>
+                  <Camera size={28} strokeWidth={1.5} />
+                </span>
+                <p className="oap-media-step__empty-title">{t('oap_mediaNoPhotosTitle')}</p>
+                <p className="oap-media-step__empty-desc">{t('oap_mediaNoPhotosDesc')}</p>
+              </div>
+            )}
+          </div>
+
+          <div className="oap-media-step__section oap-media-step__section--videos">
+            <div className="oap-media-step__video-tip" role="status">
+              <span className="oap-media-step__video-tip-icon" aria-hidden>
+                <Sparkles size={18} strokeWidth={2} />
+              </span>
+              <div className="oap-media-step__video-tip-body">
+                <span
+                  className="oap-media-step__video-tip-text"
+                  dangerouslySetInnerHTML={{ __html: t('oap_mediaVideoTip') }}
+                />
+              </div>
+            </div>
+
+            <div className="oap-media-step__media-row">
+              <div className="oap-media-step__section-upload">{renderUploadCard('video')}</div>
+
+              {videos.length > 0 && (
+                <div className="oap-media-step__gallery">
+                  <div className="oap-media-step__grid">
+                    {videos.map((video) => (
+                      <div key={video.id} className="oap-media-step__tile oap-media-step__tile--video">
+                        {video.type === 'file' ? (
+                          <video src={video.url} controls preload="metadata" />
+                        ) : video.type === 'youtube' && video.thumbnail ? (
+                          <img src={video.thumbnail} alt="" />
+                        ) : (
+                          <div className="oap-media-step__video-placeholder">
+                            <Video size={22} aria-hidden />
+                            <span>{video.type === 'youtube' ? 'YouTube' : 'Google Drive'}</span>
+                          </div>
+                        )}
+                        <span className="oap-media-step__video-badge">{t('oap_mediaVideoBadge')}</span>
+                        <button
+                          type="button"
+                          className="oap-media-step__remove"
+                          aria-label={t('oap_mediaRemoveVideo')}
+                          onClick={() => onRemoveVideo(video.id)}
+                        >
+                          <X size={16} />
+                        </button>
+                      </div>
+                    ))}
+                    {!videosFull && (
+                      <button
+                        type="button"
+                        className="oap-media-step__add-more oap-media-step__add-more--video"
+                        aria-label={t('oap_mediaAddMoreVideos')}
+                        onClick={openVideoSourceModal}
+                      >
+                        <span className="oap-media-step__add-more-icon" aria-hidden>
+                          <Plus size={18} strokeWidth={2.5} />
+                        </span>
+                        <span className="oap-media-step__add-more-label-full">{t('oap_mediaAddMore')}</span>
+                        <span className="oap-media-step__add-more-label-short">{t('oap_mediaAddShort')}</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
-        ) : (
-          <div className="oap-media-step__empty">
-            <span className="oap-media-step__empty-icon" aria-hidden>
-              <Camera size={28} strokeWidth={1.5} />
-            </span>
-            <p className="oap-media-step__empty-title">Пока нет фото и видео</p>
-            <p className="oap-media-step__empty-desc">
-              Начните с фасада, гостиной, кухни и вида из окна — так покупатель быстрее
-              представит объект
-            </p>
-          </div>
-        )}
-
-        <p className="oap-media-step__tip">
-          Минимум 5 качественных фото заметно повышают отклик. Видео — до 1 минуты, спокойный
-          обход по комнатам.
-        </p>
+        </div>
       </div>
 
       {showVideoSourceModal && (
@@ -350,15 +425,15 @@ export default function OwnerAddPropertyMediaStep({
             <button
               type="button"
               className="oap-media-modal__close"
-              aria-label="Закрыть"
+              aria-label={t('oap_publishClose')}
               onClick={() => setShowVideoSourceModal(false)}
             >
               <X size={20} />
             </button>
             <h3 id="oap-video-source-title" className="oap-media-modal__title">
-              Выберите источник видео
+              {t('oap_mediaVideoSourceTitle')}
             </h3>
-            <p className="oap-media-modal__subtitle">Добавьте видео одним из трёх способов</p>
+            <p className="oap-media-modal__subtitle">{t('oap_mediaVideoSourceSubtitle')}</p>
             <div className="oap-media-modal__actions">
               <button
                 type="button"
@@ -366,7 +441,7 @@ export default function OwnerAddPropertyMediaStep({
                 onClick={() => handleVideoSourceSelect('device')}
               >
                 <Upload size={20} aria-hidden />
-                С устройства
+                {t('oap_mediaFromDevice')}
               </button>
               <button
                 type="button"
@@ -404,18 +479,16 @@ export default function OwnerAddPropertyMediaStep({
             <button
               type="button"
               className="oap-media-modal__close"
-              aria-label="Закрыть"
+              aria-label={t('oap_publishClose')}
               onClick={closeVideoLinkModal}
             >
               <X size={20} />
             </button>
             <h3 id="oap-video-link-title" className="oap-media-modal__title">
-              {videoLinkType === 'youtube' ? 'Ссылка на YouTube' : 'Ссылка на Google Drive'}
+              {videoLinkType === 'youtube' ? t('oap_mediaYoutubeLink') : t('oap_mediaGdriveLink')}
             </h3>
             <p className="oap-media-modal__subtitle">
-              {videoLinkType === 'youtube'
-                ? 'Вставьте ссылку на ролик с YouTube'
-                : 'Вставьте ссылку на файл в Google Drive'}
+              {videoLinkType === 'youtube' ? t('oap_mediaYoutubeHint') : t('oap_mediaGdriveHint')}
             </p>
             <input
               type="url"
@@ -431,10 +504,10 @@ export default function OwnerAddPropertyMediaStep({
             />
             <div className="oap-media-modal__footer">
               <button type="button" className="oap-media-modal__cancel" onClick={closeVideoLinkModal}>
-                Отмена
+                {t('oap_cancel')}
               </button>
               <button type="button" className="oap-media-modal__submit" onClick={handleVideoLinkSubmit}>
-                Добавить
+                {t('oap_add')}
               </button>
             </div>
           </div>

@@ -4,7 +4,14 @@
 .opa-header__actions .otpm,
 .osl-header__actions .otpm,
 .ost-header__actions .otpm,
-.otd-header__actions .otpm {
+.otd-header__actions .otpm,
+.opr-header__actions .otsb,
+.mot-header__actions .otsb,
+.op-header__actions .otsb,
+.opa-header__actions .otsb,
+.osl-header__actions .otsb,
+.ost-header__actions .otsb,
+.otd-header__actions .otsb {
   z-index: 20;
 }
 

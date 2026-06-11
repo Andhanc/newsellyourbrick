@@ -1,8 +1,9 @@
-import { useState, useEffect, useCallback, useRef, Fragment } from 'react'
+import { useState, useEffect, useCallback, useRef, Fragment, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
+import i18n from '../i18n/config'
 import { useNavigate, useSearchParams, useLocation } from 'react-router-dom'
 import {
   ArrowLeft,
-  MapPin,
   Home,
   Castle,
   Hotel,
@@ -10,19 +11,12 @@ import {
   Store,
   TreePine,
   LayoutGrid,
-  Check,
   FileText,
-  Lightbulb,
-  ShieldCheck,
-  SlidersHorizontal,
-  Sparkles,
-  Camera,
-  Car,
   FileCheck2,
-  BadgeDollarSign,
   Gavel,
   TrendingUp,
   Clock,
+  Check,
 } from 'lucide-react'
 import {
   FiX,
@@ -43,6 +37,7 @@ import {
   parseMoneyDigits,
 } from '../utils/oapPricingValidation'
 import { getAmenityTzKeysForProfile } from '../utils/oapAmenityGroups'
+import { scrollMainTo } from '../utils/mainScroll'
 import {
   OAP_DRAFT_SAVE_DEBOUNCE_MS,
   loadOapDraft,
@@ -52,17 +47,13 @@ import {
   restoreOapDraftState,
   hasMeaningfulDraftData,
 } from '../utils/oapAddPropertyDraft'
-import OwnerAddPropertyLocationStep from './OwnerAddPropertyLocationStep'
-import OwnerAddPropertyAmenitiesStep from './OwnerAddPropertyAmenitiesStep'
-import OwnerAddPropertyMediaStep from './OwnerAddPropertyMediaStep'
-import OwnerAddPropertyDocumentsStep from './OwnerAddPropertyDocumentsStep'
-import OwnerAddPropertyTestDriveStep from './OwnerAddPropertyTestDriveStep'
-import OwnerAddPropertyListingStep from './OwnerAddPropertyListingStep'
-import OwnerAddPropertyCalculatorStep from './OwnerAddPropertyCalculatorStep'
-import OwnerAddPropertyPricingStep from './OwnerAddPropertyPricingStep'
-import { OAP_DESCRIPTION_IMAGES } from './oapDescriptionImages'
-import { OAP_PARAMS_IMAGES } from './oapParamsImages'
+import OwnerAddPropertyBasicsStep from './OwnerAddPropertyBasicsStep'
+import OwnerAddPropertyPresentationStep from './OwnerAddPropertyPresentationStep'
+import OwnerAddPropertyStrategyStep from './OwnerAddPropertyStrategyStep'
+import OwnerAddPropertyFinanceStep from './OwnerAddPropertyFinanceStep'
+import OwnerAddPropertyVerificationStep from './OwnerAddPropertyVerificationStep'
 import SellerVerificationModal from '../components/SellerVerificationModal'
+import OwnerSupportButton from '../components/OwnerSupportButton'
 import { getUserData } from '../services/authService'
 import { showNotification } from '../utils/toastHelper'
 import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
@@ -72,172 +63,45 @@ import {
   confirmListingPublicationFeeSession,
 } from '../utils/subscriptionCheckout'
 import { publishOapProperty } from '../utils/oapPublishProperty'
+import './OwnerAddPropertyBasicsStep.css'
+import './OwnerAddPropertyPresentationStep.css'
+import './OwnerAddPropertyStrategyStep.css'
+import './OwnerAddPropertyFinanceStep.css'
+import './OwnerAddPropertyVerificationStep.css'
+import '../components/OwnerAddPropertyWizardStepLayout.css'
+import '../components/OwnerAddPropertyStepAside.css'
 import './AddProperty.css'
 import './OwnerAddPropertyTestPage.css'
 import './OwnerAddPropertyTestPage.mobile.css'
 
-const DESKTOP_STEPS = [
-  { id: 1, label: 'Тип', Icon: LayoutGrid },
-  { id: 2, label: 'Описание', Icon: FileText },
-  { id: 3, label: 'Параметры', Icon: SlidersHorizontal },
-  { id: 4, label: 'Адрес', Icon: MapPin },
-  { id: 5, label: 'Удобства', Icon: Sparkles },
-  { id: 6, label: 'Фото и видео', Icon: Camera },
-  { id: 7, label: 'Документы', Icon: FileCheck2 },
-  { id: 8, label: 'Тест-драйв', Icon: Car },
-  { id: 9, label: 'Формат продажи', Icon: Gavel },
-  { id: 10, label: 'Оценка', Icon: TrendingUp },
-  { id: 11, label: 'Цена и дата', Icon: BadgeDollarSign },
+const DESKTOP_STEP_DEFS = [
+  { id: 1, labelKey: 'oap_wizardStepObject', Icon: LayoutGrid },
+  { id: 2, labelKey: 'oap_wizardStepListing', Icon: FileText },
+  { id: 3, labelKey: 'oap_wizardStepStrategy', Icon: Gavel },
+  { id: 4, labelKey: 'oap_wizardStepFinance', Icon: TrendingUp },
+  { id: 5, labelKey: 'oap_wizardStepDocuments', Icon: FileCheck2 },
 ]
 
 function mapWizardStepToDisplayProgress(wizardStep) {
-  return Math.min(wizardStep, 11)
+  return Math.min(wizardStep, 5)
 }
 
-const MOBILE_STEPS = [
-  { id: 1, label: 'Тип' },
-  { id: 2, label: 'Текст' },
-  { id: 3, label: 'Параметры' },
-  { id: 4, label: 'Адрес' },
-  { id: 5, label: 'Удобства' },
-  { id: 6, label: 'Медиа' },
-  { id: 7, label: 'Документы' },
-  { id: 8, label: 'Тест-драйв' },
-  { id: 9, label: 'Формат' },
-  { id: 10, label: 'Оценка' },
-  { id: 11, label: 'Цена' },
-]
-
-const BUILDING_TYPE_OPTIONS = [
-  { value: 'brick', label: 'Кирпич' },
-  { value: 'monolithic', label: 'Монолит' },
-  { value: 'panel', label: 'Панель' },
-  { value: 'block', label: 'Блок' },
-  { value: 'wood', label: 'Дерево' },
-  { value: 'frame', label: 'Каркас' },
-  { value: 'aerated_concrete', label: 'Газобетон' },
-  { value: 'foam_concrete', label: 'Пенобетон' },
-  { value: 'other', label: 'Другое' },
-]
-
-const CONSTRUCTION_TYPE_OPTIONS = [
-  { value: 'monolithic', label: 'Монолитный' },
-  { value: 'brick', label: 'Кирпичный' },
-  { value: 'panel', label: 'Панельный' },
-  { value: 'frame', label: 'Каркасный' },
-]
-
-const COMMERCIAL_TYPE_OPTIONS = [
-  { value: 'office', label: 'Офис' },
-  { value: 'shop', label: 'Магазин' },
-  { value: 'warehouse', label: 'Склад' },
-  { value: 'other', label: 'Другое' },
-]
-
-const LAND_PURPOSE_OPTIONS = [
-  { value: 'residential', label: 'Под жилую застройку' },
-  { value: 'commercial', label: 'Под бизнес / коммерцию' },
-  { value: 'agricultural', label: 'Сельхоз назначение' },
-  { value: 'industrial', label: 'Промышленное' },
-  { value: 'other', label: 'Другое' },
-]
-
-const OTHER_OBJECT_TYPE_OPTIONS = [
-  { value: 'mixed', label: 'Смешанный' },
-  { value: 'special', label: 'Специального назначения' },
-  { value: 'other', label: 'Другое' },
-]
-
-const PARAMS_SUBTITLES = {
-  apartment: 'Планировка, площади и данные о здании — как в выписке или планировке',
-  apartments: 'Планировка, площади и данные о здании — как в выписке или планировке',
-  house: 'Площадь участка и дома, этажность, материалы постройки',
-  villa: 'Площадь участка и дома, этажность, материалы постройки',
-  commercial: 'Площадь помещения, этаж и тип коммерческого объекта',
-  land: 'Площадь и назначение земельного участка',
-  other: 'Основные характеристики нестандартного объекта',
+function migrateWizardStep(step) {
+  if (step <= 5) return step
+  const migration = { 1: 1, 2: 2, 3: 1, 4: 1, 5: 2, 6: 2, 7: 5, 8: 3, 9: 3, 10: 4, 11: 4 }
+  return migration[step] ?? 1
 }
+
+const MOBILE_STEP_DEFS = [
+  { id: 1, labelKey: 'oap_wizardStepObject' },
+  { id: 2, labelKey: 'oap_wizardStepListing' },
+  { id: 3, labelKey: 'oap_wizardStepStrategy' },
+  { id: 4, labelKey: 'oap_wizardStepFinance' },
+  { id: 5, labelKey: 'oap_wizardStepDocuments' },
+]
 
 const TITLE_MAX_LENGTH = 80
 const DESCRIPTION_MAX_LENGTH = 2000
-
-const PROPERTY_TYPE_OPTIONS = [
-  {
-    value: 'house',
-    label: 'Дом',
-    description: 'Частный дом, таунхаус или коттедж',
-    Icon: Home,
-  },
-  {
-    value: 'villa',
-    label: 'Вилла',
-    description: 'Премиальная загородная недвижимость',
-    Icon: Castle,
-  },
-  {
-    value: 'apartments',
-    label: 'Аппартаменты',
-    description: 'Сервисные или инвестиционные апартаменты',
-    Icon: Hotel,
-  },
-  {
-    value: 'apartment',
-    label: 'Квартира',
-    description: 'Квартира в многоквартирном доме',
-    Icon: Building2,
-  },
-  {
-    value: 'commercial',
-    label: 'Коммерческая',
-    description: 'Офис, магазин, склад или другое помещение',
-    Icon: Store,
-  },
-  {
-    value: 'land',
-    label: 'Земля',
-    description: 'Участок под застройку, ферму или бизнес',
-    Icon: TreePine,
-  },
-  {
-    value: 'other',
-    label: 'Другое',
-    description: 'Нестандартный объект или смешанный формат',
-    Icon: LayoutGrid,
-  },
-]
-
-const LISTING_MODES = [
-  {
-    id: 'auction',
-    label: 'Аукцион',
-    description: 'Максимизирует рыночную цену за счет конкуренции между покупателями',
-    tone: 'teal',
-  },
-  {
-    id: 'auction_buy_now',
-    label: 'Аукцион + Продать сейчас',
-    description: 'Дает два сценария сразу: борьба ставок и быстрая сделка по фиксированной цене',
-    tone: 'violet',
-  },
-  {
-    id: 'shares',
-    label: 'Доли',
-    description: 'Расширяет круг покупателей за счет входа с меньшим бюджетом',
-    tone: 'blue',
-  },
-  {
-    id: 'debt',
-    label: 'Долги',
-    description: 'Подходит для сложных кейсов: помогает быстрее найти целевого инвестора',
-    tone: 'amber',
-  },
-  {
-    id: 'debt_auction',
-    label: 'Долги + Аукцион',
-    description: 'Ускоряет продажу проблемного актива и повышает шанс на лучшую цену через торги',
-    tone: 'slate',
-  },
-]
 
 const INITIAL_FORM = {
   title: '',
@@ -323,12 +187,12 @@ function validateTestDriveDetails(form) {
   const errors = {}
   const price = parseMoneyInput(form.testDrivePricePerDay)
   if (price === null || price <= 0) {
-    errors.pricePerDay = 'Укажите стоимость за сутки больше 0'
+    errors.pricePerDay = i18n.t('oap_err_pricePerDay')
   }
   if (form.testDriveInsuranceDeposit.trim()) {
     const deposit = parseMoneyInput(form.testDriveInsuranceDeposit)
     if (deposit === null || deposit < 0) {
-      errors.insuranceDeposit = 'Страховой депозит не может быть отрицательным'
+      errors.insuranceDeposit = i18n.t('oap_err_insuranceDeposit')
     }
   }
   return errors
@@ -337,7 +201,7 @@ function validateTestDriveDetails(form) {
 function validateListingStep(form) {
   const errors = {}
   if (!form.listingMode) {
-    errors.listingMode = 'Выберите формат продажи'
+    errors.listingMode = i18n.t('oap_err_listingMode')
   }
   return errors
 }
@@ -349,7 +213,7 @@ function validatePricingStep(form) {
   if (mode === 'shares') {
     const price = parseMoneyDigits(form.price)
     if (price === null || price <= 0) {
-      errors.price = 'Укажите общую стоимость объекта'
+      errors.price = i18n.t('oap_err_price')
     }
     return errors
   }
@@ -357,7 +221,7 @@ function validatePricingStep(form) {
   if (mode === 'debt') {
     const debt = parseMoneyDigits(form.debtAmount)
     if (debt === null || debt <= 0) {
-      errors.debtAmount = 'Укажите сумму долга'
+      errors.debtAmount = i18n.t('oap_err_debtAmount')
     }
     return errors
   }
@@ -367,26 +231,26 @@ function validatePricingStep(form) {
   if (mode === 'debt_auction') {
     const debt = parseMoneyDigits(form.debtAmount)
     if (debt === null || debt <= 0) {
-      errors.debtAmount = 'Укажите сумму долга'
+      errors.debtAmount = i18n.t('oap_err_debtAmount')
     }
   }
 
   if (isAuctionMode) {
     const minSale = parseMoneyDigits(form.minimumSalePrice)
     if (minSale === null || minSale <= 0) {
-      errors.minimumSalePrice = 'Укажите минимальную цену продажи'
+      errors.minimumSalePrice = i18n.t('oap_err_minimumSalePrice')
     }
 
     if (mode === 'auction_buy_now' || mode === 'debt_auction') {
       const buyNow = parseMoneyDigits(form.price)
       if (buyNow === null || buyNow <= 0) {
-        errors.price = 'Укажите цену «Продать сейчас»'
+        errors.price = i18n.t('oap_err_buyNowPrice')
       }
     }
 
     const startPrice = parseMoneyDigits(form.auctionStartingPrice)
     if (startPrice === null || startPrice <= 0) {
-      errors.auctionStartingPrice = 'Укажите стартовую сумму ставки'
+      errors.auctionStartingPrice = i18n.t('oap_err_auctionStartingPrice')
     }
 
     const endDateErr = getAuctionEndDateError(
@@ -406,57 +270,55 @@ function validateParametersStep(form, typeProfile) {
   const currentYear = new Date().getFullYear()
 
   if (typeProfile === 'apartment' || typeProfile === 'apartments') {
-    if (!parsePositiveNum(form.rooms)) errors.rooms = 'Укажите количество комнат'
-    if (!parsePositiveNum(form.bathrooms)) errors.bathrooms = 'Укажите количество санузлов'
-    if (!parsePositiveNum(form.area)) errors.area = 'Укажите общую площадь'
-    if (!parsePositiveNum(form.livingArea)) errors.livingArea = 'Укажите жилую площадь'
-    if (parseNonNegativeNum(form.floor) === null) errors.floor = 'Укажите этаж'
-    if (!parsePositiveNum(form.totalFloors)) errors.totalFloors = 'Укажите этажность здания'
-    if (!parsePositiveNum(form.yearBuilt)) errors.yearBuilt = 'Укажите год постройки'
+    if (!parsePositiveNum(form.rooms)) errors.rooms = i18n.t('oap_err_rooms')
+    if (!parsePositiveNum(form.bathrooms)) errors.bathrooms = i18n.t('oap_err_bathrooms')
+    if (!parsePositiveNum(form.area)) errors.area = i18n.t('oap_err_area')
+    if (!parsePositiveNum(form.livingArea)) errors.livingArea = i18n.t('oap_err_livingArea')
+    if (parseNonNegativeNum(form.floor) === null) errors.floor = i18n.t('oap_err_floor')
+    if (!parsePositiveNum(form.totalFloors)) errors.totalFloors = i18n.t('oap_err_totalFloors')
+    if (!parsePositiveNum(form.yearBuilt)) errors.yearBuilt = i18n.t('oap_err_yearBuilt')
     else if (parsePositiveNum(form.yearBuilt) > currentYear) {
-      errors.yearBuilt = `Не больше ${currentYear}`
+      errors.yearBuilt = i18n.t('oap_err_yearBuiltMax', { year: currentYear })
     }
-    if (!form.buildingType) errors.buildingType = 'Выберите материал здания'
+    if (!form.buildingType) errors.buildingType = i18n.t('oap_err_buildingType')
     const floor = parseNonNegativeNum(form.floor)
     const totalFloors = parsePositiveNum(form.totalFloors)
     if (floor !== null && totalFloors !== null && floor > totalFloors) {
-      errors.floor = `Не больше ${totalFloors}`
+      errors.floor = i18n.t('oap_err_floorMax', { max: totalFloors })
     }
   }
 
   if (typeProfile === 'house' || typeProfile === 'villa') {
-    if (!parsePositiveNum(form.landArea)) errors.landArea = 'Укажите площадь участка'
-    if (!parsePositiveNum(form.area)) errors.area = 'Укажите площадь дома'
-    if (!parsePositiveNum(form.livingArea)) errors.livingArea = 'Укажите жилую площадь'
-    if (!parsePositiveNum(form.totalFloors)) errors.totalFloors = 'Укажите количество этажей'
-    if (!parsePositiveNum(form.bathrooms)) errors.bathrooms = 'Укажите количество санузлов'
-    if (!parsePositiveNum(form.yearBuilt)) errors.yearBuilt = 'Укажите год постройки'
+    if (!parsePositiveNum(form.landArea)) errors.landArea = i18n.t('oap_err_landArea')
+    if (!parsePositiveNum(form.area)) errors.area = i18n.t('oap_err_houseArea')
+    if (!parsePositiveNum(form.livingArea)) errors.livingArea = i18n.t('oap_err_livingArea')
+    if (!parsePositiveNum(form.totalFloors)) errors.totalFloors = i18n.t('oap_err_houseFloors')
+    if (!parsePositiveNum(form.bathrooms)) errors.bathrooms = i18n.t('oap_err_bathrooms')
+    if (!parsePositiveNum(form.yearBuilt)) errors.yearBuilt = i18n.t('oap_err_yearBuilt')
     else if (parsePositiveNum(form.yearBuilt) > currentYear) {
-      errors.yearBuilt = `Не больше ${currentYear}`
+      errors.yearBuilt = i18n.t('oap_err_yearBuiltMax', { year: currentYear })
     }
-    if (!form.buildingType) errors.buildingType = 'Выберите материал постройки'
+    if (!form.buildingType) errors.buildingType = i18n.t('oap_err_buildingType')
   }
 
   if (typeProfile === 'commercial') {
-    if (!parsePositiveNum(form.area)) errors.area = 'Укажите площадь помещения'
-    if (!form.commercialType) errors.commercialType = 'Выберите тип объекта'
+    if (!parsePositiveNum(form.area)) errors.area = i18n.t('oap_err_area')
+    if (!form.commercialType) errors.commercialType = i18n.t('oap_err_commercialType')
   }
 
   if (typeProfile === 'land') {
-    if (!parsePositiveNum(form.landArea)) errors.landArea = 'Укажите площадь участка'
-    if (!form.commercialType) errors.commercialType = 'Выберите назначение участка'
+    if (!parsePositiveNum(form.landArea)) errors.landArea = i18n.t('oap_err_landArea')
+    if (!form.commercialType) errors.commercialType = i18n.t('oap_err_landPurpose')
   }
 
-  if (typeProfile === 'other') {
-    if (!parsePositiveNum(form.area)) errors.area = 'Укажите площадь объекта'
-  }
 
   return errors
 }
 
-const TOTAL_STEPS = 11
+const TOTAL_STEPS = 5
 
 export default function OwnerAddPropertyTestPage() {
+  const { t } = useTranslation()
   const { isEmbedded, goTo } = useOwnerTestEmbeddedNav()
   const navigate = useNavigate()
   const location = useLocation()
@@ -491,6 +353,152 @@ export default function OwnerAddPropertyTestPage() {
   const listingFeeCheckoutHandledRef = useRef(false)
   const draftReadyRef = useRef(false)
   const saveDraftTimeoutRef = useRef(null)
+
+  const desktopSteps = useMemo(
+    () => DESKTOP_STEP_DEFS.map((stepDef) => ({ ...stepDef, label: t(stepDef.labelKey) })),
+    [t],
+  )
+
+  const mobileSteps = useMemo(
+    () => MOBILE_STEP_DEFS.map((stepDef) => ({ ...stepDef, label: t(stepDef.labelKey) })),
+    [t],
+  )
+
+  const buildingTypeOptions = useMemo(
+    () => [
+      { value: 'brick', label: t('oap_buildingMaterialBrick') },
+      { value: 'monolithic', label: t('oap_buildingMaterialMonolithic') },
+      { value: 'panel', label: t('oap_buildingMaterialPanel') },
+      { value: 'block', label: t('oap_buildingMaterialBlock') },
+      { value: 'wood', label: t('oap_buildingMaterialWood') },
+      { value: 'frame', label: t('oap_buildingMaterialFrame') },
+      { value: 'aerated_concrete', label: t('oap_buildingMaterialAerated') },
+      { value: 'foam_concrete', label: t('oap_buildingMaterialFoam') },
+      { value: 'other', label: t('oap_buildingMaterialOther') },
+    ],
+    [t],
+  )
+
+  const constructionTypeOptions = useMemo(
+    () => [
+      { value: 'monolithic', label: t('oap_constructionTypeMonolithic') },
+      { value: 'brick', label: t('oap_constructionTypeBrick') },
+      { value: 'panel', label: t('oap_constructionTypePanel') },
+      { value: 'frame', label: t('oap_constructionTypeFrame') },
+    ],
+    [t],
+  )
+
+  const paramsSubtitles = useMemo(
+    () => ({
+      apartment: t('oap_basicsParamsHintApartment'),
+      apartments: t('oap_basicsParamsHintApartment'),
+      house: t('oap_basicsParamsHintHouse'),
+      villa: t('oap_basicsParamsHintHouse'),
+      commercial: t('oap_basicsParamsHintCommercial'),
+      land: t('oap_basicsParamsHintLand'),
+    }),
+    [t],
+  )
+
+  const commercialTypeOptions = useMemo(
+    () => [
+      { value: 'office', label: t('oap_commercialTypeOffice') },
+      { value: 'shop', label: t('oap_commercialTypeShop') },
+      { value: 'warehouse', label: t('oap_commercialTypeWarehouse') },
+      { value: 'other', label: t('oap_commercialTypeOther') },
+    ],
+    [t],
+  )
+
+  const landPurposeOptions = useMemo(
+    () => [
+      { value: 'residential', label: t('oap_landPurposeResidential') },
+      { value: 'commercial', label: t('oap_landPurposeCommercial') },
+      { value: 'agricultural', label: t('oap_landPurposeAgricultural') },
+      { value: 'industrial', label: t('oap_landPurposeIndustrial') },
+      { value: 'other', label: t('oap_landPurposeOther') },
+    ],
+    [t],
+  )
+
+  const propertyTypeOptions = useMemo(
+    () => [
+      {
+        value: 'house',
+        label: t('oap_propertyTypeHouse'),
+        description: t('oap_propertyTypeHouseDesc'),
+        Icon: Home,
+      },
+      {
+        value: 'villa',
+        label: t('oap_propertyTypeVilla'),
+        description: t('oap_propertyTypeVillaDesc'),
+        Icon: Castle,
+      },
+      {
+        value: 'apartments',
+        label: t('oap_propertyTypeApartments'),
+        description: t('oap_propertyTypeApartmentsDesc'),
+        Icon: Hotel,
+      },
+      {
+        value: 'apartment',
+        label: t('oap_propertyTypeApartment'),
+        description: t('oap_propertyTypeApartmentDesc'),
+        Icon: Building2,
+      },
+      {
+        value: 'commercial',
+        label: t('oap_propertyTypeCommercial'),
+        description: t('oap_propertyTypeCommercialDesc'),
+        Icon: Store,
+      },
+      {
+        value: 'land',
+        label: t('oap_propertyTypeLand'),
+        description: t('oap_propertyTypeLandDesc'),
+        Icon: TreePine,
+      },
+    ],
+    [t],
+  )
+
+  const listingModes = useMemo(
+    () => [
+      {
+        id: 'auction',
+        label: t('oap_listingModeAuction'),
+        description: t('oap_listingModeAuctionDesc'),
+        tone: 'teal',
+      },
+      {
+        id: 'auction_buy_now',
+        label: t('oap_listingModeAuctionBuyNow'),
+        description: t('oap_listingModeAuctionBuyNowDesc'),
+        tone: 'violet',
+      },
+      {
+        id: 'shares',
+        label: t('oap_listingModeShares'),
+        description: t('oap_listingModeSharesDesc'),
+        tone: 'blue',
+      },
+      {
+        id: 'debt',
+        label: t('oap_listingModeDebt'),
+        description: t('oap_listingModeDebtDesc'),
+        tone: 'amber',
+      },
+      {
+        id: 'debt_auction',
+        label: t('oap_listingModeDebtAuction'),
+        description: t('oap_listingModeDebtAuctionDesc'),
+        tone: 'slate',
+      },
+    ],
+    [t],
+  )
 
   const updateField = useCallback((key, value) => {
     setForm((prev) => ({ ...prev, [key]: value }))
@@ -619,6 +627,9 @@ export default function OwnerAddPropertyTestPage() {
     })
     if (hasMeaningfulDraftData(payload)) {
       saveOapDraftPayload(payload)
+      showNotification(t('oap_publishDraftSaved'))
+    } else {
+      showNotification(t('oap_publishDraftNeedData'), 'error')
     }
   }, [form, step, photos, videos, requiredDocuments, additionalDocuments, selectedAmenities])
 
@@ -656,7 +667,7 @@ export default function OwnerAddPropertyTestPage() {
         }
         return false
       }
-      showNotification(result.error || 'Ошибка при отправке объявления')
+      showNotification(result.error || t('oap_publishSubmitError'))
       return false
     }
 
@@ -725,10 +736,7 @@ export default function OwnerAddPropertyTestPage() {
     }
     const uid = String(userId).trim()
     if (!/^\d+$/.test(uid)) {
-      showNotification(
-        'Для оплаты нужен числовой id пользователя в базе. Подождите синхронизацию после входа или обновите страницу.',
-        'error',
-      )
+      showNotification(t('oap_publishPaymentUserId'), 'error')
       return
     }
     setListingFeeStripeLoading(true)
@@ -741,10 +749,10 @@ export default function OwnerAddPropertyTestPage() {
         returnPath: '/owner-test',
       })
       if (!result.ok) {
-        showNotification(result.error || 'Не удалось перейти к оплате', 'error')
+        showNotification(result.error || t('oap_publishPaymentError'), 'error')
       }
     } catch (e) {
-      showNotification(e?.message || 'Ошибка при запуске оплаты', 'error')
+      showNotification(e?.message || t('oap_publishPaymentStartError'), 'error')
     } finally {
       setListingFeeStripeLoading(false)
     }
@@ -753,7 +761,7 @@ export default function OwnerAddPropertyTestPage() {
   const handleApplyListingFeePromo = useCallback(async () => {
     const code = (listingFeePromoCode || '').trim()
     if (!code) {
-      setListingFeePromoError('Введите промокод')
+      setListingFeePromoError(t('oap_publishPromoRequired'))
       return
     }
     if (!userId) {
@@ -778,12 +786,12 @@ export default function OwnerAddPropertyTestPage() {
         setListingFeePromoError(null)
         await handleAfterListingFeeSuccess()
       } else if (data.reason === 'used') {
-        setListingFeePromoError('Этот промокод уже был использован')
+        setListingFeePromoError(t('oap_publishPromoUsed'))
       } else {
-        setListingFeePromoError(data.message || 'Промокод не найден или не подходит')
+        setListingFeePromoError(data.message || t('oap_publishPromoInvalid'))
       }
     } catch {
-      setListingFeePromoError('Ошибка сети. Попробуйте позже.')
+      setListingFeePromoError(t('oap_publishPromoNetwork'))
     } finally {
       setListingFeePromoLoading(false)
     }
@@ -791,11 +799,11 @@ export default function OwnerAddPropertyTestPage() {
 
   const handlePriceContinue = useCallback(() => {
     if (!form.title?.trim()) {
-      showNotification('Пожалуйста, заполните заголовок')
+      showNotification(t('oap_publishTitleRequired'))
       return
     }
     if (!photos.length) {
-      showNotification('Пожалуйста, загрузите хотя бы одно фото')
+      showNotification(t('oap_publishPhotoRequired'))
       return
     }
     if (!userId) {
@@ -809,74 +817,84 @@ export default function OwnerAddPropertyTestPage() {
     setListingFeePromoError(null)
   }, [form.title, photos.length, userId])
 
+  const handleTypeSelect = useCallback((propertyType) => {
+    setForm((prev) => ({ ...prev, propertyType }))
+    setParamErrors({})
+    setLocationErrors((prev) => {
+      if (!prev.propertyType) return prev
+      const next = { ...prev }
+      delete next.propertyType
+      return next
+    })
+  }, [])
+
   const handleNext = useCallback(() => {
-    if (step === 1 && !form.propertyType) return
-    if (step === 2 && !form.title.trim()) return
-    if (step === 3) {
-      const errors = validateParametersStep(form, getTypeProfile(form.propertyType))
-      if (Object.keys(errors).length > 0) {
-        setParamErrors(errors)
-        window.scrollTo({ top: 0, behavior: 'smooth' })
-        return
-      }
-      setParamErrors({})
-    }
-    if (step === 4) {
-      const errors = validateLocationForm(form, form.address)
-      if (Object.keys(errors).length > 0) {
-        setLocationErrors(errors)
-        window.scrollTo({ top: 0, behavior: 'smooth' })
+    if (step === 1) {
+      const nextLocationErrors = {}
+      if (!form.propertyType) nextLocationErrors.propertyType = t('oap_err_propertyType')
+      Object.assign(nextLocationErrors, validateLocationForm(form, form.address))
+      const paramValidation = validateParametersStep(form, getTypeProfile(form.propertyType))
+      if (Object.keys(nextLocationErrors).length > 0 || Object.keys(paramValidation).length > 0) {
+        setLocationErrors(nextLocationErrors)
+        setParamErrors(paramValidation)
+        scrollMainTo(0, 0, 'auto')
         return
       }
       setLocationErrors({})
+      setParamErrors({})
     }
-    if (step === 7) {
-      const errors = {}
-      if (!requiredDocuments.ownership) {
-        errors.ownership = 'Загрузите документ собственности'
-      }
-      if (!requiredDocuments.noDebts) {
-        errors.noDebts = 'Загрузите справку об отсутствии обременений'
-      }
-      if (Object.keys(errors).length > 0) {
-        setDocumentErrors(errors)
-        window.scrollTo({ top: 0, behavior: 'smooth' })
-        return
-      }
-      setDocumentErrors({})
+    if (step === 2 && !form.title.trim()) {
+      scrollMainTo(0, 0, 'auto')
+      return
     }
-    if (step === 8) {
+    if (step === 3) {
       if (form.testDrive === 'yes') {
         const errors = validateTestDriveDetails(form)
         if (Object.keys(errors).length > 0) {
           setTestDriveErrors(errors)
-          window.scrollTo({ top: 0, behavior: 'smooth' })
+          scrollMainTo(0, 0, 'auto')
           return
         }
       }
-      setTestDriveErrors({})
-    }
-    if (step === 9) {
-      const errors = validateListingStep(form)
-      if (Object.keys(errors).length > 0) {
-        setListingErrors(errors)
-        window.scrollTo({ top: 0, behavior: 'smooth' })
+      const listingValidation = validateListingStep(form)
+      if (Object.keys(listingValidation).length > 0) {
+        setListingErrors(listingValidation)
+        scrollMainTo(0, 0, 'auto')
         return
       }
+      setTestDriveErrors({})
       setListingErrors({})
     }
-    if (step === 11) {
+    if (step === 4) {
       const errors = validatePricingStep(form)
       if (Object.keys(errors).length > 0) {
         setPricingErrors(errors)
-        window.scrollTo({ top: 0, behavior: 'smooth' })
+        scrollMainTo(0, 0, 'auto')
         return
       }
       setPricingErrors({})
     }
+    if (step === 5) {
+      const isDebtListing =
+        form.listingMode === 'debt' || form.listingMode === 'debt_auction'
+      const errors = {}
+      if (!isDebtListing) {
+        if (!requiredDocuments.ownership) {
+          errors.ownership = t('oap_err_ownership')
+        }
+        if (!requiredDocuments.noDebts) {
+          errors.noDebts = t('oap_err_noDebts')
+        }
+      }
+      if (Object.keys(errors).length > 0) {
+        setDocumentErrors(errors)
+        scrollMainTo(0, 0, 'auto')
+        return
+      }
+      setDocumentErrors({})
+    }
     if (step < TOTAL_STEPS) {
       setStep((s) => s + 1)
-      window.scrollTo({ top: 0, behavior: 'smooth' })
     } else {
       handlePriceContinue()
     }
@@ -885,7 +903,6 @@ export default function OwnerAddPropertyTestPage() {
   const handleBack = useCallback(() => {
     if (step > 1) {
       setStep((s) => s - 1)
-      window.scrollTo({ top: 0, behavior: 'smooth' })
     } else {
       goToProperties()
     }
@@ -895,7 +912,6 @@ export default function OwnerAddPropertyTestPage() {
     (targetStep) => {
       if (targetStep === step || isSubmitting) return
       setStep(targetStep)
-      window.scrollTo({ top: 0, behavior: 'smooth' })
     },
     [step, isSubmitting],
   )
@@ -976,9 +992,9 @@ export default function OwnerAddPropertyTestPage() {
         if (cancelled) return
         if (result.ok) {
           if (result.data?.already) {
-            showNotification('Оплата публикации уже была учтена ранее.')
+            showNotification(t('oap_publishPaymentAlreadyRecorded'))
           } else {
-            showNotification('Оплата получена. Продолжаем публикацию.')
+            showNotification(t('oap_publishPaymentReceived'))
           }
           const next = new URLSearchParams(searchParams)
           next.delete('listing_fee_checkout')
@@ -987,12 +1003,12 @@ export default function OwnerAddPropertyTestPage() {
           setStep(TOTAL_STEPS)
           await handleAfterListingFeeSuccess()
         } else {
-          showNotification(result.error || 'Не удалось подтвердить оплату', 'error')
+          showNotification(result.error || t('oap_publishPaymentConfirmError'), 'error')
           listingFeeCheckoutHandledRef.current = false
         }
       } catch (e) {
         if (!cancelled) {
-          showNotification(e?.message || 'Ошибка подтверждения оплаты', 'error')
+          showNotification(e?.message || t('oap_publishPaymentConfirmNetwork'), 'error')
           listingFeeCheckoutHandledRef.current = false
         }
       }
@@ -1019,8 +1035,9 @@ export default function OwnerAddPropertyTestPage() {
         return
       }
 
-      setForm({ ...INITIAL_FORM, ...restored.form })
-      setStep(restored.step)
+      const mergedForm = { ...INITIAL_FORM, ...restored.form }
+      setForm(mergedForm)
+      setStep(migrateWizardStep(restored.step))
       setPhotos(restored.photos)
       setVideos(restored.videos)
       setRequiredDocuments(restored.requiredDocuments)
@@ -1078,6 +1095,10 @@ export default function OwnerAddPropertyTestPage() {
   }, [isEmbedded])
 
   useEffect(() => {
+    scrollMainTo(0, 0, 'auto')
+  }, [step])
+
+  useEffect(() => {
     return () => {
       photos.forEach((p) => {
         if (p.preview) URL.revokeObjectURL(p.preview)
@@ -1088,452 +1109,96 @@ export default function OwnerAddPropertyTestPage() {
     }
   }, [photos, requiredDocuments])
 
-  const progressSteps = isMobile ? MOBILE_STEPS : DESKTOP_STEPS
+  const progressSteps = isMobile ? mobileSteps : desktopSteps
   const activeProgress = isMobile ? step : mapWizardStepToDisplayProgress(step)
   const canProceed =
     (step === 1 && Boolean(form.propertyType)) ||
     (step === 2 && Boolean(form.title.trim())) ||
     step > 2
 
-  const renderStepType = () => (
-    <section className="oap-type-step" aria-labelledby="oap-type-step-title">
-      <header className="oap-type-step__head">
-        <h2 id="oap-type-step-title" className="oap-type-step__title">
-          Выберите тип недвижимости
-        </h2>
-        <p className="oap-type-step__subtitle">
-          От типа зависят поля объявления, характеристики и способ публикации на платформе
-        </p>
-      </header>
-
-      <div className="oap-type-grid" role="listbox" aria-label="Тип недвижимости">
-        {PROPERTY_TYPE_OPTIONS.map((type) => {
-          const isActive = form.propertyType === type.value
-          const TypeIcon = type.Icon
-          return (
-            <button
-              key={type.value}
-              type="button"
-              role="option"
-              aria-selected={isActive}
-              className={`oap-type-card${isActive ? ' oap-type-card--active' : ''}`}
-              onClick={() => updateField('propertyType', type.value)}
-            >
-              <span className="oap-type-card__icon" aria-hidden>
-                <TypeIcon size={26} strokeWidth={1.85} />
-              </span>
-              <span className="oap-type-card__body">
-                <span className="oap-type-card__title">{type.label}</span>
-                <span className="oap-type-card__desc">{type.description}</span>
-              </span>
-              <span className="oap-type-card__check" aria-hidden>
-                <Check size={16} strokeWidth={2.75} />
-              </span>
-            </button>
-          )
-        })}
-      </div>
-    </section>
-  )
-
-  const renderStepText = () => {
-    const titleLength = form.title.length
-    const descriptionLength = form.description.length
-    const selectedType = PROPERTY_TYPE_OPTIONS.find((t) => t.value === form.propertyType)
-
-    return (
-      <section className="oap-text-step" aria-labelledby="oap-text-step-title">
-        <div className="oap-text-step__layout">
-          <div className="oap-text-step__main">
-            <header className="oap-text-step__head">
-              <h2 id="oap-text-step-title" className="oap-text-step__title">
-                Расскажите о вашем объекте
-              </h2>
-              <p className="oap-text-step__subtitle">
-                {selectedType
-                  ? `Добавьте название и описание ${selectedType.label.toLowerCase()} — их увидят покупатели в каталоге`
-                  : 'Добавьте название и описание — их увидят покупатели в каталоге'}
-              </p>
-            </header>
-
-            <div className="oap-text-step__fields">
-              <label className="oap-text-field">
-                <span className="oap-text-field__label-row">
-                  <span className="oap-text-field__label">Название объекта</span>
-                  <span className="oap-text-field__badge oap-text-field__badge--required">Обязательно</span>
-                </span>
-                <span className="oap-text-field__control">
-                  <input
-                    type="text"
-                    className="oap-text-field__input"
-                    placeholder="Например, Вилла с видом на океан в Майами"
-                    value={form.title}
-                    maxLength={TITLE_MAX_LENGTH}
-                    required
-                    aria-required="true"
-                    onChange={(e) => updateField('title', e.target.value)}
-                  />
-                  <span className="oap-text-field__counter">
-                    {titleLength}/{TITLE_MAX_LENGTH}
-                  </span>
-                </span>
-              </label>
-
-              <label className="oap-text-field">
-                <span className="oap-text-field__label-row">
-                  <span className="oap-text-field__label">Описание объекта</span>
-                  <span className="oap-text-field__badge oap-text-field__badge--optional">Необязательно</span>
-                </span>
-                <span className="oap-text-field__control">
-                  <textarea
-                    className="oap-text-field__textarea"
-                    rows={8}
-                    placeholder="Опишите объект подробно: расположение, состояние, удобства рядом, особенности сделки…"
-                    value={form.description}
-                    maxLength={DESCRIPTION_MAX_LENGTH}
-                    onChange={(e) => updateField('description', e.target.value)}
-                  />
-                  <span
-                    className={`oap-text-field__counter${descriptionLength > DESCRIPTION_MAX_LENGTH * 0.9 ? ' oap-text-field__counter--warn' : ''}`}
-                  >
-                    {descriptionLength}/{DESCRIPTION_MAX_LENGTH}
-                  </span>
-                </span>
-              </label>
-            </div>
-          </div>
-
-          <aside className="oap-text-step__tip" aria-label="Совет">
-            <div className="oap-text-step__tip-head">
-              <Lightbulb size={18} strokeWidth={2} className="oap-text-step__tip-icon" aria-hidden />
-              <span className="oap-text-step__tip-title">Совет</span>
-            </div>
-            <p className="oap-text-step__tip-text">
-              Хорошее описание повышает интерес покупателей. Укажите ключевые преимущества объекта и
-              особенности расположения.
-            </p>
-            <div className="oap-text-step__tip-illustration">
-              <img
-                src={OAP_DESCRIPTION_IMAGES.sidebarHero}
-                alt=""
-                className="oap-text-step__tip-img"
-              />
-            </div>
-          </aside>
-        </div>
-      </section>
-    )
-  }
-
-  const renderStepParams = () => {
+  const renderStepBasics = () => {
     const typeProfile = getTypeProfile(form.propertyType)
-    const selectedType = PROPERTY_TYPE_OPTIONS.find((t) => t.value === form.propertyType)
-
-    const fieldClassName = (key, { fullWidth } = {}) =>
-      [
-        'oap-param-field',
-        paramErrors[key] ? 'oap-param-field--error' : '',
-        fullWidth ? 'oap-param-field--full' : '',
-      ]
-        .filter(Boolean)
-        .join(' ')
-
-    const renderFieldLabel = (label, { required } = {}) => (
-      <span className="oap-param-field__label-row">
-        <span className="oap-param-field__label">{label}</span>
-        {required ? (
-          <span className="oap-param-field__req" title="Обязательное поле" aria-hidden>
-            *
-          </span>
-        ) : null}
-      </span>
-    )
-
-    const renderNumberField = (
-      key,
-      label,
-      { suffix = '', placeholder, required, fullWidth } = {}
-    ) => (
-      <label key={key} className={fieldClassName(key, { fullWidth })}>
-        {renderFieldLabel(label, { required })}
-        <div className="oap-param-field__control">
-          <div className="oap-param-field__input-wrap">
-            <input
-              type="text"
-              inputMode="decimal"
-              className={`oap-param-field__input${suffix ? ' oap-param-field__input--suffix' : ''}`}
-              placeholder={placeholder}
-              value={form[key]}
-              onChange={(e) => updateParamField(key, e.target.value.replace(/[^\d.,]/g, ''))}
-            />
-            {suffix && <span className="oap-param-field__suffix">{suffix}</span>}
-          </div>
-        </div>
-        {paramErrors[key] && <span className="oap-param-field__error">{paramErrors[key]}</span>}
-      </label>
-    )
-
-    const renderSelectField = (key, label, options, { placeholder, required, fullWidth } = {}) => (
-      <label key={key} className={fieldClassName(key, { fullWidth })}>
-        {renderFieldLabel(label, { required })}
-        <div className="oap-param-field__control">
-          <select
-            className={`oap-param-field__select${form[key] ? '' : ' oap-param-field__select--placeholder'}`}
-            value={form[key]}
-            onChange={(e) => updateParamField(key, e.target.value)}
-          >
-            <option value="">{placeholder}</option>
-            {options.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
-        </div>
-        {paramErrors[key] && <span className="oap-param-field__error">{paramErrors[key]}</span>}
-      </label>
-    )
-
-    const renderFloorCombinedField = () => (
-      <label
-        key="floor-combined"
-        className={`${fieldClassName('floor')}${paramErrors.totalFloors && !paramErrors.floor ? ' oap-param-field--error' : ''}`}
-      >
-        {renderFieldLabel('Этаж', { required: true })}
-        <div className="oap-param-field__control">
-          <div className="oap-param-field__floor-row">
-            <input
-              type="text"
-              inputMode="numeric"
-              className="oap-param-field__input oap-param-field__input--floor"
-              placeholder="0"
-              value={form.floor}
-              onChange={(e) => updateParamField('floor', e.target.value.replace(/[^\d]/g, ''))}
-            />
-            <span className="oap-param-field__floor-sep">из</span>
-            <input
-              type="text"
-              inputMode="numeric"
-              className="oap-param-field__input oap-param-field__input--floor-total"
-              placeholder="0"
-              value={form.totalFloors}
-              onChange={(e) => updateParamField('totalFloors', e.target.value.replace(/[^\d]/g, ''))}
-            />
-          </div>
-        </div>
-        {(paramErrors.floor || paramErrors.totalFloors) && (
-          <span className="oap-param-field__error">
-            {paramErrors.floor || paramErrors.totalFloors}
-          </span>
-        )}
-      </label>
-    )
-
-    const renderParamsGrid = (children) => <div className="oap-params-grid">{children}</div>
-
-    const renderParamsFields = () => (
-      <>
-        {(typeProfile === 'apartment' || typeProfile === 'apartments') &&
-          renderParamsGrid(
-            <>
-              {renderNumberField('area', 'Общая площадь', {
-                suffix: 'м²',
-                placeholder: '0',
-                required: true,
-              })}
-              {renderNumberField('livingArea', 'Жилая площадь', {
-                suffix: 'м²',
-                placeholder: '0',
-                required: true,
-              })}
-              {renderNumberField('rooms', 'Комнаты', {
-                placeholder: '0',
-                required: true,
-              })}
-              {renderFloorCombinedField()}
-              {renderNumberField('bathrooms', 'Санузлы', {
-                placeholder: '0',
-                required: true,
-              })}
-              {renderNumberField('yearBuilt', 'Год постройки', {
-                placeholder: String(new Date().getFullYear()),
-                required: true,
-              })}
-              {renderSelectField('buildingType', 'Материал здания', BUILDING_TYPE_OPTIONS, {
-                placeholder: 'Выберите материал',
-                required: true,
-              })}
-              {renderSelectField('constructionType', 'Тип конструкции', CONSTRUCTION_TYPE_OPTIONS, {
-                placeholder: 'Выберите тип конструкции',
-              })}
-            </>
-          )}
-
-        {(typeProfile === 'house' || typeProfile === 'villa') &&
-          renderParamsGrid(
-            <>
-              {renderNumberField('landArea', 'Площадь участка', {
-                suffix: 'м²',
-                placeholder: '0',
-                required: true,
-              })}
-              {renderNumberField('area', 'Площадь дома (общая)', {
-                suffix: 'м²',
-                placeholder: '0',
-                required: true,
-              })}
-              {renderNumberField('livingArea', 'Площадь дома (жилая)', {
-                suffix: 'м²',
-                placeholder: '0',
-                required: true,
-              })}
-              {renderNumberField('totalFloors', 'Этажей в доме', {
-                placeholder: '0',
-                required: true,
-              })}
-              {renderNumberField('bathrooms', 'Санузлы', {
-                placeholder: '0',
-                required: true,
-              })}
-              {renderNumberField('yearBuilt', 'Год постройки', {
-                placeholder: String(new Date().getFullYear()),
-                required: true,
-              })}
-              {renderSelectField('buildingType', 'Материал постройки', BUILDING_TYPE_OPTIONS, {
-                placeholder: 'Выберите материал',
-                required: true,
-              })}
-              {renderSelectField('constructionType', 'Тип конструкции', CONSTRUCTION_TYPE_OPTIONS, {
-                placeholder: 'Выберите тип конструкции',
-              })}
-            </>
-          )}
-
-        {typeProfile === 'commercial' &&
-          renderParamsGrid(
-            <>
-              {renderNumberField('area', 'Площадь помещения', {
-                suffix: 'м²',
-                placeholder: '0',
-                required: true,
-              })}
-              {renderNumberField('floor', 'Этаж / уровень', {
-                placeholder: '0',
-              })}
-              {renderNumberField('totalFloors', 'Этажей в здании', {
-                placeholder: '0',
-              })}
-              {renderSelectField(
-                'commercialType',
-                'Тип коммерческого объекта',
-                COMMERCIAL_TYPE_OPTIONS,
-                {
-                  placeholder: 'Выберите тип',
-                  required: true,
-                }
-              )}
-              {renderSelectField('constructionType', 'Тип конструкции', CONSTRUCTION_TYPE_OPTIONS, {
-                placeholder: 'Выберите тип конструкции',
-              })}
-            </>
-          )}
-
-        {typeProfile === 'land' &&
-          renderParamsGrid(
-            <>
-              {renderNumberField('landArea', 'Площадь участка', {
-                suffix: 'м²',
-                placeholder: '0',
-                required: true,
-              })}
-              {renderSelectField('commercialType', 'Назначение участка', LAND_PURPOSE_OPTIONS, {
-                placeholder: 'Выберите назначение',
-                required: true,
-              })}
-            </>
-          )}
-
-        {typeProfile === 'other' &&
-          renderParamsGrid(
-            <>
-              {renderNumberField('area', 'Площадь', {
-                suffix: 'м²',
-                placeholder: '0',
-                required: true,
-              })}
-              {renderSelectField('commercialType', 'Тип объекта', OTHER_OBJECT_TYPE_OPTIONS, {
-                placeholder: 'Выберите тип',
-              })}
-            </>
-          )}
-      </>
-    )
-
     return (
-      <section className="oap-params-step" aria-labelledby="oap-params-step-title">
-        <div className="oap-params-step__layout">
-          <div className="oap-params-step__main">
-            <header className="oap-params-step__head">
-              <h2 id="oap-params-step-title" className="oap-params-step__title">
-                Параметры объекта
-              </h2>
-              <p className="oap-params-step__subtitle">
-                {selectedType
-                  ? `Укажите основные характеристики — ${PARAMS_SUBTITLES[typeProfile] || PARAMS_SUBTITLES.apartment}`
-                  : 'Укажите основные характеристики'}
-              </p>
-            </header>
-
-            <div className="oap-params-step__fields">{renderParamsFields()}</div>
-          </div>
-
-          <aside className="oap-params-step__tip" aria-label="Подсказка">
-            <div className="oap-params-step__tip-head">
-              <ShieldCheck
-                size={18}
-                strokeWidth={2}
-                className="oap-params-step__tip-icon"
-                aria-hidden
-              />
-              <span className="oap-params-step__tip-title">Подсказка</span>
-            </div>
-            <p className="oap-params-step__tip-text">
-              Чем точнее вы укажете параметры, тем легче покупателям будет найти ваш объект.
-            </p>
-            <div className="oap-params-step__tip-illustration">
-              <img
-                src={OAP_PARAMS_IMAGES.sidebarHero}
-                alt=""
-                className="oap-params-step__tip-img"
-              />
-            </div>
-          </aside>
-        </div>
-      </section>
+      <OwnerAddPropertyBasicsStep
+        form={form}
+        propertyTypeOptions={propertyTypeOptions}
+        onTypeSelect={handleTypeSelect}
+        onFormPatch={patchForm}
+        onParamFieldChange={updateParamField}
+        paramErrors={paramErrors}
+        locationErrors={locationErrors}
+        typeProfile={typeProfile}
+        paramsSubtitle={paramsSubtitles[typeProfile] || paramsSubtitles.apartment}
+        paramOptions={{
+          buildingTypeOptions,
+          constructionTypeOptions,
+          commercialTypeOptions,
+          landPurposeOptions,
+        }}
+      />
     )
   }
 
-  const renderStepLocation = () => (
-    <OwnerAddPropertyLocationStep
-      form={form}
-      onFormPatch={patchForm}
-      errors={locationErrors}
-    />
-  )
+  const renderStepPresentation = () => {
+    const typeProfile = getTypeProfile(form.propertyType)
 
-  const renderStepMedia = () => (
-    <OwnerAddPropertyMediaStep
-      photos={photos}
-      videos={videos}
-      onAddPhotos={addPhotos}
-      onRemovePhoto={removePhoto}
-      onAddVideo={addVideo}
-      onRemoveVideo={removeVideo}
-    />
-  )
+    return (
+      <OwnerAddPropertyPresentationStep
+        form={form}
+        titleMaxLength={TITLE_MAX_LENGTH}
+        descriptionMaxLength={DESCRIPTION_MAX_LENGTH}
+        onFieldChange={updateField}
+        typeProfile={typeProfile}
+        selectedAmenities={selectedAmenities}
+        onToggleAmenity={toggleAmenity}
+        onAdditionalChange={(value) => updateField('additionalAmenities', value)}
+        photos={photos}
+        videos={videos}
+        onAddPhotos={addPhotos}
+        onRemovePhoto={removePhoto}
+        onAddVideo={addVideo}
+        onRemoveVideo={removeVideo}
+      />
+    )
+  }
+
+  const renderStepStrategy = () => {
+    const selectedType = propertyTypeOptions.find((type) => type.value === form.propertyType)
+    const filteredListingModes =
+      form.testDrive === 'yes'
+        ? listingModes.filter((mode) => mode.id === 'auction_buy_now')
+        : listingModes
+
+    return (
+      <OwnerAddPropertyStrategyStep
+        listingModes={filteredListingModes}
+        listingMode={form.listingMode}
+        listingErrors={listingErrors}
+        testDriveEnabled={form.testDrive === 'yes'}
+        onSelectListingMode={(modeId) => {
+          updateField('listingMode', modeId)
+          setListingErrors((prev) => {
+            if (!prev.listingMode) return prev
+            const next = { ...prev }
+            delete next.listingMode
+            return next
+          })
+        }}
+        testDrive={form.testDrive}
+        testDrivePricePerDay={form.testDrivePricePerDay}
+        testDriveInsuranceDeposit={form.testDriveInsuranceDeposit}
+        testDriveCurrency={form.testDriveCurrency}
+        propertyTypeOption={selectedType}
+        testDriveErrors={testDriveErrors}
+        onTestDriveChoice={handleTestDriveChoice}
+        onTestDriveDetailChange={handleTestDriveDetailChange}
+      />
+    )
+  }
 
   const renderStepDocuments = () => (
-    <OwnerAddPropertyDocumentsStep
+    <OwnerAddPropertyVerificationStep
+      listingMode={form.listingMode}
       requiredDocuments={requiredDocuments}
       additionalDocuments={additionalDocuments}
       errors={documentErrors}
@@ -1544,67 +1209,31 @@ export default function OwnerAddPropertyTestPage() {
     />
   )
 
-  const renderStepAmenities = () => {
-    const typeProfile = getTypeProfile(form.propertyType)
-    const selectedType = PROPERTY_TYPE_OPTIONS.find((t) => t.value === form.propertyType)
+  const handlePricingFieldChange = useCallback(
+    (key, value) => {
+      const nextForm = { ...form, [key]: value }
+      updateField(key, value)
+      setPricingErrors((prev) => {
+        const next = { ...prev }
+        delete next[key]
 
-    return (
-      <OwnerAddPropertyAmenitiesStep
-        propertyType={form.propertyType}
-        typeProfile={typeProfile}
-        propertyTypeLabel={selectedType?.label}
-        additionalAmenities={form.additionalAmenities}
-        selectedAmenities={selectedAmenities}
-        onAdditionalChange={(value) => updateField('additionalAmenities', value)}
-        onToggleAmenity={toggleAmenity}
-      />
-    )
-  }
+        const crossKeys = ['minimumSalePrice', 'price', 'auctionStartingPrice']
+        if (crossKeys.includes(key)) {
+          const cross = getPricingCrossFieldErrors(nextForm)
+          for (const crossKey of crossKeys) {
+            if (cross[crossKey]) next[crossKey] = cross[crossKey]
+            else delete next[crossKey]
+          }
+        }
 
-  const renderStepTestDrive = () => {
-    const selectedType = PROPERTY_TYPE_OPTIONS.find((t) => t.value === form.propertyType)
+        return next
+      })
+    },
+    [form, updateField]
+  )
 
-    return (
-      <OwnerAddPropertyTestDriveStep
-        testDrive={form.testDrive}
-        pricePerDay={form.testDrivePricePerDay}
-        insuranceDeposit={form.testDriveInsuranceDeposit}
-        currency={form.testDriveCurrency}
-        propertyTypeOption={selectedType}
-        errors={testDriveErrors}
-        onSelectChoice={handleTestDriveChoice}
-        onChangeDetail={handleTestDriveDetailChange}
-      />
-    )
-  }
-
-  const renderStepListing = () => {
-    const listingModes =
-      form.testDrive === 'yes'
-        ? LISTING_MODES.filter((mode) => mode.id === 'auction_buy_now')
-        : LISTING_MODES
-
-    return (
-      <OwnerAddPropertyListingStep
-        listingModes={listingModes}
-        listingMode={form.listingMode}
-        testDriveEnabled={form.testDrive === 'yes'}
-        errors={listingErrors}
-        onSelectMode={(modeId) => {
-          updateField('listingMode', modeId)
-          setListingErrors((prev) => {
-            if (!prev.listingMode) return prev
-            const next = { ...prev }
-            delete next.listingMode
-            return next
-          })
-        }}
-      />
-    )
-  }
-
-  const renderStepCalculator = () => (
-    <OwnerAddPropertyCalculatorStep
+  const renderStepFinance = () => (
+    <OwnerAddPropertyFinanceStep
       propertyData={{
         propertyType: form.propertyType,
         area: form.area,
@@ -1616,11 +1245,6 @@ export default function OwnerAddPropertyTestPage() {
       }}
       calculatorApplied={form.calculatorApplied}
       onApplyRecommendedPrice={handleApplyCalculatedPrice}
-    />
-  )
-
-  const renderStepPricing = () => (
-    <OwnerAddPropertyPricingStep
       listingMode={form.listingMode}
       minimumSalePrice={form.minimumSalePrice}
       price={form.price}
@@ -1629,56 +1253,58 @@ export default function OwnerAddPropertyTestPage() {
       auctionStartDate={form.auctionStartDate}
       auctionEndDate={form.auctionEndDate}
       currency={form.listingCurrency}
-      errors={pricingErrors}
-      onChangeField={(key, value) => {
-        const nextForm = { ...form, [key]: value }
-        updateField(key, value)
-        setPricingErrors((prev) => {
-          const next = { ...prev }
-          delete next[key]
-
-          const crossKeys = ['minimumSalePrice', 'price', 'auctionStartingPrice']
-          if (crossKeys.includes(key)) {
-            const cross = getPricingCrossFieldErrors(nextForm)
-            for (const crossKey of crossKeys) {
-              if (cross[crossKey]) next[crossKey] = cross[crossKey]
-              else delete next[crossKey]
-            }
-          }
-
-          return next
-        })
-      }}
+      pricingErrors={pricingErrors}
+      onPricingFieldChange={handlePricingFieldChange}
     />
   )
 
   const stepContent = {
-    1: renderStepType,
-    2: renderStepText,
-    3: renderStepParams,
-    4: renderStepLocation,
-    5: renderStepAmenities,
-    6: renderStepMedia,
-    7: renderStepDocuments,
-    8: renderStepTestDrive,
-    9: renderStepListing,
-    10: renderStepCalculator,
-    11: renderStepPricing,
+    1: renderStepBasics,
+    2: renderStepPresentation,
+    3: renderStepStrategy,
+    4: renderStepFinance,
+    5: renderStepDocuments,
   }
 
   return (
     <div
-      className={`oap${step === 2 ? ' oap--step-description' : ''}${step === 3 ? ' oap--step-params' : ''}${step === 7 ? ' oap--step-documents' : ''}${step === 8 ? ' oap--step-testdrive' : ''}${step === 9 ? ' oap--step-listing' : ''}${step === 10 ? ' oap--step-calculator' : ''}${step === 11 ? ' oap--step-pricing' : ''}`}
+      className={`oap${isMobile ? ' oap--mobile' : ''}${step === 1 ? ' oap--step-basics' : ''}${step === 2 ? ' oap--step-description' : ''}${step === 3 ? ' oap--step-listing' : ''}${step === 4 ? ' oap--step-pricing' : ''}${step === 5 ? ' oap--step-documents' : ''}`}
     >
       <div className="oap-shell">
         <header className="oap-header">
-          <button type="button" className="oap-header__back" aria-label="Назад" onClick={goToProperties}>
+          <button
+            type="button"
+            className="oap-header__back"
+            aria-label={isMobile && step > 1 ? t('oap_publishBack') : t('oap_publishBackList')}
+            onClick={isMobile && step > 1 ? handleBack : goToProperties}
+          >
             <ArrowLeft size={22} strokeWidth={2} />
           </button>
-          <h1 className="oap-header__title">Добавление объекта</h1>
+          <div className="oap-header__center">
+            <h1 className="oap-header__title">{t('oap_publishAddPropertyTitle')}</h1>
+            {isMobile && (
+              <span className="oap-header__progress">
+                {t('oap_wizardStepBadge', { current: step, total: TOTAL_STEPS })}
+              </span>
+            )}
+          </div>
+          <div className="oap-header__actions">
+            {isMobile ? (
+              <button
+                type="button"
+                className="oap-header__close"
+                aria-label={t('oap_publishClose')}
+                onClick={goToProperties}
+              >
+                <FiX size={22} />
+              </button>
+            ) : (
+              <OwnerSupportButton className="oap-header__support" iconSize={22} />
+            )}
+          </div>
         </header>
 
-        <nav className="oap-stepper oap-stepper--icons" aria-label="Шаги добавления объекта">
+        <nav className="oap-stepper oap-stepper--icons" aria-label={t('oap_stepperAria')}>
           {progressSteps.map((s, idx) => {
             const num = idx + 1
             const isActive = num === activeProgress
@@ -1692,14 +1318,24 @@ export default function OwnerAddPropertyTestPage() {
                   onClick={() => handleStepClick(num)}
                   disabled={isSubmitting}
                   aria-current={isActive ? 'step' : undefined}
-                  aria-label={`Шаг ${num}: ${s.label}`}
+                  aria-label={t('oap_wizardStepAria', { num, label: s.label })}
                 >
                   <span className="oap-stepper__dot">
-                    {StepIcon ? <StepIcon size={16} strokeWidth={1.85} /> : num}
+                    {isMobile && isDone ? (
+                      <Check size={14} strokeWidth={2.5} />
+                    ) : isMobile ? (
+                      num
+                    ) : StepIcon ? (
+                      <StepIcon size={16} strokeWidth={1.85} />
+                    ) : (
+                      num
+                    )}
                   </span>
-                  <span className="oap-stepper__label">
-                    <span className="oap-stepper__num">{num}</span> {s.label}
-                  </span>
+                  {!isMobile && (
+                    <span className="oap-stepper__label">
+                      <span className="oap-stepper__num">{num}</span> {s.label}
+                    </span>
+                  )}
                 </button>
                 {idx < progressSteps.length - 1 && (
                   <span
@@ -1717,12 +1353,10 @@ export default function OwnerAddPropertyTestPage() {
         </div>
 
         <footer className="oap-footer oap-footer--wizard">
+          <button type="button" className="oap-btn oap-btn--ghost oap-btn--back" onClick={handleBack}>
+            {t('oap_publishBack')}
+          </button>
           <div className="oap-footer__actions">
-            {step > 1 && (
-              <button type="button" className="oap-btn oap-btn--ghost oap-desktop-only" onClick={handleBack}>
-                Назад
-              </button>
-            )}
             <button
               type="button"
               className={`oap-btn oap-btn--primary${isMobile ? ' oap-btn--full' : ''}`}
@@ -1730,10 +1364,12 @@ export default function OwnerAddPropertyTestPage() {
               disabled={!canProceed || isSubmitting}
             >
               {isSubmitting
-                ? 'Отправка…'
+                ? t('oap_publishSubmitting')
                 : step === TOTAL_STEPS
-                  ? 'Опубликовать'
-                  : 'Далее'}
+                  ? isMobile
+                    ? t('oap_publishPublish')
+                    : t('oap_publishPublishListing')
+                  : t('oap_publishNext')}
             </button>
           </div>
         </footer>
@@ -1766,7 +1402,7 @@ export default function OwnerAddPropertyTestPage() {
                 setListingFeePromoCode('')
                 setListingFeePromoError(null)
               }}
-              aria-label="Закрыть"
+              aria-label={t('oap_publishClose')}
             >
               <FiX size={22} />
             </button>
@@ -1775,10 +1411,11 @@ export default function OwnerAddPropertyTestPage() {
                 <div className="listing-fee-modal__icon">
                   <FiDollarSign size={32} />
                 </div>
-                <h2 className="listing-fee-modal__title">Оплата публикации объекта</h2>
-                <p className="listing-fee-modal__text">
-                  Чтобы выложить объект, необходимо оплатить <strong>29 €</strong> за размещение на платформе.
-                </p>
+                <h2 className="listing-fee-modal__title">{t('oap_publishFeeTitle')}</h2>
+                <p
+                  className="listing-fee-modal__text"
+                  dangerouslySetInnerHTML={{ __html: t('oap_publishFeeText') }}
+                />
                 <div className="listing-fee-modal__options">
                   <button
                     type="button"
@@ -1787,7 +1424,11 @@ export default function OwnerAddPropertyTestPage() {
                     disabled={listingFeeStripeLoading}
                   >
                     <FiCreditCard size={24} aria-hidden />
-                    <span>{listingFeeStripeLoading ? 'Переход к оплате…' : 'Карта (Stripe)'}</span>
+                    <span>
+                      {listingFeeStripeLoading
+                        ? t('oap_publishStripeLoading')
+                        : t('oap_publishStripeCard')}
+                    </span>
                     <span className="listing-fee-modal__option-badge listing-fee-modal__option-badge--price">
                       29 €
                     </span>
@@ -1798,7 +1439,7 @@ export default function OwnerAddPropertyTestPage() {
                     onClick={() => setShowPromoInputInFeeModal(true)}
                   >
                     <FiGift size={24} />
-                    <span>Есть промокод</span>
+                    <span>{t('oap_publishFeeHasPromo')}</span>
                   </button>
                 </div>
                 <p className="listing-fee-modal__get-promo">
@@ -1815,7 +1456,7 @@ export default function OwnerAddPropertyTestPage() {
                       })
                     }}
                   >
-                    получить промокод
+                    {t('oap_publishFeeGetPromo')}
                   </button>
                 </p>
               </>
@@ -1830,20 +1471,18 @@ export default function OwnerAddPropertyTestPage() {
                     setListingFeePromoError(null)
                   }}
                 >
-                  <FiChevronLeft size={18} /> Назад
+                  <FiChevronLeft size={18} /> {t('oap_publishBack')}
                 </button>
                 <div className="listing-fee-modal__icon listing-fee-modal__icon--promo">
                   <FiGift size={32} />
                 </div>
-                <h2 className="listing-fee-modal__title">Введите промокод</h2>
-                <p className="listing-fee-modal__text">
-                  Промокод из бонусных заданий для продавцов позволяет бесплатно опубликовать объект.
-                </p>
+                <h2 className="listing-fee-modal__title">{t('oap_publishFeePromoTitle')}</h2>
+                <p className="listing-fee-modal__text">{t('oap_publishFeePromoText')}</p>
                 <div className="listing-fee-modal__promo-row">
                   <input
                     type="text"
                     className="listing-fee-modal__input"
-                    placeholder="Например: BONUS-SELLER-INSTA-10"
+                    placeholder={t('oap_publishPromoPlaceholder')}
                     value={listingFeePromoCode}
                     onChange={(e) => {
                       setListingFeePromoCode(e.target.value)
@@ -1861,7 +1500,7 @@ export default function OwnerAddPropertyTestPage() {
                     {listingFeePromoLoading ? (
                       <FiLoader size={20} className="listing-fee-modal__spinner" />
                     ) : (
-                      'Применить'
+                      t('oap_publishPromoApply')
                     )}
                   </button>
                 </div>
@@ -1897,10 +1536,10 @@ export default function OwnerAddPropertyTestPage() {
                 />
               </svg>
             </div>
-            <h2 className="success-modal__title">Ваш объект отправлен на модерацию</h2>
+            <h2 className="success-modal__title">{t('oap_successModerationTitle')}</h2>
             <p className="success-modal__message">
               <Clock size={16} style={{ marginRight: '8px', verticalAlign: 'middle' }} />
-              Ожидайте ответ в течение 48 часов
+              {t('oap_successModerationMessage')}
             </p>
             <button
               type="button"
@@ -1910,7 +1549,7 @@ export default function OwnerAddPropertyTestPage() {
                 goToProperties()
               }}
             >
-              Понятно
+              {t('oap_successModerationBtn')}
             </button>
           </div>
         </div>
