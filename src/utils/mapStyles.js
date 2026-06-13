@@ -4,6 +4,8 @@
  */
 export const SATELLITE_MAP_MAX_ZOOM = 17
 
+export const STREET_MAP_MAX_ZOOM = 19
+
 export const SATELLITE_MAP_STYLE = {
   version: 8,
   sources: {
@@ -22,4 +24,24 @@ export const SATELLITE_MAP_STYLE = {
       source: 'satellite'
     }
   ]
+}
+
+export const STREET_MAP_STYLE = {
+  version: 8,
+  sources: {
+    osm: {
+      type: 'raster',
+      tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
+      tileSize: 256,
+      attribution: '© OpenStreetMap',
+      maxzoom: STREET_MAP_MAX_ZOOM,
+    },
+  },
+  layers: [
+    {
+      id: 'osm',
+      type: 'raster',
+      source: 'osm',
+    },
+  ],
 }

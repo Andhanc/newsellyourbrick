@@ -3,7 +3,7 @@ import maplibregl from 'maplibre-gl'
 import { FiMaximize2, FiMinimize2 } from 'react-icons/fi'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import './LocationMap.css'
-import { SATELLITE_MAP_STYLE, SATELLITE_MAP_MAX_ZOOM } from '../utils/mapStyles'
+import { SATELLITE_MAP_STYLE, SATELLITE_MAP_MAX_ZOOM, STREET_MAP_MAX_ZOOM } from '../utils/mapStyles'
 
 const LocationMap = ({
   center,
@@ -14,6 +14,9 @@ const LocationMap = ({
   onMapReady,
   allowFullscreen = true,
   controlsLayout = 'default',
+  mapStyle = SATELLITE_MAP_STYLE,
+  markerColor = '#0ABAB5',
+  maxZoom = null,
 }) => {
   const containerRef = useRef(null)
   const mapContainerRef = useRef(null)
@@ -24,11 +27,15 @@ const LocationMap = ({
   const onMarkerDragEndRef = useRef(onMarkerDragEnd)
   const onMapReadyRef = useRef(onMapReady)
   const markerDraggableRef = useRef(markerDraggable)
+  const markerColorRef = useRef(markerColor)
   const [isFullscreen, setIsFullscreen] = useState(false)
 
   onMarkerDragEndRef.current = onMarkerDragEnd
   onMapReadyRef.current = onMapReady
   markerDraggableRef.current = markerDraggable
+  markerColorRef.current = markerColor
+
+  const resolvedMaxZoom = maxZoom ?? (mapStyle === SATELLITE_MAP_STYLE ? SATELLITE_MAP_MAX_ZOOM : STREET_MAP_MAX_ZOOM)
 
   // Инициализация карты (без маркера — маркер в отдельном эффекте)
   useEffect(() => {
@@ -49,11 +56,11 @@ const LocationMap = ({
 
     const map = new maplibregl.Map({
       container: mapContainerRef.current,
-      style: SATELLITE_MAP_STYLE,
+      style: mapStyle,
       center: initialCenter,
-      zoom: Math.min(initialZoom, SATELLITE_MAP_MAX_ZOOM),
+      zoom: Math.min(initialZoom, resolvedMaxZoom),
       minZoom: 2,
-      maxZoom: SATELLITE_MAP_MAX_ZOOM,
+      maxZoom: resolvedMaxZoom,
       attributionControl: false,
     })
 
@@ -81,7 +88,7 @@ const LocationMap = ({
       map.remove()
       mapRef.current = null
     }
-  }, [allowFullscreen, controlsLayout])
+  }, [allowFullscreen, controlsLayout, mapStyle, resolvedMaxZoom])
 
   useEffect(() => {
     if (!allowFullscreen || typeof document === 'undefined') return undefined
@@ -194,7 +201,7 @@ const LocationMap = ({
 
     const applyZoom = () => {
       try {
-        const z = Math.min(Number(zoom), SATELLITE_MAP_MAX_ZOOM)
+        const z = Math.min(Number(zoom), resolvedMaxZoom)
         if (lastZoomAppliedRef.current === z) return
         lastZoomAppliedRef.current = z
         mapRef.current.setZoom(z)
@@ -208,7 +215,7 @@ const LocationMap = ({
       return
     }
     applyZoom()
-  }, [zoom])
+  }, [zoom, resolvedMaxZoom])
 
   const placeMarker = (lngLat) => {
     const map = mapRef.current
@@ -234,7 +241,7 @@ const LocationMap = ({
 
     try {
       const m = new maplibregl.Marker({
-        color: '#0ABAB5',
+        color: markerColorRef.current || '#0ABAB5',
         pitchAlignment: 'map',
         rotationAlignment: 'viewport',
         subpixelPositioning: true,
@@ -282,7 +289,7 @@ const LocationMap = ({
       return
     }
     run()
-  }, [marker, markerDraggable])
+  }, [marker, markerDraggable, markerColor])
 
   const handleZoomIn = () => {
     try {
@@ -301,15 +308,18 @@ const LocationMap = ({
   }
 
   const useColumnControls = controlsLayout === 'column'
+  const hideControls = controlsLayout === 'none'
 
   return (
     <div
       ref={containerRef}
       className={`location-map-container${
         isFullscreen ? ' location-map-container--fullscreen' : ''
-      }${useColumnControls ? ' location-map-container--column-controls' : ''}`}
+      }${useColumnControls ? ' location-map-container--column-controls' : ''}${
+        hideControls ? ' location-map-container--no-controls' : ''
+      }`}
     >
-      {useColumnControls ? (
+      {!hideControls && (useColumnControls ? (
         <div className="location-map-controls-column">
           {allowFullscreen ? (
             <button
@@ -353,7 +363,7 @@ const LocationMap = ({
             {isFullscreen ? <FiMinimize2 size={15} /> : <FiMaximize2 size={15} />}
           </button>
         )
-      )}
+      ))}
       <div ref={mapContainerRef} className="location-map" />
     </div>
   )

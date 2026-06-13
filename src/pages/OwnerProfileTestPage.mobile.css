@@ -9,7 +9,9 @@
 
   /* Прокрутка через .app-layout — как на остальных страницах кабинета */
   .opr,
+  .opr-body,
   .opr .opr-body,
+  .opr-workspace,
   .opr .opr-workspace {
     width: 100%;
     max-width: 100%;
@@ -588,51 +590,134 @@
     border-radius: 14px;
   }
 
+  .opr-stats {
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+
   .opr-stats-grid {
-    grid-template-columns: 1fr 1fr;
+    width: 100%;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 10px;
   }
 
-  .opr-stats__head,
-  .opr-stats__actions {
+  .opr-stats__head {
+    flex-direction: column;
     align-items: stretch;
+    gap: 12px;
+  }
+
+  .opr-stats__head > div:first-child {
+    width: 100%;
+    min-width: 0;
   }
 
   .opr-stats__actions {
+    display: flex;
     width: 100%;
+    min-width: 0;
     flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
   }
 
   .opr-stat-card {
+    min-width: 0;
     padding: 14px;
+    overflow: hidden;
   }
 
   .opr-stat-card__value {
     font-size: 18px;
   }
 
+  .opr-stat-card__delta {
+    font-size: 11px;
+    line-height: 1.35;
+    flex-wrap: wrap;
+    min-width: 0;
+  }
+
+  .opr-stat-card__delta svg {
+    flex-shrink: 0;
+  }
+
   .opr-stats-period {
+    display: flex;
     width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
     justify-content: stretch;
+    gap: 4px;
+    padding: 4px;
   }
 
   .opr-stats-period__btn {
-    flex: 1;
+    flex: 1 1 0;
+    min-width: 0;
+    padding: 8px 6px;
+    font-size: 11px;
+    line-height: 1.25;
     text-align: center;
+    white-space: normal;
+    hyphens: auto;
   }
 
   .opr-stats-export {
     width: 100%;
+    max-width: 100%;
     min-height: 46px;
+    box-sizing: border-box;
+    padding: 0 14px;
+    font-size: 13px;
+  }
+
+  .opr-stats-export span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .opr-stats-table-wrap {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
     padding: 14px;
     overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   .opr-stats-table {
-    min-width: 720px;
+    width: 100%;
+    min-width: 0;
+    table-layout: fixed;
+  }
+
+  .opr-stats-table th,
+  .opr-stats-table td {
+    padding: 10px 8px;
+    font-size: 12px;
+    vertical-align: top;
+  }
+
+  .opr-stats-table th:first-child,
+  .opr-stats-table td:first-child {
+    width: 68%;
+  }
+
+  .opr-stats-table th:nth-child(n + 3),
+  .opr-stats-table td:nth-child(n + 3) {
+    display: none;
+  }
+
+  .opr-stats-table__object,
+  .opr-stats-table__location {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .opr-form-row {

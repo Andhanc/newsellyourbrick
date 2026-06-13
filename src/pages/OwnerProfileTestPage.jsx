@@ -250,7 +250,7 @@ export default function OwnerProfileTestPage() {
   const statsPeriodDefs = useMemo(
     () => [
       { id: '7d', label: t('ownerTest_datePreset7d') },
-      { id: '30d', label: t('ownerTest_propertiesPeriod30d') },
+      { id: '30d', label: t('ownerTest_statsPeriod30dShort', { defaultValue: t('ownerTest_propertiesPeriod30d') }) },
       { id: 'year', label: t('ownerTest_profilePeriodYear') },
     ],
     [t]

@@ -10,14 +10,17 @@ const PropertyTimer = ({
   auctionEndedLabel = null,
   showUnitLabels = false,
   fullUnitLabels = false,
+  useFullUnitLabels = false,
   unitSeparator = ':',
+  flipUnitSize = 'default',
 }) => {
   const { t } = useTranslation()
+  const resolvedFullUnitLabels = fullUnitLabels || useFullUnitLabels
   const [timeLeft, setTimeLeft] = useState({
     days: 0,
     hours: 0,
     minutes: 0,
-    seconds: 0
+    seconds: 0,
   })
   const [isEnded, setIsEnded] = useState(false)
 
@@ -48,20 +51,14 @@ const PropertyTimer = ({
 
   const days = timeLeft.days
 
-  // Логика цветов таймера (в днях):
-  // Зеленый: от 90 дней и больше (от 3 месяцев)
-  // Оранжевый: от 60 до 90 дней (от 2 до 3 месяцев)
-  // Красный: от 30 до 60 дней (от 1 до 2 месяцев)
-  // Красный мигающий: меньше 30 дней (меньше 1 месяца)
-  let statusClass = 'timer-short' // По умолчанию красный
+  let statusClass = 'timer-short'
   if (days >= 90) {
-    statusClass = 'timer-long' // Зеленый: от 3 месяцев и больше
+    statusClass = 'timer-long'
   } else if (days >= 60) {
-    statusClass = 'timer-medium' // Оранжевый: от 2 до 3 месяцев
+    statusClass = 'timer-medium'
   }
-  // Для дней < 60 остается 'timer-short' (красный)
 
-  const isCritical = days < 30 // Красный мигающий: меньше 1 месяца
+  const isCritical = days < 30
   const hasThreeDigitDays = days >= 100
 
   if (compact) {
@@ -77,7 +74,6 @@ const PropertyTimer = ({
 
     const hasDays = timeLeft.days > 0
     const hasHours = timeLeft.hours > 0
-    // Как на странице объекта: если есть дни, часы всегда показываем (в т.ч. 00), не пропускаем сегмент
     const showHours = hasDays || hasHours
 
     return (
@@ -105,24 +101,33 @@ const PropertyTimer = ({
     )
   }
 
-  // Digit color based on days remaining
-  let digitColor = '#dc2626' // red (< 60 days)
-  if (days >= 90) digitColor = '#16a34a'      // green
-  else if (days >= 60) digitColor = '#f97316' // orange
+  let digitColor = '#dc2626'
+  if (days >= 90) digitColor = '#16a34a'
+  else if (days >= 60) digitColor = '#f97316'
 
-  /* Крупный flip; узкие экраны поджимаются в CSS (container / mobile) */
-  const flipStyle =
-    showUnitLabels && !fullUnitLabels
+  const flipStyle = showUnitLabels
+    ? flipUnitSize === 'large'
       ? {
-          '--flip-card-width': '22px',
-          '--flip-card-height': '32px',
-          '--flip-card-font-size': '16px',
+          '--flip-card-width': '34px',
+          '--flip-card-height': '48px',
+          '--flip-card-font-size': '26px',
         }
-      : {
-          '--flip-card-width': '40px',
-          '--flip-card-height': '58px',
-          '--flip-card-font-size': '29px',
-        }
+      : !resolvedFullUnitLabels
+        ? {
+            '--flip-card-width': '22px',
+            '--flip-card-height': '32px',
+            '--flip-card-font-size': '16px',
+          }
+        : {
+            '--flip-card-width': '40px',
+            '--flip-card-height': '58px',
+            '--flip-card-font-size': '29px',
+          }
+    : {
+        '--flip-card-width': '40px',
+        '--flip-card-height': '58px',
+        '--flip-card-font-size': '29px',
+      }
 
   const sepChar = unitSeparator === 'dot' ? '·' : ':'
   const sepClass =
@@ -130,7 +135,9 @@ const PropertyTimer = ({
       ? 'property-timer-detail-sep property-timer-detail-sep--dot'
       : 'property-timer-detail-sep'
 
-  const renderDetailUnit = (value, shortLabelKey, fullLabelKey) => (
+  const labelKey = (shortKey, fullKey) => (resolvedFullUnitLabels ? fullKey : shortKey)
+
+  const renderDetailUnit = (value, shortKey, fullKey) => (
     <div className="property-timer-detail-unit">
       <FlipNumber
         value={String(value).padStart(2, '0')}
@@ -140,7 +147,7 @@ const PropertyTimer = ({
       />
       {showUnitLabels ? (
         <span className="property-timer-detail-unit-label">
-          {t(fullUnitLabels ? fullLabelKey : shortLabelKey)}
+          {t(labelKey(shortKey, fullKey))}
         </span>
       ) : null}
     </div>
@@ -181,4 +188,3 @@ const PropertyTimer = ({
 }
 
 export default PropertyTimer
-

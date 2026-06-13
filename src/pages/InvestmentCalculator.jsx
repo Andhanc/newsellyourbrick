@@ -337,6 +337,20 @@ const InvestmentCalculator = () => {
     setDataSource('manual');
     setSelectedFavoriteKey(null);
     applyPropertyPreset(property, strategy);
+
+    const prefill = location.state?.calculatorPrefill;
+    if (prefill && typeof prefill === 'object') {
+      if (Number.isFinite(prefill.investment) && prefill.investment > 0) {
+        setPropertyPrice(String(Math.round(prefill.investment)));
+      }
+      if (Number.isFinite(prefill.rentAnnual) && prefill.rentAnnual > 0) {
+        setRentalIncome(String(Math.round(prefill.rentAnnual)));
+      }
+      if (Number.isFinite(prefill.periodYears) && prefill.periodYears > 0) {
+        setOwnershipPeriod(String(Math.round(prefill.periodYears)));
+      }
+    }
+
     setWizardStep(3);
 
     navigate(location.pathname, { replace: true, state: null });

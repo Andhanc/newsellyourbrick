@@ -37,9 +37,13 @@ export default function PropertyDetailAuctionBiddingForm({
   bidCeilingActive = false,
   suppressCurrentBidDisplay = false,
   layout = 'default',
+  variant = 'default',
 }) {
   const { t } = useTranslation()
   const isPanelLayout = layout === 'panel'
+  const isQuickButtonsOnly = variant === 'desktop-v3-quick'
+  const isActionsOnly = variant === 'desktop-v3-actions'
+  const isSplitDesktopVariant = isQuickButtonsOnly || isActionsOnly
   const [kycBannerDismissed, setKycBannerDismissed] = useState(false)
 
   const startingPrice = displayProperty?.auction_starting_price || 0
@@ -129,7 +133,7 @@ export default function PropertyDetailAuctionBiddingForm({
 
   return (
     <>
-      {showCurrencySelector && !isPanelLayout && (
+      {showCurrencySelector && !isPanelLayout && !isSplitDesktopVariant && (
         <div className="property-detail-mobile-card__bid-header">
           <PropertyCurrencySelector
             baseCurrency={currencyView.baseCurrency}
@@ -142,7 +146,7 @@ export default function PropertyDetailAuctionBiddingForm({
         </div>
       )}
 
-      {!hideCurrentBid && (
+      {!hideCurrentBid && !isQuickButtonsOnly && (
         <div className="property-detail-sidebar__current-bid">
           <span className="current-bid-label">
             {isAuctionProperty
@@ -167,24 +171,109 @@ export default function PropertyDetailAuctionBiddingForm({
 
       {showBidding && (
         <div className="property-detail-sidebar__bidding-section">
-          {!isPanelLayout && isReservedActive && (
+          {!isPanelLayout && !isSplitDesktopVariant && isReservedActive && (
             <div className="property-detail-bidding-reserved-notice">
               <FiLock size={16} />
               <span>{t('propertyDetailBidsUnavailableReserved')}</span>
             </div>
           )}
-          {!isPanelLayout && !isReservedActive && kycBidBlocked && (
+          {!isPanelLayout && !isSplitDesktopVariant && !isReservedActive && kycBidBlocked && (
             <div className="auction-verification-pending-banner" role="status">
               {t('propertyDetailBidVerificationPending')}
             </div>
           )}
-          {paymentActionsLocked && !isPanelLayout ? (
+          {paymentActionsLocked && !isPanelLayout && !isSplitDesktopVariant ? (
             <p className="property-detail-sidebar__bids-currency-note" role="note">
               {t('propertyDetailBidsListingCurrency', { currency: currencyView.baseCurrency })}
             </p>
           ) : null}
 
           {!isPanelLayout ? (
+            isQuickButtonsOnly ? (
+              renderQuickBidButtons()
+            ) : isActionsOnly ? (
+              <>
+                <div
+                  className={`bidding-section__input-wrapper${
+                    paymentActionsLocked ? ' bidding-section__input-wrapper--preview' : ''
+                  }`}
+                  onClick={() => {
+                    if (paymentActionsLocked) notifyListingCurrencyOnly('bid')
+                  }}
+                  onKeyDown={(e) => {
+                    if (paymentActionsLocked && (e.key === 'Enter' || e.key === ' ')) {
+                      e.preventDefault()
+                      notifyListingCurrencyOnly('bid')
+                    }
+                  }}
+                  role={paymentActionsLocked ? 'button' : undefined}
+                  tabIndex={paymentActionsLocked ? 0 : undefined}
+                >
+                  {renderInputCurrency()}
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    autoComplete="off"
+                    readOnly={paymentActionsLocked}
+                    className="bidding-section__input"
+                    placeholder={
+                      isUserLeader
+                        ? t('propertyDetailYouAreLeading')
+                        : isReservedActive
+                          ? t('objectReserved')
+                          : t('propertyDetailEnterBidAmount')
+                    }
+                    value={bidAmountInputValue}
+                    onChange={handleBidAmountChange}
+                    disabled={isSubmittingBid || isUserLeader || disableAuctionBidFields}
+                    style={{
+                      opacity: disableAuctionBidFields ? 0.5 : 1,
+                      cursor:
+                        disableAuctionBidFields || paymentActionsLocked ? 'not-allowed' : 'text',
+                    }}
+                  />
+                </div>
+
+                {showSubmitButton ? (
+                  <div className="bidding-section__submit-row">
+                    <button
+                      type="button"
+                      className={`bidding-section__submit-btn ${isUserLeader ? 'bidding-section__submit-btn--winner' : ''}${
+                        paymentActionsLocked ? ' bidding-section__submit-btn--preview' : ''
+                      }`}
+                      onClick={handleBidSubmit}
+                      disabled={
+                        isSubmittingBid ||
+                        (!paymentActionsLocked && !bidAmount) ||
+                        isUserLeader ||
+                        disableAuctionBidFields
+                      }
+                      style={{
+                        opacity: disableAuctionBidFields ? 0.5 : 1,
+                        cursor:
+                          disableAuctionBidFields || paymentActionsLocked ? 'not-allowed' : 'pointer',
+                      }}
+                    >
+                      {renderPanelSubmitLabel()}
+                    </button>
+                    {showBidCeilingButton && onOpenBidCeiling ? (
+                      <button
+                        type="button"
+                        className={`bidding-section__ceiling-btn${
+                          bidCeilingActive ? ' bidding-section__ceiling-btn--active' : ''
+                        }`}
+                        onClick={onOpenBidCeiling}
+                        disabled={disableAuctionBidFields || isReservedActive}
+                        aria-label={t('auctionBidCeilingButtonAria')}
+                        title={t('auctionBidCeilingButtonAria')}
+                      >
+                        <FiPlus size={22} strokeWidth={2.5} aria-hidden />
+                      </button>
+                    ) : null}
+                  </div>
+                ) : null}
+              </>
+            ) : (
             <>
               {renderQuickBidButtons()}
               {renderMinBidHint()}
@@ -271,6 +360,7 @@ export default function PropertyDetailAuctionBiddingForm({
                 </div>
               )}
             </>
+            )
           ) : (
             <>
               {!isReservedActive && kycBidBlocked && !kycBannerDismissed ? (
