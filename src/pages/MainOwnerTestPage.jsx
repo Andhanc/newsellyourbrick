@@ -20,6 +20,7 @@ import {
   Calendar,
   Eye,
   TrendingUp,
+  ExternalLink,
   Menu,
   X,
   Plus,
@@ -60,6 +61,23 @@ ChartJS.register(
 )
 
 const MOT_TIFFANY = '#0abab5'
+const CHART_LINE_TENSION = 0.42
+
+const CHART_FILL_RGB = {
+  views: '10, 186, 181',
+  testDrives: '245, 158, 11',
+  bids: '34, 197, 94',
+}
+
+function createLineFillGradient(chart, rgb) {
+  const { ctx, chartArea } = chart
+  if (!chartArea) return `rgba(${rgb}, 0.12)`
+  const gradient = ctx.createLinearGradient(0, chartArea.top, 0, chartArea.bottom)
+  gradient.addColorStop(0, `rgba(${rgb}, 0.26)`)
+  gradient.addColorStop(0.7, `rgba(${rgb}, 0.06)`)
+  gradient.addColorStop(1, `rgba(${rgb}, 0)`)
+  return gradient
+}
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
 
 function toInputDate(date) {
@@ -202,13 +220,37 @@ function buildDateBuckets(range, locale, maxBuckets = 90) {
   return buckets
 }
 
-function buildRangeFromDates(dates, fallbackRange) {
-  const sortedDates = dates.filter(Boolean).sort()
-  if (sortedDates.length === 0) return fallbackRange
-  return {
-    from: sortedDates[0],
-    to: sortedDates[sortedDates.length - 1],
-  }
+function filterDatesInRange(dates, range) {
+  if (!range?.from || !range?.to) return dates
+  return dates.filter((date) => date >= range.from && date <= range.to)
+}
+
+function getTestDriveEventDate(row) {
+  return toDateOnly(row.raw?.created_at || row.createdAt || row.startDate)
+}
+
+function getBidEventDate(row) {
+  return toDateOnly(row.created_at || row.createdAt)
+}
+
+function countDatesUpToFiltered(dates, bucketValue) {
+  return dates.reduce((sum, date) => (date <= bucketValue ? sum + 1 : sum), 0)
+}
+
+function countDatesInBucket(dates, bucketStart, nextBucketStart, rangeTo) {
+  return dates.reduce((sum, date) => {
+    if (date < bucketStart) return sum
+    if (nextBucketStart && date >= nextBucketStart) return sum
+    if (rangeTo && date > rangeTo) return sum
+    return sum + 1
+  }, 0)
+}
+
+function buildPerBucketCounts(dates, buckets, range) {
+  const rangeTo = range?.to || buckets[buckets.length - 1]?.value || ''
+  return buckets.map((bucket, index) =>
+    countDatesInBucket(dates, bucket.value, buckets[index + 1]?.value, rangeTo)
+  )
 }
 
 async function fetchOwnerBidRows(properties) {
@@ -413,6 +455,41 @@ function BestTimerCard({ property, goTo, className = '', t, locale, lang }) {
   )
 }
 
+function MetricNavLink({ href, ariaLabel, className = '' }) {
+  return (
+    <Link
+      to={href}
+      className={`mot-metric__link${className ? ` ${className}` : ''}`}
+      aria-label={ariaLabel}
+    >
+      <ExternalLink size={20} strokeWidth={2.25} aria-hidden />
+    </Link>
+  )
+}
+
+function getOwnerMetricHref(metricId, isEmbedded) {
+  switch (metricId) {
+    case 'views':
+      return isEmbedded
+        ? ownerTestHref(OWNER_VIEWS.PROFILE, { tab: 'statistics' })
+        : '/owner-profile-test?tab=statistics'
+    case 'testDrives':
+      return isEmbedded
+        ? ownerTestHref(OWNER_VIEWS.TEST_DRIVE)
+        : OWNER_TEST_STANDALONE_HREF_MAP.testdrive
+    case 'bids':
+      return isEmbedded
+        ? ownerTestHref(OWNER_VIEWS.SALES)
+        : OWNER_TEST_STANDALONE_HREF_MAP.sales
+    case 'properties':
+      return isEmbedded
+        ? ownerTestHref(OWNER_VIEWS.PROPERTIES)
+        : OWNER_TEST_STANDALONE_HREF_MAP.properties
+    default:
+      return isEmbedded ? ownerTestHref(OWNER_VIEWS.HOME) : OWNER_TEST_STANDALONE_HREF_MAP.home
+  }
+}
+
 function StatusDistributionCard({ donutData, donutOptions, propertyCount, statusLegend, className = '', t }) {
   return (
     <article className={`mot-card mot-status-card${className ? ` ${className}` : ''}`}>
@@ -484,6 +561,7 @@ export default function MainOwnerTestPage() {
   const [datePopoverOpen, setDatePopoverOpen] = useState(false)
   const [chartFilterOpen, setChartFilterOpen] = useState(false)
   const [chartMetricFilter, setChartMetricFilter] = useState('all')
+  const [chartMode, setChartMode] = useState('trend')
   const [selectedRange, setSelectedRange] = useState(getDefaultDateRange)
   const [draftRange, setDraftRange] = useState(getDefaultDateRange)
   const [ownerProperties, setOwnerProperties] = useState([])
@@ -740,19 +818,22 @@ export default function MainOwnerTestPage() {
     [bidCountByProperty, ownerProperties, testDriveCountByProperty]
   )
 
-  const totals = useMemo(
-    () =>
-      propertyStatsRows.reduce(
-        (acc, row) => {
-          acc.views += row.viewsValue
-          acc.testDrives += row.testDrivesValue
-          acc.bids += row.bidsValue
-          return acc
-        },
-        { views: 0, testDrives: 0, bids: 0 }
-      ),
-    [propertyStatsRows]
-  )
+  const totals = useMemo(() => {
+    const testDriveDatesInRange = filterDatesInRange(
+      testDriveRows.map(getTestDriveEventDate).filter(Boolean),
+      selectedRange
+    )
+    const bidDatesInRange = filterDatesInRange(
+      ownerBidRows.map(getBidEventDate).filter(Boolean),
+      selectedRange
+    )
+
+    return {
+      views: propertyStatsRows.reduce((sum, row) => sum + row.viewsValue, 0),
+      testDrives: testDriveDatesInRange.length,
+      bids: bidDatesInRange.length,
+    }
+  }, [ownerBidRows, propertyStatsRows, selectedRange, testDriveRows])
 
   const bidNotifications = useMemo(() => {
     const propertyByKey = new Map(propertyStatsRows.map((row) => [row.statsKey, row]))
@@ -816,39 +897,51 @@ export default function MainOwnerTestPage() {
   const metrics = useMemo(
     () => [
       {
+        id: 'views',
         label: t('ownerTest_metricViews'),
         value: formatMotNumber(totals.views, intlLocale),
         delta: overviewLoading ? t('ownerTest_metricLoading') : t('ownerTest_metricViewsDelta'),
         spark: 'tiffany',
         icon: Eye,
         iconTone: 'tiffany',
+        href: getOwnerMetricHref('views', isEmbedded),
+        linkAriaLabel: t('ownerTest_profileTabStatistics'),
       },
       {
+        id: 'testDrives',
         label: t('ownerTest_metricTestDrives'),
         value: formatMotNumber(totals.testDrives, intlLocale),
         delta: overviewLoading ? t('ownerTest_metricLoading') : t('ownerTest_metricTestDrivesDelta'),
         spark: 'orange',
         icon: Car,
         iconTone: 'orange',
+        href: getOwnerMetricHref('testDrives', isEmbedded),
+        linkAriaLabel: t('ownerTest_navTestDrive'),
       },
       {
+        id: 'bids',
         label: t('ownerTest_metricBids'),
         value: formatMotNumber(totals.bids, intlLocale),
         delta: overviewLoading ? t('ownerTest_metricLoading') : t('ownerTest_metricBidsDelta'),
         spark: 'teal',
         icon: TrendingUp,
         iconTone: 'teal',
+        href: getOwnerMetricHref('bids', isEmbedded),
+        linkAriaLabel: t('ownerTest_navSales'),
       },
       {
+        id: 'properties',
         label: t('ownerTest_metricProperties'),
         value: formatMotNumber(propertyStatsRows.length, intlLocale),
         delta: overviewLoading ? t('ownerTest_metricLoading') : t('ownerTest_metricPropertiesDelta'),
         spark: 'green',
         icon: Building2,
         iconTone: 'green',
+        href: getOwnerMetricHref('properties', isEmbedded),
+        linkAriaLabel: t('ownerTest_navMyProperties'),
       },
     ],
-    [intlLocale, overviewLoading, propertyStatsRows.length, t, totals.bids, totals.testDrives, totals.views]
+    [intlLocale, isEmbedded, overviewLoading, propertyStatsRows.length, selectedRange, t, totals.bids, totals.testDrives, totals.views]
   )
 
   const bestTimerProperty = useMemo(() => {
@@ -861,39 +954,39 @@ export default function MainOwnerTestPage() {
   }, [propertyStatsRows])
 
   const chartSeries = useMemo(() => {
-    const testDriveDates = testDriveRows
-      .map((row) => toDateOnly(row.raw?.created_at || row.createdAt || row.startDate))
-      .filter(Boolean)
-
-    const bidDates = ownerBidRows
-      .map((row) => toDateOnly(row.created_at || row.createdAt))
-      .filter(Boolean)
-
-    const propertyDates = propertyStatsRows
-      .map((row) => toDateOnly(row.raw?.created_at || row.createdAt || row.date))
-      .filter(Boolean)
-
-    const chartRange = buildRangeFromDates([...testDriveDates, ...bidDates, ...propertyDates], selectedRange)
+    const chartRange = selectedRange
     const buckets = buildDateBuckets(chartRange, intlLocale)
+    const totalViews = propertyStatsRows.reduce((sum, row) => sum + row.viewsValue, 0)
 
-    const viewsByBucket = buckets.map((bucket) =>
-      propertyStatsRows.reduce((sum, row) => {
-        const createdDate = toDateOnly(row.raw?.created_at || row.createdAt || row.date)
-        if (createdDate && createdDate > bucket.value) return sum
-        return sum + row.viewsValue
-      }, 0)
+    const testDriveDatesInRange = filterDatesInRange(
+      testDriveRows.map(getTestDriveEventDate).filter(Boolean),
+      chartRange
+    )
+    const bidDatesInRange = filterDatesInRange(
+      ownerBidRows.map(getBidEventDate).filter(Boolean),
+      chartRange
     )
 
-    const cumulativeCount = (dates, bucket) =>
-      dates.reduce((sum, date) => (date <= bucket.value ? sum + 1 : sum), 0)
+    if (!buckets.length) {
+      return { labels: [], views: [], testDrives: [], bids: [] }
+    }
+
+    if (chartMode === 'total') {
+      return {
+        labels: buckets.map((bucket) => bucket.label),
+        views: buckets.map(() => totalViews),
+        testDrives: buckets.map((bucket) => countDatesUpToFiltered(testDriveDatesInRange, bucket.value)),
+        bids: buckets.map((bucket) => countDatesUpToFiltered(bidDatesInRange, bucket.value)),
+      }
+    }
 
     return {
       labels: buckets.map((bucket) => bucket.label),
-      views: viewsByBucket,
-      testDrives: buckets.map((bucket) => cumulativeCount(testDriveDates, bucket)),
-      bids: buckets.map((bucket) => cumulativeCount(bidDates, bucket)),
+      views: buckets.map(() => totalViews),
+      testDrives: buildPerBucketCounts(testDriveDatesInRange, buckets, chartRange),
+      bids: buildPerBucketCounts(bidDatesInRange, buckets, chartRange),
     }
-  }, [intlLocale, ownerBidRows, propertyStatsRows, selectedRange, testDriveRows])
+  }, [chartMode, intlLocale, ownerBidRows, propertyStatsRows, selectedRange, testDriveRows])
 
   const chartFilterLabel = useMemo(
     () => chartFilters.find((filter) => filter.id === chartMetricFilter)?.label || chartFilters[0].label,
@@ -916,29 +1009,34 @@ export default function MainOwnerTestPage() {
   }, [chartSeries, visibleChartSeries])
 
   const lineChartData = useMemo(
-    () => ({
-      labels: chartSeries.labels,
-      datasets: visibleChartSeries.map((series) => {
-        const isViews = series.key === 'views'
-        return {
+    () => {
+      const showAreaFill = visibleChartSeries.length === 1
+
+      return {
+        labels: chartSeries.labels,
+        datasets: visibleChartSeries.map((series) => ({
           label: series.label,
           data: chartSeries[series.key] || [],
           borderColor: series.color,
-          backgroundColor: isMobile && isViews ? 'rgba(10, 186, 181, 0.16)' : series.backgroundColor,
-          fill: isMobile ? isViews : series.fill,
-          tension: isViews ? 0.38 : 0,
-          stepped: !isViews,
+          backgroundColor: (context) => {
+            if (!showAreaFill) return 'transparent'
+            return createLineFillGradient(context.chart, CHART_FILL_RGB[series.key])
+          },
+          fill: showAreaFill ? 'origin' : false,
+          tension: CHART_LINE_TENSION,
           pointRadius: 0,
-          pointHoverRadius: isMobile ? 4 : 3,
-          pointHitRadius: 14,
-          pointBackgroundColor: '#fff',
-          pointBorderColor: series.color,
-          pointBorderWidth: 2,
-          borderWidth: isMobile ? 2 : 2.5,
-        }
-      }),
-    }),
-    [chartSeries, isMobile, visibleChartSeries]
+          pointHoverRadius: 5,
+          pointHitRadius: 18,
+          pointHoverBackgroundColor: series.color,
+          pointHoverBorderColor: '#fff',
+          pointHoverBorderWidth: 2,
+          borderWidth: 2.5,
+          borderCapStyle: 'round',
+          borderJoinStyle: 'round',
+        })),
+      }
+    },
+    [chartSeries, visibleChartSeries]
   )
 
   const lineChartOptions = useMemo(
@@ -947,8 +1045,12 @@ export default function MainOwnerTestPage() {
       maintainAspectRatio: false,
       layout: isMobile
         ? { padding: { left: 0, right: 4, top: 0, bottom: 0 } }
-        : undefined,
+        : { padding: { left: 0, right: 8, top: 4, bottom: 0 } },
       interaction: { mode: 'index', intersect: false },
+      elements: {
+        line: { tension: CHART_LINE_TENSION },
+        point: { radius: 0, hoverRadius: 5 },
+      },
       plugins: {
         legend: { display: false },
         tooltip: {
@@ -960,13 +1062,15 @@ export default function MainOwnerTestPage() {
           displayColors: true,
           boxPadding: 4,
         },
+        filler: { propagate: false },
       },
       scales: {
         x: {
           offset: false,
           grid: {
-            color: isMobile ? 'transparent' : '#F1F5F9',
+            color: '#E8EDF3',
             drawBorder: false,
+            borderDash: [4, 5],
           },
           ticks: {
             color: '#94A3B8',
@@ -989,8 +1093,9 @@ export default function MainOwnerTestPage() {
             callback: (v) => v,
           },
           grid: {
-            color: '#EEF2F6',
+            color: '#E8EDF3',
             drawBorder: false,
+            borderDash: [4, 5],
           },
           border: { display: false },
         },
@@ -1110,20 +1215,20 @@ export default function MainOwnerTestPage() {
             {metrics.map((m) => {
               const Icon = m.icon
               return (
-                <article key={m.label} className="mot-card mot-metric mot-metric--mobile">
+                <article key={m.id} className="mot-card mot-metric mot-metric--mobile">
+                  <MetricNavLink href={m.href} ariaLabel={m.linkAriaLabel} />
                   <div className="mot-metric__mobile-head">
                     <span className={`mot-metric__icon mot-metric__icon--${m.iconTone}`}>
                       <Icon size={16} strokeWidth={2.2} aria-hidden />
                     </span>
-                    <Sparkline
-                      variant={m.spark}
-                      filled
-                      className="mot-metric__spark--mobile-chart"
-                    />
                   </div>
                   <span className="mot-metric__label">{m.label}</span>
                   <span className="mot-metric__value">{m.value}</span>
-                  <span className="mot-metric__delta mot-metric__delta--mobile">{m.delta}</span>
+                  <Sparkline
+                    variant={m.spark}
+                    filled
+                    className="mot-metric__spark--mobile-chart"
+                  />
                 </article>
               )
             })}
@@ -1134,17 +1239,15 @@ export default function MainOwnerTestPage() {
           {metrics.map((m) => {
             const Icon = m.icon
             return (
-              <article key={m.label} className="mot-card mot-metric">
-                <span className={`mot-metric__icon mot-metric__icon--${m.iconTone}`}>
-                  <Icon size={18} strokeWidth={2.2} aria-hidden />
-                </span>
-                <div className="mot-metric__head">
-                  <span className="mot-metric__label">{m.label}</span>
-                  <Sparkline variant={m.spark} />
+              <article key={m.id} className="mot-card mot-metric mot-metric--stat">
+                <MetricNavLink href={m.href} ariaLabel={m.linkAriaLabel} />
+                <div className={`mot-metric__icon mot-metric__icon--${m.iconTone}`}>
+                  <Icon size={28} strokeWidth={2} aria-hidden />
                 </div>
-                <div className="mot-metric__figures">
-                  <span className="mot-metric__value">{m.value}</span>
-                  <span className="mot-metric__delta">{m.delta}</span>
+                <div className="mot-metric__content">
+                  <h3 className="mot-metric__label">{m.label}</h3>
+                  <p className="mot-metric__value">{m.value}</p>
+                  <p className="mot-metric__subtext">{m.delta}</p>
                 </div>
               </article>
             )
@@ -1155,7 +1258,26 @@ export default function MainOwnerTestPage() {
           <article className="mot-card mot-chart-card">
             <div className="mot-chart-card__head">
               <h2 className="mot-card__title">{t('ownerTest_ariaPropertySummary')}</h2>
-              <div className={`mot-chart-filter${chartFilterOpen ? ' mot-chart-filter--open' : ''}`}>
+              <div className="mot-chart-card__tools">
+                <div className="mot-chart-mode" role="group" aria-label={t('ownerTest_chartModeAria')}>
+                  <button
+                    type="button"
+                    className={`mot-chart-mode__btn${chartMode === 'trend' ? ' mot-chart-mode__btn--active' : ''}`}
+                    aria-pressed={chartMode === 'trend'}
+                    onClick={() => setChartMode('trend')}
+                  >
+                    {t('ownerTest_chartModeTrend')}
+                  </button>
+                  <button
+                    type="button"
+                    className={`mot-chart-mode__btn${chartMode === 'total' ? ' mot-chart-mode__btn--active' : ''}`}
+                    aria-pressed={chartMode === 'total'}
+                    onClick={() => setChartMode('total')}
+                  >
+                    {t('ownerTest_chartModeTotal')}
+                  </button>
+                </div>
+                <div className={`mot-chart-filter${chartFilterOpen ? ' mot-chart-filter--open' : ''}`}>
                 <button
                   type="button"
                   className="mot-select-pill"
@@ -1185,6 +1307,7 @@ export default function MainOwnerTestPage() {
                     </button>
                   ))}
                 </div>
+              </div>
               </div>
             </div>
             <div className="mot-chart-card__legend">

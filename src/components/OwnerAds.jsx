@@ -18,7 +18,7 @@ function useCompactAds() {
       premium: {
         title: t('ownerTest_adPremiumTitle'),
         text: t('ownerTest_adPremiumText'),
-        button: t('ownerTest_adPremiumButton'),
+        button: t('ownerTest_adPremiumBtn'),
         image: AD_IMAGES.premiumHouse,
         imageClassName: 'oad-card__image--house',
         tone: 'premium',
@@ -27,7 +27,7 @@ function useCompactAds() {
       fastSales: {
         title: t('ownerTest_adFastSalesTitle'),
         text: t('ownerTest_adFastSalesText'),
-        button: t('ownerTest_adFastSalesButton'),
+        button: t('ownerTest_adFastSalesBtn'),
         image: AD_IMAGES.growthChart,
         imageClassName: 'oad-card__image--chart',
         tone: 'fast',
@@ -35,7 +35,7 @@ function useCompactAds() {
       help: {
         title: t('ownerTest_adHelpTitle'),
         text: t('ownerTest_adHelpText'),
-        button: t('ownerTest_adHelpButton'),
+        button: t('ownerTest_adHelpBtn'),
         image: AD_IMAGES.salesExpert,
         imageClassName: 'oad-card__image--expert',
         tone: 'help',

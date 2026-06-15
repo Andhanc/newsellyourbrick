@@ -267,7 +267,8 @@
   .osl-workspace {
     flex: 1;
     min-height: 0;
-    display: block;
+    display: flex;
+    flex-direction: column;
     overflow-x: hidden;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
@@ -284,21 +285,23 @@
   }
 
   .osl-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
     padding: 0;
     gap: 0;
+    background: #ffffff;
   }
 
   /* —— Tabs —— */
   .osl-tabs-row {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 0;
-    margin: 0 0 4px;
+    margin: 0;
+    padding: 0;
+    background: transparent;
+    border-bottom: none;
   }
 
   .osl-tabs {
-    display: flex;
-    align-items: stretch;
     margin-bottom: 0;
     border-bottom: 1px solid #e5e7eb;
     gap: 0;
@@ -313,17 +316,18 @@
 
   .osl-tabs__item {
     flex: 0 0 auto;
+    min-width: max-content;
     padding: 12px 14px;
     font-size: 14px;
     font-weight: 500;
-    color: #6b7280;
+    color: #9ca3af;
     border-bottom: 3px solid transparent;
     white-space: nowrap;
   }
 
   .osl-tabs__item--active {
-    color: var(--osl-mob-accent);
-    border-bottom-color: var(--osl-mob-accent);
+    color: var(--osl-tiffany);
+    border-bottom-color: var(--osl-tiffany);
     font-weight: 600;
   }
 

@@ -48,6 +48,10 @@ import { OWNER_VIEWS } from '../context/OwnerTestNavigationContext'
 import { useOwnerTestEmbeddedNav } from '../hooks/useOwnerTestEmbeddedNav'
 import { useOwnerTestNavItems, useOwnerTestTabItems } from '../hooks/useOwnerTestNavItems'
 import { getOwnerTestIntlLocale } from '../utils/ownerTestI18n'
+import {
+  formatOwnerAuctionTimerCountdown,
+  getOwnerAuctionTimerFlags,
+} from '../utils/ownerTestTimer'
 import { OWNER_TEST_STANDALONE_HREF_MAP } from '../utils/ownerTestNav'
 import './OwnerPropertyAnalyticsTestPage.css'
 import './OwnerPropertyAnalyticsTestPage.mobile.css'
@@ -239,29 +243,26 @@ function getAnalyticsTimerState(property, t, now = Date.now()) {
   if (!Number.isFinite(endMs)) return null
 
   const remainingMs = endMs - now
-  if (remainingMs <= 0) {
+  const { expired, warning, critical, urgent } = getOwnerAuctionTimerFlags(remainingMs)
+
+  if (expired) {
     return {
       expired: true,
+      warning: false,
       critical: false,
+      urgent: false,
       caption: t('ownerTest_propertiesTimerCaption'),
       label: t('ownerTest_propertiesTimerFinished'),
     }
   }
 
-  const totalSeconds = Math.floor(remainingMs / 1000)
-  const days = Math.floor(totalSeconds / 86400)
-  const hours = Math.floor((totalSeconds % 86400) / 3600)
-  const minutes = Math.floor((totalSeconds % 3600) / 60)
-  const seconds = totalSeconds % 60
-  const two = (value) => String(value).padStart(2, '0')
-
   return {
     expired: false,
-    critical: days === 0 && hours < 1,
+    warning,
+    critical,
+    urgent,
     caption: t('ownerTest_propertiesTimerLeft'),
-    label: days > 0
-      ? `${days}:${two(hours)}:${two(minutes)}:${two(seconds)}`
-      : `${two(hours)}:${two(minutes)}:${two(seconds)}`,
+    label: formatOwnerAuctionTimerCountdown(remainingMs, { daySeparator: ':' }),
   }
 }
 
@@ -282,7 +283,9 @@ function AnalyticsTimerPanel({ property, now, t }) {
         'opa-timer-panel',
         !hasTimer && 'opa-timer-panel--empty',
         timer?.expired && 'opa-timer-panel--expired',
+        timer?.warning && 'opa-timer-panel--warning',
         timer?.critical && 'opa-timer-panel--critical',
+        timer?.urgent && 'opa-timer-panel--urgent',
       ]
         .filter(Boolean)
         .join(' ')}

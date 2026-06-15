@@ -201,36 +201,71 @@
     min-width: 0;
   }
 
+  .otd-date-bar {
+    display: block;
+    margin: 0;
+    padding: 12px 0 0;
+    background: transparent;
+  }
+
+  .otd.otd--embedded,
+  .otc-stage .otd.otd--embedded {
+    width: 100%;
+    max-width: 100%;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+    flex: none !important;
+    background: transparent;
+    background-image: none;
+  }
+
+  .otd.otd--embedded .otd-body,
+  .otc-stage .otd.otd--embedded .otd-body {
+    display: block;
+    min-height: 0;
+    overflow: visible;
+  }
+
   /* —— Scroll area —— */
   .otd-workspace {
     flex: 1;
     min-height: 0;
-    display: block;
+    display: flex;
+    flex-direction: column;
     overflow-x: hidden;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
     overscroll-behavior: contain;
     padding: 0 var(--otd-mob-pad) calc(24px + env(safe-area-inset-bottom, 0px));
-    background: #f3f4f6;
+    background: #ffffff;
   }
 
   .otd-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
     padding: 0;
-    gap: 16px;
+    background: #ffffff;
   }
 
   /* —— Tabs —— */
   .otd-tabs-row {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 12px;
+    margin: 0;
+    padding: 0;
+    background: transparent;
+    border-bottom: none;
   }
 
   .otd-tabs {
     margin-bottom: 0;
     border-bottom: 1px solid #e5e7eb;
     gap: 0;
+    overflow-x: auto;
     scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
   }
 
   .otd-tabs::-webkit-scrollbar {
@@ -238,11 +273,14 @@
   }
 
   .otd-tabs__item {
-    padding: 10px 12px;
+    flex: 0 0 auto;
+    min-width: max-content;
+    padding: 12px 14px;
     font-size: 14px;
     font-weight: 500;
-    color: #6b7280;
-    border-bottom-width: 3px;
+    color: #9ca3af;
+    border-bottom: 3px solid transparent;
+    white-space: nowrap;
   }
 
   .otd-tabs__item--active {
@@ -257,7 +295,9 @@
   }
 
   .otd-table-card {
+    border: 1px solid #e8edf2;
     border-radius: 12px;
+    background: #ffffff;
   }
 
   .otd-table thead th:nth-child(2),
@@ -289,7 +329,7 @@
   }
 
   .otd-object-cell__thumb {
-    width: 48px;
-    height: 48px;
+    width: 44px;
+    height: 44px;
   }
 }

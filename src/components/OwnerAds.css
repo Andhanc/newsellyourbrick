@@ -196,19 +196,32 @@
 }
 
 .oad-card__button {
-  min-width: 174px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 188px;
   min-height: 52px;
   border-radius: 12px;
-  padding: 0 22px;
+  padding: 0 24px;
   background: #ffffff;
   color: #243044;
   font-size: 15px;
-  font-weight: 850;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
   box-shadow: 0 12px 26px rgba(15, 23, 42, 0.16);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.oad-card__button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 16px 30px rgba(15, 23, 42, 0.18);
 }
 
 .oad-card--premium .oad-card__button {
   color: #6d28d9;
+  background: linear-gradient(180deg, #ffffff 0%, #f7f2ff 100%);
+  border: 1px solid rgba(255, 255, 255, 0.65);
 }
 
 .oad-card__dismiss {
@@ -237,7 +250,8 @@
   bottom: -12px;
   width: 55%;
   max-width: 330px;
-  filter: drop-shadow(0 24px 34px rgba(15, 23, 42, 0.28));
+  mix-blend-mode: multiply;
+  filter: contrast(1.04) saturate(1.05);
 }
 
 .oad-card__image--chart {
@@ -331,9 +345,9 @@
   }
 
   .oad-card__button {
-    min-width: 132px;
+    min-width: 156px;
     min-height: 44px;
-    padding: 0 16px;
+    padding: 0 18px;
     border-radius: 10px;
     font-size: 13px;
   }

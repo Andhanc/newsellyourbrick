@@ -209,6 +209,15 @@
   min-width: 0;
   display: flex;
   flex-direction: column;
+  background: #ffffff;
+}
+
+.otd-workspace {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: #ffffff;
 }
 
 .otd-header {
@@ -217,8 +226,9 @@
   justify-content: space-between;
   gap: 20px;
   padding: 28px 32px 20px;
-  background: linear-gradient(180deg, rgba(244, 251, 251, 0.97) 0%, rgba(240, 253, 250, 0.85) 100%);
-  backdrop-filter: blur(8px);
+  background: linear-gradient(180deg, rgba(244, 251, 251, 0.8) 0%, rgba(240, 253, 250, 0.65) 100%);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
   position: sticky;
   top: 0;
   z-index: 10;
@@ -235,6 +245,12 @@
   display: flex;
   align-items: center;
   gap: 12px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.otd-date-bar {
+  display: none;
 }
 
 .otd-icon-btn {
@@ -244,12 +260,17 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid var(--otd-border);
+  border: 1px solid var(--otd-border, #e5e7eb);
   border-radius: 10px;
-  background: var(--otd-surface);
-  color: var(--otd-text-muted);
+  background: var(--otd-surface, #ffffff);
+  color: var(--otd-text-muted, #6b7280);
   cursor: pointer;
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  transition: border-color 0.15s;
+}
+
+.otd-icon-btn:hover {
+  border-color: #cbd5e1;
 }
 
 .otd-icon-btn__badge {
@@ -319,18 +340,24 @@
 }
 
 .otd-content {
-  padding: 0 32px 32px;
+  flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 0;
+  padding: 0 32px 32px;
+  background: #ffffff;
 }
 
-/* ——— Tabs + filter ——— */
+/* ——— Tabs + filter (как op-tabs на «Мои объекты») ——— */
 .otd-tabs-row {
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
   gap: 16px;
+  margin: 0 0 16px;
+  padding: 0;
+  background: transparent;
+  border-bottom: none;
 }
 
 .otd-tabs {
@@ -340,6 +367,7 @@
   flex: 1;
   min-width: 0;
   overflow-x: auto;
+  background: transparent;
 }
 
 .otd-tabs__item {
@@ -367,7 +395,7 @@
   border-bottom-color: var(--otd-tiffany);
 }
 
-/* ——— Table ——— */
+/* ——— Table (aligned with owner sales list) ——— */
 .otd-table-state {
   padding: 48px 24px;
   text-align: center;
@@ -377,26 +405,30 @@
 }
 
 .otd-table-card {
-  background: linear-gradient(180deg, #ffffff 0%, #fafefe 100%);
-  border: 1px solid rgba(229, 231, 235, 0.7);
-  border-radius: var(--otd-radius);
-  box-shadow: var(--otd-shadow);
+  border: 1px solid #e8edf2;
+  border-radius: 12px;
   overflow: hidden;
+  background: #fff;
+}
+
+.otd-table-wrap {
+  overflow-x: auto;
 }
 
 .otd-table {
   width: 100%;
   border-collapse: collapse;
+  font-size: 14px;
 }
 
 .otd-table thead th {
-  padding: 14px 16px;
+  padding: 12px 14px;
   text-align: left;
   font-size: 12px;
   font-weight: 600;
-  color: var(--otd-text-muted);
-  background: #fafafa;
-  border-bottom: 1px solid var(--otd-border);
+  color: #9ca3af;
+  background: #fafbfc;
+  border-bottom: 1px solid #e8edf2;
   white-space: nowrap;
 }
 
@@ -405,8 +437,8 @@
 }
 
 .otd-table tbody td {
-  padding: 14px 16px;
-  border-bottom: 1px solid #f3f4f6;
+  padding: 14px;
+  border-bottom: 1px solid #e8edf2;
   vertical-align: middle;
 }
 
@@ -415,7 +447,7 @@
 }
 
 .otd-table tbody tr:hover {
-  background: #fafafa;
+  background: rgba(10, 186, 181, 0.04);
 }
 
 .otd-table__row--clickable {
@@ -458,8 +490,8 @@
 }
 
 .otd-object-cell__thumb {
-  width: 52px;
-  height: 52px;
+  width: 44px;
+  height: 44px;
   border-radius: 10px;
   object-fit: cover;
   flex-shrink: 0;
@@ -467,40 +499,59 @@
 }
 
 .otd-object-cell__text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
   min-width: 0;
 }
 
 .otd-object-cell__title {
-  margin: 0 0 2px;
+  margin: 0;
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 500;
   line-height: 1.25;
+  color: var(--otd-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .otd-object-cell__meta {
   margin: 0;
   font-size: 12px;
   color: var(--otd-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .otd-buyer {
   font-size: 14px;
   font-weight: 500;
+  color: var(--otd-text);
 }
 
-.otd-dates,
+.otd-dates {
+  color: var(--otd-text-muted);
+  white-space: nowrap;
+  font-size: 13px;
+}
+
 .otd-amount {
   font-size: 14px;
+  font-weight: 700;
+  color: var(--otd-text);
   white-space: nowrap;
 }
 
-.otd-amount {
-  font-weight: 700;
+.otd-amount--positive {
+  color: #16a34a;
 }
 
 .otd-status {
   display: inline-flex;
-  padding: 5px 10px;
+  align-items: center;
+  padding: 4px 10px;
   border-radius: 999px;
   font-size: 12px;
   font-weight: 600;
@@ -509,22 +560,22 @@
 
 .otd-status--confirmed {
   background: rgba(34, 197, 94, 0.12);
-  color: #15803d;
+  color: #16a34a;
 }
 
 .otd-status--pending {
   background: rgba(245, 158, 11, 0.14);
-  color: #b45309;
+  color: #d97706;
 }
 
 .otd-status--cancelled {
-  background: rgba(239, 68, 68, 0.1);
-  color: #b91c1c;
+  background: rgba(239, 68, 68, 0.12);
+  color: #dc2626;
 }
 
 .otd-status--checked-in {
   background: rgba(34, 197, 94, 0.12);
-  color: #15803d;
+  color: #16a34a;
 }
 
 .otd-btn {
@@ -554,6 +605,55 @@
 .otd-btn--sm {
   padding: 8px 14px;
   font-size: 12px;
+}
+
+@media (min-width: 901px) {
+  .otd.otd--embedded,
+  .otc-stage .otd.otd--embedded {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 100%;
+    background: #ffffff;
+    background-image: none;
+  }
+
+  .otd.otd--embedded .otd-body,
+  .otc-stage .otd.otd--embedded .otd-body,
+  .otd.otd--embedded .otd-workspace,
+  .otc-stage .otd.otd--embedded .otd-workspace,
+  .otd.otd--embedded .otd-content,
+  .otc-stage .otd.otd--embedded .otd-content {
+    background: #ffffff;
+  }
+
+  .otd-table {
+    table-layout: fixed;
+  }
+
+  .otd-table thead th:nth-child(1) {
+    width: 28%;
+  }
+
+  .otd-table thead th:nth-child(2) {
+    width: 18%;
+  }
+
+  .otd-table thead th:nth-child(3) {
+    width: 22%;
+  }
+
+  .otd-table thead th:nth-child(4) {
+    width: 12%;
+  }
+
+  .otd-table thead th:nth-child(5) {
+    width: 14%;
+  }
+
+  .otd-object-cell__title {
+    max-width: 240px;
+  }
 }
 
 @media (max-width: 1024px) {

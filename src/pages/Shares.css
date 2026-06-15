@@ -8,6 +8,26 @@
   padding-bottom: 16px;
 }
 
+.shares-page--redesign {
+  background: #f8f9fb;
+  --shares-intro-purple: #6366f1;
+  --shares-intro-purple-soft: #eef2ff;
+  --shares-intro-text: #111827;
+  --shares-intro-muted: #6b7280;
+  --shares-intro-border: #e5e7eb;
+  --shares-intro-banner-bg: #f9f9fc;
+}
+
+.shares-page--redesign .shares-container {
+  padding-top: calc(env(safe-area-inset-top, 0px) + 96px);
+}
+
+@media (min-width: 769px) {
+  .shares-page--redesign .shares-container {
+    padding-top: calc(env(safe-area-inset-top, 0px) + 108px);
+  }
+}
+
 /* Доли/Долги: плавающие плашки AI и Депозит как на аукционе */
 .shares-page .ai-button {
   position: fixed;
@@ -276,6 +296,40 @@ html.site-footer-near .shares-floats > button.ai-button {
   position: relative;
   z-index: 1;
   box-sizing: border-box;
+}
+
+.shares-page-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  width: 100%;
+}
+
+.shares-page-layout__main {
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+}
+
+@media (min-width: 1200px) {
+  .shares-container--catalog {
+    max-width: 1440px;
+  }
+
+  .shares-page--redesign .shares-page-layout {
+    flex-direction: row;
+    align-items: stretch;
+    gap: 24px;
+  }
+
+  .shares-page--redesign .shares-page-layout__main {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .shares-page--redesign .shares-page-intro__banner {
+    margin-bottom: 28px;
+  }
 }
 
 /* Долги: контейнер не растягивается на весь экран — иначе заголовок уезжает вниз */

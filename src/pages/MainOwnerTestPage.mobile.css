@@ -338,7 +338,8 @@
   }
 
   .mot-metric--mobile {
-    min-height: 108px;
+    position: relative;
+    min-height: 96px;
     height: auto;
     padding: 12px 12px 10px;
     display: flex;
@@ -352,50 +353,57 @@
   }
 
   .mot-metric__mobile-head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    width: 100%;
-    gap: 8px;
     margin-bottom: 8px;
+  }
+
+  .mot-metric--mobile .mot-metric__link {
+    top: 8px;
+    right: 8px;
+    padding: 4px;
+  }
+
+  .mot-metric--mobile .mot-metric__link svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .mot-metric--mobile .mot-metric__spark--mobile-chart {
+    position: absolute;
+    right: 10px;
+    bottom: 10px;
+    display: block !important;
+    width: 64px;
+    height: 26px;
+    flex-shrink: 0;
+    margin-left: 0;
+    z-index: 1;
   }
 
   .mot-metric--mobile .mot-metric__icon {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 32px;
-    height: 32px;
-    border-radius: 10px;
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
     flex-shrink: 0;
+    color: #ffffff;
   }
 
   .mot-metric--mobile .mot-metric__icon--tiffany {
-    background: #e6f9f8;
-    color: var(--mot-tiffany);
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
   }
 
   .mot-metric--mobile .mot-metric__icon--orange {
-    background: #fff4e6;
-    color: #f59e0b;
+    background: linear-gradient(135deg, #ff9a56 0%, #ff6a88 100%);
   }
 
   .mot-metric--mobile .mot-metric__icon--teal {
-    background: #e0f7f6;
-    color: #14b8a6;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   }
 
   .mot-metric--mobile .mot-metric__icon--green {
-    background: #ecfdf5;
-    color: #22c55e;
-  }
-
-  .mot-metric--mobile .mot-metric__spark--mobile-chart {
-    display: block !important;
-    width: 72px;
-    height: 30px;
-    flex-shrink: 0;
-    margin-left: auto;
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
   }
 
   .mot-metric--mobile .mot-metric__label {
@@ -413,16 +421,12 @@
     color: #000000;
     letter-spacing: -0.02em;
     line-height: 1.15;
-    margin: 0 0 2px;
+    margin: 0;
+    padding-right: 72px;
   }
 
   .mot-metric--mobile .mot-metric__delta--mobile {
-    display: block;
-    margin-top: auto;
-    font-size: 10px;
-    font-weight: 500;
-    color: #9ca3af;
-    line-height: 1.2;
+    display: none;
   }
 
   /* —— Chart card —— */
@@ -470,8 +474,38 @@
   }
 
   .mot-chart-card__head .mot-chart-filter {
-    align-self: flex-end;
-    max-width: 100%;
+    flex: 1 1 0;
+    min-width: 0;
+    max-width: none;
+    align-self: auto;
+  }
+
+  .mot-chart-card__tools {
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .mot-chart-mode {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    flex: 1 1 0;
+    min-width: 0;
+    width: auto;
+  }
+
+  .mot-chart-mode__btn {
+    padding: 8px 6px;
+    font-size: 10px;
+    text-align: center;
+  }
+
+  .mot-chart-card__head .mot-select-pill {
+    width: 100%;
+    max-width: none;
+    justify-content: space-between;
   }
 
   .mot-chart-card__legend {

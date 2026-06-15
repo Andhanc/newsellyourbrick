@@ -1,5 +1,6 @@
 import { Bell, CalendarCheck, MessageSquare, ShieldCheck, TrendingUp, X } from 'lucide-react'
 import { useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import './OwnerNotificationsDrawer.css'
 
@@ -72,7 +73,9 @@ export default function OwnerNotificationsDrawer({ open, onClose, items }) {
     }
   }, [open, onClose])
 
-  return (
+  if (typeof document === 'undefined') return null
+
+  return createPortal(
     <div className={`ond${open ? ' ond--open' : ''}`} aria-hidden={!open}>
       <button
         type="button"
@@ -141,6 +144,7 @@ export default function OwnerNotificationsDrawer({ open, onClose, items }) {
           </div>
         )}
       </aside>
-    </div>
+    </div>,
+    document.body
   )
 }

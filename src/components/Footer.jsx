@@ -119,48 +119,77 @@ const Footer = () => {
     navigate(to)
   }
 
-  /** @type {Array<Array<{ to?: string; onClick?: () => void; label: string }>>} */
-  const desktopColumns = [
-    [
-      { to: '/', label: t('home') },
-      { to: '/news', label: t('news') },
-      { to: '/sections', label: t('footerAllSections') },
-      { to: '/private-club', label: t('privateClubPageTitle') },
-      { to: '/auction', label: t('auction') },
-      { to: '/auction?filter=buy_now', label: t('buyNowSectionTitle') },
-      { to: '/shares', label: t('shares') },
-      ...(isBuyerSignedIn ? [{ onClick: handleBecomeSellerRegister, label: t('becomeSeller') }] : []),
-    ],
-    [
-      { to: '/debts', label: t('debtsTitle') },
-      { to: '/favorites', label: t('footerLiked') },
-      { to: '/compare', label: t('footerCompareObjects') },
-      { to: '/chat?manager=1', label: t('chat') },
-    ],
-    [
-      { to: '/map', label: t('mapLink') },
-      { to: '/bonuses', label: t('bonuses') },
-      { to: '/calculator', label: t('calculator') },
-      { to: '/about#about-intro', label: t('aboutUs') },
-    ],
-    [
-      { onClick: goWallet, label: t('wallet') },
-      { to: cabinetProfilePath, label: t('profile') },
-      { to: '/test', label: 'Тест' },
-      { to: '/about#about-intro', label: t('footerForInvestors') },
-      { to: '/about#about-intro', label: t('footerOurTeam') },
-    ],
-    [
-      { to: '/subscriptions#subscriptions-pricing-section', label: t('tariffs') },
-      { to: cabinetDataPath, label: t('footerPersonalData') },
-      { to: cabinetDataPath, label: t('footerDocumentsSection') },
-      { to: '/chat?manager=1', label: t('footerTechSupport') },
-    ],
+
+  /** @type {Array<{ to?: string; onClick?: () => void; label: string }>} */
+  const footerSiteLinks = [
+    { to: '/', label: t('home') },
+    { to: '/news', label: t('news') },
+    { to: '/sections', label: t('footerAllSections') },
+    { to: '/about#about-intro', label: t('aboutUs') },
   ]
 
-  const allFooterLinks = desktopColumns.flat()
-  const mobileCol1 = allFooterLinks.slice(0, 10)
-  const mobileCol2 = allFooterLinks.slice(10)
+  /** @type {Array<{ to?: string; onClick?: () => void; label: string }>} */
+  const footerObjectLinksCol1 = [
+    { to: '/auction', label: t('auction') },
+    { to: '/auction?filter=buy_now', label: t('buyNowSectionTitle') },
+    { to: '/shares', label: t('shares') },
+    { to: '/debts', label: t('debtsTitle') },
+  ]
+
+  /** @type {Array<{ to?: string; onClick?: () => void; label: string }>} */
+  const footerObjectLinksCol2 = [
+    { to: '/map', label: t('mapLink') },
+    { to: '/compare', label: t('footerCompareObjects') },
+    { to: '/favorites', label: t('footerLiked') },
+    { to: '/private-club', label: t('privateClubPageTitle') },
+  ]
+
+  /** @type {Array<{ to?: string; onClick?: () => void; label: string }>} */
+  const footerProfileLinks = [
+    { to: cabinetProfilePath, label: t('profile') },
+    { onClick: goWallet, label: t('wallet') },
+    { to: '/bonuses', label: t('bonuses') },
+    { to: cabinetDataPath, label: t('footerPersonalData') },
+  ]
+
+  /** @type {Array<{ to?: string; onClick?: () => void; label: string }>} */
+  const footerAccountLinks = [
+    { to: cabinetDataPath, label: t('footerDocumentsSection') },
+    isBuyerSignedIn
+      ? { onClick: handleBecomeSellerRegister, label: t('becomeSeller') }
+      : { to: '/about#about-intro', label: t('footerForInvestors') },
+    { to: '/about#about-intro', label: t('footerOurTeam') },
+    { to: '/subscriptions#subscriptions-pricing-section', label: t('tariffs') },
+  ]
+
+  /** @type {Array<{ to?: string; onClick?: () => void; label: string }>} */
+  const footerServiceLinks = [
+    { to: '/calculator', label: t('calculator') },
+    { to: '/chat?manager=1', label: t('chat') },
+    { to: '/chat?manager=1', label: t('footerTechSupport') },
+    { to: '/test', label: 'Тест' },
+  ]
+
+  /** @type {Array<Array<{ to?: string; onClick?: () => void; label: string }>>} */
+  const desktopColumns = [
+    footerSiteLinks,
+    footerObjectLinksCol1,
+    footerObjectLinksCol2,
+    footerProfileLinks,
+    footerAccountLinks,
+    footerServiceLinks,
+  ]
+
+  const mobileCol1 = [
+    ...footerSiteLinks,
+    ...footerObjectLinksCol1,
+    ...footerObjectLinksCol2,
+  ]
+  const mobileCol2 = [
+    ...footerProfileLinks,
+    ...footerAccountLinks,
+    ...footerServiceLinks,
+  ]
 
   const renderLink = (item, i, keyPrefix) => {
     const key = `${keyPrefix}-${i}`

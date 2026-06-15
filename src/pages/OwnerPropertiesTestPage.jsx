@@ -28,6 +28,10 @@ import {
 import { fetchOwnerTestDriveBookings } from '../utils/ownerTestDriveList'
 import { getCurrencySymbol } from '../utils/currency'
 import { getOwnerTestIntlLocale } from '../utils/ownerTestI18n'
+import {
+  formatOwnerAuctionTimerCountdown,
+  getOwnerAuctionTimerFlags,
+} from '../utils/ownerTestTimer'
 import { OWNER_TEST_STANDALONE_HREF_MAP } from '../utils/ownerTestNav'
 import OwnerTestProfileMenu from '../components/OwnerTestProfileMenu'
 import OwnerNotificationsButton from '../components/OwnerNotificationsButton'
@@ -380,28 +384,26 @@ function getObjectTimerState(endTime, t, now = Date.now()) {
   if (!Number.isFinite(endMs)) return null
 
   const remainingMs = endMs - now
-  if (remainingMs <= 0) {
+  const { expired, warning, critical, urgent } = getOwnerAuctionTimerFlags(remainingMs)
+
+  if (expired) {
     return {
       expired: true,
+      warning: false,
+      critical: false,
+      urgent: false,
       label: t('ownerTest_propertiesTimerFinished'),
       caption: t('ownerTest_propertiesTimerCaption'),
     }
   }
 
-  const totalSeconds = Math.floor(remainingMs / 1000)
-  const days = Math.floor(totalSeconds / 86400)
-  const hours = Math.floor((totalSeconds % 86400) / 3600)
-  const minutes = Math.floor((totalSeconds % 3600) / 60)
-  const seconds = totalSeconds % 60
-  const two = (value) => String(value).padStart(2, '0')
-
   return {
     expired: false,
-    critical: days === 0 && hours < 1,
+    warning,
+    critical,
+    urgent,
     caption: t('ownerTest_propertiesTimerLeft'),
-    label: days > 0
-      ? `${days}d ${two(hours)}:${two(minutes)}:${two(seconds)}`
-      : `${two(hours)}:${two(minutes)}:${two(seconds)}`,
+    label: formatOwnerAuctionTimerCountdown(remainingMs),
   }
 }
 
@@ -415,7 +417,9 @@ function ObjectTimerBadge({ endTime, now }) {
       className={[
         'op-object-timer',
         timer.expired && 'op-object-timer--expired',
+        timer.warning && 'op-object-timer--warning',
         timer.critical && 'op-object-timer--critical',
+        timer.urgent && 'op-object-timer--urgent',
       ]
         .filter(Boolean)
         .join(' ')}

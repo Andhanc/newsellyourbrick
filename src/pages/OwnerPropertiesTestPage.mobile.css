@@ -268,9 +268,10 @@
 
   /* —— Scroll area —— */
   .op-workspace {
-    flex: none;
+    flex: 1;
     min-height: 0;
-    display: block;
+    display: flex;
+    flex-direction: column;
     overflow: visible !important;
     padding: 0 0 calc(var(--op-tab-h) + 12px + env(safe-area-inset-bottom, 0px));
     background: #ffffff;
@@ -283,8 +284,11 @@
   .op-main-panel {
     width: 100%;
     max-width: 100%;
-    flex: none;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
     overflow: visible;
+    background: #ffffff;
   }
 
   /* —— Tabs —— */
@@ -293,11 +297,12 @@
     align-items: stretch;
     gap: 0;
     margin: 0;
-    padding: 0 var(--op-mob-pad);
+    padding: 0;
     border-bottom: 1px solid #e5e7eb;
     overflow-x: auto;
     scrollbar-width: none;
     -webkit-overflow-scrolling: touch;
+    background: transparent;
   }
 
   .op-tabs--mobile::-webkit-scrollbar {
@@ -367,12 +372,14 @@
     font-size: 12px;
   }
 
-  /* —— Mobile list —— */
+  /* —— Mobile list (как owl-mob-list в кошельке) —— */
   .op-table-card {
-    border: none;
-    border-radius: 0;
-    box-shadow: none;
-    background: transparent;
+    margin: 0 var(--op-mob-pad);
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    background: #fff;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+    overflow: hidden;
   }
 
   .op-table-state {
@@ -386,16 +393,18 @@
   }
 
   .op-pagination {
-    margin: 8px var(--op-mob-pad) 0;
-    border-radius: 12px;
-    background: #ffffff;
+    margin: 0;
+    border-top: 1px solid #e8edf2;
+    border-radius: 0;
+    background: #fff;
   }
 
   .op-mob-list.op-mobile-only {
-    display: block !important;
+    display: flex !important;
+    flex-direction: column;
     list-style: none;
     margin: 0;
-    padding: 0 var(--op-mob-pad);
+    padding: 0;
   }
 
   .op-mob-list__item {
@@ -403,8 +412,9 @@
     grid-template-columns: minmax(0, 1fr) 36px;
     align-items: start;
     gap: 4px;
-    padding: 14px 0;
-    border-bottom: 1px solid #f3f4f6;
+    padding: 14px 16px;
+    border-bottom: 1px solid #e8edf2;
+    background: #fff;
   }
 
   .op-mob-list__item:last-child {
@@ -428,8 +438,8 @@
   }
 
   .op-mob-list__thumb {
-    width: 72px;
-    height: 72px;
+    width: 52px;
+    height: 52px;
     border-radius: 12px;
     object-fit: cover;
     flex-shrink: 0;
@@ -452,9 +462,9 @@
   }
 
   .op-mob-list__title {
-    font-size: 15px;
-    font-weight: 700;
-    line-height: 1.25;
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1.35;
     color: #111827;
     flex: 1;
     min-width: 0;
@@ -558,11 +568,12 @@
   }
 
   .op-mob-owner-ads .oad-card__button {
-    min-width: 128px;
+    min-width: 150px;
     min-height: 40px;
-    padding: 0 14px;
+    padding: 0 16px;
     border-radius: 10px;
     font-size: 13px;
+    white-space: nowrap;
   }
 
   .op-mob-owner-ads .oad-card__dismiss {

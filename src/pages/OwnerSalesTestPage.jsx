@@ -393,17 +393,23 @@ export default function OwnerSalesTestPage() {
                               className="osl-object-cell__thumb"
                               loading="lazy"
                             />
-                            <div className="osl-object-cell__text">
-                              <p className="osl-object-cell__title">{row.title}</p>
-                              <p className="osl-object-cell__meta">{row.location}</p>
-                            </div>
+                            <span className="osl-object-cell__text">
+                              <span className="osl-object-cell__title">{row.title}</span>
+                              <span className="osl-object-cell__meta">
+                                {row.propertyId ? `ID: ${row.propertyId}` : row.location}
+                              </span>
+                            </span>
                           </div>
                         </td>
                         <td>
                           <span className="osl-buyer">{row.buyer}</span>
                         </td>
                         <td>
-                          <span className="osl-amount">{row.dealAmount}</span>
+                          <span
+                            className={`osl-amount${row.statusTone === 'completed' ? ' osl-amount--positive' : ''}`}
+                          >
+                            {row.dealAmount}
+                          </span>
                         </td>
                         <td>
                           <span className="osl-sale-date">{row.saleDate}</span>

@@ -319,6 +319,21 @@
   .otc-stage {
     min-height: 0;
     overflow: visible;
+    display: flex;
+    flex-direction: column;
+    background: #ffffff;
+  }
+
+  .otc-stage > .osl.osl--embedded,
+  .otc-stage > .op.op--embedded,
+  .otc-stage > .ost.ost--embedded,
+  .otc-stage > .otd.otd--embedded {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 100%;
+    background: #ffffff;
+    background-image: none;
   }
 }
 

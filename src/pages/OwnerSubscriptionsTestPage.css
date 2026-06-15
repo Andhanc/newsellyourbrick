@@ -213,6 +213,7 @@
   min-width: 0;
   display: flex;
   flex-direction: column;
+  background: #ffffff;
 }
 
 .ost-header {
@@ -221,8 +222,9 @@
   justify-content: space-between;
   gap: 20px;
   padding: 28px 32px 20px;
-  background: linear-gradient(180deg, rgba(244, 251, 251, 0.97) 0%, rgba(240, 253, 250, 0.85) 100%);
-  backdrop-filter: blur(8px);
+  background: linear-gradient(180deg, rgba(244, 251, 251, 0.8) 0%, rgba(240, 253, 250, 0.65) 100%);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
   position: sticky;
   top: 0;
   z-index: 10;
@@ -322,10 +324,12 @@
 }
 
 .ost-content {
-  padding: 0 32px 40px;
+  flex: 1;
   display: flex;
   flex-direction: column;
   gap: 28px;
+  padding: 0 32px 40px;
+  background: #ffffff;
 }
 
 /* ——— Intro ——— */
@@ -409,8 +413,8 @@
   gap: 4px;
   padding: 4px;
   border-radius: 999px;
-  background: rgba(15, 23, 42, 0.05);
-  border: 1px solid rgba(15, 23, 42, 0.08);
+  background: #ffffff;
+  border: 1px solid #e8edf2;
 }
 
 .ost-period-tabs__item {
@@ -898,6 +902,9 @@
 .ost-workspace {
   flex: 1;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
 }
 
 .ost-content {
@@ -905,6 +912,7 @@
   margin: 0 auto;
   padding-top: 28px;
   gap: 22px;
+  background: #ffffff;
 }
 
 .ost-subscriptions-intro,

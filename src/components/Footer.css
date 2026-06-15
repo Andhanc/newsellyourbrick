@@ -61,6 +61,7 @@
 
 .footer__upper-left .footer__menu.footer__menu--desktop {
   justify-content: flex-start;
+  gap: 28px;
 }
 
 .footer__upper-right {
@@ -95,10 +96,10 @@
   display: flex;
   flex-direction: column;
   gap: 14px;
-  min-width: 160px;
+  min-width: 130px;
+  flex: 1 1 0;
   align-items: flex-start;
   text-align: left;
-  
 }
 
 .footer__menu-link {

@@ -212,7 +212,7 @@ export default function OwnerTestDrivePage() {
               <table className="otd-table">
                 <thead>
                   <tr>
-                    <th>{t('ownerTest_navMyProperties')}</th>
+                    <th>{t('oap_wizardStepObject')}</th>
                     <th>{t('ownerTestDriveBuyer')}</th>
                     <th>{datesColumnLabel}</th>
                     <th>{t('depositButton_label')}</th>
@@ -244,10 +244,12 @@ export default function OwnerTestDrivePage() {
                             className="otd-object-cell__thumb"
                             loading="lazy"
                           />
-                          <div className="otd-object-cell__text">
-                            <p className="otd-object-cell__title">{row.title}</p>
-                            <p className="otd-object-cell__meta">{row.location}</p>
-                          </div>
+                          <span className="otd-object-cell__text">
+                            <span className="otd-object-cell__title">{row.title}</span>
+                            <span className="otd-object-cell__meta">
+                              {row.propertyId ? `ID: ${row.propertyId}` : row.location}
+                            </span>
+                          </span>
                         </div>
                       </td>
                       <td>
@@ -257,7 +259,11 @@ export default function OwnerTestDrivePage() {
                         <span className="otd-dates">{row.dates}</span>
                       </td>
                       <td>
-                        <span className="otd-amount">{row.amount}</span>
+                        <span
+                          className={`otd-amount${row.statusKey === 'confirmed' ? ' otd-amount--positive' : ''}`}
+                        >
+                          {row.amount}
+                        </span>
                       </td>
                       <td>
                         <div className="otd-status-cell">
@@ -291,7 +297,9 @@ export default function OwnerTestDrivePage() {
       </div>
   )
 
-  if (isEmbedded) return mainColumn
+  if (isEmbedded) {
+    return <div className="otd otd--embedded">{mainColumn}</div>
+  }
 
   return (
     <div className={`otd${menuOpen ? ' otd--menu-open' : ''}`}>

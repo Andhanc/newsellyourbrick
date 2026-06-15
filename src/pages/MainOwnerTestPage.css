@@ -273,8 +273,9 @@
   justify-content: space-between;
   gap: 20px;
   padding: 28px 32px 20px;
-  background: linear-gradient(180deg, rgba(244, 251, 251, 0.97) 0%, rgba(240, 253, 250, 0.85) 100%);
-  backdrop-filter: blur(8px);
+  background: linear-gradient(180deg, rgba(244, 251, 251, 0.8) 0%, rgba(240, 253, 250, 0.65) 100%);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
   position: sticky;
   top: 0;
   z-index: 10;
@@ -727,7 +728,11 @@
 .mot-metrics {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
+  gap: 20px;
+}
+
+.mot-metrics.mot-desktop-only {
+  margin-top: 16px;
 }
 
 .mot-metric {
@@ -738,8 +743,105 @@
   position: relative;
 }
 
+.mot-metrics.mot-desktop-only .mot-metric--stat {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 16px 22px;
+  border-radius: 16px;
+  border: 1px solid #e8edf2;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.mot-metric__link {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  border-radius: 8px;
+  color: #4b5563;
+  text-decoration: none;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+
+.mot-metric__link:hover {
+  color: #111827;
+  background: #f3f4f6;
+}
+
+.mot-metric__link:focus-visible {
+  outline: 2px solid rgba(10, 186, 181, 0.45);
+  outline-offset: 2px;
+}
+
+.mot-metrics.mot-desktop-only .mot-metric--stat:hover {
+  transform: translateY(-2px);
+  border-color: #d8e0e8;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
 .mot-metric__icon {
   display: none;
+}
+
+.mot-metrics.mot-desktop-only .mot-metric__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+  flex-shrink: 0;
+  color: #ffffff;
+}
+
+.mot-metrics.mot-desktop-only .mot-metric__icon--tiffany {
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+}
+
+.mot-metrics.mot-desktop-only .mot-metric__icon--orange {
+  background: linear-gradient(135deg, #ff9a56 0%, #ff6a88 100%);
+}
+
+.mot-metrics.mot-desktop-only .mot-metric__icon--teal {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.mot-metrics.mot-desktop-only .mot-metric__icon--green {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+.mot-metrics.mot-desktop-only .mot-metric__content {
+  flex: 1;
+  min-width: 0;
+}
+
+.mot-metrics.mot-desktop-only .mot-metric__label {
+  margin: 0 0 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #666666;
+}
+
+.mot-metrics.mot-desktop-only .mot-metric__value {
+  margin: 0 0 4px;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  color: #000000;
+}
+
+.mot-metrics.mot-desktop-only .mot-metric__subtext {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 500;
+  color: #999999;
 }
 
 .mot-metric__icon--tiffany {
@@ -795,6 +897,13 @@
   margin-bottom: 10px;
 }
 
+.mot-metric__title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
 .mot-metric__label {
   font-size: 13px;
   font-weight: 500;
@@ -805,10 +914,6 @@
   width: 72px;
   height: 28px;
   flex-shrink: 0;
-}
-
-.mot-metrics.mot-desktop-only .mot-metric__icon {
-  display: none;
 }
 
 .mot-metric__figures {
@@ -847,6 +952,46 @@
   justify-content: space-between;
   gap: 12px;
   margin-bottom: 14px;
+}
+
+.mot-chart-card__tools {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.mot-chart-mode {
+  display: inline-flex;
+  padding: 3px;
+  border: 1px solid var(--mot-border);
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.mot-chart-mode__btn {
+  padding: 7px 14px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--mot-text-muted);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.mot-chart-mode__btn:hover:not(.mot-chart-mode__btn--active) {
+  color: var(--mot-text);
+}
+
+.mot-chart-mode__btn--active {
+  background: var(--mot-gradient-active);
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(10, 186, 181, 0.28);
 }
 
 .mot-chart-card__legend {
