@@ -3,19 +3,21 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background: #f1f5f9;
+  background: var(--site-color-bg);
+  font-family: var(--site-font-family);
+  color: var(--site-color-text);
   position: relative;
   padding-bottom: 16px;
 }
 
 .shares-page--redesign {
-  background: #f8f9fb;
-  --shares-intro-purple: #6366f1;
-  --shares-intro-purple-soft: #eef2ff;
-  --shares-intro-text: #111827;
-  --shares-intro-muted: #6b7280;
-  --shares-intro-border: #e5e7eb;
-  --shares-intro-banner-bg: #f9f9fc;
+  background: var(--site-color-bg);
+  --shares-intro-purple: var(--site-color-accent);
+  --shares-intro-purple-soft: rgba(10, 186, 181, 0.1);
+  --shares-intro-text: var(--site-color-text);
+  --shares-intro-muted: var(--site-color-muted);
+  --shares-intro-border: var(--site-color-border);
+  --shares-intro-banner-bg: var(--site-color-surface);
 }
 
 .shares-page--redesign .shares-container {
@@ -114,9 +116,9 @@ html.site-footer-near .shares-floats > button.ai-button {
 }
 
 .shares-page .new-header__container {
-  background: #ffffff;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06);
-  border: 1px solid rgba(0, 0, 0, 0.05);
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 14px 34px -24px rgba(15, 23, 42, 0.36), 0 1px 0 rgba(255, 255, 255, 0.9) inset;
+  border: 1px solid rgba(226, 232, 240, 0.9);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -163,8 +165,8 @@ html.site-footer-near .shares-floats > button.ai-button {
   inset: 0;
   background:
     radial-gradient(ellipse 100% 70% at 50% -10%, rgba(10, 186, 181, 0.12) 0%, transparent 45%),
-    radial-gradient(ellipse 70% 50% at 90% 30%, rgba(120, 80, 180, 0.06) 0%, transparent 40%),
-    linear-gradient(180deg, #f1f5f9 0%, #e2e8f0 40%, #f1f5f9 100%);
+    radial-gradient(ellipse 70% 50% at 90% 30%, rgba(15, 23, 42, 0.045) 0%, transparent 40%),
+    linear-gradient(180deg, var(--site-color-bg) 0%, #eef7f7 42%, var(--site-color-bg) 100%);
   z-index: 0;
   pointer-events: none;
 }
@@ -363,14 +365,14 @@ html.site-footer-near .shares-floats > button.ai-button {
 }
 
 .shares-page .page-context-heading__title--auction-script {
-  font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
-  font-weight: 700;
-  font-style: italic;
-  font-size: clamp(2.35rem, 5.2vw, 3.35rem);
-  line-height: 1.12;
-  color: #0f172a;
-  margin: 0.35rem 0 0.55rem;
-  letter-spacing: 0.03em;
+  font-family: var(--site-font-family);
+  font-weight: 800;
+  font-style: normal;
+  font-size: clamp(2rem, 4.4vw, 3rem);
+  line-height: 1.08;
+  color: var(--site-color-text);
+  margin: 0.25rem 0 0.55rem;
+  letter-spacing: -0.035em;
   text-align: left;
   font-synthesis: none;
 }
