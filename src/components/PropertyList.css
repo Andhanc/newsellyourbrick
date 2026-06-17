@@ -1,6 +1,6 @@
 .property-list {
   padding: 0 0 60px;
-  background: #f5f5f5;
+  background: var(--site-color-bg);
 }
 
 .property-list-container {
@@ -14,7 +14,7 @@
   font-size: 32px;
   font-weight: 700;
   margin-bottom: 15px;
-  color: #333;
+  color: var(--site-color-text);
 }
 
 .property-list-header {
@@ -312,12 +312,13 @@
 }
 
 .property-card {
-  background: #fff;
-  border-radius: 12px;
+  background: var(--site-color-surface);
+  border: 1px solid rgba(226, 232, 240, 0.78);
+  border-radius: var(--site-card-radius);
   overflow: visible;
   position: relative;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: var(--site-card-shadow);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -325,7 +326,8 @@
 
 .property-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  border-color: rgba(10, 186, 181, 0.28);
+  box-shadow: var(--site-card-shadow-hover);
 }
 
 .property-card--auction-ended {
@@ -339,7 +341,7 @@
 }
 
 .btn-liquid-glass--auction-ended {
-  background: linear-gradient(135deg, #6366f1 0%, #4338ca 100%) !important;
+  background: linear-gradient(135deg, var(--site-color-accent) 0%, var(--site-color-accent-dark) 100%) !important;
 }
 
 .property-link {
@@ -356,7 +358,7 @@
   width: 100%;
   height: 250px;
   overflow: hidden;
-  border-radius: 12px 12px 0 0;
+  border-radius: var(--site-card-radius) var(--site-card-radius) 0 0;
 }
 
 .property-vip-club-badge {
@@ -741,7 +743,7 @@
   color: #ffffff;
   font-size: 14px;
   font-weight: 600;
-  font-family: 'Montserrat', sans-serif;
+  font-family: var(--site-font-family);
   z-index: 3;
   white-space: nowrap;
   transition: all 0.3s ease;
@@ -1186,7 +1188,7 @@
 }
 
 .property-content {
-  padding: 14px 16px;
+  padding: 16px;
   display: flex;
   flex-direction: column;
   flex: 1;
@@ -1257,12 +1259,12 @@
 
 .property-title {
   font-size: 20px;
-  font-weight: 600;
+  font-weight: 700;
   margin-bottom: 0;
   margin-top: 0;
-  color: #333;
-  line-height: 1.4;
-  min-height: 2.8em;
+  color: var(--site-color-text);
+  line-height: 1.28;
+  min-height: 2.56em;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -1272,9 +1274,9 @@
 
 .property-description {
   font-size: 13px;
-  color: #555;
+  color: var(--site-color-muted);
   margin-bottom: 8px;
-  line-height: 1.5;
+  line-height: 1.45;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   line-clamp: 2;
@@ -1292,12 +1294,12 @@
 
 .property-location {
   font-size: 13px;
-  color: #666;
+  color: var(--site-color-muted);
   margin-top: 0;
   margin-bottom: 0;
   min-height: 2.25em;
   flex-shrink: 0;
-  line-height: 1.5;
+  line-height: 1.45;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -1315,7 +1317,7 @@
 .property-price {
   font-size: 24px;
   font-weight: 700;
-  color: #333;
+  color: var(--site-color-text);
   margin-bottom: 12px;
   flex-shrink: 0;
 }
@@ -1337,20 +1339,20 @@
   gap: 10px;
   font-size: 15px;
   font-weight: 500;
-  color: #333;
+  color: var(--site-color-text);
   padding: 0;
   white-space: nowrap;
 }
 
 .property-specs .spec-item svg {
-  color: #666;
+  color: var(--site-color-muted);
   flex-shrink: 0;
   width: 18px;
   height: 18px;
 }
 
 .property-specs .spec-item span {
-  color: #333;
+  color: var(--site-color-text);
   font-weight: 500;
 }
 
@@ -1368,23 +1370,23 @@
   align-items: center;
   gap: 6px;
   padding: 6px 12px;
-  background: #f0f9ff;
-  border: 1px solid #bae6fd;
+  background: rgba(10, 186, 181, 0.08);
+  border: 1px solid rgba(10, 186, 181, 0.22);
   border-radius: 6px;
   font-size: 13px;
-  color: #0369a1;
+  color: #0f766e;
   font-weight: 500;
   transition: all 0.2s ease;
 }
 
 .property-specs--auction .spec-item:hover {
-  background: #e0f2fe;
-  border-color: #7dd3fc;
+  background: rgba(10, 186, 181, 0.12);
+  border-color: rgba(10, 186, 181, 0.36);
   transform: translateY(-1px);
 }
 
 .property-specs--auction .spec-item svg {
-  color: #0ea5e9;
+  color: var(--site-color-accent);
   flex-shrink: 0;
 }
 
@@ -1413,7 +1415,7 @@
   align-items: center;
   gap: 6px;
   font-size: 12px;
-  color: #666;
+  color: var(--site-color-muted);
 }
 
 .property-bid-info {
@@ -1421,22 +1423,23 @@
   justify-content: space-between;
   align-items: center;
   padding: 8px 10px;
-  background: #f9f9f9;
-  border-radius: 8px;
+  background: rgba(10, 186, 181, 0.07);
+  border: 1px solid rgba(10, 186, 181, 0.14);
+  border-radius: 12px;
   margin-bottom: 6px;
   flex-shrink: 0;
 }
 
 .bid-label {
   font-size: 14px;
-  color: #666;
+  color: var(--site-color-muted);
   white-space: nowrap;
 }
 
 .bid-value {
   font-size: 18px;
   font-weight: 600;
-  color: #0ABAB5;
+  color: var(--site-color-accent-dark);
   white-space: nowrap;
 }
 
@@ -2731,14 +2734,14 @@
   }
 
   .property-list--auction-desktop .page-context-heading__title--auction-script {
-    font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
-    font-weight: 700;
-    font-style: italic;
-    font-size: clamp(2.35rem, 5.2vw, 3.35rem);
-    line-height: 1.12;
-    color: #0f172a;
-    margin: 0.35rem 0 0.55rem;
-    letter-spacing: 0.03em;
+    font-family: var(--site-font-family);
+    font-weight: 800;
+    font-style: normal;
+    font-size: clamp(2rem, 4.4vw, 3rem);
+    line-height: 1.08;
+    color: var(--site-color-text);
+    margin: 0.25rem 0 0.55rem;
+    letter-spacing: -0.035em;
     text-align: left;
     font-synthesis: none;
   }

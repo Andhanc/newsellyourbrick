@@ -2,12 +2,13 @@
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800;900&display=swap');
 
 .app {
-  font-family: 'Montserrat', sans-serif;
+  font-family: var(--site-font-family);
   padding: 0;
   display: flex;
   flex-direction: column;
   gap: 0;
   background: #ffffff;
+  color: var(--site-color-text);
   width: 100%;
   scrollbar-width: none; /* Firefox */
   -ms-overflow-style: none; /* IE and Edge */
@@ -1419,14 +1420,13 @@
 }
 
 .section__title {
-  /* Как крупное «Аукцион» на /auction (Playfair Display italic, Home.css) */
-  font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
+  font-family: var(--site-font-family);
   font-size: clamp(1.35rem, 2.4vw, 1.65rem);
-  font-weight: 700;
-  font-style: italic;
-  letter-spacing: 0.03em;
-  line-height: 1.12;
-  color: #0f172a;
+  font-weight: 800;
+  font-style: normal;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  color: var(--site-color-text);
   margin: 0;
   text-transform: none;
   font-synthesis: none;
@@ -2525,13 +2525,13 @@
 }
 
 .contact-form__title {
-  font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
+  font-family: var(--site-font-family);
   font-size: clamp(1.5rem, 2.6vw, 1.85rem);
-  font-weight: 700;
-  font-style: italic;
-  letter-spacing: 0.03em;
-  line-height: 1.12;
-  color: #0f172a;
+  font-weight: 800;
+  font-style: normal;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  color: var(--site-color-text);
   margin: 0;
   display: flex;
   flex-wrap: wrap;
@@ -6485,13 +6485,13 @@
 }
 
 .info-section__title {
-  font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
+  font-family: var(--site-font-family);
   font-size: clamp(1.45rem, 2.6vw, 1.85rem);
-  font-weight: 700;
-  font-style: italic;
-  letter-spacing: 0.03em;
-  line-height: 1.12;
-  color: #0f172a;
+  font-weight: 800;
+  font-style: normal;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  color: var(--site-color-text);
   margin: 0 0 20px;
   text-transform: none;
   font-synthesis: none;
@@ -7184,13 +7184,13 @@
 }
 
 .apartments-section__title {
-  font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
+  font-family: var(--site-font-family);
   font-size: clamp(1.45rem, 2.6vw, 1.85rem);
-  font-weight: 700;
-  font-style: italic;
-  letter-spacing: 0.03em;
-  line-height: 1.12;
-  color: #0f172a;
+  font-weight: 800;
+  font-style: normal;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  color: var(--site-color-text);
   margin: 0;
   text-transform: none;
   font-synthesis: none;
@@ -7261,16 +7261,15 @@
   min-width: 0;
 }
 
-/* Заголовки витрин — как крупное «Аукцион» на /auction (Playfair Display italic) */
 .auction-showcase__title {
   margin: 0;
-  font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
+  font-family: var(--site-font-family);
   font-size: clamp(1.55rem, 3.2vw, 2.35rem);
-  font-weight: 700;
-  font-style: italic;
-  letter-spacing: 0.03em;
-  line-height: 1.12;
-  color: #0f172a;
+  font-weight: 800;
+  font-style: normal;
+  letter-spacing: -0.035em;
+  line-height: 1.1;
+  color: var(--site-color-text);
   text-transform: none;
   font-synthesis: none;
   -webkit-font-smoothing: antialiased;
@@ -9028,12 +9027,12 @@
 }
 
 .landing-security__title {
-  font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
+  font-family: var(--site-font-family);
   font-size: clamp(1.25rem, 2.2vw, 1.65rem);
-  font-weight: 700;
-  font-style: italic;
-  letter-spacing: 0.03em;
-  line-height: 1.12;
+  font-weight: 800;
+  font-style: normal;
+  letter-spacing: -0.025em;
+  line-height: 1.1;
   color: #ffffff;
   text-align: center;
   margin: 0 0 16px;

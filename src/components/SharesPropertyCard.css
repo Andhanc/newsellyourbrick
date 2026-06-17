@@ -2,17 +2,18 @@
   display: flex;
   flex-direction: column;
   height: 100%;
-  border: 1px solid #e5e7eb;
-  border-radius: 14px;
-  background: #ffffff;
+  border: 1px solid rgba(226, 232, 240, 0.78);
+  border-radius: var(--site-card-radius);
+  background: var(--site-color-surface);
   overflow: hidden;
   cursor: pointer;
+  box-shadow: var(--site-card-shadow);
   transition: box-shadow 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
 }
 
 .shares-v2-card:hover {
-  border-color: #d1d5db;
-  box-shadow: 0 8px 24px -10px rgba(15, 23, 42, 0.16);
+  border-color: rgba(10, 186, 181, 0.28);
+  box-shadow: var(--site-card-shadow-hover);
   transform: translateY(-2px);
 }
 
@@ -56,7 +57,7 @@
   z-index: 2;
   padding: 5px 10px;
   border-radius: 999px;
-  font-family: 'Montserrat', system-ui, sans-serif;
+  font-family: var(--site-font-family);
   font-size: 0.6875rem;
   font-weight: 600;
   line-height: 1.2;
@@ -72,7 +73,7 @@
 }
 
 .shares-v2-card__badge--commercial {
-  background: #0abab5;
+  background: var(--site-color-accent-dark, #089a95);
 }
 
 .shares-v2-card__favorite {
@@ -105,7 +106,7 @@
   justify-content: center;
   background: rgba(15, 23, 42, 0.55);
   color: #ffffff;
-  font-family: 'Montserrat', system-ui, sans-serif;
+  font-family: var(--site-font-family);
   font-size: 1rem;
   font-weight: 700;
   letter-spacing: 0.12em;
@@ -126,11 +127,11 @@
 
 .shares-v2-card__title {
   margin: 0 0 6px;
-  font-family: 'Montserrat', system-ui, sans-serif;
+  font-family: var(--site-font-family);
   font-size: 0.9375rem;
   font-weight: 700;
   line-height: 1.35;
-  color: #111827;
+  color: var(--site-color-text);
 }
 
 .shares-v2-card__location {
@@ -138,10 +139,10 @@
   align-items: flex-start;
   gap: 4px;
   margin: 0 0 14px;
-  font-family: 'Montserrat', system-ui, sans-serif;
+  font-family: var(--site-font-family);
   font-size: 0.75rem;
   line-height: 1.45;
-  color: #6b7280;
+  color: var(--site-color-muted);
 }
 
 .shares-v2-card__location span {
@@ -169,7 +170,7 @@
 }
 
 .shares-v2-card__metric-label {
-  font-family: 'Montserrat', system-ui, sans-serif;
+  font-family: var(--site-font-family);
   font-size: 0.6875rem;
   line-height: 1.3;
   color: #9ca3af;
@@ -180,16 +181,16 @@
 }
 
 .shares-v2-card__metric-value {
-  font-family: 'Montserrat', system-ui, sans-serif;
+  font-family: var(--site-font-family);
   font-size: 0.875rem;
   font-weight: 700;
   line-height: 1.25;
-  color: #111827;
+  color: var(--site-color-text);
 }
 
 .shares-v2-card__metric-suffix {
   font-weight: 500;
-  color: #6b7280;
+  color: var(--site-color-muted);
 }
 
 .shares-v2-card__progress-head {
@@ -202,29 +203,29 @@
 
 .shares-v2-card__progress-label,
 .shares-v2-card__progress-percent {
-  font-family: 'Montserrat', system-ui, sans-serif;
+  font-family: var(--site-font-family);
   font-size: 0.6875rem;
   font-weight: 600;
   line-height: 1.2;
-  color: #6b7280;
+  color: var(--site-color-muted);
 }
 
 .shares-v2-card__progress-percent {
-  color: #0abab5;
+  color: var(--site-color-accent-dark, #089a95);
 }
 
 .shares-v2-card__progress-track {
   height: 6px;
   margin-bottom: 14px;
   border-radius: 999px;
-  background: #e5e7eb;
+  background: rgba(226, 232, 240, 0.9);
   overflow: hidden;
 }
 
 .shares-v2-card__progress-fill {
   height: 100%;
   border-radius: inherit;
-  background: linear-gradient(90deg, #0abab5 0%, #53d8d3 100%);
+  background: linear-gradient(90deg, var(--site-color-accent, #0abab5) 0%, #53d8d3 100%);
   transition: width 0.3s ease;
 }
 
@@ -241,14 +242,14 @@
   align-items: baseline;
   gap: 4px;
   min-width: 0;
-  font-family: 'Montserrat', system-ui, sans-serif;
+  font-family: var(--site-font-family);
   font-size: 0.8125rem;
   line-height: 1.2;
-  color: #6b7280;
+  color: var(--site-color-muted);
 }
 
 .shares-v2-card__amounts strong {
-  color: #111827;
+  color: var(--site-color-text);
   font-weight: 700;
 }
 
@@ -263,8 +264,8 @@
   border: 1px solid rgba(10, 186, 181, 0.35);
   border-radius: 10px;
   background: #ffffff;
-  color: #0abab5;
-  font-family: 'Montserrat', system-ui, sans-serif;
+  color: var(--site-color-accent-dark, #089a95);
+  font-family: var(--site-font-family);
   font-size: 0.75rem;
   font-weight: 600;
   line-height: 1.2;
@@ -273,8 +274,8 @@
 }
 
 .shares-v2-card__invest-btn:hover:not(:disabled) {
-  background: rgba(10, 186, 181, 0.06);
-  border-color: #0abab5;
+  background: rgba(10, 186, 181, 0.08);
+  border-color: var(--site-color-accent, #0abab5);
 }
 
 .shares-v2-card__invest-btn:disabled {
