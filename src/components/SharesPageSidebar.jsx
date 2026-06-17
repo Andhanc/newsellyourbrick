@@ -6,10 +6,11 @@ import {
   Network,
   Eye,
   Building2,
-  Users,
+  Coins,
+  Share2,
   Layers,
-  TrendingUp,
 } from 'lucide-react'
+import { formatSharesPlatformStatValues } from '../utils/sharesListing'
 import './SharesPageSidebar.css'
 
 const BENEFIT_ITEMS = [
@@ -21,41 +22,21 @@ const BENEFIT_ITEMS = [
 
 const STAT_ITEMS = [
   { icon: Building2, labelKey: 'sharesSidebarStatsObjects', valueKey: 'objectsAvailable' },
-  { icon: Users, labelKey: 'sharesSidebarStatsInvestors', valueKey: 'investors' },
-  { icon: Layers, labelKey: 'sharesSidebarStatsVolume', valueKey: 'totalVolume' },
-  { icon: TrendingUp, labelKey: 'sharesSidebarStatsYield', valueKey: 'averageYield' },
+  { icon: Share2, labelKey: 'sharesSidebarStatsSharesSold', valueKey: 'sharesSold' },
+  { icon: Layers, labelKey: 'sharesSidebarStatsMarketVolume', valueKey: 'marketVolume' },
+  { icon: Wallet, labelKey: 'sharesSidebarStatsMinEntry', valueKey: 'minEntry' },
 ]
-
-const DEFAULT_PLATFORM_STATS = {
-  investors: 4832,
-  totalVolume: 28_450_000,
-  averageYield: '12.7%',
-}
-
-function formatObjectsCount(count, locale) {
-  return new Intl.NumberFormat(locale).format(count)
-}
-
-function formatVolume(amount, locale) {
-  return new Intl.NumberFormat(locale, {
-    style: 'currency',
-    currency: 'EUR',
-    maximumFractionDigits: 0,
-  }).format(amount)
-}
 
 const PROMO_ART_IMAGE = '/images/external/shares-sidebar-promo-art.png'
 
-function SharesPageSidebar({ objectsAvailable = 0 }) {
+function SharesPageSidebar({ platformStats = null }) {
   const { t, i18n } = useTranslation()
-  const locale = i18n.language || 'ru'
-
-  const statValues = {
-    objectsAvailable: formatObjectsCount(objectsAvailable, locale),
-    investors: formatObjectsCount(DEFAULT_PLATFORM_STATS.investors, locale),
-    totalVolume: formatVolume(DEFAULT_PLATFORM_STATS.totalVolume, locale),
-    averageYield: DEFAULT_PLATFORM_STATS.averageYield,
-  }
+  const statValues = formatSharesPlatformStatValues(platformStats || {
+    availableObjects: 0,
+    totalSharesSold: 0,
+    marketVolumeByCurrency: {},
+    minimumInvestment: null,
+  }, i18n.language)
 
   return (
     <aside className="shares-page-sidebar" aria-label={t('sharesSidebarAria')}>

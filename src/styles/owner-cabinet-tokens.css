@@ -1,0 +1,93 @@
+/**
+ * Shared design tokens for the owner (seller) test cabinet.
+ * Imported by OwnerTestCabinetChrome and individual page stylesheets.
+ */
+
+html.owner-test-cabinet-active,
+.otc,
+.mot,
+.op,
+.opa,
+.ost,
+.osl,
+.opr,
+.otd,
+.oap,
+.owl {
+  /* Tiffany / brand */
+  --oc-tiffany: #0abab5;
+  --oc-tiffany-dark: #089a95;
+  --oc-tiffany-deep: #0d9488;
+  --oc-tiffany-darker: #0f766e;
+  --oc-tiffany-ink: #042f2e;
+  --oc-tiffany-light: #53d8d3;
+  --oc-tiffany-pale: #99f6e4;
+  --oc-tiffany-soft: #ecfdf5;
+  --oc-tiffany-mint: #ccfbf1;
+  --oc-tiffany-muted: rgba(10, 186, 181, 0.14);
+  --oc-tiffany-ring: rgba(10, 186, 181, 0.28);
+
+  /* Neutrals — contrast with brand teal */
+  --oc-slate: #0f172a;
+  --oc-slate-muted: #334155;
+  --oc-slate-light: #64748b;
+  --oc-slate-faint: #94a3b8;
+  --oc-surface: #ffffff;
+  --oc-surface-muted: #f8fafc;
+  --oc-surface-warm: #f4fbfb;
+  --oc-border: #e5e7eb;
+  --oc-border-soft: rgba(226, 232, 240, 0.85);
+  --oc-text: #111827;
+  --oc-text-muted: #6b7280;
+  --oc-text-light: #9ca3af;
+
+  /* Gradients */
+  --oc-gradient-brand: linear-gradient(135deg, #53d8d3 0%, #0abab5 48%, #089a95 100%);
+  --oc-gradient-active: linear-gradient(135deg, #1ba8a3 0%, #0abab5 42%, #089a95 100%);
+  --oc-gradient-deep: linear-gradient(145deg, #042f2e 0%, #0f766e 42%, #0d9488 78%, #14b8a6 100%);
+  --oc-gradient-deep-soft: linear-gradient(
+    180deg,
+    rgba(4, 47, 46, 0.08) 0%,
+    rgba(15, 118, 110, 0.04) 38%,
+    rgba(255, 255, 255, 0) 72%
+  );
+  --oc-gradient-page: linear-gradient(180deg, #f8fafc 0%, #f0fdfa 55%, #ecfdf5 100%);
+  --oc-gradient-promo-shade: linear-gradient(
+    115deg,
+    rgba(4, 47, 46, 0.9) 0%,
+    rgba(8, 154, 149, 0.75) 45%,
+    rgba(10, 186, 181, 0.35) 100%
+  );
+
+  /* Elevation */
+  --oc-shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.06), 0 8px 24px rgba(10, 186, 181, 0.06);
+  --oc-shadow-md: 0 4px 14px rgba(15, 23, 42, 0.05);
+  --oc-shadow-current: 0 0 0 1px rgba(15, 118, 110, 0.22), 0 20px 48px rgba(4, 47, 46, 0.14);
+  --oc-radius: 16px;
+  --oc-radius-sm: 12px;
+  --oc-radius-lg: 22px;
+
+  /* Mobile shared */
+  --oc-mob-pad: 16px;
+  --oc-mob-topbar-border: #f0f0f0;
+  --oc-mob-card-border: 1.5px solid rgba(15, 23, 42, 0.08);
+  --oc-mob-card-shadow: 0 4px 14px rgba(15, 23, 42, 0.05);
+}
+
+@media (max-width: 900px) {
+  html.owner-test-cabinet-active,
+  .otc,
+  .mot,
+  .op,
+  .opa,
+  .ost,
+  .osl,
+  .opr,
+  .otd,
+  .oap,
+  .owl {
+    --oc-mob-surface: #ffffff;
+    --oc-mob-accent: var(--oc-tiffany);
+    --oc-mob-accent-dark: var(--oc-tiffany-dark);
+  }
+}

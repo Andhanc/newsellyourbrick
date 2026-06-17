@@ -8,8 +8,7 @@ import { List, LayoutGrid, MapPin, ShoppingBag, Car } from 'lucide-react'
 import { MdBed, MdOutlineBathtub } from 'react-icons/md'
 import { BiArea } from 'react-icons/bi'
 import { cn } from '@/lib/utils'
-import PropertyTimer from '../PropertyTimer'
-import PropertyShareButton from '../PropertyShareButton'
+import ListingCardAuctionTimer from '../ListingCardAuctionTimer'
 import CircularTimer from '../CircularTimer'
 import { showNotification } from '@/utils/toastHelper'
 import { ensureCanOpenProperty } from '@/utils/propertyAccessGuard'
@@ -32,6 +31,7 @@ import { AUCTION_MOBILE_VIEW_STORAGE_KEY } from '../../constants/auctionMobileVi
 import { buildResponsiveImageProps } from '../../utils/responsiveImage'
 import ImageWithSkeleton from '../ImageWithSkeleton'
 import AuctionPropertyCard from '../AuctionPropertyCard'
+import DebtsPropertyCard from '../DebtsPropertyCard'
 import '../PropertyList.css'
 import './AuctionMobileLayout.css'
 
@@ -52,6 +52,7 @@ export default function AuctionMobileLayout({
   viewerHasVip = false,
   onOpen,
   onTooltip,
+  debtsCards = false,
 }) {
   const { t } = useTranslation()
   const navigate = useNavigate()
@@ -136,16 +137,26 @@ export default function AuctionMobileLayout({
           >
             {properties.map((property) =>
               view === 'card' ? (
-                <AuctionPropertyCard
-                  key={auctionListingDedupeKey(property)}
-                  property={property}
-                  isFavorite={typeof isFavorite === 'function' ? isFavorite(property) : false}
-                  onFavoriteToggle={onFavoriteToggle}
-                  onOpen={openProperty}
-                  onTooltip={onTooltip}
-                  viewerHasVip={viewerHasVip}
-                  formatPrice={formatPrice}
-                />
+                debtsCards ? (
+                  <DebtsPropertyCard
+                    key={auctionListingDedupeKey(property)}
+                    property={property}
+                    isFavorite={typeof isFavorite === 'function' ? isFavorite(property) : false}
+                    onFavoriteToggle={onFavoriteToggle}
+                    onOpen={openProperty}
+                  />
+                ) : (
+                  <AuctionPropertyCard
+                    key={auctionListingDedupeKey(property)}
+                    property={property}
+                    isFavorite={typeof isFavorite === 'function' ? isFavorite(property) : false}
+                    onFavoriteToggle={onFavoriteToggle}
+                    onOpen={openProperty}
+                    onTooltip={onTooltip}
+                    viewerHasVip={viewerHasVip}
+                    formatPrice={formatPrice}
+                  />
+                )
               ) : (
                 <AuctionMobileItem
                   key={auctionListingDedupeKey(property)}
@@ -494,7 +505,7 @@ function AuctionMobileItem({
     !isReserved
 
   const greenOnImage =
-    hasTimer && !isReserved && !showCircularOnCard && effectiveAuctionEnd
+    hasTimer && !isReserved && !showCircularOnCard && effectiveAuctionEnd && !isDebtProperty
   const redOnImage =
     hasTimer && !isReserved && showCircularOnCard && property.test_timer_end_date
   const buyNowEndedSealOnImage =
@@ -558,6 +569,19 @@ function AuctionMobileItem({
   }
 
   const privateClubCard = showMobilePrivateClubHero && view === 'card'
+
+  const debtsBodyFlipTimerEl =
+    isDebtProperty &&
+    hasTimer &&
+    !isReserved &&
+    effectiveAuctionEnd &&
+    !showCircularOnCard ? (
+      <ListingCardAuctionTimer
+        endTime={effectiveAuctionEnd}
+        endedLabel={t('propertyDetailAuctionCompleted')}
+        className="auction-mobile-debts-timer"
+      />
+    ) : null
 
   const greenCardTimerEl =
     greenOnImage && view === 'card' ? (
@@ -707,12 +731,6 @@ function AuctionMobileItem({
                 className="auction-mobile-photo-icons"
                 onClick={(e) => e.stopPropagation()}
               >
-                <PropertyShareButton
-                  property={property}
-                  variant="mobile-media"
-                  className="auction-mobile-share-btn"
-                  iconSize={16}
-                />
                 {showBuyNow && (
                   <AuctionPhotoHint type="buy" tooltipKey="buyNowTooltip" onGo={goDetail} />
                 )}
@@ -720,16 +738,6 @@ function AuctionMobileItem({
                   <AuctionPhotoHint type="test" tooltipKey="testDriveTooltip" onGo={goDetail} />
                 )}
               </div>
-            )}
-            {!isReserved &&
-            !showMobilePrivateClubHero &&
-            !(showBuyNow || hasTestDrive) &&
-            !isAuctionListingEnded(property) && (
-              <PropertyShareButton
-                property={property}
-                variant="mobile-media"
-                iconSize={16}
-              />
             )}
             {view === 'list' && redOnImage && (
               <div className="auction-mobile-circular-timer auction-mobile-circular-timer--list-bottom">
@@ -767,6 +775,7 @@ function AuctionMobileItem({
         </div>
 
         <div className="auction-mobile-item__body">
+          {!privateClubCard && debtsBodyFlipTimerEl}
           {!privateClubCard && greenCardTimerEl}
           {!privateClubCard && redCardTimerEl}
           {!privateClubCard && buyEndedCardTimerEl}

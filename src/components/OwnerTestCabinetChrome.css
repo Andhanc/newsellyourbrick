@@ -1,13 +1,14 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import '../styles/owner-cabinet-tokens.css';
 
 .otc {
-  --otc-tiffany: #0abab5;
-  --otc-tiffany-dark: #089a95;
-  --otc-tiffany-light: #53d8d3;
-  --otc-tiffany-soft: #ecfdf5;
-  --otc-tiffany-ring: rgba(10, 186, 181, 0.28);
-  --otc-gradient-active: linear-gradient(135deg, #1ba8a3 0%, #0abab5 42%, #089a95 100%);
-  --otc-gradient-brand: linear-gradient(135deg, #53d8d3 0%, #0abab5 48%, #089a95 100%);
+  --otc-tiffany: var(--oc-tiffany);
+  --otc-tiffany-dark: var(--oc-tiffany-dark);
+  --otc-tiffany-light: var(--oc-tiffany-light);
+  --otc-tiffany-soft: var(--oc-tiffany-soft);
+  --otc-tiffany-ring: var(--oc-tiffany-ring);
+  --otc-gradient-active: var(--oc-gradient-active);
+  --otc-gradient-brand: var(--oc-gradient-brand);
   --otc-text: #111827;
   --otc-text-muted: #6b7280;
   --otc-border: #e5e7eb;

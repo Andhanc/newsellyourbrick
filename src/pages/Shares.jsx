@@ -19,12 +19,15 @@ import { hasDbBackedProperty } from '../utils/propertyFavoriteKey'
 import {
   EMPTY_SHARES_FILTERS,
   applySharesPageFilters,
-  isShareSoldOut,
 } from '../utils/sharesPageFilters'
 import {
   SHARES_PAGE_SIZE,
+  getMinimumShareInvestment,
+  getSharesCategoryTabCounts,
+  getSharesPlatformStats,
   getSharesFilterOptions,
   mapSharesFromApiResponse,
+  matchesShareCategoryTab,
   paginateShares,
   sortShares,
 } from '../utils/sharesListing'
@@ -38,8 +41,8 @@ const Shares = () => {
   const navigate = useNavigate()
   const { isFavorite, toggleFavorite } = usePropertyFavorites()
   const [sharesFilters, setSharesFilters] = useState(EMPTY_SHARES_FILTERS)
+  const [activeCategory, setActiveCategory] = useState('all')
   const [sortKey, setSortKey] = useState('popularity')
-  const [viewMode, setViewMode] = useState('grid')
   const [currentPage, setCurrentPage] = useState(1)
   const [apiShares, setApiShares] = useState([])
   const [loadingShares, setLoadingShares] = useState(true)
@@ -110,11 +113,21 @@ const Shares = () => {
 
   const allShareObjects = useMemo(() => apiShares, [apiShares])
 
-  const filterOptions = useMemo(() => getSharesFilterOptions(allShareObjects), [allShareObjects])
+  const categoryCounts = useMemo(
+    () => getSharesCategoryTabCounts(allShareObjects),
+    [allShareObjects],
+  )
+
+  const sharesInCategory = useMemo(
+    () => allShareObjects.filter((share) => matchesShareCategoryTab(share, activeCategory)),
+    [allShareObjects, activeCategory],
+  )
+
+  const filterOptions = useMemo(() => getSharesFilterOptions(sharesInCategory), [sharesInCategory])
 
   const filtered = useMemo(
-    () => sortShares(applySharesPageFilters(allShareObjects, sharesFilters), sortKey),
-    [allShareObjects, sharesFilters, sortKey],
+    () => sortShares(applySharesPageFilters(sharesInCategory, sharesFilters), sortKey),
+    [sharesInCategory, sharesFilters, sortKey],
   )
 
   const pagination = useMemo(
@@ -124,7 +137,7 @@ const Shares = () => {
 
   useEffect(() => {
     setCurrentPage(1)
-  }, [sharesFilters, sortKey])
+  }, [sharesFilters, sortKey, activeCategory])
 
   useEffect(() => {
     if (currentPage > pagination.totalPages) {
@@ -132,8 +145,13 @@ const Shares = () => {
     }
   }, [currentPage, pagination.totalPages])
 
-  const availableObjectsCount = useMemo(
-    () => allShareObjects.filter((obj) => !isShareSoldOut(obj)).length,
+  const platformStats = useMemo(
+    () => getSharesPlatformStats(allShareObjects),
+    [allShareObjects],
+  )
+
+  const minimumShareInvestment = useMemo(
+    () => getMinimumShareInvestment(allShareObjects),
     [allShareObjects],
   )
 
@@ -171,11 +189,18 @@ const Shares = () => {
     <div className="shares-page shares-page--catalog shares-page--redesign">
       <Header />
       <main className="shares-container shares-container--catalog">
-        <SharesPageIntroHead />
+        <SharesPageIntroHead
+          activeCategory={activeCategory}
+          onCategoryChange={setActiveCategory}
+          categoryCounts={categoryCounts}
+        />
 
         <div className="shares-page-layout">
           <div className="shares-page-layout__main">
-            <SharesPageBanner />
+            <SharesPageBanner
+              minInvestment={minimumShareInvestment}
+              platformStats={platformStats}
+            />
 
             <section className="shares-listing-section" aria-label={t('shares')}>
               <SharesListingToolbar
@@ -184,19 +209,17 @@ const Shares = () => {
                 onResetFilters={handleResetFilters}
                 sortKey={sortKey}
                 onSortChange={setSortKey}
-                viewMode={viewMode}
-                onViewModeChange={setViewMode}
                 filterOptions={filterOptions}
               />
 
               <div
                 id="shares-grid"
-                className={`shares-listing-grid shares-listing-grid--${viewMode}`}
+                className="shares-listing-grid shares-listing-grid--grid"
                 aria-busy={loadingShares}
               >
                 {loadingShares ? (
                   Array.from({ length: SHARES_PAGE_SIZE }, (_, i) => (
-                    <SharesPropertyCardSkeleton key={`skeleton-${i}`} viewMode={viewMode} />
+                    <SharesPropertyCardSkeleton key={`skeleton-${i}`} />
                   ))
                 ) : pagination.items.length === 0 ? (
                   <div className="shares-listing-empty">
@@ -207,7 +230,6 @@ const Shares = () => {
                     <SharesPropertyCard
                       key={obj.shareId || `${obj.property_type}-${obj.id}`}
                       share={obj}
-                      viewMode={viewMode}
                       isFavorite={isShareLiked(obj)}
                       onFavoriteToggle={handleShareFavoriteToggle}
                       onInvest={handleInvest}
@@ -227,7 +249,7 @@ const Shares = () => {
             </section>
           </div>
 
-          <SharesPageSidebar objectsAvailable={availableObjectsCount} />
+          <SharesPageSidebar platformStats={platformStats} />
         </div>
       </main>
       <SiteChatDock

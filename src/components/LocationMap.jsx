@@ -37,6 +37,58 @@ const LocationMap = ({
 
   const resolvedMaxZoom = maxZoom ?? (mapStyle === SATELLITE_MAP_STYLE ? SATELLITE_MAP_MAX_ZOOM : STREET_MAP_MAX_ZOOM)
 
+  const scheduleMapResize = () => {
+    requestAnimationFrame(() => {
+      try {
+        mapRef.current?.resize()
+      } catch {
+        // ignore
+      }
+    })
+  }
+
+  useEffect(() => {
+    const container = mapContainerRef.current
+    if (!container) return undefined
+
+    let resizeRaf = null
+    const queueResize = () => {
+      if (resizeRaf != null) cancelAnimationFrame(resizeRaf)
+      resizeRaf = requestAnimationFrame(() => {
+        resizeRaf = null
+        try {
+          mapRef.current?.resize()
+        } catch {
+          // ignore
+        }
+      })
+    }
+
+    const resizeObserver = new ResizeObserver(queueResize)
+    resizeObserver.observe(container)
+
+    let intersectionObserver = null
+    if (typeof IntersectionObserver !== 'undefined') {
+      intersectionObserver = new IntersectionObserver(
+        (entries) => {
+          if (entries.some((entry) => entry.isIntersecting)) {
+            queueResize()
+          }
+        },
+        { threshold: 0 },
+      )
+      intersectionObserver.observe(container)
+    }
+
+    queueResize()
+
+    return () => {
+      if (resizeRaf != null) cancelAnimationFrame(resizeRaf)
+      resizeObserver.disconnect()
+      intersectionObserver?.disconnect()
+    }
+  }, [])
+
   // Инициализация карты (без маркера — маркер в отдельном эффекте)
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) return
@@ -71,7 +123,11 @@ const LocationMap = ({
 
     const notifyMapReady = () => {
       onMapReadyRef.current?.(map)
+      scheduleMapResize()
+      window.setTimeout(scheduleMapResize, 120)
     }
+
+    map.on('load', scheduleMapResize)
 
     if (map.loaded()) {
       notifyMapReady()
@@ -80,6 +136,7 @@ const LocationMap = ({
     }
 
     return () => {
+      map.off('load', scheduleMapResize)
       onMapReadyRef.current?.(null)
       if (markerRef.current) {
         markerRef.current.remove()

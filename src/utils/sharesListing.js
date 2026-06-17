@@ -1,8 +1,72 @@
 import {
+  isLandListingProperty,
+  matchesAuctionPropertyTypeFilter,
+} from './auctionDesktopFilterMatch'
+import {
   getSharePricePerShare,
   isShareSoldOut,
 } from './sharesPageFilters'
 import { getPropertyCardImage } from './propertyImage'
+import { formatPropertyPrice, normalizeCurrencyCode } from './currency'
+
+export const SHARES_CATEGORY_TAB_IDS = ['all', 'residential', 'commercial', 'land']
+
+/** Категория объекта для вкладок каталога (как на аукционе по типу недвижимости). */
+export function getShareListingCategory(share = {}) {
+  if (isLandListingProperty(share)) return 'land'
+  if (matchesAuctionPropertyTypeFilter(share, 'коммерческая')) return 'commercial'
+  return 'residential'
+}
+
+export function getSharesCategoryTabCounts(shares = []) {
+  const counts = { residential: 0, commercial: 0, land: 0 }
+  for (const share of shares) {
+    const category = getShareListingCategory(share)
+    if (category in counts) counts[category] += 1
+  }
+  return { all: shares.length, ...counts }
+}
+
+export function matchesShareCategoryTab(share, categoryId = 'all') {
+  if (!categoryId || categoryId === 'all') return true
+  return getShareListingCategory(share) === categoryId
+}
+
+export function getMinimumShareInvestment(shares = []) {
+  let minShare = null
+  let minPrice = Infinity
+
+  for (const share of shares) {
+    const price = getSharePricePerShare(share)
+    if (!Number.isFinite(price) || price <= 0) continue
+    if (price < minPrice) {
+      minPrice = price
+      minShare = share
+    }
+  }
+
+  if (!minShare) return null
+
+  return {
+    amount: minPrice,
+    currency: normalizeCurrencyCode(minShare.currency || 'EUR'),
+  }
+}
+
+export function formatMinimumShareInvestment(minInvestment, locale = 'en') {
+  if (!minInvestment) return null
+  const { amount, currency } = minInvestment
+  const numberLocale = String(locale || 'en').startsWith('ru')
+    ? 'ru-RU'
+    : String(locale || 'en').startsWith('de')
+      ? 'de-DE'
+      : 'en-US'
+
+  return formatPropertyPrice(amount, currency, {
+    compact: false,
+    locale: numberLocale,
+  })
+}
 
 export const SHARES_PAGE_SIZE = 8
 
@@ -45,6 +109,30 @@ export function getShareAnnualYield(share = {}) {
   return Number.isFinite(value) ? value : 12.7
 }
 
+/** Доля владения одной пайщиковой долей, % от объекта. */
+export function getShareOwnershipPercent(share = {}) {
+  const total = Number(share.totalShares) || 0
+  if (total <= 0) return null
+  return 100 / total
+}
+
+export function formatShareOwnershipPercent(share = {}, locale = 'en') {
+  const percent = getShareOwnershipPercent(share)
+  if (percent == null) return null
+  const numberLocale = String(locale || 'en').startsWith('ru')
+    ? 'ru-RU'
+    : String(locale || 'en').startsWith('de')
+      ? 'de-DE'
+      : 'en-US'
+
+  const fractionDigits = percent < 1 ? 2 : percent < 10 ? 1 : 0
+
+  return new Intl.NumberFormat(numberLocale, {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: fractionDigits,
+  }).format(percent)
+}
+
 export function getShareBadgeType(share = {}) {
   if (share.badge) return share.badge
   if (share.property_type === 'commercial') return 'commercial'
@@ -62,6 +150,124 @@ export function getCollectedAmount(share = {}) {
   const total = Math.max(0, Number(share.totalPrice) || 0)
   const percent = getCollectedPercent(share) / 100
   return Math.round(total * percent)
+}
+
+function getShareAnnualYieldRaw(share = {}) {
+  const raw = share.annualYield ?? share.annual_yield ?? share.yield_percent
+  if (raw == null || raw === '') return null
+  const value = Number(raw)
+  return Number.isFinite(value) ? value : null
+}
+
+function getSharesNumberLocale(locale = 'en') {
+  const lang = String(locale || 'en')
+  if (lang.startsWith('ru')) return 'ru-RU'
+  if (lang.startsWith('de')) return 'de-DE'
+  if (lang.startsWith('fr')) return 'fr-FR'
+  if (lang.startsWith('es')) return 'es-ES'
+  if (lang.startsWith('sv')) return 'sv-SE'
+  return 'en-US'
+}
+
+/** Агрегированная статистика каталога долей (из реальных объектов API). */
+export function getSharesPlatformStats(shares = []) {
+  const marketVolumeByCurrency = {}
+  let totalSharesSold = 0
+
+  for (const share of shares) {
+    totalSharesSold += Math.max(0, Number(share.sharesSold) || 0)
+
+    const currency = normalizeCurrencyCode(share.currency || 'EUR')
+    const totalPrice = Math.max(0, Number(share.totalPrice) || 0)
+    marketVolumeByCurrency[currency] = (marketVolumeByCurrency[currency] || 0) + totalPrice
+  }
+
+  const availableObjects = shares.filter((share) => !isShareSoldOut(share)).length
+  const minimumInvestment = getMinimumShareInvestment(shares)
+
+  const yields = []
+  for (const share of shares) {
+    const yieldValue = getShareAnnualYieldRaw(share)
+    if (yieldValue != null) yields.push(yieldValue)
+  }
+  const averageYield =
+    yields.length > 0 ? yields.reduce((sum, value) => sum + value, 0) / yields.length : null
+
+  return {
+    availableObjects,
+    totalObjects: shares.length,
+    totalSharesSold,
+    marketVolumeByCurrency,
+    minimumInvestment,
+    averageYield,
+  }
+}
+
+function formatAmountsByCurrency(amountsByCurrency = {}, locale = 'en') {
+  const numberLocale = getSharesNumberLocale(locale)
+  const entries = Object.entries(amountsByCurrency).filter(([, amount]) => amount > 0)
+
+  if (entries.length === 1) {
+    const [currency, amount] = entries[0]
+    return formatPropertyPrice(amount, currency, { compact: false, locale: numberLocale })
+  }
+
+  if (entries.length > 1) {
+    return entries
+      .sort((a, b) => b[1] - a[1])
+      .map(([currency, amount]) =>
+        formatPropertyPrice(amount, currency, { compact: false, locale: numberLocale }),
+      )
+      .join(' · ')
+  }
+
+  const fallbackCurrency = entries[0]?.[0] || 'EUR'
+  return formatPropertyPrice(0, fallbackCurrency, { compact: false, locale: numberLocale })
+}
+
+export function formatSharesPlatformStatValues(stats, locale = 'en') {
+  const numberLocale = getSharesNumberLocale(locale)
+  const countFormatter = new Intl.NumberFormat(numberLocale)
+
+  const marketVolume = formatAmountsByCurrency(stats.marketVolumeByCurrency, locale)
+
+  let minEntry = '—'
+  if (stats.minimumInvestment) {
+    minEntry =
+      formatMinimumShareInvestment(stats.minimumInvestment, locale) ||
+      formatPropertyPrice(
+        stats.minimumInvestment.amount,
+        stats.minimumInvestment.currency,
+        { compact: false, locale: numberLocale },
+      )
+  }
+
+  let averageYield = '—'
+  if (stats.averageYield != null) {
+    averageYield =
+      formatShareAnnualYieldDisplay(stats, locale) ||
+      `${new Intl.NumberFormat(numberLocale, {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 1,
+      }).format(stats.averageYield)}%`
+  }
+
+  return {
+    objectsAvailable: countFormatter.format(stats.availableObjects ?? 0),
+    sharesSold: countFormatter.format(stats.totalSharesSold ?? 0),
+    marketVolume,
+    minEntry,
+    averageYield,
+  }
+}
+
+export function formatShareAnnualYieldDisplay(stats, locale = 'en') {
+  if (stats?.averageYield == null) return null
+  const numberLocale = getSharesNumberLocale(locale)
+  return `${new Intl.NumberFormat(numberLocale, {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 1,
+  }).format(stats.averageYield)}%`
 }
 
 export function getSharesFilterOptions(shares = []) {

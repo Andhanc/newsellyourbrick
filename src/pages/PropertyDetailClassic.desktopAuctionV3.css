@@ -626,6 +626,55 @@
     max-height: 420px;
   }
 
+  .pd-v3-gallery__actions {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    z-index: 4;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .pd-v3-gallery__action-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    border: 1px solid rgba(255, 255, 255, 0.24);
+    border-radius: 50%;
+    background: rgba(15, 23, 42, 0.62);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    color: #ffffff;
+    cursor: pointer;
+    box-shadow:
+      0 2px 10px rgba(0, 0, 0, 0.32),
+      inset 0 1px 0 rgba(255, 255, 255, 0.12);
+    transition:
+      background-color 0.2s ease,
+      border-color 0.2s ease,
+      transform 0.15s ease;
+  }
+
+  .pd-v3-gallery__action-btn:hover:not(:disabled) {
+    background: rgba(15, 23, 42, 0.78);
+    transform: translateY(-1px);
+  }
+
+  .pd-v3-gallery__action-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+
+  .pd-v3-gallery__action-btn--active {
+    color: #f43f5e;
+    background: rgba(255, 255, 255, 0.96);
+    border-color: rgba(244, 63, 94, 0.35);
+  }
+
   .pd-v3-gallery__image {
     width: 100%;
     height: 100%;
@@ -1510,18 +1559,6 @@
     color: #334155;
   }
 
-  .pd-v3-share-card__btn--whatsapp {
-    border: none;
-    border-radius: 50%;
-    background: #25d366;
-    color: #fff;
-  }
-
-  .pd-v3-share-card__btn--whatsapp:hover {
-    background: #20bd5a;
-    color: #fff;
-  }
-
   .pd-v3-share-card__btn--telegram {
     color: #0088cc;
   }
@@ -1532,6 +1569,10 @@
 
   .pd-v3-share-card__btn--twitter {
     color: #1da1f2;
+  }
+
+  .pd-v3-share-card__btn--whatsapp {
+    color: #25d366;
   }
 
   /* ——— About: description, specs, amenities, documents ——— */
@@ -1627,59 +1668,78 @@
     letter-spacing: var(--pd-v3-ls-tight);
   }
 
-  .pd-v3-extra-grid {
+  .pd-v3-amenity-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
     list-style: none;
     margin: 0;
     padding: 0;
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 14px 24px;
   }
 
-  .pd-v3-extra-grid__item {
-    display: grid;
-    grid-template-columns: 36px minmax(0, 1fr) auto;
+  .pd-v3-amenity-chip {
+    display: inline-flex;
     align-items: center;
-    gap: 10px 12px;
+    gap: 10px;
     min-width: 0;
+    max-width: 100%;
+    padding: 9px 16px 9px 12px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #1bbdb7 0%, #0abab5 42%, #08928e 100%);
+    border: 1px solid #5eead4;
+    box-shadow: 0 2px 8px rgba(10, 186, 181, 0.35);
+    transition:
+      border-color 0.2s ease,
+      box-shadow 0.2s ease,
+      transform 0.2s ease;
   }
 
-  .pd-v3-extra-grid__icon {
+  .pd-v3-amenity-chip:hover {
+    border-color: #a7f3f0;
+    box-shadow: 0 4px 14px rgba(10, 186, 181, 0.45);
+    transform: translateY(-1px);
+  }
+
+  .pd-v3-amenity-chip__icon {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 36px;
-    height: 36px;
-    border-radius: 10px;
-    background: var(--pd-v3-primary-soft);
-    color: var(--pd-v3-primary);
+    color: #ffffff;
+    flex-shrink: 0;
+    line-height: 0;
   }
 
-  .pd-v3-extra-grid__label {
-    font-size: var(--pd-v3-fs-body-sm);
-    font-weight: 500;
-    line-height: 1.4;
-    color: #334155;
+  .pd-v3-amenity-chip__icon svg {
+    width: 20px;
+    height: 20px;
   }
 
-  .pd-v3-extra-grid__value {
+  .pd-v3-amenity-chip__label {
     display: inline-flex;
     align-items: center;
-    gap: 4px;
-    font-family: var(--pd-v3-font);
+    flex-wrap: wrap;
+    gap: 6px;
+    min-width: 0;
     font-size: var(--pd-v3-fs-body-sm);
-    font-weight: 700;
+    font-weight: 600;
     line-height: 1.35;
-    color: #0f172a;
-    white-space: nowrap;
+    color: #ffffff;
   }
 
-  .pd-v3-extra-grid__check {
-    color: var(--pd-v3-success);
-    flex-shrink: 0;
+  .pd-v3-amenity-chip__detail {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: var(--pd-v3-fs-caption);
+    font-weight: 700;
+    line-height: 1.3;
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.35);
   }
 
-  .pd-v3-extra-grid + .pd-v3-link-btn {
+  .pd-v3-amenity-chips + .pd-v3-link-btn {
     margin-top: 16px;
     padding-top: 16px;
     border-top: 1px solid #eef2f7;
@@ -2371,6 +2431,8 @@
 
   /* ——— Yield calculator ——— */
   .pd-v3-yield-calc {
+    --pd-v3-yield-label-h: 38px;
+    --pd-v3-yield-label-gap: 8px;
     background: #fff;
     border: 1px solid #e8edf5;
     border-radius: var(--pd-v3-card-radius);
@@ -2389,26 +2451,32 @@
   }
 
   .pd-v3-yield-calc__body {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 220px;
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: flex-start;
     gap: 20px 24px;
-    align-items: start;
   }
 
   .pd-v3-yield-calc__fields {
+    flex: 1 1 auto;
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 14px 16px;
+    column-gap: 14px;
+    min-width: 0;
   }
 
   .pd-v3-yield-calc__field {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: var(--pd-v3-yield-label-gap);
     min-width: 0;
+    margin: 0;
   }
 
   .pd-v3-yield-calc__label {
+    min-height: var(--pd-v3-yield-label-h);
+    display: flex;
+    align-items: flex-end;
     font-size: var(--pd-v3-fs-body-sm);
     font-weight: 600;
     line-height: 1.35;
@@ -2443,6 +2511,7 @@
   .pd-v3-yield-calc__select-wrap {
     position: relative;
     display: block;
+    width: 100%;
   }
 
   .pd-v3-yield-calc__select {
@@ -2461,19 +2530,29 @@
   }
 
   .pd-v3-yield-calc__aside {
+    flex: 0 0 220px;
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 10px;
+    width: 220px;
+    min-width: 220px;
+    margin-top: calc(var(--pd-v3-yield-label-h) + var(--pd-v3-yield-label-gap));
   }
 
   .pd-v3-yield-calc__result {
     display: flex;
     flex-direction: column;
-    gap: 6px;
-    padding: 14px 16px;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    width: 100%;
+    min-height: 74px;
+    padding: 12px 14px;
     border-radius: 12px;
     background: var(--pd-v3-success-soft);
     border: 1px solid var(--pd-v3-success-border);
+    box-sizing: border-box;
+    text-align: center;
   }
 
   .pd-v3-yield-calc__result-label {
@@ -2491,6 +2570,7 @@
     line-height: 1.15;
     letter-spacing: var(--pd-v3-ls-tight);
     color: #15803d;
+    white-space: nowrap;
   }
 
   .pd-v3-yield-calc__btn {
@@ -2506,6 +2586,7 @@
     color: var(--pd-v3-primary);
     letter-spacing: -0.01em;
     cursor: pointer;
+    box-sizing: border-box;
     transition: background 0.15s ease, border-color 0.15s ease;
   }
 
@@ -2515,6 +2596,29 @@
   }
 
   /* ——— Location map ——— */
+  .pd-v3-map__interactive {
+    position: relative;
+  }
+
+  .pd-v3-map__interactive .property-detail-location-map--split {
+    gap: 12px;
+  }
+
+  .pd-v3-map__interactive .property-detail-location-map__map {
+    height: 320px;
+    border-radius: 12px;
+    overflow: hidden;
+    background: #e2e8f0;
+    border: 1px solid #eef2f7;
+  }
+
+  .pd-v3-map__interactive .property-detail-location-map__map .location-map-container,
+  .pd-v3-map__interactive .property-detail-location-map__map .location-map {
+    width: 100%;
+    height: 100%;
+    min-height: 0 !important;
+  }
+
   .pd-v3-map__canvas {
     position: relative;
     height: 320px;
@@ -2621,5 +2725,28 @@
     background: var(--pd-v3-primary-soft);
     border-color: var(--pd-v3-primary-dark);
     color: var(--pd-v3-primary-dark);
+  }
+}
+
+.pd-v3-bid-card--share-listing {
+  padding-top: 18px;
+}
+
+.property-detail-page-new--share-listing .property-detail-mobile-sheet .property-detail-sidebar__map {
+  display: none;
+}
+
+@media (min-width: 961px) {
+  /* На десктопе мобильная вкладка «Доли» не должна скрывать описание и характеристики */
+  .property-detail-page-new--share-listing:not(.property-detail-mobile-tab-about)
+    .property-detail-left-column
+    .property-detail-auction-tab-target--about {
+    display: flex !important;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .property-detail-page-new--share-listing .property-detail-auction-desktop-about {
+    display: flex !important;
   }
 }

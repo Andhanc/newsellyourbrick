@@ -1,11 +1,9 @@
 import { useTranslation } from 'react-i18next'
-import { ChevronDown, LayoutGrid, List } from 'lucide-react'
+import { ChevronDown } from 'lucide-react'
 import {
-  EMPTY_SHARES_FILTERS,
-  SHARES_MIN_INVESTMENT_OPTIONS,
+  SHARES_COLLECTED_OPTIONS,
+  SHARES_OFFER_CATEGORY_OPTIONS,
   SHARES_PROPERTY_TYPE_OPTIONS,
-  SHARES_STATUS_OPTIONS,
-  SHARES_YIELD_OPTIONS,
 } from '../utils/sharesPageFilters'
 import { SHARES_SORT_OPTIONS } from '../utils/sharesListing'
 import './SharesListingToolbar.css'
@@ -39,8 +37,6 @@ function SharesListingToolbar({
   onResetFilters,
   sortKey,
   onSortChange,
-  viewMode,
-  onViewModeChange,
   filterOptions,
 }) {
   const { t } = useTranslation()
@@ -89,27 +85,19 @@ function SharesListingToolbar({
           t={t}
         />
         <FilterSelect
-          id="shares-filter-yield"
-          label={t('sharesFilterYield')}
-          value={filters.yieldRange}
-          onChange={(value) => setFilter('yieldRange', value)}
-          options={SHARES_YIELD_OPTIONS}
+          id="shares-filter-collected"
+          label={t('sharesFilterCollected')}
+          value={filters.collectedRange}
+          onChange={(value) => setFilter('collectedRange', value)}
+          options={SHARES_COLLECTED_OPTIONS}
           t={t}
         />
         <FilterSelect
-          id="shares-filter-min-investment"
-          label={t('sharesFilterMinInvestment')}
-          value={filters.minInvestment}
-          onChange={(value) => setFilter('minInvestment', value)}
-          options={SHARES_MIN_INVESTMENT_OPTIONS}
-          t={t}
-        />
-        <FilterSelect
-          id="shares-filter-status"
-          label={t('sharesFilterStatus')}
-          value={filters.status}
-          onChange={(value) => setFilter('status', value)}
-          options={SHARES_STATUS_OPTIONS}
+          id="shares-filter-offer-category"
+          label={t('sharesFilterOfferCategory')}
+          value={filters.offerCategory}
+          onChange={(value) => setFilter('offerCategory', value)}
+          options={SHARES_OFFER_CATEGORY_OPTIONS}
           t={t}
         />
 
@@ -137,31 +125,6 @@ function SharesListingToolbar({
             <ChevronDown size={16} className="shares-listing-toolbar__sort-chevron" aria-hidden />
           </div>
           <span className="shares-listing-toolbar__sort-current">{t(activeSort.labelKey)}</span>
-        </div>
-
-        <div className="shares-listing-toolbar__views" role="group" aria-label={t('sharesViewModeAria')}>
-          <button
-            type="button"
-            className={`shares-listing-toolbar__view-btn${
-              viewMode === 'grid' ? ' is-active' : ''
-            }`}
-            onClick={() => onViewModeChange('grid')}
-            aria-pressed={viewMode === 'grid'}
-            aria-label={t('sharesViewGrid')}
-          >
-            <LayoutGrid size={18} />
-          </button>
-          <button
-            type="button"
-            className={`shares-listing-toolbar__view-btn${
-              viewMode === 'list' ? ' is-active' : ''
-            }`}
-            onClick={() => onViewModeChange('list')}
-            aria-pressed={viewMode === 'list'}
-            aria-label={t('sharesViewList')}
-          >
-            <List size={18} />
-          </button>
         </div>
       </div>
     </div>

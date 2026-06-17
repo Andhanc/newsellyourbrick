@@ -8,7 +8,6 @@ import { ensureCanOpenProperty } from '../utils/propertyAccessGuard'
 import { getPropertyCardImage } from '../utils/propertyImage'
 import { buildResponsiveImageProps } from '../utils/responsiveImage'
 import { getPropertyDetailPath, auctionListingDedupeKey } from '../utils/propertyDetailUrl'
-import PropertyShareButton from './PropertyShareButton'
 import ImageWithSkeleton from './ImageWithSkeleton'
 import './ui/AuctionMobileLayout.css'
 
@@ -167,7 +166,6 @@ function MapPagePropertyGridCard({
               containerClassName="rounded-[inherit]"
             />
             <div className="property-media-actions property-media-actions--compact property-media-actions--reverse">
-              <PropertyShareButton property={property} variant="compact" iconSize={16} />
               <button
                 ref={favoriteBtnRef}
                 type="button"

@@ -82,14 +82,22 @@
 .auction-card__media-gradient {
   position: absolute;
   inset: 0;
-  background: linear-gradient(
-    180deg,
-    rgba(15, 23, 42, 0.08) 0%,
-    rgba(15, 23, 42, 0) 32%,
-    rgba(15, 23, 42, 0) 52%,
-    rgba(15, 23, 42, 0.72) 100%
-  );
+  z-index: 2;
   pointer-events: none;
+  background:
+    linear-gradient(
+      165deg,
+      rgba(15, 23, 42, 0.42) 0%,
+      rgba(15, 23, 42, 0.12) 30%,
+      transparent 52%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(15, 23, 42, 0.08) 0%,
+      rgba(15, 23, 42, 0) 32%,
+      rgba(15, 23, 42, 0) 52%,
+      rgba(15, 23, 42, 0.72) 100%
+    );
 }
 
 /* --- VIP ribbon on photo --- */
@@ -182,18 +190,19 @@
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  background: rgba(255, 255, 255, 0.16);
-  border: 1px solid rgba(255, 255, 255, 0.42);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
+  background: rgba(15, 23, 42, 0.62);
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   box-shadow:
-    0 4px 14px rgba(15, 23, 42, 0.22),
-    inset 0 1px 0 rgba(255, 255, 255, 0.35);
+    0 2px 10px rgba(0, 0, 0, 0.32),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
 }
 
 .auction-card__photo-icon svg {
   position: relative;
   z-index: 1;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.45));
 }
 
 .auction-card__photo-icon:hover {
@@ -201,16 +210,20 @@
 }
 
 .auction-card__photo-icon--buy .auction-card__photo-icon-glass {
-  background: rgba(255, 255, 255, 0.22);
+  background: rgba(15, 23, 42, 0.68);
+  border-color: rgba(251, 191, 36, 0.42);
 }
 
 .auction-card__photo-icon--test .auction-card__photo-icon-glass {
-  background: rgba(10, 186, 181, 0.28);
-  border-color: rgba(153, 246, 228, 0.55);
+  background: linear-gradient(145deg, #0abab5 0%, #089a96 100%);
+  border-color: rgba(255, 255, 255, 0.32);
+  box-shadow:
+    0 2px 12px rgba(8, 154, 150, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
 .auction-card__photo-icon--test {
-  color: #ecfdf5;
+  color: #fff;
 }
 
 /* --- Favorite --- */
@@ -222,28 +235,42 @@
   width: 40px;
   height: 40px;
   padding: 0;
-  border: 1px solid rgba(255, 255, 255, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.24);
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.22);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background: rgba(15, 23, 42, 0.62);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   color: #fff;
   cursor: pointer;
+  box-shadow:
+    0 2px 10px rgba(0, 0, 0, 0.32),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
   transition:
     transform 0.2s ease,
     background 0.2s ease,
     color 0.2s ease;
 }
 
+.auction-card__favorite svg {
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.45));
+}
+
 .auction-card__favorite:hover {
   transform: scale(1.06);
-  background: rgba(255, 255, 255, 0.34);
+  background: rgba(15, 23, 42, 0.78);
 }
 
 .auction-card__favorite--active {
   color: #f43f5e;
-  background: rgba(255, 255, 255, 0.92);
+  background: rgba(255, 255, 255, 0.96);
   border-color: rgba(244, 63, 94, 0.35);
+  box-shadow:
+    0 2px 10px rgba(0, 0, 0, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+.auction-card__favorite--active svg {
+  filter: none;
 }
 
 /* --- Reserved --- */
@@ -299,85 +326,7 @@
   }
 }
 
-/* Timer overrides inside dock — flip-таймер как на моб. странице объекта */
-.auction-card__timer-dock .auction-card__flip-timer.property-timer--detail {
-  width: auto;
-  flex: 0 1 auto;
-  margin: 0;
-  padding: 6px 10px 5px;
-  border-radius: 12px;
-  box-sizing: border-box;
-  background: rgba(255, 255, 255, 0.96);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  box-shadow:
-    0 6px 18px rgba(15, 23, 42, 0.14),
-    inset 0 1px 0 rgba(255, 255, 255, 0.9);
-}
-
-.auction-card__flip-timer .property-timer-detail-flip-row {
-  width: auto;
-  justify-content: center;
-  align-items: flex-start;
-  gap: 3px;
-}
-
-.auction-card__flip-timer .property-timer-detail-unit {
-  flex: 0 1 auto;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  min-width: 0;
-}
-
-.auction-card__flip-timer .property-timer-detail-unit-label {
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: #64748b;
-  line-height: 1;
-}
-
-.auction-card__flip-timer .flip-countdown-container {
-  gap: 1px;
-  justify-content: center;
-}
-
-.auction-card__flip-timer .flip-unit {
-  width: 22px !important;
-  height: 32px !important;
-}
-
-.auction-card__flip-timer .flip-digit {
-  font-size: 16px !important;
-}
-
-.auction-card__flip-timer .property-timer-detail-sep--dot {
-  font-size: 16px;
-  font-weight: 700;
-  line-height: 1;
-  color: #94a3b8;
-  flex-shrink: 0;
-  align-self: center;
-  margin-top: 0;
-  padding: 0 1px;
-  user-select: none;
-}
-
-.auction-card__flip-timer.property-timer--auction-ended {
-  width: 100%;
-}
-
-.auction-card__flip-timer.property-timer--auction-ended .property-timer-ended-detail {
-  width: 100%;
-  box-sizing: border-box;
-  padding: 10px 12px;
-  border-radius: 12px;
-  font-size: 13px;
-}
-
+/* Timer overrides inside dock — круглый таймер (тест / buy-now) */
 .auction-card__timer-dock > .circular-timer {
   width: auto;
   flex: 0 1 auto;
@@ -687,7 +636,7 @@
   .auction-card__vip-strip,
   .auction-card__vip-strip-shine::after,
   .auction-card__timer-dock--live,
-  .auction-card__flip-timer.timer-critical {
+  .listing-card-auction-timer.timer-critical .listing-card-auction-timer__time span {
     animation: none;
   }
 

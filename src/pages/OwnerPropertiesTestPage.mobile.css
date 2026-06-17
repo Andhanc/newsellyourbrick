@@ -25,9 +25,9 @@
   }
 
   .op {
-    --op-mob-pad: 16px;
+    --op-mob-pad: var(--oc-mob-pad, 16px);
     --op-tab-h: 56px;
-    --op-tiffany: #0abab5;
+    --op-tiffany: var(--oc-tiffany);
 
     flex-direction: column;
     width: 100%;

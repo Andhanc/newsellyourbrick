@@ -1,4 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import '../styles/owner-cabinet-tokens.css';
 
 .mot.mot--embedded {
   flex: 1;
@@ -10,52 +11,47 @@
 }
 
 .mot {
-  /* SellYourBrick Tiffany */
-  --mot-tiffany: #0abab5;
-  --mot-tiffany-dark: #089a95;
-  --mot-tiffany-deep: #0d9488;
-  --mot-tiffany-light: #53d8d3;
-  --mot-tiffany-pale: #99f6e4;
-  --mot-tiffany-soft: #ecfdf5;
-  --mot-tiffany-muted: rgba(10, 186, 181, 0.14);
-  --mot-tiffany-ring: rgba(10, 186, 181, 0.28);
+  /* SellYourBrick Tiffany — aliased to shared owner cabinet tokens */
+  --mot-tiffany: var(--oc-tiffany);
+  --mot-tiffany-dark: var(--oc-tiffany-dark);
+  --mot-tiffany-deep: var(--oc-tiffany-deep);
+  --mot-tiffany-light: var(--oc-tiffany-light);
+  --mot-tiffany-pale: var(--oc-tiffany-pale);
+  --mot-tiffany-soft: var(--oc-tiffany-soft);
+  --mot-tiffany-muted: var(--oc-tiffany-muted);
+  --mot-tiffany-ring: var(--oc-tiffany-ring);
 
   --mot-primary: var(--mot-tiffany);
   --mot-primary-hover: var(--mot-tiffany-dark);
   --mot-primary-soft: var(--mot-tiffany-soft);
-  --mot-gradient-brand: linear-gradient(135deg, #53d8d3 0%, #0abab5 48%, #089a95 100%);
-  --mot-gradient-active: linear-gradient(135deg, #1ba8a3 0%, #0abab5 42%, #089a95 100%);
-  --mot-gradient-promo-shade: linear-gradient(
-    115deg,
-    rgba(4, 47, 46, 0.9) 0%,
-    rgba(8, 154, 149, 0.75) 45%,
-    rgba(10, 186, 181, 0.35) 100%
-  );
+  --mot-gradient-brand: var(--oc-gradient-brand);
+  --mot-gradient-active: var(--oc-gradient-active);
+  --mot-gradient-promo-shade: var(--oc-gradient-promo-shade);
   --mot-gradient-banner: linear-gradient(
     105deg,
-    #ecfdf5 0%,
-    #f8fafc 38%,
-    #ccfbf1 72%,
+    var(--oc-tiffany-soft) 0%,
+    var(--oc-surface-muted) 38%,
+    var(--oc-tiffany-mint) 72%,
     rgba(94, 234, 212, 0.45) 100%
   );
 
-  --mot-surface: #ffffff;
-  --mot-text: #111827;
-  --mot-text-muted: #6b7280;
-  --mot-text-light: #9ca3af;
-  --mot-border: #e5e7eb;
-  --mot-shadow: 0 1px 3px rgba(15, 23, 42, 0.06), 0 8px 24px rgba(10, 186, 181, 0.06);
-  --mot-radius: 16px;
-  --mot-radius-sm: 12px;
+  --mot-surface: var(--oc-surface);
+  --mot-text: var(--oc-text);
+  --mot-text-muted: var(--oc-text-muted);
+  --mot-text-light: var(--oc-text-light);
+  --mot-border: var(--oc-border);
+  --mot-shadow: var(--oc-shadow-sm);
+  --mot-radius: var(--oc-radius);
+  --mot-radius-sm: var(--oc-radius-sm);
   --mot-sidebar-w: 252px;
 
   display: flex;
   min-height: 100vh;
-  background-color: #f4fbfb;
+  background-color: var(--oc-surface-warm);
   background-image:
     radial-gradient(ellipse 100% 70% at 100% -10%, rgba(10, 186, 181, 0.14) 0%, transparent 58%),
     radial-gradient(ellipse 80% 55% at -5% 105%, rgba(83, 216, 211, 0.12) 0%, transparent 52%),
-    linear-gradient(180deg, #f8fafc 0%, #f0fdfa 55%, #ecfdf5 100%);
+    var(--oc-gradient-page);
   color: var(--mot-text);
   font-family: 'Inter', 'Montserrat', system-ui, -apple-system, sans-serif;
   font-size: 14px;

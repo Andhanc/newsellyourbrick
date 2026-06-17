@@ -8,7 +8,6 @@ import { usePropertyFavorites } from '../context/PropertyFavoritesContext'
 import { hasDbBackedProperty } from '../utils/propertyFavoriteKey'
 import { hasBuyNowOption, hasAuctionBuyNowListingForm } from '../utils/hasBuyNowOption'
 import PropertyTimer from './PropertyTimer'
-import PropertyShareButton from './PropertyShareButton'
 import CircularTimer from './CircularTimer'
 import PropertySearchModal from './PropertySearchModal'
 import { PropertyListingSkeletonGrid } from './PropertyListingSkeletonGrid'
@@ -999,7 +998,6 @@ const PropertyList = ({
                         />
                       </svg>
                     </button>
-                    <PropertyShareButton property={property} />
                   </div>
                 </div>
                 <div className="property-content">

@@ -161,41 +161,48 @@
 
 @media (max-width: 760px) {
   .property-detail-location-map__filters {
-    grid-template-columns:
-      minmax(0, 0.68fr)
-      minmax(0, 0.84fr)
-      minmax(0, 1.12fr)
-      minmax(0, 1.12fr)
-      minmax(0, 0.86fr);
-    gap: 4px;
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: stretch;
+    gap: 8px;
+    width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 2px 2px 6px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .property-detail-location-map__filters::-webkit-scrollbar {
+    display: none;
   }
 
   .property-detail-location-map__filter {
-    min-height: 36px;
-    padding: 0 3px;
-    gap: 3px;
-    font-size: 10px;
-    border-radius: 10px;
+    flex: 0 0 auto;
+    width: auto;
+    min-width: 0;
+    min-height: 38px;
+    padding: 0 12px;
+    gap: 6px;
+    font-size: 12px;
+    border-radius: 999px;
+    justify-content: flex-start;
   }
 
-  .property-detail-location-map__filter--schools {
-    padding-inline: 2px;
-  }
-
-  .property-detail-location-map__filter-icon {
-    width: 20px;
-    height: 20px;
-  }
-}
-
-@media (max-width: 390px) {
-  .property-detail-location-map__filter {
-    font-size: 9px;
-    gap: 2px;
+  .property-detail-location-map__filter--schools,
+  .property-detail-location-map__filter--transport {
+    padding-inline: 12px;
   }
 
   .property-detail-location-map__filter-icon {
-    width: 18px;
-    height: 18px;
+    width: 22px;
+    height: 22px;
+  }
+
+  .property-detail-location-map__filter-label {
+    flex-shrink: 0;
+    white-space: nowrap;
+    overflow: visible;
+    text-overflow: clip;
   }
 }

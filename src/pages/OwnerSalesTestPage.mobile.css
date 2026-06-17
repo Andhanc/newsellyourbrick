@@ -12,9 +12,9 @@
   }
 
   .osl {
-    --osl-mob-pad: 16px;
-    --osl-mob-accent: #0b6ff0;
-    --osl-tiffany: #0abab5;
+    --osl-mob-pad: var(--oc-mob-pad, 16px);
+    --osl-mob-accent: var(--oc-mob-accent, var(--oc-tiffany));
+    --osl-tiffany: var(--oc-tiffany);
 
     flex-direction: column;
     width: 100%;
@@ -48,9 +48,9 @@
   }
 
   .osl-body {
-    --osl-mob-pad: 16px;
-    --osl-mob-accent: #0b6ff0;
-    --osl-tiffany: #0abab5;
+    --osl-mob-pad: var(--oc-mob-pad, 16px);
+    --osl-mob-accent: var(--oc-mob-accent, var(--oc-tiffany));
+    --osl-tiffany: var(--oc-tiffany);
 
     flex: 1;
     min-height: 0;

@@ -1,23 +1,24 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import '../styles/owner-cabinet-tokens.css';
 
 .op {
-  --op-tiffany: #0abab5;
-  --op-tiffany-dark: #089a95;
-  --op-tiffany-light: #53d8d3;
-  --op-tiffany-soft: #ecfdf5;
-  --op-tiffany-muted: rgba(10, 186, 181, 0.14);
-  --op-tiffany-ring: rgba(10, 186, 181, 0.28);
-  --op-gradient-active: linear-gradient(135deg, #1ba8a3 0%, #0abab5 42%, #089a95 100%);
-  --op-gradient-brand: linear-gradient(135deg, #53d8d3 0%, #0abab5 48%, #089a95 100%);
+  --op-tiffany: var(--oc-tiffany);
+  --op-tiffany-dark: var(--oc-tiffany-dark);
+  --op-tiffany-light: var(--oc-tiffany-light);
+  --op-tiffany-soft: var(--oc-tiffany-soft);
+  --op-tiffany-muted: var(--oc-tiffany-muted);
+  --op-tiffany-ring: var(--oc-tiffany-ring);
+  --op-gradient-active: var(--oc-gradient-active);
+  --op-gradient-brand: var(--oc-gradient-brand);
 
-  --op-surface: #ffffff;
-  --op-text: #111827;
-  --op-text-muted: #6b7280;
-  --op-text-light: #9ca3af;
-  --op-border: #e5e7eb;
-  --op-shadow: 0 1px 3px rgba(15, 23, 42, 0.06), 0 8px 24px rgba(10, 186, 181, 0.06);
-  --op-radius: 16px;
-  --op-radius-sm: 12px;
+  --op-surface: var(--oc-surface);
+  --op-text: var(--oc-text);
+  --op-text-muted: var(--oc-text-muted);
+  --op-text-light: var(--oc-text-light);
+  --op-border: var(--oc-border);
+  --op-shadow: var(--oc-shadow-sm);
+  --op-radius: var(--oc-radius);
+  --op-radius-sm: var(--oc-radius-sm);
   --op-sidebar-w: 252px;
   --op-rail-w: 236px;
 

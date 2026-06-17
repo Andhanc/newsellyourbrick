@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import LocationMap from '../LocationMap'
+import PropertyDetailLocationMap from '../PropertyDetailLocationMap'
 import { usePropertyMapCoordinates } from '../../hooks/usePropertyMapCoordinates'
 
 export default function PropertyDetailMap({ property, className = '' }) {
@@ -10,16 +10,23 @@ export default function PropertyDetailMap({ property, className = '' }) {
   return (
     <div className={`property-detail-sidebar__map ${className}`.trim()}>
       <h2 className="property-detail-sidebar__map-title">{locationLabel}</h2>
-      <div className="property-detail-sidebar__map-container">
+      <div className="property-detail-sidebar__map-stack">
         {typeof window !== 'undefined' && (
           <>
-            <LocationMap
+            <PropertyDetailLocationMap
               center={finalCoordinates}
               zoom={hasRealMarker ? 15 : undefined}
               marker={hasRealMarker ? finalCoordinates : null}
+              interactive={hasRealMarker}
+              filtersOutsideMap
+              mapFrame="sidebar"
+              controlsLayout="column"
+              allowFullscreen
             />
             {isGeocoding && (
-              <div className="property-detail-map__geocoding-hint">Поиск местоположения...</div>
+              <div className="property-detail-map__geocoding-hint property-detail-sidebar__map-loading">
+                Поиск местоположения...
+              </div>
             )}
           </>
         )}

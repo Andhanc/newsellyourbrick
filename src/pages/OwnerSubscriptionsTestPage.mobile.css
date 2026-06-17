@@ -13,8 +13,16 @@
   }
 
   .ost {
-    --ost-mob-pad: 16px;
-    --ost-tiffany: #0abab5;
+    --ost-mob-pad: var(--oc-mob-pad, 16px);
+    --ost-tiffany: var(--oc-tiffany);
+    --ost-tiffany-dark: var(--oc-tiffany-dark);
+    --ost-tiffany-darker: var(--oc-tiffany-darker);
+    --ost-tiffany-ink: var(--oc-tiffany-ink);
+    --ost-gradient-deep: var(--oc-gradient-deep);
+    --ost-gradient-deep-soft: var(--oc-gradient-deep-soft);
+    --ost-slate: var(--oc-slate);
+    --ost-slate-muted: var(--oc-slate-muted);
+    --ost-slate-light: var(--oc-slate-light);
 
     flex-direction: column;
     width: 100%;
@@ -23,7 +31,7 @@
     min-height: 100dvh;
     overflow: visible;
     padding-bottom: 0;
-    background: #ffffff;
+    background: var(--oc-mob-surface, #ffffff);
     background-image: none;
   }
 
@@ -67,8 +75,8 @@
     height: 56px;
     padding: 0 var(--ost-mob-pad);
     padding-top: env(safe-area-inset-top, 0px);
-    background: #ffffff;
-    border-bottom: 1px solid #f0f0f0;
+    background: var(--oc-mob-surface, #ffffff);
+    border-bottom: 1px solid var(--oc-mob-topbar-border);
     z-index: 40;
   }
 
@@ -273,8 +281,8 @@
     gap: 8px;
     padding: 4px;
     border-radius: 14px;
-    background: #ffffff;
-    border: 1px solid #e5e7eb;
+    background: var(--oc-surface-muted);
+    border: 1px solid var(--oc-border-soft);
   }
 
   .ost-period-tabs__item {
@@ -286,13 +294,15 @@
     font-size: 13px;
     box-shadow: none;
     border: none;
+    background: transparent;
+    color: var(--ost-slate-light);
   }
 
   .ost-period-tabs__item--active {
     background: var(--ost-gradient-brand);
     color: #ffffff;
     border-color: transparent;
-    box-shadow: 0 8px 18px rgba(10, 186, 181, 0.22);
+    box-shadow: 0 8px 18px var(--ost-tiffany-ring);
   }
 
   .ost-checkout-message {
@@ -323,21 +333,50 @@
   }
 
   .ost-plan-card:not(.ost-plan-card--current) {
-    border: 1.5px solid #e5e7eb;
-    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.05);
+    border: var(--oc-mob-card-border);
+    box-shadow: var(--oc-mob-card-shadow);
+  }
+
+  .ost-plan-card--current:not(.ost-plan-card--current-paid) {
+    border: 2px solid rgba(10, 186, 181, 0.34);
+    box-shadow:
+      0 0 0 3px rgba(10, 186, 181, 0.08),
+      0 12px 28px rgba(10, 186, 181, 0.12);
+  }
+
+  .ost-plan-card--current-paid {
+    border: 2px solid rgba(10, 186, 181, 0.45);
+    box-shadow:
+      0 0 0 4px rgba(10, 186, 181, 0.1),
+      0 18px 44px rgba(10, 186, 181, 0.16);
+    padding-bottom: 16px;
+  }
+
+  .ost-plan-card--current-paid::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: var(--ost-gradient-brand);
+    border-radius: 18px 18px 0 0;
   }
 
   .ost-plan-card--featured:not(.ost-plan-card--current) {
     padding-top: 28px;
   }
 
-  .ost-plan-card--current-paid {
-    padding-bottom: 16px;
+  .ost-plan-card--current-paid .ost-plan-card__name {
+    color: var(--ost-tiffany-dark);
   }
 
-  .ost-plan-card:hover,
-  .ost-plan-card--featured:hover {
-    transform: none;
+  .ost-plan-card--current-paid .ost-plan-card__amount {
+    color: var(--ost-tiffany);
+  }
+
+  .ost-plan-card--current .ost-plan-card__feature svg {
+    color: var(--ost-tiffany);
   }
 
   .ost-plan-card__owned-badge {
@@ -399,7 +438,11 @@
     flex-shrink: 0;
   }
 
-  /* —— Save banner —— */
+  .ost-plan-card:hover,
+  .ost-plan-card--featured:hover {
+    transform: none;
+  }
+
   .ost-save-banner {
     display: grid;
     grid-template-columns: minmax(0, 1fr) 64px;
@@ -408,6 +451,16 @@
     padding: 16px;
     border-radius: 18px;
     gap: 12px;
+    border-color: rgba(10, 186, 181, 0.2);
+    background:
+      radial-gradient(circle at 90% 20%, rgba(83, 216, 211, 0.2) 0%, transparent 34%),
+      linear-gradient(135deg, #ffffff 0%, var(--oc-surface-muted) 42%, var(--oc-tiffany-mint) 100%);
+    box-shadow: 0 12px 28px rgba(10, 186, 181, 0.1);
+  }
+
+  .ost-save-banner__btn {
+    background: var(--ost-gradient-brand);
+    box-shadow: 0 8px 18px var(--ost-tiffany-ring);
   }
 
   .ost-save-banner__copy {

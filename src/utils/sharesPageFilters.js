@@ -1,40 +1,31 @@
+import {
+  AUCTION_DESKTOP_PROPERTY_TYPE_ITEMS,
+  matchesAuctionPropertyTypeFilter,
+} from './auctionDesktopFilterMatch'
+
 export const EMPTY_SHARES_FILTERS = {
-  propertyType: 'all',
+  propertyType: 'все',
   country: 'all',
   city: 'all',
-  yieldRange: 'all',
-  minInvestment: 'all',
-  status: 'all',
+  collectedRange: 'all',
+  offerCategory: 'all',
 }
 
-export const SHARES_PROPERTY_TYPE_OPTIONS = [
-  { value: 'all', labelKey: 'sharesFilterAllTypes' },
-  { value: 'flat', labelKey: 'propertyTypeFlat' },
-  { value: 'apartment', labelKey: 'propertyTypeApartment' },
-  { value: 'villa', labelKey: 'propertyTypeVilla' },
-  { value: 'house', labelKey: 'propertyTypeHouse' },
-  { value: 'commercial', labelKey: 'sharesFilterCommercialType' },
-]
+export const SHARES_PROPERTY_TYPE_OPTIONS = AUCTION_DESKTOP_PROPERTY_TYPE_ITEMS
 
-export const SHARES_YIELD_OPTIONS = [
-  { value: 'all', labelKey: 'sharesFilterAnyYield' },
-  { value: '10', labelKey: 'sharesFilterYield10' },
-  { value: '12', labelKey: 'sharesFilterYield12' },
-  { value: '15', labelKey: 'sharesFilterYield15' },
-]
-
-export const SHARES_MIN_INVESTMENT_OPTIONS = [
-  { value: 'all', labelKey: 'sharesFilterAnyInvestment' },
-  { value: '100', labelKey: 'sharesFilterInvestment100' },
-  { value: '500', labelKey: 'sharesFilterInvestment500' },
-  { value: '1000', labelKey: 'sharesFilterInvestment1000' },
-]
-
-export const SHARES_STATUS_OPTIONS = [
-  { value: 'all', labelKey: 'sharesFilterAllStatuses' },
-  { value: 'available', labelKey: 'sharesFilterStatusAvailable' },
-  { value: 'funding', labelKey: 'sharesFilterStatusFunding' },
+export const SHARES_COLLECTED_OPTIONS = [
+  { value: 'all', labelKey: 'sharesFilterCollectedAny' },
+  { value: 'early', labelKey: 'sharesFilterCollectedEarly' },
+  { value: 'active', labelKey: 'sharesFilterCollectedActive' },
+  { value: 'high', labelKey: 'sharesFilterCollectedHigh' },
   { value: 'sold_out', labelKey: 'sharesFilterSoldOutOnly' },
+]
+
+export const SHARES_OFFER_CATEGORY_OPTIONS = [
+  { value: 'all', labelKey: 'sharesFilterOfferAll' },
+  { value: 'stable', labelKey: 'sharesBadgeStable' },
+  { value: 'new', labelKey: 'sharesBadgeNew' },
+  { value: 'commercial', labelKey: 'sharesBadgeCommercial' },
 ]
 
 /** @deprecated kept for mobile legacy chips */
@@ -50,8 +41,8 @@ export const SHARES_MOBILE_FILTER_ITEMS = [
     value: item.value,
     labelKey: item.labelKey,
   })),
-  ...SHARES_STATUS_OPTIONS.filter((item) => item.value !== 'all' && item.value !== 'funding').map(
-    (item) => ({ kind: 'status', value: item.value, labelKey: item.labelKey }),
+  ...SHARES_OFFER_CATEGORY_OPTIONS.filter((item) => item.value !== 'all').map(
+    (item) => ({ kind: 'category', value: item.value, labelKey: item.labelKey }),
   ),
 ]
 
@@ -95,33 +86,7 @@ function getShareLocationParts(share) {
 }
 
 function matchesPropertyType(share, propertyType) {
-  if (!propertyType || propertyType === 'all') return true
-
-  const typeMap = {
-    flat: ['apartment', 'flat'],
-    apartment: ['commercial', 'apartment'],
-    villa: ['villa'],
-    house: ['house', 'townhouse'],
-    commercial: ['commercial'],
-  }
-
-  if (share.property_type) {
-    const allowed = typeMap[propertyType]
-    if (allowed && !allowed.includes(share.property_type)) return false
-    if (propertyType === 'commercial' && share.badge === 'commercial') return true
-    return true
-  }
-
-  const titleLower = (share.title || share.name || '').toLowerCase()
-  const typeMatch = {
-    flat: titleLower.includes('квартир') || titleLower.includes('студи'),
-    apartment: titleLower.includes('апартамент'),
-    villa: titleLower.includes('вилл'),
-    house: titleLower.includes('дом') || titleLower.includes('таунхаус'),
-    commercial: titleLower.includes('коммер') || titleLower.includes('офис'),
-  }
-  if (share.badge === 'commercial' && propertyType === 'commercial') return true
-  return Boolean(typeMatch[propertyType])
+  return matchesAuctionPropertyTypeFilter(share, propertyType || 'все')
 }
 
 function matchesCountry(share, country) {
@@ -134,33 +99,35 @@ function matchesCity(share, city) {
   return getShareLocationParts(share).city === city
 }
 
-function matchesYield(share, yieldRange) {
-  if (!yieldRange || yieldRange === 'all') return true
-  const minYield = Number(yieldRange)
-  if (!Number.isFinite(minYield)) return true
-  const raw = share.annualYield ?? share.annual_yield ?? share.yield_percent ?? 12.7
-  const value = Number(raw)
-  return Number.isFinite(value) && value >= minYield
-}
-
-function matchesMinInvestment(share, minInvestment) {
-  if (!minInvestment || minInvestment === 'all') return true
-  const threshold = Number(minInvestment)
-  if (!Number.isFinite(threshold)) return true
-  return getSharePricePerShare(share) <= threshold
-}
-
-function matchesStatus(share, status) {
-  if (!status || status === 'all') return true
-  const soldOut = isShareSoldOut(share)
+function getShareCollectedPercent(share) {
   const total = Math.max(1, Number(share.totalShares) || 1)
   const sold = Math.min(Number(share.sharesSold) || 0, total)
-  const collected = sold / total
+  return Math.round((sold / total) * 100)
+}
 
-  if (status === 'sold_out') return soldOut
-  if (status === 'available') return !soldOut && collected < 0.35
-  if (status === 'funding') return !soldOut && collected >= 0.35
+function getShareOfferCategory(share) {
+  if (share.badge) return share.badge
+  if (share.property_type === 'commercial') return 'commercial'
+  if (share.is_new) return 'new'
+  return 'stable'
+}
+
+function matchesCollectedRange(share, collectedRange) {
+  if (!collectedRange || collectedRange === 'all') return true
+  if (collectedRange === 'sold_out') return isShareSoldOut(share)
+
+  const percent = getShareCollectedPercent(share)
+  if (isShareSoldOut(share)) return false
+
+  if (collectedRange === 'early') return percent < 35
+  if (collectedRange === 'active') return percent >= 35 && percent < 70
+  if (collectedRange === 'high') return percent >= 70
   return true
+}
+
+function matchesOfferCategory(share, offerCategory) {
+  if (!offerCategory || offerCategory === 'all') return true
+  return getShareOfferCategory(share) === offerCategory
 }
 
 export function applySharesPageFilters(shares = [], filters = EMPTY_SHARES_FILTERS) {
@@ -169,8 +136,7 @@ export function applySharesPageFilters(shares = [], filters = EMPTY_SHARES_FILTE
       matchesPropertyType(share, filters.propertyType) &&
       matchesCountry(share, filters.country) &&
       matchesCity(share, filters.city) &&
-      matchesYield(share, filters.yieldRange) &&
-      matchesMinInvestment(share, filters.minInvestment) &&
-      matchesStatus(share, filters.status),
+      matchesCollectedRange(share, filters.collectedRange) &&
+      matchesOfferCategory(share, filters.offerCategory),
   )
 }

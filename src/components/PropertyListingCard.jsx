@@ -6,7 +6,6 @@ import { usePropertyFavorites } from '../context/PropertyFavoritesContext'
 import { hasDbBackedProperty } from '../utils/propertyFavoriteKey'
 import { hasBuyNowOption, hasAuctionBuyNowListingForm } from '../utils/hasBuyNowOption'
 import PropertyTimer from './PropertyTimer'
-import PropertyShareButton from './PropertyShareButton'
 import CircularTimer from './CircularTimer'
 import ImageWithSkeleton from './ImageWithSkeleton'
 import { formatPropertyPrice } from '../utils/currency'
@@ -298,7 +297,6 @@ const PropertyListingCard = ({
                 />
               </svg>
             </button>
-            <PropertyShareButton property={property} />
           </div>
           {imageTopRightAction ? (
             <button

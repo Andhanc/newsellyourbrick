@@ -1,15 +1,10 @@
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ChevronDown, X } from 'lucide-react'
+import { AUCTION_DESKTOP_PROPERTY_TYPE_ITEMS } from '../utils/auctionDesktopFilterMatch'
 import './AuctionDesktopFilters.css'
 
-const PROPERTY_TYPE_ITEMS = [
-  { value: 'все', labelKey: 'propertyTypeAll' },
-  { value: 'квартира', labelKey: 'propertyTypeFlat' },
-  { value: 'апартаменты', labelKey: 'propertyTypeApartment' },
-  { value: 'вилла', labelKey: 'propertyTypeVilla' },
-  { value: 'дом', labelKey: 'propertyTypeHouse' },
-]
+const PROPERTY_TYPE_ITEMS = AUCTION_DESKTOP_PROPERTY_TYPE_ITEMS
 
 const AVAILABILITY_ITEMS = [
   { value: 'available', labelKey: 'sharesFilterAvailable' },

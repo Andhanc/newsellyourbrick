@@ -1,6 +1,6 @@
 .shares-page-sidebar {
-  --shares-sidebar-purple: #6366f1;
-  --shares-sidebar-purple-soft: rgba(99, 102, 241, 0.12);
+  --shares-sidebar-purple: #0abab5;
+  --shares-sidebar-purple-soft: rgba(10, 186, 181, 0.12);
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -50,8 +50,8 @@
   align-items: center;
   justify-content: center;
   border-radius: 10px;
-  background: var(--shares-sidebar-purple-soft);
-  color: var(--shares-sidebar-purple);
+  background: var(--shares-sidebar-purple);
+  color: #ffffff;
 }
 
 .shares-sidebar-benefits__text {
@@ -126,7 +126,7 @@
   width: 100%;
   min-height: 40px;
   padding: 10px 16px;
-  border: 1px solid rgba(99, 102, 241, 0.28);
+  border: 1px solid rgba(10, 186, 181, 0.28);
   border-radius: 10px;
   background: #ffffff;
   color: var(--shares-sidebar-purple);
@@ -143,13 +143,13 @@
 }
 
 .shares-sidebar-card__btn:hover {
-  background: rgba(99, 102, 241, 0.06);
-  border-color: rgba(99, 102, 241, 0.45);
-  color: #4f46e5;
+  background: rgba(10, 186, 181, 0.06);
+  border-color: rgba(10, 186, 181, 0.45);
+  color: #089a95;
 }
 
 .shares-sidebar-card__btn:focus-visible {
-  outline: 2px solid rgba(99, 102, 241, 0.45);
+  outline: 2px solid rgba(10, 186, 181, 0.45);
   outline-offset: 2px;
 }
 
@@ -170,7 +170,10 @@
   position: relative;
   overflow: hidden;
   border-radius: 18px;
-  padding: 22px 18px 18px;
+  padding: 30px 22px 26px;
+  min-height: 268px;
+  display: flex;
+  flex-direction: column;
   background: linear-gradient(152deg, #5b5ef7 0%, #6366f1 38%, #7c4dff 72%, #6d28d9 100%);
   box-shadow:
     0 10px 28px -8px rgba(79, 70, 229, 0.55),
@@ -204,8 +207,9 @@
   display: flex;
   flex-direction: column;
   flex: 1 1 auto;
-  min-height: 148px;
-  padding-bottom: 14px;
+  min-height: 212px;
+  gap: 24px;
+  padding-bottom: 12px;
 }
 
 .shares-sidebar-promo__copy {
@@ -275,9 +279,9 @@
 .shares-sidebar-promo__image {
   position: absolute;
   right: -22px;
-  bottom: -16px;
+  bottom: -8px;
   z-index: 1;
-  width: 182px;
+  width: 196px;
   height: auto;
   object-fit: contain;
   pointer-events: none;
@@ -298,20 +302,21 @@
 
   .shares-sidebar-promo {
     flex: 1 1 auto;
-    display: flex;
-    flex-direction: column;
-    min-height: 168px;
+    min-height: 348px;
   }
 
   .shares-sidebar-promo__inner {
-    min-height: 168px;
-    padding-bottom: 16px;
+    min-height: 0;
+    flex: 1;
+    justify-content: space-between;
+    gap: 26px;
+    padding-bottom: 18px;
   }
 
   .shares-sidebar-promo__image {
-    width: 206px;
-    right: -26px;
-    bottom: -12px;
+    width: 232px;
+    right: -30px;
+    bottom: 0;
   }
 }
 

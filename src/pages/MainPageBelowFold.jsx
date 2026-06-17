@@ -7,7 +7,6 @@ import {
 import { MdBed, MdOutlineBathtub } from 'react-icons/md'
 import { BiArea } from 'react-icons/bi'
 import PropertyTimer from '../components/PropertyTimer'
-import PropertyShareButton from '../components/PropertyShareButton'
 import { AuctionShowcaseSkeletonCards } from '../components/AuctionShowcaseSkeletonStrip'
 import { PropertyListingSkeletonGrid } from '../components/PropertyListingSkeletonGrid'
 import LandingFaqAccordion from '../components/LandingFaqAccordion'
@@ -153,7 +152,6 @@ export default function MainPageBelowFold() {
                           className="auction-showcase-card__image"
                         />
                         <div className="property-media-actions property-media-actions--compact property-media-actions--reverse">
-                          <PropertyShareButton property={apartment} variant="compact" iconSize={16} />
                           <button
                             type="button"
                             className={`property-favorite ${
@@ -302,7 +300,6 @@ export default function MainPageBelowFold() {
                           className="auction-showcase-card__image"
                         />
                         <div className="property-media-actions property-media-actions--compact property-media-actions--reverse">
-                          <PropertyShareButton property={villa} variant="compact" iconSize={16} />
                           <button
                             type="button"
                             className={`property-favorite ${
@@ -436,7 +433,6 @@ export default function MainPageBelowFold() {
                             className="auction-showcase-card__image"
                           />
                           <div className="property-media-actions property-media-actions--compact property-media-actions--reverse">
-                            <PropertyShareButton property={flat} variant="compact" iconSize={16} />
                             <button
                               type="button"
                               className={`property-favorite ${
@@ -625,7 +621,6 @@ export default function MainPageBelowFold() {
                             className="auction-showcase-card__image"
                           />
                           <div className="property-media-actions property-media-actions--compact property-media-actions--reverse">
-                            <PropertyShareButton property={townhouse} variant="compact" iconSize={16} />
                             <button
                               type="button"
                               className={`property-favorite ${
@@ -807,7 +802,6 @@ export default function MainPageBelowFold() {
                       className="property-image"
                     />
                     <div className="property-media-actions property-media-actions--reverse">
-                      <PropertyShareButton property={property} />
                       <button
                         type="button"
                         className={`property-favorite ${
@@ -907,7 +901,6 @@ export default function MainPageBelowFold() {
                       className="property-image"
                     />
                     <div className="property-media-actions property-media-actions--reverse">
-                      <PropertyShareButton property={property} />
                       <button
                         type="button"
                         className={`property-favorite ${

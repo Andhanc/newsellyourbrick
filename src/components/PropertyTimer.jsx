@@ -137,11 +137,11 @@ const PropertyTimer = ({
 
   const labelKey = (shortKey, fullKey) => (resolvedFullUnitLabels ? fullKey : shortKey)
 
-  const renderDetailUnit = (value, shortKey, fullKey) => (
+  const renderDetailUnit = (value, shortKey, fullKey, padTo = 2) => (
     <div className="property-timer-detail-unit">
       <FlipNumber
-        value={String(value).padStart(2, '0')}
-        padTo={2}
+        value={String(value).padStart(padTo, '0')}
+        padTo={padTo}
         style={flipStyle}
         textColor={digitColor}
       />
@@ -169,7 +169,7 @@ const PropertyTimer = ({
       className={`property-timer property-timer--detail ${statusClass} ${isCritical ? 'timer-critical' : ''} ${hasThreeDigitDays ? 'property-timer--days-3' : ''} ${className}`.trim()}
     >
       <div className="property-timer-detail-flip-row">
-        {renderDetailUnit(timeLeft.days, 'timerDay', 'timerDayFull')}
+        {renderDetailUnit(timeLeft.days, 'timerDay', 'timerDayFull', hasThreeDigitDays ? 3 : 2)}
         <span className={sepClass} aria-hidden="true">
           {sepChar}
         </span>

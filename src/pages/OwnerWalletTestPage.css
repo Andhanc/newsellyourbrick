@@ -1,23 +1,27 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import '../styles/owner-cabinet-tokens.css';
 
 .owl {
-  --owl-primary: #0abab5;
-  --owl-primary-dark: #089a95;
-  --owl-primary-soft: rgba(10, 186, 181, 0.12);
+  --owl-primary: var(--oc-tiffany);
+  --owl-primary-dark: var(--oc-tiffany-dark);
+  --owl-primary-soft: var(--oc-tiffany-muted);
   --owl-primary-muted: rgba(10, 186, 181, 0.1);
-  --owl-primary-ring: rgba(10, 186, 181, 0.28);
+  --owl-primary-ring: var(--oc-tiffany-ring);
 
-  --owl-surface: #ffffff;
-  --owl-text: #111827;
-  --owl-text-muted: #6b7280;
-  --owl-border: #e5e7eb;
-  --owl-shadow: 0 1px 3px rgba(15, 23, 42, 0.06), 0 8px 24px rgba(15, 23, 42, 0.04);
-  --owl-radius: 16px;
+  --owl-surface: var(--oc-surface);
+  --owl-text: var(--oc-text);
+  --owl-text-muted: var(--oc-text-muted);
+  --owl-border: var(--oc-border);
+  --owl-shadow: var(--oc-shadow-sm);
+  --owl-radius: var(--oc-radius);
   --owl-sidebar-w: 252px;
 
   display: flex;
   min-height: 100vh;
-  background-color: #f5f7fa;
+  background-color: var(--oc-surface-warm);
+  background-image:
+    radial-gradient(ellipse 100% 70% at 100% -10%, rgba(10, 186, 181, 0.1) 0%, transparent 58%),
+    var(--oc-gradient-page);
   color: var(--owl-text);
   font-family: 'Inter', 'Montserrat', system-ui, -apple-system, sans-serif;
   font-size: 14px;

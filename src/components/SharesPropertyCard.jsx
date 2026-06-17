@@ -4,7 +4,7 @@ import { buildResponsiveImageProps } from '../utils/responsiveImage'
 import {
   getCollectedAmount,
   getCollectedPercent,
-  getShareAnnualYield,
+  formatShareOwnershipPercent,
   getShareBadgeType,
   getShareLocationLabel,
 } from '../utils/sharesListing'
@@ -26,7 +26,7 @@ function SharesPropertyCard({
   onInvest,
   imageFallback,
 }) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const badgeType = getShareBadgeType(share)
   const badgeLabelKey = BADGE_LABEL_KEYS[badgeType] ?? BADGE_LABEL_KEYS.stable
   const locationLabel = getShareLocationLabel(share)
@@ -35,7 +35,7 @@ function SharesPropertyCard({
   const collectedAmount = getCollectedAmount(share)
   const totalPrice = Number(share.totalPrice) || 0
   const currency = share.currency || 'EUR'
-  const annualYield = getShareAnnualYield(share)
+  const ownershipPercent = formatShareOwnershipPercent(share, i18n.language)
   const minInvestment = getSharePricePerShare(share)
 
   const image = share.image || imageFallback
@@ -47,7 +47,10 @@ function SharesPropertyCard({
   })
 
   const formatMoney = (amount) =>
-    formatPropertyPrice(amount, currency, { compact: false })
+    formatPropertyPrice(amount, currency, {
+      compact: false,
+      locale: i18n.language?.startsWith('ru') ? 'ru-RU' : 'en-US',
+    })
 
   const handleFavoriteClick = (e) => {
     e.preventDefault()
@@ -100,16 +103,18 @@ function SharesPropertyCard({
 
         <div className="shares-v2-card__metrics">
           <div className="shares-v2-card__metric">
-            <span className="shares-v2-card__metric-label">{t('sharesCardYield')}</span>
+            <span className="shares-v2-card__metric-label">{t('sharesCardStake')}</span>
             <span className="shares-v2-card__metric-value">
-              {annualYield}%
-              <span className="shares-v2-card__metric-suffix"> {t('sharesCardYieldPeriod')}</span>
+              {ownershipPercent != null ? `${ownershipPercent}%` : '—'}
             </span>
           </div>
           <div className="shares-v2-card__metric">
-            <span className="shares-v2-card__metric-label">{t('sharesCardMinInvestment')}</span>
+            <span className="shares-v2-card__metric-label">
+              <span className="shares-v2-card__metric-label--desktop">{t('sharesCardMinInvestment')}</span>
+              <span className="shares-v2-card__metric-label--mobile">{t('sharesCardInvestment')}</span>
+            </span>
             <span className="shares-v2-card__metric-value">
-              {formatPropertyPrice(minInvestment, currency, { compact: true })}
+              {formatMoney(minInvestment)}
             </span>
           </div>
         </div>

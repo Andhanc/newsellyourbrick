@@ -1,33 +1,29 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ensureCanOpenProperty } from '../utils/propertyAccessGuard'
 import { useTranslation } from 'react-i18next'
-import { PanelLeftClose, PanelLeftOpen, ShieldQuestionMark, ShieldAlert, ShieldCheck } from 'lucide-react'
-import DebtsDesktopFilters from '../components/DebtsDesktopFilters'
+import { ShieldQuestionMark, ShieldAlert, ShieldCheck } from 'lucide-react'
+import DebtsPageHeader from '../components/DebtsPageHeader'
+import DebtsPageFilters from '../components/DebtsPageFilters'
+import DebtsListingMeta from '../components/DebtsListingMeta'
+import DebtsPropertyCard, { DebtsPropertyCardSkeleton } from '../components/DebtsPropertyCard'
 import Header from '../components/Header'
 import SiteChatDock from '../components/SiteChatDock'
-import PageBreadcrumbs from '../components/PageBreadcrumbs'
+import FlipCard from '../components/ui/FlipCard'
 import DepositButton from '../components/DepositButton'
 import DepositButtonSkeleton from '../components/DepositButtonSkeleton'
-import FlipCard from '../components/ui/FlipCard'
-import PropertyTimer from '../components/PropertyTimer'
-import PropertyShareButton from '../components/PropertyShareButton'
-import CircularTimer from '../components/CircularTimer'
 import AuctionMobileLayout from '../components/ui/AuctionMobileLayout'
 import { usePropertyFavorites } from '../context/PropertyFavoritesContext'
 import { hasDbBackedProperty } from '../utils/propertyFavoriteKey'
-import { hasBuyNowOption } from '../utils/hasBuyNowOption'
 import { formatPropertyPrice } from '../utils/currency'
 import { getPropertyCardImage } from '../utils/propertyImage'
 import { fetchUserDeposit } from '../utils/depositApi'
 import { fetchDedupe } from '../utils/fetchDedupe'
 import { fetchNumericDbUserIdForApi, getStoredNumericUserId } from '../services/authService'
-import { PropertyListingSkeletonGrid } from '../components/PropertyListingSkeletonGrid'
+import { resolveAuctionCurrentBidValue } from '../services/auctionListCache'
 import {
   AuctionMobileListingSkeleton,
   readAuctionMobileViewMode,
 } from '../components/AuctionMobileListingSkeleton'
-import { buildResponsiveImageProps } from '../utils/responsiveImage'
 import './Shares.css'
 import '../components/PropertyList.css'
 import { getPropertyDetailPath, auctionListingDedupeKey } from '../utils/propertyDetailUrl'
@@ -35,8 +31,12 @@ import {
   EMPTY_DEBTS_FILTERS,
   applyDebtsPageFilters,
   getDebtsPriceBounds,
+  getDebtsDebtBounds,
+  getDebtsFilterOptions,
+  getDebtsPurchaseCounts,
   DEBTS_MOBILE_FILTER_ITEMS,
 } from '../utils/debtsPageFilters'
+import { getDebtsRiskStats, sortDebts } from '../utils/debtsListing'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api'
 const MOBILE_BREAKPOINT = 768
@@ -46,11 +46,11 @@ const Debts = () => {
   const navigate = useNavigate()
   const { isFavorite, toggleFavorite } = usePropertyFavorites()
   const [searchQuery, setSearchQuery] = useState('')
+  const [sortKey, setSortKey] = useState('newest')
+  const [openRiskCard, setOpenRiskCard] = useState(null)
   const [debtsFilters, setDebtsFilters] = useState(EMPTY_DEBTS_FILTERS)
-  const [desktopFiltersOpen, setDesktopFiltersOpen] = useState(true)
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false)
   const searchFiltersBarRef = useRef(null)
-  const [openRiskCard, setOpenRiskCard] = useState(null)
   const [apiDebts, setApiDebts] = useState([])
   const [loadingDebts, setLoadingDebts] = useState(true)
   const [dbUserId, setDbUserId] = useState(() => getStoredNumericUserId())
@@ -201,14 +201,8 @@ const Debts = () => {
           const location = p.location || [p.city, p.country].filter(Boolean).join(', ') || ''
           const priceNumber = p.price != null && p.price !== '' ? Number(p.price) : 0
           const debtAmount = p.debt_amount != null && p.debt_amount !== '' ? Number(p.debt_amount) : null
-          const currentBidRaw =
-            p.currentBid ??
-            p.auction_current_bid ??
-            p.auctionCurrentBid ??
-            p.auction_starting_price ??
-            p.auctionStartingPrice ??
-            null
-          const currentBid = currentBidRaw != null && currentBidRaw !== '' ? Number(currentBidRaw) : null
+          const currentBidValue = resolveAuctionCurrentBidValue(p)
+          const currentBid = currentBidValue > 0 ? currentBidValue : null
 
           const endTime =
             p.endTime ??
@@ -258,11 +252,20 @@ const Debts = () => {
   }, [loadDebts])
 
   const priceBounds = useMemo(() => getDebtsPriceBounds(apiDebts), [apiDebts])
+  const debtBounds = useMemo(() => getDebtsDebtBounds(apiDebts), [apiDebts])
 
   const filtered = useMemo(
-    () => applyDebtsPageFilters(apiDebts, debtsFilters, searchQuery),
-    [apiDebts, debtsFilters, searchQuery],
+    () => sortDebts(applyDebtsPageFilters(apiDebts, debtsFilters, searchQuery), sortKey),
+    [apiDebts, debtsFilters, searchQuery, sortKey],
   )
+
+  const riskStats = useMemo(() => getDebtsRiskStats(apiDebts), [apiDebts])
+  const filterOptions = useMemo(() => getDebtsFilterOptions(apiDebts), [apiDebts])
+  const purchaseCounts = useMemo(() => getDebtsPurchaseCounts(apiDebts), [apiDebts])
+
+  const openProperty = (property) => {
+    navigate(getPropertyDetailPath(property.id, { property }), { state: { property } })
+  }
 
   const formatPrice = (n, currency = 'USD') => {
     if (!n || Number.isNaN(Number(n))) return '—'
@@ -279,7 +282,7 @@ const Debts = () => {
   }
 
   return (
-    <div className="shares-page shares-page--debts">
+    <div className="shares-page shares-page--debts shares-page--debts-redesign">
       <Header />
       <div className="shares-page__bg" />
       <main className="shares-container">
@@ -337,366 +340,162 @@ const Debts = () => {
           />
         </div>
 
-        <div
-          className={`shares-listing-shell${
-            isDebtsDesktop && desktopFiltersOpen ? ' shares-listing-shell--with-filters' : ''
-          }${isDebtsDesktop && !desktopFiltersOpen ? ' shares-listing-shell--filters-hidden' : ''}`}
-        >
-          <div className="page-context-heading page-context-heading--listing-auction">
-            <div className="page-context-heading--listing-auction-inner">
-              <h1 className="page-context-heading__title page-context-heading__title--auction-script">
-                {t('debtsTitle')}
-              </h1>
-              <PageBreadcrumbs className="page-breadcrumbs--flat-club" separator=">" />
-            </div>
-          </div>
+        <DebtsPageHeader
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+        />
 
-          <div
-            className={`shares-listing-layout${
-              isDebtsDesktop
-                ? ` auction-desktop-layout${
-                    desktopFiltersOpen ? '' : ' auction-desktop-layout--filters-hidden'
-                  }`
-                : ''
-            }`}
-          >
-          {isDebtsDesktop && desktopFiltersOpen ? (
-            <DebtsDesktopFilters
-              propertyType={debtsFilters.propertyType}
-              setPropertyType={setPropertyType}
-              riskFilter={debtsFilters.risk}
-              setRiskFilter={setRiskFilter}
-              minPrice={debtsFilters.minPrice}
-              maxPrice={debtsFilters.maxPrice}
-              setMinPrice={setMinPriceFilter}
-              setMaxPrice={setMaxPriceFilter}
-              priceBounds={priceBounds}
-              onApply={() => {
-                document.getElementById('properties-grid')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-              }}
-            />
-          ) : null}
+        <div className="debts-page-body">
+          {isDebtsDesktop ? (
+            <div className="debts-page-layout">
+              <DebtsPageFilters
+                filters={debtsFilters}
+                onFiltersChange={setDebtsFilters}
+                priceBounds={priceBounds}
+                debtBounds={debtBounds}
+                riskStats={riskStats}
+                purchaseCounts={purchaseCounts}
+                filterOptions={filterOptions}
+              />
 
-          <div
-            className={`shares-listing-layout__main${
-              isDebtsDesktop ? ' auction-desktop-layout__main' : ''
-            }${
-              isDebtsDesktop && !desktopFiltersOpen ? ' auction-desktop-layout__main--filters-hidden' : ''
-            }`.trim()}
-          >
-            <div
-              ref={searchFiltersBarRef}
-              className={`search-filters-bar${
-                isDebtsDesktop ? ' search-filters-bar--auction-desktop' : ' search-filters-bar--auction-mobile'
-              }${
-                isMobile
-                  ? mobileFiltersOpen
-                    ? ' search-filters-bar--types-expanded'
-                    : ' search-filters-bar--types-collapsed'
-                  : ''
-              }`}
-            >
-              {isDebtsDesktop ? (
-                <button
-                  type="button"
-                  className="auction-desktop-filters-toggle"
-                  onClick={() => setDesktopFiltersOpen((open) => !open)}
-                  aria-label={
-                    desktopFiltersOpen ? t('auctionToggleFiltersHide') : t('auctionToggleFiltersShow')
-                  }
-                  aria-expanded={desktopFiltersOpen}
-                >
-                  {desktopFiltersOpen ? <PanelLeftClose size={20} /> : <PanelLeftOpen size={20} />}
-                </button>
-              ) : null}
-              <div className="search-box">
-                <svg
-                  className="search-icon"
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  aria-hidden
-                >
-                  <circle cx="11" cy="11" r="8" />
-                  <path d="m21 21-4.35-4.35" />
-                </svg>
-                <input
-                  type="text"
-                  className="search-input"
-                  placeholder={t('searchPlaceholderLong')}
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-                {searchQuery ? (
-                  <button
-                    type="button"
-                    className="search-clear"
-                    onClick={() => setSearchQuery('')}
-                    aria-label={t('clearSearch')}
+              <div className="debts-page-layout__main">
+                <section className="debts-listing-section" aria-label={t('debtsTitle')}>
+                  <DebtsListingMeta
+                    total={filtered.length}
+                    sortKey={sortKey}
+                    onSortChange={setSortKey}
+                  />
+
+                  <div
+                    id="properties-grid"
+                    className="debts-listing-grid debts-listing-grid--grid"
+                    aria-busy={loadingDebts}
                   >
-                    ×
-                  </button>
-                ) : null}
-              </div>
-              {isMobile ? (
-                <div className="filters-and-types-grid">
-                  <button
-                    type="button"
-                    className="filters-button"
-                    aria-expanded={mobileFiltersOpen}
-                    onClick={() => setMobileFiltersOpen((open) => !open)}
-                  >
-                    <svg
-                      width="20"
-                      height="20"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      aria-hidden
-                    >
-                      <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
-                    </svg>
-                    {t('filters')}
-                  </button>
-                  <div className="property-types property-types--auction-mobile">
-                    {DEBTS_MOBILE_FILTER_ITEMS.map((item) => (
-                      <button
-                        key={`${item.kind}-${item.value}`}
-                        type="button"
-                        className={`type-button ${
-                          item.kind === 'type'
-                            ? debtsFilters.propertyType === item.value
-                              ? 'active'
-                              : ''
-                            : debtsFilters.risk === item.value
-                              ? 'active'
-                              : ''
-                        }`}
-                        onClick={() => {
-                          if (item.kind === 'type') {
-                            setPropertyType(item.value)
-                          } else {
-                            setRiskFilter(debtsFilters.risk === item.value ? 'all' : item.value)
-                          }
-                        }}
-                      >
-                        {t(item.labelKey)}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ) : null}
-            </div>
+                  {loadingDebts
+                    ? Array.from({ length: 6 }, (_, i) => <DebtsPropertyCardSkeleton key={`sk-${i}`} />)
+                    : null}
 
-        <div className="shares-grid" aria-busy={loadingDebts}>
-          {loadingDebts && (
-            <div style={{ gridColumn: '1 / -1' }}>
-              {isMobile ? (
-                <div
-                  className="properties-grid properties-grid--mobile-auction"
-                  aria-busy="true"
-                >
-                  <AuctionMobileListingSkeleton viewMode={readAuctionMobileViewMode()} />
-                </div>
-              ) : (
-                <div className="properties-grid" aria-hidden="true">
-                  <PropertyListingSkeletonGrid count={6} />
-                </div>
-              )}
-            </div>
-          )}
+                  {!loadingDebts && filtered.length === 0 ? (
+                    <div className="debts-listing-empty">
+                      <p>{t('debtsEmpty')}</p>
+                    </div>
+                  ) : null}
 
-          {!loadingDebts && filtered.length === 0 && (
-            <div className="shares-no-results">
-              <p>{t('debtsEmpty')}</p>
-            </div>
-          )}
-
-          {!loadingDebts && filtered.length > 0 && (
-            <>
-              {isMobile ? (
-                <div style={{ gridColumn: '1 / -1' }}>
-                  <div className="properties-grid properties-grid--mobile-auction">
-                    <AuctionMobileLayout
-                      properties={filtered}
-                      formatPrice={formatPrice}
-                      isFavorite={isPropertyLiked}
-                      onFavoriteToggle={handleFavoriteToggle}
-                    />
-                  </div>
-                </div>
-              ) : (
-                <div style={{ gridColumn: '1 / -1' }}>
-                  <div id="properties-grid" className="properties-grid">
-                    {filtered.map((property) => {
-                      const propertyTitle = property.title || property.name || ''
-                      const propertyImages = property.images || (property.image ? [property.image] : [])
-                      const propertyImage =
-                        propertyImages[0] ||
-                        '/images/external/photo-1560448204-e02f11c3d0e2-54a1e4fab4.jpg'
-                      const propertyImageProps = buildResponsiveImageProps(propertyImage, {
-                        widths: [320, 480, 640, 800],
-                        sizes: '(max-width: 500px) 50vw, (max-width: 768px) 50vw, (max-width: 1200px) 50vw, 33vw',
-                        quality: 72,
-                        fit: 'crop',
-                      })
-                      const hasTestTimer =
-                        property.test_timer_end_date != null && property.test_timer_end_date !== ''
-                      const hasTimer =
-                        (property.isAuction === true &&
-                          property.endTime != null &&
-                          property.endTime !== '') ||
-                        hasTestTimer
-                      const isReserved = property.is_reserved === true || property.is_reserved === 1
-                      const showBuyNow = hasBuyNowOption(property)
-
-                      const greenTimerBlock =
-                        hasTimer && !isReserved && !hasTestTimer && property.endTime ? (
-                          <div className="property-timer-wrapper">
-                            <PropertyTimer endTime={property.endTime} compact={true} />
-                          </div>
-                        ) : null
-
-                      const redTimerBlock =
-                        hasTimer && !isReserved && hasTestTimer ? (
-                          <div className="property-timer-wrapper">
-                            <CircularTimer
-                              endTime={property.test_timer_end_date}
-                              size={120}
-                              strokeWidth={6}
-                            />
-                          </div>
-                        ) : null
-
-                      const hasDebtAmount =
-                        property.debt_amount != null &&
-                        property.debt_amount !== '' &&
-                        !Number.isNaN(Number(property.debt_amount))
-
-                      return (
-                        <div
+                  {!loadingDebts
+                    ? filtered.map((property) => (
+                        <DebtsPropertyCard
                           key={auctionListingDedupeKey(property)}
-                          className="property-card"
-                          onClick={(e) => {
-                            if (e.target.closest('button') || e.target.closest('a')) return
-                            if (!ensureCanOpenProperty()) return
-                            navigate(getPropertyDetailPath(property.id, { property }), { state: { property } })
-                          }}
-                          style={{ cursor: 'pointer' }}
+                          property={property}
+                          isFavorite={isPropertyLiked(property)}
+                          onFavoriteToggle={handleFavoriteToggle}
+                          onOpen={openProperty}
+                        />
+                      ))
+                    : null}
+                  </div>
+                </section>
+              </div>
+            </div>
+          ) : (
+            <div className="shares-listing-shell">
+              <div className="shares-listing-layout">
+                <div className="shares-listing-layout__main">
+                  <div
+                    ref={searchFiltersBarRef}
+                    className={`search-filters-bar search-filters-bar--auction-mobile${
+                      mobileFiltersOpen
+                        ? ' search-filters-bar--types-expanded'
+                        : ' search-filters-bar--types-collapsed'
+                    }`}
+                  >
+                    <div className="filters-and-types-grid">
+                      <button
+                        type="button"
+                        className="filters-button"
+                        aria-expanded={mobileFiltersOpen}
+                        onClick={() => setMobileFiltersOpen((open) => !open)}
+                      >
+                        <svg
+                          width="20"
+                          height="20"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          aria-hidden
                         >
-                          <div className="property-link">
-                            <div className="property-image-container">
-                              <img {...propertyImageProps} alt={propertyTitle} className="property-image" />
-                              <div className="property-media-actions">
-                                <button
-                                  type="button"
-                                  className={`property-favorite ${isPropertyLiked(property) ? 'active' : ''}`}
-                                  onClick={(e) => handleFavoriteToggle(property, e)}
-                                  aria-label={t('favorites')}
-                                >
-                                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden>
-                                    <path
-                                      d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"
-                                      stroke="currentColor"
-                                      strokeWidth="2"
-                                      fill={isPropertyLiked(property) ? 'currentColor' : 'none'}
-                                    />
-                                  </svg>
-                                </button>
-                                <PropertyShareButton property={property} />
-                              </div>
-                              {isReserved && (
-                                <div className="property-reserved-overlay">
-                                  <div className="reserved-overlay-icon">🔒</div>
-                                  <div className="reserved-overlay-text">{t('reserved')}</div>
-                                </div>
-                              )}
-                              {!isReserved && showBuyNow && (
-                                <div className="property-badges-center">
-                                  <div className="property-buy-badge">
-                                    <span>{t('buyNowSectionTitle')}</span>
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                            <div className="property-content">
-                              {greenTimerBlock}
-                              {redTimerBlock}
-                              <h3 className="property-title">{propertyTitle}</h3>
-                              <p className="property-location">{property.location || ''}</p>
+                          <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+                        </svg>
+                        {t('filters')}
+                      </button>
+                      <div className="property-types property-types--auction-mobile">
+                        {DEBTS_MOBILE_FILTER_ITEMS.map((item) => (
+                          <button
+                            key={`${item.kind}-${item.value}`}
+                            type="button"
+                            className={`type-button ${
+                              item.kind === 'type'
+                                ? debtsFilters.propertyType === item.value
+                                  ? 'active'
+                                  : ''
+                                : debtsFilters.risk === item.value
+                                  ? 'active'
+                                  : ''
+                            }`}
+                            onClick={() => {
+                              if (item.kind === 'type') {
+                                setPropertyType(item.value)
+                              } else {
+                                setRiskFilter(debtsFilters.risk === item.value ? 'all' : item.value)
+                              }
+                            }}
+                          >
+                            {t(item.labelKey)}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
 
-                              <div className="property-content-bottom">
-                                <div className="property-bid-info" style={{ display: 'grid', gap: 6 }}>
-                                  {hasDebtAmount && (
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10 }}>
-                                      <span className="bid-label">{t('debtsDebtAmount')}</span>
-                                      <span className="bid-value">{formatPrice(property.debt_amount, property.currency)}</span>
-                                    </div>
-                                  )}
-                                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10 }}>
-                                    <span className="bid-label">{t('currentBid')}</span>
-                                    <span className="bid-value">
-                                      {formatPrice(property.currentBid || property.price || 0, property.currency)}
-                                    </span>
-                                  </div>
-                                </div>
-
-                                <div className="property-actions" onClick={(e) => e.stopPropagation()}>
-                                  <button
-                                    type="button"
-                                    className="btn btn-primary btn-liquid-glass"
-                                    onClick={(e) => {
-                                      e.preventDefault()
-                                      e.stopPropagation()
-                                      if (!ensureCanOpenProperty()) return
-                                      navigate(getPropertyDetailPath(property.id, { property }), { state: { property } })
-                                    }}
-                                    disabled={isReserved}
-                                    style={{
-                                      opacity: isReserved ? 0.5 : 1,
-                                      cursor: isReserved ? 'not-allowed' : 'pointer',
-                                    }}
-                                  >
-                                    {isReserved ? t('objectReserved') : t('placeBid')}
-                                  </button>
-                                  {showBuyNow && (
-                                    <button
-                                      type="button"
-                                      className="btn btn-buy-now btn-liquid-glass-buy"
-                                      onClick={(e) => {
-                                        e.preventDefault()
-                                        e.stopPropagation()
-                                        if (!ensureCanOpenProperty()) return
-                                        navigate(getPropertyDetailPath(property.id, { property }), { state: { property } })
-                                      }}
-                                      disabled={isReserved}
-                                      style={{
-                                        opacity: isReserved ? 0.5 : 1,
-                                        cursor: isReserved ? 'not-allowed' : 'pointer',
-                                      }}
-                                    >
-                                      {isReserved ? t('objectReserved') : t('buyNowSectionTitle')}
-                                    </button>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          </div>
+                  <div className="shares-grid" aria-busy={loadingDebts}>
+                    {loadingDebts && (
+                      <div style={{ gridColumn: '1 / -1' }}>
+                        <div
+                          className="properties-grid properties-grid--mobile-auction"
+                          aria-busy="true"
+                        >
+                          <AuctionMobileListingSkeleton
+                            viewMode={readAuctionMobileViewMode()}
+                            debtsCards
+                          />
                         </div>
-                      )
-                    })}
+                      </div>
+                    )}
+
+                    {!loadingDebts && filtered.length === 0 && (
+                      <div className="shares-no-results">
+                        <p>{t('debtsEmpty')}</p>
+                      </div>
+                    )}
+
+                    {!loadingDebts && filtered.length > 0 && (
+                      <div style={{ gridColumn: '1 / -1' }}>
+                        <div className="properties-grid properties-grid--mobile-auction">
+                          <AuctionMobileLayout
+                            properties={filtered}
+                            formatPrice={formatPrice}
+                            isFavorite={isPropertyLiked}
+                            onFavoriteToggle={handleFavoriteToggle}
+                            debtsCards
+                          />
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
-              )}
-            </>
+              </div>
+            </div>
           )}
-        </div>
-          </div>
-        </div>
         </div>
       </main>
       <SiteChatDock wrapperClassName="shares-floats" recommendationProperties={apiDebts}>

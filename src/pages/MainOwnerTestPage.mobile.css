@@ -24,10 +24,10 @@
   }
 
   .mot {
-    --mot-mob-pad: 16px;
+    --mot-mob-pad: var(--oc-mob-pad, 16px);
     --mot-tab-h: 56px;
-    --mot-tiffany: #0abab5;
-    --mot-mob-block-border: 1.5px solid rgba(10, 186, 181, 0.34);
+    --mot-tiffany: var(--oc-tiffany);
+    --mot-mob-block-border: 1.5px solid rgba(15, 118, 110, 0.28);
     --mot-mob-block-shadow: 0 8px 22px rgba(15, 23, 42, 0.06);
 
     flex-direction: column;
@@ -37,7 +37,7 @@
     min-height: 0;
     overflow: visible !important;
     padding-bottom: 0;
-    background: #ffffff;
+    background: var(--oc-mob-surface, #ffffff);
   }
 
   .mot-main {

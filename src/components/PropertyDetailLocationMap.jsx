@@ -43,6 +43,10 @@ export default function PropertyDetailLocationMap({
   interactive = false,
   filtersOutsideMap = false,
   mapFrame = null,
+  allowFullscreen = true,
+  mapStyle,
+  markerColor,
+  className = '',
 }) {
   const { t } = useTranslation()
   const mapRef = useRef(null)
@@ -68,6 +72,22 @@ export default function PropertyDetailLocationMap({
   const handleMapReady = useCallback((map) => {
     mapRef.current = map
     setMapReady(Boolean(map))
+    if (map) {
+      requestAnimationFrame(() => {
+        try {
+          map.resize()
+        } catch {
+          // ignore
+        }
+      })
+      window.setTimeout(() => {
+        try {
+          map.resize()
+        } catch {
+          // ignore
+        }
+      }, 150)
+    }
   }, [])
 
   const removeCategoryMarkers = useCallback((categoryId) => {
@@ -229,6 +249,9 @@ export default function PropertyDetailLocationMap({
         marker={marker}
         controlsLayout={controlsLayout}
         onMapReady={handleMapReady}
+        allowFullscreen={allowFullscreen}
+        mapStyle={mapStyle}
+        markerColor={markerColor}
       />
     </div>
   )
@@ -287,7 +310,11 @@ export default function PropertyDetailLocationMap({
       )
 
     return (
-      <div className="property-detail-location-map property-detail-location-map--split">
+      <div
+        className={`property-detail-location-map property-detail-location-map--split${
+          className ? ` ${className}` : ''
+        }`}
+      >
         {framedMap}
         {filtersNode}
       </div>
@@ -295,7 +322,7 @@ export default function PropertyDetailLocationMap({
   }
 
   return (
-    <div className="property-detail-location-map">
+    <div className={`property-detail-location-map${className ? ` ${className}` : ''}`}>
       {mapNode}
       {filtersNode}
     </div>

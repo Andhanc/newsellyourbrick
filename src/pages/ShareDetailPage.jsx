@@ -1,15 +1,11 @@
 import { useState, useEffect, useCallback, useLayoutEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useParams, useNavigate, useLocation, useSearchParams } from 'react-router-dom'
-import { FiPlus, FiArrowLeft } from 'react-icons/fi'
 import { useUser } from '@clerk/clerk-react'
-import Header from '../components/Header'
 import SharePurchaseModal from '../components/SharePurchaseModal'
 import DepositRequiredModal from '../components/DepositRequiredModal'
-import PropertyDetailGallery from '../components/property-detail/PropertyDetailGallery'
-import PropertyDetailInfoSection from '../components/property-detail/PropertyDetailInfoSection'
-import PropertyDetailMap from '../components/property-detail/PropertyDetailMap'
-import { usePropertyFavorites } from '../context/PropertyFavoritesContext'
+import PropertyDetailClassic from './PropertyDetailClassic'
+import PropertyDetailClassicSkeleton from './PropertyDetailClassicSkeleton'
 import { getUserData, isAuthenticated, getStoredNumericUserId, CLERK_DB_USER_SYNCED } from '../services/authService'
 import { showNotification } from '../utils/toastHelper'
 import { requestOpenLoginModal } from '../utils/requestOpenLoginModal'
@@ -17,11 +13,9 @@ import { fetchUserDeposit } from '../utils/depositApi'
 import { isAuctionDepositSufficient } from '../utils/auctionDeposit'
 import { getPropertyCardImage, normalizePropertyMediaFields } from '../utils/propertyImage'
 import { buildDisplayProperty } from '../utils/buildDisplayProperty'
-import { hasDbBackedProperty } from '../utils/propertyFavoriteKey'
-import './PropertyDetailClassic.css'
-import './ShareDetailPage.css'
 import { formatPropertyPrice } from '../utils/currency'
-import ShareDetailPageSkeleton from './ShareDetailPageSkeleton'
+import './PropertyDetailClassic.css'
+import './PropertyDetailClassic.desktopAuctionV3.css'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api'
 
@@ -48,6 +42,7 @@ const DEMO_SHARE_OBJECTS = [
     myShares: 0,
     area: 65,
     rooms: 2,
+    property_type: 'apartment',
   },
   {
     id: 'share-demo-2',
@@ -67,6 +62,7 @@ const DEMO_SHARE_OBJECTS = [
     myShares: 2,
     area: 95,
     rooms: 3,
+    property_type: 'apartment',
   },
   {
     id: 'share-demo-3',
@@ -85,11 +81,12 @@ const DEMO_SHARE_OBJECTS = [
     myShares: 0,
     area: 42,
     rooms: 1,
+    property_type: 'apartment',
   },
 ]
 
 const ShareDetailPage = () => {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const { id } = useParams()
   const navigate = useNavigate()
   const location = useLocation()
@@ -108,43 +105,34 @@ const ShareDetailPage = () => {
   const [userDeposit, setUserDeposit] = useState(0)
   const [isDepositRequiredOpen, setIsDepositRequiredOpen] = useState(false)
   const [mySharesOwned, setMySharesOwned] = useState(0)
-  const { isFavorite: isFavoriteInStore, toggleFavorite } = usePropertyFavorites()
 
   const isDbShare = shareObject && typeof shareObject.id === 'number' && shareObject.property_type
 
-  const displayProperty = useMemo(
-    () => (shareObject ? buildDisplayProperty(shareObject) : null),
-    [shareObject],
-  )
-
-  const galleryImages = useMemo(() => {
-    if (!shareObject) return []
-    const { images } = normalizePropertyMediaFields(shareObject)
-    if (images.length > 0) return images
-    if (Array.isArray(shareObject.images) && shareObject.images.length > 0) return shareObject.images
-    if (shareObject.image) return [shareObject.image]
-    return []
-  }, [shareObject])
-
-  const favoriteProperty = useMemo(() => {
+  const classicProperty = useMemo(() => {
     if (!shareObject) return null
-    const sourceTable =
-      shareObject.source_table ||
-      (shareObject.property_type === 'house' || shareObject.property_type === 'villa'
-        ? 'properties_houses'
-        : 'properties_apartments')
+    const display = buildDisplayProperty(shareObject)
+    const { images } = normalizePropertyMediaFields(shareObject)
+    const gallery = images.length > 0 ? images : shareObject.images || (shareObject.image ? [shareObject.image] : [])
+
     return {
       ...shareObject,
-      source_table: sourceTable,
+      ...display,
+      name: shareObject.title || display.name,
+      title: shareObject.title || display.title,
+      isAuction: false,
+      is_auction: false,
+      sale_type: 'share',
+      is_shared_ownership: true,
+      price: shareObject.totalPrice ?? display.price,
+      photos: gallery,
+      images: gallery,
+      source_table:
+        shareObject.source_table ||
+        (shareObject.property_type === 'house' || shareObject.property_type === 'villa'
+          ? 'properties_houses'
+          : 'properties_apartments'),
     }
   }, [shareObject])
-
-  const isFavorite = favoriteProperty
-    ? isFavoriteInStore(
-        favoriteProperty,
-        hasDbBackedProperty(favoriteProperty) ? undefined : 'property',
-      )
-    : false
 
   useEffect(() => {
     const apply = () => {
@@ -230,6 +218,7 @@ const ShareDetailPage = () => {
           rooms: p.rooms,
           bedrooms: p.bedrooms,
           property_type: p.property_type,
+          currency: p.currency || 'EUR',
           ...p,
         })
       })
@@ -314,7 +303,7 @@ const ShareDetailPage = () => {
         next.delete('session_id')
         setSearchParams(next, { replace: true })
         if (res.ok && data.success) {
-          showNotification('Оплата прошла успешно, доли зачислены')
+          showNotification(t('shareDetailPurchaseSuccess'))
           await loadPropertyFromApi()
           if (routeMatch) {
             const propertyType = routeMatch[1]
@@ -329,81 +318,27 @@ const ShareDetailPage = () => {
             }
           }
         } else {
-          showNotification(data.error || 'Не удалось подтвердить оплату')
+          showNotification(data.error || t('shareDetailPurchaseConfirmError'))
         }
       } catch (e) {
-        if (!cancelled) showNotification(e?.message || 'Ошибка подтверждения оплаты')
+        if (!cancelled) showNotification(e?.message || t('shareDetailPurchaseConfirmError'))
       }
     })()
     return () => {
       cancelled = true
     }
-  }, [id, loadPropertyFromApi, checkoutFlag, sessionIdQ, searchParams, setSearchParams])
+  }, [id, loadPropertyFromApi, checkoutFlag, sessionIdQ, searchParams, setSearchParams, t])
 
   const userEmail =
     user?.primaryEmailAddress?.emailAddress || user?.emailAddresses?.[0]?.emailAddress || getUserData()?.email || ''
 
-  if (loadingShare) {
-    return <ShareDetailPageSkeleton />
-  }
-
-  if (!shareObject) {
-    return (
-      <div className="share-detail-page">
-        <Header />
-        <div className="share-detail-page__container">
-          <p>{t('shareDetailNotFound')}</p>
-          <button type="button" onClick={() => navigate('/shares')}>
-            {t('shareDetailBackToShares')}
-          </button>
-        </div>
-      </div>
-    )
-  }
-
-  const totalShares = shareObject.totalShares || 20
-  const sharesSold = shareObject.sharesSold || 0
-  const myShares = isDbShare ? mySharesOwned : shareObject.myShares || 0
-  const availableToBuy = totalShares - sharesSold
-  const othersSold = Math.max(0, sharesSold - myShares)
+  const totalShares = shareObject?.totalShares || 20
+  const sharesSold = shareObject?.sharesSold || 0
+  const myShares = isDbShare ? mySharesOwned : shareObject?.myShares || 0
+  const availableToBuy = Math.max(0, totalShares - sharesSold)
   const isSoldOut = sharesSold >= totalShares
 
-  const previewMyShares = myShares + Math.min(buyCount, availableToBuy)
-  const previewAvailable = Math.max(0, availableToBuy - buyCount)
-  const previewSold = sharesSold + Math.min(buyCount, availableToBuy)
-
-  const pctOthers = totalShares > 0 ? (othersSold / totalShares) * 100 : 0
-  const pctMyShares = totalShares > 0 ? (previewMyShares / totalShares) * 100 : 0
-  const pctAvailable = totalShares > 0 ? (previewAvailable / totalShares) * 100 : 0
-
-  const formatPrice = (n) => formatPropertyPrice(n, shareObject.currency, { compact: true })
-
-  const handleShare = () => {
-    if (!shareObject || !navigator.share) return
-    navigator
-      .share({
-        title: shareObject.title,
-        text: shareObject.description,
-        url: window.location.href,
-      })
-      .catch(() => {})
-  }
-
-  const handleToggleFavorite = async () => {
-    if (!favoriteProperty) return
-    const isClerkAuth = user && userLoaded
-    const isOldAuth = isAuthenticated()
-    if (!isFavorite && !isClerkAuth && !isOldAuth) {
-      requestOpenLoginModal({ wizard: true })
-      return
-    }
-    await toggleFavorite(
-      favoriteProperty,
-      hasDbBackedProperty(favoriteProperty) ? undefined : 'property',
-    )
-  }
-
-  const openPurchaseModal = async () => {
+  const openPurchaseModal = useCallback(async () => {
     const isClerkAuth = user && userLoaded
     const isOldAuth = isAuthenticated()
     if (!isClerkAuth && !isOldAuth) {
@@ -411,13 +346,13 @@ const ShareDetailPage = () => {
       return
     }
     if (!isDbShare) {
-      showNotification('Это демо-карточка. Оплата доступна для объектов из каталога долей.')
+      showNotification(t('shareDetailDemoHint'))
       return
     }
     if (availableToBuy <= 0) return
 
     if (userId == null) {
-      showNotification('Не удалось определить пользователя. Обновите страницу и попробуйте снова.')
+      showNotification(t('shareDetailUserResolveError'))
       return
     }
 
@@ -430,168 +365,65 @@ const ShareDetailPage = () => {
     }
 
     setPurchaseModalOpen(true)
+  }, [user, userLoaded, isDbShare, availableToBuy, userId, t])
+
+  const shareListingConfig = useMemo(() => {
+    if (!shareObject) return null
+    const numberLocale = i18n.language?.startsWith('ru') ? 'ru-RU' : 'en-US'
+    return {
+      totalShares,
+      sharesSold,
+      myShares,
+      availableToBuy,
+      buyCount,
+      onBuyCountChange: setBuyCount,
+      pricePerShare: shareObject.pricePerShare || 0,
+      currency: shareObject.currency || 'EUR',
+      isSoldOut,
+      isDbShare: Boolean(isDbShare),
+      onPurchase: openPurchaseModal,
+      formatStickyTotal: () =>
+        formatPropertyPrice((shareObject.pricePerShare || 0) * buyCount, shareObject.currency || 'EUR', {
+          compact: true,
+          locale: numberLocale,
+        }),
+    }
+  }, [
+    shareObject,
+    totalShares,
+    sharesSold,
+    myShares,
+    availableToBuy,
+    buyCount,
+    isSoldOut,
+    isDbShare,
+    openPurchaseModal,
+    i18n.language,
+  ])
+
+  if (loadingShare) {
+    return <PropertyDetailClassicSkeleton />
+  }
+
+  if (!shareObject || !classicProperty) {
+    return (
+      <div className="property-detail-page-new" style={{ padding: '48px 24px', textAlign: 'center' }}>
+        <p>{t('shareDetailNotFound')}</p>
+        <button type="button" onClick={() => navigate('/shares')}>
+          {t('shareDetailBackToShares')}
+        </button>
+      </div>
+    )
   }
 
   return (
-    <div className={`share-detail-page ${isSoldOut ? 'share-detail-page--sold-out' : ''}`}>
-      <Header />
-      <div className="share-detail-page__bg" />
-      <div className="share-detail-page__container">
-        <button type="button" className="share-detail-page__back" onClick={() => navigate('/shares')}>
-          <FiArrowLeft size={20} /> {t('shareDetailBackToShares')}
-        </button>
-
-        <div className="share-detail__layout">
-          <div className="share-detail__left-column">
-            <div className="share-detail__gallery-wrap">
-              <PropertyDetailGallery
-                images={galleryImages}
-                title={shareObject.title}
-                onShare={handleShare}
-                onToggleFavorite={handleToggleFavorite}
-                isFavorite={isFavorite}
-                alwaysShowNav
-                overlay={
-                  isSoldOut ? <div className="share-detail__hero-sold-overlay" aria-hidden /> : null
-                }
-              />
-            </div>
-
-            {displayProperty && (
-              <PropertyDetailInfoSection
-                displayProperty={displayProperty}
-                property={shareObject}
-              />
-            )}
-          </div>
-
-          <div className="share-detail__sidebar">
-            <div className="share-detail__meta-card share-detail__meta-card--sidebar">
-              <h1 className="share-detail__title">{shareObject.title}</h1>
-              {shareObject.description && (
-                <p className="share-detail__description">{shareObject.description}</p>
-              )}
-            </div>
-
-            {isSoldOut ? (
-              <div className="share-detail__sold-out-block">
-                <div className="share-detail__sold-out-icon" aria-hidden>
-                  <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-                    <polyline points="22 4 12 14.01 9 11.01" />
-                  </svg>
-                </div>
-                <h3 className="share-detail__sold-out-title">Все доли проданы</h3>
-                <p className="share-detail__sold-out-text">
-                  Этот объект полностью выкуплен. Все {totalShares} долей находятся у совладельцев.
-                </p>
-                <p className="share-detail__sold-out-hint">Следите за новыми объектами — они появляются регулярно.</p>
-                <button type="button" className="share-detail__sold-out-btn" onClick={() => navigate('/shares')}>
-                  Смотреть другие объекты
-                </button>
-              </div>
-            ) : null}
-
-            {!isSoldOut ? (
-              <>
-                <div className="share-detail__chart-section">
-                  <h3 className="share-detail__chart-title">Распределение долей</h3>
-                  {buyCount > 0 && availableToBuy > 0 && (
-                    <p className="share-detail__chart-preview-hint">
-                      Превью: как будет после покупки {buyCount} {buyCount === 1 ? 'доли' : 'долей'}
-                    </p>
-                  )}
-                  <div className="share-detail__chart-wrap">
-                    <div
-                      className="share-detail__pie"
-                      style={{
-                        background: `conic-gradient(
-                          #5b6ee1 0% ${pctOthers}%,
-                          #0ABAB5 ${pctOthers}% ${pctOthers + pctMyShares}%,
-                          #dff7ff ${pctOthers + pctMyShares}% 100%
-                        )`,
-                      }}
-                    />
-                    <div className="share-detail__pie-center">
-                      <span className="share-detail__pie-value">
-                        {buyCount > 0 && availableToBuy > 0 ? previewSold : sharesSold}
-                      </span>
-                      <span className="share-detail__pie-label">из {totalShares}</span>
-                      {buyCount > 0 && availableToBuy > 0 && (
-                        <span className="share-detail__pie-sublabel">после покупки</span>
-                      )}
-                    </div>
-                  </div>
-                  <div className="share-detail__legend">
-                    <div className="share-detail__legend-item share-detail__legend-item--gray">
-                      <span className="share-detail__legend-dot" /> Можно купить:{' '}
-                      {buyCount > 0 && availableToBuy > 0 ? previewAvailable : availableToBuy}
-                    </div>
-                    <div className="share-detail__legend-item share-detail__legend-item--teal">
-                      <span className="share-detail__legend-dot" /> Ваши доли:{' '}
-                      {buyCount > 0 && availableToBuy > 0 ? previewMyShares : myShares}
-                    </div>
-                    {othersSold > 0 && (
-                      <div className="share-detail__legend-item share-detail__legend-item--dark">
-                        <span className="share-detail__legend-dot" /> У других: {othersSold}
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <div className="share-detail__buy-block">
-                  <div className="share-detail__buy-controls">
-                    <label className="share-detail__buy-label">Количество долей:</label>
-                    <div className="share-detail__buy-stepper-row">
-                      <div className="share-detail__buy-stepper">
-                        <button
-                          type="button"
-                          className="share-detail__stepper-btn"
-                          onClick={() => setBuyCount((c) => Math.max(1, c - 1))}
-                          disabled={buyCount <= 1}
-                        >
-                          −
-                        </button>
-                        <span className="share-detail__buy-count">{buyCount}</span>
-                        <button
-                          type="button"
-                          className="share-detail__stepper-btn"
-                          onClick={() => setBuyCount((c) => Math.min(availableToBuy, c + 1))}
-                          disabled={buyCount >= availableToBuy}
-                        >
-                          +
-                        </button>
-                      </div>
-                      <span
-                        className="share-detail__buy-hint"
-                        role="group"
-                        aria-label={`Итого: ${formatPrice(shareObject.pricePerShare * buyCount)}`}
-                      >
-                        <span className="share-detail__buy-hint-label">Итого</span>
-                        <span className="share-detail__buy-hint-value">
-                          {formatPrice(shareObject.pricePerShare * buyCount)}
-                        </span>
-                      </span>
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    className="share-detail__buy-btn"
-                    onClick={openPurchaseModal}
-                    disabled={availableToBuy <= 0}
-                  >
-                    <FiPlus size={22} /> Купить долю{buyCount > 1 ? ` (${buyCount})` : ''}
-                  </button>
-                </div>
-              </>
-            ) : null}
-
-            <div className="share-detail__map-card">
-              <PropertyDetailMap property={shareObject} />
-            </div>
-          </div>
-        </div>
-      </div>
+    <>
+      <PropertyDetailClassic
+        property={classicProperty}
+        onBack={() => navigate('/shares')}
+        requireAuthOnLoad={false}
+        shareListingConfig={shareListingConfig}
+      />
 
       <SharePurchaseModal
         isOpen={purchaseModalOpen}
@@ -613,7 +445,7 @@ const ShareDetailPage = () => {
           navigate('/deposit')
         }}
       />
-    </div>
+    </>
   )
 }
 

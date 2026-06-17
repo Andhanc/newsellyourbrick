@@ -1,28 +1,29 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import '../styles/owner-cabinet-tokens.css';
 
 .opr {
-  --opr-tiffany: #0abab5;
-  --opr-tiffany-dark: #089a95;
-  --opr-tiffany-light: #53d8d3;
-  --opr-tiffany-soft: #ecfdf5;
-  --opr-tiffany-muted: rgba(10, 186, 181, 0.14);
-  --opr-tiffany-ring: rgba(10, 186, 181, 0.28);
-  --opr-gradient-brand: linear-gradient(135deg, #53d8d3 0%, #0abab5 48%, #089a95 100%);
-  --opr-gradient-active: linear-gradient(135deg, #1ba8a3 0%, #0abab5 42%, #089a95 100%);
+  --opr-tiffany: var(--oc-tiffany);
+  --opr-tiffany-dark: var(--oc-tiffany-dark);
+  --opr-tiffany-light: var(--oc-tiffany-light);
+  --opr-tiffany-soft: var(--oc-tiffany-soft);
+  --opr-tiffany-muted: var(--oc-tiffany-muted);
+  --opr-tiffany-ring: var(--oc-tiffany-ring);
+  --opr-gradient-brand: var(--oc-gradient-brand);
+  --opr-gradient-active: var(--oc-gradient-active);
 
-  --opr-surface: #ffffff;
-  --opr-text: #111827;
-  --opr-text-muted: #6b7280;
-  --opr-text-light: #9ca3af;
-  --opr-border: #e5e7eb;
-  --opr-shadow: 0 1px 3px rgba(15, 23, 42, 0.06), 0 8px 24px rgba(10, 186, 181, 0.06);
-  --opr-radius: 16px;
-  --opr-radius-sm: 12px;
+  --opr-surface: var(--oc-surface);
+  --opr-text: var(--oc-text);
+  --opr-text-muted: var(--oc-text-muted);
+  --opr-text-light: var(--oc-text-light);
+  --opr-border: var(--oc-border);
+  --opr-shadow: var(--oc-shadow-sm);
+  --opr-radius: var(--oc-radius);
+  --opr-radius-sm: var(--oc-radius-sm);
   --opr-sidebar-w: 252px;
 
   display: flex;
   min-height: 100vh;
-  background-color: #f4fbfb;
+  background-color: var(--oc-surface-warm);
   background-image:
     radial-gradient(ellipse 100% 70% at 100% -10%, rgba(10, 186, 181, 0.14) 0%, transparent 58%),
     radial-gradient(ellipse 80% 55% at -5% 105%, rgba(83, 216, 211, 0.12) 0%, transparent 52%),

@@ -3,8 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { MapPin, Gem, ShoppingBag, Car, ArrowUpRight } from 'lucide-react'
 import { MdBed, MdOutlineBathtub } from 'react-icons/md'
 import { BiArea } from 'react-icons/bi'
-import PropertyTimer from './PropertyTimer'
-import PropertyShareButton from './PropertyShareButton'
+import ListingCardAuctionTimer from './ListingCardAuctionTimer'
 import CircularTimer from './CircularTimer'
 import ImageWithSkeleton from './ImageWithSkeleton'
 import { getPropertyCardImage } from '../utils/propertyImage'
@@ -199,8 +198,6 @@ export default function AuctionPropertyCard({
             </svg>
           </button>
 
-          <PropertyShareButton property={property} variant="glass" iconSize={18} />
-
           {showFeatureBadges ? (
             <div className="auction-card__photo-icons" onClick={(e) => e.stopPropagation()}>
               {state.hasBuyNowPrice ? (
@@ -264,7 +261,7 @@ export default function AuctionPropertyCard({
           </div>
         ) : null}
 
-        {!state.isReserved && (state.showGreenTimer || state.showCircularTimer || state.showBuyNowEndedSeal) ? (
+        {!state.isReserved && (state.showCircularTimer || state.showBuyNowEndedSeal) ? (
           <div
             className={[
               'auction-card__timer-dock',
@@ -273,14 +270,6 @@ export default function AuctionPropertyCard({
               .filter(Boolean)
               .join(' ')}
           >
-            {state.showGreenTimer ? (
-              <PropertyTimer
-                endTime={state.effectiveAuctionEnd}
-                className="auction-card__flip-timer"
-                unitSeparator="dot"
-                auctionEndedLabel={t('propertyDetailAuctionCompleted')}
-              />
-            ) : null}
             {state.showCircularTimer ? (
               <CircularTimer
                 endTime={property.test_timer_end_date}
@@ -321,6 +310,13 @@ export default function AuctionPropertyCard({
             <ArrowUpRight size={14} aria-hidden />
           </button>
         </div>
+      ) : null}
+
+      {!state.isReserved && state.showGreenTimer ? (
+        <ListingCardAuctionTimer
+          endTime={state.effectiveAuctionEnd}
+          endedLabel={t('propertyDetailAuctionCompleted')}
+        />
       ) : null}
 
       <div className="auction-card__body">

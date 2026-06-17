@@ -1,33 +1,43 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import '../styles/owner-cabinet-tokens.css';
 
 :where(.ost, .ost-body) {
-  --ost-tiffany: #0abab5;
-  --ost-tiffany-dark: #089a95;
-  --ost-tiffany-light: #53d8d3;
-  --ost-tiffany-soft: #ecfdf5;
-  --ost-tiffany-muted: rgba(10, 186, 181, 0.14);
-  --ost-tiffany-ring: rgba(10, 186, 181, 0.28);
-  --ost-gradient-brand: linear-gradient(135deg, #53d8d3 0%, #0abab5 48%, #089a95 100%);
-  --ost-gradient-active: linear-gradient(135deg, #1ba8a3 0%, #0abab5 42%, #089a95 100%);
+  --ost-tiffany: var(--oc-tiffany);
+  --ost-tiffany-dark: var(--oc-tiffany-dark);
+  --ost-tiffany-deep: var(--oc-tiffany-deep);
+  --ost-tiffany-darker: var(--oc-tiffany-darker);
+  --ost-tiffany-ink: var(--oc-tiffany-ink);
+  --ost-tiffany-light: var(--oc-tiffany-light);
+  --ost-tiffany-soft: var(--oc-tiffany-soft);
+  --ost-tiffany-muted: var(--oc-tiffany-muted);
+  --ost-tiffany-ring: var(--oc-tiffany-ring);
+  --ost-gradient-brand: var(--oc-gradient-brand);
+  --ost-gradient-active: var(--oc-gradient-active);
+  --ost-gradient-deep: var(--oc-gradient-deep);
+  --ost-gradient-deep-soft: var(--oc-gradient-deep-soft);
 
-  --ost-surface: #ffffff;
-  --ost-text: #111827;
-  --ost-text-muted: #6b7280;
-  --ost-border: #e5e7eb;
-  --ost-shadow: 0 1px 3px rgba(15, 23, 42, 0.06), 0 8px 24px rgba(10, 186, 181, 0.06);
-  --ost-radius: 16px;
-  --ost-radius-sm: 12px;
+  --ost-slate: var(--oc-slate);
+  --ost-slate-muted: var(--oc-slate-muted);
+  --ost-slate-light: var(--oc-slate-light);
+
+  --ost-surface: var(--oc-surface);
+  --ost-text: var(--oc-text);
+  --ost-text-muted: var(--oc-text-muted);
+  --ost-border: var(--oc-border);
+  --ost-shadow: var(--oc-shadow-sm);
+  --ost-radius: var(--oc-radius);
+  --ost-radius-sm: var(--oc-radius-sm);
   --ost-sidebar-w: 252px;
 }
 
 .ost {
   display: flex;
   min-height: 100vh;
-  background-color: #f4fbfb;
+  background-color: var(--oc-surface-warm);
   background-image:
     radial-gradient(ellipse 100% 70% at 100% -10%, rgba(10, 186, 181, 0.14) 0%, transparent 58%),
     radial-gradient(ellipse 80% 55% at -5% 105%, rgba(83, 216, 211, 0.12) 0%, transparent 52%),
-    linear-gradient(180deg, #f8fafc 0%, #f0fdfa 55%, #ecfdf5 100%);
+    var(--oc-gradient-page);
   color: var(--ost-text);
   font-family: 'Inter', 'Montserrat', system-ui, -apple-system, sans-serif;
   font-size: 14px;
@@ -520,20 +530,23 @@
   padding: 24px 20px 20px;
   border-radius: var(--ost-radius);
   background: var(--ost-surface);
-  border: 1px solid var(--ost-border);
-  box-shadow: var(--ost-shadow);
+  border: 1.5px solid var(--oc-border-soft);
+  box-shadow: var(--oc-shadow-md);
   min-height: 100%;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
-.ost-plan-card:hover {
+.ost-plan-card:hover:not(.ost-plan-card--current) {
   transform: translateY(-2px);
-  box-shadow: 0 4px 6px rgba(15, 23, 42, 0.04), 0 12px 28px rgba(10, 186, 181, 0.1);
+  border-color: rgba(15, 23, 42, 0.12);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
 }
 
 .ost-plan-card--current {
-  border-color: rgba(10, 186, 181, 0.35);
-  box-shadow: 0 0 0 1px rgba(10, 186, 181, 0.18), var(--ost-shadow);
+  border-color: rgba(10, 186, 181, 0.32);
+  box-shadow:
+    0 0 0 1px rgba(10, 186, 181, 0.14),
+    0 16px 40px rgba(10, 186, 181, 0.14);
 }
 
 .ost-plan-card__owned-badge {
@@ -543,12 +556,12 @@
   z-index: 1;
   padding: 5px 11px;
   border-radius: 999px;
-  background: linear-gradient(135deg, #53d8d3 0%, #089a95 100%);
+  background: var(--ost-gradient-brand);
   color: #fff;
   font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.02em;
-  box-shadow: 0 4px 12px rgba(10, 186, 181, 0.28);
+  box-shadow: 0 6px 16px var(--ost-tiffany-ring);
 }
 
 .ost-plan-card__billing {
@@ -557,8 +570,8 @@
   gap: 0;
   margin-bottom: 16px;
   border-radius: 14px;
-  background: rgba(10, 186, 181, 0.06);
-  border: 1px solid rgba(10, 186, 181, 0.18);
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.03) 0%, rgba(248, 250, 252, 0.9) 100%);
+  border: 1px solid rgba(15, 23, 42, 0.08);
   overflow: hidden;
 }
 
@@ -572,7 +585,7 @@
 }
 
 .ost-plan-card__billing-item + .ost-plan-card__billing-item {
-  border-top: 1px solid rgba(10, 186, 181, 0.12);
+  border-top: 1px solid rgba(15, 23, 42, 0.06);
 }
 
 .ost-plan-card__billing-label {
@@ -611,18 +624,15 @@
 }
 
 .ost-plan-card--featured {
-  border-color: var(--ost-tiffany);
-  background: linear-gradient(180deg, #ffffff 0%, #f0fdfa 100%);
-  box-shadow:
-    0 0 0 1px rgba(10, 186, 181, 0.28),
-    0 12px 32px rgba(10, 186, 181, 0.14);
+  border-color: rgba(15, 23, 42, 0.1);
+  background: linear-gradient(180deg, #ffffff 0%, var(--oc-surface-muted) 100%);
+  box-shadow: var(--oc-shadow-md);
   padding-top: 36px;
 }
 
 .ost-plan-card--featured:hover {
-  box-shadow:
-    0 0 0 1px rgba(10, 186, 181, 0.35),
-    0 16px 40px rgba(10, 186, 181, 0.18);
+  border-color: rgba(10, 186, 181, 0.28);
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.1);
 }
 
 .ost-plan-card__ribbon {
@@ -665,7 +675,7 @@
 
 .ost-plan-card--featured .ost-plan-card__name,
 .ost-plan-card--featured .ost-plan-card__amount {
-  color: var(--ost-tiffany-dark);
+  color: var(--ost-slate);
 }
 
 .ost-plan-card__badge {
@@ -725,7 +735,7 @@
 .ost-plan-card__feature svg {
   flex-shrink: 0;
   margin-top: 1px;
-  color: var(--ost-tiffany);
+  color: var(--ost-slate-light);
 }
 
 .ost-plan-card__btn {
@@ -956,19 +966,25 @@
   min-height: 36px;
   padding: 9px 18px;
   border-radius: 8px;
-  background: #fff;
-  border: 1px solid rgba(226, 232, 240, 0.85);
-  color: #64748b;
-  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.04);
+  background: var(--oc-surface-muted);
+  border: 1px solid var(--oc-border-soft);
+  color: var(--ost-slate-light);
+  box-shadow: none;
   font-size: 13px;
   font-weight: 700;
+}
+
+.ost-period-tabs__item:hover:not(.ost-period-tabs__item--active) {
+  background: #ffffff;
+  color: var(--ost-slate-muted);
+  border-color: rgba(15, 23, 42, 0.1);
 }
 
 .ost-period-tabs__item--active {
   background: var(--ost-gradient-brand);
   color: #ffffff;
   border-color: transparent;
-  box-shadow: 0 12px 26px rgba(10, 186, 181, 0.22);
+  box-shadow: 0 12px 26px var(--ost-tiffany-ring);
 }
 
 .ost-plans-grid {
@@ -978,45 +994,82 @@
 .ost-plan-card {
   min-height: 420px;
   padding: 28px 28px 24px;
-  border-radius: 22px;
+  border-radius: var(--oc-radius-lg);
   background: #fff;
-  border: 1.5px solid #e5e7eb;
-  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.05);
+  border: 1.5px solid var(--oc-border-soft);
+  box-shadow: var(--oc-shadow-md);
   transform: none;
   overflow: hidden;
 }
 
 .ost-plan-card--featured:not(.ost-plan-card--current) {
   padding-top: 28px;
+  border-left: 4px solid var(--ost-tiffany);
 }
 
-.ost-plan-card:hover,
-.ost-plan-card--featured:hover {
-  transform: none;
-  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.07);
+.ost-plan-card--featured:not(.ost-plan-card--current) .ost-plan-card__btn--select {
+  background: var(--ost-gradient-brand);
+  box-shadow: 0 12px 24px rgba(10, 186, 181, 0.2);
+}
+
+.ost-plan-card:hover:not(.ost-plan-card--current),
+.ost-plan-card--featured:hover:not(.ost-plan-card--current) {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.09);
 }
 
 .ost-plan-card--current-paid {
-  border: 2px solid var(--ost-tiffany);
+  border: 2px solid rgba(10, 186, 181, 0.45);
   background:
-    linear-gradient(180deg, rgba(10, 186, 181, 0.08) 0%, rgba(255, 255, 255, 0) 42%),
+    linear-gradient(180deg, rgba(10, 186, 181, 0.1) 0%, rgba(255, 255, 255, 0) 48%),
     #ffffff;
   box-shadow:
     0 0 0 4px rgba(10, 186, 181, 0.1),
-    0 18px 40px rgba(10, 186, 181, 0.12);
+    0 18px 44px rgba(10, 186, 181, 0.16);
+}
+
+.ost-plan-card--current-paid::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 5px;
+  background: var(--ost-gradient-brand);
+  border-radius: var(--oc-radius-lg) var(--oc-radius-lg) 0 0;
 }
 
 .ost-plan-card--current-paid:hover {
   box-shadow:
-    0 0 0 4px rgba(10, 186, 181, 0.12),
-    0 20px 44px rgba(10, 186, 181, 0.14);
+    0 0 0 4px rgba(10, 186, 181, 0.14),
+    0 22px 48px rgba(10, 186, 181, 0.2);
 }
 
 .ost-plan-card--current:not(.ost-plan-card--current-paid) {
   border: 2px solid rgba(10, 186, 181, 0.34);
+  background:
+    linear-gradient(180deg, rgba(236, 253, 245, 0.75) 0%, #ffffff 42%),
+    #ffffff;
   box-shadow:
     0 0 0 3px rgba(10, 186, 181, 0.08),
-    0 8px 22px rgba(10, 186, 181, 0.1);
+    0 12px 28px rgba(10, 186, 181, 0.12);
+}
+
+.ost-plan-card--current .ost-plan-card__feature svg {
+  color: var(--ost-tiffany);
+}
+
+.ost-plan-card--current-paid .ost-plan-card__billing {
+  background: linear-gradient(180deg, rgba(10, 186, 181, 0.07) 0%, rgba(248, 250, 252, 0.95) 100%);
+  border-color: rgba(10, 186, 181, 0.2);
+}
+
+.ost-plan-card--current-paid .ost-plan-card__billing-item + .ost-plan-card__billing-item {
+  border-top-color: rgba(10, 186, 181, 0.12);
+}
+
+.ost-plan-card--current-paid .ost-plan-card__billing-value--amount {
+  color: var(--ost-tiffany-dark);
 }
 
 .ost-plan-card__head {
@@ -1026,7 +1079,11 @@
 .ost-plan-card__name {
   font-size: 20px;
   font-weight: 800;
-  color: #0f172a;
+  color: var(--ost-slate);
+}
+
+.ost-plan-card--current-paid .ost-plan-card__name {
+  color: var(--ost-tiffany-dark);
 }
 
 .ost-plan-card__price {
@@ -1036,11 +1093,15 @@
 
 .ost-plan-card__amount {
   display: inline-block;
-  color: #0f172a;
+  color: var(--ost-slate);
   font-size: 32px;
   font-weight: 850;
   animation: ost-price-pop 0.28s ease;
   transform-origin: left center;
+}
+
+.ost-plan-card--current-paid .ost-plan-card__amount {
+  color: var(--ost-tiffany);
 }
 
 .ost-plan-card__period {
@@ -1076,7 +1137,7 @@
   min-height: 26px;
   padding: 5px 10px;
   border-radius: 999px;
-  background: linear-gradient(135deg, rgba(83, 216, 211, 0.22) 0%, rgba(10, 186, 181, 0.16) 100%);
+  background: linear-gradient(135deg, rgba(83, 216, 211, 0.24) 0%, rgba(10, 186, 181, 0.16) 100%);
   color: var(--ost-tiffany-dark);
   font-size: 11px;
   font-weight: 850;
@@ -1101,7 +1162,7 @@
 
 .ost-plan-card__feature {
   gap: 11px;
-  color: #334155;
+  color: var(--ost-slate-muted);
   font-size: 13px;
   font-weight: 650;
 }
@@ -1110,7 +1171,7 @@
   width: 14px;
   height: 14px;
   margin-top: 2px;
-  color: var(--ost-tiffany);
+  color: var(--ost-slate-light);
   stroke-width: 3;
 }
 
@@ -1124,17 +1185,24 @@
 
 .ost-plan-card__btn--select {
   background: var(--ost-gradient-brand);
-  box-shadow: 0 12px 24px rgba(10, 186, 181, 0.22);
+  box-shadow: 0 12px 24px var(--ost-tiffany-ring);
+}
+
+.ost-plan-card__btn--select:hover {
+  box-shadow: 0 14px 28px rgba(10, 186, 181, 0.35);
 }
 
 .ost-plan-card__btn--current {
-  background: #fff;
-  color: var(--ost-tiffany-dark, #089a95);
-  border: 1.5px solid rgba(10, 186, 181, 0.34);
+  background: var(--oc-surface-muted);
+  color: var(--ost-slate-light);
+  border: 1.5px solid var(--oc-border-soft);
 }
 
 .ost-plan-card--current-paid .ost-plan-card__btn--current {
-  background: linear-gradient(135deg, rgba(10, 186, 181, 0.08) 0%, #ffffff 100%);
+  background: linear-gradient(135deg, rgba(10, 186, 181, 0.1) 0%, #ffffff 100%);
+  color: var(--ost-tiffany-dark);
+  border-color: rgba(10, 186, 181, 0.34);
+  font-weight: 800;
 }
 
 .ost-save-banner {
@@ -1142,11 +1210,11 @@
   min-height: 128px;
   padding: 28px 32px;
   gap: 24px;
-  border: 1px solid rgba(10, 186, 181, 0.16);
+  border: 1px solid rgba(10, 186, 181, 0.2);
   border-radius: 24px;
   background:
     radial-gradient(circle at 90% 20%, rgba(83, 216, 211, 0.22) 0%, transparent 34%),
-    linear-gradient(135deg, #ffffff 0%, #f0fdfa 58%, #ccfbf1 100%);
+    linear-gradient(135deg, #ffffff 0%, var(--oc-surface-muted) 42%, var(--oc-tiffany-mint) 100%);
   box-shadow: 0 18px 40px rgba(10, 186, 181, 0.12);
 }
 
@@ -1167,7 +1235,7 @@
   min-height: 48px;
   border-radius: 16px;
   background: var(--ost-gradient-brand);
-  box-shadow: 0 12px 24px rgba(10, 186, 181, 0.22);
+  box-shadow: 0 12px 24px var(--ost-tiffany-ring);
   font-weight: 800;
 }
 
